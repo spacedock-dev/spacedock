@@ -172,24 +172,29 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 // CAS values, and durable ids belong to the recorder.
 func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
-		Use:                "gate prepare|record|validate|eligibility|consume <entity>",
-		Short:              "Prepare, record, inspect, or consume durable gate resolutions",
+		Use:                "gate prepare|withdraw|record|validate|consume <entity>",
+		Short:              "Prepare, withdraw, record, inspect, or consume durable gate resolutions",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate record <entity> --room PATH [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--feedback-cycle FILE] [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate eligibility <entity> [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. In a split-root workflow, a successful close or consume\nends with a machine-parseable `sync=.../phase=...` line; branch on that final line plus\nthe exit code, never on which prose lines printed.")
 				return nil
 			}
-			if len(args) < 2 || (args[0] != "prepare" && args[0] != "record" && args[0] != "validate" && args[0] != "eligibility" && args[0] != "consume") {
-				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|record|validate|eligibility|consume)")
+			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "validate" && args[0] != "consume") {
+				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|withdraw|record|validate|consume)")
 				return exitCodeError{2}
 			}
 			workflowDir := ""
 			input := gates.RecordInput{}
 			prepareInput := gates.PrepareInput{}
-			questionCount, artifactCount, summaryCount := 0, 0, 0
+			questionCount, artifactCount, summaryCount, reasonCount := 0, 0, 0, 0
+			consumeFlag := false
 			for i := 2; i < len(args); i++ {
+				if args[i] == "--consume" {
+					consumeFlag = true
+					continue
+				}
 				if i+1 >= len(args) {
 					fmt.Fprintf(stderr, "Error: %s requires an argument\n", args[i])
 					return exitCodeError{2}
@@ -199,20 +204,17 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					workflowDir = args[i+1]
 				case "--briefing":
 					input.BriefingPath = args[i+1]
-				case "--room":
-					input.RoomPath = args[i+1]
 				case "--actor":
 					input.Actor = args[i+1]
 				case "--decision":
 					input.Decision = args[i+1]
 				case "--reason":
 					input.Reason = args[i+1]
+					reasonCount++
 				case "--round":
 					input.Round = args[i+1]
 				case "--log":
 					input.LogPath = args[i+1]
-				case "--feedback-cycle":
-					input.FeedbackCyclePath = args[i+1]
 				case "--question":
 					prepareInput.Question = args[i+1]
 					questionCount++
@@ -229,6 +231,22 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					return exitCodeError{2}
 				}
 				i++
+			}
+			if consumeFlag && args[0] != "record" {
+				fmt.Fprintf(stderr, "Error: --consume is only valid with gate record\n")
+				return exitCodeError{2}
+			}
+			// --round is an advisory correction-round publication, not a close
+			// or a consume attempt — mechanism 1 deliberately excludes it from
+			// the implicit sync (Alternatives rejected 6: zero AC-1 benefit, a
+			// new failure surface for a verb outside the measured ceremony
+			// window), so it still needs an explicit `state commit` afterward,
+			// same as before mechanism 1. --consume has nothing to sequence
+			// here, so reject it as a usage error rather than silently
+			// ignoring it.
+			if consumeFlag && input.Round != "" {
+				fmt.Fprintln(stderr, "Error: --consume is not valid with --round (no close/consume attempt to sequence; --round still needs an explicit state commit)")
+				return exitCodeError{2}
 			}
 			if args[0] == "prepare" {
 				if summaryCount != 1 {
@@ -250,6 +268,14 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			} else if questionCount != 0 || artifactCount != 0 || summaryCount != 0 || len(prepareInput.References) != 0 {
 				fmt.Fprintf(stderr, "Error: gate %s does not accept prepare flags\n", args[0])
 				return exitCodeError{2}
+			}
+			if args[0] == "withdraw" {
+				allowed := input
+				allowed.Reason = ""
+				if reasonCount != 1 || allowed != (gates.RecordInput{}) {
+					fmt.Fprintln(stderr, "Error: gate withdraw accepts exactly one --reason and optional --workflow-dir")
+					return exitCodeError{2}
+				}
 			}
 			definitionDir := workflowDir
 			if definitionDir == "" {
@@ -284,6 +310,15 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintf(stdout, "room=%s\nbriefing=%s\ndigest=%s\nstate=%s\n", result.Room, result.Briefing, result.Digest, result.State)
 				return nil
 			}
+			if args[0] == "withdraw" {
+				s, err := gates.Withdraw(path, gates.WithdrawInput{Reason: input.Reason, WorkflowDir: definitionDir})
+				if err != nil {
+					fmt.Fprintln(stderr, "Error:", err)
+					return exitCodeError{1}
+				}
+				fmt.Fprintf(stdout, "withdrawn gate=%s attempt=%s state=%s briefing=%s\n", s.Gate, s.Attempt, s.State, s.Briefing)
+				return nil
+			}
 			if args[0] == "validate" {
 				if input.Round != "" {
 					round := input.Round
@@ -299,46 +334,29 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					fmt.Fprintln(stderr, "Error: gate validate accepts only --workflow-dir")
 					return exitCodeError{2}
 				}
-				s, err := gates.SummaryFileAt(path, definitionDir)
+				s, warnings, err := gates.SummaryFileDiagnosticsAt(path, definitionDir)
 				if err != nil {
 					fmt.Fprintln(stderr, "Error:", err)
 					return exitCodeError{1}
+				}
+				for _, warning := range warnings {
+					fmt.Fprintln(stderr, gates.FormatWarning(path, warning))
 				}
 				fmt.Fprintf(stdout, "gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 				return nil
 			}
-			if args[0] == "eligibility" || args[0] == "consume" {
+			if args[0] == "consume" {
 				if input != (gates.RecordInput{}) {
 					fmt.Fprintf(stderr, "Error: gate %s accepts only --workflow-dir\n", args[0])
 					return exitCodeError{2}
 				}
-				if args[0] == "eligibility" {
-					e, err := gates.EligibilityFileAt(path, definitionDir)
-					if err != nil {
-						fmt.Fprintln(stderr, "Error:", err)
-						return exitCodeError{1}
-					}
-					fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t target-stage=%s\n", e.Gate, e.Attempt, e.Action, e.ApplicationState, e.Condition, e.Eligible, e.TargetStage)
-					return nil
-				}
-				result, err := gates.ConsumeAt(path, definitionDir)
-				if err != nil {
-					fmt.Fprintln(stderr, "Error:", err)
-					return exitCodeError{1}
-				}
-				fmt.Fprintf(stdout, "gate=%s attempt=%s application=%s/%s condition=%s eligible=%t consumed=%t target-stage=%s", result.Gate, result.Attempt, result.Action, result.ApplicationState, result.Condition, result.Eligible, result.Consumed, result.TargetStage)
-				// Terminal-target approvals are routed, not spent: consume leaves
-				// the application pending; the printed route reuses the existing
-				// CurrentStageReadiness approved-awaiting-merge vocabulary rather
-				// than a ConsumeResult field (merge guard is the sole terminal
-				// consumer).
-				routed := !result.Consumed && result.Eligible && gates.ApprovedAwaitingMergeRoute(path, definitionDir)
-				if routed {
-					fmt.Fprintf(stdout, " route=%s", gates.RouteApprovedAwaitingMerge)
-				}
-				fmt.Fprintln(stdout)
-				if !result.Consumed && !routed {
-					return exitCodeError{1}
+				// runGateConsumeAndSync renders the exact gate=.../consumed=.../route=
+				// line this branch always has, then — mechanism 1 — a machine-parseable
+				// sync=.../phase=consume line when (and only when) the call wrote (a
+				// real advance or a stale-pending supersede); a terminal route or an
+				// ineligible/blocked refusal writes nothing and stays byte-clean.
+				if code := runGateConsumeAndSync(path, definitionDir, stdout, stderr); code != 0 {
+					return exitCodeError{code}
 				}
 				return nil
 			}
@@ -355,28 +373,19 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				fmt.Fprintln(stderr, "Error: gate record --briefing requires --round")
 				return exitCodeError{2}
 			}
-			sources := 0
-			for _, source := range []string{input.RoomPath, input.Decision} {
-				if source != "" {
-					sources++
-				}
-			}
-			if sources != 1 {
-				fmt.Fprintln(stderr, "Error: gate record requires exactly one of --room or --decision")
+			if input.Decision == "" {
+				fmt.Fprintln(stderr, "Error: gate record requires --decision")
 				return exitCodeError{2}
 			}
-			if input.Decision != "" && input.Actor == "" {
+			if input.Actor == "" {
 				fmt.Fprintln(stderr, "Error: --decision requires --actor ID")
 				return exitCodeError{2}
 			}
-			if input.RoomPath != "" && (input.Actor != "" || input.Reason != "") {
-				fmt.Fprintln(stderr, "Error: gate record flags do not match the selected semantic source")
+			// --consume never softens a non-approve chat decision. This is a usage
+			// error (exit 2) before any write.
+			if consumeFlag && input.Decision != "approve" {
+				fmt.Fprintln(stderr, "Error: --consume with --decision revise or hold is a usage error; the flag never softens a non-approve decision")
 				return exitCodeError{2}
-			}
-			for _, retainedPath := range []*string{&input.RoomPath} {
-				if *retainedPath != "" && !filepath.IsAbs(*retainedPath) {
-					*retainedPath = filepath.Join(dir, *retainedPath)
-				}
 			}
 			input.WorkflowDir = definitionDir
 			s, err := gates.RecordSemanticSummary(path, input)
@@ -385,6 +394,21 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				return exitCodeError{1}
 			}
 			fmt.Fprintf(stdout, "recorded gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
+
+			// Mechanism 1: the close always wrote a Resolution, so it always syncs
+			// (split-root only; inline prints nothing, exit 0 unchanged).
+			entityStage := status.ParseFrontmatter(path)["status"]
+			recordMsg := fmt.Sprintf("gate: record %s %s %s", status.EntitySlug(path), entityStage, s.Decision)
+			if code := runGateSync(stdout, stderr, definitionDir, path, gateSyncPhaseRecord, recordMsg); code != 0 {
+				return exitCodeError{code}
+			}
+			if !consumeFlag {
+				return nil
+			}
+			// Sequence the existing consume handler in the same invocation.
+			if code := runGateConsumeAndSync(path, definitionDir, stdout, stderr); code != 0 {
+				return exitCodeError{code}
+			}
 			return nil
 		},
 	}
@@ -395,7 +419,7 @@ func printRound(s gates.RoundSummary, err error, stdout, stderr io.Writer) error
 		fmt.Fprintln(stderr, "Error:", err)
 		return exitCodeError{1}
 	}
-	fmt.Fprintf(stdout, "round=%s stage=%s cycle=%d briefing=%s triage=%s entries=%d\n", s.ID, s.Stage, s.Cycle, s.Briefing, s.Triage, len(s.Entries))
+	fmt.Fprintf(stdout, "round=%s stage=%s cycle=%d briefing=%s entries=%d\n", s.ID, s.Stage, s.Cycle, s.Briefing, len(s.Entries))
 	for _, entry := range s.Entries {
 		fmt.Fprintf(stdout, "entry=%s type=%s advisory=%t decision=%s\n", entry.ID, entry.Type, entry.Advisory, entry.Decision)
 	}
@@ -544,18 +568,23 @@ Examples:
 // the hand-rolled router did — cobra never consumes, reorders, or validates a
 // status flag (AC-5).
 func newStatusCommand(ctx context.Context, env []string, dir string, stdin io.Reader, stdout, stderr io.Writer, runner status.Runner) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:                "status [args]",
 		Short:              "Show or update workflow state",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if wantsHelp(args) {
+				return cmd.Help()
+			}
 			if code := runStatus(ctx, args, env, dir, stdin, stdout, stderr, runner); code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
 		},
 	}
+	setStatusHelp(cmd, stdout)
+	return cmd
 }
 
 // newNewCommand wires `spacedock new [--folder] SLUG` as a pure alias for
@@ -916,7 +945,7 @@ _spacedock() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   verbs="claude codex pi install doctor status new state merge completion dispatch --version --help"
-  status_flags="--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root"
+  status_flags="--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root --page --limit"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$verbs" -- "$cur") )
     return 0
@@ -937,7 +966,7 @@ const zshCompletion = `#compdef spacedock
 _spacedock() {
   local -a verbs status_flags
   verbs=(claude codex pi install doctor status new state merge completion dispatch --version --help)
-  status_flags=(--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root)
+  status_flags=(--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root --page --limit)
   if (( CURRENT == 2 )); then
     compadd -- $verbs
     return

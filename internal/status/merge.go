@@ -419,6 +419,17 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 	if terminal == "" {
 		return errExit(stderr, fmt.Sprintf("workflow %s declares no terminal stage — cannot finalize", roots.definitionDir))
 	}
+	// The CLI surface and the stored surface differ on case, and this is the one
+	// boundary between them: `--verdict passed|rejected` is lowercase (what the
+	// help text documents and every caller and doc passes), while the entity
+	// schema declares the frontmatter value's conventional set as
+	// [PASSED REJECTED]. Writing the flag verbatim made `status --validate` warn
+	// on the entity this verb had just finalized — permanently, since it is
+	// terminal and archived by then. Normalise here, not in either writer: both
+	// the gates delivery write and the legacy --set read `stored`, so neither
+	// path can drift. Everything downstream that reads a verdict back compares
+	// case-insensitively (runArchive's guards, runSet's, the validator).
+	stored := storedVerdict(verdict)
 	// Fail-closed writer selection: only a genuinely gate-less entity takes the
 	// legacy finalization path. A REAL pending terminal application with a
 	// disturbed briefing room or an unreadable gates record is a refusal, never
@@ -436,13 +447,13 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 	if pendingApproval {
 		// Sole-consumer write: gates owns the locked candidate carrying the
 		// spend, terminal status, verdict, and completed together.
-		if _, err := gates.FinalizeTerminalApproval(entityPath, roots.definitionDir, verdict, nowTimestamp()); err != nil {
+		if _, err := gates.FinalizeTerminalApproval(entityPath, roots.definitionDir, stored, nowTimestamp()); err != nil {
 			return errExit(stderr, fmt.Sprintf("merge guard: terminal delivery write refused for %s: %v", slug, err))
 		}
 	} else {
 		terminalize := []fieldUpdate{
 			{field: "status", value: terminal, hasValue: true},
-			{field: "verdict", value: verdict, hasValue: true},
+			{field: "verdict", value: stored, hasValue: true},
 			{field: "completed", hasValue: false},
 		}
 		if rc := emitSet(roots, slug, terminalize, stderr); rc != 0 {

@@ -14,29 +14,33 @@ import (
 
 // EvaluateEligibility is a pure read over a validated gate record, the entity's
 // current status, and the caller's digest comparison. It never queries another
-// entity or attempts to satisfy a blocker.
+// entity or attempts to perform workflow effects.
 func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool) Eligibility {
 	result := Eligibility{Condition: "ineligible"}
 	if doc == nil {
 		return result
 	}
-	var record *GateRecord
-	for i := range doc.Records {
-		if doc.Records[i].ID == doc.Current.Gate {
-			record = &doc.Records[i]
-			break
-		}
-	}
-	if record == nil || len(record.Attempts) == 0 {
+	record, err := recordForStage(doc, status)
+	if err != nil || len(record.Attempts) == 0 {
 		return result
 	}
 	attempt := &record.Attempts[len(record.Attempts)-1]
 	result.Gate, result.Attempt = record.ID, attempt.ID
 	app := attempt.Application
 	if app == nil {
+		if attempt.Resolution != nil {
+			switch attempt.Resolution.Decision {
+			case "hold":
+				result.Condition = "not-applicable"
+			case "revise":
+				result.Condition = "feedback-pending"
+			}
+		}
 		return result
 	}
-	result.Action, result.TargetStage = app.Action, app.TargetStage
+	// The enclosing approval Resolution fixes the operation. Keep the existing
+	// CLI/readiness vocabulary by deriving its action rather than storing it.
+	result.Action, result.TargetStage = "advance", app.TargetStage
 	result.ApplicationState = app.State
 	switch app.State {
 	case "consumed":
@@ -44,9 +48,6 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 		return result
 	case "superseded":
 		result.Condition = "superseded"
-		return result
-	case "not-applicable":
-		result.Condition = "not-applicable"
 		return result
 	case "pending":
 	default:
@@ -56,25 +57,10 @@ func EvaluateEligibility(doc *Document, status string, reviewedInputCurrent bool
 		result.Condition = "stale"
 		return result
 	}
-	if status != record.Stage || attempt.Resolution == nil ||
+	if status != record.Stage || attemptState(attempt) != "closed" ||
 		attempt.Resolution.Briefing != attempt.Briefing.ID ||
-		attempt.Resolution.Decision != "approve" || app.Action != "advance" ||
-		strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == record.Stage ||
-		app.Blockers == nil {
-		return result
-	}
-	if app.ExecutionHold != nil {
-		switch app.ExecutionHold.State {
-		case "active":
-			result.Condition = "held"
-			return result
-		case "released":
-		default:
-			return result
-		}
-	}
-	if len(*app.Blockers) != 0 {
-		result.Condition = "blocked"
+		attempt.Resolution.Decision != "approve" ||
+		strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == record.Stage {
 		return result
 	}
 	result.Condition = "approved-pending"
@@ -103,7 +89,7 @@ func eligibilityFileAt(path, workflowDir string) (Eligibility, error) {
 		return Eligibility{}, err
 	}
 	inputState := reviewedInputUnknown
-	if record := findRecord(doc, doc.Current.Gate); record != nil && len(record.Attempts) > 0 {
+	if record, err := recordForStage(doc, status); err == nil && len(record.Attempts) > 0 {
 		inputState = inspectReviewedInput(path, record.Attempts[len(record.Attempts)-1].Briefing)
 	}
 	result := EvaluateEligibility(doc, status, inputState == reviewedInputCurrent)
@@ -140,9 +126,9 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 	if err != nil {
 		return ConsumeResult{}, err
 	}
-	record := findRecord(doc, doc.Current.Gate)
+	record, recordErr := recordForStage(doc, status)
 	inputState := reviewedInputUnknown
-	if record != nil && len(record.Attempts) > 0 {
+	if recordErr == nil && len(record.Attempts) > 0 {
 		inputState = inspectReviewedInput(path, record.Attempts[len(record.Attempts)-1].Briefing)
 	}
 	eligibility := EvaluateEligibility(doc, status, inputState == reviewedInputCurrent)
@@ -163,6 +149,7 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 			return ConsumeResult{}, err
 		}
 		result.ApplicationState = "superseded"
+		result.Wrote = true
 		return result, nil
 	}
 	if !eligibility.Eligible {
@@ -196,6 +183,7 @@ func ConsumeAt(path, workflowDir string) (ConsumeResult, error) {
 	}
 	result.Consumed = true
 	result.ApplicationState = "consumed"
+	result.Wrote = true
 	return result, nil
 }
 
@@ -252,21 +240,16 @@ func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputChec
 	path := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
 	var digest string
 	var err error
-	switch binding.DigestDomain {
-	case "canonical-bytes":
-		var data []byte
-		if binding.RequestDigest == "" {
-			data, err = os.ReadFile(path)
-		} else {
-			data, _, err = boundBriefingBytes(entityPath, binding)
-		}
-		if err != nil {
-			return reviewedInputUnknown
-		}
-		digest, err = CanonicalDigest(data)
-	default:
+	var data []byte
+	if binding.RequestDigest == "" {
+		data, err = os.ReadFile(path)
+	} else {
+		data, _, err = boundBriefingBytes(entityPath, binding)
+	}
+	if err != nil {
 		return reviewedInputUnknown
 	}
+	digest, err = CanonicalDigest(data)
 	if err == nil && digest == binding.Digest {
 		return reviewedInputCurrent
 	}

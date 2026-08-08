@@ -16,10 +16,48 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
+// recordedGateRequiredEvents labels the classic three-step trace (prepare,
+// decision-record, consume) the scripted CLI-replay fixtures below drive
+// directly. A live agent following the now-documented captain-approve fast
+// path instead closes with `gate record --decision approve --consume` in one
+// call, producing the two-step recordedGateCollapsedEventTrace — both are
+// valid gate-lifecycle traces; see validRecordedGateEventTrace.
 var recordedGateRequiredEvents = []string{
 	"prepare",
 	"decision-record",
 	"consume",
+}
+
+// recordedGateCollapsedEventTrace is mechanism 2's collapsed shape: one
+// `gate record --decision approve --consume` call sequences the close and the
+// consume attempt, so the command-log detector emits a single combined event
+// rather than two separate ones.
+var recordedGateCollapsedEventTrace = []string{
+	"prepare",
+	"decision-record-and-consume",
+}
+
+// validRecordedGateEventTrace reports whether events form one of the two
+// valid gate-lifecycle traces before dispatch: the classic separate
+// decision-record then consume, or mechanism 2's single combined
+// decision-record-and-consume. Neither shape is more "correct" than the
+// other — --consume is opt-in, not mandatory — so both must authorize
+// dispatch identically.
+func validRecordedGateEventTrace(events []string) bool {
+	return recordedGateEventsEqual(events, recordedGateRequiredEvents) ||
+		recordedGateEventsEqual(events, recordedGateCollapsedEventTrace)
+}
+
+func recordedGateEventsEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 const recordedGateDispatchMarker = "RECORDED-GATE-SUCCESSOR-DISPATCHED"
@@ -39,16 +77,17 @@ type recordedGateDispatchProof struct {
 }
 
 type recordedGateObservation struct {
-	events       []string
-	before       string
-	after        string
-	dispatch     recordedGateDispatchProof
-	expectedNext string
-	gateID       string
-	attemptID    string
-	briefingID   string
-	digest       string
-	resolutionID string
+	events        []string
+	before        string
+	after         string
+	dispatch      recordedGateDispatchProof
+	expectedNext  string
+	expectedActor string
+	gateID        string
+	attemptID     string
+	briefingID    string
+	digest        string
+	resolutionID  string
 }
 
 func assertRecordedGateLifecycle(o recordedGateObservation) error {
@@ -69,13 +108,13 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if resolutionID == "" {
 		resolutionID = "resolution:spacedock:recorded-gate-task:validation:1"
 	}
-	if len(o.events) != len(recordedGateRequiredEvents) {
-		return fmt.Errorf("gate lifecycle recorded %d events, want %d before dispatch", len(o.events), len(recordedGateRequiredEvents))
+	expectedActor := o.expectedActor
+	if expectedActor == "" {
+		expectedActor = "agent:first-officer"
 	}
-	for i, want := range recordedGateRequiredEvents {
-		if got := o.events[i]; got != want {
-			return fmt.Errorf("gate lifecycle event %d = %q, want %q", i+1, got, want)
-		}
+	if !validRecordedGateEventTrace(o.events) {
+		return fmt.Errorf("gate lifecycle recorded event trace %v, want %v (classic) or %v (mechanism-2 --consume fast path)",
+			o.events, recordedGateRequiredEvents, recordedGateCollapsedEventTrace)
 	}
 	if o.dispatch.builds != 1 || o.dispatch.successfulBuilds != 1 {
 		return fmt.Errorf("successor dispatch build attempts/successes = %d/%d, want 1/1", o.dispatch.builds, o.dispatch.successfulBuilds)
@@ -89,7 +128,7 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 	if strings.Contains(o.before, recordedGateDispatchMarker) {
 		return fmt.Errorf("successor marker already existed before the lifecycle began")
 	}
-	for _, want := range []string{"status: " + o.expectedNext, "state: consumed", "by: agent:first-officer"} {
+	for _, want := range []string{"status: " + o.expectedNext, "state: consumed"} {
 		if !strings.Contains(o.after, want) {
 			return fmt.Errorf("durable post-state missing %q", want)
 		}
@@ -105,20 +144,33 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		value string
 		count int
 	}{
-		{"gate identity", "gate: " + gateID, 1},
+		{"gate record identity", "id: " + gateID, 1},
+		{"gate record stage", "stage: validation", 1},
 		{"attempt identity", "id: " + attemptID, 1},
 		{"briefing identity", "id: " + briefingID, 1},
 		{"briefing resolution link", "briefing: " + briefingID, 1},
 		{"briefing digest", "digest: " + digest, 1},
 		{"resolution identity", "id: " + resolutionID, 1},
 		{"approval decision", "\n                decision: approve", 1},
-		{"approval actor", "by: agent:first-officer", 1},
+		{"approval actor", "by: " + expectedActor, 1},
 		{"approval reason", "\n                reason:", 1},
 		{"forged adoption note", "adoption-note:", 0},
 		{"application target", "target-stage: " + o.expectedNext, 1},
 		{"consumed application", "\n                state: consumed", 1},
 	} {
-		if got := strings.Count(authority, exact.value); got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(authority, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
+		got := strings.Count(authority, exact.value)
+		if exact.label == "approval actor" {
+			got = recordedGateExactLineCount(authority, exact.value)
+		}
+		if exact.label == "approval reason" && expectedActor == "person:captain" {
+			// Provider-authored approvals may omit a reason. If present, it
+			// must still be a nonblank single field, just like chat reasons.
+			if got > 1 || (got == 1 && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(authority, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
+				return fmt.Errorf("durable post-state %s count = %d, want at most one nonblank value for %q", exact.label, got, exact.value)
+			}
+			continue
+		}
+		if got != exact.count || (exact.label == "approval reason" && strings.Trim(strings.TrimSpace(strings.SplitN(strings.SplitN(authority, exact.value, 2)[1], "\n", 2)[0]), `"'`) == "") {
 			return fmt.Errorf("durable post-state %s count = %d, want %d for %q", exact.label, got, exact.count, exact.value)
 		}
 	}
@@ -129,6 +181,16 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		return fmt.Errorf("gate lifecycle left entity byte-identical")
 	}
 	return nil
+}
+
+func recordedGateExactLineCount(body, want string) int {
+	count := 0
+	for _, line := range strings.Split(body, "\n") {
+		if strings.TrimSpace(line) == want {
+			count++
+		}
+	}
+	return count
 }
 
 type recordedGateFixture struct {
@@ -189,7 +251,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
 
 	consume := run("consume", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+	assertCommandOutput(t, consume.stdout, "consumed=true", "application=advance/consumed", "target-stage=handoff")
 	commitRecordedGateState(t, binary, fixture, "consume gate authorization")
 	durable, _, durableErr := gates.Read(fixture.entity)
 	requireRecordedGate(t, durableErr == nil && durable.Records[0].Attempts[0].Resolution.By == "agent:first-officer" && durable.Records[0].Attempts[0].Resolution.Reason == recordedGateReason, "approve durable snapshot unreadable")
@@ -219,6 +281,17 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	withoutHelp := strings.ReplaceAll(strings.ReplaceAll(validLog, "begin\tgate --help\n", ""), "exit=0\tgate --help\n", "")
 	writeFile(t, commandLog, withoutHelp)
 	requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog)) == nil, "optional gate help changed lifecycle ordering")
+	withPhaseHelp := strings.Replace(validLog,
+		"begin\tgate prepare recorded-gate-task ",
+		"begin\tgate prepare --help\nexit=0\tgate prepare --help\nbegin\tgate prepare recorded-gate-task ", 1)
+	withPhaseHelp = strings.Replace(withPhaseHelp,
+		"begin\tgate record recorded-gate-task ",
+		"begin\tgate record --help\nexit=0\tgate record --help\nbegin\tgate record recorded-gate-task ", 1)
+	withPhaseHelp = strings.Replace(withPhaseHelp,
+		"begin\tgate consume recorded-gate-task ",
+		"begin\tgate consume --help\nexit=0\tgate consume --help\nbegin\tgate consume recorded-gate-task ", 1)
+	writeFile(t, commandLog, withPhaseHelp)
+	requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog)) == nil, "phase help probes changed lifecycle ordering")
 	writeFile(t, commandLog, validLog)
 	for name, log := range map[string]string{"zero-build": strings.Replace(validLog, "begin\tdispatch build ", "begin\tignored build ", 1), "failed-build": strings.Replace(validLog, "exit=0\tdispatch build ", "exit=1\tdispatch build ", 1), "build-before-consume": strings.Replace(validLog, "exit=0\tgate consume ", "exit=0\tignored consume ", 1) + "\nexit=0\tgate consume late", "missing-ancestry": strings.Replace(validLog, "dispatch-head\t", "missing-head\t", 1)} {
 		writeFile(t, commandLog, log)
@@ -247,6 +320,103 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	if strings.Contains(log, "dirty-sibling.md") {
 		t.Fatalf("folder-form state commit swept dirty sibling:\n%s", log)
 	}
+}
+
+func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
+	fixture := writePreparedRecordedGateFixture(t)
+	binary := buildRecordedGateBinary(t)
+
+	prepare := mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the stale candidate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Stale candidate.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	firstRoom := outputValue(prepare.stdout, "room")
+	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
+	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
+	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
+
+	withdraw := mustRecordedGate(t, binary, fixture.root,
+		"gate", "withdraw", "recorded-gate-task",
+		"--reason", "Sprint re-scope replaced the reviewed candidate.",
+		"--workflow-dir", fixture.root)
+	assertCommandOutput(t, withdraw.stdout, "state=withdrawn", "attempt=gate-attempt:recorded-gate-task-validation-1")
+	commitRecordedGateState(t, binary, fixture, "withdraw stale attempt")
+
+	boot := mustRecordedGate(t, binary, fixture.root,
+		"status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json")
+	assertCommandOutput(t, boot.stdout,
+		`"ready_gates":[{"id":"recorded-gate-task","slug":"recorded-gate-task","current":"validation","readiness":"withdrawn-awaiting-prepare"}]`)
+
+	replacement := mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the replacement candidate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Replacement candidate.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	secondRoom := outputValue(replacement.stdout, "room")
+	if secondRoom == firstRoom {
+		t.Fatal("replacement reused withdrawn room")
+	}
+	assertCommandOutput(t, replacement.stdout, "briefing=briefing:recorded-gate-task:validation:attempt-2:revision-1")
+	commitRecordedGateState(t, binary, fixture, "prepare replacement attempt")
+	assertCommandOutput(t, mustRecordedGate(t, binary, fixture.root,
+		"status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json").stdout,
+		`"readiness":"awaiting-captain"`)
+
+	close := mustRecordedGate(t, binary, fixture.root,
+		"gate", "record", "recorded-gate-task", "--decision", "approve", "--actor", "agent:first-officer", "--reason", recordedGateReason, "--workflow-dir", fixture.root)
+	assertCommandOutput(t, close.stdout, "state=closed", "attempt=gate-attempt:recorded-gate-task-validation-2", "decision=approve")
+	commitRecordedGateState(t, binary, fixture, "record replacement provider decision")
+	consume := mustRecordedGate(t, binary, fixture.root,
+		"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+	commitRecordedGateState(t, binary, fixture, "consume replacement authorization")
+
+	doc, _, err := gates.Read(fixture.entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Records) != 1 || len(doc.Records[0].Attempts) != 2 {
+		t.Fatalf("attempt history = %#v", doc.Records)
+	}
+	stale, current := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
+	if stale.Withdrawal == nil || stale.Withdrawal.By != "agent:first-officer" ||
+		stale.Resolution != nil || stale.ProviderEvidence != nil || stale.Application != nil {
+		t.Fatalf("withdrawn authority was not retained cleanly: %#v", stale)
+	}
+	if current.Withdrawal != nil || current.Resolution == nil || current.ProviderEvidence != nil ||
+		current.Application == nil || current.Application.State != "consumed" {
+		t.Fatalf("replacement did not exclusively own consumed authority: %#v", current)
+	}
+	if readFile(t, filepath.Join(firstRoom, "gate-briefing.json")) != firstBriefing ||
+		readFile(t, filepath.Join(firstRoom, "request.json")) != firstRequest {
+		t.Fatal("replacement lifecycle changed withdrawn room bytes")
+	}
+	if !strings.Contains(readFile(t, fixture.entity), "status: handoff") {
+		t.Fatal("replacement consumption did not advance workflow status")
+	}
+	if !strings.Contains(git(t, fixture.stateRoot, "status", "--short"), "?? dirty-sibling.md") {
+		t.Fatal("path-scoped lifecycle commits swept dirty sibling")
+	}
+
+	entityBeforeRefusal := readFile(t, fixture.entity)
+	firstRequestPath := filepath.Join(firstRoom, "request.json")
+	writeFile(t, firstRequestPath, strings.Replace(firstRequest, `"actor": "person:captain"`, `"actor": "agent:other"`, 1))
+	refused := runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
+	if refused.exit == 0 || !strings.Contains(refused.stderr, "frozen digest") {
+		t.Fatalf("withdrawn retained-authority drift validated: exit=%d stderr=%q", refused.exit, refused.stderr)
+	}
+	if readFile(t, fixture.entity) != entityBeforeRefusal {
+		t.Fatal("withdrawn retained-authority refusal changed entity")
+	}
+	writeFile(t, firstRequestPath, firstRequest)
+
 }
 
 func assertRecordedGateDispatchRow(t *testing.T, binary string, fixture recordedGateFixture, current, next string) {
@@ -390,15 +560,14 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			}
 		})
 	}
-	t.Run("validate-and-eligibility-reads", func(t *testing.T) {
+	t.Run("validate-read", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
 		closeRecordedGate(t, binary, fixture, "approve")
 		before := treeDigest(t, fixture.stateRoot)
 		mustRecordedGate(t, binary, fixture.root, "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
-		mustRecordedGate(t, binary, fixture.root, "gate", "eligibility", "recorded-gate-task", "--workflow-dir", fixture.root)
 		if after := treeDigest(t, fixture.stateRoot); after != before {
-			t.Fatal("validate/eligibility read changed workflow bytes")
+			t.Fatal("validate read changed workflow bytes")
 		}
 	})
 	t.Run("forced-close-validation-mismatch", func(t *testing.T) {
@@ -425,7 +594,7 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			closeCommit := commitRecordedGateState(t, binary, fixture, "durably record "+decision)
 			closed, _, err := gates.Read(fixture.entity)
 			attempt := closed.Records[0].Attempts[0]
-			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Application.Action == map[string]string{"revise": "feedback", "hold": "none"}[decision], "%s close/route snapshot mismatch", calls[i])
+			requireRecordedGate(t, err == nil && readFile(t, fixture.entity) == recordedGateEntityAt(t, fixture, closeCommit) && attempt.Resolution.Decision == decision && attempt.Resolution.Reason == reasons[i] && attempt.Application == nil, "%s close/route snapshot mismatch", calls[i])
 			before := treeDigest(t, fixture.stateRoot)
 			result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 			assertRecordedGateByteCleanFailure(t, fixture, result, "condition")
@@ -437,23 +606,19 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			}
 		})
 	}
-	t.Run("blocked", func(t *testing.T) {
+	t.Run("application-extension-warning", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
 		closeRecordedGate(t, binary, fixture, "approve")
-		closeCommit := commitRecordedGateState(t, binary, fixture, "durably record blocked approval")
-		closeSnapshot := recordedGateEntityAt(t, fixture, closeCommit)
-		if !strings.Contains(closeSnapshot, "decision: approve") || !strings.Contains(closeSnapshot, "state: pending") {
-			t.Fatalf("blocked approval close was not durable before consume:\n%s", closeSnapshot)
-		}
 		body := readFile(t, fixture.entity)
-		writeFile(t, fixture.entity, strings.Replace(body, "                blockers: []",
-			"                blockers:\n                    - id: blocker:external\n                      state: unsatisfied", 1))
-		before := treeDigest(t, fixture.stateRoot)
+		writeFile(t, fixture.entity, strings.Replace(body, "                target-stage: handoff",
+			"                action: advance\n                target-stage: handoff", 1))
 		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
-		assertRecordedGateByteCleanFailure(t, fixture, result, "blocked")
-		if after := treeDigest(t, fixture.stateRoot); after != before {
-			t.Fatal("blocked consume changed workflow bytes")
+		if result.exit != 0 || !strings.Contains(result.stdout, "consumed=true") {
+			t.Fatalf("application extension should warn and consume: exit=%d stdout=%q stderr=%q", result.exit, result.stdout, result.stderr)
+		}
+		if strings.Contains(readFile(t, fixture.entity), "action: advance") {
+			t.Fatal("canonical consume retained the ignored application extension")
 		}
 	})
 	t.Run("repeat-consume", func(t *testing.T) {
@@ -488,8 +653,8 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 			closeRecordedGate(t, binary, fixture, decision)
 			before := recordedGateTreeSnapshot(t, fixture.stateRoot)
 			for pass := 0; pass < 3; pass++ {
-				eligibility := mustRecordedGate(t, binary, fixture.root, "gate", "eligibility", "recorded-gate-task", "--workflow-dir", fixture.root)
-				assertCommandOutput(t, eligibility.stdout, "eligible=false")
+				result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+				assertRecordedGateByteCleanFailure(t, fixture, result, "condition")
 			}
 			after := readFile(t, fixture.entity)
 			assertRecordedGateTreeSnapshot(t, fixture.stateRoot, before)
@@ -504,21 +669,23 @@ func TestRecordedGateLifecycleAC7ResumeMatrix(t *testing.T) {
 		bindRecordedGate(t, binary, fixture)
 		commitRecordedGateState(t, binary, fixture, "bind retained gate package")
 
-		// Fresh process 1 closes the gate and stops before its required state commit.
+		// Fresh process 1 closes the gate. Mechanism 1 (implicit split-root state
+		// sync in gate record/consume) commits the close itself — no separate
+		// `state commit` is required to make it durable.
 		closeRecordedGate(t, binary, fixture, "approve")
-		closedUncommitted := recordedGateTreeSnapshot(t, fixture.stateRoot)
+		closedCommitted := recordedGateTreeSnapshot(t, fixture.stateRoot)
 		entityRel := strings.TrimPrefix(fixture.entity, fixture.stateRoot+string(os.PathSeparator))
-		if exec.Command("git", "-C", fixture.stateRoot, "diff", "--quiet", "--", entityRel).Run() == nil {
-			t.Fatal("successful close was already committed")
+		if exec.Command("git", "-C", fixture.stateRoot, "diff", "--quiet", "--", entityRel).Run() != nil {
+			t.Fatal("successful close was not committed by the implicit sync")
 		}
-		if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel)); len(commits) != 0 {
-			t.Fatalf("uncommitted close already has %d decision commits", len(commits))
+		if commits := strings.Fields(git(t, fixture.stateRoot, "log", "--format=%H", "-Sdecision: approve", "--", entityRel)); len(commits) != 1 {
+			t.Fatalf("committed close has %d decision commits, want exactly 1", len(commits))
 		}
 		repeatClose := runRecordedGateCommand(binary, fixture.root, "", "gate", "record", "recorded-gate-task",
 			"--decision", "approve", "--actor", "agent:first-officer", "--reason", "duplicate",
 			"--workflow-dir", fixture.root)
 		assertRecordedGateByteCleanFailure(t, fixture, repeatClose, "closed")
-		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedUncommitted)
+		assertRecordedGateTreeSnapshot(t, fixture.stateRoot, closedCommitted)
 
 		// Fresh process 2 resumes the uncommitted close and commits the exact pending state.
 		closeCommit := commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
@@ -564,13 +731,13 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 	valid := recordedGateObservation{
 		events: append([]string(nil), recordedGateRequiredEvents...),
 		before: "status: validation",
-		after: "status: handoff\ngate: gate:recorded-gate-task:validation\nid: gate-attempt:recorded-gate-task-validation-1\n" +
+		after: "status: handoff\nid: gate:recorded-gate-task:validation\nstage: validation\nid: gate-attempt:recorded-gate-task-validation-1\n" +
 			"id: " + recordedGateBriefingID + "\ndigest: " + recordedGateDigest + "\n" +
 			"id: resolution:spacedock:recorded-gate-task:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
 			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +
 			"target-stage: handoff\n                state: consumed\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.",
 		dispatch:     recordedGateDispatchProof{builds: 1, successfulBuilds: 1, durableEffects: 1, ordered: true, committed: true},
-		expectedNext: "handoff",
+		expectedNext: "handoff", expectedActor: "agent:first-officer",
 	}
 	if err := assertRecordedGateLifecycle(valid); err != nil {
 		t.Fatalf("baseline: %v", err)
@@ -584,6 +751,9 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 	for name, mutate := range map[string]func(*recordedGateObservation){
 		"actor-swap": func(o *recordedGateObservation) {
 			o.after = strings.Replace(o.after, "by: agent:first-officer", "by: person:captain", 1)
+		},
+		"actor-suffix": func(o *recordedGateObservation) {
+			o.after = strings.Replace(o.after, "by: agent:first-officer", "by: agent:first-officer-forged", 1)
 		},
 		"blank-reason":         func(o *recordedGateObservation) { o.after = strings.Replace(o.after, recordedGateReason, "", 1) },
 		"forged-adoption-note": func(o *recordedGateObservation) { o.after = "adoption-note: forged\n" + o.after },
@@ -602,13 +772,8 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 	}
 }
 func authorizeRecordedGateDispatch(events []string, entity, successor string) error {
-	if len(events) != len(recordedGateRequiredEvents) {
-		return fmt.Errorf("trace incomplete: got %v", events)
-	}
-	for i, want := range recordedGateRequiredEvents {
-		if events[i] != want {
-			return fmt.Errorf("trace event %d = %q, want %q", i+1, events[i], want)
-		}
+	if !validRecordedGateEventTrace(events) {
+		return fmt.Errorf("trace incomplete or invalid: got %v", events)
 	}
 	if !strings.Contains(entity, "status: "+successor) || !strings.Contains(entity, "state: consumed") {
 		return fmt.Errorf("authorization was not atomically consumed into %s", successor)
@@ -692,11 +857,18 @@ func recordedGateEventsFromCommandLog(log string) []string {
 		if !strings.HasPrefix(line, "exit=0\tgate ") || strings.Contains(line, " --help") {
 			continue
 		}
+		isDecisionRecord := started && strings.Contains(line, "gate record ") && strings.Contains(line, " --decision ")
 		switch {
 		case strings.Contains(line, "gate prepare "):
 			started = true
 			events = append(events, "prepare")
-		case started && strings.Contains(line, "gate record ") && (strings.Contains(line, " --decision ") || strings.Contains(line, " --room ")):
+		case isDecisionRecord && strings.Contains(line, " --consume"):
+			// Mechanism 2's fast path: one call sequences the close and the
+			// consume attempt, so no separate "gate consume" line follows —
+			// label it as the single combined event rather than losing the
+			// consume half entirely.
+			events = append(events, "decision-record-and-consume")
+		case isDecisionRecord:
 			events = append(events, "decision-record")
 		case started && strings.Contains(line, "gate consume "):
 			events = append(events, "consume")
@@ -705,6 +877,160 @@ func recordedGateEventsFromCommandLog(log string) []string {
 	return events
 }
 
+// TestRecordedGateLifecycleCollapsedConsumeTrace pins the codex-live CI fix:
+// a live agent that closes with `gate record --decision approve --consume`
+// (mechanism 2's captain-approve fast path, now the documented primary form)
+// must be recognized as a complete, valid, dispatch-authorizing trace even
+// though no separate "gate consume" line ever appears in its command log —
+// without weakening the classic separate-command trace's own validation.
+func TestRecordedGateLifecycleCollapsedConsumeTrace(t *testing.T) {
+	collapsedLog := "exit=0\tgate prepare recorded-gate-task --question Advance? --workflow-dir /wf\n" +
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf\n" +
+		"exit=0\tgate record recorded-gate-task --decision approve --actor person:captain --consume --workflow-dir /wf\n"
+	events := recordedGateEventsFromCommandLog(collapsedLog)
+	if want := recordedGateCollapsedEventTrace; !recordedGateEventsEqual(events, want) {
+		t.Fatalf("collapsed log events = %v, want %v", events, want)
+	}
+	if !validRecordedGateEventTrace(events) {
+		t.Fatalf("collapsed trace %v rejected as invalid", events)
+	}
+	if err := authorizeRecordedGateDispatch(events, "status: handoff\nstate: consumed", "handoff"); err != nil {
+		t.Fatalf("collapsed trace did not authorize dispatch: %v", err)
+	}
+
+	// The classic separate-command trace must still validate identically.
+	classicLog := "exit=0\tgate prepare recorded-gate-task --question Advance? --workflow-dir /wf\n" +
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf\n" +
+		"exit=0\tgate record recorded-gate-task --decision approve --actor person:captain --workflow-dir /wf\n" +
+		"exit=0\tgate consume recorded-gate-task --workflow-dir /wf\n"
+	classicEvents := recordedGateEventsFromCommandLog(classicLog)
+	if !recordedGateEventsEqual(classicEvents, recordedGateRequiredEvents) {
+		t.Fatalf("classic log events = %v, want %v", classicEvents, recordedGateRequiredEvents)
+	}
+	if !validRecordedGateEventTrace(classicEvents) {
+		t.Fatalf("classic trace %v rejected as invalid", classicEvents)
+	}
+
+	// A close with --decision but no --consume and no separate consume call
+	// is genuinely incomplete (nothing ever spent the approval) and must
+	// still be rejected.
+	incompleteLog := "exit=0\tgate prepare recorded-gate-task --question Advance? --workflow-dir /wf\n" +
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf\n" +
+		"exit=0\tgate record recorded-gate-task --decision approve --actor person:captain --workflow-dir /wf\n"
+	incompleteEvents := recordedGateEventsFromCommandLog(incompleteLog)
+	if validRecordedGateEventTrace(incompleteEvents) {
+		t.Fatalf("incomplete trace %v wrongly accepted as valid", incompleteEvents)
+	}
+	if err := authorizeRecordedGateDispatch(incompleteEvents, "status: handoff\nstate: consumed", "handoff"); err == nil {
+		t.Fatal("incomplete trace wrongly authorized dispatch")
+	}
+}
+
+func TestRecordedGateLifecyclePhaseDetectionIgnoresHelpProbes(t *testing.T) {
+	log := strings.Join([]string{
+		"exit=0\tgate prepare --help",
+		"exit=0\tgate prepare recorded-gate-task --question Advance?",
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf",
+		"exit=0\tgate record --help",
+		"exit=0\tgate record recorded-gate-task --decision approve --actor person:captain",
+		"exit=0\tgate consume --help",
+		"exit=0\tgate consume recorded-gate-task --workflow-dir /wf",
+	}, "\n")
+	prepareAt := recordedGatePhaseAt(log, "exit=0\tgate prepare ")
+	bindCommitAt := recordedGatePhaseAt(log, "exit=0\tstate commit recorded-gate-task")
+	decisionAt := recordedGatePhaseAt(log, "exit=0\tgate record ")
+	if prepareAt < 0 || bindCommitAt <= prepareAt || decisionAt <= bindCommitAt {
+		t.Fatalf("help probes poisoned phase order: prepare=%d bind=%d decision=%d", prepareAt, bindCommitAt, decisionAt)
+	}
+	if recordedGatePhaseAt("exit=0\tgate consume --help", "exit=0\tgate consume ") >= 0 {
+		t.Fatal("consume help probe was treated as a lifecycle phase")
+	}
+	if !recordedGateHelpProbe("exit=0\tgate record recorded-gate-task --help") {
+		t.Fatal("record help probe was not recognized")
+	}
+}
+
+func TestRecordedGateExpectedActorFromSuccessfulClose(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		log  string
+		want string
+	}{
+		{
+			name: "chat actor",
+			log:  "exit=0\tgate record --help\nexit=0\tgate record recorded-gate-task --decision approve --actor person:captain",
+			want: "person:captain",
+		},
+		{
+			name: "actor equals form",
+			log:  "exit=0\tgate record recorded-gate-task --decision approve --actor=agent:first-officer",
+			want: "agent:first-officer",
+		},
+		{
+			name: "failed close ignored",
+			log:  "exit=1\tgate record recorded-gate-task --decision approve --actor person:captain",
+			want: "",
+		},
+		{
+			name: "unsupported actor does not become expectation",
+			log:  "exit=0\tgate record recorded-gate-task --decision approve --actor agent:ensign",
+			want: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := recordedGateExpectedActor(tc.log); got != tc.want {
+				t.Fatalf("recordedGateExpectedActor() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestRecordedGateCommittedBeforeDispatchResolutionPaths(t *testing.T) {
+	binary := buildRecordedGateBinary(t)
+	fixture := writeRecordedGateFixture(t)
+	before := readFile(t, fixture.entity)
+	mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the recorded validation gate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Exact recorded gate validation summary.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	commitRecordedGateState(t, binary, fixture, "bind retained gate package")
+
+	close := mustRecordedGate(t, binary, fixture.root,
+		"gate", "record", "recorded-gate-task",
+		"--decision", "approve", "--actor", "agent:first-officer",
+		"--reason", recordedGateReason,
+		"--workflow-dir", fixture.root)
+	assertCommandOutput(t, close.stdout, "state=closed", "decision=approve")
+	commitRecordedGateState(t, binary, fixture, "record delegated gate decision")
+	consume := mustRecordedGate(t, binary, fixture.root,
+		"gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
+	assertCommandOutput(t, consume.stdout, "consumed=true", "target-stage=handoff")
+	consumedCommit := commitRecordedGateState(t, binary, fixture, "consume gate authorization")
+
+	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The consumed approval entered handoff.\n\n### Summary\n\nThe handoff completed after the consumed approval.\n")
+	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
+	commandLog := filepath.Join(fixture.root, "command.log")
+	writeFile(t, commandLog, strings.Join([]string{
+		"exit=0\tgate prepare recorded-gate-task --question Advance?",
+		"exit=0\tstate commit recorded-gate-task --workflow-dir /wf",
+		"exit=0\tgate record recorded-gate-task --decision approve --actor agent:first-officer",
+		"exit=0\tgate consume recorded-gate-task --workflow-dir /wf",
+		"dispatch-head\t" + consumedCommit,
+		"begin\tdispatch build --workflow-dir /wf",
+		"exit=0\tdispatch build --workflow-dir /wf",
+	}, "\n"))
+	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
+	if !observation.dispatch.ordered || !observation.dispatch.committed {
+		t.Fatalf("chat close was not recognized as ordered and committed before dispatch: %+v", observation.dispatch)
+	}
+	if err := assertRecordedGateLifecycle(observation); err != nil {
+		t.Fatalf("chat consumed lifecycle graded FAIL: %v", err)
+	}
+}
 func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 	binary := buildRecordedGateBinary(t)
 	for skip, omitted := range recordedGateRequiredEvents {
@@ -733,13 +1059,17 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	t.Helper()
 	log := readFile(t, commandLog)
 	builds, successfulBuilds, consumed, ordered := 0, 0, false, true
-	prepareAt := strings.Index(log, "exit=0\tgate prepare ")
-	bindCommitAt := strings.Index(log, "exit=0\tstate commit recorded-gate-task")
-	decisionAt := strings.Index(log, "exit=0\tgate record ")
+	prepareAt := recordedGatePhaseAt(log, "exit=0\tgate prepare ")
+	bindCommitAt := recordedGatePhaseAt(log, "exit=0\tstate commit recorded-gate-task")
+	decisionAt := recordedGatePhaseAt(log, "exit=0\tgate record ")
 	ordered = prepareAt >= 0 && bindCommitAt > prepareAt && decisionAt > bindCommitAt
 	dispatchHead, buildCommand := "", ""
 	for _, line := range strings.Split(log, "\n") {
-		if strings.HasPrefix(line, "exit=0\tgate consume ") {
+		// A separate "gate consume" line is the classic form; mechanism 2's
+		// --consume fast path sequences the consume attempt into the same
+		// "gate record ... --consume" call, so no separate line ever appears.
+		if !recordedGateHelpProbe(line) && (strings.HasPrefix(line, "exit=0\tgate consume ") ||
+			(strings.HasPrefix(line, "exit=0\tgate record ") && strings.Contains(line, " --consume"))) {
 			consumed = true
 		}
 		if strings.HasPrefix(line, "begin\tdispatch build ") && !strings.Contains(line, " --help") {
@@ -764,23 +1094,78 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	if strings.Contains(after, recordedGateDispatchMarker) {
 		effects = len(commits)
 	}
-	closeCommit := strings.SplitN(strings.TrimSpace(git(t, fixture.stateRoot, "log", "--reverse", "--format=%H", "-Sid: resolution:spacedock:recorded-gate-task:validation:1", "--", entityRel)), "\n", 2)[0]
-	consumedCommit := strings.SplitN(strings.TrimSpace(git(t, fixture.stateRoot, "log", "--reverse", "--format=%H", "-S\n                state: consumed", "--", entityRel)), "\n", 2)[0]
 	gateID := firstRecordedGateMatch(after, `(?m)^\s+gate: (gate:[^\s]+)$`)
 	attemptID := firstRecordedGateMatch(after, `(?m)^\s+- id: (gate-attempt:[^\s]+)$`)
 	briefingID := firstRecordedGateMatch(after, `(?m)^\s+id: (briefing:[^\s]+)$`)
 	digest := firstRecordedGateMatch(after, `(?m)^\s+digest: (sha256:[0-9a-f]{64})$`)
 	resolutionID := firstRecordedGateMatch(after, `(?m)^\s+id: (resolution:[^\s]+)$`)
+	expectedActor := recordedGateExpectedActor(log)
+	closeCommit := ""
+	if resolutionID != "" {
+		closeCommit = strings.SplitN(strings.TrimSpace(git(t, fixture.stateRoot, "log", "--reverse", "--format=%H", "-S"+"id: "+resolutionID, "--", entityRel)), "\n", 2)[0]
+	}
+	consumedCommit := strings.SplitN(strings.TrimSpace(git(t, fixture.stateRoot, "log", "--reverse", "--format=%H", "-S\n                state: consumed", "--", entityRel)), "\n", 2)[0]
 	return recordedGateObservation{
 		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
 		dispatch: recordedGateDispatchProof{
 			builds: builds, successfulBuilds: successfulBuilds, durableEffects: effects, ordered: ordered,
 			committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, dispatchHead, strings.Join(commits, " ")),
 		},
-		expectedNext: "handoff",
-		gateID:       gateID, attemptID: attemptID, briefingID: briefingID,
+		expectedNext:  "handoff",
+		expectedActor: expectedActor,
+		gateID:        gateID, attemptID: attemptID, briefingID: briefingID,
 		digest: digest, resolutionID: resolutionID,
 	}
+}
+
+// recordedGatePhaseAt returns the byte offset of the first successful command
+// matching prefix. Help probes are intentionally ignored: they are read-only
+// CLI discovery calls and must not stand in for a lifecycle phase.
+func recordedGatePhaseAt(log, prefix string) int {
+	offset := 0
+	for _, line := range strings.SplitAfter(log, "\n") {
+		if strings.HasPrefix(line, prefix) && !recordedGateHelpProbe(line) {
+			return offset
+		}
+		offset += len(line)
+	}
+	return -1
+}
+
+func recordedGateHelpProbe(line string) bool {
+	for _, field := range strings.Fields(line) {
+		if field == "--help" {
+			return true
+		}
+	}
+	return false
+}
+
+// recordedGateExpectedActor derives the authority a successful close command
+// is expected to persist. Chat closes carry their explicit --actor value. An empty result lets
+// synthetic observations use assertRecordedGateLifecycle's stable
+// agent:first-officer default without accepting arbitrary entity by: values.
+func recordedGateExpectedActor(log string) string {
+	for _, line := range strings.Split(log, "\n") {
+		if !strings.HasPrefix(line, "exit=0\tgate record ") || recordedGateHelpProbe(line) {
+			continue
+		}
+		fields := strings.Fields(line)
+		for i, field := range fields {
+			switch {
+			case field == "--actor" && i+1 < len(fields):
+				if actor := fields[i+1]; actor == "person:captain" || actor == "agent:first-officer" {
+					return actor
+				}
+			case strings.HasPrefix(field, "--actor="):
+				actor := strings.TrimPrefix(field, "--actor=")
+				if actor == "person:captain" || actor == "agent:first-officer" {
+					return actor
+				}
+			}
+		}
+	}
+	return ""
 }
 
 func firstRecordedGateMatch(body, pattern string) string {

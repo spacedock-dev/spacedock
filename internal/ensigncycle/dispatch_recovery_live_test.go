@@ -1,7 +1,7 @@
 //go:build live
 
 // ABOUTME: Live proof for AC-2 (degraded-bare) and AC-3 (break-glass-shim) — the
-// ABOUTME: two fo-dispatch-recovery scenarios, Claude-only (not sharedRuntimeScenarios).
+// ABOUTME: two fo-dispatch-recovery scenarios, intentionally Claude-only.
 package ensigncycle
 
 import (
@@ -13,6 +13,8 @@ import (
 
 // writeDispatchRecoveryWorkflow seeds the shared one-entity fixture both
 // dispatch-recovery scenarios drive.
+//
+//spacedock:live-fixture id=dispatch-recovery/base
 func writeDispatchRecoveryWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), dispatchRecoveryReadme())
@@ -30,6 +32,8 @@ func writeDispatchRecoveryWorkflow(t *testing.T, root string) string {
 // shim's dir ahead of the real binary's dir on PATH (via withStubPATH) cannot
 // recurse into itself. Other live scenarios use the same withStubPATH seam for
 // their scenario-local executable shims.
+//
+//spacedock:live-fixture id=dispatch-recovery/failing-build
 func writeStubBreakGlassSpacedock(t *testing.T, realBinary string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -54,16 +58,14 @@ func writeStubBreakGlassSpacedock(t *testing.T, realBinary string) string {
 // now a FAILURE.
 // Run it against a real credential:
 // `go test -tags live -run TestLiveBareReachable ./internal/ensigncycle -v -count=1`.
+//
+//spacedock:live-proof id=claude-bare-dispatch lane=claude-live
 func TestLiveBareReachable(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	workflowRoot := t.TempDir()
 	writeDispatchRecoveryWorkflow(t, workflowRoot)
 
-	scenario := sharedRuntimeScenario{
-		name:          "bare-reachable",
-		oldPythonTest: "n/a (net-new; dispatch-exception-paths-deferred-module)",
-		intent:        "A plain `/spacedock bare` instruction produces bare-shaped Agent() dispatch for the run, without the retired Degraded Mode captain report and without loading spacedock:fo-dispatch-recovery.",
-	}
+	scenario := sharedRuntimeScenario{name: "bare-reachable"}
 	result := runner.run(t, scenario, workflowRoot, bareReachablePrompt())
 	if err := assertBareReachableObservables(result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
@@ -80,19 +82,18 @@ func TestLiveBareReachable(t *testing.T) {
 // definition).
 // Run it against a real credential:
 // `go test -tags live -run TestLiveBreakGlassShimRecovery ./internal/ensigncycle -v -count=1`.
+//
+//spacedock:live-proof id=claude-dispatch-build-break-glass lane=claude-live
 func TestLiveBreakGlassShimRecovery(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	workflowRoot := t.TempDir()
 	writeDispatchRecoveryWorkflow(t, workflowRoot)
 
 	shimDir := writeStubBreakGlassSpacedock(t, runner.binary)
+	runner.env = withSpacedockShimShellEnv(t, runner.env, shimDir)
 	scenarioRunner := runner.withStubPATH(shimDir)
 
-	scenario := sharedRuntimeScenario{
-		name:          "break-glass-shim",
-		oldPythonTest: "n/a (net-new; dispatch-exception-paths-deferred-module)",
-		intent:        "A failing `spacedock dispatch build` produces a captain-facing report before any Agent() call, loads spacedock:fo-dispatch-recovery, and manually assembles a break-glass-shaped Agent() dispatch.",
-	}
+	scenario := sharedRuntimeScenario{name: "break-glass-shim"}
 	result := scenarioRunner.run(t, scenario, workflowRoot, breakGlassShimPrompt())
 	if err := assertBreakGlassObservables(result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)

@@ -21,37 +21,174 @@ import (
 // failure is hostile authority and must be refused byte-clean.
 var ErrNoGateRecord = errors.New("entity has no gates record")
 
+// Warning is a non-authoritative compatibility finding from a gate read.
+// Path is the stable gates-node path of the application mapping and Field is
+// the unknown key observed there. Warnings are sorted and de-duplicated by
+// ReadDiagnostics; they never participate in eligibility or writes.
+type Warning struct {
+	Path  string `json:"path"`
+	Field string `json:"field"`
+}
+
+// Diagnostic is kept as a descriptive alias for callers that prefer the
+// diagnostic vocabulary. Warning is the canonical name used by this package.
+type Diagnostic = Warning
+
+// FormatWarning renders the stable operator-facing form used by gate
+// validation. The entity path is included so a warning from a direct gate
+// command remains actionable without a surrounding status table.
+func FormatWarning(entityPath string, warning Warning) string {
+	return fmt.Sprintf("Warning: unknown gate application field '%s' at %s: path=%s", warning.Field, warning.Path, entityPath)
+}
+
 func Read(path string) (*Document, *yaml.Node, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, nil, err
 	}
-	return readData(data)
+	doc, node, _, err := readDataDiagnostics(data)
+	return doc, node, err
+}
+
+// ReadDiagnostics reads a gate document and returns compatibility warnings in
+// addition to the original gates node. The node is never filtered or replaced;
+// callers may safely use it as the compare-and-swap/write expectation. Unknown
+// keys are tolerated only in the exact application mappings described by the
+// v1 gate contract.
+func ReadDiagnostics(path string) (*Document, *yaml.Node, []Warning, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return readDataDiagnostics(data)
+}
+
+// ReadWithWarnings is an explicit compatibility alias for ReadDiagnostics.
+// Keep it small so integrations that use the older diagnostic naming do not
+// need to duplicate the gate reader.
+func ReadWithWarnings(path string) (*Document, *yaml.Node, []Warning, error) {
+	return ReadDiagnostics(path)
 }
 
 func readData(data []byte) (*Document, *yaml.Node, error) {
+	doc, node, _, err := readDataDiagnostics(data)
+	return doc, node, err
+}
+
+func readDataDiagnostics(data []byte) (*Document, *yaml.Node, []Warning, error) {
 	root, _, _, err := frontmatterNode(data)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	gatesNode := mappingValue(root, "gates")
 	if gatesNode == nil {
-		return nil, nil, ErrNoGateRecord
+		return nil, nil, nil, ErrNoGateRecord
 	}
-	encoded, err := yaml.Marshal(gatesNode)
+	filtered := cloneYAMLNode(gatesNode)
+	warnings, err := filterApplicationMappings(filtered)
 	if err != nil {
-		return nil, nil, fmt.Errorf("encode gates for validation: %w", err)
+		return nil, nil, nil, err
+	}
+	encoded, err := yaml.Marshal(filtered)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("encode gates for validation: %w", err)
 	}
 	var doc Document
 	decoder := yaml.NewDecoder(bytes.NewReader(encoded))
 	decoder.KnownFields(true)
 	if err := decoder.Decode(&doc); err != nil {
-		return nil, nil, fmt.Errorf("decode canonical gates v1: %w", err)
+		return nil, nil, nil, fmt.Errorf("decode canonical gates v1: %w", err)
 	}
 	if err := Validate(&doc); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return &doc, gatesNode, nil
+	return &doc, gatesNode, warnings, nil
+}
+
+// cloneYAMLNode clones a node through YAML encoding, which retains scalar tags
+// and aliases without ever sharing Content slices with the source node. The
+// clone is deliberately used only for strict validation; the source node stays
+// untouched for CAS and byte-preserving writes.
+func cloneYAMLNode(node *yaml.Node) *yaml.Node {
+	if node == nil {
+		return nil
+	}
+	encoded, err := yaml.Marshal(node)
+	if err != nil {
+		// A node obtained from yaml.Unmarshal is marshalable. Keep this helper
+		// total for package-internal callers; the caller's subsequent strict
+		// decode will report the meaningful failure if a future node shape is not.
+		return &yaml.Node{}
+	}
+	var out yaml.Node
+	if err := yaml.Unmarshal(encoded, &out); err != nil || len(out.Content) == 0 {
+		return &yaml.Node{}
+	}
+	if out.Kind == yaml.DocumentNode {
+		return out.Content[0]
+	}
+	return &out
+}
+
+// filterApplicationMappings removes non-canonical keys only at
+// gates.records[*].attempts[*].application. It validates the application value
+// shape before filtering so null, sequence, and scalar legacy values remain
+// strict errors. Unknown keys are reported once per path/field and sorted for
+// deterministic operator output.
+func filterApplicationMappings(gatesNode *yaml.Node) ([]Warning, error) {
+	var warnings []Warning
+	if gatesNode == nil || gatesNode.Kind != yaml.MappingNode {
+		return warnings, nil
+	}
+	records := mappingValue(gatesNode, "records")
+	if records == nil || records.Kind != yaml.SequenceNode {
+		return warnings, nil
+	}
+	for ri, record := range records.Content {
+		if record == nil || record.Kind != yaml.MappingNode {
+			continue
+		}
+		attempts := mappingValue(record, "attempts")
+		if attempts == nil || attempts.Kind != yaml.SequenceNode {
+			continue
+		}
+		for ai, attempt := range attempts.Content {
+			if attempt == nil || attempt.Kind != yaml.MappingNode {
+				continue
+			}
+			for i := 0; i+1 < len(attempt.Content); i += 2 {
+				if attempt.Content[i].Value != "application" {
+					continue
+				}
+				application := attempt.Content[i+1]
+				if application == nil || application.Kind != yaml.MappingNode {
+					return nil, fmt.Errorf("gates.records[%d].attempts[%d].application must be a mapping", ri, ai)
+				}
+				path := fmt.Sprintf("gates.records[%d].attempts[%d].application", ri, ai)
+				kept := make([]*yaml.Node, 0, len(application.Content))
+				seen := make(map[string]bool)
+				for j := 0; j+1 < len(application.Content); j += 2 {
+					key, value := application.Content[j], application.Content[j+1]
+					if key.Value == "target-stage" || key.Value == "state" {
+						kept = append(kept, key, value)
+						continue
+					}
+					if !seen[key.Value] {
+						warnings = append(warnings, Warning{Path: path, Field: key.Value})
+						seen[key.Value] = true
+					}
+				}
+				application.Content = kept
+			}
+		}
+	}
+	sort.Slice(warnings, func(i, j int) bool {
+		if warnings[i].Path != warnings[j].Path {
+			return warnings[i].Path < warnings[j].Path
+		}
+		return warnings[i].Field < warnings[j].Field
+	})
+	return warnings, nil
 }
 
 func SummaryFile(path string) (Summary, error) {
@@ -59,14 +196,26 @@ func SummaryFile(path string) (Summary, error) {
 }
 
 func SummaryFileAt(path, workflowDir string) (Summary, error) {
-	doc, _, err := Read(path)
+	summary, _, err := SummaryFileDiagnosticsAt(path, workflowDir)
+	return summary, err
+}
+
+// SummaryFileDiagnosticsAt is the gate-validate read surface. It performs the
+// same retained-authority checks as SummaryFileAt and returns any bounded
+// application-extension warnings for explicit presentation by the CLI.
+func SummaryFileDiagnosticsAt(path, workflowDir string) (Summary, []Warning, error) {
+	doc, _, warnings, err := ReadDiagnostics(path)
 	if err != nil {
-		return Summary{}, err
+		return Summary{}, nil, err
 	}
 	if err := validateRetainedAuthority(path, workflowDir, doc); err != nil {
-		return Summary{}, err
+		return Summary{}, nil, err
 	}
-	return CurrentSummary(doc), nil
+	status, err := entityStatus(path)
+	if err != nil {
+		return Summary{}, nil, err
+	}
+	return CurrentSummary(doc, status), warnings, nil
 }
 
 func validateRetainedAuthority(entityPath, workflowDir string, doc *Document) error {
@@ -534,66 +683,6 @@ func publishRound(room string, next roundRoomBytes, commitEntity func(bool) erro
 		return err
 	}
 	return nil
-}
-
-func spliceFeedbackCycle(data []byte, line string, cycle int, project bool) ([]byte, error) {
-	_, _, fmEnd, err := frontmatterNode(data)
-	if err != nil {
-		return nil, err
-	}
-	prefix := fmt.Sprintf("- Cycle %d:", cycle)
-	insert, headings, exact, cycles := len(data), 0, 0, 0
-	inFence, inSection := false, false
-	for offset := lineOffset(data, fmEnd+1); offset < len(data); {
-		end := bytes.IndexByte(data[offset:], '\n')
-		if end < 0 {
-			end = len(data) - offset
-		}
-		text := strings.TrimSuffix(string(data[offset:offset+end]), "\r")
-		trim := strings.TrimSpace(text)
-		if strings.HasPrefix(trim, "```") || strings.HasPrefix(trim, "~~~") {
-			inFence = !inFence
-		} else if !inFence {
-			level := strings.IndexFunc(text, func(r rune) bool { return r != '#' })
-			if level == 3 && strings.TrimSpace(text[level:]) == "Feedback Cycles" {
-				headings++
-				inSection = true
-			} else if inSection && level > 0 && level <= 3 {
-				insert = offset
-				inSection = false
-			}
-			if inSection {
-				if text == line {
-					exact++
-				}
-				if strings.HasPrefix(text, prefix) {
-					cycles++
-				}
-			}
-		}
-		offset += end + 1
-	}
-	if headings > 1 || !project && cycles != 0 || project && (cycles != exact || cycles > 1) {
-		return nil, fmt.Errorf("Feedback Cycles projection conflicts with %s", prefix)
-	}
-	if !project || exact == 1 {
-		return data, nil
-	}
-	if headings == 0 {
-		sep := "\n\n"
-		if bytes.HasSuffix(data, []byte("\n\n")) {
-			sep = ""
-		} else if bytes.HasSuffix(data, []byte("\n")) {
-			sep = "\n"
-		}
-		return append(data, []byte(sep+"### Feedback Cycles\n\n"+line+"\n")...), nil
-	}
-	sep := ""
-	if insert > 0 && data[insert-1] != '\n' {
-		sep = "\n"
-	}
-	add := []byte(sep + line + "\n\n")
-	return append(append(append([]byte{}, data[:insert]...), add...), data[insert:]...), nil
 }
 
 func writeSyncedFile(path string, data []byte) error {

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // bootOrphanReadme defines a single worktree-bearing stage so --boot renders an
@@ -57,9 +59,7 @@ func orphanExistence(boot string) (dir, branch string) {
 // yielding a non-existent path and DIR_EXISTS=no.
 func TestBootAbsoluteWorktreeDirExists(t *testing.T) {
 	root := t.TempDir()
-	if out, err := exec.Command("git", "-C", root, "init").CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v (%s)", err, out)
-	}
+	testgit.InitRepo(t, root)
 	// An absolute worktree path that exists but is OUTSIDE the git root, so a
 	// filepath.Join(git_root, wt) would point at a non-existent nested path.
 	absWorktree := t.TempDir()
@@ -125,9 +125,7 @@ stages:
 func buildSplitRootWorktreeFixture(t *testing.T) (defDir, wtDir string) {
 	t.Helper()
 	coderoot := t.TempDir()
-	gitC(t, coderoot, "init")
-	gitC(t, coderoot, "config", "user.email", "test@example.com")
-	gitC(t, coderoot, "config", "user.name", "test")
+	testgit.InitRepo(t, coderoot)
 	// A worktree needs a committed HEAD to branch from.
 	writeFile(t, filepath.Join(coderoot, "seed.txt"), "seed\n")
 	gitC(t, coderoot, "add", "seed.txt")
@@ -204,9 +202,7 @@ func TestBootSplitRootWorktreeExistence(t *testing.T) {
 // the two roots are the same dir), confirming no regression.
 func TestBootSingleRootWorktreeExistence(t *testing.T) {
 	root := t.TempDir()
-	gitC(t, root, "init")
-	gitC(t, root, "config", "user.email", "test@example.com")
-	gitC(t, root, "config", "user.name", "test")
+	testgit.InitRepo(t, root)
 	writeFile(t, filepath.Join(root, "seed.txt"), "seed\n")
 	gitC(t, root, "add", "seed.txt")
 	gitC(t, root, "commit", "-m", "seed")

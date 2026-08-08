@@ -29,7 +29,10 @@ func FinalizeTerminalApproval(path, workflowDir, verdict, completedStamp string)
 		return "", err
 	}
 	defer unlock()
-	record := findRecord(doc, doc.Current.Gate)
+	record, err := recordForStage(doc, status)
+	if err != nil {
+		return "", err
+	}
 	attempt := &record.Attempts[len(record.Attempts)-1]
 	attempt.Application.State = "consumed"
 	if err := validateApplicationMutation(oldNode, doc, attempt.ID, "pending", "consumed"); err != nil {
@@ -49,7 +52,7 @@ func FinalizeTerminalApproval(path, workflowDir, verdict, completedStamp string)
 // back for rework: in ONE locked compare-before-replace candidate it writes
 // application.state pending→superseded (the same guarded mutation the drift
 // path uses) and status := the record stage's validated declared feedback-to.
-// gates.current is untouched; the superseded attempt is frozen history —
+// the superseded attempt is frozen history —
 // re-entry runs a successor attempt with a fresh approval. verdict/completed
 // are never written pre-delivery.
 //
@@ -68,7 +71,10 @@ func SupersedeTerminalApproval(path, workflowDir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	record := findRecord(doc, doc.Current.Gate)
+	record, err := recordForStage(doc, status)
+	if err != nil {
+		return "", err
+	}
 	attempt := &record.Attempts[len(record.Attempts)-1]
 	attempt.Application.State = "superseded"
 	if err := validateApplicationMutation(oldNode, doc, attempt.ID, "pending", "superseded"); err != nil {
@@ -171,7 +177,10 @@ func lockPendingTerminalApproval(path, workflowDir string) (unlock func(), doc *
 	if err != nil {
 		return fail(err)
 	}
-	record := findRecord(doc, doc.Current.Gate)
+	record, err := recordForStage(doc, status)
+	if err != nil {
+		return fail(err)
+	}
 	inputState := reviewedInputUnknown
 	if record != nil && len(record.Attempts) > 0 {
 		inputState = inspectReviewedInput(path, record.Attempts[len(record.Attempts)-1].Briefing)

@@ -52,7 +52,7 @@ The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, 
 
 ## Seed Scenarios
 
-The first foundation is the host-neutral runtime scenarios already shipped and held in host parity by the shared coverage tests. They are the named seed instances:
+The first foundation is the 16 exported `TestLiveCommon...` journeys registered in `docs/runtime-live-ci-registry.md`. Each function owns one stable ID, executable fixture binding, target-specific TODO ownership, runtime-neutral exercise, and durable assertion. There is no central scenario table or per-runtime runner registry.
 
 <!-- seed-scenarios -->
 - `gate-guardrail` — the FO binds and commits the retained package, presents exactly one semantic root review, then stops open without Resolution, consume, advance, dispatch, or archival.
@@ -67,11 +67,11 @@ The first foundation is the host-neutral runtime scenarios already shipped and h
 - `keep-moving-posture` — the FO keeps moving: after a gate approval it advances + dispatches the next stage with no permission question, dispatches independent ready entities in parallel, re-shapes a questioned entity and pauses only its dispatch while the independent ones keep moving, and does not end its turn on an async wait while independent work remains.
 <!-- /seed-scenarios -->
 
-These IDs are the code-backed source of truth. They mirror the `sharedRuntimeScenarios()` table in `internal/ensigncycle`; the seed IDs declared above must equal that table. This block is machine-readable so a lock test can bind the doc to the code and red on drift in either direction — adding, dropping, or renaming a scenario on one side without the other. This is what makes the doc the human-readable face of a code-backed truth rather than prose bound to nothing.
+The registry names the desired journeys. `TestRuntimeLiveRegistryReconciliation` joins it to the real declarations, adjacent metadata calls, fixture annotations, and all three executable workflow selectors.
 
 ## Prioritizing New Cross-Runtime Scenarios
 
-A scenario belongs in the shared cross-runtime set only when the same user journey should hold for every supported host. Host-specific probes, such as a Codex-only idle-notification experiment, should live in a host-runtime test lane instead of `sharedRuntimeScenarios()`.
+A scenario belongs in the common cross-runtime set only when the same user journey should hold for every supported host. Host-specific probes belong in a runtime-specific proof lane.
 
 Prefer new scenarios that start from the first officer's normal event loop: boot the workflow, inspect startup state and dispatchable work, run the required action, and grade durable outcomes. This catches real producer behavior instead of only testing a helper in isolation.
 

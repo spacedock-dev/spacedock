@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // identifyPRReadme declares a split-root slug workflow whose implementation stage
@@ -52,10 +53,10 @@ stages:
 
 func openGateEntity(slug, status, score string) string {
 	return "---\nid: " + slug + "\nstatus: " + status + "\nscore: " + score + "\ngates:\n" +
-		"  version: 1\n  current: {gate: 'gate:" + slug + ":" + status + "'}\n  records:\n" +
+		"  version: 1\n  records:\n" +
 		"    - id: gate:" + slug + ":" + status + "\n      stage: " + status + "\n      attempts:\n" +
 		"        - id: gate-attempt:" + slug + "-" + status + "-1\n" +
-		"          briefing: {id: 'briefing:" + slug + ":" + status + ":attempt-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', digest-domain: canonical-bytes, room-ref: ./review/" + status + "/briefing-1}\n" +
+		"          briefing: {id: 'briefing:" + slug + ":" + status + ":attempt-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', room-ref: ./review/" + status + "/briefing-1}\n" +
 		"---\n# " + slug + "\n"
 }
 
@@ -63,7 +64,16 @@ func approvedGateEntity(slug, status, target, score string) string {
 	body := strings.TrimSuffix(openGateEntity(slug, status, score), "---\n# "+slug+"\n")
 	return body +
 		"          resolution: {type: Resolution, id: 'resolution:" + slug + ":1', briefing: 'briefing:" + slug + ":" + status + ":attempt-1', by: 'person:captain', at: '2026-07-23T00:00:00Z', decision: approve}\n" +
-		"          application: {action: advance, target-stage: " + target + ", state: pending, blockers: []}\n" +
+		"          application: {target-stage: " + target + ", state: pending}\n" +
+		"---\n# " + slug + "\n"
+}
+
+func withdrawnGateEntity(slug, status, score string) string {
+	body := strings.TrimSuffix(openGateEntity(slug, status, score), "---\n# "+slug+"\n")
+	body = strings.Replace(body, "room-ref:",
+		"request-digest: 'sha256:"+strings.Repeat("2", 64)+"', room-ref:", 1)
+	return body +
+		"          withdrawal: {by: 'agent:first-officer', at: '2026-07-26T11:30:00.123456Z', reason: 'candidate is stale'}\n" +
 		"---\n# " + slug + "\n"
 }
 
@@ -167,6 +177,7 @@ func TestBootIdentifyReadyGates(t *testing.T) {
 		"sp.md":          "---\nid: sp\nstatus: validation\nscore: 100\n---\n# Still validating\n",
 		"mf.md":          openGateEntity("mf", "validation", "90"),
 		"r4.md":          strings.Replace(openGateEntity("r4", "validation", "80"), "id: r4\n", "", 1),
+		"wd.md":          withdrawnGateEntity("wd", "validation", "75"),
 		"2n.md":          approvedGateEntity("2n", "validation", "done", "70"),
 		"qc.md":          "---\nid: qc\nstatus: validation\nscore: 60\n---\n# Still validating\n",
 		"dispatch-me.md": "---\nstatus: draft\nscore: 1000\n---\n",
@@ -191,7 +202,7 @@ func TestBootIdentifyReadyGates(t *testing.T) {
 		t.Fatalf("parse identify boot: %v\n%s", err, identifyOut)
 	}
 
-	wantReady := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"},{"id":"r4","slug":"r4","current":"validation","readiness":"awaiting-captain"},{"id":"2n","slug":"2n","current":"validation","readiness":"approved-awaiting-merge"}]`
+	wantReady := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"},{"id":"r4","slug":"r4","current":"validation","readiness":"awaiting-captain"},{"id":"wd","slug":"wd","current":"validation","readiness":"withdrawn-awaiting-prepare"},{"id":"2n","slug":"2n","current":"validation","readiness":"approved-awaiting-merge"}]`
 	if got := string(identify.ReadyGates); got != wantReady {
 		t.Fatalf("ready_gates = %s\nwant        = %s", got, wantReady)
 	}
@@ -226,7 +237,7 @@ func TestBootIdentifyReadyGates(t *testing.T) {
 	}
 }
 
-func TestBootReadyGatesRequiresCurrentStageSelection(t *testing.T) {
+func TestBootReadyGatesUsesStatusDerivedSelection(t *testing.T) {
 	def, state := buildSplitRoot(t, identifyReadyGatesReadme, nil)
 	room := filepath.Join(state, "review", "validation", "briefing-1")
 	writeFile(t, filepath.Join(room, "briefing.json"),
@@ -242,28 +253,13 @@ func TestBootReadyGatesRequiresCurrentStageSelection(t *testing.T) {
 	}
 	entity := filepath.Join(state, "mf.md")
 	writeFile(t, entity, "---\nid: mf\nstatus: validation\ngates:\n"+
-		"  version: 1\n  current: {gate: 'gate:mf:ideation'}\n  records:\n"+
+		"  version: 1\n  records:\n"+
 		"    - id: gate:mf:ideation\n      stage: ideation\n      attempts:\n"+
-		"        - id: gate-attempt:mf-ideation-1\n          briefing: {id: 'briefing:mf:ideation:attempt-1', digest: 'sha256:"+strings.Repeat("2", 64)+"', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1}\n"+
+		"        - id: gate-attempt:mf-ideation-1\n          briefing: {id: 'briefing:mf:ideation:attempt-1', digest: 'sha256:"+strings.Repeat("2", 64)+"', room-ref: ./review/ideation/briefing-1}\n"+
 		"    - id: gate:mf:validation\n      stage: validation\n      attempts:\n"+
-		"        - id: gate-attempt:mf-validation-1\n          briefing: {id: 'briefing:mf:validation:attempt-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1}\n"+
+		"        - id: gate-attempt:mf-validation-1\n          briefing: {id: 'briefing:mf:validation:attempt-1', digest: '"+digest+"', room-ref: ./review/validation/briefing-1}\n"+
 		"---\n# MF\n")
 
-	before := identifyReadyRows(t, def)
-	if before != "[]" {
-		t.Fatalf("stale old-stage selection scheduled mf: %s", before)
-	}
-	body, err := os.ReadFile(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	selected := strings.Replace(string(body), "current: {gate: 'gate:mf:ideation'}", "current: {gate: 'gate:mf:validation'}", 1)
-	if selected == string(body) {
-		t.Fatal("current-stage selection fixture was not updated")
-	}
-	if err := os.WriteFile(entity, []byte(selected), 0o644); err != nil {
-		t.Fatal(err)
-	}
 	after := identifyReadyRows(t, def)
 	want := `[{"id":"mf","slug":"mf","current":"validation","readiness":"awaiting-captain"}]`
 	if after != want {
@@ -305,10 +301,10 @@ func TestBootReadyGateTerminalApprovalPersistsAtConsumeUntilDeliveryEnvelope(t *
 		t.Fatal(err)
 	}
 	writeFile(t, entity, "---\nid: 2n\nstatus: validation\ngates:\n"+
-		"  version: 1\n  current: {gate: 'gate:2n:validation'}\n  records:\n"+
+		"  version: 1\n  records:\n"+
 		"    - id: gate:2n:validation\n      stage: validation\n      attempts:\n"+
 		"        - id: gate-attempt:2n-validation-1\n"+
-		"          briefing: {id: 'briefing:2n:validation:attempt-1:revision-1', digest: '"+digest+"', digest-domain: canonical-bytes, room-ref: ./review/validation/briefing-1/briefing.json}\n"+
+		"          briefing: {id: 'briefing:2n:validation:attempt-1:revision-1', digest: '"+digest+"', room-ref: ./review/validation/briefing-1/briefing.json}\n"+
 		"---\n# 2n\n")
 	if _, _, err := gates.Read(entity); err != nil {
 		t.Fatal(err)
@@ -344,17 +340,17 @@ func TestBootReadyGateTerminalApprovalPersistsAtConsumeUntilDeliveryEnvelope(t *
 	}
 }
 
-func TestBootReadyGatesFailClosedLifecycleControls(t *testing.T) {
-	blocked := strings.Replace(approvedGateEntity("blocked", "validation", "done", "90"),
-		"blockers: []", "blockers: [{id: blocker:x, state: unsatisfied}]", 1)
-	held := strings.Replace(approvedGateEntity("held", "validation", "done", "80"),
-		"blockers: []}", "blockers: [], execution-hold: {state: active}}", 1)
-	feedback := strings.Replace(approvedGateEntity("feedback", "validation", "done", "70"),
+func TestBootReadyGatesIgnoreUnknownApplicationExtensions(t *testing.T) {
+	blocked := strings.Replace(approvedGateEntity("blocked", "validation", "implementation", "90"),
+		"application: {target-stage: implementation, state: pending}", "application:\n                blockers: [{id: blocker:x, state: unsatisfied}]\n                target-stage: implementation\n                state: pending", 1)
+	held := strings.Replace(approvedGateEntity("held", "validation", "implementation", "80"),
+		"application: {target-stage: implementation, state: pending}", "application:\n                execution-hold: {state: active}\n                target-stage: implementation\n                state: pending", 1)
+	feedback := strings.Replace(approvedGateEntity("feedback", "validation", "implementation", "70"),
 		"decision: approve}", "decision: revise, reason: revise}", 1)
-	feedback = strings.Replace(feedback, "action: advance", "action: feedback", 1)
-	consumed := strings.Replace(approvedGateEntity("consumed", "validation", "done", "60"),
+	feedback = strings.Replace(feedback, "application: {target-stage: implementation, state: pending}", "application:\n                action: feedback\n                target-stage: implementation\n                state: pending", 1)
+	consumed := strings.Replace(approvedGateEntity("consumed", "validation", "implementation", "60"),
 		"state: pending", "state: consumed", 1)
-	superseded := strings.Replace(approvedGateEntity("superseded", "validation", "done", "50"),
+	superseded := strings.Replace(approvedGateEntity("superseded", "validation", "implementation", "50"),
 		"state: pending", "state: superseded", 1)
 	def, _ := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
 		"validating.md": "---\nstatus: validation\n---\n",
@@ -363,12 +359,13 @@ func TestBootReadyGatesFailClosedLifecycleControls(t *testing.T) {
 		"feedback.md":   feedback,
 		"consumed.md":   consumed,
 		"superseded.md": superseded,
-		"malformed.md":  "---\nstatus: validation\ngates:\n  version: 1\n  current: {gate: missing}\n  records: []\n---\n",
+		"malformed.md":  "---\nstatus: validation\ngates:\n  version: 1\n  records: []\n---\n",
 		"terminal.md":   openGateEntity("terminal", "done", "100"),
 		"ordinary.md":   openGateEntity("ordinary", "implementation", "100"),
 	})
-	if got := identifyReadyRows(t, def); got != "[]" {
-		t.Fatalf("fail-closed lifecycle controls scheduled rows: %s", got)
+	want := `[{"id":"blocked","slug":"blocked","current":"validation","readiness":"approved-awaiting-advance"},{"id":"held","slug":"held","current":"validation","readiness":"approved-awaiting-advance"}]`
+	if got := identifyReadyRows(t, def); got != want {
+		t.Fatalf("unknown application extensions must not block authority: got %s want %s", got, want)
 	}
 }
 
@@ -381,9 +378,7 @@ func TestBootIdentifyIsSideEffectFree(t *testing.T) {
 		"add-login.md": "---\nstatus: implementation\npr: \"#42\"\n---\n",
 	})
 	// The state checkout is a real git repo so HEAD/tree can be diffed.
-	gitC(t, state, "init", "-q")
-	gitC(t, state, "config", "user.email", "t@t")
-	gitC(t, state, "config", "user.name", "t")
+	testgit.InitRepo(t, state, "-q")
 	gitC(t, state, "add", "-A")
 	gitC(t, state, "commit", "-q", "-m", "seed")
 

@@ -14,7 +14,7 @@ import (
 )
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
-var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 triage=all-fixed entries=4$`)
+var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
 
@@ -30,7 +30,6 @@ func commandRecordsRejectionRound(command string) bool {
 		regexp.MustCompile(`--round(?:=|\s+)['"]?validation/1['"]?(?:\s|$)`),
 		rejectionRoundArtifactArg("briefing", "briefing.json"),
 		rejectionRoundArtifactArg("log", "briefing.review.jsonl"),
-		rejectionRoundArtifactArg("feedback-cycle", "feedback-cycle.txt"),
 	} {
 		if !required.MatchString(command) {
 			return false
@@ -138,11 +137,11 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 	if wantStatus != "validation" {
 		return fmt.Errorf("round-only state contains an ordinary gate record; `gate record --round` must retain only advisory review-round state")
 	}
-	if len(doc.Records) != 1 || doc.Current.Gate != "gate:rejection-task:validation" {
+	if len(doc.Records) != 1 || doc.Records[0].Stage != "validation" {
 		return fmt.Errorf("final gate selection does not identify exactly one rejection-task validation gate")
 	}
 	record := doc.Records[0]
-	if record.ID != doc.Current.Gate || record.Stage != "validation" || len(record.Attempts) != 1 {
+	if record.Stage != "validation" || len(record.Attempts) != 1 {
 		return fmt.Errorf("selected validation gate does not contain exactly one attempt")
 	}
 	attempt := record.Attempts[0]
@@ -182,10 +181,6 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if err := assertRejectionRoundGateBoundary(entityPath, wantStatus); err != nil {
 		return err
 	}
-	if got := bytes.Count(entity, []byte(rejectionFeedbackCycle)); got != 1 {
-		return fmt.Errorf("Cycle 1 projection count = %d, want exactly 1", got)
-	}
-
 	summary, err := gates.ValidateRoundFile(entityPath, "validation/1")
 	if err != nil {
 		return fmt.Errorf("validate retained round: %w", err)
@@ -194,7 +189,6 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 		summary.Stage != "validation" ||
 		summary.Cycle != 1 ||
 		summary.Briefing != rejectionBriefingID ||
-		summary.Triage != "all-fixed" ||
 		len(summary.Entries) != 4 {
 		return fmt.Errorf("retained round summary = %#v", summary)
 	}
@@ -241,17 +235,23 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	root := t.TempDir()
 	entityPath := writeRejectionWorkflow(t, root)
 	writeFile(t, filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"), rejectionCompleteLog())
+	// Workflow policy is authored by the First Officer before invoking the
+	// neutral producer. The recorder must retain this line byte-for-byte.
+	cycleBefore := readFile(t, entityPath)
+	writeFile(t, entityPath, cycleBefore+"\n### Feedback Cycles\n\n"+rejectionFeedbackCycle)
 	before := readFile(t, entityPath)
 	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
-		Round:             "validation/1",
-		BriefingPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
-		LogPath:           filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
-		FeedbackCyclePath: filepath.Join(root, "rejection-task", "inputs", "feedback-cycle.txt"),
-		WorkflowDir:       root,
+		Round:        "validation/1",
+		BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
+		LogPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
+		WorkflowDir:  root,
 	}); err != nil {
 		t.Fatalf("record completed triage: %v", err)
 	}
 	after := readFile(t, entityPath)
+	if strings.Count(after, rejectionFeedbackCycle) != 1 {
+		t.Fatalf("neutral round recorder changed workflow-owned Cycle projection")
+	}
 	for _, line := range []string{
 		"status: backlog",
 		"workflow-state: preserve-me",
@@ -300,7 +300,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	for _, control := range []struct{ entity, want string }{
 		{strings.Replace(openGateEntity, "              briefing:\n", "              state: open\n              briefing:\n", 1), "malformed final validation gate"},
 		{strings.Replace(openGateEntity, rejectionPreparedBriefingID, rejectionBriefingID, 1), "validation/1 advisory round was retained as a gate attempt"},
-		{strings.ReplaceAll(openGateEntity, "gate:rejection-task:validation", "gate:rejection-task:wrong"), "final gate selection does not identify"},
+		{strings.Replace(openGateEntity, "      stage: validation", "      stage: wrong", 1), "final gate selection does not identify"},
 	} {
 		writeFile(t, entityPath, control.entity)
 		if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
@@ -321,8 +321,8 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 }
 
 func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
-	command := `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir "$WD" --round validation/1 --briefing "$WD/rejection-task/inputs/briefing.json" --log "$WD/rejection-task/inputs/briefing.review.jsonl" --feedback-cycle "$WD/rejection-task/inputs/feedback-cycle.txt"`
-	result := "round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 triage=all-fixed entries=4"
+	command := `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir "$WD" --round validation/1 --briefing "$WD/rejection-task/inputs/briefing.json" --log "$WD/rejection-task/inputs/briefing.review.jsonl"`
+	result := "round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4"
 	claudeStream := strings.Join([]string{
 		bashToolLine("toolu_round", command),
 		toolResultLine("toolu_round", false, result),
@@ -349,11 +349,11 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 		}, "\n")) {
 		t.Fatal("Claude extractor accepted a missing or failed correlated result")
 	}
-	captured := "B=${SPACEDOCK_BIN:-spacedock}\n$B gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt"
+	captured := "B=${SPACEDOCK_BIN:-spacedock}\n$B gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl"
 	if !codexRecordedRejectionRound(codexCommandOutput(captured, result, 0, "completed")) {
 		t.Fatal("Codex extractor missed captured resolved launcher round invocation")
 	}
-	retainedCodexWrapped := `/bin/zsh -lc "rg -n '"'^shared-rejection-fix: applied$|''^## Stage Report: implementation|''^- DONE:'"' rejection-task/index.md; tail -n 4 rejection-task/inputs/briefing.review.jsonl; "'${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --feedback-cycle rejection-task/inputs/feedback-cycle.txt --workflow-dir .; ${SPACEDOCK_BIN:-spacedock} state commit rejection-task'`
+	retainedCodexWrapped := `/bin/zsh -lc "rg -n '"'^shared-rejection-fix: applied$|''^## Stage Report: implementation|''^- DONE:'"' rejection-task/index.md; tail -n 4 rejection-task/inputs/briefing.review.jsonl; "'${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl --workflow-dir .; ${SPACEDOCK_BIN:-spacedock} state commit rejection-task'`
 	if !codexRecordedRejectionRound(codexCommandOutput(retainedCodexWrapped, result, 0, "completed")) {
 		t.Fatal("Codex extractor missed retained nested-shell resolved launcher round invocation")
 	}
@@ -363,8 +363,7 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	absoluteMultiline := `/tmp/candidate/spacedock gate record \
   "rejection-task" --workflow-dir . --round="validation/1" \
   --briefing "rejection-task/inputs/briefing.json" \
-  --log="rejection-task/inputs/briefing.review.jsonl" \
-  --feedback-cycle "rejection-task/inputs/feedback-cycle.txt"`
+  --log="rejection-task/inputs/briefing.review.jsonl"`
 	if !commandRecordsRejectionRound(absoluteMultiline) {
 		t.Fatal("command recognizer missed absolute resolved launcher with multiline/quoted flags")
 	}

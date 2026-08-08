@@ -14,26 +14,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
-	root, entity, briefing, log, feedback := advisoryRoundFixture(t)
+func TestRoundRecordNeutralReplayAndRefusalsAreByteClean(t *testing.T) {
+	root, entity, briefing, log, _ := advisoryRoundFixture(t)
 	fullLog := mustReadBytes(t, log)
-	prefixEnd := nthNewline(fullLog, 3)
-	if err := os.WriteFile(log, fullLog[:prefixEnd], 0o644); err != nil {
-		t.Fatal(err)
-	}
+	input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log}
 
-	input := RecordInput{
-		Round:             "implementation/1",
-		BriefingPath:      briefing,
-		LogPath:           log,
-		FeedbackCyclePath: feedback,
+	// A truncated JSONL line is rejected before publication and leaves all
+	// mutable state untouched.
+	if err := os.WriteFile(log, fullLog[:len(fullLog)-1], 0o644); err != nil {
+		t.Fatal(err)
 	}
 	beforeCandidate := mustReadBytes(t, filepath.Join(root, "candidate.patch"))
 	beforeProduct := mustReadBytes(t, filepath.Join(root, "product", "status.txt"))
 	beforeLifecycle := lifecycleBytes(t, entity)
 	pendingBefore := treeDigest(t, root)
 	if err := RecordSemantic(entity, input); err == nil {
-		t.Fatal("findings-bearing reviewer-only log was persisted")
+		t.Fatal("incomplete review log was persisted")
 	}
 	if got := treeDigest(t, root); got != pendingBefore {
 		t.Fatal("incomplete-round refusal changed fixture bytes")
@@ -53,7 +49,8 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 	if err != nil {
 		t.Fatalf("validate complete round: %v", err)
 	}
-	if summary.ID != "round:task:implementation:1" || summary.Triage != "all-declines" || len(summary.Entries) != 5 {
+	if summary.ID != "round:task:implementation:1" || summary.Stage != "implementation" ||
+		summary.Cycle != 1 || summary.Briefing != "briefing:3j:implementation:round-1" || len(summary.Entries) != 5 {
 		t.Fatalf("complete summary = %#v", summary)
 	}
 	resolutions := 0
@@ -61,7 +58,7 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 		if entry.Type == "Resolution" {
 			resolutions++
 			if !entry.Advisory {
-				t.Fatalf("round Resolution %s was not advisory", entry.ID)
+				t.Fatalf("round Resolution %s was not marked structurally", entry.ID)
 			}
 		}
 	}
@@ -69,36 +66,8 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 		t.Fatalf("resolution count = %d, want reviewer and worker", resolutions)
 	}
 	entityBytes := mustReadBytes(t, entity)
-	wantEntity := mustReadBytes(t, filepath.Join("testdata", "advisory-round", "recorded-entity.md"))
-	assertExactEntity := func(got []byte) error {
-		if !bytes.Equal(got, wantEntity) {
-			return errors.New("complete entity differs outside the authorized review-round pointer and Feedback Cycles insertion")
-		}
-		return nil
-	}
-	if err := assertExactEntity(entityBytes); err != nil {
-		t.Fatalf("%v\nentity after:\n%s", err, entityBytes)
-	}
-	for _, mutation := range []struct{ old, new string }{
-		{"custom: preserve-me", "custom: corrupted"},
-		{"Unrelated body bytes stay fixed.", "Unrelated body bytes were corrupted."},
-	} {
-		corrupt := bytes.Replace(entityBytes, []byte(mutation.old), []byte(mutation.new), 1)
-		if bytes.Equal(corrupt, entityBytes) {
-			t.Fatalf("negative-control span %q was absent", mutation.old)
-		}
-		if err := assertExactEntity(corrupt); err == nil {
-			t.Fatalf("unrelated corruption %q escaped the complete-entity oracle", mutation.old)
-		}
-	}
-	if got := bytes.Count(entityBytes, []byte("- Cycle 1:")); got != 1 {
-		t.Fatalf("Feedback Cycles projection count = %d, want one", got)
-	}
-	if got := mustReadBytes(t, filepath.Join(room, "briefing.review.jsonl")); !bytes.Equal(got, fullLog) {
-		t.Fatal("retained complete log does not equal supplied log")
-	}
-	if got := mustReadBytes(t, filepath.Join(room, "briefing.json")); !bytes.Equal(got, mustReadBytes(t, briefing)) {
-		t.Fatal("retained Briefing bytes changed")
+	if bytes.Contains(entityBytes, []byte("Feedback Cycles")) || bytes.Contains(entityBytes, []byte("Cycle 1:")) {
+		t.Fatalf("neutral recorder projected workflow prose:\n%s", entityBytes)
 	}
 	if !bytes.Equal(mustReadBytes(t, filepath.Join(root, "candidate.patch")), beforeCandidate) ||
 		!bytes.Equal(mustReadBytes(t, filepath.Join(root, "product", "status.txt")), beforeProduct) {
@@ -107,6 +76,15 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 	if got := lifecycleBytes(t, entity); !bytes.Equal(got, beforeLifecycle) {
 		t.Fatalf("round recording changed status or gates:\n%s", got)
 	}
+	if got := mustReadBytes(t, filepath.Join(room, "briefing.review.jsonl")); !bytes.Equal(got, fullLog) {
+		t.Fatal("retained complete log does not equal supplied log")
+	}
+	if got := mustReadBytes(t, filepath.Join(room, "briefing.json")); !bytes.Equal(got, mustReadBytes(t, briefing)) {
+		t.Fatal("retained Briefing bytes changed")
+	}
+	if got := mustReadBytes(t, filepath.Join(root, "candidate.patch")); !bytes.Equal(got, mustReadBytes(t, filepath.Join("testdata", "advisory-round", "candidate.patch"))) {
+		t.Fatal("round recording changed candidate bytes")
+	}
 
 	if err := os.RemoveAll(filepath.Join(root, ".derived-cache")); err != nil {
 		t.Fatal(err)
@@ -114,6 +92,7 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 	if _, err := ValidateRoundFile(entity, input.Round); err != nil {
 		t.Fatalf("pointer readback after cache removal: %v", err)
 	}
+
 	replayBefore := treeDigest(t, root)
 	if err := RecordSemantic(entity, input); err != nil {
 		t.Fatalf("exact replay: %v", err)
@@ -150,6 +129,27 @@ func TestRoundRecordCompleteReplayAndRefusalsAreByteClean(t *testing.T) {
 	}
 }
 
+func TestRoundAcceptsWorkflowForeignLabelsAndActors(t *testing.T) {
+	_, entity, briefing, log, _ := advisoryRoundFixture(t)
+	body := mustReadBytes(t, log)
+	body = bytes.ReplaceAll(body, []byte("actor:ensign"), []byte("reviewer:outside-workflow"))
+	body = bytes.ReplaceAll(body, []byte("class: correct-but-disproportionate; why-not-material: released workflow and ACs remain correct at candidate 90aea55; promotes-when: a supported duplicate-member flow produces observable incorrect state"), []byte("label: foreign-policy; disposition: deferred"))
+	body = bytes.ReplaceAll(body, []byte("triage: 0 material fixed; 2 declined"), []byte("reviewer notes: arbitrary labels are opaque"))
+	if err := os.WriteFile(log, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log}
+	if err := RecordSemantic(entity, input); err != nil {
+		t.Fatalf("workflow-foreign review log rejected: %v", err)
+	}
+	if _, err := ValidateRoundFile(entity, input.Round); err != nil {
+		t.Fatalf("workflow-foreign review log did not validate: %v", err)
+	}
+	if bytes.Contains(mustReadBytes(t, entity), []byte("Feedback Cycles")) {
+		t.Fatal("neutral recorder wrote a workflow projection")
+	}
+}
+
 func TestRoundRequiresFolderFormWithoutCrossEntityCollision(t *testing.T) {
 	workflow := t.TempDir()
 	for _, slug := range []string{"task-a", "task-b"} {
@@ -161,11 +161,18 @@ func TestRoundRequiresFolderFormWithoutCrossEntityCollision(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(workflow, "unrelated"), []byte("preserve"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	input := RecordInput{Round: "implementation/1", BriefingPath: filepath.Join(workflow, "briefing.json"), LogPath: filepath.Join(workflow, "briefing.review.jsonl")}
+	inputRoot := filepath.Join(workflow, "inputs")
+	if err := os.MkdirAll(inputRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	briefing := filepath.Join(inputRoot, "briefing.json")
+	log := filepath.Join(inputRoot, "briefing.review.jsonl")
+	copyRoundFixture(t, briefing, "briefing.json")
+	copyRoundFixture(t, log, "briefing.review.jsonl")
 	for _, slug := range []string{"task-a", "task-b"} {
 		before := treeDigest(t, workflow)
 		entity := filepath.Join(workflow, slug+".md")
-		err := RecordSemantic(entity, input)
+		err := RecordSemantic(entity, inputForRound(briefing, log))
 		if err == nil || !strings.Contains(err.Error(), "folder-form entity") || treeDigest(t, workflow) != before {
 			t.Fatalf("%s flat refusal error=%v or changed workflow bytes", slug, err)
 		}
@@ -176,236 +183,108 @@ func TestRoundRequiresFolderFormWithoutCrossEntityCollision(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(workflow, "review")); !os.IsNotExist(err) {
 		t.Fatalf("flat refusals created a shared review room: %v", err)
 	}
-
-	for _, slug := range []string{"task-a", "task-b"} {
-		root, entity, briefing, log, feedback := advisoryRoundFixtureAt(t, filepath.Join(workflow, slug))
-		if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err != nil {
-			t.Fatalf("%s folder-form record: %v", slug, err)
-		}
-		if _, err := os.Stat(filepath.Join(root, "review", "implementation", "round-1")); err != nil {
-			t.Fatalf("%s has no independent retained room: %v", slug, err)
-		}
-	}
 }
 
 func TestRoundNoFindingsAndPreflightRefusals(t *testing.T) {
-	t.Run("no findings", func(t *testing.T) {
+	t.Run("no findings is structurally valid and has no projection", func(t *testing.T) {
 		_, entity, briefing, log, _ := advisoryRoundFixture(t)
-		noFindings := `{"type":"Resolution","id":"resolution:roborev-clear","briefing":"briefing:3j:implementation:round-1","by":"software:roborev","at":"2026-07-20T01:00:00Z","decision":"approve"}` + "\n"
+		noFindings := `{"type":"Resolution","id":"resolution:roborev-clear","briefing":"briefing:3j:implementation:round-1","by":"reviewer:foreign","at":"2026-07-20T01:00:00Z","decision":"approve"}` + "\n"
 		if err := os.WriteFile(log, []byte(noFindings), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log}
+		input := inputForRound(briefing, log)
 		if err := RecordSemantic(entity, input); err != nil {
 			t.Fatal(err)
 		}
 		summary, err := ValidateRoundFile(entity, input.Round)
-		if err != nil {
-			t.Fatal(err)
+		if err != nil || len(summary.Entries) != 1 {
+			t.Fatalf("summary=%#v err=%v", summary, err)
 		}
-		if summary.Triage != "no-findings" {
-			t.Fatalf("triage = %q, want no-findings", summary.Triage)
-		}
-		if bytes.Contains(mustReadBytes(t, entity), []byte("- Cycle 1:")) {
-			t.Fatal("no-findings round received worker-triage projection")
+		if bytes.Contains(mustReadBytes(t, entity), []byte("Cycle 1:")) {
+			t.Fatal("neutral no-findings round received a workflow projection")
 		}
 	})
 
-	t.Run("bad artifact digest", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		if err := os.WriteFile(filepath.Join(root, "candidate.patch"), []byte("corrupt\n"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		before := treeDigest(t, root)
-		err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback})
-		if err == nil || !strings.Contains(err.Error(), "artifact") {
-			t.Fatalf("bad digest error = %v", err)
-		}
-		if got := treeDigest(t, root); got != before {
-			t.Fatal("bad digest refusal changed fixture tree")
-		}
-		if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
-			t.Fatalf("bad digest left lock residue: %v", err)
-		}
-	})
-
-	t.Run("self-referential mutable entity artifact", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		body := bytes.Replace(mustReadBytes(t, briefing), []byte("../../../candidate.patch"), []byte("../../../index.md"), 1)
-		body = bytes.Replace(body, []byte("sha256:8e85d4c9523a617e05b17c92390b10b2f9892152ca348433311230ac3ad98dd3"), []byte(RawDigest(mustReadBytes(t, entity))), 1)
-		if err := os.WriteFile(briefing, body, 0o644); err != nil {
-			t.Fatal(err)
-		}
-		before := treeDigest(t, root)
-		if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err == nil {
-			t.Fatal("self-referential mutable entity artifact recorded")
-		}
-		if got := treeDigest(t, root); got != before {
-			t.Fatal("self-referential artifact refusal changed fixture bytes")
-		}
-	})
-
-	t.Run("occupied target", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		room := filepath.Join(root, "review", "implementation", "round-1")
-		if err := os.MkdirAll(room, 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.WriteFile(filepath.Join(room, "foreign"), []byte("occupied"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		before := treeDigest(t, root)
-		if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err == nil {
-			t.Fatal("conflicting occupied target succeeded")
-		}
-		if got := treeDigest(t, root); got != before {
-			t.Fatal("occupied-target refusal changed fixture tree")
-		}
-	})
-
-	t.Run("lock contention", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		if err := os.WriteFile(entity+".gates.lock", []byte("held"), 0o600); err != nil {
-			t.Fatal(err)
-		}
-		before := treeDigest(t, root)
-		if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err == nil {
-			t.Fatal("lock-contended record succeeded")
-		}
-		if got := treeDigest(t, root); got != before {
-			t.Fatal("lock contention changed fixture tree")
-		}
-	})
-
-	t.Run("cross briefing log", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		body := bytes.Replace(mustReadBytes(t, log), []byte(`"briefing":"briefing:3j:implementation:round-1"`), []byte(`"briefing":"briefing:other"`), 1)
-		if err := os.WriteFile(log, body, 0o644); err != nil {
-			t.Fatal(err)
-		}
-		before := treeDigest(t, root)
-		if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err == nil {
-			t.Fatal("cross-Briefing log succeeded")
-		}
-		if got := treeDigest(t, root); got != before {
-			t.Fatal("cross-Briefing refusal changed fixture tree")
-		}
-	})
-
-	t.Run("malformed artifact URI", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		body := bytes.Replace(mustReadBytes(t, briefing), []byte("../../../candidate.patch"), []byte("%gh"), 1)
-		if err := os.WriteFile(briefing, body, 0o644); err != nil {
-			t.Fatal(err)
-		}
-		before := treeDigest(t, root)
-		err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback})
-		if err == nil || !strings.Contains(err.Error(), "URI") {
-			t.Fatalf("malformed artifact URI error = %v", err)
-		}
-		if got := treeDigest(t, root); got != before {
-			t.Fatal("malformed URI refusal changed fixture tree")
-		}
-	})
-
-	t.Run("malformed decline disposition", func(t *testing.T) {
-		for _, body := range []string{
-			"class: ; why-not-material: none; promotes-when: never",
-			"class: material-ish; why-not-material: no released harm; promotes-when: supported harm",
-			"class: correct-but-disproportionate; why-not-material: ; promotes-when: supported harm",
-			"class: correct-but-disproportionate; why-not-material: no released harm; promotes-when: not applicable",
-			"class: correct-but-disproportionate; why-not-material: no released harm; promotes-when: supported harm; injected: true",
-		} {
-			root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-			data := bytes.Replace(mustReadBytes(t, log),
-				[]byte("class: correct-but-disproportionate; why-not-material: released workflow and ACs remain correct at candidate 90aea55; promotes-when: a supported duplicate-member flow produces observable incorrect state"),
-				[]byte(body), 1)
-			if err := os.WriteFile(log, data, 0o644); err != nil {
+	for _, tc := range []struct {
+		name   string
+		mutate func(root, entity, briefing, log string)
+		want   string
+	}{
+		{"bad artifact digest", func(root, entity, briefing, log string) {
+			if err := os.WriteFile(filepath.Join(root, "candidate.patch"), []byte("corrupt\n"), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			before := treeDigest(t, root)
-			if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err == nil {
-				t.Fatalf("malformed decline %q recorded", body)
-			}
-			if treeDigest(t, root) != before {
-				t.Fatalf("malformed decline %q changed fixture bytes", body)
-			}
-		}
-	})
-
-	t.Run("feedback cycle grammar and decision", func(t *testing.T) {
-		for _, line := range []string{
-			"- Cycle 1: PASSED — Roborev; surface 0/0 vs estimate 340 (0%); AC unchanged",
-			"- Cycle 1: REJECTED — ; surface 0/0 vs estimate 340 (0%); AC unchanged",
-			"- Cycle 1: REJECTED — Roborev; surface 0/0 vs estimate 340 (0%); AC unchanged; injected: true",
-			"- Cycle 1: REJECTED — Roborev; surface 0/0 estimate 340 (0%); AC unchanged",
-		} {
-			root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-			if err := os.WriteFile(feedback, []byte(line+"\n"), 0o644); err != nil {
+		}, "artifact"},
+		{"self-referential mutable entity artifact", func(root, entity, briefing, log string) {
+			body := bytes.Replace(mustReadBytes(t, briefing), []byte("../../../candidate.patch"), []byte("../../../index.md"), 1)
+			body = bytes.Replace(body, []byte("sha256:8e85d4c9523a617e05b17c92390b10b2f9892152ca348433311230ac3ad98dd3"), []byte(RawDigest(mustReadBytes(t, entity))), 1)
+			if err := os.WriteFile(briefing, body, 0o644); err != nil {
 				t.Fatal(err)
 			}
+		}, "mutable entity"},
+		{"occupied target", func(root, entity, briefing, log string) {
+			room := filepath.Join(root, "review", "implementation", "round-1")
+			if err := os.MkdirAll(room, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(room, "foreign"), []byte("occupied"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}, "canonical room"},
+		{"lock contention", func(root, entity, briefing, log string) {
+			if err := os.WriteFile(entity+".gates.lock", []byte("held"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}, "lock"},
+		{"cross briefing log", func(root, entity, briefing, log string) {
+			body := bytes.Replace(mustReadBytes(t, log), []byte(`"briefing":"briefing:3j:implementation:round-1"`), []byte(`"briefing":"briefing:other"`), 1)
+			if err := os.WriteFile(log, body, 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}, "same Briefing"},
+		{"malformed artifact URI", func(root, entity, briefing, log string) {
+			body := bytes.Replace(mustReadBytes(t, briefing), []byte("../../../candidate.patch"), []byte("%gh"), 1)
+			if err := os.WriteFile(briefing, body, 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}, "URI"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity, briefing, log, _ := advisoryRoundFixture(t)
+			tc.mutate(root, entity, briefing, log)
 			before := treeDigest(t, root)
-			if err := RecordSemantic(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}); err == nil {
-				t.Fatalf("malformed feedback line %q recorded", line)
+			err := RecordSemantic(entity, inputForRound(briefing, log))
+			if err == nil || !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(tc.want)) {
+				t.Fatalf("error=%v, want %q", err, tc.want)
 			}
-			if treeDigest(t, root) != before {
-				t.Fatalf("malformed feedback line %q changed fixture bytes", line)
+			if got := treeDigest(t, root); got != before {
+				t.Fatal("refusal changed fixture tree")
 			}
-		}
-	})
+		})
+	}
 
 	t.Run("stage taxonomy permits historical backfill", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
+		root, entity, briefing, log, _ := advisoryRoundFixture(t)
 		body := bytes.Replace(mustReadBytes(t, entity), []byte("status: implementation"), []byte("status: validation"), 1)
 		if err := os.WriteFile(entity, body, 0o644); err != nil {
 			t.Fatal(err)
 		}
-		input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback, WorkflowDir: root}
+		input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, WorkflowDir: root}
 		if err := RecordSemantic(entity, input); err != nil {
 			t.Fatalf("historical implementation round at validation status: %v", err)
 		}
 	})
 
 	t.Run("unknown workflow stage", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
+		root, entity, briefing, log, _ := advisoryRoundFixture(t)
 		before := treeDigest(t, root)
-		input := RecordInput{Round: "unknown/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback, WorkflowDir: root}
-		if err := RecordSemantic(entity, input); err == nil {
+		if err := RecordSemantic(entity, RecordInput{Round: "unknown/1", BriefingPath: briefing, LogPath: log, WorkflowDir: root}); err == nil {
 			t.Fatal("round for undefined workflow stage recorded")
 		}
 		if treeDigest(t, root) != before {
-			t.Fatal("undefined-stage refusal changed fixture bytes")
+			t.Fatal("undefined-stage refusal changed fixture tree")
 		}
 	})
-}
-
-func TestRoundFixedAndMixedTriageProjectAndReplay(t *testing.T) {
-	for _, tc := range []struct {
-		name, class string
-		log         func([]byte) []byte
-	}{
-		{"all fixed", "all-fixed", allFixedRoundLog},
-		{"mixed", "mixed", mixedRoundLog},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-			if err := os.WriteFile(log, tc.log(mustReadBytes(t, log)), 0o644); err != nil {
-				t.Fatal(err)
-			}
-			input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}
-			if err := RecordSemantic(entity, input); err != nil {
-				t.Fatal(err)
-			}
-			summary, err := ValidateRoundFile(entity, input.Round)
-			if err != nil || summary.Triage != tc.class || bytes.Count(mustReadBytes(t, entity), []byte("- Cycle 1:")) != 1 {
-				t.Fatalf("summary=%#v err=%v entity=%s", summary, err, mustReadBytes(t, entity))
-			}
-			before := treeDigest(t, root)
-			if err := RecordSemantic(entity, input); err != nil || treeDigest(t, root) != before {
-				t.Fatalf("exact %s replay changed the fixture: %v", tc.class, err)
-			}
-		})
-	}
 }
 
 func TestRoundSharedCASAndRollbackBoundaries(t *testing.T) {
@@ -420,11 +299,8 @@ func TestRoundSharedCASAndRollbackBoundaries(t *testing.T) {
 			buildCalled = true
 			return append(current, []byte("changed\n")...), nil
 		}
-		if err := mutateEntity(entity, entityExpectation{}, build, atomicWrite); err == nil {
-			t.Fatal("zero entity expectation succeeded")
-		}
-		if buildCalled {
-			t.Fatal("build ran without a mandatory expectation")
+		if err := mutateEntity(entity, entityExpectation{}, build, atomicWrite); err == nil || buildCalled {
+			t.Fatal("zero entity expectation succeeded or built")
 		}
 		stale := append([]byte(nil), original...)
 		stale[4] = 'X'
@@ -475,85 +351,6 @@ func TestRoundSharedCASAndRollbackBoundaries(t *testing.T) {
 	})
 }
 
-func TestRoundWorkerTriageRequiresFixedActorAndBackwardGraph(t *testing.T) {
-	const briefingID = "briefing:test"
-	reviewer := `{"type":"Annotation","id":"f1","briefing":"briefing:test","by":"software:roborev","at":"2026-07-20T01:00:00Z","body":"finding"}` + "\n" +
-		`{"type":"Resolution","id":"r1","briefing":"briefing:test","by":"software:roborev","at":"2026-07-20T01:01:00Z","decision":"revise","includes":["f1"]}` + "\n"
-	secondReviewer := reviewer +
-		`{"type":"Annotation","id":"d2","briefing":"briefing:test","by":"software:roborev-2","at":"2026-07-20T01:02:00Z","includes":["f1"],"body":"class: correct-but-disproportionate; why-not-material: no released value harm; promotes-when: supported harm"}` + "\n" +
-		`{"type":"Resolution","id":"r2","briefing":"briefing:test","by":"software:roborev-2","at":"2026-07-20T01:03:00Z","decision":"revise","includes":["d2"]}` + "\n"
-	log, err := parseReviewLog([]byte(secondReviewer), briefingID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if class, err := classifyCompletedRound(log); err == nil {
-		t.Fatalf("second reviewer classified as completed worker triage: %q", class)
-	}
-
-	worker := strings.ReplaceAll(secondReviewer, "software:roborev-2", "actor:ensign")
-	log, err = parseReviewLog([]byte(worker), briefingID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	class, err := classifyCompletedRound(log)
-	if err != nil || class != "all-declines" {
-		t.Fatalf("authorized worker graph = class=%q err=%v", class, err)
-	}
-	for _, broken := range []string{
-		strings.Replace(worker, `"by":"actor:ensign","at":"2026-07-20T01:02:00Z","includes":["f1"]`, `"by":"actor:ensign","at":"2026-07-20T01:02:00Z","includes":[]`, 1),
-		strings.Replace(worker, `"by":"actor:ensign"`, `"by":"software:roborev-2"`, 1),
-	} {
-		log, err := parseReviewLog([]byte(broken), briefingID)
-		if err == nil {
-			_, err = classifyCompletedRound(log)
-		}
-		if err == nil {
-			t.Fatal("broken worker disposition graph completed triage")
-		}
-	}
-
-	multiple := worker + `{"type":"Resolution","id":"r3","briefing":"briefing:test","by":"actor:ensign","at":"2026-07-20T01:04:00Z","decision":"revise","includes":["d2"]}` + "\n"
-	log, err = parseReviewLog([]byte(multiple), briefingID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := classifyCompletedRound(log); err == nil {
-		t.Fatal("multiple authorized worker triage Resolutions succeeded")
-	}
-
-	full := mustReadBytes(t, filepath.Join("testdata", "advisory-round", "briefing.review.jsonl"))
-	log, err = parseReviewLog(allFixedRoundLog(full), "briefing:3j:implementation:round-1")
-	if class, classifyErr := classifyCompletedRound(log); err != nil || classifyErr != nil || class != "all-fixed" {
-		t.Fatalf("material-only triage class=%q parse=%v classify=%v", class, err, classifyErr)
-	}
-	log, err = parseReviewLog(mixedRoundLog(full), "briefing:3j:implementation:round-1")
-	if class, classifyErr := classifyCompletedRound(log); err != nil || classifyErr != nil || class != "mixed" {
-		t.Fatalf("mixed triage class=%q parse=%v classify=%v", class, err, classifyErr)
-	}
-	contradictory := bytes.Replace(mixedRoundLog(full), []byte(`"includes":["annotation:job-594"]`), []byte(`"includes":["annotation:job-592"]`), 1)
-	log, err = parseReviewLog(contradictory, "briefing:3j:implementation:round-1")
-	if err == nil {
-		_, err = classifyCompletedRound(log)
-	}
-	if err == nil {
-		t.Fatal("one reviewer finding received contradictory fixed and declined dispositions")
-	}
-}
-
-func allFixedRoundLog(full []byte) []byte {
-	return bytes.Replace(full,
-		[]byte("class: correct-but-disproportionate; why-not-material: released workflow and ACs remain correct at candidate 90aea55; promotes-when: a supported duplicate-member flow produces observable incorrect state"),
-		[]byte("class: material; disposition: fixed"), 1)
-}
-
-func mixedRoundLog(full []byte) []byte {
-	lines := strings.Split(string(full), "\n")
-	lines[3] = `{"type":"Annotation","id":"annotation:fixed","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:00Z","includes":["annotation:job-592"],"body":"class: material; disposition: fixed"}` + "\n" +
-		`{"type":"Annotation","id":"annotation:declined","briefing":"briefing:3j:implementation:round-1","by":"actor:ensign","at":"2026-07-20T01:03:30Z","includes":["annotation:job-594"],"body":"class: correct-but-disproportionate; why-not-material: no released harm; promotes-when: supported harm"}`
-	lines[4] = strings.Replace(lines[4], `["annotation:decline-duplicate-member"]`, `["annotation:fixed","annotation:declined"]`, 1)
-	return []byte(strings.Join(lines, "\n"))
-}
-
 func TestRoundValidateRequiresCanonicalRegularFileRoom(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -574,8 +371,8 @@ func TestRoundValidateRequiresCanonicalRegularFileRoom(t *testing.T) {
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-			input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}
+			root, entity, briefing, log, _ := advisoryRoundFixture(t)
+			input := inputForRound(briefing, log)
 			if err := RecordSemantic(entity, input); err != nil {
 				t.Fatal(err)
 			}
@@ -587,41 +384,12 @@ func TestRoundValidateRequiresCanonicalRegularFileRoom(t *testing.T) {
 	}
 }
 
-func TestFeedbackCycleSpliceIsSectionScoped(t *testing.T) {
-	line := "- Cycle 1: REJECTED — reviewer; surface 1/1 vs estimate 1 (100%); AC unchanged"
-	entity := []byte("---\nstatus: implementation\n---\n# Entity\n\n" + line + "\n\n### Feedback Cycles\n\n### Next\n")
-	out, err := spliceFeedbackCycle(entity, line, 1, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if bytes.Count(out, []byte(line)) != 2 {
-		t.Fatalf("projection did not distinguish same text outside section:\n%s", out)
-	}
-	feedback := bytes.Index(out, []byte("### Feedback Cycles"))
-	next := bytes.Index(out, []byte("### Next"))
-	projected := bytes.LastIndex(out, []byte(line))
-	if projected < feedback || projected > next {
-		t.Fatalf("projection is outside Feedback Cycles section:\n%s", out)
-	}
-
-	eof := []byte("---\nstatus: implementation\n---\n# Entity\n\n### Feedback Cycles")
-	out, err = spliceFeedbackCycle(eof, line, 1, true)
-	if err != nil || !bytes.Contains(out, []byte("### Feedback Cycles\n"+line)) {
-		t.Fatalf("EOF projection corrupted heading: err=%v\n%s", err, out)
-	}
-	replayed, err := spliceFeedbackCycle(out, line, 1, true)
-	if err != nil || !bytes.Equal(replayed, out) {
-		t.Fatalf("EOF projection exact replay changed bytes: err=%v\n%s", err, replayed)
-	}
-}
-
 func TestRoundCompleteOperationCASAndRollbackAreByteClean(t *testing.T) {
 	t.Run("new room rolls back when entity replacement fails", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
+		root, entity, briefing, log, _ := advisoryRoundFixture(t)
 		before := treeDigest(t, root)
 		injected := errors.New("injected entity failure")
-		err := recordRoundLockedWith(entity, RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}, nil,
-			func(string, []byte) error { return injected })
+		err := recordRoundLockedWith(entity, inputForRound(briefing, log), nil, func(string, []byte) error { return injected })
 		if !errors.Is(err, injected) {
 			t.Fatalf("record error = %v, want injected failure", err)
 		}
@@ -631,8 +399,8 @@ func TestRoundCompleteOperationCASAndRollbackAreByteClean(t *testing.T) {
 	})
 
 	t.Run("exact room does not repair a missing pointer", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}
+		root, entity, briefing, log, _ := advisoryRoundFixture(t)
+		input := inputForRound(briefing, log)
 		if err := RecordSemantic(entity, input); err != nil {
 			t.Fatal(err)
 		}
@@ -654,11 +422,11 @@ func TestRoundCompleteOperationCASAndRollbackAreByteClean(t *testing.T) {
 	})
 
 	t.Run("entity race after new-room publication rolls the room back", func(t *testing.T) {
-		root, entity, briefing, log, feedback := advisoryRoundFixture(t)
-		input := RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log, FeedbackCyclePath: feedback}
+		root, entity, briefing, log, _ := advisoryRoundFixture(t)
+		input := inputForRound(briefing, log)
 		entityBefore := mustReadBytes(t, entity)
 		var racedDigest string
-		err := recordRoundLockedWith(entity, input, func(room string) {
+		err := recordRoundLockedWith(entity, input, func(string) {
 			if err := os.WriteFile(entity, append(entityBefore, []byte("\nexternal race\n")...), 0o644); err != nil {
 				t.Fatal(err)
 			}
@@ -675,6 +443,10 @@ func TestRoundCompleteOperationCASAndRollbackAreByteClean(t *testing.T) {
 			t.Fatalf("stale-entity refusal left the new room: %v", statErr)
 		}
 	})
+}
+
+func inputForRound(briefing, log string) RecordInput {
+	return RecordInput{Round: "implementation/1", BriefingPath: briefing, LogPath: log}
 }
 
 func advisoryRoundFixture(t *testing.T) (root, entity, briefing, log, feedback string) {
@@ -712,8 +484,6 @@ func advisoryRoundFixtureAt(t *testing.T, root string) (string, string, string, 
 		"custom: preserve-me\n" +
 		"gates:\n" +
 		"  version: 1\n" +
-		"  current:\n" +
-		"    gate: gate:task:ideation\n" +
 		"  records:\n" +
 		"    - id: gate:task:ideation\n" +
 		"      stage: ideation\n" +
@@ -722,7 +492,6 @@ func advisoryRoundFixtureAt(t *testing.T, root string) (string, string, string, 
 		"          briefing:\n" +
 		"            id: briefing:task:ideation:1\n" +
 		"            digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n" +
-		"            digest-domain: canonical-bytes\n" +
 		"            room-ref: ./review/ideation/briefing-1\n" +
 		"title: Task\n" +
 		"---\n" +
@@ -748,19 +517,6 @@ func mustReadBytes(t *testing.T, path string) []byte {
 		t.Fatal(err)
 	}
 	return body
-}
-
-func nthNewline(body []byte, n int) int {
-	seen := 0
-	for i, b := range body {
-		if b == '\n' {
-			seen++
-			if seen == n {
-				return i + 1
-			}
-		}
-	}
-	return len(body)
 }
 
 func lifecycleBytes(t *testing.T, entity string) []byte {

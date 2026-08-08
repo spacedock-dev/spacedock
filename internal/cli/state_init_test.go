@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // splitWorkflowReadme is a commissioned split-root README declaring the state
@@ -240,7 +241,7 @@ func TestStateInitInlineNoOp(t *testing.T) {
 		[]byte("---\ncommissioned-by: spacedock@1\nid-style: slug\nstate: $inline\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: done\n      terminal: true\n---\n\n# Inline WF\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	git(t, root, "init", "-q")
+	testgit.InitRepo(t, root, "-q")
 	git(t, root, "add", "-A")
 	git(t, root, "commit", "-q", "-m", "init")
 

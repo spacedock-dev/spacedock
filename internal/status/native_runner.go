@@ -128,6 +128,10 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	if err != nil {
 		return errExit(stderr, err.Error())
 	}
+	page, limit, pageSet, limitSet, err := parsePageLimitArgs(args)
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
 
 	includeArchive := contains(args, "--archived")
 	showNext := contains(args, "--next")
@@ -145,6 +149,44 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	// --next-id nor --new is present.
 	if len(idMaterialFlags) > 0 && !showNextID && newSlug == "" {
 		return errExit(stderr, "--id-seed and --id-actor can only be used with --next-id")
+	}
+
+	// --page/--limit apply only to the default status listing (bare status,
+	// --where, --archived, --fields/--all-fields, --json status envelope); every
+	// other read/mutation mode has its own semantics that a row slice would
+	// silently change, so pagination flags are refused there instead of guessing.
+	if pageSet || limitSet {
+		var incompatible []string
+		if showNext {
+			incompatible = append(incompatible, "--next")
+		}
+		if showBoot {
+			incompatible = append(incompatible, "--boot")
+		}
+		if showValidate {
+			incompatible = append(incompatible, "--validate")
+		}
+		if readRef != "" {
+			incompatible = append(incompatible, "--read")
+		}
+		if resolveRef != "" {
+			incompatible = append(incompatible, "--resolve")
+		}
+		if shortIDRef != "" {
+			incompatible = append(incompatible, "--short-id")
+		}
+		if showNextID {
+			incompatible = append(incompatible, "--next-id")
+		}
+		if setResult != nil {
+			incompatible = append(incompatible, "--set")
+		}
+		if archiveSlug != "" {
+			incompatible = append(incompatible, "--archive")
+		}
+		if len(incompatible) > 0 {
+			return errExit(stderr, "--page/--limit cannot be combined with "+strings.Join(incompatible, ", "))
+		}
 	}
 
 	if showBoot {
@@ -427,7 +469,7 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	}
 
 	// Read paths (table / next / boot / validate).
-	return runRead(probe, roots, args, e, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, identify, explicitFields, allFieldsFlag, asJSON, quiet, archiveSlug != "", setResult != nil, resolveRef != "", stdout, stderr)
+	return runRead(probe, roots, args, e, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, identify, explicitFields, allFieldsFlag, asJSON, quiet, archiveSlug != "", setResult != nil, resolveRef != "", page, limit, stdout, stderr)
 }
 
 // failOnValidationErrors prints validation errors to stderr and returns 1 when

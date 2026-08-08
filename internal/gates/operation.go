@@ -1,4 +1,4 @@
-// ABOUTME: Recorder operations, pointer-CAS checks, digest binding, and room-backed results.
+// ABOUTME: Recorder operations, pointer-CAS checks, and digest binding.
 // ABOUTME: These operations never model application state or invoke workflow effects.
 package gates
 
@@ -16,17 +16,22 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	jsoncanonicalizer "github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer"
-	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	"gopkg.in/yaml.v3"
 )
 
 type RecordInput struct {
-	BriefingPath, RoomPath            string
-	LogPath, FeedbackCyclePath, Round string
-	Actor, Decision                   string
-	Reason, WorkflowDir               string
+	BriefingPath        string
+	LogPath, Round      string
+	Actor, Decision     string
+	Reason, WorkflowDir string
+}
+
+type WithdrawInput struct {
+	Reason      string
+	WorkflowDir string
 }
 
 type artifactRef struct {
@@ -139,7 +144,7 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 		if input.BriefingPath == "" || input.LogPath == "" {
 			return Summary{}, fmt.Errorf("gate record --round requires --briefing and --log")
 		}
-		if input.RoomPath != "" || input.Actor != "" || input.Decision != "" || input.Reason != "" {
+		if input.Actor != "" || input.Decision != "" || input.Reason != "" {
 			return Summary{}, fmt.Errorf("gate record --round is incompatible with gate-closing flags")
 		}
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
@@ -155,180 +160,96 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 		defer unlock()
 		return Summary{}, recordRoundLockedWith(entityPath, input, nil, atomicWrite)
 	}
-	if input.LogPath != "" || input.FeedbackCyclePath != "" {
-		return Summary{}, fmt.Errorf("--log and --feedback-cycle require --round")
+	if input.LogPath != "" {
+		return Summary{}, fmt.Errorf("--log requires --round")
 	}
 	if input.BriefingPath != "" {
 		return Summary{}, fmt.Errorf("gate record --briefing requires --round")
 	}
-	sources := 0
-	for _, source := range []string{input.RoomPath, input.Decision} {
-		if source != "" {
-			sources++
-		}
-	}
-	if sources != 1 {
-		return Summary{}, fmt.Errorf("gate record requires exactly one of --room or --decision")
-	}
-	if input.RoomPath != "" && (input.Actor != "" || input.Decision != "" || input.Reason != "") {
-		return Summary{}, fmt.Errorf("gate record flags do not match the selected semantic source")
+	if input.Decision == "" {
+		return Summary{}, fmt.Errorf("gate record requires --decision")
 	}
 	unlock, err := lockEntity(entityPath)
 	if err != nil {
 		return Summary{}, err
 	}
 	defer unlock()
-	var recordErr error
-	if input.RoomPath != "" {
-		recordErr = recordRoomLocked(entityPath, input)
-	} else {
-		recordErr = recordChatLocked(entityPath, input)
-	}
-	if recordErr != nil {
-		return Summary{}, recordErr
+	if err := recordChatLocked(entityPath, input); err != nil {
+		return Summary{}, err
 	}
 	doc, _, err := Read(entityPath)
 	if err != nil {
 		return Summary{}, err
 	}
-	return CurrentSummary(doc), nil
+	stage, err := entityStatus(entityPath)
+	if err != nil {
+		return Summary{}, err
+	}
+	return CurrentSummary(doc, stage), nil
 }
 
-func recordRoomLocked(entityPath string, input RecordInput) error {
-	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath, input.WorkflowDir)
+// Withdraw retires the selected request-backed prepared attempt without
+// inventing a Resolution or application.
+func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
+	if strings.TrimSpace(input.Reason) == "" {
+		return Summary{}, fmt.Errorf("gate withdraw requires a nonblank --reason")
+	}
+	if !utf8.ValidString(input.Reason) {
+		return Summary{}, fmt.Errorf("--reason must be valid UTF-8")
+	}
+	unlock, err := lockEntity(entityPath)
 	if err != nil {
-		return err
+		return Summary{}, err
+	}
+	defer unlock()
+
+	doc, _, err := Read(entityPath)
+	if err != nil {
+		return Summary{}, err
 	}
 	workflowDir := input.WorkflowDir
 	if workflowDir == "" {
 		workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
 	}
-	if err := validateRetainedAuthorityExcept(entityPath, workflowDir, doc, record.ID, attempt.ID); err != nil {
-		return err
+	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
+		return Summary{}, err
 	}
-	if attempt.Resolution != nil {
-		return fmt.Errorf("attempt %s is frozen closed", attempt.ID)
+	doc, oldNode, _, attempt, err := currentStageAttempt(entityPath, workflowDir)
+	if err != nil {
+		return Summary{}, err
 	}
-	if !digestRE.MatchString(attempt.Briefing.Digest) {
-		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
+	if state := attemptState(attempt); state != "open" {
+		return Summary{}, fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
 	}
 	if attempt.Briefing.RequestDigest == "" {
-		return fmt.Errorf("current attempt has no frozen request digest for room-backed recording")
+		return Summary{}, fmt.Errorf("current attempt is not request-backed")
 	}
-	roomPath, err := filepath.Abs(input.RoomPath)
+	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef)))
 	if err != nil {
-		return fmt.Errorf("resolve gate room: %w", err)
+		return Summary{}, fmt.Errorf("resolve bound gate room: %w", err)
 	}
-	boundRoomPath, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef)))
+	if err := validatePreparedRoomEntries(room); err != nil {
+		return Summary{}, err
+	}
+	attempt.Withdrawal = &Withdrawal{
+		By:     "agent:first-officer",
+		At:     time.Now().UTC().Format(time.RFC3339Nano),
+		Reason: input.Reason,
+	}
+	if err := Validate(doc); err != nil {
+		return Summary{}, err
+	}
+	if err := ValidateTransition(oldNode, doc); err != nil {
+		return Summary{}, err
+	}
+	if err := writeDocument(entityPath, oldNode, doc); err != nil {
+		return Summary{}, err
+	}
+	stage, err := entityStatus(entityPath)
 	if err != nil {
-		return fmt.Errorf("resolve bound gate room: %w", err)
+		return Summary{}, err
 	}
-	if filepath.Clean(roomPath) != filepath.Clean(boundRoomPath) {
-		return fmt.Errorf("--room is not the current attempt's bound gate room")
-	}
-	requestBytes, err := os.ReadFile(filepath.Join(roomPath, "request.json"))
-	if err != nil {
-		return fmt.Errorf("read gate room request: %w", err)
-	}
-	requestDigest, err := CanonicalDigest(requestBytes)
-	if err != nil {
-		return fmt.Errorf("canonicalize gate room request: %w", err)
-	}
-	if requestDigest != attempt.Briefing.RequestDigest {
-		return fmt.Errorf("gate room request does not match the frozen request digest")
-	}
-	request, err := decodeGateRoomRequest(requestBytes)
-	if err != nil {
-		return err
-	}
-	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
-		request.Gate != record.ID || request.Attempt != attempt.ID ||
-		request.Briefing.ID != attempt.Briefing.ID || request.Briefing.Digest != attempt.Briefing.Digest ||
-		request.Actor != "person:captain" || request.Approver != "person:captain" {
-		return fmt.Errorf("gate room request does not bind the current gate, attempt, Briefing, and captain authority")
-	}
-	resultPath := filepath.Join(roomPath, "provider", "result.json")
-	resultBytes, err := os.ReadFile(resultPath)
-	if err != nil {
-		return fmt.Errorf("read provider Result: %w", err)
-	}
-	result, err := decodeProviderResult(resultBytes)
-	if err != nil {
-		return err
-	}
-	var envelope map[string]json.RawMessage
-	if err := decodeAuthorityJSON(resultBytes, "parse Result envelope", &envelope); err != nil {
-		return err
-	}
-	for _, field := range []string{"status", "binding", "actor", "approver", "resolutionId"} {
-		if _, present := envelope[field]; present {
-			return fmt.Errorf("advisory Result remains evidence; closing a gate requires a separate minimal binding Result")
-		}
-	}
-	for field := range envelope {
-		switch field {
-		case "type", "briefing", "artifact", "resolution", "annotations":
-		default:
-			return fmt.Errorf("binding Result has unknown top-level field %q", field)
-		}
-	}
-	resolutionDecoder := json.NewDecoder(bytes.NewReader(envelope["resolution"]))
-	resolutionDecoder.DisallowUnknownFields()
-	if err := resolutionDecoder.Decode(&result.Resolution); err != nil {
-		return fmt.Errorf("parse Result Resolution: %w", err)
-	}
-	if result.Briefing != request.Briefing.ID {
-		return fmt.Errorf("binding Result does not bind the gate room's canonical Briefing")
-	}
-	if result.Resolution.By != request.Approver {
-		return fmt.Errorf("binding Result Resolution.by does not match the gate room request authority")
-	}
-	manifest, err := boundBriefingManifest(entityPath, attempt.Briefing)
-	if err != nil {
-		return err
-	}
-	canonicalItems, err := canonicalPresentationItems(manifest)
-	if err != nil {
-		return err
-	}
-	roots := gitsource.Roots{Main: workflowDir, State: filepath.Dir(entityPath)}
-	gitItems := 0
-	for _, item := range canonicalItems {
-		if strings.HasPrefix(item.URI, "git-root://") {
-			gitItems++
-			if _, err := gitsource.Resolve(roots, item.URI, item.Rev); err != nil {
-				return fmt.Errorf("resolve selected source: %w", err)
-			}
-		}
-	}
-	if gitItems != 0 && gitItems != len(canonicalItems) {
-		return fmt.Errorf("canonical Briefing mixes Git-root and non-Git selected source identities")
-	}
-	presentedBytes, err := os.ReadFile(filepath.Join(roomPath, "provider", "presented-inventory.json"))
-	if err != nil {
-		return fmt.Errorf("read presented inventory: %w", err)
-	}
-	presented, err := decodePresentedInventory(presentedBytes)
-	if err != nil {
-		return err
-	}
-	association, err := deriveAssociation(resultBytes, result, presented, request.Approver, attempt.Briefing, canonicalItems)
-	if err != nil {
-		return err
-	}
-	if err := verifyAssociation(resultBytes, result, association, request.Approver, attempt.Briefing, canonicalItems); err != nil {
-		return err
-	}
-	resolution := result.Resolution
-	resolution.Briefing = attempt.Briefing.ID
-	attempt.ProviderEvidence = &ProviderEvidence{
-		ResultDigest:             RawDigest(resultBytes),
-		PresentedInventoryDigest: RawDigest(presentedBytes),
-	}
-	if err := closeAttempt(entityPath, input.WorkflowDir, doc, oldNode, record, attempt, &resolution); err != nil {
-		return err
-	}
-	return writeDocument(entityPath, oldNode, doc)
+	return CurrentSummary(doc, stage), nil
 }
 
 func recordChatLocked(entityPath string, input RecordInput) error {
@@ -358,8 +279,8 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	if err := validateRetainedAuthority(entityPath, workflowDir, doc); err != nil {
 		return err
 	}
-	if attempt.Resolution != nil {
-		return fmt.Errorf("attempt %s is frozen closed", attempt.ID)
+	if state := attemptState(attempt); state != "open" {
+		return fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
 	}
 	if !digestRE.MatchString(attempt.Briefing.Digest) {
 		return fmt.Errorf("open attempt %s has no verifiable digest", attempt.ID)
@@ -407,7 +328,7 @@ func findRecord(doc *Document, id string) *GateRecord {
 }
 
 func sameBinding(left, right Briefing) bool {
-	return left.ID == right.ID && left.Digest == right.Digest && left.DigestDomain == right.DigestDomain &&
+	return left.ID == right.ID && left.Digest == right.Digest &&
 		left.RequestDigest == right.RequestDigest && left.RoomRef == right.RoomRef
 }
 
@@ -476,7 +397,6 @@ func closeAttempt(entityPath, workflowDir string, doc *Document, oldNode *yaml.N
 	}
 	attempt.Resolution = resolution
 	attempt.Application = application
-	doc.Current.Gate = record.ID
 	if err := Validate(doc); err != nil {
 		return err
 	}
@@ -486,8 +406,23 @@ func closeAttempt(entityPath, workflowDir string, doc *Document, oldNode *yaml.N
 func applicationForDecision(entityPath, workflowDir, stage, decision string) (*Application, error) {
 	switch decision {
 	case "hold":
-		return &Application{Action: "none", State: "not-applicable"}, nil
-	case "approve", "revise":
+		// Holds are complete Resolutions and carry no application.
+		return nil, nil
+	case "revise":
+		// Validate the stage taxonomy for advisory-round callers, while keeping
+		// the feedback-to route outside the durable application object.
+		if workflowDir == "" {
+			workflowDir = filepath.Dir(entityPath)
+		}
+		stages, err := applicationStages(filepath.Join(workflowDir, "README.md"))
+		if err != nil {
+			return nil, err
+		}
+		if applicationStageIndex(stages, stage) < 0 {
+			return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
+		}
+		return nil, nil
+	case "approve":
 	default:
 		return nil, fmt.Errorf("unsupported application decision %q", decision)
 	}
@@ -502,18 +437,10 @@ func applicationForDecision(entityPath, workflowDir, stage, decision string) (*A
 	if i < 0 {
 		return nil, fmt.Errorf("workflow stage %s is not defined in %s", stage, workflowDir)
 	}
-	if decision == "revise" {
-		target := stages[i].FeedbackTo
-		if target == "" {
-			target = stage
-		}
-		return &Application{Action: "feedback", TargetStage: target, State: "pending"}, nil
-	}
 	if i+1 >= len(stages) || strings.TrimSpace(stages[i+1].Name) == "" {
 		return nil, fmt.Errorf("workflow stage %s has no advance target", stage)
 	}
-	blockers := []Blocker{}
-	return &Application{Action: "advance", TargetStage: stages[i+1].Name, State: "pending", Blockers: &blockers}, nil
+	return &Application{TargetStage: stages[i+1].Name, State: "pending"}, nil
 }
 
 type applicationStage struct {
@@ -747,9 +674,6 @@ func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, atte
 }
 
 func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManifest, error) {
-	if binding.DigestDomain != "canonical-bytes" {
-		return nil, fmt.Errorf("Result association requires a canonical-bytes Briefing binding")
-	}
 	data, _, err := boundBriefingBytes(entityPath, binding)
 	if err != nil {
 		return nil, err
@@ -997,7 +921,8 @@ func ValidateTransition(oldNode *yaml.Node, next *Document) error {
 			return fmt.Errorf("gate %s cannot be deleted", oldRecord.ID)
 		}
 		for _, oldAttempt := range oldRecord.Attempts {
-			if attemptState(&oldAttempt) != "closed" {
+			state := attemptState(&oldAttempt)
+			if state != "closed" && state != "withdrawn" {
 				continue
 			}
 			var found *Attempt
@@ -1006,8 +931,10 @@ func ValidateTransition(oldNode *yaml.Node, next *Document) error {
 					found = &nr.Attempts[i]
 				}
 			}
-			if found == nil || !nodesEqual(oldAttempt, *found) && !pendingApplicationSuperseded(oldAttempt, *found) {
-				return fmt.Errorf("frozen closed attempt %s cannot be deleted or mutated", oldAttempt.ID)
+			unchanged := found != nil && nodesEqual(oldAttempt, *found)
+			closedSuperseded := state == "closed" && found != nil && pendingApplicationSuperseded(oldAttempt, *found)
+			if !unchanged && !closedSuperseded {
+				return fmt.Errorf("frozen %s attempt %s cannot be deleted or mutated", state, oldAttempt.ID)
 			}
 		}
 	}

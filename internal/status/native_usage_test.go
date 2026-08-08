@@ -30,6 +30,37 @@ var usageCases = []struct {
 	{"root-without-discover-or-resolve", func(r string) []string {
 		return []string{"--workflow-dir", r, "--root", r}
 	}},
+	{"page-zero", func(r string) []string { return []string{"--workflow-dir", r, "--page", "0"} }},
+	{"page-negative", func(r string) []string { return []string{"--workflow-dir", r, "--page", "-1"} }},
+	{"page-non-integer", func(r string) []string { return []string{"--workflow-dir", r, "--page", "abc"} }},
+	{"limit-negative", func(r string) []string { return []string{"--workflow-dir", r, "--limit", "-1"} }},
+	{"limit-non-integer", func(r string) []string { return []string{"--workflow-dir", r, "--limit", "abc"} }},
+	{"page-with-limit-zero", func(r string) []string {
+		return []string{"--workflow-dir", r, "--page", "2", "--limit", "0"}
+	}},
+	{"page-with-next", func(r string) []string { return []string{"--workflow-dir", r, "--next", "--page", "2"} }},
+	{"page-with-boot", func(r string) []string { return []string{"--workflow-dir", r, "--boot", "--page", "2"} }},
+	{"limit-with-validate", func(r string) []string {
+		return []string{"--workflow-dir", r, "--validate", "--limit", "5"}
+	}},
+	{"limit-with-read", func(r string) []string {
+		return []string{"--workflow-dir", r, "--read", "003-wire-cli", "--limit", "5"}
+	}},
+	{"page-with-resolve", func(r string) []string {
+		return []string{"--workflow-dir", r, "--resolve", "003-wire-cli", "--page", "2"}
+	}},
+	{"page-with-short-id", func(r string) []string {
+		return []string{"--workflow-dir", r, "--short-id", "003-wire-cli", "--page", "2"}
+	}},
+	{"page-with-next-id", func(r string) []string {
+		return []string{"--workflow-dir", r, "--next-id", "--page", "2"}
+	}},
+	{"limit-with-set", func(r string) []string {
+		return []string{"--workflow-dir", r, "--set", "003-wire-cli", "score=0.5", "--limit", "5"}
+	}},
+	{"page-with-archive", func(r string) []string {
+		return []string{"--workflow-dir", r, "--archive", "003-wire-cli", "--page", "2"}
+	}},
 }
 
 func TestNativeUsageErrorsExitOneNotTwo(t *testing.T) {

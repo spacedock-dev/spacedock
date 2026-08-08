@@ -22,7 +22,7 @@ import (
 // the second live lane alongside the legacy interactive pty lane (which SKIPs on
 // this host); together they realize 9243's OQ-6 host-regime split.
 //
-// It reuses the headless launch wiring of TestLiveEnsignCycle verbatim (the same
+// It reuses the headless launch wiring of TestLiveCommonFullEnsignCycle verbatim (the same
 // `spacedock claude -- -p` front door, isolatedClaudeEnv auth/HOME isolation,
 // streamWatcher liveness, detectWrongRootBoot, locateEntity terminal-state grade)
 // and ADDS only the merged-shape assertions over the captured stream + the on-disk
@@ -47,9 +47,11 @@ import (
 //   - the per-name shutdown_request teardown + members[] prune are interactive-only
 //     beats and are NOT asserted here (there is no `teams/config.json` members[] to
 //     prune) — #5; the kept terminus is the entity reaching its terminal state,
-//     identical to TestLiveEnsignCycle.
+//     identical to TestLiveCommonFullEnsignCycle.
 //
 // Skips (never fatals) without auth (isolatedClaudeEnv, the same AC-6 gate).
+//
+//spacedock:live-proof id=claude-merged-agent-dispatch lane=claude-live
 func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	// Merged lane: this asserts the in-process named-background shape. On a LEGACY
 	// host (claude <2.1.178, native TeamCreate present) the FO drives the native team
@@ -68,7 +70,10 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	env = withBinaryOnPath(env, binary)
 	configDir, _ := envValue(env, "CLAUDE_CONFIG_DIR")
 	homeDir, _ := envValue(env, "HOME")
-	effectiveConfigDir := configDirOrDefault(configDir, homeDir)
+	effectiveConfigDir := configDir
+	if effectiveConfigDir == "" {
+		effectiveConfigDir = filepath.Join(homeDir, ".claude")
+	}
 
 	// The realistic ≥3-stage lifecycle fixture (backlog → implementation → done), a
 	// flat entity at backlog — the SAME fixture the bare cycle and the pty lane use.
@@ -101,7 +106,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 		"Drive the workflow to completion; you have the conn to resolve gates from " +
 		"each stage report's verdict (auto-approve). " + antiShutdownOverride
 
-	// The headless front door — identical to TestLiveEnsignCycle's launch — wrapped
+	// The headless front door — identical to TestLiveCommonFullEnsignCycle's launch — wrapped
 	// in `env -u <nested-session markers>` so a child claude launched from inside a
 	// Claude session (the common CI/teammate case) does not self-identify as nested
 	// and suppress its transcript (CC 2.1.170+). The team flag is NOT set: the merged
@@ -145,7 +150,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	// finished in 338s, a fuller-ceremony run crossed 600s still emitting). The
 	// deliverable is "the merged FO dispatched a named background ensign and the
 	// entity reached its terminal state" — so gate on THAT (the same expect-then-kill
-	// discipline TestLiveEnsignCycle uses), then reap the still-chatty subprocess and
+	// discipline TestLiveCommonFullEnsignCycle uses), then reap the still-chatty subprocess and
 	// grade the accumulated transcript. Each step is bounded by the no-progress quiet
 	// budget; the deferred poller.kill() reaps on every exit path.
 	//
@@ -183,7 +188,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	poller.kill()
 	stream := watcher.fullTranscript()
 	duration := time.Since(started)
-	t.Logf("merged-lane drive reached terminal state in %s, %d transcript lines", duration.Round(time.Second), len(splitStreamLines(stream)))
+	t.Logf("merged-lane drive reached terminal state in %s, %d transcript lines", duration.Round(time.Second), len(strings.Split(stream, "\n")))
 	_ = os.WriteFile(filepath.Join(artifactDir, "merged-stream.jsonl"), []byte(stream), 0o644)
 
 	// A 401/is_error result is a LOUD launch failure, never fed into an assertion.
@@ -194,7 +199,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 			extractErr, artifactDir, tail(stream, 4000))
 	}
 
-	lines := splitStreamLines(stream)
+	lines := strings.Split(stream, "\n")
 
 	// Assertion #1 — NO TeamCreate. Two independent signals, both verified live:
 	//   (a) the init-event tool surface carries SendMessage but NOT TeamCreate/
@@ -297,7 +302,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	}
 
 	// Kept terminus (the AC-4-style proof the dispatch DROVE THE ENTITY TO A TERMINAL
-	// STATE) — the same mode-invariant on-disk facts TestLiveEnsignCycle asserts:
+	// STATE) — the same mode-invariant on-disk facts TestLiveCommonFullEnsignCycle asserts:
 	// entity locatable, status: done, a path-scoped commit. verdict is NOT asserted
 	// (team-finalize omits it non-deterministically — the spun-off verdict-omission
 	// task owns that).

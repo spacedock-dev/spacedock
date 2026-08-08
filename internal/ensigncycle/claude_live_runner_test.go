@@ -3,6 +3,8 @@
 package ensigncycle
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -10,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
 // antiShutdownOverride counters upstream claude-code #55297 (a regression in 2.1.126;
@@ -18,7 +22,7 @@ import (
 // response" EVERY turn, and the model panic-shuts-down the team before the work
 // finishes. No FO-contract prose can out-argue a per-turn harness reminder, so the
 // override rides in the `-p` input of EVERY team-using Claude live launch — this shared
-// runner AND TestLiveEnsignCycle's drivePrompt. It is GENERIC: it governs shutdown
+// runner AND TestLiveCommonFullEnsignCycle's drivePrompt. It is GENERIC: it governs shutdown
 // TIMING only, naming no stage or task. Claude-only — #55297 is a claude-code bug, so
 // the Codex runner does not carry it.
 const antiShutdownOverride = "Do not shut down your team or prepare your final " +
@@ -33,10 +37,11 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 // checkout install, the `spacedock claude -- -p <prompt> --output-format
 // stream-json` launch, and the observed-extract: the final message comes from the
 // stream's result/success event (the front-door analog of Codex
-// --output-last-message) via extractClaudeFinalMessage. The scenario table,
+// --output-last-message) via extractClaudeFinalMessage. The common declarations,
 // fixtures, prompts, and assertions are shared with the Codex runner.
 
 type claudeLiveRunner struct {
+	t            *testing.T
 	binary       string
 	pluginDir    string
 	env          []string
@@ -72,177 +77,47 @@ func withPATHPrefix(env []string, dir string) []string {
 	return out
 }
 
-// liveDriver is the transport seam: it turns a prompt + workflow root into the
-// observed (finalMessage, stream) the shared assertions consume. The headless
-// `-p` runner (claudeLiveRunner) and the pty/tmux runner (ptyLiveDriver) are two
-// implementations; the scenario orchestration and assertions do not know which
-// transport ran. model and home expose the two concrete facts the per-scenario
-// orchestration needs beyond the launch itself — the metrics tag (model) and the
-// isolated team root the shallow-boot scenario probes (home/.claude/teams).
+// liveDriver turns a prompt and workflow root into the observed final message
+// and stream that the shared assertions consume. model and home expose the two
+// facts the per-scenario orchestration needs beyond the headless launch.
 // withStubPATH returns a driver copy whose launched FO subprocess resolves a stub
 // binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED).
 type liveDriver interface {
 	run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) liveResult
+	emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult)
+	gradeShallowBootObservation(t *testing.T, result liveResult)
+	prepareRecordedGate(t *testing.T) (liveDriver, func(liveResult))
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
 }
 
 // liveResult is the host-neutral observed state the shared assertions consume.
-// headless `-p`: finalMessage is the stream's result/success event, stream is the
-// stream-json transcript. pty/tmux: finalMessage is the FO-pane final text, stream
-// is the session jsonl written under CLAUDE_CONFIG_DIR (the SAME stream-json
-// dialect the assertions grade). The transport is invisible to the assertions.
+// finalMessage is the headless stream's result/success event and stream is its
+// stream-json transcript.
 type liveResult struct {
 	finalMessage string
 	stream       string
+	commands     []string
 	artifactDir  string
 	duration     time.Duration
 	// configDir and cwd locate the dispatched-ensign sub-agent transcripts on disk
 	// (under {configDir}/projects/{encode(cwd)}/{FO-session-id}/subagents), so the
 	// journey-metrics fold can observe the ensign's --read adoption. cwd is the
 	// EvalSymlinks-resolved FO working dir — the form Claude Code encodes into the
-	// projects path. Empty on transports that do not record them (the pty driver),
-	// so the fold no-ops to FO-front-door counts.
+	// projects path.
 	configDir string
 	cwd       string
 }
 
-type claudeLiveScenario struct {
-	sharedRuntimeScenario
-	run func(*testing.T, liveDriver, sharedRuntimeScenario)
-}
-
-func TestLiveClaudeSharedScenarios(t *testing.T) {
-	runner := newClaudeLiveRunner(t)
-
-	// The scenarios fan out in parallel: each is an independent multi-minute live
-	// claude journey, so running them serially makes the lane wall-time the SUM of
-	// the four (~27m on opus). t.Parallel collapses it toward the slowest single
-	// scenario. The cheap canary (TestLiveEnsignCycle) runs as an earlier step, so a
-	// systemic failure (auth/install) still fails fast before this fan-out. Each
-	// scenario gets its own workflowRoot (t.TempDir) and its own CLAUDE_CONFIG_DIR
-	// (run(), keyed by scenario name) so the concurrent sessions never share claude
-	// config/session state.
-	for _, scenario := range claudeLiveScenarios(t) {
-		t.Run(scenario.name, func(t *testing.T) {
-			t.Parallel()
-			if reason := liveDurableJourneyTODO(scenario.name); reason != "" {
-				t.Skip(reason)
-			}
-			scenario.run(t, runner, scenario.sharedRuntimeScenario)
-		})
-	}
-}
-
-func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
+func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) recordedGateFixture, assert func(recordedGateObservation) error) {
 	t.Helper()
-	runners := claudeScenarioRunners()
-
-	var scenarios []claudeLiveScenario
-	for _, scenario := range sharedRuntimeScenarios() {
-		run := runners[scenario.name]
-		if run == nil {
-			t.Fatalf("shared scenario %q has no Claude live runner", scenario.name)
-		}
-		scenarios = append(scenarios, claudeLiveScenario{
-			sharedRuntimeScenario: scenario,
-			run:                   run,
-		})
-	}
-	return scenarios
-}
-
-// claudeScenarioRunners maps each shared scenario ID to its runner. The runners
-// take the liveDriver seam, not a concrete runner, so the SAME map drives the
-// headless `-p` runner and the pty/tmux driver. It is the parity guard: the shared
-// coverage meta-test fails if this map lacks a runner for any
-// sharedRuntimeScenarios() ID.
-func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
-	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
-		"gate-guardrail":                runClaudeGateGuardrailScenario,
-		"recorded-gate-lifecycle":       runClaudeRecordedGateLifecycleScenario,
-		"rejection-flow":                runClaudeRejectionFlowScenario,
-		"feedback-3-cycle-escalation":   runClaudeFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
-		"filing":                        runClaudeFilingScenario,
-		"shallow-boot":                  runClaudeShallowBootScenario,
-		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
-		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
-		"keep-moving-posture":           runClaudeKeepMovingScenario,
-	}
-}
-
-func TestClaudeTODOModelScope(t *testing.T) {
-	for _, tc := range []struct {
-		model, family string
-		want          bool
-	}{
-		{"sonnet", "sonnet", true},
-		{"claude-sonnet-5", "sonnet", true},
-		{"claude-opus-4-8", "sonnet", false},
-		{"opus", "opus", true},
-		{"claude-opus-4-8", "opus", true},
-		{"openrouter/opossum", "opus", false},
-	} {
-		if got := claudeModelFamily(tc.model, tc.family); got != tc.want {
-			t.Errorf("claudeModelFamily(%q, %q) = %t, want %t", tc.model, tc.family, got, tc.want)
-		}
-	}
-}
-
-func TestClaudeRejectionFlowTODOModelScope(t *testing.T) {
-	for model, want := range map[string]bool{
-		"sonnet": true, "claude-sonnet-5": true,
-		"opus": true, "claude-opus-4-8": true,
-		"haiku": false, "openrouter/opossum": false,
-	} {
-		if got := claudeRejectionFlowTODOModel(model); got != want {
-			t.Errorf("claudeRejectionFlowTODOModel(%q) = %t, want %t", model, got, want)
-		}
-	}
-}
-
-func claudeModelFamily(model, family string) bool {
-	model = strings.ToLower(strings.TrimSpace(model))
-	return model == family || strings.Contains(model, "claude-"+family+"-")
-}
-
-func claudeRejectionFlowTODOModel(model string) bool {
-	return claudeModelFamily(model, "opus") || claudeModelFamily(model, "sonnet")
-}
-
-func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
-	t.Helper()
-	if claudeModelFamily(runner.model(), "sonnet") {
-		t.Skip("TODO(w5bfnrvpcphw857nzz93340c): Sonnet must reliably render the exact selected Briefing digest before re-enabling this journey")
-	}
-	if copied, ok := runner.(claudeLiveRunner); ok {
-		copied.pluginDir = t.TempDir()
-		if err := copyTree(runner.(claudeLiveRunner).pluginDir, copied.pluginDir); err != nil {
-			t.Fatal(err)
-		}
-		runner = copied
-	}
-	fixture := writePreparedRecordedGateFixture(t)
+	runner, gradePreparation := runner.prepareRecordedGate(t)
+	fixture := build(t)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
-	shellEnvDir := t.TempDir()
-	bashEnv := filepath.Join(shellEnvDir, "recorded-gate-env.sh")
-	writeFile(t, bashEnv, "export SPACEDOCK_BIN="+filepath.Join(shimDir, "spacedock")+"\n")
-	writeFile(t, filepath.Join(shellEnvDir, ".zshenv"), readFile(t, bashEnv))
 	runner = runner.withStubPATH(shimDir)
-	switch copied := runner.(type) {
-	case claudeLiveRunner:
-		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
-		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
-		runner = copied
-	case ptyLiveDriver:
-		copied.env = withRecordedGateEnv(copied.env, "BASH_ENV", bashEnv)
-		copied.env = withRecordedGateEnv(copied.env, "ZDOTDIR", shellEnvDir)
-		runner = copied
-	}
 	result := runner.run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
 	writeFile(t, filepath.Join(result.artifactDir, "command.log"), readFile(t, commandLog))
 	commandLog = filepath.Join(result.artifactDir, "command.log")
@@ -254,14 +129,12 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 			t.Fatalf("recorded gate lifecycle recovered with an explicit host: %s\nArtifacts: %s", line, result.artifactDir)
 		}
 	}
-	if copied, ok := runner.(claudeLiveRunner); ok && (!strings.Contains(result.stream, copied.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle")) {
-		t.Fatalf("recorded gate lifecycle did not load the copied skill body\nArtifacts: %s", result.artifactDir)
-	}
+	gradePreparation(result)
 	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
-	if err := assertRecordedGateLifecycle(observation); err != nil {
+	if err := assert(observation); err != nil {
 		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
@@ -280,6 +153,7 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 
 	homeDir, _ := envValue(env, "HOME")
 	return claudeLiveRunner{
+		t:            t,
 		binary:       binary,
 		pluginDir:    pluginDir,
 		env:          env,
@@ -295,6 +169,31 @@ var _ liveDriver = claudeLiveRunner{}
 
 func (r claudeLiveRunner) model() string { return r.modelName }
 func (r claudeLiveRunner) home() string  { return r.homeDir }
+func (r claudeLiveRunner) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
+	emitClaudeScenarioMetrics(t, scenario, result, r.modelName)
+}
+func (r claudeLiveRunner) gradeShallowBootObservation(t *testing.T, result liveResult) {
+	t.Helper()
+	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertShallowBootMeasured(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	emitShallowBootWindowMetrics(t, result.stream, r.modelName)
+}
+func (r claudeLiveRunner) prepareRecordedGate(t *testing.T) (liveDriver, func(liveResult)) {
+	source := r.pluginDir
+	r.pluginDir = t.TempDir()
+	if err := copyTree(source, r.pluginDir); err != nil {
+		t.Fatal(err)
+	}
+	return r, func(result liveResult) {
+		if !strings.Contains(result.stream, r.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle") {
+			t.Fatalf("recorded gate lifecycle did not load the copied skill body\nArtifacts: %s", result.artifactDir)
+		}
+	}
+}
 
 // withStubPATH returns a runner copy whose launched FO subprocess resolves a stub
 // binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED). It
@@ -302,29 +201,18 @@ func (r claudeLiveRunner) home() string  { return r.homeDir }
 // race-free.
 func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	r.env = withPATHPrefix(r.env, dir)
+	r.env = withSpacedockShimShellEnv(r.t, r.env, dir)
 	return r
 }
 
-func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(string, string, gateHeldExpectation) error) {
 	t.Helper()
-	if claudeModelFamily(runner.model(), "opus") {
-		t.Skip("TODO(w5bfnrvpcphw857nzz93340c): Opus must reliably render the exact selected Briefing digest before re-enabling this journey")
-	}
 	workflowRoot := t.TempDir()
-	fixture := writeGateWorkflow(t, workflowRoot)
-	if scenario.name == "default-headless-recorded-gate-stop" {
-		writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(recordedGateReadme(), "### validation", "### implementation\n\nAppend an implementation stage report, then return completion.\n\n### validation", 1))
-		writeFile(t, fixture.entity, strings.Replace(recordedGateEntity(), "status: validation", "status: implementation", 1))
-		gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "start before gate")
-	}
+	fixture := build(t, workflowRoot)
 	before := readFile(t, fixture.entity)
 	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	runner = runner.withStubPATH(shimDir)
-	if copied, ok := runner.(claudeLiveRunner); ok {
-		copied.env = withSpacedockShimShellEnv(t, copied.env, shimDir)
-		runner = copied
-	}
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
@@ -335,26 +223,98 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	if err != nil {
 		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertGateHeld(before, after, expected); err != nil {
+	if err := assert(before, after, expected); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
-func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(*gates.Document) error) {
 	t.Helper()
-	if claudeRejectionFlowTODOModel(runner.model()) {
-		t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Claude Opus and Sonnet must reliably bind a distinct post-rework Briefing before re-enabling this journey")
-	}
 	workflowRoot := t.TempDir()
-	entityPath := writeRejectionWorkflow(t, workflowRoot)
+	fixture := build(t, workflowRoot)
+	binary := buildRecordedGateBinary(t)
+	commitRecordedGateState(t, binary, fixture, "commit selected gate inputs")
+	prepared := mustRecordedGate(t, binary, fixture.root,
+		"gate", "prepare", "recorded-gate-task",
+		"--question", "Should the stale candidate advance?",
+		"--artifact", fixture.gateReview,
+		"--summary", "Stale candidate.",
+		"--reference", fixture.references[0],
+		"--reference", fixture.references[1],
+		"--workflow-dir", fixture.root)
+	firstRoom := outputValue(prepared.stdout, "room")
+	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
+	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
+	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
+	mustRecordedGate(t, binary, fixture.root,
+		"gate", "withdraw", "recorded-gate-task",
+		"--reason", "Sprint re-scope replaced the reviewed candidate.",
+		"--workflow-dir", fixture.root)
+	commitRecordedGateState(t, binary, fixture, "withdraw stale attempt")
+
+	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	shimDir := writeRecordedGateLoggingShim(t, binary, commandLog)
+	runner = runner.withStubPATH(shimDir)
+	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
+
+	doc, _, err := gates.Read(fixture.entity)
+	if err != nil {
+		t.Fatalf("read recovered entity: %v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assert(doc); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	current := doc.Records[0].Attempts[1]
+	if readFile(t, filepath.Join(firstRoom, "gate-briefing.json")) != firstBriefing ||
+		readFile(t, filepath.Join(firstRoom, "request.json")) != firstRequest {
+		t.Fatalf("recovery rewrote withdrawn room bytes\nArtifacts: %s", result.artifactDir)
+	}
+	secondRoom := filepath.Join(filepath.Dir(fixture.entity), filepath.FromSlash(current.Briefing.RoomRef))
+	entries, err := os.ReadDir(secondRoom)
+	if err != nil || len(entries) != 2 {
+		t.Fatalf("successor room is not the emitted two-file room: entries=%v err=%v\nArtifacts: %s", entries, err, result.artifactDir)
+	}
+	log := readFile(t, commandLog)
+	const prepare = "exit=0\tgate prepare recorded-gate-task "
+	if strings.Count(log, prepare) != 1 ||
+		strings.Count(log, "exit=0\tstate commit recorded-gate-task") != 1 ||
+		strings.Contains(log, "gate record recorded-gate-task") ||
+		strings.Contains(log, "gate consume recorded-gate-task") ||
+		strings.Contains(log, "dispatch build ") {
+		t.Fatalf("withdrawn recovery crossed its prepare/commit gate-stop boundary\n%s\nArtifacts: %s", log, result.artifactDir)
+	}
+	if !validatingStatus.MatchString(readFile(t, fixture.entity)) {
+		t.Fatalf("withdrawn recovery changed workflow status\nArtifacts: %s", result.artifactDir)
+	}
+	runner.emitMetrics(t, scenario, result)
+}
+
+func assertWithdrawnGateRecovery(doc *gates.Document) error {
+	if len(doc.Records) != 1 || len(doc.Records[0].Attempts) != 2 {
+		return fmt.Errorf("recovery attempts = %#v", doc.Records)
+	}
+	withdrawn, current := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
+	if withdrawn.Withdrawal == nil || withdrawn.Resolution != nil || withdrawn.ProviderEvidence != nil || withdrawn.Application != nil {
+		return fmt.Errorf("withdrawn attempt lost its clean terminal state: %#v", withdrawn)
+	}
+	if current.Withdrawal != nil || current.Resolution != nil || current.ProviderEvidence != nil || current.Application != nil || !strings.HasSuffix(current.ID, "-2") {
+		return fmt.Errorf("recovery did not stop on open successor N+1: %#v", current)
+	}
+	return nil
+}
+
+func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(string, string) error) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := build(t, workflowRoot)
 
 	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
 	after := readFile(t, entityPath)
-	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
+	if err := assert(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream)); err != nil {
@@ -372,7 +332,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	if err := assertClaudeSingleEntityRejectionFlow(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
 // runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture
@@ -382,34 +342,34 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 // state ALONE (cycle count + escalation marker + no post-cycle-3 implementation
 // report) — the reviewer-reuse signal is host-specific and lives in rejection-flow,
 // not here; this scenario is purely a host-neutral durable-state grade.
-func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(string) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	entityPath := writeEscalationWorkflow(t, workflowRoot)
+	entityPath := build(t, workflowRoot)
 
 	result := runner.run(t, scenario, workflowRoot, escalationPrompt(workflowRoot))
 	after := readFile(t, entityPath)
-	if err := assertThirdCycleEscalation(after); err != nil {
+	if err := assert(after); err != nil {
 		t.Fatalf("%v\nEntity after:\n%s\nFinal message:\n%s\nArtifacts: %s", err, after, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
-func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(string, string, string) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	entityPath := writeMergeHookGuardWorkflow(t, workflowRoot)
+	entityPath := build(t, workflowRoot)
 	before := readFile(t, entityPath)
 
 	result := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt(workflowRoot))
 	after := readFile(t, entityPath)
-	if err := assertMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.stream); err != nil {
+	if err := assert(before, after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
 // runClaudeSelfEvidenceMergeTriageScenario drives the real FO against the
@@ -421,17 +381,17 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenar
 // diagnosis must name THIS run's failing test, not the inherited "known flake" label.
 // The this-run token is graded in the FINAL MESSAGE only — the fixture body carries it
 // so the FO can read it, so grading the transcript would pass on the entity-read echo.
-func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(string, string) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
+	entityPath := build(t, workflowRoot)
 
 	result := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(workflowRoot))
 	after := readMergeTriageAfter(t, workflowRoot, entityPath)
-	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
+	if err := assert(after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
 // runClaudeSmallestSufficientMechanismScenario drives the real FO against the
@@ -442,31 +402,29 @@ func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, s
 // the commissioned ready entities are engaged via the standing dispatch loop WITHOUT a
 // per-entity justification. The trace is graded, not the durable end-state, which is
 // identical whether the FO climbed or not.
-func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(*testing.T, string, mechanismTrace, []string, []string) error) {
 	t.Helper()
-	workflowRoot := t.TempDir()
-	writeSmallestMechanismWorkflow(t, workflowRoot)
+	workflowRoot := build(t, t.TempDir())
 
 	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot))
 	trace := claudeMechanismTrace(result.stream, ssmEditFiles(), ssmCommissioned())
-	if err := assertDurableSmallestMechanism(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned()); err != nil {
+	if err := assert(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
 // runClaudeKeepMovingScenario grades each completed task from its own ordered,
 // path-scoped Git history and keeps the questioned task active after a durable re-shape.
-func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(*testing.T, string) error) {
 	t.Helper()
-	workflowRoot := t.TempDir()
-	writeKeepMovingWorkflow(t, workflowRoot)
+	workflowRoot := build(t, t.TempDir())
 
 	result := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot))
-	if err := assertDurableKeepMoving(t, workflowRoot); err != nil {
+	if err := assert(t, workflowRoot); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
 }
 
 // runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it
@@ -475,19 +433,34 @@ func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario share
 // the durable end-state file is indistinguishable between the two paths. The file
 // must also actually land (the run produced a real seed), so the stream grade is
 // proof of HOW, not just THAT, the entity was filed.
-func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func([]string, string) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	entityPath := writeFilingWorkflow(t, workflowRoot)
-
+	entityPath := build(t, workflowRoot)
 	result := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
+	if err := assert(result.commands, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.emitMetrics(t, scenario, result)
+}
+
+func assertFilingCommands(commands []string, slug string) error {
+	filed := false
+	for _, command := range commands {
+		if nextIDInvocation.MatchString(command) {
+			return fmt.Errorf("filing previewed --next-id instead of using the atomic new path")
+		}
+		if commandFilesViaNew(command, slug) {
+			filed = true
+		}
+	}
+	if !filed {
+		return fmt.Errorf("filing command log has no spacedock new %s invocation", slug)
+	}
+	return nil
 }
 
 // runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture
@@ -496,10 +469,10 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 // NO entity mutation occurs, NO team config lands on disk, and no durable dispatch
 // fingerprint appears. It then asserts the AC-2 behavioral signal (no TeamCreate
 // before the greet) and records the AC-6 measured signal over the captured stream.
-func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) shallowBootFixture, assert func(shallowBootObservation) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
-	fixture := writeShallowBootWorkflow(t, workflowRoot)
+	fixture := build(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
 
 	result := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
@@ -508,24 +481,11 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// startup hook membership-checks and TeamCreate writes a team config.json under.
 	teamRoot := filepath.Join(runner.home(), ".claude", "teams")
 	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, result.finalMessage)
-	if err := assertShallowBoot(obs); err != nil {
+	if err := assert(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
-	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	// The boot-window oracle: a greet turn was produced (structural only — the
-	// former ~60k ceiling/spike thresholds no longer gate CI, see
-	// assertShallowBootMeasuredTurns).
-	if err := assertShallowBootMeasured(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	// Record (don't gate on) the greet turn's full token usage as a distinct
-	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
-	// emitClaudeScenarioMetrics below already uses.
-	emitShallowBootWindowMetrics(t, result.stream, runner.model())
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	runner.gradeShallowBootObservation(t, result)
+	runner.emitMetrics(t, scenario, result)
 }
 
 // run launches the real `spacedock claude` front door for one shared scenario and
@@ -538,7 +498,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 // LOUD launch failure here, never fed into a scenario assertion.
 //
 // Liveness is the EXISTING streamWatcher (the Go port of the upstream
-// FOStreamWatcher, shared with TestLiveEnsignCycle) — one mechanism, no second
+// FOStreamWatcher, shared with TestLiveCommonFullEnsignCycle) — one mechanism, no second
 // impl. drainToExit runs the process to exit while accumulating the full
 // transcript, bounded by the per-step no-progress quietBudgetDefault (60s): the
 // deadline resets on every drained line, so a genuine multi-minute run of
@@ -640,11 +600,28 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	return liveResult{
 		finalMessage: finalMessage,
 		stream:       stream,
+		commands:     claudeObservedCommands(stream),
 		artifactDir:  artifactDir,
 		duration:     duration,
 		configDir:    configDir,
 		cwd:          resolvedCwd,
 	}
+}
+
+func claudeObservedCommands(stream string) []string {
+	var commands []string
+	for _, line := range strings.Split(stream, "\n") {
+		var entry streamEntry
+		if json.Unmarshal([]byte(line), &entry) != nil {
+			continue
+		}
+		for _, block := range entry.toolUseBlocks() {
+			if block.Name == "Bash" {
+				commands = append(commands, block.Input.Command)
+			}
+		}
+	}
+	return commands
 }
 
 func claudeLiveArtifactDir(t *testing.T, name string) string {

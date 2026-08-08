@@ -41,6 +41,10 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 			fmt.Fprintln(stderr, "error: dispatch build --advance is incompatible with --bare-mode (a reuse advance presupposes an addressable worker; bare mode has none)")
 			return 2
 		}
+		if opts.Stamp && opts.Advance {
+			fmt.Fprintln(stderr, "error: dispatch build --stamp is incompatible with --advance (a reuse advance presupposes an already-stamped live worker; the post-gate reuse path needs no stamps)")
+			return 2
+		}
 		return runBuild(probe, opts, stdin, stdout, stderr)
 	case "show-stage-def":
 		if wantsHelp(args[1:]) {
@@ -119,6 +123,7 @@ type buildOptions struct {
 	BareMode            bool
 	FeedbackReflow      bool
 	Advance             bool
+	Stamp               bool
 	PrintSchema         bool
 	ValidateOnly        string
 	requestFlagProvided bool
@@ -174,6 +179,9 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 			opts.requestFlagProvided = true
 		case "--advance":
 			opts.Advance = true
+			opts.requestFlagProvided = true
+		case "--stamp":
+			opts.Stamp = true
 			opts.requestFlagProvided = true
 		case "--print-schema":
 			opts.PrintSchema = true
@@ -303,7 +311,7 @@ Input mode selection:
   is IGNORED (flag/file mode); otherwise the request is read as a JSON object on
   stdin (stdin JSON mode). Request flags:
     --entity-path  --stage  --checklist-file  --scope-notes-file
-    --feedback-context-file  --team-name  --bare-mode  --feedback-reflow  --advance
+    --feedback-context-file  --team-name  --bare-mode  --feedback-reflow  --advance  --stamp
   Flag/file mode requires --entity-path, --stage, and --checklist-file; any
   request flag with one of the three missing fails:
     error: flag/file input requires --entity-path, --stage, and --checklist-file
@@ -321,9 +329,10 @@ Flags:
   --scope-notes-file FILE       Optional scope-notes file (flag/file mode).
   --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow (flag/file mode).
   --team-name NAME              Select the legacy TeamCreate-registry dispatch shape. On host=claude, auto-team is the default — omit this unless you mean legacy team mode.
-  --bare-mode                   Emit the bare sequential shape (no name, no team_name, no run_in_background).
+  --bare-mode                   Emit the bare sequential shape (no name, no team_name, no run_in_background); unsupported on host=codex.
   --feedback-reflow             Route a rejection back to its feedback-to target stage; requires --feedback-context-file.
   --advance                     Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
+  --stamp                       Fold the ordinary post-gate dispatch steps (started/worktree frontmatter stamps, state commit+sync, worktree creation) into this build, before assembling the envelope. Refuses (no mutation) unless the entity's status already equals --stage. Incompatible with --advance.
   --print-schema                Print the stdin request JSON schema and exit.
   --validate-only FILE          Validate a request JSON file without writing a dispatch; exit 0 on success.
 

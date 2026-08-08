@@ -3,7 +3,7 @@
 ===== stdout =====
 ID     SLUG                           STATUS               TITLE                          SCORE
 --     ----                           ------               -----                          -----
-alpha  alpha                          backlog              A                              0.5
 beta   beta                           done                 B                              0.7
+alpha  alpha                          backlog              A                              0.5
 
 ===== stderr =====

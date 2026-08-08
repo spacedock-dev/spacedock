@@ -90,9 +90,6 @@ func TestFinalizeTerminalApprovalOneLockedReplacement(t *testing.T) {
 			t.Fatalf("final entity missing %q:\n%s", want, finalBytes)
 		}
 	}
-	if doc.Current.Gate != "gate:task:ideation" {
-		t.Fatalf("finalize moved gates.current: %q", doc.Current.Gate)
-	}
 	if !strings.Contains(string(finalBytes), "Body.\n") {
 		t.Fatalf("finalize disturbed the entity body:\n%s", finalBytes)
 	}
@@ -193,14 +190,6 @@ func TestSupersedeTerminalApprovalRoutesDeclaredFeedback(t *testing.T) {
 			t.Fatalf("--rework wrote terminal field %q pre-delivery:\n%s", banned, finalBytes)
 		}
 	}
-	doc, _, err := Read(entity)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if doc.Current.Gate != "gate:task:ideation" {
-		t.Fatalf("--rework moved gates.current: %q", doc.Current.Gate)
-	}
-
 	// Refusal matrix: each malformed declaration refuses closed, byte-clean.
 	for _, tc := range []struct {
 		name       string

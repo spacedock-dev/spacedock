@@ -30,17 +30,18 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(room, "briefing.json"), briefing, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	body := "---\nid: task\nstatus: ideation\ntitle: Task\ngates:\n  version: 1\n  current: {gate: 'gate:task:ideation'}\n  records:\n    - id: gate:task:ideation\n      stage: ideation\n      attempts:\n        - id: attempt:task-1\n          briefing: {id: 'briefing:task:1', digest: '" + digest + "', digest-domain: canonical-bytes, room-ref: ./review/ideation/briefing-1/briefing.json}\n          resolution: {type: Resolution, id: 'resolution:task-1', briefing: 'briefing:task:1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: approve}\n          application: {action: advance, target-stage: implementation, state: pending, blockers: []}\n---\n# Task\n"
+	body := "---\nid: task\nstatus: ideation\ntitle: Task\ngates:\n  version: 1\n  records:\n    - id: gate:task:ideation\n      stage: ideation\n      attempts:\n        - id: attempt:task-1\n          briefing: {id: 'briefing:task:1', digest: '" + digest + "', room-ref: ./review/ideation/briefing-1/briefing.json}\n          resolution: {type: Resolution, id: 'resolution:task-1', briefing: 'briefing:task:1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: approve}\n          application: {action: advance, target-stage: implementation, state: pending, blockers: []}\n---\n# Task\n"
+	body = strings.Replace(body, "application: {action: advance, target-stage: implementation, state: pending, blockers: []}", "application: {target-stage: implementation, state: pending}", 1)
 	if err := os.WriteFile(filepath.Join(root, "task.md"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	args := []string{"--workflow-dir", root, "--fields", "gate-decision,gate-application,gate-condition,gate-eligible"}
+	args := []string{"--workflow-dir", root, "--fields", "gate-decision,gate-application,gate-target-stage"}
 	text, stderr, code := runNative(t, root, nil, args...)
-	if code != 0 || !strings.Contains(text, "approve") || !strings.Contains(text, "advance/pending") || !strings.Contains(text, "approved-pending") {
+	if code != 0 || !strings.Contains(text, "approve") || !strings.Contains(text, "advance/pending") || !strings.Contains(text, "implementation") {
 		t.Fatalf("text status exit=%d stderr=%q output=%q", code, stderr, text)
 	}
 	jsonOut, stderr, code := runNative(t, root, nil, append(args, "--json")...)
-	if code != 0 || !strings.Contains(jsonOut, `"gate-application":"advance/pending"`) || !strings.Contains(jsonOut, `"gate-condition":"approved-pending"`) || !strings.Contains(jsonOut, `"gate-eligible":"true"`) {
+	if code != 0 || !strings.Contains(jsonOut, `"gate-application":"advance/pending"`) || !strings.Contains(jsonOut, `"gate-target-stage":"implementation"`) || strings.Contains(jsonOut, "gate-eligible") || strings.Contains(jsonOut, "gate-condition") {
 		t.Fatalf("json status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
 	}
 	changed := strings.Replace(readme, "name: implementation", "name: validation", 1)
@@ -48,8 +49,8 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 	jsonOut, stderr, code = runNative(t, root, nil, append(args, "--json")...)
-	if code != 0 || !strings.Contains(jsonOut, `"gate-condition":"ineligible"`) || !strings.Contains(jsonOut, `"gate-eligible":"false"`) {
-		t.Fatalf("changed-taxonomy status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
+	if code != 0 || !strings.Contains(jsonOut, `"gate-target-stage":"implementation"`) || strings.Contains(jsonOut, "gate-eligible") || strings.Contains(jsonOut, "gate-condition") {
+		t.Fatalf("changed-taxonomy canonical status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
 	}
 }
 
@@ -58,6 +59,7 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 		"sp.md": "---\nid: sp\nstatus: validation\nscore: 100\n---\n# incomplete\n",
 		"mf.md": openGateEntity("mf", "validation", "90"),
 		"r4.md": openGateEntity("r4", "validation", "80"),
+		"wd.md": withdrawnGateEntity("wd", "validation", "75"),
 		"2n.md": approvedGateEntity("2n", "validation", "done", "70"),
 		"ax.md": approvedGateEntity("ax", "validation", "implementation", "65"),
 		"qc.md": "---\nid: qc\nstatus: validation\nscore: 60\n---\n# incomplete\n",
@@ -75,7 +77,8 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 	}
 	want := map[string]string{
 		"sp": "validating", "mf": "awaiting-captain", "r4": "awaiting-captain",
-		"2n": "approved-awaiting-merge", "ax": "approved-awaiting-advance", "qc": "validating",
+		"wd": "withdrawn-awaiting-prepare", "2n": "approved-awaiting-merge",
+		"ax": "approved-awaiting-advance", "qc": "validating",
 	}
 	for _, entity := range result.Entities {
 		id := entity["id"]
@@ -85,6 +88,10 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 		if id == "2n" && (entity["gate-state"] != "closed" || entity["gate-decision"] != "approve" ||
 			entity["gate-application"] != "advance/pending" || entity["gate-target-stage"] != "done") {
 			t.Errorf("2n lost canonical gate details: %#v", entity)
+		}
+		if id == "wd" && (entity["gate-state"] != "withdrawn" || entity["gate-decision"] != "" ||
+			entity["gate-application"] != "" || entity["gate-target-stage"] != "") {
+			t.Errorf("wd projected closure details: %#v", entity)
 		}
 	}
 
@@ -135,7 +142,7 @@ func TestStatusTextAndJSONProjectAllRecordedResolutionStates(t *testing.T) {
 		if decision != "approve" {
 			reason = ", reason: 'recorded reason'"
 		}
-		body := "---\nstatus: ideation\ntitle: " + decision + "\ngates:\n  version: 1\n  current: {gate: 'gate:" + decision + "'}\n  records:\n    - id: gate:" + decision + "\n      stage: ideation\n      attempts:\n        - id: attempt:" + decision + "-1\n          briefing: {id: 'briefing:" + decision + "-1', digest: 'sha256:" + strings.Repeat("2", 64) + "', digest-domain: canonical-bytes, room-ref: ./review}\n          resolution: {type: Resolution, id: 'resolution:" + decision + "-1', briefing: 'briefing:" + decision + "-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: " + decision + reason + "}\n---\n"
+		body := "---\nstatus: ideation\ntitle: " + decision + "\ngates:\n  version: 1\n  records:\n    - id: gate:" + decision + "\n      stage: ideation\n      attempts:\n        - id: attempt:" + decision + "-1\n          briefing: {id: 'briefing:" + decision + "-1', digest: 'sha256:" + strings.Repeat("2", 64) + "', room-ref: ./review}\n          resolution: {type: Resolution, id: 'resolution:" + decision + "-1', briefing: 'briefing:" + decision + "-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: " + decision + reason + "}\n---\n"
 		if err := os.WriteFile(filepath.Join(root, decision+".md"), []byte(body), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -158,7 +165,8 @@ func TestStatusTextAndJSONProjectAllRecordedResolutionStates(t *testing.T) {
 
 func TestUnrelatedSetPreservesGatesAndStatusProjectsResolution(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "task.md")
-	body := "---\nid: task\nstatus: ideation\nscore: '0.5'\ngates:\n  version: 1\n  current: {gate: 'gate:design'}\n  records:\n    - id: gate:design\n      stage: ideation\n      attempts:\n        - id: attempt:design-1\n          briefing: {id: 'briefing:design-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', digest-domain: canonical-bytes, room-ref: ./review}\n          resolution: {type: Resolution, id: 'resolution:design-1', briefing: 'briefing:design-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: hold, reason: 'wait'}\n          application: {action: none, state: not-applicable}\n---\n# Task\n"
+	body := "---\nid: task\nstatus: ideation\nscore: '0.5'\ngates:\n  version: 1\n  records:\n    - id: gate:design\n      stage: ideation\n      attempts:\n        - id: attempt:design-1\n          briefing: {id: 'briefing:design-1', digest: 'sha256:" + strings.Repeat("1", 64) + "', room-ref: ./review}\n          resolution: {type: Resolution, id: 'resolution:design-1', briefing: 'briefing:design-1', by: 'person:captain', at: '2026-07-22T00:00:00Z', decision: hold, reason: 'wait'}\n          application: {action: none, state: not-applicable}\n---\n# Task\n"
+	body = strings.Replace(body, "\n          application: {action: none, state: not-applicable}", "", 1)
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}

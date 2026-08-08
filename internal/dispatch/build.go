@@ -137,6 +137,12 @@ func runBuild(probe claudeteam.TeamStateProbe, opts buildOptions, stdin io.Reade
 		return code
 	}
 
+	if opts.Stamp {
+		if code := runStamp(opts, fields, stderr); code != 0 {
+			return code
+		}
+	}
+
 	return runBuildFields(probe, opts, fields, stdout, stderr)
 }
 
@@ -317,6 +323,12 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	bareMode := optBool(fields, "bare_mode")
 	isFeedbackReflow := optBool(fields, "is_feedback_reflow")
 	advance := optBool(fields, "advance")
+
+	// Codex fresh dispatch has no anonymous blocking spawn shape: spawn_agent
+	// requires the helper-emitted name as task_name.
+	if host == "codex" && bareMode {
+		return buildError(stderr, 2, "bare_mode is unsupported on host codex; Codex worker.spawn requires a named spawn_agent task")
+	}
 
 	// Rule 13: --advance excludes bare mode. A reuse advance presupposes an
 	// addressable live worker to message; bare mode dispatches nothing addressable.

@@ -12,14 +12,21 @@ The `${SPACEDOCK_BIN:-spacedock} status` launcher owns path resolution and mutat
 
 Invoke it as:
 ```
-${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
+${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--page N|--limit N|--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
 ```
 
 - `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
 - `--validate` — run before trusting manually edited workflow state.
 - `--resolve REF` — deterministic lookup by slug, exact stored ID, or sd-b32 address prefix; `--root` rejects unqualified cross-workflow ambiguity rather than guessing.
 - `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` under the eagerly loaded `«write.classify»` contract, which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
-- `--next` / `--where "pr !="` — targeted event-loop queries.
+- `--where <field>=<value>` — **THE entity query.** One clause per flag; repeat
+  the flag to AND clauses (`--where sprint=X --where 'sprint-readiness!=defer'`).
+  Two clauses in one string is an error, not an AND. `field!=` means non-empty,
+  `field=` means empty. Unknown field names are a loud error listing the known
+  fields. Known fields are this workflow's frontmatter keys plus the canonical
+  set: `id slug status title score source worktree pr started completed verdict
+  mod-block archived issue`. Never `find`/`grep` the state dir — query it.
+- `--next` — dispatchable entities.
 
 The `--set` flag updates entity frontmatter fields:
 - `--set {slug} field=value` sets a field
@@ -36,9 +43,11 @@ The commissioned README directs the captain to dispatch the FO to inspect workfl
 - any ad-hoc question a `status` view answers (a single entity, entities in a stage, PR-pending).
 
 **Canonical invocations** (all start with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir}`):
-- Overview: no extra flags.
+- Overview: no extra flags shows the first 25 rows, sorted by later stage first then score descending; use `--page N` for more or `--limit 0` for the full table.
 - Dispatchables: `--next`.
-- Archive view: `--archived`.
+- Archived-inclusive view: `--archived` returns active **plus** archived, not
+  archived-only. A full-sprint answer incl. done is one query:
+  `--where sprint=X --archived --fields slug,status,verdict,archived`.
 - Single-entity: `--resolve {ref}` then `--where slug={resolved-slug}`.
 
 **Output rendering guidance.** Forward `status` stdout verbatim inside a fenced code block, with a one-line preface naming the request ("Workflow overview:", "Dispatchable entities:", "Archived entities:"). On empty results, render a literal note ("No dispatchable entities right now.") instead of an empty fence. Do not paraphrase rows, omit columns, invent fields, summarize counts, or editorialize.

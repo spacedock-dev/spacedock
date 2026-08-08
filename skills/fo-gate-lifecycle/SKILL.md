@@ -10,42 +10,49 @@ user-invocable: false
 
 Load before engaged gate action. It grants no writes; read `fo-write-core.md` before FO mutation.
 
-| Command | Responsibility |
-|---------|----------------|
-| `gate prepare` | Opens one attempt, freezes selected authority in its room, and binds its Briefing. |
-| `gate record` | Closes that attempt from one semantic source; never advances status. |
-| `gate consume` | Applies one eligible approval; terminal targets route unspent to merge guard. |
+The binary owns preparation, withdrawal, recording, and one-use consume; this skill only routes their observed results.
 
-**Boot projection.** Use actionable `ready_gates` from `status --boot --identify --json`. Engage row `slug`; read its entity, never infer readiness from stage. `awaiting-captain` means an open current-stage Briefing; `approved-awaiting-merge`/`approved-awaiting-advance` are unblocked. For gated current `status`, any selected or retained gate record used to resume/present must have `stage` equal to that status. A prior-stage `gates.current` is history, not reusable authority. If no selected attempt (omitted `validating`) or it mismatches, run `gate prepare` for the current status and present only its emitted binding.
+**Boot projection.** Use `ready_gates` from `status --boot --identify --json`. Engage `slug`; read its entity and record for current status. `needs-preparation` is mechanical: review the report before writing. `awaiting-captain` is open; `withdrawn-awaiting-prepare` needs its successor; approved routes are unblocked. Prior authority is history; malformed/ambiguous fails closed.
 
-**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select a Markdown gate-review Artifact and References, author its concise summary, then commit the selections. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
+**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select a Markdown gate-review Artifact and References, author its concise summary, then commit selections. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
 
 ```text
 ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 ```
 
-The real capability check is the `gate prepare` invocation. Nonzero prepare halts; surface its exact error and refresh or rebuild the selected version-gated bundle when the command is unavailable. Never hand-edit `gates:` or delete/revert/replace binary-owned entity or room authority.
+Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity/room authority.
 
-Require the emitted `room`, `briefing`, `digest`, and `state=open` lines. The emitted clean absolute room is sole authority; never reconstruct it. Preparation binds two recorder-ready files without source copies. `«state.commit»(slug)` commits the folder entity or flat Markdown-plus-companion room unit. Before presentation, load `Skill(skill="spacedock:present-gate")`; an override replaces only chat display. Invoke `«gate.ac-cross-check»`, judge evidence, then `«gate.assemble-verdict»`. Chat presentation completes only after one root review names entity/stage, a compact bound Briefing snapshot, recommendation, and decision ask. It follows the bind commit, must precede decision record; delegated conn does not waive it.
+Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct the room. `«state.commit»(slug)` commits the binding. Load `spacedock:present-gate`, cross-check ACs, and present once after commit. No conn: ask and stop open. Explicit conn: presentation is notification; immediately record the delegated decision below.
+
+**Cold report candidate.** For one `needs-preparation` row, re-read the entity, latest exact-stage report/checklist, and its commit; this is structural only. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and zero prepare, mutation, presentation, idle, or repeat-next. Otherwise choose question, committed Markdown Artifact, summary, and References; invoke `gate prepare` once. Require `room`, `briefing`, `digest`, `state=open`; commit, re-read, and present the same-slug `awaiting-captain`. With a conn, immediately record and consume; never final after presentation. Nonzero/mismatch stops; no retry or `gate record --briefing`.
+
+**Withdraw stale open authority.** If a prepared room is stale before the Captain decision, run:
+
+```text
+${SPACEDOCK_BIN:-spacedock} gate withdraw ENTITY --reason REASON --workflow-dir WORKFLOW_DIR
+```
+
+Require `state=withdrawn`, commit the entity, and stop unless replacement inputs are ready. Withdrawal never means approve, revise, or hold. On `withdrawn-awaiting-prepare`, prepare and commit N+1, present its emitted room, and stop open. Never record, consume, present, dispatch, or recover with `record --briefing` on withdrawn N.
 
 **Record and durably close.** Use exactly one semantic source:
 
 ```text
+# Captain-approve fast path: close, sync, consume, sync in one call
+${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve --actor person:captain [--reason REASON] --consume --workflow-dir WORKFLOW_DIR
+
 # Captain's chat decision
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor person:captain [--reason REASON] --workflow-dir WORKFLOW_DIR
 
 # FO decision under explicit Captain conn
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --workflow-dir WORKFLOW_DIR
 
-# Recorder-ready prepared room
-${SPACEDOCK_BIN:-spacedock} gate record ENTITY --room ROOM --workflow-dir WORKFLOW_DIR
 ```
 
-No explicit Captain grant in the active conversation: bind/present; leave the gate open. A grant including one issued later in that conversation permits delegation. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain's own decision. Recorder authenticates/retains no grant. `revise`/`hold` need reasons; room-backed mappings must be complete.
+No Captain grant: bind/present and leave open; a later grant permits delegation. An existing conn requires present once, immediate record, then the route below. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain. Recorder retains no grant. `revise`/`hold` need reasons.
 
 Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate.
 
-Require exit 0, the bound attempt/Briefing, `state=closed`, and the decision; record already validates the Resolution/application before atomic write. After every successful close, `«state.commit»(slug)` must commit that exact Resolution before approve, revise, hold, or any consume attempt. Close/commit failure halts.
+Require exit 0, bound attempt/Briefing, `state=closed`, and decision; record validates Resolution/application before atomic write, commits, and syncs itself (split-root); `sync=`/`phase=` discriminator and recovery in fo-dispatch-core.md. Close/sync failure halts.
 
 **Route fail-closed.** For approve, run:
 
@@ -53,13 +60,13 @@ Require exit 0, the bound attempt/Briefing, `state=closed`, and the decision; re
 ${SPACEDOCK_BIN:-spacedock} gate consume ENTITY --workflow-dir WORKFLOW_DIR
 ```
 
-Consume itself rechecks currency, successor, blockers, and one-use state under lock. Nonterminal: require exit 0, `consumed=true`, the expected successor; it atomically writes successor status plus consumed state — commit through `«state.commit»(slug)`, then ordinary dispatch. Terminal: require `consumed=false`, `route=approved-awaiting-merge` — consume writes nothing; drive `«merge.guard»(slug)`, no successor dispatch. Never use `status --set` to advance a gate.
+Consume rechecks currency, successor, blockers, and one-use state under lock. Nonterminal: require exit 0, `consumed=true`, expected successor; it writes successor/consumed state, commits, and syncs. Then call `dispatch build --stamp` exactly once in the bound adapter shape (Codex named: no `--bare-mode`/`--team-name`); never probe another shape. Terminal: require `consumed=false`, `route=approved-awaiting-merge`; drive `«merge.guard»(slug)` with no dispatch. Never use `status --set` to advance a gate.
 
-- `revise`: after its close commit, never consume; invoke `«feedback.route»`.
-- `hold`: after its close commit, remain at the gate and surface the reason.
-- blocked/wrong-stage/unknown/ineligible approval: its close is already durable; halt and preserve status bytes.
+- `revise`: never consume after close commit; invoke `«feedback.route»`.
+- `hold`: after close commit, remain at the gate and surface the reason.
+- blocked/wrong-stage/unknown/ineligible approval: close is durable; halt and preserve status bytes.
 - `stale`: consume exits nonzero, leaves status unchanged, changes only pending → superseded; commit it, bind a replacement Briefing, re-present.
 - pending terminal approval: unspent — drive `«merge.guard»`.
-- already `consumed`: the authorization is spent. A nonterminal current status resumes ordinary dispatch/recovery; a terminal current status resumes the existing merge ceremony. Do not re-record, consume, or dispatch a terminal successor. A diagnostic repeat consume must be nonzero and byte-clean.
+- already `consumed`: authorization is spent. Nonterminal status resumes ordinary dispatch/recovery; terminal status resumes the existing merge ceremony. Never re-record, consume, or dispatch a terminal successor. Diagnostic repeat consume must be nonzero and byte-clean.
 
-**Resume.** Use boot/entity state and prior result; `gate validate`/`gate eligibility` are optional diagnostics, never positive-path requirements. Exact prepare replay is idempotent; a divergent open room is frozen—surface the refusal and stop. Require the exact Resolution commit before routing closed state. Pending approval → consume; revise/hold → route/stop; consumed → dispatch only if nonterminal, else merge; stale → supersede then replace. Surface nonzero command, exit, remedy; never repair frontmatter.
+**Resume.** Recover durable-but-unsynced writes per fo-dispatch-core.md; never retry a failed verb blindly or repair frontmatter. Use current boot/entity state: open → present, `needs-preparation` → semantic review above, withdrawn → prepare successor, pending approval → consume, revise/hold → route/stop, consumed → dispatch or merge. Exact open prepare replay is idempotent; divergent binding refuses.

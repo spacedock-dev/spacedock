@@ -14,13 +14,13 @@ When a feedback stage recommends REJECTED:
 
 1. Read the rejected stage's `feedback-to` target — the stage that receives the fix request, not the reviewer.
 2. Read the already-authorized workflow package: rejected snapshot, finding evidence, existing workflow classifications, FO-authorized dispositions, and concrete revise assignment. If the distinct authorization or assignment is missing, hold at the active workflow's review-finding checkpoint; routing is ineligible.
-3. If the workflow declares a `### Feedback Cycles` correction-round projection, append it from the authorized package verbatim. Do not define, normalize, or interpret its category labels, fields, tolerance, estimate, or drift grammar. On cycle 3, escalate to the human instead of another round.
+3. If the workflow declares a `### Feedback Cycles` correction-round projection, the First Officer appends its authorized line directly. Do not define, normalize, or interpret its category labels, fields, tolerance, estimate, or drift grammar. On cycle 3, escalate to the human instead of another round.
 4. Invoke `«context-budget»()`. If the old ensign is over budget or the source is unavailable, shut down and fresh-dispatch; if no probe is declared, proceed to reuse below.
 5. Route the authorized package unchanged to the target stage in the same worktree using `«addressable-worker»` when the existing handle is addressable and reuse conditions pass; otherwise shut down and fresh-dispatch. The routed message carries the concrete assignment, not an acknowledgment request or a new classification request. Do not treat the immediate routing response as completion: wait for the reused worker's next `«completion-signal»` when it is on the critical path, and attribute completion by mailbox content, task path, or durable workflow state.
 6. Re-run the reviewer after fixes. When the existing reviewer remains addressable and reuse conditions pass, re-run the kept-alive reviewer through the same `«addressable-worker»` capability used for feedback routing; the message must ask that reviewer to re-review the updated entity state, not validate its own fix work. Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail.
-7. Re-enter the normal gate flow with the updated result.
+7. Re-enter the normal gate flow with the updated result. After the reviewer log and any workflow-owned Cycle line are complete, invoke the neutral `${SPACEDOCK_BIN:-spacedock} gate record --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl`; it retains the canonical two-file room and advances `review-round`, without receiving or interpreting the Cycle line.
 
-The FO owns the shared correction-round section and writes it under `«write.classify»`: worktree-side when `worktree:` is set, main-side otherwise.
+The FO owns the shared correction-round section and writes it under `«write.classify»`: worktree-side when `worktree:` is set, main-side otherwise. The generic recorder owns only the immutable room and pointer bytes.
 
 ## Workflow-defined correction-round projection
 

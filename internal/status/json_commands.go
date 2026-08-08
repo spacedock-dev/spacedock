@@ -51,24 +51,40 @@ func entityJSONObj(e *entity, fields []string) *jsonObj {
 	return o
 }
 
-// statusJSON builds the {"command":"status","entities":[...]} envelope for the
-// default / --archived / --where reads. Array order is sortDefault.
-func statusJSON(entities []*entity, stages []Stage, fields []string) *jsonObj {
+// statusJSON builds the {"command":"status","entities":[...],"pagination":{...}}
+// envelope for the default / --archived / --where reads. Array order is
+// sortDefault; entities is bounded to the win slice.
+func statusJSON(entities []*entity, stages []Stage, fields []string, win paginationWindow) *jsonObj {
 	sorted := sortDefault(entities, stages)
-	arr := make(jsonArr, 0, len(sorted))
-	for _, e := range sorted {
+	page := sorted[win.start:win.end]
+	arr := make(jsonArr, 0, len(page))
+	for _, e := range page {
 		arr = append(arr, entityJSONObj(e, fields))
 	}
-	return newJSONObj().set("command", "status").setValue("entities", arr)
+	return newJSONObj().set("command", "status").setValue("entities", arr).setValue("pagination", paginationJSONObj(win))
+}
+
+// paginationJSONObj renders the pagination window as the all-strings object
+// beside entities: page, limit, total, start, end (1-based inclusive, (0,0)
+// for an empty window), has_next.
+func paginationJSONObj(w paginationWindow) *jsonObj {
+	start, end := w.display()
+	return newJSONObj().
+		set("page", strconv.Itoa(w.page)).
+		set("limit", strconv.Itoa(w.limit)).
+		set("total", strconv.Itoa(w.total)).
+		set("start", strconv.Itoa(start)).
+		set("end", strconv.Itoa(end)).
+		set("has_next", strconv.FormatBool(w.hasNext))
 }
 
 // nextFixedFields are the always-present --next keys: id, slug, plus the three
 // computed dispatch columns. --fields adds frontmatter keys after these.
 var nextFixedFields = []string{"id", "slug", "current", "next", "worktree"}
 
-// nextJSON builds the {"command":"next","dispatchable":[...]} envelope. The
-// fixed five are always present; explicit/--all-fields frontmatter keys are
-// additive after them (the computed columns are not projectable, per spike).
+// nextJSON builds the machine scheduler envelope. dispatchable keeps its fixed
+// row shape and ready_gates is the canonical ordered gate projection shared by
+// boot --identify and every scheduler read.
 func nextJSON(entities []*entity, stages []Stage, explicitFields []string, allFields bool) *jsonObj {
 	disp := computeDispatchable(entities, stages)
 	extras := resolveNextExtras(entities, explicitFields, allFields)
@@ -78,7 +94,9 @@ func nextJSON(entities []*entity, stages []Stage, explicitFields []string, allFi
 			arr[i].set(f, d.e.fields[f])
 		}
 	}
-	return newJSONObj().set("command", "next").setValue("dispatchable", arr)
+	return newJSONObj().set("command", "next").
+		setValue("dispatchable", arr).
+		setValue("ready_gates", readyGatesJSONArr(computeReadyGates(entities, stages)))
 }
 
 // resolveNextExtras returns the additive frontmatter keys for --next JSON:

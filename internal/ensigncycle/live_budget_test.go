@@ -44,6 +44,7 @@ var liveBudgetSources = []string{
 	"live_test.go",
 	"claude_live_runner_test.go",
 	"codex_live_runner_test.go",
+	"codex_single_run_test.go",
 }
 
 // posSpan is the [start, end) source range of a quiet-budget const initializer
@@ -253,26 +254,30 @@ const (
 	}
 }
 
-func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
-	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "live_test.go", nil, 0)
-	if err != nil {
-		t.Fatalf("parse live_test.go: %v", err)
-	}
-	ast.Inspect(f, func(n ast.Node) bool {
-		switch node := n.(type) {
-		case *ast.Ident:
-			if node.Name == "liveTimeout" {
-				t.Errorf("live_test.go still references the banned monolithic `liveTimeout` const (AC-1)")
-			}
-		case *ast.SelectorExpr:
-			// context.WithTimeout — the banned monolithic deadline ctx.
-			if pkg, ok := node.X.(*ast.Ident); ok && pkg.Name == "context" && node.Sel.Name == "WithTimeout" {
-				t.Errorf("live_test.go still calls context.WithTimeout — the monolithic deadline ctx is banned (AC-1)")
-			}
+func TestLiveProcessPathsHaveNoMonolithicDeadlineCtx(t *testing.T) {
+	for file, bannedIdent := range map[string]string{
+		"live_test.go":             "liveTimeout",
+		"codex_single_run_test.go": "codexScenarioTimeout",
+	} {
+		fset := token.NewFileSet()
+		f, err := parser.ParseFile(fset, file, nil, 0)
+		if err != nil {
+			t.Fatalf("parse %s: %v", file, err)
 		}
-		return true
-	})
+		ast.Inspect(f, func(n ast.Node) bool {
+			switch node := n.(type) {
+			case *ast.Ident:
+				if node.Name == bannedIdent {
+					t.Errorf("%s still references banned monolithic deadline %q", file, bannedIdent)
+				}
+			case *ast.SelectorExpr:
+				if pkg, ok := node.X.(*ast.Ident); ok && pkg.Name == "context" && node.Sel.Name == "WithTimeout" {
+					t.Errorf("%s still calls context.WithTimeout — fixed process deadlines are banned", file)
+				}
+			}
+			return true
+		})
+	}
 }
 
 // durationOf evaluates an expression to its real time.Duration, FULLY

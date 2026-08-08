@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // TestStableChannelDecoupledFromBranchHead is the load-bearing AC-1 proof: a
@@ -104,7 +106,7 @@ func buildPluginGitRepo(t *testing.T, root string) string {
 	mustMkdir(t, filepath.Join(root, "skills", "demo"))
 
 	writePluginVersion(t, root, "0.0.1")
-	git(t, root, "init", "-q", "-b", "next")
+	testgit.InitRepo(t, root, "-q", "-b", "next")
 	git(t, root, "add", "-A")
 	git(t, root, "commit", "-q", "-m", "v0.0.1")
 	git(t, root, "tag", "v0.0.1")

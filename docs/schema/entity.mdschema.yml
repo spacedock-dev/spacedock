@@ -107,13 +107,15 @@
       "gates": {
         "type": "mapping",
         "version": 1,
-        "semantics": "closed canonical-v1 binary-owned durable resolution records: logical gates, ordered stable attempts, one Briefing binding per attempt, and the exact adopted Resolution; the known opaque application subtree is owned by the application layer",
-        "writer": "spacedock gate record",
+        "semantics": "closed canonical-v1 binary-owned durable gate records: logical gates, ordered stable attempts, one Briefing binding per attempt, optional reasoned withdrawal, and the exact adopted Resolution; the known opaque application subtree is owned by the application layer",
+        "writer": "spacedock gate prepare|withdraw|record|consume",
         "invariants": [
-          "gates.current selects one logical gate and the last ordered attempt in each record is current",
+          "entity status selects exactly one record by stage; duplicate stage records fail closed and the last ordered attempt is current",
           "open attempts may replace their one briefing binding",
-          "Resolution absence means open and presence means closed; closed attempts are frozen",
-          "unsupported prototype fields and arbitrary unknown fields inside binary-owned gates fail closed; only the known application field has opaque application-layer-owned nested data",
+          "neither withdrawal nor Resolution means open; withdrawal alone means withdrawn; Resolution alone means closed; withdrawn and closed attempts are frozen",
+          "withdrawal is request-backed and carries only fixed agent:first-officer attribution, a UTC timestamp, and a nonblank reason",
+          "withdrawn attempts carry no Resolution, provider evidence, or application",
+          "unsupported prototype fields and arbitrary unknown fields outside records[*].attempts[*].application mappings fail closed; unknown keys inside those exact mappings warn on explicit validation, are ignored for authority, and are never written",
           "canonical gates writes preserve top-level frontmatter outside gates and the entity body byte-for-byte",
           "recording never changes status or dispatches"
         ]
@@ -121,12 +123,12 @@
       "review-round": {
         "type": "mapping",
         "fields": ["id", "stage", "cycle", "briefing"],
-        "briefing_fields": ["id", "digest", "digest-domain", "room-ref"],
-        "semantics": "current pointer to one immutable complete advisory Review & Gate room; exact replay is a no-op and divergent reuse fails closed",
+        "briefing_fields": ["id", "digest", "room-ref"],
+        "semantics": "current pointer to one immutable complete review room; exact replay is a no-op and divergent reuse fails closed",
         "writer": "spacedock gate record --round",
         "invariants": [
           "id is round:<entity-id>:<stage>:<cycle> and room-ref is ./review/<stage>/round-<cycle>",
-          "the pointer and optional Feedback Cycles projection enter one atomic entity replacement",
+          "the pointer enters one atomic entity replacement; workflow-defined body sections remain untouched",
           "round recording never selects or closes a gate, creates an application, or changes status"
         ]
       }

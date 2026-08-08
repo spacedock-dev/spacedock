@@ -1,5 +1,3 @@
-//go:build live
-
 package ensigncycle
 
 import (
@@ -11,6 +9,8 @@ import (
 // writeShallowBootWorkflow seeds the shallow-boot fixture under root and returns
 // the gate entity path. The fixture is intentionally mutation-free: merged-PR
 // discovery and the registered startup hook are engage work, not greet work.
+//
+//spacedock:live-fixture id=boot/held-gate
 func writeShallowBootWorkflow(t *testing.T, root string) shallowBootFixture {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), shallowBootReadme())

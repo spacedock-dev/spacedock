@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // initStateRepoWithOrigin turns an existing state checkout dir into a real git
@@ -15,9 +17,7 @@ import (
 // `remote get-url origin`, network-free), so the bare upstream needs no content.
 func initStateRepoWithOrigin(t *testing.T, stateDir string) {
 	t.Helper()
-	gitC(t, stateDir, "init", "-q")
-	gitC(t, stateDir, "config", "user.email", "t@t")
-	gitC(t, stateDir, "config", "user.name", "t")
+	testgit.InitRepo(t, stateDir, "-q")
 	upstream := filepath.Join(t.TempDir(), "upstream.git")
 	gitC(t, t.TempDir(), "init", "-q", "--bare", upstream)
 	gitC(t, stateDir, "remote", "add", "origin", upstream)

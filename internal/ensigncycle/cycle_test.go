@@ -13,6 +13,7 @@ import (
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // The cycle exercises the deterministic seams on both sides of the LLM: the
@@ -322,7 +323,7 @@ func gitCommitPathScoped(t *testing.T, root, rel, msg string) {
 // find_git_root resolves there and HEAD exists for the path-scoped commit.
 func gitInit(t *testing.T, dir string) {
 	t.Helper()
-	git(t, dir, "init", "-q")
+	testgit.InitRepo(t, dir, "-q")
 	git(t, dir, "add", "-A")
 	git(t, dir, "commit", "-q", "-m", "init")
 }

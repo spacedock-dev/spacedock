@@ -66,6 +66,49 @@ func TestBuildCodexHostPromptShape(t *testing.T) {
 	}
 }
 
+func TestBuildCodexHostRejectsBareModeBeforeArtifactCreation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), readmeNonWorktreeStages())
+	entityPath := filepath.Join(root, "f02codexbare.md")
+	writeFile(t, entityPath, entityFM("Codex Bare", "implementation", ""))
+	gitInit(t, root)
+	artifactPath := filepath.Join(dispatchFileDir, "spacedock-ensign-f02codexbare-implementation.md")
+	_ = os.Remove(artifactPath)
+	t.Cleanup(func() { _ = os.Remove(artifactPath) })
+	fields := map[string]any{
+		"schema_version": 2,
+		"entity_path":    entityPath,
+		"workflow_dir":   root,
+		"stage":          "implementation",
+		"checklist":      []string{"- prove Codex host shape"},
+		"bare_mode":      true,
+		"host":           "codex",
+	}
+	bare := runNative(mergeStdin(fields, nil), "build", "--workflow-dir", root)
+	if bare.exit != 2 {
+		t.Fatalf("bare Codex build exit=%d, want 2; stderr=%q", bare.exit, bare.stderr)
+	}
+	const diagnostic = "bare_mode is unsupported on host codex; Codex worker.spawn requires a named spawn_agent task"
+	if !strings.Contains(bare.stderr, diagnostic) {
+		t.Fatalf("bare Codex diagnostic=%q, want %q", bare.stderr, diagnostic)
+	}
+	if _, err := os.Stat(artifactPath); !os.IsNotExist(err) {
+		t.Fatalf("bare Codex created dispatch artifact %s; stat err=%v", artifactPath, err)
+	}
+	fields["bare_mode"] = false
+	named := runNative(mergeStdin(fields, nil), "build", "--workflow-dir", root)
+	if named.exit != 0 {
+		t.Fatalf("named Codex build exit=%d, want 0; stderr=%q", named.exit, named.stderr)
+	}
+	var out struct{ Name, Prompt string }
+	if err := json.Unmarshal([]byte(named.stdout), &out); err != nil {
+		t.Fatalf("named Codex stdout is not JSON: %v", err)
+	}
+	if out.Name == "" || out.Prompt == "" {
+		t.Fatalf("named Codex build must retain name and prompt: %s", named.stdout)
+	}
+}
+
 // TestBuildCodexHostIgnoresModelWithNote is AC-5: dispatch build --host codex
 // over a fable-declaring README exits 0, emits model: null, and prints the
 // ignore-with-note stderr line in place of the effective_model line — model is

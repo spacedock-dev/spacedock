@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // mergeGuardWorktreeReadme declares a split-root workflow whose terminal
@@ -41,9 +43,7 @@ stages:
 func buildMergeGuardForeignCwdFixture(t *testing.T) (coderoot, defDir, wtDir string) {
 	t.Helper()
 	coderoot = t.TempDir()
-	gitC(t, coderoot, "init")
-	gitC(t, coderoot, "config", "user.email", "test@example.com")
-	gitC(t, coderoot, "config", "user.name", "spacedock-test")
+	testgit.InitRepo(t, coderoot)
 
 	defDir = filepath.Join(coderoot, "docs", "dev")
 	writeFile(t, filepath.Join(defDir, "README.md"), mergeGuardWorktreeReadme)
@@ -53,9 +53,7 @@ func buildMergeGuardForeignCwdFixture(t *testing.T) (coderoot, defDir, wtDir str
 	state := filepath.Join(defDir, ".spacedock-state")
 	writeFile(t, filepath.Join(state, "010-repro.md"),
 		"---\nid: \"010\"\nstatus: implementation\n---\n# Repro entity\n")
-	gitC(t, state, "init")
-	gitC(t, state, "config", "user.email", "test@example.com")
-	gitC(t, state, "config", "user.name", "spacedock-test")
+	testgit.InitRepo(t, state)
 	gitC(t, state, "add", "010-repro.md")
 	gitC(t, state, "commit", "-q", "-m", "seed")
 	gitC(t, state, "branch", "-M", "spacedock-state/dev")
@@ -112,8 +110,8 @@ func TestMergeGuardForeignCwdRefusalNamesWorkingFix(t *testing.T) {
 	if got := frontmatterField(t, archived, "status"); got != "done" {
 		t.Fatalf("archived entity status = %q, want done", got)
 	}
-	if got := frontmatterField(t, archived, "verdict"); got != "passed" {
-		t.Fatalf("archived entity verdict = %q, want passed", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "PASSED" {
+		t.Fatalf("archived entity verdict = %q, want PASSED (the schema-cased stored value)", got)
 	}
 }
 

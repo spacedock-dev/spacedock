@@ -286,7 +286,10 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			slug, postUpdateStatus, terminalStageName(roots.definitionDir), slug))
 	}
 
-	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
+	// The rejected carve-out is case-insensitive (isRejectedVerdict): the verdict
+	// under test comes from frontmatter or from a --set value, so it may arrive as
+	// the `REJECTED` merge guard writes or the `rejected` an older binary wrote.
+	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && !isRejectedVerdict(postUpdateVerdict) {
 		mergeHooks := scanMods(roots.definitionDir)["merge"]
 		if len(mergeHooks) > 0 {
 			return errExit(stderr, fmt.Sprintf(
@@ -402,6 +405,7 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 	includeArchive, showNext, showBoot, showNextID, showValidate, identify bool,
 	explicitFields []string, allFieldsFlag, asJSON, quiet bool,
 	hasArchiveSlug, hasSet, hasResolve bool,
+	page, limit int,
 	stdout, stderr io.Writer) int {
 
 	readme := filepath.Join(roots.definitionDir, "README.md")
@@ -490,8 +494,17 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 
 	applyEffectiveIDs(allEntities, idStyle, allEntities)
 	applyEffectiveIDs(entities, idStyle, allEntities)
-	materializeGateEligibility(entities, roots.definitionDir, explicitFields, allFieldsFlag, whereFilters)
+	materializeGateReadinessWhenReferenced(entities, roots.definitionDir, explicitFields, allFieldsFlag, whereFilters)
+	// Machine scheduler reads consume the same readiness reducer as boot
+	// identify. Materialize it before filtering so --next can expose ready gates
+	// even when no gate-readiness field was explicitly requested.
+	if showNext {
+		materializeGateReadiness(entities, stages)
+	}
 	materializeSuppressedBy(entities, stages, explicitFields, whereFilters)
+	if err := validateWhereFields(entities, whereFilters); err != nil {
+		return errExit(stderr, err.Error())
+	}
 	entities = applyFilters(entities, whereFilters)
 
 	switch {
@@ -515,13 +528,14 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 		extras := resolveExtraFields(entities, explicitFields, allFieldsFlag, defaultNextFields, nextFixedFields)
 		printNextTable(stdout, entities, stages, extras, quiet)
 	default:
+		win := paginate(len(entities), page, limit)
 		if asJSON {
 			fields := resolveJSONFields(entities, explicitFields, allFieldsFlag, defaultStatusFields)
-			emitJSON(stdout, statusJSON(entities, stages, fields))
+			emitJSON(stdout, statusJSON(entities, stages, fields, win))
 			return 0
 		}
 		extras := resolveExtraFields(entities, explicitFields, allFieldsFlag, defaultStatusFields, defaultStatusFields)
-		printStatusTable(stdout, entities, stages, extras, quiet)
+		printStatusTable(stdout, entities, stages, extras, quiet, win)
 	}
 	return 0
 }

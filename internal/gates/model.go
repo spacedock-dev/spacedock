@@ -1,26 +1,20 @@
 // ABOUTME: Canonical v1 durable gate-resolution and one-use application model.
-// ABOUTME: Validation keeps unknown or conflicting application state fail-closed.
+// ABOUTME: Canonical validation keeps unknown or conflicting application state fail-closed.
 package gates
 
 import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var digestRE = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 var roundStageRE = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
-var feedbackCycleRE = regexp.MustCompile(`^- Cycle ([1-9][0-9]*): (PASSED|REJECTED) — ([^;\r\n]+); surface ([^;\r\n]+) vs estimate ([^;\r\n]+) \(([0-9]+)%\); AC (unchanged|narrowed: [^;\r\n]+)$`)
-var declineDispositionRE = regexp.MustCompile(`^class: correct-but-disproportionate; why-not-material: ([^ ;\r\n](?:[^;\r\n]*[^ ;\r\n])?); promotes-when: ([^ ;\r\n](?:[^;\r\n]*[^ ;\r\n])?)$`)
 
 type Document struct {
 	Version int          `yaml:"version" json:"version"`
-	Current Selection    `yaml:"current" json:"current"`
 	Records []GateRecord `yaml:"records" json:"records"`
-}
-
-type Selection struct {
-	Gate string `yaml:"gate" json:"gate"`
 }
 
 type GateRecord struct {
@@ -32,9 +26,16 @@ type GateRecord struct {
 type Attempt struct {
 	ID               string            `yaml:"id" json:"id"`
 	Briefing         Briefing          `yaml:"briefing" json:"briefing"`
+	Withdrawal       *Withdrawal       `yaml:"withdrawal,omitempty" json:"withdrawal,omitempty"`
 	ProviderEvidence *ProviderEvidence `yaml:"provider-evidence,omitempty" json:"provider-evidence,omitempty"`
 	Resolution       *Resolution       `yaml:"resolution,omitempty" json:"resolution,omitempty"`
 	Application      *Application      `yaml:"application,omitempty" json:"application,omitempty"`
+}
+
+type Withdrawal struct {
+	By     string `yaml:"by" json:"by"`
+	At     string `yaml:"at" json:"at"`
+	Reason string `yaml:"reason" json:"reason"`
 }
 
 type ProviderEvidence struct {
@@ -43,41 +44,13 @@ type ProviderEvidence struct {
 }
 
 type Application struct {
-	Action        string         `yaml:"action" json:"action"`
-	TargetStage   string         `yaml:"target-stage,omitempty" json:"target-stage,omitempty"`
-	State         string         `yaml:"state" json:"state"`
-	Blockers      *[]Blocker     `yaml:"blockers,omitempty" json:"blockers,omitempty"`
-	ExecutionHold *ExecutionHold `yaml:"execution-hold,omitempty" json:"execution-hold,omitempty"`
-	Feedback      *Feedback      `yaml:"feedback,omitempty" json:"feedback,omitempty"`
-}
-
-type Blocker struct {
-	ID               string `yaml:"id,omitempty" json:"id,omitempty"`
-	Kind             string `yaml:"kind,omitempty" json:"kind,omitempty"`
-	Ref              string `yaml:"ref,omitempty" json:"ref,omitempty"`
-	ExpectedRevision string `yaml:"expected-revision,omitempty" json:"expected-revision,omitempty"`
-	ExpectedState    string `yaml:"expected-state,omitempty" json:"expected-state,omitempty"`
-	State            string `yaml:"state,omitempty" json:"state,omitempty"`
-}
-
-type ExecutionHold struct {
-	ID     string `yaml:"id,omitempty" json:"id,omitempty"`
-	State  string `yaml:"state" json:"state"`
-	By     string `yaml:"by,omitempty" json:"by,omitempty"`
-	At     string `yaml:"at,omitempty" json:"at,omitempty"`
-	Reason string `yaml:"reason,omitempty" json:"reason,omitempty"`
-}
-
-type Feedback struct {
-	Cycle         int    `yaml:"cycle,omitempty" json:"cycle,omitempty"`
-	FindingRef    string `yaml:"finding-ref,omitempty" json:"finding-ref,omitempty"`
-	FindingDigest string `yaml:"finding-digest,omitempty" json:"finding-digest,omitempty"`
+	TargetStage string `yaml:"target-stage" json:"target-stage"`
+	State       string `yaml:"state" json:"state"`
 }
 
 type Briefing struct {
 	ID            string `yaml:"id" json:"id"`
 	Digest        string `yaml:"digest" json:"digest"`
-	DigestDomain  string `yaml:"digest-domain" json:"digest-domain"`
 	RequestDigest string `yaml:"request-digest,omitempty" json:"request-digest,omitempty"`
 	RoomRef       string `yaml:"room-ref" json:"room-ref"`
 }
@@ -94,9 +67,9 @@ type RoundEntrySummary struct {
 }
 
 type RoundSummary struct {
-	ID, Stage, Briefing, Triage string
-	Cycle                       int
-	Entries                     []RoundEntrySummary
+	ID, Stage, Briefing string
+	Cycle               int
+	Entries             []RoundEntrySummary
 }
 
 type Resolution struct {
@@ -141,9 +114,23 @@ type Eligibility struct {
 // CurrentStageReadiness projects it; CLI consume reporting reuses it.
 const RouteApprovedAwaitingMerge = "approved-awaiting-merge"
 
+// RouteNeedsPreparation is the scheduler-only readiness value for a gated
+// current stage whose report is mechanically complete but has no current
+// attempt authority. It is a candidate for First Officer semantic review, not
+// an approval or a permission to mutate the entity.
+const RouteNeedsPreparation = "needs-preparation"
+
 type ConsumeResult struct {
 	Eligibility
 	Consumed bool
+	// Wrote reports whether THIS call wrote a real mutation (a fresh advance or
+	// a fresh pending->superseded supersede) — distinct from ApplicationState,
+	// which EvaluateEligibility always copies from the attempt's current
+	// application state, including on a pure-refusal read against an
+	// already-superseded or already-consumed application. Callers deciding
+	// whether to sync/commit must branch on Wrote, never on
+	// ApplicationState == "superseded" or "consumed" alone.
+	Wrote bool
 }
 
 // ReadinessStage is the minimum workflow taxonomy needed to reduce a selected
@@ -168,55 +155,50 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 	if doc == nil {
 		return "validating"
 	}
-	var record *GateRecord
-	for i := range doc.Records {
-		if doc.Records[i].ID == doc.Current.Gate {
-			record = &doc.Records[i]
-			break
+	record, err := recordForStage(doc, status)
+	if err != nil {
+		if strings.Contains(err.Error(), "no logical gate") {
+			return "validating"
 		}
+		return "invalid"
 	}
-	if record == nil || record.Stage != status || len(record.Attempts) == 0 {
+	if len(record.Attempts) == 0 {
 		return "validating"
 	}
 	attempt := &record.Attempts[len(record.Attempts)-1]
 	if attempt.Briefing.ID == "" || attempt.Briefing.Digest == "" || attempt.Briefing.RoomRef == "" {
 		return "invalid"
 	}
-	if attempt.Resolution == nil {
+	switch attemptState(attempt) {
+	case "open":
 		return "awaiting-captain"
+	case "withdrawn":
+		return "withdrawn-awaiting-prepare"
+	case "closed":
+	default:
+		return "invalid"
 	}
 	app := attempt.Application
 	if app == nil {
-		return "invalid"
+		switch attempt.Resolution.Decision {
+		case "hold":
+			return "not-applicable"
+		case "revise":
+			return "feedback-pending"
+		default:
+			return "invalid"
+		}
 	}
 	switch app.State {
-	case "consumed", "superseded", "not-applicable":
+	case "consumed", "superseded":
 		return app.State
 	case "pending":
 	default:
 		return "invalid"
 	}
-	if attempt.Resolution.Decision == "revise" {
-		if app.Action == "feedback" && strings.TrimSpace(app.TargetStage) != "" {
-			return "feedback-pending"
-		}
+	if attempt.Resolution.Decision != "approve" ||
+		strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == status {
 		return "invalid"
-	}
-	if attempt.Resolution.Decision != "approve" || app.Action != "advance" ||
-		app.Blockers == nil || strings.TrimSpace(app.TargetStage) == "" || app.TargetStage == status {
-		return "invalid"
-	}
-	if app.ExecutionHold != nil {
-		switch app.ExecutionHold.State {
-		case "active":
-			return "held"
-		case "released":
-		default:
-			return "invalid"
-		}
-	}
-	if len(*app.Blockers) != 0 {
-		return "blocked"
 	}
 	target, ok := stageByName[app.TargetStage]
 	if !ok {
@@ -228,15 +210,34 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 	return "approved-awaiting-advance"
 }
 
+// CurrentStageReadinessWithReport extends CurrentStageReadiness with the
+// status-owned mechanical report proof. A complete report promotes only the
+// no-current-authority shape; every selected, malformed, or otherwise
+// classified authority keeps the canonical result above. Keeping this wrapper
+// beside the reducer lets status and any future machine projection share the
+// exact ordering and fail-closed behavior without adding durable gate state.
+func CurrentStageReadinessWithReport(doc *Document, status string, stages []ReadinessStage, reportComplete bool) string {
+	readiness := CurrentStageReadiness(doc, status, stages)
+	if !reportComplete || readiness != "validating" {
+		return readiness
+	}
+	if doc == nil {
+		return RouteNeedsPreparation
+	}
+	if len(doc.Records) == 0 {
+		return "invalid"
+	}
+	if _, err := recordForStage(doc, status); err != nil && strings.Contains(err.Error(), "no logical gate") {
+		return RouteNeedsPreparation
+	}
+	return readiness
+}
+
 func Validate(doc *Document) error {
 	if doc.Version != 1 {
 		return fmt.Errorf("gates.version must be 1")
 	}
-	if doc.Current.Gate == "" {
-		return fmt.Errorf("gates.current must name a gate")
-	}
-	gateIDs, attemptIDs, briefingIDs, resolutionIDs := map[string]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}
-	selected := false
+	gateIDs, stages, attemptIDs, briefingIDs, resolutionIDs := map[string]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}, map[string]bool{}
 	for ri := range doc.Records {
 		r := &doc.Records[ri]
 		pendingApplications := 0
@@ -244,9 +245,10 @@ func Validate(doc *Document) error {
 			return fmt.Errorf("record %d has missing or duplicate identity or no attempts", ri+1)
 		}
 		gateIDs[r.ID] = true
-		if r.ID == doc.Current.Gate {
-			selected = true
+		if stages[r.Stage] {
+			return fmt.Errorf("multiple logical gates claim workflow stage %s", r.Stage)
 		}
+		stages[r.Stage] = true
 		for ai := range r.Attempts {
 			a := &r.Attempts[ai]
 			if a.ID == "" || attemptIDs[a.ID] {
@@ -257,13 +259,11 @@ func Validate(doc *Document) error {
 				return fmt.Errorf("attempt %s has invalid or duplicate briefing binding", a.ID)
 			}
 			briefingIDs[a.Briefing.ID] = true
-			if a.Briefing.DigestDomain != "canonical-bytes" {
-				return fmt.Errorf("attempt %s has unknown digest-domain %q", a.ID, a.Briefing.DigestDomain)
-			}
 			if a.Briefing.RequestDigest != "" && !digestRE.MatchString(a.Briefing.RequestDigest) {
 				return fmt.Errorf("attempt %s has invalid request-digest", a.ID)
 			}
-			if a.Resolution == nil {
+			switch attemptState(a) {
+			case "open":
 				if a.ProviderEvidence != nil {
 					return fmt.Errorf("open attempt %s cannot carry provider evidence", a.ID)
 				}
@@ -271,6 +271,20 @@ func Validate(doc *Document) error {
 					return fmt.Errorf("open attempt %s cannot carry application data", a.ID)
 				}
 				continue
+			case "withdrawn":
+				if a.Briefing.RequestDigest == "" {
+					return fmt.Errorf("withdrawn attempt %s must retain a request-digest", a.ID)
+				}
+				if err := validateWithdrawal(a.Withdrawal); err != nil {
+					return fmt.Errorf("attempt %s: %w", a.ID, err)
+				}
+				if a.ProviderEvidence != nil || a.Application != nil {
+					return fmt.Errorf("withdrawn attempt %s cannot carry provider evidence or application data", a.ID)
+				}
+				continue
+			case "closed":
+			default:
+				return fmt.Errorf("attempt %s has conflicting withdrawal and resolution state", a.ID)
 			}
 			if a.ProviderEvidence != nil {
 				if a.Briefing.RequestDigest == "" ||
@@ -299,31 +313,33 @@ func Validate(doc *Document) error {
 			return fmt.Errorf("gate %s carries more than one pending application", r.ID)
 		}
 	}
-	if !selected {
-		return fmt.Errorf("gates.current pointer does not resolve to one logical gate")
+	return nil
+}
+
+func validateWithdrawal(withdrawal *Withdrawal) error {
+	if withdrawal == nil || withdrawal.By != "agent:first-officer" {
+		return fmt.Errorf("withdrawal attribution must be agent:first-officer")
+	}
+	if parsed, err := time.Parse(time.RFC3339Nano, withdrawal.At); err != nil || parsed.Location() != time.UTC {
+		return fmt.Errorf("withdrawal timestamp must be RFC3339Nano UTC")
+	}
+	if strings.TrimSpace(withdrawal.Reason) == "" {
+		return fmt.Errorf("withdrawal reason must be nonblank")
 	}
 	return nil
 }
 
 func validateApplication(a *Application, decision string) error {
 	switch a.State {
-	case "pending", "consumed", "superseded", "not-applicable":
+	case "pending", "consumed", "superseded":
 	default:
-		return fmt.Errorf("application state must be pending, consumed, superseded, or not-applicable")
+		return fmt.Errorf("application state must be pending, consumed, or superseded")
 	}
-	switch decision {
-	case "approve":
-		if a.Action != "advance" || strings.TrimSpace(a.TargetStage) == "" || a.State == "not-applicable" {
-			return fmt.Errorf("approve application must be advance with a target stage")
-		}
-	case "revise":
-		if a.Action != "feedback" || strings.TrimSpace(a.TargetStage) == "" || a.State == "not-applicable" {
-			return fmt.Errorf("revise application must be feedback with a target stage")
-		}
-	case "hold":
-		if a.Action != "none" || a.TargetStage != "" || a.State != "not-applicable" {
-			return fmt.Errorf("hold application must be none/not-applicable")
-		}
+	if decision != "approve" {
+		return fmt.Errorf("only approve resolutions may carry an application")
+	}
+	if strings.TrimSpace(a.TargetStage) == "" {
+		return fmt.Errorf("approve application must have a target stage")
 	}
 	return nil
 }
@@ -344,19 +360,21 @@ func validateResolution(r *Resolution, briefingID string) error {
 	return nil
 }
 
-func CurrentSummary(doc *Document) Summary {
-	for i := range doc.Records {
-		r := &doc.Records[i]
-		if r.ID != doc.Current.Gate || len(r.Attempts) == 0 {
-			continue
-		}
+func CurrentSummary(doc *Document, stage ...string) Summary {
+	var r *GateRecord
+	if len(stage) > 0 {
+		r, _ = recordForStage(doc, stage[0])
+	} else if len(doc.Records) == 1 {
+		r = &doc.Records[0]
+	}
+	if r != nil && len(r.Attempts) > 0 {
 		a := &r.Attempts[len(r.Attempts)-1]
 		s := Summary{Gate: r.ID, Attempt: a.ID, State: attemptState(a), Briefing: a.Briefing.ID}
 		if a.Resolution != nil {
 			s.Resolution, s.Decision = a.Resolution.ID, a.Resolution.Decision
 		}
 		if a.Application != nil {
-			s.Application = a.Application.Action + "/" + a.Application.State
+			s.Application = "advance/" + a.Application.State
 			s.ApplicationState = a.Application.State
 			s.TargetStage = a.Application.TargetStage
 		}
@@ -366,8 +384,14 @@ func CurrentSummary(doc *Document) Summary {
 }
 
 func attemptState(a *Attempt) string {
-	if a.Resolution != nil {
+	switch {
+	case a.Withdrawal == nil && a.Resolution == nil:
+		return "open"
+	case a.Withdrawal != nil && a.Resolution == nil:
+		return "withdrawn"
+	case a.Withdrawal == nil && a.Resolution != nil:
 		return "closed"
+	default:
+		return "invalid"
 	}
-	return "open"
 }

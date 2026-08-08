@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 const sandboxBootReadme = `---
@@ -35,7 +37,7 @@ stages:
 func sandboxBootFixture(t *testing.T, inside, available bool) (root string, env []string) {
 	t.Helper()
 	root = t.TempDir()
-	gitC(t, root, "init")
+	testgit.InitRepo(t, root)
 	writeFile(t, filepath.Join(root, "README.md"), sandboxBootReadme)
 	writeFile(t, filepath.Join(root, ".safehouse"), "profile")
 	pathDir := t.TempDir()

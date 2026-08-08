@@ -145,7 +145,13 @@ func updateFrontmatter(path string, updates []fieldUpdate) (*resolvedFields, err
 			}
 			resolved.set(u.field, now)
 		} else {
-			resolved.set(u.field, u.value)
+			// Single normalisation point for every frontmatter write that goes
+			// through this engine — the user-facing `--set`, finalize's
+			// gate-less terminalize, archive. A field with a schema-declared
+			// conventional set is stored in the schema's spelling whatever case
+			// the caller used, so stored state cannot depend on which verb wrote
+			// it. Values outside the set pass through untouched.
+			resolved.set(u.field, canonicalConventional(u.field, u.value))
 		}
 	}
 
@@ -338,13 +344,16 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 	// `verdict: rejected` entity is also exempted: it never ran the merge ceremony
 	// (no PR to require, no merge to gate on), so the requirement is vacuous — this
 	// matches the --set finalize path (runSet), keeping reject-then-archive on the
-	// happy path without --force.
+	// happy path without --force. The exemption reads the verdict case-insensitively
+	// (isRejectedVerdict): merge guard finalizes by writing REJECTED and archiving in
+	// the same run, so a case-sensitive test would refuse the archive step of the
+	// very ceremony that wrote the value.
 	policy, perr := resolveMergePolicy(definitionDir)
 	if perr != nil {
 		fmt.Fprintf(stderr, "Error: %s\n", perr)
 		return 1
 	}
-	if !force && policy != mergeLocal && verdict != "rejected" && modBlock == "" && pr == "" {
+	if !force && policy != mergeLocal && !isRejectedVerdict(verdict) && modBlock == "" && pr == "" {
 		mergeHooks := scanMods(definitionDir)["merge"]
 		if len(mergeHooks) > 0 {
 			fmt.Fprintf(stderr,
@@ -366,7 +375,7 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 	// `--set` gate's carve-out for `verdict: rejected`. Layered after the
 	// merge-hook invariant so an entity that ALSO skipped the merge ceremony keeps
 	// reporting that cause first (unchanged from today). --force bypasses.
-	if verdict != "" && verdict != "rejected" && !force {
+	if verdict != "" && !isRejectedVerdict(verdict) && !force {
 		readme := filepath.Join(definitionDir, "README.md")
 		if fileExists(readme) {
 			status := strings.TrimSpace(fields["status"])

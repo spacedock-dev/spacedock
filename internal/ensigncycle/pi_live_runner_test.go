@@ -15,34 +15,9 @@ import (
 	"time"
 )
 
-const piLiveSmokeMarker = "PI-LIVE-SUBAGENT-ENSIGN-SMOKE"
 const defaultPiLiveModel = "openrouter/openai/gpt-5.4"
 
-func TestLivePiSubagentEnsignSmoke(t *testing.T) {
-	piBin, err := exec.LookPath("pi")
-	if err != nil {
-		t.Skip("pi not on PATH; install Pi CLI before running the live Pi smoke")
-	}
-	repo := repoRoot(t)
-	piSubagentsRoot := piSubagentsPackageRoot(t)
-	binary := piSpacedockBinary(t, repo)
-	workflowRoot, stateRoot, entityPath, artifactDir, env := newPiLiveSmokeFixture(t, "pi-subagent-ensign-smoke", repo, piSubagentsRoot, binary)
-
-	envelope := runPiSmokeDispatchBuild(t, binary, workflowRoot, entityPath)
-	prompt := piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath, envelope)
-	runPiLiveCommand(t, artifactDir, workflowRoot, env, piBin,
-		"--print",
-		"--session-dir", filepath.Join(artifactDir, "sessions"),
-		"--extension", filepath.Join(piSubagentsRoot, "src", "extension", "index.ts"),
-		"--skill", filepath.Join(piSubagentsRoot, "skills", "pi-subagents"),
-		"--skill", filepath.Join(repo, "skills", "first-officer"),
-		"--skill", filepath.Join(repo, "skills", "ensign"),
-		prompt,
-	)
-	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
-	assertPiEnsignBootContract(t, workflowRoot, envelope, artifactDir)
-}
-
+//spacedock:live-proof id=pi-front-door-subagent-dispatch lane=pi-live
 func TestLivePiFrontDoorSmoke(t *testing.T) {
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
@@ -61,6 +36,7 @@ func TestLivePiFrontDoorSmoke(t *testing.T) {
 		"--session-dir", filepath.Join(artifactDir, "sessions"),
 	)
 	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
+	assertPiEnsignBootContract(t, workflowRoot, envelope, artifactDir)
 }
 
 func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string) {
@@ -146,31 +122,13 @@ func piSpacedockBinary(t *testing.T, repo string) string {
 	return out
 }
 
-func TestPiLiveSmokePromptRequiresExactStageReportHeading(t *testing.T) {
-	envelope := piSmokeEnvelope{Agent: "worker", Skill: "ensign", Prompt: "Read /tmp/spacedock-dispatch/x.md and treat its content as your assignment."}
-	prompt := piLiveSmokePrompt("/repo", "/workflow", "/workflow/.spacedock-state", "/workflow/.spacedock-state/pi-live-smoke/index.md", envelope)
-	want := "exact heading '## Stage Report: implementation'"
-	if !strings.Contains(prompt, want) {
-		t.Fatalf("pi live smoke prompt missing %q:\n%s", want, prompt)
-	}
-}
-
-// piSmokeEnvelope is the dispatch-build --host pi artifact fields the smoke
-// forwards to pi-subagents and grades the spawn against.
-type piSmokeEnvelope struct {
-	Agent        string `json:"agent"`
-	Skill        string `json:"skill"`
-	Prompt       string `json:"prompt"`
-	DispatchFile string `json:"dispatch_file_path"`
-}
-
 // runPiSmokeDispatchBuild assembles the real initial-dispatch artifact for the
 // smoke entity through `dispatch build --host pi` (the AC-1 spawn source of
 // truth) and asserts it carries the default worker/ensign spawn fields.
 func runPiSmokeDispatchBuild(t *testing.T, binary, workflowRoot, entityPath string) piSmokeEnvelope {
 	t.Helper()
 	checklist := []string{
-		"- Append a stage report with the exact heading '## Stage Report: implementation' containing the exact marker " + piLiveSmokeMarker + ", at least one '- DONE:' item, and a '### Summary' subsection",
+		"- First read " + filepath.Join(repoRoot(t), "skills", "ensign", "SKILL.md") + " and " + filepath.Join(repoRoot(t), "skills", "ensign", "references", "pi-ensign-runtime.md") + "; then append a stage report with the exact heading '## Stage Report: implementation' containing the exact marker " + piLiveSmokeMarker + ", at least one '- DONE:' item, and a '### Summary' subsection",
 		"- Commit only the entity path in the state checkout with message 'ensign: pi live smoke' (path-scoped git add/commit for pi-live-smoke/index.md)",
 	}
 	stdin, err := json.Marshal(map[string]any{
@@ -211,23 +169,7 @@ func runPiSmokeDispatchBuild(t *testing.T, binary, workflowRoot, entityPath stri
 	return envelope
 }
 
-func piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath string, envelope piSmokeEnvelope) string {
-	return fmt.Sprintf(`You are the Spacedock first officer for a live Pi smoke test.
-
-An initial-dispatch artifact was assembled for the entity with `+"`spacedock dispatch build --host pi`"+`; forward it through pi-subagents exactly as emitted — this smoke exists to prove the build artifact's spawn fields drive the worker boot.
-
-  agent: %[5]s
-  skill: %[6]s
-  task: %[7]s
-
-Use the pi-subagents subagent(...) tool exactly once with those fields verbatim (context must be "fresh", working directory %[2]s). Do not use or mention Claude Agent, SendMessage, TeamCreate, or TeamDelete tools. Do not paraphrase, re-order, or extend the task string.
-
-After subagent(...) returns, you as first officer must verify the entity file %[4]s contains %[8]s and verify the state checkout %[3]s git log contains 'ensign: pi live smoke' over pi-live-smoke/index.md. The stage report must use the exact heading '## Stage Report: implementation' — confirm that too. Exit successfully only after those durable checks pass; your final message names the agent and skill values you passed to subagent(...) and the child's run id.
-
-Reference paths: ensign contract at %[1]s/skills/ensign/SKILL.md; Pi ensign adapter at %[1]s/skills/ensign/references/pi-ensign-runtime.md (the worker's dispatch artifact already points at them).`,
-		repo, workflowRoot, stateRoot, entityPath, envelope.Agent, envelope.Skill, envelope.Prompt, piLiveSmokeMarker)
-}
-
+//spacedock:live-fixture id=pi/split-root-smoke
 func writePiSplitRootSmokeWorkflow(t *testing.T) (workflowRoot, stateRoot, entityPath string) {
 	t.Helper()
 	workflowRoot = t.TempDir()
@@ -305,83 +247,6 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required strin
 	t.Skip(message + "; run pi login or set OPENAI_API_KEY to run the live Pi suite")
 }
 
-func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string) []string {
-	env := cleanEnviron(
-		"CODEX_THREAD_ID", "CLAUDECODE", "HOME", "PI_CODING_AGENT_DIR",
-		"PI_CODING_AGENT_SESSION_DIR", "PI_INTERCOM_PACKAGE_ROOT",
-		"PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE",
-	)
-	// Optional-adjacent scrub (validation attempt-1 correction): an ambient
-	// PI_SUBAGENT_* family leaks hermeticity when the live lane runs nested
-	// inside a pi-subagents session (e.g. PI_SUBAGENT_CHILD=1 would exempt the
-	// parent FO from its own extension bootstrap).
-	env = dropEnvPrefix(env, "PI_SUBAGENT_")
-	env = append(env,
-		"HOME="+cleanHome,
-		"PI_CODING_AGENT_DIR="+piHome,
-		"PI_CODING_AGENT_SESSION_DIR="+sessionDir,
-		"PI_INTERCOM_PACKAGE_ROOT="+piIntercomPackageRoot(piSubagentsRoot),
-		"PI_SUBAGENTS_PACKAGE_ROOT="+piSubagentsRoot,
-		"PI_OFFLINE=1",
-	)
-	return withBinaryOnPath(env, filepath.Join(binaryDir, "spacedock"))
-}
-
-func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
-	for key, value := range map[string]string{"CODEX_THREAD_ID": "codex", "CLAUDECODE": "claude", "PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/parent/pi",
-		"PI_CODING_AGENT_SESSION_DIR": "/parent/sessions", "PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
-		"PI_SUBAGENTS_PACKAGE_ROOT": "/parent/package",
-		"PI_OFFLINE":                "0", "HOME": "/parent/home", "OPENAI_API_KEY": "key", "PATH": "/parent/bin"} {
-		t.Setenv(key, value)
-	}
-
-	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin", "/target/package")
-
-	want := map[string]string{"CODEX_THREAD_ID": "", "CLAUDECODE": "",
-		"PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/target/pi",
-		"PI_CODING_AGENT_SESSION_DIR": "/target/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/target/package",
-		"PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
-		"PI_OFFLINE":               "1", "HOME": "/target/home", "OPENAI_API_KEY": "key",
-		"PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
-	for key, value := range want {
-		assertEnvValue(t, env, key, value)
-	}
-}
-
-// dropEnvPrefix removes every KEY=VALUE entry whose key carries prefix.
-func dropEnvPrefix(env []string, prefix string) []string {
-	kept := env[:0]
-	for _, kv := range env {
-		key := kv
-		if i := strings.IndexByte(kv, '='); i >= 0 {
-			key = kv[:i]
-		}
-		if strings.HasPrefix(key, prefix) {
-			continue
-		}
-		kept = append(kept, kv)
-	}
-	return kept
-}
-
-func TestPiLiveEnvScrubsAmbientPiSubagentMarkers(t *testing.T) {
-	t.Setenv("PI_SUBAGENT_CHILD", "1")
-	t.Setenv("PI_SUBAGENT_RUN_ID", "ambient-run")
-	t.Setenv("PI_SUBAGENT_DEPTH", "1")
-
-	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin", "/target/package")
-
-	for _, kv := range env {
-		key := kv
-		if i := strings.IndexByte(kv, '='); i >= 0 {
-			key = kv[:i]
-		}
-		if strings.HasPrefix(key, "PI_SUBAGENT_") {
-			t.Fatalf("piLiveEnv leaked ambient marker %s", kv)
-		}
-	}
-}
-
 func piSubagentsPackageRoot(t *testing.T) string {
 	t.Helper()
 	if p := os.Getenv("PI_SUBAGENTS_PACKAGE_ROOT"); p != "" {
@@ -396,20 +261,6 @@ func piSubagentsPackageRoot(t *testing.T) string {
 		t.Fatalf("pi-subagents package extension not found at %s: %v; set PI_SUBAGENTS_PACKAGE_ROOT", p, err)
 	}
 	return p
-}
-
-func piIntercomPackageRoot(piSubagentsRoot string) string {
-	if p := os.Getenv("PI_INTERCOM_PACKAGE_ROOT"); p != "" {
-		return p
-	}
-	return filepath.Join(filepath.Dir(piSubagentsRoot), "pi-intercom")
-}
-
-func TestPiIntercomPackageRootDefaultsBesideSubagents(t *testing.T) {
-	t.Setenv("PI_INTERCOM_PACKAGE_ROOT", "")
-	if got := piIntercomPackageRoot("/packages/pi-subagents"); got != "/packages/pi-intercom" {
-		t.Fatalf("piIntercomPackageRoot() = %q, want sibling package", got)
-	}
 }
 
 func piLiveModelName() string {
@@ -496,15 +347,19 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 		t.Fatalf("child transcript must contain zero first-officer reads, found %d: %v", foReads, reads)
 	}
 
-	grade := map[string]any{
-		"verdict":                   "pass",
-		"worker_transcripts_graded": 1,
-		"read_calls":                len(reads),
-		"ensign_skill_read_rank":    ensignRank,
-		"first_officer_reads":       0,
-		"spawn_agent":               meta.Agent,
-		"spawn_skills":              meta.Skills,
-		"transcript":                meta.TranscriptPath,
+	rootSession := onePiSession(t, filepath.Join(artifactDir, "sessions", "*.jsonl"), "root")
+	childSession := onePiSession(t, filepath.Join(artifactDir, "sessions", "*", "*", "run-*", "session.jsonl"), "child")
+	grade, err := buildPiFrontDoorEvidenceGrade(rootSession, childSession, true, piBootContractEvidence{
+		Agent:                 meta.Agent,
+		Skills:                meta.Skills,
+		DispatchFileForwarded: strings.Contains(meta.Task, envelope.DispatchFile),
+		ReadCallCount:         len(reads),
+		EnsignSkillReadRank:   ensignRank,
+		FirstOfficerReads:     foReads,
+		Transcript:            meta.TranscriptPath,
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 	gradeJSON, err := json.MarshalIndent(grade, "", "  ")
 	if err != nil {
@@ -514,13 +369,26 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 	if err := os.WriteFile(gradePath, append(gradeJSON, '\n'), 0o644); err != nil {
 		t.Fatalf("write graded transcript artifact: %v", err)
 	}
-	t.Logf("AC-1 boot contract pass: %d reads, ensign SKILL.md at read #%d, zero first-officer reads; grade artifact %s", len(reads), ensignRank, gradePath)
+	t.Logf("Pi front-door evidence pass: %d reads, ensign SKILL.md at read #%d, root %s/%dms, child %s/%dms; grade artifact %s",
+		len(reads), ensignRank, grade.Root.Model, grade.Root.DurationMS, grade.Child.Model, grade.Child.DurationMS, gradePath)
+}
+
+func onePiSession(t *testing.T, pattern, role string) string {
+	t.Helper()
+	paths, err := filepath.Glob(pattern)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) != 1 {
+		t.Fatalf("Pi %s sessions=%d, want exactly one: %v", role, len(paths), paths)
+	}
+	return paths[0]
 }
 
 // piTranscriptReadPaths extracts the ordered read-type tool-call paths from a
 // pi-subagents child transcript (.jsonl message records whose content blocks
 // are read tool calls).
-func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
+func piTranscriptToolValues(t *testing.T, transcriptPath, tool, alternate string) []string {
 	t.Helper()
 	var reads []string
 	for lineNo, line := range strings.Split(readFile(t, transcriptPath), "\n") {
@@ -539,19 +407,30 @@ func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
 			Type      string `json:"type"`
 			Name      string `json:"name"`
 			Arguments struct {
-				Path string `json:"path"`
+				Path    string `json:"path"`
+				Command string `json:"command"`
 			} `json:"arguments"`
 		}
 		if err := json.Unmarshal(record.Message.Content, &blocks); err != nil {
 			continue // string content (plain text messages) carries no tool calls
 		}
 		for _, b := range blocks {
-			if b.Type == "toolCall" && b.Name == "read" {
-				reads = append(reads, b.Arguments.Path)
+			if b.Type == "toolCall" && (b.Name == tool || alternate != "" && b.Name == alternate) {
+				value := b.Arguments.Path
+				if alternate != "" {
+					value = b.Arguments.Command
+				}
+				if alternate == "" || value != "" {
+					reads = append(reads, value)
+				}
 			}
 		}
 	}
 	return reads
+}
+
+func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
+	return piTranscriptToolValues(t, transcriptPath, "read", "")
 }
 
 func headStrings(s []string, n int) []string {

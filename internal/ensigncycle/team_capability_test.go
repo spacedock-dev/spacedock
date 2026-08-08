@@ -1,119 +1,142 @@
-// ABOUTME: TeamCreate-capability discriminator — parses `claude --version` so the legacy
-// ABOUTME: interactive pty lane SKIPs on a merged host (native team tools gone, ≥ the merged floor).
 package ensigncycle
 
 import (
-	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 )
 
-// mergedFloorMinor is the claude-code minor version at which the native team
-// tools (TeamCreate/TeamDelete) were dropped — the "merged floor". 2.1.178
-// retired the native team registry in favour of the in-process named-background
-// teammate shape (anthropics/claude-code#68721), so 2.1.<minor≥178> is a MERGED
-// host where the legacy interactive pty lane cannot run TeamCreate. A host below
-// the floor (the pinned 2.1.177) still exposes the native tools — the legacy lane
-// runs there.
-const mergedFloorMinor = 178
+const mergedFloorPatch = 178
 
-// claudeVersionPattern extracts the leading semver from `claude --version` output
-// (e.g. "2.1.181 (Claude Code)" → 2,1,181). The trailing " (Claude Code)" label
-// and any build suffix are ignored; only the dotted numeric head is read.
 var claudeVersionPattern = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)`)
 
-// mergedFloor is the (major, minor, patch) at which the native team tools were
-// dropped. A version BELOW this floor still exposes TeamCreate/TeamDelete; at or
-// above it, the host is merged. Kept as the one floor literal so teamCreateCapable
-// is a plain lexicographic-by-component compare against it.
-var mergedFloor = [3]int{2, 1, mergedFloorMinor}
-
-// teamCreateCapable reports whether the claude version in versionOutput still
-// exposes the native TeamCreate/TeamDelete tools — i.e. it is strictly BELOW the
-// merged floor (2.1.178). This is the harness-observable analog of the contract's
-// `ToolSearch(select:TeamCreate)`-empty discriminator: a Go test cannot run the
-// ToolSearch hop, but it can read `claude --version`, and the team-tool presence
-// is a deterministic function of the version (present < 2.1.178, gone ≥ 2.1.178).
-//
-// An unparseable version conservatively reports NOT capable (false): the legacy
-// lane SKIPs rather than FAILs when the version is unknown, matching the
-// skip-not-fatal discipline (a merged host or an unreadable probe both skip).
-func teamCreateCapable(versionOutput string) bool {
-	major, minor, patch, ok := parseClaudeVersion(versionOutput)
-	if !ok {
-		return false
+// mergedClaudeHost reports whether a parsed Claude Code version supports the
+// current in-process named-background Agent substrate. parsed is false when the
+// version line has no leading semantic version.
+func mergedClaudeHost(versionOutput string) (merged, parsed bool) {
+	match := claudeVersionPattern.FindStringSubmatch(strings.TrimSpace(versionOutput))
+	if match == nil {
+		return false, false
 	}
-	got := [3]int{major, minor, patch}
-	for i := range got {
-		if got[i] != mergedFloor[i] {
-			return got[i] < mergedFloor[i]
+	version := [3]int{}
+	for i := range version {
+		value, err := strconv.Atoi(match[i+1])
+		if err != nil {
+			return false, false
+		}
+		version[i] = value
+	}
+	floor := [3]int{2, 1, mergedFloorPatch}
+	for i := range version {
+		if version[i] != floor[i] {
+			return version[i] > floor[i], true
 		}
 	}
-	// Exactly the floor (2.1.178) is the first merged version — not capable.
+	return true, true
+}
+
+func cleanupKeepMovingRoot(t *testing.T, root string, failed bool) {
+	t.Helper()
+	if failed {
+		t.Logf("retained failing keep-moving Git root: %s", root)
+		return
+	}
+	if err := os.RemoveAll(root); err != nil {
+		t.Errorf("remove successful keep-moving Git root: %v", err)
+	}
+}
+
+func TestCleanupKeepMovingRootRetainsOnlyFailures(t *testing.T) {
+	root := t.TempDir()
+	cleanupKeepMovingRoot(t, root, true)
+	if _, err := os.Stat(root); err != nil {
+		t.Fatalf("failed workflow was not retained: %v", err)
+	}
+	cleanupKeepMovingRoot(t, root, false)
+	if _, err := os.Stat(root); !os.IsNotExist(err) {
+		t.Fatalf("successful workflow still exists: %v", err)
+	}
+}
+
+func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) []string {
+	return []string{
+		"codex",
+		"--plugin-dir", pluginDir,
+		"--skip-compat-check",
+		prompt,
+		"--",
+		"exec",
+		"--json",
+		"--dangerously-bypass-approvals-and-sandbox",
+		"--cd", workflowRoot,
+		"--output-last-message", finalPath,
+	}
+}
+
+func argvHasAdjacent(args []string, left, right string) bool {
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == left && args[i+1] == right {
+			return true
+		}
+	}
 	return false
 }
 
-// parseClaudeVersion pulls the (major, minor, patch) ints out of a `claude
-// --version` line. ok is false when no leading dotted-numeric version is present.
-func parseClaudeVersion(versionOutput string) (major, minor, patch int, ok bool) {
-	m := claudeVersionPattern.FindStringSubmatch(strings.TrimSpace(versionOutput))
-	if m == nil {
-		return 0, 0, 0, false
+func TestCodexLiveRunnerLeavesCollaborationConfigToSpacedockLauncher(t *testing.T) {
+	args := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
+	if argvHasAdjacent(args, "--enable", "multi_agent_v2") || argvHasAdjacent(args, "--disable", "multi_agent_v2") {
+		t.Fatalf("Codex live argv must leave collaboration configuration to the Spacedock launcher; args=%v", args)
 	}
-	major, err1 := strconv.Atoi(m[1])
-	minor, err2 := strconv.Atoi(m[2])
-	patch, err3 := strconv.Atoi(m[3])
-	if err1 != nil || err2 != nil || err3 != nil {
-		return 0, 0, 0, false
-	}
-	return major, minor, patch, true
 }
 
-// teamCapabilitySkipReason returns the SKIP message the legacy pty lane uses when
-// the host is merged (no native TeamCreate). It names the observed version so a CI
-// log makes the skip self-explaining (the version pin moved past the floor) rather
-// than an opaque skip.
-func teamCapabilitySkipReason(versionOutput string) string {
-	return fmt.Sprintf(
-		"legacy interactive team-mode lane SKIPPED: the live claude (%q) is at/above the merged floor (2.1.%d) where native TeamCreate/TeamDelete are gone — this lane needs the native team tools. On a merged host the FO dispatches in-process named background teammates instead (covered by the merged lane); the legacy lane retires when stable Claude catches up.",
-		strings.TrimSpace(versionOutput), mergedFloorMinor)
+func TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs(t *testing.T) {
+	args := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
+	fence := -1
+	for i, arg := range args {
+		if arg == "--" {
+			fence = i
+			break
+		}
+	}
+	if fence < 0 {
+		t.Fatalf("Codex live argv has no host-argument fence: %v", args)
+	}
+	if args[0] != "codex" || !argvHasAdjacent(args[:fence], "--plugin-dir", "/tmp/plugin") {
+		t.Fatalf("Spacedock-owned Codex setup is not before host args: %v", args)
+	}
+	for _, arg := range args[fence+1:] {
+		if arg == "--plugin-dir" || arg == "/tmp/plugin" || arg == "--skip-compat-check" {
+			t.Fatalf("Spacedock-owned argument leaked after host fence: %v", args)
+		}
+	}
+	if args[fence+1] != "exec" {
+		t.Fatalf("Codex host argv does not start with exec: %v", args)
+	}
+	if !argvHasAdjacent(args, "--dangerously-bypass-approvals-and-sandbox", "--cd") {
+		t.Fatalf("Codex live argv does not preserve bypass-permission posture before workflow root: %v", args)
+	}
 }
 
-// TestTeamCreateCapable is the offline proof of the legacy-lane skip discriminator
-// (no model spend, no live claude): teamCreateCapable reads `claude --version` and
-// reports whether the native team tools are present, so the legacy interactive pty
-// tests SKIP cleanly when CI unpins to a merged host (≥2.1.178) rather than RED.
-func TestTeamCreateCapable(t *testing.T) {
-	cases := []struct {
-		name    string
-		version string
-		capable bool
+func TestMergedClaudeHost(t *testing.T) {
+	for _, tc := range []struct {
+		name           string
+		version        string
+		merged, parsed bool
 	}{
-		{"pinned legacy 2.1.177 is team-capable", "2.1.177 (Claude Code)", true},
-		{"merged floor 2.1.178 is NOT capable", "2.1.178 (Claude Code)", false},
-		{"current local 2.1.181 is NOT capable", "2.1.181 (Claude Code)", false},
-		{"older 2.1.161 is team-capable", "2.1.161 (Claude Code)", true},
-		{"older minor 2.0.250 is team-capable", "2.0.250 (Claude Code)", true},
-		{"future minor 2.2.0 is NOT capable", "2.2.0 (Claude Code)", false},
-		{"future major 3.0.0 is NOT capable", "3.0.0 (Claude Code)", false},
-		{"older major 1.9.9 is team-capable", "1.9.9 (Claude Code)", true},
-		{"bare version with no label still parses", "2.1.177", true},
-		{"leading whitespace tolerated", "  2.1.177 (Claude Code)\n", true},
-		{"unparseable version is conservatively NOT capable", "garbage", false},
-		{"empty output is conservatively NOT capable", "", false},
-	}
-	for _, tc := range cases {
+		{"last native-team version", "2.1.177 (Claude Code)", false, true},
+		{"merged floor", "2.1.178 (Claude Code)", true, true},
+		{"current merged version", "2.1.181 (Claude Code)", true, true},
+		{"future minor", "2.2.0 (Claude Code)", true, true},
+		{"older minor", "2.0.250 (Claude Code)", false, true},
+		{"unparseable", "garbage", false, false},
+	} {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := teamCreateCapable(tc.version); got != tc.capable {
-				t.Errorf("teamCreateCapable(%q) = %v, want %v", tc.version, got, tc.capable)
+			merged, parsed := mergedClaudeHost(tc.version)
+			if merged != tc.merged || parsed != tc.parsed {
+				t.Fatalf("mergedClaudeHost(%q) = (%t, %t), want (%t, %t)", tc.version, merged, parsed, tc.merged, tc.parsed)
 			}
 		})
-	}
-
-	// The skip reason names the observed version so the CI log is self-explaining.
-	if r := teamCapabilitySkipReason("2.1.181 (Claude Code)"); !strings.Contains(r, "2.1.181") || !strings.Contains(r, "SKIPPED") {
-		t.Errorf("teamCapabilitySkipReason should name the version and SKIP; got %q", r)
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // TestStateReadyFromRootResolves pins AC-1: bare `state ready`, run with the repo
@@ -167,7 +168,7 @@ func TestStateVerbsFromRootRefuseAmbiguousWorkflows(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	git(t, root, "init", "-q")
+	testgit.InitRepo(t, root, "-q")
 	git(t, root, "add", "-A")
 	git(t, root, "commit", "-q", "-m", "two commissioned workflows")
 
@@ -219,9 +220,7 @@ func setupStandaloneSplitWorkflow(t *testing.T, root, relPath, slug string) (wor
 	if err := os.MkdirAll(checkout, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	git(t, checkout, "init", "-q")
-	git(t, checkout, "config", "user.email", "t@t")
-	git(t, checkout, "config", "user.name", "t")
+	testgit.InitRepo(t, checkout, "-q")
 	git(t, checkout, "branch", "-M", "spacedock-state/"+filepath.Base(workflowDir))
 	if err := os.WriteFile(filepath.Join(checkout, slug+".md"),
 		[]byte("---\nstatus: ideation\n---\n# "+slug+"\n"), 0o644); err != nil {
