@@ -6,6 +6,7 @@ sprint:
 id: mr9k7c0g35jhrrdv4zqyjctw
 started: 2026-08-08T00:16:07Z
 worktree: .worktrees/spacedock-ensign-legacy-verdict-warning-flood
+pr: "#634"
 ---
 
 One path-scoped state mutation currently emits 117 `Warning: field 'verdict' ... is not one of [PASSED REJECTED]` lines from the checkout-wide pre-commit validation: 104 lowercase `passed`, 9 lowercase `rejected`, and four other legacy/superseded values. The command exits successfully, but the historical backlog swamps the warning signal for the current change.
