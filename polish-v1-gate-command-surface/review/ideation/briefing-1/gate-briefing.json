@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f6cvn0s87ywbs158yy0b5q7k:ideation:attempt-1:revision-1",
+  "question": "Does F6C define a finite sprint-wide removal of semantic prose-grep proof while preserving only published help text contracts?",
+  "artifacts": [
+    {
+      "id": "artifact:f6cvn0s87ywbs158yy0b5q7k:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/110a9eb010df4afe88d66134c169645fd7cbbc95/polish-v1-gate-command-surface/index.md",
+      "rev": "sha256:7ea3cba14c5da90a49f851f88129d16fd09bc7d92d9034c1e4b48d79d60c9f2d",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE. The design inventories 16 coupling groups, replaces each with structured/state/behavior evidence, targets zero semantic prose-search dependencies, and adds no behavior or standing lint."
+    }
+  ]
+}
