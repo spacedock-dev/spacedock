@@ -341,3 +341,14 @@ The offline Codex terminal-boundary regression and Codex-only fix are complete, 
 ### Summary
 
 Cycle 7 resolves both cycle-6 live blockers at the exact pinned candidate: shallow boot now leaves durable terminal evidence, and recorded-gate successor dispatch uses one anchored absolute path with one successful build. The AC re-anchor fixture also has distinct committed review and reference sources, and all required live, focused, full, race, formatting, diff, and registry proofs pass. Counts: DONE 3, SKIPPED 0, FAILED 0.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Independently validate every acceptance criterion against the full pinned candidate 8728da3a0..304e09a09, including the cycle-6/7 Codex terminal/live-fixture repairs, exact diff boundary, kd separation, and no-manifest rule.
+  Evidence: AC-1 fixture/parser, Codex full journey, AC-2 bootstrap/removal mutation, AC-3 spawn/pointer/advance tests, AC-4 offline cross-host/full/race checks, Codex live, and Pi fallback all passed; the exact Claude common selector stopped after its first pass on expired OAuth, so the required all-host AC-4 evidence is incomplete. Candidate HEAD is clean at 304e09a09864889b1375fe7d41eeabd4d41e5153, merge-base is 8728da3a0, 113738b20 is not an ancestor, and the diff has no kd, internal/gates, manifest, manifest-testdata, assignment, pointer, or oracle paths.
+- FAILED: Run the documented focused/full/race/formatting/diff/registry checks, Codex/Claude/Pi common live selectors with their exact pinned environments and 40-minute fail-fast selector, both AutoContinue variants, durable-state assertions, and a detached adversarial audit that falsifies each terminal/bootstrap/path-oracle claim.
+  Evidence: focused tests, go test ./..., go test ./... -race, gofmt, diff check, registry reconciliation, Codex selector, both Codex AutoContinue variants, Pi openai-codex fallback selector, and detached audit passed; the exact Claude command failed at gate-guardrail with `OAuth session expired and could not be refreshed` in /tmp/spacedock-validation-nvz-claude.olmfAC, and the exact documented Pi command failed at full-ensign-cycle with OpenRouter HTTP 402 in /tmp/spacedock-validation-nvz-pi.YjaYqm. Neither host failure was marked SKIPPED. Audit clone /tmp/spacedock-validation-nvz-audit.8rOj4Q passed its controls and made every required mutation red without changing the candidate or any manifest.
+
+### Summary
+
+Offline behavior, pinned ancestry, scope boundaries, Codex terminal/process evidence, both AutoContinue durable-state variants, Pi fallback evidence, and all five detached falsifiers are concrete passes. The validation gate recommendation is REJECTED for an infrastructure/evidence hold only: rerun the exact Claude lane after OAuth recovery and the documented default Pi lane after its OpenRouter credit issue is resolved; no candidate defect or implementation feedback cycle is recommended. Counts: DONE 0, SKIPPED 0, FAILED 2.
