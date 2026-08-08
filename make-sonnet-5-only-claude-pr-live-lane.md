@@ -44,6 +44,17 @@ gates:
                 digest: sha256:5fe1c5f4d43d0e30a78f008bc59b1cfed1d231f431d841972080f1fc05e2b25a
                 request-digest: sha256:eeb9dfc192729f5e6f48544b0840636230c0cc1df3dc51b805c540d27ce21068
                 room-ref: ./make-sonnet-5-only-claude-pr-live-lane/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0ytmjwn4ppg5en25z7vmna0p:ideation:1
+                briefing: briefing:0ytmjwn4ppg5en25z7vmna0p:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-08T15:57:40.803253Z"
+                decision: approve
+                reason: Captain approved the ideated two-lane pull-request cadence and directed implementation.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.
