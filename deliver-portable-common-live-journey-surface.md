@@ -2143,3 +2143,28 @@ Cycle 27 independently PASSED exact candidate `37bc5e43762c01091691626bf0bc84401
 ### Summary
 
 Cycle 28 truthfully binds the fresh Codex default-headless nonpass to the existing `26n` owner without broadening into a product or harness change. The local two-file candidate is focused-, full-, and race-green under immutable state and remains deliberately unpublished pending independent validation.
+
+## Stage Report: validation (cycle 28 — independent Codex evidence binding)
+
+- DONE: Verify exact local-candidate provenance and implementation evidence.
+  Clean LOCAL-ONLY merged HEAD is `347cc5734951967c5d7f5ac6969c6833947a236a`, with parents core representation `f3ffeb408e17921860b09474dda1d4ef797443d6` and current main `94acb270a5c475d190f6b7bef56488aaf78cc7d5`; predecessor `37bc5e43762c01091691626bf0bc8440173e412b` is the core parent. Implementation state commit `2e0f6a98e9dfb9e16e4e0ab4fb7dd134afa4d7a3` records the same scope. Candidate code remains unpushed.
+- DONE: Verify the exact cycle-28 representation delta and rejection guard.
+  Core `f3ffeb408` versus `37bc5e437` is exactly two files/+5/-1: the reconciliation test requires default-headless rows Sonnet, Codex, Pi in that order, all owned by `26nk8qd48zknqnn4kc123sez`, and the shared live runner inserts only the Codex row between the existing Sonnet and Pi rows. The guard's exact length and positional struct comparisons reject removal, reordering, and any wrong owner.
+- DONE: Independently bind the fresh Codex nonpass to existing stage-coherence ownership.
+  Retained PR #633 run `31229553481`, job `93030653527`, failed default-headless in 59.83s with zero prepared requests. Its boot record kept the entity at non-gated `implementation` with no ready gate, and the sole failing command was `gate prepare`, which refused `workflow stage implementation is not an actionable gate`; no product mutation followed. This is the existing defect owned by `26nk8qd48zknqnn4kc123sez`, not a new product or harness defect.
+- DONE: Determine whether the banked Sonnet pass remains valid for final HEAD.
+  Read-only job metadata confirms job `93030653539` PASSED on exact `37bc5e437`: common live ran 01:13:39-01:52:33Z and substrate proofs passed through 02:01:35Z. For target `claude-sonnet`, unchanged `liveJourney` encounters the pre-existing `26n` Sonnet row first and exits through `t.Skipf` before the newly inserted Codex row; the only other cycle-28 change is the offline guard. The pass is therefore safely bankable for final `347cc5734`.
+- DONE: Verify semantic scope and merged-main reconciliation.
+  Cycle 28 changes no product, fixture, prompt, adapter, assertion, registry, documentation, workflow, or existing owner. Main advanced from the common merge base only in `docs/roadmap/live-test-truth/index.md` (+12/-9); merged HEAD's roadmap blob is byte-identical to current main. Final HEAD versus current main is 35 files/+1174/-2018, while the isolated cycle-28 delta remains exactly two files/+5/-1.
+- DONE: Run fresh focused, formatting, and compile verification.
+  `gofmt -l ./cmd ./internal` emitted nothing and `git diff --check` passed. Focused reconciliation passed with `-count=1` in 0.46s wall, all contractlint passed with `-count=1` in 0.45s wall, and live-tag compile-only passed with `-run '^$' -count=1` in 0.51s wall.
+- DONE: Run required repository verification against immutable pilot state.
+  With `SPACEDOCK_STATE_ROOT=/tmp/spacedock-ys-pilot-state.60QPGN`, exact `go test ./...` passed in 190.65s and exact `go test ./... -race` passed in 171.75s. Each broad run actually executed seven packages, reported thirteen unaffected packages cached, and reported two packages with no test files.
+- SKIPPED: Run model, hosted, live, PR, CI, gate, frontmatter, status, code-push, or product-correction commands.
+  Validation used retained artifacts, read-only job metadata, source inspection, and deterministic offline checks only; candidate code and external workflow state were not mutated.
+- DONE: Return an explicit independent recommendation with zero failed checklist items.
+  PASSED. Material: none. Deferred risk: none. Polish: none. Checklist: 0 failed; candidate code and unrelated state paths remained untouched.
+
+### Summary
+
+Cycle 28 independently PASSED exact LOCAL-ONLY merged candidate `347cc5734951967c5d7f5ac6969c6833947a236a`. The two-file representation delta truthfully binds Codex's reproduced default-headless stage-coherence nonpass to existing owner `26nk8qd48zknqnn4kc123sez`, exact guards and all required offline checks are green, and the successful predecessor Sonnet evidence is behaviorally bankable for final HEAD.
