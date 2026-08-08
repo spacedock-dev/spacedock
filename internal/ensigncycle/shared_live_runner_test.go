@@ -101,7 +101,7 @@ func TestClaudeLiveModelMapsToStableTODORole(t *testing.T) {
 
 //spacedock:live-journey id=full-ensign-cycle fixture=realistic-lifecycle
 func TestLiveCommonFullEnsignCycle(t *testing.T) {
-	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, []liveJourneyTODO{liveTODO("codex", "nvz2ym82ydfn07jp04yfxg9r")}, runFullEnsignCycleJourney, someCommitNamesOnly)
+	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, nil, runFullEnsignCycleJourney, someCommitNamesOnly)
 }
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
