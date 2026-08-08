@@ -1,6 +1,6 @@
 ---
 title: "Legacy verdict tokens flood every state-checkout validation commit"
-status: implementation
+status: validation
 source: "Durable-decisions Commander dogfood, 2026-07-22: a normal `spacedock state commit` ran the state-checkout pre-commit validator and printed 117 pre-existing verdict-enum warnings before succeeding, burying any new warning attributable to the entity being committed. Dedupe found the schema validator and pre-commit-hook tasks, but no entity owns legacy-token migration or bounded warning output."
 sprint:
 id: mr9k7c0g35jhrrdv4zqyjctw
