@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mr9k7c0g35jhrrdv4zqyjctw:validation:attempt-1:revision-1",
+  "question": "Does PR #634 remove legacy verdict warning noise while preserving meaningful validation warnings?",
+  "artifacts": [
+    {
+      "id": "artifact:mr9k7c0g35jhrrdv4zqyjctw:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f635b4eb63c04381c260fbf798ef4b80ec5acf7b/legacy-verdict-warning-flood/index.md",
+      "rev": "sha256:7ef6930a8d252887a5b693458421e21fb7aa450af7f92d581371d2211778df89",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation passed the unchanged PR #634 candidate: canonical writes, legacy-compatible reads, unconventional-value warnings, focused/race evidence, and clean Roborev rerun."
+    }
+  ]
+}
