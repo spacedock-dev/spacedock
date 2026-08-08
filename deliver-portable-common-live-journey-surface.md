@@ -2118,3 +2118,28 @@ Cycle 27 corrects two candidate-owned live harness defects without changing runt
 ### Summary
 
 Cycle 27 independently PASSED exact candidate `37bc5e43762c01091691626bf0bc8440173e412b`. Both PR reds are causally harness-owned and narrowly corrected: Claude receives only a suite-wide 90m backstop, while the split-root fixture now enters its derived state branch; focused, full, race, provenance, scope, and policy checks are green with no material finding.
+
+## Stage Report: implementation (cycle 28 — Codex default-headless evidence binding)
+
+- DONE: Classify the fresh Codex default-headless failure without changing product behavior.
+  PR #633 run `31229553481`, job `93030653527`, failed `TestLiveCommonDefaultHeadlessGateStop` after 59.83s with `prepared fixture request count = 0, want 1`; the entity remained at non-gated implementation, `gate prepare` correctly refused, and no product mutation occurred. This reproduces the existing stage-coherence defect owned by `26nk8qd48zknqnn4kc123sez`.
+- DONE: Add the smallest exact reconciliation guard before the representation correction.
+  `TestRuntimeLiveRegistryReconciliation` RED in 1.04s because actual rows were Sonnet/Pi while the guard required exactly Sonnet/Codex/Pi, in source order, all owned by `26nk8qd48zknqnn4kc123sez`.
+- DONE: Bind Codex to the existing default-headless TODO owner.
+  `TestLiveCommonDefaultHeadlessGateStop` adds only `liveTODO("codex", "26nk8qd48zknqnn4kc123sez")` between Sonnet and Pi; the gate-guardrail guard, owner, product, fixture, prompt, adapter, assertion, registry, docs, and workflow remain unchanged.
+- DONE: Prove the exact guard and live-tag source compile after the correction.
+  Focused reconciliation GREEN in 0.36s, all contractlint GREEN in 0.50s, and live-tag compile-only `go test -tags live ./internal/ensigncycle -run '^$' -count=1` GREEN in 0.98s; removing or reordering the Codex row makes the exact guard fail.
+- DONE: Run formatting and exact-delta checks.
+  `gofmt -w ./cmd ./internal` and `git diff --check` passed; the delta from `37bc5e43762c01091691626bf0bc8440173e412b` is exactly two files/+5/-1.
+- DONE: Run the required repository-wide checks against immutable pilot state.
+  With `SPACEDOCK_STATE_ROOT=/tmp/spacedock-ys-pilot-state.60QPGN`, exact `go test ./...` passed in 126.32s and exact `go test ./... -race` passed in 165.97s.
+- DONE: Commit the candidate locally without publishing code.
+  Candidate `f3ffeb408e17921860b09474dda1d4ef797443d6` is clean and ahead of its origin branch by exactly one local commit; no code push occurred.
+- SKIPPED: Run a model, hosted, live, PR, CI, gate, frontmatter, status, or underlying product correction.
+  This is representation-only TODO attribution; the running remote Sonnet job and all external workflow surfaces were left untouched.
+- DONE: Close the implementation checklist with zero failed items and preserve review authority.
+  Checklist result: 0 failed. Independent validation of `f3ffeb408e17921860b09474dda1d4ef797443d6` is required before any code push.
+
+### Summary
+
+Cycle 28 truthfully binds the fresh Codex default-headless nonpass to the existing `26n` owner without broadening into a product or harness change. The local two-file candidate is focused-, full-, and race-green under immutable state and remains deliberately unpublished pending independent validation.
