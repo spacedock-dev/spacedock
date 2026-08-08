@@ -302,3 +302,16 @@ The archived pilot manifest now matches the shared state checkout, with its inva
 ### Summary
 
 The exact candidate passes the offline contract, transport, cross-host, full, race, formatting, registry, manifest, and detached adversarial checks. The corrected live artifact identifies `7d50c7d88` and proves the fresh prompt edge, but the Codex host stopped making progress after `turn.completed` before durable terminal evidence; this is an infrastructure/evidence failure under the assignment contract, not a code finding.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Rebase nv onto durable 0y tip 8728da3a0; drop 7d50c7d88 and keep no internal/gates or manifest paths, while preserving Codex bootstrap, 0y layout, kd boundary, and dirty 0y files.
+  Evidence: the rebase completed without conflict; clean candidate HEAD `77589b581` has only rebased commits `0295894d0` and `77589b581` atop `8728da3a0`, with a 12-file diff and no `internal/gates/**` or `v1_pilot_manifest` path; the separate 0y worktree was not copied or changed.
+- FAILED: Run focused, full, race, formatting, diff, live, and registry checks against exact rebased HEAD without changing the oracle or manifest; record concrete evidence and stop on rebase or host-lifecycle failure.
+  Evidence: focused fixture/dispatch, registry, `go test ./...`, `go test ./... -race`, `gofmt -l ./cmd ./internal`, and `git diff --check` passed at `77589b581`; the Codex selector recorded 7 passed journeys and 4 declared TODO skips before `TestLiveCommonAutoContinueAfterImplementation` hit the 1-minute no-progress watchdog after `turn.completed` (exit 1), with artifacts at `/tmp/spacedock-codex-live-proof-rework-nvz-cycle5.9uBdDX`.
+- DONE: Commit the clean candidate and append the implementation rework Stage Report with every checklist item marked DONE, SKIPPED, or FAILED and explicit counts.
+  Evidence: candidate branch `spacedock-ensign/restore-codex-ensign-contract-bootstrap` is clean at `77589b581`; this report is appended without frontmatter, oracle, or manifest changes and is being committed path-scoped in `spacedock-state/dev`.
+
+### Summary
+
+Rebuilt the Codex ensign-bootstrap candidate from durable 0y, dropped the pilot-manifest repair, and preserved the Codex, kd, and 0y boundaries. Offline, full, race, formatting, diff, registry, and focused proofs passed; the supported Codex live lane produced durable passes through several common journeys but stopped on the existing post-`turn.completed` host-lifecycle watchdog during auto-continue. Counts: DONE 2, SKIPPED 0, FAILED 1.
