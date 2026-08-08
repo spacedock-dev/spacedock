@@ -240,3 +240,36 @@ Validation confirms the mode-preserving worker behavior and team recovery, but t
 ### Summary
 
 The correction accepts Claude's explicit-false normalization only for blocking bare recovery and closes the two reviewer-proven identity and report-scoping false positives. The candidate is committed at `43fd2e79d`; all offline task-owned evidence passes, while live model evidence remains externally blocked by expired or revoked Claude OAuth credentials.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify absent-or-false blocking bare semantics and all crossed-mode, true, name, team, zero-worker, and multiple-worker negative controls at exact head 43fd2e79d.
+  Focused tests pass both bare encodings, team mode, and every named mutation; fresh Sonnet and Opus live runs pass selected-bare and selected-team end to end at `43fd2e79d`.
+- DONE: Verify explicit non-ensign merged dispatch and scattered report-token counterexamples fail while durable identity, exact Stage Report, path-scoped commit, clean worktree, and bounded-stop evidence remain strict.
+  Focused plus temporary overlay controls reject explicit `general-purpose` identity and DONE/Summary before or after the exact section; Git-backed marker, report, commit, dirty-path, and completion-bound mutations remain falsifiable.
+- DONE: Audit the fixed 9-file surface against A7 and F6C boundaries, then run focused, full, race, formatting, diff, and applicable live evidence with external failures classified from this run.
+  The exact A7-based surface is nine files at +350/-62 with no A7-owned file or F6C command/spec/help change; F6C overlap is confined to 824-owned recovery oracles/skill and its runtime-live description.
+
+### Acceptance evidence
+
+- AC-1: Sonnet passed both break-glass modes in 278.90s and Opus passed both in 499.83s; each live case requires exactly one worker, bounded return, marker, exact report, path-scoped commit, and clean entity path.
+- AC-2: Offline absent/false positives and true/name/team/crossed-mode negatives pass; both models independently passed selected-bare and selected-team through the real failing-helper front door.
+- AC-3: Offline tables reject crossed pairs, malformed prompts, zero/multiple workers, explicit non-ensign types, and scattered report tokens; contract and fixture remain aligned with the observed live recovery shapes.
+- AC-4: Durable-result mutations independently reject missing marker, heading, DONE, Summary, commit, or clean state; merged artifact and member-meta mutations retain independent ensign identity.
+
+### External evidence limitations
+
+- `go test ./...` and `go test ./... -race` pass `internal/ensigncycle` and fail only `internal/gates/TestV1PilotManifestReadsAndValidates` because two shared-state manifests are absent; this is external checkout state, not candidate behavior.
+- Fresh Sonnet and Opus `TestLiveMergedTeamModeDispatch` each stop before First Officer work with HTTP 401 `OAuth access token has been revoked`; offline merged transport, artifact, and member-meta controls pass, but this run adds no new merged live observation.
+
+### Deferred risks
+
+- The stream oracle treats present non-boolean `run_in_background` values (`null`, `"false"`, or `0`) as false because decode errors are ignored. Claude tool input canonically supplies a JSON boolean, so no supported trigger or value AC fails; promote to Material if a supported host emits an untyped value or fixture ingestion admits noncanonical tool input.
+
+### Recommendation
+
+PASSED. No material finding remains; the malformed-boolean parser weakness is deferred with a concrete promotion condition, and the two external failures do not contradict candidate behavior.
+
+### Summary
+
+Validation at exact head `43fd2e79d` reproduces all four acceptance criteria, including fresh two-model live proof of both recovery modes and adversarial proof of the two corrected false positives. The candidate stays within the approved nine-file boundary, formatting and diff checks are clean, and only classified external-state limitations plus one unsupported-input deferred risk remain.
