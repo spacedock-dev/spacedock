@@ -3,6 +3,7 @@
 package ensigncycle
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -51,11 +52,12 @@ func liveDriverForRuntime(t *testing.T) (liveDriver, string) {
 	t.Helper()
 	switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime {
 	case "claude":
-		runner := newClaudeLiveRunner(t)
-		if runner.model() == "sonnet" {
-			return runner, "claude-sonnet"
+		role, err := claudeLiveRole(envOr("SPACEDOCK_LIVE_MODEL", "sonnet"))
+		if err != nil {
+			t.Fatal(err)
+			return nil, ""
 		}
-		return runner, "claude-opus"
+		return newClaudeLiveRunner(t), role
 	case "codex":
 		return codexAsLiveDriver{t: t, runner: newCodexLiveRunner(t)}, "codex"
 	case "pi":
@@ -63,6 +65,37 @@ func liveDriverForRuntime(t *testing.T) (liveDriver, string) {
 	default:
 		t.Fatalf("SPACEDOCK_LIVE_RUNTIME=%q, want claude, codex, or pi", runtime)
 		return nil, ""
+	}
+}
+
+func claudeLiveRole(model string) (string, error) {
+	switch model {
+	case "sonnet", "claude-sonnet-5":
+		return "claude-sonnet", nil
+	case "claude-opus-4-8":
+		return "claude-opus", nil
+	default:
+		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, claude-sonnet-5, or claude-opus-4-8", model)
+	}
+}
+
+func TestClaudeLiveModelMapsToStableTODORole(t *testing.T) {
+	tests := []struct {
+		model, want string
+		wantErr     bool
+	}{
+		{model: "sonnet", want: "claude-sonnet"},
+		{model: "claude-sonnet-5", want: "claude-sonnet"},
+		{model: "claude-opus-4-8", want: "claude-opus"},
+		{model: "claude-future-unknown", wantErr: true},
+	}
+	for _, test := range tests {
+		t.Run(test.model, func(t *testing.T) {
+			got, err := claudeLiveRole(test.model)
+			if (err != nil) != test.wantErr || got != test.want {
+				t.Fatalf("claudeLiveRole(%q) = %q, %v; want %q, error=%t", test.model, got, err, test.want, test.wantErr)
+			}
+		})
 	}
 }
 
