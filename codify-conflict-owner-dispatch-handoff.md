@@ -78,6 +78,17 @@ gates:
                 digest: sha256:e956833f41e4790b85fc16f9f0ed75da35710cd6f93419a8551cf32bb48d0483
                 request-digest: sha256:8f5acbc9380a1d224d433fedd7040ea4d5a37a112f9ded397e88ead7bbe524c6
                 room-ref: ./codify-conflict-owner-dispatch-handoff/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d8qmey415fsb5q9h6q639ngf:validation:2
+                briefing: briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-08T06:43:36.968806Z"
+                decision: approve
+                reason: Exact head 7057ad6f7 derives the owner tuple from the initial stamped dispatch, proves live and fresh routing from that tuple, satisfies all three ACs, and adds no grammar, state, parser, resolver, or authority change.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
