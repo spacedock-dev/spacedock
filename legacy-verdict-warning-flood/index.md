@@ -19,6 +19,17 @@ gates:
                 digest: sha256:cc8e99835df956c873b06179dc5a43f8b7057ab656f997e66d075c8c48559f23
                 request-digest: sha256:6a956cafc54210c1e370a1697b201c51426c2a9e1c12a2041d8f5911bc5bca9a
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mr9k7c0g35jhrrdv4zqyjctw:validation:1
+                briefing: briefing:mr9k7c0g35jhrrdv4zqyjctw:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-08T07:31:57.000843Z"
+                decision: approve
+                reason: Captain authorized approval; validation reproduced the warning reduction, preserved unconventional warnings, accepted canonical output, and found no material candidate defect.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 One path-scoped state mutation currently emits 117 `Warning: field 'verdict' ... is not one of [PASSED REJECTED]` lines from the checkout-wide pre-commit validation: 104 lowercase `passed`, 9 lowercase `rejected`, and four other legacy/superseded values. The command exits successfully, but the historical backlog swamps the warning signal for the current change.
