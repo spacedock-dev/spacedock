@@ -442,3 +442,16 @@ The structural proof now observes every matrix key instead of enumerating known 
 ### Summary
 
 Validation reproduced the former false-green mutation and observed the corrected raw-key guard reject it. The one-file test correction is clean, every requested suite passes, and exact SHA `113738b20` is safe for the first officer to push to PR #639 for direct job-graph proof without approving paid lanes.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Normalize known Claude model IDs to stable Sonnet/Opus lane roles and fail on unknown IDs.
+  Commit `a606ae5f3` maps `sonnet` and `claude-sonnet-5` to `claude-sonnet`, maps `claude-opus-4-8` to `claude-opus`, and rejects every unknown ID before constructing the live runner.
+- DONE: Restore every existing `claude-sonnet` TODO match without changing journey behavior, registry rows, or product-gap ownership.
+  All four existing Sonnet TODO declarations already target the restored stable role; the correction changes no TODO, journey, fixture, registry, or owner bytes.
+- DONE: Add focused mapping/TODO controls and run formatting, affected packages, full suite, and race suite before reporting.
+  The offline tagged table fails on the former Sonnet-5-to-Opus mapping or accepted unknowns; registry reconciliation, affected ensigncycle, workflow structure, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass.
+
+### Summary
+
+PR #639 run `31281195654` proved the two-job graph at exact head `113738b20` but exposed the model-role mismatch when `TestLiveCommonRejectionFlow` ran instead of applying its Sonnet TODO. The local correction is one existing file and +37/-4 from that head; PR delivery and CI approval remain with the first officer.
