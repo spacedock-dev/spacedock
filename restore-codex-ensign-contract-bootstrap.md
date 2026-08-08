@@ -190,9 +190,9 @@ This applies to `docs/site/contributing/adding-a-runtime.md`; no live-CI wording
 ## Stage Report: ideation
 
 - DONE: Define an executable Codex bootstrap approach and exercise its riskiest fresh-child path.
-  Evidence: the supported Codex fresh-child probe (Codex thread `019fdea2-490f-7632-a599-f380366947b3`, CLI `0.146.0`) exited 0 after reading the real ensign skill/core/adapter and the pointer, then confirmed the anchored Stage Report protocol; the result selects that executable edge over duplicated contract bytes.
+  Evidence: AC-2 — the supported Codex fresh-child probe (Codex thread `019fdea2-490f-7632-a599-f380366947b3`, CLI `0.146.0`) exited 0 after reading the real ensign skill/core/adapter and the pointer, then confirmed the anchored Stage Report protocol; the result selects that executable edge over duplicated contract bytes.
 - DONE: Make every acceptance criterion independently checkable while preserving host and transport boundaries.
-  Evidence: AC-1 through AC-4 each name an independent live, fixture, mutation, or relational check; the repaired fixture contract supplies its plugin root and avoids ambient auth/`/tmp`; the scope preserves `fork_turns: "none"`, byte-for-byte prompt forwarding, pointer-owned assignment payload, Claude/Pi behavior, and the existing oracle.
+  Evidence: AC-3 transport-boundary evidence: AC-1 through AC-4 each name an independent live, fixture, mutation, or relational check; the repaired fixture contract supplies its plugin root and avoids ambient auth/`/tmp`; the scope preserves `fork_turns: "none"`, byte-for-byte prompt forwarding, pointer-owned assignment payload, Claude/Pi behavior, and the existing oracle.
 - DONE: Declare expected surface, estimate, semantic scope, and any required documentation diff.
   Evidence: the expected files, 6–9-file/120–220-line estimate, explicit command/stored-format/authority/prompt/runtime/validation scope, sibling-task boundary, and concrete diffs for both runtime-support docs are recorded above; `runtime-live-ci.md` is intentionally unchanged because its plugin-boundary wording already matches.
 
