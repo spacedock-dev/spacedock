@@ -31,14 +31,7 @@ type liveCadenceWorkflow struct {
 			Name string `yaml:"name"`
 		} `yaml:"environment"`
 		Strategy struct {
-			Matrix struct {
-				Cadence     []string         `yaml:"cadence"`
-				Model       []string         `yaml:"model"`
-				Effort      []string         `yaml:"effort"`
-				Environment []string         `yaml:"environment"`
-				Include     []liveCadenceRow `yaml:"include"`
-				Exclude     []liveCadenceRow `yaml:"exclude"`
-			} `yaml:"matrix"`
+			Matrix map[string]yaml.Node `yaml:"matrix"`
 		} `yaml:"strategy"`
 	} `yaml:"jobs"`
 }
@@ -55,6 +48,7 @@ func TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence(t *testing.T) {
 		t.Fatal(err)
 	}
 	mutations := [][2]string{
+		{"include:\n", "os: [ubuntu-latest, macos-latest]\n        include:\n"},
 		{"include:\n", "model: [claude-opus-4-8]\n        include:\n"},
 		{"include:\n", "exclude:\n          - model: claude-sonnet-5\n        include:\n"},
 		{"environment: " + claudeCadenceEnv, "environment: " + claudeCadenceEnv + "\n          - model: claude-opus-4-8\n            effort: max\n            environment: CI-E2E-OPUS"},
@@ -84,12 +78,17 @@ func assertOneClaudeCadence(workflow string) error {
 		return fmt.Errorf("workflow lacks claude-live")
 	}
 	matrix := job.Strategy.Matrix
-	if len(matrix.Cadence)+len(matrix.Model)+len(matrix.Effort)+len(matrix.Environment)+len(matrix.Exclude) != 0 {
-		return fmt.Errorf("Claude cadence must use no base axes or exclude entries")
+	include, ok := matrix["include"]
+	if len(matrix) != 1 || !ok {
+		return fmt.Errorf("Claude matrix keys = %v, want only include", sortedKeys(matrix))
+	}
+	var rows []liveCadenceRow
+	if err := include.Decode(&rows); err != nil {
+		return fmt.Errorf("decode Claude matrix include: %w", err)
 	}
 	want := liveCadenceRow{Cadence: pullRequestCadence, Model: claudeCadenceModel, Effort: "max", Environment: claudeCadenceEnv}
-	if len(matrix.Include) != 1 || matrix.Include[0] != want {
-		return fmt.Errorf("Claude matrix include = %#v, want one explicit row %#v", matrix.Include, want)
+	if len(rows) != 1 || rows[0] != want {
+		return fmt.Errorf("Claude matrix include = %#v, want one explicit row %#v", rows, want)
 	}
 	if codex, ok := parsed.Jobs["codex-live"]; !ok || codex.Environment.Name != "CI-E2E-CODEX" {
 		return fmt.Errorf("workflow lacks the Codex approval lane")
@@ -98,6 +97,15 @@ func assertOneClaudeCadence(workflow string) error {
 		return fmt.Errorf("workflow retains a Pi approval lane")
 	}
 	return nil
+}
+
+func sortedKeys[V any](values map[string]V) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 type liveClaim struct{ step, selector, claim string }
