@@ -1,6 +1,6 @@
 ---
 title: Make FO dispatch of moving-target conflict owners explicit
-status: validation
+status: implementation
 source: "Captain follow-up after the 2026-08-04 conflict-owner and shared-credential diagnosis."
 started: 2026-08-06T15:54:14Z
 completed:
@@ -88,9 +88,9 @@ gates:
                 reason: Exact head 7057ad6f7 derives the owner tuple from the initial stamped dispatch, proves live and fresh routing from that tuple, satisfies all three ACs, and adds no grammar, state, parser, resolver, or authority change.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
-pr: "#636"
+                state: superseded
+mod-block:
+pr:
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
@@ -356,3 +356,16 @@ Two exact-head attempts to reproduce a second completed live Codex handoff faile
 ### Summary
 
 Validation recommends PASSED at exact head `7057ad6f7`: the prior Material provenance defect is repaired, all three ACs have exact-head evidence, and no Material candidate finding remains. The independent live reruns are classified as non-candidate evidence-infrastructure failures and are preserved honestly; `/tmp/spacedock-d8-validation-live` retains the second transcript, while the completed 235.71s exact-head implementation run remains the runtime handoff/fresh-fallback proof.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Reconcile the candidate with current main and the YS live-test inventory.
+  The owner branch was rebased without conflict from `7057ad6f7` onto canonical YS/main `d3e70e958`; exact new head `84f9830ec` preserves both FO contract edits and the stamped-owner proof.
+- DONE: Register the owner-handoff live scenario in every required inventory and coverage guard.
+  `owned-conflict-owner-handoff` is the 17th registry/common entry with fixture `conflict-owner/stamped-checkout`; the source annotation, count guard, live-CI guide, workflow count, scenario specification, and architecture inventory agree, while all three unchanged `^TestLiveCommon` selectors and existing artifact uploads include it.
+- DONE: Preserve the self-contained owner tuple contract and prove focused, full, race, and live checks.
+  At `84f9830ec`, reconciliation and focused packages passed, `go test ./...` and `go test ./... -race` passed, and canonical `SPACEDOCK_LIVE_RUNTIME=codex TestLiveCommonOwnedConflictOwnerHandoff` passed in 170.78s; Claude Sonnet/Opus and Pi retain exact D8-owned TODO cells.
+
+### Summary
+
+D8 now participates in YS's canonical portable live inventory instead of restoring its retired standalone test entry point. The existing Codex proof remains self-contained and green, current workflow selectors and artifact paths collect it automatically, and no product grammar, state, parser, resolver, authority, or conflict-resolution behavior changed.
