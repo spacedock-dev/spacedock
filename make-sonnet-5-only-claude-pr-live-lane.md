@@ -24,6 +24,17 @@ gates:
                 digest: sha256:dbf8b6eef823205ddcd3f98c3329756465a1102398f78b4a504f02ad3548023e
                 request-digest: sha256:db28e83d3906eb06c9ceb9d98ffebe8ac28753cf4b020b902f23a306cdd061fb
                 room-ref: ./make-sonnet-5-only-claude-pr-live-lane/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0ytmjwn4ppg5en25z7vmna0p:backlog:1
+                briefing: briefing:0ytmjwn4ppg5en25z7vmna0p:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-08T15:44:23.487623Z"
+                decision: approve
+                reason: Captain directed dispatch. Ideation must make routine PR CI select Sonnet 5/max and Codex Luna/max, retain Opus for pre-release, and move Pi to manual/local evidence.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.
