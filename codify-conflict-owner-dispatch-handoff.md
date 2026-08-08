@@ -72,6 +72,12 @@ gates:
                 at: "2026-08-07T05:49:48.980218Z"
                 decision: revise
                 reason: Validation proved that both live and fresh fixture arms seed the owner tuple instead of deriving it from the initial stamped dispatch. Fix only that provenance defect, then rerun focused, full, race, and live evidence.
+            - id: gate-attempt:d8qmey415fsb5q9h6q639ngf-validation-2
+              briefing:
+                id: briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-2:revision-1
+                digest: sha256:e956833f41e4790b85fc16f9f0ed75da35710cd6f93419a8551cf32bb48d0483
+                request-digest: sha256:8f5acbc9380a1d224d433fedd7040ea4d5a37a112f9ded397e88ead7bbe524c6
+                room-ref: ./codify-conflict-owner-dispatch-handoff/review/validation/briefing-2
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target

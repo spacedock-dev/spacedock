@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-2:revision-1",
+  "question": "Does D8 return a moving-target conflict to the owner tuple produced by the initial stamped dispatch without new grammar or state?",
+  "artifacts": [
+    {
+      "id": "artifact:d8qmey415fsb5q9h6q639ngf:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/afc450966c094af60c64c0beccb363106d4336b2/codify-conflict-owner-dispatch-handoff.md",
+      "rev": "sha256:b77e4283af5d52cc486a88d01925b688050dda56ca949a9eb96268139fe997c4",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE. Exact head 7057ad6f7 derives one owner tuple from the initial stamped dispatch, uses it for live and fresh routes, and preserves authority with no new parser, resolver, grammar, or state."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:d8qmey415fsb5q9h6q639ngf:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/7057ad6f79fdc4cf6f23171301142547713f982f/internal/ensigncycle/conflict_owner_handoff_live_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:5097cef3359a08f60274cce7becd7af905791a527c363e87efa4c0071813cc6d"
+    }
+  ]
+}
