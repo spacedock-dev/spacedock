@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/livescenario"
+	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
 func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) string, assert func(*testing.T, string, string) bool) {
@@ -101,6 +102,35 @@ func autoContinueFixtureVariants() []autoContinueFixtureVariant {
 	}
 }
 
+func initializeAutoContinueFixtureGit(t *testing.T, workflowRoot, stateRoot string) {
+	t.Helper()
+	if stateRoot != workflowRoot {
+		gitInit(t, stateRoot)
+		branch, err := status.StateBranch(workflowRoot)
+		if err != nil {
+			t.Fatal(err)
+		}
+		git(t, stateRoot, "branch", "-m", branch)
+	}
+	gitInit(t, workflowRoot)
+}
+
+func TestSplitRootAutoContinueFixtureUsesDerivedStateBranch(t *testing.T) {
+	workflowRoot := t.TempDir()
+	stateRoot, _, err := writePiAutoContinueWorkflowNoGit(workflowRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	initializeAutoContinueFixtureGit(t, workflowRoot, stateRoot)
+	want, err := status.StateBranch(workflowRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimSpace(git(t, stateRoot, "branch", "--show-current")); got != want {
+		t.Fatalf("split-root state branch = %q, want %q", got, want)
+	}
+}
+
 func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() []autoContinueFixtureVariant, assert func(string, string, string) error) {
 	t.Helper()
 	for _, fixture := range build() {
@@ -114,10 +144,7 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 				stateRoot, entity, err = fixture.stageWithoutGit(dir)
 				if err == nil {
 					splitRoot = stateRoot != dir
-					if splitRoot {
-						gitInit(t, stateRoot)
-					}
-					gitInit(t, dir)
+					initializeAutoContinueFixtureGit(t, dir, stateRoot)
 				}
 				return entity, err
 			},

@@ -102,6 +102,26 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	}
 }
 
+func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
+	repo := repoRoot(t)
+	live := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
+	docs := string(mustRead(t, filepath.Join(repo, "docs", "runtime-live-ci.md")))
+	for _, command := range []struct {
+		name, text, want string
+	}{
+		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast ./internal/ensigncycle/`},
+		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
+		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
+		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
+		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
+		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
+	} {
+		if count := strings.Count(command.text, command.want); count != 1 {
+			t.Errorf("%s common-suite command count = %d, want 1", command.name, count)
+		}
+	}
+}
+
 func readDesiredLiveJourneys(t *testing.T, path string) map[string]desiredLiveJourney {
 	text := string(mustRead(t, path))
 	start := strings.Index(text, "## Common journeys\n")

@@ -251,7 +251,8 @@ jobs:
 
       # Run all 16 exported common journeys through the Claude transport. The exact
       # prefix selector is shared with Codex and Pi; -failfast stops at the first
-      # non-TODO regression.
+      # non-TODO regression. The loose 90-minute timeout is a suite-wide runaway
+      # backstop for these sequential journeys, not an individual-journey budget.
       # Output discipline: gotestsum runs the suite ONCE, prints a CLEAN step log
       # (per-package progress + an `=== Failed` recap listing each failing test
       # with file:line — no per-test === RUN / --- PASS firehose) and writes the
@@ -264,7 +265,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle/
+          SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast ./internal/ensigncycle/
 
       # Current Claude substrate proofs. Each exact test name owns one claim:
       # merged named-Agent dispatch, explicit bare dispatch, or break-glass recovery
