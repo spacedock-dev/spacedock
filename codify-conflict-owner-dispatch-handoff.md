@@ -326,6 +326,7 @@ Validation recommends REJECTED at exact head `9b0d30f13`. The contract surface i
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached validation / owner tuple provenance; surface 3 files/+164/-3 vs estimate 3–5 files/about +90/-10; AC unchanged
+- Cycle 2: REJECTED — post-YS validation / self-referential recipient and cardinality evidence; surface 10 files/+265/-11 vs estimate 3–5 files/about +90/-10; AC unchanged. Captain-directed YS reconciliation explains the registry surface; FO authorizes only the D8-owned typed-event correlation fix.
 
 ## Stage Report: implementation (cycle 1)
 
