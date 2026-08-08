@@ -328,3 +328,16 @@ Rebuilt the Codex ensign-bootstrap candidate from durable 0y, dropped the pilot-
 ### Summary
 
 The offline Codex terminal-boundary regression and Codex-only fix are complete, and aggregate, race, formatting, diff, registry, and durable AutoContinue checks pass. The full common live selector remains FAILED only because its shallow-boot artifact has no process-result evidence after three monitor epochs, with a later selector run also exposing a recorded-gate duplicate-dispatch flake; neither is a state-transition-guard failure. Counts: DONE 2, SKIPPED 0, FAILED 1.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Resolve the two concrete cycle-6 live blockers at the exact candidate: shallow-boot terminal/process-result evidence and the recorded-gate successor duplicate-dispatch assertion.
+  Evidence: the exact full selector at `/tmp/spacedock-codex-live-proof-rework-nvz-cycle7-full-fixed` exited 0; all 11 process-result artifacts are `terminal: true` and `timed_out: false`, including shallow-boot, and the recorded-gate command log has exactly one dispatch-build begin and one successful dispatch-build exit. The fixes anchor the successor entity path as an absolute path and run the selector with its sufficient 45-minute suite timeout.
+- DONE: Run the offline and focused regressions, both AutoContinue variants, the exact full common selector, and focused/full/race/formatting/diff/registry checks without weakening generic watcher, durable-state, or quiet-timeout oracles or editing any manifest.
+  Evidence: focused process-boundary, recorded-gate prompt, AC fixture, dispatch, and registry tests pass; both AutoContinue variants and the exact `-run '^TestLiveCommon'` selector pass; `go test ./... -count=1`, `go test ./... -race -count=1`, `gofmt -w ./cmd ./internal`, `gofmt -l ./cmd ./internal`, and `git diff --check` pass. The final diff contains only the three intended fixture/test files, with generic watcher, durable-state, quiet-timeout, and manifest paths unchanged.
+- DONE: Commit the clean candidate and append implementation cycle 7 with every item marked DONE, SKIPPED, or FAILED and explicit counts; leave no FAILED item for the state transition guard.
+  Evidence: code commit `304e09a09` is clean on `spacedock-ensign/restore-codex-ensign-contract-bootstrap`, retains pinned base `8728da3a0`, and this report is appended after `total_lines=330` without frontmatter changes for a path-scoped state commit.
+
+### Summary
+
+Cycle 7 resolves both cycle-6 live blockers at the exact pinned candidate: shallow boot now leaves durable terminal evidence, and recorded-gate successor dispatch uses one anchored absolute path with one successful build. The AC re-anchor fixture also has distinct committed review and reference sources, and all required live, focused, full, race, formatting, diff, and registry proofs pass. Counts: DONE 3, SKIPPED 0, FAILED 0.
