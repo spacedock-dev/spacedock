@@ -1,6 +1,6 @@
 ---
 title: Polish the v1 gate command and documentation surface
-status: ideation
+status: implementation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: top-level help omits gate prepare and the prose still describes prototype lifecycle details that the semantic cuts will remove."
 started: 2026-08-08T00:04:11Z
 completed:
@@ -53,7 +53,7 @@ gates:
                 reason: Captain directed F6C to kill sprint-added prose greps. The ideation report accounts for all three dispatched items, inventories 16 coupling groups, targets zero semantic prose-search dependencies, and preserves exact text only for published help.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. Remove sprint-added tests that infer behavior by searching free-form command, prompt, document, or transcript prose. Exact text remains asserted only for deliberately published human-facing help.
