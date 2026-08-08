@@ -2168,3 +2168,28 @@ Cycle 28 truthfully binds the fresh Codex default-headless nonpass to the existi
 ### Summary
 
 Cycle 28 independently PASSED exact LOCAL-ONLY merged candidate `347cc5734951967c5d7f5ac6969c6833947a236a`. The two-file representation delta truthfully binds Codex's reproduced default-headless stage-coherence nonpass to existing owner `26nk8qd48zknqnn4kc123sez`, exact guards and all required offline checks are green, and the successful predecessor Sonnet evidence is behaviorally bankable for final HEAD.
+
+## Stage Report: implementation (cycle 29 — AC re-anchor fixture commissioning)
+
+- DONE: Reproduce the final-head Codex AC re-anchor reachability failure at the fixture-discovery boundary.
+  PR #633 run `31246422432`, job `93075787158`, exited cleanly without mutation after boot reported no commissioned workflow; local `go test ./internal/livescenario -run '^TestACReanchorFixtureIsDiscoverable$' -count=1` then RED in 0.330s with `AC re-anchor fixture is not discoverable from its workflow root`.
+- DONE: Add a focused regression test that creates the real fixture and proves workflow discovery.
+  `TestACReanchorFixtureIsDiscoverable` calls the git-backed `writeACReanchorFixture`, then requires `status.DiscoverWorkflowDir(root)` to find that exact root; deleting the commissioning marker makes this exercised boundary fail.
+- DONE: Implement the smallest representation-only correction.
+  `acReanchorReadme` adds only `commissioned-by: spacedock@1`; the scenario prompt, adapter, oracle, entity, product behavior, registry, TODO bindings, docs, and workflow remain unchanged.
+- DONE: Prove the focused behavior, live-tag compilation, and reconciliation controls after the correction.
+  All AC re-anchor tests passed in 0.600s, live-tag ensign-cycle compile-only passed in 0.241s, and runtime-live reconciliation controls passed in 0.261s; removing the marker reintroduces the focused RED.
+- DONE: Run formatting and exact-delta checks.
+  `gofmt -w ./cmd ./internal`, `gofmt -l ./cmd ./internal`, and `git diff --check` passed; cycle 29 is exactly two files/+15 with one test and one marker.
+- DONE: Run the required repository-wide checks against immutable pilot state.
+  With `SPACEDOCK_STATE_ROOT=/tmp/spacedock-ys-pilot-state.60QPGN`, exact `go test ./...` passed, including `internal/ensigncycle` in 113.534s, and exact `go test ./... -race` passed in 165.89s wall.
+- DONE: Commit the candidate locally without publishing code.
+  Candidate `97603585ff4120559315d29764c04d603827035d` is clean and exactly one commit ahead of its origin branch; no code push occurred.
+- SKIPPED: Run a model, hosted live lane, PR command, CI approval, gate command, frontmatter/status mutation, merge, or product/TODO correction.
+  Those delivery and authority actions remain with the first officer after fresh independent validation.
+- DONE: Close the implementation checklist and classify residual risk.
+  Checklist result: 0 failed. Material: none. Deferred risk: none. Polish: none; fresh validation of `97603585f` is required before publication.
+
+### Summary
+
+Cycle 29 repairs only the AC re-anchor fixture's commissioned-workflow identity, the exact missing precondition proven by final-head Codex artifacts and the new offline behavioral regression. The local two-file candidate is focused-, full-, and race-green under immutable state and remains deliberately unpublished pending independent validation.
