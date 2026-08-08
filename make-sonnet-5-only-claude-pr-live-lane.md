@@ -64,6 +64,17 @@ gates:
                 digest: sha256:8084561597119202308347ff4ad9dedcd71501df568dcc3c4f053a1fec6fcd1d
                 request-digest: sha256:f0eccaf219416c998fdad5bb18b4d49726a31e77c106466b7b456fe56bbcab24
                 room-ref: ./make-sonnet-5-only-claude-pr-live-lane/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0ytmjwn4ppg5en25z7vmna0p:validation:1
+                briefing: briefing:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-08T18:32:10.784333Z"
+                decision: approve
+                reason: Validation reproduced all acceptance criteria and required repository checks on the integrated candidate.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.
