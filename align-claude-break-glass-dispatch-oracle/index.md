@@ -78,6 +78,17 @@ gates:
                 digest: sha256:c306f003a56ee182551aa40a72ed542410848bff04b53f4478edf9731232f2fa
                 request-digest: sha256:712e3c0f873aa6b5a1539d92b60397fb38102f8b27127c6a1534cfac01a3984a
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:824ecawn5jttbykcgx82nbf4:validation:2
+                briefing: briefing:824ecawn5jttbykcgx82nbf4:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-08T07:05:34.321236Z"
+                decision: approve
+                reason: 'Exact head 43fd2e79d satisfies all four ACs: Sonnet and Opus pass both recovery modes, crossed and malformed supported shapes fail, explicit wrong identity fails, and durable report evidence is exact-section and Git scoped.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
