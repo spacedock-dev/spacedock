@@ -223,3 +223,7 @@ REJECTED. The supported live bare path false-reds on both required models, and t
 ### Summary
 
 Validation confirms the mode-preserving worker behavior and team recovery, but the observable omission requirement is incompatible with current Claude stream normalization. Two additional adversarial controls show weakened identity and completion evidence, so all four ACs lack valid end-to-end proof at this head.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — detached validation / normalized false plus two oracle false positives; surface 9 files/+285 vs estimate 8 files/about +220/-55; AC narrowed: bare blocking accepts absent or explicit false
