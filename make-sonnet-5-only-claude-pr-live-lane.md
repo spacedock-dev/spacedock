@@ -7,7 +7,7 @@ started: 2026-08-08T15:45:20Z
 completed:
 verdict:
 score: 0.85
-worktree:
+worktree: .worktrees/spacedock-ensign-make-sonnet-5-only-claude-pr-live-lane
 issue:
 pr:
 mod-block:
