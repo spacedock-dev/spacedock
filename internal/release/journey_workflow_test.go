@@ -66,19 +66,16 @@ func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
 	}
 }
 
-func TestRuntimeLiveWorkflowGuardRejectsObsoletePiMinReleaseAgeProbe(t *testing.T) {
+func TestRuntimeLiveWorkflowGuardRejectsPaidPiJob(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.Replace(live,
-		`node --version`,
-		`npm config get min-release-age
-          npm config set min-release-age 1440`,
-		1)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing Pi install prelude")
-	}
+	adversarial := live + `
+  pi-live:
+    environment:
+      name: CI-E2E-PI
+`
 
 	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted obsolete min-release-age probing")
+		t.Fatal("runtime live workflow guard accepted a paid Pi live job")
 	}
 }
 

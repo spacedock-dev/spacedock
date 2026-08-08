@@ -248,9 +248,9 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 		"login status exec",
 		"plugin list exec",
 		"plugin add exec",
-		"exec --model gpt-5.6-luna --json prompt",
-		"--ask-for-approval on-request exec --model gpt-5.6-luna --json prompt",
-		"--dangerously-bypass-approvals-and-sandbox exec --model gpt-5.6-luna --json prompt",
+		"exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
+		"--ask-for-approval on-request exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
+		"--dangerously-bypass-approvals-and-sandbox exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("Codex shim argv = %q, want %q", got, want)
@@ -258,6 +258,9 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 	for _, line := range got[4:] {
 		if strings.Count(line, "--model gpt-5.6-luna") != 1 {
 			t.Fatalf("pinned Codex exec argv = %q, want exactly one Luna model flag", line)
+		}
+		if strings.Count(line, `-c model_reasoning_effort="max"`) != 1 {
+			t.Fatalf("pinned Codex exec argv = %q, want exactly one maximum-effort setting", line)
 		}
 	}
 }

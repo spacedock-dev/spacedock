@@ -20,9 +20,6 @@ var liveClaims = []liveClaim{
 	{"Run live Claude substrate proofs", "TestLiveBreakGlassShimRecovery", "claude-break-glass-recovery"},
 	{"Verify Codex resolver against installed plugin", "TestCodexResolveManifestAgainstInstalledHost", "codex-current-checkout-manifest-resolution"},
 	{"Run live Codex shared scenarios", "TestLiveCodexSharedScenarios", "codex-common-journeys"},
-	{"Run Pi shared scenario coverage guard", "TestSharedScenarioRunnerCoverage", "shared-runner-map-parity"},
-	{"Run Pi shared scenario coverage guard", "TestPiSharedScenarioCoverage", "pi-common-journey-classification"},
-	{"Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke", "pi-front-door-child-durable-boot-contract"},
 }
 
 var offlineControls = []string{
@@ -31,7 +28,8 @@ var offlineControls = []string{
 	"TestCleanupKeepMovingRootRetainsOnlyFailures", "TestCodexLiveRunnerExecArgvEnablesMultiAgentV2",
 	"TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs", "TestPiIntercomPackageRootDefaultsBesideSubagents",
 	"TestPiLiveEnvDropsForeignRuntimeMarkers", "TestPiLiveEnvScrubsAmbientPiSubagentMarkers",
-	"TestPiLiveSmokePromptRequiresExactStageReportHeading", "TestShallowBootFixtureContainsOnlyHeldGate",
+	"TestPiLiveSmokePromptRequiresExactStageReportHeading", "TestPiSharedScenarioCoverage",
+	"TestSharedScenarioRunnerCoverage", "TestShallowBootFixtureContainsOnlyHeldGate",
 }
 
 func TestRuntimeLiveWorkflowEverySelectedMinuteBuysNamedEvidence(t *testing.T) {
@@ -52,8 +50,8 @@ func TestRuntimeLiveWorkflowNamedEvidenceMutationControls(t *testing.T) {
 		"removed claim selector": func(s string) string {
 			return strings.Replace(s, "TestLiveBreakGlassShimRecovery", "TestLiveMergedTeamModeDispatch", 1)
 		},
-		"second Pi smoke": func(s string) string {
-			return strings.Replace(s, "-run TestLivePiFrontDoorSmoke", "-run 'TestLivePiFrontDoorSmoke|TestLivePiSubagentEnsignSmoke'", 1)
+		"lost offline Pi coverage": func(s string) string {
+			return strings.Replace(s, "|TestPiSharedScenarioCoverage", "", 1)
 		},
 		"legacy PTY flag": func(s string) string {
 			return strings.Replace(s, "DISABLE_AUTOUPDATER: \"1\"", "DISABLE_AUTOUPDATER: \"1\"\n      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: \"1\"", 1)
@@ -98,7 +96,7 @@ func assertNamedLiveEvidence(workflow string) error {
 	if len(expected) != 0 {
 		return fmt.Errorf("workflow lacks owned selector steps %v", expected)
 	}
-	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "journey-metrics/pi", "inputs.effort"} {
+	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "TestLivePiFrontDoorSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "journey-metrics/pi", "inputs.effort", "CI-E2E-PI"} {
 		if activeYAMLText(workflow, dead) {
 			return fmt.Errorf("workflow retains dead surface %q", dead)
 		}
@@ -114,7 +112,7 @@ func assertNamedLiveEvidence(workflow string) error {
 func assertOfflineControls(workflow string) error {
 	step, ok := stepNamed(parseWorkflowSteps(workflow), "Run deterministic live-harness controls offline")
 	if !ok || strings.Contains(step.run, "-tags") || strings.Join(selectedTests(step.run), "|") != strings.Join(sorted(offlineControls), "|") {
-		return fmt.Errorf("the 12 deterministic controls are not an exact untagged command")
+		return fmt.Errorf("the 14 deterministic controls are not an exact untagged command")
 	}
 	return nil
 }

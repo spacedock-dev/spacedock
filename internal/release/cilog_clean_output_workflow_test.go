@@ -17,8 +17,6 @@ var transformedLiveSteps = []string{
 	"Run live Claude E2E",
 	"Run live Claude shared scenarios",
 	"Run live Codex shared scenarios",
-	"Run Pi shared scenario coverage guard",
-	"Run live Pi front-door smoke",
 }
 
 // TestLiveWorkflowStepsUseGotestsumOneRunShape pins each transformed live step to
@@ -70,9 +68,9 @@ func TestLiveWorkflowInstallsPinnedGotestsum(t *testing.T) {
 			installs++
 		}
 	}
-	// claude-live, codex-live, pi-live each install gotestsum.
-	if installs < 3 {
-		t.Errorf("expected an Install gotestsum step in all three live jobs, found %d", installs)
+	// The offline gate and the two live jobs each install gotestsum.
+	if installs != 3 {
+		t.Errorf("expected gotestsum in the offline gate and both live jobs, found %d installs", installs)
 	}
 
 	// Read the EXECUTABLE commands, not the raw text: commenting out every
