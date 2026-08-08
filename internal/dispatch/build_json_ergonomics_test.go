@@ -60,9 +60,7 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
 		out := decodeBuildOutput(t, native.stdout)
-		if strings.Contains(out.Prompt, "Skill(skill=") {
-			t.Fatalf("derived Codex prompt is Claude-shaped: %q", out.Prompt)
-		}
+		assertCodexFreshPrompt(t, out.Prompt, out.DispatchFilePath)
 		body := readDispatchBody(t, out.DispatchFilePath)
 		for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"team-lead\""} {
 			if strings.Contains(body, banned) {
@@ -145,9 +143,7 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
 		out := decodeBuildOutput(t, native.stdout)
-		if strings.Contains(out.Prompt, "Skill(skill=") {
-			t.Fatalf("--host codex prompt is Claude-shaped: %q", out.Prompt)
-		}
+		assertCodexFreshPrompt(t, out.Prompt, out.DispatchFilePath)
 	})
 
 	t.Run("matching-explicit-sources", func(t *testing.T) {
@@ -160,9 +156,7 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
 		out := decodeBuildOutput(t, native.stdout)
-		if strings.Contains(out.Prompt, "Skill(skill=") {
-			t.Fatalf("matching explicit Codex prompt is Claude-shaped: %q", out.Prompt)
-		}
+		assertCodexFreshPrompt(t, out.Prompt, out.DispatchFilePath)
 	})
 
 	t.Run("host-flag-overrides-pi-runtime", func(t *testing.T) {
@@ -192,9 +186,7 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
 		out := decodeBuildOutput(t, native.stdout)
-		if strings.Contains(out.Prompt, "Skill(skill=") {
-			t.Fatalf("explicit JSON Codex prompt is Claude-shaped: %q", out.Prompt)
-		}
+		assertCodexFreshPrompt(t, out.Prompt, out.DispatchFilePath)
 	})
 
 	t.Run("conflicting-explicit-sources", func(t *testing.T) {

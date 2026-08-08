@@ -4,6 +4,7 @@ package dispatch
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,14 +43,10 @@ func TestBuildCodexHostPromptShape(t *testing.T) {
 	if err := json.Unmarshal([]byte(native.stdout), &out); err != nil {
 		t.Fatalf("stdout is not build JSON: %v\n%s", err, native.stdout)
 	}
-	if strings.Contains(out.Prompt, "Skill(skill=") {
-		t.Fatalf("codex prompt must not depend on Skill(...): %q", out.Prompt)
-	}
-	if !strings.Contains(out.Prompt, "Read ") || !strings.Contains(out.Prompt, "treat its content as your assignment") {
-		t.Fatalf("codex prompt should be the read-dispatch-file form: %q", out.Prompt)
-	}
+	dispatchPath := dispatchFilePathFromStdout(t, native.stdout)
+	assertCodexFreshPrompt(t, out.Prompt, dispatchPath)
 
-	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
+	body := readDispatchBody(t, dispatchPath)
 	for _, banned := range []string{"Skill(skill=\"spacedock:ensign\")", "SendMessage(to=\"team-lead\""} {
 		if strings.Contains(body, banned) {
 			t.Fatalf("codex dispatch body must omit %q:\n%s", banned, body)
@@ -57,12 +54,22 @@ func TestBuildCodexHostPromptShape(t *testing.T) {
 	}
 	for _, want := range []string{
 		"Read this dispatch file directly",
+		"outer fresh-worker prompt invokes `$spacedock:ensign`",
+		"file supplies the stage-specific assignment",
 		"Codex final-status notification",
 		"FO mailbox",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("codex dispatch body missing %q:\n%s", want, body)
 		}
+	}
+}
+
+func assertCodexFreshPrompt(t *testing.T, prompt, dispatchPath string) {
+	t.Helper()
+	want := fmt.Sprintf("$spacedock:ensign; then Read %s and treat its content as your assignment.", dispatchPath)
+	if prompt != want {
+		t.Fatalf("Codex fresh prompt = %q, want exact pointer bootstrap %q", prompt, want)
 	}
 }
 
