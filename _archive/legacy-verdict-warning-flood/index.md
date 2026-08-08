@@ -1,6 +1,6 @@
 ---
 title: "Legacy verdict tokens flood every state-checkout validation commit"
-status: validation
+status: done
 source: "Durable-decisions Commander dogfood, 2026-07-22: a normal `spacedock state commit` ran the state-checkout pre-commit validator and printed 117 pre-existing verdict-enum warnings before succeeding, burying any new warning attributable to the entity being committed. Dedupe found the schema validator and pre-commit-hook tasks, but no entity owns legacy-token migration or bounded warning output."
 sprint:
 id: mr9k7c0g35jhrrdv4zqyjctw
@@ -29,7 +29,10 @@ gates:
                 reason: Captain authorized approval; validation reproduced the warning reduction, preserved unconventional warnings, accepted canonical output, and found no material candidate defect.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+verdict: passed
+completed: 2026-08-08T08:22:40Z
+archived: 2026-08-08T08:22:40Z
 ---
 
 One path-scoped state mutation currently emits 117 `Warning: field 'verdict' ... is not one of [PASSED REJECTED]` lines from the checkout-wide pre-commit validation: 104 lowercase `passed`, 9 lowercase `rejected`, and four other legacy/superseded values. The command exits successfully, but the historical backlog swamps the warning signal for the current change.
