@@ -391,3 +391,16 @@ The two-file candidate YAML itself is a clean one-row correction, and all focuse
 
 - Cycle 1: REJECTED — PR #639 live job graph; surface 2 files/110 LOC vs estimate 8 files/570 LOC (19%); AC unchanged.
 - Cycle 2: REJECTED — fresh validation of the one-row guard; surface 2 files/110 LOC vs estimate 8 files/570 LOC (19%); AC unchanged.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Make the raw YAML matrix key set exactly `include`, so any unknown base axis fails the structural guard.
+  Commit `113738b20` parses the matrix as a raw key map, requires `include` to be its sole key, and only then decodes and checks the approved row.
+- DONE: Keep the one-row workflow and acceptance criteria unchanged; add no matrix simulator or controller.
+  The correction changes only the existing structural test by +20/-12; the workflow YAML and desired journey registry are byte-identical to `8e2d67f76`.
+- DONE: Reproduce the arbitrary-axis negative control and run focused, formatting, full, and race checks before reporting.
+  Adding `os: [ubuntu-latest, macos-latest]` first reproduced the false green, then failed under the corrected guard; focused release/ensigncycle/contractlint tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass.
+
+### Summary
+
+The structural proof now observes every matrix key instead of enumerating known axes, so any new Cartesian axis invalidates the test. The one-row workflow is unchanged, PR #639 remains untouched, and the local candidate is ready for fresh independent validation.
