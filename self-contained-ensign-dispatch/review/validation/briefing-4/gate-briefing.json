@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-4:revision-1",
+  "question": "Does KD deliver self-contained pointer-only assignments with a builder-pinned launcher, including one real canonical worker execution?",
+  "artifacts": [
+    {
+      "id": "artifact:kd7877nnbd19d528xnpwwaj4:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/29adbbe9e94748f98f3518ffa77572b8886e664c/self-contained-ensign-dispatch/index.md",
+      "rev": "sha256:1b0702296758ae74a1536ec00bf3f2703558cdc1f3632a7f1e88fad0cc4806ff",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE. Exact candidate 7fce0bb1 is deterministically green and a canonical Codex child executed the candidate-generated pointer assignment through pinned launcher A while hostile ambient B remained unused."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kd7877nnbd19d528xnpwwaj4:validation:attempt-4:revision-1:item-2",
+      "uri": "git-root://main/7fce0bb19157bcacf9814a3855f7e04a72f4898e/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:bc1c31106ac88e93bd28662071b72f42759c9874015c979d43cb6b214bc17f93"
+    }
+  ]
+}

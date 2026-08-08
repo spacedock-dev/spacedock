@@ -87,6 +87,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-07T13:16:35.148152Z"
                 reason: The candidate is unchanged and deterministically green, but the open gate lacks the required real worker-spawn evidence. Withdraw it before a fresh exact-head live validation rerun.
+            - id: gate-attempt:kd7877nnbd19d528xnpwwaj4-validation-4
+              briefing:
+                id: briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-4:revision-1
+                digest: sha256:9a27043c5b9266fbe9a789b2de1231696e796a444ec93def1c619fd2eda9ddbc
+                request-digest: sha256:d85291f88b7d231a95163d291da5d8304b87dcbc74ef7cc8392ec3385a3fbaed
+                room-ref: ./review/validation/briefing-4
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 sprint-readiness: required
