@@ -11,24 +11,19 @@ import (
 type liveClaim struct{ step, selector, claim string }
 
 var liveClaims = []liveClaim{
-	{"Run live Claude E2E", "TestLiveEnsignCycle", "full-ensign-cycle"},
-	{"Run live Claude E2E", "TestLiveDefaultHeadlessStopsAtGate", "default-headless-gate-stop-and-withdrawn-recovery"},
-	{"Run live Claude E2E", "TestLiveZeroDiscoverReportsAndStops", "zero-discovery"},
-	{"Run live Claude shared scenarios", "TestLiveClaudeSharedScenarios", "claude-common-journeys"},
+	{"Run live Claude E2E", "TestLiveCommon", "claude-common-journeys"},
 	{"Run live Claude substrate proofs", "TestLiveMergedTeamModeDispatch", "claude-merged-agent-dispatch"},
 	{"Run live Claude substrate proofs", "TestLiveBareReachable", "claude-bare-dispatch"},
 	{"Run live Claude substrate proofs", "TestLiveBreakGlassShimRecovery", "claude-break-glass-recovery"},
 	{"Verify Codex resolver against installed plugin", "TestCodexResolveManifestAgainstInstalledHost", "codex-current-checkout-manifest-resolution"},
-	{"Run live Codex shared scenarios", "TestLiveCodexSharedScenarios", "codex-common-journeys"},
-	{"Run Pi shared scenario coverage guard", "TestSharedScenarioRunnerCoverage", "shared-runner-map-parity"},
-	{"Run Pi shared scenario coverage guard", "TestPiSharedScenarioCoverage", "pi-common-journey-classification"},
+	{"Run live Codex shared scenarios", "TestLiveCommon", "codex-common-journeys"},
+	{"Run live Pi common journeys", "TestLiveCommon", "pi-common-journeys"},
 	{"Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke", "pi-front-door-child-durable-boot-contract"},
 }
 
 var offlineControls = []string{
-	"TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle", "TestClaudeRejectionFlowTODOModelScope",
-	"TestClaudeSonnetGateGuardrailTODOModelScope", "TestClaudeTODOModelScope",
-	"TestCleanupKeepMovingRootRetainsOnlyFailures", "TestCodexLiveRunnerExecArgvEnablesMultiAgentV2",
+	"TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle", "TestCleanupKeepMovingRootRetainsOnlyFailures",
+	"TestCodexLiveRunnerExecArgvEnablesMultiAgentV2",
 	"TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs", "TestPiIntercomPackageRootDefaultsBesideSubagents",
 	"TestPiLiveEnvDropsForeignRuntimeMarkers", "TestPiLiveEnvScrubsAmbientPiSubagentMarkers",
 	"TestPiLiveSmokePromptRequiresExactStageReportHeading", "TestShallowBootFixtureContainsOnlyHeldGate",
@@ -119,7 +114,7 @@ func assertOfflineControls(workflow string) error {
 	return nil
 }
 
-var runSelector = regexp.MustCompile(`(?:^|\s)-run\s+['"]?([A-Za-z0-9_|]+)`)
+var runSelector = regexp.MustCompile(`(?:^|\s)-run\s+['"]?\^?([A-Za-z0-9_|]+)`)
 
 func selectedTests(script string) []string {
 	seen := map[string]bool{}

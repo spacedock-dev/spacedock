@@ -17,6 +17,7 @@ import (
 
 const defaultPiLiveModel = "openrouter/openai/gpt-5.4"
 
+//spacedock:live-proof id=pi-front-door-subagent-dispatch lane=pi-live
 func TestLivePiFrontDoorSmoke(t *testing.T) {
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
@@ -168,6 +169,7 @@ func runPiSmokeDispatchBuild(t *testing.T, binary, workflowRoot, entityPath stri
 	return envelope
 }
 
+//spacedock:live-fixture id=pi/split-root-smoke
 func writePiSplitRootSmokeWorkflow(t *testing.T) (workflowRoot, stateRoot, entityPath string) {
 	t.Helper()
 	workflowRoot = t.TempDir()
@@ -386,7 +388,7 @@ func onePiSession(t *testing.T, pattern, role string) string {
 // piTranscriptReadPaths extracts the ordered read-type tool-call paths from a
 // pi-subagents child transcript (.jsonl message records whose content blocks
 // are read tool calls).
-func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
+func piTranscriptToolValues(t *testing.T, transcriptPath, tool, alternate string) []string {
 	t.Helper()
 	var reads []string
 	for lineNo, line := range strings.Split(readFile(t, transcriptPath), "\n") {
@@ -405,19 +407,30 @@ func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
 			Type      string `json:"type"`
 			Name      string `json:"name"`
 			Arguments struct {
-				Path string `json:"path"`
+				Path    string `json:"path"`
+				Command string `json:"command"`
 			} `json:"arguments"`
 		}
 		if err := json.Unmarshal(record.Message.Content, &blocks); err != nil {
 			continue // string content (plain text messages) carries no tool calls
 		}
 		for _, b := range blocks {
-			if b.Type == "toolCall" && b.Name == "read" {
-				reads = append(reads, b.Arguments.Path)
+			if b.Type == "toolCall" && (b.Name == tool || alternate != "" && b.Name == alternate) {
+				value := b.Arguments.Path
+				if alternate != "" {
+					value = b.Arguments.Command
+				}
+				if alternate == "" || value != "" {
+					reads = append(reads, value)
+				}
 			}
 		}
 	}
 	return reads
+}
+
+func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
+	return piTranscriptToolValues(t, transcriptPath, "read", "")
 }
 
 func headStrings(s []string, n int) []string {

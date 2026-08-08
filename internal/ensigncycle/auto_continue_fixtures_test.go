@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
 // Auto-continue fixtures and assertion for AC-5: a dev-shaped workflow parked at
@@ -46,6 +48,16 @@ func writeAutoContinueWorkflow(t *testing.T, root string) string {
 	return entityPath
 }
 
+func TestAutoContinueFixtureIsDiscoverable(t *testing.T) {
+	root := t.TempDir()
+	if _, err := writeAutoContinueWorkflowNoGit(root); err != nil {
+		t.Fatal(err)
+	}
+	if _, found := status.DiscoverWorkflowDir(root); !found {
+		t.Fatal("auto-continue fixture is not discoverable from its workflow root")
+	}
+}
+
 // autoContinueReadme is the dev-shaped fixture workflow from AC-4: a non-split-
 // root workflow backlog → implementation → validation(worktree, fresh, gate) →
 // done. validation is `fresh: true` so the FO must dispatch a FRESH validator,
@@ -54,6 +66,7 @@ func writeAutoContinueWorkflow(t *testing.T, root string) string {
 // dispatched validator has real work that leaves a durable validation report.
 func autoContinueReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
