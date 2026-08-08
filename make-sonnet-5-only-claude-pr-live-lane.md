@@ -1,7 +1,7 @@
 ---
 id: 0ytmjwn4ppg5en25z7vmna0p
 title: Make Sonnet 5 the only Claude live lane on pull requests
-status: validation
+status: implementation
 source: Captain decision on 2026-08-07 after review of PR 626 and current Opus cost and failure evidence.
 started: 2026-08-08T15:45:20Z
 completed:
@@ -9,8 +9,8 @@ verdict:
 score: 0.85
 worktree: .worktrees/spacedock-ensign-make-sonnet-5-only-claude-pr-live-lane
 issue:
-pr: "#639"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 sprint:
 gates:
     version: 1
@@ -74,7 +74,7 @@ gates:
                 reason: Validation reproduced all acceptance criteria and required repository checks on the integrated candidate.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.
@@ -330,3 +330,20 @@ The integrated branch now carries the approved two-lane pull-request cadence on 
 ### Summary
 
 Validation independently reproduced every acceptance criterion at merge commit `8728da3a0`. The candidate is clean, all focused and repository-wide checks pass, and no real shared-state entity inventory remains coupled to the gate tests; recommendation: PASSED.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Reproduce and diagnose the rejected pull-request lane expansion before changing the workflow.
+  PR #639 run `31272368367` at exact head `8728da3a0` queued Sonnet job `93140486631`, Codex job `93140486613`, and unexpected Opus job `93140486627`. GitHub applies `exclude` before `include`, so the Opus include created a new include-only row after its base combination was excluded; the local simulator was false-green because it modeled include augmentation before exclusion.
+- DONE: Replace the Cartesian Claude matrix with one explicit include row selected directly from the event and dispatch cadence.
+  Local commit `8e2d67f76` contains no base axes and no exclusions. Its only row selects pull-request/Sonnet 5/`CI-E2E` for pull requests or manual Sonnet, Opus 4.8/`CI-E2E-OPUS` only for `opus-pre-release`, and maximum effort in every case.
+- DONE: Guard the exact one-row mechanism against the failure mode and structural regressions.
+  `TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence` requires exactly one include row with the approved expressions and rejects a second row, every base axis, an exclusion, aliases, reduced effort, and cadence or environment mapping changes. The correction changes 2 files by +44/-66 relative to `8728da3a0`.
+- DONE: Run all required formatting, focused, full, and race checks without spending live-model credits.
+  `gofmt -w ./cmd ./internal`, focused release, ensigncycle, and contractlint tests, `go test ./...`, and `go test ./... -race` all pass. The desired journey registry remains unchanged.
+- DONE: Leave delivery and renewed live proof to the first officer.
+  The implementation commit is local only: this worker did not push the code branch or mutate PR #639. No paid jobs were approved; the next synchronized PR run remains the direct semantic proof.
+
+### Summary
+
+The live failure exposed a mismatch between GitHub matrix semantics and the prior test simulator. The corrected workflow has one explicit Claude matrix row, making an ordinary pull request structurally incapable of queuing a separate Opus row while preserving the explicit pre-release Opus dispatch.
