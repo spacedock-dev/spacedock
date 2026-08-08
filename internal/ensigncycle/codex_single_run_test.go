@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -85,6 +86,11 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 	jsonl, readErr := os.ReadFile(jsonlPath)
 	result.jsonl = string(jsonl)
 	result.lastEvent = lastCodexEvent(result.jsonl)
+	// A terminal line can be written to the durable stdout artifact in the same
+	// instant the quiet deadline fires, after the pipe watcher has made its last
+	// drain. Reconcile that Codex-specific boundary after Wait; generic watcher
+	// timeout semantics remain unchanged when no exact terminal event was emitted.
+	terminalObserved = terminalObserved || codexTranscriptHasTerminal(result.jsonl)
 	if final, err := os.ReadFile(spec.finalPath); err == nil {
 		result.finalMessage = string(final)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -92,6 +98,8 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 	}
 	var terminalEvidenceErr error
 	if terminalObserved {
+		stallErr = nil
+		result.timedOut = false
 		if strings.TrimSpace(result.finalMessage) == "" {
 			terminalEvidenceErr = fmt.Errorf("codex turn.completed had no non-empty final message; terminal evidence is incomplete\nLast event: %s\nArtifacts: %s", result.lastEvent, result.artifactDir)
 		} else {
@@ -114,16 +122,28 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 		return result, terminalEvidenceErr
 	}
 	if result.terminal {
-		// Codex can emit turn.completed and write --output-last-message before its
-		// front-door process exits. The Codex-specific drain owns that semantic
-		// terminal boundary; an exit error from the intentional cleanup kill is not
-		// a scenario failure after the terminal evidence is complete.
+		// Codex can emit turn.completed while its front-door process remains alive;
+		// the cleanup wait also gives --output-last-message time to flush. The
+		// Codex-specific drain owns that semantic terminal boundary, so an exit error
+		// from the intentional cleanup kill is not a scenario failure.
 		return result, nil
 	}
 	if runErr != nil {
 		return result, fmt.Errorf("codex exec exited %d: %w", result.exitCode, runErr)
 	}
 	return result, nil
+}
+
+func codexTranscriptHasTerminal(jsonl string) bool {
+	for _, line := range strings.Split(jsonl, "\n") {
+		var event struct {
+			Type string `json:"type"`
+		}
+		if json.Unmarshal([]byte(line), &event) == nil && event.Type == "turn.completed" {
+			return true
+		}
+	}
+	return false
 }
 
 // drainCodexToTerminal is the Codex-specific process boundary. Codex's
