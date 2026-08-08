@@ -1,6 +1,6 @@
 ---
 title: Align Claude break-glass recovery with the selected dispatch mode
-status: validation
+status: implementation
 score: 0.96
 source: "PRs #627, #628, #629, and #631 fail TestLiveBreakGlassShimRecovery after PR #626 selected it for required CI. The worker completes through bare blocking dispatch, but the oracle requires a named background worker. History: named recovery template 8e66ead, blanket single-task bare rule ecffced, live selection 4cc0d8."
 sprint: durable-decisions
@@ -8,9 +8,9 @@ started: 2026-08-07T04:35:54Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-dispatch-oracle
-pr: "#637"
+pr:
 issue:
-mod-block: merge:pr-merge
+mod-block:
 id: 824ecawn5jttbykcgx82nbf4
 gates:
     version: 1
@@ -88,7 +88,7 @@ gates:
                 reason: 'Exact head 43fd2e79d satisfies all four ACs: Sonnet and Opus pass both recovery modes, crossed and malformed supported shapes fail, explicit wrong identity fails, and durable report evidence is exact-section and Git scoped.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
@@ -290,3 +290,16 @@ PASSED. No material finding remains; the malformed-boolean parser weakness is de
 ### Summary
 
 Validation at exact head `43fd2e79d` reproduces all four acceptance criteria, including fresh two-model live proof of both recovery modes and adversarial proof of the two corrected false positives. The candidate stays within the approved nine-file boundary, formatting and diff checks are clean, and only classified external-state limitations plus one unsupported-input deferred risk remain.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Reconcile the candidate with current main and the YS live-test inventory.
+  Merge commit `6c50fc82e` incorporates canonical `origin/main`/PR #633 and keeps the `TestLiveCommon` registry, selectors, fixture/proof annotations, and substrate artifact bundle intact.
+- DONE: Resolve both live-test conflicts without weakening the selected dispatch-mode oracle.
+  The guide retains YS common-inventory rows plus 824's strict substrate claim; `TestLiveBreakGlassShimRecovery` retains both bare/team subtests, one-worker mode grading, and durable path-scoped committed-report grading.
+- DONE: Update required inventory coverage and prove focused, full, race, Sonnet, and Opus behavior.
+  Registry reconciliation and focused mutations pass; full/race fail only on the two absent shared-state pilot manifests; Sonnet passes bare/team in 389s and Opus passes bare/team in 539s at `6c50fc82e`.
+
+### Summary
+
+The candidate is reconciled onto the canonical YS inventory without resurrecting removed common-runner surfaces or absorbing the separate journey-delta-comment defect. The runtime registry now requires selected bare/team preservation plus a committed complete worker report, and both required Claude models prove that behavior at exact head `6c50fc82e`.
