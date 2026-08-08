@@ -21,7 +21,7 @@ The division is deliberate: a behavior that can be guarded by the binary or a fa
 `docs/specs/` holds the contracts downstream code cites instead of re-deriving. Two are current.
 
 - **`state-behavior-extension.md`** defines the split-root storage profile. A development workflow keeps its README in the main repo and its mutable entities in a per-workflow `.spacedock-state` checkout, so shared issues advance without noisy state commits on the code branch. The README's `state: .spacedock-state` frontmatter field names the checkout, resolved relative to the README directory. The spec fixes the v0 layout (entities directly under `.spacedock-state`, no `entities/` directory; `_archive/` and `_debriefs/` siblings) and the mutation rules: reads compose the main README's stages with the checkout's entities, while `--set` and `--archive` write only inside the checkout.
-- **`scenario-testing-principles.md`** sets out the semantic model for scenario testing. Common LLM journeys are the 16 exported `TestLiveCommon...` functions reconciled against the live registry, fixture annotations, and workflow selectors.
+- **`scenario-testing-principles.md`** sets out the semantic model for scenario testing. Common LLM journeys are the 17 exported `TestLiveCommon...` functions reconciled against the live registry, fixture annotations, and workflow selectors.
 
 ## Runtime live CI model
 

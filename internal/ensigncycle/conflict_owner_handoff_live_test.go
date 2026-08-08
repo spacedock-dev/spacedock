@@ -24,8 +24,14 @@ type conflictOwnerTuple struct {
 	DispatchFile string
 }
 
-func TestLiveCodexOwnedConflictReturnsToRegisteredWorker(t *testing.T) {
-	runner := newCodexLiveRunner(t)
+type conflictOwnerFixture struct {
+	root, entity, worktree, marker, before string
+	owner                                  conflictOwnerTuple
+}
+
+//spacedock:live-fixture id=conflict-owner/stamped-checkout
+func writeConflictOwnerFixture(t *testing.T) conflictOwnerFixture {
+	t.Helper()
 	root := t.TempDir()
 	entity := filepath.Join(root, "conflict-owner.md")
 
@@ -33,7 +39,7 @@ func TestLiveCodexOwnedConflictReturnsToRegisteredWorker(t *testing.T) {
 	writeFile(t, filepath.Join(root, "conflict.txt"), "base\n")
 	writeFile(t, entity, conflictOwnerEntity())
 	gitInit(t, root)
-	owner := stampConflictOwner(t, runner.binary, root, entity)
+	owner := stampConflictOwner(t, spacedockBinary(t), root, entity)
 	worktree := filepath.Join(root, owner.Worktree)
 	marker := filepath.Join(worktree, "owner-handoff.marker")
 	writeFile(t, filepath.Join(worktree, "conflict.txt"), "worker branch\n")
@@ -47,40 +53,46 @@ func TestLiveCodexOwnedConflictReturnsToRegisteredWorker(t *testing.T) {
 	if out, err := cmd.CombinedOutput(); err == nil {
 		t.Fatalf("fixture rebase unexpectedly succeeded: %s", out)
 	}
-	before := readFile(t, entity)
+	return conflictOwnerFixture{root: root, entity: entity, worktree: worktree, marker: marker, before: readFile(t, entity), owner: owner}
+}
 
-	scenario := sharedRuntimeScenario{name: "owned-conflict-owner-handoff"}
+func runConflictOwnerHandoffJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) conflictOwnerFixture, assert func(*testing.T, conflictOwnerFixture, liveResult)) {
+	t.Helper()
+	fixture := build(t)
+	owner := fixture.owner
 	prompt := fmt.Sprintf("Use $spacedock:first-officer for this whole run. The fixture is paused at the runtime boundary of an owned code-worktree rebase conflict for %s in %s. ", owner.Entity, owner.Stage) +
 		fmt.Sprintf("Reconstitute the owner recorded by the initial stamped dispatch %s by spawning exactly one worker named %s with identity %s/%s/%s/%s; its first assignment only acknowledges readiness and it must remain addressable. ", owner.DispatchFile, owner.WorkerName, owner.Entity, owner.Stage, owner.Branch, owner.Worktree) +
 		"Then handle the existing conflict exactly through the first-officer conflict-owner contract. The owner handoff's next action is to write owner-handoff.marker containing runtime-worker-owner, commit it on the registered branch using the shared Git identity user.name=Captain and user.email=captain@example.test, and leave conflict.txt unresolved beyond the required rebase abort. " +
 		"Do not edit the entity. Stop after the owner completes the follow-up."
-	result, err := runner.run(t, scenario, root, prompt)
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
+	result := driver.run(t, scenario, fixture.root, prompt)
+	assert(t, fixture, result)
+	driver.emitMetrics(t, scenario, result)
+}
 
-	if after := readFile(t, entity); after != before {
-		t.Fatalf("owner handoff changed authority bytes\nbefore:\n%s\nafter:\n%s", before, after)
+func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, result liveResult) {
+	t.Helper()
+	if after := readFile(t, fixture.entity); after != fixture.before {
+		t.Fatalf("owner handoff changed authority bytes\nbefore:\n%s\nafter:\n%s", fixture.before, after)
 	}
-	if got := strings.TrimSpace(readFile(t, marker)); got != "runtime-worker-owner" {
+	if got := strings.TrimSpace(readFile(t, fixture.marker)); got != "runtime-worker-owner" {
 		t.Fatalf("worker marker = %q, want runtime-worker-owner", got)
 	}
-	if got := strings.TrimSpace(git(t, worktree, "branch", "--show-current")); got != owner.Branch {
-		t.Fatalf("marker branch = %q, want stamped owner branch %q", got, owner.Branch)
+	if got := strings.TrimSpace(git(t, fixture.worktree, "branch", "--show-current")); got != fixture.owner.Branch {
+		t.Fatalf("marker branch = %q, want stamped owner branch %q", got, fixture.owner.Branch)
 	}
-	if got := strings.TrimSpace(git(t, worktree, "log", "-1", "--format=%an <%ae>")); got != "Captain <captain@example.test>" {
+	if got := strings.TrimSpace(git(t, fixture.worktree, "log", "-1", "--format=%an <%ae>")); got != "Captain <captain@example.test>" {
 		t.Fatalf("marker Git author = %q, want shared Captain credential", got)
 	}
-	rebaseDir := strings.TrimSpace(git(t, worktree, "rev-parse", "--git-path", "rebase-merge"))
+	rebaseDir := strings.TrimSpace(git(t, fixture.worktree, "rev-parse", "--git-path", "rebase-merge"))
 	if _, err := os.Stat(rebaseDir); !os.IsNotExist(err) {
 		t.Fatalf("rebase was not cleanly aborted: %v", err)
 	}
 	for _, event := range []string{"spawn_agent", "followup_task"} {
-		if !strings.Contains(result.jsonl, event) {
+		if !strings.Contains(result.stream, event) {
 			t.Errorf("Codex stream lacks actual %s runtime call; artifacts: %s", event, result.artifactDir)
 		}
 	}
-	assertConflictOwnerFreshEnvelope(t, runner.binary, root, entity, owner)
+	assertConflictOwnerFreshEnvelope(t, spacedockBinary(t), fixture.root, fixture.entity, fixture.owner)
 }
 
 func stampConflictOwner(t *testing.T, binary, root, entity string) conflictOwnerTuple {
