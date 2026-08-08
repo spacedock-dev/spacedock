@@ -69,7 +69,10 @@ func TestFinalizeStatusGateSetWithTerminalStatusAllowed(t *testing.T) {
 		t.Fatalf("finalize WITH status={terminal} in the same call must succeed (exit 0), got %d (stderr=%q)", code, errOut)
 	}
 	fm := readWhole(t, filepath.Join(root, "002-vendor-script.md"))
-	if !strings.Contains(fm, "status: done") || !strings.Contains(fm, "verdict: passed") {
+	// `verdict=passed` on the CLI stores as the schema's PASSED: updateFrontmatter
+	// canonicalises conventional values on every write, so --set and merge guard
+	// cannot disagree on stored case.
+	if !strings.Contains(fm, "status: done") || !strings.Contains(fm, "verdict: PASSED") {
 		t.Fatalf("entity should have terminalized:\n%s", fm)
 	}
 }
@@ -90,7 +93,7 @@ func TestFinalizeStatusGateAlreadyTerminalAllowed(t *testing.T) {
 		t.Fatalf("finalize on an already-terminal entity must succeed (exit 0), got %d (stderr=%q)", code, errOut)
 	}
 	fm := readWhole(t, filepath.Join(root, "already-done.md"))
-	if !strings.Contains(fm, "verdict: passed") {
+	if !strings.Contains(fm, "verdict: PASSED") {
 		t.Fatalf("entity should have gained a verdict:\n%s", fm)
 	}
 }

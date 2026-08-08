@@ -286,7 +286,10 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			slug, postUpdateStatus, terminalStageName(roots.definitionDir), slug))
 	}
 
-	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
+	// The rejected carve-out is case-insensitive (isRejectedVerdict): the verdict
+	// under test comes from frontmatter or from a --set value, so it may arrive as
+	// the `REJECTED` merge guard writes or the `rejected` an older binary wrote.
+	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && !isRejectedVerdict(postUpdateVerdict) {
 		mergeHooks := scanMods(roots.definitionDir)["merge"]
 		if len(mergeHooks) > 0 {
 			return errExit(stderr, fmt.Sprintf(

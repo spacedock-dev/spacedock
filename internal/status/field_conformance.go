@@ -145,8 +145,13 @@ func fieldViolation(name string, spec schemaField, value string) string {
 		return ""
 	}
 	if len(spec.Conventional) > 0 {
+		// Case-insensitive: a conventional enum fixes which token was chosen, not
+		// its casing. Entities written before the verdict writer normalised case
+		// (`verdict: passed`) are semantically conformant, and warning on them
+		// would demand hand-editing already-archived terminal entities to silence
+		// a diagnostic about a value the tool itself wrote.
 		for _, allowed := range spec.Conventional {
-			if value == allowed {
+			if strings.EqualFold(value, allowed) {
 				return ""
 			}
 		}

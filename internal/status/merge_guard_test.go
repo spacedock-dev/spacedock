@@ -152,8 +152,8 @@ func TestMergeGuardFinalizesFromMergedSentinelNonArmed(t *testing.T) {
 	if got := frontmatterField(t, archived, "status"); got != "done" {
 		t.Fatalf("archived status=%q, want done", got)
 	}
-	if got := frontmatterField(t, archived, "verdict"); got != "passed" {
-		t.Fatalf("archived verdict=%q, want passed", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "PASSED" {
+		t.Fatalf("archived verdict=%q, want PASSED (the schema-cased stored value)", got)
 	}
 }
 
@@ -288,8 +288,8 @@ func TestMergeGuardArmThenFinalizeLocal(t *testing.T) {
 	if got := frontmatterField(t, archived, "status"); got != "done" {
 		t.Fatalf("archived status=%q, want done", got)
 	}
-	if got := frontmatterField(t, archived, "verdict"); got != "passed" {
-		t.Fatalf("archived verdict=%q, want passed", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "PASSED" {
+		t.Fatalf("archived verdict=%q, want PASSED (the schema-cased stored value)", got)
 	}
 	if got := frontmatterField(t, archived, "mod-block"); got != "" {
 		t.Fatalf("archived mod-block should be cleared, got %q", got)
@@ -409,8 +409,8 @@ func TestMergeGuardRejectedFinalizesNoPR(t *testing.T) {
 	if got := frontmatterField(t, archived, "status"); got != "done" {
 		t.Fatalf("archived status=%q, want done", got)
 	}
-	if got := frontmatterField(t, archived, "verdict"); got != "rejected" {
-		t.Fatalf("archived verdict=%q, want rejected", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "REJECTED" {
+		t.Fatalf("archived verdict=%q, want REJECTED (the schema-cased stored value)", got)
 	}
 }
 
@@ -433,8 +433,8 @@ func TestMergeGuardRejectedClearsModBlockFirst(t *testing.T) {
 	if got := frontmatterField(t, archived, "status"); got != "done" {
 		t.Fatalf("archived status=%q, want done", got)
 	}
-	if got := frontmatterField(t, archived, "verdict"); got != "rejected" {
-		t.Fatalf("archived verdict=%q, want rejected", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "REJECTED" {
+		t.Fatalf("archived verdict=%q, want REJECTED (the schema-cased stored value)", got)
 	}
 	if got := frontmatterField(t, archived, "mod-block"); got != "" {
 		t.Fatalf("archived mod-block should be cleared, got %q", got)
@@ -548,8 +548,8 @@ func TestMergeGuardFinalizesMissingMergeModRejected(t *testing.T) {
 		t.Fatalf("stdout should signal finalized, got %q", out)
 	}
 	archived := filepath.Join(root, "_archive", "140-missing-mod-rejected.md")
-	if got := frontmatterField(t, archived, "verdict"); got != "rejected" {
-		t.Fatalf("archived verdict=%q, want rejected", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "REJECTED" {
+		t.Fatalf("archived verdict=%q, want REJECTED (the schema-cased stored value)", got)
 	}
 }
 
@@ -951,8 +951,8 @@ func TestMergeGuardFinalizesFolderFormEntity(t *testing.T) {
 	if got := frontmatterField(t, archived, "status"); got != "done" {
 		t.Fatalf("archived status=%q, want done", got)
 	}
-	if got := frontmatterField(t, archived, "verdict"); got != "passed" {
-		t.Fatalf("archived verdict=%q, want passed", got)
+	if got := frontmatterField(t, archived, "verdict"); got != "PASSED" {
+		t.Fatalf("archived verdict=%q, want PASSED (the schema-cased stored value)", got)
 	}
 	// The source folder is gone from the live root.
 	if fileExists(filepath.Join(root, "110-pr-merged-folder", "index.md")) {
