@@ -1,7 +1,7 @@
 ---
 id: 0ytmjwn4ppg5en25z7vmna0p
 title: Make Sonnet 5 the only Claude live lane on pull requests
-status: backlog
+status: ideation
 source: Captain decision on 2026-08-07 after review of PR 626 and current Opus cost and failure evidence.
 started:
 completed:
@@ -34,7 +34,7 @@ gates:
                 reason: Captain directed dispatch. Ideation must make routine PR CI select Sonnet 5/max and Codex Luna/max, retain Opus for pre-release, and move Pi to manual/local evidence.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.
