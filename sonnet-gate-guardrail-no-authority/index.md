@@ -219,3 +219,28 @@ AC-1, AC-3, and AC-4 all PASS with reproduced evidence: offline suites clean, th
 ### Summary
 
 Removed the Sonnet gate-guardrail TODO quarantine per the FO-authorized fix disposition, using the validation stage's already-reproduced live evidence rather than spending another live run. `go test ./...`, `-race`, and `gofmt -l` are clean; the diff matches the entity's Expected surface exactly (-25/-1). Mechanism 2 (SKILL.md) remains deferred per the earlier captain decision and is untouched here.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Reconcile exact candidate e36769727 with current post-YS main without discarding either side.
+  Merge commit `4f4ee424792f9ea1044578334040825bcd1da585` joins candidate `e36769727` with `origin/main` `d3e70e958`; the branch is pushed and clean.
+- DONE: Resolve the post-YS conflict set on the canonical journey architecture.
+  Resolved `docs/runtime-live-ci.md` and `internal/ensigncycle/claude_live_runner_test.go`; accepted YS's deletion of `internal/ensigncycle/livescenario_adapter_live_test.go` without restoring it.
+- DONE: Move the 3Z quarantine removal and strict diagnostics onto the canonical live inventory and common runner.
+  `TestLiveCommonGateGuardrail` has no Claude Sonnet TODO; its strict seven-condition log diagnostic now lives in `internal/ensigncycle/claude_runtime_helpers_test.go`, used by the common exercise.
+- DONE: Preserve the intended TODO-owner boundaries after YS.
+  Claude Sonnet is live evidence; Codex and Pi alone retain `TODO(3zzpdw704df1g8pg1x9thzmw)` in `shared_live_runner_test.go`, exactly as enforced by registry reconciliation; Opus has no 3Z TODO.
+- DONE: Preserve gate-prepare attribution and the strict accept/reject behavior.
+  `TestPrepareAttributesRejectedSelectedSourceToItsFlag` and `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` pass; each fails if attribution is dropped or any of the six negative mutations is accepted or misdiagnosed.
+- DONE: Prove canonical live inventory reconciliation.
+  `go test ./internal/contractlint -run '^TestRuntimeLiveRegistryReconciliation$' -count=1` passes and fails on TODO ownership, builder/assertion drift, orphan fixtures, or lane-selector drift.
+- FAILED: Prove full and race suites clean in the current shared-state environment.
+  `go test ./...` and `go test ./... -race` run to completion; all packages pass except `internal/gates`, where unchanged post-YS `TestV1PilotManifestReadsAndValidates` expects two root entities absent from the shared state checkout (`codex-launch-multi-agent-v2.md`, `gate-agent-ergonomics.md`; both exist only under `_archive`). Candidate diff against main does not touch that manifest or test.
+- DONE: Prove applicable live Sonnet behavior on the canonical common journey.
+  `TestLiveCommonGateGuardrail` passed twice after reconciliation (115.66s and retained-artifact 133.47s), resolved to `claude-sonnet-5`; retained stream independently shows one prepare, one state commit, and zero decision/consume/dispatch calls.
+- DONE: Run repository formatting requirements.
+  `gofmt -w ./cmd ./internal` completed; focused mechanism, oracle, inventory, and live checks remained green afterward.
+
+### Summary
+
+The exact candidate is reconciled and pushed at `4f4ee4247` without restoring any retired pre-YS harness file or weakening the gate oracle. YS's registry/common-runner architecture remains canonical: Sonnet is active evidence, the stale quarantine paragraph is gone, and the strict diagnostic moved to the shared helper. The only red evidence is a main-equivalent pilot-manifest/shared-state mismatch outside this candidate; both full commands otherwise completed cleanly, while the targeted and real Sonnet common journey passed.
