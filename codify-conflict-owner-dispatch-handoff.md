@@ -1,6 +1,6 @@
 ---
 title: Make FO dispatch of moving-target conflict owners explicit
-status: validation
+status: implementation
 source: "Captain follow-up after the 2026-08-04 conflict-owner and shared-credential diagnosis."
 started: 2026-08-06T15:54:14Z
 completed:
@@ -407,3 +407,16 @@ D8 now participates in YS's canonical portable live inventory instead of restori
 ### Summary
 
 Validation recommends REJECTED at exact head `84f9830ec`. Reconciliation preserved the stamped tuple and YS inventory, the fresh envelope and registered checkout remain correct, and the supported Codex run completed, but the live recipient/cardinality assertion is self-referential and cannot establish that the stamped owner received exactly one handoff; this Material evidence defect requires a harness observation-boundary reset rather than candidate repair in validation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Replace contract-text matching with exact typed spawn and follow-up event correlation to the stamped owner handle.
+  Commit `de9960197` adds a focused `codexCollabItem` correlation assertion: exactly one completed `spawn_agent` must expose one receiver handle and bind its prompt to the stamped worker and dispatch-file pointer; exactly one `followup_task` must target that same handle and carry the recorded entity/stage/branch/worktree tuple plus action marker.
+- DONE: Reject text-only, zero, extra, wrong-handle, and mismatched-marker handoff evidence without changing product behavior.
+  `TestCodexConflictOwnerHandoffCorrelatesTypedEvents` passes table cases for contract text only, absent or duplicate calls, wrong routing, wrong marker, and a changed tuple. The 2-file `+131/-4` correction changes tests only; it adds no product behavior, command grammar, parser, resolver, state, synthetic language, or broad harness.
+- DONE: Reconcile onto the current integration tip and rerun focused, inventory, full, race, and canonical Codex live evidence.
+  `origin/main` remains `d3e70e958`, already the candidate base, so 0Y has not landed. At exact head `de9960197`, focused correlation and inventory guards, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` passed. Two canonical Codex attempts failed the new assertion after otherwise completing the owner handoff: the installed public `codex exec --json` stream emitted only typed `wait` collaboration items and zero completed `spawn_agent` items. The retained second run is at `/tmp/d8-typed-live/codex-shared-scenarios/owned-conflict-owner-handoff`; its marker, branch, author, authority-byte, abort, and fresh-envelope checks passed before the typed-event grade failed.
+
+### Summary
+
+The authorized correction removes the self-referential string grade and makes recipient identity and call cardinality explicit at the existing typed collaboration-event boundary. Offline adversarial coverage is green, while the canonical live lane now truthfully rejects the current host stream because it does not publish the required spawn/follow-up events; this is the observation-boundary failure cycle-3 validation identified, not a fallback to contract-text evidence.
