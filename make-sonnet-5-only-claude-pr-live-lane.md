@@ -1,7 +1,7 @@
 ---
 id: 0ytmjwn4ppg5en25z7vmna0p
 title: Make Sonnet 5 the only Claude live lane on pull requests
-status: implementation
+status: validation
 source: Captain decision on 2026-08-07 after review of PR 626 and current Opus cost and failure evidence.
 started: 2026-08-08T15:45:20Z
 completed:
