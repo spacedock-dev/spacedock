@@ -2196,8 +2196,8 @@ Cycle 29 repairs only the AC re-anchor fixture's commissioned-workflow identity,
 
 ## Stage Report: validation (cycle 29 — independent fixture commissioning audit)
 
-- DONE: Verify exact local-candidate, state, remote-head, and main provenance.
-  Clean LOCAL-ONLY candidate is `97603585ff4120559315d29764c04d603827035d`, exactly one commit after pushed PR head `347cc5734951967c5d7f5ac6969c6833947a236a`; implementation state commit `b6da22b4e694e357c84fd09d66ca291e973cbf8e` is remote-equal. Read-only remote resolution confirms PR head remains `347cc5734` and main remains `94acb270a5c475d190f6b7bef56488aaf78cc7d5`.
+- DONE: Verify exact candidate, state, remote-head, and main provenance.
+  Clean candidate `97603585ff4120559315d29764c04d603827035d` is exactly one commit after validation base `347cc5734951967c5d7f5ac6969c6833947a236a`; implementation state commit `b6da22b4e694e357c84fd09d66ca291e973cbf8e` is remote-equal. The PR head remained `347cc5734` through evidence and report assembly, then a final read observed an external concurrent advance to exact `97603585f`; the validator issued no code push. Main remains `94acb270a5c475d190f6b7bef56488aaf78cc7d5`.
 - DONE: Independently classify the Codex CI failure at its observable boundary.
   Run `31246422432`, job `93075787158`, on `347cc5734` had eight tests pass, seven TODO-skip, and only `TestLiveCommonACValueReanchor` fail in 14.31s. Its sole agent command booted once, received `no commissioned Spacedock workflow found`, and stopped with no state search, dispatch, edit, gate record, or mutation; the downstream oracle consequently found no gates record.
 - DONE: Verify the exact representation-only correction and semantic envelope.
@@ -2217,4 +2217,4 @@ Cycle 29 repairs only the AC re-anchor fixture's commissioned-workflow identity,
 
 ### Summary
 
-Cycle 29 independently PASSED exact LOCAL-ONLY candidate `97603585ff4120559315d29764c04d603827035d`. The reproduced Codex nonpass is solely missing fixture commissioning, the two-file correction makes the real workflow discoverable without altering its semantics, all fresh offline checks are green, and prior Sonnet semantic evidence remains valid without misreporting the still-running newer job.
+Cycle 29 independently PASSED exact candidate `97603585ff4120559315d29764c04d603827035d`, which became remote-equal only through a concurrent external push after validation evidence was assembled. The reproduced Codex nonpass is solely missing fixture commissioning, the two-file correction makes the real workflow discoverable without altering its semantics, all fresh offline checks are green, and prior Sonnet semantic evidence remains valid without misreporting the still-running newer job.
