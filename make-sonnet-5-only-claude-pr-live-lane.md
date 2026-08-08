@@ -281,3 +281,32 @@ Pull requests now queue Sonnet 5 at maximum effort and Codex Luna at maximum eff
 ### Summary
 
 The integrated branch now carries the approved two-lane pull-request cadence on current `origin/main`. It also removes the invalid test dependency on the mutable shared state checkout and keeps upstream's common-journey reconciliation aligned with local Pi evidence.
+
+## Stage Report: validation
+
+- DONE: Verify pull requests select exactly Sonnet 5/max and Codex Luna/max, while Opus remains pre-release and Pi remains local/manual.
+  `TestRuntimeLiveWorkflowExpandsApprovedCadences` observed one Sonnet 5/max PR leg and two total approvals; exact shim-argv tests observed Luna/max, while mutations reject Opus, aliases, duplicates, lower effort, and a paid Pi job.
+- DONE: Verify the mutable docs/dev entity-state pilot dependency is removed and focused synthetic gate-format coverage remains sufficient.
+  The 11-file delta deletes the fixed 31-path pilot manifest and its shared-state reader; `TestRecordClosureShapesApplication` exercised synthetic approve/revise/hold records and exact canonical application keys.
+- DONE: Verify the current-main 11-file delta, unchanged desired journey registry, formatting, focused tests, full suite, and race suite with independent evidence.
+  Against merge parent `8728da3a0^2`, the candidate is 11 files and +226/-438; registry diff, `git diff --check`, and `gofmt -d ./cmd ./internal` were clean, and focused, full, and race suites exited 0.
+- DONE: AC-1 - Each pull request queues exactly two live approval jobs.
+  Cadence expansion returned exactly Sonnet 5/max in `CI-E2E` plus Codex in `CI-E2E-CODEX`; adding a Pi job or exposing the PR Opus leg makes the focused guards fail.
+- DONE: AC-2 - Ordinary pull requests run exactly one Claude live lane.
+  The parsed PR matrix produced one `claude-sonnet-5`/`max`/`CI-E2E` leg; alias, duplicate-model, Opus-exclusion, and effort mutations were all rejected.
+- DONE: AC-3 - Ordinary pull requests run Codex Luna at maximum effort.
+  `TestCodexLiveWorkflowPinsOnlyExecToLuna` executed all three supported shim prefixes and observed exactly one Luna model flag and one maximum-effort setting in each final argv.
+- DONE: AC-4 - Opus and Pi evidence remain available without pull-request approval waits.
+  Expansion observed one Opus/max `CI-E2E-OPUS` pre-release leg; registry reconciliation observed the Pi common command exactly once in the local guide and absent from the workflow.
+- DONE: AC-5 - The desired journey and target registry remains byte-identical.
+  `git diff --exit-code 8728da3a0^2..8728da3a0 -- docs/runtime-live-ci-registry.md` exited 0; reconciliation independently observed all 16 desired and actual journeys.
+- DONE: AC-6 - Operators can identify all cadences without reading workflow YAML.
+  The reconciled guide names Sonnet 5/max, Luna/max, `opus-pre-release`, and the local `pi login` subscription path; the site architecture note carries the same three-path summary.
+- DONE: AC-7 - The change uses the existing workflow and test surface.
+  The upstream-relative delta changes one existing workflow and 10 existing code/doc paths, adds no workflow or package, and preserves the desired registry under the captain-authorized 11-file scope.
+- DONE: Recommend PASSED with no material findings or deferred risks.
+  The semantic adversarial pass covered all three cadences, duplicate and wrong-identity legs, lower effort, non-exec shim inputs, paid Pi reintroduction, canonical gate bytes, and full/race execution.
+
+### Summary
+
+Validation independently reproduced every acceptance criterion at merge commit `8728da3a0`. The candidate is clean, all focused and repository-wide checks pass, and no real shared-state entity inventory remains coupled to the gate tests; recommendation: PASSED.
