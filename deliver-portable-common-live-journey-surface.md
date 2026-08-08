@@ -2091,3 +2091,30 @@ Cycle 26 PASSED exact merged candidate `8dfc87c7d588540e2e656d557237fba7c99477c7
 ### Summary
 
 Cycle 27 corrects two candidate-owned live harness defects without changing runtime product behavior or evidence policy. Exact candidate `37bc5e43762c01091691626bf0bc8440173e412b` is focused-, full-, and race-green under immutable state, remote-equal, and ready for fresh independent validation before selective PR CI.
+
+## Stage Report: validation (cycle 27 — independent PR harness correction)
+
+- DONE: Verify immutable provenance and the exact correction envelope.
+  Clean HEAD and origin recarve branch are exactly `37bc5e43762c01091691626bf0bc8440173e412b`; predecessor is exactly `8dfc87c7d588540e2e656d557237fba7c99477c7`, while current `origin/main` and merge base remain `e24e8234a0eff20fe1d5efa3bb600eb51811a532`. Delta is exactly five files/+60/-10.
+- DONE: Independently reproduce the Sonnet failure classification.
+  Retained job `92784324455` JSON shows every completed journey passed or TODO-skipped, auto-continue passed in 1313.42s, self-evidence started at about 37.6m, and only the package-level `panic: test timed out after 40m0s` fired after self-evidence had run 2m24s; no journey assertion failed.
+- DONE: Verify the narrow Claude suite-backstop correction and its guards.
+  Workflow and documentation each contain exactly one Claude 90m common-suite command and exact Codex/Pi 40m commands. `TestRuntimeLiveCommonSuiteTimeouts` passed with `-count=1` in 1.04s, and the release missing-shared-run mutation guard passed in 0.64s, proving a commented/non-executable Claude command still fails.
+- DONE: Independently reproduce the Codex failure classification.
+  Retained job `92784324502` artifacts show single-root metrics completed before split-root `state ready` refused state HEAD `main` against derived `spacedock-state/003`, leaving the entity parked before report processing.
+- DONE: Verify split-root initialization at the failing boundary.
+  The common helper initializes the state repository, derives `status.StateBranch(workflowRoot)`, renames the state branch, and only then initializes the workflow root; `runAutoContinueJourney` and `TestSplitRootAutoContinueFixtureUsesDerivedStateBranch` call that same helper. The live-tagged non-model test passed with `-count=1` in 0.58s.
+- DONE: Verify semantic scope and current-main preservation.
+  The exact delta changes only workflow/docs timeout text, two deterministic guards, and the shared split-root Git helper/control. Registry, TODOs, fixtures, prompts, assertions, product, adapters, launchers, Opus policy, and Codex/Pi policy are unchanged; current-main behavior remains inherited unchanged.
+- DONE: Run required formatting and repository verification.
+  `gofmt -l ./cmd ./internal` emitted nothing and `git diff --check` passed. With `SPACEDOCK_STATE_ROOT=/tmp/spacedock-ys-pilot-state.60QPGN`, exact `go test ./...` passed in 244.32s and exact `go test ./... -race` passed in 306.65s; each executed seven packages and reported thirteen unaffected packages cached.
+- DONE: Classify mutable-state drift separately.
+  The pinned 31-path pilot manifest passed in 0.33s. The unpinned shared checkout failed only because `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` moved from active root to `_archive`; this external location drift is not candidate red.
+- SKIPPED: Run model, hosted, live, PR, CI, gate, frontmatter, or status mutations.
+  The assignment prohibited these operations; validation used retained artifacts and deterministic offline checks only.
+- DONE: Return an explicit independent recommendation with zero failed checklist items.
+  PASSED. Material: none. Deferred risk: none. Polish: refresh the two mutable pilot-manifest locations separately. Checklist: 0 failed; candidate code and unrelated state paths were untouched.
+
+### Summary
+
+Cycle 27 independently PASSED exact candidate `37bc5e43762c01091691626bf0bc8440173e412b`. Both PR reds are causally harness-owned and narrowly corrected: Claude receives only a suite-wide 90m backstop, while the split-root fixture now enters its derived state branch; focused, full, race, provenance, scope, and policy checks are green with no material finding.
