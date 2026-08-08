@@ -62,3 +62,16 @@ Determine the smallest safe ownership boundary between a one-time legacy data mi
 ### Summary
 
 Adopted GitHub PR #634 unchanged: conventional verdict writes use the schema spelling, legacy case variants read compatibly, and unconventional values retain warning visibility without a bulk state migration. The only Roborev finding was preserved and declined by explicit captain ruling; the unchanged candidate then passed focused, full, race, formatting, live-state, and final Roborev checks.
+
+## Stage Report: validation
+
+- DONE: Independently verify that canonical verdict writes and legacy-compatible reads remove lowercase warning noise while genuinely unconventional values still warn.
+  Focused status/CLI tests fail if either writer stores noncanonical case, legacy `passed`/`rejected` warns, `needs-work` is rewritten, unconventional verdicts stop warning, or structural errors stop exiting 1; live validation exited 0/`VALID` with 0 lowercase and 4 `superseded` verdict warnings.
+- DONE: Confirm the unchanged PR #634 candidate satisfies the task value without bulk state migration, and audit both Roborev dispositions against the captain ruling.
+  HEAD remained exact candidate `6c45fd59c7377eadfb2c2013d048bb77fa004c69` with a clean worktree; job 1037's stdout finding is DECLINED by `captain-ruling[2026-08-07]`, and rerun job 1040 reports no issues.
+- DONE: Reproduce the proportionate focused evidence, inspect the exact diff and public output change, and recommend PASSED or REJECTED with any residual risk.
+  PASSED: the 16-file/234-addition/31-deletion diff, uppercase text goldens, `git diff --check`, formatting, focused tests, and pinned-state race tests for status/CLI/gates passed; an unpinned whole-repo race only reproduced the documented unrelated stale pilot-manifest drift.
+
+### Summary
+
+Recommend PASSED with no material candidate finding: canonical writes and case-compatible reads remove the 113 lowercase verdict warnings without migrating state, while four genuinely unconventional values remain visible. Residual operational risk is adjacent rather than candidate-owned: the current live checkout also emits 125 unknown gate-application-field warnings, so total pre-commit output remains noisy even though the legacy verdict corpus is gone; revisit if bounded output is broadened beyond verdict diagnostics.
