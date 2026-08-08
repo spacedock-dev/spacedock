@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-1:revision-1",
+  "question": "Approve the validated two-lane pull-request cadence and hermetic gate-test repair for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d8d979deb5629fff73ad7e7095b8ff7903dcf4ee/make-sonnet-5-only-claude-pr-live-lane.md",
+      "rev": "sha256:a3f9adad40c7e72b4c611f80111971017fe6bded835b5f197c641005e858bd31",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation reproduced all seven acceptance criteria, confirmed the desired journey registry is unchanged, and passed focused, full, and race suites on the current-main 11-file candidate."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/8728da3a0a7724864f1ffdbdf326653ca6c4d758/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:e454d8362bae0799d09fb40eb8dd22cad0e38ec20c7298dce6db8092e904a29b"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/8728da3a0a7724864f1ffdbdf326653ca6c4d758/internal/gates/application_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:e97b128cfff451286153f23fb0da5cc31bcf5714cad06a690efac13f577d9600"
+    }
+  ]
+}
