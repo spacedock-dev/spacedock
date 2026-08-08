@@ -347,3 +347,42 @@ Validation independently reproduced every acceptance criterion at merge commit `
 ### Summary
 
 The live failure exposed a mismatch between GitHub matrix semantics and the prior test simulator. The corrected workflow has one explicit Claude matrix row, making an ordinary pull request structurally incapable of queuing a separate Opus row while preserving the explicit pre-release Opus dispatch.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify commit 8e2d67f76 defines exactly one Claude matrix row with no base axes or exclusions, and preserves the three intended cadence mappings.
+  The workflow has one `include` row, no base axes or `exclude`, and maps PR/manual Sonnet to Sonnet 5/max/CI-E2E and `opus-pre-release` to Opus 4.8/max/CI-E2E-OPUS.
+- FAILED: Verify the replacement test checks the structural one-row contract without simulating GitHub matrix expansion.
+  A throwaway mutation added `os: [ubuntu-latest, macos-latest]`; `TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence` still exited 0 because its typed YAML shape ignores unknown matrix axes.
+- DONE: Verify the live finding.
+  `gh run view 31272368367` observed PR SHA `8728da3a0`, queued Sonnet job `93140486631`, Codex job `93140486613`, and unexpected Opus job `93140486627`; the run is cancelled and all paid jobs have empty step lists.
+- DONE: Verify the two-file correction.
+  `8728da3a0..8e2d67f76` changes only `.github/workflows/runtime-live-e2e.yml` and `internal/release/runtime_live_evidence_workflow_test.go`, by +44/-66; `git diff --check` is clean.
+- DONE: Verify the unchanged registry.
+  `git diff --exit-code 8728da3a0..8e2d67f76 -- docs/runtime-live-ci-registry.md` exited 0.
+- DONE: Verify focused checks.
+  Release, ensigncycle, and contractlint packages pass; the cadence test rejects the named axes, exclusions, multiple include rows, aliases, lower effort, and mapping changes, but not arbitrary axes.
+- DONE: Verify the full suite and race suite.
+  `go test ./... -race` passed; an isolated `go test ./...` rerun passed after a concurrent full/race run exposed a transient split-root dispatch-golden mismatch.
+- DONE: AC-1 - Each pull request queues exactly two live approval jobs.
+  Current YAML structurally defines one Claude include row plus the unchanged Codex job; direct GitHub job-graph proof remains pending.
+- FAILED: AC-2 - Ordinary pull requests run exactly one Claude live lane.
+  The candidate YAML meets the value, but its required extra-leg regression proof is incomplete because an arbitrary two-value base axis escapes the structural test.
+- DONE: AC-3 - Ordinary pull requests run Codex Luna at maximum effort.
+  The correction does not change the Codex job or its exact-argv tests; the focused ensigncycle suite passes.
+- DONE: AC-4 - Opus and Pi evidence remain available without pull-request approval waits.
+  The single row selects Opus only for `opus-pre-release`; no Pi job exists, and the correction leaves offline/local Pi evidence unchanged.
+- DONE: AC-5 - The desired journey and target registry remains byte-identical.
+  The exact correction-range registry diff exited 0.
+- DONE: AC-6 - Operators can identify all cadences without reading workflow YAML.
+  The correction changes no operator documentation, preserving the previously validated cadence descriptions.
+- DONE: AC-7 - The change uses the existing workflow and test surface.
+  The correction touches two existing files and adds no workflow, package, registry row, reconciliation command, or simulator.
+- FAILED: Recommend whether it is safe to update PR #639 for direct job-graph proof.
+  Not yet: fix the material evidence defect first, then push that exact corrected SHA so the replacement PR run proves the final candidate and no paid lane needs approval.
+- FAILED: Recommend PASSED or REJECTED.
+  Recommend REJECTED for a material evidence defect: supported trigger is an added matrix axis; harm is duplicate paid Claude approvals; authority is `value-ac[AC-2]` exactly one Claude lane; trigger evidence is the passing two-value `os` mutation.
+
+### Summary
+
+The two-file candidate YAML itself is a clean one-row correction, and all focused, isolated full, and race checks pass. Validation rejects because the replacement structural test can still pass when a new Cartesian base axis creates multiple Claude rows; repair that guard before pushing the final exact SHA to PR #639 for direct job-graph proof.
