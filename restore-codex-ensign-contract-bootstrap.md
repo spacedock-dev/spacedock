@@ -43,6 +43,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:nvz2ym82ydfn07jp04yfxg9r:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:nvz2ym82ydfn07jp04yfxg9r-ideation-1
+              briefing:
+                id: briefing:nvz2ym82ydfn07jp04yfxg9r:ideation:attempt-1:revision-1
+                digest: sha256:0834a43f42a25251fb05daf7d946511a8ce887e149dfee57847f701b42237783
+                request-digest: sha256:bdbf442f28214e48d96bf4eb730fd3ff5e230a7582ae9ebf5568eefe8d9c856c
+                room-ref: ./restore-codex-ensign-contract-bootstrap/review/ideation/briefing-1
 ---
 
 ## Outcome

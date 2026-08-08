@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nvz2ym82ydfn07jp04yfxg9r:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:nvz2ym82ydfn07jp04yfxg9r:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1f6b31a46c15b8e61b95f1451b3332ecac838b34/restore-codex-ensign-contract-bootstrap.md",
+      "rev": "sha256:b1581f811f1e5d468fd7360fddef5673cb75d5f969a4c8e0a280e593e132cc30",
+      "mediaType": "text/markdown",
+      "summary": "The design selects an executable Codex skill bootstrap, preserves fresh-context and pointer-only transport, and defines fixture/live evidence for implementation."
+    }
+  ]
+}
