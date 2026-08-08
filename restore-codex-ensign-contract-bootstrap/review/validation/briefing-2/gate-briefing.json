@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-2:revision-1",
+  "question": "Should Captain hold nv for external Claude and Pi runtime evidence recovery, or approve the unchanged candidate?",
+  "artifacts": [
+    {
+      "id": "artifact:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/6175634f74287761465bc490a6343556527a75cc/restore-codex-ensign-contract-bootstrap/review/validation/fo-gate-review-cycle2.md",
+      "rev": "sha256:239cfc2f90c2d2dca5ac4db867e304ca9f1931f1673e2e268046523e49038910",
+      "mediaType": "text/markdown",
+      "summary": "Codex, offline, fallback Pi, and adversarial evidence pass; exact Claude OAuth and default Pi credit failures leave an infrastructure-only evidence hold."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/6175634f74287761465bc490a6343556527a75cc/restore-codex-ensign-contract-bootstrap.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3f4ee06d768fb151205d15da1656fcce39282b9a6ec96d2708e9535e2aaaed86"
+    }
+  ]
+}
