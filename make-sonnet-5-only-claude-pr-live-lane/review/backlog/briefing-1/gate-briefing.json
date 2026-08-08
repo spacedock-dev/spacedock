@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0ytmjwn4ppg5en25z7vmna0p:backlog:attempt-1:revision-1",
+  "question": "Approve this task to enter ideation with routine PR CI limited to Sonnet 5/max and Codex Luna/max, Opus pre-release, and Pi manual/local?",
+  "artifacts": [
+    {
+      "id": "artifact:0ytmjwn4ppg5en25z7vmna0p:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/38311be8df574ea7f439a868878d45e5fb335f12/make-sonnet-5-only-claude-pr-live-lane.md",
+      "rev": "sha256:53f6e72999296384fe7ced0b8a6ffbc2d5d800750e3da230e4219972f348cce4",
+      "mediaType": "text/markdown",
+      "summary": "The task removes approval and cost noise from ordinary PRs while preserving explicit pre-release Opus and manual/local Pi evidence. Ideation must update the current Pi-out-of-scope clause and prove event selection without a paid Opus run."
+    }
+  ]
+}
