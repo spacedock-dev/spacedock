@@ -253,3 +253,16 @@ A paid Sonnet, Codex, Opus, or Pi run is not necessary. The next normal pull req
 The plan reduces pull-request approval jobs from four to two. Opus remains an explicit pre-release run.
 
 Pi evidence moves to the local subscription path.
+
+## Stage Report: implementation
+
+- DONE: Make pull-request event expansion queue exactly Sonnet 5/max and Codex Luna/max, while Opus remains pre-release and Pi remains local/manual.
+  Commit `105ffea63` adds three event fixtures; alias, Opus, duplicate-leg, and lower-effort mutations fail the pull-request assertion.
+- DONE: Implement the cadence through the existing workflow and shims within the approved 10-file, +240/-330 ceiling, with the desired journey registry unchanged.
+  Commit `105ffea63` changes 9 files by +240/-291; `git diff --exit-code -- docs/runtime-live-ci-registry.md` exited 0 before commit.
+- DONE: Add falsifiable event and command-argument coverage, then run focused checks, gofmt, the full suite, and the race suite.
+  Focused release and ensigncycle tests pass; shim tests fail if maximum effort or the explicit model is removed or duplicated. Both full suites reached one unrelated `internal/gates` fixture failure because two shared-state manifest files are absent.
+
+### Summary
+
+Pull requests now queue Sonnet 5 at maximum effort and Codex Luna at maximum effort. Opus is available only through the pre-release dispatch, while Pi live evidence stays local and its free coverage guards run offline.
