@@ -35,6 +35,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:0ytmjwn4ppg5en25z7vmna0p:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:0ytmjwn4ppg5en25z7vmna0p-ideation-1
+              briefing:
+                id: briefing:0ytmjwn4ppg5en25z7vmna0p:ideation:attempt-1:revision-1
+                digest: sha256:5fe1c5f4d43d0e30a78f008bc59b1cfed1d231f431d841972080f1fc05e2b25a
+                request-digest: sha256:eeb9dfc192729f5e6f48544b0840636230c0cc1df3dc51b805c540d27ce21068
+                room-ref: ./make-sonnet-5-only-claude-pr-live-lane/review/ideation/briefing-1
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.

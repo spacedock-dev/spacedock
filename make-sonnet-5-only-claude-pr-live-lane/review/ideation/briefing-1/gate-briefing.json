@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0ytmjwn4ppg5en25z7vmna0p:ideation:attempt-1:revision-1",
+  "question": "Approve this two-lane pull-request cadence design to enter implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:0ytmjwn4ppg5en25z7vmna0p:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d1fb45997227e457996c0621027d3cb1d02d6bd1/make-sonnet-5-only-claude-pr-live-lane.md",
+      "rev": "sha256:89e8f606ae6437ad1030870006fffe78817840acd72bb97c493df44596f74c0d",
+      "mediaType": "text/markdown",
+      "summary": "Reduce ordinary pull-request live approvals from four to two: Sonnet 5/max and Codex Luna/max. Keep Opus as an explicit pre-release dispatch and Pi as local subscription evidence. Reuse the existing workflow, shims, offline controls, and release tests."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0ytmjwn4ppg5en25z7vmna0p:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/94acb270a5c475d190f6b7bef56488aaf78cc7d5/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:a6dff3033c9f64932f6a7483b749bc9612ea5b2805058bf010751b87d603624f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0ytmjwn4ppg5en25z7vmna0p:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/94acb270a5c475d190f6b7bef56488aaf78cc7d5/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:cadad84ced84e37b45c71be98b6de6cc3d8c771ebc3c9551f8be2d7f311bba63"
+    }
+  ]
+}
