@@ -1,7 +1,7 @@
 ---
 id: 0ytmjwn4ppg5en25z7vmna0p
 title: Make Sonnet 5 the only Claude live lane on pull requests
-status: validation
+status: implementation
 source: Captain decision on 2026-08-07 after review of PR 626 and current Opus cost and failure evidence.
 started: 2026-08-08T15:45:20Z
 completed:
@@ -391,6 +391,7 @@ The two-file candidate YAML itself is a clean one-row correction, and all focuse
 
 - Cycle 1: REJECTED — PR #639 live job graph; surface 2 files/110 LOC vs estimate 8 files/570 LOC (19%); AC unchanged.
 - Cycle 2: REJECTED — fresh validation of the one-row guard; surface 2 files/110 LOC vs estimate 8 files/570 LOC (19%); AC unchanged.
+- Cycle 3: REJECTED — corrected PR live run exposed concrete-model/stable-role drift; AC unchanged; captain authorized narrow rework.
 
 ## Stage Report: implementation (cycle 4)
 
