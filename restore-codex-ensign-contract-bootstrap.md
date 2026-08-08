@@ -1,6 +1,6 @@
 ---
 title: Restore the shared ensign contract at the Codex fresh-dispatch boundary
-status: implementation
+status: validation
 source: "Runtime Live E2E run 31045591048, Codex job 92440554439: the first full-ensign-cycle worker received only a Read pointer, never loaded the shared ensign contract, and wrote two generic checkbox Stage Reports that the FO accepted before archive."
 started: 2026-08-07T13:16:17Z
 completed:
@@ -271,3 +271,17 @@ The Codex fresh boundary now loads the installed ensign skill before the pointer
 ### Summary
 
 The archived pilot manifest now matches the shared state checkout, with its invariant updated from 22 to 24 while retaining 31 unique entries. All focused, full, race, formatting, and diff checks passed; the existing exact-head Codex live proof remains valid for this offline-only correction. Counts: DONE 3, SKIPPED 0, FAILED 0.
+
+## Stage Report: validation
+
+- DONE: Verify every nv acceptance criterion and the candidate's exact Codex fresh-dispatch boundary, including kd separation and unchanged assignment/pointer transport, with explicit evidence and a semantic adversarial pass.
+  AC-1: fixture/parser PASS; authoritative live terminal evidence is held after the Codex host hung. AC-2: supplied-plugin fixture PASS, including bootstrap-removal and checkbox negatives. AC-3: exact spawn, pointer, advance, and adapter tests PASS. AC-4: cross-host/full/race checks PASS; no kd, oracle, or adapter diff.
+  Exact candidate HEAD is `7d50c7d88d579f33df5dd28e144bc8901f687550`; candidate status stayed clean. Detached mutations of the fresh edge and anchored report each made the existing boundary test fail.
+- FAILED: Run the documented focused checks, go test ./..., go test ./... -race, gofmt -l, registry reconciliation, and the full existing -run '^TestLiveCommon' -failfast selector against exact candidate HEAD 7d50c7d88; retain durable live evidence.
+  Focused dispatch, manifest, registry, `go test ./...`, `go test ./... -race`, `gofmt -l`, and `git diff --check` passed. Correct live setup used `/tmp/spacedock-codex-live-nvz-correct.98L8Gq/spacedock`; source-head evidence is exact HEAD, and the artifact records the `$spacedock:ensign; then Read ...` prompt. The selector failed only when `TestLiveCommonFullEnsignCycle` hung after `turn.completed` and the runner killed it under the 1-minute no-progress budget; artifacts: `/tmp/spacedock-codex-live-proof-nvz-correct.0LCSHm`.
+- DONE: Publish a validation report with explicit AC-by-AC evidence and PASSED/REJECTED recommendation, commit only validation/state evidence, and name any infrastructure failure separately from candidate defects.
+  Recommendation: REJECTED — infrastructure/evidence hold for Captain runtime-lane direction; no candidate defect or implementation feedback cycle is recommended.
+
+### Summary
+
+The exact candidate passes the offline contract, transport, cross-host, full, race, formatting, registry, manifest, and detached adversarial checks. The corrected live artifact identifies `7d50c7d88` and proves the fresh prompt edge, but the Codex host stopped making progress after `turn.completed` before durable terminal evidence; this is an infrastructure/evidence failure under the assignment contract, not a code finding.
