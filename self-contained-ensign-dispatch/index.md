@@ -1,6 +1,6 @@
 ---
 title: Make ensign dispatch self-contained across launcher drift
-status: validation
+status: implementation
 sprint: durable-decisions
 source: "Real source-build sprint dogfood, 2026-07-26"
 score: "1.0"
@@ -103,12 +103,12 @@ gates:
                 reason: 'Validation cycle 4 closes the only missing evidence: a real candidate-generated Codex child executed exact 7fce0bb1 through pinned launcher A under hostile ambient B. All three validation checklist items and all five AC values are satisfied with no candidate finding.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 sprint-readiness: required
-mod-block: merge:pr-merge
-pr: "#635"
+mod-block:
+pr:
 ---
 
 ## Outcome
@@ -806,3 +806,18 @@ The 44-file KD reset is proportionate and deterministic evidence supports its na
 ### Summary
 
 Validation now has the missing real-worker evidence: a canonical Codex child executed the exact `7fce0bb1` self-contained assignment and used its literal pinned launcher under a hostile ambient-B environment. With focused, formatting, full/race candidate-package, authority, and proportional-diff evidence reconfirmed and no material candidate finding, validation recommends **PASSED**.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Replace generic launcher policy prose with exact full-path workflow commands generated from the resolved launcher.
+  Commit `d3f093cdb` resolves an explicit `SPACEDOCK_BIN` once, shell-quotes its absolute path in stage/standing commands, and tests execution under hostile ambient PATH/SPACEDOCK_BIN; changing the command back to ambient resolution invokes failing B.
+- DONE: Preserve explicit testing of supplied worktree binaries and remove the incorrect product-only claim.
+  Resolver tests accept an executable candidate path as the selected launcher, the A/B/C fixture runs explicit C independently, and neither generated output nor the ensign contract claims worktree binaries are product-only.
+- DONE: Reduce duplicated golden ownership so shared bootstrap wording has one exact contract fixture without prose parsing.
+  The repeated launcher-policy paragraph was removed from all 26 build snapshots; `build-space-path` owns exact quoting while the Claude/Codex/Pi fresh/advance matrix asserts structured command and pointer behavior.
+- FAILED: Run the repository-wide non-race and race suites without external fixture failures.
+  Both `go test ./...` and `go test ./... -race` pass every task-owned package but `internal/gates.TestV1PilotManifestReadsAndValidates` fails because two shared-state manifest files are absent; focused dispatch/CLI/ensigncycle/integration suites pass.
+
+### Summary
+
+The revision replaces generic launcher policy with executable-specific generated commands and honors an explicitly supplied candidate launcher at dispatch generation. It restores focused bootstrap ownership, keeps pointer-only outer transport, documents the behavior, and commits the implementation as `d3f093cdb`.
