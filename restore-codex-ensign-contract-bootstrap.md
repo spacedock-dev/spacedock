@@ -258,3 +258,16 @@ The supported current-checkout rerun proves the new Codex prefix reaches a real 
 ### Summary
 
 The Codex fresh boundary now loads the installed ensign skill before the pointer, with truthful artifact wording, deterministic mutation coverage, and runtime documentation. The real current-checkout common journey proves compliant fresh and advance behavior through terminal archive; the aggregate gates remain blocked by unrelated shared-state pilot-manifest drift, which was investigated and left unchanged. Candidate commits are `9fcccabf0` and `892acbdb7`.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Correct the two pilot-manifest entries to the durable _archive paths and update the archive expectation from 22 to 24, preserving 31 unique entries and changing no shared state records.
+  Evidence: `TestV1PilotManifestReadsAndValidates` passed with 31 unique entries and 24 archived paths; commit `7d50c7d88` changes only the two authorized candidate files.
+- DONE: Re-run the focused manifest/dispatch checks, full and race Go suites, gofmt, diff checks, and the required existing live proof policy; stop and report any failure outside the two-file manifest correction.
+  Evidence: focused gates/dispatch tests, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` passed; exact-head live proof `/tmp/spacedock-codex-live-proof.nvz-Gx10ZCEg` was banked because no live surface changed.
+- DONE: Commit the candidate and publish a cycle-4 implementation report with explicit DONE/SKIPPED/FAILED counts and concrete evidence, without changing kd or the live oracle.
+  Evidence: candidate commit `7d50c7d88` is on `spacedock-ensign/restore-codex-ensign-contract-bootstrap`; no kd, oracle, or unrelated state file was edited.
+
+### Summary
+
+The archived pilot manifest now matches the shared state checkout, with its invariant updated from 22 to 24 while retaining 31 unique entries. All focused, full, race, formatting, and diff checks passed; the existing exact-head Codex live proof remains valid for this offline-only correction. Counts: DONE 3, SKIPPED 0, FAILED 0.
