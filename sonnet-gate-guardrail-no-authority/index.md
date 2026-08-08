@@ -244,3 +244,16 @@ Removed the Sonnet gate-guardrail TODO quarantine per the FO-authorized fix disp
 ### Summary
 
 The exact candidate is reconciled and pushed at `4f4ee4247` without restoring any retired pre-YS harness file or weakening the gate oracle. YS's registry/common-runner architecture remains canonical: Sonnet is active evidence, the stale quarantine paragraph is gone, and the strict diagnostic moved to the shared helper. The only red evidence is a main-equivalent pilot-manifest/shared-state mismatch outside this candidate; both full commands otherwise completed cleanly, while the targeted and real Sonnet common journey passed.
+
+## Stage Report: implementation (cycle 3 report repair)
+
+- DONE: Reconcile exact candidate e36769727 with current post-YS main without discarding either side.
+  Merge commit `4f4ee424792f9ea1044578334040825bcd1da585` joins candidate `e36769727` with `origin/main` `d3e70e958`; the branch is pushed and clean. Conflicts in `docs/runtime-live-ci.md` and `internal/ensigncycle/claude_live_runner_test.go` were resolved, and YS's deletion of `internal/ensigncycle/livescenario_adapter_live_test.go` was preserved.
+- DONE: Move the 3Z quarantine removal and strict diagnostics onto the canonical live inventory and common runner.
+  `TestLiveCommonGateGuardrail` has no Claude Sonnet TODO, while Codex and Pi alone retain `TODO(3zzpdw704df1g8pg1x9thzmw)` and Opus has none. The stale quarantine paragraph is removed, and the unchanged seven-condition accept/reject diagnostic now lives in `internal/ensigncycle/claude_runtime_helpers_test.go` on the common exercise path.
+- FAILED: Preserve gate-prepare behavior and prove focused, full, race, inventory, and applicable live checks.
+  Focused attribution/oracle tests and registry reconciliation passed; `TestLiveCommonGateGuardrail` passed twice (115.66s and 133.47s), resolved to `claude-sonnet-5`, with one prepare, one state commit, and zero forbidden decision/consume/dispatch calls. `go test ./...` and `go test ./... -race` each failed only because unchanged post-YS `TestV1PilotManifestReadsAndValidates` expects `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` at state-root paths although both are archived; the candidate does not modify that manifest or test.
+
+### Summary
+
+This report-only repair maps the recorded cycle-3 evidence onto the three dispatched checklist items exactly. Candidate commit `4f4ee4247` remains unchanged; focused, inventory, and live Sonnet proof is green, while the full and race items remain honestly FAILED on the recorded main-equivalent pilot-manifest/shared-state mismatch.
