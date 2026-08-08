@@ -2060,3 +2060,34 @@ Cycle 25 truthfully represents the reproduced Codex `gate-guardrail` gap beside 
 ### Summary
 
 Cycle 26 PASSED exact merged candidate `8dfc87c7d588540e2e656d557237fba7c99477c7`. The merged tree preserves current-main #631/#632 behavior, implements the exact narrow Codex truth binding, matches the approved semantic envelope, and is focused-, full-, race-, and immutable-pilot-green; only explicitly nonblocking documentation attribution and mutable archive-location maintenance remain.
+
+## Stage Report: implementation (cycle 27 — PR live harness correction)
+
+- DONE: Classify the Sonnet PR failure as a suite-wide harness timeout.
+  PR #633 run `31152258422`, job `92784324455`, reached about 37.6m with completed journeys passing or skipping; auto-continue took 1313.42s (single-root 1030.298s plus split-root 282.777s), then the outer 40m timeout killed self-evidence after 144s with no journey assertion red.
+- DONE: Correct only the Claude common-suite runaway backstop.
+  The Claude workflow and matching local documentation command move from 40m to 90m as a loose sequential-suite backstop; Codex and Pi remain exactly 40m.
+- DONE: Classify the Codex PR failure as split-root fixture initialization.
+  Job `92784324502` passed auto-continue single-root, then the split-root fixture halted because its state checkout was on `main` instead of derived `spacedock-state/003`; this was a harness defect, not a product or TODO failure.
+- DONE: Initialize the split-root common fixture on its derived state branch.
+  The shared helper initializes the state repository, renames it to `status.StateBranch(workflowRoot)`, then initializes the workflow root; `runAutoContinueJourney` uses that exact helper without changing fixture bytes, state-ready behavior, or assertions.
+- DONE: Add RED-first deterministic controls for both corrections.
+  The timeout consistency control initially found zero Claude 90m commands in workflow and docs, while the live-tag non-model split-root control observed `main` instead of the derived branch.
+- DONE: Preserve the instruction-read architecture boundary.
+  The initial combined timeout control exposed the guard against reading instruction documentation from `internal/release`; the exact workflow/docs control was moved to the existing `internal/contractlint` quarantine.
+- DONE: Keep the correction within the exact authorized surface.
+  Candidate `37bc5e43762c01091691626bf0bc8440173e412b` is exactly five files and +60/-10: workflow/docs timeout literals and prose, release mutation fixture, contractlint timeout pin, and split-root fixture helper/control. No product, prompt, adapter, registry, TODO, launcher, other runtime command, or Opus/Pi policy changed.
+- DONE: Run focused formatting and deterministic verification.
+  `TestRuntimeLiveCommonSuiteTimeouts` passed in 3.385s, the release missing-shared-run guard passed in 3.818s, and `TestSplitRootAutoContinueFixtureUsesDerivedStateBranch` passed live-tagged without a model in 4.668s; `gofmt -w ./cmd ./internal` and diff checks were clean.
+- DONE: Run repository-wide verification against immutable pilot state.
+  The unpinned broad run's archived-manifest misses and contention timeouts were environmental; with `SPACEDOCK_STATE_ROOT=/tmp/spacedock-ys-pilot-state.60QPGN`, `go test ./...` passed (CLI 285.329s, ensigncycle 301.525s) and `go test ./... -race` passed (CLI 309.555s, ensigncycle 338.583s).
+- SKIPPED: Run paid, model, hosted, or live correction commands.
+  No model or hosted live run was launched during this deterministic harness correction.
+- DONE: Publish the immutable candidate and preserve review authority.
+  Commit `37bc5e437` was SSH-pushed because the HTTPS OAuth channel lacked workflow scope; local and origin are exact. Fresh independent validation is recommended before Sonnet/Codex-only PR CI.
+- DONE: Close the implementation checklist with zero failed items.
+  Checklist result: 0 failed; this report changes no entity frontmatter or workflow status.
+
+### Summary
+
+Cycle 27 corrects two candidate-owned live harness defects without changing runtime product behavior or evidence policy. Exact candidate `37bc5e43762c01091691626bf0bc8440173e412b` is focused-, full-, and race-green under immutable state, remote-equal, and ready for fresh independent validation before selective PR CI.
