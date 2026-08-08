@@ -33,3 +33,32 @@ Determine the smallest safe ownership boundary between a one-time legacy data mi
 - Changing the durable-decisions sprint or its release criteria.
 - Weakening warning-tier schema conformance or pre-commit hard-error enforcement.
 - Bulk rewriting entity bodies, reports, review rooms, or unrelated frontmatter.
+
+## Stage Report: implementation
+
+- DONE: Review PR #634 with Roborev before changing the imported candidate, and preserve every finding for workflow disposition.
+  Roborev job 1037 reviewed untouched head `6c45fd59`; its exact finding and captain-decline comment remain available via `roborev show --job 1037`, with advertised log path `/Users/clkao/.roborev/logs/jobs/1037.log`.
+- DONE: Prove that canonical writes plus legacy-compatible reads remove the verdict-warning flood while novel invalid values remain visible.
+  Focused status tests fail if writes stop storing `PASSED`/`REJECTED`, lowercase legacy reads warn, novel `needs-work` is rewritten/silenced, or structural errors stop exiting 1; the live checkout now emits 0 lowercase legacy verdict warnings and exactly four `superseded` warnings instead of 117 verdict warnings.
+- DONE: Deliver the adopted candidate with focused, full, race, formatting, and exact surface evidence, or stop unchanged on an unresolved material finding.
+  Adopted PR commit `6c45fd59c7377eadfb2c2013d048bb77fa004c69` is clean; `gofmt -w ./cmd ./internal`, focused tests, `go test ./...`, and `go test ./... -race` passed, and the PR surface is 16 files, 234 insertions, 31 deletions.
+
+### Review-finding disposition
+
+- Reviewer observation (Roborev job 1037, exact): `Severity: Medium`; `Location: internal/status/mutate.go:154`; `Problem: Canonicalizing before change reporting alters the stable status --set stdout from the caller-provided passed/rejected to PASSED/REJECTED, as shown by the modified golden fixtures. This unnecessary public-output regression can break consumers that parse the existing output.` `Fix: Canonicalize only the persisted frontmatter value while retaining the requested spelling for CLI change reporting, and keep the existing lowercase golden output.`
+- Released user and normal workflow: `spacedock status --set <slug> ... verdict=passed` is the normal mutation path and reports its resolved change.
+- Observable harm proposed by the worker: three stdout goldens changed from lowercase to uppercase, potentially affecting exact-output consumers.
+- Affected boundary proposed by the worker: `contract[AGENTS.md#Priorities]` requires stable, fixture-tested command output.
+- Trigger evidence: `handlers.go` reports the value returned from `updateFrontmatter`; canonicalization therefore appears in text, quiet, and JSON narration as well as storage.
+- Worker proposal: Material, task-owned, fix; initial FO authorization: fix.
+- Final authorization and outcome: `captain-ruling[2026-08-07]: status --set output need not remain lowercase; canonical stored-value narration is accepted.` Disposition DECLINED; the in-progress correction was removed and byte equality to imported head was verified before further checks.
+- Rerun: Roborev job 1040 reports `No issues found`; canonical artifact is `roborev show --job 1040`, with advertised log path `/Users/clkao/.roborev/logs/jobs/1040.log`.
+
+### Verification notes
+
+- The first live-checkout full/race attempts exposed an unrelated stale pilot manifest whose two named entities have since moved under `_archive/`; both exact suites passed with `SPACEDOCK_STATE_ROOT` pinned to immutable state commit `a0169cc2d8a5e4912ed33f75ca8422a767e71c9e`, where the manifest paths exist.
+- Live candidate validation exited 0 with `VALID`; verdict warnings were bounded to the four deliberately novel `superseded` tokens, while all 104 `passed` and 9 `rejected` legacy tokens were accepted case-compatibly.
+
+### Summary
+
+Adopted GitHub PR #634 unchanged: conventional verdict writes use the schema spelling, legacy case variants read compatibly, and unconventional values retain warning visibility without a bulk state migration. The only Roborev finding was preserved and declined by explicit captain ruling; the unchanged candidate then passed focused, full, race, formatting, live-state, and final Roborev checks.
