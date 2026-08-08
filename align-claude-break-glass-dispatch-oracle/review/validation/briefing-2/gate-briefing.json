@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:824ecawn5jttbykcgx82nbf4:validation:attempt-2:revision-1",
+  "question": "Does 824 align break-glass recovery with selected bare/team mode while preserving strict identity and durable completion evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:824ecawn5jttbykcgx82nbf4:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/c4fb52d0cf9f3b7eca19e8988e0e7ca1018139aa/align-claude-break-glass-dispatch-oracle/index.md",
+      "rev": "sha256:1ed9d908b8bde24806ea4a2bf3ca7bb08e5cb65c3912f5fe81ca103cb0aff88e",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE. Exact head 43fd2e79d passes both recovery modes on Sonnet and Opus, rejects crossed modes and explicit wrong identity, and scopes durable report evidence to the exact implementation report."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:824ecawn5jttbykcgx82nbf4:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/43fd2e79d8898b363014c792ec556cb267d4e55b/internal/ensigncycle/dispatch_recovery_assert_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:9690f3a23b4b2d246c6acd336bebe92013613cd33ee95b8c7803ab36e1885223"
+    }
+  ]
+}
