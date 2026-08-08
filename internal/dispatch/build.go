@@ -606,25 +606,15 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		parts = append(parts, fmt.Sprintf("You are working on: %s\n\nStage: %s\n", entityTitle, stage))
 	}
 
-	// Every successful artifact binds ensign-owned workflow helpers to the exact
-	// resolved launcher that built it. Ambient SPACEDOCK_BIN/PATH and an explicit
-	// product-test binary are not alternate workflow-control launchers.
-	if opts.ValidateOnly == "" {
-		parts = append(parts, fmt.Sprintf(
-			"### Workflow launcher\n\n"+
-				"Begin every ensign-owned Spacedock workflow-helper command, including `status --read`, "+
-				"with this literal command prefix:\n\n"+
-				"    %s\n\n"+
-				"Do not substitute inherited `SPACEDOCK_BIN` or `spacedock` from PATH. "+
-				"An explicitly named worktree Spacedock binary is the product under test, not the workflow launcher.\n",
-			shlexQuote(workflowLauncher)))
+	// Stage loading is an exact command, not an ambient launcher policy. Resolve
+	// the launcher once at generation and put its shell-quoted absolute path into
+	// every generated helper invocation. Separate shell calls therefore do not
+	// depend on an export persisting, and an explicitly supplied candidate binary
+	// remains a legitimate launcher under test.
+	fetchCommands := []string{
+		fmt.Sprintf("%s dispatch show-stage-def --workflow-dir %s --stage %s",
+			shlexQuote(workflowLauncher), shlexQuote(workflowDir), shlexQuote(stage)),
 	}
-
-	// The builder already resolved the exact stage subsection plus ordered
-	// declared context sections from this validated README snapshot. Keep those
-	// bytes in the file; the outer prompt remains pointer-only.
-	parts = append(parts, stageSubsection+"\n")
-	fetchCommands := make([]string, 0)
 
 	// 3. Worktree instructions (conditional). Under split root the state-commit
 	// guidance applies to every stage, worktree or not: the worktree branch
@@ -698,13 +688,19 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		"### Completion checklist\n\n%s\n\n### Summary\n{brief description of what was accomplished}\n",
 		checklistText))
 
-	// 9. Standing-teammate routing is selected by the builder and inlined only for
-	// the same legacy-team/non-empty condition as before. Bare, merged/no-team, and
-	// empty-standing assignments omit the section.
-	if standing := claudeteam.RenderStandingTeammatesSection(
-		EnumerateDeclaredStandingTeammates(workflowDir, teamName)); standing != "" {
-		parts = append(parts, standing)
+	// 9. Standing-teammate loading uses the same already-resolved executable.
+	// Bare, merged/no-team, and empty-standing assignments still omit the command.
+	if len(EnumerateDeclaredStandingTeammates(workflowDir, teamName)) > 0 {
+		fetchCommands = append(fetchCommands,
+			fmt.Sprintf("%s dispatch show-standing --workflow-dir %s",
+				shlexQuote(workflowLauncher), shlexQuote(workflowDir)))
 	}
+
+	fetchLines := []string{"### Fetch commands", ""}
+	for _, command := range fetchCommands {
+		fetchLines = append(fetchLines, "    "+command)
+	}
+	parts = append(parts, strings.Join(fetchLines, "\n"))
 
 	// 10. Completion signal (Claude legacy team mode, Claude merged mode, or
 	// Codex named dispatch). The merged shape (mergedMode: claude, no team_name)

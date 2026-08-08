@@ -1,5 +1,5 @@
 // ABOUTME: routing regression — runtime-coupled inspection subcommands stay native.
-// ABOUTME: Dispatch build now inlines standing routing while retaining those public surfaces.
+// ABOUTME: Dispatch build emits exact full-path stage and standing fetch commands.
 package dispatch
 
 import (
@@ -37,7 +37,7 @@ func TestRuntimeCoupledSubcommandsRouteNative(t *testing.T) {
 
 // TestBuildInlinesStandingRoutingUnderMods asserts the builder snapshots standing
 // routing for a legacy team while retaining an empty bootstrap-fetch schema field.
-func TestBuildInlinesStandingRoutingUnderMods(t *testing.T) {
+func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
@@ -68,24 +68,24 @@ func TestBuildInlinesStandingRoutingUnderMods(t *testing.T) {
 
 	var env struct {
 		FetchCommands []string `json:"fetch_commands"`
-		DispatchFile  string   `json:"dispatch_file_path"`
 	}
 	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
 		t.Fatalf("build output not JSON: %v\n%s", err, out.String())
 	}
-	if len(env.FetchCommands) != 0 {
-		t.Fatalf("fetch_commands=%v, want empty self-contained assignment", env.FetchCommands)
+	if len(env.FetchCommands) != 2 {
+		t.Fatalf("expected two fetch commands; got %v", env.FetchCommands)
 	}
-	body := readDispatchBody(t, env.DispatchFile)
-	if !strings.Contains(body, "### Standing teammates available in your team") ||
-		!strings.Contains(body, "helper") {
-		t.Errorf("dispatch file omitted rendered standing routing:\n%s", body)
+	if want := testWorkflowLauncher + " dispatch show-stage-def"; !strings.Contains(env.FetchCommands[0], want) {
+		t.Errorf("first fetch command does not pin stage loading to %q: %q", want, env.FetchCommands[0])
+	}
+	if want := testWorkflowLauncher + " dispatch show-standing"; !strings.Contains(env.FetchCommands[1], want) {
+		t.Errorf("second fetch command does not pin standing loading to %q: %q", want, env.FetchCommands[1])
 	}
 }
 
 // TestBuildOmitsStandingRoutingWithoutMods asserts the inlined section remains
 // conditional rather than appearing for a workflow with no standing mods.
-func TestBuildOmitsStandingRoutingWithoutMods(t *testing.T) {
+func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
@@ -111,16 +111,11 @@ func TestBuildOmitsStandingRoutingWithoutMods(t *testing.T) {
 
 	var env struct {
 		FetchCommands []string `json:"fetch_commands"`
-		DispatchFile  string   `json:"dispatch_file_path"`
 	}
 	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
 		t.Fatalf("build output not JSON: %v\n%s", err, out.String())
 	}
-	if len(env.FetchCommands) != 0 {
-		t.Fatalf("fetch_commands=%v, want empty self-contained assignment", env.FetchCommands)
-	}
-	body := readDispatchBody(t, env.DispatchFile)
-	if strings.Contains(body, "### Standing teammates available in your team") {
-		t.Fatalf("dispatch file rendered standing routing without a declared mod:\n%s", body)
+	if len(env.FetchCommands) != 1 || !strings.Contains(env.FetchCommands[0], testWorkflowLauncher+" dispatch show-stage-def") {
+		t.Fatalf("expected exactly one full-path show-stage-def command; got %v", env.FetchCommands)
 	}
 }

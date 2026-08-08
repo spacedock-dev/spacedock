@@ -5,7 +5,9 @@
   "schema_version": 2,
   "subagent_type": "spacedock:ensign",
   "description": "Thing: defaultsmodel",
-  "fetch_commands": [],
+  "fetch_commands": [
+    "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage defaultsmodel"
+  ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-defaultsmodel.md",
   "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-defaultsmodel.md and treat its content as your assignment.",
   "model": "haiku",
