@@ -74,7 +74,7 @@ func TestVerdictGateFinalizeWithVerdictAllowed(t *testing.T) {
 		t.Fatalf("finalize WITH a verdict must succeed (exit 0), got %d (stderr=%q)", code, errOut)
 	}
 	fm := readWhole(t, filepath.Join(root, "002-vendor-script.md"))
-	if !strings.Contains(fm, "status: done") || !strings.Contains(fm, "verdict: passed") {
+	if !strings.Contains(fm, "status: done") || !strings.Contains(fm, "verdict: PASSED") {
 		t.Fatalf("entity should have terminalized with a verdict:\n%s", fm)
 	}
 }

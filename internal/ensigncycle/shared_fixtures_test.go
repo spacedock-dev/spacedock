@@ -18,8 +18,29 @@ import (
 // build tags so the offline negative-case tests (AC-5) reuse them without spending
 // a model, alongside the //go:build live runners that drive them for real.
 
+//spacedock:live-fixture id=recorded-gate/prepared
+func writeCommonPreparedRecordedGateFixture(t *testing.T) recordedGateFixture {
+	return writePreparedRecordedGateFixture(t)
+}
+
+//spacedock:live-fixture id=recorded-gate/withdrawn
+func writeWithdrawnGateFixture(t *testing.T, root string) recordedGateFixture {
+	return writePreparedRecordedGateFixtureAt(t, root)
+}
+
+//spacedock:live-fixture id=recorded-gate/held
 func writeGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	return writePreparedRecordedGateFixtureAt(t, root)
+}
+
+//spacedock:live-fixture id=recorded-gate/pre-gate
+func writePreGateWorkflow(t *testing.T, root string) recordedGateFixture {
+	t.Helper()
+	fixture := writePreparedRecordedGateFixtureAt(t, root)
+	writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(recordedGateReadme(), "### validation", "### implementation\n\nAppend an implementation stage report, then return completion.\n\n### validation", 1))
+	writeFile(t, fixture.entity, strings.Replace(recordedGateEntity(), "status: validation", "status: implementation", 1))
+	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "start before gate")
+	return fixture
 }
 func gateReadme() string { return recordedGateReadme() }
 func gateEntity() string { return recordedGateEntity() }
@@ -33,6 +54,7 @@ func gatePrompt(workflowRoot string) string {
 	)
 }
 
+//spacedock:live-fixture id=rejection/before-validation-1
 func writeRejectionWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), rejectionReadme())
@@ -131,6 +153,7 @@ func rejectionPrompt(workflowRoot string) string {
 	)
 }
 
+//spacedock:live-fixture id=rejection/before-validation-3
 func writeEscalationWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), escalationReadme())
@@ -212,6 +235,7 @@ func escalationPrompt(workflowRoot string) string {
 	)
 }
 
+//spacedock:live-fixture id=merge-hook/blocked
 func writeMergeHookGuardWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), mergeHookGuardReadme())
@@ -291,6 +315,7 @@ func mergeHookGuardPrompt(workflowRoot string) string {
 // file lands as on disk.
 const filingSlug = "wire-the-thing"
 
+//spacedock:live-fixture id=filing/empty-workflow
 func writeFilingWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), filingReadme())
@@ -464,6 +489,8 @@ func TestShallowBootPromptIsMutationFreeInteractiveGreet(t *testing.T) {
 // label. A non-terminal `blocked` stage gives a hold a realistic home so the fixture
 // is not terminal-or-nothing. The writer is default-tagged so the offline negative
 // reuses the fixture builders without a model.
+//
+//spacedock:live-fixture id=merge-triage/unapproved-live-evidence
 func writeMergeTriageWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), mergeTriageReadme())
@@ -556,6 +583,8 @@ func mergeTriagePrompt(workflowRoot string) string {
 // discretionary ad-hoc task (apply the two known edits in-house; commit a
 // convention-direct strategy doc directly) with commissioned durable journeys.
 // The writer stays default-tagged for offline controls.
+//
+//spacedock:live-fixture id=mechanism-choice/mixed-authority
 func writeSmallestMechanismWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), smallestMechanismReadme())
@@ -623,6 +652,8 @@ func smallestMechanismPrompt(workflowRoot string) string {
 
 // writeKeepMovingWorkflow writes three independently completable tasks plus one
 // questioned task that must be durably re-shaped without terminalizing.
+//
+//spacedock:live-fixture id=keep-moving/mixed-events
 func writeKeepMovingWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), keepMovingReadme())

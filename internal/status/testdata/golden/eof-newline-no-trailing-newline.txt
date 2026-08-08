@@ -4,7 +4,7 @@ title: No EOF newline
 status: done
 score: "0.5"
 source: x
-verdict: passed
+verdict: PASSED
 ---
 # No EOF newline
 

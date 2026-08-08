@@ -3,7 +3,7 @@
 package ensigncycle
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -17,9 +17,8 @@ import (
 // the shared assertions consume. Auth/HOME isolation (isolated CODEX_HOME +
 // minimal config plus copied auth.json / OPENAI_API_KEY), Spacedock-owned local
 // plugin setup, and the `--output-last-message` observed-extract are the ONLY
-// Codex-specific surface; the scenario table, fixtures, prompts, and assertions
+// Codex-specific surface; the common declarations, fixtures, prompts, and assertions
 // are shared with the Claude runner.
-
 type codexLiveRunner struct {
 	binary       string
 	pluginDir    string
@@ -29,58 +28,41 @@ type codexLiveRunner struct {
 	artifactRoot string
 }
 
-type codexLiveScenario struct {
-	sharedRuntimeScenario
-	run func(*testing.T, codexLiveRunner, sharedRuntimeScenario)
+type codexAsLiveDriver struct {
+	t      *testing.T
+	runner codexLiveRunner
 }
 
-func TestLiveCodexSharedScenarios(t *testing.T) {
-	runner := newCodexLiveRunner(t)
-
-	for _, scenario := range codexLiveScenarios(t) {
-		t.Run(scenario.name, func(t *testing.T) {
-			if reason := liveDurableJourneyTODO(scenario.name); reason != "" {
-				t.Skip(reason)
-			}
-			scenario.run(t, runner, scenario.sharedRuntimeScenario)
-		})
+func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, prompt string) liveResult {
+	result, err := d.runner.run(t, scenario, root, prompt)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
+	return liveResult{finalMessage: result.finalMessage, stream: result.jsonl, commands: codexObservedCommands(result.jsonl), artifactDir: result.artifactDir, duration: result.duration}
 }
 
-func codexLiveScenarios(t *testing.T) []codexLiveScenario {
-	t.Helper()
-	runners := codexScenarioRunners()
-
-	var scenarios []codexLiveScenario
-	for _, scenario := range sharedRuntimeScenarios() {
-		run := runners[scenario.name]
-		if run == nil {
-			t.Fatalf("shared scenario %q has no Codex live runner", scenario.name)
+func codexObservedCommands(jsonl string) []string {
+	var commands []string
+	for _, line := range strings.Split(jsonl, "\n") {
+		var event codexCommandItem
+		if json.Unmarshal([]byte(line), &event) == nil && event.Item.Type == "command_execution" {
+			commands = append(commands, event.Item.Command)
 		}
-		scenarios = append(scenarios, codexLiveScenario{
-			sharedRuntimeScenario: scenario,
-			run:                   run,
-		})
 	}
-	return scenarios
+	return commands
 }
-
-// codexScenarioRunners maps each shared scenario ID to its Codex runner. It is the
-// Codex side of the parity guard: the shared coverage meta-test fails if this map
-// lacks a runner for any sharedRuntimeScenarios() ID.
-func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario) {
-	return map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario){
-		"gate-guardrail":                runCodexGateGuardrailScenario,
-		"recorded-gate-lifecycle":       runCodexRecordedGateLifecycleScenario,
-		"rejection-flow":                runCodexRejectionFlowScenario,
-		"feedback-3-cycle-escalation":   runCodexFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
-		"filing":                        runCodexFilingScenario,
-		"shallow-boot":                  runCodexShallowBootScenario,
-		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
-		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
-		"keep-moving-posture":           runCodexKeepMovingScenario,
-	}
+func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
+	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})
+}
+func (d codexAsLiveDriver) gradeShallowBootObservation(*testing.T, liveResult) {}
+func (d codexAsLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liveResult)) {
+	return d, noLiveGrade
+}
+func (d codexAsLiveDriver) model() string { return envOr("SPACEDOCK_CODEX_LIVE_MODEL", "codex") }
+func (d codexAsLiveDriver) home() string  { return d.runner.codexHome }
+func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
+	d.runner = d.runner.withStubPATH(d.t, dir)
+	return d
 }
 
 func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner {
@@ -98,23 +80,6 @@ func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner 
 		t.Fatalf("write recorded-gate Codex shim: %v", err)
 	}
 	return r
-}
-
-func runCodexRecordedGateLifecycleScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	fixture := writePreparedRecordedGateFixture(t)
-	before := readFile(t, fixture.entity)
-	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
-	result, err := runner.withStubPATH(t, shimDir).run(t, scenario, fixture.root, recordedGatePrompt(fixture.root))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
-	if err := assertRecordedGateLifecycle(observation); err != nil {
-		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 func newCodexLiveRunner(t *testing.T) codexLiveRunner {
@@ -198,226 +163,6 @@ func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
 	}
 	t.Fatalf("create isolated CODEX_HOME outside system temp: %s", strings.Join(failures, "; "))
 	return ""
-}
-
-func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot := t.TempDir()
-	fixture := writeGateWorkflow(t, workflowRoot)
-	before := readFile(t, fixture.entity)
-	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
-	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
-
-	result, err := runner.withStubPATH(t, shimDir).run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
-		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
-	}
-	after := readFile(t, fixture.entity)
-	expected, err := recordedGateHeldExpectation(fixture)
-	if err != nil {
-		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
-	}
-	if err := assertGateHeld(before, after, expected); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertRecordedGateHoldLog(readFile(t, commandLog)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	t.Skip("TODO(zbcj98qfwtax61vxdzrf615e): Codex must reliably bind a distinct post-rework Briefing before re-enabling this journey")
-
-	workflowRoot := t.TempDir()
-	entityPath := writeRejectionWorkflow(t, workflowRoot)
-	result, runErr := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
-	entityAfter, captureErr := captureCodexRejectionEvidence(workflowRoot, entityPath, result.artifactDir)
-	if captureErr != nil {
-		t.Fatalf("capture rejection-flow evidence: %v\nArtifacts: %s", captureErr, result.artifactDir)
-	}
-	if runErr != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", runErr, result.finalMessage, result.artifactDir)
-	}
-	if err := assertRejectionFlow(entityAfter, result.finalMessage+"\n"+result.jsonl); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", codexRecordedRejectionRound(result.jsonl)); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	// assertRejectionFlow (above) proves the two-cycle re-review OCCURRED from the
-	// durable entity body. assertCodexReviewerReuse grades WHO performed it from
-	// structured handles: a re-review routed to a non-validation thread fails; reuse
-	// and structurally-distinct fresh both pass; an absent identity handle is
-	// identity-not-provable — log it, do not fail, since the durable two-cycle proof
-	// already stands.
-	if err := assertCodexReviewerReuse(result.jsonl); err != nil {
-		if errors.Is(err, errReviewerIdentityUnsupported) {
-			t.Logf("rejection-flow reviewer identity abstained (re-review OCCURRED per durable state, but WHO is not structurally provable): %s", err)
-		} else {
-			t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-		}
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-// runCodexFeedback3CycleEscalationScenario drives the real FO against a fixture
-// seeded with two prior rejection cycles at a 3rd REJECTED report and grades the
-// durable end-state: the FO must escalate to the human on the 3rd cycle, not
-// auto-bounce a 4th time. assertThirdCycleEscalation grades durable entity-body
-// state ALONE (cycle count + escalation marker + no post-cycle-3 implementation
-// report) — host-neutral, the same assertion the Claude runner feeds.
-func runCodexFeedback3CycleEscalationScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot := t.TempDir()
-	entityPath := writeEscalationWorkflow(t, workflowRoot)
-
-	result, err := runner.run(t, scenario, workflowRoot, escalationPrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	after := readFile(t, entityPath)
-	if err := assertThirdCycleEscalation(after); err != nil {
-		t.Fatalf("%v\nEntity after:\n%s\nFinal message:\n%s\nArtifacts: %s", err, after, result.finalMessage, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot := t.TempDir()
-	entityPath := writeMergeHookGuardWorkflow(t, workflowRoot)
-	before := readFile(t, entityPath)
-
-	result, err := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	after := readFile(t, entityPath)
-	if err := assertMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.jsonl); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
-		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-// runCodexSelfEvidenceMergeTriageScenario drives the real FO against the merge/triage
-// fixture and grades the SAME host-neutral decision assertSelfEvidenceMergeTriage the
-// Claude runner feeds, against the INCIDENT class only (Cycle-3): the FO must NOT wave
-// the change through — terminalize-as-PASSED or merge-without-evidence — while the
-// required lane is unapproved; a hold or a reject-without-merge both pass. Its
-// final-message diagnosis must name THIS run's failing test, not the inherited "known
-// flake" label. The this-run token is graded in the FINAL MESSAGE only, so the
-// entity-read echo in the transcript cannot satisfy it.
-func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot := t.TempDir()
-	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
-
-	result, err := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	after := readMergeTriageAfter(t, workflowRoot, entityPath)
-	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-// runCodexSmallestSufficientMechanismScenario drives the real FO against the
-// durable fixture while preserving transcript checks unrelated to completion.
-func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot := t.TempDir()
-	writeSmallestMechanismWorkflow(t, workflowRoot)
-
-	result, err := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	trace := codexMechanismTrace(result.jsonl, ssmEditFiles(), ssmCommissioned())
-	if err := assertDurableSmallestMechanism(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned()); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-// runCodexKeepMovingScenario grades each completed task from its own ordered
-// Git history and keeps the questioned task active after a durable re-shape.
-func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot, err := os.MkdirTemp("", "spacedock-keep-moving-")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { cleanupKeepMovingRoot(t, workflowRoot, t.Failed()) })
-	writeKeepMovingWorkflow(t, workflowRoot)
-
-	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	if err := assertDurableKeepMoving(t, workflowRoot); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-// runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
-// to file one seed entity. Like the Claude runner it grades the FO's recorded
-// command stream — the FO filed via `spacedock … new <slug>`, not a `--next-id`
-// preview-then-write — because the durable end-state file is indistinguishable
-// between the two paths. The file must also actually land, so the stream grade is
-// proof of HOW, not just THAT, the entity was filed.
-func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot := t.TempDir()
-	entityPath := writeFilingWorkflow(t, workflowRoot)
-
-	result, err := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	if _, err := os.Stat(entityPath); err != nil {
-		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertCodexFilingViaNew(result.jsonl, filingSlug); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-// runCodexShallowBootScenario drives the real FO against the shallow-boot fixture
-// and grades the SAME host-neutral durable end-state assertShallowBoot the Claude
-// runner feeds: the FO greets with the accurate held-gate state, performs no
-// persisted entity mutation, and leaves no durable dispatch fingerprint (the gate
-// entity is unchanged, not archived, no worktree). Codex has no Claude team root,
-// so the no-team-config check is host-neutral-vacuous (empty teamRoot). Absence of
-// transient dispatch commands is outside this durable oracle. The AC-2/AC-6 Claude
-// token-stream measurements are Claude-specific and live in the Claude runner.
-func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
-	t.Helper()
-	workflowRoot := t.TempDir()
-	fixture := writeShallowBootWorkflow(t, workflowRoot)
-	gateBefore := readFile(t, fixture.gateEntityPath)
-
-	result, err := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
-	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-
-	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
-	if err := assertShallowBoot(obs); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 // run launches one `codex exec --json` for one shared scenario. Each complete
