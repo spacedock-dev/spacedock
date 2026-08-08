@@ -88,7 +88,7 @@ Current-trunk evidence is direct: `skills/first-officer/references/claude-fo-dis
 
 The dispatch mode is selected before `dispatch build` runs and remains authoritative if assembly fails. Break-glass reports the helper failure and loads `spacedock:fo-dispatch-recovery` as today, then uses exactly one of two explicit manual `Agent` arms:
 
-- **Selected bare mode:** call `Agent` synchronously with `subagent_type`, required `description`, optional effective `model`, and the manual prompt. Omit `name`, `team_name`, and `run_in_background`. Omit the prompt's `SendMessage` completion block because the blocking return is the completion signal.
+- **Selected bare mode:** call `Agent` synchronously with `subagent_type`, required `description`, optional effective `model`, and the manual prompt. The call omits `name`, `team_name`, and `run_in_background`; the observable Claude stream may preserve the omission or normalize it to explicit `run_in_background=false`, and both represent the same blocking bare transport. Explicit `true` remains invalid. Omit the prompt's `SendMessage` completion block because the blocking return is the completion signal.
 - **Selected team mode:** call the current merged-Claude shape with `subagent_type`, required `description`, capped `name`, `run_in_background=true`, optional effective `model`, and the manual prompt. Omit `team_name`. Retain the prompt's `SendMessage(to="team-lead", ...)` completion block.
 
 Both arms carry the same ensign skill invocation, verbatim stage definition, entity path, checklist, stage-report requirement, and summary slot. Recovery must not probe another transport, retry in the other mode, or convert a bare selection into a named worker merely to satisfy the oracle. The existing stamp/sync and rebase-conflict exclusions remain upstream and unchanged: those failures never enter break-glass.
@@ -105,11 +105,11 @@ The still-required `TestLiveBreakGlassShimRecovery` passes its bare and team cas
 
 **AC-2 — Break-glass recovery preserves the dispatch mode selected before helper failure.**
 
-For a single-task bare dispatch, recovery has no `name`, `team_name`, or `run_in_background` and blocks for completion. For a team dispatch, recovery has a capped `name`, `run_in_background=true`, no `team_name`, and the `team-lead` completion signal.
+For a single-task bare dispatch, recovery has no `name` or `team_name`, reports absent or explicit-false `run_in_background`, and blocks for completion. For a team dispatch, recovery has a capped `name`, `run_in_background=true`, no `team_name`, and the `team-lead` completion signal.
 
 **AC-3 — The contract, manual template, fixture, and live oracle describe the same behavior.**
 
-An offline table accepts selected-bare/bare-call and selected-team/team-call, and rejects both crossed pairs. It also rejects a missing recovery-skill load, a helper report after the first `Agent`, a malformed prompt, zero workers, or multiple workers.
+An offline table accepts selected-bare/bare-call with absent or explicit-false `run_in_background` and selected-team/team-call, and rejects `true` in bare mode plus both crossed pairs. It also rejects names or teams in bare mode, a missing recovery-skill load, a helper report after the first `Agent`, a malformed prompt, zero workers, or multiple workers.
 
 Claude's live stream may omit the defaulted `subagent_type` from a successful named-background `Agent` input. The required merged-team oracle therefore recognizes the transport from `Agent` plus nonempty `name`, `run_in_background=true`, and absent `team_name`; it proves ensign identity independently from the prompt's `Skill(skill="spacedock:ensign")` and the on-disk member meta's `agentType`. It must reject a bare call, legacy `team_name`, missing ensign prompt/meta, or missing durable result.
 
@@ -119,7 +119,7 @@ The proof still requires the ensign skill, verbatim stage definition, one worker
 
 ## Test plan
 
-1. Add offline mode-aware transcript fixtures and mutation controls before changing the skill. A mode-preserving stream passes; deleting the only `Agent`, adding a second `Agent`, or swapping bare/team fields fails AC-1/AC-2. Cost: small table tests, no model.
+1. Add offline mode-aware transcript fixtures and mutation controls before changing the skill. A mode-preserving bare stream passes with absent or explicit-false `run_in_background`; deleting the only `Agent`, adding a second `Agent`, setting it true, adding bare names/teams, or swapping bare/team fields fails AC-1/AC-2. Cost: small table tests, no model.
 2. Add a Git-backed durable-result assertion over the existing recovery fixture. A committed marker plus complete report passes; independently remove the marker, report heading, `DONE`, `Summary`, path-scoped commit, or clean-worktree condition and observe failure. This serves AC-1/AC-4; checking only final prose was considered and rejected because it cannot distinguish an uncommitted worker result.
 3. Rewrite the recovery skill as the two explicit mode arms above, then make `assertBreakGlassObservables` accept the selected mode and require exactly one matching call. This serves AC-2/AC-3; a single permissive template was considered and rejected because omitted and present transport fields are the mode contract.
 4. Keep `TestLiveBreakGlassShimRecovery` selected in `claude-live` and run two subtests through the real Claude front door and failing helper shim: the existing single-entity prompt selects bare; a mode-only cue selects team. Each runs the stream oracle and durable-result assertion. Do not mark either case optional or TODO. The harness timeout is the bounded-stop proof.
@@ -227,3 +227,16 @@ Validation confirms the mode-preserving worker behavior and team recovery, but t
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — detached validation / normalized false plus two oracle false positives; surface 9 files/+285 vs estimate 8 files/about +220/-55; AC narrowed: bare blocking accepts absent or explicit false
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Implement the Captain-approved bare-mode rule: accept absent or explicit false run_in_background while rejecting true, names, teams, crossed modes, zero workers, and multiple workers.
+  Commit `43fd2e79d` adds absent/false positives and true/name/team negative controls; the existing crossed-mode and worker-cardinality controls remain green.
+- DONE: Reject explicit non-ensign merged dispatches and require DONE and Summary tokens inside the exact implementation Stage Report section.
+  Focused mutations now fail on `subagent_type="general-purpose"` and on DONE/Summary tokens placed before an empty exact implementation report; both pass only after the strict predicates in `43fd2e79d`.
+- DONE: Update the task contract and focused mutations, stay within the approved surface, and rerun focused, full, race, formatting, diff, and applicable live evidence at the exact head.
+  The same 9 implementation files are touched at 350 insertions/62 deletions; focused tests and formatting/diff checks pass, full/race fail only on two absent shared-state manifests, and Sonnet/Opus live runs stop before FO work on OAuth 401.
+
+### Summary
+
+The correction accepts Claude's explicit-false normalization only for blocking bare recovery and closes the two reviewer-proven identity and report-scoping false positives. The candidate is committed at `43fd2e79d`; all offline task-owned evidence passes, while live model evidence remains externally blocked by expired or revoked Claude OAuth credentials.
