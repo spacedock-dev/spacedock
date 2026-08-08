@@ -232,3 +232,16 @@ The current Codex host can load the installed Spacedock ensign skill at the fres
 ### Summary
 
 The executable Codex bootstrap, truthful artifact boundary, deterministic supplied-plugin fixture, contract documentation, and focused tests are complete in `04a775987`. The default and race gates pass, and the current-checkout Codex live suite produced four passing cases; its remaining red cases were stream-transport failures, while the named `full-ensign-cycle` Codex journey is absent from this checkout, so that live proof remains unresolved rather than fabricated.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Implement the executable Codex fresh-prompt bootstrap and truthful artifact boundary.
+  Evidence: candidate HEAD remains `04a775987`; no candidate bytes changed during this read-only investigation, and the previously passing fixture/gate evidence remains valid.
+- FAILED: Ship fixture and live-journey proof plus required documentation while preserving host and transport semantics.
+  Evidence: preserved rerun from the assigned checkout/plugin passed `feedback-3-cycle-escalation` and `merge-hook-guardrail`; `recorded-gate-lifecycle` durably reached the fixed `$spacedock:ensign` handoff dispatch, marker, report, and commit `0f53f00`, but the front-door process stayed alive after `turn.completed` and the existing 60-second watchdog killed it. The earlier API `stream disconnected` result and this post-completion hang are infrastructure/host-lifecycle failures, not bootstrap defects; no literal Codex `full-ensign-cycle` case exists in this checkout.
+- DONE: Commit a complete implementation with focused evidence for the declared acceptance criteria.
+  Evidence: code remains committed as `04a775987`; `gofmt`, `go test ./...`, `go test ./... -race`, and focused fixture checks passed previously, and this cycle made no out-of-scope code or oracle changes.
+
+### Summary
+
+The supported current-checkout rerun proves the new Codex prefix reaches a real handoff dispatch and that the durable worker/report path completes; two previously red live cases pass on rerun. The remaining checklist failure is isolated to external API transport and Codex front-door process termination after a completed turn, with artifacts at `/tmp/spacedock-codex-live-proof.Ue12pW`; no legitimate in-scope candidate repair was identified or made.
