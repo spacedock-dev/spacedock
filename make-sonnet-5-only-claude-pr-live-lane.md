@@ -1,7 +1,7 @@
 ---
 id: 0ytmjwn4ppg5en25z7vmna0p
 title: Make Sonnet 5 the only Claude live lane on pull requests
-status: ideation
+status: implementation
 source: Captain decision on 2026-08-07 after review of PR 626 and current Opus cost and failure evidence.
 started: 2026-08-08T15:45:20Z
 completed:
@@ -54,7 +54,7 @@ gates:
                 reason: Captain approved the ideated two-lane pull-request cadence and directed implementation.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.
