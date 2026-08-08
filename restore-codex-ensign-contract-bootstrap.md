@@ -6,7 +6,7 @@ started: 2026-08-07T13:16:17Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-restore-codex-ensign-contract-bootstrap
 issue:
 sprint: test-behavior-completeness
 id: nvz2ym82ydfn07jp04yfxg9r
