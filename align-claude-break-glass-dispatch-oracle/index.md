@@ -1,6 +1,6 @@
 ---
 title: Align Claude break-glass recovery with the selected dispatch mode
-status: implementation
+status: validation
 score: 0.96
 source: "PRs #627, #628, #629, and #631 fail TestLiveBreakGlassShimRecovery after PR #626 selected it for required CI. The worker completes through bare blocking dispatch, but the oracle requires a named background worker. History: named recovery template 8e66ead, blanket single-task bare rule ecffced, live selection 4cc0d8."
 sprint: durable-decisions
@@ -303,3 +303,41 @@ Validation at exact head `43fd2e79d` reproduces all four acceptance criteria, in
 ### Summary
 
 The candidate is reconciled onto the canonical YS inventory without resurrecting removed common-runner surfaces or absorbing the separate journey-delta-comment defect. The runtime registry now requires selected bare/team preservation plus a committed complete worker report, and both required Claude models prove that behavior at exact head `6c50fc82e`.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify exact head 6c50fc82e preserves the selected bare and team dispatch-mode contract and all acceptance criteria.
+  Focused mode/cardinality/identity/report mutations pass at `6c50fc82e`; fresh Sonnet and Opus runs each pass selected-bare and selected-team with strict stream and durable Git grading.
+- DONE: Verify YS registry, annotations, selectors, artifacts, and strict durable-report grading remain consistent.
+  Registry reconciliation proves 16 registry/source bindings, fixture/proof annotations, three exact common selectors, and retired-symbol absence; workflow mutation guards prove named evidence and substrate artifact selection.
+- DONE: Re-run focused, full, race, Sonnet, and Opus evidence; classify each current failure from its own output.
+  Focused and both-model live evidence pass; full/race fail only on the two currently absent shared-state pilot manifests, reproduced independently in both commands below.
+
+### Acceptance evidence
+
+- AC-1: Sonnet passed both recovery modes in 417.14s and Opus passed both in 487.66s; every subtest requires exactly one worker, bounded return, the fixture marker, exact report, path-scoped commit, and a clean entity path.
+- AC-2: Absent and explicit-false bare inputs pass, while true/name/team/crossed-mode inputs fail; the named background team shape and completion signal pass offline and live on both models.
+- AC-3: Contract, fixture, oracle, live-proof annotations, and registry outcome agree; missing skill/report ordering/stage definition, zero/multiple workers, explicit non-ensign identity, and scattered report tokens all fail focused controls.
+- AC-4: Git-backed mutations reject every missing report component, uncommitted result, dirty entity, and non-path-scoped commit; YS reconciliation retains the substrate detail artifact and exact selector.
+
+### Reconciliation boundaries
+
+- Relative to current-main parent `d3e70e958`, the candidate is exactly the approved nine 824 files; the merge resolution adds only recovery semantics to the YS registry, guide, and live test.
+- `TestRuntimeLiveRegistryReconciliation` rejects the retired common-runner symbols and passes. The candidate does not modify `.github/workflows/runtime-live-e2e.yml` relative to current main, so it neither owns nor absorbs `journey-delta-comment`; its separate workflow guards pass unchanged.
+
+### Current external failures
+
+- `go test ./...` fails only `internal/gates/TestV1PilotManifestReadsAndValidates` because `codex-launch-multi-agent-v2.md` and `gate-agent-ergonomics.md` are absent from the shared state checkout; all other packages pass.
+- `go test ./... -race` independently fails only the same two missing-manifest cases; `internal/ensigncycle`, `contractlint`, `release`, and `status` pass under race.
+
+### Deferred risk
+
+- The previously recorded noncanonical JSON-boolean risk remains unchanged: a present `null`, string, or numeric `run_in_background` can decode as false. Supported Claude tool input emits a boolean; promote if a supported stream emits an untyped value or ingestion begins accepting noncanonical tool input.
+
+### Recommendation
+
+PASSED. No material finding remains, the YS reconciliation preserves all four ACs, and the current red results are external shared-state availability failures rather than candidate defects.
+
+### Summary
+
+Successor validation at exact head `6c50fc82e` replaces the stale pre-YS proof with fresh focused, full, race, Sonnet, and Opus evidence. The selected-mode recovery contract and durable completion proof remain strict inside the canonical YS inventory, without restoring retired runners or taking ownership of the journey-delta job.
