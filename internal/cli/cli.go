@@ -162,7 +162,7 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newStateCommand(ctx, env, dir, stdout, stderr),
 		newMergeCommand(ctx, env, dir, stdout, stderr),
 		newCompletionCommand(stdout, stderr),
-		newDispatchCommand(dispatchProbe, stdin, stdout, stderr),
+		newDispatchCommand(dispatchProbe, env, stdin, stdout, stderr),
 		newGateCommand(dir, stdout, stderr),
 	)
 	return root
@@ -720,14 +720,14 @@ func newCompletionCommand(stdout, stderr io.Writer) *cobra.Command {
 
 // newDispatchCommand reparents `spacedock dispatch` under cobra with flag parsing
 // disabled, forwarding its post-subcommand argv verbatim to dispatch.Run (AC-5).
-func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
+func newDispatchCommand(probe claudeteam.TeamStateProbe, env []string, stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
 		Use:                "dispatch build | show-stage-def",
 		Short:              "Build worker dispatch artifacts",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workflowLauncher, _ := resolvedLauncherBin()
+			workflowLauncher, _ := resolvedDispatchLauncher(env)
 			if code := dispatch.RunWithLauncher(probe, workflowLauncher, args, stdin, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}

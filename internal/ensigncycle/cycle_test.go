@@ -48,10 +48,9 @@ var (
 	// the dispatch body), so asserting the emit form proves the body wires the
 	// protocol — without grepping the protocol prose itself.
 	skillFirstAction = regexp.MustCompile(`(?m)^    Skill\(skill="spacedock:ensign"\)$`)
-	// These anchors prove the dispatch file carries both the builder-selected stage
-	// and the exact workflow-helper launcher prefix.
-	selfContainedStage     = regexp.MustCompile(`(?m)^### backlog$`)
-	pinnedWorkflowLauncher = regexp.MustCompile(`(?m)^    /opt/spacedock/bin/spacedock$`)
+	// fetchStageDef anchors the generated exact full-path command that loads the
+	// stage definition without re-resolving ambient launcher state.
+	fetchStageDef = regexp.MustCompile(`(?m)^    /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir `)
 )
 
 // cycleFixture is a staged dispatch->ensign->stage environment.
@@ -171,15 +170,15 @@ func TestEnsignCycleMechanicalOutputs(t *testing.T) {
 	// lines — NOT a prose grep of the protocol text. The protocol shape itself
 	// (`## Stage Report: {stage_name}`, DONE/SKIPPED/FAILED markers, the
 	// path-scoped commit form) lives in ensign-shared-core.md, loaded by the
-	// first-action Skill call; the dispatch file carries the resolved stage. The
+	// first-action Skill call; the fetch line resolves the stage definition. The
 	// scripted ensign above consumed exactly that protocol when it appended the
 	// report, so asserting the body emits the loading mechanism is the behavioral
 	// link, not prose-grep.
 	if !skillFirstAction.MatchString(f.body) {
 		t.Errorf("dispatch body missing anchored Skill first-action emit line\n%s", f.body)
 	}
-	if !selfContainedStage.MatchString(f.body) || !pinnedWorkflowLauncher.MatchString(f.body) {
-		t.Errorf("dispatch body missing anchored self-contained stage or pinned launcher line\n%s", f.body)
+	if !fetchStageDef.MatchString(f.body) {
+		t.Errorf("dispatch body missing anchored exact show-stage-def fetch line\n%s", f.body)
 	}
 }
 

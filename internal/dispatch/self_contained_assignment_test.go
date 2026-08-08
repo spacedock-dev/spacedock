@@ -1,5 +1,5 @@
-// ABOUTME: Self-contained dispatch keeps assignment payload in the file across every host.
-// ABOUTME: Fresh and advance pointer prompts remain invariant as selected payload grows.
+// ABOUTME: Dispatch fetches pin one resolved executable across every supported host and mode.
+// ABOUTME: Pointer prompts remain payload-free while structured fetch commands stay executable.
 package dispatch
 
 import (
@@ -18,7 +18,7 @@ type selfContainedOutput struct {
 	Name         *string  `json:"name"`
 }
 
-func TestGeneratedAssignmentRoutesWorkflowReadToPinnedA(t *testing.T) {
+func TestGeneratedAssignmentExecutesStageLoadThroughPinnedA(t *testing.T) {
 	root := t.TempDir()
 	entityPath := filepath.Join(root, "thing.md")
 	writeFile(t, filepath.Join(root, "README.md"), "---\nstages:\n  states:\n    - name: implementation\n      initial: true\n---\n# Fixture\n\n### implementation\nwork\n")
@@ -31,7 +31,7 @@ func TestGeneratedAssignmentRoutesWorkflowReadToPinnedA(t *testing.T) {
 	}
 	aLog := filepath.Join(t.TempDir(), "a.log")
 	bLog := filepath.Join(t.TempDir(), "b.log")
-	aPath := writeExecutable(t, aDir, "spacedock", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$A_LOG\"\nprintf '{}\\n'\n")
+	aPath := writeExecutable(t, aDir, "spacedock", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$A_LOG\"\nprintf 'A-STAGE\\n'\n")
 	bDir := t.TempDir()
 	bPath := writeExecutable(t, bDir, "spacedock", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$B_LOG\"\nexit 91\n")
 	cPath := writeExecutable(t, t.TempDir(), "product-C", "#!/bin/sh\nprintf 'C:%s\\n' \"$*\" >> \"$A_LOG\"\n")
@@ -49,17 +49,17 @@ func TestGeneratedAssignmentRoutesWorkflowReadToPinnedA(t *testing.T) {
 		t.Fatal(err)
 	}
 	body := readDispatchBody(t, output.DispatchFile)
-	launcher := "    " + shlexQuote(aPath)
-	if !strings.Contains(body, launcher) || len(output.Fetch) != 0 {
-		t.Fatalf("assignment did not retain pinned A or retained fetches: fetch=%v\n%s", output.Fetch, body)
+	wantCommand := shlexQuote(aPath) + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage implementation"
+	if len(output.Fetch) != 1 || output.Fetch[0] != wantCommand || !strings.Contains(body, "    "+wantCommand) {
+		t.Fatalf("assignment did not own the exact A command: fetch=%v\n%s", output.Fetch, body)
 	}
 
 	env := append(environWithoutSpacedockBin(),
 		"PATH="+bDir+":/usr/bin:/bin", "SPACEDOCK_BIN="+bPath, "A_LOG="+aLog, "B_LOG="+bLog)
-	cmd := exec.Command("sh", "-c", shlexQuote(aPath)+" status --read "+shlexQuote(entityPath)+" --json")
+	cmd := exec.Command("sh", "-c", output.Fetch[0])
 	cmd.Env = env
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("pinned status read failed: %v\n%s", err, out)
+	if out, err := cmd.CombinedOutput(); err != nil || string(out) != "A-STAGE\n" {
+		t.Fatalf("pinned stage load failed: err=%v out=%q", err, out)
 	}
 	product := exec.Command(cPath, "version-under-test")
 	product.Env = env
@@ -70,7 +70,7 @@ func TestGeneratedAssignmentRoutesWorkflowReadToPinnedA(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := string(aCalls); strings.Count(got, "status --read") != 1 || strings.Count(got, "C:version-under-test") != 1 {
+	if got := string(aCalls); strings.Count(got, "dispatch show-stage-def") != 1 || strings.Count(got, "C:version-under-test") != 1 {
 		t.Fatalf("unexpected A/C calls:\n%s", got)
 	}
 	if bCalls, err := os.ReadFile(bLog); err == nil && len(bCalls) != 0 {
@@ -143,49 +143,28 @@ func selfContainedBuild(t *testing.T, root, host string, advance bool, stage, co
 	return output, readDispatchBody(t, output.DispatchFile)
 }
 
-func TestBuildAssignmentPayloadStaysFileOnlyAcrossHosts(t *testing.T) {
-	const stage, context, checklist = "STAGE-ONLY", "CONTEXT-ONLY", "- CHECKLIST-ONLY"
+func TestBuildHostModeMatrixKeepsPointerTransportAndExactFetchShape(t *testing.T) {
 	for _, host := range []string{"claude", "codex", "pi"} {
 		for _, advance := range []bool{false, true} {
 			t.Run(host+"/"+map[bool]string{false: "fresh", true: "advance"}[advance], func(t *testing.T) {
 				root := t.TempDir()
 				writeFile(t, filepath.Join(root, "thing.md"), entityFM("Thing", "implementation", ""))
 				gitInit(t, root)
-				base, baseBody := selfContainedBuild(t, root, host, advance, "base", "base", []string{"- base"}, nil)
-				variants := []struct {
-					name, stage, context string
-					checklist            []string
-					extra                map[string]any
-					wants                []string
-				}{
-					{"stage", "base\n" + stage, "base", []string{"- base"}, nil, []string{stage}},
-					{"context", "base", "base\n" + context, []string{"- base"}, nil, []string{context}},
-					{"checklist", "base", "base", []string{"- base", checklist}, nil, []string{checklist}},
-					{"scope-feedback", "base", "base", []string{"- base"}, map[string]any{
-						"scope_notes": "SCOPE-ONLY", "feedback_context": "FEEDBACK-ONLY", "is_feedback_reflow": true,
-					}, []string{"SCOPE-ONLY", "FEEDBACK-ONLY"}},
+				got, body := selfContainedBuild(t, root, host, advance, "STAGE-SENTINEL", "CONTEXT-SENTINEL", []string{"- CHECKLIST-SENTINEL"}, nil)
+				if len(got.Fetch) != 1 {
+					t.Fatalf("fetch command count=%d, want 1: %v", len(got.Fetch), got.Fetch)
 				}
-				for _, variant := range variants {
-					got, body := selfContainedBuild(t, root, host, advance, variant.stage, variant.context, variant.checklist, variant.extra)
-					if got.Prompt != base.Prompt {
-						t.Errorf("%s changed pointer prompt\nbase=%q\ngot=%q", variant.name, base.Prompt, got.Prompt)
-					}
-					if len(got.Fetch) != 0 || strings.Contains(body, "### Fetch commands") {
-						t.Errorf("%s restored worker-time resolution: fetch=%v", variant.name, got.Fetch)
-					}
-					for _, sentinel := range variant.wants {
-						if !strings.Contains(body, sentinel) || strings.Contains(got.Prompt, sentinel) {
-							t.Errorf("%s sentinel %q crossed file/prompt boundary", variant.name, sentinel)
-						}
-					}
-					if variant.name != "scope-feedback" && len(body) <= len(baseBody) {
-						t.Errorf("%s payload did not grow dispatch file", variant.name)
+				want := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage implementation"
+				if got.Fetch[0] != want || !strings.Contains(body, "    "+want) {
+					t.Fatalf("structured fetch mismatch: got=%v\nbody=%s", got.Fetch, body)
+				}
+				for _, forbidden := range []string{"STAGE-SENTINEL", "CONTEXT-SENTINEL"} {
+					if strings.Contains(got.Prompt, forbidden) || strings.Contains(body, forbidden) {
+						t.Errorf("stage payload %q crossed into pointer transport or bootstrap body", forbidden)
 					}
 				}
-				writeMods(t, root, map[string]string{"helper.md": standingMod("helper", "sonnet", "STANDING-ONLY", "")})
-				got, body := selfContainedBuild(t, root, host, advance, "base", "base", []string{"- base"}, nil)
-				if got.Prompt != base.Prompt || !strings.Contains(body, "STANDING-ONLY") || strings.Contains(got.Prompt, "STANDING-ONLY") {
-					t.Error("standing payload crossed file/prompt boundary")
+				if strings.Contains(got.Prompt, "CHECKLIST-SENTINEL") || !strings.Contains(body, "CHECKLIST-SENTINEL") {
+					t.Error("checklist did not remain file-only")
 				}
 			})
 		}

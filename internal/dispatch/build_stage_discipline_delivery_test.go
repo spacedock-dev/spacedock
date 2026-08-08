@@ -1,5 +1,5 @@
-// ABOUTME: Behavior-loss control — proves dev stage discipline is snapshotted from
-// ABOUTME: the workflow README while show-stage-def remains a public inspection surface.
+// ABOUTME: Behavior-loss control — proves dev stage discipline rides the dev-shape
+// ABOUTME: show-stage-def fetch, not the universal ensign core.
 package dispatch
 
 import (
@@ -71,10 +71,10 @@ Independently verify.
 term.
 `
 
-// TestBuildStageDisciplineIsSnapshottedIntoAssignment proves the selected README
-// stage prose is carried in the self-contained file, not the universal ensign core
-// or the outer pointer prompt.
-func TestBuildStageDisciplineIsSnapshottedIntoAssignment(t *testing.T) {
+// TestBuildStageDisciplineRidesExactFetchCommand proves the selected README stage
+// prose stays behind a generated full-path fetch command and out of the universal
+// ensign core, dispatch body, and outer pointer prompt.
+func TestBuildStageDisciplineRidesExactFetchCommand(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
@@ -105,9 +105,6 @@ func TestBuildStageDisciplineIsSnapshottedIntoAssignment(t *testing.T) {
 		t.Errorf("dispatch body missing the universal-core load directive (Skill first-action):\n%s", body)
 	}
 
-	if !strings.Contains(body, devDisciplineSentinel) {
-		t.Errorf("dispatch body omitted the selected stage-discipline sentinel:\n%s", body)
-	}
 	var envelope struct {
 		Prompt string   `json:"prompt"`
 		Fetch  []string `json:"fetch_commands"`
@@ -115,11 +112,12 @@ func TestBuildStageDisciplineIsSnapshottedIntoAssignment(t *testing.T) {
 	if err := json.Unmarshal([]byte(native.stdout), &envelope); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(envelope.Prompt, devDisciplineSentinel) {
+	if strings.Contains(body, devDisciplineSentinel) || strings.Contains(envelope.Prompt, devDisciplineSentinel) {
 		t.Errorf("outer pointer prompt transported stage payload: %q", envelope.Prompt)
 	}
-	if len(envelope.Fetch) != 0 || strings.Contains(body, "### Fetch commands") {
-		t.Errorf("assignment retained worker fetch bootstrap: envelope=%#v\n%s", envelope.Fetch, body)
+	wantFetch := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage ideation"
+	if len(envelope.Fetch) != 1 || envelope.Fetch[0] != wantFetch || !strings.Contains(body, "    "+wantFetch) {
+		t.Errorf("assignment did not render the exact full-path stage command: envelope=%#v\n%s", envelope.Fetch, body)
 	}
 
 	// The public inspection command remains available and returns the same selection.
@@ -143,7 +141,7 @@ func TestBuildStageDisciplineIsSnapshottedIntoAssignment(t *testing.T) {
 	}
 }
 
-func TestDeclaredContextBuildIsHostNeutralAndSelfContained(t *testing.T) {
+func TestDeclaredContextBuildAndHostNeutralFetch(t *testing.T) {
 	root := t.TempDir()
 	readme := "---\nentity-type: task\nid-style: slug\nstages:\n  defaults:\n" +
 		"    context-sections: [Pølicy]\n  states:\n    - name: ideation\n      initial: true\n---\n" +
@@ -164,20 +162,15 @@ func TestDeclaredContextBuildIsHostNeutralAndSelfContained(t *testing.T) {
 				t.Fatalf("build exit=%d stderr=%q", built.exit, built.stderr)
 			}
 			var envelope struct {
-				Fetch        []string `json:"fetch_commands"`
-				DispatchFile string   `json:"dispatch_file_path"`
+				Fetch []string `json:"fetch_commands"`
 			}
 			if err := json.Unmarshal([]byte(built.stdout), &envelope); err != nil {
 				t.Fatal(err)
 			}
-			if len(envelope.Fetch) != 0 {
-				t.Fatalf("fetch commands = %#v, want empty self-contained assignment", envelope.Fetch)
+			if len(envelope.Fetch) != 1 || !strings.HasPrefix(envelope.Fetch[0], testWorkflowLauncher+" dispatch show-stage-def ") {
+				t.Fatalf("fetch commands = %#v, want one exact full-path show-stage-def command", envelope.Fetch)
 			}
 			want := "### ideation\nstage β\n\n## Pølicy\nα\nβ\nγ\n"
-			body := readDispatchBody(t, envelope.DispatchFile)
-			if !strings.Contains(body, want) {
-				t.Fatalf("dispatch file omitted resolved stage/context package\nwant=%q\nbody=%q", want, body)
-			}
 			got := runNative("", "show-stage-def", "--workflow-dir", root, "--stage", "ideation")
 			if got.exit != 0 || got.stdout != want {
 				t.Fatalf("show-stage-def exit=%d stderr=%q\n got=%q\nwant=%q", got.exit, got.stderr, got.stdout, want)

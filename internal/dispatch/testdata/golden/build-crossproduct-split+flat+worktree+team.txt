@@ -5,7 +5,9 @@
   "schema_version": 2,
   "subagent_type": "spacedock:ensign",
   "description": "Thing: implementation",
-  "fetch_commands": [],
+  "fetch_commands": [
+    "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT>/state-checkout --stage implementation"
+  ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation.md",
   "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation.md and treat its content as your assignment.",
   "model": null,
@@ -29,20 +31,6 @@ You are working on: Thing
 
 Stage: implementation
 
-### Workflow launcher
-
-Begin every ensign-owned Spacedock workflow-helper command, including `status --read`, with this literal command prefix:
-
-    /opt/spacedock/bin/spacedock
-
-Do not substitute inherited `SPACEDOCK_BIN` or `spacedock` from PATH. An explicitly named worktree Spacedock binary is the product under test, not the workflow launcher.
-
-### implementation
-
-work.
-
-- **Outputs:** y.
-
 Your working directory for CODE is <ROOT>/.worktrees/spacedock-ensign-thing
 All CODE reads and writes MUST use paths under <ROOT>/.worktrees/spacedock-ensign-thing.
 Your git branch for CODE is spacedock-ensign/thing. All CODE commits MUST be on this branch in the worktree. Do NOT switch branches or commit code to main.
@@ -58,6 +46,9 @@ Read the entity file at <ROOT>/state-checkout/thing.md for the current spec.
 ### Summary
 {brief description of what was accomplished}
 
+### Fetch commands
+
+    /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT>/state-checkout --stage implementation
 
 
 ### Completion Signal
