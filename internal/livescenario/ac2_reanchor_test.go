@@ -111,6 +111,11 @@ func TestACReanchorFixtureIsDiscoverable(t *testing.T) {
 	if _, err := writeACReanchorFixture(root); err != nil {
 		t.Fatal(err)
 	}
+	for _, name := range []string{"ac2-design-proof-review.md", "ac2-design-proof-reference.md"} {
+		if _, err := os.Stat(root + "/" + name); err != nil {
+			t.Fatalf("AC re-anchor fixture missing committed gate package file %q: %v", name, err)
+		}
+	}
 	if got, found := statuspkg.DiscoverWorkflowDir(root); !found {
 		t.Fatal("AC re-anchor fixture is not discoverable from its workflow root")
 	} else if got != root {
