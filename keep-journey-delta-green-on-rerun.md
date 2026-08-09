@@ -193,3 +193,18 @@ Validation must run a detached adversarial audit. The audit must fail one artifa
 ### Summary
 
 The design recovers the newest exact artifact for each producer across rerun attempts. It skips the optional comment with a named warning if recovery cannot produce both complete metric sets.
+
+## Stage Report: implementation
+
+- DONE: Implement exact-ID artifact recovery and the complete-pair warning-and-skip fallback within the approved three-file, 243-insertion ceiling.
+  Commit `ce01c4e69` selects exact artifact IDs by creation time and ID. The two-file change has 54 insertions.
+- SKIPPED: Add behavioral exercises for complete, duplicate, missing, invalid, and empty artifacts without adding or rerunning a live lane.
+  The captain removed the simulator and prohibited a replacement harness. The implementation adds no live lane or rerun command.
+- DONE: Update the operator rule and run focused, full, race, formatting, and workflow checks.
+  The focused release and registry tests passed. The full and race suites passed after formatting.
+
+### Summary
+
+The reporting job now downloads the newest exact artifact for each required producer. It warns and exits successfully if either metric set is unavailable.
+
+The operator rule now states that an optional metrics failure does not change the required test result.
