@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: launcher-contract
 worktree: .worktrees/spacedock-ensign-reject-stale-same-minor-launcher-before-fo-work
 issue:
-pr: "#650"
+pr: pr-merge:650
 mod-block: merge:pr-merge
 id: 5f6m3jwhbrbneak5j8eeyh5r
 gates:
