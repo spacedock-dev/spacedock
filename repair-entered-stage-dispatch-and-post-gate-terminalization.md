@@ -48,6 +48,12 @@ Second, a consumed nonterminal approval is treated as an error during ordinary t
 
 The initial-stage successor defect is not part of this task. Task `6x50qafc8566zc6p1qpb6y30` owns that behavior and its smoke tests. This task must not duplicate that repair or its live journey.
 
+Staff finding M4 adds an ordering constraint. The two tasks share
+`internal/ensigncycle/shared_live_runner_test.go` and
+`skills/first-officer/references/fo-dispatch-core.md`. Task
+`6x50qafc8566zc6p1qpb6y30` owns every `smallest-sufficient-mechanism` binding.
+This task owns no smallest-sufficient-mechanism binding.
+
 ## Value slice
 
 This task owns one end-to-end value slice: consume an approved nonterminal gate, dispatch the successor with durable evidence, record the worker result, and complete the entity with ordinary non-forced terminal fields.
@@ -56,7 +62,7 @@ The `keep-moving-posture` journey is the live value check. Its other ready entit
 
 ## Proposed approach
 
-1. Run the affected `keep-moving-posture` cells with the strict XFAIL mechanism from `ts7gq0mr9s3chx2w4wppd1kt` before any product edit. Bind one stable semantic failure code to each executable target. Keep a TODO only when that target cannot run.
+1. Run the affected `keep-moving-posture` cells with the strict XFAIL mechanism from `ts7gq0mr9s3chx2w4wppd1kt` before any product edit. Bind one stable semantic failure code to each executable target. Keep a TODO only when that target cannot run. Do not add or change a `smallest-sufficient-mechanism` binding.
 
 2. Keep gate consume and successor dispatch as one documented ceremony boundary. The consume command writes the successor status and `consumed` gate state. One `dispatch build --stamp` call then writes `started` and `worktree`, commits the path-scoped entity, and builds the envelope. Do not add a manual status write, a separate state commit, or a plain dispatch build between these commands.
 
@@ -71,6 +77,7 @@ The simplest alternatives are insufficient. Status prose cannot prove the exact 
 ## Out of scope
 
 - Initial-stage dispatch when `current=ready,next=done`. Task `6x50qafc8566zc6p1qpb6y30` owns this item.
+- All `smallest-sufficient-mechanism` bindings and their live proof. Task `6x50qafc8566zc6p1qpb6y30` owns the Claude Sonnet, Codex, and Pi bindings.
 - Changes to the durable Git-history oracle, its path scope, or its failure rules.
 - New command flags, new frontmatter fields, or a new gate authority format.
 - Agent instructions that use `--force` to finish the journey.
@@ -96,6 +103,12 @@ A consumed nonterminal record allows ordinary atomic terminal fields. Pending te
 
 Verified by: the focused CLI regression and the existing terminal refusal matrix. Falsifiers: `--force` being required for the consumed nonterminal case, or any protected terminal-target case succeeding without its merge guard.
 
+**AC-4 — The 9a candidate uses the landed 6x candidate.**
+
+Task 6x lands before 9a implementation. The 9a branch rebases onto the exact 6x landing commit before it changes a shared runner or dispatch file. The exact candidate reruns the 9a deterministic tests and the `keep-moving-posture` cells.
+
+Verified by: the 6x landing SHA, the serial rebase record, and test records from the rebased candidate. Falsifiers: a stale-base candidate, a duplicate smallest-sufficient binding, or a shared-file change without an exact-candidate rerun.
+
 ## Test plan
 
 Run the smallest proof first:
@@ -105,8 +118,9 @@ Run the smallest proof first:
 3. Add and run the exact dispatch-blob smoke test.
 4. Add and run the `review(gate) -> implementation(consumed) -> done` CLI regression.
 5. Run the recorded gate lifecycle and durable journey tests.
-6. Run strict XFAIL for the three `keep-moving-posture` target cells before the repair, then rerun them after the repair.
-7. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
+6. After 6x lands, rebase 9a onto the exact 6x landing commit.
+7. Run strict XFAIL for the three `keep-moving-posture` target cells before the repair, then rerun them after the repair.
+8. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
 
 Each new test must name its falsifier. The consumed-nonterminal regression must prove that the final status write does not call `--force`. The dispatch smoke must inspect the exact commit, not only the final worktree.
 
@@ -119,7 +133,7 @@ The expected implementation surface is below. Estimates exclude the generic XFAI
 | `internal/status/merge.go` | 12 | 4 | +8 | Classify consumed nonterminal authority as ordinary history while preserving fail-closed terminal-target checks. |
 | `internal/cli/terminal_consume_test.go` | 120 | 0 | +120 | Add the focused consumed-nonterminal completion and refusal matrix. |
 | `internal/cli/gate_ceremony_count_test.go` | 45 | 0 | +45 | Inspect the exact dispatch commit entity blob. |
-| `internal/ensigncycle/shared_live_runner_test.go` | 28 | 6 | +22 | Bind the three executable `keep-moving-posture` cells to strict XFAIL, then remove the bindings on XPASS. |
+| `internal/ensigncycle/shared_live_runner_test.go` | 28 | 6 | +22 | After 6x lands, bind only the three executable `keep-moving-posture` cells to strict XFAIL, then remove those bindings on XPASS. |
 | `skills/fo-gate-lifecycle/SKILL.md` | 12 | 4 | +8 | State the one consume-then-`dispatch build --stamp` boundary. |
 | `skills/first-officer/references/fo-dispatch-core.md` | 10 | 2 | +8 | Require complete entered-stage evidence in the dispatch commit. |
 | `docs/site/concepts/gates-and-decisions.md` | 6 | 1 | +5 | Document ordinary terminalization after consumed nonterminal approval. |
@@ -141,7 +155,11 @@ Add this rule to the dispatch contract:
 
 ## Dependencies and XFAIL-first order
 
-The strict-XFAIL runner from `ts7gq0mr9s3chx2w4wppd1kt` must be available before implementation. The initial-stage repair and its binding belong to task `6x50qafc8566zc6p1qpb6y30`. Neither dependency changes this task's value slice.
+Task `6x50qafc8566zc6p1qpb6y30` is a landing dependency. It must land its initial-stage repair and all three `smallest-sufficient-mechanism` bindings for Claude Sonnet, Codex, and Pi before 9a implementation starts. The 9a task owns no smallest-sufficient-mechanism binding.
+
+Staff finding M4 requires serial edits to shared files. After 6x lands, rebase 9a onto the exact 6x landing commit. Run the exact 9a candidate tests on that rebased commit. If either shared file changes again, repeat the rebase and exact-candidate reruns.
+
+The strict-XFAIL runner from `ts7gq0mr9s3chx2w4wppd1kt` must be available before either live binding changes. Neither dependency changes this task's value slice.
 
 Before a product edit, run each executable `keep-moving-posture` target and record one stable failure code. After the smoke and CLI tests pass, implement the narrow status change and contract updates. Then rerun the live cells. XPASS removes the 9a binding. A target that cannot run keeps a TODO with its reason.
 
@@ -154,14 +172,16 @@ The spike found the remaining proof gaps. No current test reads the entity blob 
 ## Stage Report: ideation
 
 - DONE: Remove initial-stage defect from this task and keep one post-gate value slice.
-  Task `6x50qafc8566zc6p1qpb6y30` owns initial-stage dispatch. This entity now owns only `keep-moving-posture` after gate consume.
+  Task `6x50qafc8566zc6p1qpb6y30` owns initial-stage dispatch and every `smallest-sufficient-mechanism` binding. This entity now owns only `keep-moving-posture` after gate consume.
 - DONE: Exercise gate-consume dispatch evidence and safe terminalization before selecting the repair.
   Existing stamp, terminal-authority, recorded-lifecycle, and durable-journey tests passed. Source tracing found the consumed-nonterminal classifier and two missing proof tests.
 - DONE: Give gross and net line estimates with XFAIL-first dependencies.
   The plan estimates +247/-19, net +228, with ±25% tolerance. Strict XFAIL runner `ts7gq0mr9s3chx2w4wppd1kt` is the first dependency.
+- DONE: Fold staff finding M4 into this ideation.
+  Task 6x lands first. The 9a task then rebases onto its exact candidate and reruns every shared-runner and dispatch-file proof from that candidate.
 
 ### Summary
 
 Ideation is complete. The plan keeps one post-gate value slice, requires exact dispatch-commit evidence, and narrows terminal authority only for consumed nonterminal history.
 
-The initial-stage repair belongs to task `6x50qafc8566zc6p1qpb6y30`. Implementation must run strict XFAIL before product edits and must preserve the durable oracle and fail-closed terminal-target checks.
+Task `6x50qafc8566zc6p1qpb6y30` owns all smallest-sufficient-mechanism bindings and must land before 9a implementation. Staff finding M4 now requires a serial rebase and exact-candidate reruns for the shared runner and dispatch files.
