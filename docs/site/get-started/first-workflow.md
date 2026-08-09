@@ -65,7 +65,7 @@ item reaches the `review` gate, you get a gate review:
 
 ```text
 Capability/change: token-bucket limiter at the API middleware layer.
-Test and evidence: the Stage Report records 2 DONE, 0 SKIPPED, 0 FAILED.
+Test and evidence: both validation checks passed; the acceptance evidence is ready for delivery.
 Reviewed snapshot: Briefing `...` at compact digest `sha256:1a2b3c4d…`.
 Findings: none.
 Recommendation: approve the implementation.

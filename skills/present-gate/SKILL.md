@@ -23,18 +23,20 @@ Present gate reviews in this format:
 
 ```
 Gate review: {entity title} — {stage}
-Chosen direction: {one-line summary of the ensign's chosen approach, or `n/a` for stages without a chosen-direction concept (e.g., simple work stages, merge)}
 Recommend {approve | reject: {one-line reason}}.
 Reviewed snapshot: {bound Briefing identity and compact digest prefix}
 
-Checklist (from ## Stage Report in {entity_file_path} lines {start}-{end}):
+Stage evidence ({stage}):
+{For backlog: Outcome: {seed outcome}. Scope boundary: {included work and explicit cuts}. Proof readiness: {proposed observable proof and known unknowns}.}
+{For ideation: Chosen direction: {selected approach}. Risk evidence: {riskiest-mechanism spike result or recorded no-spike basis}. Expected surface: {files, LOC, tolerance, and semantic-change declaration}. Acceptance proofs: {each AC and its proposed observable proof}.}
+{For validation, cite ## Stage Report in {entity_file_path} lines {start}-{end}, then render only non-empty classes:
 - DONE: {≤10-word gist of item}
 - SKIPPED: {gist} — {one-line reason}
 - FAILED: {gist} — {one-line reason}
+Assessment: {N} done, {N} skipped, {N} failed.
+Checks executed: {checks actually run and their outcomes}. Acceptance evidence: {actual evidence by AC}. Delivery readiness: {ready or concrete blocker}.}
 
 {If reviewer findings exist, render them under `Reviewer findings` in the active workflow's declared category order and exact labels. Preserve each recorded category and omit empty categories. If the workflow declares none, use one neutral `Findings:` list. If no reviewer ran, omit this whole block.}
-
-Assessment: {N} done, {N} skipped, {N} failed.
 
 Decision: {one-line decision prompt naming what approval/rejection does in concrete terms — e.g., "approve to enter implementation in worktree `.worktrees/...`" or "reject to bounce back to {feedback-to target} with the authorized findings above"}.
 ```
@@ -43,14 +45,14 @@ Decision: {one-line decision prompt naming what approval/rejection does in concr
 
 The template is the floor, not the ceiling. The FO MUST hold to the following discipline when filling it:
 
-1. **Lede first, decision last, nothing between them buried.** The first three lines (title, chosen direction, recommend) and the final line (decision) are the spine. Everything else is supporting evidence; if the captain stops reading after line three, they can still vote.
-2. **Chosen direction is required as FO prose.** When the stage selected among options (ideation picks an approach, validation picks PASS/REJECTED), name it on the `Chosen direction:` line; don't make the captain infer from the Checklist gist or open the entity file. For stages without a chosen direction, use `n/a`.
-3. **Cite the Stage Report; render a one-line gist roll-up.** Do not paste it into the gate message. Under `Checklist:`, render one bullet per DONE/SKIPPED/FAILED item as a verb-noun gist (≤10 words, FO paraphrase, no new facts). For SKIPPED/FAILED, append `— {one-line reason}`. Cite the full report by file path and line range. If a decision-relevant reviewer finding directly questions a checklist item's evidence, inline that item's evidence paragraph under the finding so the captain can decide without opening the file. Otherwise no Stage Report content appears.
+1. **Lede first, decision last, nothing between them buried.** The title, recommendation, reviewed snapshot, and final decision line are the common spine. Everything else is supporting evidence; keep the vote visible without repeating the recommendation.
+2. **Select evidence by gate stage.** Backlog shows the seed outcome, scope boundary, and proof readiness; it does not claim a Stage Report, executed check, or delivery. Ideation shows the chosen direction, risk evidence, expected surface, semantic-change declaration, and each AC's proposed observable proof; it does not invent execution results. Validation shows actual report results, executed checks, AC evidence, and delivery readiness. For ideation and validation, state the selected direction (the approach or PASS/REJECTED) in the stage evidence rather than making the captain infer it.
+3. **Omit unavailable and empty evidence.** Backlog and ideation have no validation Assessment or result classes. At validation, keep the numeric `Assessment:` totals, but render a DONE, SKIPPED, or FAILED heading and its bullets only when that class has at least one item. Never substitute `None`, `N/A`, a zero-result row, or an empty findings block. Cite the Stage Report and paraphrase each rendered item as a verb-noun gist (≤10 words, no new facts); append the one-line reason to SKIPPED/FAILED. If a decision-relevant reviewer finding directly questions an item's evidence, inline that evidence paragraph under the finding. Otherwise no Stage Report content appears.
 4. **Reviewer findings preserve workflow classification.** Render findings in the active workflow's declared category order and exact labels, preserving each recorded category and dropping empty categories. If the workflow declares none, use a neutral `Findings:` list. Presentation never classifies.
 5. **Recommendation appears exactly once.** The `Recommend {approve | reject: {reason}}` line is the only place the FO states its verdict. Do not duplicate it elsewhere or re-explain it in an enumerated list.
 6. **Bounce-back recommendations name the concrete asks.** If recommending reject, the reason line names the specific concerns by content, not by reference. Bad: "address the reviewer's five concrete notes." Good: "tighten AC-2 substring assertion; correct the file X claim; cut the format-pedantry aside."
 7. **No format-pedantry asides.** Format drift (`1./2./3./4.` instead of `**AC-N**`, missing trailing period) is not load-bearing for a gate decision. Surface it only when the active workflow's policy makes it gate-blocking, under that policy's exact category label.
 8. **One sentence of worktree heads-up when approval changes worktree state.** When approving opens or closes a worktree, the Decision line names it: "approve to enter implementation in worktree `.worktrees/{worker_key}-{slug}`". One sentence, not a section.
 9. **Target length: 15-25 lines of FO-authored prose.** The full gate message should fit in 15-25 lines. If it exceeds 25, the FO is over-narrating; cut.
-10. **FO-authored prose speaks the workflow's declared label.** Where the gate-summary prose the FO writes — the `Chosen direction:` line, the `Checklist:` gist roll-up, the `Decision:` line — names the kind of thing under review, use the workflow's declared `entity-label` / `entity-label-plural` from `«state.boot»()`, not the generic "entity". A `ticket` workflow's Decision line says "approve to enter implementation on this ticket"; an `experiment` workflow says "experiment". The `{entity title}` placeholder and the structural headings (`Gate review:`, `Checklist:`, `Decision:`) stay generic — only the FO-authored noun localizes.
+10. **FO-authored prose speaks the workflow's declared label.** Where the gate-summary prose the FO writes — stage evidence or the `Decision:` line — names the kind of thing under review, use the workflow's declared `entity-label` / `entity-label-plural` from `«state.boot»()`, not the generic "entity". A `ticket` workflow's Decision line says "approve to enter implementation on this ticket"; an `experiment` workflow says "experiment". The `{entity title}` placeholder and structural headings stay generic — only the FO-authored noun localizes.
 11. **Surface verification state as evidence, not as a label.** When the gate turns on checks that ran outside this presentation (CI lanes, a validation report), hold them to the shared core's self-evidence bar (`## Working Principles`): state which relevant checks actually ran and passed, and read any failure from this run's evidence (the failing test/assertion), never from an inherited "known flake" label. The captain votes on which checks are green and why a red is red.

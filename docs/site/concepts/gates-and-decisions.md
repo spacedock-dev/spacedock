@@ -13,7 +13,7 @@ Until then, the gates are yours.
 
 ## What you see at a gate
 
-A chat gate review has one concise evidence spine. The first officer emits it before recording either your decision or a decision made under delegated conn:
+A chat gate review has one concise evidence spine. Its evidence matches the gate: backlog shows the seed outcome, boundary, and proof readiness; ideation shows the chosen direction, risk evidence, expected surface, and acceptance proof; validation shows actual results, checks, acceptance evidence, and delivery readiness. Empty result classes are omitted. The first officer emits the review before recording either your decision or a decision made under delegated conn:
 
 ```text
 Capability/change: replace sleep-based waits with event polling.
