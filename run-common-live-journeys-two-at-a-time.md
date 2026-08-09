@@ -1,6 +1,6 @@
 ---
 title: Run Claude common live journeys two at a time
-status: ideation
+status: implementation
 source: "Captain request after PR #643 CI timing review, 2026-08-09. Run 31295813569 measured Claude common plus substrate at about 31 minutes. Codex was explicitly deferred until later."
 started: 2026-08-09T05:56:00Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: Captain approved proceeding after removal of tests for test infrastructure.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Reduce pull-request wait time by running at most two independent common live journeys concurrently on Claude.
