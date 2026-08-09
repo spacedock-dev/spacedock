@@ -9,7 +9,7 @@ verdict:
 score: 0.3
 worktree:
 issue:
-sprint: test-behavior-completeness
+sprint:
 ---
 
 A live Claude (opus) agent, recovering a withdrawn gate attempt, hit a pre-existing CAS guard (`internal/gitsource/source.go`, unchanged from `main`) rejecting an uncommitted source on its first `gate prepare` attempt. Rather than committing the exact source and retrying the identical command, it worked around the rejection by dropping `--reference` and using an absolute artifact path -- succeeding, but producing an attempt with no References bound. It then judged that attempt deficient on its own, withdrew it, and re-prepared a third time with absolute paths for everything. The scenario's test expects exactly 2 attempts (the original + one legitimate recovery); 3 attempts fails it.
