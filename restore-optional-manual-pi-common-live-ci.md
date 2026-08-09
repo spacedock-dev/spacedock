@@ -280,3 +280,39 @@ These records use the existing journey-metrics artifact and format. AC-1, runtim
 ### Summary
 
 The Pi driver now emits one existing-format metrics record after each completed common journey. The focused proof detects the prior empty artifact and passes on the repair. Paid CI remains for fresh validation.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Re-review exact candidate `f5c4b32d48f036fddb52233e1c2ca9a1fbf2baa1`, reproduce the focused no-op/fixed metrics proof, and verify the bounded reset stayed within its two-file/+120 limits and existing format.
+  The fixed example passed, but the same example also passed after the detached audit restored the driver no-op.
+- DONE: Verify the authorized correction boundary and existing record format.
+  The correction changes two approved files, adds 51 lines, deletes 2 lines, and adds 49 net lines.
+  The helper uses `journeymetrics.BuildRecord` and `journeymetrics.EmitRecord`. Its record has the expected scenario, runtime, model, duration, and bytes.
+- FAILED: Reproduce the required focused no-op failure and corrected pass.
+  `Example_emitPiScenarioMetrics` passed on the candidate and passed after `piSharedLiveDriver.emitMetrics` became an exact no-op.
+- SKIPPED: Run the exact repaired manual Pi cadence and inspect the downloaded artifact for non-empty existing-format journey-metrics records for every completed common journey; classify any auth or protected-environment wait honestly.
+  The First Officer stopped live execution after the Material evidence defect. No protected environment received an approval request.
+- SKIPPED: AC-1 (VALUE) - A maintainer can obtain retained Pi CI evidence on demand.
+  No exact-candidate Pi artifact exists. The focused proof cannot detect the original no-op regression.
+- SKIPPED: AC-2 - Pi does not become a pull-request merge requirement.
+  No exact-candidate pull-request run exists. The unchanged parsed condition excludes Pi from pull requests.
+- SKIPPED: AC-3 - A Pi-only dispatch spends no Claude or Codex lane.
+  No exact-candidate Pi run exists. Structural conditions are unchanged, but they are not live evidence.
+- SKIPPED: AC-4 (VALUE) - Each manual release cadence spends only its selected runtime.
+  Exact-candidate Pi, Opus, and pull-request evidence is unavailable.
+- DONE: AC-5 - The desired journey registry stays unchanged.
+  Registry reconciliation and the mutable owner test passed for the same 17 journeys.
+- SKIPPED: Re-run the applicable offline/race/registry/adversarial evidence and report AC-1 through AC-5 with a PASSED or REJECTED recommendation, never treating unavailable exact-candidate evidence as green.
+  Registry, owner, formatting, focused, and adversarial checks ran. The First Officer stopped the full and race suites before the authorized fix.
+- FAILED: Material AC-1 evidence defect — the focused proof does not exercise the Pi driver seam.
+  The normal user runs the manual Pi cadence and expects retained metrics.
+  The guard permits the exact no-op that removes all Pi journey metrics.
+  Authority: `value-ac[AC-1]` requires retained journey metrics.
+  The detached no-op edit passed `Example_emitPiScenarioMetrics`, which proves the trigger.
+  The First Officer selected `FIX`. The next proof must call `piSharedLiveDriver.emitMetrics` and fail on the no-op.
+- DONE: Report a PASSED or REJECTED recommendation with all live lanes classified from current exact-candidate evidence.
+  Recommendation: REJECTED. All exact-candidate live lanes remain unavailable, and none is classified as green.
+
+### Summary
+
+The correction is inside the authorized boundary and uses the existing record format. Its focused proof does not detect the exact driver no-op regression. The recommendation is REJECTED, and the candidate remains unchanged.
