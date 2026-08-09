@@ -2,7 +2,7 @@
 title: Publish the rejected validation round before correction and re-gating
 status: ideation
 source: "Replacement for archived rejected zbc; Runtime Live E2E rejection-flow evidence showed the FO claimed validation/1 was recorded without invoking gate record --round validation/1."
-started:
+started: 2026-08-09T18:34:24Z
 completed:
 verdict:
 score: 0.9
