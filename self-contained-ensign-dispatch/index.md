@@ -821,3 +821,16 @@ Validation now has the missing real-worker evidence: a canonical Codex child exe
 ### Summary
 
 The revision replaces generic launcher policy with executable-specific generated commands and honors an explicitly supplied candidate launcher at dispatch generation. It restores focused bootstrap ownership, keeps pointer-only outer transport, documents the behavior, and commits the implementation as `d3f093cdb`.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Rebase the clean KD revision onto exact validated 0Y commit 8728da3a0 without discarding either side.
+  Final head `34e6160a5` is rebased onto landed origin/main tip `9021cbf374`; both final 0Y successor `113738b20` and original validated `8728da3a0` are ancestors, and stable KD patch-id `5e5d10e3` matches the preserved pre-reconciliation delta.
+- DONE: Preserve exact resolved workflow commands, candidate-binary support, and focused golden ownership.
+  Generated stage/standing commands retain the resolved shell-quoted executable, candidate `SPACEDOCK_BIN` selection remains covered, the generic paragraph/product-only claim remain absent, and no prose parser was added.
+- DONE: Run focused, full, race, formatting, and relevant dispatch integration evidence at the new exact head.
+  `go test ./internal/dispatch ./internal/cli ./skills/integration ./internal/ensigncycle`, `go test ./...`, and `go test ./... -race` pass; `gofmt -w ./cmd ./internal` leaves a clean tree and `git diff --check` passes.
+
+### Summary
+
+KD is reconciled onto the actual merged 0Y tip with its exact delta preserved at head `34e6160a5`. The non-force publication is remote branch `spacedock-ensign/self-contained-ensign-dispatch-reconciled`; all focused, full, race, formatting, and integration evidence is green.
