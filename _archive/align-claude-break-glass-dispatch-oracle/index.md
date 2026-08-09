@@ -1,16 +1,16 @@
 ---
 title: Align Claude break-glass recovery with the selected dispatch mode
-status: validation
+status: done
 score: 0.96
 source: "PRs #627, #628, #629, and #631 fail TestLiveBreakGlassShimRecovery after PR #626 selected it for required CI. The worker completes through bare blocking dispatch, but the oracle requires a named background worker. History: named recovery template 8e66ead, blanket single-task bare rule ecffced, live selection 4cc0d8."
 sprint: durable-decisions
 started: 2026-08-07T04:35:54Z
-completed:
-verdict:
+completed: 2026-08-09T06:24:33Z
+verdict: passed
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-dispatch-oracle
 pr: pr-merge:637
 issue:
-mod-block: merge:pr-merge
+mod-block:
 id: 824ecawn5jttbykcgx82nbf4
 gates:
     version: 1
@@ -105,7 +105,8 @@ gates:
                 reason: Exact reconciled candidate passes all three validation items and all acceptance criteria; focused, inventory, cadence, full, race, formatting, and adversarial evidence is green, while fresh local Claude probes failed only at the pre-work authentication boundary.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-09T06:24:33Z
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
