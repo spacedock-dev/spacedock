@@ -75,6 +75,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:0ytmjwn4ppg5en25z7vmna0p-validation-2
+              briefing:
+                id: briefing:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-2:revision-1
+                digest: sha256:6293387ea7953aba8dac6b97320c27392419d589df6f48a2f0000e1db49b93d1
+                request-digest: sha256:2045816b4918655dd1e0340940e4353ae621813f15cba1a9a85e86697128adf9
+                room-ref: ./make-sonnet-5-only-claude-pr-live-lane/review/validation/briefing-2
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.

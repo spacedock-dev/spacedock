@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-2:revision-1",
+  "question": "Approve the validated Sonnet 5 and Codex pull-request live lanes for delivery through PR #639?",
+  "artifacts": [
+    {
+      "id": "artifact:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/d30d8adbb028b9cc027cf9f2e265620547d94c30/make-sonnet-5-only-claude-pr-live-lane.md",
+      "rev": "sha256:485bf9de5cd02dba70f90d2900102b21d7b4eac82bf46c780651e58dbc3ce7ee",
+      "mediaType": "text/markdown",
+      "summary": "Validation and PR CI confirm exactly Sonnet 5/max and Codex/max run on pull requests; offline, Codex, the complete Sonnet common suite, and Sonnet substrate proofs passed at exact SHA 1296be968. The optional journey-delta comment remains red only because GitHub cannot download a retained Codex metrics artifact."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/1296be968ccc452df5177aa9d9b2715d44a6976b/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:5bae781c365aedc4a03e8d4d4dabde6c4536a27f6937f376bef4c8853a2939b4"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/1296be968ccc452df5177aa9d9b2715d44a6976b/internal/ensigncycle/shared_live_runner_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:01d04ee2b6d0e65ba885c3969d004914384c2a18707734f6b54b5088ea129221"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0ytmjwn4ppg5en25z7vmna0p:validation:attempt-2:revision-1:item-4",
+      "uri": "git-root://main/1296be968ccc452df5177aa9d9b2715d44a6976b/internal/ensigncycle/dispatch_recovery_live_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:88095be7fb056251046ee0626b001b1b849c2d900cb11a5ea3d765c2b17e2d21"
+    }
+  ]
+}
