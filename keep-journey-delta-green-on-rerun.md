@@ -34,6 +34,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:qz0ap96nt5k93tgbsphq9ahy:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:qz0ap96nt5k93tgbsphq9ahy-ideation-1
+              briefing:
+                id: briefing:qz0ap96nt5k93tgbsphq9ahy:ideation:attempt-1:revision-1
+                digest: sha256:82b8d4b9e7f7b2692f1abb9bf1795c95b4a9af41930f058735fa913c0aecc647
+                request-digest: sha256:4d55aafe4bca1976bf75b023791c0698e35787bbd4e241f90bf2696815e02496
+                room-ref: ./keep-journey-delta-green-on-rerun/review/ideation/briefing-1
 ---
 
 A failed-job rerun can reuse successful live jobs from an earlier attempt. The reporting job then reads artifacts from different attempts of one run.
