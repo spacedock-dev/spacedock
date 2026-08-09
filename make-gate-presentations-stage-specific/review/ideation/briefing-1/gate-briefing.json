@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:krbaeb3resfpbh1qvnb65krf:ideation:attempt-1:revision-1",
+  "question": "Should KRB enter implementation to make the existing gate presenter select stage-available evidence and omit empty result classes?",
+  "artifacts": [
+    {
+      "id": "artifact:krbaeb3resfpbh1qvnb65krf:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/25f3791733581e5327e6b2089ee33901ca458846/make-gate-presentations-stage-specific/index.md",
+      "rev": "sha256:05de7d3a761b45f3c465e9ffe6c02beaf285afda0146da99b30d556b14f0e957",
+      "mediaType": "text/markdown",
+      "summary": "Keep one presenter and recorder; show backlog, ideation, and validation evidence appropriate to each stage, omitting empty classes while preserving numeric validation totals."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:krbaeb3resfpbh1qvnb65krf:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/skills/present-gate/SKILL.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5a4a38f0ab34e90640ba91f050a543e59e0158786d9d49e682e616f8d8c2f7bc"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:krbaeb3resfpbh1qvnb65krf:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/site/concepts/gates-and-decisions.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:79284385f6cb6e2a186dd4a0f71242937d1959532b097fc6f6ecef1ced308545"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:krbaeb3resfpbh1qvnb65krf:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/site/get-started/first-workflow.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d61bba8bff508ef1746514908378c1c6a78b6ed5c25dac4b0deec8ef166cacd9"
+    }
+  ]
+}
