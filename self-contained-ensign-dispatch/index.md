@@ -110,6 +110,17 @@ gates:
                 digest: sha256:ea262be6293f671aa73db82019b950edbc5a1954e25a605d5079cd041500ad4a
                 request-digest: sha256:e8fc0dd443ff9e15bbb07ddef59ca7412164abbeeef1e21c289df3e985c71b0a
                 room-ref: ./review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kd7877nnbd19d528xnpwwaj4:validation:5
+                briefing: briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-5:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T04:54:34.791433Z"
+                decision: approve
+                reason: Exact reconciled candidate passes all three validation items and all acceptance criteria, including adversarial launcher isolation, full, race, formatting, and integration checks.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 sprint-readiness: required
