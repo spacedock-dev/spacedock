@@ -46,6 +46,17 @@ gates:
                 digest: sha256:a652a2335c0572d93e39271d332e1e0c9e25d9c157318e60deccafb69265f7f1
                 request-digest: sha256:201d5101bf0d12f55269979cc995b7944f3b4474325e880b768ccb07864f7550
                 room-ref: ./run-common-live-journeys-two-at-a-time/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:c1nbf39akyh263a4p1ts593m:ideation:1
+                briefing: briefing:c1nbf39akyh263a4p1ts593m:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T13:56:08.747199Z"
+                decision: approve
+                reason: Captain approved proceeding after removal of tests for test infrastructure.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Reduce pull-request wait time by running at most two independent common live journeys concurrently on Claude.
