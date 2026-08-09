@@ -202,3 +202,85 @@ Committed the bounded gate-lifecycle and public-documentation correction without
 ### Summary
 
 The serial race suite passed and the one authenticated comparison preserved correct open-gate authority: one prepare and commit, no Resolution, consume, advance, or successor dispatch. The value ceiling still failed at 18 turns and 27 calls, so the approved candidate is held unchanged and the pre-load ownership boundary is escalated for a Captain decision.
+
+## Design Reset: Automatic Headless Engage
+
+Captain authorization on 2026-08-09 expands ownership from the lifecycle/doc pair into the boot-resident shared core. This section supersedes the earlier two-file surface, ACs, and test plan; commit `7da5d36a5` remains the unchanged starting candidate until the First Officer separately authorizes implementation.
+
+### Revised ownership and exact boundary
+
+The shared core owns automatic headless engage only through gate selection. The required order is:
+
+1. Run the existing single local boot and enter `«interaction.boundary»()` with its retained workflow, mods, dispatchable, and ready-gate record.
+2. Interactive launch presents that record, names each ready gate, hints `engage`, and stops. It does not converge, load `fo-gate-lifecycle`, open a gate/entity/source, or render a review.
+3. Headless launch automatically invokes `«engage»()` once per selected workflow. Engage runs `state ready`; on exit 3 it halts. It then runs the separate read-only `state sweep`, followed by every registered startup hook exactly once.
+4. After convergence and hooks, the shared core obtains the authoritative `status --next --json` envelope and selects its first `ready_gates` row before considering dispatchable work. This gate-first selection is boot-resident ownership; `fo-dispatch-core.md` remains deferred unless no ready gate exists and a worker dispatch is actually considered.
+5. The selected row triggers `Skill(skill="spacedock:fo-gate-lifecycle")` as the first gate action. No gate/entity/source read, filesystem listing/search, Git inspection, capability probe, presenter load, or mutation may precede that load.
+6. The lifecycle skill then owns one grouped path-resolved evidence read, the existing write-core boundary, one prepare and commit, one grouped checklist/AC scan, and one presentation. It leaves the attempt open without Resolution, consume, advance, or dispatch when no conn exists.
+
+This adds no scheduler, state, lease, retry loop, command, or lifecycle format. It moves only the automatic headless gate-selection boundary into the already boot-resident core so the lifecycle contract can govern every gate-related action.
+
+### Feasibility budget
+
+The no-startup-hook `gate-guardrail` fixture has this falsifiable lower-bound plan:
+
+| Phase | Host calls | Required events |
+|---|---:|---|
+| Load and boot | 6 | FO Skill; shared-core read; runtime-marker probe; adapter read; grouped sandbox/version gate; one boot |
+| Automatic engage | 2 | `state ready`; then `state sweep` and post-sweep `status --next --json` in one guarded shell event because boot declares zero startup hooks |
+| Gate action | 7 | lifecycle Skill; grouped exact-source read; write-core read; prepare; commit; grouped checklist/AC scan; presenter Skill |
+| Total | 15 | Three-call margin under 18; 15 dependent tool-bearing turns plus the final presentation equals the 16-turn ceiling |
+
+For a workflow with registered startup hooks, sweep completes before the hook bodies and selection; their declared calls count normally and are not hidden by batching. The 16-turn ceiling is feasible for the specified zero-hook comparison but has no turn margin. If the next sole live run needs an additional dependent turn, the Captain must choose between relaxing the turn threshold or authorizing a deeper mechanism such as a binary-owned convergence/selection fold; this task does not assume either choice.
+
+### Revised expected surface and semantic boundaries
+
+- `skills/first-officer/references/first-officer-shared-core.md`: clarify automatic headless engage, gate-first selection ownership, and the pre-load prohibition in at most 6 inserted and 8 deleted physical lines; net bytes must be negative so the file remains strictly below its 26,900-byte cap.
+- `skills/fo-gate-lifecycle/SKILL.md` and `docs/site/concepts/gates-and-decisions.md`: retain commit `7da5d36a5` byte-for-byte.
+- Total product diff from the original base: exactly three files, at most 12 insertions and 17 deletions. No CLI, fixture, harness, schema, generated artifact, simulator, new test, command grammar/output, or lifecycle-state change.
+
+Interactive boot-only semantics, gate authority, mutation order, and the decision recorder remain unchanged. The only new semantic owner is the shared core's automatic headless transition from convergence to ready-gate selection; ordinary dispatch still loads the dispatch core before its first dispatch capability.
+
+### Revised acceptance criteria
+
+**AC-1 (VALUE) — Full-path headless gate work meets the operator-effort ceiling.**
+
+One new max-effort Sonnet-5 `TestLiveCommonGateGuardrail` run at the authorized implementation commit uses at most 16 assistant turns and 18 host tool calls, including state ready, state sweep, startup-hook handling, gate binding, commit, and presentation.
+
+**AC-2 — The automatic boundary is ordered and waste-free.**
+
+The archived stream orders boot → interaction boundary → state ready → state sweep → zero registered startup hooks → ready-gate selection → lifecycle Skill → gate evidence. It contains no gate read/search/list/Git inspection before lifecycle load, no help/shape probe, no broad history/status inspection, and no boot projection after prepare.
+
+**AC-3 — Interactive boot remains boot-only.**
+
+The interactive branch remains byte-identical: it names ready gates and stops without convergence, lifecycle/presenter load, gate evidence read, preparation, or mutation.
+
+**AC-4 — Gate authority remains exact.**
+
+The comparison passes `assertGateHeld`: exactly one committed current-stage open attempt and bound two-file room, with the dirty sibling and prior bytes preserved and no Resolution, decision, consume, status advance, successor dispatch, archive, or other unauthorized mutation.
+
+**AC-5 — The design reset changes only the expanded owner.**
+
+The diff stays within the three-file/line/byte surface above and adds no runtime mechanism, CLI or test surface.
+
+### Revised test plan
+
+1. Before editing, rerun the focused contract and lifecycle controls: `go test ./internal/contractlint -run '^(TestSharedCoreRemainsBelowPreChangeByteCap|TestBootResidentDeferredLoadPointsResolve|TestFOInstructionComponentCaps)$' -count=1`; the cap test fails on shared-core growth, while closure/cap controls fail on a dangling deferred boundary or oversized component.
+2. Run `go test ./internal/ensigncycle -run '^(TestShallowBootFixtureContainsOnlyHeldGate|TestShallowBootPromptIsMutationFreeInteractiveGreet|TestGateGuardrailNegativeBrokenStateTransition|TestRecordedGateLifecycle(RealCLIReplay|PhaseDetectionIgnoresHelpProbes|MissingEventControls))$' -count=1` and the existing status ready-gate/next-envelope checks. These fail if boot-only fixtures mutate/present or if open-gate ordering/authority breaks; no prose-presence test is added.
+3. After separate FO implementation authorization, change only the shared-core file, retain the two candidate files byte-for-byte, and verify `git diff --numstat`, `wc -c`, `git diff --check`, and the three-file cap.
+4. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and load-safe `go test ./... -race -p 1`.
+5. Spend exactly one new authenticated max-effort Sonnet-5 `TestLiveCommonGateGuardrail` run. Grade its archived metrics and ordered tool stream against AC-1/AC-2, and require the real durable `assertGateHeld` state proof for AC-4; do not rerun a miss for luck.
+6. Preserve the interactive branch byte-for-byte and use the existing shallow-boot fixture/negative controls as its no-mutation regression evidence. Do not add a second model run, permanent metrics simulator, harness change, or static wording assertion.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Define the exact automatic headless-engage boundary so fo-gate-lifecycle is the first gate action after convergence and gate selection, while interactive boot-only still names the gate and stops without loading it.
+  The reset assigns gate-first selection to the boot-resident core and forbids every gate action before lifecycle load; the interactive branch remains byte-identical and stop-only.
+- DONE: Account for state ready, state sweep, and startup hooks in the real pre-load path; reassess whether the 16-turn/18-call ceiling is feasible and propose a falsifiable measurement plan.
+  The zero-hook fixture budgets 15 calls and exactly 16 turns including presentation; the sole next live stream must prove the full ordering and thresholds, with no rerun.
+- DONE: Update the task design, acceptance criteria, expected surface, and test plan under the Captain-approved expanded ownership before changing candidate bytes or spending a new live run.
+  Revised AC-1–AC-5 and the six-step plan are durable here; candidate `7da5d36a5` is unchanged and no new model run was spent.
+
+### Summary
+
+Reset the design around automatic headless engage: converge fully, select gates before dispatch, and load lifecycle before any gate evidence. The value ceiling is feasible for the zero-hook comparison but has no turn margin; implementation remains blocked on distinct First Officer authorization, and a miss would return to the Captain for a threshold-or-mechanism decision.
