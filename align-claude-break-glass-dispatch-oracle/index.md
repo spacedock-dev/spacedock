@@ -341,3 +341,16 @@ PASSED. No material finding remains, the YS reconciliation preserves all four AC
 ### Summary
 
 Successor validation at exact head `6c50fc82e` replaces the stale pre-YS proof with fresh focused, full, race, Sonnet, and Opus evidence. The selected-mode recovery contract and durable completion proof remain strict inside the canonical YS inventory, without restoring retired runners or taking ownership of the journey-delta job.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Rebase the post-YS 824 candidate onto actual landed 0Y tip 9021cbf37 without discarding either side.
+  FO-directed no-force reconciliation uses merge `d42b6f40d` with parents `6c50fc82e` and exact landed 0Y `9021cbf37`; task-owned Sonnet proof restoration is committed at pushed exact head `4ecc0440d`.
+- DONE: Preserve selected bare/team recovery grading, YS registry integration, and pilot-manifest decoupling.
+  Focused recovery mutations reject crossed modes, wrong cardinality/identity, and incomplete or uncommitted reports; registry/cadence guards pass, the retired runners remain absent, and 0Y's deleted pilot-manifest test is not restored.
+- DONE: Run focused, inventory, full, race, Sonnet, and Opus evidence at the new exact head.
+  Focused, inventory, release-cadence, `go test ./...`, and `go test ./... -race` pass; Sonnet and Opus each run both recovery cases but stop before FO work because local Claude OAuth is expired and cannot refresh.
+
+### Summary
+
+Reconciled 824 with landed 0Y through the smallest fast-forwardable, non-force topology and pushed exact head `4ecc0440d` on only the named 824 branch. The selected-mode and durable-report oracle remains strict inside the YS inventory, while 0Y's Sonnet-on-PR, Opus-pre-release, and Codex cadence plus its pilot-manifest deletion remain intact; fresh live model execution is externally blocked by expired OAuth.
