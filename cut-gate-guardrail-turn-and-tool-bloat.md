@@ -2,7 +2,7 @@
 title: Cut gate-guardrail turn and tool bloat
 status: ideation
 source: "Journey-metrics audit of PR #643, Runtime Live E2E run 31297186020, Claude job 93204212216, artifact 9033837253. The gate-guardrail journey used 22 assistant turns and 24 tool calls, up from 11 and 11 in the v0.26 Sonnet observation. Captain directed a separate filing on 2026-08-09."
-started:
+started: 2026-08-09T14:51:32Z
 completed:
 verdict:
 score: 0.9
