@@ -7,7 +7,7 @@ source: "Captain feedback on 2026-08-08 after repeated gate reviews rendered FAI
 issue:
 sprint: durable-decisions
 sprint-readiness: ready
-started:
+started: 2026-08-09T14:51:39Z
 completed:
 verdict:
 worktree:
