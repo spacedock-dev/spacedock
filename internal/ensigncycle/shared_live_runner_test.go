@@ -23,12 +23,16 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	}
 	build, buildCalls := countedLiveFunction(t, builder)
 	assert, assertionCalls := countedLiveFunction(t, assertion)
-	driver, target := liveDriverForRuntime(t)
+	newDriver, target := liveDriverForRuntime(t)
 	for _, todo := range todos {
 		if todo.target == target {
 			t.Skipf("TODO(%s): %s/%s lacks passing live evidence", todo.owner, target, id)
 		}
 	}
+	if os.Getenv("SPACEDOCK_LIVE_RUNTIME") == "claude" {
+		t.Parallel()
+	}
+	driver := newDriver()
 	exercise(t, driver, sharedRuntimeScenario{name: id}, build, assert)
 	if *buildCalls == 0 || *assertionCalls == 0 {
 		t.Fatalf("live journey %s executed builder/assertion %d/%d times", id, *buildCalls, *assertionCalls)
@@ -48,7 +52,7 @@ func countedLiveFunction[Function any](t *testing.T, function Function) (Functio
 
 func noLiveGrade(liveResult) {}
 
-func liveDriverForRuntime(t *testing.T) (liveDriver, string) {
+func liveDriverForRuntime(t *testing.T) (func() liveDriver, string) {
 	t.Helper()
 	switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime {
 	case "claude":
@@ -57,11 +61,11 @@ func liveDriverForRuntime(t *testing.T) (liveDriver, string) {
 			t.Fatal(err)
 			return nil, ""
 		}
-		return newClaudeLiveRunner(t), role
+		return func() liveDriver { return newClaudeLiveRunner(t) }, role
 	case "codex":
-		return codexAsLiveDriver{t: t, runner: newCodexLiveRunner(t)}, "codex"
+		return func() liveDriver { return codexAsLiveDriver{t: t, runner: newCodexLiveRunner(t)} }, "codex"
 	case "pi":
-		return newPiSharedLiveDriver(t), "pi"
+		return func() liveDriver { return newPiSharedLiveDriver(t) }, "pi"
 	default:
 		t.Fatalf("SPACEDOCK_LIVE_RUNTIME=%q, want claude, codex, or pi", runtime)
 		return nil, ""

@@ -38,13 +38,14 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the common journeys by selecting one transport. Each command uses the same
-16 exported sequential tests and stops at the first non-TODO failure. Claude's
-90-minute timeout is a loose suite-wide runaway backstop; Codex and Pi retain
-the 40-minute backstop:
+Run the common journeys by selecting one transport. The Claude command runs at
+most two common journeys at one time. The Codex and Pi commands run the same
+journeys in sequence. Each command stops at the first non-TODO failure. Claude's
+90-minute timeout is a loose suite-wide runaway backstop; Codex and Pi retain the
+40-minute backstop:
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v
 ```
 
 Run all three current Claude substrate proofs with one 20-minute backstop:
