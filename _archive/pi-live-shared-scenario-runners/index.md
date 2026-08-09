@@ -1,7 +1,7 @@
 ---
 title: Pi live shared scenario runners — enable shallow-boot + filing + gate-guardrail on the pi-live CI lane
 status: backlog
-source: "Captain (2026-06-20): the pi-live CI lane runs only TestLivePiFrontDoorSmoke (a trivial dispatch smoke) + the coverage meta-test. The 6 shared runtime scenarios (gate-guardrail, rejection-flow, feedback-3-cycle-escalation, merge-hook-guardrail, filing, shallow-boot) all have claude + codex live runners but pi marks every one as 'gap' in pi_shared_coverage_test.go. After 0223 delivered skill injection (eq #406), model stamping (bdt #405), and the back-channel capstone (b2 #409 pending), pi can now run the no-dispatch and single-dispatch scenarios. Enabling shallow-boot + filing would have caught the pi-devoverride-package-ok blank-id boot failure in CI; it's not a config flip — pi has no piLiveRunner or per-scenario runners, only the smoke."
+source: Superseded on 2026-08-09 by restore-optional-manual-pi-common-live-ci. The original task assumed that Pi lacked shared runners; current main has the common runner and now lacks only the optional manual CI job.
 score:
 started:
 completed:
@@ -11,6 +11,7 @@ issue:
 sprint:
 sprint-readiness:
 id: asc4j2vs2qqgtg04hp87j2tq
+archived: 2026-08-09T14:30:08Z
 ---
 
 # Pi live shared scenario runners
