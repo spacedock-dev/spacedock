@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dvddbpsf4tdt3yjw1yjyp14k:ideation:attempt-1:revision-1",
+  "question": "Does this design complete the Codex correction journey?",
+  "artifacts": [
+    {
+      "id": "artifact:dvddbpsf4tdt3yjw1yjyp14k:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b1b93983953dace1b59c6d34748024d390474745/continue-codex-rejection-after-first-validation.md",
+      "rev": "sha256:e5fa45a27b048b4a3031b886b8651f3f510d1051a6784fe5ba18ffded49b1817",
+      "mediaType": "text/markdown",
+      "summary": "Codex completes correction and validation/2, then stops at one fresh final gate."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:dvddbpsf4tdt3yjw1yjyp14k:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:721a29206d100a38a9af0378441bd4878f67e0ccaa16a8fa9236fc14f0da195f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:dvddbpsf4tdt3yjw1yjyp14k:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24234b4adff24091d215eec6992580d6b1925c714a36ededdd4d0a5383ec2c4b"
+    }
+  ]
+}

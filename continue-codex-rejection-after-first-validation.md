@@ -37,6 +37,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:dvddbpsf4tdt3yjw1yjyp14k:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:dvddbpsf4tdt3yjw1yjyp14k-ideation-1
+              briefing:
+                id: briefing:dvddbpsf4tdt3yjw1yjyp14k:ideation:attempt-1:revision-1
+                digest: sha256:e7ea43c9d2cf658ba396a887006d1f6eb35c2553c608513a223228c5553a080d
+                request-digest: sha256:d7130b947de519759c629aac7fa524b15d8d6b79131095e608fb7311f28f6ecf
+                room-ref: ./continue-codex-rejection-after-first-validation/review/ideation/briefing-1
 ---
 
 ## Problem
