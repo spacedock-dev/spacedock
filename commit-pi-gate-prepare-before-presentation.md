@@ -1,6 +1,6 @@
 ---
 title: Commit the Pi gate before presentation
-status: backlog
+status: ideation
 source: "Staff review M3 for test-behavior-completeness, 2026-08-09"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: The Captain authorized shaping and requires end-user value; this task owns a Pi review bound to committed state.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A Pi operator must receive a gate review that is bound to committed state.
