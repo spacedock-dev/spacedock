@@ -1,6 +1,6 @@
 ---
 title: Restore optional manual Pi common-live CI
-status: validation
+status: implementation
 source: "Captain correction, 2026-08-09: PR #639 removed pi-live when it removed Pi from pull-request approvals. Restore manual CI Pi evidence without making Pi a merge requirement."
 started: 2026-08-09T15:42:25Z
 completed:
@@ -90,7 +90,7 @@ gates:
                 reason: 'Approved under sprint conn: candidate 7f5f79aad passed local/offline validation, exact Pi retained-metrics and exclusivity evidence, and exact Opus exclusivity evidence. AC-2 remains an explicit merge-boundary blocker until the normal PR run passes Sonnet and Codex and skips Pi with zero steps.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
@@ -396,3 +396,19 @@ The focused proof now calls the same Pi driver seam as the common journeys. It f
 ### Summary
 
 The exact Pi cadence retained complete metrics and used only its selected runtime. The exact Opus cadence also proved runtime exclusion. Validation recommends PASSED, with AC-2 pending at merge.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Rebase the registered 0a branch onto exact `origin/main` tip `944f323ac`, preserve only the approved candidate changes, and stop without guessing if any content conflict occurs.
+  The rebase completed without conflicts and produced candidate `3e1147f50` on `944f323ac`.
+  The remote branch required an ancestry-only merge for a normal push. That merge was conflict-free and kept the exact tree.
+- DONE: Compare the rebased patch to candidate `7f5f79aadb90b30e72eb243fb91732a4cf6063a7`, name every changed product byte or source binding, and keep the ten-file/+299 approved boundary.
+  No product byte or source binding changed. Both patches have stable patch ID `7c0cea6b`.
+  The rebased patch changes the same ten files, with 342 insertions, 43 deletions, and +299 net lines.
+- DONE: Run formatting, focused, full, race, registry, and owner checks; push the rebased candidate and commit a complete Simplified-English implementation Stage Report.
+  `gofmt`, the focused Pi proof, both full suites, registry reconciliation, and the mutable owner test passed.
+  Candidate `20910e6351a42f0f2ca30a92c269ddffbc069582` is pushed with the rebased tree and preserved remote ancestry.
+
+### Summary
+
+The candidate now includes exact integration tip `944f323ac` without a content change. All checks pass on the rebased tree. The normal push preserved the old remote ancestry and the approved patch.
