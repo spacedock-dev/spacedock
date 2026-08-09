@@ -100,7 +100,7 @@ func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, _ li
 			worktreePaths = append(worktreePaths, path)
 		}
 	}
-	if len(worktreePaths) != 2 || worktreePaths[0] != fixture.root || worktreePaths[1] != fixture.worktree {
+	if len(worktreePaths) != 2 || canonicalPath(t, worktreePaths[0]) != canonicalPath(t, fixture.root) || canonicalPath(t, worktreePaths[1]) != canonicalPath(t, fixture.worktree) {
 		t.Fatalf("worktree inventory = %q, want only root and stamped owner worktree", worktreePaths)
 	}
 	branches := strings.Fields(git(t, fixture.root, "branch", "--format=%(refname:short)"))
@@ -108,6 +108,15 @@ func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, _ li
 		t.Fatalf("branch inventory = %q, want only main and stamped owner branch", branches)
 	}
 	assertConflictOwnerFreshEnvelope(t, spacedockBinary(t), fixture.root, fixture.entity, fixture.owner)
+}
+
+func canonicalPath(t *testing.T, path string) string {
+	t.Helper()
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Fatalf("resolve worktree path %q: %v", path, err)
+	}
+	return resolved
 }
 
 func stampConflictOwner(t *testing.T, binary, root, entity string) conflictOwnerTuple {
