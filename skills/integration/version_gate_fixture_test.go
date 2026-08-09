@@ -15,6 +15,7 @@ import (
 )
 
 const curlInstallToken = "curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh"
+const withdrawCapability = "spacedock gate withdraw <entity> --reason TEXT"
 
 // gateFixtureDir builds the captive-command fixture tree:
 //
@@ -54,10 +55,18 @@ func writeExe(t *testing.T, path, body string) {
 // $COUNT_FILE, and honors the real install.sh's stderr contract
 // (`install.sh: installed spacedock <version> to <dir>/spacedock`).
 func captiveInstall(version string, extraVersionLines ...string) string {
-	captiveBinary := "#!/bin/sh\necho \"spacedock " + version + "\"\n"
+	captiveBinary := "#!/bin/sh\n" +
+		"[ -n \"${INVOCATION_LOG:-}\" ] && printf '%s|%s\\n' \"$0\" \"$*\" >> \"$INVOCATION_LOG\"\n" +
+		"case \"$*\" in\n" +
+		"--version) echo \"spacedock " + version + "\"\n"
 	for _, l := range extraVersionLines {
 		captiveBinary += "echo \"" + l + "\"\n"
 	}
+	captiveBinary += "  ;;\n" +
+		"'gate --help') echo '" + withdrawCapability + "' ;;\n" +
+		"'status --boot --identify --json') echo '{\"command\":\"status\",\"boot\":true}' ;;\n" +
+		"*) exit 9 ;;\n" +
+		"esac\n"
 	return "#!/bin/sh\n" +
 		"mkdir -p \"$HOME/.local/bin\"\n" +
 		"cat > \"$HOME/.local/bin/spacedock\" <<'EOS'\n" + captiveBinary + "EOS\n" +
@@ -84,6 +93,7 @@ func runGateFlow(t *testing.T, dir string, extraEnv []string) (string, int) {
 		"HOME=" + filepath.Join(dir, "home"),
 		"COUNT_FILE=" + filepath.Join(dir, "install-count"),
 		"CAPTIVE_INSTALL=" + os.Getenv("CAPTIVE_INSTALL"),
+		"INVOCATION_LOG=" + filepath.Join(dir, "invocations"),
 		"FIXTURE_OS=Linux",
 		"REQUIRED_MINOR=0.27",
 	}
@@ -114,6 +124,94 @@ const fixtureSessionID = "fixture-session-0001"
 
 func sentinelPath(dir string) string {
 	return filepath.Join(dir, "spacedock-install-attempted-"+fixtureSessionID)
+}
+
+func writeGateLauncher(t *testing.T, dir, version, help string) string {
+	t.Helper()
+	path := filepath.Join(dir, "selected", "spacedock")
+	body := `#!/bin/sh
+printf '%s|%s\n' "$0" "$*" >> "$INVOCATION_LOG"
+case "$*" in
+--version)
+	printf '%s\n' 'spacedock ` + version + `'
+	;;
+'gate --help')
+	printf '%s\n' '` + help + `'
+	;;
+'status --boot --identify --json')
+	printf '%s\n' '{"command":"status","boot":true}'
+	;;
+*)
+	printf '%s\n' "unexpected invocation: $*" >&2
+	exit 9
+	;;
+esac
+`
+	writeExe(t, path, body)
+	return path
+}
+
+func invocationLog(t *testing.T, dir string) []string {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join(dir, "invocations"))
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Split(strings.TrimSpace(string(b)), "\n")
+}
+
+func TestGateFlowRejectsStaleSameMinorBeforeBoot(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		os     string
+		remedy string
+	}{
+		{name: "Darwin", os: "Darwin", remedy: "brew upgrade spacedock"},
+		{name: "Linux", os: "Linux", remedy: curlInstallToken},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := gateFixtureDir(t, captiveInstall("0.27.0"))
+			launcher := writeGateLauncher(t, dir, "0.27.0-pre2+dev", "stale gate help")
+			out, code := runGateFlow(t, dir, []string{"SPACEDOCK_BIN=" + launcher, "FIXTURE_OS=" + tc.os})
+			if code != 3 {
+				t.Fatalf("exit = %d, want 3 for stale same-minor launcher:\n%s", code, out)
+			}
+			wantCalls := []string{launcher + "|--version", launcher + "|gate --help"}
+			if got := invocationLog(t, dir); strings.Join(got, "\n") != strings.Join(wantCalls, "\n") {
+				t.Fatalf("invocations = %#v, want %#v", got, wantCalls)
+			}
+			for _, want := range []string{launcher, "spacedock 0.27.0-pre2+dev", withdrawCapability, tc.remedy, "relaunch"} {
+				if !strings.Contains(out, want) {
+					t.Fatalf("stale failure missing %q:\n%s", want, out)
+				}
+			}
+			for _, forbidden := range []string{"go build", "source", "checkout", "repository", "plugin refresh", "SPACEDOCK_BIN repointed"} {
+				if strings.Contains(out, forbidden) {
+					t.Fatalf("stale failure contains forbidden development/repoint advice %q:\n%s", forbidden, out)
+				}
+			}
+		})
+	}
+}
+
+func TestGateFlowCompatibleSameMinorProbesThenBootsOnce(t *testing.T) {
+	dir := gateFixtureDir(t, captiveInstall("0.27.0"))
+	launcher := writeGateLauncher(t, dir, "0.27.0-pre2+dev", "Usage:\n       "+withdrawCapability+" [--workflow-dir DIR]")
+	out, code := runGateFlow(t, dir, []string{"SPACEDOCK_BIN=" + launcher})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 for compatible same-minor launcher:\n%s", code, out)
+	}
+	wantCalls := []string{
+		launcher + "|--version",
+		launcher + "|gate --help",
+		launcher + "|status --boot --identify --json",
+	}
+	if got := invocationLog(t, dir); strings.Join(got, "\n") != strings.Join(wantCalls, "\n") {
+		t.Fatalf("invocations = %#v, want %#v", got, wantCalls)
+	}
 }
 
 // TestGateFlowInstallAndResumeConvergence is AC-2 fixture 1: a captive install

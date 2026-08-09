@@ -10,6 +10,7 @@
 set -u
 
 REQUIRED_MINOR="${REQUIRED_MINOR:-0.27}"
+REQUIRED_CAPABILITY="${REQUIRED_CAPABILITY:-spacedock gate withdraw <entity> --reason TEXT}"
 LINUX_CMD='curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh'
 DARWIN_CMD='brew tap spacedock-dev/homebrew-tap && brew install spacedock'
 key="${CLAUDE_CODE_SESSION_ID:-${CODEX_THREAD_ID:-fixture}}"
@@ -49,8 +50,24 @@ fi
 if [ "$present" = 1 ]; then
 	ver="$(printf '%s\n' "$vout" | sed -n '1s/^spacedock //p')"
 	if [ "$(major_minor "$ver")" = "$REQUIRED_MINOR" ]; then
+		helpout=""
+		if ! helpout="$("$launcher" gate --help 2>/dev/null)" || ! printf '%s\n' "$helpout" | awk -v required="$REQUIRED_CAPABILITY" 'index($0, required) { found=1 } END { exit !found }'; then
+			os="${FIXTURE_OS:-$(uname -s)}"
+			case "$os" in
+			Darwin) REMEDY='brew upgrade spacedock' ;;
+			Linux) REMEDY="$LINUX_CMD" ;;
+			*) REMEDY='install the current Spacedock binary for this OS' ;;
+			esac
+			say "selected launcher: $launcher"
+			say "observed version: spacedock $ver"
+			say "missing capability: $REQUIRED_CAPABILITY"
+			say "upgrade the installed launcher: $REMEDY"
+			say "then relaunch"
+			exit 3
+		fi
 		say "gate passed: spacedock $ver"
-		exit 0
+		"$launcher" status --boot --identify --json
+		exit $?
 	fi
 	# Wrong-version class: unchanged by this task — abort + doctor pointer.
 	say "version mismatch: binary $ver, skills require $REQUIRED_MINOR — run \${SPACEDOCK_BIN:-spacedock} doctor for the per-class remedy"
