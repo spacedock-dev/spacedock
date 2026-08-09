@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5k704rrfk5r75vqv3bwn1yhf:backlog:attempt-1:revision-1",
+  "question": "Should 5K enter ideation to identify and remove avoidable gate-journey work?",
+  "artifacts": [
+    {
+      "id": "artifact:5k704rrfk5r75vqv3bwn1yhf:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c5936a482dd36c27e474b774c29dbbb0af6830fc/cut-gate-guardrail-turn-and-tool-bloat.md",
+      "rev": "sha256:c3c7a0a4e57df3ce841fce3213d617bcd96b20d83037ef60dcb52e3172739efc",
+      "mediaType": "text/markdown",
+      "summary": "Classify the measured 24 calls first, then select the smallest owning change while preserving gate authority."
+    }
+  ]
+}

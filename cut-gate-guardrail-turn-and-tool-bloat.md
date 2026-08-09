@@ -14,6 +14,18 @@ issue:
 pr:
 mod-block:
 id: 5k704rrfk5r75vqv3bwn1yhf
+gates:
+    version: 1
+    records:
+        - id: gate:5k704rrfk5r75vqv3bwn1yhf:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:5k704rrfk5r75vqv3bwn1yhf-backlog-1
+              briefing:
+                id: briefing:5k704rrfk5r75vqv3bwn1yhf:backlog:attempt-1:revision-1
+                digest: sha256:bdd851d207fe8f84300b59cbd34359f1cc613df5fee26b869f323db6e63f7956
+                request-digest: sha256:ef783c09a07b51873e1f7c8d3fef81b226bfa69901afc1a652389886a6d7b2d2
+                room-ref: ./cut-gate-guardrail-turn-and-tool-bloat/review/backlog/briefing-1
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
