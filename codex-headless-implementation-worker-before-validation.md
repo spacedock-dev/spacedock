@@ -1,6 +1,6 @@
 ---
 title: Make headless Sonnet and Codex spawn implementation before validation
-status: backlog
+status: ideation
 source: "PR #583 run 31320596435, Codex job 93262943132 and Sonnet job 93262943118, 2026-08-09"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: The Captain authorized ideation dispatch; the seed names the exact live failure, repair boundary, and XFAIL-first order.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
