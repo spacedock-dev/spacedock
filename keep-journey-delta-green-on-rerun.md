@@ -36,23 +36,86 @@ gates:
                 state: consumed
 ---
 
-A failed-job rerun can reuse successful live jobs from an earlier attempt. The metrics job then finds Codex artifact metadata, but artifact extraction fails.
+A failed-job rerun can reuse successful live jobs from an earlier attempt. The reporting job then reads artifacts from different attempts of one run.
 
-All test jobs pass in this state. However, the optional metrics job keeps the complete workflow red.
+All required test jobs can pass in this state. However, one optional metrics download can keep the complete workflow red.
 
 ## Problem
 
-`journey-delta-comment` treats each current-run artifact as required. GitHub failed the Codex artifact download after five retries in two consecutive rerun attempts.
+Runtime Live E2E run `31288504298` showed the fault. Attempt 2 and attempt 3 selected Codex artifact `9030747663`.
 
-This failure hides the correct test result. It also prevents a clean merge for a change that passed all required test lanes.
+In each attempt, `actions/download-artifact@v5` found the artifact metadata. Then the ZIP download failed after five retries.
+
+The `codex-live` job had passed in attempt 1. The reruns did not run that paid lane again.
+
+The required test result was green. The optional `journey-delta-comment` job made the run red and prevented a clean merge.
+
+## Spike result
+
+The spike used the current run's artifact REST API. The API listed artifacts from successful jobs across earlier attempts.
+
+The spike selected exact artifact IDs and downloaded each ZIP through `gh api`:
+
+- Claude artifact `9031942337` contained 15 metrics JSON files.
+- Codex artifact `9030747663` contained 10 metrics JSON files.
+- `unzip -t` reported no error for either ZIP.
+
+A name-pattern download also completed. However, the run had two Claude artifacts with the same name.
+
+That path can merge two attempts into one directory. Therefore, the implementation must select one exact artifact ID for each producer name.
 
 ## Proposed approach
 
-Make the journey-delta comment best-effort at the artifact boundary. Preserve the comment when both metric artifacts are available.
+Replace the two required artifact actions with one best-effort shell step. Keep this change inside `journey-delta-comment`.
 
-If an artifact is unavailable, emit a clear warning and complete the reporting job successfully. Do not publish a partial or misleading comment.
+The step queries artifacts for `GITHUB_RUN_ID`. It selects the newest nonexpired artifact for each exact producer name.
 
-Ideation must examine whether GitHub can select artifacts from a prior successful attempt. Prefer that recovery when it is reliable and small.
+The selection compares `created_at`. If two times are equal, it compares the artifact IDs.
+
+The producer names are:
+
+- `runtime-live-e2e-claude-live-claude-sonnet-5`
+- `runtime-live-e2e-codex-live`
+
+The step downloads each exact ID into a separate temporary directory. It checks each ZIP and requires at least one journey-metrics JSON file per producer.
+
+If both artifact sets are complete, the step writes `found=true`. The existing locate and comment steps then publish one complete comment.
+
+If one query, download, ZIP check, or metrics check fails, the step deletes the partial metrics input. It writes `found=false` and exits successfully.
+
+The warning names the unavailable artifact. For example:
+
+`::warning::journey metrics artifact runtime-live-e2e-codex-live is unavailable; skipping journey-cost delta comment`
+
+Gate the ledger, locate, and comment steps on `found == 'true'`. Thus, no later step can publish a partial comment.
+
+This recovery serves AC-1, AC-2, AC-3, and AC-5. The live spike proves exact-ID recovery from an earlier successful attempt.
+
+The simplest alternative was `continue-on-error` on each current download action. That option protects AC-1 but loses a recoverable complete comment.
+
+Another alternative was a name-pattern `gh run download`. The spike found duplicate Claude names, so that option cannot identify one attempt.
+
+The existing job graph serves AC-4. The task does not add a producer, a live lane, or a rerun command.
+
+## Documentation change
+
+Add this operator rule to `docs/runtime-live-ci.md`:
+
+> The optional journey-delta job uses the newest metrics artifact for each live producer in the run.
+>
+> If one artifact is unavailable or incomplete, the job warns and skips the comment. The required test result does not change.
+
+No command documentation changes. The `journey-delta` command and the comment layout stay unchanged.
+
+## Expected surface
+
+- `.github/workflows/runtime-live-e2e.yml`: replace two download steps and gate three consumer steps, with at most 65 inserted lines.
+- `internal/release/journey_delta_workflow_test.go`: add workflow exercises and graph checks, with at most 170 inserted lines.
+- `docs/runtime-live-ci.md`: add the operator rule, with at most 8 inserted lines.
+
+The insertion ceiling is 243 lines across three files. A fourth file or more than 243 inserted lines requires a new design review.
+
+The task changes CI runtime behavior and warning text. It does not change command grammar, stored formats, comment layout, or write authority.
 
 ## Out of scope
 
@@ -60,28 +123,53 @@ Ideation must examine whether GitHub can select artifacts from a prior successfu
 - Do not add a live lane.
 - Do not rerun a passed live lane only to produce metrics.
 - Do not change the journey-cost format or comment layout.
+- Do not change the required status policy.
 
 ## Acceptance criteria
 
 **AC-1 (VALUE) - An unavailable metrics artifact cannot make a pull-request workflow red after all required test jobs pass.**
-Verified by: a deterministic workflow exercise makes one artifact unavailable and observes a successful reporting job with a warning. Removing the nonfatal path makes this exercise fail.
+Verified by: execute the real extracted download step with one failed artifact response. The step exits zero, and the comment steps do not run.
 
-**AC-2 - A normal first attempt still posts or updates one journey-delta comment when both artifacts are available.**
-Verified by: the existing comment path receives both fixture artifacts and produces one complete comment. Removing either artifact input makes this exercise fail.
+**AC-2 - Available artifacts from successful producer attempts result in one complete journey-delta comment.**
+Verified by: give the extracted step two valid fixture ZIPs. Both metric sets reach the existing comment command, and exactly one comment call occurs.
 
-**AC-3 - A rerun never publishes a partial journey-delta comment.**
-Verified by: fixtures cover one missing Claude artifact and one missing Codex artifact. Each case emits a warning and produces no comment.
+**AC-3 - A rerun selects the newest artifact for each exact producer name.**
+Verified by: give the API stub two Claude artifacts in reverse order. Only the artifact with the later `created_at` supplies Claude metrics.
 
-**AC-4 - The fix does not add or rerun a live test job.**
-Verified by: the workflow job graph remains offline, one Claude lane, one Codex lane, and the reporting job. Adding another producer makes the graph check fail.
+**AC-4 - A rerun never publishes a partial journey-delta comment.**
+Verified by: fail Claude once and Codex once in separate exercises. Each exercise names the artifact, removes partial input, and makes zero comment calls.
 
-**AC-5 - Operators can distinguish a test failure from an optional metrics failure.**
-Verified by: the missing-artifact exercise exits successfully and emits the artifact name in a GitHub warning. Removing the artifact name makes the exercise fail.
+**AC-5 - The fix does not add or rerun a live test job.**
+Verified by: parse the workflow graph. It has `offline`, one Claude producer, one Codex producer, and the existing reporting consumer.
+
+**AC-6 - Operators can distinguish a test failure from an optional metrics failure.**
+Verified by: the failed-artifact exercise exits successfully and emits one GitHub warning with the exact artifact name.
 
 ## Test plan
 
-Use deterministic fixtures for successful and failed artifact downloads. Exercise the reporting step without a live runtime subscription.
+Add table-driven tests that execute the real extracted workflow script. Use a `gh` stub and small ZIP fixtures.
 
-Run the existing workflow checks, the affected Go package, `go test ./...`, and `go test ./... -race`.
+Cover complete artifacts, duplicate names, a missing artifact, a failed ZIP download, an invalid ZIP, and an empty metrics tree.
 
-Because this task changes CI machinery, validation must run a detached adversarial audit. The audit must make one artifact unavailable and observe the value in AC-1.
+Make the stub record artifact IDs and comment calls. These records prove exact selection and the absence of a partial comment.
+
+Keep the existing locate-path and comment-directory tests. Their failure protects the complete-comment path after the new artifact step.
+
+Parse the workflow job graph. Make the test fail if a new live producer or a rerun command appears.
+
+Run `go test ./internal/release`, `go test ./...`, and `go test ./... -race`. Then run `gofmt -w ./cmd ./internal`.
+
+Validation must run a detached adversarial audit. The audit must fail one artifact response and observe a green job with no comment call.
+
+## Stage Report: ideation
+
+- DONE: Define the smallest rerun-safe artifact policy that preserves test truth and complete metrics comments.
+  Exact-ID recovery publishes only two complete metric sets. An artifact-specific skip keeps the optional job green.
+- DONE: Exercise the riskiest prior-attempt artifact path before selecting recovery or a nonfatal skip.
+  The spike downloaded run `31288504298` artifacts `9031942337` and `9030747663`. Both ZIP checks passed.
+- DONE: Specify expected files, insertion ceiling, semantic changes, acceptance evidence, and detached audit.
+  The task body sets three files, a 243-line ceiling, six tested criteria, and one adversarial audit.
+
+### Summary
+
+The design recovers the newest exact artifact for each producer across rerun attempts. It skips the optional comment with a named warning if recovery cannot produce both complete metric sets.
