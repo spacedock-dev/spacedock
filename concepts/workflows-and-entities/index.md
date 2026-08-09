@@ -2,7 +2,7 @@
 title: "Workflows & entities"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-09 04:10:40"
+last_updated: "2026-08-09 05:44:12"
 ---
 
 # Workflows & entities
@@ -50,7 +50,7 @@ stages:
       - Constraint Authority
 ```
 
-`context-sections` contains exact README heading text. A stage-specific list replaces the default, and `[]` clears it. `dispatch build` validates every selection before spawn; the worker's existing `show-stage-def` read returns the stage definition followed by those sections in declaration order. Selected sections normalize newline boundaries to LF, drop trailing blank lines, use one blank line between sections, and end stdout with one LF. The read uses the then-current valid README; an invalid current selection fails before stage work. Workflows without the field keep existing output unchanged.
+`context-sections` contains exact README heading text. A stage-specific list replaces the default, and `[]` clears it. `dispatch build` validates every selection before spawn and writes an exact `dispatch show-stage-def` command into the dispatch file. The command uses the resolved absolute launcher selected for that build, so a later `SPACEDOCK_BIN` or PATH change cannot redirect stage loading. Its output contains the stage definition followed by the selected sections in declaration order. Selected sections normalize newline boundaries to LF, drop trailing blank lines, use one blank line between sections, and end stdout with one LF. The outer fresh or reuse-advance prompt remains a file pointer plus fixed routing metadata.
 
 ## Each work item is one file
 
