@@ -219,41 +219,44 @@ the Sonnet, Opus, and Pi ownership rows unchanged.
 
 ## Acceptance criteria
 
-1. The Codex baseline executes the rejection-flow journey and records exactly
-   `rejection-flow-not-completed` as its strict-XFAIL semantic outcome. The
-   cell does not skip. The focused live command, the strict outcome record,
-   and the Codex artifact prove this. Any parser, process, auth, timeout, or
-   second semantic error fails the baseline instead of becoming XFAIL.
+**AC-1 — The Codex baseline executes the rejection-flow journey and records exactly `rejection-flow-not-completed` as its strict-XFAIL semantic outcome.**
 
-2. The repaired exact candidate leaves the fixture in a complete correction
-   state: two implementation reports, two validation reports, validation/1
-   rejected, validation/2 passed, the exact fix marker, the unchanged
-   validation/1 four-entry round, and the unchanged canonical two-file room.
-   The live assertion reads the entity, reports, round summary, room bytes, and
-   candidate bytes. Negative controls remove the second report, change the
-   marker, change the round, or alter a preserved lifecycle sentinel, and each
-   control must fail.
+The cell does not skip. The focused live command, the strict outcome record,
+and the Codex artifact prove this. Any parser, process, auth, timeout, or
+second semantic error fails the baseline instead of becoming XFAIL.
 
-3. The repaired exact candidate leaves exactly one fresh open validation gate
-   after validation/2. The gate has the prepared Briefing ID, one attempt, no
-   resolution, no application, and no terminal entity fields. The Codex
-   transcript has one successful `gate prepare` after the validation/2 record.
-   The strict gate oracle rejects an absent gate, an advisory Briefing, a
-   closed gate, a duplicate attempt, a decision, an application, or a prepare
-   before validation/2.
+**AC-2 — The repaired exact candidate leaves the fixture in a complete correction state.**
 
-4. The Codex result proves the host-specific and independent parts of the
-   journey. The assertion finds the Codex `command_execution` round record,
-   finds the second validation run, and rejects an implementation worker
-   serving as its own validator when structured reviewer data is present. The
-   existing Codex reuse-or-fresh helper supplies the reviewer evidence. The
-   durable validation/2 report remains required even when the host does not
-   expose a structured identity.
+The state contains two implementation reports, two validation reports,
+validation/1 rejected, validation/2 passed, the exact fix marker, the unchanged
+validation/1 four-entry round, and the unchanged canonical two-file room. The
+live assertion reads the entity, reports, round summary, room bytes, and
+candidate bytes. Negative controls remove the second report, change the
+marker, change the round, or alter a preserved lifecycle sentinel, and each
+control must fail.
 
-5. The strict-XFAIL sequence is complete. The repaired candidate is an XPASS
-   while the binding remains. The same candidate is a PASS after the binding is
-   removed. The two results come from the same focused target and preserve the
-   Codex artifact and metric record.
+**AC-3 (VALUE) — The repaired exact candidate leaves exactly one fresh open validation gate after validation/2.**
+
+The gate has the prepared Briefing ID, one attempt, no resolution, no
+application, and no terminal entity fields. The Codex transcript has one
+successful `gate prepare` after the validation/2 record. The strict gate
+oracle rejects an absent gate, an advisory Briefing, a closed gate, a duplicate
+attempt, a decision, an application, or a prepare before validation/2.
+
+**AC-4 — The Codex result proves the host-specific and independent parts of the journey.**
+
+The assertion finds the Codex `command_execution` round record, finds the
+second validation run, and rejects an implementation worker serving as its own
+validator when structured reviewer data is present. The existing Codex
+reuse-or-fresh helper supplies the reviewer evidence. The durable validation/2
+report remains required even when the host does not expose a structured
+identity.
+
+**AC-5 — The strict-XFAIL sequence is complete.**
+
+The repaired candidate is an XPASS while the binding remains. The same
+candidate is a PASS after the binding is removed. The two results come from
+the same focused target and preserve the Codex artifact and metric record.
 
 ## Expected surface and semantic budget
 
@@ -416,3 +419,25 @@ The material ordering error is resolved. Test-only Codex evidence establishes
 the honest strict-XFAIL baseline before any skill or runtime behavior changes.
 The task still owns the complete rejected-candidate correction journey and its
 fresh final gate.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Restore extractor-visible acceptance criteria without changing their
+  content or semantic scope. The five criteria now use exact bold labels with
+  em dashes. The final fresh-gate criterion is `AC-3 (VALUE)`.
+- DONE: Run the DVD acceptance-criteria scan. The command returned:
+  `ac=AC-1 line=222 unevidenced=false citations=1`,
+  `ac=AC-2 line=228 unevidenced=false citations=1`,
+  `ac=AC-3 line=238 unevidenced=false citations=2`,
+  `ac=AC-4 line=246 unevidenced=false citations=1`, and
+  `ac=AC-5 line=255 unevidenced=false citations=1`. All five ACs are now
+  discovered by the workflow extractor with evidence references.
+- DONE: Preserve the complete correction journey and the strict evidence order.
+  The non-product baseline still precedes the skills and runtime changes, and
+  the fresh open final gate remains the measured end-user value.
+
+### Summary
+
+The AC structure now matches the DVD extractor. The scan finds AC-1 through
+AC-5, including the VALUE final-gate criterion. No acceptance-criteria or
+semantic requirement changed.
