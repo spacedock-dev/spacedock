@@ -241,3 +241,16 @@ launcher selection.
 Selected one read-only post-version/pre-boot `gate --help` capability probe that
 distinguishes released `v0.27.0-pre2` from current HEAD despite their identical
 minor string, while retaining one launcher resolution and one compatible boot.
+
+## Stage Report: implementation
+
+- DONE: Add one read-only post-version, pre-boot capability probe on the already-selected launcher; fail closed with the selected executable, observed version, missing capability, and install-only OS remedy.
+  Commit `b331baf4f` adds the fixed-string `gate --help` probe and stale failure before boot; the stale fixture fails if any workflow call occurs or required Darwin/Linux evidence disappears.
+- DONE: Extend the existing version-gate fixtures first so stale and compatible same-minor launchers prove exact version/help/boot ordering, zero workflow calls on failure, and one boot on success.
+  `TestGateFlowRejectsStaleSameMinorBeforeBoot` and `TestGateFlowCompatibleSameMinorProbesThenBootsOnce` pass; either test fails if call order, executable identity, failure isolation, or boot cardinality changes.
+- DONE: Keep the approved four-file behavior boundary, update public install guidance, and run focused fixtures, required host live boot evidence, formatting, and both repository test suites.
+  Four files/127 insertions; `gofmt -w ./cmd ./internal`, focused fixtures, `go test ./...`, and `go test ./... -race` pass. Claude live shallow boot passed (51.58s); retained Codex and Pi transcripts show `--version`, `gate --help`, then one boot (Pi used the supported Gemini override after canonical OpenRouter GPT-5.4 was credit-blocked).
+
+### Summary
+
+First Officer startup now rejects stale same-minor launchers before workflow discovery while compatible launchers preserve one resolution and one boot. The contract remains at its 26,895-byte pre-change size, public troubleshooting gives install-only remedies, and commit `b331baf4f` contains the complete four-file implementation.
