@@ -4,7 +4,7 @@ Shared ensign semantics. Keep aligned with `agents/ensign.md` and the runtime ad
 
 ## Assignment
 
-**Launcher command invariant:** Generated fetch commands and any Spacedock helper calls should prefer `${SPACEDOCK_BIN:-spacedock}` so sessions launched by an explicit binary keep using that binary, while unset environments fall back to `spacedock` on `$PATH`.
+**Launcher command invariant:** Run generated workflow-helper commands exactly as written. Each command carries the absolute executable selected when the dispatch was built; do not replace it with a later `SPACEDOCK_BIN` or PATH lookup. An explicitly supplied worktree binary can legitimately be that selected executable.
 
 Read the assignment context provided by the first officer. It defines:
 - the entity
@@ -98,15 +98,29 @@ When done, send a minimal completion signal that points the first officer back t
 
 ## DISPATCH_FILE Bootstrap
 
-The FO dispatches an ensign with a tiny ~175-char dispatch prompt of the shape:
+The FO dispatches a fresh ensign with a tiny pointer prompt. The host-specific
+bootstrap is in the outer prompt, before the assignment pointer:
+
+Claude:
 
     Skill(skill="spacedock:ensign"); then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.
 
-When your initial prompt matches this pattern (the `Skill(...)` invocation followed by `Read /tmp/spacedock-dispatch/...`), your first action MUST be `Read /tmp/spacedock-dispatch/{name}.md` and treat the file's content as your inline assignment. Then proceed with the rest of the operating contract.
+Codex:
+
+    $spacedock:ensign; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.
+
+The Codex `$spacedock:ensign` marker belongs in the outer fresh-worker prompt,
+not inside the dispatch artifact. It loads this shared contract before the
+worker reads the pointer; the artifact supplies the stage-specific assignment.
+When the initial prompt matches either host-specific pattern, the first action
+after the bootstrap MUST be `Read /tmp/spacedock-dispatch/{name}.md` and treat
+the file's content as the inline assignment. Pi keeps its native pointer
+bootstrap and receives the already-bound contract from its runtime adapter.
+Then proceed with the rest of the operating contract.
 
 If the Read fails (missing, unreadable, empty), do NOT proceed with empty context. Send `DISPATCH_FILE_MISSING: {path} - {error}` to the first officer through your runtime adapter's completion-signal channel and stop.
 
-**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment (the fetch-commands bootstrap above applies to it identically). On Read failure, send `DISPATCH_FILE_MISSING: {path} - {error}` through the same completion-signal channel and stop — the same failure shape as the initial bootstrap.
+**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment. A reused Codex worker does not repeat `$spacedock:ensign`; it already holds the shared contract. The fetch-commands bootstrap above applies to the pointer. On Read failure, send `DISPATCH_FILE_MISSING: {path} - {error}` through the same completion-signal channel and stop — the same failure shape as the initial bootstrap.
 
 ## Fetch-on-Demand Bootstrap
 

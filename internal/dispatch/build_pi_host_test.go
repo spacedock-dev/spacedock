@@ -360,14 +360,9 @@ func TestPiStageDispatchSmokeFixtureWorker(t *testing.T) {
 
 func assertRenderedStageDefCommand(t *testing.T, body, workflowDir, stage string) {
 	t.Helper()
-	semantic := "dispatch show-stage-def --workflow-dir " + shlexQuote(workflowDir) + " --stage " + stage
-	for _, want := range []string{
-		"spacedock_launcher() {",
-		"spacedock_launcher " + semantic,
-	} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("dispatch artifact missing rendered stage-definition command %q:\n%s", want, body)
-		}
+	want := shlexQuote(testWorkflowLauncher) + " dispatch show-stage-def --workflow-dir " + shlexQuote(workflowDir) + " --stage " + stage
+	if !strings.Contains(body, want) {
+		t.Fatalf("dispatch artifact missing exact stage-definition command %q:\n%s", want, body)
 	}
 }
 

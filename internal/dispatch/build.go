@@ -123,11 +123,9 @@ func buildError(stderr io.Writer, code int, format string, a ...any) int {
 }
 
 // runBuild reads a dispatch request from stdin JSON or the flag/file input mode
-// and assembles the dispatch envelope on stdout plus the dispatch-file body
-// written to a deterministic path. It always emits the show-stage-def fetch line
-// and appends the show-standing fetch line when the workflow declares at least
-// one standing teammate.
-func runBuild(probe claudeteam.TeamStateProbe, opts buildOptions, stdin io.Reader, stdout, stderr io.Writer) int {
+// and assembles the dispatch envelope on stdout plus the self-contained
+// dispatch-file body written to a deterministic path.
+func runBuild(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, stdin io.Reader, stdout, stderr io.Writer) int {
 	if opts.PrintSchema {
 		return emitBuildSchema(stdout)
 	}
@@ -143,7 +141,7 @@ func runBuild(probe claudeteam.TeamStateProbe, opts buildOptions, stdin io.Reade
 		}
 	}
 
-	return runBuildFields(probe, opts, fields, stdout, stderr)
+	return runBuildFields(probe, workflowLauncher, opts, fields, stdout, stderr)
 }
 
 func loadBuildFields(opts buildOptions, stdin io.Reader, stderr io.Writer) (map[string]json.RawMessage, int) {
@@ -289,7 +287,7 @@ func validBuildHost(host string) bool {
 	return host == "claude" || host == "codex" || host == "pi"
 }
 
-func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
+func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
 	// Rule 1: Required fields present and non-null.
 	for _, field := range buildRequiredFields {
 		v, ok := fields[field]
@@ -590,6 +588,9 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	if stageSubsection == "" {
 		return buildError(stderr, 1, "stage '%s' heading not found in %s", stage, readmePath)
 	}
+	if opts.ValidateOnly == "" && (workflowLauncher == "" || !filepath.IsAbs(workflowLauncher)) {
+		return buildError(stderr, 1, "cannot resolve the running spacedock executable; refusing to write a dispatch artifact")
+	}
 
 	// --- Prompt assembly ---
 	var parts []string
@@ -605,12 +606,14 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		parts = append(parts, fmt.Sprintf("You are working on: %s\n\nStage: %s\n", entityTitle, stage))
 	}
 
-	// 2. Stage definition — replaced by the show-stage-def fetch line. The native
-	// fetch line targets `spacedock dispatch show-stage-def` so the dispatch path
-	// stays Python-free (the one intentional divergence from the oracle).
+	// Stage loading is an exact command, not an ambient launcher policy. Resolve
+	// the launcher once at generation and put its shell-quoted absolute path into
+	// every generated helper invocation. Separate shell calls therefore do not
+	// depend on an export persisting, and an explicitly supplied candidate binary
+	// remains a legitimate launcher under test.
 	fetchCommands := []string{
 		fmt.Sprintf("%s dispatch show-stage-def --workflow-dir %s --stage %s",
-			LauncherCommand(), shlexQuote(workflowDir), shlexQuote(stage)),
+			shlexQuote(workflowLauncher), shlexQuote(workflowDir), shlexQuote(stage)),
 	}
 
 	// 3. Worktree instructions (conditional). Under split root the state-commit
@@ -685,21 +688,17 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		"### Completion checklist\n\n%s\n\n### Summary\n{brief description of what was accomplished}\n",
 		checklistText))
 
-	// 9. Standing-teammate fetch line — appended only when at least one declared
-	// standing teammate exists for this workflow. Bare-mode (empty team_name) and
-	// zero-standing dispatches omit the line, so show-standing never runs where it
-	// would render nothing. The enumeration is runtime-neutral; the native fetch
-	// line targets `spacedock dispatch show-standing` (the same documented
-	// claude-team→spacedock dispatch rewrite as the show-stage-def line).
+	// 9. Standing-teammate loading uses the same already-resolved executable.
+	// Bare, merged/no-team, and empty-standing assignments still omit the command.
 	if len(EnumerateDeclaredStandingTeammates(workflowDir, teamName)) > 0 {
 		fetchCommands = append(fetchCommands,
-			fmt.Sprintf("%s dispatch show-standing --workflow-dir %s", LauncherCommand(), shlexQuote(workflowDir)))
+			fmt.Sprintf("%s dispatch show-standing --workflow-dir %s",
+				shlexQuote(workflowLauncher), shlexQuote(workflowDir)))
 	}
 
-	// Emit the `### Fetch commands` block.
 	fetchLines := []string{"### Fetch commands", ""}
-	for _, cmd := range fetchCommands {
-		fetchLines = append(fetchLines, "    "+cmd)
+	for _, command := range fetchCommands {
+		fetchLines = append(fetchLines, "    "+command)
 	}
 	parts = append(parts, strings.Join(fetchLines, "\n"))
 
@@ -778,6 +777,9 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		return 1
 	}
 
+	// Self-contained artifact; pointer-only transport. Assignment payload stays in
+	// dispatchBody. These renderers carry only the file locator and fixed host or
+	// stage routing metadata; advance deliberately retains its stage label.
 	var prompt string
 	if advance {
 		prompt = dispatchAdvancePointerPrompt(stage, dispatchFilePath)
@@ -936,12 +938,13 @@ func firstActionBlock(host string) string {
 	if host == "codex" {
 		return "## First action\n" +
 			"\n" +
-			"Read this dispatch file directly and treat its content as your operating contract and assignment.\n" +
+			"Read this dispatch file directly and treat its content as your stage-specific assignment.\n" +
 			"\n" +
-			"This file contains the shared ensign discipline entry points (stage-report format, polling, " +
-			"worktree ownership, and completion signal protocol) plus the stage-specific assignment. " +
-			"Do not try to invoke a Claude skill wrapper; Codex dispatch uses this file " +
-			"pointer as the contract surface.\n"
+			"The outer fresh-worker prompt invokes `$spacedock:ensign` before this pointer. The installed " +
+			"skill supplies the shared ensign discipline (stage-report format, polling, worktree " +
+			"ownership, and completion signal protocol); this file supplies the stage-specific " +
+			"assignment. Do not try to invoke a Claude skill wrapper; Codex dispatch uses this file " +
+			"pointer after the outer bootstrap.\n"
 	}
 	if host == "pi" {
 		return "## First action\n" +
@@ -1001,7 +1004,10 @@ func completionSignalBlock(host, entityTitle, stage, entityFileRef string) strin
 }
 
 func dispatchPointerPrompt(host, dispatchFilePath string) string {
-	if host == "codex" || host == "pi" {
+	if host == "codex" {
+		return fmt.Sprintf("$spacedock:ensign; then Read %s and treat its content as your assignment.", dispatchFilePath)
+	}
+	if host == "pi" {
 		return fmt.Sprintf("Read %s and treat its content as your assignment.", dispatchFilePath)
 	}
 	return fmt.Sprintf(

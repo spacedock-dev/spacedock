@@ -125,6 +125,42 @@ func withExecutablePath(t *testing.T, path string, err error) {
 	t.Cleanup(func() { executablePath = orig })
 }
 
+func TestResolvedDispatchLauncherPrefersExplicitSpacedockBin(t *testing.T) {
+	dir := t.TempDir()
+	candidate := filepath.Join(dir, "candidate spacedock")
+	if err := os.WriteFile(candidate, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	withExecutablePath(t, filepath.Join(dir, "missing-current"), nil)
+
+	got, ok := resolvedDispatchLauncher([]string{"SPACEDOCK_BIN=" + candidate})
+	want, err := filepath.EvalSymlinks(candidate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok || got != want {
+		t.Fatalf("resolvedDispatchLauncher() = %q, %t; want explicit candidate %q", got, ok, want)
+	}
+}
+
+func TestResolvedDispatchLauncherFallsBackFromInvalidSpacedockBin(t *testing.T) {
+	dir := t.TempDir()
+	current := filepath.Join(dir, "current-spacedock")
+	if err := os.WriteFile(current, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	withExecutablePath(t, current, nil)
+
+	got, ok := resolvedDispatchLauncher([]string{"SPACEDOCK_BIN=" + filepath.Join(dir, "missing")})
+	want, err := filepath.EvalSymlinks(current)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok || got != want {
+		t.Fatalf("resolvedDispatchLauncher() = %q, %t; want current executable %q", got, ok, want)
+	}
+}
+
 // withVersion stamps the package Version (the binary display semver the gate
 // feeds to the upgrade-hint compare), restoring it after the test. The package
 // default is the `dev` sentinel, which suppresses the hint, so a test that

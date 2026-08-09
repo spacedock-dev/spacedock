@@ -5,7 +5,7 @@
   "schema_version": 2,
   "description": "Thing: implementation",
   "fetch_commands": [
-    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage implementation"
+    "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage implementation"
   ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation-advance.md",
   "prompt": "Advancing to next stage: implementation.\n\nRead /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation-advance.md and treat its content as your next-stage assignment.",
@@ -40,7 +40,7 @@ REJECTED: do better.
 
 ### Fetch commands
 
-    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage implementation
+    /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage implementation
 
 
 ### Completion Signal

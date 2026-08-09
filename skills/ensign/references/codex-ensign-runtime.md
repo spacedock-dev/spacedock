@@ -4,6 +4,10 @@ How the shared ensign core executes on Codex. The shared core owns the ensign di
 
 ## Runtime implementation
 
+- `Fresh dispatch` -> the helper's prompt begins `$spacedock:ensign; then Read ...`. The Codex host loads the installed Spacedock ensign skill before the child reads the dispatch pointer; the pointer artifact then supplies the stage-specific assignment.
+- `Advance/reuse` -> the helper's short `Advancing to next stage: ...` pointer is forwarded to the already-bound worker without repeating `$spacedock:ensign`.
+- `Prompt ownership` -> the First Officer forwards the helper-emitted prompt byte-for-byte; stage, entity, and checklist payload remain in the dispatch artifact.
+
 - `Clarification` -> ask in the Codex worker thread, naming what you understand and what is ambiguous so the FO can route an answer through `«addressable-worker»`.
 - `Completion signal` -> one minimal final message in the Codex worker thread: `Done: {entity title} completed {stage}. Report written to {entity_file_path}.` Plain text, single line; the entity file is the artifact. After sending the completion signal, stop unless the FO routes more work through `«addressable-worker»`.
 - `Captain communication` -> when the stage involves direct captain interaction, communicate via direct Codex conversation text; keep operational signals concise so the FO mailbox notification stays easy to interpret.

@@ -49,9 +49,9 @@ var advanceContractRows = []contractRow{
 		element: "`### Stage definition:` — full README subsection verbatim (via show-stage-def fetch line)",
 		check: func(t *testing.T, prompt, body string, f advanceParityFixture) {
 			t.Helper()
-			want := fmt.Sprintf("dispatch show-stage-def --workflow-dir %s --stage %s", shlexQuote(f.workflowDir), shlexQuote(f.stage))
+			want := fmt.Sprintf("%s dispatch show-stage-def --workflow-dir %s --stage %s", shlexQuote(testWorkflowLauncher), shlexQuote(f.workflowDir), shlexQuote(f.stage))
 			if !strings.Contains(body, want) {
-				t.Errorf("fetch commands missing show-stage-def line %q: body=%q", want, body)
+				t.Errorf("fetch commands missing exact show-stage-def line %q: body=%q", want, body)
 			}
 		},
 	},

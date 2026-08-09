@@ -48,10 +48,9 @@ var (
 	// the dispatch body), so asserting the emit form proves the body wires the
 	// protocol — without grepping the protocol prose itself.
 	skillFirstAction = regexp.MustCompile(`(?m)^    Skill\(skill="spacedock:ensign"\)$`)
-	// fetchStageDef anchors the fetch-on-demand emit line that resolves the stage
-	// definition (the other half of the protocol-loading wiring) through the
-	// executable SPACEDOCK_BIN-or-PATH fallback launcher shim.
-	fetchStageDef = regexp.MustCompile(`(?m)^    spacedock_launcher\(\) \{ .*; \}; spacedock_launcher dispatch show-stage-def --workflow-dir `)
+	// fetchStageDef anchors the generated exact full-path command that loads the
+	// stage definition without re-resolving ambient launcher state.
+	fetchStageDef = regexp.MustCompile(`(?m)^    /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir `)
 )
 
 // cycleFixture is a staged dispatch->ensign->stage environment.
@@ -86,7 +85,7 @@ func stageFixture(t *testing.T) cycleFixture {
 	})
 
 	var stdout, stderr strings.Builder
-	if code := dispatch.Run(claudeteam.Probe, []string{"build", "--workflow-dir", root},
+	if code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root},
 		strings.NewReader(stdin), &stdout, &stderr); code != 0 {
 		t.Fatalf("dispatch build exit=%d stderr=%s", code, stderr.String())
 	}
@@ -179,7 +178,7 @@ func TestEnsignCycleMechanicalOutputs(t *testing.T) {
 		t.Errorf("dispatch body missing anchored Skill first-action emit line\n%s", f.body)
 	}
 	if !fetchStageDef.MatchString(f.body) {
-		t.Errorf("dispatch body missing anchored show-stage-def fetch emit line\n%s", f.body)
+		t.Errorf("dispatch body missing anchored exact show-stage-def fetch line\n%s", f.body)
 	}
 }
 

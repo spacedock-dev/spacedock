@@ -67,7 +67,7 @@ Add support in small layers. Each layer should have its own proof.
 2. **Dispatch host mode**
    - Teach `spacedock dispatch build` to accept `host: "<host>"` when the assignment shape differs by host.
    - If a generic dispatch mode has no faithful native call shape, reject that host/mode combination before artifact creation; do not silently reinterpret it.
-   - Codex fresh dispatch is always named, so `host=codex` rejects `bare_mode`.
+   - Codex fresh dispatch is always named, so `host=codex` rejects `bare_mode`. Its fresh prompt begins `$spacedock:ensign; then Read ...`, which loads the installed Spacedock ensign skill before the child reads the dispatch pointer. Reuse/advance prompts do not repeat this prefix because they target the worker that already loaded the shared contract.
    - Keep entity paths and worktree paths explicit, especially for split-root workflows (`state: .spacedock-state`).
    - Test both positive shape and banned-tool negative cases.
 
