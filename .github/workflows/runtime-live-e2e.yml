@@ -585,18 +585,55 @@ jobs:
         with:
           go-version: "1.22"
 
-      - name: Download this run's Claude journey metrics
-        uses: actions/download-artifact@v5
-        with:
-          pattern: runtime-live-e2e-claude-live-*
-          path: ${{ runner.temp }}/current-run-artifacts
-          merge-multiple: true
+      - name: Recover this run's journey metrics
+        id: recover_current_metrics
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
 
-      - name: Download this run's Codex journey metrics
-        uses: actions/download-artifact@v5
-        with:
-          name: runtime-live-e2e-codex-live
-          path: ${{ runner.temp }}/current-run-artifacts
+          warn_and_skip() {
+            artifact_name="$1"
+            rm -rf "$RUNNER_TEMP/current-run-artifacts" "$RUNNER_TEMP/current-run-metrics"
+            echo "::warning::journey metrics artifact $artifact_name is unavailable; skipping journey-cost delta comment" >&2
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
+          mkdir -p "$RUNNER_TEMP/current-run-artifacts"
+          for artifact_name in \
+            runtime-live-e2e-claude-live-claude-sonnet-5 \
+            runtime-live-e2e-codex-live
+          do
+            if ! artifact_id="$(gh api \
+              "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+              --paginate \
+              --jq ".artifacts[] | select(.name == \"$artifact_name\" and .expired == false) | [.created_at, .id] | @tsv" \
+              | sort -k1,1 -k2,2n | tail -1 | cut -f2)"
+            then
+              warn_and_skip "$artifact_name"
+            fi
+            if [ -z "$artifact_id" ]; then
+              warn_and_skip "$artifact_name"
+            fi
+
+            artifact_zip="$RUNNER_TEMP/current-run-artifact-$artifact_id.zip"
+            artifact_dir="$RUNNER_TEMP/current-run-artifacts/$artifact_id"
+            if ! gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id/zip" > "$artifact_zip"; then
+              warn_and_skip "$artifact_name"
+            fi
+            if ! unzip -tq "$artifact_zip" >/dev/null; then
+              warn_and_skip "$artifact_name"
+            fi
+            mkdir -p "$artifact_dir"
+            if ! unzip -q "$artifact_zip" -d "$artifact_dir"; then
+              warn_and_skip "$artifact_name"
+            fi
+            if ! find "$artifact_dir" -path '*/journey-metrics/*.json' -type f -print -quit | grep -q .; then
+              warn_and_skip "$artifact_name"
+            fi
+          done
+          echo "found=true" >> "$GITHUB_OUTPUT"
 
       # Best-effort: no previously published release (or one with no
       # journey-costs asset) means no baseline to diff against. `|| true` /
@@ -604,6 +641,7 @@ jobs:
       # missing baseline never REDs the PR.
       - name: Download the latest published release's journey-cost ledger
         id: download_previous_ledger
+        if: steps.recover_current_metrics.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -630,14 +668,14 @@ jobs:
       # same class of problem) is layout-agnostic — it locates the metrics
       # files wherever they actually landed.
       - name: Locate this run's journey metrics
-        if: steps.download_previous_ledger.outputs.found == 'true'
+        if: steps.recover_current_metrics.outputs.found == 'true' && steps.download_previous_ledger.outputs.found == 'true'
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/current-run-metrics"
           find "$RUNNER_TEMP/current-run-artifacts" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/current-run-metrics/" \;
 
       - name: Post the journey-cost delta PR comment
-        if: steps.download_previous_ledger.outputs.found == 'true'
+        if: steps.recover_current_metrics.outputs.found == 'true' && steps.download_previous_ledger.outputs.found == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

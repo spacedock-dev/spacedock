@@ -101,6 +101,9 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 
 The deletion removes 17 seconds of tmux setup and avoids a 172.5-second duplicate Pi smoke per run.
 
+The optional journey-delta job uses the newest metrics artifact for each live producer in the run.
+If one artifact is unavailable or incomplete, the job warns and skips the comment. The required test result does not change.
+
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
 - Pull requests run `claude-sonnet-5` at maximum effort and `gpt-5.6-luna` at maximum effort.
