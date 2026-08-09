@@ -41,8 +41,10 @@ func (d piSharedLiveDriver) withStubPATH(dir string) liveDriver {
 	d.env = withSpacedockShimShellEnv(d.t, d.env, dir)
 	return d
 }
-func (d piSharedLiveDriver) emitMetrics(*testing.T, sharedRuntimeScenario, liveResult) {}
-func (d piSharedLiveDriver) gradeShallowBootObservation(*testing.T, liveResult)        {}
+func (d piSharedLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
+	emitPiScenarioMetrics(t, scenario, result, d.modelName)
+}
+func (d piSharedLiveDriver) gradeShallowBootObservation(*testing.T, liveResult) {}
 func (d piSharedLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liveResult)) {
 	return d, noLiveGrade
 }

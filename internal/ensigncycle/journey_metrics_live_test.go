@@ -3,13 +3,34 @@
 package ensigncycle
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
+
+func Example_emitPiScenarioMetrics() {
+	dir, _ := os.MkdirTemp("", "pi-metrics-proof")
+	defer os.RemoveAll(dir)
+	model := "openai/gpt-5.6-luna:max"
+	_ = writePiScenarioMetrics(dir, sharedRuntimeScenario{name: "pi-metrics-proof"}, liveResult{duration: 2 * time.Second}, model)
+	paths, err := filepath.Glob(filepath.Join(dir, "shared-scenarios", "*.json"))
+	if err != nil || len(paths) != 1 {
+		fmt.Printf("files=%d error=%v\n", len(paths), err)
+		return
+	}
+	data, _ := os.ReadFile(paths[0])
+	var record journeymetrics.Record
+	err = json.Unmarshal(data, &record)
+	fmt.Printf("files=%d bytes=%t error=%v scenario=%s runtime=%s model=%s duration=%d\n",
+		len(paths), len(data) > 0, err, record.ScenarioID, record.Runtime, record.Model, record.DurationMS)
+	// Output: files=1 bytes=true error=<nil> scenario=pi-metrics-proof runtime=pi model=openai/gpt-5.6-luna:max duration=2000
+}
 
 func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult, model string) {
 	t.Helper()
@@ -123,4 +144,30 @@ func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, resu
 	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
 		t.Fatalf("emit Codex journey metrics for %s: %v", scenario.name, err)
 	}
+}
+
+func emitPiScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult, model string) {
+	t.Helper()
+	dir := os.Getenv("SPACEDOCK_JOURNEY_METRICS_DIR")
+	if dir == "" {
+		return
+	}
+	if err := writePiScenarioMetrics(dir, scenario, result, model); err != nil {
+		t.Fatalf("emit Pi journey metrics for %s: %v", scenario.name, err)
+	}
+}
+
+func writePiScenarioMetrics(dir string, scenario sharedRuntimeScenario, result liveResult, model string) error {
+	record := journeymetrics.BuildRecord(journeymetrics.JourneySpec{
+		ScenarioID: scenario.name,
+		Source:     "live-harness",
+		Mode:       journeymetrics.ModeLLMLive,
+		Runtime:    "pi",
+		Executor:   "llm",
+		Host:       "pi",
+		Model:      model,
+	}, journeymetrics.BehaviorResult{Passed: true}, journeymetrics.Observation{
+		Duration: result.duration,
+	})
+	return journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record)
 }
