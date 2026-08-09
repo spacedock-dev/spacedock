@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3zzpdw704df1g8pg1x9thzmw:validation:attempt-2:revision-1",
+  "question": "Does the post-NV and post-824 3Z candidate safely restore Sonnet gate-guardrail evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:3zzpdw704df1g8pg1x9thzmw:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/b3969a7149842cfa5975c1fc679c2be377ccaefb/sonnet-gate-guardrail-no-authority/index.md",
+      "rev": "sha256:06383c284eb3cdc72f5543e39fd31bd7534ea258ed8a250198604cd502b17168",
+      "mediaType": "text/markdown",
+      "summary": "Exact PR head 48fd54b2a retains only the intended four-file 3Z delta. Offline, focused, registry, full, race, formatting, Sonnet, and Codex checks pass; the only red job is the QZ-owned artifact-download comment."
+    }
+  ]
+}
