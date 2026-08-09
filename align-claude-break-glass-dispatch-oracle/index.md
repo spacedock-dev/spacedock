@@ -354,3 +354,35 @@ Successor validation at exact head `6c50fc82e` replaces the stale pre-YS proof w
 ### Summary
 
 Reconciled 824 with landed 0Y through the smallest fast-forwardable, non-force topology and pushed exact head `4ecc0440d` on only the named 824 branch. The selected-mode and durable-report oracle remains strict inside the YS inventory, while 0Y's Sonnet-on-PR, Opus-pre-release, and Codex cadence plus its pilot-manifest deletion remain intact; fresh live model execution is externally blocked by expired OAuth.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Verify exact head 4ecc0440d preserves selected bare/team recovery, worker identity, cardinality, and durable report grading.
+  Focused controls accept bare absent/false and the named-background team shape, and reject crossed modes, true/name/team bare fields, zero/multiple workers, explicit non-ensign identity, incomplete/scattered reports, uncommitted results, dirty state, and non-path-scoped commits.
+- DONE: Verify YS live inventory, 0Y pilot-manifest decoupling, and Sonnet/Codex/Opus cadence remain intact.
+  Registry reconciliation proves all 16 common journeys and exact selectors; release guards prove one Sonnet-PR/Opus-pre-release Claude row plus the Codex approval lane, while full/race pass with the retired runners and pilot-manifest gate absent.
+- DONE: Run focused, inventory, full, race, formatting, and available Sonnet/Opus evidence; classify unavailable live evidence precisely.
+  Focused, registry, cadence, `go test ./...`, `go test ./... -race`, gofmt listing, `git diff --check`, and cleanliness checks pass; both fresh model probes fail authentication before any First Officer work.
+
+### Acceptance evidence
+
+- AC-1: The exact-head offline and Git-backed graders require one selected-mode worker, bounded completion, marker, exact report, path-scoped commit, and clean entity; prior Sonnet/Opus proof at `6c50fc82e` exercised both modes, and `4ecc0440d` restores the Sonnet selector after the no-force 0Y merge without changing those graders.
+- AC-2: The adjacent mode matrix accepts omitted/false bare background state and selected team, while rejecting true, bare names/teams, crossed pairs, and wrong cardinality.
+- AC-3: Recovery prose, fixtures, stream oracle, registry annotations, and workflow selectors agree; mutations fail on missing skill load, late helper report, malformed prompt, wrong identity, and retired-runner restoration.
+- AC-4: Complete-result mutations independently reject every missing marker/report component, scattered tokens, uncommitted or dirty results, and non-path-scoped commits; merged transport still requires prompt and member-meta ensign identity.
+
+### External evidence limitation
+
+- Fresh `claude-sonnet-5` and `claude-opus-4-8` runs each attempted both recovery cases with Claude Code 2.1.220, but every case returned `OAuth session expired and could not be refreshed` before First Officer work. These are credential failures and provide no new live candidate evidence.
+
+### Deferred risk
+
+- The existing unsupported-input risk remains: non-boolean `run_in_background` JSON can be treated as false. Supported Claude tool input is boolean; promote if a supported stream emits an untyped value or ingestion begins accepting noncanonical input.
+
+### Recommendation
+
+PASSED. Exact-head deterministic evidence shows no selected-mode, identity, cardinality, durability, YS inventory, 0Y decoupling, or cadence regression; fresh live evidence is unavailable solely at the pre-work credential boundary.
+
+### Summary
+
+Validation at pushed head `4ecc0440d` reproduces the task-owned acceptance evidence and the YS/0Y reconciliation boundaries through focused adversarial, inventory, full, race, and formatting checks. The candidate remains unchanged and clean; local Sonnet and Opus evidence is precisely classified as unavailable before First Officer execution.
