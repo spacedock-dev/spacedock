@@ -2,7 +2,7 @@
 title: Dispatch the current initial stage before its successor
 status: ideation
 source: "Recarved from 9adv48yhye5s2vkhwd7ge52d during test-behavior-completeness shaping, 2026-08-09"
-started:
+started: 2026-08-09T18:34:37Z
 completed:
 verdict:
 score: 0.9
