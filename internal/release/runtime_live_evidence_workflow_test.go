@@ -27,6 +27,8 @@ type liveCadenceWorkflow struct {
 		} `yaml:"workflow_dispatch"`
 	} `yaml:"on"`
 	Jobs map[string]struct {
+		If          string            `yaml:"if"`
+		Env         map[string]string `yaml:"env"`
 		Environment struct {
 			Name string `yaml:"name"`
 		} `yaml:"environment"`
@@ -40,6 +42,9 @@ const (
 	pullRequestCadence = `${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}`
 	claudeCadenceModel = `${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'claude-sonnet-5' || 'claude-opus-4-8' }}`
 	claudeCadenceEnv   = `${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}`
+	claudeCadenceIf    = `${{ github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' || inputs.live_cadence == 'opus-pre-release' }}`
+	codexCadenceIf     = `${{ github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' }}`
+	piCadenceIf        = `${{ github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi' }}`
 )
 
 func TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence(t *testing.T) {
@@ -70,8 +75,8 @@ func assertOneClaudeCadence(workflow string) error {
 		return err
 	}
 	input, ok := parsed.On.WorkflowDispatch.Inputs["live_cadence"]
-	if !ok || input.Default != "sonnet" || fmt.Sprint(input.Options) != fmt.Sprint([]string{"sonnet", "opus-pre-release"}) {
-		return fmt.Errorf("workflow_dispatch live_cadence choice is not the approved two-value surface")
+	if !ok || input.Default != "sonnet" || fmt.Sprint(input.Options) != fmt.Sprint([]string{"sonnet", "opus-pre-release", "pi"}) {
+		return fmt.Errorf("workflow_dispatch live_cadence choice is not the approved three-value surface")
 	}
 	job, ok := parsed.Jobs["claude-live"]
 	if !ok {
@@ -90,11 +95,19 @@ func assertOneClaudeCadence(workflow string) error {
 	if len(rows) != 1 || rows[0] != want {
 		return fmt.Errorf("Claude matrix include = %#v, want one explicit row %#v", rows, want)
 	}
-	if codex, ok := parsed.Jobs["codex-live"]; !ok || codex.Environment.Name != "CI-E2E-CODEX" {
-		return fmt.Errorf("workflow lacks the Codex approval lane")
+	if job.If != claudeCadenceIf {
+		return fmt.Errorf("Claude job if = %q, want exclusive cadence condition %q", job.If, claudeCadenceIf)
 	}
-	if _, ok := parsed.Jobs["pi-live"]; ok {
-		return fmt.Errorf("workflow retains a Pi approval lane")
+	codex, ok := parsed.Jobs["codex-live"]
+	if !ok || codex.Environment.Name != "CI-E2E-CODEX" || codex.If != codexCadenceIf {
+		return fmt.Errorf("Codex lane environment/if = %q/%q, want CI-E2E-CODEX/%q", codex.Environment.Name, codex.If, codexCadenceIf)
+	}
+	pi, ok := parsed.Jobs["pi-live"]
+	if !ok || pi.Environment.Name != "CI-E2E-PI" || pi.If != piCadenceIf {
+		return fmt.Errorf("Pi lane environment/if = %q/%q, want CI-E2E-PI/%q", pi.Environment.Name, pi.If, piCadenceIf)
+	}
+	if pi.Env["OPENAI_API_KEY"] != `${{ secrets.OPENAI_API_KEY }}` || pi.Env["SPACEDOCK_PI_LIVE_CHILD_MODEL"] != "openai/gpt-5.6-luna:max" {
+		return fmt.Errorf("Pi lane key/model = %q/%q, want stored OpenAI key and Luna/max", pi.Env["OPENAI_API_KEY"], pi.Env["SPACEDOCK_PI_LIVE_CHILD_MODEL"])
 	}
 	return nil
 }
@@ -117,6 +130,8 @@ var liveClaims = []liveClaim{
 	{"Run live Claude substrate proofs", "TestLiveBreakGlassShimRecovery", "claude-break-glass-recovery"},
 	{"Verify Codex resolver against installed plugin", "TestCodexResolveManifestAgainstInstalledHost", "codex-current-checkout-manifest-resolution"},
 	{"Run live Codex shared scenarios", "TestLiveCommon", "codex-common-journeys"},
+	{"Run live Pi common journeys", "TestLiveCommon", "pi-common-journeys"},
+	{"Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke", "pi-front-door-substrate"},
 }
 
 var offlineControls = []string{
@@ -145,8 +160,14 @@ func TestRuntimeLiveWorkflowNamedEvidenceMutationControls(t *testing.T) {
 		"removed claim selector": func(s string) string {
 			return strings.Replace(s, "TestLiveBreakGlassShimRecovery", "TestLiveMergedTeamModeDispatch", 1)
 		},
-		"paid Pi job": func(s string) string {
-			return s + "\n  pi-live:\n    environment:\n      name: CI-E2E-PI\n"
+		"Pi cadence loses exclusivity": func(s string) string {
+			return strings.Replace(s, piCadenceIf, `${{ github.event_name == 'workflow_dispatch' }}`, 1)
+		},
+		"Opus cadence starts Codex": func(s string) string {
+			return strings.Replace(s, codexCadenceIf, `${{ github.event_name == 'pull_request' || inputs.live_cadence != 'pi' }}`, 1)
+		},
+		"Pi cadence starts Claude": func(s string) string {
+			return strings.Replace(s, claudeCadenceIf, `${{ github.event_name == 'pull_request' || inputs.live_cadence != 'none' }}`, 1)
 		},
 		"legacy PTY flag": func(s string) string {
 			return strings.Replace(s, "DISABLE_AUTOUPDATER: \"1\"", "DISABLE_AUTOUPDATER: \"1\"\n      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: \"1\"", 1)
@@ -159,7 +180,7 @@ func TestRuntimeLiveWorkflowNamedEvidenceMutationControls(t *testing.T) {
 	for name, mutate := range mutations {
 		t.Run(name, func(t *testing.T) {
 			adversarial := mutate(live)
-			if assertNamedLiveEvidence(adversarial) == nil && assertOfflineControls(adversarial) == nil {
+			if assertOneClaudeCadence(adversarial) == nil && assertNamedLiveEvidence(adversarial) == nil && assertOfflineControls(adversarial) == nil {
 				t.Fatal("mutation escaped the workflow guards")
 			}
 		})
@@ -191,7 +212,7 @@ func assertNamedLiveEvidence(workflow string) error {
 	if len(expected) != 0 {
 		return fmt.Errorf("workflow lacks owned selector steps %v", expected)
 	}
-	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "TestLivePiFrontDoorSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "journey-metrics/pi", "inputs.effort", "CI-E2E-PI"} {
+	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "inputs.effort"} {
 		if activeYAMLText(workflow, dead) {
 			return fmt.Errorf("workflow retains dead surface %q", dead)
 		}

@@ -11,8 +11,8 @@
 # and runs unconditionally on every PR. Only live jobs declare an `environment:`
 # (a required-reviewer approval gate, reviewer = clkao) and read only the
 # host-specific secret they need: ANTHROPIC_API_KEY for Claude and
-# OPENAI_API_KEY for Codex. Pull requests queue Sonnet 5 and Codex Luna. A
-# manual pre-release dispatch replaces Sonnet with Opus and waits for approval.
+# OPENAI_API_KEY for Codex or Pi. Pull requests queue Sonnet 5 and Codex Luna.
+# Manual Opus and Pi cadences run only their selected runtime.
 
 name: Runtime Live E2E
 
@@ -20,13 +20,14 @@ on:
   workflow_dispatch:
     inputs:
       live_cadence:
-        description: "Select the routine Sonnet lane or the Opus pre-release lane."
+        description: "Select routine Sonnet, Opus pre-release, or optional Pi evidence."
         required: true
         type: choice
         default: sonnet
         options:
           - sonnet
           - opus-pre-release
+          - pi
       claude_version:
         description: "Pin Claude Code to a specific version (e.g. 2.1.107, stable, latest). Empty = installer default."
         required: false
@@ -79,6 +80,7 @@ jobs:
   # Pull requests normalize to one Sonnet 5 leg. Manual dispatches choose the
   # routine Sonnet cadence or the separately approved Opus pre-release cadence.
   claude-live:
+    if: ${{ github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' || inputs.live_cadence == 'opus-pre-release' }}
     needs: offline
     # The offline gate runs first without secrets. The selected live leg then
     # waits for its CI-E2E or CI-E2E-OPUS approval.
@@ -307,6 +309,7 @@ jobs:
           if-no-files-found: warn
 
   codex-live:
+    if: ${{ github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' }}
     needs: offline
     runs-on: ubuntu-latest
     environment:
@@ -556,6 +559,224 @@ jobs:
             ./spacedock
             ./codex-shared-scenarios-detail.jsonl
             live-artifacts/codex/**
+            live-artifacts/journey-metrics/**
+          if-no-files-found: warn
+
+  pi-live:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi' }}
+    needs: offline
+    runs-on: ubuntu-latest
+    environment:
+      name: CI-E2E-PI
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SPACEDOCK_PI_LIVE_REQUIRED: "1"
+      SPACEDOCK_PI_LIVE_CHILD_MODEL: openai/gpt-5.6-luna:max
+      SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
+      SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi
+      PI_OFFLINE: "1"
+    steps:
+      - name: Check required secret
+        run: |
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "OPENAI_API_KEY is required for pi-live after CI-E2E-PI approval." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.22"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install Pi CLI and substrates
+        run: |
+          set -euo pipefail
+
+          npm --version
+          node --version
+
+          # Compatibility pins: pi-coding-agent 0.80.x requires Node >=22.19 and
+          # provides @earendil-works/pi-ai/compat, which pi-subagents 0.35.x loads.
+          # Keep these exact pins together; do not let npm's engine-aware resolver
+          # fall back to legacy-node20 pi-coding-agent while pi-subagents floats new.
+          PI_CODING_AGENT_VERSION="0.80.10"
+          PI_CODING_AGENT_INTEGRITY="sha512-aL4apbupCHiVLSXASXvRzH4Q2vmtfrDa+0s909CJuVu/GgGylbDzr7oyF1mPmip5E+VxYYxKWmph4hV04wUcQg=="
+          PI_SUBAGENTS_VERSION="0.35.1"
+          PI_SUBAGENTS_INTEGRITY="sha512-nIH6liO541FZ1RoeEu58Ligd59tiNw0/ODPgHh7uvx9Dk4UpWH08F84/l1+hXCzUgC85OCmyVtngWkZjcK94Cg=="
+          PI_INTERCOM_VERSION="0.6.0"
+          PI_INTERCOM_INTEGRITY="sha512-OFPh/DXfPhUUSDLTRJiFPEvw00fOA/spjsxUcXiuCHvb2ZkRL02G8Q91mTd+3d42A9AK8BSmbD0+8imFPuHGoQ=="
+
+          pack_dir="$RUNNER_TEMP/pi-live-npm-packs"
+          mkdir -p "$pack_dir"
+          verified_pack() {
+            local spec="$1"
+            local expected_integrity="$2"
+            local pack_json actual_integrity filename
+            pack_json="$(npm pack "$spec" --pack-destination "$pack_dir" --ignore-scripts --json)"
+            actual_integrity="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.integrity)")"
+            filename="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.filename)")"
+            if [ "$actual_integrity" != "$expected_integrity" ]; then
+              echo "integrity mismatch for $spec: expected $expected_integrity got $actual_integrity" >&2
+              exit 1
+            fi
+            printf '%s/%s\n' "$pack_dir" "$filename"
+          }
+
+          pi_coding_agent_tgz="$(verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY")"
+          pi_subagents_tgz="$(verified_pack "pi-subagents@$PI_SUBAGENTS_VERSION" "$PI_SUBAGENTS_INTEGRITY")"
+          pi_intercom_tgz="$(verified_pack "pi-intercom@$PI_INTERCOM_VERSION" "$PI_INTERCOM_INTEGRITY")"
+
+          npm install -g "$pi_coding_agent_tgz" --ignore-scripts --no-audit --no-fund --omit=dev
+          command -v pi
+          test -x "$(command -v pi)"
+          pi --version
+          global_npm_root="$(npm root -g)"
+          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (p.version !== '$PI_CODING_AGENT_VERSION') throw new Error('unexpected Pi version '+p.version); if (!p.bin || p.bin.pi !== 'dist/cli.js') throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
+
+          pi_npm_root="$HOME/.pi/agent/npm"
+          mkdir -p "$pi_npm_root"
+          npm install --prefix "$pi_npm_root" \
+            "$pi_subagents_tgz" \
+            "$pi_intercom_tgz" \
+            --ignore-scripts --no-audit --no-fund --omit=dev
+          node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); if (p.version !== '$PI_SUBAGENTS_VERSION') throw new Error('unexpected pi-subagents version '+p.version); console.log('verified '+p.name+'@'+p.version)"
+          node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); if (p.version !== '$PI_INTERCOM_VERSION') throw new Error('unexpected pi-intercom version '+p.version); console.log('verified '+p.name+'@'+p.version)"
+          test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"
+          test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
+          test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"
+          test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
+          echo "PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents" >> "$GITHUB_ENV"
+          echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"
+
+      - name: Guard Pi substrate compatibility
+        run: |
+          set -euo pipefail
+
+          global_npm_root="$(npm root -g)"
+          pi_npm_root="$HOME/.pi/agent/npm"
+          GLOBAL_NPM_ROOT="$global_npm_root" \
+          PI_AGENT_ROOT="$global_npm_root/@earendil-works/pi-coding-agent" \
+          PI_SUBAGENTS_ROOT="$pi_npm_root/node_modules/pi-subagents" \
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const { pathToFileURL } = require('url');
+
+          function readPackage(root) {
+            return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+          }
+          function fail(message) {
+            console.error(`Pi substrate compatibility guard failed: ${message}`);
+            process.exit(1);
+          }
+
+          const nodeVersion = process.versions.node.split('.').map(Number);
+          if (nodeVersion[0] < 22 || (nodeVersion[0] === 22 && nodeVersion[1] < 19)) {
+            fail(`Node ${process.versions.node} does not satisfy pi-coding-agent's >=22.19.0 engine requirement`);
+          }
+
+          const agentRoot = process.env.PI_AGENT_ROOT;
+          const subagentsRoot = process.env.PI_SUBAGENTS_ROOT;
+          const agentPackage = readPackage(agentRoot);
+          const subagentsPackage = readPackage(subagentsRoot);
+          if (agentPackage.version !== '0.80.10') {
+            fail(`expected @earendil-works/pi-coding-agent 0.80.10, got ${agentPackage.version}`);
+          }
+          if (subagentsPackage.version !== '0.35.1') {
+            fail(`expected pi-subagents 0.35.1, got ${subagentsPackage.version}`);
+          }
+
+          // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
+          // to the global root); check the nested copy pi actually loads first, then the
+          // top-level global root. The /compat export is ESM-only (import condition), so
+          // probe it with a dynamic import, never require.resolve.
+          const piAICandidates = [
+            path.join(agentRoot, 'node_modules', '@earendil-works', 'pi-ai'),
+            path.join(process.env.GLOBAL_NPM_ROOT, '@earendil-works/pi-ai'),
+          ];
+          const piAIRoot = piAICandidates.find((candidate) => fs.existsSync(path.join(candidate, 'package.json')));
+          if (!piAIRoot) {
+            fail(`cannot locate @earendil-works/pi-ai under pi-coding-agent ${agentPackage.version} (checked ${piAICandidates.join(', ')})`);
+          }
+          const piAIPackage = readPackage(piAIRoot);
+          const compatExport = piAIPackage.exports && piAIPackage.exports['./compat'] && piAIPackage.exports['./compat'].import;
+          if (!compatExport) {
+            fail(`pi-subagents ${subagentsPackage.version} requires @earendil-works/pi-ai/compat, but @earendil-works/pi-ai ${piAIPackage.version} from pi-coding-agent ${agentPackage.version} does not declare that export`);
+          }
+          const compatPath = path.join(piAIRoot, compatExport);
+          if (!fs.existsSync(compatPath)) {
+            fail(`@earendil-works/pi-ai/compat resolves to missing file ${compatPath}`);
+          }
+          import(pathToFileURL(compatPath).href).then(() => {
+            console.log(`verified pi-subagents ${subagentsPackage.version} is paired with @earendil-works/pi-ai ${piAIPackage.version}: ${compatPath}`);
+          }).catch((error) => {
+            fail(`@earendil-works/pi-ai/compat exists but failed to load: ${error.message}`);
+          });
+          NODE
+
+      - name: Build spacedock binary
+        run: |
+          go build -o ./spacedock ./cmd/spacedock
+          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
+          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "$(pwd)" >> "$GITHUB_PATH"
+
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global init.defaultBranch main
+
+      - name: Verify Pi current-checkout setup
+        run: |
+          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
+          spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE" | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/pi-doctor.txt"
+          test -f "$GITHUB_WORKSPACE/skills/first-officer/references/pi-first-officer-runtime.md"
+          test -f "$GITHUB_WORKSPACE/skills/ensign/references/pi-ensign-runtime.md"
+          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/extension/index.ts"
+          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/skills/pi-subagents/SKILL.md"
+          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/intercom/intercom-bridge.ts"
+          test -f "$PI_INTERCOM_PACKAGE_ROOT/skills/pi-intercom/SKILL.md"
+
+      - name: Show tool versions
+        run: |
+          pi --version
+          go version
+          echo "### Pi live tool versions" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`pi --version\`: \`$(pi --version)\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Model: \`openai/gpt-5.6-luna\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Thinking: \`max\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run live Pi common journeys
+        run: |
+          set -o pipefail
+          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle
+
+      - name: Run live Pi front-door smoke
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
+
+      - name: Upload live artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: runtime-live-e2e-pi-live
+          path: |
+            ./spacedock
+            ./pi-coverage-detail.jsonl
+            ./pi-front-door-smoke-detail.jsonl
+            live-artifacts/pi/**
             live-artifacts/journey-metrics/**
           if-no-files-found: warn
 
