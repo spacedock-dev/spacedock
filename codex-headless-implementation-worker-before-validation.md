@@ -46,6 +46,17 @@ gates:
                 digest: sha256:2aba5b6df9421dd67cb8935d68bbbeaa3143e6833b91e7cbe1e9cfe2152fc04e
                 request-digest: sha256:28e6d0584bc432e39011dab29a42972c17f0d05b21b3ff8ba78c7e8fbd844c3b
                 room-ref: ./codex-headless-implementation-worker-before-validation/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:98aa776adg66gn823a8gamdq:ideation:1
+                briefing: briefing:98aa776adg66gn823a8gamdq:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T21:33:10.060763Z"
+                decision: approve
+                reason: Captain approved the real worker-before-validation direction.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
