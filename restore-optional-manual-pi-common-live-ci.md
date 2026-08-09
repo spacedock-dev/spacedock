@@ -80,6 +80,17 @@ gates:
                 digest: sha256:a4e0d87d65c4177acb055ce97e7e9455da2b9447b93913e84cb1ea34631af5ed
                 request-digest: sha256:dd0c93da792868c7556b720df2015c9d77baceef2cc7cb786de5aa326a3b6525
                 room-ref: ./restore-optional-manual-pi-common-live-ci/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0aqnm6v8ajns6cpsknxn9wf2:validation:2
+                briefing: briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T23:49:20.318112Z"
+                decision: approve
+                reason: 'Approved under sprint conn: candidate 7f5f79aad passed local/offline validation, exact Pi retained-metrics and exclusivity evidence, and exact Opus exclusivity evidence. AC-2 remains an explicit merge-boundary blocker until the normal PR run passes Sonnet and Codex and skips Pi with zero steps.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
