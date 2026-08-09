@@ -2,7 +2,7 @@
 title: Reject a stale same-minor launcher before First Officer work
 status: ideation
 source: "Weekly friction audit and Captain direction, 2026-08-09: an installed 0.27 binary passed the minor-version gate but lacked the merged approval surface. Detect the missing command capability before workflow effects."
-started:
+started: 2026-08-09T14:51:35Z
 completed:
 verdict:
 score: 0.85
