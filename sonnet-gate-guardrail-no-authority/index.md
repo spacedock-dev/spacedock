@@ -90,7 +90,7 @@ gates:
                 target-stage: done
                 state: pending
 sprint: test-behavior-completeness
-mod-block:
+mod-block: merge:pr-merge
 pr:
 ---
 
