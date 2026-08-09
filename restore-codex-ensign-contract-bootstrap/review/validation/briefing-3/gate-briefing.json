@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-3:revision-1",
+  "question": "Should nv validation be approved and routed to terminal merge?",
+  "artifacts": [
+    {
+      "id": "artifact:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/655340e14c7f394307a3ca344b333f637068375f/restore-codex-ensign-contract-bootstrap/review/validation/fo-gate-review-cycle3.md",
+      "rev": "sha256:82993dcda1ad415c162d197218d70ddaa71933eec5dbe20dc54432b13078825b",
+      "mediaType": "text/markdown",
+      "summary": "Exact-head Codex, Claude, offline, merged-tree full/race checks, and clean kd integration pass; approve unchanged nv. The non-required journey-delta-comment job failed only on Codex artifact download after five retries; do not rerun."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/655340e14c7f394307a3ca344b333f637068375f/restore-codex-ensign-contract-bootstrap.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d3ada26e6be2d51dc4be67acb3cef7417c24ad618559c6666511a5e7b85932dd"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/9021cbf374bb1740d1b2e45155041e1f809372c4/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fb091afe289766f9cb9698f22aea2f9703b6afe6904f6f4eee4f9c634b2c253c"
+    }
+  ]
+}

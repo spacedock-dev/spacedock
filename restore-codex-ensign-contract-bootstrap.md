@@ -90,6 +90,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-09T04:39:48.123714Z"
                 reason: Candidate must be reconciled onto confirmed latest origin/main before CI; validation attempt 2 briefing and evidence are stale.
+            - id: gate-attempt:nvz2ym82ydfn07jp04yfxg9r-validation-3
+              briefing:
+                id: briefing:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-3:revision-1
+                digest: sha256:4656d348c940a99ad0a40023965a70e73a0b141d44ad72f0baaf831efd8efe28
+                request-digest: sha256:f55c0f5fbc75e3c6b2592799236fb87f7db8d32ef31b308f73c0e2d89422b6d4
+                room-ref: ./restore-codex-ensign-contract-bootstrap/review/validation/briefing-3
 ---
 
 ## Outcome
