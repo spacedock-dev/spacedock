@@ -63,6 +63,17 @@ gates:
                 digest: sha256:29bf02a0e2093c1aba011a80b234ad238e3e968137cf5e8edd3199581708dfc8
                 request-digest: sha256:d881013b790978df4670360fed0074c52d32b600effd222e99b3c057f3051e4c
                 room-ref: ./keep-journey-delta-green-on-rerun/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qz0ap96nt5k93tgbsphq9ahy:validation:1
+                briefing: briefing:qz0ap96nt5k93tgbsphq9ahy:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T05:38:08.432674Z"
+                decision: approve
+                reason: Independent validation passed all six ACs, full and race suites, and the detached exact-script audit; the captain-approved lean scope has no material finding.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 A failed-job rerun can reuse successful live jobs from an earlier attempt. The reporting job then reads artifacts from different attempts of one run.
