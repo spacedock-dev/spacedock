@@ -9,7 +9,7 @@ score: 0.75
 sprint:
 sprint-readiness: ready
 group: live-ci-performance
-worktree:
+worktree: .worktrees/spacedock-ensign-run-common-live-journeys-two-at-a-time
 issue:
 pr:
 mod-block:
