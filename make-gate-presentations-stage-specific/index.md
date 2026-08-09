@@ -213,3 +213,28 @@ Validation recommends PASSED: all five acceptance criteria have executable or re
 ### Summary
 
 This cycle supersedes the prior report's AC-5-pass and PASSED statements. Validation recommends REJECTED for a material evidence defect at the AC-5 visual-review observation boundary; AC-1 through AC-4 pass, and no candidate product defect or candidate mutation is claimed.
+
+## Review-finding disposition
+
+### AC-5 unavailable visual observation
+
+- Exact finding: AC-5 requires visual review of the two rendered documentation pages, but both the validator and root First Officer session observed zero available browser backends.
+- Released user and normal workflow: the supported documentation validation path requires the declared visual review before this task can ship.
+- Observable harm: validation cannot prove that the changed stage-specific and empty-row presentation renders correctly, so release evidence is incomplete even though no product defect is established.
+- Authority: value-ac[AC-5]: strict docs build and visual review must establish correct rendered documentation presentation.
+- Trigger evidence: both browser-runtime probes returned an empty browser list; strict build and source inspection are not visual evidence.
+- Classification: Material evidence defect; ownership is outside KRB's approved three-file candidate surface.
+- First Officer authorization: Needs decision; disposition route for decision. Candidate mutation and all test, browser, and live reruns remain forbidden pending Captain review.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Preserve the browser observation finding with all four workflow evidence fields and distinguish the unavailable observation boundary from a candidate product defect.
+  The disposition above records released workflow, observable harm, `value-ac[AC-5]`, and the two empty-browser-list probes; it classifies an unavailable evidence boundary, not failed rendered behavior.
+- DONE: Record the First Officer authorization as Needs decision with disposition route for decision; keep candidate commit a236c0074 and its bytes unchanged.
+  The authorized hold is recorded verbatim, and candidate commit `a236c0074` / tree `6f62b9c1` remain unchanged with no candidate write or rerun.
+- DONE: Append a replacement validation report that carries AC-1 through AC-4 evidence, names AC-5 as unmet, and performs no test, browser, or live rerun.
+  Retained evidence remains: AC-1/AC-2 direct grader 3/3 with zero fabricated rows and numeric totals; AC-3 one snapshot/recommendation/decision plus serialized authority; AC-4 no F6C cleanup, W5 mechanism, XX validation, or command/schema/recorder/runtime change; AC-5 is unmet.
+
+### Summary
+
+Validation recommends REJECTED and routes the Material AC-5 evidence defect to the Captain as Needs decision. AC-1 through AC-4 retain their prior evidence, while no product defect, candidate mutation, or new execution is asserted.
