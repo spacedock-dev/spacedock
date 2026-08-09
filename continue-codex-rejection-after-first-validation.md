@@ -56,6 +56,17 @@ gates:
                 digest: sha256:d42af88b082ed9618b19409f52f7ae84861fdc41d901ab7d1e4bb5a2a4b2dfb8
                 request-digest: sha256:cff06998837ee1db46e617fb191d8b13df6a0b01c2fa892e8fcd1aed997e27b2
                 room-ref: ./continue-codex-rejection-after-first-validation/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dvddbpsf4tdt3yjw1yjyp14k:ideation:2
+                briefing: briefing:dvddbpsf4tdt3yjw1yjyp14k:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-09T21:33:20.653918Z"
+                decision: approve
+                reason: Captain approved the complete Codex correction journey and fresh final gate.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
