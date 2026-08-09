@@ -84,11 +84,12 @@ func TestUnsetNestedSessionArgs(t *testing.T) {
 	}
 }
 
-func assertRecordedGateHoldLog(log string) error {
+func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error {
 	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
 	prepare := strings.Index(log, prepareToken)
 	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
 	head := strings.LastIndex(log, "state-head\t")
+	dispatches := strings.Split(log[:max(prepare, 0)], "exit=0\tdispatch build ")
 	const boundary = "gate hold crossed its committed no-authority boundary: "
 	switch {
 	case prepare < 0:
@@ -105,16 +106,39 @@ func assertRecordedGateHoldLog(log string) error {
 		return errGraded(boundary + "the gate was consumed after prepare")
 	case strings.Contains(log[prepare:], "dispatch build "):
 		return errGraded(boundary + "a successor was dispatched after prepare")
+	case strings.Contains(log[prepare:], "gate withdraw "):
+		return errGraded(boundary + "the gate was withdrawn after prepare")
+	case successfulStatusSet(log[prepare:]):
+		return errGraded(boundary + "status changed after prepare")
+	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 2 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
+		return errGraded(boundary + "implementation was not dispatched before validation")
 	}
 	return nil
 }
 
+func successfulStatusSet(log string, allowed ...string) (found bool) {
+	for _, line := range strings.Split(log, "\n") {
+		if strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ") && (len(allowed) == 0 || found || !strings.HasSuffix(line, " "+allowed[0])) {
+			return true
+		}
+		found = found || strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ")
+	}
+	return len(allowed) > 0 && !found
+}
+
 func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
-	const prepared = "exit=1\tgate prepare recorded-gate-task validation\n" +
+	const prepared = "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=implementation started\n" +
+		"exit=0\tstate commit recorded-gate-task\n" +
+		"state-head\timplementation\n" +
+		"exit=0\tdispatch build --stage implementation\n" +
+		"exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=validation started\n" +
+		"exit=0\tstate commit recorded-gate-task\n" +
+		"state-head\tvalidation\n" +
+		"exit=1\tgate prepare recorded-gate-task validation\n" +
 		"exit=0\tgate prepare recorded-gate-task validation\n" +
 		"exit=0\tstate commit recorded-gate-task\n" +
 		"state-head\tabc123\n"
-	if err := assertRecordedGateHoldLog(prepared); err != nil {
+	if err := assertRecordedGateHoldLog(prepared, true); err != nil {
 		t.Fatalf("prepare-first hold log rejected: %v", err)
 	}
 	for name, tc := range map[string]struct {
@@ -122,9 +146,11 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		want     string
 	}{
 		"retired bind":      {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1), "no successful gate prepare recorded"},
-		"missing commit":    {strings.Replace(prepared, "exit=0\tstate commit recorded-gate-task\n", "", 1), "state commit missing or before the successful gate prepare"},
+		"missing commit":    {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\n", 1), "state commit missing or before the successful gate prepare"},
 		"decision":          {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
 		"consume":           {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
+		"withdraw":          {prepared + "exit=0\tgate withdraw recorded-gate-task\n", "the gate was withdrawn after prepare"},
+		"status repair":     {prepared + "exit=0\tstatus --set recorded-gate-task status=validation\n", "status changed after prepare"},
 		"successor build":   {prepared + "exit=0\tdispatch build successor\n", "a successor was dispatched after prepare"},
 		"duplicate prepare": {prepared + "exit=0\tgate prepare recorded-gate-task validation\n", "more than one successful gate prepare recorded"},
 	} {

@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,10 +38,30 @@ func writeGateWorkflow(t *testing.T, root string) recordedGateFixture {
 func writePreGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	t.Helper()
 	fixture := writePreparedRecordedGateFixtureAt(t, root)
-	writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(recordedGateReadme(), "### validation", "### implementation\n\nAppend an implementation stage report, then return completion.\n\n### validation", 1))
-	writeFile(t, fixture.entity, strings.Replace(recordedGateEntity(), "status: validation", "status: implementation", 1))
-	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "start before gate")
+	writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(strings.Replace(recordedGateReadme(), "    - name: implementation\n      initial: true\n", "    - name: queued\n      initial: true\n    - name: implementation\n", 1), "### validation", "### implementation\n\nAppend exactly one `## Stage Report: implementation`, then return completion.\n\n### validation", 1))
+	writeFile(t, fixture.entity, strings.Replace(strings.Split(recordedGateEntity(), "\n## Stage Report: validation\n")[0]+"\n", "status: validation", "status: queued", 1))
+	writeFile(t, fixture.references[0], "# Entity snapshot\n\nThe retained package is ready for implementation.\n")
+	git(t, fixture.stateRoot, "add", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md")
+	git(t, fixture.stateRoot, "commit", "-q", "-m", "queue coherent implementation", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md")
 	return fixture
+}
+
+func TestPreGateWorkflowIsStageCoherent(t *testing.T) {
+	fixture := writePreGateWorkflow(t, t.TempDir())
+	if body := readFile(t, fixture.entity); strings.Contains(body, "\ngates:") || strings.Contains(body, "## Stage Report: implementation") || strings.Contains(body, "## Stage Report: validation") || strings.Contains(readFile(t, fixture.references[0]), "Stage Report is complete") {
+		t.Fatal("queued entity retained selected gate or completed stage report")
+	}
+	result := mustRecordedGate(t, buildRecordedGateBinary(t), fixture.root, "status", "--workflow-dir", fixture.root, "--boot", "--identify", "--json")
+	var boot struct {
+		Dispatchable []struct{ Current, Next string } `json:"dispatchable"`
+		Ready        json.RawMessage                  `json:"ready_gates"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &boot); err != nil {
+		t.Fatalf("parse queued implementation boot: %v\n%s", err, result.stdout)
+	}
+	if len(boot.Dispatchable) != 1 || boot.Dispatchable[0].Current != "queued" || boot.Dispatchable[0].Next != "implementation" || string(boot.Ready) != "[]" {
+		t.Fatalf("queued implementation boot dispatchable=%+v ready_gates=%s", boot.Dispatchable, boot.Ready)
+	}
 }
 func gateReadme() string { return recordedGateReadme() }
 func gateEntity() string { return recordedGateEntity() }
