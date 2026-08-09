@@ -1,6 +1,6 @@
 ---
 title: Restore live evidence whose original repair owners are complete
-status: backlog
+status: ideation
 source: "Live-test-truth close reconciliation, 2026-08-09"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: The Captain authorized ideation dispatch; the task is a late evidence-only capstone with exact target proof.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Three live TODO groups still name completed and archived repair tasks. The code
