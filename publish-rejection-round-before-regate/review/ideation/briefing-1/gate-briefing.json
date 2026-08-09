@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zhcb4bcz1qgcn7ajx2ctxpxk:ideation:attempt-1:revision-1",
+  "question": "Does this design publish the complete rejected round before correction?",
+  "artifacts": [
+    {
+      "id": "artifact:zhcb4bcz1qgcn7ajx2ctxpxk:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/cd57041c71543e39ffdb4049a2220f918a8b5e54/publish-rejection-round-before-regate.md",
+      "rev": "sha256:8eb3bcc136a33c20480fef2724c58d31475094f8497f9c849b6f7fdf1776c3d4",
+      "mediaType": "text/markdown",
+      "summary": "Stable recorder failures publish the complete rejected round before re-review."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zhcb4bcz1qgcn7ajx2ctxpxk:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:721a29206d100a38a9af0378441bd4878f67e0ccaa16a8fa9236fc14f0da195f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:zhcb4bcz1qgcn7ajx2ctxpxk:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24234b4adff24091d215eec6992580d6b1925c714a36ededdd4d0a5383ec2c4b"
+    }
+  ]
+}
