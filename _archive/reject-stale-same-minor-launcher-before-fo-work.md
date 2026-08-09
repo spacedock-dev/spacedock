@@ -1,10 +1,10 @@
 ---
 title: Reject a stale same-minor launcher before First Officer work
-status: validation
+status: done
 source: "Weekly friction audit and Captain direction, 2026-08-09: an installed 0.27 binary passed the minor-version gate but lacked the merged approval surface. Detect the missing command capability before workflow effects."
 started: 2026-08-09T14:51:35Z
-completed:
-verdict:
+completed: 2026-08-09T23:09:23Z
+verdict: PASSED
 score: 0.85
 sprint: durable-decisions
 sprint-readiness: ready
@@ -12,7 +12,7 @@ group: launcher-contract
 worktree: .worktrees/spacedock-ensign-reject-stale-same-minor-launcher-before-fo-work
 issue:
 pr: pr-merge:650
-mod-block: merge:pr-merge
+mod-block:
 id: 5f6m3jwhbrbneak5j8eeyh5r
 gates:
     version: 1
@@ -76,7 +76,8 @@ gates:
                 reason: Validation passed AC-1 through AC-3 with exact launcher-order fixtures, three host live boots, full and race suites, approved scope, and a detached claim-breaking audit; no findings remain.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-09T23:09:23Z
 ---
 
 Stop a First Officer before workflow work when the selected launcher has the correct minor version but lacks a required command surface.
