@@ -90,16 +90,16 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 
 	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
 	docs := string(mustRead(t, filepath.Join(repo, "docs", "runtime-live-ci.md")))
-	if strings.Count(workflow, "-run '^TestLiveCommon' -failfast") != 2 || strings.Count(workflow, "-run '^TestLiveCommon'") != 2 {
-		t.Errorf("workflow must contain exactly two common selectors with -failfast")
+	if strings.Count(workflow, "-run '^TestLiveCommon' -failfast") != 3 || strings.Count(workflow, "-run '^TestLiveCommon'") != 3 {
+		t.Errorf("workflow must contain exactly three common selectors with -failfast")
 	}
-	for _, runtime := range []string{"claude", "codex"} {
+	for _, runtime := range []string{"claude", "codex", "pi"} {
 		if strings.Count(workflow, "SPACEDOCK_LIVE_RUNTIME="+runtime) != 1 {
 			t.Errorf("workflow runtime selector %q is not unique", runtime)
 		}
 	}
-	if strings.Contains(workflow, "SPACEDOCK_LIVE_RUNTIME=pi") || strings.Count(docs, "SPACEDOCK_LIVE_RUNTIME=pi go test") != 1 {
-		t.Error("Pi common selector must exist once in the local guide and never in the workflow")
+	if strings.Count(docs, "SPACEDOCK_LIVE_RUNTIME=pi go test") != 1 {
+		t.Error("Pi common selector must exist once in the local guide")
 	}
 }
 
@@ -210,6 +210,7 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 	}{
 		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle/`},
 		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
+		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
 		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v`},
 		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
 		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},

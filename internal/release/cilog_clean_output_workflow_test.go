@@ -16,6 +16,8 @@ import (
 var transformedLiveSteps = []string{
 	"Run live Claude E2E",
 	"Run live Codex shared scenarios",
+	"Run live Pi common journeys",
+	"Run live Pi front-door smoke",
 }
 
 // TestLiveWorkflowStepsUseGotestsumOneRunShape pins each transformed live step to
@@ -67,9 +69,9 @@ func TestLiveWorkflowInstallsPinnedGotestsum(t *testing.T) {
 			installs++
 		}
 	}
-	// The offline gate and the two live jobs each install gotestsum.
-	if installs != 3 {
-		t.Errorf("expected gotestsum in the offline gate and both live jobs, found %d installs", installs)
+	// The offline gate and the three live jobs each install gotestsum.
+	if installs != 4 {
+		t.Errorf("expected gotestsum in the offline gate and all three live jobs, found %d installs", installs)
 	}
 
 	// Read the EXECUTABLE commands, not the raw text: commenting out every
