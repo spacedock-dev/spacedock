@@ -187,3 +187,18 @@ Selected a bounded gate-lifecycle contract correction: use existing structured r
 ### Summary
 
 Committed the bounded gate-lifecycle and public-documentation correction without changing runtime code, fixtures, or tests. Mechanical behavior checks passed, but this environment could not supply the required live comparison and the full race suite exposed one unrelated load-sensitive replay failure; both are retained for validation rather than hidden by reruns or out-of-scope edits.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Retain the exact approved two-file candidate and focused/full behavior evidence; make no product change unless this run proves the candidate itself is defective.
+  Commit `7da5d36a5` remains byte-clean and unchanged; focused checks and `go test ./...` from cycle 1 remain the behavior baseline.
+- DONE: Run the repository-required full race suite in a load-safe serial context and require it to pass; read any new failure from this run rather than inheriting the prior label.
+  `go test ./... -race -p 1` passed, including `internal/ensigncycle` in 384.486s; the prior parallel timing label was not inherited.
+- FAILED: Obtain exactly one actual Sonnet-5 gate-guardrail comparison at the candidate commit through an available authenticated local or GitHub path (the prior pre-launch skip is not a run), verify the 16-turn/18-tool-call and authority-state limits, and append a complete replacement implementation Stage Report with no FAILED item only if all obligations are met.
+  The sole actual max-effort Sonnet-5 run passed authority-state assertions but measured 18 turns/27 calls against 16/18; stream `d9b7b6af…`, final message `e06a60be…`, and metrics `0e938606…` remain under `/private/tmp/spacedock-gate-live.3fPRvk/`.
+- DONE: Route the material value failure through the implementation finding boundary without unauthorized candidate mutation or rerun.
+  FO authorized `route for decision`: calls 8–17 precede lifecycle-skill load at call 18, so the dominant waste lies outside the approved surface and requires Captain design authority.
+
+### Summary
+
+The serial race suite passed and the one authenticated comparison preserved correct open-gate authority: one prepare and commit, no Resolution, consume, advance, or successor dispatch. The value ceiling still failed at 18 turns and 27 calls, so the approved candidate is held unchanged and the pre-load ownership boundary is escalated for a Captain decision.
