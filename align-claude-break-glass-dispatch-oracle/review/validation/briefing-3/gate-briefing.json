@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:824ecawn5jttbykcgx82nbf4:validation:attempt-3:revision-1",
+  "question": "Does the reconciled 824 candidate safely preserve Claude break-glass dispatch mode and durable completion proof?",
+  "artifacts": [
+    {
+      "id": "artifact:824ecawn5jttbykcgx82nbf4:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/43e2f567dea43dc8259c6b18653feac1d37ced61/align-claude-break-glass-dispatch-oracle/index.md",
+      "rev": "sha256:a7458cc70d59fb5c3252f26610834277dc52473f40083dbe09d676d18ae21972",
+      "mediaType": "text/markdown",
+      "summary": "Exact head 4ecc0440d passes focused, inventory, cadence, full, race, formatting, and adversarial checks. Prior Sonnet and Opus live proof remains applicable. Fresh local probes failed authentication before First Officer work."
+    }
+  ]
+}
