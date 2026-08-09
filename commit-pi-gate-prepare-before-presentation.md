@@ -186,7 +186,7 @@ open-boundary failure.
 Each criterion has a named test or artifact. The implementation must meet all
 criteria.
 
-### AC-1 — Value: committed Pi review
+**AC-1 (VALUE) — Value: committed Pi review**
 
 On the exact candidate, with the XFAIL binding removed,
 
@@ -204,7 +204,7 @@ successful commit.
 Test: exact Pi live target plus `assertRecordedGateHoldLog` and the saved live
 artifact.
 
-### AC-2 — Strict baseline and XPASS proof
+**AC-2 — Strict baseline and XPASS proof**
 
 Before the repair, the exact target must run as strict XFAIL with the sole code
 `gate-prepare-state-commit-missing`. A setup error, a skipped TODO, a second
@@ -214,7 +214,7 @@ the exact target must pass.
 
 Test: the strict-XFAIL classifier and the three exact-candidate runs.
 
-### AC-3 — No presentation before commit and reread
+**AC-3 — No presentation before commit and reread**
 
 The command log must contain exactly one successful `gate prepare`, followed by
 exactly one successful `state commit`, followed by a `state-head` read. No
@@ -225,7 +225,7 @@ text block after the read.
 Test: `assertRecordedGateHoldLog` plus the Pi transcript and command log from
 the exact target.
 
-### AC-4 — The prepared gate remains the same open gate
+**AC-4 — The prepared gate remains the same open gate**
 
 After presentation, the fixture entity must retain one open attempt with the
 same room reference, Briefing digest, and prepared state. It must have no
@@ -234,7 +234,7 @@ the gate.
 
 Test: existing `assertGateHeld` and the reread JSON artifact.
 
-### AC-5 — Existing semantics remain stable
+**AC-5 — Existing semantics remain stable**
 
 The existing `gate prepare`, `state commit`, `status --read`, gate storage, and
 authority rules must remain unchanged. Claude and Codex `gate-guardrail` runs,
@@ -351,3 +351,32 @@ The task now has a live, semantic baseline and a bounded repair that requires
 prepare, commit, reread, and presentation in order. The exact Pi journey must
 show XPASS while its strict binding remains, then pass after that binding is
 removed. The state entity is the only artifact changed in this stage.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Exercise the real Pi gate-guardrail failure before selecting a repair.
+  The durable semantic baseline remains `gate-prepare-state-commit-missing`; no repair semantics changed.
+- DONE: Define the smallest change that presents only committed and reread gate state.
+  The three-surface plan and its ordered lifecycle remain unchanged.
+- DONE: Give a visible-value statement and gross and net line estimates.
+  The committed-state review value and 22 gross additions, 8 gross deletions, and 14 net lines remain unchanged.
+- DONE: Restore extractor-visible AC labels without changing a criterion.
+  Five criterion labels now use the required bold form. AC-1 retains the `(VALUE)` annotation.
+
+The post-correction command was `spacedock status --read 2e4 --ac-scan`.
+Its exact output was:
+
+```text
+stage=ideation
+ac=AC-1 line=189 unevidenced=false citations=2
+ac=AC-2 line=207 unevidenced=false citations=1
+ac=AC-3 line=217 unevidenced=false citations=1
+ac=AC-4 line=228 unevidenced=false citations=1
+ac=AC-5 line=237 unevidenced=false citations=1
+```
+
+### Summary
+
+The withdrawn gate's structural issue is corrected. The AC scan now discovers
+all five criteria, including the real Pi value criterion. The criteria,
+semantic boundary, repair scope, and estimates were not changed.
