@@ -32,6 +32,13 @@ After a rejection, operators can inspect one durable correction history. The fir
 
 Ideation must find the smallest change that makes a real First Officer invoke the existing `gate record --round validation/1` path at the correct lifecycle boundary. Reuse the existing recorder, rejection fixture, command log, and durable journey assertion.
 
+Before a product change, use the strict XFAIL behavior from
+`ts7gq0mr9s3chx2w4wppd1kt`. Run each available target and record the stable
+semantic failure code. Convert a TODO only when the complete journey can run.
+
+After the product repair, XPASS must force removal of each repaired XFAIL
+binding. Keep TODO for a target that cannot run.
+
 When the behavior is proven, remove each TODO only after that runtime has passing
 evidence from `TestLiveCommonRejectionFlow`.
 
