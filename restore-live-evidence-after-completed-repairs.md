@@ -41,8 +41,9 @@ gates:
 
 ## Problem
 
-Seven xp6 target cells still use target-scoped `TODO` bindings. The source hides
-their current runtime evidence behind a pre-execution skip.
+Seven ordinary xp6 target cells still use target-scoped `TODO` bindings. One
+additional withdrawn-gate cell also needs an xp6-owned binding removal. The
+source hides this evidence behind pre-execution skips.
 
 The `liveTODO(...)` helper skips before the fixture builder and journey run. It
 cannot report a repair, an expected semantic failure, or an infrastructure
@@ -50,8 +51,8 @@ failure. Strict XFAIL support from `ts7gq0mr9s3chx2w4wppd1kt` must define that
 boundary before any binding edit.
 
 The Codex `withdrawn-gate-recovery` rerun passed. Staff finding M5 keeps task
-`47g` outside this sprint. That pass permits the `47g` binding to remove its
-TODO in its own change. It is not an xp6 target.
+`47g` outside this sprint. xp6 removes that stale binding after an exact rerun.
+Task `47g` remains the evidence origin, not the removal owner.
 
 ## Value
 
@@ -60,9 +61,10 @@ cell can remove its `TODO` or XPASS binding. A stable failure stays visible
 with a named repair owner. An unexecutable cell keeps a `TODO` with its setup
 reason.
 
-The baseline is seven xp6 `TODO` cells. The expected result is three passing
-cells, two stable semantic failures, and two unexecutable cells. No xp6 target
-is unclassified.
+The xp6 action baseline is eight target-scoped `TODO` bindings: seven ordinary
+cells plus the withdrawn-gate removal. The expected result is four passing
+cells, two stable semantic failures, and two unexecutable cells. No cell is
+unclassified.
 
 ## Spike result
 
@@ -84,15 +86,16 @@ The Opus lane skipped because the local benchmark token was empty and
 credit error. A lower-cost Pi model enabled the two semantic probes.
 
 The separate Codex `withdrawn-gate-recovery` rerun passed in 149.68 seconds.
-This is disposition evidence for `47g`, not an xp6 target or a sprint member.
-The Codex `default-headless-gate-stop` failure remains the known `98a` route.
+This is an xp6-owned evidence binding removal. Task `47g` remains outside
+sprint membership. The Codex `default-headless-gate-stop` failure remains the
+known `98a` route.
 
 The `/tmp` artifact paths are local probe locations. The result, command, and
 failure text above are the durable evidence for this ideation record.
 
 ## Target classification
 
-| Journey | Target | Classification | Repair owner | Evidence |
+| Journey | Target | Classification | Binding or repair owner | Evidence |
 | --- | --- | --- | --- | --- |
 | `gate-guardrail` | Codex | passing | — | Exit 0; 138.89s; `codex-shared-scenarios/gate-guardrail` |
 | `gate-guardrail` | Pi | stable semantic failure | `2e4fe65gy9vcr4xck6akzmdd` (`commit-pi-gate-prepare-before-presentation`) | `state commit missing or before the successful gate prepare`; lower-cost Pi model |
@@ -101,10 +104,12 @@ failure text above are the durable evidence for this ideation record.
 | `owned-conflict-owner-handoff` | Claude Sonnet | passing | — | Exit 0; 312.44s; `claude-shared-scenarios/owned-conflict-owner-handoff` |
 | `owned-conflict-owner-handoff` | Claude Opus | unexecutable | xp6 `xp6c9qfe7y4wwp46enc3f85n` | Runner skipped because local Claude auth was unavailable |
 | `owned-conflict-owner-handoff` | Pi | passing | — | Exit 0; 135.39s; lower-cost Pi model |
+| `withdrawn-gate-recovery` | Codex | passing | xp6 `xp6c9qfe7y4wwp46enc3f85n` | Exit 0; 149.68s; exact rerun; stale TODO originated in `47g` |
 
-The table has seven xp6 cells: three passing, two stable semantic failures, two
-unexecutable, and zero unclassified. The passed `47g` cell is recorded above
-only to justify its separate TODO removal.
+The table has eight xp6 evidence cells: seven ordinary cells plus one
+withdrawn-gate binding removal. Four pass, two have stable semantic failures,
+two are unexecutable, and zero are unclassified. The `47g` entity stays outside
+sprint membership.
 
 ## Repair routing
 
@@ -123,6 +128,10 @@ These tasks are separate. xp6 does not implement either repair or invent either
 semantic code. The `98aa776adg66gn823a8gamdq` task remains the owner of the
 adjacent Codex and Sonnet default-headless failure. It does not expand xp6.
 
+The withdrawn-gate row needs no repair owner. xp6 owns its evidence-only TODO
+removal. Task `47g` remains outside sprint membership and does not receive this
+binding change.
+
 ## Required order
 
 1. Land or expose strict XFAIL behavior from `ts7gq0mr9s3chx2w4wppd1kt` at the
@@ -133,8 +142,9 @@ adjacent Codex and Sonnet default-headless failure. It does not expand xp6.
    Do not combine the two mechanisms.
 5. Keep each Opus target as `TODO` while authenticated execution is unavailable.
 6. Stop on an unclassified result. Do not convert it to `TODO` or XFAIL.
-7. Keep `47g` outside the sprint. Its passed withdrawn-gate rerun permits its
-   own binding change, not an xp6 target or product change.
+7. Keep `47g` outside the sprint. After its passed withdrawn-gate rerun, xp6
+   removes the stale binding as an evidence-only change. Do not assign this
+   removal to `47g` or defer it outside xp6.
 
 ## Proposed approach
 
@@ -142,27 +152,29 @@ Use the existing common journey entry points, fixtures, exercises, and
 assertions. Any later xp6 source edit is limited to passing binding removal in
 `internal/ensigncycle/shared_live_runner_test.go`.
 
-The three passing xp6 targets are Codex `gate-guardrail`, Sonnet
-`owned-conflict-owner-handoff`, and Pi `owned-conflict-owner-handoff`. Remove
-only their target bindings after exact-candidate evidence.
+The four passing xp6 cells are Codex `gate-guardrail`, Sonnet
+`owned-conflict-owner-handoff`, Pi `owned-conflict-owner-handoff`, and Codex
+`withdrawn-gate-recovery`. Remove only their target bindings after exact-
+candidate evidence.
 
 Keep the two Pi failure records routed to their separate repair tasks. Keep both
 Opus `TODO` bindings until an authenticated pre-release run can execute them.
 Do not remove a TODO because a host lacks auth or credits.
 
-The `47g` withdrawn-gate pass remains a disposition note. Its own binding can
-be removed outside this sprint. No deferred task remains in xp6 scope.
+The `47g` withdrawn-gate pass remains evidence from an outside-sprint entity.
+Its stale binding is still an xp6 removal. No deferred repair enters xp6 scope.
 
 No new scenario table, simulator, helper-only change, or component-only landing
 is allowed. A product-repair landing is also outside xp6.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — Three passing xp6 target cells have no target-scoped TODO or XPASS binding.**
+**AC-1 (VALUE) — Four passing xp6 evidence cells have no target-scoped TODO or XPASS binding.**
 
 The Codex `gate-guardrail`, Sonnet `owned-conflict-owner-handoff`, and Pi
-`owned-conflict-owner-handoff` probes pass their durable assertions. Their
-future binding removal is evidence-only.
+`owned-conflict-owner-handoff` probes pass their durable assertions. The Codex
+`withdrawn-gate-recovery` probe also passes. Each binding removal is
+evidence-only.
 
 **AC-2 (VALUE) — The two Pi semantic failures have separate named repair owners.**
 
@@ -175,11 +187,12 @@ different code or infrastructure error fails the lane.
 The `recorded-gate-lifecycle` and `owned-conflict-owner-handoff` Opus lanes
 record the auth-missing setup reason. They do not claim semantic evidence.
 
-**AC-4 (VALUE) — All seven xp6 target cells have one classification.**
+**AC-4 (VALUE) — All eight xp6 evidence cells have one classification.**
 
-The final xp6 state records three passing cells, two stable semantic failures,
-two unexecutable Opus cells, and zero unclassified cells. The passed `47g`
-withdrawn-gate cell is outside this count and outside sprint membership.
+The final xp6 state records four passing cells, two stable semantic failures,
+two unexecutable Opus cells, and zero unclassified cells. Seven cells are
+ordinary xp6 targets. The eighth is the `47g`-origin withdrawn-gate binding
+removal, which xp6 owns while `47g` stays outside sprint membership.
 
 **AC-5 — This task remains evidence-only.**
 
@@ -199,6 +212,10 @@ Run each focused common journey on its exact candidate. Use local subscription
 auth before paid CI. A lower-cost Pi model can diagnose behavior. It cannot
 justify removal from the default Pi lane.
 
+Run the exact Codex `withdrawn-gate-recovery` candidate before removing its
+stale TODO. The pass permits the binding removal. It does not move `47g` into
+the sprint.
+
 Run these deterministic checks after any binding edit:
 
 - `go test ./internal/ensigncycle -run 'TestGateGuardrailNegativeBrokenStateTransition|TestAssertGateHeld'`
@@ -216,10 +233,9 @@ workflow records, not product LOC. M5 keeps product net at zero.
 
 | Surface | Gross additions | Gross deletions | Net | Purpose |
 | --- | ---: | ---: | ---: | --- |
-| `internal/ensigncycle/shared_live_runner_test.go` | ~2 | ~2 | 0 | Remove three passing xp6 TODO entries across two binding rows after exact evidence |
+| `internal/ensigncycle/shared_live_runner_test.go` | ~3 | ~3 | 0 | Remove four passing xp6 TODO entries across three binding rows after exact evidence |
 | Pi repair tasks | 0 | 0 | 0 | Product repairs stay with the two named owners |
-| `47g` disposition | 0 | 0 | 0 | Its own binding removal stays outside this sprint |
-| **Product total** | **~2** | **~2** | **0** | Binding-only evidence landing; no repair bytes |
+| **Product total** | **~3** | **~3** | **0** | Binding-only evidence landing; no repair bytes |
 
 The estimate has a tolerance of two changed lines. A component-only landing is
 not acceptable. A product-repair landing is not acceptable. If no exact passing
@@ -237,11 +253,11 @@ binding remains after reconciliation, xp6 lands no product source change.
 ## Scope
 
 - Reuse the current common journey entry points, fixtures, exercises, and assertions.
-- Record the exact result for each of the seven xp6 target cells.
-- Remove only passing xp6 bindings after exact evidence.
+- Record the exact result for each of the eight xp6 evidence cells.
+- Remove all four passing xp6 bindings after exact evidence.
 - Name the two Pi repair owners and keep their mechanisms separate.
 - Keep the two Opus TODOs only while authenticated execution is unavailable.
-- Keep `47g` outside sprint membership while recording its pass as disposition evidence.
+- Keep `47g` outside sprint membership while xp6 removes its passed cell binding.
 
 ## Out of scope
 
@@ -252,30 +268,30 @@ binding remains after reconciliation, xp6 lands no product source change.
 - Adding tests for reconciliation code.
 - Changing the desired journey registry.
 - Changing First Officer behavior, gate authority, or stored formats.
-- Carrying deferred task `47g` into xp6.
+- Adding deferred task `47g` to sprint membership or assigning its binding removal to `47g`.
 - Landing component-only or product-repair code.
 
 ## Stage Report: ideation
 
 - DONE: Keep this task evidence-only and include the withdrawn-gate Codex cell from deferred task 47g.
-  The pass is retained as disposition evidence only. M5 removes `47g` from xp6 and sprint scope; its own binding may remove the TODO.
+  M5 keeps `47g` outside sprint membership, while xp6 removes its passed stale binding after the exact rerun. No repair enters xp6.
 - DONE: Classify each target as passing, stable semantic failure, unexecutable, or unclassified.
-  The corrected matrix has seven xp6 cells: three passing, two stable semantic failures, two unexecutable Opus cells, and zero unclassified cells.
+  The corrected matrix has eight evidence cells: four passing, two stable semantic failures, two unexecutable Opus cells, and zero unclassified cells. Seven are ordinary xp6 cells; one is the `47g`-origin removal.
 - DONE: Give gross and net line estimates with product-repair routing outside this capstone.
-  The binding-only estimate is about two additions and two deletions, net zero. Pi repairs route to `2e4fe65gy9vcr4xck6akzmdd` and `fh6rv0k6wr25zty0jjan4jp7`; no repair bytes enter xp6.
+  The binding-only estimate is about three additions and three deletions, net zero. Pi repairs route to `2e4fe65gy9vcr4xck6akzmdd` and `fh6rv0k6wr25zty0jjan4jp7`; no repair bytes enter xp6.
 
 ### Summary
 
-This corrected ideation package is evidence-only. It records seven xp6 target
+This corrected ideation package is evidence-only. It records eight evidence
 cells, routes the two distinct Pi failures to their named owners, and keeps both
-Opus TODOs until authenticated execution is available. The passing `47g` rerun
-permits its own TODO removal while keeping that deferred task outside the sprint.
+Opus TODOs until authenticated execution is available. xp6 removes the passed
+`47g`-origin binding while that deferred task stays outside the sprint.
 
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Keep this task evidence-only and include the withdrawn-gate Codex cell from deferred task 47g.
-  M5 keeps the passed cell as disposition evidence only. The corrected scope removes `47g` from xp6 and sprint membership; its own change may remove the TODO.
+  M5 keeps `47g` outside sprint membership. xp6 owns the passed cell's stale TODO removal after the exact rerun.
 - DONE: Classify each target as passing, stable semantic failure, unexecutable, or unclassified.
-  M3 is folded into the seven-cell matrix. It names `2e4fe65gy9vcr4xck6akzmdd` for the Pi gate-commit failure and `fh6rv0k6wr25zty0jjan4jp7` for the Pi headless-hold failure.
+  M3 is folded into the eight-cell matrix. Seven cells are ordinary xp6 targets. The eighth is the passed withdrawn-gate removal. It names `2e4fe65gy9vcr4xck6akzmdd` for the Pi gate-commit failure and `fh6rv0k6wr25zty0jjan4jp7` for the Pi headless-hold failure.
 - DONE: Give gross and net line estimates with product-repair routing outside this capstone.
-  The binding-only estimate is about two additions and two deletions, net zero. No component-only or product-repair landing is allowed.
+  The binding-only estimate is about three additions and three deletions, net zero. No component-only or product-repair landing is allowed.
