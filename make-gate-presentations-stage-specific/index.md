@@ -358,3 +358,32 @@ The design now generalizes through workflow-owned Gate content carried by existi
 ### Summary
 
 Gate reviews now read workflow-owned `Gate content` and use a bounded declared-stage fallback without stage-name semantics. The presenter keeps one Briefing, recommendation, decision effect, finding-label authority, and recorder while omitting empty evidence; commission, refit, built-in templates, and user docs carry the same behavior.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Independently reproduce the explicit-content, renamed-stage, bounded-fallback, and empty-evidence matrix without trusting the implementation report.
+  The current-checkout Codex presenter passed explicit `orbit-audit`, the definition-preserving rename `signal-check`, and the no-`Gate content` fallback. The explicit cases showed only the requested 4.2 ms drift and transition, never the conflicting raw-frame/catalog material; all cases omitted `SKIPPED`, `FAILED`, `None`, `N/A`, and zero-result rows. The stream recorded `dispatch show-stage-def` before presentation (AC-1/AC-2).
+- DONE: Verify the common gate spine and workflow finding authority with a separate controlled review.
+  A `release-check` workflow rendered exactly one task/stage, `briefing:spine:1`, `sha256:def456`, recommendation, and concrete decision effect; it preserved the non-empty `Urgent` label, omitted empty `Advisory`, fetched the stage definition, and invoked no alternate recorder. `${SPACEDOCK_BIN:-spacedock} gate record --decision` remains the sole declared recorder (AC-3).
+- DONE: Drive all three built-in commission shapes, one custom variant, and refit Phase 3b while retaining the old fixture as the control.
+  Fresh generated READMEs contained mission-specific Gate content at development's three gates, experiment's three gates, refinement's review gate, and the custom outreach variant's `review` and `watching` gates. Refit of a throwaway copy exposed additive Gate content at backlog, ideation, and validation. The repository control stayed byte-identical at Git blob `5565f9b3b6c183aa04c2b60969139daddcc24a1e` at both base `a929fcb60` and candidate HEAD (AC-4).
+- DONE: Verify documentation output, exact candidate scope, formatting, and all required offline suites.
+  Candidate `6b36ecfe5eef975741009fd4b8a6f7884dc678d1` / tree `9d9de65251` is clean and measures 10 files/131 changed lines from `main`. Contract and integration tests, pinned strict MkDocs, generated-visible-HTML comparison, exact `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed. The retired hardcoded evidence table, 11-item list, and abstract documentation phrases are absent; behavior was proved by rendered output, not by those absence checks. No browser-only observation is claimed or required by this reset's assigned documentation proof.
+- DONE: Classify the final diff against AC-5 and the approved boundary.
+  The final diff contains direct workflow-owned documentation and no F6C semantic-oracle cleanup, no F6C inventory, no W5 digest mechanism, no XX dispatch validation, and no command grammar, YAML/stored schema, parser, recorder, or runtime change. AC-5 therefore passes through strict rendering, generated-output comparison, and this final path classification.
+- FAILED: Obtain passing evidence for every required live lane selected by the changed shared `present-gate` path.
+  `TestLiveCommonGateGuardrail` passed on Claude Sonnet in 129.32s and Claude Opus in 166.20s. The same canonical journey explicitly skipped on Codex as `TODO(xp6c9qfe7y4wwp46enc3f85n): codex/gate-guardrail lacks passing live evidence`; Pi reported the same owned TODO. A zero-exit Go wrapper around a skipped required journey is not green evidence, so the required Codex lane remains unmet.
+
+### Summary
+
+Validation recommends REJECTED for one material verification defect: the required Codex `gate-guardrail` live journey has only an owned TODO skip. AC-1 through AC-5 otherwise pass, including controlled workflow-owned rendering, common authority, commission/refit propagation, strict generated documentation, and the explicit adjacent-surface exclusion. Candidate bytes and HEAD remain unchanged.
+
+## Review-finding disposition: required Codex gate-guardrail evidence
+
+- Exact finding: the shared `present-gate` path requires the canonical Codex `TestLiveCommonGateGuardrail` journey, but the executable registry skips it as `TODO(xp6c9qfe7y4wwp46enc3f85n)` and states that Codex lacks passing live evidence.
+- Released user and normal workflow: pull requests exercise the current-checkout shared common journeys through both Claude Sonnet and Codex; a skipped required run is explicitly not green.
+- Observable harm: validation cannot establish that Codex preserves the gate at the bound Briefing while presenting the revised shared presenter, even though the controlled Codex renderer and both Claude live lanes pass.
+- Authority: value-ac[AC-1]: the workflow-owned presenter behavior must hold for the shared runtime surface; contract[docs/runtime-live-ci.md#runtime-live-ci]: Codex common journeys are current-checkout live evidence.
+- Trigger evidence: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -run '^TestLiveCommonGateGuardrail$' ./internal/ensigncycle -v` emitted the owned TODO and `--- SKIP`; the Pi invocation emitted the same target-scoped TODO.
+- Classification: Material evidence defect; the candidate does not own the target-scoped runtime TODO or its separate remediation.
+- First Officer direction: preserve and route this new finding through the workflow checkpoint without candidate mutation. Disposition is route for decision; no KRB candidate edit or live-evidence substitution is authorized.
