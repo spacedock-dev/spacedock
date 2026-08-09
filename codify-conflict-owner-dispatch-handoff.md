@@ -437,6 +437,8 @@ The authorized correction removes the self-referential string grade and makes re
   Exact head `2dc2953cb` passes focused dispatch and inventory tests, live-tag compilation, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, `git diff --check`, and the canonical Codex D8 journey; deleting the marker commit or adding a checkout/branch makes its durable grade fail.
 - DONE: Narrow AC-1 and the live half of AC-2 to the Captain-approved durable outcome boundary.
   The entity now names committed owner state, unchanged authority, aborted rebase, original checkout inventory, and fresh fallback tuple as proof, while explicitly excluding internal recipient/cardinality claims from the public stream.
+- FAILED: Publish the rebased code branch to `origin`.
+  GitHub rejected the lease-protected update because the OAuth App lacks `workflow` scope for the existing `.github/workflows/runtime-live-e2e.yml` change; the complete candidate remains committed locally at `2dc2953cb` for validation.
 
 ### Summary
 
