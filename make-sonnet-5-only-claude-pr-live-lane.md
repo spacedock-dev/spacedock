@@ -493,3 +493,16 @@ PR #639 run `31281195654` proved the two-job graph at exact head `113738b20` but
 ### Summary
 
 Validation observed the concrete Sonnet and Opus IDs select their stable TODO roles, the unknown-ID path fail before runner construction, and all four existing Sonnet TODOs skip correctly. The one-file correction is clean, all requested suites pass, task 824 remains separate, and exact SHA `a606ae5f3` is safe for the first officer to push.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: TODO only Sonnet `TestLiveBreakGlassShimRecovery` under owner 824ecawn5jttbykcgx82nbf4 while keeping Opus and the other Sonnet substrate proofs active.
+  Commit `52fa3c801` places the owner-linked TODO at that test's entry point; the boundary table skips `sonnet` and `claude-sonnet-5`, keeps `claude-opus-4-8` active, and no skip was added to merged-team or bare-reachable proofs.
+- DONE: Keep the desired runtime-specific proof, workflow, fixture, assertion, and 824 product repair unchanged.
+  The correction changes only `dispatch_recovery_live_test.go` by +41/-0 from `a606ae5f3`; its proof annotation, exercise, fixture, assertion, registry, workflow, and task-824-owned product/oracle bytes are unchanged.
+- DONE: Add focused skip-boundary evidence and run tagged compilation, reconciliation, formatting, affected, full, and race checks.
+  The offline entry-point run emitted the exact task-824 TODO before credentials, the table rejects unknown IDs and proves Opus remains active, and tagged compilation, registry/workflow guards, affected ensigncycle, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass.
+
+### Summary
+
+PR #639 run `31281195654`, job `93162834615`, exposed a task-824-owned break-glass oracle gap after the correct Sonnet lane was selected. This temporary, owner-linked TODO represents that truth only for Sonnet; the local commit is ready for fresh validation, with PR delivery and CI approval left to the first officer.
