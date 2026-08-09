@@ -782,7 +782,23 @@ func authorizeRecordedGateDispatch(events []string, entity, successor string) er
 }
 
 func recordedGatePrompt(workflowRoot string) string {
-	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nDo not pass `--host` to `dispatch build`.\nUse the already-committed `.spacedock-state/recorded-gate-task/selected/gate-review.md` Artifact and both already-committed References, `.spacedock-state/recorded-gate-task/selected/entity-snapshot.md` and `recorder-contract.md`; do not replace or regenerate them. Prepare the recorder-ready validation room, approve it, and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, recordedGateDispatchMarker)
+	entityPath := filepath.Join(workflowRoot, ".spacedock-state", "recorded-gate-task", "index.md")
+	return fmt.Sprintf("Use $spacedock:first-officer for this whole run.\n\nWorkflow directory: %s\nEngage only `recorded-gate-task` under this delegated conn: %s\nDo not pass `--host` to `dispatch build`.\nSuccessor entity path: %s. After consume, use this exact absolute path for --entity-path; do not use the relative .spacedock-state path or retry a failed dispatch with another path.\nUse the already-committed `.spacedock-state/recorded-gate-task/selected/gate-review.md` Artifact and both already-committed References, `.spacedock-state/recorded-gate-task/selected/entity-snapshot.md` and `recorder-contract.md`; do not replace or regenerate them. Prepare the recorder-ready validation room, approve it, and continue until the handoff worker records %s in durable state, then stop.", workflowRoot, recordedGateDirective, entityPath, recordedGateDispatchMarker)
+}
+
+func TestRecordedGatePromptAnchorsSuccessorEntityPath(t *testing.T) {
+	workflowRoot := filepath.Join(t.TempDir(), "workflow")
+	prompt := recordedGatePrompt(workflowRoot)
+	entityPath := filepath.Join(workflowRoot, ".spacedock-state", "recorded-gate-task", "index.md")
+	for _, want := range []string{
+		"Successor entity path: " + entityPath,
+		"use this exact absolute path for --entity-path",
+		"do not use the relative .spacedock-state path",
+	} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("recorded-gate prompt missing %q:\n%s", want, prompt)
+		}
+	}
 }
 
 func writeRecordedGateLoggingShim(t *testing.T, binary, logPath string) string {

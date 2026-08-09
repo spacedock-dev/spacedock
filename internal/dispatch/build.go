@@ -938,12 +938,13 @@ func firstActionBlock(host string) string {
 	if host == "codex" {
 		return "## First action\n" +
 			"\n" +
-			"Read this dispatch file directly and treat its content as your operating contract and assignment.\n" +
+			"Read this dispatch file directly and treat its content as your stage-specific assignment.\n" +
 			"\n" +
-			"This file contains the shared ensign discipline entry points (stage-report format, polling, " +
-			"worktree ownership, and completion signal protocol) plus the stage-specific assignment. " +
-			"Do not try to invoke a Claude skill wrapper; Codex dispatch uses this file " +
-			"pointer as the contract surface.\n"
+			"The outer fresh-worker prompt invokes `$spacedock:ensign` before this pointer. The installed " +
+			"skill supplies the shared ensign discipline (stage-report format, polling, worktree " +
+			"ownership, and completion signal protocol); this file supplies the stage-specific " +
+			"assignment. Do not try to invoke a Claude skill wrapper; Codex dispatch uses this file " +
+			"pointer after the outer bootstrap.\n"
 	}
 	if host == "pi" {
 		return "## First action\n" +
@@ -1003,7 +1004,10 @@ func completionSignalBlock(host, entityTitle, stage, entityFileRef string) strin
 }
 
 func dispatchPointerPrompt(host, dispatchFilePath string) string {
-	if host == "codex" || host == "pi" {
+	if host == "codex" {
+		return fmt.Sprintf("$spacedock:ensign; then Read %s and treat its content as your assignment.", dispatchFilePath)
+	}
+	if host == "pi" {
 		return fmt.Sprintf("Read %s and treat its content as your assignment.", dispatchFilePath)
 	}
 	return fmt.Sprintf(

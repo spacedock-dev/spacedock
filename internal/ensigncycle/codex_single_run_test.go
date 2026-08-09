@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ type codexScenarioResult struct {
 	artifactDir  string
 	duration     time.Duration
 	exitCode     int
+	terminal     bool
 	timedOut     bool
 	lastEvent    string
 }
@@ -65,13 +67,14 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 	started := time.Now()
 	startErr := cmd.Start()
 	var runErr, stallErr error
+	var terminalObserved bool
 	if startErr != nil {
 		runErr = startErr
 		_ = streamWriter.CloseWithError(startErr)
 	} else {
 		poller := newCmdPoller(cmd, streamWriter)
 		watcher := newStreamWatcher(newPipeLineSource(streamReader), poller, func(string) {})
-		_, stallErr = watcher.drainToExit(spec.quietBudget, "codex exec")
+		_, terminalObserved, stallErr = drainCodexToTerminal(watcher, spec.quietBudget)
 		result.exitCode, runErr = poller.wait()
 		var timeout *stepTimeout
 		result.timedOut = errors.As(stallErr, &timeout)
@@ -83,16 +86,31 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 	jsonl, readErr := os.ReadFile(jsonlPath)
 	result.jsonl = string(jsonl)
 	result.lastEvent = lastCodexEvent(result.jsonl)
-	processResult := fmt.Sprintf(
-		"started: %s\nexit_code: %d\ntimed_out: %t\nduration: %s\nlast_event: %s\n",
-		started.UTC().Format(time.RFC3339Nano), result.exitCode, result.timedOut, result.duration, result.lastEvent,
-	)
-	resultErr := os.WriteFile(filepath.Join(spec.artifactDir, "codex-process-result.txt"), []byte(processResult), 0o644)
+	// A terminal line can be written to the durable stdout artifact in the same
+	// instant the quiet deadline fires, after the pipe watcher has made its last
+	// drain. Reconcile that Codex-specific boundary after Wait; generic watcher
+	// timeout semantics remain unchanged when no exact terminal event was emitted.
+	terminalObserved = terminalObserved || codexTranscriptHasTerminal(result.jsonl)
 	if final, err := os.ReadFile(spec.finalPath); err == nil {
 		result.finalMessage = string(final)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		readErr = errors.Join(readErr, err)
 	}
+	var terminalEvidenceErr error
+	if terminalObserved {
+		stallErr = nil
+		result.timedOut = false
+		if strings.TrimSpace(result.finalMessage) == "" {
+			terminalEvidenceErr = fmt.Errorf("codex turn.completed had no non-empty final message; terminal evidence is incomplete\nLast event: %s\nArtifacts: %s", result.lastEvent, result.artifactDir)
+		} else {
+			result.terminal = true
+		}
+	}
+	processResult := fmt.Sprintf(
+		"started: %s\nexit_code: %d\nterminal: %t\ntimed_out: %t\nduration: %s\nlast_event: %s\n",
+		started.UTC().Format(time.RFC3339Nano), result.exitCode, result.terminal, result.timedOut, result.duration, result.lastEvent,
+	)
+	resultErr := os.WriteFile(filepath.Join(spec.artifactDir, "codex-process-result.txt"), []byte(processResult), 0o644)
 
 	if artifactErr := errors.Join(closeErr, resultErr, readErr); artifactErr != nil {
 		return result, fmt.Errorf("finalize Codex process artifacts: %w", artifactErr)
@@ -100,10 +118,82 @@ func runCodexProcess(spec codexProcessSpec) (codexScenarioResult, error) {
 	if stallErr != nil {
 		return result, fmt.Errorf("%w\nLast event: %s\nArtifacts: %s", stallErr, result.lastEvent, result.artifactDir)
 	}
+	if terminalEvidenceErr != nil {
+		return result, terminalEvidenceErr
+	}
+	if result.terminal {
+		// Codex can emit turn.completed while its front-door process remains alive;
+		// the cleanup wait also gives --output-last-message time to flush. The
+		// Codex-specific drain owns that semantic terminal boundary, so an exit error
+		// from the intentional cleanup kill is not a scenario failure.
+		return result, nil
+	}
 	if runErr != nil {
 		return result, fmt.Errorf("codex exec exited %d: %w", result.exitCode, runErr)
 	}
 	return result, nil
+}
+
+func codexTranscriptHasTerminal(jsonl string) bool {
+	for _, line := range strings.Split(jsonl, "\n") {
+		var event struct {
+			Type string `json:"type"`
+		}
+		if json.Unmarshal([]byte(line), &event) == nil && event.Type == "turn.completed" {
+			return true
+		}
+	}
+	return false
+}
+
+// drainCodexToTerminal is the Codex-specific process boundary. Codex's
+// turn.completed event is the semantic end of a run, even when the front-door
+// process remains alive. The final-message file is checked after the intentional
+// cleanup wait in runCodexProcess. The shared streamWatcher keeps its generic
+// OS-exit contract; only this Codex adapter recognizes the host-specific terminal
+// event and reaps the process after killing that idle tail.
+func drainCodexToTerminal(w *streamWatcher, budget time.Duration) (string, bool, error) {
+	deadline := time.Now().Add(budget)
+	terminalSeen := false
+	for {
+		entries, drained := w.drainEntries()
+		if drained > 0 {
+			deadline = time.Now().Add(budget)
+		}
+		for _, entry := range entries {
+			if entry.Type == "turn.completed" {
+				terminalSeen = true
+			}
+		}
+
+		if terminalSeen {
+			w.proc.kill()
+			return w.fullTranscript(), true, nil
+		}
+
+		if _, exited := w.proc.poll(); exited {
+			entries, _ = w.drainEntries()
+			for _, entry := range entries {
+				if entry.Type == "turn.completed" {
+					terminalSeen = true
+				}
+			}
+			if terminalSeen {
+				return w.fullTranscript(), true, nil
+			}
+			return w.fullTranscript(), false, nil
+		}
+
+		if time.Now().After(deadline) {
+			w.proc.kill()
+			return w.fullTranscript(), false, &stepTimeout{
+				label: "codex exec",
+				msg: fmt.Sprintf("codex exec made no stream progress within %s (no-progress quiet budget) — a hung stage; killed the subprocess.\nTranscript tail:\n%s",
+					budget, w.transcriptTail()),
+			}
+		}
+		time.Sleep(w.pollInterval)
+	}
 }
 
 func lastCodexEvent(jsonl string) string {
@@ -294,6 +384,50 @@ func TestCodexProcessQuietTimeoutPreservesFaultEvidence(t *testing.T) {
 	}
 }
 
+func TestCodexProcessRecognizesTerminalTurnBeforeOSExit(t *testing.T) {
+	const quietBudget = 250 * time.Millisecond
+	spec, invocations := codexProcessFixture(t, "terminal-before-exit", "terminal-then-hang", quietBudget)
+	spec.env = append(spec.env, "GO_WANT_CODEX_FINAL_MESSAGE_PATH="+spec.finalPath)
+
+	result, runErr := runCodexProcess(spec)
+	if runErr != nil {
+		t.Fatalf("terminal Codex process should finish after turn.completed and final message: %v", runErr)
+	}
+	if result.timedOut {
+		t.Fatal("terminal Codex process was classified as a quiet timeout")
+	}
+	if !strings.Contains(result.jsonl, `{"type":"turn.completed"`) {
+		t.Fatalf("terminal Codex event was not preserved in the transcript: %q", result.jsonl)
+	}
+	if result.finalMessage != "Gate review: terminal evidence\n" {
+		t.Fatalf("final message = %q, want the complete terminal message", result.finalMessage)
+	}
+	if got := strings.Fields(readFile(t, invocations)); len(got) != 1 {
+		t.Fatalf("codex invocation records = %v, want exactly one", got)
+	}
+	if !result.terminal {
+		t.Fatal("terminal Codex process did not record the semantic terminal boundary")
+	}
+}
+
+func TestCodexProcessRequiresFinalMessageForTerminalTurn(t *testing.T) {
+	const quietBudget = 250 * time.Millisecond
+	spec, _ := codexProcessFixture(t, "terminal-without-final-message", "terminal-without-final", quietBudget)
+	result, runErr := runCodexProcess(spec)
+	if runErr == nil {
+		t.Fatal("turn.completed without a final message unexpectedly passed")
+	}
+	if result.timedOut {
+		t.Fatalf("terminal process without a final message should fail on missing terminal evidence, not quiet timeout: %+v", result)
+	}
+	if result.terminal {
+		t.Fatal("turn.completed without a final message was incorrectly accepted as terminal")
+	}
+	if !strings.Contains(result.jsonl, `{"type":"turn.completed"`) {
+		t.Fatalf("terminal event was not preserved for the failed case: %q", result.jsonl)
+	}
+}
+
 func TestCodexSingleRunHelperProcess(t *testing.T) {
 	if os.Getenv("GO_WANT_CODEX_SINGLE_RUN_HELPER") != "1" {
 		return
@@ -350,6 +484,21 @@ func TestCodexSingleRunHelperProcess(t *testing.T) {
 			fmt.Printf("{\"type\":\"item.started\",\"sequence\":%d,\"item\":{\"type\":\"collab_tool_call\",\"tool\":\"wait_agent\"}}\n", sequence)
 		}
 		os.Exit(0)
+	}
+	if mode == "terminal-then-hang" {
+		finalPath := os.Getenv("GO_WANT_CODEX_FINAL_MESSAGE_PATH")
+		if finalPath == "" {
+			fmt.Fprintln(os.Stderr, "terminal fixture missing final-message path")
+			os.Exit(2)
+		}
+		if err := os.WriteFile(finalPath, []byte("Gate review: terminal evidence\n"), 0o644); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
+		fmt.Println(`{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":1}}`)
+	}
+	if mode == "terminal-without-final" {
+		fmt.Println(`{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":1}}`)
 	}
 	for {
 		time.Sleep(10 * time.Millisecond)

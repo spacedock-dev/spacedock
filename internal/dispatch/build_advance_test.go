@@ -82,6 +82,12 @@ func TestBuildAdvanceGoldens(t *testing.T) {
 			if native.exit != 0 {
 				t.Fatalf("advance build exit=%d stderr=%s", native.exit, native.stderr)
 			}
+			if tc.host == "codex" {
+				out := decodeBuildOutput(t, native.stdout)
+				if strings.HasPrefix(out.Prompt, "$spacedock:ensign; then Read ") {
+					t.Fatalf("Codex advance prompt must not repeat the fresh bootstrap: %q", out.Prompt)
+				}
+			}
 			nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 			env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}

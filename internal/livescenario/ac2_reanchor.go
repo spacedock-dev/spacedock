@@ -27,6 +27,7 @@ func AuthorACReanchorScenario() Scenario {
 			"",
 			"Workflow directory: .",
 			"Process only `ac2-design-proof`, which is parked at its validation gate.",
+			"Use the committed Artifact `ac2-design-proof-review.md` and committed Reference `ac2-design-proof-reference.md` for the gate package. Do not select `ac2-design-proof.md` as the Artifact or Reference.",
 			"You have the conn to resolve exactly this one gate from the existing evidence. Prepare and present the gate review, record the decision, and apply its configured route until the entity reaches the resulting parked stage.",
 			"Then stop. Do not dispatch workers, edit the report, archive the entity, or perform work in the resulting stage.",
 		}, "\n"),
@@ -66,13 +67,19 @@ func writeACReanchorFixture(dir string) (string, error) {
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(acReanchorReadme), 0o644); err != nil {
 		return "", err
 	}
+	if err := os.WriteFile(filepath.Join(dir, "ac2-design-proof-review.md"), []byte(acReanchorReview), 0o644); err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(filepath.Join(dir, "ac2-design-proof-reference.md"), []byte(acReanchorReference), 0o644); err != nil {
+		return "", err
+	}
 	entityPath := filepath.Join(dir, "ac2-design-proof.md")
 	if err := os.WriteFile(entityPath, []byte(acReanchorEntity), 0o644); err != nil {
 		return "", err
 	}
 	commands := [][]string{
 		{"init", "-q"},
-		{"add", "--", "README.md", "ac2-design-proof.md"},
+		{"add", "--", "README.md", "ac2-design-proof-review.md", "ac2-design-proof-reference.md", "ac2-design-proof.md"},
 		{"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init"},
 	}
 	for _, args := range commands {
@@ -151,4 +158,14 @@ Verified by: baseline 10,000 bytes; target 8,000 bytes; actual 10,200 bytes.
 ### Summary
 
 The recorded evidence is ready for gate review.
+`
+
+const acReanchorReview = `# Contract Measurement Validation Review
+
+The validation replay confirms both declared checklist items. The measured result is 10,200 bytes against an 8,000-byte target and a 10,000-byte baseline, so the gate decision must route the entity to rework.
+`
+
+const acReanchorReference = `# Contract Measurement Reference
+
+The accepted route is configured by the workflow's validation stage. Preserve the committed validation report and use the configured feedback-to target for the revise decision.
 `
