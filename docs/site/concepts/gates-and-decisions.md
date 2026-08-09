@@ -39,6 +39,9 @@ newly authored selected sources and calls `gate prepare` with its question, prim
 Markdown review, exact concise summary, and References. Spacedock authors and binds a
 two-file recorder-ready room; the first officer commits that entity-owned room. The
 selected source payloads remain singular local Git objects rather than room copies.
+For a cold gate, `status --read <task> --gate-evidence --json` supplies the current
+entity, stage prose, and committed candidates in one read-only Git-pinned envelope;
+the first officer still judges and selects the Artifact, References, and summary.
 
 Both presentation interfaces return semantic decision and reason input to the first
 officer. The first officer records that input through the same `gate record --decision`
