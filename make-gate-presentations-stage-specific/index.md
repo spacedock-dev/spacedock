@@ -198,3 +198,18 @@ The existing presenter now selects backlog seed evidence, ideation design/proof 
 ### Summary
 
 Validation recommends PASSED: all five acceptance criteria have executable or retained durable evidence, the candidate remains commit `a236c0074`, and no material, deferred-risk, or polish finding remains. The earlier `2/2` dispatch-attempt result was an external concurrent `/tmp/spacedock-dispatch` collision, not a KRB candidate defect; the First Officer authorized no candidate fix and one serialized rerun, which passed.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify the three-file candidate produces correct backlog, ideation, and validation evidence forms (3/3) with zero fabricated or empty result-class rows while retaining numeric validation totals.
+  The retained direct grader remains 3/3 with zero fabricated rows and preserved `Assessment: 2 done, 0 skipped, 0 failed`; no candidate bytes or evidence were rerun or changed (AC-1/AC-2).
+- DONE: Verify the bound Briefing/digest, exactly one recommendation and decision effect, unchanged gate-record authority, and the serialized live binding-to-presentation-to-recorder ordering; confirm the authorized rerun left candidate bytes and HEAD unchanged.
+  The retained controlled and live evidence still proves the common spine and serialized authority sequence; candidate commit `a236c0074` and tree `6f62b9c1` remain unchanged (AC-3).
+- FAILED: Cross-check AC-1 through AC-5, diff ownership and line tolerance, contract lint, strict docs build plus visual review where available, formatting, full tests, and race tests; reject any F6C/W5/XX, command, schema, recorder, or runtime semantic change.
+  AC-4 passes by final diff classification: no F6C semantic-oracle cleanup, no W5 digest mechanism, no XX dispatch validation, and no command/schema/recorder/runtime change; AC-5 remains unmet because neither worker nor root session had an available browser backend for the required visual review.
+- SKIPPED: Visual review of the two rendered documentation pages.
+  Both browser-runtime checks listed zero available browsers; strict build and source inspection are not claimed as visual evidence.
+
+### Summary
+
+This cycle supersedes the prior report's AC-5-pass and PASSED statements. Validation recommends REJECTED for a material evidence defect at the AC-5 visual-review observation boundary; AC-1 through AC-4 pass, and no candidate product defect or candidate mutation is claimed.
