@@ -9,8 +9,8 @@ verdict:
 score: 0.75
 worktree: .worktrees/spacedock-ensign-keep-journey-delta-green-on-rerun
 issue:
-pr:
-mod-block:
+pr: "#643"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
