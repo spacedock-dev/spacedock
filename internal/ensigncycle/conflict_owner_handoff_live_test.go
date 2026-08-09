@@ -69,7 +69,7 @@ func runConflictOwnerHandoffJourney(t *testing.T, driver liveDriver, scenario sh
 	driver.emitMetrics(t, scenario, result)
 }
 
-func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, result liveResult) {
+func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, _ liveResult) {
 	t.Helper()
 	if after := readFile(t, fixture.entity); after != fixture.before {
 		t.Fatalf("owner handoff changed authority bytes\nbefore:\n%s\nafter:\n%s", fixture.before, after)
@@ -83,21 +83,29 @@ func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, resu
 	if got := strings.TrimSpace(git(t, fixture.worktree, "log", "-1", "--format=%an <%ae>")); got != "Captain <captain@example.test>" {
 		t.Fatalf("marker Git author = %q, want shared Captain credential", got)
 	}
+	if got := strings.TrimSpace(git(t, fixture.worktree, "show", "HEAD:owner-handoff.marker")); got != "runtime-worker-owner" {
+		t.Fatalf("committed owner marker = %q, want runtime-worker-owner", got)
+	}
+	if got := strings.TrimSpace(git(t, fixture.worktree, "status", "--porcelain")); got != "" {
+		t.Fatalf("registered owner worktree is not clean after committed handoff:\n%s", got)
+	}
 	rebaseDir := strings.TrimSpace(git(t, fixture.worktree, "rev-parse", "--git-path", "rebase-merge"))
 	if _, err := os.Stat(rebaseDir); !os.IsNotExist(err) {
 		t.Fatalf("rebase was not cleanly aborted: %v", err)
 	}
-	want := conflictOwnerHandoffExpectation{
-		DispatchFile: fixture.owner.DispatchFile,
-		WorkerName:   fixture.owner.WorkerName,
-		Entity:       fixture.owner.Entity,
-		Stage:        fixture.owner.Stage,
-		Branch:       fixture.owner.Branch,
-		Worktree:     fixture.owner.Worktree,
-		Marker:       "runtime-worker-owner",
+	worktrees := strings.Split(strings.TrimSpace(git(t, fixture.root, "worktree", "list", "--porcelain")), "\n")
+	var worktreePaths []string
+	for _, line := range worktrees {
+		if path, ok := strings.CutPrefix(line, "worktree "); ok {
+			worktreePaths = append(worktreePaths, path)
+		}
 	}
-	if err := assertCodexConflictOwnerHandoff(result.stream, want); err != nil {
-		t.Errorf("Codex stream lacks one exact stamped-owner handoff: %v; artifacts: %s", err, result.artifactDir)
+	if len(worktreePaths) != 2 || worktreePaths[0] != fixture.root || worktreePaths[1] != fixture.worktree {
+		t.Fatalf("worktree inventory = %q, want only root and stamped owner worktree", worktreePaths)
+	}
+	branches := strings.Fields(git(t, fixture.root, "branch", "--format=%(refname:short)"))
+	if len(branches) != 2 || branches[0] != "main" || branches[1] != fixture.owner.Branch {
+		t.Fatalf("branch inventory = %q, want only main and stamped owner branch", branches)
 	}
 	assertConflictOwnerFreshEnvelope(t, spacedockBinary(t), fixture.root, fixture.entity, fixture.owner)
 }
