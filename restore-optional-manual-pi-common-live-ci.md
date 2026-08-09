@@ -151,7 +151,7 @@ with:
 
 The design restores retained Pi evidence without restoring Pi as a pull-request gate. It also reconciles the task with D8: the unchanged desired registry now contains 17 common journeys, not 16. The only remaining mechanism proof is the real GitHub cadence run after implementation.
 
-## Stage Report: ideation (cycle 2)
+## Stage Report: ideation
 
 - DONE: Design one manual Pi-only cadence in the existing workflow that uses the stored OpenAI key and retained evidence.
   The original Pi design remains; Pi uses direct-OpenAI Luna/max and retains common, substrate, diagnostic, session, and journey-metric evidence.
