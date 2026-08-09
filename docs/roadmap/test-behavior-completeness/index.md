@@ -1,6 +1,6 @@
 # Test-behavior-completeness sprint
 
-Status: **shaped with Material folds pending**.
+Status: **staff-review clean. Ideation gates pending**.
 
 Target train: not bound. The captain must bind the release before Commander
 dispatch.
@@ -18,7 +18,7 @@ runs against the exact repair candidate before source removes the binding.
 The workflow query owns membership. The index does not own lifecycle state.
 
 ```bash
-# All sprint members
+# Raw sprint-label audit, including archived history and excluded g3
 spacedock status --workflow-dir docs/dev \
   --where sprint=test-behavior-completeness \
   --archived
@@ -26,18 +26,13 @@ spacedock status --workflow-dir docs/dev \
 # Drivable members
 spacedock status --workflow-dir docs/dev \
   --where sprint=test-behavior-completeness \
+  --where 'slug != define-fo-moving-target-conflict-ownership' \
   --where 'sprint-readiness != defer'
 ```
 
-The current query is incomplete. The staff review requires three additional
-task entities before gate lock:
-
-- `continue-codex-rejection-after-first-validation`
-- `commit-pi-gate-prepare-before-presentation`
-- `hold-pi-default-headless-validation-gate`
-
-The staff review defines their exact proposed scope. This index does not create
-those entities.
+The current query contains all retained implementation members. Archived rows
+remain historical evidence and are not drivable. The explicit slug filter keeps
+`g3` in the durable-decisions lane.
 
 ## Completion definition
 
@@ -65,10 +60,10 @@ membership authority.
 | `98a` | Sonnet and Codex complete the implementation worker before validation. | About `+6` net, tolerance 2 lines. |
 | `6x5` | An initial stage runs before its terminal successor. | About `+12` net, tolerance 12 lines. |
 | `9a` | A consumed nonterminal gate has one dispatch commit and normal terminalization. | About `+228` net, tolerance 25%. |
-| `zh` | Stable recorder-failure targets publish the complete rejected round before re-review. | About `+1` net, tolerance 12 lines. |
-| proposed Codex rejection task | Codex completes correction and reaches a fresh final gate. | Initial estimate `+10` net, tolerance 12 lines. |
-| proposed Pi gate-commit task | Pi presents only a gate whose binding is committed and reread. | Initial estimate `+12` net, tolerance 12 lines. |
-| proposed Pi headless-hold task | Pi stops at the first open validation gate with durable evidence. | Initial estimate `+14` net, tolerance 14 lines. |
+| `zh` | Pi publishes the complete rejected round before re-review. | About `+2` net, tolerance 12 lines. |
+| `dvd` | Codex completes correction and reaches a fresh final gate. | About `+26` net, tolerance 14 lines. |
+| `2e4` | Pi presents only a gate whose binding is committed and reread. | About `+14` net, tolerance 12 lines. |
+| `fh6` | Pi stops at the open validation gate with zero terminal fields. | About `+12` net, tolerance 14 lines. |
 | `xp6` | Passing TODO rows disappear, stable failures stay executable, and unexecutable rows stay honest. | Product delta `0` net. |
 
 A new registry, result artifact, host-switch table, copied scenario map, process
@@ -86,12 +81,12 @@ flowchart TD
     A[0a optional Pi CI]
     T[ts strict XFAIL]
     H[98a Sonnet and Codex worker]
-    PH[proposed Pi headless hold]
+    PH[fh6 Pi headless hold]
     I[6x5 initial stage]
     K[9a post-gate completion]
     R[zh rejected-round publication]
-    CR[proposed Codex rejection continuation]
-    PG[proposed Pi gate commit]
+    CR[dvd Codex rejection continuation]
+    PG[2e4 Pi gate commit]
     X[xp6 evidence capstone]
 
     A --> T
@@ -116,13 +111,30 @@ Use this serial merge order:
 4. `6x5`
 5. `9a`
 6. `zh`
-7. the proposed Codex rejection task
-8. the proposed Pi gate-commit task
-9. the proposed Pi headless-hold task
+7. `dvd`
+8. `2e4`
+9. `fh6`
 10. `xp6`
 
 Before each repair baseline, rebase onto the last landing. Then commit its XFAIL
 binding and run the exact target. Product bytes come only after that evidence.
+
+## `0a` cold-boot recovery
+
+`0a` is part of Commander dispatch. It is not complete.
+
+The registered checkout is
+`.worktrees/spacedock-ensign-restore-optional-manual-pi-common-live-ci`. Its
+registered branch is
+`spacedock-ensign/restore-optional-manual-pi-common-live-ci`. The observed tip is
+`e838fba69` (`ci: restore exclusive manual Pi live cadence`).
+
+The entity has no implementation Stage Report. On cold boot, the Commander must
+converge the workflow and reconcile these facts before reuse or fresh dispatch.
+The Commander must also check active owner availability. Normal ownership and
+dispatch rules decide whether the work resumes or gets a fresh worker.
+
+Validate and merge `0a` before `ts`.
 
 ## Lane policy
 
@@ -148,6 +160,6 @@ readable and their entities do not return to this sprint.
 
 ## Readiness gate
 
-The Commander package remains blocked until the five Material findings in
-`staff-review.md` are folded. The Shaping FO must create and ideate the three
-proposed tasks, update affected task bodies, and record their gate attempts.
+The staff review has no open Material finding. The Commander package remains
+blocked until all ideation gates close-approved, the captain binds the target
+train, and the captain activates the package.

@@ -1,8 +1,8 @@
 # Commander dispatch: test-behavior-completeness
 
-This package is a **draft fail-closed handoff**. Do not start implementation
-until `staff-review.md` has no open Material finding and all ideation gates are
-closed-approved.
+This package is the **cold-boot Commander handoff**. The staff review has no
+open Material finding. Do not start implementation until all ideation gates are
+closed-approved and the captain activates this package.
 
 When the captain activates this package, you are the Commander for this sprint.
 Assume `spacedock:first-officer` for the complete session. Tell each worker and
@@ -23,9 +23,11 @@ work.
 2. Read `docs/roadmap/test-behavior-completeness/staff-review.md`.
 3. Read `docs/runtime-live-ci.md` and the desired registry.
 4. Run the membership query from the index.
-5. Stop if any proposed task is absent, not ideation-approved, or deferred.
-6. Stop if a Material staff finding lacks a durable task fold.
-7. Read each approved task body before dispatch.
+5. Make sure that all 10 retained members are present and ideation-approved.
+6. If the staff review has an open Material finding, stop.
+7. Make sure that the captain bound the target train and activated this package.
+8. Read each approved task body before dispatch.
+9. Reconcile `0a` before any new sprint dispatch.
 
 ## Authority boundaries
 
@@ -75,8 +77,24 @@ These lanes do not replace required Sonnet or Codex evidence.
 
 ### Phase 1 — Restore CI and land strict XFAIL
 
-Finish `0a` first. Validate its event matrix and exact manual Pi cadence. Merge
-it before `ts` because both tasks edit the live guide.
+`0a` is in implementation and has no implementation Stage Report. Do not treat
+its candidate as finished.
+
+Converge these durable facts first:
+
+- entity status and registered worktree
+- branch `spacedock-ensign/restore-optional-manual-pi-common-live-ci`
+- tip `e838fba69`
+- active owner availability
+- candidate status and missing implementation Stage Report
+
+Use normal ownership and dispatch rules after convergence. Reuse an available
+registered owner only when the runtime and worker identity permit reuse. Use a
+fresh implementation dispatch when normal recovery requires it.
+
+Require the implementation Stage Report before validation. Then validate the
+event matrix and exact manual Pi cadence. Merge `0a` before `ts` because both
+tasks edit the live guide.
 
 Then implement `ts`. Its first landing must contain both real
 `default-headless-gate-stop` XFAIL results for Sonnet and Codex. The classifier
@@ -89,10 +107,10 @@ Do not dispatch product repair before `ts` merges.
 
 After `ts` merges, dispatch these lanes in parallel:
 
-1. `98a`, then the proposed Pi headless-hold task.
+1. `98a`, then `fh6`.
 2. `6x5`, then `9a`.
-3. The recarved `zh`, then the proposed Codex rejection task.
-4. The proposed Pi gate-commit task.
+3. The recarved `zh`, then `dvd`.
+4. `2e4`.
 
 Each task follows this exact order:
 
@@ -100,7 +118,7 @@ Each task follows this exact order:
 2. Add the target XFAIL binding with its active owner and stable code.
 3. Commit that baseline before product bytes.
 4. Run the complete focused journey on that baseline commit.
-5. Stop if the result skips, changes code, or adds another code.
+5. If the result skips, changes code, or adds another code, stop.
 6. Apply the approved product repair without weakening the assertion.
 7. Run the same target on the exact repair candidate.
 8. Require XPASS failure while the binding remains.
@@ -116,10 +134,10 @@ Use this merge order:
 1. `98a`
 2. `6x5`
 3. `9a`
-4. recarved `zh`
-5. proposed Codex rejection continuation
-6. proposed Pi gate commit
-7. proposed Pi headless hold
+4. `zh`
+5. `dvd`
+6. `2e4`
+7. `fh6`
 
 Before each merge, rebase onto the prior landing. If the rebase changes product
 bytes or a source binding, rerun the exact focused lane on the new candidate.
@@ -145,7 +163,8 @@ These files are shared merge surfaces:
 - `internal/ensigncycle/shared_live_runner_test.go`
 - `skills/first-officer/references/fo-dispatch-core.md`
 - `docs/runtime-live-ci.md`
-- feedback-flow process text
+- `skills/feedback-rejection-flow/SKILL.md`
+- `skills/first-officer/references/pi-first-officer-runtime.md`
 
 Assign one merge owner: the Commander. Workers do not resolve another task's
 binding during a feature merge. After every conflict resolution, run registry

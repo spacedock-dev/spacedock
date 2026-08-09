@@ -2,239 +2,201 @@
 
 Date: 2026-08-09
 
-Verdict: **NOT READY**. The sprint has five Material findings. The final shape
-needs three new product-repair tasks and two task folds before gate lock.
+Verdict: **READY FOR IDEATION GATES**. The folds close all seven Material
+findings. No Material finding remains.
 
-This review excludes `g3` and all durable-decisions work. It does not approve
-product changes or create task entities.
+This review excludes `g3`, `47g`, and all durable-decisions work. It does not
+approve product changes or edit task state.
 
 ## Evidence read
 
-The review read the shaping handoff, the roadmap rules, the development workflow,
-the live guide, and the complete desired registry. It also read every active
-sprint task except `g3`.
+The review reread the corrected bodies for `ts`, `zh`, `6x5`, `9a`, and `xp6`.
+It also read all three new task bodies and their complete ideation reports:
 
-The latest ideation records were read for `ts`, `98a`, `6x5`, `zh`, `9a`, and
-`xp6`. The banked `0a` design was also read. The source bindings and durable
-assertions were checked against those records.
+- `2e4` — commit the Pi gate before presentation
+- `dvd` — continue Codex rejection after the first validation
+- `fh6` — hold the Pi default headless validation gate
 
-The membership source is this query:
+The review checked the source bindings, shared assertions, expected surfaces,
+line budgets, dependencies, and serial landing order.
+
+The workflow query remains the membership authority:
 
 ```bash
 spacedock status --workflow-dir docs/dev \
   --where sprint=test-behavior-completeness \
-  --where 'sprint-readiness != defer' \
-  --archived
+  --where 'slug != define-fo-moving-target-conflict-ownership' \
+  --where 'sprint-readiness != defer'
 ```
 
-## Material findings
+## Prior Material findings
 
-### M1 — Strict XFAIL has no rule for two semantic failures
+### M1 — Strict XFAIL multi-error safety: closed
 
-`ts` keeps infrastructure failures outside the semantic grade. That boundary is
-sound. Its result matrix also makes XPASS fail the lane.
+`ts` now runs every durable semantic assertion after infrastructure succeeds.
+XFAIL requires the unique code set to equal `{expected}`. An empty set is XPASS.
+An additional or different code is FAIL.
 
-The design does not define the result when two durable assertions fail. The gate
-state assertion and command-log assertion run in sequence. A first-match rule can
-hide a second, different product failure as XFAIL.
+The first landing also changes two real journey results. Sonnet and Codex
+`default-headless-gate-stop` change from TODO to executed XFAIL. A helper-only,
+parser-only, or metrics-only landing is banned.
 
-Fold this rule into `ts` before its gate:
+### M2 — Rejection mechanisms: closed
 
-- Run all durable semantic assertions after infrastructure succeeds.
-- XFAIL only when the expected code is the sole semantic failure.
-- XPASS when no semantic failure exists for an XFAIL binding.
-- FAIL when any other code exists, including an additional code.
-- Emit the existing metrics record after classification.
-- Never send launch, auth, timeout, fixture, parse, state-read, or metric errors
-  through the classifier.
+`zh` now owns only stable recorder publication. Pi has exact evidence for
+`rejection-round-incomplete`. Sonnet and Opus need matching exact evidence before
+they join that repair.
 
-This fold also defines exact candidate order. The first `ts` landing must include
-the Sonnet and Codex `default-headless-gate-stop` XFAIL records. A helper-only
-landing is not valid.
+`dvd` owns the separate Codex continuation value. Its target is one fresh open
+gate after correction and validation/2. It does not change recorder bytes.
 
-### M2 — The rejection task combines two mechanisms
+### M3 — Two Pi mechanisms: closed
 
-`zh` proposes one recorder-order change. The Pi evidence supports this mechanism:
-the recorder ran with two entries before the complete four-entry log existed.
+`2e4` owns prepare, commit, reread, and presentation order for Pi
+`gate-guardrail`.
 
-The Codex evidence does not reach that boundary. It stops after the first rejected
-validation and prepares an ordinary gate. The task itself calls this result
-`rejection-flow-not-completed` and excludes it from recorder XFAIL evidence.
+`fh6` owns the separate terminal-field failure in Pi
+`default-headless-gate-stop`. The artifact identifies `completed` and `verdict`
+as the exact failed clause. The task does not assume the `98a` mechanism.
 
-Recarve `zh` to the stable recorder-publication failures only. A Sonnet or Opus
-cell can join only after one exact run supplies a stable recorder code. A passing
-cell can remove its TODO after exact-candidate evidence.
+### M4 — Owner transfer and shared-file order: closed
 
-Create a separate proposed task with this scope:
+`6x5` now transfers only the three `smallest-sufficient-mechanism` rows from
+`9a` to `6x5`. The transfer and XFAIL baseline precede product bytes.
 
-**Proposed slug:** `continue-codex-rejection-after-first-validation`
+`9a` keeps only the three `keep-moving-posture` rows. It rebases after `6x5` and
+reruns the exact candidate.
 
-**Scope:** Route the first rejected Codex validation through correction,
-independent validation/2, and the fresh final gate. Do not change recorder bytes,
-round format, or the Pi recorder-order repair.
+The sprint now declares one serial merge order for all shared files.
 
-**Acceptance criteria:**
+### M5 — Evidence capstone boundary: closed
 
-- The Codex `rejection-flow` cell starts from strict XFAIL code
-  `rejection-flow-not-completed` on a committed baseline.
-- The repaired exact candidate leaves two implementation reports, two validation
-  reports, and one fresh open final gate.
-- XPASS fails before source removes the binding.
-- The final Codex run passes after binding removal.
+`xp6` remains evidence-only and net zero. It removes four passing bindings after
+exact runs. Two Pi repairs stay with `2e4` and `fh6`.
 
-**Dependencies:** `ts` first. Land after the `zh` recorder repair if both tasks
-touch feedback-flow text.
+The passed Codex withdrawn-gate row can lose its TODO without adding `47g` to
+the sprint. The two Opus TODO rows remain only while authenticated execution is
+unavailable.
 
-**Visible value:** Codex completes the correction journey instead of stopping at
-the first rejected candidate.
+## Final delta findings
 
-**Estimate:** 3 existing files, about 18 insertions and 8 deletions, net `+10`.
-Tolerance: one file and 12 net lines. Ideation must revise this estimate after the
-required live spike.
+### M6 — Codex baseline order: closed
 
-### M3 — The two Pi failures do not share one owner or mechanism
+The `dvd` spike found that the shared runner uses the Claude round extractor for
+Codex JSONL. That path reports a false missing-recorder error. The task states
+that the Codex extractor is required before the baseline can isolate
+`rejection-flow-not-completed`.
 
-The Pi `gate-guardrail` cell fails its command-log boundary. It prepares the gate
-without a later successful state commit. The existing gate-lifecycle skill already
-requires prepare, commit, reread, and present in that order.
+The corrected task now uses this exact order:
 
-The Pi `default-headless-gate-stop` cell fails the final entity boundary. The
-entity is not held at the open validation gate. This result does not prove the
-missing-worker mechanism that `98a` owns. `98a` explicitly excludes Pi.
+1. Rebase after `ts` and `zh`.
+2. Add the existing Codex extractor selection and strict final-gate oracle.
+3. Add the Codex XFAIL binding in the same non-product baseline commit.
+4. Run the real Codex journey and require the sole code
+   `rejection-flow-not-completed`.
+5. Change the feedback-flow and Codex runtime behavior only after that XFAIL.
+6. Require XPASS with the binding, then PASS after removal.
 
-Do not put either repair in `xp6`. Do not combine the two Pi failures.
+The extractor commit cannot land alone. The final task landing changes the real
+Codex journey from XFAIL to PASS with one fresh open gate.
 
-Create this first proposed task:
+### M7 — Pi headless XFAIL ownership: closed
 
-**Proposed slug:** `commit-pi-gate-prepare-before-presentation`
+`fh6` now uses this source row:
 
-**Scope:** Make Pi commit and reread a successful prepared gate before the root
-session presents it. Reuse `gate prepare`, `state commit`, and the existing room.
-Do not change gate storage or command grammar.
+```text
+liveXFail("pi", "fh6rv0k6wr25zty0jjan4jp7", "gate-hold-terminal-fields-set")
+```
 
-**Acceptance criteria:**
+The body, acceptance criteria, evidence, and baseline plan use that same owner.
+`xp6` remains evidence-only. The binding cannot name `xp6` at any repair stage.
 
-- The Pi `gate-guardrail` cell starts from committed strict XFAIL code
-  `gate-prepare-state-commit-missing`.
-- The exact command log orders one successful prepare before one successful state
-  commit and state-head read.
-- The prepared Briefing stays open and unchanged after presentation.
-- The repaired exact candidate passes after binding removal.
+## End-user value refutation
 
-**Dependencies:** `ts` first. It can ideate with the next Pi task, but their live
-runs must use isolated artifact roots.
+| Member | Required journey result | Review result |
+| --- | --- | --- |
+| `0a` | A manual Pi cadence runs common journeys and retains evidence. | Pass. A workflow-only change is insufficient without the exact manual run. |
+| `ts` | Two real headless cells run as strict XFAIL. | Pass after M1. A classifier-only landing is banned. |
+| `98a` | Sonnet and Codex complete implementation before validation. | Pass. Both exact live cells must change from XFAIL to PASS. |
+| `6x5` | Each initial-stage worker leaves a ready report before terminal state. | Pass. The durable journey counts two reports and two archives. |
+| `9a` | A consumed gate dispatches once and reaches non-forced terminal state. | Pass. The live value includes the exact dispatch commit and terminal result. |
+| `zh` | Pi retains one complete rejected round before re-gating. | Pass. A recorder-text change without a real Pi result is banned. |
+| `dvd` | Codex reaches one fresh open gate after validation/2. | Pass after M6. The extractor cannot land without the journey repair. |
+| `2e4` | Pi presents a review only after the gate is committed and reread. | Pass. The exact Pi cell must change from XFAIL to PASS. |
+| `fh6` | Pi reaches an open gate with zero terminal fields. | Pass after M7. The binding names `fh6` as repair owner. |
+| `xp6` | Four passing cells stop skipping and expose current results. | Pass. It can remove bindings only, with no repair bytes. |
 
-**Visible value:** A Pi operator receives a review bound to committed gate state.
+No retained task ends with a helper, parser, binding, contract, metrics, fixture,
+or test-only result. `dvd` can include parser work only with its final journey
+repair. `ts` can include common infrastructure only with its two first XFAIL
+cells.
 
-**Estimate:** 3 existing files, about 20 insertions and 8 deletions, net `+12`.
-Tolerance: one file and 12 net lines.
+## Strict-XFAIL and exact-candidate audit
 
-Create this second proposed task:
+- `98a` starts from the two `ts` XFAIL records.
+- `6x5` starts from three owner-correct XFAIL records.
+- `9a` starts from each executable `keep-moving-posture` cell with one sole code.
+- `zh` starts from Pi `rejection-round-incomplete`.
+- `dvd` puts the extractor, oracle, controls, and binding in one baseline commit.
+- `2e4` starts from Pi `gate-prepare-state-commit-missing`.
+- `fh6` starts from Pi `gate-hold-terminal-fields-set` under its own task ID.
 
-**Proposed slug:** `hold-pi-default-headless-validation-gate`
+Each repair keeps its binding through one XPASS run. Binding removal then uses
+the same target and exact candidate for PASS.
 
-**Scope:** Repair the Pi-only path that fails to leave the entity at the open
-validation gate. First identify which final-state clause fails. Do not assume the
-Sonnet and Codex worker-dispatch mechanism.
+## `0a` recovery audit
 
-**Acceptance criteria:**
+`0a` remains in implementation. Its registered checkout exists at the expected
+path. The registered branch tip is `e838fba69`.
 
-- A committed strict-XFAIL baseline names one refined semantic code for the exact
-  failed clause in `assertGateHeld`.
-- The Pi journey dispatches and completes required work, reaches validation,
-  binds one open Briefing, and stops without decision or successor dispatch.
-- XPASS fails before binding removal.
-- The exact Pi candidate passes after binding removal.
+The entity has no implementation Stage Report. The Commander must not treat the
+candidate as finished. Cold boot first checks durable state, the registered
+checkout, branch tip, and active owner availability. Normal ownership rules then
+select reuse or fresh implementation dispatch.
 
-**Dependencies:** `ts`, then `98a`. Running after `98a` proves whether the shared
-worker guard changes the Pi symptom.
+`0a` validates and merges before `ts`.
 
-**Visible value:** A headless Pi run stops at the first open validation gate with
-durable evidence.
+## Shared surfaces and landing order
 
-**Estimate:** spike allowance of 3 existing files, about 24 insertions and 10
-deletions, net `+14`. Tolerance: one file and 14 net lines. The ideation gate must
-reject this estimate if the mechanism differs.
+The required serial merge order is:
 
-### M4 — Current ownership and file order disagree
+```text
+0a -> ts -> 98a -> 6x5 -> 9a -> zh -> dvd -> 2e4 -> fh6 -> xp6
+```
 
-The source still assigns all three `smallest-sufficient-mechanism` TODO rows to
-`9a`. The recarved design assigns this journey to `6x5`.
+This order covers these collisions:
 
-The `6x5` XFAIL baseline must change those owners before its product edit. The
-mutable owner join checks active state, but it cannot detect the wrong active
-task. The sprint review must therefore check the semantic owner mapping.
+- `docs/runtime-live-ci.md`: `0a`, `ts`, and `dvd`
+- `internal/ensigncycle/shared_live_runner_test.go`: all evidence and repair tasks
+- `skills/first-officer/references/fo-dispatch-core.md`: `98a`, `6x5`, and `9a`
+- `skills/feedback-rejection-flow/SKILL.md`: `zh` and `dvd`
+- `skills/first-officer/references/pi-first-officer-runtime.md`: `2e4` and `fh6`
 
-Six tasks can edit `internal/ensigncycle/shared_live_runner_test.go`. Three tasks
-also edit `skills/first-officer/references/fo-dispatch-core.md`. Parallel product
-branches without an ordered rebase can overwrite source bindings or contract
-rules.
+Workers can run independent investigation and focused tests in parallel. The
+Commander owns all shared-file conflict resolution and serial merges.
 
-Use the landing order in the sprint index. Each repair branch must rebase onto
-the prior landing before it commits its XFAIL baseline. Run exact-candidate live
-proof after that baseline commit and before product bytes.
+## Line and capstone audit
 
-### M5 — The capstone cannot carry repaired or deferred product scope
+- `0a`: net must stay within its approved 8-file, 380-insertion reset.
+- `ts`: hard cap `+210` net.
+- `98a`: about `+6` net.
+- `6x5`: about `+12` net.
+- `9a`: about `+228` net, with 25% tolerance.
+- `zh`: about `+2` net.
+- `dvd`: about `+26` net.
+- `2e4`: about `+14` net.
+- `fh6`: about `+12` net.
+- `xp6`: product net `0`.
 
-`xp6` is correctly evidence-only. Its product estimate is net zero. Keep this
-boundary.
+`xp6` cannot absorb a product fix, helper, parser, fixture, or metrics change.
+If no exact passing binding remains, it lands no product source change.
 
-The Codex `withdrawn-gate-recovery` probe passed. This evidence permits `xp6` to
-remove that TODO after an exact-candidate rerun. Task `47g` stays outside this
-sprint. No deferred task must remain in scope to remove a stale TODO.
+## Readiness result
 
-The two Opus rows remain TODO only until an authenticated run exists. Missing
-local authentication is an execution-path reason, not product evidence.
+The delta read found M6 and M7 in durable task state. Every retained task has a
+visible journey result. Every product repair starts from strict XFAIL. The
+shared surfaces have one serial landing order. `xp6` remains evidence-only.
 
-`xp6` runs last. It removes passing bindings, preserves honest TODO rows, and
-leaves product repairs with their own tasks.
-
-## Claim-by-claim refutation result
-
-| Claim | Result |
-| --- | --- |
-| Each task has independent visible value. | Refuted for `zh` until Codex is split. Confirmed for the other current tasks. |
-| `ts` stays a small test mechanism. | Conditional. Its `+210` cap is acceptable only with the sole-failure rule and no second artifact. |
-| Infrastructure cannot appear as XFAIL. | Conditional pass. The written boundary is sound, but multi-error behavior needs the M1 fold. |
-| XPASS cannot remain green. | Confirmed by `ts` AC-2. The Commander must keep the binding through the XPASS run. |
-| TODO and XFAIL owners join to active tasks. | Conditional. `ts` extends the join, but `6x5` must replace the stale `9a` owner mapping. |
-| TODO cells change only after execution evidence. | Confirmed by the proposed order. Opus stays TODO until authenticated execution. |
-| Product repairs start from committed XFAIL. | Conditional. Every branch needs a baseline commit after its latest rebase. |
-| Shared surfaces have one landing order. | Refuted in the task bodies. The index now supplies one order. |
-| The capstone contains no product repair. | Confirmed if M3 creates two separate Pi owners. |
-| Durable-decisions work is excluded. | Confirmed. `g3` is excluded from review, dispatch, and merge authority. |
-
-## Net-line and implementability audit
-
-`0a` is large because it restores a complete retained CI job. Its limit remains
-8 files and 380 insertions after its approved design reset.
-
-`ts` has a hard `+210` net cap. This is the largest acceptable common mechanism.
-A protocol, new artifact, copied scenario map, or host switch is a design reset.
-
-`98a`, `6x5`, and `zh` each have small product deltas. Their live proof is larger
-than their product change, but it reuses the common suite.
-
-`9a` estimates net `+228`. Most growth is focused CLI evidence. Implementation
-must prefer existing test files and stay below the declared 25% tolerance. A new
-controller, lifecycle model, or test-only state machine is a design reset.
-
-`xp6` remains net zero in product source. The three proposed tasks add about 36
-net lines before their ideation refinements.
-
-No proposed interface lacks command grammar or stored-field domains. The three
-new tasks reuse current commands and formats. Their ideation spikes must name the
-exact semantic branch before gate approval.
-
-## Required closure before gate presentation
-
-1. Fold M1 into `ts`.
-2. Recarve `zh` and create the separate Codex repair task.
-3. Create and ideate the two Pi repair tasks.
-4. Fold the owner and merge order from M4 into affected tasks.
-5. Update the membership query result and net-line budget.
-6. Record fresh ideation gate attempts for all changed or new tasks.
-
-After these actions, one independent delta review must make sure that each
-Material finding is present in durable task state. The sprint can then become
-Commander-ready.
+No Material finding remains. The Shaping FO can record and present the ideation
+gates. Commander execution still waits for those approvals, the target-train
+decision, and captain activation.
