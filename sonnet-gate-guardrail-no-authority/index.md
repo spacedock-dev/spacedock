@@ -270,3 +270,16 @@ This report-only repair maps the recorded cycle-3 evidence onto the three dispat
 ### Summary
 
 3Z is reconciled onto the actual merged 0Y tip and normally pushed at exact head `f638451b974c1f2ec503fbdfe68cff08641b5efe`, with the authorized ancestry bridge preserving a byte-identical rebased tree. The intended four-file product diff, YS common inventory, Sonnet TODO removal, strict oracle, and ambient pilot-manifest deletion are preserved. All offline proof is green; applicable local Sonnet evidence remains explicitly FAILED on expired OAuth before workflow execution, so CI owns the fresh live verdict.
+
+## Stage Report: implementation (cycle 4 report repair)
+
+- DONE: Rebase the clean 3Z candidate onto exact validated 0Y commit 8728da3a0 without discarding either side.
+  The candidate was rebased through corrected 0Y and onto landed tip `9021cbf374bb1740d1b2e45155041e1f809372c4`; both `8728da3a0` and `9021cbf3` are ancestors. Final bridge `f638451b974c1f2ec503fbdfe68cff08641b5efe` has parents `394f86b0a3a688f15cd9f85dc377f734d72c8973` and `4f4ee424792f9ea1044578334040825bcd1da585`, with tree `06820105b123fc9a46b101a47fd9afee006d52b4` byte-identical to parent 1; the ambient pilot-manifest deletion remains intact.
+- DONE: Confirm the YS common inventory and 3Z Sonnet TODO removal remain exact after 0Y.
+  `TestLiveCommonGateGuardrail` has no Claude Sonnet 3Z TODO; Codex and Pi alone retain `TODO(3zzpdw704df1g8pg1x9thzmw)`, Opus has none, the stale quarantine paragraph is absent, and the strict seven-condition diagnostic remains on the common helper path. Registry reconciliation passed.
+- SKIPPED: Run focused, inventory, full, race, and applicable Sonnet evidence at the new exact head.
+  Focused attribution/oracle tests, inventory reconciliation, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` passed at exact bridge head `f638451b9`. The local Sonnet attempt never reached FO or product work because OAuth refresh failed and `ANTHROPIC_API_KEY` was unset; artifact `/tmp/spacedock-3z-final-live.giuur5`. CI owns the fresh live proof; this report does not call Sonnet green.
+
+### Summary
+
+This report-only repair preserves the completed landed-base reconciliation and all green offline evidence. Applicable local Sonnet proof is SKIPPED because authentication failed before workflow execution; fresh CI must establish the live verdict.
