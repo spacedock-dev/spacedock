@@ -187,3 +187,19 @@ The Captain-approved fold makes both manual release cadences exclusive. `opus-pr
 ## Implementation design reset
 
 Captain-conn approval on 2026-08-09 raises the file tolerance from 7 to 8 without changing semantics or LOC. The two required surfaces missing from the estimate are the existing live-registry reconciliation guard and clean-log/gotestsum guard; both must change because they currently encode the deliberate absence of Pi CI. The authorized eight files are the workflow, four existing workflow/registry test files, the clean-log test, and the two approved runtime CI documents. No workflow, parser, simulator, registry entry, live journey, fixture, release mechanism, or other product surface is added.
+
+## Stage Report: implementation
+
+- DONE: Deliver the approved eight-file manual Pi cadence candidate within the +380 net-line limit, preserving pull-request Sonnet and Codex behavior and exclusive manual Opus/Pi routing.
+  Candidate `e838fba693d5562fa4cee99cfbfb682014331a4f` changes eight approved files and adds 244 net lines.
+- DONE: Prove the candidate with the required offline, race, formatting, registry, active-owner, and exact workflow-structure checks; record any unavailable live evidence honestly.
+  `gofmt`, both full suites, registry reconciliation, active-owner proof, and focused workflow guards passed.
+  The relative active-owner command did not find the split-root checkout. The same test passed with its assigned absolute state path.
+  The local Pi proof stopped before execution. The `openai-codex` OAuth refresh returned `401 refresh_token_reused`.
+  No protected environment received an approval request. Exact Pi, Opus, and pull-request Actions evidence remains unavailable.
+- DONE: Commit a complete implementation Stage Report that identifies the candidate tip, changed surfaces, test results, and readiness for independent validation.
+  The candidate changes one workflow, five guard files, and two documents. It is ready for fresh validation with live evidence outstanding.
+
+### Summary
+
+The adopted candidate restores an optional Pi Luna/max cadence and retains its evidence. Manual Opus and Pi routing is exclusive, while pull requests retain Sonnet and Codex. The candidate is clean and ready for independent validation at `e838fba693d5562fa4cee99cfbfb682014331a4f`.
