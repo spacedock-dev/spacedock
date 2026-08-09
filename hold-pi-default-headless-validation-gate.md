@@ -71,7 +71,9 @@ Task `ts7gq0mr9s3chx2w4wppd1kt` must land first. It supplies strict-XFAIL gradin
 
 Task `98aa776adg66gn823a8gamdq` must land next. It repairs the Sonnet and Codex implementation-worker boundary. This task does not change that repair or assume its mechanism for Pi.
 
-Run the current Pi journey as strict XFAIL after those dependencies. Start Pi product work only after the run reports the sole code `gate-hold-terminal-fields-set`.
+This task owns the Pi strict-XFAIL binding under `fh6rv0k6wr25zty0jjan4jp7`. The runtime label `xp6c9qfe7y4wwp46enc3f85n` is evidence-only.
+
+Run the current Pi journey as strict XFAIL for owner `fh6rv0k6wr25zty0jjan4jp7` after those dependencies. Start Pi product work only after the run reports the sole code `gate-hold-terminal-fields-set`.
 
 ## Proposed approach
 
@@ -101,7 +103,7 @@ Do not change the shared ensign contract in this task. It already says that a wo
 
 Refine the first `assertGateHeld` branch into separate semantic codes. Use `gate-hold-terminal-fields-set` only when `completed` or `verdict` is non-empty. Keep separate codes for an unchanged entity and a non-validation status.
 
-The existing gate-binding and open-attempt checks remain semantic controls. The Pi strict-XFAIL binding names only the terminal-field code.
+The existing gate-binding and open-attempt checks remain semantic controls. The Pi strict-XFAIL binding for owner `fh6rv0k6wr25zty0jjan4jp7` names only the terminal-field code.
 
 ### 4. Prove the cleanup order in the existing command log
 
@@ -111,7 +113,7 @@ This command-log check proves the repair boundary. The final-state assertion pro
 
 ### 5. Bind Pi to strict XFAIL
 
-Replace the Pi `liveTODO` binding for `default-headless-gate-stop` with `liveXFail("pi", "xp6c9qfe7y4wwp46enc3f85n", "gate-hold-terminal-fields-set")`.
+Replace the Pi `liveTODO` binding for `default-headless-gate-stop` with `liveXFail("pi", "fh6rv0k6wr25zty0jjan4jp7", "gate-hold-terminal-fields-set")`.
 
 Keep the binding until the exact repaired candidate passes. A repaired run must report XPASS while the binding remains. Remove the binding only after the passing run.
 
@@ -122,7 +124,7 @@ Keep the binding until the exact repaired candidate passes. A repaired run must 
 | Pi First Officer cleanup and reread | AC-1 and AC-3 | Add another worker instruction | The existing worker instruction already forbids frontmatter writes. The live child still wrote the fields. |
 | Stable final-state code | AC-2 | Match the full error text | Model output and assertion text can change without a semantic change. |
 | Command-log order check | AC-3 | Check only the final entity | A final entity cannot prove that cleanup happened before gate preparation. |
-| Strict Pi XFAIL binding | AC-2 | Keep Pi as TODO | TODO skips the journey and hides a repaired or changed failure. |
+| Strict Pi XFAIL binding for owner `fh6rv0k6wr25zty0jjan4jp7` | AC-2 | Keep Pi as TODO | TODO skips the journey and hides a repaired or changed failure. |
 | Existing `status --set` clear operation | AC-1 | Add a new normalize command | A new command changes grammar and adds an unnecessary surface. |
 | No `--force` path | AC-1 and AC-3 | Bypass all status guards | `--force` can bypass merge-hook protection and hide a workflow error. |
 
@@ -136,7 +138,7 @@ Verified by: run the exact Pi live selector and inspect the entity, gate room, c
 
 **AC-2 — The known Pi failure has one strict semantic code.**
 
-The current candidate runs the real fixture and reports XFAIL with exactly `gate-hold-terminal-fields-set`. A repaired candidate reports XPASS and fails the lane while the binding remains.
+The current candidate runs the real fixture and reports XFAIL with exactly `gate-hold-terminal-fields-set` for owner `fh6rv0k6wr25zty0jjan4jp7`. A repaired candidate reports XPASS and fails the lane while the binding remains.
 
 Verified by: run the strict-XFAIL selector before the Pi repair, then run it again after the repair and remove the binding only after PASS.
 
@@ -166,7 +168,7 @@ SPACEDOCK_LIVE_RUNTIME=pi \
   -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v
 ```
 
-The expected result is one executed XFAIL with the sole code `gate-hold-terminal-fields-set`. A skip, an infrastructure error, or another semantic code fails the proof.
+The expected result is one executed XFAIL for owner `fh6rv0k6wr25zty0jjan4jp7` with the sole code `gate-hold-terminal-fields-set`. A skip, an infrastructure error, or another semantic code fails the proof.
 
 After the Pi runtime rule lands, run the same selector. Expect XPASS failure while the strict binding remains. Remove the binding and run the selector again. Expect PASS with the final-state count at zero.
 
@@ -231,7 +233,7 @@ This text documents the Pi operator-visible stop rule. It does not change the CL
 
 ## Evidence
 
-The root Pi transcript ends with a gate presentation and a stop message. The durable final-state read shows `status: validation`, `completed: true`, and `verdict: approved`. The nested Pi worker transcript contains the write that introduced those fields. The current shared contract forbids that write, so the evidence supports a First Officer boundary repair rather than a fixture relaxation.
+The root Pi transcript ends with a gate presentation and a stop message. The durable final-state read shows `status: validation`, `completed: true`, and `verdict: approved`. The nested Pi worker transcript contains the write that introduced those fields. The runtime label `xp6c9qfe7y4wwp46enc3f85n` is evidence-only and is not the task owner. The current shared contract forbids that write, so the evidence supports a First Officer boundary repair rather than a fixture relaxation.
 
 The live process completed without timeout. The expected open Briefing and no-decision result are already exercised by `runGateStopScenario`; only the terminal-field clause fails on this candidate.
 
@@ -239,7 +241,7 @@ The live process completed without timeout. The expected open Briefing and no-de
 
 - Repair the Pi `default-headless-gate-stop` final-state boundary.
 - Preserve the existing fixture, gate storage, command grammar, and worker envelope.
-- Keep strict XFAIL until the repaired Pi candidate passes.
+- Keep the strict-XFAIL binding for owner `fh6rv0k6wr25zty0jjan4jp7` until the repaired Pi candidate passes.
 - Run after strict XFAIL and `98a` evidence.
 
 ## Out of scope
@@ -253,12 +255,12 @@ The live process completed without timeout. The expected open Briefing and no-de
 ## Stage Report: ideation
 
 - DONE: Identify the exact failed Pi final-state clause before selecting a repair.
-  The final entity had `status: validation` but also `completed: true` and `verdict: approved`. The exact clause is the terminal-field branch, coded as `gate-hold-terminal-fields-set`.
+  The final entity had `status: validation` but also `completed: true` and `verdict: approved`. The exact clause is the terminal-field branch, coded as `gate-hold-terminal-fields-set`. The strict-XFAIL owner is `fh6rv0k6wr25zty0jjan4jp7`.
 - DONE: Define the smallest change that passes the unchanged headless gate-stop journey.
-  The Pi First Officer clears accidental terminal fields once with the existing status command, rereads the entity, fails closed on refusal, and then uses the existing gate path. The command-log oracle and strict binding prove the boundary.
+  The Pi First Officer clears accidental terminal fields once with the existing status command, rereads the entity, fails closed on refusal, and then uses the existing gate path. The command-log oracle and the `fh6rv0k6wr25zty0jjan4jp7` strict binding prove the boundary. The runtime label `xp6c9qfe7y4wwp46enc3f85n` remains evidence-only.
 - DONE: Give a visible-value statement and gross and net line estimates.
   The visible value is two non-empty terminal fields reduced to zero while one open Briefing remains. The estimate is 21 gross insertions, 9 gross deletions, and +12 net lines across four existing files.
 
 ### Summary
 
-Ideation isolates the Pi failure to terminal fields set on an otherwise open validation gate. The plan adds a bounded First Officer cleanup, a stable semantic code, command-order proof, and a strict-XFAIL Pi binding. It leaves the fixture unchanged and makes the final-state journey measurable.
+Ideation isolates the Pi failure to terminal fields set on an otherwise open validation gate. The plan adds a bounded First Officer cleanup, a stable semantic code, command-order proof, and a strict-XFAIL Pi binding owned by `fh6rv0k6wr25zty0jjan4jp7`. It leaves the fixture unchanged and makes the final-state journey measurable.
