@@ -17,9 +17,9 @@ separate because they verify host boundaries rather than workflow semantics.
 
 `TestRuntimeLiveRegistryReconciliation` parses the real Go declarations and calls,
 the immediately adjacent journey and fixture annotations, the desired registry,
-and the executable workflow. It fails on missing or duplicate IDs, malformed TODO
-ownership, builder/assertion drift, orphan fixtures, and any lane that does not use
-the exact `-run '^TestLiveCommon' -failfast` selector.
+and the executable workflow. It fails on missing or duplicate IDs, unclassified
+live tests, malformed TODO ownership, builder/assertion drift, orphan fixtures,
+and an incorrect common-suite selector.
 
 Run it after changes to `internal/ensigncycle/`, `internal/livescenario/`, the
 registry, or `.github/workflows/runtime-live-e2e.yml`:
@@ -27,6 +27,17 @@ registry, or `.github/workflows/runtime-live-e2e.yml`:
 ```bash
 go test ./internal/contractlint -run '^TestRuntimeLiveRegistryReconciliation$'
 ```
+
+The state checkout changes independently from a code commit. Run the mutable
+owner join during sprint close and before a release:
+
+```bash
+SPACEDOCK_LIVE_STATE_DIR=docs/dev/.spacedock-state \
+  go test ./internal/contractlint -run '^TestRuntimeLiveTODOOwnersAreActive$'
+```
+
+This check fails when a TODO names a missing, completed, rejected, or archived
+entity. Stable code CI does not fetch mutable workflow state.
 
 ### Local live execution
 

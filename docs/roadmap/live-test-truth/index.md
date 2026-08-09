@@ -200,6 +200,6 @@ Claude Opus 1, Claude Sonnet 4, Codex 6, and Pi 5.
   `test-behavior-completeness`.
 - Product repairs and later evidence restoration remain outside this sprint.
 
-The delivery work is complete. Pre-close review still requires the reconciliation
-guard to reject inactive TODO owners and unclassified live entry points before
-the sprint can close.
+The delivery work is complete. Source reconciliation rejects unclassified live
+entry points. The close procedure joins TODO IDs to the mutable state checkout
+and rejects inactive owners without making stable code CI depend on later state.

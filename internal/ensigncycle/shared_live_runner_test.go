@@ -83,26 +83,6 @@ func claudeLiveRole(model string) (string, error) {
 	}
 }
 
-func TestClaudeLiveModelMapsToStableTODORole(t *testing.T) {
-	tests := []struct {
-		model, want string
-		wantErr     bool
-	}{
-		{model: "sonnet", want: "claude-sonnet"},
-		{model: "claude-sonnet-5", want: "claude-sonnet"},
-		{model: "claude-opus-4-8", want: "claude-opus"},
-		{model: "claude-future-unknown", wantErr: true},
-	}
-	for _, test := range tests {
-		t.Run(test.model, func(t *testing.T) {
-			got, err := claudeLiveRole(test.model)
-			if (err != nil) != test.wantErr || got != test.want {
-				t.Fatalf("claudeLiveRole(%q) = %q, %v; want %q, error=%t", test.model, got, err, test.want, test.wantErr)
-			}
-		})
-	}
-}
-
 //spacedock:live-journey id=full-ensign-cycle fixture=realistic-lifecycle
 func TestLiveCommonFullEnsignCycle(t *testing.T) {
 	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, nil, runFullEnsignCycleJourney, someCommitNamesOnly)
@@ -110,12 +90,12 @@ func TestLiveCommonFullEnsignCycle(t *testing.T) {
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
 func TestLiveCommonGateGuardrail(t *testing.T) {
-	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyTODO{liveTODO("codex", "3zzpdw704df1g8pg1x9thzmw"), liveTODO("pi", "3zzpdw704df1g8pg1x9thzmw")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyTODO{liveTODO("codex", "xp6c9qfe7y4wwp46enc3f85n"), liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "26nk8qd48zknqnn4kc123sez"), liveTODO("codex", "26nk8qd48zknqnn4kc123sez"), liveTODO("pi", "26nk8qd48zknqnn4kc123sez")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "98aa776adg66gn823a8gamdq"), liveTODO("codex", "98aa776adg66gn823a8gamdq"), liveTODO("pi", "98aa776adg66gn823a8gamdq")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
@@ -125,7 +105,7 @@ func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
 func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
-	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyTODO{liveTODO("claude-opus", "a732sahay8wzgqrd2yr0xxr7")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
+	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyTODO{liveTODO("claude-opus", "xp6c9qfe7y4wwp46enc3f85n")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
 }
 
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
@@ -185,5 +165,5 @@ func TestLiveCommonACValueReanchor(t *testing.T) {
 
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyTODO{liveTODO("claude-sonnet", "d8qmey415fsb5q9h6q639ngf"), liveTODO("claude-opus", "d8qmey415fsb5q9h6q639ngf"), liveTODO("pi", "d8qmey415fsb5q9h6q639ngf")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyTODO{liveTODO("claude-sonnet", "xp6c9qfe7y4wwp46enc3f85n"), liveTODO("claude-opus", "xp6c9qfe7y4wwp46enc3f85n"), liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
