@@ -283,3 +283,65 @@ The Captain supersedes the hardcoded stage table and the prior three-file fix pr
 ### F6C boundary
 
 KRB owns the workflow-defined gate-content mechanism, generic evidence selection, built-in stage declarations needed to adopt it, and the two KRB user-doc sentences. F6C retains removal/replacement of semantic prose-grep assertions and the wider final gate/help documentation reconciliation; KRB adds no committed wording oracle and does not absorb F6C's inventory. W5 digest reliability, XX zero-item dispatch validation, command grammar, stored gate schema, recorder semantics, and runtime routing remain excluded.
+
+## Re-estimate: workflow-owned Gate content
+
+This re-estimate supersedes the earlier three-file/35-75-line surface and narrows the reset draft to the smallest end-to-end adoption. `present-gate` itself reads the current stage subsection through the existing `dispatch show-stage-def` surface, so `skills/first-officer/references/first-officer-shared-core.md`, Go code, YAML frontmatter, parser logic, and renderer schemas do not change.
+
+### Revised mechanism
+
+Each gated `### <stage>` subsection may declare one direct `- **Gate content:** ...` instruction. The presenter treats that instruction as authoritative; without it, the presenter uses only the subsection's Inputs, Outputs, Good/Bad criteria, and the workflow-declared advance/feedback transition. Generic hints distinguish gates before direction selection, after direction selection, and after execution without assigning meaning to a stage name. Missing evidence and empty result/finding groups are omitted, never replaced with placeholders or invented facts.
+
+### Revised acceptance criteria
+
+**AC-1 (VALUE) - Gate reviews follow their workflow's stage definition, improving from a hardcoded development-stage table to correct declared evidence for every controlled non-development gate with zero stage-name inference or fabricated rows.**
+Verified by: exercise explicit Gate content across controlled refinement and experiment gates with non-development names; grade every visible row against the declaration. Renaming a stage without changing its definition must not change the evidence, while changing the Gate content must change the review.
+
+**AC-2 - Explicit Gate content overrides generic hints, and an undeclared Gate content falls back only to declared stage criteria and transition.**
+Verified by: one conflict case requests a narrow metric while Inputs/Outputs mention additional material, and one fallback case has no Gate content. The first fails if extra material appears; the second fails if output cannot be traced to Inputs, Outputs, Good/Bad, or transition.
+
+**AC-3 - Empty evidence is absent while the common gate authority remains singular and unchanged.**
+Verified by: controlled reviews with missing/zero evidence contain no empty heading, `None`, `N/A`, or zero-result row and contain exactly one task/stage, supplied Briefing identity/digest, recommendation, and decision effect; workflow finding labels remain exact and `${SPACEDOCK_BIN:-spacedock} gate record --decision` remains the sole recorder.
+
+**AC-4 - Commission and refit propagate workflow-owned Gate content without rewriting old fixture truth.**
+Verified by: commission one workflow from each built-in template and one custom/variant shape, then run refit Phase 3b against `skills/integration/testdata/refit-content-propagation/site-workflow/`. Generated gated stage subsections contain their template/mission-specific Gate content, and the refit diff exposes the additive declarations while the legacy fixture README remains byte-unchanged.
+
+**AC-5 - Published documentation describes workflow-owned evidence directly and KRB does not absorb F6C or adjacent semantics.**
+Verified by: strict docs rendering and visual review compare the user pages with controlled output; final diff classification shows no semantic prose-grep cleanup, F6C inventory, W5 digest mechanism, XX dispatch validation, command grammar, YAML/stored schema, parser, recorder, or runtime change.
+
+### Revised expected surface
+
+Expected implementation surface: **9 files / 55-105 changed lines** (insertions plus deletions):
+
+- `skills/present-gate/SKILL.md` - remove the hardcoded stage table and 11-item list; add one generic template, stage-definition fetch, phase hints, omission, finding-label, singular-authority, and recorder rules (about 25-50 changed lines).
+- `skills/commission/SKILL.md` - require every custom or variant gated stage definition to state the evidence that makes its decision possible (about 3-7 lines).
+- `skills/commission/references/templates/development.md` - add Gate content to its three gated stage subsections (about 3-8 lines).
+- `skills/commission/references/templates/refinement.md` - add Gate content to its gated review subsection; variants inherit the commission rule (about 1-4 lines).
+- `skills/commission/references/templates/experiment.md` - add Gate content to its three gated stage subsections (about 3-8 lines).
+- `docs/dev/README.md` - add explicit Gate content to this workflow's three gated stage definitions (about 3-8 lines).
+- `skills/integration/testdata/refit-content-propagation/README.md` - name Gate content as an expected additive refit hunk (about 2-5 lines). Its legacy `site-workflow/README.md` deliberately remains unchanged; entity-label and scaffold fixtures are fallback workflows, not propagation fixtures.
+- `docs/site/concepts/gates-and-decisions.md` - replace the abstract/hardcoded sentence with direct workflow-owned behavior (about 2-7 lines).
+- `docs/site/get-started/first-workflow.md` - name the concrete passed checks and omit empty groups in the example (about 2-5 lines).
+
+Tolerance is **plus or minus 1 file and +35/-20 changed lines** for existing template-propagation machinery discovered during implementation. Any Go production edit, new YAML/frontmatter field, parser, renderer schema, hardcoded stage semantic, second recorder, or F6C semantic-oracle cleanup is a design reset regardless of line count.
+
+### Revised test plan
+
+1. Run the AC-1/AC-2 controlled presenter matrix across development, refinement, experiment, and a custom shape. Grade semantic output rather than searching instruction prose; include rename invariance, explicit-override, fallback, and absent-evidence controls.
+2. Run the AC-3 common-spine grader with empty classes/findings and a workflow-owned finding-label order. Fail on a placeholder, invented section, missing/duplicate authority fact, reclassification, or alternate recorder.
+3. Drive commission for all three built-in templates plus one custom/variant gate, then drive refit Phase 3b against the retained old site-workflow fixture. Compare generated stage subsections and refit diff; do not update the old fixture to make the proof pass.
+4. Run contract lint, strict MkDocs plus available visual review, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. Run the live gate journeys required by the shared-skill path mapping, including one visible non-development gate that proves stage-definition read before presentation and presentation before the unchanged recorder.
+5. Audit final paths and line count against the estimate and F6C boundary. Add no committed semantic prose-presence test.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Resolve the smallest workflow-owned Gate content mechanism without hardcoded stage names, new YAML, a parser, or a renderer schema.
+  The revised mechanism uses one optional instruction in the existing stage subsection and the shipped stage-definition read; explicit content wins and fallback is bounded to declared criteria/transition.
+- DONE: Re-estimate the exact files and changed lines, including only required built-in templates and propagation fixtures; state the F6C boundary and any tolerance decision.
+  The new estimate is 9 files/55-105 changed lines with plus-or-minus-1-file and +35/-20-line tolerance; all three canonical templates and only the propagation descriptor change, while its old workflow fixture remains byte-stable.
+- DONE: Update the durable design, expected surface, acceptance criteria, and test plan; keep candidate a236c0074 and all product bytes unchanged and run no tests.
+  The sections above replace the obsolete design and name falsifiable matrix, commission/refit, docs, repository, live, and ownership proof; code HEAD remains `a236c0074` with a clean worktree and no test or live invocation in this cycle.
+
+### Summary
+
+The design now generalizes through workflow-owned Gate content carried by existing stage subsections and the existing read surface. The re-estimate identifies nine product/documentation/template files, retains the old refit workflow as the propagation control, and excludes F6C plus all command/schema/parser/recorder/runtime changes. Candidate `a236c0074` remains untouched pending a separately authorized implementation.
