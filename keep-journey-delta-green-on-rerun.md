@@ -1,7 +1,7 @@
 ---
 id: qz0ap96nt5k93tgbsphq9ahy
 title: Keep journey-delta reporting green across failed-job reruns
-status: implementation
+status: validation
 source: PR #639 Runtime Live E2E attempts 2 and 3 on 2026-08-08.
 started: 2026-08-09T04:16:06Z
 completed:
@@ -208,3 +208,32 @@ The design recovers the newest exact artifact for each producer across rerun att
 The reporting job now downloads the newest exact artifact for each required producer. It warns and exits successfully if either metric set is unavailable.
 
 The operator rule now states that an optional metrics failure does not change the required test result.
+
+## Stage Report: validation
+
+- DONE: Verify exact-ID recovery chooses the newest nonexpired Claude and Codex artifacts and skips the optional comment cleanly when either artifact is unavailable or incomplete.
+  A detached extracted-script audit selected Claude ID 12 over older ID 11 while excluding expired ID 99 and near-name ID 100; missing, failed-download, invalid-ZIP, and empty-metrics cases exited zero with `found=false` and deleted partial input.
+- DONE: Confirm the final change is lean: no artifact simulator, generated ZIP fixtures, job-graph test, live-lane addition, or rerun command.
+  Commit `ce01c4e69` changes only the workflow and operator guide, with 54 insertions/13 deletions; no simulator, committed ZIP, test file, new job, live lane, or rerun command exists.
+- DONE: Run applicable existing workflow, release, registry, full, race, formatting, and detached-adversarial checks; verify every acceptance criterion and report PASSED or REJECTED.
+  Focused release and registry checks passed; `go test ./...` and `go test ./... -race` passed; `gofmt -w ./cmd ./internal`, `gofmt -l`, and `git diff --check` were clean; verdict is PASSED.
+- DONE: AC-1 (VALUE) - An unavailable metrics artifact cannot make a pull-request workflow red after all required test jobs pass.
+  The detached audit ran the real recovery step with missing and failed artifact responses: each exited zero, wrote only `found=false`, removed partial input, and therefore left all three consumers gated off.
+- DONE: AC-2 - Available artifacts from successful producer attempts result in one complete journey-delta comment.
+  Two valid exact-ID ZIPs produced `found=true`; the real locate step delivered two JSON inputs, and `TestJourneyDeltaCommandCreatesNewCommentWhenNoneExists` proved exactly one post invocation (it would fail on zero or multiple calls).
+- DONE: AC-3 - A rerun selects the newest artifact for each exact producer name.
+  Reverse-ordered API data downloaded only Claude ID 12 (later `created_at`) plus Codex ID 21; the older, expired, and nonexact-name Claude artifacts were not downloaded.
+- DONE: AC-4 - A rerun never publishes a partial journey-delta comment.
+  Separate Claude-missing and Codex failure/incomplete exercises wrote `found=false`, removed recovered Claude input when applicable, and the independently parsed consumer predicates require `found == 'true'`.
+- DONE: AC-5 - The fix does not add or rerun a live test job.
+  Parsed active job headers remain exactly `offline`, `claude-live`, `codex-live`, and `journey-delta-comment`; no rerun invocation exists and the diff adds no job header.
+- DONE: AC-6 - Operators can distinguish a test failure from an optional metrics failure.
+  Every unavailable case exited zero and emitted exactly one GitHub warning containing the exact failing producer name; changing the warning count or name fails the detached audit.
+- SKIPPED: Add durable regression coverage for the new recovery branch.
+  Latest captain feedback explicitly removed the simulator/harness and required no replacement; detached mutation showed committed release tests stay green if `warn_and_skip` changes to exit 1, while the independent audit fails, so revisit if this branch is edited again.
+
+### Summary
+
+PASSED. The candidate satisfies all six acceptance criteria, stays inside the two-file lean scope, and completes focused, full, race, formatting, and detached behavioral validation.
+
+One deferred evidence risk remains by captain-approved scope: the recovery branch has no committed behavioral regression test. Promote it to material if a later change touches artifact recovery without repeating the extracted-script audit or if CI exhibits another optional-comment red result.
