@@ -55,6 +55,8 @@ For this choice, run the offline job and one approval-gated `pi-live` job. Do no
 
 Keep pull-request behavior unchanged. Pull requests create only the Sonnet and Codex live jobs, so Pi is not a merge requirement.
 
+Make the release cadences exclusive. Manual `live_cadence=opus-pre-release` runs offline plus Opus/max only. Manual `live_cadence=pi` runs offline plus Pi Luna/max only. Manual `live_cadence=sonnet` may preserve its current Sonnet-plus-Codex behavior.
+
 Use the existing `CI-E2E-PI` environment and the pinned Pi packages. Run Pi with the stored `OPENAI_API_KEY`, model `openai/gpt-5.6-luna`, and maximum thinking. Run the canonical `^TestLiveCommon` selector and the Pi front-door substrate proof. Retain logs, artifacts, and journey metrics.
 
 Do not add a second workflow, scheduler, registry, simulator, or product-behavior repair.
@@ -64,7 +66,7 @@ GitHub represents every statically declared job in the run graph. A false job-le
 ## Proposed approach
 
 1. Extend the existing `live_cadence` choice from `sonnet|opus-pre-release` to `sonnet|opus-pre-release|pi`. Keep `sonnet` as the default.
-2. Add job-level event conditions. Claude and Codex run for pull requests and non-Pi manual cadences. Pi runs only for `workflow_dispatch` with `live_cadence=pi`. The offline job remains unconditional and is the only prerequisite of each live job.
+2. Add job-level event conditions. Pull requests run Claude Sonnet/max plus Codex Luna/max. Manual `sonnet` may run Sonnet plus Codex as it does now. Manual `opus-pre-release` runs Opus/max and excludes Codex and Pi. Manual `pi` runs Pi Luna/max and excludes Claude and Codex. The offline job remains unconditional and is the only prerequisite of each selected live job.
 3. Restore the previously proven Pi job in the same workflow instead of inventing a new runner. Keep its verified package integrity pins, current-checkout binary, Pi doctor check, isolated live-test environment, clean gotestsum logs, and `CI-E2E-PI` environment.
 4. Set the Pi job's model to `openai/gpt-5.6-luna:max`. Pi treats the suffix as the `max` thinking level. Both common journeys and the front-door proof already consume the shared Pi model selector.
 5. Add the Pi journey-metrics directory and upload it with the common-journey detail JSONL, front-door detail JSONL, current-checkout binary, Pi diagnostics, and Pi live artifacts. Do not add Pi to the pull-request journey-delta comment, because the Pi cadence is manual-only.
@@ -83,7 +85,7 @@ The Pi job is long because package integrity and runtime isolation are part of t
 
 Tolerance: at most 7 files and 380 inserted lines. A small helper-test edit in `internal/release` is allowed if the existing YAML parser cannot expose job conditions. No production Go package, live journey implementation, fixture, registry, skill, or release workflow may change.
 
-Observable semantics allowed to change: the manual workflow input accepts `pi`; job selection for manual dispatch changes; the Pi CI model/thinking level and retained artifacts change. Command grammar, product runtime behavior, workflow-state formats, gate authority, pull-request required checks, and the 17-journey registry do not change.
+Observable semantics allowed to change: the manual workflow input accepts `pi`; manual Opus and Pi dispatches become runtime-exclusive; the Pi CI model/thinking level and retained artifacts change. Command grammar, product runtime behavior, workflow-state formats, gate authority, pull-request required checks, manual Sonnet behavior, and the 17-journey registry do not change.
 
 ## Mechanism proof
 
@@ -102,14 +104,17 @@ Verified by: one pull-request workflow run executes Sonnet and Codex live jobs, 
 **AC-3 - A Pi-only dispatch spends no Claude or Codex lane.**
 Verified by: the manual Pi run allocates no Claude or Codex runner, requests only the `CI-E2E-PI` approval, and leaves any statically declared Claude or Codex nodes skipped.
 
-**AC-4 - The desired journey registry stays unchanged.**
+**AC-4 (VALUE) - Each manual release cadence spends only its selected runtime.**
+Verified by: Actions job and deployment records for exact-candidate `opus-pre-release` and `pi` dispatches show offline plus only Opus or Pi respectively; excluded hosts allocate no runner, request no environment approval, receive no secret, and execute no step. A skipped static graph node is permitted. Manual `sonnet` is not a release cadence and may retain Sonnet plus Codex.
+
+**AC-5 - The desired journey registry stays unchanged.**
 Verified by: registry reconciliation passes with the same current 17 common journeys, fixtures, TODO owners, and canonical selector.
 
 ## Test plan
 
-Start with a failing structural test for the event matrix: pull request selects Claude plus Codex and excludes Pi execution; manual `pi` selects Pi and excludes Claude plus Codex execution; other manual choices preserve their current hosts. Assert the Pi job uses `CI-E2E-PI`, the stored OpenAI key, `openai/gpt-5.6-luna:max`, both exact test selectors, and retained metrics/artifacts. Use parsed YAML and executable-step inspection, not prose grep. Do not add a simulator for GitHub Actions.
+Start with a failing structural test for the event matrix: pull request selects Sonnet plus Codex; manual `sonnet` may select Sonnet plus Codex; manual `opus-pre-release` selects Opus and excludes Codex plus Pi; manual `pi` selects Pi and excludes Claude plus Codex. Assert the Pi job uses `CI-E2E-PI`, the stored OpenAI key, `openai/gpt-5.6-luna:max`, both exact test selectors, and retained metrics/artifacts. Assert the Opus job uses only `CI-E2E-OPUS`. Use the existing parsed-YAML and executable-step inspection helpers, not prose grep, a new parser, or a simulator for GitHub Actions.
 
-Run `go test ./...`, `go test ./... -race`, formatting, and the registry reconciliation. Then dispatch one real `live_cadence=pi` workflow on the exact candidate commit, approve only `CI-E2E-PI`, and inspect the Actions job list, requested environment, model record, and downloaded artifact contents. Inspect one pull-request run on the same workflow shape to confirm that Pi consumed no runner or approval.
+Run `go test ./...`, `go test ./... -race`, formatting, and the registry reconciliation. Dispatch one real `live_cadence=pi` workflow on the exact candidate commit, approve only `CI-E2E-PI`, and inspect the Actions job list, requested environment, model record, and downloaded artifact contents. For Opus exclusivity, use the next exact-candidate `opus-pre-release` run and verify that it requests only `CI-E2E-OPUS`; if no release run exists for that commit, dispatch one. Inspect one pull-request run on the same workflow shape to confirm that the existing Sonnet and Codex lanes still run and Pi consumes no runner or approval.
 
 ## Documentation diff proposed at ideation
 
@@ -121,13 +126,17 @@ with:
 
 > An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai/gpt-5.6-luna` at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests still run only Sonnet and Codex; Pi is optional and is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
+Also change the Opus cadence sentence to:
+
+> An explicit `live_cadence=opus-pre-release` dispatch runs offline plus `claude-opus-4-8` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
+
 In `docs/site/contributing/architecture-notes.md`, replace:
 
 > **Pi evidence** uses the local subscription path with `pi login`. Pull requests keep only the free registry reconciliation.
 
 with:
 
-> **Pi evidence** runs on demand with `live_cadence=pi` behind `CI-E2E-PI`, using Luna at maximum thinking and retaining the common-journey and front-door artifacts. Pull requests do not run Pi.
+> **Manual release evidence** is runtime-exclusive: `opus-pre-release` runs only Opus/max behind `CI-E2E-OPUS`, and `pi` runs only Pi Luna/max behind `CI-E2E-PI` while retaining the common-journey and front-door artifacts. Pull requests continue to run Sonnet/max and Codex Luna/max; they do not run Pi.
 
 ## Stage Report: ideation
 
@@ -141,3 +150,16 @@ with:
 ### Summary
 
 The design restores retained Pi evidence without restoring Pi as a pull-request gate. It also reconciles the task with D8: the unchanged desired registry now contains 17 common journeys, not 16. The only remaining mechanism proof is the real GitHub cadence run after implementation.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Design one manual Pi-only cadence in the existing workflow that uses the stored OpenAI key and retained evidence.
+  The original Pi design remains; Pi uses direct-OpenAI Luna/max and retains common, substrate, diagnostic, session, and journey-metric evidence.
+- DONE: Keep pull-request Sonnet and Codex behavior unchanged, with no Pi merge requirement or unrelated lane spend.
+  The corrected matrix keeps PR Sonnet/max plus Codex Luna/max, makes Opus manual dispatch Opus-only, and makes Pi manual dispatch Pi-only.
+- DONE: Specify the smallest workflow and test changes plus one real exact-cadence validation run.
+  Existing job conditions and YAML test helpers own exclusivity; exact-candidate Pi and Opus Actions records prove that excluded runtimes consume no runner, approval, secret, or step.
+
+### Summary
+
+The Captain-approved fold makes both manual release cadences exclusive. `opus-pre-release` spends only Opus, `pi` spends only Pi, and pull requests retain Sonnet plus Codex; no new workflow, parser, simulator, registry, or release mechanism is introduced.
