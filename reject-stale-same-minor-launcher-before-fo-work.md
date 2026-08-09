@@ -66,6 +66,17 @@ gates:
                 digest: sha256:dd4f34d9ac1e7f15ed798dfd865589d0295ac814cc9745940e57724ad4991163
                 request-digest: sha256:eac67f1cdabf845bf2b83d850db9cb994919bccf794085255441841da70cf005
                 room-ref: ./reject-stale-same-minor-launcher-before-fo-work/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5f6m3jwhbrbneak5j8eeyh5r:validation:1
+                briefing: briefing:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T20:38:15.675093Z"
+                decision: approve
+                reason: Validation passed AC-1 through AC-3 with exact launcher-order fixtures, three host live boots, full and race suites, approved scope, and a detached claim-breaking audit; no findings remain.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Stop a First Officer before workflow work when the selected launcher has the correct minor version but lacks a required command surface.
