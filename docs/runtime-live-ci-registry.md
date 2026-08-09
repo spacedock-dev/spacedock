@@ -244,6 +244,18 @@ deterministic coverage to the default suite, or delete it.
   - `ac-reanchor/means-pass-value-regressed` — a gated candidate whose mechanism
     criterion passes while its paired value criterion regresses.
 
+### `owned-conflict-owner-handoff`
+
+- **Entry point:** `TestLiveCommonOwnedConflictOwnerHandoff`
+- **Required outcome:** After aborting an owned moving-target conflict, the first
+  officer routes reconciliation to the workflow owner of the existing registered
+  checkout. Live reuse and ordinary fresh fallback preserve the owner tuple from
+  the initial stamped dispatch without changing workflow authority.
+- **Fixtures:**
+  - `conflict-owner/stamped-checkout` — an initial stamped dispatch creates the
+    registered implementation checkout before its branch and `main` diverge into
+    a real rebase conflict.
+
 ## Runtime-specific live proofs
 
 These proofs are intentionally separate from common journeys. Each must remain

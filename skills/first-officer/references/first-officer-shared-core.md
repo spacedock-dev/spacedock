@@ -128,10 +128,12 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 
 - → **shipped**: `` `spacedock state commit <slug>` `` — on exit 3 → `«halt.rebase-conflict»(paths)`.
 
-## «halt.rebase-conflict»(paths): abort, surface, stop
+## «halt.rebase-conflict»(paths): halt state; route owned code
 
-- **block:** an «engage» `state ready` / `«state.commit»` exit 3 already carries the remediation in its stderr — HALT per that output. A manual FO-held `pull --rebase` CONFLICT (code worktree, the reconcile sweep's `stale-branch` remedy): run `git rebase --abort`, surface `paths` + peer commit to the captain, stop. Never `--force`/`--force-with-lease`, never `-X ours`/`-X theirs`, never discard either side — do not force-push or auto-resolve.
-- → **prose** — no binary resolves a two-writer conflict; the FO halts and the captain reconciles.
+- **block:** an «engage» `state ready` / `«state.commit»` exit 3 carries remediation in stderr — HALT; a state-sync conflict remains workflow-wide.
+- **effect:** for a manual FO-held `pull --rebase` CONFLICT in an owned code worktree, run `git rebase --abort`, surface exact paths + peer commit, then invoke dispatch-core's same-stage owner handoff; unrelated entities may continue. Cold or unowned checkouts are report-only.
+- **block:** never force-push, auto-resolve, or discard either side.
+- → **prose** — the recorded owner, not the FO, reconciles code.
 
 ## Mod Hook Convention
 
