@@ -22,6 +22,11 @@ The CAS guard itself fired correctly and is untouched by collapse-gate-approval-
 
 This PR's `skills/fo-gate-lifecycle/SKILL.md` Resume paragraph newly added "stale -> supersede then replace" wording. The model's own final message described its incomplete attempt as "stale" before withdrawing and redoing it -- an unproven but plausible echo of that new wording nudging it toward withdraw-and-redo as a first response to a prepare rejection, rather than the simpler commit-and-retry. If confirmed, tightening that wording (to bias toward commit-and-retry on a CAS rejection specifically, reserving withdraw-and-redo for genuinely stale/superseded state) could reduce this class of extra-attempt noise. Needs ideation to determine if this is worth a scoped wording fix or should stay as accepted live-agent variance.
 
+Before a product change, run this journey with the strict XFAIL behavior from
+`ts7gq0mr9s3chx2w4wppd1kt`. Convert the TODO only if repeated evidence produces
+one stable semantic failure code. If results vary, keep this task as a behavior
+investigation and do not hide the variance as XFAIL.
+
 ## Out of scope
 
 Any change to the CAS guard itself (`internal/gitsource/source.go`) -- it is behaving correctly, unrelated to this finding.
