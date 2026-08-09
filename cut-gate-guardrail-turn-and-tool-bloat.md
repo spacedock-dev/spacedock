@@ -46,6 +46,17 @@ gates:
                 digest: sha256:966fe77eebf72e5aa68f230fe9733fb73cb5cee62659f85207e60f0791957c2f
                 request-digest: sha256:da8824069956b6ee755d3bb86d73a3250f3d727b489467fbddfd66062873c137
                 room-ref: ./cut-gate-guardrail-turn-and-tool-bloat/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5k704rrfk5r75vqv3bwn1yhf:ideation:1
+                briefing: briefing:5k704rrfk5r75vqv3bwn1yhf:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T15:29:21.646183Z"
+                decision: approve
+                reason: The direction removes measured contract-caused gate toil through existing structured reads and real gate outputs, with bounded files and live comparison evidence and no new parser, harness, CLI, or lifecycle state.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
