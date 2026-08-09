@@ -316,3 +316,19 @@ The Pi driver now emits one existing-format metrics record after each completed 
 ### Summary
 
 The correction is inside the authorized boundary and uses the existing record format. Its focused proof does not detect the exact driver no-op regression. The recommendation is REJECTED, and the candidate remains unchanged.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Replace the focused proof so it executes the supported `piSharedLiveDriver.emitMetrics` seam and fails when that method is restored to the exact no-op regression.
+  The fixed seed calls the driver seam. The detached no-op failed with `Pi journey metric files = 0, want 1`.
+  The exact candidate passed the same focused command for `FuzzPiSharedLiveDriverEmitsJourneyMetric/seed#0`.
+- DONE: Keep the correction inside the same two files, existing metrics format, and +120 net limit; do not add another helper, schema, format, or producer path.
+  The correction has 57 insertions, 2 deletions, and +55 net lines across the same two files.
+  The proof replaces the bypassing example, and the producer still uses the existing `BuildRecord` and `EmitRecord` path.
+- DONE: Commit the proof correction and a complete Simplified-English implementation Stage Report with focused no-op/fixed output and full offline/race/registry evidence.
+  Candidate `7f5f79aadb90b30e72eb243fb91732a4cf6063a7` is pushed and ready for fresh validation.
+  `gofmt`, both full suites, registry reconciliation, and the mutable owner test passed.
+
+### Summary
+
+The focused proof now calls the same Pi driver seam as the common journeys. It fails on the original no-op and passes on the repaired candidate. The full candidate changes ten approved files and adds 299 net lines.
