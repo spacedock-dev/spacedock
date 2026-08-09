@@ -250,3 +250,36 @@ Validation recommends REJECTED and routes the Material AC-5 evidence defect to t
 - Proposed materiality: Material.
 - Proposed task ownership: KRB's current three-file candidate; all affected prose is in the approved presenter and two documentation files and requires no F6C, W5, XX, command, schema, recorder, or runtime change.
 - Proposed disposition: replace the 11-item list with the existing short presentation template plus a few direct rules: select only stage-available evidence, omit empty result/finding groups while retaining validation totals, preserve workflow-owned finding labels without classifying, emit exactly one recommendation/snapshot/decision effect, and keep `gate record --decision` as sole recorder. Rewrite the two documentation sentences to state the backlog, ideation, and validation evidence directly and name the passed validation checks; remove abstract prose across only these three files after distinct First Officer authorization. Candidate bytes, HEAD, and test state remain unchanged pending that authorization.
+
+## Design reset: workflow-owned gate evidence
+
+### Captain correction
+
+The Captain supersedes the hardcoded stage table and the prior three-file fix proposal: "those per-stage thing should be defined in workflow. i don't understand how present-gate can generalize". `present-gate` may carry generic hints, but the current workflow stage definition is authoritative: read its declared inputs, outputs, Good/Bad criteria, and transition; show only evidence needed for that decision; never infer content from a stage name, invent missing evidence, or override an explicit workflow gate-content definition.
+
+### Smallest declarative mechanism
+
+- Keep stage meaning in the existing `### <stage>` subsection of the workflow README. A gated stage may add one optional `- **Gate content:** ...` instruction that names the evidence the Captain needs for that gate; this is workflow prose returned verbatim by the existing `dispatch show-stage-def` command, not a new YAML field, parser, stored form, or renderer schema.
+- Add the current stage definition to `«gate.assemble-verdict»` inputs using the existing stage-def surface. If `Gate content` is present, it is the selection authority. If absent, select the minimum decision evidence from that stage's Inputs, Outputs, Good/Bad criteria, and declared advance/feedback transition. The checklist and AC scan remain evidence sources, not universal presentation sections.
+- Keep `present-gate` generic. Its hints may distinguish a gate before direction selection, after direction selection, or after execution, but may not name or require any development stage. Render only non-empty workflow-requested evidence; omit an unavailable section rather than inserting `None`, `N/A`, a zero-result row, or an invented fact.
+- Preserve the common gate authority unchanged: task label and current stage, bound Briefing identity/digest, workflow-owned reviewer finding labels without presenter classification, exactly one recommendation, exactly one decision effect derived from the declared transition, and `${SPACEDOCK_BIN:-spacedock} gate record --decision` as sole recorder.
+
+### Migration surface
+
+- Replace the hardcoded stage names and 11-item accumulated list in `skills/present-gate/SKILL.md` with one short generic template and the direct rules above.
+- Extend `«gate.assemble-verdict»` in `skills/first-officer/references/first-officer-shared-core.md` to read the current workflow stage definition before rendering; reuse `dispatch show-stage-def`, checklist, AC scan, boot stage order, and `feedback-to` rather than adding a command or parser.
+- Add explicit `Gate content` instructions to the gated stages in `docs/dev/README.md`, and to gated stages in the built-in development, refinement, and experiment commission templates. Custom commissioning guidance should ask what evidence makes each gate decidable and write that answer into the stage subsection.
+- Rewrite the two KRB user-doc changes to explain that each workflow defines its gate evidence and that empty evidence groups are omitted; the example names the checks that passed. Do not teach a frontmatter field or dev-specific universal stage map.
+- Candidate commit `a236c0074` is superseded by this design reset. No candidate byte or HEAD changes are authorized yet; expected file/line scope must be re-estimated before implementation, with any generated template fixtures included only when their existing propagation checks require them.
+
+### Proof plan
+
+1. Exercise the existing presenter with controlled workflows whose gated stages use non-development names. Grade that each visible review follows its own explicit `Gate content`, contains no development-stage vocabulary, and omits every unavailable or empty group.
+2. Exercise an explicit-override case where Inputs/Outputs suggest extra material but `Gate content` requests a narrower metric; fail if the presenter adds the extra material. Exercise a fallback case with no `Gate content`; fail unless the review uses only the declared Inputs, Outputs, Good/Bad criteria, and transition.
+3. Across the controlled reviews, require the supplied Briefing/digest, workflow-owned finding labels, exactly one recommendation, exactly one decision effect, and the unchanged sole recorder. A missing/duplicate common fact or presenter-authored finding class fails.
+4. Use one live recorded gate with a non-development stage name to observe stage definition read before presentation and presentation before `gate record --decision`; grade output semantics and durable command ordering, not instruction-file substrings.
+5. After authorized implementation, run contract lint, strict docs build plus available visual review, formatting, both repository suites, and final diff ownership. Add no semantic prose-presence oracle.
+
+### F6C boundary
+
+KRB owns the workflow-defined gate-content mechanism, generic evidence selection, built-in stage declarations needed to adopt it, and the two KRB user-doc sentences. F6C retains removal/replacement of semantic prose-grep assertions and the wider final gate/help documentation reconciliation; KRB adds no committed wording oracle and does not absorb F6C's inventory. W5 digest reliability, XX zero-item dispatch validation, command grammar, stored gate schema, recorder semantics, and runtime routing remain excluded.
