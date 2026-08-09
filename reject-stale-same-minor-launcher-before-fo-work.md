@@ -57,6 +57,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:5f6m3jwhbrbneak5j8eeyh5r:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:5f6m3jwhbrbneak5j8eeyh5r-validation-1
+              briefing:
+                id: briefing:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1
+                digest: sha256:dd4f34d9ac1e7f15ed798dfd865589d0295ac814cc9745940e57724ad4991163
+                request-digest: sha256:eac67f1cdabf845bf2b83d850db9cb994919bccf794085255441841da70cf005
+                room-ref: ./reject-stale-same-minor-launcher-before-fo-work/review/validation/briefing-1
 ---
 
 Stop a First Officer before workflow work when the selected launcher has the correct minor version but lacks a required command surface.

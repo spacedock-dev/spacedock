@@ -1,0 +1,45 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1",
+  "question": "Should 5F6 deliver the validated stale-same-minor launcher guard to stable 0.27.0?",
+  "artifacts": [
+    {
+      "id": "artifact:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/54284ef1a2a868012a82dfa5f989c81bf41e6a96/reject-stale-same-minor-launcher-before-fo-work.md",
+      "rev": "sha256:7511650641e29706598488c67f0606d1ac7311f69dd9e7338ebdaf62d25f6941",
+      "mediaType": "text/markdown",
+      "summary": "Reject stale same-minor launchers before workflow effects while compatible launchers retain one selected executable and one boot; all behavioral, live-host, race, and detached adversarial evidence passed."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/b331baf4ffa0532d495c870fd0e7b3646f8f9ed9/skills/first-officer/references/first-officer-shared-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:75a5c679713720c3d4fc892f7b51537ffb2623dae4e2465c0485cc4ca5f5516a"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/b331baf4ffa0532d495c870fd0e7b3646f8f9ed9/skills/integration/testdata/version_gate_flow.sh",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:4b4e29e72bacf59df4e3c09097a7c0a3345cb9afc6796d63985f594beb8c88a3"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/b331baf4ffa0532d495c870fd0e7b3646f8f9ed9/skills/integration/version_gate_fixture_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:bd1e5e385c2852bbd51cb1608065ea8d9a258b1aa62fe425db094e46dbec1e8f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:validation:attempt-1:revision-1:item-5",
+      "uri": "git-root://main/b331baf4ffa0532d495c870fd0e7b3646f8f9ed9/docs/site/get-started/install.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:4e14b05db895a8210078f81e955af914395e2f2b352e4658e48382756f7a9814"
+    }
+  ]
+}
