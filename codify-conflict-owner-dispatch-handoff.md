@@ -103,6 +103,12 @@ gates:
                 at: "2026-08-08T17:09:01.003807Z"
                 decision: revise
                 reason: 'Post-YS validation proves the live recipient and cardinality checks are self-referential. Authorize only the D8-owned typed-event correlation fix: exactly one spawn and one follow-up to the stamped handle, with text-only, wrong-handle, and extra-call negatives.'
+            - id: gate-attempt:d8qmey415fsb5q9h6q639ngf-validation-4
+              briefing:
+                id: briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-4:revision-1
+                digest: sha256:b53720064a79f90e21aaed54ca4e22f2a256b58996f58cd0819a9ee00183600c
+                request-digest: sha256:0e1f8ab32a90a5df9ccd4d6201439e22d8b008215a1ed8cd410b330e0a5505aa
+                room-ref: ./codify-conflict-owner-dispatch-handoff/review/validation/briefing-4
 mod-block:
 pr:
 ---
