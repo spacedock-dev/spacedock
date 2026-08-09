@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:98aa776adg66gn823a8gamdq:ideation:attempt-1:revision-1",
+  "question": "Does this design restore the required worker before validation?",
+  "artifacts": [
+    {
+      "id": "artifact:98aa776adg66gn823a8gamdq:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a57207bc48056b76b3b2ffb5e964eedd00d0e2d9/codex-headless-implementation-worker-before-validation.md",
+      "rev": "sha256:252fbea8b35fa08b150a32e82901acc1c3189d93edca824a854d642bff3ffbee",
+      "mediaType": "text/markdown",
+      "summary": "The repair produces a real implementation worker and completion evidence before validation."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:98aa776adg66gn823a8gamdq:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:721a29206d100a38a9af0378441bd4878f67e0ccaa16a8fa9236fc14f0da195f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:98aa776adg66gn823a8gamdq:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24234b4adff24091d215eec6992580d6b1925c714a36ededdd4d0a5383ec2c4b"
+    }
+  ]
+}
