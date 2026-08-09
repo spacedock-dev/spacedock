@@ -2,7 +2,7 @@
 
 The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
 
-A runtime regression is proved by one of the 16 exported `TestLiveCommon...`
+A runtime regression is proved by one of the 17 exported `TestLiveCommon...`
 functions registered in [`runtime-live-ci-registry.md`](runtime-live-ci-registry.md).
 Each declaration has an adjacent `liveJourney(...)` call that binds its stable
 journey ID, fixture builder, target-scoped TODO owner, runtime-neutral exercise,
@@ -40,7 +40,7 @@ export SPACEDOCK_REPO_ROOT="$PWD"
 
 Run the common journeys by selecting one transport. The Claude command runs at
 most two common journeys at one time. The Codex and Pi commands run the same
-journeys in sequence. The Claude command keeps `-failfast`, but Go can start
+17 journeys in sequence. The Claude command keeps `-failfast`, but Go can start
 queued parallel journeys after a failure. At most two Claude journeys run at one
 time. The sequential Codex and Pi commands stop at the first non-TODO failure.
 Claude's 90-minute timeout is a loose suite-wide runaway backstop; Codex and Pi
@@ -97,7 +97,7 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
-| Claude `TestLiveCommon...` | The 16 registered common journeys | Journey metrics record duration, tokens, model, and available cost. |
+| Claude `TestLiveCommon...` | The 17 registered common journeys | Journey metrics record duration, tokens, model, and available cost. |
 | Claude substrate: `TestLiveMergedTeamModeDispatch`, `TestLiveBareReachable`, `TestLiveBreakGlassShimRecovery` | Merged and bare dispatch, plus break-glass recovery that preserves the selected bare/team mode and commits the worker report | Merged baseline: 127s Sonnet and 144s Opus. Cost was not available. |
 | Codex resolver and `TestLiveCommon...` | Current-checkout resolution and common journeys | Both PR and release jobs consume Codex metrics. |
 | Pi `TestLiveCommon...` and `TestLivePiFrontDoorSmoke` | Common journeys plus one four-part substrate proof | The detail artifacts preserve each run. |

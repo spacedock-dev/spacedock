@@ -182,3 +182,8 @@ func TestLiveCommonKeepMovingPosture(t *testing.T) {
 func TestLiveCommonACValueReanchor(t *testing.T) {
 	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, nil, runACValueReanchorJourney, assertACReanchorScenario)
 }
+
+//spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
+func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyTODO{liveTODO("claude-sonnet", "d8qmey415fsb5q9h6q639ngf"), liveTODO("claude-opus", "d8qmey415fsb5q9h6q639ngf"), liveTODO("pi", "d8qmey415fsb5q9h6q639ngf")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+}

@@ -52,7 +52,7 @@ The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, 
 
 ## Seed Scenarios
 
-The first foundation is the 16 exported `TestLiveCommon...` journeys registered in `docs/runtime-live-ci-registry.md`. Each function owns one stable ID, executable fixture binding, target-specific TODO ownership, runtime-neutral exercise, and durable assertion. There is no central scenario table or per-runtime runner registry.
+The first foundation is the 17 exported `TestLiveCommon...` journeys registered in `docs/runtime-live-ci-registry.md`. Each function owns one stable ID, executable fixture binding, target-specific TODO ownership, runtime-neutral exercise, and durable assertion. There is no central scenario table or per-runtime runner registry.
 
 <!-- seed-scenarios -->
 - `gate-guardrail` — the FO binds and commits the retained package, presents exactly one semantic root review, then stops open without Resolution, consume, advance, dispatch, or archival.

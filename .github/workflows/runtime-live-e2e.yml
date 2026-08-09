@@ -261,7 +261,7 @@ jobs:
       - name: Set archivable CLAUDE_CONFIG_DIR
         run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/spacedock-claude-config/${{ matrix.model }}" >> "$GITHUB_ENV"
 
-      # Run all 16 exported common journeys through the Claude transport. The exact
+      # Run all 17 exported common journeys through the Claude transport. The exact
       # prefix selector is shared with Codex and Pi. Go runs at most two Claude
       # journeys concurrently; queued work can start after a failure despite
       # -failfast. The loose 90-minute timeout is a suite-wide runaway backstop.
