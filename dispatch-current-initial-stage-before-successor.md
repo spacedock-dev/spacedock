@@ -46,3 +46,243 @@ The task owns the initial-stage defect from task 9a. It does not own gate-consum
 Before the repair, run each executable affected journey through strict XFAIL. Use one stable semantic failure code and this active task ID.
 
 Ideation must exercise the current-stage dispatch path first. Then it must define the smallest product repair and exact live proof.
+
+## Problem
+
+At source head `d28834249b23df204292149c7581a295e85c10dd`, the scheduler can report
+`current=ready,next=done` for a commissioned entity. The First Officer contract
+still says that an initial-stage successor row keeps its old meaning. The host
+then advances the entity to `done`, commits `dispatch: <slug> entering done`,
+and builds the `done` worker.
+
+The fixture requires the opposite order. Each entity must first run its `ready`
+worker and write a `ready` stage report. The terminal stage must follow that
+report. A wrong target loses the first worker evidence and can make the durable
+journey look complete for the wrong reason.
+
+## Proposed approach
+
+Change one target-selection rule in
+`skills/first-officer/references/fo-dispatch-core.md`:
+
+1. Keep `current == next` dispatching `current` with an idempotent
+   `status={current} started` update.
+2. Add the initial-stage exception. When `current` is the workflow's initial
+   stage and `next` is terminal, set the dispatch target to `current`.
+3. Keep `next` as the target for every other successor row.
+4. Use the selected target for the status stamp, exact path-scoped dispatch
+   commit, and `dispatch build --stage` call.
+
+For the affected row, the observable sequence is therefore
+`status=ready started`, `dispatch: ready-one entering ready`, and
+`dispatch build --stage ready`. The worker writes the ready report. Normal
+successor handling stays outside this task. Gate consume, terminalization,
+status output, stored fields, authority rules, and runtime adapters stay
+unchanged.
+
+The simplest alternatives do not meet the value. Changing `status --next` to
+project `ready` twice would alter a shared scheduler contract. Adding a special
+case to one fixture would not help other initial stages. Adding a new runtime
+helper would duplicate the existing dispatch path. The contract rule is the
+smallest host-neutral change.
+
+## Spike first: current-stage dispatch path
+
+The native binary and dispatch helper were exercised before selecting this
+repair in a throwaway split-root fixture. The fixture declared `ready` as the
+initial stage and `done` as terminal.
+
+- `spacedock status --workflow-dir ... --next --json` returned
+  `current=ready,next=done`.
+- `status --set ready-one status=ready started` returned an idempotent status
+  update and a non-empty timestamp.
+- `dispatch build --entity-path .../ready-one.md --stage ready` returned an
+  ensign artifact whose first action and stage were `ready`.
+- A path-scoped state commit was named exactly
+  `dispatch: ready-one entering ready`; its entity blob had `status: ready`
+  and the non-empty `started` field.
+
+The existing independent checks also passed:
+
+```text
+go test ./internal/status -run 'TestEnteredStageLegacySuppressionControls/initial_stage_keeps_successor_projection' -count=1 -v
+go test ./internal/ensigncycle -run '^TestDurableTaskJourneys$' -count=1 -v
+```
+
+This spike proves the binary, state mutation, path-scoped commit, and dispatch
+builder support the needed target. It does not claim host-model proof. The
+strict-XFAIL runs below are required before implementation.
+
+## Acceptance criteria
+
+**AC-1 (VALUE) — A commissioned initial-stage journey records ready work before terminal work.**
+
+For every executable target whose fixture runs, the
+`smallest-sufficient-mechanism` journey leaves both `ready-one` and `ready-two`
+with a `ready` dispatch, a ready-stage report, and then terminal state. The
+independent end-value measure is `ready_stage_reports=2`,
+`wrong_target_dispatches=0`, and `terminal_archives=2` in the existing durable
+Git-state oracle. The current failing baseline is the missing ready dispatch
+and report after the host commits `entering done`.
+
+Verified by: strict-XFAIL runs before repair, followed by the unchanged live
+journey and durable assertion after repair. A missing path-scoped dispatch,
+wrong stage, missing report, or early terminal state fails this criterion.
+
+**AC-2 — An initial-stage successor row dispatches its current stage.**
+
+For `current=ready,next=done`, the First Officer uses `ready` for the status
+stamp, path-scoped commit, and dispatch build. The commit's entity blob contains
+`status=ready` and non-empty `started`.
+
+Verified by: the split-root command fixture, the dispatch artifact, and the
+focused skill smoke. The test fails if any target contains `done` instead of
+`ready` in the dispatch boundary.
+
+**AC-3 — Existing entered-stage and ordinary successor behavior remains stable.**
+
+`current == next` remains idempotent. A non-initial, non-terminal successor
+still dispatches `next`. Gate-consumed dispatch and post-gate terminalization
+remain owned by task `9adv48yhye5s2vkhwd7ge52d`.
+
+Verified by: the existing entered-stage status test, the durable dispatch
+oracle, contract-lint checks, and the unaffected keep-moving journey. No test
+may replace the path-scoped durable assertion with prose matching.
+
+**AC-4 — The change stays within the declared semantic boundary.**
+
+Command grammar, stored formats, write authority, and runtime host adapters do
+not change. Only the target selected for an initial-stage successor row changes.
+
+Verified by: the final diff, existing CLI and dispatch tests, and the required
+host lanes for the changed First Officer contract.
+
+## Strict-XFAIL-first dependency
+
+Task `ts7gq0mr9s3chx2w4wppd1kt` must provide the strict classifier before these
+cells leave TODO. Use one binding for this task's three registered targets:
+
+```text
+liveXFail("claude-sonnet", "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-target-mismatch")
+liveXFail("codex",         "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-target-mismatch")
+liveXFail("pi",            "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-target-mismatch")
+```
+
+Run each cell before the product repair. XFAIL is valid only when the fixture
+runs and the typed durable assertion returns that exact code. XPASS is a lane
+failure until this task removes the binding. Authentication, launch, timeout,
+fixture, state-read, parsing, and every different semantic code remain FAIL.
+Keep TODO only when the cell cannot execute.
+
+The exact commands are:
+
+```bash
+go build -o ./spacedock ./cmd/spacedock
+export SPACEDOCK_BIN="$PWD/spacedock"
+export SPACEDOCK_REPO_ROOT="$PWD"
+SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=sonnet go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonSmallestSufficientMechanism$' ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonSmallestSufficientMechanism$' ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonSmallestSufficientMechanism$' ./internal/ensigncycle -v
+```
+
+The current live runner still skips these rows, and task `ts7` is still in
+ideation. Therefore this ideation records the required XFAIL contract but does
+not claim a host run. Implementation must run the executable cells first and
+attach their metric records before changing the dispatch rule.
+
+## Exact live proof after repair
+
+Run the same three commands without XFAIL bindings. The artifact for each
+target must show two ready dispatch boundaries with exact messages
+`dispatch: ready-one entering ready` and `dispatch: ready-two entering ready`.
+For each entity, the commit blob at that boundary must contain `status: ready`
+and non-empty `started`. Each entity must then contain `## Stage Report: ready`,
+terminal fields, and its canonical archive.
+
+The durable result must report `ready_stage_reports=2`,
+`wrong_target_dispatches=0`, and `terminal_archives=2`. The live test must PASS,
+not XPASS. Remove all three XFAIL bindings only after those records exist.
+
+## Test plan and mechanism budget
+
+The implementation test order is:
+
+1. Run the three strict-XFAIL cells and save their metrics.
+2. Add or reuse the typed semantic code at the existing durable assertion
+   boundary. Do not classify unstable error text.
+3. Add the focused target-selection smoke using an external fixture and the
+   existing `dispatch build` helper.
+4. Update the one First Officer rule and replace only this task's live bindings.
+5. Run all three exact live cells, then run `go test ./...`,
+   `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
+
+The new XFAIL binding serves AC-1 by making the pre-repair failure executable.
+The focused smoke serves AC-2 by checking an independent command result and
+Git state. Reusing the existing durable oracle is simpler than adding a second
+workflow model. A new model would risk passing while the supported First
+Officer path still dispatches the wrong stage.
+
+## Expected surface and semantic budget
+
+Baseline: **up to 3 existing files, about 18 gross insertions and 6 deletions,
+for a net change of about 12 lines; tolerance is ±1 file and ±12 net lines.**
+
+- `skills/first-officer/references/fo-dispatch-core.md`: about 8 insertions
+  and 2 deletions. State the target-selection rule and use the selected target
+  in the existing mutation and build steps.
+- `internal/ensigncycle/shared_keep_moving_durable_test.go`: about 7
+  insertions and 1 deletion only if the existing oracle needs the stable typed
+  semantic code. Reuse the classifier from `ts7` when it is available.
+- `internal/ensigncycle/shared_live_runner_test.go`: replace the three
+  `liveTODO` bindings with this task's `liveXFail` bindings, then remove them
+  after the repaired live proof.
+
+Observable semantics are explicit: command grammar unchanged; stored formats
+unchanged; write authority unchanged; runtime behavior changes only for an
+initial current stage whose scheduler successor is terminal.
+
+## Documentation diff
+
+The contract text is the user-facing documentation for this First Officer
+behavior. Replace:
+
+```text
+Initial-stage successor rows retain legacy meaning.
+```
+
+with:
+
+```text
+When the current stage is initial and its successor is terminal, dispatch the
+current stage itself. Use its idempotent status stamp, path-scoped dispatch
+commit, and stage-specific build. All other successor rows keep their existing
+target.
+```
+
+No CLI help, workflow schema, or site documentation needs a diff.
+
+## Out of scope
+
+- Do not change `status --next` projection or stored entity fields.
+- Do not repair gate-consume evidence or post-gate terminalization.
+- Do not add a new dispatch protocol, runtime adapter, or terminal consumer.
+- Do not weaken the durable Git-history oracle or teach hosts to use `--force`.
+
+## Stage Report: ideation
+
+- DONE: Exercise the current-stage dispatch path before selecting the repair.
+  The native throwaway fixture returned `current=ready,next=done`, then produced
+  `status=ready started`, an exact `entering ready` commit, and a ready dispatch.
+- DONE: Define the smallest repair for current equals initial and successor equals terminal.
+  The plan changes only First Officer target selection and preserves ordinary,
+  entered-stage, gate-consume, and terminalization behavior.
+- DONE: Give gross and net line estimates with strict-XFAIL and exact live proof.
+  The plan names the active owner, one stable code, three bindings, exact live
+  commands, expected surfaces, a line budget, and post-repair durable metrics.
+
+### Summary
+
+Ideation is complete. The smallest repair is an explicit initial-stage target
+rule in the First Officer dispatch contract. Native command and durable-oracle
+spikes passed; host strict-XFAIL execution remains a required pre-implementation
+step because task `ts7gq0mr9s3chx2w4wppd1kt` has not landed yet.
