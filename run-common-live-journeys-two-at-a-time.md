@@ -73,15 +73,17 @@ This mechanism serves AC-1 and AC-2. Existing isolation serves AC-4 without a ne
 
 ### Expected surface
 
-The expected change has five files and approximately 35 to 70 inserted lines. The tolerance is one additional test file and 20 lines.
+The expected change has five files. It has 15 to 30 gross insertions and a net increase of 3 to 12 lines.
 
-| File | Estimated insertions | Purpose |
-|---|---:|---|
-| `internal/ensigncycle/shared_live_runner_test.go` | 10-20 | Resolve the target first and parallelize Claude common journeys. |
-| `.github/workflows/runtime-live-e2e.yml` | 2-5 | Add the Claude concurrency cap and update the step comment. |
-| `internal/contractlint/live_registry_reconciliation_test.go` | 8-15 | Require the Claude cap and preserve the other selectors. |
-| `internal/release/journey_workflow_test.go` | 4-10 | Update the executable workflow guard. |
-| `docs/runtime-live-ci.md` | 10-20 | Document Claude concurrency and the local command. |
+The tolerance is five files, 40 gross insertions, and a net increase of 17 lines. A larger change returns to ideation.
+
+| File | Gross insertions | Net change | Purpose |
+|---|---:|---:|---|
+| `internal/ensigncycle/shared_live_runner_test.go` | 8-15 | +5 to +10 | Resolve the target first and parallelize Claude common journeys. |
+| `.github/workflows/runtime-live-e2e.yml` | 2-4 | 0 to +2 | Add the Claude cap and replace the step comment. |
+| `internal/contractlint/live_registry_reconciliation_test.go` | 1-3 | 0 | Replace the existing exact Claude command expectation. |
+| `internal/release/journey_workflow_test.go` | 1-3 | 0 | Replace the existing exact Claude command expectation. |
+| `docs/runtime-live-ci.md` | 3-8 | -2 to +2 | Replace the sequence text and local Claude command. |
 
 Command grammar changes only for the Claude common-suite command. It adds `-parallel 2`.
 
@@ -97,6 +99,8 @@ Stored formats and authority do not change. Journey IDs, TODOs, fixtures, models
 - Changes to desired journeys, TODO ownership, fixtures, assertions, models, effort, or runtime timeouts.
 - A concurrency simulator, including a committed simulator.
 - A scheduler, worker pool, retry loop, or shard registry.
+- New tests for test infrastructure.
+- A new contract-lint assertion or release workflow assertion.
 
 ## Acceptance criteria
 
@@ -114,13 +118,15 @@ Verified by: a focused two-journey run produces two workflow roots, two configur
 
 ## Test plan
 
-1. Add focused tests for target resolution and the Claude-only command change. These tests serve AC-2 and AC-3.
+1. Replace the existing exact Claude command expectations. Do not add a contract-lint assertion or release workflow assertion.
 2. Run `TestRuntimeLiveRegistryReconciliation`. This test fails if selectors, IDs, fixtures, or TODO bindings change.
 3. Run `go test ./...` and `go test ./... -race`. These commands make sure that shared test state stays race-free.
 4. Run `gofmt -w ./cmd ./internal`. Then make sure that this command changes no unrelated file.
 5. Run two focused Claude journeys with `-parallel 2`. Record wall time, active process count, roots, configuration directories, and artifacts.
 6. Run a controlled failing Claude pair with `-failfast -parallel 2`. Record the active sibling and make sure that no queued journey starts.
 7. Run the exact Sonnet candidate command. Compare its common-step duration with run `31295813569`.
+
+Live Claude runs prove concurrency, isolation, failure cost, and value. Offline tests do not simulate these properties.
 
 The local spike on 2026-08-08 used real Claude Code `2.1.220` and `claude-sonnet-5`. It started `filing` and `zero-discovery` together.
 
@@ -147,8 +153,10 @@ After: `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -
 - DONE: Run one local subscription-backed two-journey exercise, and record the wall time, concurrency, and failure behavior.
   The 12-second run reached concurrency two, but both real launches failed because the stored OAuth token was expired.
 - DONE: Write a lean Simple English plan with exact files, LOC estimates, value links, and no Codex, Pi, substrate, scheduler, or simulator scope.
-  The plan names five files, a 35-to-70-line estimate, the PR `#643` timing value, and explicit scope limits.
+  The plan names five files, 15-to-30 gross insertions, 3-to-12 net lines, the PR `#643` timing value, and explicit scope limits.
 
 ### Summary
 
-The plan uses Go's existing semaphore and changes only Claude common journeys. A real two-journey spike proved isolation and the cap, but expired subscription authentication blocked successful behavior evidence.
+The lean plan uses Go's existing semaphore and changes only Claude common journeys. It adds no infrastructure test or concurrency simulator.
+
+A real two-journey spike proved isolation and the cap. Expired subscription authentication blocked successful behavior evidence.
