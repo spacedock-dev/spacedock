@@ -1,6 +1,6 @@
 ---
 title: Continue Codex rejection after the first validation
-status: backlog
+status: ideation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: The Captain authorized shaping and requires end-user value; this task owns the complete Codex correction journey.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A Codex operator must receive a complete correction journey after the first rejected candidate.
