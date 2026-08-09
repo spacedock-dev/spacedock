@@ -254,3 +254,16 @@ minor string, while retaining one launcher resolution and one compatible boot.
 ### Summary
 
 First Officer startup now rejects stale same-minor launchers before workflow discovery while compatible launchers preserve one resolution and one boot. The contract remains at its 26,895-byte pre-change size, public troubleshooting gives install-only remedies, and commit `b331baf4f` contains the complete four-file implementation.
+
+## Stage Report: validation
+
+- DONE: Adversarially verify stale and compatible same-minor launchers use one selected executable in exact version/help/boot order, with zero workflow effects on stale failure and exactly one boot on success.
+  The focused ledger fixtures passed and fail if stale reaches boot/state work, executable identity or order changes, or compatible boot cardinality differs from one; AC-1 and AC-2 pass at `b331baf4f`.
+- DONE: Cross-check AC-1 through AC-3, the approved four-file/insertion boundary, fixed-string capability semantics, and Darwin/Linux install-only remedies with no source-build, repository, plugin-refresh, install-execution, or alternate-launcher advice.
+  The candidate changes exactly four approved files with 127 insertions, uses a literal `awk index` match, and the Darwin/Linux stale arms observe only their approved relaunch remedies; AC-3 passes.
+- DONE: Run the focused fixtures, formatting, full and race suites, required Claude/Codex/Pi live boot evidence, and a detached throwaway-checkout audit that proves a claim-breaking edit is caught before recommending delivery.
+  Focused, `gofmt`, `go test ./...`, and `go test ./... -race` passed; exact-candidate Claude/Codex/Pi shallow boots passed, and weakening the detached capability predicate made both stale OS arms boot and fail the test.
+
+### Summary
+
+Validation recommends **PASSED** with no material, deferred-risk, or polish findings. AC-1 through AC-3 have behavioral evidence, the approved scope and remedy boundary hold, all repository gates pass, and the detached falsifier proves the stale-launcher test can catch loss of the fixed-string capability guard.
