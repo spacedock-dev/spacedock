@@ -203,3 +203,37 @@ Captain-conn approval on 2026-08-09 raises the file tolerance from 7 to 8 withou
 ### Summary
 
 The adopted candidate restores an optional Pi Luna/max cadence and retains its evidence. Manual Opus and Pi routing is exclusive, while pull requests retain Sonnet and Codex. The candidate is clean and ready for independent validation at `e838fba693d5562fa4cee99cfbfb682014331a4f`.
+
+## Stage Report: validation
+
+- FAILED: Independently reproduce AC-1 through AC-5 against exact candidate `e838fba693d5562fa4cee99cfbfb682014331a4f`, including event-matrix, model, artifact, exclusivity, registry, owner, formatting, full-suite, and race evidence.
+  AC-1 failed because run `31323946889` retained no journey-metric file.
+- FAILED: AC-1 (VALUE) - A maintainer can obtain retained Pi CI evidence on demand.
+  The exact Pi run passed, but its downloaded artifact contained zero files under `live-artifacts/journey-metrics`.
+- SKIPPED: AC-2 - Pi does not become a pull-request merge requirement.
+  No pull-request run exists for the exact candidate. The parsed condition excludes Pi from pull requests.
+- DONE: AC-3 - A Pi-only dispatch spends no Claude or Codex lane.
+  Run `31323946889` ran `offline` and `pi-live`. GitHub skipped `claude-live` and `codex-live` without steps.
+- FAILED: AC-4 (VALUE) - Each manual release cadence spends only its selected runtime.
+  The Pi cadence used only `CI-E2E-PI`. No exact-candidate Opus run exists, so Opus evidence is unavailable.
+- DONE: AC-5 - The desired journey registry stays unchanged.
+  Registry reconciliation passed for the same 17 journeys, fixtures, owners, and selector.
+- DONE: Verify the approved eight-file/+380 boundary and absence of scope creep.
+  The candidate changes eight approved files and adds 244 net lines. No live journey, fixture, registry, product, or release workflow changed.
+- DONE: Verify the existing metrics format and artifact records.
+  Both Go detail JSONL files and all session JSONL files passed `jq`. The metrics packages and format files are unchanged.
+- DONE: Run formatting, focused guards, registry reconciliation, the mutable owner check, the full suite, and the race suite.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed.
+  Focused `./internal/release ./internal/contractlint` tests passed. The owner test passed with the exact `SPACEDOCK_LIVE_STATE_DIR` path.
+- DONE: Run the required detached adversarial audit for CI/release machinery on a throwaway checkout and show that the candidate guards fail under a claim-breaking edit.
+  A detached edit let Opus start Codex. `TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence` failed with the changed condition.
+- DONE: Report a PASSED or REJECTED recommendation with every live lane classified from current evidence; do not call unavailable, skipped, unapproved, stale, or different-candidate evidence green.
+  Recommendation: REJECTED. Pi evidence is current; exact-candidate Opus and pull-request evidence is unavailable.
+- FAILED: Material AC-1 outcome defect — retained Pi journey metrics are absent.
+  The normal trigger is `live_cadence=pi`. The missing files remove promised evidence from the maintainer artifact.
+  Authority: `value-ac[AC-1]` requires retained journey metrics. Run `31323946889` and the empty metrics path prove the trigger.
+  The First Officer selected `ROUTE FOR DECISION`. The likely emitter repair is outside the approved eight-file surface.
+
+### Summary
+
+The exact Pi cadence passed with Luna/max and exclusive `CI-E2E-PI` use. The artifact did not contain promised journey metrics, so AC-1 failed. The recommendation is REJECTED, and the candidate remains unchanged.
