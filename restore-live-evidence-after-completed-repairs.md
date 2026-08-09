@@ -46,6 +46,17 @@ gates:
                 digest: sha256:0e0c2f5cc14a9b1f86efa9c40576c4772e31531fe80b8e1a5a89f5e897c11fcc
                 request-digest: sha256:7d25c93ec3eb7f55727f6e47d83c464d685940d0ade98592f01a08ad581e9f6e
                 room-ref: ./restore-live-evidence-after-completed-repairs/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xp6c9qfe7y4wwp46enc3f85n:ideation:1
+                briefing: briefing:xp6c9qfe7y4wwp46enc3f85n:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T21:33:28.842159Z"
+                decision: approve
+                reason: Captain approved the evidence-only capstone with no repair bytes.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
