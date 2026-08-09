@@ -39,10 +39,226 @@ gates:
                 state: consumed
 ---
 
-A headless Pi run must stop at the first open validation gate with durable evidence.
+## Problem
 
-Ideation must identify the exact failed final-state clause before it selects a repair. Do not assume the Sonnet or Codex mechanism.
+The unchanged Pi `default-headless-gate-stop` journey reaches the validation gate with terminal fields set.
 
-A fixture or assertion change does not satisfy this task. The unchanged Pi `default-headless-gate-stop` journey must pass.
+The durable oracle has one first branch for four final-state facts. It checks that the entity changed, that its status is validation, and that `completed` and `verdict` are empty. The branch reports one generic error.
 
-The task depends on strict XFAIL and on the `98a` worker-dispatch repair.
+The live Pi artifact at `/private/tmp/spacedock-xp6-artifacts-pi-default-headless/pi-common/default-headless-gate-stop/` ran for `10m37.753288125s` without a process timeout. The root session read this final entity:
+
+```text
+status: validation
+completed: true
+verdict: approved
+```
+
+The entity changed. Its status is validation. The gate binding is present and open. The first oracle branch therefore fails on `completed` and `verdict`. The stable semantic code for this branch is `gate-hold-terminal-fields-set`.
+
+The Pi implementation worker wrote the terminal fields in its stage report. The shared ensign contract already forbids worker frontmatter writes. The live run proves that worker prose alone does not protect the First Officer boundary.
+
+## Value
+
+A headless Pi run stops at the first open validation gate with a nonterminal entity and durable evidence.
+
+The final entity has `status: validation`, empty `completed`, empty `verdict`, one open Briefing, no Resolution, no Application, and no successor dispatch.
+
+The current artifact has two non-empty terminal fields. The repaired journey has zero. This final-state count is independent of the repair mechanism.
+
+## Dependencies and order
+
+Task `ts7gq0mr9s3chx2w4wppd1kt` must land first. It supplies strict-XFAIL grading and the typed semantic error path.
+
+Task `98aa776adg66gn823a8gamdq` must land next. It repairs the Sonnet and Codex implementation-worker boundary. This task does not change that repair or assume its mechanism for Pi.
+
+Run the current Pi journey as strict XFAIL after those dependencies. Start Pi product work only after the run reports the sole code `gate-hold-terminal-fields-set`.
+
+## Proposed approach
+
+### 1. Normalize accidental terminal fields at the Pi First Officer boundary
+
+After the Pi worker returns and its stage report passes, read the entity frontmatter before the First Officer advances the status.
+
+If the current stage is nonterminal and `completed` or `verdict` is non-empty, run the existing command once:
+
+```text
+spacedock status --workflow-dir <workflow> --set <slug> completed= verdict=
+```
+
+Read the entity again after the command. If the command fails, or either field remains non-empty, stop without gate preparation. Do not use `--force`.
+
+Only after the fields are empty can the First Officer run the existing status transition, state commit, gate preparation, gate commit, and presentation.
+
+This repair is First Officer-owned state cleanup. It does not record a decision, consume a gate, or dispatch a successor.
+
+### 2. Keep the Pi runtime rule explicit
+
+Add the boundary rule to `skills/first-officer/references/pi-first-officer-runtime.md`. The rule names the two fields, the one clear operation, the reread, the fail-closed result, and the `--force` prohibition.
+
+Do not change the shared ensign contract in this task. It already says that a worker updates the entity body and does not modify YAML frontmatter. The observed run makes a First Officer boundary guard necessary.
+
+### 3. Give the final-state branch a stable code
+
+Refine the first `assertGateHeld` branch into separate semantic codes. Use `gate-hold-terminal-fields-set` only when `completed` or `verdict` is non-empty. Keep separate codes for an unchanged entity and a non-validation status.
+
+The existing gate-binding and open-attempt checks remain semantic controls. The Pi strict-XFAIL binding names only the terminal-field code.
+
+### 4. Prove the cleanup order in the existing command log
+
+Allow one `completed= verdict=` cleanup line before the validation status change. Require it before the successful gate preparation. Reject a duplicate cleanup, a cleanup after preparation, or a status change after preparation.
+
+This command-log check proves the repair boundary. The final-state assertion proves the value.
+
+### 5. Bind Pi to strict XFAIL
+
+Replace the Pi `liveTODO` binding for `default-headless-gate-stop` with `liveXFail("pi", "xp6c9qfe7y4wwp46enc3f85n", "gate-hold-terminal-fields-set")`.
+
+Keep the binding until the exact repaired candidate passes. A repaired run must report XPASS while the binding remains. Remove the binding only after the passing run.
+
+## Alternatives and value mapping
+
+| Mechanism | Value AC | Simplest alternative | Why the alternative fails |
+|---|---|---|---|
+| Pi First Officer cleanup and reread | AC-1 and AC-3 | Add another worker instruction | The existing worker instruction already forbids frontmatter writes. The live child still wrote the fields. |
+| Stable final-state code | AC-2 | Match the full error text | Model output and assertion text can change without a semantic change. |
+| Command-log order check | AC-3 | Check only the final entity | A final entity cannot prove that cleanup happened before gate preparation. |
+| Strict Pi XFAIL binding | AC-2 | Keep Pi as TODO | TODO skips the journey and hides a repaired or changed failure. |
+| Existing `status --set` clear operation | AC-1 | Add a new normalize command | A new command changes grammar and adds an unnecessary surface. |
+| No `--force` path | AC-1 and AC-3 | Bypass all status guards | `--force` can bypass merge-hook protection and hide a workflow error. |
+
+## Acceptance criteria
+
+**AC-1 (VALUE) — The unchanged Pi journey stops with a clean open gate.**
+
+The exact `default-headless-gate-stop` fixture ends at `status: validation` with empty `completed` and `verdict`, one open expected Briefing, no Resolution, no Application, and no successor dispatch. The independent baseline has two non-empty terminal fields.
+
+Verified by: run the exact Pi live selector and inspect the entity, gate room, command log, and journey metric.
+
+**AC-2 — The known Pi failure has one strict semantic code.**
+
+The current candidate runs the real fixture and reports XFAIL with exactly `gate-hold-terminal-fields-set`. A repaired candidate reports XPASS and fails the lane while the binding remains.
+
+Verified by: run the strict-XFAIL selector before the Pi repair, then run it again after the repair and remove the binding only after PASS.
+
+**AC-3 — Pi cleanup is bounded and stays before gate authority.**
+
+The command log has at most one successful terminal-field cleanup. The cleanup precedes the validation status transition and gate preparation. No decision, consume, withdrawal, or successor dispatch follows preparation.
+
+Verified by: extend the existing command-log oracle with duplicate, reordered, post-prepare, and missing-cleanup controls. Run the exact live selector.
+
+**AC-4 — The Sonnet and Codex repair remains separate.**
+
+The Sonnet and Codex default-headless journeys retain their `98a` worker-dispatch binding and behavior. The Pi cleanup rule does not change their runtime adapters or the shared worker envelope.
+
+Verified by: run the exact Sonnet and Codex selectors after `98a`, then run the offline and race suites.
+
+## Test plan
+
+First run the focused oracle tests. The `assertGateHeld` controls must distinguish unchanged state, non-validation status, terminal fields, wrong gate binding, resolved attempts, and applied attempts. The terminal-field mutant must return exactly `gate-hold-terminal-fields-set`.
+
+Next run the command-log tests. A clear operation before validation is valid. A duplicate, a post-prepare clear, and a status change after prepare are invalid. The missing-worker branch keeps its existing `implementation-worker-not-dispatched` code.
+
+Then run the Pi strict-XFAIL selector on the current candidate:
+
+```bash
+SPACEDOCK_LIVE_RUNTIME=pi \
+  go test -tags live -count=1 -timeout 40m \
+  -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v
+```
+
+The expected result is one executed XFAIL with the sole code `gate-hold-terminal-fields-set`. A skip, an infrastructure error, or another semantic code fails the proof.
+
+After the Pi runtime rule lands, run the same selector. Expect XPASS failure while the strict binding remains. Remove the binding and run the selector again. Expect PASS with the final-state count at zero.
+
+Run the Sonnet and Codex selectors after `98a`. They must keep their own strict code and worker-dispatch evidence. Finish with `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
+
+No new fixture is needed. The existing `recorded-gate/pre-gate` fixture and `runGateStopScenario` already exercise the unchanged journey.
+
+## Expected surface and estimate
+
+The product behavior must touch the Pi runtime contract. The proof must touch the existing oracle and strict-XFAIL binding. A fixture-only or assertion-only change is out of scope.
+
+| File | Purpose | Gross insertions | Gross deletions | Net |
+|---|---|---:|---:|---:|
+| `skills/first-officer/references/pi-first-officer-runtime.md` | Bound cleanup, reread, and fail-closed Pi behavior | 8 | 3 | +5 |
+| `internal/ensigncycle/gate_assert_impl_test.go` | Stable final-state semantic code | 5 | 2 | +3 |
+| `internal/ensigncycle/claude_runtime_helpers_test.go` | Cleanup order and command-log controls | 5 | 3 | +2 |
+| `internal/ensigncycle/shared_live_runner_test.go` | Pi strict-XFAIL source binding | 3 | 1 | +2 |
+| **Total** |  | **21** | **9** | **+12** |
+
+The tolerance is one file and plus or minus 14 net lines. No new file, fixture, CLI command, or stored format belongs in the surface.
+
+## Semantic scope
+
+- Command grammar: unchanged. The repair uses the existing `status --set` field syntax.
+- Stored formats: unchanged. Empty `completed` and `verdict` remain the nonterminal representation.
+- Authority: unchanged. The First Officer owns frontmatter and gate state. The worker owns the stage body and report.
+- Runtime behavior: changed only for Pi after worker completion and before a nonterminal status advance. The Pi run still presents one open gate and stops without a decision.
+- Host behavior: Sonnet and Codex remain owned by `98a`. The Pi rule does not alter their dispatch envelope.
+
+## Riskiest mechanism spike
+
+The existing clear operation was exercised on disposable copies before this plan selected it.
+
+First, a copy of `docs/dev` retained `_mods/pr-merge`. With `status: validation`, `completed: 2026-08-09T00:00:00Z`, and `verdict: approved`, the clear command exited 1 because the merge hook was not run.
+
+Second, a copy without `_mods` used the same fields and status. The exact command exited 0 and printed:
+
+```text
+completed: 2026-08-09T00:00:00Z ->
+verdict: approved ->
+```
+
+The post-state kept `status: validation` and left both fields empty. The implementation therefore fails closed on a refused clear and does not use `--force`. The unchanged live fixture has no merge hook, so this existing command path passes its relevant guard.
+
+## Documentation diff
+
+Apply this wording change to `skills/first-officer/references/pi-first-officer-runtime.md`.
+
+Before:
+
+```text
+`«completion-signal»`: For `pi-subagents`, the PRIMARY completion signal is the child return/status (`status: completed`); an optional advisory is only a non-blocking heads-up via raw `intercom send` before return (`contact_supervisor` carries no completion reason). file verification remains the completion gate: the FO reads the entity file and verifies the stage report before advancing state. For `pi-agent-teams`, task/member completion is likewise verified against the entity file.
+```
+
+After:
+
+```text
+`«completion-signal»`: For `pi-subagents`, the PRIMARY completion signal is the child return/status (`status: completed`); an optional advisory is only a non-blocking heads-up via raw `intercom send` before return (`contact_supervisor` carries no completion reason). Before a nonterminal status advance, the FO reads `completed` and `verdict`. If either field is non-empty, the FO runs `status --set <slug> completed= verdict=` once, reads the fields again, and stops if either field remains non-empty. The FO does not use `--force`. File verification remains the completion gate: the FO reads the entity file and reads the stage report before advancing state. For `pi-agent-teams`, apply the same field rule after task/member completion.
+```
+
+This text documents the Pi operator-visible stop rule. It does not change the CLI grammar or the entity format.
+
+## Evidence
+
+The root Pi transcript ends with a gate presentation and a stop message. The durable final-state read shows `status: validation`, `completed: true`, and `verdict: approved`. The nested Pi worker transcript contains the write that introduced those fields. The current shared contract forbids that write, so the evidence supports a First Officer boundary repair rather than a fixture relaxation.
+
+The live process completed without timeout. The expected open Briefing and no-decision result are already exercised by `runGateStopScenario`; only the terminal-field clause fails on this candidate.
+
+## Scope
+
+- Repair the Pi `default-headless-gate-stop` final-state boundary.
+- Preserve the existing fixture, gate storage, command grammar, and worker envelope.
+- Keep strict XFAIL until the repaired Pi candidate passes.
+- Run after strict XFAIL and `98a` evidence.
+
+## Out of scope
+
+- Repairing the Sonnet or Codex worker-dispatch gap.
+- Changing the Pi `gate-guardrail` journey.
+- Relaxing `assertGateHeld` or deleting the terminal-field assertion.
+- Adding a fixture, simulator, new CLI verb, or new stored field.
+- Using `--force` to bypass a workflow guard.
+
+## Stage Report: ideation
+
+- DONE: Identify the exact failed Pi final-state clause before selecting a repair.
+  The final entity had `status: validation` but also `completed: true` and `verdict: approved`. The exact clause is the terminal-field branch, coded as `gate-hold-terminal-fields-set`.
+- DONE: Define the smallest change that passes the unchanged headless gate-stop journey.
+  The Pi First Officer clears accidental terminal fields once with the existing status command, rereads the entity, fails closed on refusal, and then uses the existing gate path. The command-log oracle and strict binding prove the boundary.
+- DONE: Give a visible-value statement and gross and net line estimates.
+  The visible value is two non-empty terminal fields reduced to zero while one open Briefing remains. The estimate is 21 gross insertions, 9 gross deletions, and +12 net lines across four existing files.
+
+### Summary
+
+Ideation isolates the Pi failure to terminal fields set on an otherwise open validation gate. The plan adds a bounded First Officer cleanup, a stable semantic code, command-order proof, and a strict-XFAIL Pi binding. It leaves the fixture unchanged and makes the final-state journey measurable.
