@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-5:revision-1",
+  "question": "Does D8 safely return an owned moving-target conflict to the recorded owner checkout using durable evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:d8qmey415fsb5q9h6q639ngf:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/39aef8b4eeaf959a36a52bcfd9f56d6e2f3d0291/codify-conflict-owner-dispatch-handoff.md",
+      "rev": "sha256:59963f57fbff9954097e3c3fe8ea15ac18e0feecf2da18d9cf8233b225c30b1f",
+      "mediaType": "text/markdown",
+      "summary": "Validation passes at 2dc2953cb. Durable Git and filesystem outcomes prove the handoff without prose or hidden-event parsing; the expanded live fixture is explicit."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:d8qmey415fsb5q9h6q639ngf:validation:attempt-5:revision-1:item-2",
+      "uri": "git-root://main/2dc2953cb36d1532d6fa512ba0f6fd104467419f/skills/first-officer/references/first-officer-shared-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2cc9d81eb0af371cec5da92214107ec74feba7704870a4b5bcf9ea1367edc784"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:d8qmey415fsb5q9h6q639ngf:validation:attempt-5:revision-1:item-3",
+      "uri": "git-root://main/2dc2953cb36d1532d6fa512ba0f6fd104467419f/skills/first-officer/references/fo-dispatch-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5fc8bd248c0361b3189bb66bf4e21c77e34b6bf3c136e5dfa0f32f19fce4048f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:d8qmey415fsb5q9h6q639ngf:validation:attempt-5:revision-1:item-4",
+      "uri": "git-root://main/2dc2953cb36d1532d6fa512ba0f6fd104467419f/internal/ensigncycle/conflict_owner_handoff_live_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:f0570254a40cffe89c326c71980e227510198aae11376ddc88d2be297f42a122"
+    }
+  ]
+}

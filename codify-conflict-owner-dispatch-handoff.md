@@ -113,6 +113,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-09T14:47:32.46304Z"
                 reason: Latest validation report heading must exactly name the validation stage before gate decision.
+            - id: gate-attempt:d8qmey415fsb5q9h6q639ngf-validation-5
+              briefing:
+                id: briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-5:revision-1
+                digest: sha256:4a638ecededd8cacd42e283d3674b6495a55ae929158656505a123193aed6ba7
+                request-digest: sha256:b3f9742e6f966302c1db26033e8649374103c156f7504a15f4965f99358bceaa
+                room-ref: ./codify-conflict-owner-dispatch-handoff/review/validation/briefing-5
 mod-block:
 pr: "#645"
 ---
