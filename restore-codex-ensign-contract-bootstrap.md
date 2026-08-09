@@ -96,6 +96,17 @@ gates:
                 digest: sha256:4656d348c940a99ad0a40023965a70e73a0b141d44ad72f0baaf831efd8efe28
                 request-digest: sha256:f55c0f5fbc75e3c6b2592799236fb87f7db8d32ef31b308f73c0e2d89422b6d4
                 room-ref: ./restore-codex-ensign-contract-bootstrap/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nvz2ym82ydfn07jp04yfxg9r:validation:3
+                briefing: briefing:nvz2ym82ydfn07jp04yfxg9r:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T06:08:09.870021Z"
+                decision: approve
+                reason: 'Under the delegated Captain conn, approve the unchanged candidate: exact-head Codex, Claude, and offline lanes passed; the auxiliary journey-delta-comment artifact download failed after five retries but is not a required check; clean synthetic kd merge and full normal/race suites passed.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Outcome
