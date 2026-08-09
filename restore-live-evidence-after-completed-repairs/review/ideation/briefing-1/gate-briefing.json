@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:xp6c9qfe7y4wwp46enc3f85n:ideation:attempt-1:revision-1",
+  "question": "Does this evidence-only capstone make every remaining cell honest?",
+  "artifacts": [
+    {
+      "id": "artifact:xp6c9qfe7y4wwp46enc3f85n:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b366ce7a0ed13a1a6905cb1104d5737fb108be59/restore-live-evidence-after-completed-repairs.md",
+      "rev": "sha256:ae6be394304e70c151f8b785f75696a1ab6552c3c28e6493123430ead6df8bb0",
+      "mediaType": "text/markdown",
+      "summary": "The capstone removes proven passes, preserves unexecutable TODOs, and contains no repair bytes."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:xp6c9qfe7y4wwp46enc3f85n:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:721a29206d100a38a9af0378441bd4878f67e0ccaa16a8fa9236fc14f0da195f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:xp6c9qfe7y4wwp46enc3f85n:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24234b4adff24091d215eec6992580d6b1925c714a36ededdd4d0a5383ec2c4b"
+    }
+  ]
+}
