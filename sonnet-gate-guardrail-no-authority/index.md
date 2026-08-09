@@ -326,3 +326,18 @@ This report-only repair preserves the completed landed-base reconciliation and a
 ### Summary
 
 Recommendation: PASSED, with no material, deferred-risk, or polish findings in the candidate. Exact topology, byte identity, four-file scope, TODO ownership, seven-condition behavior, 0Y decoupling, focused/full/race tests, and formatting all validate cleanly; the only unavailable observation is a fresh exact-head Sonnet run, whose launch failed at authentication before the product or first officer executed and is explicitly not counted as evidence.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Reconcile exact 3Z candidate f638451b9 onto the landed NV tip without discarding either side or force-pushing.
+  Normal merge `f6221b314f9f90d5cfce79dabdd9231d776d05b6` joined `f638451b9` to exact NV tip `48b45a815`; moving-target merge `48fd54b2aa8fd63b002beb7ec46afa6ecaea6228` then joined landed 824 tip `5c54154a0`. Both pushes were ordinary fast-forwards to PR #640, and both landed tips are ancestors of the final head.
+- DONE: Preserve 3Z rejected-source attribution, seven-condition diagnostics, Sonnet ownership, and NV Codex terminal-boundary behavior.
+  Final diff from `origin/main` is exactly the four intended 3Z files (69 insertions, 14 deletions). Focused attribution/oracle tests fail if the flag/path wrap or any condition-specific rejection is lost; registry reconciliation preserves Sonnet as active gate evidence, the existing Codex/Pi gate TODO ownership, and NV's removal of the full-cycle Codex TODO. NV terminal tests require `turn.completed` plus a non-empty final message.
+- DONE: Run focused, registry, full, race, formatting, Sonnet, and Codex evidence at the new exact head.
+  At exact `48fd54b2a`, focused gates/ensigncycle tests, `TestRuntimeLiveRegistryReconciliation`, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` are green. Local `TestLiveCommonAutoContinueAfterImplementation` passed both Codex variants in 430.89s; both artifacts record `terminal: true` and `timed_out: false`. CI run `31299255670` attempt 2 is green for offline job `93209745179`, Sonnet `claude-sonnet-5` job `93209844691`, and Codex job `93209844700`.
+- SKIPPED: Repair or rerun unrelated CI infrastructure findings.
+  Attempt 1's unchanged `TestDurableQuestionedRejectsTerminalHistory` `bad object HEAD` failure passed 20/20 locally and went green on the one FO-authorized rerun without candidate edits. Attempt 2's QZ-owned journey-delta-comment job `93214710577` failed only because `actions/download-artifact@v5` could not download/extract artifact `9034189537` after five retries; the FO authorized DECLINE candidate edit and no rerun.
+
+### Summary
+
+PR #640 is updated at exact head `48fd54b2aa8fd63b002beb7ec46afa6ecaea6228`, reconciled normally onto both NV and 824 while retaining the intended four-file 3Z value. Relevant offline, Sonnet, and Codex evidence is green at that head; no retired runner, Codex full-cycle TODO, QZ journey-comment change, or force-push was introduced.
