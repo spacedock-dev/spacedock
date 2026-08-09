@@ -1,6 +1,6 @@
 ---
 title: Dispatch the current initial stage before its successor
-status: backlog
+status: ideation
 source: "Recarved from 9adv48yhye5s2vkhwd7ge52d during test-behavior-completeness shaping, 2026-08-09"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: The Captain authorized ideation dispatch; this seed isolates the initial-stage repair and requires strict XFAIL evidence first.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
