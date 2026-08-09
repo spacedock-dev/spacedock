@@ -1,11 +1,11 @@
 ---
 id: 0ytmjwn4ppg5en25z7vmna0p
 title: Make Sonnet 5 the only Claude live lane on pull requests
-status: validation
+status: done
 source: Captain decision on 2026-08-07 after review of PR 626 and current Opus cost and failure evidence.
 started: 2026-08-08T15:45:20Z
-completed:
-verdict:
+completed: 2026-08-09T04:11:01Z
+verdict: passed
 score: 0.85
 worktree: .worktrees/spacedock-ensign-make-sonnet-5-only-claude-pr-live-lane
 issue:
@@ -91,7 +91,8 @@ gates:
                 reason: Captain accepts the exact two-lane PR cadence after offline, Codex/max, Sonnet 5/max common journeys, and Sonnet substrate proofs passed; the optional metrics-comment artifact download will be fixed later.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-09T04:11:02Z
 ---
 
 Make ordinary pull-request CI run one Claude lane: Sonnet 5 with maximum effort. Keep Opus as a pre-release lane.
