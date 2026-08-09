@@ -10,7 +10,7 @@ sprint-readiness: ready
 started: 2026-08-09T14:51:39Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-make-gate-presentations-stage-specific
 pr:
 mod-block:
 gates:
