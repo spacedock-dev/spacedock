@@ -4,19 +4,32 @@ sequence: 2
 harness: Codex
 model: sol
 model-version-build: med
-first-commit: 5c54154a061a26fbae503ad9349f5ec80c390e66
-last-commit: 582b5f0a337527ec291d52f2863d42fc17e47fe7
-duration: ~9h49m
+first-commit: 1947aacb0d7c3481c18a846f3566645fd2cb89ee
+last-commit: a929fcb60dab0deda4bdf1768af8dfc9d66fce8f
+duration: ~5d2h12m
 ---
 
-# Session Debrief — 2026-08-09 #2
+# Sprint Debrief — `live-test-truth`
 
-This record excludes concurrent durable-decision work unless this session
-directly handled it. The session closed the live-test-truth sprint and moved
-the remaining product gaps to behavior completeness.
+This is the full `live-test-truth` sprint debrief. It excludes concurrent work
+unless this sprint directly required it. The sprint delivered a desired-state
+registry, portable common journeys, truthful lane selection, and executable
+reconciliation. Product failures remain visible as exact TODO cells with active
+owners in `test-behavior-completeness`.
 
 ## Shipped
 
+### Sprint members
+
+- **v7** `refresh-v1-pilot-manifest-after-archive-moves` — [#612](https://github.com/spacedock-dev/spacedock/pull/612). Restored current-checkout validation after pilot tasks moved to the archive.
+- **nz6** `land-live-test-truth-planning-package` — [#614](https://github.com/spacedock-dev/spacedock/pull/614). Landed the sprint plan separately from implementation work.
+- **3d** `make-live-test-results-truthful` — [#615](https://github.com/spacedock-dev/spacedock/pull/615). Made live results report truthful runtime outcomes.
+- **15e** `make-live-lanes-buy-named-evidence` — [#626](https://github.com/spacedock-dev/spacedock/pull/626). Bound live-lane cost to named evidence.
+- **ys** `deliver-portable-common-live-journey-surface` — [#633](https://github.com/spacedock-dev/spacedock/pull/633). Delivered one portable common journey surface across runtimes.
+
+### Closure and direct follow-ons
+
+- **0y** `make-sonnet-5-only-claude-pr-live-lane` — [#639](https://github.com/spacedock-dev/spacedock/pull/639). Kept Sonnet 5 as the pull-request Claude lane and moved Opus to pre-release evidence.
 - **824** `align-claude-break-glass-dispatch-oracle` — [#637](https://github.com/spacedock-dev/spacedock/pull/637). Aligned the Claude break-glass oracle with the selected dispatch mode.
 - **3z** `sonnet-gate-guardrail-no-authority` — [#640](https://github.com/spacedock-dev/spacedock/pull/640). Restored the Sonnet gate-guardrail proof without destructive room-state recovery.
 - **qz** `keep-journey-delta-green-on-rerun` — [#643](https://github.com/spacedock-dev/spacedock/pull/643). Kept optional journey metrics green across failed-job reruns.
@@ -24,6 +37,7 @@ the remaining product gaps to behavior completeness.
 - **c1n** `run-common-live-journeys-two-at-a-time` — [#647](https://github.com/spacedock-dev/spacedock/pull/647). Runs at most two Claude common journeys concurrently.
 - **Live-test close cleanup** — [#646](https://github.com/spacedock-dev/spacedock/pull/646). Reconciled stale registry and sprint references.
 - **Live-test reconciliation close** — [#648](https://github.com/spacedock-dev/spacedock/pull/648). Rejects unclassified live tests and inactive TODO owners.
+- **Final sprint record** — [#649](https://github.com/spacedock-dev/spacedock/pull/649). Records the final 17-journey reconciliation result and active TODO ownership.
 
 ## Filed (backlog)
 
@@ -47,6 +61,7 @@ Routine dispatch, gate, and state commits are omitted.
 ## Decisions
 
 - The registry is the desired-state SSOT. It is not a gap ledger.
+- The sprint was recarved into tasks that each delivered visible test-surface value.
 - Source annotations own volatile function and fixture bindings.
 - Common journeys apply to all runtimes unless an explicit exception exists.
 - Runtime-specific proofs cover host substrate behavior only.
@@ -85,6 +100,9 @@ These items already have local task coverage. No new GitHub issue was filed.
 ## Observations
 
 - The desired registry became useful when it could expose missing tests before code existed.
+- The delivered registry has 17 common journeys and 68 runtime cells.
+- Reconciliation derives 48 runnable cells and 20 exact TODO cells.
+- The current TODO split is Opus 3, Sonnet 5, Codex 6, and Pi 6.
 - TODOs are honest only when their owners remain active.
 - The source classifier provides durable value without another scenario table.
 - The mutable owner join belongs at sprint close and release preparation.
@@ -98,7 +116,7 @@ These items already have local task coverage. No new GitHub issue was filed.
 - Harness/runtime: Codex
 - Model: sol
 - Model version/build: med
-- Session scale: 14 tasks touched, 12 workers dispatched, and 7 PRs merged
+- Session scale: 18 tasks touched, 34 recorded worker dispatches, and 14 PRs merged
 
 Spacedock preserved decisions, task ownership, and evidence across a long
 session and several context resets. Durable IDs and state records made recovery

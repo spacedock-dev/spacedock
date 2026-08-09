@@ -42,7 +42,12 @@ Opus, and Pi.**
 Run the current common journey on each target. Remove each TODO only after its
 exact candidate passes the durable assertion.
 
-**AC-4 — Preserve honest failures.**
+**AC-4 (VALUE) — Restore Pi `default-headless-gate-stop` evidence.**
+
+Run the coherent fixture and durable oracle on Pi. Remove the TODO only after
+the exact candidate passes.
+
+**AC-5 — Preserve honest failures.**
 
 If a target fails, diagnose the product behavior. Keep the TODO until a product
 repair and exact-target evidence pass.
