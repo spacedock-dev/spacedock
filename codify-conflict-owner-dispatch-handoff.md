@@ -442,3 +442,16 @@ Publication note: GitHub rejected the lease-protected update because the OAuth A
 ### Summary
 
 The final candidate preserves the FO same-stage live-or-fresh owner handoff and the post-YS 17-journey map while removing the unsupported typed collaboration-event correlation test. The live grade now relies only on durable Git and filesystem outcomes, and the acceptance/test text forbids prose inference, private transcript parsing, synthetic event protocols, and new runtime schemas.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Verify every revised D8 acceptance criterion with independent code, command, or durable-state evidence, including adversarial negatives that can falsify the owner-handoff outcome.
+  Exact head `2dc2953cb` passed canonical Codex in 190.50s; a detached exact-head probe accepted the valid outcome and rejected missing/uncommitted marker, dirty checkout, wrong branch/author, changed authority, active rebase, replacement branch, and replacement worktree variants.
+- DONE: Verify the post-YS 17-journey registry, runner annotation, runtime TODO ownership, selectors, and artifact inventory remain consistent.
+  Focused reconciliation/timeout tests pass at 17/17; `owned-conflict-owner-handoff` retains fixture `conflict-owner/stamped-checkout`, all three canonical selectors collect it, and Claude Sonnet, Claude Opus, and Pi remain D8-owned TODO cells while Codex emitted exact-head detail artifacts.
+- DONE: Run the applicable focused, full, race, formatting, and canonical Codex live checks at the exact candidate head; recommend PASSED or REJECTED without using prose or private-event observation.
+  Focused packages, live-tag compilation, `go test ./...`, isolated `go test ./... -race`, `gofmt -w ./cmd ./internal`, `git diff --check`, and the canonical Codex journey pass at clean head `2dc2953cb`; recommendation is PASSED solely on code, command, Git, filesystem, and dispatch-envelope evidence.
+
+### Summary
+
+Validation recommends PASSED at exact local candidate `2dc2953cb`. AC-1 is proved by the committed marker on the stamped branch/worktree plus exact inventory and cleanup checks; AC-2 by the stamped tuple carried through the durable live result and ordinary fresh envelope; AC-3 by byte-identical authority, Captain Git attribution, aborted rebase, and the absence of product grammar, state, parser, resolver, credential lookup, or conflict-resolution changes. Internal `spawn_agent`/`followup_task` recipients or cardinality and host prose were not used as acceptance evidence.
