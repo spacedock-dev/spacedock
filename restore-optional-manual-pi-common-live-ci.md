@@ -9,7 +9,7 @@ score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
 group: live-ci-evidence
-worktree:
+worktree: .worktrees/spacedock-ensign-restore-optional-manual-pi-common-live-ci
 issue:
 pr:
 mod-block:
