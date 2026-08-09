@@ -24,6 +24,15 @@ changes landed, but the required runtime evidence did not remove these TODOs.
 Each remaining TODO points to active work. Passing evidence removes the TODO for
 that exact runtime and journey.
 
+## Required order
+
+Use the strict XFAIL behavior from `ts7gq0mr9s3chx2w4wppd1kt` before a new
+product repair. Convert a TODO only when the complete journey runs and produces
+one stable semantic failure code.
+
+Remove a TODO immediately when the journey passes. Remove an XFAIL binding when
+the repaired journey reports XPASS.
+
 ## Acceptance criteria
 
 **AC-1 (VALUE) — Restore `gate-guardrail` evidence on Codex and Pi.**
