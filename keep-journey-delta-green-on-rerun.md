@@ -1,7 +1,7 @@
 ---
 id: qz0ap96nt5k93tgbsphq9ahy
 title: Keep journey-delta reporting green across failed-job reruns
-status: ideation
+status: implementation
 source: PR #639 Runtime Live E2E attempts 2 and 3 on 2026-08-08.
 started: 2026-08-09T04:16:06Z
 completed:
@@ -53,7 +53,7 @@ gates:
                 reason: Captain approves the exact-artifact recovery design and its warning-and-skip fallback.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A failed-job rerun can reuse successful live jobs from an earlier attempt. The reporting job then reads artifacts from different attempts of one run.
