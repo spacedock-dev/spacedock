@@ -497,11 +497,11 @@ Validation observed the concrete Sonnet and Opus IDs select their stable TODO ro
 ## Stage Report: implementation (cycle 6)
 
 - DONE: TODO only Sonnet `TestLiveBreakGlassShimRecovery` under owner 824ecawn5jttbykcgx82nbf4 while keeping Opus and the other Sonnet substrate proofs active.
-  Commit `52fa3c801` places the owner-linked TODO at that test's entry point; the boundary table skips `sonnet` and `claude-sonnet-5`, keeps `claude-opus-4-8` active, and no skip was added to merged-team or bare-reachable proofs.
+  Amended commit `1296be968` calls the existing stable-role normalizer at that test's entry point and skips only `claude-sonnet` with the literal owner; Opus and the merged-team and bare-reachable proofs remain active.
 - DONE: Keep the desired runtime-specific proof, workflow, fixture, assertion, and 824 product repair unchanged.
-  The correction changes only `dispatch_recovery_live_test.go` by +41/-0 from `a606ae5f3`; its proof annotation, exercise, fixture, assertion, registry, workflow, and task-824-owned product/oracle bytes are unchanged.
+  The correction changes only `dispatch_recovery_live_test.go` by +7/-0 from `a606ae5f3`; its proof annotation, exercise, fixture, assertion, registry, workflow, and task-824-owned product/oracle bytes are unchanged.
 - DONE: Add focused skip-boundary evidence and run tagged compilation, reconciliation, formatting, affected, full, and race checks.
-  The offline entry-point run emitted the exact task-824 TODO before credentials, the table rejects unknown IDs and proves Opus remains active, and tagged compilation, registry/workflow guards, affected ensigncycle, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` pass.
+  The direct tagged Sonnet invocation emitted the exact task-824 TODO before runner construction; the existing stable-role table proves Opus non-match and unknown-ID failure, while tagged compilation, reconciliation, formatting, affected ensigncycle, full, and race checks pass.
 
 ### Summary
 
