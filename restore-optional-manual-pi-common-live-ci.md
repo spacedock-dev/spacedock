@@ -66,6 +66,14 @@ gates:
                 digest: sha256:726967ec584dcb98ea9063dd63cfd9c2292daa7a46086e686270d364a5d2e5f8
                 request-digest: sha256:123ff303ed7debbd1797108104478d97390968d1ce57c336fd22dd2655cd9619
                 room-ref: ./restore-optional-manual-pi-common-live-ci/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0aqnm6v8ajns6cpsknxn9wf2:validation:1
+                briefing: briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T21:53:57.842218Z"
+                decision: revise
+                reason: 'Exact-candidate run 31323946889 retained no journey-metrics files, failing AC-1. Captain authorized a bounded design reset: preserve AC-1 and the existing metrics format; add at most two files and +120 net lines; reuse journeymetrics APIs; prove the current no-op failure and exact repaired Pi artifact.'
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
