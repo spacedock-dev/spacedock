@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:krbaeb3resfpbh1qvnb65krf:backlog:attempt-1:revision-1",
+  "question": "Should KRB enter ideation to make gate reviews stage-specific and omit empty result rows?",
+  "artifacts": [
+    {
+      "id": "artifact:krbaeb3resfpbh1qvnb65krf:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4a5b54adb4f54fda5353249fbdda181b253f20e8/make-gate-presentations-stage-specific/index.md",
+      "rev": "sha256:b86f8772a929a32ce2b04e568feac58f4ad7dcec5267ae63f65046a0ff96671c",
+      "mediaType": "text/markdown",
+      "summary": "Use the existing presenter, tailor evidence by stage, omit empty classes, and preserve one bound decision authority."
+    }
+  ]
+}

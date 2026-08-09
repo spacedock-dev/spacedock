@@ -13,6 +13,18 @@ verdict:
 worktree:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:krbaeb3resfpbh1qvnb65krf:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:krbaeb3resfpbh1qvnb65krf-backlog-1
+              briefing:
+                id: briefing:krbaeb3resfpbh1qvnb65krf:backlog:attempt-1:revision-1
+                digest: sha256:87dcf5d1606cb23b261dc62b4e261e7b18d1f6859af6627461f2e184900619be
+                request-digest: sha256:f53ac4ab11d714aafe7349c2071e67c1894e4b14f71ae946013cde46f3fc2ce8
+                room-ref: ./review/backlog/briefing-1
 ---
 
 ## Outcome
