@@ -1,6 +1,6 @@
 ---
 title: Make gate prepare name its rejected selection so Sonnet stops destroying binary-owned gate room state
-status: validation
+status: implementation
 source: "Captain correction, 2026-08-02: keep the deferred Sonnet repair as a local Spacedock task; PR #585 owns only the green-baseline quarantine."
 started: 2026-08-02T00:49:50Z
 completed:
@@ -71,10 +71,10 @@ gates:
                 reason: Exact candidate passes the complete offline validation set and preserves prior Sonnet behavior evidence; require fresh exact-head Sonnet CI before merge because local authentication failed before product execution.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 sprint: test-behavior-completeness
-mod-block: merge:pr-merge
-pr: "#640"
+mod-block:
+pr:
 ---
 
 Restore the Sonnet gate-guardrail live proof by making `gate prepare` name which selected source it rejected, so the FO stops bisecting for the offending path by binding throwaway content and destroying binary-owned room state. The task removes the bounded Sonnet TODO quarantine only after an exact-tip live run proves exactly one successful `gate prepare`.
