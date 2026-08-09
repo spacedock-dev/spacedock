@@ -1,6 +1,6 @@
 ---
 title: Cut gate-guardrail turn and tool bloat
-status: ideation
+status: implementation
 source: "Journey-metrics audit of PR #643, Runtime Live E2E run 31297186020, Claude job 93204212216, artifact 9033837253. The gate-guardrail journey used 22 assistant turns and 24 tool calls, up from 11 and 11 in the v0.26 Sonnet observation. Captain directed a separate filing on 2026-08-09."
 started: 2026-08-09T14:51:32Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: The direction removes measured contract-caused gate toil through existing structured reads and real gate outputs, with bounded files and live comparison evidence and no new parser, harness, CLI, or lifecycle state.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
