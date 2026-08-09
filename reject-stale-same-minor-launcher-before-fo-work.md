@@ -26,6 +26,17 @@ gates:
                 digest: sha256:7f79fc8844f764e271fc88b9f9e5dec162255d45d673f49aaf8c7c311e4ff745
                 request-digest: sha256:33a4dc17b36c81cebccb91764417df4717586b4fbf1a25ffdc600dcdd6f337cb
                 room-ref: ./reject-stale-same-minor-launcher-before-fo-work/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5f6m3jwhbrbneak5j8eeyh5r:backlog:1
+                briefing: briefing:5f6m3jwhbrbneak5j8eeyh5r:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T14:50:47.070464Z"
+                decision: approve
+                reason: Captain directed ideation dispatch; a pre-boot capability check addresses observed stale-launcher harm.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Stop a First Officer before workflow work when the selected launcher has the correct minor version but lacks a required command surface.
