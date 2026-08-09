@@ -506,3 +506,38 @@ Validation observed the concrete Sonnet and Opus IDs select their stable TODO ro
 ### Summary
 
 PR #639 run `31281195654`, job `93162834615`, exposed a task-824-owned break-glass oracle gap after the correct Sonnet lane was selected. This temporary, owner-linked TODO represents that truth only for Sonnet; the local commit is ready for fresh validation, with PR delivery and CI approval left to the first officer.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Verify the seven-line entry-point TODO skips only stable Sonnet role under exact owner 824ecawn5jttbykcgx82nbf4 before runner construction.
+  A direct tagged `claude-sonnet-5` invocation skipped in 0.00s with `TODO(824ecawn5jttbykcgx82nbf4): claude-sonnet/claude-dispatch-build-break-glass`, before credentials, binary build, fixture, or runner setup.
+- DONE: Verify Opus and the other two Sonnet substrate proofs remain active.
+  With credentials deliberately absent, Opus break-glass and Sonnet merged-team/bare-reachable reached runner auth setup and skipped there; only Sonnet break-glass emitted the owner-linked TODO.
+- DONE: Verify no workflow, registry, fixture, assertion, or 824 product changes.
+  `a606ae5f3..1296be968` is exactly one existing tagged test file and +7/-0; the workflow, registry, fixture/proof annotations, exercise, assertions, and task-824 product/oracle bytes are unchanged.
+- DONE: Verify direct tagged skip evidence, existing role controls, reconciliation, formatting, and affected package.
+  Direct Sonnet/Opus boundary runs, `TestClaudeLiveModelMapsToStableTODORole`, registry reconciliation, `git diff --check`, `gofmt -d ./cmd ./internal`, and `go test ./internal/ensigncycle` all behaved as required.
+- DONE: Verify the full suite and race suite.
+  Sequential isolated runs of `go test ./...` and `go test ./... -race` both exited 0.
+- DONE: AC-1 - Each pull request queues exactly two live approval jobs.
+  Run `31281195654` observed one Sonnet and one Codex job at `113738b20`; the workflow remains byte-identical through `1296be968`.
+- DONE: AC-2 - Ordinary pull requests run exactly one Claude live lane.
+  The unchanged one-row workflow selects Sonnet 5/max, and only its task-824-owned break-glass substrate proof is temporarily skipped.
+- DONE: AC-3 - Ordinary pull requests run Codex Luna at maximum effort.
+  No Codex workflow, runner, or assertion changed, and the full suites pass.
+- DONE: AC-4 - Opus and Pi evidence remain available without pull-request approval waits.
+  Opus break-glass remains active under `claude-opus`, while the unchanged workflow and registry preserve pre-release Opus and offline/local Pi paths.
+- DONE: AC-5 - The desired journey and target registry remains byte-identical.
+  The exact correction-range registry diff exited 0 and reconciliation passed.
+- DONE: AC-6 - Operators can identify all cadences without reading workflow YAML.
+  No operator documentation changed.
+- DONE: AC-7 - The change uses the existing workflow and test surface.
+  The seven-line correction modifies one existing live-proof entry point and adds no workflow, fixture, assertion, registry row, controller, or product behavior.
+- DONE: Recommend whether exact SHA 1296be968 is safe to push.
+  Safe to push exactly `1296be968`; PR #639 currently remains at `113738b20`, and CI approval plus task 824's repair remain with the first officer.
+- DONE: Recommend PASSED or REJECTED.
+  Recommend PASSED with no material findings, deferred risks, or polish findings in 0y's correction scope.
+
+### Summary
+
+Validation proved the exact Sonnet-only TODO boundary and observed Opus plus the adjacent Sonnet substrate proofs remain active. The seven-line correction is clean, every requested check passes, and exact SHA `1296be968` is safe for the first officer to push without absorbing task 824's product repair.
