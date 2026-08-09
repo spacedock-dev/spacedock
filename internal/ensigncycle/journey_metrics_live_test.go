@@ -4,7 +4,6 @@ package ensigncycle
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,22 +13,33 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
 
-func Example_emitPiScenarioMetrics() {
-	dir, _ := os.MkdirTemp("", "pi-metrics-proof")
-	defer os.RemoveAll(dir)
-	model := "openai/gpt-5.6-luna:max"
-	_ = writePiScenarioMetrics(dir, sharedRuntimeScenario{name: "pi-metrics-proof"}, liveResult{duration: 2 * time.Second}, model)
-	paths, err := filepath.Glob(filepath.Join(dir, "shared-scenarios", "*.json"))
-	if err != nil || len(paths) != 1 {
-		fmt.Printf("files=%d error=%v\n", len(paths), err)
-		return
-	}
-	data, _ := os.ReadFile(paths[0])
-	var record journeymetrics.Record
-	err = json.Unmarshal(data, &record)
-	fmt.Printf("files=%d bytes=%t error=%v scenario=%s runtime=%s model=%s duration=%d\n",
-		len(paths), len(data) > 0, err, record.ScenarioID, record.Runtime, record.Model, record.DurationMS)
-	// Output: files=1 bytes=true error=<nil> scenario=pi-metrics-proof runtime=pi model=openai/gpt-5.6-luna:max duration=2000
+func FuzzPiSharedLiveDriverEmitsJourneyMetric(f *testing.F) {
+	f.Add("pi-metrics-proof")
+	f.Fuzz(func(t *testing.T, scenarioName string) {
+		dir := t.TempDir()
+		t.Setenv("SPACEDOCK_JOURNEY_METRICS_DIR", dir)
+		driver := piSharedLiveDriver{modelName: "openai/gpt-5.6-luna:max"}
+		driver.emitMetrics(t, sharedRuntimeScenario{name: scenarioName}, liveResult{duration: 2 * time.Second})
+
+		paths, err := filepath.Glob(filepath.Join(dir, "shared-scenarios", "*.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(paths) != 1 {
+			t.Fatalf("Pi journey metric files = %d, want 1", len(paths))
+		}
+		data, err := os.ReadFile(paths[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		var record journeymetrics.Record
+		if len(data) == 0 || json.Unmarshal(data, &record) != nil {
+			t.Fatalf("Pi journey metric is empty or invalid: %q", data)
+		}
+		if record.ScenarioID != scenarioName || record.Runtime != "pi" || record.Model != driver.modelName || record.DurationMS != 2000 {
+			t.Fatalf("Pi journey metric = %#v", record)
+		}
+	})
 }
 
 func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult, model string) {
@@ -152,12 +162,6 @@ func emitPiScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result 
 	if dir == "" {
 		return
 	}
-	if err := writePiScenarioMetrics(dir, scenario, result, model); err != nil {
-		t.Fatalf("emit Pi journey metrics for %s: %v", scenario.name, err)
-	}
-}
-
-func writePiScenarioMetrics(dir string, scenario sharedRuntimeScenario, result liveResult, model string) error {
 	record := journeymetrics.BuildRecord(journeymetrics.JourneySpec{
 		ScenarioID: scenario.name,
 		Source:     "live-harness",
@@ -169,5 +173,7 @@ func writePiScenarioMetrics(dir string, scenario sharedRuntimeScenario, result l
 	}, journeymetrics.BehaviorResult{Passed: true}, journeymetrics.Observation{
 		Duration: result.duration,
 	})
-	return journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record)
+	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
+		t.Fatalf("emit Pi journey metrics for %s: %v", scenario.name, err)
+	}
 }
