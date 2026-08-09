@@ -37,8 +37,8 @@ Decision: {one-line decision prompt naming what approval/rejection does in concr
 ### Captain-facing assembly rules
 
 - Fetch the current stage with `${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir {workflow_dir} --stage {stage}` before selecting evidence. Never infer content from the stage name.
-- A `Gate content` instruction in that stage definition is authoritative. Without one, use only its declared Inputs, Outputs, Good/Bad criteria, and the workflow-declared advance or feedback transition. Do not add facts that those sources do not support.
+- A `Gate content` instruction in that stage definition is authoritative. Without one, use only the decision-relevant subset of its declared Inputs, Outputs, Good/Bad criteria, and the workflow-declared advance or feedback transition. Do not add facts that those sources do not support.
 - Generic hints apply only inside that fallback: before a direction is selected, show what is proposed and what proof the decision needs; after selection, show the direction, risks, surface, and proposed proof; after execution, show actual results, checks, acceptance evidence, and readiness. The declared stage definition decides which hint fits.
-- Omit missing evidence, empty result classes, empty finding categories, zero-result rows, and placeholders such as `None` or `N/A`. Preserve the workflow's finding labels and order; presentation does not classify findings.
+- Omit missing evidence, empty result classes, empty finding categories, zero-result rows, and placeholders such as `None` or `N/A`. Do not print an aggregate count that names a zero class. Preserve the workflow's finding labels and order; presentation does not classify findings.
 - Name the task and stage, Briefing identity and digest, one recommendation, and one concrete decision effect. Keep `${SPACEDOCK_BIN:-spacedock} gate record --decision` as the sole recorder; presentation adds no authority.
 - Keep the decision visible and the review concise. Use the workflow's declared entity label in authored prose, name concrete reasons for rejection, and mention a worktree only when the decision changes worktree state.
