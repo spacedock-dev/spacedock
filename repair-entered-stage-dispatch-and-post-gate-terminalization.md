@@ -2,7 +2,7 @@
 title: Repair entered-stage dispatch evidence and post-gate terminalization
 status: ideation
 source: "PR #585 exact-head run 30706782428: Codex job 91387287118 and Sonnet job 91387287120"
-started:
+started: 2026-08-09T18:34:29Z
 completed:
 verdict:
 score: 0.9
