@@ -1,0 +1,45 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5f6m3jwhbrbneak5j8eeyh5r:ideation:attempt-1:revision-1",
+  "question": "Should 5F6 enter implementation with one read-only same-minor command-capability probe before boot?",
+  "artifacts": [
+    {
+      "id": "artifact:5f6m3jwhbrbneak5j8eeyh5r:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/dc7bbdce3987c2db82ffccb66eef927d3e26b3d5/reject-stale-same-minor-launcher-before-fo-work.md",
+      "rev": "sha256:a2e2ff2009522df7d12a3b07ceedb2b334ff14bed755b8d389e487d2e737f4c6",
+      "mediaType": "text/markdown",
+      "summary": "Use one selected launcher for version, capability help, and a single boot; abort stale same-minor binaries before state work with install-only remedies."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/skills/first-officer/references/first-officer-shared-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:2cc9d81eb0af371cec5da92214107ec74feba7704870a4b5bcf9ea1367edc784"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/skills/integration/testdata/version_gate_flow.sh",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:2e15b0db2c379aefd5fde5b42fb872bf3352f95d6a616cd71a8c150f1dc6fc16"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/skills/integration/version_gate_fixture_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:7037038367900deb8942e57f5eacdd7f3033b7b259f359799ca15c7d38beb571"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:5f6m3jwhbrbneak5j8eeyh5r:ideation:attempt-1:revision-1:item-5",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/site/get-started/install.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:f8ba7ff19d10bbaf395cc5c052cbab25d735f5cadbabf9e5208c63693e2b90aa"
+    }
+  ]
+}
