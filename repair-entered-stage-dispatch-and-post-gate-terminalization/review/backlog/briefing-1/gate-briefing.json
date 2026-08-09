@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9adv48yhye5s2vkhwd7ge52d:backlog:attempt-1:revision-1",
+  "question": "Is this task ready for post-gate repair ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:9adv48yhye5s2vkhwd7ge52d:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/727bdfd414b9be67b75261f6e753a46e693fb456/repair-entered-stage-dispatch-and-post-gate-terminalization.md",
+      "rev": "sha256:65d7f5a37e4b4e539514f4876100aff191fa77fbe6db93d7fd5560ecd1599b5e",
+      "mediaType": "text/markdown",
+      "summary": "Recarve this task to gate-consume dispatch evidence and safe post-gate terminalization."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:9adv48yhye5s2vkhwd7ge52d:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31cb42360f20b278f4d18781b6c790eee7a1a415de7362b5a63db376dec0d1e3"
+    }
+  ]
+}

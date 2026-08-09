@@ -11,6 +11,18 @@ issue:
 milestone: 0.27.0
 id: 9adv48yhye5s2vkhwd7ge52d
 sprint: test-behavior-completeness
+gates:
+    version: 1
+    records:
+        - id: gate:9adv48yhye5s2vkhwd7ge52d:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:9adv48yhye5s2vkhwd7ge52d-backlog-1
+              briefing:
+                id: briefing:9adv48yhye5s2vkhwd7ge52d:backlog:attempt-1:revision-1
+                digest: sha256:2cb413910c222d4d8b9a3b47fa2f43705c6a5198c796988425da0956e65f8c5e
+                request-digest: sha256:9bcea1bdbd613334d989eaf10920c3e50f40c4e6f6386993352a0bd258b4989e
+                room-ref: ./repair-entered-stage-dispatch-and-post-gate-terminalization/review/backlog/briefing-1
 ---
 
 PR #585's runtime-neutral durable live oracle exposed three shipped behavior defects outside the PR's Codex configuration and launcher-shim scope.
