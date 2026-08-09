@@ -1,6 +1,6 @@
 ---
 title: Restore optional manual Pi common-live CI
-status: backlog
+status: ideation
 source: "Captain correction, 2026-08-09: PR #639 removed pi-live when it removed Pi from pull-request approvals. Restore manual CI Pi evidence without making Pi a merge requirement."
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: Captain directed dispatch; the task restores optional retained Pi CI evidence without changing pull-request requirements or blocking pre3.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
