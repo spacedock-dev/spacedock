@@ -50,6 +50,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-09T21:28:30.615994Z"
                 reason: The ideation AC labels are not readable by the workflow AC extractor.
+            - id: gate-attempt:2e4fe65gy9vcr4xck6akzmdd-ideation-2
+              briefing:
+                id: briefing:2e4fe65gy9vcr4xck6akzmdd:ideation:attempt-2:revision-1
+                digest: sha256:51af8e7b2cd1722194960cde64039dfb663e2b2a205cc131b3a487e8bd43a89d
+                request-digest: sha256:771cc01da140a4ca71f0bdff88e7af0e216611981b452406d90338c9906163bc
+                room-ref: ./commit-pi-gate-prepare-before-presentation/review/ideation/briefing-2
 ---
 
 ## Problem
