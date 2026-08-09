@@ -33,6 +33,8 @@ func dispatchRecoveryReadme() string {
 // can eyeball alongside the stream-json oracle.
 const dispatchRecoveryMarker = "DISPATCH-RECOVERY-WORKER-RAN"
 
+const dispatchRecoveryStageDefinition = "Append a one-line marker to `widget-task.md` proving the worker ran.\n\n- **Outputs:** An implementation stage report."
+
 func dispatchRecoveryEntity() string {
 	return "---\n" +
 		"id: widget-task\n" +
@@ -79,4 +81,11 @@ func breakGlassShimPrompt() string {
 		"Your final response must confirm the worker's implementation stage report landed.",
 		"If the dispatch helper fails, follow your contract's break-glass recovery path rather than giving up.",
 	)
+}
+
+// breakGlassShimTeamPrompt changes only the dispatch-mode selection. The helper
+// still fails at the same seam and the worker receives the same entity/stage work.
+func breakGlassShimTeamPrompt() string {
+	return "You MUST run in team mode for this run: dispatch every worker as a named background teammate. " +
+		breakGlassShimPrompt()
 }

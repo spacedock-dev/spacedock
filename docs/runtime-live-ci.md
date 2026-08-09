@@ -95,7 +95,7 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
 | Claude `TestLiveCommon...` | The 16 registered common journeys | Journey metrics record duration, tokens, model, and available cost. |
-| Claude substrate: `TestLiveMergedTeamModeDispatch`, `TestLiveBareReachable`, `TestLiveBreakGlassShimRecovery` | Merged, bare, and break-glass dispatch | Merged baseline: 127s Sonnet and 144s Opus. Cost was not available. |
+| Claude substrate: `TestLiveMergedTeamModeDispatch`, `TestLiveBareReachable`, `TestLiveBreakGlassShimRecovery` | Merged and bare dispatch, plus break-glass recovery that preserves the selected bare/team mode and commits the worker report | Merged baseline: 127s Sonnet and 144s Opus. Cost was not available. |
 | Codex resolver and `TestLiveCommon...` | Current-checkout resolution and common journeys | Both PR and release jobs consume Codex metrics. |
 | Pi `TestLiveCommon...` and `TestLivePiFrontDoorSmoke` | Common journeys plus one four-part substrate proof | The detail artifacts preserve each run. |
 

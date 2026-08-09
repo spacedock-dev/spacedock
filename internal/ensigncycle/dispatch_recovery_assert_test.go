@@ -5,6 +5,9 @@ package ensigncycle
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -26,9 +29,9 @@ const recoverySkillArg = "spacedock:fo-dispatch-recovery"
 
 // streamContentBlock is one tool_use/text content block of one assistant message
 // delta, decoded generically: Input as a raw key-set (not a typed struct) so an
-// oracle can test field PRESENCE (e.g. "was run_in_background emitted at all")
-// rather than only its value — a bare-mode Agent() omits the key entirely, it does
-// not emit `run_in_background: false`.
+// oracle can test field PRESENCE as well as value. Claude may serialize a blocking
+// bare-mode Agent() with an omitted key or with `run_in_background: false`; true is
+// still a different transport and must be rejected.
 type streamContentBlock struct {
 	Type  string                     `json:"type"`
 	Name  string                     `json:"name"`
@@ -167,11 +170,19 @@ func assertBareReachableObservables(stream string) error {
 // one Agent() tool_use carries run_in_background=true, a name matching the
 // `{worker_key}-{slug}-{stage}` shape, and a prompt containing both
 // `Skill(skill="spacedock:ensign")` and `### Stage definition`.
-func assertBreakGlassObservables(stream string) error {
+type dispatchMode string
+
+const (
+	dispatchModeBare dispatchMode = "bare"
+	dispatchModeTeam dispatchMode = "team"
+)
+
+func assertBreakGlassObservables(stream string, selectedMode dispatchMode) error {
 	sawReportBeforeAgent := false
 	sawAgentCall := false
 	sawRecoverySkill := false
-	var breakGlassAgentSeen bool
+	var agentCount int
+	var matchingAgentCount int
 	var breakGlassAgentDetails []string
 
 	walkStreamBlocks(stream, func(block streamContentBlock) {
@@ -188,19 +199,35 @@ func assertBreakGlassObservables(stream string) error {
 				}
 			case "Agent":
 				sawAgentCall = true
+				agentCount++
 				var runInBackground bool
-				if raw, ok := block.Input["run_in_background"]; ok {
-					_ = json.Unmarshal(raw, &runInBackground)
+				runRaw, hasRunInBackground := block.Input["run_in_background"]
+				if hasRunInBackground {
+					_ = json.Unmarshal(runRaw, &runInBackground)
 				}
 				name := inputStringField(block.Input, "name")
+				_, hasName := block.Input["name"]
+				_, hasTeamName := block.Input["team_name"]
 				prompt := inputStringField(block.Input, "prompt")
+				description := inputStringField(block.Input, "description")
+				subagentType := inputStringField(block.Input, "subagent_type")
 				hasEnsignSkill := strings.Contains(prompt, `Skill(skill="spacedock:ensign")`)
-				hasStageDef := strings.Contains(prompt, "### Stage definition")
+				hasStageDef := strings.Contains(prompt, "### Stage definition:") && strings.Contains(prompt, dispatchRecoveryStageDefinition)
+				hasStageReport := strings.Contains(prompt, "### Stage report")
+				hasCompletionSignal := strings.Contains(prompt, `SendMessage(to="team-lead"`)
 				nameShaped := strings.Count(name, "-") >= 2
-				details := fmt.Sprintf("name=%q run_in_background=%v ensign-skill-in-prompt=%v stage-def-in-prompt=%v", name, runInBackground, hasEnsignSkill, hasStageDef)
+				commonShape := subagentType == "spacedock:ensign" && description != "" && hasEnsignSkill && hasStageDef && hasStageReport
+				modeShape := false
+				switch selectedMode {
+				case dispatchModeBare:
+					modeShape = !hasName && !hasTeamName && (!hasRunInBackground || !runInBackground) && !hasCompletionSignal
+				case dispatchModeTeam:
+					modeShape = nameShaped && runInBackground && hasRunInBackground && !hasTeamName && hasCompletionSignal
+				}
+				details := fmt.Sprintf("name=%q name-present=%v team_name-present=%v run_in_background=%v run-present=%v subagent_type=%q description-present=%v ensign-skill-in-prompt=%v stage-def-in-prompt=%v stage-report-in-prompt=%v completion-signal=%v", name, hasName, hasTeamName, runInBackground, hasRunInBackground, subagentType, description != "", hasEnsignSkill, hasStageDef, hasStageReport, hasCompletionSignal)
 				breakGlassAgentDetails = append(breakGlassAgentDetails, details)
-				if runInBackground && nameShaped && hasEnsignSkill && hasStageDef {
-					breakGlassAgentSeen = true
+				if commonShape && modeShape {
+					matchingAgentCount++
 				}
 			}
 		}
@@ -212,8 +239,84 @@ func assertBreakGlassObservables(stream string) error {
 	if !sawRecoverySkill {
 		return fmt.Errorf("no Skill(skill=%q) tool_use observed in the stream — the Break-Glass trigger did not load the recovery skill", recoverySkillArg)
 	}
-	if !breakGlassAgentSeen {
-		return fmt.Errorf("no Agent() call matched the break-glass shape (run_in_background=true, a {worker_key}-{slug}-{stage} name, a prompt carrying Skill(skill=\"spacedock:ensign\") and ### Stage definition); observed Agent() calls: %v", breakGlassAgentDetails)
+	if agentCount != 1 {
+		return fmt.Errorf("observed %d Agent() calls, want exactly one; calls: %v", agentCount, breakGlassAgentDetails)
+	}
+	if matchingAgentCount != 1 {
+		return fmt.Errorf("the only Agent() call did not preserve selected %s mode or carry the complete ensign prompt; observed Agent() calls: %v", selectedMode, breakGlassAgentDetails)
 	}
 	return nil
+}
+
+// assertBreakGlassDurableResult proves the worker result, report protocol, scoped
+// commit, and clean entity path independently from the Claude stream.
+func assertBreakGlassDurableResult(root, entityPath string) error {
+	content, err := os.ReadFile(entityPath)
+	if err != nil {
+		return fmt.Errorf("read recovery entity: %w", err)
+	}
+	if err := assertCompleteRecoveryReport(string(content)); err != nil {
+		return err
+	}
+	rel, err := filepath.Rel(root, entityPath)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return fmt.Errorf("entity %q is outside repository %q", entityPath, root)
+	}
+	status, err := gitOutput(root, "status", "--short", "--", rel)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(status) != "" {
+		return fmt.Errorf("entity has uncommitted changes: %s", strings.TrimSpace(status))
+	}
+	history, err := gitOutput(root, "log", "--format=%H", "--", rel)
+	if err != nil {
+		return err
+	}
+	for _, commit := range strings.Fields(history) {
+		blob, showErr := gitOutput(root, "show", commit+":"+filepath.ToSlash(rel))
+		if showErr != nil || assertCompleteRecoveryReport(blob) != nil {
+			continue
+		}
+		files, diffErr := gitOutput(root, "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", commit)
+		if diffErr == nil && strings.TrimSpace(files) == filepath.ToSlash(rel) {
+			return nil
+		}
+	}
+	return fmt.Errorf("no path-scoped commit contains the complete recovery result")
+}
+
+func assertCompleteRecoveryReport(content string) error {
+	if !strings.Contains(content, dispatchRecoveryMarker) {
+		return fmt.Errorf("recovery entity missing %q", dispatchRecoveryMarker)
+	}
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		if line != "## Stage Report: implementation" {
+			continue
+		}
+		hasDone := false
+		hasSummary := false
+		for _, sectionLine := range lines[i+1:] {
+			if strings.HasPrefix(sectionLine, "## ") {
+				break
+			}
+			hasDone = hasDone || strings.HasPrefix(sectionLine, "- DONE:")
+			hasSummary = hasSummary || sectionLine == "### Summary"
+		}
+		if hasDone && hasSummary {
+			return nil
+		}
+	}
+	return fmt.Errorf("recovery entity missing DONE and Summary inside exact %q section", "## Stage Report: implementation")
+}
+
+func gitOutput(root string, args ...string) (string, error) {
+	cmd := exec.Command("git", args...)
+	cmd.Dir = root
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
+	}
+	return string(out), nil
 }

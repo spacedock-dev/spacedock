@@ -243,8 +243,8 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	// build.go (NOT "main"). The dispatch prompt is a pointer the ensign Reads, so the
 	// concrete completion target lives in the dispatch FILE under /tmp/spacedock-dispatch;
 	// assert it there (the build helper wrote it during the FO's dispatch).
-	if !mergedDispatchFileTargetsTeamLead(t, dispatches, artifactDir) {
-		t.Errorf("no merged dispatch file pinned the completion target SendMessage(to=\"team-lead\")\nArtifacts: %s", artifactDir)
+	if !mergedDispatchFileHasEnsignContract(t, dispatches, artifactDir) {
+		t.Errorf("no merged dispatch file carried the ensign skill and pinned SendMessage(to=\"team-lead\")\nArtifacts: %s", artifactDir)
 	}
 
 	// Capture the FO's own session id (the init event's session_id == the
@@ -266,14 +266,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 		t.Fatalf("reading merged member metas: %v\nArtifacts: %s", err, artifactDir)
 	}
 	metaPath := mergedMemberMetasPath(effectiveConfigDir, resolvedRoot, sessionID)
-	ensignMember := false
-	for _, m := range metas {
-		if m.AgentType == "spacedock:ensign" && m.Name != "" && m.TeamName == "" {
-			ensignMember = true
-			break
-		}
-	}
-	if !ensignMember {
+	if !hasMergedEnsignMember(metas) {
 		t.Errorf("no in-process member meta with agentType=spacedock:ensign + a name + no team_name found under %s; metas=%+v\nArtifacts: %s",
 			metaPath, metas, artifactDir)
 	}
@@ -322,14 +315,15 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	}
 }
 
-// mergedDispatchFileTargetsTeamLead reports whether any merged dispatch the FO made
-// wrote a dispatch file under /tmp/spacedock-dispatch whose completion-signal block
-// pins SendMessage(to="team-lead"). The dispatch file is keyed on the session id +
+// mergedDispatchFileHasEnsignContract reports whether any merged dispatch the FO
+// made wrote a dispatch file under /tmp/spacedock-dispatch that invokes the ensign
+// skill and whose completion-signal block pins SendMessage(to="team-lead"). The
+// dispatch file is keyed on the session id +
 // the derived member name (build.go's mergedMode path), so it is located by the
 // dispatched member's name. The completion target is the assertable code surface
 // (#396's build.go emits to="team-lead"); a `claude-fo-dispatch.md` prose note still
 // frames it as "main", but the code target is the one this asserts.
-func mergedDispatchFileTargetsTeamLead(t *testing.T, dispatches []mergedAgentDispatch, artifactDir string) bool {
+func mergedDispatchFileHasEnsignContract(t *testing.T, dispatches []mergedAgentDispatch, artifactDir string) bool {
 	t.Helper()
 	const dispatchDir = "/tmp/spacedock-dispatch"
 	for _, d := range dispatches {
@@ -345,8 +339,8 @@ func mergedDispatchFileTargetsTeamLead(t *testing.T, dispatches []mergedAgentDis
 			if err != nil {
 				continue
 			}
-			if strings.Contains(string(raw), `SendMessage(to="team-lead"`) {
-				t.Logf("merged dispatch file %s pins completion target to team-lead", p)
+			if mergedDispatchArtifactHasEnsignContract(string(raw)) {
+				t.Logf("merged dispatch file %s carries the ensign skill and pins completion target to team-lead", p)
 				return true
 			}
 		}
