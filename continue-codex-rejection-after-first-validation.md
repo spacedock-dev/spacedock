@@ -2,7 +2,7 @@
 title: Continue Codex rejection after the first validation
 status: ideation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
-started:
+started: 2026-08-09T20:36:16Z
 completed:
 verdict:
 score: 0.9
