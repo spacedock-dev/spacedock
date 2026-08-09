@@ -76,34 +76,39 @@ func TestLiveBareReachable(t *testing.T) {
 // TestLiveBreakGlassShimRecovery is AC-3's behavioral proof: a PATH-shimmed
 // `spacedock dispatch build` that fails for real must produce a captain-facing
 // helper-failure report BEFORE any Agent() call, a
-// Skill(skill="spacedock:fo-dispatch-recovery") load, and a break-glass-shaped
-// Agent() call (run_in_background=true, a {worker_key}-{slug}-{stage} name, a
-// prompt carrying Skill(skill="spacedock:ensign") and an inline ### Stage
-// definition).
+// Skill(skill="spacedock:fo-dispatch-recovery") load, and exactly one Agent()
+// call that preserves the selected blocking-bare or named-background-team mode.
+// Both modes must carry Skill(skill="spacedock:ensign"), an inline ### Stage
+// definition, and a complete path-scoped committed worker report.
 // Run it against a real credential:
 // `go test -tags live -run TestLiveBreakGlassShimRecovery ./internal/ensigncycle -v -count=1`.
 //
 //spacedock:live-proof id=claude-dispatch-build-break-glass lane=claude-live
 func TestLiveBreakGlassShimRecovery(t *testing.T) {
-	role, err := claudeLiveRole(envOr("SPACEDOCK_LIVE_MODEL", "sonnet"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if role == "claude-sonnet" {
-		t.Skipf("TODO(824ecawn5jttbykcgx82nbf4): %s/claude-dispatch-build-break-glass lacks passing live evidence", role)
-	}
 	runner := newClaudeLiveRunner(t)
-	workflowRoot := t.TempDir()
-	writeDispatchRecoveryWorkflow(t, workflowRoot)
-
 	shimDir := writeStubBreakGlassSpacedock(t, runner.binary)
 	runner.env = withSpacedockShimShellEnv(t, runner.env, shimDir)
 	scenarioRunner := runner.withStubPATH(shimDir)
-
-	scenario := sharedRuntimeScenario{name: "break-glass-shim"}
-	result := scenarioRunner.run(t, scenario, workflowRoot, breakGlassShimPrompt())
-	if err := assertBreakGlassObservables(result.stream); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	for _, tc := range []struct {
+		name   string
+		mode   dispatchMode
+		prompt string
+	}{
+		{"selected-bare", dispatchModeBare, breakGlassShimPrompt()},
+		{"selected-team", dispatchModeTeam, breakGlassShimTeamPrompt()},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			workflowRoot := t.TempDir()
+			entityPath := writeDispatchRecoveryWorkflow(t, workflowRoot)
+			scenario := sharedRuntimeScenario{name: "break-glass-shim-" + tc.name}
+			result := scenarioRunner.run(t, scenario, workflowRoot, tc.prompt)
+			if err := assertBreakGlassObservables(result.stream, tc.mode); err != nil {
+				t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+			}
+			if err := assertBreakGlassDurableResult(workflowRoot, entityPath); err != nil {
+				t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+			}
+			emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+		})
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }

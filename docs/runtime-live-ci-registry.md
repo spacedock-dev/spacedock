@@ -272,7 +272,8 @@ limited to the named runtime boundary.
 - **Entry point:** `TestLiveBreakGlassShimRecovery`
 - **Lane:** `claude-live`
 - **Required outcome:** A real `dispatch build` failure is reported before worker
-  dispatch and routes through the documented break-glass behavior.
+  dispatch, then recovery preserves the selected blocking-bare or
+  named-background-team mode and commits the complete worker report.
 - **Fixtures:**
   - `dispatch-recovery/base` — the shared dispatchable workflow.
   - `dispatch-recovery/failing-build` — the same workflow with `dispatch build`

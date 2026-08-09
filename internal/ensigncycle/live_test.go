@@ -193,7 +193,11 @@ func isTeamCreate(e streamEntry) bool {
 // block in a multi-tool turn is not missed.
 func isEnsignDispatch(e streamEntry) bool {
 	for _, b := range e.toolUseBlocks() {
-		if b.Name == "Agent" && b.Input.SubagentType == "spacedock:ensign" {
+		// Claude can omit a defaulted subagent_type from a successful Agent
+		// input. Treat that omission as a dispatch barrier only; the required
+		// merged oracle separately proves named/background/no-team transport,
+		// the ensign prompt, and on-disk agentType identity.
+		if b.Name == "Agent" && (b.Input.SubagentType == "spacedock:ensign" || b.Input.SubagentType == "") {
 			return true
 		}
 	}
