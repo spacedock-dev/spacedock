@@ -14,6 +14,18 @@ sprint: test-behavior-completeness
 group: common-evidence
 sprint-readiness: ready
 id: 98aa776adg66gn823a8gamdq
+gates:
+    version: 1
+    records:
+        - id: gate:98aa776adg66gn823a8gamdq:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:98aa776adg66gn823a8gamdq-backlog-1
+              briefing:
+                id: briefing:98aa776adg66gn823a8gamdq:backlog:attempt-1:revision-1
+                digest: sha256:b0d7c918d0addf124f3fa3b605e3ed074b6824a05a5acb69734299696260b51f
+                request-digest: sha256:54e4b661e7ba07b41d0a51b198e3a987479f991259beed74bf82eb05ff0f3610
+                room-ref: ./codex-headless-implementation-worker-before-validation/review/backlog/briefing-1
 ---
 
 ## Problem
