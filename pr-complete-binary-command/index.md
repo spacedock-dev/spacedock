@@ -2,13 +2,15 @@
 id: p23sxe8ec3mmwgekvz9041a9
 title: "spacedock pr complete — collapse the Merge-and-Cleanup ceremony into one binary command"
 status: ideation
-source: "captain (2026-06-04) — token-efficiency decomposition of first-officer-shared-core.md + the binary-simplification roadmap #3. Merge-and-Cleanup is MECHANICAL ceremony, so it routes to a binary command (not a lazy skill): collapsing it removes the prose outright. The FO ran this ceremony ~7x BY HAND this session (at/n3/2a/am/6b/ep/zd/p4 merges) — the heaviest, most error-prone sequence — the strongest single binary-command ROI."
+source: "Captain decision on 2026-06-04: collapse repeated merge and cleanup ceremony into one binary command. Extended by the 2026-08-09 journey-friction audit: the successful terminal path must carry or request the required verdict without a failed merge guard retry."
 score: "0.36"
 worktree:
 started: 2026-06-04T07:20:48Z
 completed:
 verdict:
 issue:
+sprint: durable-decisions
+sprint-readiness: ready
 ---
 
 The post-merge half of Merge-and-Cleanup (+ the Ship-Local Ceremony) is pure mechanical ceremony: mod-block clear (separate commit per the standalone rule) → terminalize (`--set completed verdict= worktree=`) → archive → worktree-remove → local-branch-delete → state push. It is the heaviest block in `first-officer-shared-core.md` (lines 207–242 today) and the most error-prone to run by hand — the FO ran it ~7× manually this session. Ceremony → BINARY command (the roadmap's lever 1), which removes the prose from the boot read entirely rather than deferring it to a skill. The team teardown is NOT part of this command — it is a Claude team-tool call (not shell-able), so it stays FO/runtime-side per the using-claude-team boundary.
