@@ -29,11 +29,11 @@ The live lanes prove runtime behavior by launching a real headless host, observi
 
 Each common test binds its stable ID, fixture builder, target-scoped TODO owner, runtime-neutral exercise, and durable assertion in one adjacent `liveJourney(...)` call. The helper selects only the Claude, Codex, or Pi transport; it never redispatches by journey name. Liveness remains the transport's no-progress quiet budget.
 
-CI runs these in `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before either live lane spends its environment approval:
+CI runs these in `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane spends its environment approval:
 
-- **`claude-live`** (matrix `sonnet` and `claude-opus-4-8`): secret `ANTHROPIC_API_KEY`. Runs the full-cycle smoke and the shared suite, loading the current checkout via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`.
-- **`codex-live`**: secret `OPENAI_API_KEY`. Builds a local marketplace under `$RUNNER_TEMP` and fails if the listing names a remote `github.com`/`ref next` install instead of the local path.
-- **`pi-live`**: installs `pi-coding-agent` and runs the Pi coverage guard plus the front-door smoke.
+- **Pull requests** run Claude Sonnet 5 at maximum effort and Codex Luna at maximum effort.
+- **Pre-release dispatches** run Opus at maximum effort when `live_cadence=opus-pre-release`.
+- **Pi evidence** uses the local subscription path with `pi login`. Pull requests keep only the free registry reconciliation.
 
 Every live lane tests the current checkout, never a remote `--ref next` install. For the local invocation commands and the full layer-by-layer breakdown of the scenario surface, see [the development workflow](development-workflow.md).
 

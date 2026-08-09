@@ -10,19 +10,23 @@
 # default Go suite (the live-tagged test compiles out) as the secret-free gate,
 # and runs unconditionally on every PR. Only live jobs declare an `environment:`
 # (a required-reviewer approval gate, reviewer = clkao) and read only the
-# host-specific secret they need: ANTHROPIC_API_KEY for Claude, OPENAI_API_KEY
-# for Codex and Pi. The Claude live job is a matrix over two variants: sonnet
-# (the Python-land floor) on CI-E2E and claude-opus-4-8 on CI-E2E-OPUS — each its
-# own separately-approved deployment. So a live PR run needs
-# same-repo-or-no-secrets + the per-variant environment approval; each variant
-# pauses in `waiting` until a maintainer approves its environment, so the
-# API-spending dispatch cannot start unapproved.
+# host-specific secret they need: ANTHROPIC_API_KEY for Claude and
+# OPENAI_API_KEY for Codex. Pull requests queue Sonnet 5 and Codex Luna. A
+# manual pre-release dispatch replaces Sonnet with Opus and waits for approval.
 
 name: Runtime Live E2E
 
 on:
   workflow_dispatch:
     inputs:
+      live_cadence:
+        description: "Select the routine Sonnet lane or the Opus pre-release lane."
+        required: true
+        type: choice
+        default: sonnet
+        options:
+          - sonnet
+          - opus-pre-release
       claude_version:
         description: "Pin Claude Code to a specific version (e.g. 2.1.107, stable, latest). Empty = installer default."
         required: false
@@ -72,28 +76,21 @@ jobs:
       - name: Run deterministic live-harness controls offline
         run: go test ./internal/ensigncycle -count=1 -run 'TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveSmokePromptRequiresExactStageReportHeading|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
 
-  # Live job: a matrix over two separately-approved variants. sonnet is the
-  # Python-land floor (CI-E2E); claude-opus-4-8 is the upper tier (CI-E2E-OPUS).
-  # Each leg pins its own model and its own approval-gated environment, so each
-  # spends ANTHROPIC_API_KEY only after a maintainer approves THAT deployment.
-  # fail-fast is off so one model's red does not cancel the other's run.
+  # Pull requests normalize to one Sonnet 5 leg. Manual dispatches choose the
+  # routine Sonnet cadence or the separately approved Opus pre-release cadence.
   claude-live:
     needs: offline
-    # Live, secret-bearing job. Every PR to `main` (and every manual
-    # workflow_dispatch) queues the live matrix; the offline gate above runs
-    # unconditionally per-PR (no secrets). Each variant then pauses in `waiting`
-    # on its CI-E2E* / CI-E2E-OPUS environment until a maintainer approves THAT
-    # deployment, so a live PR run needs same-repo-or-no-secrets + the
-    # per-variant environment approval.
+    # The offline gate runs first without secrets. The selected live leg then
+    # waits for its CI-E2E or CI-E2E-OPUS approval.
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - model: sonnet
-            environment: CI-E2E
-          - model: claude-opus-4-8
-            environment: CI-E2E-OPUS
+          - cadence: ${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}
+            model: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'claude-sonnet-5' || 'claude-opus-4-8' }}
+            effort: max
+            environment: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}
     environment:
       name: ${{ matrix.environment }}
     env:
@@ -108,7 +105,7 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       # Per-leg artifact root the shared Claude scenario runner writes its
       # stream/final-message artifacts under (claudeLiveArtifactDir reads it). The
-      # /${{ matrix.model }} segment keeps the two matrix legs from colliding.
+      # /${{ matrix.model }} keeps cadence artifacts separate.
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/claude/${{ matrix.model }}
       SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}
     steps:
@@ -142,6 +139,21 @@ jobs:
           echo "Installing Claude Code version: $VERSION"
           curl -fsSL https://claude.ai/install.sh | bash -s -- "$VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Set Claude maximum effort
+        run: |
+          set -euo pipefail
+          real_claude="$HOME/.local/bin/claude"
+          shim_dir="$RUNNER_TEMP/spacedock-claude-shim"
+          mkdir -p "$shim_dir"
+          cat > "$shim_dir/claude" <<'SH'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec "${SPACEDOCK_CLAUDE_REAL_BIN:?SPACEDOCK_CLAUDE_REAL_BIN is not set}" --effort max "$@"
+          SH
+          chmod +x "$shim_dir/claude"
+          printf 'SPACEDOCK_CLAUDE_REAL_BIN=%s\n' "$real_claude" >> "$GITHUB_ENV"
+          printf '%s\n' "$shim_dir" >> "$GITHUB_PATH"
 
       - name: Install spacedock candidate
         run: |
@@ -245,7 +257,7 @@ jobs:
       # projects/<slug>/<session>.jsonl HERE (the test honors this via
       # isolatedClaudeEnv), so the Upload step below grabs the structured
       # transcript even on a failed/killed run. The /${{ matrix.model }} segment
-      # keeps the two matrix legs from sharing a config dir.
+      # keeps cadence runs from sharing a config dir.
       - name: Set archivable CLAUDE_CONFIG_DIR
         run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/spacedock-claude-config/${{ matrix.model }}" >> "$GITHUB_ENV"
 
@@ -351,16 +363,16 @@ jobs:
           # plugin paths/arguments may legitimately be named "exec".
           case "${1:-}" in
             exec)
-              exec "$real_codex" exec --model gpt-5.6-luna "${@:2}"
+              exec "$real_codex" exec --model gpt-5.6-luna -c 'model_reasoning_effort="max"' "${@:2}"
               ;;
             --ask-for-approval)
               if [ "${2:-}" = "on-request" ] && [ "${3:-}" = "exec" ]; then
-                exec "$real_codex" "${@:1:3}" --model gpt-5.6-luna "${@:4}"
+                exec "$real_codex" "${@:1:3}" --model gpt-5.6-luna -c 'model_reasoning_effort="max"' "${@:4}"
               fi
               ;;
             --dangerously-bypass-approvals-and-sandbox)
               if [ "${2:-}" = "exec" ]; then
-                exec "$real_codex" "${@:1:2}" --model gpt-5.6-luna "${@:3}"
+                exec "$real_codex" "${@:1:2}" --model gpt-5.6-luna -c 'model_reasoning_effort="max"' "${@:3}"
               fi
               ;;
           esac
@@ -547,221 +559,6 @@ jobs:
             live-artifacts/journey-metrics/**
           if-no-files-found: warn
 
-  pi-live:
-    needs: offline
-    runs-on: ubuntu-latest
-    environment:
-      name: CI-E2E-PI
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      SPACEDOCK_PI_LIVE_REQUIRED: "1"
-      SPACEDOCK_PI_LIVE_CHILD_MODEL: openai/gpt-5.4
-      SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
-      PI_OFFLINE: "1"
-    steps:
-      - name: Check required secret
-        run: |
-          if [ -z "${OPENAI_API_KEY}" ]; then
-            echo "OPENAI_API_KEY is required for pi-live after CI-E2E-PI approval." >&2
-            exit 1
-          fi
-
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.22"
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-
-      - name: Install Pi CLI and substrates
-        run: |
-          set -euo pipefail
-
-          npm --version
-          node --version
-
-          # Compatibility pins: pi-coding-agent 0.80.x requires Node >=22.19 and
-          # provides @earendil-works/pi-ai/compat, which pi-subagents 0.35.x loads.
-          # Keep these exact pins together; do not let npm's engine-aware resolver
-          # fall back to legacy-node20 pi-coding-agent while pi-subagents floats new.
-          PI_CODING_AGENT_VERSION="0.80.10"
-          PI_CODING_AGENT_INTEGRITY="sha512-aL4apbupCHiVLSXASXvRzH4Q2vmtfrDa+0s909CJuVu/GgGylbDzr7oyF1mPmip5E+VxYYxKWmph4hV04wUcQg=="
-          PI_SUBAGENTS_VERSION="0.35.1"
-          PI_SUBAGENTS_INTEGRITY="sha512-nIH6liO541FZ1RoeEu58Ligd59tiNw0/ODPgHh7uvx9Dk4UpWH08F84/l1+hXCzUgC85OCmyVtngWkZjcK94Cg=="
-          PI_INTERCOM_VERSION="0.6.0"
-          PI_INTERCOM_INTEGRITY="sha512-OFPh/DXfPhUUSDLTRJiFPEvw00fOA/spjsxUcXiuCHvb2ZkRL02G8Q91mTd+3d42A9AK8BSmbD0+8imFPuHGoQ=="
-
-          pack_dir="$RUNNER_TEMP/pi-live-npm-packs"
-          mkdir -p "$pack_dir"
-          verified_pack() {
-            local spec="$1"
-            local expected_integrity="$2"
-            local pack_json actual_integrity filename
-            pack_json="$(npm pack "$spec" --pack-destination "$pack_dir" --ignore-scripts --json)"
-            actual_integrity="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.integrity)")"
-            filename="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.filename)")"
-            if [ "$actual_integrity" != "$expected_integrity" ]; then
-              echo "integrity mismatch for $spec: expected $expected_integrity got $actual_integrity" >&2
-              exit 1
-            fi
-            printf '%s/%s\n' "$pack_dir" "$filename"
-          }
-
-          pi_coding_agent_tgz="$(verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY")"
-          pi_subagents_tgz="$(verified_pack "pi-subagents@$PI_SUBAGENTS_VERSION" "$PI_SUBAGENTS_INTEGRITY")"
-          pi_intercom_tgz="$(verified_pack "pi-intercom@$PI_INTERCOM_VERSION" "$PI_INTERCOM_INTEGRITY")"
-
-          npm install -g "$pi_coding_agent_tgz" --ignore-scripts --no-audit --no-fund --omit=dev
-          command -v pi
-          test -x "$(command -v pi)"
-          pi --version
-          global_npm_root="$(npm root -g)"
-          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (p.version !== '$PI_CODING_AGENT_VERSION') throw new Error('unexpected Pi version '+p.version); if (!p.bin || p.bin.pi !== 'dist/cli.js') throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
-
-          pi_npm_root="$HOME/.pi/agent/npm"
-          mkdir -p "$pi_npm_root"
-          npm install --prefix "$pi_npm_root" \
-            "$pi_subagents_tgz" \
-            "$pi_intercom_tgz" \
-            --ignore-scripts --no-audit --no-fund --omit=dev
-          node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); if (p.version !== '$PI_SUBAGENTS_VERSION') throw new Error('unexpected pi-subagents version '+p.version); console.log('verified '+p.name+'@'+p.version)"
-          node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); if (p.version !== '$PI_INTERCOM_VERSION') throw new Error('unexpected pi-intercom version '+p.version); console.log('verified '+p.name+'@'+p.version)"
-          test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"
-          test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
-          test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"
-          test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
-          echo "PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents" >> "$GITHUB_ENV"
-          echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"
-
-      - name: Guard Pi substrate compatibility
-        run: |
-          set -euo pipefail
-
-          global_npm_root="$(npm root -g)"
-          pi_npm_root="$HOME/.pi/agent/npm"
-          GLOBAL_NPM_ROOT="$global_npm_root" \
-          PI_AGENT_ROOT="$global_npm_root/@earendil-works/pi-coding-agent" \
-          PI_SUBAGENTS_ROOT="$pi_npm_root/node_modules/pi-subagents" \
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const { pathToFileURL } = require('url');
-
-          function readPackage(root) {
-            return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-          }
-          function fail(message) {
-            console.error(`Pi substrate compatibility guard failed: ${message}`);
-            process.exit(1);
-          }
-
-          const nodeVersion = process.versions.node.split('.').map(Number);
-          if (nodeVersion[0] < 22 || (nodeVersion[0] === 22 && nodeVersion[1] < 19)) {
-            fail(`Node ${process.versions.node} does not satisfy pi-coding-agent's >=22.19.0 engine requirement`);
-          }
-
-          const agentRoot = process.env.PI_AGENT_ROOT;
-          const subagentsRoot = process.env.PI_SUBAGENTS_ROOT;
-          const agentPackage = readPackage(agentRoot);
-          const subagentsPackage = readPackage(subagentsRoot);
-          if (agentPackage.version !== '0.80.10') {
-            fail(`expected @earendil-works/pi-coding-agent 0.80.10, got ${agentPackage.version}`);
-          }
-          if (subagentsPackage.version !== '0.35.1') {
-            fail(`expected pi-subagents 0.35.1, got ${subagentsPackage.version}`);
-          }
-
-          // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
-          // to the global root); check the nested copy pi actually loads first, then the
-          // top-level global root. The /compat export is ESM-only (import condition), so
-          // probe it with a dynamic import, never require.resolve.
-          const piAICandidates = [
-            path.join(agentRoot, 'node_modules', '@earendil-works', 'pi-ai'),
-            path.join(process.env.GLOBAL_NPM_ROOT, '@earendil-works/pi-ai'),
-          ];
-          const piAIRoot = piAICandidates.find((candidate) => fs.existsSync(path.join(candidate, 'package.json')));
-          if (!piAIRoot) {
-            fail(`cannot locate @earendil-works/pi-ai under pi-coding-agent ${agentPackage.version} (checked ${piAICandidates.join(', ')})`);
-          }
-          const piAIPackage = readPackage(piAIRoot);
-          const compatExport = piAIPackage.exports && piAIPackage.exports['./compat'] && piAIPackage.exports['./compat'].import;
-          if (!compatExport) {
-            fail(`pi-subagents ${subagentsPackage.version} requires @earendil-works/pi-ai/compat, but @earendil-works/pi-ai ${piAIPackage.version} from pi-coding-agent ${agentPackage.version} does not declare that export`);
-          }
-          const compatPath = path.join(piAIRoot, compatExport);
-          if (!fs.existsSync(compatPath)) {
-            fail(`@earendil-works/pi-ai/compat resolves to missing file ${compatPath}`);
-          }
-          import(pathToFileURL(compatPath).href).then(() => {
-            console.log(`verified pi-subagents ${subagentsPackage.version} is paired with @earendil-works/pi-ai ${piAIPackage.version}: ${compatPath}`);
-          }).catch((error) => {
-            fail(`@earendil-works/pi-ai/compat exists but failed to load: ${error.message}`);
-          });
-          NODE
-
-      - name: Build spacedock binary
-        run: |
-          go build -o ./spacedock ./cmd/spacedock
-          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
-          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
-          echo "$(pwd)" >> "$GITHUB_PATH"
-
-      # Pinned, sha256-verified gotestsum for the clean log + `-json` archive (see
-      # the claude-live job for the rationale).
-      - name: Install gotestsum
-        run: bash .github/scripts/install-gotestsum.sh
-
-      - name: Configure git identity
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global init.defaultBranch main
-
-      - name: Verify Pi current-checkout setup
-        run: |
-          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE" | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/pi-doctor.txt"
-          test -f "$GITHUB_WORKSPACE/skills/first-officer/references/pi-first-officer-runtime.md"
-          test -f "$GITHUB_WORKSPACE/skills/ensign/references/pi-ensign-runtime.md"
-          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/extension/index.ts"
-          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/skills/pi-subagents/SKILL.md"
-          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/intercom/intercom-bridge.ts"
-          test -f "$PI_INTERCOM_PACKAGE_ROOT/skills/pi-intercom/SKILL.md"
-
-      - name: Show tool versions
-        run: |
-          pi --version
-          go version
-          echo "### Pi live tool versions" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`pi --version\`: \`$(pi --version)\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
-
-      # Clean step log + archived `-json` detail from one run per step (see the
-      # claude-live job for the rationale).
-      - name: Run live Pi common journeys
-        run: |
-          set -o pipefail
-          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle
-
-      - name: Run live Pi front-door smoke
-        run: |
-          set -o pipefail
-          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
-
-      - name: Upload live artifacts
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: runtime-live-e2e-pi-live
-          path: |
-            ./spacedock
-            ./pi-coverage-detail.jsonl
-            ./pi-front-door-smoke-detail.jsonl
-            live-artifacts/pi/**
-          if-no-files-found: warn
 
   # AC-3: posts a per-PR delta of this run's journey-cost observations against
   # the latest published release ledger, as a single sticky-updating PR comment

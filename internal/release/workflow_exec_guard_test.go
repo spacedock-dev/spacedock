@@ -46,27 +46,15 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	if codexRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Codex shared scenario run")
 	}
-	piCoverageRun := findExecutableStep(steps, "Run live Pi common journeys", "TestLiveCommon")
-	if piCoverageRun < 0 {
-		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario coverage guard")
-	}
-	piSmokeRun := findExecutableStep(steps, "Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke")
-	if piSmokeRun < 0 {
-		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi front-door smoke")
-	}
-	if !hasExecutableYAMLLine(workflow, `OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}`) || !hasExecutableYAMLLine(workflow, `SPACEDOCK_PI_LIVE_REQUIRED: "1"`) || !hasExecutableYAMLLine(workflow, `name: CI-E2E-PI`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job is missing its OpenAI secret, required flag, or CI-E2E-PI environment")
-	}
-	if workflowHasExecutableCommandContaining(workflow, `npm config get min-release-age`) || workflowHasExecutableCommandContaining(workflow, `npm config set min-release-age`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job uses obsolete min-release-age probing")
-	}
-	if !workflowHasExecutableCommandContaining(workflow, `spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE"`) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not verify current-checkout Spacedock skills")
+	for _, job := range parseWorkflowJobs(workflow) {
+		if job.name == "pi-live" {
+			return fmt.Errorf("runtime-live-e2e.yml retains a paid Pi live job")
+		}
 	}
 	if !hasJourneyMetricsUploadAfter(steps, claudeRun, codexRun) {
 		return fmt.Errorf("runtime-live-e2e.yml Claude shared scenario job does not upload raw journey metrics")
 	}
-	if !hasJourneyMetricsUploadAfter(steps, codexRun, piCoverageRun) {
+	if !hasJourneyMetricsUploadAfter(steps, codexRun, len(steps)) {
 		return fmt.Errorf("runtime-live-e2e.yml Codex shared scenario job does not upload raw journey metrics")
 	}
 	if hasExecutableYAMLLine(workflow, `SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi`) {

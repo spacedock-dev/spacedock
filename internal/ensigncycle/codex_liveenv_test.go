@@ -248,9 +248,9 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 		"login status exec",
 		"plugin list exec",
 		"plugin add exec",
-		"exec --model gpt-5.6-luna --json prompt",
-		"--ask-for-approval on-request exec --model gpt-5.6-luna --json prompt",
-		"--dangerously-bypass-approvals-and-sandbox exec --model gpt-5.6-luna --json prompt",
+		"exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
+		"--ask-for-approval on-request exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
+		"--dangerously-bypass-approvals-and-sandbox exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("Codex shim argv = %q, want %q", got, want)
@@ -259,6 +259,45 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 		if strings.Count(line, "--model gpt-5.6-luna") != 1 {
 			t.Fatalf("pinned Codex exec argv = %q, want exactly one Luna model flag", line)
 		}
+		if strings.Count(line, `-c model_reasoning_effort="max"`) != 1 {
+			t.Fatalf("pinned Codex exec argv = %q, want exactly one maximum-effort setting", line)
+		}
+	}
+}
+
+func TestRuntimeLiveClaudeShimSetsMaximumEffort(t *testing.T) {
+	workflow, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "runtime-live-e2e.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	const start = `cat > "$shim_dir/claude" <<'SH'`
+	bodyStart := strings.Index(string(workflow), start) + len(start) + 1
+	endAt := strings.Index(string(workflow[bodyStart:]), "\n          SH\n")
+	lines := strings.Split(string(workflow[bodyStart:bodyStart+endAt]), "\n")
+	for i := range lines {
+		lines[i] = strings.TrimPrefix(lines[i], "          ")
+	}
+	root := t.TempDir()
+	realClaude := filepath.Join(root, "real-claude")
+	shimPath := filepath.Join(root, "claude")
+	files := map[string]string{realClaude: "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\"\n", shimPath: strings.Join(lines, "\n") + "\n"}
+	for path, content := range files {
+		if err := os.WriteFile(path, []byte(content), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var got []byte
+	for _, args := range [][]string{{"--version"}, {"--model", "claude-sonnet-5", "--help"}} {
+		cmd := exec.Command(shimPath, args...)
+		cmd.Env = append(os.Environ(), "SPACEDOCK_CLAUDE_REAL_BIN="+realClaude)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("Claude shim %v failed: %v\n%s", args, err, out)
+		} else {
+			got = append(got, out...)
+		}
+	}
+	if want := "--effort max --version\n--effort max --model claude-sonnet-5 --help\n"; string(got) != want {
+		t.Fatalf("Claude shim argv = %q, want %q", got, want)
 	}
 }
 
