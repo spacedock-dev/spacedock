@@ -387,3 +387,16 @@ Validation recommends REJECTED for one material verification defect: the require
 - Trigger evidence: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -run '^TestLiveCommonGateGuardrail$' ./internal/ensigncycle -v` emitted the owned TODO and `--- SKIP`; the Pi invocation emitted the same target-scoped TODO.
 - Classification: Material evidence defect; the candidate does not own the target-scoped runtime TODO or its separate remediation.
 - First Officer direction: preserve and route this new finding through the workflow checkpoint without candidate mutation. Disposition is route for decision; no KRB candidate edit or live-evidence substitution is authorized.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Record the First Officer's disposition for the required Codex gate-guardrail evidence defect without changing or re-exercising the candidate.
+  Authorization is HOLD. KRB remains at candidate `6b36ecfe5`; no candidate bytes, HEAD, test result, or live evidence were changed, rerun, or substituted in this cycle.
+- DONE: Assign the runtime evidence repair to its existing owner and keep it outside KRB's approved boundary.
+  The material Codex `gate-guardrail` defect is owned by `xp6` (`restore-live-evidence-after-completed-repairs`) in the test-behavior-completeness sprint. KRB does not absorb the runtime TODO repair.
+- DONE: State the exact re-entry condition.
+  KRB is held for revalidation after xp6 supplies a real passing Codex `TestLiveCommonGateGuardrail` journey. An owned TODO skip or other substituted evidence does not satisfy that condition.
+
+### Summary
+
+Validation remains REJECTED and is now held by First Officer authorization. Candidate `6b36ecfe5` is unchanged; revalidation waits for xp6's real passing Codex gate-guardrail evidence.
