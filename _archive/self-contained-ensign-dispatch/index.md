@@ -1,6 +1,6 @@
 ---
 title: Make ensign dispatch self-contained across launcher drift
-status: validation
+status: done
 sprint: durable-decisions
 source: "Real source-build sprint dogfood, 2026-07-26"
 score: "1.0"
@@ -120,12 +120,15 @@ gates:
                 reason: Exact reconciled candidate passes all three validation items and all acceptance criteria, including adversarial launcher isolation, full, race, formatting, and integration checks.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 sprint-readiness: required
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:641
+verdict: passed
+completed: 2026-08-09T05:44:31Z
+archived: 2026-08-09T05:44:31Z
 ---
 
 ## Outcome
