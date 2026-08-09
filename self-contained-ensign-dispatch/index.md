@@ -125,7 +125,7 @@ started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 sprint-readiness: required
 mod-block: merge:pr-merge
-pr: "#641"
+pr: pr-merge:641
 ---
 
 ## Outcome
