@@ -1,7 +1,7 @@
 ---
 id: qz0ap96nt5k93tgbsphq9ahy
 title: Keep journey-delta reporting green across failed-job reruns
-status: backlog
+status: ideation
 source: PR #639 Runtime Live E2E attempts 2 and 3 on 2026-08-08.
 started:
 completed:
@@ -33,7 +33,7 @@ gates:
                 reason: Captain directed the First Officer to file and dispatch this journey-metrics fix.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A failed-job rerun can reuse successful live jobs from an earlier attempt. The metrics job then finds Codex artifact metadata, but artifact extraction fails.
