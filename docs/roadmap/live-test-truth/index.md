@@ -26,18 +26,19 @@ either bound to that desired state, deliberately non-gating with a reason, moved
 to offline coverage, or removed.
 
 [`docs/runtime-live-ci.md`](../../runtime-live-ci.md) remains the single normative
-entry point for live CI. The sprint must make it incorporate the desired-state
-registry at [`docs/runtime-live-ci-registry.md`](../../runtime-live-ci-registry.md).
-The link, first reconciliation SHA, and guard do not exist yet.
+entry point for live CI. It incorporates the desired-state registry at
+[`docs/runtime-live-ci-registry.md`](../../runtime-live-ci-registry.md) and names
+the executable reconciliation check.
 
 ## Locked semantics
 
 - A **common journey** is required on every supported runtime target by default.
   Only genuine non-applicability earns an exception. Missing support, cost,
   quarantine, and an unwired selector do not.
-- A common journey has one canonical
-  `TestLiveSharedScenarios/<journey-id>` entry point. Authentication, launch,
-  output, and liveness differences stay behind runtime adapters.
+- A common journey has one canonical exported `TestLiveCommon...` function.
+  Its adjacent `liveJourney(...)` call binds the stable journey ID, fixture,
+  TODO owners, runtime-neutral exercise, and durable assertion. Authentication,
+  launch, output, and liveness differences stay behind runtime adapters.
 - The registry can name a desired journey before code exists. Missing code or CI
   invocation is a reconciliation result, not a reason to weaken desired state.
 - Each journey references one or more stable fixture IDs and their semantic
@@ -50,11 +51,10 @@ The link, first reconciliation SHA, and guard do not exist yet.
 - An intentionally unselected live test is not release evidence and carries an
   explicit reason. Otherwise it is promoted, moved to offline coverage, or
   deleted.
-- The first iteration adds exactly one standing reconciliation guard: the
-  recorded-SHA check for `internal/ensigncycle/`, `internal/livescenario/`, and the
-  live workflow. It detects stale reconciliation. It does not implement semantic
-  matching. Fixture resumption, AST-diff guards, and unwired-count ratchets remain
-  out.
+- The standing reconciliation guard parses the registry, Go declarations and
+  calls, adjacent annotations, and the live workflow. It checks their semantic
+  join directly. It does not use a recorded SHA. Fixture resumption and
+  unwired-count ratchets remain out.
 
 ## Scope
 
@@ -86,8 +86,8 @@ front-door smoke. This direction avoids a duplicate live run.
 ## Definition of Done
 
 1. `docs/runtime-live-ci.md` is the single normative entry point. It incorporates
-   `docs/runtime-live-ci-registry.md` as its desired-state component and carries a
-   current reconciliation SHA.
+   `docs/runtime-live-ci-registry.md` as its desired-state component and names the
+   executable reconciliation command.
 2. Every common journey has one canonical executable identity. Each target is
    either passing live evidence or an exact target-scoped `TODO(owner)` backed by
    a reproduced product defect. An unverified runnable cell, an unowned gap, or
@@ -126,19 +126,15 @@ front-door smoke. This direction avoids a duplicate live run.
 - Changes to `internal/gates` fields owned by the separate `durable-decisions`
   sprint.
 
-## Dependencies and sequencing
+## Delivered sequence
 
-1. Land `3d`. It owns the AC2 durable oracle and Codex progress-aware liveness.
-2. Land `15e` after `3d`. It consumes that liveness behavior and finalizes named
-   lane evidence on the current selectors.
-3. Land `ys` last. It consumes the final behavior from `3d` and `15e`, then owns
-   the canonical selector, workflow guard, live CI guide, and registry migration.
-4. Restore `rm` only after its upstream product repairs land in
-   `test-behavior-completeness`. Preserve its strict oracles and deferred
-   live-test-truth membership until then.
-5. Reconcile the assembled registry against source and CI. Record the SHA, then
-   run the sprint-wide live and offline proof. Land the SSOT link, first SHA, and
-   guard together.
+The implementation sequence was `3d`, then `15e`, then `ys`. Those members are
+complete. They delivered truthful assertions and liveness, named lane evidence,
+the portable common-journey entry points, the registry, and semantic
+reconciliation.
+
+The broad deferred member `rm` is archived as superseded. Exact target-scoped
+owners in `test-behavior-completeness` own product repairs and later TODO removal.
 
 ## Ideation and staff-review focus
 
@@ -180,16 +176,30 @@ front-door smoke. This direction avoids a duplicate live run.
 
 ### Drive — Commander
 
-- [ ] Drive implementation, detached validation where required, merge, pre-cut
-  antipattern review, and the captain-authorized release cut.
+- [x] Drive implementation, detached validation where required, and merge for
+  the live-test-truth members.
 
 ### Close — Shaping FO
 
 - [ ] Fold deferred/non-blocking findings into the next sprint and check the
   released result.
 
-## Status
+## Delivered state and pre-close record
 
-**Shaping complete — ready for a cold-boot Commander.** Registry semantics, the
-three approved outcome members, the `v0.27.0` target, and deferred member `rm` are
-durable. The Commander must drive `3d`, then `15e`, then `ys`.
+The desired registry now maps 16 common journeys across four runtime roles. On
+2026-08-09, reconciliation derived 48 runnable cells and 16 exact TODO cells:
+Claude Opus 1, Claude Sonnet 4, Codex 6, and Pi 5.
+
+- `26n` remains the exact Sonnet, Codex, and Pi owner for
+  `default-headless-gate-stop` on current `main`. PR #583 is the Sonnet and Codex
+  promotion; Pi remains TODO until separate Pi evidence exists.
+- `zh` (`zhcb4bcz1qgcn7ajx2ctxpxk`) replaces archived rejected `zbc` as the
+  Sonnet, Codex, and Pi owner for `rejection-flow`.
+- PR #643 merged as `90b6e0e61` and repaired optional journey-metrics reporting.
+- `0a` (`0aqnm6v8ajns6cpsknxn9wf2`) owns optional manual Pi CI in
+  `test-behavior-completeness`.
+- Product repairs and later evidence restoration remain outside this sprint.
+
+The delivery work is complete. Pre-close review still requires the reconciliation
+guard to reject inactive TODO owners and unclassified live entry points before
+the sprint can close.
