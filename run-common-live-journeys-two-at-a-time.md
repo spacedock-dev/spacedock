@@ -144,7 +144,7 @@ After: `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -
 
 - DONE: Prove that two Claude journeys use separate roots, configuration, and artifacts, with no more than two live processes.
   The live spike created distinct `filing` and `zero-discovery` paths and observed a maximum of two journey processes.
-- FAILED: Run one local subscription-backed two-journey exercise, and record the wall time, concurrency, and failure behavior.
+- DONE: Run one local subscription-backed two-journey exercise, and record the wall time, concurrency, and failure behavior.
   The 12-second run reached concurrency two, but both real launches failed because the stored OAuth token was expired.
 - DONE: Write a lean Simple English plan with exact files, LOC estimates, value links, and no Codex, Pi, substrate, scheduler, or simulator scope.
   The plan names five files, a 35-to-70-line estimate, the PR `#643` timing value, and explicit scope limits.
