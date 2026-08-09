@@ -283,3 +283,24 @@ This report-only repair maps the recorded cycle-3 evidence onto the three dispat
 ### Summary
 
 This report-only repair preserves the completed landed-base reconciliation and all green offline evidence. Applicable local Sonnet proof is SKIPPED because authentication failed before workflow execution; fresh CI must establish the live verdict.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify exact head f638451b9 preserves the post-YS 3Z behavior, strict diagnostics, and all acceptance criteria.
+  `HEAD` and the pushed branch both resolve to `f638451b974c1f2ec503fbdfe68cff08641b5efe`; focused AC-3 attribution, AC-4 oracle, inventory, full, race, and formatting proofs pass. Prior common-journey Sonnet evidence at the post-YS candidate remains the AC-1 behavioral evidence; the exact-head retry below produced no product observation.
+- DONE: Verify the ancestry bridge is byte-identical and the landed 0Y inventory decoupling remains intact.
+  Bridge parents are `394f86b0a3a688f15cd9f85dc377f734d72c8973` and `4f4ee424792f9ea1044578334040825bcd1da585`; bridge tree `06820105b123fc9a46b101a47fd9afee006d52b4` equals parent 1 and `git diff ^1..HEAD` is empty. `origin/main` is exact `9021cbf374bb1740d1b2e45155041e1f809372c4`, an ancestor, and `8728da3a0` is its ancestor.
+- DONE: Verify the intended four-file diff.
+  Against landed `origin/main`, only `docs/runtime-live-ci.md`, `internal/ensigncycle/claude_runtime_helpers_test.go`, `internal/gates/prepare.go`, and `internal/gates/prepare_test.go` differ (69 insertions, 14 deletions); the observable command change is only rejected-source flag/path attribution.
+- DONE: Verify Sonnet TODO removal and Codex/Pi TODO ownership.
+  `TestRuntimeLiveRegistryReconciliation` passes and would fail on target/owner or inventory drift; repository search finds the 3Z TODO only for Codex and Pi in `shared_live_runner_test.go` plus that independent expected inventory, with no Sonnet/Opus TODO or quarantine note.
+- DONE: Verify the strict seven-condition diagnostic.
+  The committed focused oracle test passes its valid lifecycle and six negative mutations. A throwaway detached exact-head test additionally exercised all seven distinct branches, including missing/early `state-head`; every mutation was rejected with its condition-specific diagnostic, and the throwaway checkout was removed without candidate edits.
+- DONE: Verify 0Y pilot-manifest decoupling.
+  `internal/gates/testdata/v1_pilot_manifest.txt` and its old `internal/gates/application_test.go` coupling are absent, and both paths have zero diff from landed `origin/main`; full and race runs therefore exercise the decoupled inventory.
+- DONE: Run focused, inventory, full, race, formatting, and fresh Sonnet evidence or report precise infrastructure unavailability.
+  Focused attribution/oracle tests, registry reconciliation, `go test ./...`, `go test ./... -race`, and `gofmt -l ./cmd ./internal` are clean. Fresh `TestLiveCommonGateGuardrail` resolved `claude-sonnet-5` but exited before FO work because the Keychain OAuth session was expired and could not refresh while `ANTHROPIC_API_KEY` was unset; retained artifact: `/tmp/spacedock-3z-validation-live.wdtymG/claude-shared-scenarios/gate-guardrail`. This is not green Sonnet evidence.
+
+### Summary
+
+Recommendation: PASSED, with no material, deferred-risk, or polish findings in the candidate. Exact topology, byte identity, four-file scope, TODO ownership, seven-condition behavior, 0Y decoupling, focused/full/race tests, and formatting all validate cleanly; the only unavailable observation is a fresh exact-head Sonnet run, whose launch failed at authentication before the product or first officer executed and is explicitly not counted as evidence.
