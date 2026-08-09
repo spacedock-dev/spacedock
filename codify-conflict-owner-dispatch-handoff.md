@@ -427,7 +427,7 @@ Validation recommends REJECTED at exact head `84f9830ec`. Reconciliation preserv
 
 The authorized correction removes the self-referential string grade and makes recipient identity and call cardinality explicit at the existing typed collaboration-event boundary. Offline adversarial coverage is green, while the canonical live lane now truthfully rejects the current host stream because it does not publish the required spawn/follow-up events; this is the observation-boundary failure cycle-3 validation identified, not a fallback to contract-text evidence.
 
-## Stage Report: implementation (cycle 4)
+## Stage Report: implementation
 
 - DONE: Durable evidence proves reconciliation returns to the stamped owner tuple on the existing branch and worktree, with unchanged authority and no replacement checkout.
   Commits `a87c5534c` and `2dc2953cb` remove the typed-event observer and make the live grade fail on an uncommitted marker, dirty checkout, changed branch/worktree, replacement branch/worktree, wrong author, changed authority bytes, or an active rebase; canonical Codex passed in 183.31s.
