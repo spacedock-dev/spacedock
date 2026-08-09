@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:fh6rv0k6wr25zty0jjan4jp7:backlog:attempt-1:revision-1",
+  "question": "Is this task ready for Pi headless-hold ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:fh6rv0k6wr25zty0jjan4jp7:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8f9a2e724c34a9a4d68a574f71db26a1ab179814/hold-pi-default-headless-validation-gate.md",
+      "rev": "sha256:202300dcc7ed70ab6b4257699fc3b1921898fe3e8de67fbf875a18ab6e023e57",
+      "mediaType": "text/markdown",
+      "summary": "Shape one Pi journey that stops at the first open validation gate."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:fh6rv0k6wr25zty0jjan4jp7:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/c7887aae4773feae6a07676295a97460e0a43921/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31cb42360f20b278f4d18781b6c790eee7a1a415de7362b5a63db376dec0d1e3"
+    }
+  ]
+}
