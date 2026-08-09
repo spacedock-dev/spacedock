@@ -765,3 +765,24 @@ REJECTED/HOLD. The reconciled candidate is clean, merge-ready, and green under
 focused/full/race checks, but a fresh supported Sonnet run reproduces the separate
 `3zzpdw704df1g8pg1x9thzmw` direct-gate blocker by dispatching a validation worker.
 Candidate bytes remain frozen while that blocker is routed to its owning task.
+
+## Stage Report: validation (cycle 13)
+
+- DONE: Reconcile candidate 8d07b1a58749a5feed99d8dfa294c5e1b5a6bb14 with current origin/main without changing candidate bytes.
+  Candidate HEAD/tree remain exact `8d07b1a58749a5feed99d8dfa294c5e1b5a6bb14`/`408b4dc2629b5a4afeb36bebf6ce4fa5f64c59be`; detached current main is clean at `90b6e0e61cb7182ad8764378b698f1de79b12f39`/tree `1e4eab97076092c3915f6bab4e657c63aac11999`, with landed 3Z bridge `48fd54b2a` an ancestor.
+- FAILED: Run one detached Sonnet promotion of default-headless-gate-stop and verify that implementation leads directly to one open validation gate.
+  With only the `claude-sonnet` 26N TODO removed in detached current main, `SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=sonnet go test -tags live -count=1 -timeout 20m -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v` exited 1 after 2.02s: `Failed to authenticate: OAuth session expired and could not be refreshed` before any FO work.
+- DONE: Preserve exact promotion logs and durable-state disposition.
+  The launch resolved `claude-sonnet-5` on Claude Code `2.1.220`; its result recorded `num_turns:1`, synthetic assistant input/output `0/0`, `total_cost_usd:0`, session `489afd54-f669-49b9-82ea-e447bc9eff5f`, and no FO tool call, command-log event, entity mutation, gate room, Resolution, or Application. The harness temp artifact path was reaped, so no durable journey state exists to grade.
+- DONE: Report whether landed 3z removes the blocker, with exact logs, durable state, TODO disposition, and no product repair in 26n.
+  INCONCLUSIVE/HOLD: 3Z is landed and offline-clean, but this promotion produced no product observation. Current main's shared hold oracle checks one prepare/commit and forbids decision, consume, or successor dispatch after prepare; it does not reject a pre-prepare validation dispatch or require implementation -> prepare ordering, so offline green cannot substitute for AC-2's fresh durable trace.
+- DONE: Preserve the TODO and candidate bytes after the failed promotion.
+  Restored the detached `claude-sonnet` `TODO(26nk8qd48zknqnn4kc123sez)` exactly; registry reconciliation, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass on clean detached current main. No 26N product/test repair or candidate commit was made.
+- SKIPPED: Recommend PASSED or REJECTED on the direct-gate product outcome.
+  Authentication failed before the observable boundary, so neither a passing direct journey nor the prior validation-dispatch defect was reproduced; retain HOLD until one authenticated Sonnet promotion yields the entity, gate room, state Git history, and command log.
+
+### Summary
+
+The frozen 26N candidate remains byte-exact and current main, including landed 3Z,
+is offline-clean. The sole detached promotion failed before FO execution on expired
+OAuth, so 3Z's effect on the direct-gate blocker is unproven and the Sonnet TODO remains.
