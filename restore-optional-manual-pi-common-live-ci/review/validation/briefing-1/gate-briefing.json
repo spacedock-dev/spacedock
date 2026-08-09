@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-1:revision-1",
+  "question": "Does the exact-candidate validation support revising 0a to repair retained Pi journey metrics before merge?",
+  "artifacts": [
+    {
+      "id": "artifact:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/004ec8a3fa65dbbd59f4e1363f86ab26b2b85082/restore-optional-manual-pi-common-live-ci.md",
+      "rev": "sha256:592f53c083d1ede283f68382aed761653d459ba5288397aa20a1748d037fea13",
+      "mediaType": "text/markdown",
+      "summary": "REJECTED: exact manual Pi run 31323946889 retained no journey-metrics files. AC-1 is unmet; the captain authorized a bounded two-file, +120-line design reset that preserves the existing metrics format."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/e0f2812d68db3ee3ef0a61dc006792fbb29a065a/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8042b3a42369859fd0a37c8f03724dfb200936819a23b68aac15fb1acd78fc58"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/e0f2812d68db3ee3ef0a61dc006792fbb29a065a/docs/roadmap/test-behavior-completeness/dispatch-sprint-execution.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e0772dfdf509be2ace9ad67f8650166ef3d14303155b4c27d001a715c77c3b1f"
+    }
+  ]
+}
