@@ -4,7 +4,7 @@ status: done
 source: "PR #580 run 30591046287, Sonnet job 91033369022"
 started: 2026-07-31T00:32:10Z
 completed: 2026-08-09T15:50:04Z
-verdict: passed
+verdict: PASSED
 score: 0.9
 worktree: .worktrees/spacedock-ensign-headless-recorded-gate-stop-stage-coherence
 issue:

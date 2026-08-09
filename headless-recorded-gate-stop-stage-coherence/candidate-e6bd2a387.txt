@@ -1,6 +1,0 @@
-Candidate: e6bd2a387
-Parent rejected candidate: 0691f25a9
-Authorized correction: grade exactly one implementation dispatch followed by exactly one validation dispatch before gate preparation, while rejecting missing, duplicate, reordered, late, substituted, and post-prepare dispatches.
-Code surface: three existing test files, cumulative +90/-11 against main; no production, provider, transcript, shell grammar, protocol, or runtime change.
-Evidence: exact retained Sonnet log shape seeded as deterministic positive; focused ordered-dispatch mutants, retained-tree proof, queued fixture coherence, go test ./..., go test ./... -race, gofmt, and diff checks passed.
-Live and Roborev evidence: intentionally not rerun for this correction cycle.

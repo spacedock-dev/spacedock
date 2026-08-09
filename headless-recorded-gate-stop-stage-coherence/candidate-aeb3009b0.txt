@@ -1,6 +1,0 @@
-Candidate: aeb3009b0
-Parent rejected candidate: 92dadede5
-Authorized correction: remove the invented validation-worker and validation-report requirement, and grade AC-2's retained direct gated-stage trace with one implementation dispatch/report, one validation transition, one prepare/commit, and an open unresolved stop.
-Code surface: three existing test files, cumulative +88/-12 against main; no product, First Officer contract, provider, transcript, shell grammar, protocol, or runtime change.
-Evidence: the retained direct-gate deterministic positive failed red under the frozen two-dispatch oracle; focused direct-gate mutants, queued fixture coherence, single-copy success/failure retention, go test ./..., go test ./... -race, gofmt, and diff checks passed after the rollback.
-Live and Roborev evidence: intentionally not rerun for this correction cycle.

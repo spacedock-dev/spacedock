@@ -1,6 +1,0 @@
-Candidate: 43a1b8db4
-Parent rejected candidate: e6bd2a387
-Authorized correction: require exactly one successful status=validation transition after implementation dispatch and before validation dispatch, while rejecting missing, late, duplicate, alternate, and post-prepare status repairs.
-Code surface: three existing test files, cumulative +90/-11 against main; no production, provider, transcript, shell grammar, protocol, or runtime change.
-Evidence: missing and late transition mutants failed red; focused transition/retention and queued fixture tests, go test ./..., go test ./... -race, gofmt, and diff checks passed.
-Live and Roborev evidence: intentionally not rerun for this correction cycle.

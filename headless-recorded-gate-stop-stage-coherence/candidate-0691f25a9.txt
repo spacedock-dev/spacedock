@@ -1,6 +1,0 @@
-Candidate: 0691f25a9
-Parent rejected candidate: 1df0092ee
-Authorized correction: register existing workflow-tree retention before the default headless model/assertion path so cleanup preserves failure evidence before t.TempDir removal.
-Code surface: three existing test files, cumulative +90/-11 against main; no production, protocol, provider, transcript, or artifact-framework change.
-Evidence: focused simulated-failure cleanup and retained-tree regrade, journey mutants, queued fixture coherence, go test ./..., go test ./... -race, gofmt, and diff checks passed.
-Live and Roborev evidence: intentionally not rerun for this correction cycle.
