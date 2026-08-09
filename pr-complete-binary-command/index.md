@@ -10,7 +10,7 @@ completed:
 verdict:
 issue:
 sprint: durable-decisions
-sprint-readiness: ready
+sprint-readiness: defer
 ---
 
 The post-merge half of Merge-and-Cleanup (+ the Ship-Local Ceremony) is pure mechanical ceremony: mod-block clear (separate commit per the standalone rule) → terminalize (`--set completed verdict= worktree=`) → archive → worktree-remove → local-branch-delete → state push. It is the heaviest block in `first-officer-shared-core.md` (lines 207–242 today) and the most error-prone to run by hand — the FO ran it ~7× manually this session. Ceremony → BINARY command (the roadmap's lever 1), which removes the prose from the boot read entirely rather than deferring it to a skill. The team teardown is NOT part of this command — it is a Claude team-tool call (not shell-able), so it stays FO/runtime-side per the using-claude-team boundary.
