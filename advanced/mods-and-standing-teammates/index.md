@@ -2,7 +2,7 @@
 title: "Mods & standing teammates"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-09 07:47:44"
+last_updated: "2026-08-09 13:53:45"
 ---
 
 # Mods & standing teammates
