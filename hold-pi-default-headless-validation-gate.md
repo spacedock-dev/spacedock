@@ -37,6 +37,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:fh6rv0k6wr25zty0jjan4jp7:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:fh6rv0k6wr25zty0jjan4jp7-ideation-1
+              briefing:
+                id: briefing:fh6rv0k6wr25zty0jjan4jp7:ideation:attempt-1:revision-1
+                digest: sha256:b7bf620a437c4aba3156522c2eee177d0adb4b1e2ad0236cba43c1f08f04e063
+                request-digest: sha256:a538be68b35505144f0506819b7dc69eb0b5d493597c61b71b5636cbbfb7b3c6
+                room-ref: ./hold-pi-default-headless-validation-gate/review/ideation/briefing-1
 ---
 
 ## Problem
