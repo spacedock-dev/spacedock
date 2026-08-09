@@ -186,13 +186,13 @@ owners in `test-behavior-completeness` own product repairs and later TODO remova
 
 ## Delivered state and pre-close record
 
-The desired registry now maps 16 common journeys across four runtime roles. On
-2026-08-09, reconciliation derived 48 runnable cells and 16 exact TODO cells:
-Claude Opus 1, Claude Sonnet 4, Codex 6, and Pi 5.
+The desired registry now maps 17 common journeys across four runtime roles. On
+2026-08-09, reconciliation derived 48 runnable cells and 20 exact TODO cells:
+Claude Opus 3, Claude Sonnet 5, Codex 6, and Pi 6.
 
-- `26n` remains the exact Sonnet, Codex, and Pi owner for
-  `default-headless-gate-stop` on current `main`. PR #583 is the Sonnet and Codex
-  promotion; Pi remains TODO until separate Pi evidence exists.
+- PR #583 completed `26n`, the coherent fixture and oracle repair for
+  `default-headless-gate-stop`. `98a` owns the Sonnet and Codex product gap.
+  `xp6` owns the remaining Pi evidence gap.
 - `zh` (`zhcb4bcz1qgcn7ajx2ctxpxk`) replaces archived rejected `zbc` as the
   Sonnet, Codex, and Pi owner for `rejection-flow`.
 - PR #643 merged as `90b6e0e61` and repaired optional journey-metrics reporting.
