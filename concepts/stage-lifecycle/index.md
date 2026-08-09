@@ -2,7 +2,7 @@
 title: "The stage lifecycle"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-09 16:13:43"
+last_updated: "2026-08-09 16:54:10"
 ---
 
 # The stage lifecycle
