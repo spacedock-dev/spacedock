@@ -141,6 +141,27 @@ func resolvedLauncherBin() (string, bool) {
 	return "", false
 }
 
+// resolvedDispatchLauncher selects the explicit launcher identity propagated to
+// the agent session before falling back to this process's executable. Selection
+// happens once while dispatch build runs; generated commands receive the
+// resulting absolute path and never depend on the environment again.
+func resolvedDispatchLauncher(env []string) (string, bool) {
+	if candidate := envGetenv(env)(spacedockBinEnv); candidate != "" {
+		if !filepath.IsAbs(candidate) {
+			if abs, err := filepath.Abs(candidate); err == nil {
+				candidate = abs
+			}
+		}
+		if resolved, err := filepath.EvalSymlinks(candidate); err == nil && executableFile(resolved) {
+			return resolved, true
+		}
+		if filepath.IsAbs(candidate) && executableFile(candidate) {
+			return candidate, true
+		}
+	}
+	return resolvedLauncherBin()
+}
+
 func executableFile(path string) bool {
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {

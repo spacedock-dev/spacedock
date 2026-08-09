@@ -1,5 +1,5 @@
-// ABOUTME: routing regression — the four runtime-coupled subcommands now resolve
-// ABOUTME: native (no longer exit-2 deferred) and build emits the standing fetch line.
+// ABOUTME: routing regression — runtime-coupled inspection subcommands stay native.
+// ABOUTME: Dispatch build emits exact full-path stage and standing fetch commands.
 package dispatch
 
 import (
@@ -35,12 +35,8 @@ func TestRuntimeCoupledSubcommandsRouteNative(t *testing.T) {
 	}
 }
 
-// TestBuildEmitsStandingFetchLineUnderMods asserts the build _mods/show-standing
-// branch is now native: with a _mods dir declaring a standing teammate and a team
-// name, build emits BOTH the show-stage-def fetch line AND a
-// `spacedock dispatch show-standing` fetch line. The prerequisite deferred this
-// branch (emitting only show-stage-def); landing it here trips this assertion if
-// the branch is later removed.
+// TestBuildInlinesStandingRoutingUnderMods asserts the builder snapshots standing
+// routing for a legacy team while retaining an empty bootstrap-fetch schema field.
 func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := t.TempDir()
@@ -66,7 +62,7 @@ func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 	}, nil)
 
 	var out, errBuf bytes.Buffer
-	if code := Run(claudeteam.Probe, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
+	if code := RunWithLauncher(claudeteam.Probe, testWorkflowLauncher, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
 		t.Fatalf("build exit=%d stderr=%q", code, errBuf.String())
 	}
 
@@ -77,18 +73,18 @@ func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 		t.Fatalf("build output not JSON: %v\n%s", err, out.String())
 	}
 	if len(env.FetchCommands) != 2 {
-		t.Fatalf("expected two fetch lines (show-stage-def + show-standing); got %v", env.FetchCommands)
+		t.Fatalf("expected two fetch commands; got %v", env.FetchCommands)
 	}
-	if !strings.Contains(env.FetchCommands[0], "show-stage-def") {
-		t.Errorf("first fetch line is not show-stage-def: %q", env.FetchCommands[0])
+	if want := testWorkflowLauncher + " dispatch show-stage-def"; !strings.Contains(env.FetchCommands[0], want) {
+		t.Errorf("first fetch command does not pin stage loading to %q: %q", want, env.FetchCommands[0])
 	}
-	if !strings.Contains(env.FetchCommands[1], LauncherCommand()+" dispatch show-standing") {
-		t.Errorf("second fetch line is not the native show-standing line: %q", env.FetchCommands[1])
+	if want := testWorkflowLauncher + " dispatch show-standing"; !strings.Contains(env.FetchCommands[1], want) {
+		t.Errorf("second fetch command does not pin standing loading to %q: %q", want, env.FetchCommands[1])
 	}
 }
 
-// TestBuildOmitsStandingFetchLineWithoutMods asserts the standing fetch line is
-// omitted when no standing mod exists — the branch is conditional, not always-on.
+// TestBuildOmitsStandingRoutingWithoutMods asserts the inlined section remains
+// conditional rather than appearing for a workflow with no standing mods.
 func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := t.TempDir()
@@ -109,7 +105,7 @@ func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 	}, nil)
 
 	var out, errBuf bytes.Buffer
-	if code := Run(claudeteam.Probe, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
+	if code := RunWithLauncher(claudeteam.Probe, testWorkflowLauncher, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
 		t.Fatalf("build exit=%d stderr=%q", code, errBuf.String())
 	}
 
@@ -119,7 +115,7 @@ func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
 		t.Fatalf("build output not JSON: %v\n%s", err, out.String())
 	}
-	if len(env.FetchCommands) != 1 || !strings.Contains(env.FetchCommands[0], "show-stage-def") {
-		t.Fatalf("expected exactly one show-stage-def fetch line; got %v", env.FetchCommands)
+	if len(env.FetchCommands) != 1 || !strings.Contains(env.FetchCommands[0], testWorkflowLauncher+" dispatch show-stage-def") {
+		t.Fatalf("expected exactly one full-path show-stage-def command; got %v", env.FetchCommands)
 	}
 }

@@ -100,7 +100,7 @@ func stageReflowFixture(t *testing.T, reflow bool, feedbackContext string) reflo
 	}
 
 	var stdout, stderr strings.Builder
-	code := dispatch.Run(claudeteam.Probe, []string{"build", "--workflow-dir", root},
+	code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root},
 		strings.NewReader(mustJSON(t, fields)), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("dispatch build exit=%d stderr=%s", code, stderr.String())
@@ -195,7 +195,7 @@ func TestFeedbackReflowGoesRedOnBrokenOutput(t *testing.T) {
 		})
 
 		var stdout, stderr strings.Builder
-		code := dispatch.Run(claudeteam.Probe, []string{"build", "--workflow-dir", root},
+		code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root},
 			strings.NewReader(stdin), &stdout, &stderr)
 
 		if code == 0 {

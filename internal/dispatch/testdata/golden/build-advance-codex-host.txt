@@ -5,7 +5,7 @@
   "schema_version": 2,
   "description": "Thing: validation",
   "fetch_commands": [
-    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
+    "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
   ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md",
   "prompt": "Advancing to next stage: validation.\n\nRead /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md and treat its content as your next-stage assignment.",
@@ -35,7 +35,7 @@ Continue working on the entity at <ROOT>/.worktrees/spacedock-ensign-thing/thing
 
 ### Fetch commands
 
-    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation
+    /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage validation
 
 
 ### Completion Signal

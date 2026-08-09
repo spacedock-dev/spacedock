@@ -10,14 +10,20 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 )
 
-// Run routes a `spacedock dispatch <subcommand> [flags]` invocation. build and
+// Run routes launcher-independent dispatch subcommands. Artifact builds must use
+// RunWithLauncher so they can bind the CLI-resolved executable and fail closed.
+func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	return RunWithLauncher(probe, "", args, stdin, stdout, stderr)
+}
+
+// RunWithLauncher routes a `spacedock dispatch <subcommand> [flags]` invocation. build and
 // show-stage-def are the host-neutral surface (assembled here); context-budget,
 // list-standing, show-standing, and spawn-standing are the Claude-coupled surface
 // (their ~/.claude and standing-mod reads live in internal/claudeteam). An unknown
 // subcommand fails with exit 2 and a usage diagnostic on stderr. probe is the
 // host-supplied team-state probe gating the bare-mode advisory (nil on a non-Claude
 // host → no advisory).
-func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
 		printUsage(stderr)
 		return 2
@@ -45,7 +51,7 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 			fmt.Fprintln(stderr, "error: dispatch build --stamp is incompatible with --advance (a reuse advance presupposes an already-stamped live worker; the post-gate reuse path needs no stamps)")
 			return 2
 		}
-		return runBuild(probe, opts, stdin, stdout, stderr)
+		return runBuild(probe, workflowLauncher, opts, stdin, stdout, stderr)
 	case "show-stage-def":
 		if wantsHelp(args[1:]) {
 			printShowStageDefUsage(stdout)
