@@ -1,6 +1,6 @@
 ---
 title: Run Claude common live journeys two at a time
-status: implementation
+status: validation
 source: "Captain request after PR #643 CI timing review, 2026-08-09. Run 31295813569 measured Claude common plus substrate at about 31 minutes. Codex was explicitly deferred until later."
 started: 2026-08-09T05:56:00Z
 completed:
