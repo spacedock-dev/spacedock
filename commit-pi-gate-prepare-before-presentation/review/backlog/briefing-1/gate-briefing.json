@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:2e4fe65gy9vcr4xck6akzmdd:backlog:attempt-1:revision-1",
+  "question": "Is this task ready for Pi gate-commit ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:2e4fe65gy9vcr4xck6akzmdd:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4e7802c6216d04f1d2cdc33252029e830c4e06b0/commit-pi-gate-prepare-before-presentation.md",
+      "rev": "sha256:454131addc669ebb7dab8e834db5b9dd87336c87edd08a44caf076f4215c5744",
+      "mediaType": "text/markdown",
+      "summary": "Shape one Pi journey that presents only committed and reread gate state."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:2e4fe65gy9vcr4xck6akzmdd:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/c7887aae4773feae6a07676295a97460e0a43921/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31cb42360f20b278f4d18781b6c790eee7a1a415de7362b5a63db376dec0d1e3"
+    }
+  ]
+}

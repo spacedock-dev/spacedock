@@ -14,6 +14,18 @@ issue:
 pr:
 mod-block:
 id: 2e4fe65gy9vcr4xck6akzmdd
+gates:
+    version: 1
+    records:
+        - id: gate:2e4fe65gy9vcr4xck6akzmdd:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:2e4fe65gy9vcr4xck6akzmdd-backlog-1
+              briefing:
+                id: briefing:2e4fe65gy9vcr4xck6akzmdd:backlog:attempt-1:revision-1
+                digest: sha256:4f4d2ebcbf4b234f26a87c87c1435e3bf527ee89713ffcc1a4f64e53b7357948
+                request-digest: sha256:8afb36d8c635124e272551c8ee60e2fdbee8481cc110c3271097a8ea111834be
+                room-ref: ./commit-pi-gate-prepare-before-presentation/review/backlog/briefing-1
 ---
 
 A Pi operator must receive a gate review that is bound to committed state.
