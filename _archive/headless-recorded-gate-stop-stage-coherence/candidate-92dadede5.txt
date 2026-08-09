@@ -1,0 +1,6 @@
+Candidate: 92dadede5
+Parent rejected candidate: 43a1b8db4
+Authorized correction: retain the existing workflow tree exactly once per outcome, with success retaining directly, failure cleanup retaining when absent, and cleanup no-oping when the retained directory already exists.
+Code surface: three existing test files, cumulative +90/-11 against main; no production, artifact framework, provider, transcript, shell grammar, protocol, or runtime change.
+Evidence: the combined success/failure cleanup proof failed red on the duplicate success-tree copy; the focused 21-event journey matrix, both retained-tree regrades, queued fixture coherence, go test ./..., go test ./... -race, gofmt, and diff checks passed after the guard.
+Live and Roborev evidence: intentionally not rerun for this correction cycle.
