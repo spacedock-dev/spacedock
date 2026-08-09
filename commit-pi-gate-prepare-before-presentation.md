@@ -37,6 +37,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:2e4fe65gy9vcr4xck6akzmdd:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:2e4fe65gy9vcr4xck6akzmdd-ideation-1
+              briefing:
+                id: briefing:2e4fe65gy9vcr4xck6akzmdd:ideation:attempt-1:revision-1
+                digest: sha256:da4249eb26fa723f8276aaf0d18142ca5f38f2436d3d118bac69acf6108363cc
+                request-digest: sha256:58cd28b5f1933706111e40bd0a8dbfdc043db980f11fe0bfbdd16e951dbab739
+                room-ref: ./commit-pi-gate-prepare-before-presentation/review/ideation/briefing-1
 ---
 
 ## Problem

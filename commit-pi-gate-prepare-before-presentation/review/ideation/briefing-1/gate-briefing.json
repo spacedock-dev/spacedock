@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:2e4fe65gy9vcr4xck6akzmdd:ideation:attempt-1:revision-1",
+  "question": "Does this design bind Pi presentation to committed gate state?",
+  "artifacts": [
+    {
+      "id": "artifact:2e4fe65gy9vcr4xck6akzmdd:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/85b2e687f91bb1d0be0a7ea9302bbf9f561ee176/commit-pi-gate-prepare-before-presentation.md",
+      "rev": "sha256:bcaa6b839ea5a8e0c1d051fe75c5d1eef6af3d08772f04a75a20066d480a5fff",
+      "mediaType": "text/markdown",
+      "summary": "Pi prepares, commits, rereads, and presents one unchanged open gate."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:2e4fe65gy9vcr4xck6akzmdd:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:721a29206d100a38a9af0378441bd4878f67e0ccaa16a8fa9236fc14f0da195f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:2e4fe65gy9vcr4xck6akzmdd:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24234b4adff24091d215eec6992580d6b1925c714a36ededdd4d0a5383ec2c4b"
+    }
+  ]
+}
