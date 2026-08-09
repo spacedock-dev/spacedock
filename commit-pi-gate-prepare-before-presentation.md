@@ -56,6 +56,17 @@ gates:
                 digest: sha256:51af8e7b2cd1722194960cde64039dfb663e2b2a205cc131b3a487e8bd43a89d
                 request-digest: sha256:771cc01da140a4ca71f0bdff88e7af0e216611981b452406d90338c9906163bc
                 room-ref: ./commit-pi-gate-prepare-before-presentation/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:2e4fe65gy9vcr4xck6akzmdd:ideation:2
+                briefing: briefing:2e4fe65gy9vcr4xck6akzmdd:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-09T21:33:23.549678Z"
+                decision: approve
+                reason: Captain approved committed and reread Pi gate state before presentation.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
