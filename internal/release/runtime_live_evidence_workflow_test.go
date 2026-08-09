@@ -6,7 +6,107 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
+
+type liveCadenceRow struct {
+	Cadence     string `yaml:"cadence"`
+	Model       string `yaml:"model"`
+	Effort      string `yaml:"effort"`
+	Environment string `yaml:"environment"`
+}
+
+type liveCadenceWorkflow struct {
+	On struct {
+		WorkflowDispatch struct {
+			Inputs map[string]struct {
+				Default string   `yaml:"default"`
+				Options []string `yaml:"options"`
+			} `yaml:"inputs"`
+		} `yaml:"workflow_dispatch"`
+	} `yaml:"on"`
+	Jobs map[string]struct {
+		Environment struct {
+			Name string `yaml:"name"`
+		} `yaml:"environment"`
+		Strategy struct {
+			Matrix map[string]yaml.Node `yaml:"matrix"`
+		} `yaml:"strategy"`
+	} `yaml:"jobs"`
+}
+
+const (
+	pullRequestCadence = `${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}`
+	claudeCadenceModel = `${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'claude-sonnet-5' || 'claude-opus-4-8' }}`
+	claudeCadenceEnv   = `${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}`
+)
+
+func TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence(t *testing.T) {
+	workflow := readWorkflow(t, "runtime-live-e2e.yml")
+	if err := assertOneClaudeCadence(workflow); err != nil {
+		t.Fatal(err)
+	}
+	mutations := [][2]string{
+		{"include:\n", "os: [ubuntu-latest, macos-latest]\n        include:\n"},
+		{"include:\n", "model: [claude-opus-4-8]\n        include:\n"},
+		{"include:\n", "exclude:\n          - model: claude-sonnet-5\n        include:\n"},
+		{"environment: " + claudeCadenceEnv, "environment: " + claudeCadenceEnv + "\n          - model: claude-opus-4-8\n            effort: max\n            environment: CI-E2E-OPUS"},
+		{"claude-sonnet-5", "sonnet"},
+		{"effort: max", "effort: high"},
+		{claudeCadenceEnv, "CI-E2E"},
+		{"'pull-request'", "'sonnet'"},
+	}
+	for _, mutation := range mutations {
+		if err := assertOneClaudeCadence(strings.Replace(workflow, mutation[0], mutation[1], 1)); err == nil {
+			t.Fatalf("mutation %q escaped the one-row cadence guard", mutation[0])
+		}
+	}
+}
+
+func assertOneClaudeCadence(workflow string) error {
+	var parsed liveCadenceWorkflow
+	if err := yaml.Unmarshal([]byte(workflow), &parsed); err != nil {
+		return err
+	}
+	input, ok := parsed.On.WorkflowDispatch.Inputs["live_cadence"]
+	if !ok || input.Default != "sonnet" || fmt.Sprint(input.Options) != fmt.Sprint([]string{"sonnet", "opus-pre-release"}) {
+		return fmt.Errorf("workflow_dispatch live_cadence choice is not the approved two-value surface")
+	}
+	job, ok := parsed.Jobs["claude-live"]
+	if !ok {
+		return fmt.Errorf("workflow lacks claude-live")
+	}
+	matrix := job.Strategy.Matrix
+	include, ok := matrix["include"]
+	if len(matrix) != 1 || !ok {
+		return fmt.Errorf("Claude matrix keys = %v, want only include", sortedKeys(matrix))
+	}
+	var rows []liveCadenceRow
+	if err := include.Decode(&rows); err != nil {
+		return fmt.Errorf("decode Claude matrix include: %w", err)
+	}
+	want := liveCadenceRow{Cadence: pullRequestCadence, Model: claudeCadenceModel, Effort: "max", Environment: claudeCadenceEnv}
+	if len(rows) != 1 || rows[0] != want {
+		return fmt.Errorf("Claude matrix include = %#v, want one explicit row %#v", rows, want)
+	}
+	if codex, ok := parsed.Jobs["codex-live"]; !ok || codex.Environment.Name != "CI-E2E-CODEX" {
+		return fmt.Errorf("workflow lacks the Codex approval lane")
+	}
+	if _, ok := parsed.Jobs["pi-live"]; ok {
+		return fmt.Errorf("workflow retains a Pi approval lane")
+	}
+	return nil
+}
+
+func sortedKeys[V any](values map[string]V) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
 
 type liveClaim struct{ step, selector, claim string }
 
@@ -17,8 +117,6 @@ var liveClaims = []liveClaim{
 	{"Run live Claude substrate proofs", "TestLiveBreakGlassShimRecovery", "claude-break-glass-recovery"},
 	{"Verify Codex resolver against installed plugin", "TestCodexResolveManifestAgainstInstalledHost", "codex-current-checkout-manifest-resolution"},
 	{"Run live Codex shared scenarios", "TestLiveCommon", "codex-common-journeys"},
-	{"Run live Pi common journeys", "TestLiveCommon", "pi-common-journeys"},
-	{"Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke", "pi-front-door-child-durable-boot-contract"},
 }
 
 var offlineControls = []string{
@@ -47,8 +145,8 @@ func TestRuntimeLiveWorkflowNamedEvidenceMutationControls(t *testing.T) {
 		"removed claim selector": func(s string) string {
 			return strings.Replace(s, "TestLiveBreakGlassShimRecovery", "TestLiveMergedTeamModeDispatch", 1)
 		},
-		"second Pi smoke": func(s string) string {
-			return strings.Replace(s, "-run TestLivePiFrontDoorSmoke", "-run 'TestLivePiFrontDoorSmoke|TestLivePiSubagentEnsignSmoke'", 1)
+		"paid Pi job": func(s string) string {
+			return s + "\n  pi-live:\n    environment:\n      name: CI-E2E-PI\n"
 		},
 		"legacy PTY flag": func(s string) string {
 			return strings.Replace(s, "DISABLE_AUTOUPDATER: \"1\"", "DISABLE_AUTOUPDATER: \"1\"\n      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: \"1\"", 1)
@@ -93,7 +191,7 @@ func assertNamedLiveEvidence(workflow string) error {
 	if len(expected) != 0 {
 		return fmt.Errorf("workflow lacks owned selector steps %v", expected)
 	}
-	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "journey-metrics/pi", "inputs.effort"} {
+	for _, dead := range []string{"TestLivePty", "TestLivePiRecordedGateLifecycle", "TestLivePiSubagentEnsignSmoke", "TestLivePiFrontDoorSmoke", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS", "pty-team-mode", "Install tmux", "journey-metrics/pi", "inputs.effort", "CI-E2E-PI"} {
 		if activeYAMLText(workflow, dead) {
 			return fmt.Errorf("workflow retains dead surface %q", dead)
 		}
@@ -109,7 +207,7 @@ func assertNamedLiveEvidence(workflow string) error {
 func assertOfflineControls(workflow string) error {
 	step, ok := stepNamed(parseWorkflowSteps(workflow), "Run deterministic live-harness controls offline")
 	if !ok || strings.Contains(step.run, "-tags") || strings.Join(selectedTests(step.run), "|") != strings.Join(sorted(offlineControls), "|") {
-		return fmt.Errorf("the 12 deterministic controls are not an exact untagged command")
+		return fmt.Errorf("the 9 deterministic controls are not an exact untagged command")
 	}
 	return nil
 }
