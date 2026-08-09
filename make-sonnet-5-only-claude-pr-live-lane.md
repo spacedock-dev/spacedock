@@ -9,7 +9,7 @@ verdict:
 score: 0.85
 worktree: .worktrees/spacedock-ensign-make-sonnet-5-only-claude-pr-live-lane
 issue:
-pr: "#639"
+pr: pr-merge:639
 mod-block:
 sprint:
 gates:
