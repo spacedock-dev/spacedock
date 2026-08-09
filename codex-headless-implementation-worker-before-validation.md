@@ -218,3 +218,6 @@ boundary. A local replay was not authenticated, so it was not used as proof.
 Ideation records an authenticated failure on the exact candidate and defines a
 small, portable shared-core guard. The next stage must land strict XFAIL
 evidence first, then prove spawn and completion ordering in both live lanes.
+The entity parser and gofmt check passed. The normal and race Go suites were
+attempted, but internal/cli stalled and both runs were interrupted after about
+five minutes; no product files changed.
