@@ -61,6 +61,17 @@ gates:
                 digest: sha256:a69a4356445101c5291172c46c80e9b2daee1520f422db325d7b781284880266
                 request-digest: sha256:735c3625854348e175d44f096130931b5f327d8c86b80f81d140fb884d2a5e29
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3zzpdw704df1g8pg1x9thzmw:validation:1
+                briefing: briefing:3zzpdw704df1g8pg1x9thzmw:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T04:54:30.609484Z"
+                decision: approve
+                reason: Exact candidate passes the complete offline validation set and preserves prior Sonnet behavior evidence; require fresh exact-head Sonnet CI before merge because local authentication failed before product execution.
+              application:
+                target-stage: done
+                state: pending
 sprint: test-behavior-completeness
 ---
 
