@@ -1,6 +1,6 @@
 ---
 title: Restore optional manual Pi common-live CI
-status: validation
+status: implementation
 source: "Captain correction, 2026-08-09: PR #639 removed pi-live when it removed Pi from pull-request approvals. Restore manual CI Pi evidence without making Pi a merge requirement."
 started: 2026-08-09T15:42:25Z
 completed:
