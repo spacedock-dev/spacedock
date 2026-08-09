@@ -3,10 +3,10 @@ title: Make gate presentations stage-specific and omit empty result classes
 status: backlog
 id: krbaeb3resfpbh1qvnb65krf
 score: 0.8
-source: "Captain feedback on 2026-08-08 after repeated gate reviews rendered `FAILED: None`."
+source: "Captain feedback on 2026-08-08 after repeated gate reviews rendered FAILED: None. Extended by the 2026-08-09 journey-friction audit: the same stage-specific presentation must show the exact selected artifact and references plus the executable next action, so one gate operation does not require filesystem searches or help retries."
 issue:
-sprint:
-sprint-readiness:
+sprint: durable-decisions
+sprint-readiness: ready
 started:
 completed:
 verdict:
