@@ -2,7 +2,7 @@
 title: Run known live behavior gaps as strict XFAIL
 status: ideation
 source: "Captain decision after live-test-truth sprint close, 2026-08-09"
-started:
+started: 2026-08-09T18:34:17Z
 completed:
 verdict:
 score: 0.95
