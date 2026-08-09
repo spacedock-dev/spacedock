@@ -32,6 +32,15 @@ The failures occurred on candidate `7c8708c8537fc73761e56813ddbd6a498959ef19`. C
 
 A headless First Officer must run the required work before it presents the next gate. A dispatch package is not a worker dispatch.
 
+## Required order
+
+Task `ts7gq0mr9s3chx2w4wppd1kt` must land before this product repair starts.
+It must run the Sonnet and Codex cells as strict XFAIL evidence.
+
+Do not change the First Officer behavior before both cells report the expected
+`implementation-worker-not-dispatched` failure code. After the repair, XPASS
+must force removal of each repaired XFAIL binding.
+
 ## Acceptance criteria
 
 **AC-1 (VALUE) — Sonnet and Codex run the implementation worker before validation.**
