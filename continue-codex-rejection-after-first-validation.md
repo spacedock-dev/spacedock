@@ -46,6 +46,10 @@ gates:
                 digest: sha256:e7ea43c9d2cf658ba396a887006d1f6eb35c2553c608513a223228c5553a080d
                 request-digest: sha256:d7130b947de519759c629aac7fa524b15d8d6b79131095e608fb7311f28f6ecf
                 room-ref: ./continue-codex-rejection-after-first-validation/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-09T21:28:27.351902Z"
+                reason: The ideation AC labels are not readable by the workflow AC extractor.
 ---
 
 ## Problem
