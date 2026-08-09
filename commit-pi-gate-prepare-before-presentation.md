@@ -46,6 +46,10 @@ gates:
                 digest: sha256:da4249eb26fa723f8276aaf0d18142ca5f38f2436d3d118bac69acf6108363cc
                 request-digest: sha256:58cd28b5f1933706111e40bd0a8dbfdc043db980f11fe0bfbdd16e951dbab739
                 room-ref: ./commit-pi-gate-prepare-before-presentation/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-09T21:28:30.615994Z"
+                reason: The ideation AC labels are not readable by the workflow AC extractor.
 ---
 
 ## Problem
