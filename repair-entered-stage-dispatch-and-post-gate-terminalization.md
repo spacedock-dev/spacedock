@@ -43,6 +43,17 @@ gates:
                 digest: sha256:0fba23bdbbd09bfb8817b41884296317aa97f047e43ec6d86fc26e4f5e17894c
                 request-digest: sha256:637a687f6fc691c5c7c21edacfef31297b9f38758808d3e06855f062f5843412
                 room-ref: ./repair-entered-stage-dispatch-and-post-gate-terminalization/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9adv48yhye5s2vkhwd7ge52d:ideation:1
+                briefing: briefing:9adv48yhye5s2vkhwd7ge52d:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T21:33:15.15948Z"
+                decision: approve
+                reason: Captain approved the post-gate dispatch and terminalization direction.
+              application:
+                target-stage: implementation
+                state: pending
 sprint-readiness: ready
 group: common-evidence
 ---
