@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-09 19:51:41"
+last_updated: "2026-08-09 23:08:58"
 ---
 
 # Install Spacedock
@@ -73,6 +73,8 @@ See [supported sandboxes](../../reference/sandbox/).
 ## Troubleshooting
 
 Run `spacedock doctor`.
+
+If startup says the installed launcher is missing a required command, upgrade Spacedock and relaunch. On macOS, run `brew upgrade spacedock`. On Linux, rerun the checksum-verified binary installer shown above.
 
 ## Next
 
