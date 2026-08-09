@@ -95,6 +95,17 @@ gates:
                 digest: sha256:b2166695843a29dd61785dec02e170ca5e582f25214c4d301a33ff5e2c40bc65
                 request-digest: sha256:49e74584e6365b0118c0f7c3adb5ad59084dee019a7870e3b6c2a0f6bf58ae8a
                 room-ref: ./review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:824ecawn5jttbykcgx82nbf4:validation:3
+                briefing: briefing:824ecawn5jttbykcgx82nbf4:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T05:32:40.483568Z"
+                decision: approve
+                reason: Exact reconciled candidate passes all three validation items and all acceptance criteria; focused, inventory, cadence, full, race, formatting, and adversarial evidence is green, while fresh local Claude probes failed only at the pre-work authentication boundary.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Stable CI must evaluate the supported Claude break-glass behavior instead of rejecting a successful worker because two contracts disagree.
