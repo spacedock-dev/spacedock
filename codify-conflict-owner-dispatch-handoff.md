@@ -119,6 +119,17 @@ gates:
                 digest: sha256:4a638ecededd8cacd42e283d3674b6495a55ae929158656505a123193aed6ba7
                 request-digest: sha256:b3f9742e6f966302c1db26033e8649374103c156f7504a15f4965f99358bceaa
                 room-ref: ./codify-conflict-owner-dispatch-handoff/review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d8qmey415fsb5q9h6q639ngf:validation:5
+                briefing: briefing:d8qmey415fsb5q9h6q639ngf:validation:attempt-5:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T14:53:12.469381Z"
+                decision: approve
+                reason: Exact-head validation proves all revised ACs through durable Git and filesystem outcomes; the expanded surface is limited to the live fixture and post-YS registry integration.
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 pr: "#645"
 ---
