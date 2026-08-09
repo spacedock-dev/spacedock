@@ -23,6 +23,17 @@ gates:
                 digest: sha256:e5f04abe6ac0725eac6b831d33309ee789b6bb4ae8888518444ed971971013f3
                 request-digest: sha256:b1f7d469585bc21a3d1b8180b8e49253a1abf6ca75347b60ab4874ea87e8de39
                 room-ref: ./keep-journey-delta-green-on-rerun/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qz0ap96nt5k93tgbsphq9ahy:backlog:1
+                briefing: briefing:qz0ap96nt5k93tgbsphq9ahy:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T04:15:12.231791Z"
+                decision: approve
+                reason: Captain directed the First Officer to file and dispatch this journey-metrics fix.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A failed-job rerun can reuse successful live jobs from an earlier attempt. The metrics job then finds Codex artifact metadata, but artifact extraction fails.
