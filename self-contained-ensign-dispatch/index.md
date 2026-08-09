@@ -834,3 +834,28 @@ The revision replaces generic launcher policy with executable-specific generated
 ### Summary
 
 KD is reconciled onto the actual merged 0Y tip with its exact delta preserved at head `34e6160a5`. The non-force publication is remote branch `spacedock-ensign/self-contained-ensign-dispatch-reconciled`; all focused, full, race, formatting, and integration evidence is green.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Verify exact head 34e6160a5 implements the Captain-approved exact-command launcher design and all acceptance criteria.
+  Clean exact `34e6160a5f930afcd6a7077b81635b22f07d9e23` has `9021cbf374bb1740d1b2e45155041e1f809372c4` as its merge base and ancestor; generated stage/standing fetches contain the shell-quoted resolved executable, while generic launcher-policy prose and the false product-only worktree-binary claim are absent.
+- DONE: Verify candidate-binary support, pointer-only transport, and focused golden ownership fail under adversarial launcher drift.
+  Green focused tests cover explicit `SPACEDOCK_BIN` candidate selection, exact A execution under hostile PATH/`SPACEDOCK_BIN` B, explicit product C separation, fail-closed missing launchers, and all six Claude/Codex/Pi fresh/advance pointer rows; exactly 26 build goldens changed and no prose parser was introduced.
+- DONE: Run focused, full, race, formatting, and applicable integration evidence on landed 0Y main ancestry.
+  `go test ./internal/dispatch ./internal/cli ./skills/integration ./internal/ensigncycle -count=1`, `go test ./... -count=1`, and `go test ./... -race -count=1` pass; `gofmt -w ./cmd ./internal`, `git diff --check`, and the final clean-worktree check pass.
+
+### Adversarial evidence
+
+- In a detached throwaway checkout, replacing the literal resolved launcher with `LauncherCommand()` made exact-command ownership fail before execution; disabling explicit candidate selection made the CLI resolver test fail.
+- Independently leaking the selected stage/context into the outer prompt made every Claude/Codex/Pi fresh/advance pointer-transport row fail. The throwaway checkout was removed and candidate HEAD/bytes remained unchanged.
+- The full KD delta has stable patch-id `5e5d10e3d61174368e29ff7dbe67f63c94e74d01`; final commit `34e6160a5` and pre-reconciliation `d3f093cdb` share stable patch-id `5dcd3905f8a229646b26caf9c63cafe7d102758a`.
+
+### Delivery and review-finding disposition
+
+- Recommendation: **PASSED**. No new material, outcome, evidence, or polish finding was discovered in the exact candidate; the previously accepted deferred risk remains unchanged below.
+- GitHub PR #635 remains open at obsolete head `d3f093cdb`; the correct published delivery ref is `origin/spacedock-ensign/self-contained-ensign-dispatch-reconciled` at `34e6160a5`. Validation did not push, update the PR, or modify candidate code.
+- Existing product risk is unchanged: an exact launcher path can later disappear or be replaced in place; promote only when a supported assignment uses or observes an ephemeral or mutable launcher path.
+
+### Summary
+
+Exact head `34e6160a5` passes the Captain-approved resolved-command design, preserves explicit candidate-binary testing and pointer-only transport, and reduces shared bootstrap wording to focused structured ownership without a prose parser. Full, race, formatting, integration, and adversarial evidence are green on landed 0Y ancestry, so validation recommends **PASSED** on the reconciled delivery branch.
