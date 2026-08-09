@@ -38,20 +38,130 @@ sprint-readiness: ready
 group: common-evidence
 ---
 
-PR #585's runtime-neutral durable live oracle exposed three shipped behavior defects outside the PR's Codex configuration and launcher-shim scope.
+## Problem
 
-Before a product change, use the strict XFAIL behavior from
-`ts7gq0mr9s3chx2w4wppd1kt`. Run each affected target and record one stable
-semantic failure code for each executable journey cell. Keep TODO only when a
-cell cannot run.
+PR #585's runtime-neutral live oracle found two defects in one post-gate journey.
 
-After a product repair, XPASS must force removal of the repaired XFAIL binding.
-Do not weaken the durable oracle to obtain PASS or XFAIL.
+First, a gate consume can advance an entity to `implementation`, then the dispatch evidence can split across two commits. The first commit names the entered stage before `started` exists. The second commit adds `started`. The durable oracle requires one exact path-scoped dispatch commit with both values.
 
-1. Initial-stage successor dispatch is underspecified. At exact head `d28834249b23df204292149c7581a295e85c10dd`, both Codex/Luna and Claude Sonnet changed `ready-one` and `ready-two` from `ready` directly to terminal `done`, committed `dispatch: <slug> entering done`, and built `--stage done`, while the fixture and worker assignment require a `ready` stage report. Owner: `skills/first-officer/references/fo-dispatch-core.md` plus its mandatory skill smoke tests. Make the initial-stage rule explicit and prove `current=ready,next=done` dispatches `current` with `status=ready started`, an exact path-scoped `dispatch: <slug> entering ready` commit, and `dispatch build --stage ready`.
+Second, a consumed nonterminal approval is treated as an error during ordinary terminal status writes. A worker can complete its report, but the entity cannot reach `done` without `--force`. That breaks the non-force safety rule.
 
-2. Gate-consume dispatch evidence can be split across commits. Sonnet consumed `approved-gate` from `review` to `implementation` and committed `dispatch: approved-gate entering implementation` before `started` existed, then added `started` in a second commit named `dispatch: approved-gate implementation started`. The durable oracle correctly requires the exact dispatch commit's entity blob to contain both the entered stage and nonempty `started`. Owner: gate-lifecycle/dispatch contract and smoke tests. Prove a consumed nonterminal approval records the dispatch boundary only after `started` is present, without weakening path-scoped durable grading.
+The initial-stage successor defect is not part of this task. Task `6x50qafc8566zc6p1qpb6y30` owns that behavior and its smoke tests. This task must not duplicate that repair or its live journey.
 
-3. A consumed nonterminal gate record blocks later ordinary terminalization. Both hosts received `condition=consumed` after the approved `review -> implementation` transition. `internal/status/handlers.go` sends every terminal status write through `pendingTerminalApproval`; `internal/status/merge.go` classifies consumed/nonterminal authority as an error. Codex could not finalize; Sonnet escaped with `--force`, violating the live scenario's non-force safety posture. Owner: `internal/status`/`internal/gates`. Add a focused CLI regression for `review(gate) -> implementation(consumed) -> done`, allowing the atomic non-forced terminal fields while pending, unreadable, stale, or binding terminal-target authority remains fail-closed.
+## Value slice
 
-Evidence: archived Sonnet artifact `runtime-live-e2e-claude-live-sonnet`, `claude-shared-scenarios-detail.jsonl`, and scenario streams under `live-artifacts/claude/sonnet/claude-shared-scenarios/`; archived Codex artifact `runtime-live-e2e-codex-live` and the corresponding scenario streams. Restore the TODO-disabled live journeys only after focused smoke/CLI proof lands; do not relax the durable Git-history oracle or teach agents to use `--force`.
+This task owns one end-to-end value slice: consume an approved nonterminal gate, dispatch the successor with durable evidence, record the worker result, and complete the entity with ordinary non-forced terminal fields.
+
+The `keep-moving-posture` journey is the live value check. Its other ready entities remain controls. The `smallest-sufficient-mechanism` journey and its initial-stage rows remain with task `6x50qafc8566zc6p1qpb6y30`.
+
+## Proposed approach
+
+1. Run the affected `keep-moving-posture` cells with the strict XFAIL mechanism from `ts7gq0mr9s3chx2w4wppd1kt` before any product edit. Bind one stable semantic failure code to each executable target. Keep a TODO only when that target cannot run.
+
+2. Keep gate consume and successor dispatch as one documented ceremony boundary. The consume command writes the successor status and `consumed` gate state. One `dispatch build --stamp` call then writes `started` and `worktree`, commits the path-scoped entity, and builds the envelope. Do not add a manual status write, a separate state commit, or a plain dispatch build between these commands.
+
+3. Add a smoke assertion that reads the entity blob from the exact `dispatch: <slug> entering <stage>` commit. The blob must contain the entered stage and a nonempty `started` value. A later commit that adds `started` must fail the assertion.
+
+4. Narrow `pendingTerminalApproval` so a consumed nonterminal application is ordinary stage history. It must allow the atomic non-forced terminal fields after the worker report. It must still fail closed for pending terminal-target approval, unreadable authority, stale authority, and a binding to a terminal target.
+
+5. Run the live value cells again. XPASS must remove the repaired XFAIL binding. The durable Git-history oracle remains unchanged.
+
+The simplest alternatives are insufficient. Status prose cannot prove the exact commit blob. A second stamp commit cannot meet the single-boundary requirement. `--force` hides an authority error and violates the value slice. A broad bypass for all consumed records would weaken terminal-target safety.
+
+## Out of scope
+
+- Initial-stage dispatch when `current=ready,next=done`. Task `6x50qafc8566zc6p1qpb6y30` owns this item.
+- Changes to the durable Git-history oracle, its path scope, or its failure rules.
+- New command flags, new frontmatter fields, or a new gate authority format.
+- Agent instructions that use `--force` to finish the journey.
+- The generic strict-XFAIL runner work owned by `ts7gq0mr9s3chx2w4wppd1kt`.
+
+## Acceptance criteria
+
+**AC-1 (VALUE) — A consumed nonterminal post-gate journey reaches normal completion.**
+
+The `keep-moving-posture` fixture moves `approved-gate` from `review` to `implementation`, records the worker report, and reaches `done` with non-forced atomic terminal fields. The path-scoped history has the consume, dispatch, report, and terminal evidence. The journey does not use `--force`.
+
+Verified by: the strict XFAIL-enabled live cells for each executable host, plus the durable journey grader. Falsifiers: a refusal at `done`, a `--force` invocation, a missing report, or a missing terminal record.
+
+**AC-2 — The dispatch boundary contains complete entered-stage evidence.**
+
+After nonterminal gate consume, the exact path-scoped commit named `dispatch: <slug> entering implementation` contains `status: implementation` and a nonempty `started` field in the entity blob. The envelope exists after that commit. A second commit is not needed.
+
+Verified by: a focused CLI or dispatch smoke test that reads the exact commit blob. Falsifiers: an absent `started` field, a split commit, a missing envelope, or an extra dispatch stamp commit.
+
+**AC-3 — Terminal authority remains fail closed.**
+
+A consumed nonterminal record allows ordinary atomic terminal fields. Pending terminal-target approval, unreadable authority, digest-stale authority, and a terminal-target binding still refuse the non-forced status write and direct the caller to the merge guard.
+
+Verified by: the focused CLI regression and the existing terminal refusal matrix. Falsifiers: `--force` being required for the consumed nonterminal case, or any protected terminal-target case succeeding without its merge guard.
+
+## Test plan
+
+Run the smallest proof first:
+
+1. Run the existing `internal/dispatch` stamp tests for commit, worktree, mismatch, and idempotence.
+2. Run the existing terminal refusal and merge-guard tests.
+3. Add and run the exact dispatch-blob smoke test.
+4. Add and run the `review(gate) -> implementation(consumed) -> done` CLI regression.
+5. Run the recorded gate lifecycle and durable journey tests.
+6. Run strict XFAIL for the three `keep-moving-posture` target cells before the repair, then rerun them after the repair.
+7. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
+
+Each new test must name its falsifier. The consumed-nonterminal regression must prove that the final status write does not call `--force`. The dispatch smoke must inspect the exact commit, not only the final worktree.
+
+## Expected surface and semantic changes
+
+The expected implementation surface is below. Estimates exclude the generic XFAIL runner and task `6x`.
+
+| File | Gross additions | Gross deletions | Net | Purpose |
+| --- | ---: | ---: | ---: | --- |
+| `internal/status/merge.go` | 12 | 4 | +8 | Classify consumed nonterminal authority as ordinary history while preserving fail-closed terminal-target checks. |
+| `internal/cli/terminal_consume_test.go` | 120 | 0 | +120 | Add the focused consumed-nonterminal completion and refusal matrix. |
+| `internal/cli/gate_ceremony_count_test.go` | 45 | 0 | +45 | Inspect the exact dispatch commit entity blob. |
+| `internal/ensigncycle/shared_live_runner_test.go` | 28 | 6 | +22 | Bind the three executable `keep-moving-posture` cells to strict XFAIL, then remove the bindings on XPASS. |
+| `skills/fo-gate-lifecycle/SKILL.md` | 12 | 4 | +8 | State the one consume-then-`dispatch build --stamp` boundary. |
+| `skills/first-officer/references/fo-dispatch-core.md` | 10 | 2 | +8 | Require complete entered-stage evidence in the dispatch commit. |
+| `docs/site/concepts/gates-and-decisions.md` | 6 | 1 | +5 | Document ordinary terminalization after consumed nonterminal approval. |
+| `docs/site/reference/command-reference.md` | 6 | 1 | +5 | Document the non-forced terminal status rule and dispatch evidence. |
+| `docs/specs/gate-resolution-frontmatter-contract.md` | 8 | 1 | +7 | State the authority distinction in the contract. |
+| **Total** | **247** | **19** | **+228** | **Tolerance: ±25% for gross and net estimates.** |
+
+Semantic changes are narrow. Command grammar does not change. Stored frontmatter formats do not change. Authority behavior changes only for a consumed nonterminal application during ordinary terminalization. Pending, unreadable, stale, and terminal-target authority remains protected. Runtime behavior requires `dispatch build --stamp` to provide the single complete dispatch evidence boundary.
+
+## Documentation diff proposal
+
+Add this rule to the gates concept and command reference:
+
+> After a nonterminal approval is consumed and its worker report is present, ordinary atomic terminal fields can complete the entity without `--force`. Pending, unreadable, stale, or terminal-target gate authority still fails closed and uses the merge guard.
+
+Add this rule to the dispatch contract:
+
+> For a consumed nonterminal entry, the exact `dispatch: <slug> entering <stage>` commit must contain the entered stage and nonempty `started` value. Do not split those values across commits.
+
+## Dependencies and XFAIL-first order
+
+The strict-XFAIL runner from `ts7gq0mr9s3chx2w4wppd1kt` must be available before implementation. The initial-stage repair and its binding belong to task `6x50qafc8566zc6p1qpb6y30`. Neither dependency changes this task's value slice.
+
+Before a product edit, run each executable `keep-moving-posture` target and record one stable failure code. After the smoke and CLI tests pass, implement the narrow status change and contract updates. Then rerun the live cells. XPASS removes the 9a binding. A target that cannot run keeps a TODO with its reason.
+
+## Spike result
+
+The riskiest available path was exercised first. The existing stamp tests pass for commit creation, worktree creation, stage mismatch, and idempotent rerun. The existing terminal tests pass for pending, stale, unreadable, and terminal-target authority. Recorded gate lifecycle and durable journey tests also pass.
+
+The spike found the remaining proof gaps. No current test reads the entity blob from the exact dispatch commit. No current CLI regression covers `review(gate) -> implementation(consumed) -> done`. Source tracing shows that `pendingTerminalApproval` currently rejects consumed nonterminal authority. The plan adds proof before the narrow repair. It introduces no new state or authority primitive.
+
+## Stage Report: ideation
+
+- DONE: Remove initial-stage defect from this task and keep one post-gate value slice.
+  Task `6x50qafc8566zc6p1qpb6y30` owns initial-stage dispatch. This entity now owns only `keep-moving-posture` after gate consume.
+- DONE: Exercise gate-consume dispatch evidence and safe terminalization before selecting the repair.
+  Existing stamp, terminal-authority, recorded-lifecycle, and durable-journey tests passed. Source tracing found the consumed-nonterminal classifier and two missing proof tests.
+- DONE: Give gross and net line estimates with XFAIL-first dependencies.
+  The plan estimates +247/-19, net +228, with ±25% tolerance. Strict XFAIL runner `ts7gq0mr9s3chx2w4wppd1kt` is the first dependency.
+
+### Summary
+
+Ideation is complete. The plan keeps one post-gate value slice, requires exact dispatch-commit evidence, and narrows terminal authority only for consumed nonterminal history.
+
+The initial-stage repair belongs to task `6x50qafc8566zc6p1qpb6y30`. Implementation must run strict XFAIL before product edits and must preserve the durable oracle and fail-closed terminal-target checks.
