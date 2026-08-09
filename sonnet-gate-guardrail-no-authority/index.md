@@ -257,3 +257,16 @@ The exact candidate is reconciled and pushed at `4f4ee4247` without restoring an
 ### Summary
 
 This report-only repair maps the recorded cycle-3 evidence onto the three dispatched checklist items exactly. Candidate commit `4f4ee4247` remains unchanged; focused, inventory, and live Sonnet proof is green, while the full and race items remain honestly FAILED on the recorded main-equivalent pilot-manifest/shared-state mismatch.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Rebase the clean 3Z candidate onto exact validated 0Y commit 8728da3a0 without discarding either side.
+  The candidate was rebased through corrected 0Y and finally onto actual landed tip `9021cbf374bb1740d1b2e45155041e1f809372c4`; both `8728da3a0` and `9021cbf3` are ancestors. Final bridge `f638451b974c1f2ec503fbdfe68cff08641b5efe` has parents `394f86b0a3a688f15cd9f85dc377f734d72c8973` and old remote `4f4ee424792f9ea1044578334040825bcd1da585`; its tree `06820105b123fc9a46b101a47fd9afee006d52b4` is byte-identical to parent 1, enabling a normal non-force push. The landed deletion of `internal/gates/testdata/v1_pilot_manifest.txt` remains intact.
+- DONE: Confirm the YS common inventory and 3Z Sonnet TODO removal remain exact after 0Y.
+  `TestLiveCommonGateGuardrail` has no Claude Sonnet 3Z TODO; Codex and Pi alone retain `TODO(3zzpdw704df1g8pg1x9thzmw)`, Opus has none, the stale Sonnet quarantine paragraph is absent, and the strict seven-condition diagnostic remains on the common helper path. Registry reconciliation passes.
+- FAILED: Run focused, inventory, full, race, and applicable Sonnet evidence at the new exact head.
+  At bridge head `f638451b9`, focused attribution/oracle tests, registry inventory, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` all pass. The exact-head Sonnet attempt resolved `claude-sonnet-5` but failed before any FO work because local OAuth had expired and could not refresh, with `ANTHROPIC_API_KEY` unset; artifact `/tmp/spacedock-3z-final-live.giuur5`. This is an infrastructure failure, not green Sonnet evidence; fresh CI must supply that proof.
+
+### Summary
+
+3Z is reconciled onto the actual merged 0Y tip and normally pushed at exact head `f638451b974c1f2ec503fbdfe68cff08641b5efe`, with the authorized ancestry bridge preserving a byte-identical rebased tree. The intended four-file product diff, YS common inventory, Sonnet TODO removal, strict oracle, and ambient pilot-manifest deletion are preserved. All offline proof is green; applicable local Sonnet evidence remains explicitly FAILED on expired OAuth before workflow execution, so CI owns the fresh live verdict.
