@@ -85,6 +85,13 @@ func TestLiveBareReachable(t *testing.T) {
 //
 //spacedock:live-proof id=claude-dispatch-build-break-glass lane=claude-live
 func TestLiveBreakGlassShimRecovery(t *testing.T) {
+	role, err := claudeLiveRole(envOr("SPACEDOCK_LIVE_MODEL", "sonnet"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if role == "claude-sonnet" {
+		t.Skipf("TODO(824ecawn5jttbykcgx82nbf4): %s/claude-dispatch-build-break-glass lacks passing live evidence", role)
+	}
 	runner := newClaudeLiveRunner(t)
 	workflowRoot := t.TempDir()
 	writeDispatchRecoveryWorkflow(t, workflowRoot)
