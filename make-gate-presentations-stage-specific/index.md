@@ -1,6 +1,6 @@
 ---
 title: Make gate presentations stage-specific and omit empty result classes
-status: backlog
+status: ideation
 id: krbaeb3resfpbh1qvnb65krf
 score: 0.8
 source: "Captain feedback on 2026-08-08 after repeated gate reviews rendered FAILED: None."
@@ -35,7 +35,7 @@ gates:
                 reason: Captain directed ideation dispatch; stage-specific evidence removes fabricated rows without changing gate authority.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Outcome
