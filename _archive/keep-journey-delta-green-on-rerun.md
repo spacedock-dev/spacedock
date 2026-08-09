@@ -1,16 +1,16 @@
 ---
 id: qz0ap96nt5k93tgbsphq9ahy
 title: Keep journey-delta reporting green across failed-job reruns
-status: validation
+status: done
 source: PR #639 Runtime Live E2E attempts 2 and 3 on 2026-08-08.
 started: 2026-08-09T04:16:06Z
-completed:
-verdict:
+completed: 2026-08-09T13:53:54Z
+verdict: passed
 score: 0.75
 worktree: .worktrees/spacedock-ensign-keep-journey-delta-green-on-rerun
 issue:
-pr: "#643"
-mod-block: merge:pr-merge
+pr: pr-merge:643
+mod-block:
 gates:
     version: 1
     records:
@@ -73,7 +73,8 @@ gates:
                 reason: Independent validation passed all six ACs, full and race suites, and the detached exact-script audit; the captain-approved lean scope has no material finding.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-09T13:53:54Z
 ---
 
 A failed-job rerun can reuse successful live jobs from an earlier attempt. The reporting job then reads artifacts from different attempts of one run.
