@@ -174,3 +174,16 @@ The candidate diff stays within the two-file/LOC/byte budget above; no CLI gramm
 ### Summary
 
 Selected a bounded gate-lifecycle contract correction: use existing structured reads, trust the real prepare/commit outputs, and stop after one presentation. The design removes the mandated help/reprojection calls and constrains agent discovery waste without adding CLI or harness machinery.
+
+## Stage Report: implementation
+
+- DONE: Deliver only the two-file gate-lifecycle contract and public-doc correction within the approved line and byte budgets, with no CLI, fixture, harness, schema, or new-test changes.
+  Commit `7da5d36a5` changes exactly the two approved files by +6/-9 lines; the skill shrank from 6,813 to 6,762 bytes, and `git diff --check` passed.
+- DONE: Preserve one prepared and committed open gate presentation while replacing search/help/reprojection waste with the existing path-resolved structured reads.
+  The focused lifecycle tests fail on missing/duplicate prepare/commit or unauthorized ordering; status tests fail if structured reads lose current-stage or open-readiness semantics, and both groups passed.
+- FAILED: Run the focused lifecycle/status checks, repository-required formatting and test suites, and exactly one Sonnet-5 live comparison capped at 16 turns and 18 tool calls; do not rerun a miss for luck.
+  Focused checks, `gofmt -w ./cmd ./internal`, and `go test ./...` passed; `go test ./... -race` hit unrelated load-sensitive `TestSonnetTeamDeleteHangReplay` (the exact race test then passed), and the sole live invocation skipped before model launch because no nonempty benchmark token or CI API key was available.
+
+### Summary
+
+Committed the bounded gate-lifecycle and public-documentation correction without changing runtime code, fixtures, or tests. Mechanical behavior checks passed, but this environment could not supply the required live comparison and the full race suite exposed one unrelated load-sensitive replay failure; both are retained for validation rather than hidden by reruns or out-of-scope edits.
