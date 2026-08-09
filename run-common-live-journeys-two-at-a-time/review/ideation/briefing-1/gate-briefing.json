@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:c1nbf39akyh263a4p1ts593m:ideation:attempt-1:revision-1",
+  "question": "Approve the lean Claude-only concurrency design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:c1nbf39akyh263a4p1ts593m:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9309165f6cb97b0404ebc0daec1be8036e4ba6a8/run-common-live-journeys-two-at-a-time.md",
+      "rev": "sha256:f52bd2a37cfbccf2261418813f11b8a7872e4a7fedcb62873bb1ed930ca5196b",
+      "mediaType": "text/markdown",
+      "summary": "Add Go-native two-at-a-time Claude journey execution with 3-12 net lines, no new infrastructure tests, and live evidence as the value proof."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:c1nbf39akyh263a4p1ts593m:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/9021cbf374bb1740d1b2e45155041e1f809372c4/internal/ensigncycle/shared_live_runner_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:01d04ee2b6d0e65ba885c3969d004914384c2a18707734f6b54b5088ea129221"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:c1nbf39akyh263a4p1ts593m:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/9021cbf374bb1740d1b2e45155041e1f809372c4/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:5bae781c365aedc4a03e8d4d4dabde6c4536a27f6937f376bef4c8853a2939b4"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:c1nbf39akyh263a4p1ts593m:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/9021cbf374bb1740d1b2e45155041e1f809372c4/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fb091afe289766f9cb9698f22aea2f9703b6afe6904f6f4eee4f9c634b2c253c"
+    }
+  ]
+}
