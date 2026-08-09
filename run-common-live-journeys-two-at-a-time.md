@@ -59,55 +59,67 @@ gates:
                 state: consumed
 ---
 
-Reduce pull-request wait time by running at most two independent common live journeys concurrently on Claude.
+Reduce pull-request wait time by running at most two independent Claude common journeys at one time.
 
 ## Problem
 
-The common live suite has 16 top-level journey entry points. Go runs them in sequence because none calls `t.Parallel()`.
+The common live suite has 16 top-level journey entry points. Go runs them in sequence because no test calls `t.Parallel()`.
 
 Sonnet currently runs 12 non-TODO common journeys and three substrate proofs. Run `31295813569` spent approximately 26 minutes on the common step. The substrate proofs used five more minutes.
 
-The existing runner gives each journey a separate workflow root, artifact directory, and Claude configuration directory. This isolation makes bounded parallel runs possible.
+The existing runner gives each journey a separate workflow root, artifact directory, and Claude configuration directory. This isolation permits parallel runs.
+
+Candidate `25fe7f42e` uses Go's parallel-test semaphore. A live failure run showed the cost of this choice.
+
+After one journey failed, Go started a queued journey while another journey remained active. Thus, `-failfast` does not stop all queued parallel work.
 
 ## Value
 
-Developers receive the same named live evidence sooner. The target is 20 minutes or less for the Sonnet common step.
+Developers receive the same named live evidence sooner after a successful run. The target is 20 minutes or less for the Sonnet common step.
 
 The independent baseline is pull-request run `31295813569`, which used approximately 26 minutes. This task follows the timing review for PR `#643`.
 
+The task accepts Go's queued-work cost after a failure. The concurrency cap limits active Claude work, but it does not limit total post-failure work.
+
 ## Proposed approach
 
-Resolve the runtime target before the live driver is constructed. Apply target-scoped TODOs before the parallel pause.
+Keep candidate `25fe7f42e` unchanged. Resolve the runtime target before the live driver is constructed. Apply target-scoped TODOs before the parallel pause.
 
 For Claude common journeys only, call `t.Parallel()` before runner setup. Add `-parallel 2` to the Claude CI and local commands.
 
 Keep the current artifacts, metrics files, workflow roots, and one-process watchdogs. Codex, Pi, and Claude substrate proofs stay in sequence.
 
-Use the Go parallel-test semaphore. A scheduler is unnecessary because Go already limits active parallel tests with `-parallel`.
+Use the Go parallel-test semaphore. Go limits active parallel tests with `-parallel`.
 
-The simpler alternative is CI matrix sharding. It needs more jobs and approvals, so it does not serve the value at lower cost.
+Keep `-failfast`, but do not claim that it stops queued Claude journeys. Go can start queued work after the first failure.
 
-The CI command keeps the canonical `^TestLiveCommon` selector and `-failfast`. After a failure, Go starts no queued journey. One active sibling can finish.
+The smallest alternative is to abandon concurrency. That choice avoids queued-work cost, but it does not reduce the successful-run duration.
 
-This mechanism serves AC-1 and AC-2. Existing isolation serves AC-4 without a new harness.
+A scheduler can stop queued work after a failure. It is not necessary for the successful-run value, and it exceeds this task's scope.
+
+The Go semaphore serves AC-1 and AC-2. Existing isolation serves AC-4 without a new harness.
 
 ### Expected surface
 
-The expected change has five files. It has 15 to 30 gross insertions and a net increase of 3 to 12 lines.
+The existing candidate changes five files. It has 22 gross insertions and a net increase of five lines.
 
-The tolerance is five files, 40 gross insertions, and a net increase of 17 lines. A larger change returns to ideation.
+One follow-up commit will correct the failure description in `docs/runtime-live-ci.md`. The cumulative expected surface stays at five files.
+
+The cumulative estimate is 23 to 27 gross insertions and a net increase of 5 to 9 lines. The tolerance is 30 insertions and 10 net lines.
 
 | File | Gross insertions | Net change | Purpose |
 |---|---:|---:|---|
-| `internal/ensigncycle/shared_live_runner_test.go` | 8-15 | +5 to +10 | Resolve the target first and parallelize Claude common journeys. |
-| `.github/workflows/runtime-live-e2e.yml` | 2-4 | 0 to +2 | Add the Claude cap and replace the step comment. |
-| `internal/contractlint/live_registry_reconciliation_test.go` | 1-3 | 0 | Replace the existing exact Claude command expectation. |
-| `internal/release/journey_workflow_test.go` | 1-3 | 0 | Replace the existing exact Claude command expectation. |
-| `docs/runtime-live-ci.md` | 3-8 | -2 to +2 | Replace the sequence text and local Claude command. |
+| `internal/ensigncycle/shared_live_runner_test.go` | 9 | +5 | Resolve the target first and parallelize Claude common journeys. |
+| `.github/workflows/runtime-live-e2e.yml` | 3 | 0 | Add the Claude cap and replace the step comment. |
+| `internal/contractlint/live_registry_reconciliation_test.go` | 2 | 0 | Replace the existing exact Claude command expectation. |
+| `internal/release/journey_workflow_test.go` | 2 | 0 | Replace the existing exact Claude command expectation. |
+| `docs/runtime-live-ci.md` | 7-11 | +1 to +4 | Add the command and describe the accepted failure cost. |
 
 Command grammar changes only for the Claude common-suite command. It adds `-parallel 2`.
 
-Runtime behavior changes only for Claude common journeys. At most two journey processes run at the same time.
+Runtime behavior changes only for Claude common journeys. At most two journey processes run at one time.
+
+After a failure, Go can start queued Claude journeys. The task does not set a limit on total post-failure journey starts.
 
 Stored formats and authority do not change. Journey IDs, TODOs, fixtures, models, effort, timeouts, and artifact names do not change.
 
@@ -121,14 +133,15 @@ Stored formats and authority do not change. Journey IDs, TODOs, fixtures, models
 - A scheduler, worker pool, retry loop, or shard registry.
 - New tests for test infrastructure.
 - A new contract-lint assertion or release workflow assertion.
+- A guarantee that `-failfast` stops queued parallel journeys.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - Sonnet common-journey wall time falls without losing named evidence.**
-Verified by: one exact-candidate Sonnet run executes the unchanged selected set with a concurrency cap of two. The common step completes in 20 minutes or less. Every non-TODO journey emits its normal result and metrics artifact. Compare this duration with the 26-minute baseline from run `31295813569`.
+**AC-1 (VALUE) - A successful Sonnet common run finishes sooner without losing named evidence.**
+Verified by: one exact-candidate Sonnet run executes the unchanged selected set. The common step completes in 20 minutes or less. Every non-TODO journey emits its normal result and metrics artifact. Compare this duration with the 26-minute baseline from run `31295813569`.
 
-**AC-2 - Failure cost and API pressure remain bounded.**
-Verified by: process start and finish evidence shows no more than two Claude journey processes at one time. A controlled failing run starts no queued journey after the first failure. At most one active sibling finishes.
+**AC-2 - The active Claude workload has a fixed cap.**
+Verified by: process evidence from the controlled three-journey failure shows no more than two Claude journey processes at one time. It also shows the queued start.
 
 **AC-3 - The canonical registry and CI selection stay unchanged.**
 Verified by: `TestRuntimeLiveRegistryReconciliation` passes with the same 16 journey IDs, fixtures, TODO bindings, and `^TestLiveCommon` selectors. The workflow adds no job or approval.
@@ -138,15 +151,15 @@ Verified by: a focused two-journey run produces two workflow roots, two configur
 
 ## Test plan
 
-1. Replace the existing exact Claude command expectations. Do not add a contract-lint assertion or release workflow assertion.
+1. Keep the existing exact Claude command replacements. Do not add a contract-lint assertion or release workflow assertion.
 2. Run `TestRuntimeLiveRegistryReconciliation`. This test fails if selectors, IDs, fixtures, or TODO bindings change.
 3. Run `go test ./...` and `go test ./... -race`. These commands make sure that shared test state stays race-free.
 4. Run `gofmt -w ./cmd ./internal`. Then make sure that this command changes no unrelated file.
 5. Run two focused Claude journeys with `-parallel 2`. Record wall time, active process count, roots, configuration directories, and artifacts.
-6. Run a controlled failing Claude pair with `-failfast -parallel 2`. Record the active sibling and make sure that no queued journey starts.
+6. Keep the controlled failure evidence. It shows that queued work can start after a failure and that no more than two processes run.
 7. Run the exact Sonnet candidate command. Compare its common-step duration with run `31295813569`.
 
-Live Claude runs prove concurrency, isolation, failure cost, and value. Offline tests do not simulate these properties.
+Live Claude runs prove concurrency, isolation, accepted failure behavior, and value. Offline tests do not simulate these properties.
 
 The local spike on 2026-08-08 used real Claude Code `2.1.220` and `claude-sonnet-5`. It started `filing` and `zero-discovery` together.
 
@@ -158,9 +171,9 @@ This failure proves the launch cap and isolation paths. It does not prove succes
 
 ### Documentation change
 
-Before: `Each command uses the same 16 exported sequential tests and stops at the first non-TODO failure.`
+Before: `Each command stops at the first non-TODO failure.`
 
-After: `The Claude command runs at most two common journeys at one time. The Codex and Pi commands run the same journeys in sequence.`
+After: `The Claude command keeps the -failfast flag, but Go can start queued parallel journeys after a failure. At most two Claude journeys run at one time. The sequential Codex and Pi commands stop at the first non-TODO failure.`
 
 Before: `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`
 
@@ -211,6 +224,7 @@ Claude common journeys now use Go's built-in test semaphore with a concurrency c
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation reviewer; surface 5 files at +22/-17 vs estimate 5 files, 15-30 gross insertions, +3 to +12 net; AC unchanged; Captain authorized a design reset to ideation because Go's semaphore violates AC-2.
+- Cycle 2: Captain authorized acceptance of Go's queued-work cost or abandonment. Ideation recommends the accepted cost and a narrower value promise.
 
 ## Stage Report: validation
 
@@ -232,3 +246,16 @@ Claude common journeys now use Go's built-in test semaphore with a concurrency c
 ### Summary
 
 Offline, race, formatting, registry, scope, and structural isolation checks passed. Validation recommends REJECTED because the real controlled failure proved Go's parallel-test semaphore starts a queued journey after the first failure; the successful Sonnet wall-time proof remains explicitly unclaimed until PR CI.
+
+## Stage Report: ideation
+
+- DONE: Preserve candidate `25fe7f42e` and use its live failure as design evidence.
+  The code candidate is unchanged. The plan records that Go can start queued Claude work after a failure.
+- DONE: Choose the smallest honest outcome.
+  The plan accepts Go's queued-work cost and keeps the two-process cap. It adds no scheduler, shard system, simulator, or infrastructure test.
+- DONE: Rewrite the value, approach, acceptance criteria, expected surface, test plan, and documentation change in Simple English.
+  AC-1 measures successful-run duration and named evidence. AC-2 promises only the observed active-process cap.
+
+### Summary
+
+The revised design keeps the five-file candidate and accepts Go's queued-work behavior. A small documentation follow-up will remove the false failure-stop promise.
