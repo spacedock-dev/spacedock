@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5f6m3jwhbrbneak5j8eeyh5r:backlog:attempt-1:revision-1",
+  "question": "Should 5F6 enter ideation to stop stale same-minor launchers before workflow effects?",
+  "artifacts": [
+    {
+      "id": "artifact:5f6m3jwhbrbneak5j8eeyh5r:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4df3cb760c20b3fb146d1fde570aeea022c4f7ca/reject-stale-same-minor-launcher-before-fo-work.md",
+      "rev": "sha256:1d436f970fbb49d2ed10c211dfaf083c49ce55d41a8ae22411b21e18138977ad",
+      "mediaType": "text/markdown",
+      "summary": "Design one capability check after launcher selection and before boot, with an installed-upgrade remedy."
+    }
+  ]
+}

@@ -14,6 +14,18 @@ issue:
 pr:
 mod-block:
 id: 5f6m3jwhbrbneak5j8eeyh5r
+gates:
+    version: 1
+    records:
+        - id: gate:5f6m3jwhbrbneak5j8eeyh5r:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:5f6m3jwhbrbneak5j8eeyh5r-backlog-1
+              briefing:
+                id: briefing:5f6m3jwhbrbneak5j8eeyh5r:backlog:attempt-1:revision-1
+                digest: sha256:7f79fc8844f764e271fc88b9f9e5dec162255d45d673f49aaf8c7c311e4ff745
+                request-digest: sha256:33a4dc17b36c81cebccb91764417df4717586b4fbf1a25ffdc600dcdd6f337cb
+                room-ref: ./reject-stale-same-minor-launcher-before-fo-work/review/backlog/briefing-1
 ---
 
 Stop a First Officer before workflow work when the selected launcher has the correct minor version but lacks a required command surface.
