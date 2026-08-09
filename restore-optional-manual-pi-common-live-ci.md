@@ -37,6 +37,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:0aqnm6v8ajns6cpsknxn9wf2:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:0aqnm6v8ajns6cpsknxn9wf2-ideation-1
+              briefing:
+                id: briefing:0aqnm6v8ajns6cpsknxn9wf2:ideation:attempt-1:revision-1
+                digest: sha256:38cfe1ae900ba2cbaede656e65dafa1c54b3a88355c2fb3d93a2cd52d6419e75
+                request-digest: sha256:5ac2196d66b19f30d73abfbba974fb0d938a86a5559b3d90527ac32c9b45c205
+                room-ref: ./restore-optional-manual-pi-common-live-ci/review/ideation/briefing-1
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.

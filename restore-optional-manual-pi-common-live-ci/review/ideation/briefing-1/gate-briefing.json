@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0aqnm6v8ajns6cpsknxn9wf2:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation direction for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:0aqnm6v8ajns6cpsknxn9wf2:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ce77b4d9ebea7692dfe3466cd21ab4c18009054d/restore-optional-manual-pi-common-live-ci.md",
+      "rev": "sha256:70d267f8cdb9a6da5940c8bccf8e6d4ef7c15311d0abe878aa4f735387587dd1",
+      "mediaType": "text/markdown",
+      "summary": "Use exclusive manual cadences in the existing workflow: Opus-only prerelease and Pi-only retained CI, while pull requests retain Sonnet plus Codex."
+    }
+  ]
+}
