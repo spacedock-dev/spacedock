@@ -2,7 +2,7 @@
 title: Restore live evidence whose original repair owners are complete
 status: ideation
 source: "Live-test-truth close reconciliation, 2026-08-09"
-started:
+started: 2026-08-09T18:34:33Z
 completed:
 verdict:
 score: 0.9
