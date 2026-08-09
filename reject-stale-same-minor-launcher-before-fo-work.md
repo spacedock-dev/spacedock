@@ -9,7 +9,7 @@ score: 0.85
 sprint: durable-decisions
 sprint-readiness: ready
 group: launcher-contract
-worktree:
+worktree: .worktrees/spacedock-ensign-reject-stale-same-minor-launcher-before-fo-work
 issue:
 pr:
 mod-block:
