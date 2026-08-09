@@ -76,16 +76,32 @@ Routine dispatch, gate, and state commits are omitted.
 - Local subscription-backed live runs take priority over paid CI.
 - 26n merged without another live run after both runtime defects were reproduced.
 - c1n merged after its target Claude common step passed in 13m13s.
+- A recorded gate attempt is the stopping point. Gate readiness is a calculated
+  view, not a stored lifecycle state. Independent work can continue before the
+  captain sees the gate.
+- Delegated conn includes gate approval, CI approval, PR action, and merge when
+  the captain grants those actions.
+- Small, deterministic state and documentation corrections can land directly.
+  Do not create a PR only to carry bookkeeping changes.
 
 ## Issues — Workflow
 
-- The first `ys` implementation became too large and encoded runtime selection through host switches.
+- The rejected `ys` candidate reached 43 files and approximately +2,750/-714
+  lines across 21 cycles. It encoded runtime selection through 16-case host
+  switches and added tests for the reconciler itself.
 - The repair returned the entry point to ordinary Go functions and annotations.
+- Net change size matters. Visible value does not justify a large support
+  mechanism when a small, readable surface can deliver the same result.
 - Several tasks initially separated mechanisms from visible value. The sprint required another carve.
 - Archived tasks remained TODO owners after their implementation work completed.
 - The new close join found and repaired these stale owner bindings.
 - The c1n substrate step remained active after the target common suite passed.
 - Codex failed c1n on an unrelated checklist-path retry. An existing backlog task owns this friction.
+- The latest measured gate-guardrail journey used 22 assistant turns and 24
+  tool calls. The v0.26 baseline used 11 turns and 11 tool calls. Task `5k`
+  owns this durable-decision friction.
+- The requested shallow-boot token comparison with v0.26, and the other token
+  deltas, did not reach a durable report. Do not treat that audit as complete.
 
 ## Issues — Spacedock
 
@@ -103,6 +119,16 @@ These items already have local task coverage. No new GitHub issue was filed.
 - The delivered registry has 17 common journeys and 68 runtime cells.
 - Reconciliation derives 48 runnable cells and 20 exact TODO cells.
 - The current TODO split is Opus 3, Sonnet 5, Codex 6, and Pi 6.
+- The 20 TODO cells have these active owners:
+
+  - `98a`: default-headless on Sonnet and Codex (2 cells).
+  - `zh`: rejection-flow on Sonnet, Opus, Codex, and Pi (4 cells).
+  - `9a`: smallest-sufficient-mechanism and keep-moving-posture on Sonnet,
+    Codex, and Pi (6 cells).
+  - `47g`: withdrawn-gate-recovery on Codex (1 cell).
+  - `xp6`: gate-guardrail on Codex and Pi; recorded-gate-lifecycle on Opus;
+    default-headless on Pi; and owned-conflict on Sonnet, Opus, and Pi
+    (7 cells).
 - TODOs are honest only when their owners remain active.
 - The source classifier provides durable value without another scenario table.
 - The mutable owner join belongs at sprint close and release preparation.
