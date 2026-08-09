@@ -8,15 +8,20 @@ verdict:
 score: 0.85
 worktree:
 issue:
-sprint: live-test-truth
+sprint:
 group: common-evidence
-sprint-readiness: defer
+sprint-readiness: superseded
 id: rmz8te1nt2a2akrkjfhaa37p
+archived: 2026-08-09T15:00:00Z
 ---
 
 ## Problem
 
 Required common journeys are selected through suite entry points but currently skip for one or more hosts: gate-guardrail, recorded-gate-lifecycle, rejection-flow, smallest-sufficient-mechanism, and keep-moving-posture. Their underlying product defects are owned by existing tasks, including work outside this sprint; this task owns only exact-tip restoration after those dependencies land.
+
+This broad restoration task is superseded. Exact target-scoped owners in
+`test-behavior-completeness` now own each remaining product repair and TODO
+removal. The archived body remains as historical design context.
 
 ## Acceptance criteria
 
@@ -34,4 +39,3 @@ Verified by: a diff limited to quarantine removal, runner integration, and regis
 - Remain deferred until every upstream product dependency is terminal or explicitly transferred.
 - Ideation records the exact dependency-to-skip map without investigating another sprint member beyond its public dependency state.
 - Validation requires clean, non-skipped live results rather than selector presence.
-
