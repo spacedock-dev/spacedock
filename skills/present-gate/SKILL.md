@@ -26,15 +26,8 @@ Gate review: {entity title} — {stage}
 Recommend {approve | reject: {one-line reason}}.
 Reviewed snapshot: {bound Briefing identity and compact digest prefix}
 
-Stage evidence ({stage}):
-{For backlog: Outcome: {seed outcome}. Scope boundary: {included work and explicit cuts}. Proof readiness: {proposed observable proof and known unknowns}.}
-{For ideation: Chosen direction: {selected approach}. Risk evidence: {riskiest-mechanism spike result or recorded no-spike basis}. Expected surface: {files, LOC, tolerance, and semantic-change declaration}. Acceptance proofs: {each AC and its proposed observable proof}.}
-{For validation, cite ## Stage Report in {entity_file_path} lines {start}-{end}, then render only non-empty classes:
-- DONE: {≤10-word gist of item}
-- SKIPPED: {gist} — {one-line reason}
-- FAILED: {gist} — {one-line reason}
-Assessment: {N} done, {N} skipped, {N} failed.
-Checks executed: {checks actually run and their outcomes}. Acceptance evidence: {actual evidence by AC}. Delivery readiness: {ready or concrete blocker}.}
+Evidence for {stage}:
+{rows required by the workflow's Gate content, or the bounded fallback}
 
 {If reviewer findings exist, render them under `Reviewer findings` in the active workflow's declared category order and exact labels. Preserve each recorded category and omit empty categories. If the workflow declares none, use one neutral `Findings:` list. If no reviewer ran, omit this whole block.}
 
@@ -43,16 +36,9 @@ Decision: {one-line decision prompt naming what approval/rejection does in concr
 
 ### Captain-facing assembly rules
 
-The template is the floor, not the ceiling. The FO MUST hold to the following discipline when filling it:
-
-1. **Lede first, decision last, nothing between them buried.** The title, recommendation, reviewed snapshot, and final decision line are the common spine. Everything else is supporting evidence; keep the vote visible without repeating the recommendation.
-2. **Select evidence by gate stage.** Backlog shows the seed outcome, scope boundary, and proof readiness; it does not claim a Stage Report, executed check, or delivery. Ideation shows the chosen direction, risk evidence, expected surface, semantic-change declaration, and each AC's proposed observable proof; it does not invent execution results. Validation shows actual report results, executed checks, AC evidence, and delivery readiness. For ideation and validation, state the selected direction (the approach or PASS/REJECTED) in the stage evidence rather than making the captain infer it.
-3. **Omit unavailable and empty evidence.** Backlog and ideation have no validation Assessment or result classes. At validation, keep the numeric `Assessment:` totals, but render a DONE, SKIPPED, or FAILED heading and its bullets only when that class has at least one item. Never substitute `None`, `N/A`, a zero-result row, or an empty findings block. Cite the Stage Report and paraphrase each rendered item as a verb-noun gist (≤10 words, no new facts); append the one-line reason to SKIPPED/FAILED. If a decision-relevant reviewer finding directly questions an item's evidence, inline that evidence paragraph under the finding. Otherwise no Stage Report content appears.
-4. **Reviewer findings preserve workflow classification.** Render findings in the active workflow's declared category order and exact labels, preserving each recorded category and dropping empty categories. If the workflow declares none, use a neutral `Findings:` list. Presentation never classifies.
-5. **Recommendation appears exactly once.** The `Recommend {approve | reject: {reason}}` line is the only place the FO states its verdict. Do not duplicate it elsewhere or re-explain it in an enumerated list.
-6. **Bounce-back recommendations name the concrete asks.** If recommending reject, the reason line names the specific concerns by content, not by reference. Bad: "address the reviewer's five concrete notes." Good: "tighten AC-2 substring assertion; correct the file X claim; cut the format-pedantry aside."
-7. **No format-pedantry asides.** Format drift (`1./2./3./4.` instead of `**AC-N**`, missing trailing period) is not load-bearing for a gate decision. Surface it only when the active workflow's policy makes it gate-blocking, under that policy's exact category label.
-8. **One sentence of worktree heads-up when approval changes worktree state.** When approving opens or closes a worktree, the Decision line names it: "approve to enter implementation in worktree `.worktrees/{worker_key}-{slug}`". One sentence, not a section.
-9. **Target length: 15-25 lines of FO-authored prose.** The full gate message should fit in 15-25 lines. If it exceeds 25, the FO is over-narrating; cut.
-10. **FO-authored prose speaks the workflow's declared label.** Where the gate-summary prose the FO writes — stage evidence or the `Decision:` line — names the kind of thing under review, use the workflow's declared `entity-label` / `entity-label-plural` from `«state.boot»()`, not the generic "entity". A `ticket` workflow's Decision line says "approve to enter implementation on this ticket"; an `experiment` workflow says "experiment". The `{entity title}` placeholder and structural headings stay generic — only the FO-authored noun localizes.
-11. **Surface verification state as evidence, not as a label.** When the gate turns on checks that ran outside this presentation (CI lanes, a validation report), hold them to the shared core's self-evidence bar (`## Working Principles`): state which relevant checks actually ran and passed, and read any failure from this run's evidence (the failing test/assertion), never from an inherited "known flake" label. The captain votes on which checks are green and why a red is red.
+- Fetch the current stage with `${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir {workflow_dir} --stage {stage}` before selecting evidence. Never infer content from the stage name.
+- A `Gate content` instruction in that stage definition is authoritative. Without one, use only its declared Inputs, Outputs, Good/Bad criteria, and the workflow-declared advance or feedback transition. Do not add facts that those sources do not support.
+- Generic hints apply only inside that fallback: before a direction is selected, show what is proposed and what proof the decision needs; after selection, show the direction, risks, surface, and proposed proof; after execution, show actual results, checks, acceptance evidence, and readiness. The declared stage definition decides which hint fits.
+- Omit missing evidence, empty result classes, empty finding categories, zero-result rows, and placeholders such as `None` or `N/A`. Preserve the workflow's finding labels and order; presentation does not classify findings.
+- Name the task and stage, Briefing identity and digest, one recommendation, and one concrete decision effect. Keep `${SPACEDOCK_BIN:-spacedock} gate record --decision` as the sole recorder; presentation adds no authority.
+- Keep the decision visible and the review concise. Use the workflow's declared entity label in authored prose, name concrete reasons for rejection, and mention a worktree only when the decision changes worktree state.

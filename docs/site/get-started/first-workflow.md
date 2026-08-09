@@ -65,9 +65,8 @@ item reaches the `review` gate, you get a gate review:
 
 ```text
 Capability/change: token-bucket limiter at the API middleware layer.
-Test and evidence: both validation checks passed; the acceptance evidence is ready for delivery.
+Test and evidence: the sixth failed login returns 429, and a successful login resets the counter. No skipped or failed result groups are shown because both are empty.
 Reviewed snapshot: Briefing `...` at compact digest `sha256:1a2b3c4d…`.
-Findings: none.
 Recommendation: approve the implementation.
 Decision ask: approve to close, revise with feedback, or hold at review.
 ```

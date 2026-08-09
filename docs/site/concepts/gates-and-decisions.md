@@ -13,7 +13,7 @@ Until then, the gates are yours.
 
 ## What you see at a gate
 
-A chat gate review has one concise evidence spine. Its evidence matches the gate: backlog shows the seed outcome, boundary, and proof readiness; ideation shows the chosen direction, risk evidence, expected surface, and acceptance proof; validation shows actual results, checks, acceptance evidence, and delivery readiness. Empty result classes are omitted. The first officer emits the review before recording either your decision or a decision made under delegated conn:
+Before it asks for a decision, the first officer reads the current stage's `Gate content` instruction and shows the evidence that instruction requests. If the stage has no instruction, it uses only that stage's declared inputs, outputs, good and bad criteria, and transition. It omits missing evidence and empty result or finding groups. The first officer shows the review before recording either your decision or a decision made under delegated conn:
 
 ```text
 Capability/change: replace sleep-based waits with event polling.
