@@ -14,6 +14,18 @@ issue:
 pr:
 mod-block:
 id: 0aqnm6v8ajns6cpsknxn9wf2
+gates:
+    version: 1
+    records:
+        - id: gate:0aqnm6v8ajns6cpsknxn9wf2:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:0aqnm6v8ajns6cpsknxn9wf2-backlog-1
+              briefing:
+                id: briefing:0aqnm6v8ajns6cpsknxn9wf2:backlog:attempt-1:revision-1
+                digest: sha256:1ac393459063bbb598d4631c0ddda9acfdf0de48f2535f2b600fe53bd63263c8
+                request-digest: sha256:cb99842a502664750d83cd144f580afc457ef1d73fd628ddb9540acc2c66ee06
+                room-ref: ./restore-optional-manual-pi-common-live-ci/review/backlog/briefing-1
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.

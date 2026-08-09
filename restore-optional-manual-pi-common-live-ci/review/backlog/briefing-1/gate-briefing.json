@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0aqnm6v8ajns6cpsknxn9wf2:backlog:attempt-1:revision-1",
+  "question": "Approve this task for ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:0aqnm6v8ajns6cpsknxn9wf2:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bf592d776227405728cefe709366c9091dd8a55e/restore-optional-manual-pi-common-live-ci.md",
+      "rev": "sha256:ced352a317f8945a7ab4bd3e4813bf4012c57a6aac0c2b0668f0deb4c2ad1b68",
+      "mediaType": "text/markdown",
+      "summary": "Restore an optional manual Pi-only CI cadence that uses the stored OpenAI key, preserves retained evidence, and does not affect pull-request requirements."
+    }
+  ]
+}
