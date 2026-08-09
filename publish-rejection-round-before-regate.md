@@ -38,55 +38,61 @@ gates:
                 state: consumed
 ---
 
-Restore the common rejection journey on Sonnet, Opus, Codex, and Pi by making the First Officer publish the rejected validation round before correction and re-gating.
+Restore durable recorder publication for supported rejection-flow failures. Keep the complete rejected round visible before correction re-gating.
 
 ## Problem
 
-The `rejection-flow` journey needs durable evidence of validation/1 before the
-First Officer re-runs the reviewer and prepares the next gate. The existing
-recorder works, but live conduct does not always call it at that boundary.
+The rejection flow must publish validation/1 after the first rejection. Operators
+must see the complete rejected round before the corrected candidate enters
+re-gating. The existing recorder supports this state. Live conduct can call it
+at the wrong point.
 
-The archived validation record shows the defect. At `f2bd91044`, the Codex
-focused run failed at 390.47 seconds. The Sonnet full run passed once. The Opus
-full run failed at 610.16 seconds. Repeated focused runs were FAIL/PASS/PASS
-for Sonnet and FAIL/FAIL/FAIL for Opus. The report names the missing
-`gate record --round validation/1` call as the common harm.
+Pi is the current supported recorder-publication case. Run `31016570689`, job
+`92342373497`, and artifact `8935708302` show an exact recorder result with
+`entries=2`. The worker log and Cycle line came later. No second recorder call
+published the complete four-entry log. This evidence supports the stable code
+`rejection-round-incomplete` at the durable assertion boundary.
 
-Pi gives a more precise failure. Run `31016570689`, job `92342373497`, and
-artifact `8935708302` show one successful recorder result with `entries=2`.
-The worker log and Cycle line were added later. No second recorder call
-published the complete four-entry log.
+Archived Sonnet and Opus results do not provide exact stable recorder evidence.
+Sonnet passed one full run and had FAIL/PASS/PASS focused results. Opus had
+FAIL/FAIL/FAIL focused results. Do not bind either target to this task until an
+exact live artifact shows the recorder failure code and a repeat shows the same
+code.
 
-Codex gives a lifecycle failure. Run `31032033236`, job `92395174900`, and
-artifact `8941373026` reached one implementation report and one REJECTED
-validation report. The First Officer prepared an ordinary gate and stopped.
-It did not route rework, publish the round, or run validation/2.
+Codex does not reach the recorder boundary. Run `31032033236`, job
+`92395174900`, and artifact `8941373026` stopped after one implementation report
+and one REJECTED validation report. The separate task `Continue Codex rejection
+after the first validation` (`dvddbpsf4tdt3yjw1yjyp14k`) owns correction,
+validation/2, and the fresh final gate. It is the dependency seam for Codex
+coverage. This task does not bind Codex.
 
-The source keeps four target-scoped TODOs for Sonnet, Opus, Codex, and Pi. The
-TODOs name this task, not archived `zbc`. Strict XFAIL evidence must classify
-each target before a product change.
+The source currently names this task for Sonnet, Opus, Codex, and Pi. Recarve
+that source. Admit Pi now. Admit Sonnet or Opus only after exact stable recorder
+evidence. Use the Codex task for Codex continuation. Do not use archived `zbc`.
 
 ## Value
 
-After a rejection, operators can inspect one complete correction history. The
-retained round contains the reviewer and worker entries. The next reviewer and
-ordinary gate then use the corrected candidate.
+After the first rejection, operators can see one complete rejected round before
+correction re-gating starts. The retained round contains reviewer and worker
+entries. The next reviewer and ordinary gate then use the corrected candidate.
 
-The end value is measurable. `TestLiveCommonRejectionFlow` must leave two
-implementation reports, two validation reports, a retained validation/1 round
-with four entries, and a fresh open validation gate. Its command log must show
-a successful `gate record --round validation/1` call. A missing call, an
-`entries=2` round, or one-cycle state must fail the journey.
+The end value is measurable for each admitted target. `TestLiveCommonRejectionFlow`
+must leave two implementation reports, two validation reports, a retained
+validation/1 round with four entries, and a fresh open validation gate. Its
+command log must show one successful exact `gate record --round validation/1`
+call. A missing call, an `entries=2` result, or one-cycle state must fail the
+journey.
 
 ## Proposed approach
 
-Use one recorder-reuse change. Keep the current neutral `gate record --round`
-command and the current rejection routing. Move its explicit invocation to the
-first point where the complete reviewer and worker log exists.
+Use one recorder-reuse change for the admitted target. Keep the current neutral
+`gate record --round` command and the current rejection routing. Move its
+explicit invocation to the first point where the complete reviewer and worker
+log exists.
 
 1. Keep the target lookup, authorized package, budget probe, and worker reuse
    rules unchanged.
-2. Wait for the correction worker's completion and its worker entries. Do not
+2. Wait for correction worker completion and its worker entries. Do not
    append the workflow-owned Cycle line before those entries exist.
 3. Append the authorized Cycle line. Then invoke the existing command once:
 
@@ -102,30 +108,38 @@ first point where the complete reviewer and worker log exists.
 
 This reuses the existing recorder, immutable room, pointer, command log, and
 durable assertion. It adds no recorder, field, freshness rule, or authority
-source. The complete log cannot be published before the worker entries exist;
-the proposed boundary is therefore the earliest valid publication point and
-still precedes reviewer re-run and final gate preparation.
+source. The complete log cannot exist before the worker entries exist. This
+boundary is the earliest valid publication point for a complete round. It keeps
+the rejected round visible before correction re-gating.
 
-### XFAIL-first dependency
+### XFAIL-first dependency and target seam
 
-Task `ts7gq0mr9s3chx2w4wppd1kt` must land before this product change. Run the
-real `TestLiveCommonRejectionFlow` cell for all four targets. Bind an XFAIL only
-when the journey runs and returns one stable semantic code at the durable
-assertion boundary.
+Task `ts7gq0mr9s3chx2w4wppd1kt`, `Run known live behavior gaps as strict XFAIL`,
+must land before this product change. Run the real
+`TestLiveCommonRejectionFlow` cell at the durable assertion boundary.
+
+- Pi has current exact evidence for `rejection-round-incomplete`. Bind Pi as
+  XFAIL after the strict runner is available.
+- Sonnet has no stable recorder code. Run an exact artifact and a repeat before
+  adding Sonnet to this task.
+- Opus has no stable recorder code. Run an exact artifact and a repeat before
+  adding Opus to this task.
+- Codex has `rejection-flow-not-completed` evidence. The separate Codex task
+  owns that code and the continuation journey. Do not bind it here.
+
+The recorder codes have narrow meanings:
 
 - `rejection-round-not-published` means that no successful exact recorder call
   was observed.
 - `rejection-round-incomplete` means that the exact call succeeded but the
   retained round is not the complete four-entry round.
-- `rejection-flow-not-completed` means that the run stopped before the
-  rejection flow reached its recorder boundary. Treat this as a different
-  failure, not as recorder XFAIL evidence.
 
-Infrastructure, authentication, timeout, fixture, and other semantic failures
-remain FAIL. A target with unstable semantic outcomes remains FAIL until a new
-disposition exists. Keep TODO only when the journey cannot run. After the repair,
-XPASS must remove that target's XFAIL binding; the target has passing evidence
-only when the unchanged journey passes.
+`rejection-flow-not-completed` does not belong to this recorder task. It means
+that the journey stopped before the recorder boundary. Infrastructure,
+authentication, timeout, fixture, and other semantic failures remain FAIL. Keep
+TODO only when the journey cannot run. A target with unstable semantic outcomes
+remains unbound until a new disposition exists. After the repair, XPASS must
+remove each target XFAIL binding. PASS requires the unchanged journey.
 
 ## Out of scope
 
@@ -133,11 +147,13 @@ only when the unchanged journey passes.
 - Do not add another recorder, flag, freshness protocol, or test harness.
 - Do not weaken the durable rejection-flow assertion or accept a final-message claim.
 - Do not change gate storage, round formats, worker reuse, or reviewer identity.
-- Do not create a separate Opus task. Opus is the pre-release lane.
+- Do not own Codex continuation. The separate Codex task owns its correction,
+  validation/2, and final-gate value.
+- Do not bind Sonnet or Opus without exact stable recorder evidence.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - A supported First Officer publishes one complete rejected validation round before reviewer re-run and final gate preparation.**
+**AC-1 (VALUE) - An admitted target publishes one complete rejected validation round before correction re-gating.**
 
 Verified by: the unchanged `TestLiveCommonRejectionFlow` command log contains
 one successful exact `gate record --round validation/1` result, the retained
@@ -145,18 +161,19 @@ round validates with four entries, and the durable two-cycle assertion passes.
 The no-invocation control, an `entries=2` result, and a final gate without the
 retained round each fail.
 
-**AC-2 (VALUE) - Each executable target has honest coverage state.**
+**AC-2 (VALUE) - Recorder-failure coverage has honest target ownership.**
 
-Verified by: strict XFAIL runs cover Claude Sonnet, Claude Opus, Codex, and Pi.
-Each target reports XFAIL only for its bound stable semantic code, XPASS when
-the repair removes that code, or PASS after the unchanged journey passes. A
-different failure remains FAIL. No target entry names archived `zbc`.
+Verified by: Pi reports XFAIL only for `rejection-round-incomplete` after its
+exact evidence. Sonnet and Opus remain unbound until an exact repeat confirms a
+stable recorder code. Codex has no binding in this task. The separate task
+`dvddbpsf4tdt3yjw1yjyp14k` owns `rejection-flow-not-completed` and the complete
+Codex continuation.
 
 **AC-3 - The change reuses the current rejection lifecycle and recorder.**
 
-Verified by: the final diff changes the feedback-flow ordering and its mirrored
-process wording only. It adds no gate field, recorder command, flag, freshness
-schema, parallel harness, or new authority source.
+Verified by: the final diff changes the feedback-flow ordering, mirrored process
+wording, and admitted target binding only. It adds no gate field, recorder
+command, flag, freshness schema, parallel harness, or new authority source.
 
 **AC-4 - Workflow-owned policy remains separate from recorder bytes.**
 
@@ -166,8 +183,8 @@ in the round room. A recorder edit that rewrites the Cycle line fails the test.
 
 ## Expected surface and semantic budget
 
-Baseline: **4 existing files, about 11 gross insertions and 10 deletions,
-for a net change of about 1 line; tolerance is ±1 file and ±12 net lines.**
+Baseline: **4 existing files, about 12 gross insertions and 10 deletions, for a
+net change of about 2 lines. Tolerance is ±1 file and ±12 net lines.**
 
 - `skills/feedback-rejection-flow/SKILL.md`: about 7 insertions and 5
   deletions. Move the existing command to the complete-log checkpoint and make
@@ -176,25 +193,28 @@ for a net change of about 1 line; tolerance is ±1 file and ±12 net lines.**
   recorder runs before reviewer re-run and next-gate preparation.
 - `skills/commission/references/templates/development.md`: about 2 insertions
   and 2 deletions. Keep new development workflows aligned with the process doc.
-- `internal/ensigncycle/shared_live_runner_test.go`: transient XFAIL bindings
-  are owned by `ts7g`; remove each repaired binding on XPASS. Count at most 4
-  binding-line replacements in gross work and 4 removals in the final diff.
+- `internal/ensigncycle/shared_live_runner_test.go`: replace the current
+  rejection-flow target binding with the Pi XFAIL binding after `ts7g` lands.
+  Do not add Codex, Sonnet, or Opus bindings without their evidence gate.
 
-The estimate excludes the strict XFAIL runner itself. That dependency owns its
-result type, reconciliation, and metrics changes. This task only supplies the
-four target bindings and removes them after XPASS.
+The estimate excludes the strict XFAIL runner and the separate Codex task. The
+XFAIL task owns its result type, reconciliation, and metrics changes. The Codex
+task owns continuation after the recorder boundary. This task owns only the
+recorder publication order and its admitted target binding.
 
 Declared semantic changes:
 
-- **Command grammar:** none. The existing `gate record --round` invocation is
-  reused without a new flag or output requirement.
-- **Stored formats:** none. The existing review-round pointer and canonical
-  two-file room remain unchanged.
-- **Authority:** none. The existing First Officer and neutral recorder retain
-  their writers and authority.
-- **Runtime behavior:** the feedback flow must publish one complete round after
-  worker entries and before reviewer re-run and final gate preparation.
-- **Documentation:** process wording states the same observable order.
+- **Command grammar:** none. Reuse the existing `gate record --round`
+  invocation without a new flag or output requirement.
+- **Stored formats:** none. Keep the existing review-round pointer and
+  canonical two-file room.
+- **Authority:** none. Keep the existing First Officer and neutral recorder
+  writers and authority.
+- **Runtime behavior:** publish one complete round after worker entries and
+  before reviewer re-run and final gate preparation.
+- **Coverage:** classify Pi as the current recorder-publication lane. Admit
+  Sonnet and Opus only after exact stable evidence. Keep Codex in its own task.
+- **Documentation:** state the same observable order and ownership seam.
 
 ## Test plan
 
@@ -208,37 +228,42 @@ It passed in 1.592 seconds. The durable test passed the four-entry recorder,
 preserved status and lifecycle sentinels, and failed its inverted no-invocation
 control. The extractor test passed wrong entity, round, suffix, and file
 controls, and rejected missing or failed results. This proves the existing
-recorder path before any repair selection. No binary extension is indicated by
-this spike.
+recorder path before repair selection. No binary extension is indicated by this
+spike.
 
-After `ts7gq0mr9s3chx2w4wppd1kt` lands, build the current binary and run the
-focused cell with each supported target:
+After `ts7gq0mr9s3chx2w4wppd1kt` lands, build the current binary and run the Pi
+focused cell:
+
+```bash
+SPACEDOCK_LIVE_RUNTIME=pi \
+  go test -tags live -count=1 -timeout 20m -run '^TestLiveCommonRejectionFlow$' ./internal/ensigncycle -v
+```
+
+Run the Sonnet and Opus cells only as evidence gates for later admission:
 
 ```bash
 SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=sonnet \
   go test -tags live -count=1 -timeout 20m -run '^TestLiveCommonRejectionFlow$' ./internal/ensigncycle -v
 SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=claude-opus-4-8 \
   go test -tags live -count=1 -timeout 20m -run '^TestLiveCommonRejectionFlow$' ./internal/ensigncycle -v
-SPACEDOCK_LIVE_RUNTIME=codex \
-  go test -tags live -count=1 -timeout 20m -run '^TestLiveCommonRejectionFlow$' ./internal/ensigncycle -v
-SPACEDOCK_LIVE_RUNTIME=pi \
-  go test -tags live -count=1 -timeout 20m -run '^TestLiveCommonRejectionFlow$' ./internal/ensigncycle -v
 ```
 
-Record the target, candidate SHA, duration, result, and stable semantic code
-from each real artifact. Keep TODO for an unavailable target. Convert only a
-stable semantic failure to XFAIL. Do not classify a skipped, timed-out, or
-unrelated failure as XFAIL.
+Record each target, candidate SHA, duration, run, job, artifact, result, and
+semantic code. Pi must reproduce `rejection-round-incomplete`. Sonnet or Opus
+can join only when the exact recorder command, durable code, and repeat match.
+Do not run Codex as part of this task. The separate Codex task owns its live
+continuation and `rejection-flow-not-completed` seam.
 
-Implement the one skill ordering change and the two mirrored process wording
-changes. Re-run the focused offline recorder tests. Then run each XFAIL cell
-again. An XPASS removes its binding. A PASS removes its TODO. A different FAIL
-stops the repair and requires a new disposition.
+Implement the one skill ordering change, the two mirrored process wording
+changes, and the admitted Pi binding. Re-run the focused offline recorder tests.
+Then run the Pi XFAIL cell again. An XPASS removes the Pi binding. A PASS removes
+the TODO or XFAIL state. A different FAIL stops the repair and requires a new
+disposition.
 
 Finally run the unchanged full and race suites, the live registry reconciliation,
 and `gofmt -w ./cmd ./internal`. The final proof must include the complete
 round, two-cycle durable state, fresh final gate, one successful recorder call,
-and clean target coverage state.
+and honest target coverage.
 
 ## Proposed documentation diff
 
@@ -247,7 +272,7 @@ and clean target coverage state.
 +++ b/skills/feedback-rejection-flow/SKILL.md
 @@
 -3. If the workflow declares a `### Feedback Cycles` correction-round projection, the First Officer appends its authorized line directly.
-+3. Wait for the correction worker's complete entries. Then append the authorized `### Feedback Cycles` line.
++3. Wait for complete correction worker entries. Then append the authorized `### Feedback Cycles` line.
 @@
 -7. Re-enter the normal gate flow with the updated result. After the reviewer log and any workflow-owned Cycle line are complete, invoke the neutral `${SPACEDOCK_BIN:-spacedock} gate record --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl`.
 +6. Invoke the existing `${SPACEDOCK_BIN:-spacedock} gate record --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl` once. Require its complete round result before reviewer re-run or gate preparation.
@@ -262,17 +287,22 @@ and clean target coverage state.
 @@
 -After reviewer and worker entries and FO consultation, the First Officer appends the workflow-defined Cycle line directly from the authorized package, then invokes `${SPACEDOCK_BIN:-spacedock} gate record --round` with the canonical Briefing/log.
 +After reviewer and worker entries and FO consultation, the First Officer appends the workflow-defined Cycle line directly from the authorized package, then invokes `${SPACEDOCK_BIN:-spacedock} gate record --round` with the canonical Briefing/log before reviewer re-run or next-gate preparation.
+--- a/internal/ensigncycle/shared_live_runner_test.go
++++ b/internal/ensigncycle/shared_live_runner_test.go
+@@
+-liveJourney(... []liveJourneyTODO{... Sonnet ..., ... Opus ..., ... Codex ..., ... Pi ...})
++liveJourney(... []liveJourneyGap{liveXFail("pi", "zhcb4bcz1qgcn7ajx2ctxpxk", "rejection-round-incomplete")})
 ```
 
 ## Stage Report: ideation
 
 - DONE: Exercise the rejection-round recorder path before selecting the repair.
   `go test ./internal/ensigncycle -run 'TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl|TestRejectionFlowRoundInvocationExtractors' -count=1 -v` passed in 1.592 seconds. It proved the four-entry recorder, lifecycle preservation, exact invocation extraction, and no-invocation control.
-- DONE: Define one recorder-reuse change with XFAIL-first dependencies for all executable targets.
-  The plan moves the existing `gate record --round` call to the complete-log checkpoint before reviewer re-run and next-gate preparation. It requires `ts7gq0mr9s3chx2w4wppd1kt` first and defines target-scoped stable codes for Sonnet, Opus, Codex, and Pi.
-- DONE: Give gross and net line estimates with exact runtime evidence.
-  The plan estimates 4 existing files, about 11 gross insertions and 10 deletions, for a net change of about 1 line. It records archived Codex, Sonnet, Opus, and Pi run evidence with run, job, artifact, duration, and failure shape.
+- DONE: Fold staff finding M2 into a stable recorder-publication scope.
+  Pi is the current admitted lane with run `31016570689`, job `92342373497`, artifact `8935708302`, and `entries=2` evidence for `rejection-round-incomplete`. Sonnet and Opus require an exact stable recorder result and a matching repeat. Codex does not reach the recorder boundary. Task `Continue Codex rejection after the first validation` (`dvddbpsf4tdt3yjw1yjyp14k`) owns its continuation and `rejection-flow-not-completed` seam.
+- DONE: Define one recorder-reuse change and give gross and net line estimates.
+  The plan moves the existing recorder call to the complete-log checkpoint before reviewer re-run and next-gate preparation. It estimates 4 existing files, about 12 gross insertions and 10 deletions, for a net change of about 2 lines. It records the archived Sonnet, Opus, and Codex evidence without binding those outcomes to this task.
 
 ### Summary
 
-Ideation selected one small lifecycle-order change that reuses the existing recorder and keeps gate and round formats unchanged. The recorder spike passed before repair selection, and strict XFAIL classification now gates every supported runtime target before product work.
+Ideation keeps the end-user value: the complete rejected round is visible before correction re-gating. It limits this task to stable recorder-publication failures, admits Pi from current evidence, gates Sonnet and Opus on exact repeatable evidence, and assigns Codex continuation to its separate owner.
