@@ -332,3 +332,50 @@ The correction is inside the authorized boundary and uses the existing record fo
 ### Summary
 
 The focused proof now calls the same Pi driver seam as the common journeys. It fails on the original no-op and passes on the repaired candidate. The full candidate changes ten approved files and adds 299 net lines.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Re-review exact candidate `7f5f79aadb90b30e72eb243fb91732a4cf6063a7` and verify the correction boundary.
+  The correction changes the same two approved files and adds 55 net lines.
+  The producer still uses `journeymetrics.BuildRecord` and `journeymetrics.EmitRecord`.
+- DONE: Reproduce the focused Pi driver proof and the detached no-op failure.
+  The exact seed passed through `piSharedLiveDriver.emitMetrics`.
+  The detached no-op failed with `Pi journey metric files = 0, want 1`.
+- DONE: Run the required local and offline checks without changing candidate bytes.
+  `gofmt`, `go test ./...`, and `go test ./... -race` passed.
+  Registry reconciliation and the mutable owner check passed for the same 17 journeys.
+  Local Pi stopped before execution because the OpenAI API key was unavailable.
+- DONE: AC-1 (VALUE) - A maintainer can obtain retained Pi CI evidence on demand.
+  Exact run `31338875783` passed on serial attempt 2 with Pi Luna/max.
+  Artifact `9045701917` has 12 non-empty schema-v2 records for all 12 completed executions.
+  Each record names Pi, Luna/max, the scenario, a positive duration, and run `31338875783`.
+- SKIPPED: AC-2 - Pi does not become a pull-request merge requirement.
+  The parsed pull-request conditions exclude Pi. No exact pull-request run exists before the normal merge boundary.
+  The Captain permits validation approval with AC-2 pending. This approval does not satisfy AC-2.
+  Before merge, Sonnet and Codex must pass. Pi must skip with zero steps and no approval.
+- DONE: AC-3 - A Pi-only dispatch spends no Claude or Codex lane.
+  Exact run `31338875783` used only `CI-E2E-PI` after offline tests.
+  Claude and Codex skipped with zero steps. No unrelated environment requested approval.
+- DONE: AC-4 (VALUE) - Each manual release cadence spends only its selected runtime.
+  Exact Opus run `31340713337` requested only `CI-E2E-OPUS` after offline tests.
+  Its Pi and Codex jobs skipped with zero steps. Exact Pi evidence proves the opposite exclusive route.
+- DONE: AC-5 - The desired journey registry stays unchanged.
+  Registry reconciliation and active-owner checks passed for all 17 registered journeys.
+- DONE: Inspect exact artifacts, job records, deployment records, and excluded job shapes.
+  The Pi artifact JSONL, session files, model files, and metrics files parsed successfully.
+  The Opus artifact `9046295047` retained its failed scenario streams and final messages.
+- DONE: Record the first Pi attempt without assigning an unsupported candidate repair.
+  Attempt 1 failed before metrics emission. The same recorded-gate journey passed at baseline `e838fba`.
+  The authorized serial rerun passed. The First Officer declined a candidate change.
+- DONE: Record two Material sprint findings from the exact Opus run.
+  `default-headless-gate-stop` crossed its no-authority boundary before validation.
+  `rejection-flow` did not invoke `gate record --round validation/1`.
+  The second failure also occurred in run `31321450831`.
+  These are existing product gaps outside this task. The First Officer declined a task change and rerun.
+- DONE: Report the validation recommendation from current exact-candidate evidence.
+  Recommendation: PASSED. AC-1, AC-3, AC-4, and AC-5 passed. Structural pull-request exclusion passed.
+  AC-2 remains pending at the normal merge boundary under the Captain's ruling.
+
+### Summary
+
+The exact Pi cadence retained complete metrics and used only its selected runtime. The exact Opus cadence also proved runtime exclusion. Validation recommends PASSED, with AC-2 pending at merge.
