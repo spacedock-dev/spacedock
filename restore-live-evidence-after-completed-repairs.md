@@ -26,6 +26,17 @@ gates:
                 digest: sha256:df59dc0041b492b9dd552cc7d2e574b73036ebd23b4b924735f9243b2bbb91b9
                 request-digest: sha256:497346c14775e33d34376b86d620b664986f817b81386f7169752ef061d2655b
                 room-ref: ./restore-live-evidence-after-completed-repairs/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xp6c9qfe7y4wwp46enc3f85n:backlog:1
+                briefing: briefing:xp6c9qfe7y4wwp46enc3f85n:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T18:33:22.408925Z"
+                decision: approve
+                reason: The Captain authorized ideation dispatch; the task is a late evidence-only capstone with exact target proof.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Three live TODO groups still name completed and archived repair tasks. The code
