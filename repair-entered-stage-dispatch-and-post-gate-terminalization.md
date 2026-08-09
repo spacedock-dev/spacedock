@@ -34,6 +34,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:9adv48yhye5s2vkhwd7ge52d:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:9adv48yhye5s2vkhwd7ge52d-ideation-1
+              briefing:
+                id: briefing:9adv48yhye5s2vkhwd7ge52d:ideation:attempt-1:revision-1
+                digest: sha256:0fba23bdbbd09bfb8817b41884296317aa97f047e43ec6d86fc26e4f5e17894c
+                request-digest: sha256:637a687f6fc691c5c7c21edacfef31297b9f38758808d3e06855f062f5843412
+                room-ref: ./repair-entered-stage-dispatch-and-post-gate-terminalization/review/ideation/briefing-1
 sprint-readiness: ready
 group: common-evidence
 ---
