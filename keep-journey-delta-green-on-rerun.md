@@ -3,7 +3,7 @@ id: qz0ap96nt5k93tgbsphq9ahy
 title: Keep journey-delta reporting green across failed-job reruns
 status: ideation
 source: PR #639 Runtime Live E2E attempts 2 and 3 on 2026-08-08.
-started:
+started: 2026-08-09T04:16:06Z
 completed:
 verdict:
 score: 0.75
