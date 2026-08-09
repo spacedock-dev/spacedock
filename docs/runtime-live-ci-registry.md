@@ -323,6 +323,14 @@ live CI lane. Each remains live-tagged only for its stated experiment.
 - **Reason unselected:** Its any-break matrix is an experiment whose negative
   result is expected data, not a failing release assertion.
 
+### `TestLiveCodexWaitMatrixFromShippedAdapter`
+
+- **Purpose:** Characterize Codex wait behavior for active, complete, failed,
+  and absent worker states through the shipped adapter.
+- **Fixture:** `codex/wait-matrix` — four isolated worker-state variants.
+- **Reason unselected:** The four real Codex runs measure host behavior. They do
+  not prove a common user journey or block a release.
+
 ## Source binding convention
 
 Each exported `TestLiveCommon...` declaration carries an immediately adjacent

@@ -9,6 +9,7 @@ import (
 	"testing"
 )
 
+//spacedock:live-experiment id=codex-wait-matrix
 func TestLiveCodexWaitMatrixFromShippedAdapter(t *testing.T) {
 	runner := newCodexLiveRunner(t)
 	head := strings.TrimSpace(git(t, repoRoot(t), "rev-parse", "HEAD"))

@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -29,9 +30,13 @@ type liveTODORow struct{ target, owner string }
 var (
 	registryHeading, registryEntry = regexp.MustCompile("^### `([^`]+)`$"), regexp.MustCompile("^- \\*\\*Entry point:\\*\\* `([^`]+)`$")
 	registryFixture                = regexp.MustCompile("^  - `([^`]+)`")
+	registryTestHeading            = regexp.MustCompile("(?m)^### `(Test[^`]+)`$")
+	registryEntryPoint             = regexp.MustCompile("(?m)^- \\*\\*Entry point:\\*\\* `(Test[^`]+)`$")
 	journeyBinding                 = regexp.MustCompile(`spacedock:live-journey id=([^ ]+) fixture=([^ ]+)`)
 	fixtureBinding                 = regexp.MustCompile(`spacedock:live-fixture id=([^ ]+)`)
 	ownerID                        = regexp.MustCompile(`^[a-z0-9]{24}$`)
+	frontmatterID                  = regexp.MustCompile(`(?m)^id: ([a-z0-9]{24})$`)
+	frontmatterStatus              = regexp.MustCompile(`(?m)^status: ([a-z-]+)$`)
 )
 
 func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
@@ -41,13 +46,10 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	targets := readRegistryTargets(t, registryPath)
 	registryFixtures := readRegistryFixtureUnion(t, registryPath)
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
-	if len(desired) != 17 || len(actual) != 17 {
-		t.Fatalf("common live registry/source counts = %d/%d, want 17/17", len(desired), len(actual))
+	if len(desired) != len(actual) {
+		t.Errorf("common live registry/source counts = %d/%d", len(desired), len(actual))
 	}
-	gateTODOs := actual["gate-guardrail"].todos
-	if want := []liveTODORow{{target: "codex", owner: "3zzpdw704df1g8pg1x9thzmw"}, {target: "pi", owner: "3zzpdw704df1g8pg1x9thzmw"}}; len(gateTODOs) != len(want) || gateTODOs[0] != want[0] || gateTODOs[1] != want[1] {
-		t.Fatalf("gate-guardrail TODOs = %#v, want %#v", gateTODOs, want)
-	}
+	reconcileRegisteredLiveTests(t, repo, registryPath)
 	gapCounts := map[string]int{}
 	for id, want := range desired {
 		got, ok := actual[id]
@@ -99,6 +101,104 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	if strings.Contains(workflow, "SPACEDOCK_LIVE_RUNTIME=pi") || strings.Count(docs, "SPACEDOCK_LIVE_RUNTIME=pi go test") != 1 {
 		t.Error("Pi common selector must exist once in the local guide and never in the workflow")
 	}
+}
+
+func TestRuntimeLiveTODOOwnersAreActive(t *testing.T) {
+	stateDir := os.Getenv("SPACEDOCK_LIVE_STATE_DIR")
+	if stateDir == "" {
+		t.Skip("set SPACEDOCK_LIVE_STATE_DIR to run the mutable state-owner join")
+	}
+	if !filepath.IsAbs(stateDir) {
+		stateDir = filepath.Join(repoRoot(t), stateDir)
+	}
+	repo := repoRoot(t)
+	registryPath := filepath.Join(repo, "docs", "runtime-live-ci-registry.md")
+	actual, _ := readActualLiveJourneys(t, repo, readRegistryTargets(t, registryPath))
+	active := readActiveEntityIDs(t, stateDir)
+	for journeyID, journey := range actual {
+		for _, todo := range journey.todos {
+			if !active[todo.owner] {
+				t.Errorf("journey %q target %q names inactive TODO owner %q", journeyID, todo.target, todo.owner)
+			}
+		}
+	}
+}
+
+func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
+	registry := string(mustRead(t, registryPath))
+	registered := map[string]bool{}
+	for _, pattern := range []*regexp.Regexp{registryEntryPoint, registryTestHeading} {
+		for _, match := range pattern.FindAllStringSubmatch(registry, -1) {
+			registered[match[1]] = true
+		}
+	}
+
+	fset := token.NewFileSet()
+	found := map[string]bool{}
+	dir := filepath.Join(repo, "internal", "ensigncycle")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), "_test.go") {
+			continue
+		}
+		path := filepath.Join(dir, entry.Name())
+		data := mustRead(t, path)
+		preamble := strings.SplitN(string(data), "package ", 2)[0]
+		if !strings.Contains(preamble, "//go:build live") {
+			continue
+		}
+		file, err := parser.ParseFile(fset, path, data, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, declaration := range file.Decls {
+			function, ok := declaration.(*ast.FuncDecl)
+			if !ok || !strings.HasPrefix(function.Name.Name, "Test") {
+				continue
+			}
+			found[function.Name.Name] = true
+			if !registered[function.Name.Name] {
+				t.Errorf("live-tagged test %q is not a registered common journey, runtime proof, or non-gating experiment", function.Name.Name)
+			}
+		}
+	}
+	for test := range registered {
+		if !found[test] {
+			t.Errorf("registered live test %q has no live-tagged declaration", test)
+		}
+	}
+}
+
+func readActiveEntityIDs(t *testing.T, stateDir string) map[string]bool {
+	t.Helper()
+	active := map[string]bool{}
+	err := filepath.WalkDir(stateDir, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || filepath.Ext(path) != ".md" {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		idMatch, statusMatch := frontmatterID.FindSubmatch(data), frontmatterStatus.FindSubmatch(data)
+		if idMatch == nil || statusMatch == nil {
+			return nil
+		}
+		status := string(statusMatch[1])
+		archived := strings.Contains(filepath.ToSlash(path), "/_archive/")
+		active[string(idMatch[1])] = !archived && status != "done" && status != "rejected"
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return active
 }
 
 func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {

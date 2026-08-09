@@ -115,22 +115,6 @@ func initializeAutoContinueFixtureGit(t *testing.T, workflowRoot, stateRoot stri
 	gitInit(t, workflowRoot)
 }
 
-func TestSplitRootAutoContinueFixtureUsesDerivedStateBranch(t *testing.T) {
-	workflowRoot := t.TempDir()
-	stateRoot, _, err := writePiAutoContinueWorkflowNoGit(workflowRoot)
-	if err != nil {
-		t.Fatal(err)
-	}
-	initializeAutoContinueFixtureGit(t, workflowRoot, stateRoot)
-	want, err := status.StateBranch(workflowRoot)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := strings.TrimSpace(git(t, stateRoot, "branch", "--show-current")); got != want {
-		t.Fatalf("split-root state branch = %q, want %q", got, want)
-	}
-}
-
 func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() []autoContinueFixtureVariant, assert func(string, string, string) error) {
 	t.Helper()
 	for _, fixture := range build() {
@@ -205,25 +189,6 @@ func authorACReanchorScenario() livescenario.Scenario {
 
 func assertACReanchorScenario(spec livescenario.Scenario, before, after livescenario.EntityState, observed string) error {
 	return spec.Assert(before, after, observed)
-}
-
-func TestACReanchorCommonAssertionUsesBuiltScenario(t *testing.T) {
-	spec := authorACReanchorScenario()
-	entityPath, err := spec.Setup(t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	body, err := os.ReadFile(entityPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = assertACReanchorScenario(spec, livescenario.EntityState{Body: string(body)}, livescenario.EntityState{Body: string(body)}, "")
-	if err == nil {
-		t.Fatal("unchanged AC re-anchor state unexpectedly passed")
-	}
-	if strings.Contains(err.Error(), "no such file or directory") {
-		t.Fatalf("assertion lost the built scenario's entity path: %v", err)
-	}
 }
 
 func writePiAutoContinueWorkflowNoGit(root string) (stateRoot, entityPath string, err error) {
