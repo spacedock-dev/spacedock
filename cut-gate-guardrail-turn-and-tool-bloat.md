@@ -26,6 +26,17 @@ gates:
                 digest: sha256:bdd851d207fe8f84300b59cbd34359f1cc613df5fee26b869f323db6e63f7956
                 request-digest: sha256:ef783c09a07b51873e1f7c8d3fef81b226bfa69901afc1a652389886a6d7b2d2
                 room-ref: ./cut-gate-guardrail-turn-and-tool-bloat/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5k704rrfk5r75vqv3bwn1yhf:backlog:1
+                briefing: briefing:5k704rrfk5r75vqv3bwn1yhf:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T14:50:42.1944Z"
+                decision: approve
+                reason: Captain directed ideation dispatch; the measured-call classification constrains the smallest safe change.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
