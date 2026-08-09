@@ -208,6 +208,10 @@ Claude common journeys now use Go's built-in test semaphore with a concurrency c
 - Proposed ownership and disposition: mechanism/design reset; preventing Go from releasing a queued parallel test needs control outside the approved semaphore-only scope.
 - Validation recommendation: REJECTED. Candidate commit `25fe7f42e` stayed unchanged pending First Officer and captain direction.
 
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation reviewer; surface 5 files at +22/-17 vs estimate 5 files, 15-30 gross insertions, +3 to +12 net; AC unchanged; Captain authorized a design reset to ideation because Go's semaphore violates AC-2.
+
 ## Stage Report: validation
 
 - DONE: Verify that the five-file diff adds no infrastructure test, simulator, scheduler, or concurrency outside Claude common journeys.
