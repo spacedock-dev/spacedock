@@ -1,6 +1,6 @@
 ---
 title: Restore optional manual Pi common-live CI
-status: ideation
+status: implementation
 source: "Captain correction, 2026-08-09: PR #639 removed pi-live when it removed Pi from pull-request approvals. Restore manual CI Pi evidence without making Pi a merge requirement."
 started: 2026-08-09T15:42:25Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: The direction provides retained Pi Luna/max CI evidence and makes manual Opus and Pi cadences runtime-exclusive, using existing workflow conditions and job-graph tests without changing pull-request requirements.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
