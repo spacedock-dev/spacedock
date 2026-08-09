@@ -1,6 +1,6 @@
 ---
 title: Reject a stale same-minor launcher before First Officer work
-status: backlog
+status: ideation
 source: "Weekly friction audit and Captain direction, 2026-08-09: an installed 0.27 binary passed the minor-version gate but lacked the merged approval surface. Detect the missing command capability before workflow effects."
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: Captain directed ideation dispatch; a pre-boot capability check addresses observed stale-launcher harm.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Stop a First Officer before workflow work when the selected launcher has the correct minor version but lacks a required command surface.
