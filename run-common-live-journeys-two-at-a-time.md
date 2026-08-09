@@ -26,6 +26,17 @@ gates:
                 digest: sha256:da85889f12776fd63a653ff53047fa42a77f2bba3a911f7daf4e688242ae2dbf
                 request-digest: sha256:d57c94fc26cc64f0a8030d97b47088f5998ae038480845b41f3d5e141b3c3026
                 room-ref: ./run-common-live-journeys-two-at-a-time/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:c1nbf39akyh263a4p1ts593m:backlog:1
+                briefing: briefing:c1nbf39akyh263a4p1ts593m:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T05:55:31.272689Z"
+                decision: approve
+                reason: Captain directed dispatch of the narrowed Claude-only concurrency task.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Reduce pull-request wait time by running at most two independent common live journeys concurrently on Claude.
