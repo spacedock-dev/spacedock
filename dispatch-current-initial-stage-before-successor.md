@@ -60,6 +60,52 @@ worker and write a `ready` stage report. The terminal stage must follow that
 report. A wrong target loses the first worker evidence and can make the durable
 journey look complete for the wrong reason.
 
+## End-user value
+
+A workflow operator can see each initial-stage worker run before terminal
+completion. The operator can inspect a ready-stage report and its dispatch
+commit. This evidence prevents a terminal result from hiding skipped work.
+
+The value measure is two ready-stage reports for the two commissioned entities.
+The durable record must also show two terminal archives and no wrong-target
+dispatch. The same result must hold for every executable host target.
+
+## Staff finding M4: owner transfer and landing order
+
+The sprint staff review found that the source assigns all three
+`smallest-sufficient-mechanism` TODO rows to task `9adv48yhye5s2vkhwd7ge52d`.
+This task owns that journey after the recarve. The strict-XFAIL baseline must
+move the three target owners to task `6x50qafc8566zc6p1qpb6y30` before any
+product bytes change.
+
+| Journey target | Current owner | Required owner |
+| --- | --- | --- |
+| `claude-sonnet` | `9adv48yhye5s2vkhwd7ge52d` | `6x50qafc8566zc6p1qpb6y30` |
+| `codex` | `9adv48yhye5s2vkhwd7ge52d` | `6x50qafc8566zc6p1qpb6y30` |
+| `pi` | `9adv48yhye5s2vkhwd7ge52d` | `6x50qafc8566zc6p1qpb6y30` |
+
+This transfer covers only the three `smallest-sufficient-mechanism` rows. The
+three `keep-moving-posture` rows remain with task `9adv48yhye5s2vkhwd7ge52d`.
+The owner transfer must be a committed baseline step. It must happen before
+the First Officer contract or any other product file changes.
+
+The shared files require a serial landing order. The sprint order is:
+
+```text
+0a -> ts -> 98a -> 6x -> 9a -> zh -> Codex rejection -> Pi gate commit -> Pi headless hold -> xp6
+```
+
+Task `6x` lands before task `9a`. Both tasks edit
+`internal/ensigncycle/shared_live_runner_test.go` and
+`skills/first-officer/references/fo-dispatch-core.md`. Task `6x` rebases onto
+the `98a` landing, commits the owner transfer and strict-XFAIL baseline, runs
+the baseline cells, applies its dispatch repair, and lands the exact candidate.
+Task `9a` then rebases onto the final `6x` landing. It keeps the three
+`smallest-sufficient-mechanism` rows owned by `6x` and edits only its own rows.
+
+The Commander must rebase each branch onto the prior landing. If a rebase
+changes a source binding or product rule, run the focused live cell again.
+
 ## Proposed approach
 
 Change one target-selection rule in
@@ -157,6 +203,18 @@ not change. Only the target selected for an initial-stage successor row changes.
 Verified by: the final diff, existing CLI and dispatch tests, and the required
 host lanes for the changed First Officer contract.
 
+**AC-5 — The three smallest-mechanism target owners are transferred before repair.**
+
+The Sonnet, Codex, and Pi rows for
+`smallest-sufficient-mechanism` name task `6x50qafc8566zc6p1qpb6y30` in the
+committed strict-XFAIL baseline. The rows for `keep-moving-posture` still name
+task `9adv48yhye5s2vkhwd7ge52d`.
+
+Verified by: inspect the owner-transfer baseline commit, compare all six rows
+with the table above, and run the mutable owner join. A baseline that changes
+any product file first, or that changes a keep-moving owner, fails this
+criterion.
+
 ## Strict-XFAIL-first dependency
 
 Task `ts7gq0mr9s3chx2w4wppd1kt` must provide the strict classifier before these
@@ -168,11 +226,18 @@ liveXFail("codex",         "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-t
 liveXFail("pi",            "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-target-mismatch")
 ```
 
-Run each cell before the product repair. XFAIL is valid only when the fixture
-runs and the typed durable assertion returns that exact code. XPASS is a lane
-failure until this task removes the binding. Authentication, launch, timeout,
-fixture, state-read, parsing, and every different semantic code remain FAIL.
-Keep TODO only when the cell cannot execute.
+Use this baseline order:
+
+1. Rebase the task branch onto the latest `98a` landing.
+2. Change only the three smallest-mechanism owner and XFAIL rows shown above.
+3. Commit that baseline before changing the First Officer contract.
+4. Run each cell on the committed baseline.
+
+XFAIL is valid only when the fixture runs and the typed durable assertion
+returns that exact code. XPASS is a lane failure until this task removes the
+binding. Authentication, launch, timeout, fixture, state-read, parsing, and
+every different semantic code remain FAIL. Keep TODO only when the cell cannot
+execute.
 
 The exact commands are:
 
@@ -207,13 +272,15 @@ not XPASS. Remove all three XFAIL bindings only after those records exist.
 
 The implementation test order is:
 
-1. Run the three strict-XFAIL cells and save their metrics.
-2. Add or reuse the typed semantic code at the existing durable assertion
+1. Rebase onto `98a`. Commit the three owner transfers and XFAIL bindings before
+   any product bytes change.
+2. Run the three strict-XFAIL cells and save their metrics.
+3. Add or reuse the typed semantic code at the existing durable assertion
    boundary. Do not classify unstable error text.
-3. Add the focused target-selection smoke using an external fixture and the
+4. Add the focused target-selection smoke using an external fixture and the
    existing `dispatch build` helper.
-4. Update the one First Officer rule and replace only this task's live bindings.
-5. Run all three exact live cells, then run `go test ./...`,
+5. Update the one First Officer rule and replace only this task's live bindings.
+6. Run all three exact live cells, then run `go test ./...`,
    `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
 
 The new XFAIL binding serves AC-1 by making the pre-repair failure executable.
@@ -234,8 +301,10 @@ for a net change of about 12 lines; tolerance is ±1 file and ±12 net lines.**
   insertions and 1 deletion only if the existing oracle needs the stable typed
   semantic code. Reuse the classifier from `ts7` when it is available.
 - `internal/ensigncycle/shared_live_runner_test.go`: replace the three
-  `liveTODO` bindings with this task's `liveXFail` bindings, then remove them
-  after the repaired live proof.
+  `liveTODO` bindings owned by `9adv48yhye5s2vkhwd7ge52d` with this task's
+  `liveXFail` bindings before product edits. Keep the three keep-moving rows
+  with task `9adv48yhye5s2vkhwd7ge52d`. Remove this task's bindings only after
+  the repaired live proof.
 
 Observable semantics are explicit: command grammar unchanged; stored formats
 unchanged; write authority unchanged; runtime behavior changes only for an
@@ -279,10 +348,14 @@ No CLI help, workflow schema, or site documentation needs a diff.
 - DONE: Give gross and net line estimates with strict-XFAIL and exact live proof.
   The plan names the active owner, one stable code, three bindings, exact live
   commands, expected surfaces, a line budget, and post-repair durable metrics.
+- DONE: Fold staff finding M4 into the owner map and serial landing order.
+  The plan moves all three smallest-mechanism targets from `9a` to `6x` in the
+  baseline before product bytes, then lands `6x` before `9a`.
 
 ### Summary
 
 Ideation is complete. The smallest repair is an explicit initial-stage target
 rule in the First Officer dispatch contract. Native command and durable-oracle
 spikes passed; host strict-XFAIL execution remains a required pre-implementation
-step because task `ts7gq0mr9s3chx2w4wppd1kt` has not landed yet.
+step because task `ts7gq0mr9s3chx2w4wppd1kt` has not landed yet. The M4 owner
+transfer and `6x` then `9a` landing order now protect the shared files.
