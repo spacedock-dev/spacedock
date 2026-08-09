@@ -114,7 +114,7 @@ gates:
                 at: "2026-08-09T14:47:32.46304Z"
                 reason: Latest validation report heading must exactly name the validation stage before gate decision.
 mod-block:
-pr:
+pr: "#645"
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
