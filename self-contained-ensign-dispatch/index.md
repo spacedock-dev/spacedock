@@ -876,3 +876,14 @@ KD is reconciled onto the actual merged 0Y tip with its exact delta preserved at
 ### Summary
 
 Exact head `34e6160a5` passes the Captain-approved resolved-command design, preserves explicit candidate-binary testing and pointer-only transport, and reduces shared bootstrap wording to focused structured ownership without a prose parser. Full, race, formatting, integration, and adversarial evidence are green on landed 0Y ancestry, so validation recommends **PASSED** on the reconciled delivery branch.
+
+## Stage Report: validation (cycle 5 accounting repair)
+
+- DONE: Reconcile the final delivery file count against exact `main...34e6160a5`.
+  The final delta is 48 files: 26 build goldens plus 22 hand-authored files, not 26 plus 18. Relative to the 44-file intermediate set at `933fda4d6`, the four additions are `docs/site/concepts/workflows-and-entities.md`, `docs/site/reference/command-reference.md`, `internal/cli/frontdoor.go`, and `internal/cli/frontdoor_test.go`; no files left that set.
+- DONE: Reassess the validation recommendation without changing or rerunning the candidate.
+  **PASSED remains unchanged**: the two docs describe the exact-command behavior, while the CLI seam and test implement and prove explicit candidate-launcher resolution required by the approved design. Candidate code stayed clean at `34e6160a5`; previously green checks were not rerun.
+
+### Summary
+
+The earlier 44-file accounting described the intermediate file set and was factually stale for the final exact head. Correct final accounting is 48 files = 26 goldens + 22 hand-authored, and the four purposeful acceptance-criterion files strengthen rather than weaken the PASSED recommendation.
