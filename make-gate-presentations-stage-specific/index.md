@@ -1,6 +1,6 @@
 ---
 title: Make gate presentations stage-specific and omit empty result classes
-status: ideation
+status: implementation
 id: krbaeb3resfpbh1qvnb65krf
 score: 0.8
 source: "Captain feedback on 2026-08-08 after repeated gate reviews rendered FAILED: None."
@@ -55,7 +55,7 @@ gates:
                 reason: The bounded three-file design keeps present-gate and gate record as sole owners, proves stage-specific omission behavior through controlled and live presentations, and excludes adjacent F6C, W5, and XX semantics.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Outcome
