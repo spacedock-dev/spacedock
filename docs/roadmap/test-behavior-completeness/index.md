@@ -1,9 +1,11 @@
 # Test-behavior-completeness sprint
 
-Status: **staff-review clean. Ideation gates pending**.
+Status: **staff-review clean. Commander activated**.
 
-Target train: not bound. The captain must bind the release before Commander
-dispatch.
+Target train: **`next` development line**.
+
+Stable release tagging is outside Commander authority. A stable tag needs a
+separate captain grant and the release procedure from `main`.
 
 ## Goal
 
@@ -144,8 +146,8 @@ Luna at maximum effort when the diff touches their live surface.
 Opus is pre-release evidence. Pi is optional manual evidence. Neither gives the
 Commander authority to skip a required Sonnet or Codex lane.
 
-Use local subscription-backed runs before paid CI. Use isolated artifact roots
-for concurrent live runs.
+Use local subscription-backed runs before paid CI whenever possible. Use
+isolated artifact roots for concurrent live runs.
 
 ## Exclusions
 
@@ -158,8 +160,11 @@ evidence permits removal of its stale TODO without bringing `47g` into scope.
 Archived `nv`, `26n`, `3z`, and `zbc` stay archived. Their evidence remains
 readable and their entities do not return to this sprint.
 
-## Readiness gate
+## Activation record
 
-The staff review has no open Material finding. The Commander package remains
-blocked until all ideation gates close-approved, the captain binds the target
-train, and the captain activates the package.
+The staff review has no open Material finding. The captain approved all nine
+ideation gates, bound the target train to `next`, and activated the Commander.
+
+The Commander has the conn toward the sprint goal. Environment approvals and
+stable release tags remain outside this authority unless the captain grants
+them separately.

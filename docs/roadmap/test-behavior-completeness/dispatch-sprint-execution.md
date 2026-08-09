@@ -1,12 +1,12 @@
 # Commander dispatch: test-behavior-completeness
 
-This package is the **cold-boot Commander handoff**. The staff review has no
-open Material finding. Do not start implementation until all ideation gates are
-closed-approved and the captain activates this package.
+This package is the **activated cold-boot Commander handoff**. The staff review
+has no open Material finding. The captain approved all nine ideation gates and
+bound the target train to the `next` development line.
 
-When the captain activates this package, you are the Commander for this sprint.
-Assume `spacedock:first-officer` for the complete session. Tell each worker and
-reviewer: “We love you.” Require `$simple-english` in every report.
+Under this activation, you are the Commander for this sprint. Assume
+`spacedock:first-officer` for the complete session. Tell each worker and reviewer:
+“We love you.” Require `$simple-english` in every report.
 
 ## Mission
 
@@ -23,17 +23,19 @@ work.
 2. Read `docs/roadmap/test-behavior-completeness/staff-review.md`.
 3. Read `docs/runtime-live-ci.md` and the desired registry.
 4. Run the membership query from the index.
-5. Make sure that all 10 retained members are present and ideation-approved.
+5. Make sure that all 10 retained members are present.
 6. If the staff review has an open Material finding, stop.
-7. Make sure that the captain bound the target train and activated this package.
+7. Make sure that the nine ideation gates remain closed-approved.
 8. Read each approved task body before dispatch.
 9. Reconcile `0a` before any new sprint dispatch.
 
 ## Authority boundaries
 
-Captain activation grants authority to dispatch approved implementation and
-validation work for sprint members. It also grants ordinary execution-gate and
-merge judgment within this package.
+The Commander has the conn toward the sprint goal. The Commander can dispatch
+approved implementation and validation work for sprint members.
+
+The Commander can use judgment to approve sprint gates, pull requests, relevant
+CI lanes, and merges. Escalate uncertainty to `/root`.
 
 This authority has these limits:
 
@@ -41,12 +43,15 @@ This authority has these limits:
   criteria, or line tolerances.
 - Do not add a product repair to `xp6`.
 - Do not move `47g`, `g3`, or durable-decisions work into this sprint.
-- Do not approve an environment deployment that needs a separate human approval.
+- Do not approve a protected environment. Environment approval needs a separate
+  captain grant.
 - Do not merge a task when a required lane is red, skipped, unapproved, stale,
   or built from another candidate.
 - Do not waive the strict-XFAIL baseline or exact-candidate proof.
 - Escalate a third feedback cycle, a line-budget breach, an irrecoverable block,
   or a mechanism change.
+- Do not create or push a stable release tag. Stable tagging needs a separate
+  captain grant.
 
 The Commander can merge a pull request only after its validation gate passes and
 its merge mod is satisfied. Every diff-required lane must also be green on the
@@ -69,6 +74,8 @@ SPACEDOCK_LIVE_STATE_DIR=docs/dev/.spacedock-state \
 Pull-request changes to common live behavior require Sonnet 5 at maximum effort
 and Codex Luna at maximum effort. The exact target repair also needs its focused
 live cell.
+
+Use local subscription-backed live runs before paid CI whenever possible.
 
 Opus runs as pre-release evidence. Pi runs through optional manual evidence.
 These lanes do not replace required Sonnet or Codex evidence.
@@ -178,5 +185,5 @@ session logs, or temp workflow state across targets.
 The sprint is complete only when the completion definition in the index is true.
 Then run one independent pre-cut antipattern audit on the assembled `main`.
 
-Do not cut a release without separate captain authorization. Stable releases
-come from `main` through the annotated-tag procedure in `docs/releasing.md`.
+Do not cut or tag a stable release. Stable releases come from `main` through the
+annotated-tag procedure in `docs/releasing.md`, after a separate captain grant.
