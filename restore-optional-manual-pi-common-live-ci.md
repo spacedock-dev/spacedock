@@ -183,3 +183,7 @@ The design restores retained Pi evidence without restoring Pi as a pull-request 
 ### Summary
 
 The Captain-approved fold makes both manual release cadences exclusive. `opus-pre-release` spends only Opus, `pi` spends only Pi, and pull requests retain Sonnet plus Codex; no new workflow, parser, simulator, registry, or release mechanism is introduced.
+
+## Implementation design reset
+
+Captain-conn approval on 2026-08-09 raises the file tolerance from 7 to 8 without changing semantics or LOC. The two required surfaces missing from the estimate are the existing live-registry reconciliation guard and clean-log/gotestsum guard; both must change because they currently encode the deliberate absence of Pi CI. The authorized eight files are the workflow, four existing workflow/registry test files, the clean-log test, and the two approved runtime CI documents. No workflow, parser, simulator, registry entry, live journey, fixture, release mechanism, or other product surface is added.
