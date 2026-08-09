@@ -111,7 +111,7 @@ func TestLiveCommonGateGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyTODO{liveTODO("pi", "26nk8qd48zknqnn4kc123sez")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "26nk8qd48zknqnn4kc123sez"), liveTODO("codex", "26nk8qd48zknqnn4kc123sez"), liveTODO("pi", "26nk8qd48zknqnn4kc123sez")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
