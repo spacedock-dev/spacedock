@@ -1,10 +1,10 @@
 ---
 title: Restore the shared ensign contract at the Codex fresh-dispatch boundary
-status: validation
+status: done
 source: "Runtime Live E2E run 31045591048, Codex job 92440554439: the first full-ensign-cycle worker received only a Read pointer, never loaded the shared ensign contract, and wrote two generic checkbox Stage Reports that the FO accepted before archive."
 started: 2026-08-07T13:16:17Z
-completed:
-verdict:
+completed: 2026-08-09T06:10:37Z
+verdict: passed
 score: 0.95
 worktree: .worktrees/spacedock-ensign-restore-codex-ensign-contract-bootstrap
 issue:
@@ -106,9 +106,10 @@ gates:
                 reason: 'Under the delegated Captain conn, approve the unchanged candidate: exact-head Codex, Claude, and offline lanes passed; the auxiliary journey-delta-comment artifact download failed after five retries but is not a required check; clean synthetic kd merge and full normal/race suites passed.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:642
+archived: 2026-08-09T06:10:37Z
 ---
 
 ## Outcome
