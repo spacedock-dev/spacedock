@@ -46,6 +46,17 @@ gates:
                 digest: sha256:b7bf620a437c4aba3156522c2eee177d0adb4b1e2ad0236cba43c1f08f04e063
                 request-digest: sha256:a538be68b35505144f0506819b7dc69eb0b5d493597c61b71b5636cbbfb7b3c6
                 room-ref: ./hold-pi-default-headless-validation-gate/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:fh6rv0k6wr25zty0jjan4jp7:ideation:1
+                briefing: briefing:fh6rv0k6wr25zty0jjan4jp7:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T21:33:26.164844Z"
+                decision: approve
+                reason: Captain approved the Pi headless open-validation-gate result.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
