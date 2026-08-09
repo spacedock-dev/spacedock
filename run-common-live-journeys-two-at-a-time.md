@@ -193,3 +193,38 @@ A real two-journey spike proved isolation and the cap. Expired subscription auth
 ### Summary
 
 Claude common journeys now use Go's built-in test semaphore with a concurrency cap of two. Codex, Pi, and Claude substrate commands remain sequential, and live success/value timing remains authentication-blocked for independent validation.
+
+## Review-finding disposition
+
+### Validation finding 1 - queued Claude journey starts after the first failure
+
+- Reviewer observation: a real three-journey Claude run resumed queued `filing` after `merge-hook-guardrail` failed, while `zero-discovery` was still active.
+- Released user and normal workflow: PR CI runs the canonical Claude common suite with `-failfast -parallel 2`; a journey regression is a normal supported trigger.
+- Observable harm: another paid journey starts after the first failure, so failure cost and API pressure exceed the promised bound.
+- Affected authority: `value-ac[AC-2]` Failure cost and API pressure must remain bounded; no queued journey may start after the first failure.
+- Trigger evidence: Claude Code `2.1.220` emitted `CONT merge-hook`, `CONT zero-discovery`, the first failure, then `CONT filing` under the exact candidate flags.
+- Defect kind: outcome defect. The observable live behavior contradicts AC-2, rather than merely lacking evidence.
+- Release scope: Material. The trigger is any real common-journey failure in the supported PR lane, not an unsupported edge case.
+- Proposed ownership and disposition: mechanism/design reset; preventing Go from releasing a queued parallel test needs control outside the approved semaphore-only scope.
+- Validation recommendation: REJECTED. Candidate commit `25fe7f42e` stayed unchanged pending First Officer and captain direction.
+
+## Stage Report: validation
+
+- DONE: Verify that the five-file diff adds no infrastructure test, simulator, scheduler, or concurrency outside Claude common journeys.
+  Commit `25fe7f42e` changes exactly five existing files (+22/-17); test edits only replace existing exact command expectations, and only Claude common tests call `t.Parallel()`.
+- DONE: Reproduce the existing offline, race, formatting, and registry checks against commit 25fe7f42e.
+  `go test ./...`, `go test ./... -race`, focused registry/workflow guards, `git diff --check`, and gofmt passed; gofmt left the worktree clean.
+- DONE: Inspect or run the smallest real Claude exercise, and separate proven structure from live evidence that must come from PR CI.
+  A real Claude pair entered both tests and wrote separate journey artifact/config paths, but expired OAuth stopped both before FO work; successful behavior and Sonnet timing remain unproved PR-CI evidence.
+- SKIPPED: AC-1 successful Sonnet common-step timing and complete named evidence.
+  Local OAuth is expired, so validation does not claim the <=20-minute target or successful result/metrics artifacts; PR CI must supply both.
+- FAILED: AC-2 failure cost and API pressure remain bounded.
+  A real three-journey `-failfast -parallel 2` run started queued `filing` after the first failure while one sibling remained active, falsifying the no-new-start promise.
+- DONE: AC-3 canonical registry and CI selection stay unchanged.
+  `TestRuntimeLiveRegistryReconciliation` and exact command guards passed; the diff retains all 16 IDs and selectors and adds no job or approval.
+- DONE: AC-4 concurrent Claude journeys keep separate state and evidence paths.
+  The focused pair produced distinct `filing` and `zero-discovery` artifact directories, temp workflow roots, and `.claude/<journey>` configuration paths; authentication prevented successful artifact contents.
+
+### Summary
+
+Offline, race, formatting, registry, scope, and structural isolation checks passed. Validation recommends REJECTED because the real controlled failure proved Go's parallel-test semaphore starts a queued journey after the first failure; the successful Sonnet wall-time proof remains explicitly unclaimed until PR CI.
