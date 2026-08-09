@@ -104,6 +104,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:kd7877nnbd19d528xnpwwaj4-validation-5
+              briefing:
+                id: briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-5:revision-1
+                digest: sha256:ea262be6293f671aa73db82019b950edbc5a1954e25a605d5079cd041500ad4a
+                request-digest: sha256:e8fc0dd443ff9e15bbb07ddef59ca7412164abbeeef1e21c289df3e985c71b0a
+                room-ref: ./review/validation/briefing-5
 started: 2026-07-26T15:08:14Z
 worktree: .worktrees/spacedock-ensign-self-contained-ensign-dispatch
 sprint-readiness: required

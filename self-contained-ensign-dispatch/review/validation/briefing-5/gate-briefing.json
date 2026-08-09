@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kd7877nnbd19d528xnpwwaj4:validation:attempt-5:revision-1",
+  "question": "Does the validated change make ensign dispatch self-contained across launcher drift?",
+  "artifacts": [
+    {
+      "id": "artifact:kd7877nnbd19d528xnpwwaj4:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/191da154486170a2ffc077f8831bfff0bd659ada/self-contained-ensign-dispatch/index.md",
+      "rev": "sha256:cf9df092d3e764e5eccf56146ff0f8cacdba4c45576b01f93945e0931297b015",
+      "mediaType": "text/markdown",
+      "summary": "The exact reconciled candidate uses full-path workflow commands, preserves explicit candidate-binary tests, keeps pointer-only transport, and passes focused, full, race, formatting, integration, and adversarial checks."
+    }
+  ]
+}
