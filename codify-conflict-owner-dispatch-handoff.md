@@ -341,6 +341,7 @@ Validation recommends REJECTED at exact head `9b0d30f13`. The contract surface i
 
 - Cycle 1: REJECTED — detached validation / owner tuple provenance; surface 3 files/+164/-3 vs estimate 3–5 files/about +90/-10; AC unchanged
 - Cycle 2: REJECTED — post-YS validation / self-referential recipient and cardinality evidence; surface 10 files/+265/-11 vs estimate 3–5 files/about +90/-10; AC unchanged. Captain-directed YS reconciliation explains the registry surface; FO authorizes only the D8-owned typed-event correlation fix.
+- Cycle 3: REJECTED — the public Codex stream does not expose spawn/follow-up events; Captain authorizes a design reset that narrows proof to the durable owner-handoff outcome, preserves the post-YS live journey map, and forbids prose matching, private transcript parsing, or a new event protocol.
 
 ## Stage Report: implementation (cycle 1)
 
