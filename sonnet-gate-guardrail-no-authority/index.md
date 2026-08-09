@@ -78,6 +78,17 @@ gates:
                 digest: sha256:639d348f8dddfa7cc3778945b92569f85b0feef17923498640a83104c92eda7d
                 request-digest: sha256:904991b971c50c1b0eb657ab113c9546601d60a4e3e9eeb39d6732e0727084d5
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3zzpdw704df1g8pg1x9thzmw:validation:2
+                briefing: briefing:3zzpdw704df1g8pg1x9thzmw:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T07:47:28.801805Z"
+                decision: approve
+                reason: Exact post-NV and post-824 candidate preserves the intended four-file 3Z value and passes all relevant offline, Sonnet, and Codex evidence; QZ owns the unrelated artifact-download comment failure.
+              application:
+                target-stage: done
+                state: pending
 sprint: test-behavior-completeness
 mod-block:
 pr:
