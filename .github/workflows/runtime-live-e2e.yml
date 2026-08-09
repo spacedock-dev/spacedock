@@ -262,9 +262,9 @@ jobs:
         run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/spacedock-claude-config/${{ matrix.model }}" >> "$GITHUB_ENV"
 
       # Run all 16 exported common journeys through the Claude transport. The exact
-      # prefix selector is shared with Codex and Pi; -failfast stops at the first
-      # non-TODO regression. Go runs at most two Claude journeys concurrently; the
-      # loose 90-minute timeout is a suite-wide runaway backstop.
+      # prefix selector is shared with Codex and Pi. Go runs at most two Claude
+      # journeys concurrently; queued work can start after a failure despite
+      # -failfast. The loose 90-minute timeout is a suite-wide runaway backstop.
       # Output discipline: gotestsum runs the suite ONCE, prints a CLEAN step log
       # (per-package progress + an `=== Failed` recap listing each failing test
       # with file:line — no per-test === RUN / --- PASS firehose) and writes the
