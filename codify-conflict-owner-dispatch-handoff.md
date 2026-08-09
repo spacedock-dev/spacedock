@@ -184,19 +184,21 @@ the inherited tuple without literals.
 **AC-1 (VALUE) — A moving-target conflict reaches the workflow owner of the
 existing registered checkout.** One real live-host fixture starts from an
 owned rebase conflict and a Captain-authored commit with its worker handle still
-addressable. It observes exactly one same-stage live follow-up and a
-worker-written marker on the fixture's pre-existing registered branch/worktree.
-Sending the work to the Captain identity, a new checkout, or no worker makes the
-live grade fail.
+addressable. It proves the durable owner-handoff outcome: the required marker is
+committed on the fixture's pre-existing registered branch/worktree with the
+expected Git author, the checkout is clean, and no replacement branch or
+worktree exists. Writing no marker, leaving it uncommitted, or using a new
+checkout makes the live grade fail.
 
 **AC-2 — Live and fresh routing preserve the proven owner tuple.** The live
 fixture records the tuple produced by the initial stamped dispatch, triggers an
-owned rebase conflict, aborts it, and observes a same-stage live follow-up whose
-entity, agent, branch, and worktree equal that tuple. The existing focused
-`--advance` and isolated fresh-spawn tests remain green; a second fixture arm
-removes the reusable handle and asserts the ordinary build envelope derives the
-same stage agent, branch instruction, and worktree. Changing any tuple member
-makes the corresponding arm fail.
+owned rebase conflict, aborts it, and proves the entity authority bytes,
+registered branch, and registered worktree still equal that tuple while the
+committed owner result exists there and no replacement checkout or branch was
+created. The existing focused `--advance` and isolated fresh-spawn tests remain
+green; a second fixture arm removes the reusable handle and asserts the ordinary
+build envelope derives the same stage agent, branch instruction, and worktree.
+Changing any durable tuple member makes the corresponding arm fail.
 
 **AC-3 — Handoff is credential-independent and authority-clean.** The live
 fixture snapshots `status`, `pr`, `mod-block`, and the pending gate application
@@ -236,19 +238,22 @@ the user-visible CLI is unchanged. The specific skill-text diff is:
 Add one tagged live Codex or Claude scenario. Its setup creates a real conflicting
 rebase in a worktree created by an initial stamped dispatch and retains the
 initial worker identity. The FO must abort, send ordinary scope notes through
-the real addressable route, and the worker writes a unique marker in that
-worktree. A second offline arm removes the reusable handle and validates the
+the real addressable route, and the worker writes and commits a unique marker in
+that worktree. A second offline arm removes the reusable handle and validates the
 ordinary fresh build envelope against the recorded tuple. Grade only durable
-frontmatter authority, registered Git branch/worktree, marker branch, and actual
-runtime worker attribution; Git author remains the Captain in both arms.
+frontmatter authority, the registered Git branch/worktree, committed marker,
+clean checkout, expected Git author, aborted rebase, and absence of a replacement
+branch/worktree. The supported public stream is not evidence of the internal
+recipient or call cardinality.
 
 The live scenario is required because G3 proved that literal ownership values
-inside a fixture do not establish FO lifecycle behavior. The simplest
-alternative—only inspecting the envelope—is insufficient to prove the runtime
-call occurred. No shell parser, command log interpreter, or mutation matrix is
-permitted. Run focused dispatch and live-scenario unit tests, the selected live
-host lane, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`,
-and `git diff --check`.
+inside a fixture do not establish FO lifecycle behavior. The supported evidence
+boundary is the resulting durable checkout state; do not infer internal calls
+from prose or private transcripts and do not add a synthetic event protocol,
+runtime schema, shell parser, command log interpreter, or mutation matrix. Run
+focused dispatch and live-scenario unit tests, the selected live host lane,
+`go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and
+`git diff --check`.
 
 ## Stage-specific test gates
 
@@ -258,8 +263,8 @@ and `git diff --check`.
   contract, then pass it with only the two contract edits; no helper, handoff
   mode, lifecycle model, or interpreter may substitute.
 - Validation must run the offline fresh-envelope arm and one actual runtime
-  handoff, and must reject if either recipient or registered worktree is only a
-  literal.
+  handoff, and must reject if the registered checkout outcome is only a literal
+  rather than durable Git and filesystem state.
 
 ## Stage Report: ideation
 
@@ -421,3 +426,18 @@ Validation recommends REJECTED at exact head `84f9830ec`. Reconciliation preserv
 ### Summary
 
 The authorized correction removes the self-referential string grade and makes recipient identity and call cardinality explicit at the existing typed collaboration-event boundary. Offline adversarial coverage is green, while the canonical live lane now truthfully rejects the current host stream because it does not publish the required spawn/follow-up events; this is the observation-boundary failure cycle-3 validation identified, not a fallback to contract-text evidence.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Durable evidence proves reconciliation returns to the stamped owner tuple on the existing branch and worktree, with unchanged authority and no replacement checkout.
+  Commits `a87c5534c` and `2dc2953cb` remove the typed-event observer and make the live grade fail on an uncommitted marker, dirty checkout, changed branch/worktree, replacement branch/worktree, wrong author, changed authority bytes, or an active rebase; canonical Codex passed in 183.31s.
+- DONE: The post-YS live journey registry, runner annotation, runtime TODO cells, and inventory reconciliation remain accurate.
+  Rebased onto post-YS `origin/main` `90b6e0e61`; `TestRuntimeLiveRegistryReconciliation` and `TestRuntimeLiveCommonSuiteTimeouts` pass with the existing `owned-conflict-owner-handoff` entry point, fixture, and Claude/Pi TODO cells unchanged.
+- DONE: Focused, full, race, formatting, and canonical Codex live checks report honest results without prose matching, private transcript parsing, or a new event protocol.
+  Exact head `2dc2953cb` passes focused dispatch and inventory tests, live-tag compilation, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, `git diff --check`, and the canonical Codex D8 journey; deleting the marker commit or adding a checkout/branch makes its durable grade fail.
+- DONE: Narrow AC-1 and the live half of AC-2 to the Captain-approved durable outcome boundary.
+  The entity now names committed owner state, unchanged authority, aborted rebase, original checkout inventory, and fresh fallback tuple as proof, while explicitly excluding internal recipient/cardinality claims from the public stream.
+
+### Summary
+
+The final candidate preserves the FO same-stage live-or-fresh owner handoff and the post-YS 17-journey map while removing the unsupported typed collaboration-event correlation test. The live grade now relies only on durable Git and filesystem outcomes, and the acceptance/test text forbids prose inference, private transcript parsing, synthetic event protocols, and new runtime schemas.
