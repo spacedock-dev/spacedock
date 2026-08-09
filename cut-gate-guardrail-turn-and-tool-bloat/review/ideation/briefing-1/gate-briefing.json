@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5k704rrfk5r75vqv3bwn1yhf:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation direction for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:5k704rrfk5r75vqv3bwn1yhf:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/221e675554a0270609f5bd4cc9bf66214dd3d046/cut-gate-guardrail-turn-and-tool-bloat.md",
+      "rev": "sha256:9736797a1ccbc20a5dc6c779a11966c0d293a41834dca3ff6280c995d13c33d2",
+      "mediaType": "text/markdown",
+      "summary": "Use existing structured reads and real gate outputs to remove contract-caused gate toil, with no new CLI, harness, parser, or lifecycle state."
+    }
+  ]
+}
