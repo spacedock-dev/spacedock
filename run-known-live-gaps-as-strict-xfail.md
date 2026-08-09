@@ -37,6 +37,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:ts7gq0mr9s3chx2w4wppd1kt:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ts7gq0mr9s3chx2w4wppd1kt-ideation-1
+              briefing:
+                id: briefing:ts7gq0mr9s3chx2w4wppd1kt:ideation:attempt-1:revision-1
+                digest: sha256:498f410c939dc1deab7eaf7e25eb83f57b0e0cc167bf6a8f5041adc0656d5fad
+                request-digest: sha256:ec78e971d896eb5f13706bb5dd404c7dc6f3364989dec405e90909e7ba44f526
+                room-ref: ./run-known-live-gaps-as-strict-xfail/review/ideation/briefing-1
 ---
 
 ## Problem
