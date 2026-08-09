@@ -238,3 +238,15 @@ This cycle supersedes the prior report's AC-5-pass and PASSED statements. Valida
 ### Summary
 
 Validation recommends REJECTED and routes the Material AC-5 evidence defect to the Captain as Needs decision. AC-1 through AC-4 retain their prior evidence, while no product defect, candidate mutation, or new execution is asserted.
+
+## Review-finding disposition: Captain wording
+
+- Exact finding: `A chat gate review has one concise evidence spine` is vague AI-style prose. Also inspect the two KRB documentation changes for the same defect, including `acceptance evidence is ready for delivery`. The Captain expands the finding to the 11-item presentation-discipline list in `skills/present-gate/SKILL.md`: "and i really don't like 11 step crap. if we are here, might as well clean it up."
+- Released user and normal workflow: readers encounter both changed sentences in the published gate concept and first-workflow tutorial while learning what a gate review shows.
+- Observable harm: the concept sentence hides the concrete evidence shown at each stage, the tutorial sentence does not name the validation checks or their observed result, and the presenter buries the rendering contract in 11 accumulated rules that repeat its template and mix evidence selection with style and lifecycle reminders; readers and First Officers cannot recover the promised stage-specific, omission-first behavior directly.
+- Authority: value-ac[AC-5]: published gate documentation must describe the same stage-specific, omission-first review seen in the live presentation.
+- Trigger evidence: commit `a236c0074` adds both quoted phrases and edits an 11-item `Captain-facing assembly rules` list; direct inspection shows the docs use abstract claims while the skill repeats lede, direction, report, findings, recommendation, bounce-back, format, worktree, length, label, and verification obligations after already presenting the template.
+- Captain ruling: replace abstract phrases with direct stage-by-stage language that states what each review shows and that empty result groups are omitted; clean up the 11-step list while here.
+- Proposed materiality: Material.
+- Proposed task ownership: KRB's current three-file candidate; all affected prose is in the approved presenter and two documentation files and requires no F6C, W5, XX, command, schema, recorder, or runtime change.
+- Proposed disposition: replace the 11-item list with the existing short presentation template plus a few direct rules: select only stage-available evidence, omit empty result/finding groups while retaining validation totals, preserve workflow-owned finding labels without classifying, emit exactly one recommendation/snapshot/decision effect, and keep `gate record --decision` as sole recorder. Rewrite the two documentation sentences to state the backlog, ideation, and validation evidence directly and name the passed validation checks; remove abstract prose across only these three files after distinct First Officer authorization. Candidate bytes, HEAD, and test state remain unchanged pending that authorization.
