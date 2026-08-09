@@ -2,7 +2,7 @@
 title: Commit the Pi gate before presentation
 status: ideation
 source: "Staff review M3 for test-behavior-completeness, 2026-08-09"
-started:
+started: 2026-08-09T20:36:19Z
 completed:
 verdict:
 score: 0.9
