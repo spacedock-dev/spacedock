@@ -63,6 +63,17 @@ gates:
                 digest: sha256:a0b9c66b28d091b6520619b0c14b711e5d18a6655c1993dcd36a314f261a64cd
                 request-digest: sha256:73f62dd5b6e88d7d9af69dd26498b591d44909e7aad050cdd65f1d794b1c5db0
                 room-ref: ./run-common-live-journeys-two-at-a-time/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:c1nbf39akyh263a4p1ts593m:ideation:2
+                briefing: briefing:c1nbf39akyh263a4p1ts593m:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-09T15:03:55.961385Z"
+                decision: approve
+                reason: Captain accepts Go's queued-work cost after a Claude journey failure in exchange for faster successful runs, with at most two active Claude journeys.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Reduce pull-request wait time by running at most two independent Claude common journeys at one time.
