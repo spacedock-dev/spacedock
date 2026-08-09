@@ -86,6 +86,10 @@ gates:
                 digest: sha256:ea570c687cf3a94a0ded00511904c73b77a838c82d8a93a8eba303b74132116c
                 request-digest: sha256:2861b22b629a173b0bd28744c82cd629e793d4b5c3ba73b2345dc2f15100f921
                 room-ref: ./restore-codex-ensign-contract-bootstrap/review/validation/briefing-2
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-09T04:39:48.123714Z"
+                reason: Candidate must be reconciled onto confirmed latest origin/main before CI; validation attempt 2 briefing and evidence are stale.
 ---
 
 ## Outcome
