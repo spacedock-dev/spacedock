@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zhcb4bcz1qgcn7ajx2ctxpxk:backlog:attempt-1:revision-1",
+  "question": "Is this task ready for rejection-round repair ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:zhcb4bcz1qgcn7ajx2ctxpxk:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ab074cb86394e5acdac171073071d313329c6531/publish-rejection-round-before-regate.md",
+      "rev": "sha256:21b3b0d4870a9361c53b799c64919aeb12876784b621b2a94ddf9f625459ad09",
+      "mediaType": "text/markdown",
+      "summary": "Shape one recorder-reuse repair with exact runtime evidence and XFAIL-first order."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zhcb4bcz1qgcn7ajx2ctxpxk:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31cb42360f20b278f4d18781b6c790eee7a1a415de7362b5a63db376dec0d1e3"
+    }
+  ]
+}
