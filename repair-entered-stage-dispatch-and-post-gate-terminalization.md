@@ -15,6 +15,14 @@ sprint: test-behavior-completeness
 
 PR #585's runtime-neutral durable live oracle exposed three shipped behavior defects outside the PR's Codex configuration and launcher-shim scope.
 
+Before a product change, use the strict XFAIL behavior from
+`ts7gq0mr9s3chx2w4wppd1kt`. Run each affected target and record one stable
+semantic failure code for each executable journey cell. Keep TODO only when a
+cell cannot run.
+
+After a product repair, XPASS must force removal of the repaired XFAIL binding.
+Do not weaken the durable oracle to obtain PASS or XFAIL.
+
 1. Initial-stage successor dispatch is underspecified. At exact head `d28834249b23df204292149c7581a295e85c10dd`, both Codex/Luna and Claude Sonnet changed `ready-one` and `ready-two` from `ready` directly to terminal `done`, committed `dispatch: <slug> entering done`, and built `--stage done`, while the fixture and worker assignment require a `ready` stage report. Owner: `skills/first-officer/references/fo-dispatch-core.md` plus its mandatory skill smoke tests. Make the initial-stage rule explicit and prove `current=ready,next=done` dispatches `current` with `status=ready started`, an exact path-scoped `dispatch: <slug> entering ready` commit, and `dispatch build --stage ready`.
 
 2. Gate-consume dispatch evidence can be split across commits. Sonnet consumed `approved-gate` from `review` to `implementation` and committed `dispatch: approved-gate entering implementation` before `started` existed, then added `started` in a second commit named `dispatch: approved-gate implementation started`. The durable oracle correctly requires the exact dispatch commit's entity blob to contain both the entered stage and nonempty `started`. Owner: gate-lifecycle/dispatch contract and smoke tests. Prove a consumed nonterminal approval records the dispatch boundary only after `started` is present, without weakening path-scoped durable grading.
