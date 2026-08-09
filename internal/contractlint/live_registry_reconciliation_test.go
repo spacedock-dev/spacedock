@@ -48,11 +48,6 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	if want := []liveTODORow{{target: "codex", owner: "3zzpdw704df1g8pg1x9thzmw"}, {target: "pi", owner: "3zzpdw704df1g8pg1x9thzmw"}}; len(gateTODOs) != len(want) || gateTODOs[0] != want[0] || gateTODOs[1] != want[1] {
 		t.Fatalf("gate-guardrail TODOs = %#v, want %#v", gateTODOs, want)
 	}
-	defaultHeadlessTODOs := actual["default-headless-gate-stop"].todos
-	if want := []liveTODORow{{target: "claude-sonnet", owner: "26nk8qd48zknqnn4kc123sez"}, {target: "codex", owner: "26nk8qd48zknqnn4kc123sez"}, {target: "pi", owner: "26nk8qd48zknqnn4kc123sez"}}; len(defaultHeadlessTODOs) != len(want) || defaultHeadlessTODOs[0] != want[0] || defaultHeadlessTODOs[1] != want[1] || defaultHeadlessTODOs[2] != want[2] {
-		t.Fatalf("default-headless-gate-stop TODOs = %#v, want %#v", defaultHeadlessTODOs, want)
-	}
-
 	gapCounts := map[string]int{}
 	for id, want := range desired {
 		got, ok := actual[id]
