@@ -180,3 +180,16 @@ After: `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -
 The lean plan uses Go's existing semaphore and changes only Claude common journeys. It adds no infrastructure test or concurrency simulator.
 
 A real two-journey spike proved isolation and the cap. Expired subscription authentication blocked successful behavior evidence.
+
+## Stage Report: implementation
+
+- DONE: Make Claude common journeys run with Go concurrency two, while Codex, Pi, and substrate proofs stay sequential.
+  Commit `25fe7f42e` lazily constructs live drivers after Claude calls `t.Parallel()`; only the Claude common command adds `-parallel 2`.
+- DONE: Keep the change within 40 gross insertions and 17 net lines, with no new infrastructure tests or simulator.
+  The five-file commit has 22 gross insertions and +5 net lines; it only replaces existing exact command expectations.
+- DONE: Run the existing offline checks and the smallest available live Claude exercise, and record exact evidence and authentication limits.
+  `go test ./...`, `go test ./... -race`, gofmt, and registry reconciliation passed; a 2.75-second Claude pair entered both tests and made separate artifact/config trees, then expired OAuth stopped both before FO work.
+
+### Summary
+
+Claude common journeys now use Go's built-in test semaphore with a concurrency cap of two. Codex, Pi, and Claude substrate commands remain sequential, and live success/value timing remains authentication-blocked for independent validation.
