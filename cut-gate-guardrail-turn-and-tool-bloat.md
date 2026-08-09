@@ -9,7 +9,7 @@ score: 0.9
 sprint: durable-decisions
 sprint-readiness: ready
 group: gate-lifecycle-ux
-worktree:
+worktree: .worktrees/spacedock-ensign-cut-gate-guardrail-turn-and-tool-bloat
 issue:
 pr:
 mod-block:
