@@ -254,3 +254,12 @@ The adopted candidate restores an optional Pi Luna/max cadence and retains its e
 ### Summary
 
 The exact Pi cadence passed with Luna/max and exclusive `CI-E2E-PI` use. The artifact did not contain promised journey metrics, so AC-1 failed. The recommendation is REJECTED, and the candidate remains unchanged.
+
+## Implementation correction design reset
+
+Captain approval adds two allowed files: `internal/ensigncycle/pi_shared_live_runner_test.go` and `internal/ensigncycle/journey_metrics_live_test.go`.
+The expected correction has 35-80 gross insertions, at most 10 deletions, and at most +120 net lines.
+The full candidate retains the original eight-file limit plus these two exact files.
+
+The end-user value remains unchanged. A successful manual Pi cadence retains at least one non-empty record for each completed journey.
+These records use the existing journey-metrics artifact and format. AC-1, runtime targets, lane policy, and result format do not change.
