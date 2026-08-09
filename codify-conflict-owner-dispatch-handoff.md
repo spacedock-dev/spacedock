@@ -109,6 +109,10 @@ gates:
                 digest: sha256:b53720064a79f90e21aaed54ca4e22f2a256b58996f58cd0819a9ee00183600c
                 request-digest: sha256:0e1f8ab32a90a5df9ccd4d6201439e22d8b008215a1ed8cd410b330e0a5505aa
                 room-ref: ./codify-conflict-owner-dispatch-handoff/review/validation/briefing-4
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-09T14:47:32.46304Z"
+                reason: Latest validation report heading must exactly name the validation stage before gate decision.
 mod-block:
 pr:
 ---
