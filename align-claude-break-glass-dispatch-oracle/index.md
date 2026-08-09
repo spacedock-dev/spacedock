@@ -1,6 +1,6 @@
 ---
 title: Align Claude break-glass recovery with the selected dispatch mode
-status: implementation
+status: validation
 score: 0.96
 source: "PRs #627, #628, #629, and #631 fail TestLiveBreakGlassShimRecovery after PR #626 selected it for required CI. The worker completes through bare blocking dispatch, but the oracle requires a named background worker. History: named recovery template 8e66ead, blanket single-task bare rule ecffced, live selection 4cc0d8."
 sprint: durable-decisions
