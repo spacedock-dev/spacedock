@@ -486,6 +486,36 @@ func TestPrepareRejectsDivergentOccupancyAndLeavesEntityUnchanged(t *testing.T) 
 	}
 }
 
+func TestPrepareAttributesRejectedSelectedSourceToItsFlag(t *testing.T) {
+	for _, flag := range []string{"--reference", "--artifact"} {
+		t.Run(strings.TrimPrefix(flag, "--"), func(t *testing.T) {
+			workflow, state, entity, artifact, reference := prepareFixture(t, "flat")
+			input := PrepareInput{
+				WorkflowDir: workflow,
+				Question:    "Should this gate advance?",
+				Artifact:    artifact,
+				Summary:     "Exact summary.",
+				References:  []string{reference},
+			}
+			uncommitted := filepath.Join(state, "uncommitted-reference.json")
+			if flag == "--artifact" {
+				uncommitted = filepath.Join(filepath.Dir(filepath.Dir(workflow)), "uncommitted-artifact.md")
+				input.Artifact = uncommitted
+			} else {
+				input.References = append(input.References, uncommitted)
+			}
+			if err := os.WriteFile(uncommitted, []byte("stub\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			_, err := Prepare(entity, input)
+			want := flag + " " + uncommitted + ":"
+			if err == nil || !strings.Contains(err.Error(), want) {
+				t.Fatalf("error=%v want prefix %q", err, want)
+			}
+		})
+	}
+}
+
 func TestPrepareReplaySurvivesRequiredStateCommit(t *testing.T) {
 	workflow, state, entity, artifact, reference := prepareFixture(t, "flat")
 	input := PrepareInput{

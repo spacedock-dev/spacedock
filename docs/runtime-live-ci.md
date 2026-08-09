@@ -104,7 +104,6 @@ The deletion removes 17 seconds of tmux setup and avoids a 172.5-second duplicat
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
 - Pull requests run `claude-sonnet-5` at maximum effort and `gpt-5.6-luna` at maximum effort.
-  For local Spacedock task `sonnet-gate-guardrail-no-authority` (`3zzpdw704df1g8pg1x9thzmw`), only the Claude Sonnet `gate-guardrail` case is temporarily non-evidence, based on run `30708727845`, job `91392375253`, artifact `8821429777` (resolved model `claude-sonnet-5`, head `57489d491`). Its narrow runner-boundary `TODO(3zzpdw704df1g8pg1x9thzmw)` skip does not disable the other Sonnet scenarios or add a skip to any Opus, Codex, or Pi case. Promote it back to evidence only after the defect is fixed and a fresh approved Sonnet live run passes the unchanged strict gate oracle; then remove the skip.
 - An explicit `live_cadence=opus-pre-release` dispatch runs `claude-opus-4-8` at maximum effort.
 - Pi live evidence runs locally with `pi login`. The offline job keeps the registry reconciliation. An explicit local API key is also supported.
 
