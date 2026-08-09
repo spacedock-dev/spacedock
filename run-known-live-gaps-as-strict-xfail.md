@@ -26,6 +26,17 @@ gates:
                 digest: sha256:8dd057d5494ec56568e793d8cc503cc1dee58720ed236092096811e43ab4f9de
                 request-digest: sha256:3ddbb008cf288eaa9aca4ede97e3d06d670684c6a5c4de66356884895bb4f4dd
                 room-ref: ./run-known-live-gaps-as-strict-xfail/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ts7gq0mr9s3chx2w4wppd1kt:backlog:1
+                briefing: briefing:ts7gq0mr9s3chx2w4wppd1kt:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T18:33:02.472302Z"
+                decision: approve
+                reason: The Captain authorized ideation dispatch; the seed defines strict semantic outcomes and requires real Sonnet and Codex XFAIL cells.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
