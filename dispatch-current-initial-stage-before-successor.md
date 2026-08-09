@@ -26,6 +26,17 @@ gates:
                 digest: sha256:e32fc37aa5c0ed64331be56f7df6580998db3c9776929ae23b9e16ca0e33a6e8
                 request-digest: sha256:c56845702e628abe4e1a0f0b033af3c75483a568dfdcced3257fadad3d116411
                 room-ref: ./dispatch-current-initial-stage-before-successor/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6x50qafc8566zc6p1qpb6y30:backlog:1
+                briefing: briefing:6x50qafc8566zc6p1qpb6y30:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T18:33:27.796613Z"
+                decision: approve
+                reason: The Captain authorized ideation dispatch; this seed isolates the initial-stage repair and requires strict XFAIL evidence first.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
