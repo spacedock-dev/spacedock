@@ -37,6 +37,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:6x50qafc8566zc6p1qpb6y30:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:6x50qafc8566zc6p1qpb6y30-ideation-1
+              briefing:
+                id: briefing:6x50qafc8566zc6p1qpb6y30:ideation:attempt-1:revision-1
+                digest: sha256:258c684ced1fc428b6f4136d683629a5eacb02d181a4070be97eff3b938ad82e
+                request-digest: sha256:cf68ab1f7e2f6351ed071571128719b625ca4451924bdacffa516ae371a53b57
+                room-ref: ./dispatch-current-initial-stage-before-successor/review/ideation/briefing-1
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.

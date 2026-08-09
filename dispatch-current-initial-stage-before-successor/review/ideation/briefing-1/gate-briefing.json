@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6x50qafc8566zc6p1qpb6y30:ideation:attempt-1:revision-1",
+  "question": "Does this design run the current initial stage before its successor?",
+  "artifacts": [
+    {
+      "id": "artifact:6x50qafc8566zc6p1qpb6y30:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7cc54d661eb7fdcf0a6a562900df6743a5573bf6/dispatch-current-initial-stage-before-successor.md",
+      "rev": "sha256:25415b845e58682ac251eb6b260257e77af2c63c795cfd7de78ef449213b9a8e",
+      "mediaType": "text/markdown",
+      "summary": "The initial stage runs and records its own worker evidence before terminal advancement."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6x50qafc8566zc6p1qpb6y30:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/staff-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:721a29206d100a38a9af0378441bd4878f67e0ccaa16a8fa9236fc14f0da195f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:6x50qafc8566zc6p1qpb6y30:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/f10e816fbf7c836f155cbbf0645bc4556f9bc6ae/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:24234b4adff24091d215eec6992580d6b1925c714a36ededdd4d0a5383ec2c4b"
+    }
+  ]
+}
