@@ -453,7 +453,7 @@ Publication note: GitHub rejected the lease-protected update because the OAuth A
 
 The final candidate preserves the FO same-stage live-or-fresh owner handoff and the post-YS 17-journey map while removing the unsupported typed collaboration-event correlation test. The live grade now relies only on durable Git and filesystem outcomes, and the acceptance/test text forbids prose inference, private transcript parsing, synthetic event protocols, and new runtime schemas.
 
-## Stage Report: validation (cycle 4)
+## Stage Report: validation
 
 - DONE: Verify every revised D8 acceptance criterion with independent code, command, or durable-state evidence, including adversarial negatives that can falsify the owner-handoff outcome.
   Exact head `2dc2953cb` passed canonical Codex in 190.50s; a detached exact-head probe accepted the valid outcome and rejected missing/uncommitted marker, dirty checkout, wrong branch/author, changed authority, active rebase, replacement branch, and replacement worktree variants.
