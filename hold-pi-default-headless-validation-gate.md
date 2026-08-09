@@ -1,6 +1,6 @@
 ---
 title: Hold the Pi default headless validation gate
-status: backlog
+status: ideation
 source: "Staff review M3 for test-behavior-completeness, 2026-08-09"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: The Captain authorized shaping and requires end-user value; this task owns the real Pi headless gate-stop result.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A headless Pi run must stop at the first open validation gate with durable evidence.
