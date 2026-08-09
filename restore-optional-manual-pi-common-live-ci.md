@@ -263,3 +263,20 @@ The full candidate retains the original eight-file limit plus these two exact fi
 
 The end-user value remains unchanged. A successful manual Pi cadence retains at least one non-empty record for each completed journey.
 These records use the existing journey-metrics artifact and format. AC-1, runtime targets, lane policy, and result format do not change.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Before candidate edits, update and commit the 0a task body with the authorized two-file design reset, gross/net estimate, +120 net tolerance, preserved AC-1 value, and unchanged metrics format.
+  State commit `dc3f25d1e` records both files, the 35-80 gross estimate, the +120 net limit, and the unchanged value and format.
+- DONE: Add the minimum Pi metrics producer path plus adjacent proof, reuse existing `journeymetrics` APIs, and show the focused proof fails on the current no-op before it passes on the repair.
+  The initial focused proof failed with `Pi journey metric files = 0, want 1` against `e838fba69`.
+  The durable example now passes and proves one non-empty Pi record with its scenario, runtime, model, and duration.
+  The repair uses `BuildRecord` and `EmitRecord` in the existing `shared-scenarios` directory.
+- DONE: Commit the correction and a complete implementation Stage Report with offline/race/registry evidence and exact repaired-candidate readiness for the Pi run.
+  Candidate `f5c4b32d48f036fddb52233e1c2ca9a1fbf2baa1` is pushed and ready for the exact Pi run.
+  `gofmt`, the focused proof, both full suites, registry reconciliation, and the mutable owner check passed.
+  The correction has 51 insertions, 2 deletions, and +49 net lines. The full candidate has ten approved files and +293 net lines.
+
+### Summary
+
+The Pi driver now emits one existing-format metrics record after each completed common journey. The focused proof detects the prior empty artifact and passes on the repair. Paid CI remains for fresh validation.
