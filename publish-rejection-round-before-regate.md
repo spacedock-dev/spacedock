@@ -1,6 +1,6 @@
 ---
 title: Publish the rejected validation round before correction and re-gating
-status: backlog
+status: ideation
 source: "Replacement for archived rejected zbc; Runtime Live E2E rejection-flow evidence showed the FO claimed validation/1 was recorded without invoking gate record --round validation/1."
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
                 reason: The Captain authorized ideation dispatch; the seed names the recorder reuse boundary and exact live proof.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Restore the common rejection journey on Sonnet, Opus, Codex, and Pi by making the First Officer publish the rejected validation round before correction and re-gating.
