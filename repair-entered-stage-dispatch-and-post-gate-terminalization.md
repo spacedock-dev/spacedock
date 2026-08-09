@@ -34,6 +34,8 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+sprint-readiness: ready
+group: common-evidence
 ---
 
 PR #585's runtime-neutral durable live oracle exposed three shipped behavior defects outside the PR's Codex configuration and launcher-shim scope.
