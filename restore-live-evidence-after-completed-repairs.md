@@ -14,6 +14,18 @@ sprint: test-behavior-completeness
 group: common-evidence
 sprint-readiness: ready
 id: xp6c9qfe7y4wwp46enc3f85n
+gates:
+    version: 1
+    records:
+        - id: gate:xp6c9qfe7y4wwp46enc3f85n:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:xp6c9qfe7y4wwp46enc3f85n-backlog-1
+              briefing:
+                id: briefing:xp6c9qfe7y4wwp46enc3f85n:backlog:attempt-1:revision-1
+                digest: sha256:df59dc0041b492b9dd552cc7d2e574b73036ebd23b4b924735f9243b2bbb91b9
+                request-digest: sha256:497346c14775e33d34376b86d620b664986f817b81386f7169752ef061d2655b
+                room-ref: ./restore-live-evidence-after-completed-repairs/review/backlog/briefing-1
 ---
 
 Three live TODO groups still name completed and archived repair tasks. The code

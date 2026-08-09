@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:xp6c9qfe7y4wwp46enc3f85n:backlog:attempt-1:revision-1",
+  "question": "Is this task ready for evidence-capstone ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:xp6c9qfe7y4wwp46enc3f85n:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8fda683446e47bbf8b0e0b477ddd700d00ba60e4/restore-live-evidence-after-completed-repairs.md",
+      "rev": "sha256:798861beafc99c54e786425fa702ddc35828cd693f907c79991fa07ea9393320",
+      "mediaType": "text/markdown",
+      "summary": "Shape a late evidence-only capstone that removes passing TODOs and routes real defects."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:xp6c9qfe7y4wwp46enc3f85n:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31cb42360f20b278f4d18781b6c790eee7a1a415de7362b5a63db376dec0d1e3"
+    }
+  ]
+}
