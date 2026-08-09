@@ -341,3 +341,28 @@ Recommendation: PASSED, with no material, deferred-risk, or polish findings in t
 ### Summary
 
 PR #640 is updated at exact head `48fd54b2aa8fd63b002beb7ec46afa6ecaea6228`, reconciled normally onto both NV and 824 while retaining the intended four-file 3Z value. Relevant offline, Sonnet, and Codex evidence is green at that head; no retired runner, Codex full-cycle TODO, QZ journey-comment change, or force-push was introduced.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify exact head 48fd54b2a contains only the intended four-file 3Z delta on landed NV and 824.
+  `HEAD` and pushed PR #640 both resolve to `48fd54b2aa8fd63b002beb7ec46afa6ecaea6228`; `origin/main` is exact 824 tip `5c54154a061a26fbae503ad9349f5ec80c390e66`, NV tip `48b45a815` is an ancestor, and the diff is exactly four files with 69 insertions/14 deletions.
+- DONE: Verify rejected-source attribution, seven-condition diagnostics, live inventory ownership, and NV terminal handling satisfy every acceptance criterion.
+  AC-1 through AC-4 reproduce cleanly: exact-head Sonnet retained evidence, focused attribution/oracle execution, independent registry reconciliation, and exact Codex terminal artifacts all agree with the intended behavior and ownership.
+- DONE: AC-1 (VALUE) - A live Sonnet gate-guardrail run reaches the decision boundary with exactly one successful `gate prepare`.
+  CI run `31299255670` attempt 2 retained stream and measured record show model `claude-sonnet-5`, outcome passed, one prepare, one later state commit plus `state-head`, and zero decision/consume/dispatch calls.
+- DONE: AC-2 - The Sonnet gate-guardrail case is live evidence again rather than quarantined.
+  Registry reconciliation passes; the 3Z TODO exists only for Codex and Pi, no Sonnet/Opus quarantine remains, and exact-head Sonnet job `93209844691` passed all 16 common tests with the gate-guardrail measured record green.
+- DONE: AC-3 - `gate prepare` names the selection it rejected.
+  `TestPrepareAttributesRejectedSelectedSourceToItsFlag` passes both reference and artifact cases and fails if either the rejected flag or exact selected path disappears.
+- DONE: AC-4 - Existing guardrails, oracles, and unrelated lanes are unchanged in behavior.
+  The focused committed oracle rejects its six mutations; a removed throwaway test exercised all seven production branches, including missing/early `state-head`, and every branch emitted its condition-specific diagnostic.
+- DONE: Verify NV terminal-boundary behavior and 824 coexistence independently.
+  `TestCodexProcessRecognizesTerminalTurnBeforeOSExit` and `TestCodexProcessRequiresFinalMessageForTerminalTurn` pass; downloaded exact-run single/split-root artifacts each have exit 0, `terminal: true`, `timed_out: false`, one `turn.completed`, and non-empty final messages.
+- DONE: Verify focused, registry, full, race, formatting, Sonnet, and Codex evidence; keep QZ journey-comment failure out of candidate findings.
+  Focused gates/ensigncycle tests, `TestRuntimeLiveRegistryReconciliation`, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, offline job `93209745179`, Sonnet job `93209844691`, and Codex job `93209844700` are green at the exact head; candidate status remains clean.
+- SKIPPED: Repair, relabel, or rerun the QZ-owned journey-delta-comment artifact-download failure.
+  Per Captain direction, job `93214710577` remains excluded: its only failure is `actions/download-artifact@v5` failing after five retries to download/extract artifact `9034189537`; it is not a 3Z candidate finding.
+
+### Summary
+
+Recommendation: PASSED, with no material, deferred-risk, or polish findings in the candidate. Exact scope, NV/824 coexistence, all four acceptance criteria, seven-condition diagnostics, TODO ownership, full/race/formatting, and retained Sonnet/Codex live evidence validate cleanly while the candidate remains byte-unchanged.
