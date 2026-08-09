@@ -1,6 +1,6 @@
 ---
 title: Reject a stale same-minor launcher before First Officer work
-status: ideation
+status: implementation
 source: "Weekly friction audit and Captain direction, 2026-08-09: an installed 0.27 binary passed the minor-version gate but lacked the merged approval surface. Detect the missing command capability before workflow effects."
 started: 2026-08-09T14:51:35Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: The same-minor stale/current spike proves one read-only selected-launcher capability check blocks obsolete approval surfaces before boot, with fixture-backed order and install-only remedies.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Stop a First Officer before workflow work when the selected launcher has the correct minor version but lacks a required command surface.
