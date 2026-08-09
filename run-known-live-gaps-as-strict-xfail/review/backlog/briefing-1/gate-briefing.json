@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ts7gq0mr9s3chx2w4wppd1kt:backlog:attempt-1:revision-1",
+  "question": "Is this task ready for strict-XFAIL ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:ts7gq0mr9s3chx2w4wppd1kt:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2176817dbf96d0c3be22a02dc3a20da70280884a/run-known-live-gaps-as-strict-xfail.md",
+      "rev": "sha256:d7ce01cc9d90471318d9ecf5a31201c2acc23e2e5b60ea730521e5b83f624640",
+      "mediaType": "text/markdown",
+      "summary": "Shape strict XFAIL with real Sonnet and Codex cells in its first landing."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ts7gq0mr9s3chx2w4wppd1kt:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31cb42360f20b278f4d18781b6c790eee7a1a415de7362b5a63db376dec0d1e3"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ts7gq0mr9s3chx2w4wppd1kt:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8042b3a42369859fd0a37c8f03724dfb200936819a23b68aac15fb1acd78fc58"
+    }
+  ]
+}
