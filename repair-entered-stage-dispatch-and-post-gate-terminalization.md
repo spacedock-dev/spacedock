@@ -1,6 +1,6 @@
 ---
 title: Repair entered-stage dispatch evidence and post-gate terminalization
-status: backlog
+status: ideation
 source: "PR #585 exact-head run 30706782428: Codex job 91387287118 and Sonnet job 91387287120"
 started:
 completed:
@@ -33,7 +33,7 @@ gates:
                 reason: The Captain authorized ideation dispatch; shaping assigns initial-stage dispatch to task 6x and keeps post-gate behavior here.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 PR #585's runtime-neutral durable live oracle exposed three shipped behavior defects outside the PR's Codex configuration and launcher-shim scope.
