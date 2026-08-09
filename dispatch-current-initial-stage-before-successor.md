@@ -46,6 +46,17 @@ gates:
                 digest: sha256:258c684ced1fc428b6f4136d683629a5eacb02d181a4070be97eff3b938ad82e
                 request-digest: sha256:cf68ab1f7e2f6351ed071571128719b625ca4451924bdacffa516ae371a53b57
                 room-ref: ./dispatch-current-initial-stage-before-successor/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6x50qafc8566zc6p1qpb6y30:ideation:1
+                briefing: briefing:6x50qafc8566zc6p1qpb6y30:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-09T21:33:12.688933Z"
+                decision: approve
+                reason: Captain approved current initial-stage dispatch before successor advancement.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
