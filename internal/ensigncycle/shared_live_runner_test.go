@@ -110,7 +110,7 @@ func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
 
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("codex", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("pi", "zhcb4bcz1qgcn7ajx2ctxpxk")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyTODO{liveTODO("claude-sonnet", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("claude-opus", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("codex", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("pi", "zhcb4bcz1qgcn7ajx2ctxpxk")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
 //spacedock:live-journey id=feedback-3-cycle-escalation fixture=rejection/before-validation-3
