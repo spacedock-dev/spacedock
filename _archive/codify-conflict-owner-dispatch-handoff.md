@@ -1,10 +1,10 @@
 ---
 title: Make FO dispatch of moving-target conflict owners explicit
-status: validation
+status: done
 source: "Captain follow-up after the 2026-08-04 conflict-owner and shared-credential diagnosis."
 started: 2026-08-06T15:54:14Z
-completed:
-verdict:
+completed: 2026-08-09T15:30:46Z
+verdict: passed
 score: 0.93
 worktree: .worktrees/spacedock-ensign-codify-conflict-owner-dispatch-handoff
 issue:
@@ -129,9 +129,10 @@ gates:
                 reason: Exact-head validation proves all revised ACs through durable Git and filesystem outcomes; the expanded surface is limited to the live fixture and post-YS registry integration.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 mod-block:
 pr: pr-merge:645
+archived: 2026-08-09T15:30:47Z
 ---
 
 The First Officer contract names safety behavior for an open-PR moving-target
