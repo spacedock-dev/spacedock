@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:c1nbf39akyh263a4p1ts593m:ideation:attempt-2:revision-1",
+  "question": "Accept queued post-failure Claude work in exchange for faster successful runs?",
+  "artifacts": [
+    {
+      "id": "artifact:c1nbf39akyh263a4p1ts593m:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/0336cd987239127f3a6c3a8a3a6c0b7c2e4e50cc/run-common-live-journeys-two-at-a-time.md",
+      "rev": "sha256:93178b3f8fb2d59399e09962ccd753d779bc162a5938a3b974a433f63ee6362a",
+      "mediaType": "text/markdown",
+      "summary": "Keep Go-native two-at-a-time Claude concurrency, cap active work at two, and explicitly accept that queued journeys can start after a failure."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:c1nbf39akyh263a4p1ts593m:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/90b6e0e61cb7182ad8764378b698f1de79b12f39/internal/ensigncycle/shared_live_runner_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:511b0eb5fbd9c0233c14bfc6ead4ce38a52b3568e28a047e8d6730be5af441a4"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:c1nbf39akyh263a4p1ts593m:ideation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/90b6e0e61cb7182ad8764378b698f1de79b12f39/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:e4d5c4d3b149dc3e0c24080bb9fd17b1089dd58d0a4e2962afbf858961515f16"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:c1nbf39akyh263a4p1ts593m:ideation:attempt-2:revision-1:item-4",
+      "uri": "git-root://main/90b6e0e61cb7182ad8764378b698f1de79b12f39/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:bf21a06dbc2cbac89c00b52ddc9a1a9a35e9d558d2b3b6b53b7f4eb60fb85f1e"
+    }
+  ]
+}

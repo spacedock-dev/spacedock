@@ -57,6 +57,12 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+            - id: gate-attempt:c1nbf39akyh263a4p1ts593m-ideation-2
+              briefing:
+                id: briefing:c1nbf39akyh263a4p1ts593m:ideation:attempt-2:revision-1
+                digest: sha256:a0b9c66b28d091b6520619b0c14b711e5d18a6655c1993dcd36a314f261a64cd
+                request-digest: sha256:73f62dd5b6e88d7d9af69dd26498b591d44909e7aad050cdd65f1d794b1c5db0
+                room-ref: ./run-common-live-journeys-two-at-a-time/review/ideation/briefing-2
 ---
 
 Reduce pull-request wait time by running at most two independent Claude common journeys at one time.
