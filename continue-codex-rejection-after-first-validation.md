@@ -169,10 +169,16 @@ break the control that proves `gate record --round` can retain advisory state
 without preparing a gate. The optional strict form keeps that boundary while
 measuring the Codex value.
 
-### Strict-XFAIL source binding
+### Non-product baseline and strict-XFAIL source binding
 
-After the known `ts` strict-XFAIL machinery lands, replace only the Codex
-`rejection-flow` TODO with the target-scoped expected semantic code:
+After the known `ts` strict-XFAIL machinery and the preceding `zh` recorder
+work land, make one non-product baseline commit. This commit contains only
+the Codex host extractor, the strict final-gate oracle, its negative controls,
+and the target binding. It contains no skill text, Codex runtime instruction,
+or user-visible documentation change.
+
+The baseline commit replaces only the Codex `rejection-flow` TODO with the
+target-scoped expected semantic code:
 
 ```text
 target: codex
@@ -180,12 +186,18 @@ owner: dvddbpsf4tdt3yjw1yjyp14k
 code: rejection-flow-not-completed
 ```
 
-The baseline run must execute the real journey. It must not skip. The strict
-grade must report exactly the one semantic code when the Codex path reaches the
-missing-final-gate state. A parser error, auth error, launch error, timeout,
-malformed state, or any extra semantic error is an ordinary failure. The
-Codex host extractor is test plumbing required before the baseline can isolate
-the named product gap. It must not hide unrelated failures.
+Run the complete Codex rejection journey from that baseline commit. It must
+not skip. The Codex host extractor must select
+`codexRecordedRejectionRound`, and the strict final-gate oracle must reach the
+durable missing-gate state. The strict grade must report exactly one semantic
+code: `rejection-flow-not-completed`. A parser error, auth error, launch
+error, timeout, malformed state, or any extra semantic error is an ordinary
+failure. The baseline evidence is not valid until the live run reaches this
+sole-code result.
+
+Do not change skills, Codex runtime instructions, or user-visible behavior
+until the baseline has produced the sole expected XFAIL code. This order keeps
+the baseline proof independent from the repair.
 
 With the binding still present, the repaired exact candidate must produce an
 XPASS and fail the lane. Remove the binding only after that XPASS. Run the same
@@ -232,20 +244,22 @@ the Sonnet, Opus, and Pi ownership rows unchanged.
 
 ## Expected surface and semantic budget
 
-The expected surface is six existing files:
+The expected surface is six existing files. The first three files form one
+non-product baseline commit. The last three files change only after the live
+baseline produces the sole expected XFAIL code.
 
-- `skills/feedback-rejection-flow/SKILL.md`: state the post-review gate
-  preparation and stop point.
-- `skills/first-officer/references/codex-first-officer-runtime.md`: bind the
-  explicit Codex correction-to-gate sequence.
 - `internal/ensigncycle/claude_live_runner_test.go`: route rejection evidence
   by host and call the strict Codex final-gate oracle.
 - `internal/ensigncycle/shared_round_recording_test.go`: add the strict oracle
   and its malformed, closed, duplicate, and pre-round controls.
 - `internal/ensigncycle/shared_live_runner_test.go`: bind Codex to the strict
   XFAIL owner and code after the dependency lands.
+- `skills/feedback-rejection-flow/SKILL.md`: state the post-review gate
+  preparation and stop point after the baseline evidence.
+- `skills/first-officer/references/codex-first-officer-runtime.md`: bind the
+  explicit Codex correction-to-gate sequence after the baseline evidence.
 - `docs/runtime-live-ci.md`: document the Codex journey result and the strict
-  XFAIL sequence.
+  XFAIL sequence after the baseline evidence.
 
 Estimate about 46 gross insertions and 20 deletions, for a net increase of
 about 26 lines. Tolerance is plus or minus one file and plus or minus 14 net
@@ -281,9 +295,11 @@ It also proved that `commandRecordsRejectionRound` and
 `codexRecordedRejectionRound` match the real Codex shell command. The existing
 offline test `TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl`
 already drives `gates.Prepare` and proves the prepared open-gate bytes. That
-mechanism needs no new format spike. The unverified mechanism is the Codex
-post-review handoff. The exact-candidate live run is the first implementation
-test for it.
+mechanism needs no new format spike. The initial live run is diagnostic only:
+the Claude extractor stopped the test before a semantic final-gate result, so
+it is not the strict-XFAIL proof. The non-product baseline commit must close
+that evidence gap. The unverified mechanism is the Codex post-review handoff.
+The exact-candidate live run is the first implementation test for it.
 
 ## Test plan
 
@@ -292,16 +308,22 @@ baseline took about seven minutes. Use an isolated artifact directory and the
 documented 40-minute Codex timeout.
 
 1. Rebase after the `ts` strict-XFAIL work and the preceding `zh` recorder
-   work. Add the Codex binding. Run the exact baseline command. Require one
-   strict-XFAIL code and no skip. Stop on any other result.
-2. Add the host evidence selector, strict final-gate oracle, and the two
-   instruction changes. Run the focused offline round and extractor tests,
-   including the negative controls. Run the skill and docs lint checks.
-3. Run the exact Codex command with the binding retained. Require XPASS. Save
-   the JSONL, final message, entity, reports, round room, and gate room.
-4. Remove only the Codex binding. Run the same command again. Require PASS and
+   work. Add the Codex host extractor, strict final-gate oracle, negative
+   controls, and XFAIL binding in one non-product baseline commit. Do not
+   change skills or Codex runtime instructions.
+2. Run the exact Codex command from that baseline commit. Require the complete
+   journey and the sole semantic code `rejection-flow-not-completed`. A parser
+   failure or any additional code stops the repair. Save the baseline JSONL,
+   final message, entity, reports, round room, and gate evidence.
+3. Only after the sole-code XFAIL, add the feedback skill and Codex runtime
+   instruction changes. Add the documentation diff. Run the focused offline
+   round, extractor, strict-oracle, and negative-control tests.
+4. Run the exact Codex command with the binding retained. Require XPASS. Save
+   the repaired JSONL, final message, entity, reports, round room, and gate
+   room.
+5. Remove only the Codex binding. Run the same command again. Require PASS and
    inspect the final durable state for the complete correction journey.
-5. Run the normal focused and full Go tests, the race suite, registry
+6. Run the normal focused and full Go tests, the race suite, registry
    reconciliation, and `gofmt -w ./cmd ./internal` in the implementation
    stage. Do not use a Claude or Pi live run as a substitute for the Codex
    proof.
@@ -357,3 +379,27 @@ both the host-specific evidence boundary and the missing final-gate handoff.
 It preserves recorder bytes, round format, authority, and the Pi repair. The
 strict-XFAIL and exact-candidate sequence measures the final open gate rather
 than accepting a component-only helper.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Correct the baseline order after staff re-review. The Codex extractor,
+  strict final-gate oracle, negative controls, and target binding now land in
+  one non-product baseline commit. The live baseline runs only after that
+  commit. Skill text, Codex runtime instructions, and user-visible docs wait
+  for the baseline result.
+- DONE: Require the complete Codex journey to produce the sole expected
+  XFAIL. The baseline must reach the durable missing-gate state through
+  validation/2 and report only `rejection-flow-not-completed`. A parser error,
+  infrastructure error, or extra semantic code fails the baseline.
+- DONE: Preserve the complete correction value and the exact-candidate proof.
+  After the sole-code XFAIL, the repair produces XPASS with the binding and
+  PASS after its removal. The final state still requires one fresh open gate,
+  two implementation reports, two validation reports, and the retained
+  four-entry advisory round.
+
+### Summary
+
+The material ordering error is resolved. Test-only Codex evidence establishes
+the honest strict-XFAIL baseline before any skill or runtime behavior changes.
+The task still owns the complete rejected-candidate correction journey and its
+fresh final gate.
