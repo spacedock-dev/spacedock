@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3zzpdw704df1g8pg1x9thzmw:validation:attempt-1:revision-1",
+  "question": "Does the validated change safely restore the Sonnet gate-guardrail lane?",
+  "artifacts": [
+    {
+      "id": "artifact:3zzpdw704df1g8pg1x9thzmw:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/191da154486170a2ffc077f8831bfff0bd659ada/sonnet-gate-guardrail-no-authority/index.md",
+      "rev": "sha256:35743992981994590e2c8ca933a2ddcd10af9780a11867dcd39111d2be16147d",
+      "mediaType": "text/markdown",
+      "summary": "The exact candidate passes focused, full, race, inventory, and formatting checks. Prior Sonnet evidence shows one prepare and one state commit. Fresh exact-head Sonnet CI remains required because local authentication failed before product execution."
+    }
+  ]
+}

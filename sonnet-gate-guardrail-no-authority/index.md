@@ -52,6 +52,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:3zzpdw704df1g8pg1x9thzmw:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:3zzpdw704df1g8pg1x9thzmw-validation-1
+              briefing:
+                id: briefing:3zzpdw704df1g8pg1x9thzmw:validation:attempt-1:revision-1
+                digest: sha256:a69a4356445101c5291172c46c80e9b2daee1520f422db325d7b781284880266
+                request-digest: sha256:735c3625854348e175d44f096130931b5f327d8c86b80f81d140fb884d2a5e29
+                room-ref: ./review/validation/briefing-1
 sprint: test-behavior-completeness
 ---
 
