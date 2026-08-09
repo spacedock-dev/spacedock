@@ -108,7 +108,7 @@ gates:
                 target-stage: done
                 state: pending
 mod-block: merge:pr-merge
-pr: "#642"
+pr: pr-merge:642
 ---
 
 ## Outcome
