@@ -25,6 +25,17 @@ gates:
                 digest: sha256:ca2ad92ff6a096a252a9d8afa04ceac8c0f42479830ee44dfa2410561c419c8d
                 request-digest: sha256:aa3328285343a91f97a61f069c02112a1146eb4bdb5d7f472a65dff4eb020fbc
                 room-ref: ./publish-rejection-round-before-regate/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zhcb4bcz1qgcn7ajx2ctxpxk:backlog:1
+                briefing: briefing:zhcb4bcz1qgcn7ajx2ctxpxk:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-09T18:33:12.199234Z"
+                decision: approve
+                reason: The Captain authorized ideation dispatch; the seed names the recorder reuse boundary and exact live proof.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Restore the common rejection journey on Sonnet, Opus, Codex, and Pi by making the First Officer publish the rejected validation round before correction and re-gating.
