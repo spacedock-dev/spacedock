@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6x50qafc8566zc6p1qpb6y30:backlog:attempt-1:revision-1",
+  "question": "Is this task ready for initial-stage dispatch ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:6x50qafc8566zc6p1qpb6y30:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a4c410fb7d45941d95745d8ac3773711902e6233/dispatch-current-initial-stage-before-successor.md",
+      "rev": "sha256:50c83faeeabcaab09963b7d5aa097181e31f2d9d206ed5862b3a06b972205ab0",
+      "mediaType": "text/markdown",
+      "summary": "Shape the current-stage dispatch repair with strict XFAIL evidence before product change."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6x50qafc8566zc6p1qpb6y30:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/a929fcb60dab0deda4bdf1768af8dfc9d66fce8f/docs/runtime-live-ci-registry.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:31cb42360f20b278f4d18781b6c790eee7a1a415de7362b5a63db376dec0d1e3"
+    }
+  ]
+}

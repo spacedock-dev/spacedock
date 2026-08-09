@@ -14,6 +14,18 @@ issue:
 pr:
 mod-block:
 id: 6x50qafc8566zc6p1qpb6y30
+gates:
+    version: 1
+    records:
+        - id: gate:6x50qafc8566zc6p1qpb6y30:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:6x50qafc8566zc6p1qpb6y30-backlog-1
+              briefing:
+                id: briefing:6x50qafc8566zc6p1qpb6y30:backlog:attempt-1:revision-1
+                digest: sha256:e32fc37aa5c0ed64331be56f7df6580998db3c9776929ae23b9e16ca0e33a6e8
+                request-digest: sha256:c56845702e628abe4e1a0f0b033af3c75483a568dfdcced3257fadad3d116411
+                room-ref: ./dispatch-current-initial-stage-before-successor/review/backlog/briefing-1
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
