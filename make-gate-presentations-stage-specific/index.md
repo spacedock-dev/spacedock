@@ -345,3 +345,16 @@ Tolerance is **plus or minus 1 file and +35/-20 changed lines** for existing tem
 ### Summary
 
 The design now generalizes through workflow-owned Gate content carried by existing stage subsections and the existing read surface. The re-estimate identifies nine product/documentation/template files, retains the old refit workflow as the propagation control, and excludes F6C plus all command/schema/parser/recorder/runtime changes. Candidate `a236c0074` remains untouched pending a separately authorized implementation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Add a focused behavioral test before product edits for non-development stage names, explicit Gate content override, bounded fallback, rename invariance, and omitted empty evidence.
+  `skills/integration/gate_content_live_test.sh` failed on `a236c0074` by leaking catalog evidence and zero classes; it now passes explicit `orbit-audit`, renamed `signal-check`, and no-instruction fallback, and fails if the stage fetch, override, bound, or omission behavior regresses.
+- DONE: Implement the workflow-owned Gate content design across the re-estimated surface; keep present-gate stage-name agnostic, remove the 11-item list and abstract prose, and preserve all common gate authority.
+  Commits `0d88168a8` and `6b36ecfe5` deliver 10 files/131 changed lines: generic presentation rules, three templates, dev workflow declarations, commission/refit propagation, direct user docs, and no command/schema/parser/recorder/runtime change.
+- DONE: Run focused presenter, commission/refit, contract, strict documentation, formatting, full, race, and required live checks; compare generated documentation output with controlled gate output without requiring a browser-only observation.
+  The three-case Codex presenter matrix, custom commission, refit diff with old hash `5565f9b3…` unchanged, built-in stage reads, contract/integration tests, `mkdocs build --strict`, `gofmt`, `go test ./...`, and `go test ./... -race` passed; rendered docs and live output both omit empty groups. Claude gate-guardrail was attempted but skipped for missing local auth, and Pi reported its existing registered TODO.
+
+### Summary
+
+Gate reviews now read workflow-owned `Gate content` and use a bounded declared-stage fallback without stage-name semantics. The presenter keeps one Briefing, recommendation, decision effect, finding-label authority, and recorder while omitting empty evidence; commission, refit, built-in templates, and user docs carry the same behavior.
