@@ -1,6 +1,6 @@
 ---
 title: Run known live behavior gaps as strict XFAIL
-status: backlog
+status: ideation
 source: "Captain decision after live-test-truth sprint close, 2026-08-09"
 started:
 completed:
@@ -36,7 +36,7 @@ gates:
                 reason: The Captain authorized ideation dispatch; the seed defines strict semantic outcomes and requires real Sonnet and Codex XFAIL cells.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
