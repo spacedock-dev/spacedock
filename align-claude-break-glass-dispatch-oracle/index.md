@@ -10,7 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-align-claude-break-glass-dispatch-oracle
 pr:
 issue:
-mod-block:
+mod-block: merge:pr-merge
 id: 824ecawn5jttbykcgx82nbf4
 gates:
     version: 1
