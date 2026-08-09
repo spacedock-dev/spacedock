@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-2:revision-1",
+  "question": "Does corrected exact-candidate validation support approval, with AC-2 held as a mandatory merge-boundary check?",
+  "artifacts": [
+    {
+      "id": "artifact:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/3570ca9a74dd649e1a15e7f7cf490833c58e1f65/restore-optional-manual-pi-common-live-ci.md",
+      "rev": "sha256:cb5fcc512d5a1a65451bbbbb80b4f17f541a04196661c612850379051e24a1a2",
+      "mediaType": "text/markdown",
+      "summary": "PASSED: candidate 7f5f79aad passed local/offline proof, exact Pi metrics/exclusivity, and exact Opus exclusivity. AC-2 remains explicitly pending for the normal PR merge boundary."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/e0f2812d68db3ee3ef0a61dc006792fbb29a065a/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8042b3a42369859fd0a37c8f03724dfb200936819a23b68aac15fb1acd78fc58"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/e0f2812d68db3ee3ef0a61dc006792fbb29a065a/docs/roadmap/test-behavior-completeness/dispatch-sprint-execution.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e0772dfdf509be2ace9ad67f8650166ef3d14303155b4c27d001a715c77c3b1f"
+    }
+  ]
+}

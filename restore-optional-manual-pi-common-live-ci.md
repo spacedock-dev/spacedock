@@ -74,6 +74,12 @@ gates:
                 at: "2026-08-09T21:53:57.842218Z"
                 decision: revise
                 reason: 'Exact-candidate run 31323946889 retained no journey-metrics files, failing AC-1. Captain authorized a bounded design reset: preserve AC-1 and the existing metrics format; add at most two files and +120 net lines; reuse journeymetrics APIs; prove the current no-op failure and exact repaired Pi artifact.'
+            - id: gate-attempt:0aqnm6v8ajns6cpsknxn9wf2-validation-2
+              briefing:
+                id: briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-2:revision-1
+                digest: sha256:a4e0d87d65c4177acb055ce97e7e9455da2b9447b93913e84cb1ea34631af5ed
+                request-digest: sha256:dd0c93da792868c7556b720df2015c9d77baceef2cc7cb786de5aa326a3b6525
+                room-ref: ./restore-optional-manual-pi-common-live-ci/review/validation/briefing-2
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
