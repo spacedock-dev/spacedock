@@ -176,3 +176,41 @@ The exact failure is a premature Codex stop after successful validation dispatch
 ### Summary
 
 Codex now continues monitoring after a fresh validation spawn when no other work is unresolved. The retained evidence is in `.spacedock-evidence/v8pcpdmrdf-local-codex`.
+
+## Stage Report: validation
+
+- DONE: Confirm exact candidate, remote match, base, and clean tracked worktree.
+  Local and remote HEAD are `c42b1dfdf`. The base is `0bbe9d46c`. Only retained evidence is untracked.
+- DONE: Inspect the exact one-file, four-gross-line product scope.
+  The diff adds two lines to `codex-first-officer-runtime.md` and changes no other tracked file.
+- DONE: Inspect retained local Codex PASS artifacts for validator monitoring, completion, report commit, and gate entry.
+  Both fixtures waited and reached committed validation reports before gate handling.
+- DONE: Run focused negative, registry, owner, format, and diff checks without repeating owned full, race, or live runs.
+  The focused negative, registry, owner, format, and diff checks passed.
+- DONE: Report each finding with four workflow evidence fields.
+  Finding V8-1 records all four fields below.
+- DONE: Write and push a Simplified-English PASSED or REJECTED validation Stage Report.
+  This report recommends REJECTED because the focused proof does not establish AC-2 or AC-4.
+
+### Acceptance evidence
+
+- AC-1: The retained local Codex run passed both fixture variants in 357.10 seconds.
+- AC-2: The artifacts contain no structured `spawn_agent` event for the validator.
+- AC-3: Each fixture contains a committed validation report before gate handling.
+- AC-4: The negative oracle rejects missing state, but it accepts a report without worker evidence.
+- AC-5: The local format, registry, owner, and diff checks passed. Required PR checks remain pending.
+
+### Material findings
+
+- V8-1: Evidence defect, Material, current-task ownership, Needs decision.
+  Released user and normal workflow: supported Codex auto-continue after implementation.
+  Observable harm: the oracle accepts an advanced state without a structured fresh validator dispatch or run.
+  Authority: `value-ac[AC-2]` requires one fresh validation worker to dispatch and run.
+  Trigger evidence: `single-root/codex-exec.jsonl` has zero `spawn_agent` events and one empty-target `wait` event.
+  The retained `split-root/codex-exec.jsonl` file has the same event counts and empty target.
+
+### Summary
+
+The two-line instruction change is within the approved scope. The retained journey reaches validation, but its proof cannot establish the fresh worker boundary.
+
+REJECTED. The First Officer must authorize a proof-surface change or request a design decision.
