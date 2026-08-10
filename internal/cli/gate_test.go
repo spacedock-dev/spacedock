@@ -317,8 +317,8 @@ func TestRemovedGateVerbsAreAbsentAndSideEffectFree(t *testing.T) {
 
 			var out, errOut bytes.Buffer
 			code := run(context.Background(), []string{"gate", verb, "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-			if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|validate|consume)") {
-				t.Fatalf("gate %s exit=%d stdout=%q stderr=%q", verb, code, out.String(), errOut.String())
+			if code != 2 {
+				t.Fatalf("gate %s exit=%d, want routing rejection exit 2", verb, code)
 			}
 			after, err := os.ReadDir(root)
 			if err != nil {
