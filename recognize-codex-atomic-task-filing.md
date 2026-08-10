@@ -140,3 +140,18 @@ Thus, a failed atomic-looking command stays red.
 
 The design repairs only the Codex filing evidence boundary.
 It recognizes the successful atomic command and keeps each adjacent non-atomic or unsuccessful command red.
+
+## Stage Report: implementation
+
+- DONE: Recognize the exact successful blessed Codex filing command while every manual, preview-plus-write, wrong-slug, failed, and narration-only control remains red.
+  Commit `95e7f715d` adds successful-command filtering and the narrow `/bin/bash -lc` display-form matcher. The focused control fails without either change.
+- DONE: Prove the repaired exact local Codex filing journey passes normally with retained artifacts.
+  `TestLiveCommonFiling` passed with local subscription authentication. The artifacts remain at `/tmp/spacedock-codex-filing-implementation.Iskzdl`.
+- FAILED: Keep the approved three-file, 105-gross evidence-only boundary and complete required offline checks.
+  The commit has three files and 105 gross lines. Format, registry, active-owner, focused, and focused-race checks passed.
+  `go test ./...` and `go test ./... -race` stopped when the full system volume reported `no space left on device`.
+
+### Summary
+
+The oracle now grades only completed Codex commands with exit code zero. It recognizes the exact artifact command and keeps all required controls red.
+The exact local journey passed and retained its artifacts. The full offline suites need a machine with sufficient temporary disk space.
