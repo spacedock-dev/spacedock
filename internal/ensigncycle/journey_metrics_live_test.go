@@ -3,13 +3,44 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
+
+func FuzzPiSharedLiveDriverEmitsJourneyMetric(f *testing.F) {
+	f.Add("pi-metrics-proof")
+	f.Fuzz(func(t *testing.T, scenarioName string) {
+		dir := t.TempDir()
+		t.Setenv("SPACEDOCK_JOURNEY_METRICS_DIR", dir)
+		driver := piSharedLiveDriver{modelName: "openai/gpt-5.6-luna:max"}
+		driver.emitMetrics(t, sharedRuntimeScenario{name: scenarioName}, liveResult{duration: 2 * time.Second})
+
+		paths, err := filepath.Glob(filepath.Join(dir, "shared-scenarios", "*.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(paths) != 1 {
+			t.Fatalf("Pi journey metric files = %d, want 1", len(paths))
+		}
+		data, err := os.ReadFile(paths[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		var record journeymetrics.Record
+		if len(data) == 0 || json.Unmarshal(data, &record) != nil {
+			t.Fatalf("Pi journey metric is empty or invalid: %q", data)
+		}
+		if record.ScenarioID != scenarioName || record.Runtime != "pi" || record.Model != driver.modelName || record.DurationMS != 2000 {
+			t.Fatalf("Pi journey metric = %#v", record)
+		}
+	})
+}
 
 func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult, model string) {
 	t.Helper()
@@ -122,5 +153,27 @@ func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, resu
 	record.ToolCallsByName = characterization.ToolCallsByName
 	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
 		t.Fatalf("emit Codex journey metrics for %s: %v", scenario.name, err)
+	}
+}
+
+func emitPiScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult, model string) {
+	t.Helper()
+	dir := os.Getenv("SPACEDOCK_JOURNEY_METRICS_DIR")
+	if dir == "" {
+		return
+	}
+	record := journeymetrics.BuildRecord(journeymetrics.JourneySpec{
+		ScenarioID: scenario.name,
+		Source:     "live-harness",
+		Mode:       journeymetrics.ModeLLMLive,
+		Runtime:    "pi",
+		Executor:   "llm",
+		Host:       "pi",
+		Model:      model,
+	}, journeymetrics.BehaviorResult{Passed: true}, journeymetrics.Observation{
+		Duration: result.duration,
+	})
+	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
+		t.Fatalf("emit Pi journey metrics for %s: %v", scenario.name, err)
 	}
 }
