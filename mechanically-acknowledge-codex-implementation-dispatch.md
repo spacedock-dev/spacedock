@@ -36,6 +36,26 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:n28423efmj358m5av61z2fxx:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:n28423efmj358m5av61z2fxx-ideation-1
+              briefing:
+                id: briefing:n28423efmj358m5av61z2fxx:ideation:attempt-1:revision-1
+                digest: sha256:982b7ea3d3de77071e52a42a61084a2301d41c76e84db991495b27d8c88b0598
+                request-digest: sha256:24969a63ab572e2e210d26a20b06f8245fbbbeabce96e41e9c7652cd5d9f3e3a
+                room-ref: ./mechanically-acknowledge-codex-implementation-dispatch/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:n28423efmj358m5av61z2fxx:ideation:1
+                briefing: briefing:n28423efmj358m5av61z2fxx:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-10T17:04:42.523723Z"
+                decision: approve
+                reason: 'Captain approves exact reviewed state 829daad9a: ten files, +449/-43, 492 gross hard cap, CLI-only acknowledgment value, and required focused plus exact local XPASS-to-PASS proofs.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem

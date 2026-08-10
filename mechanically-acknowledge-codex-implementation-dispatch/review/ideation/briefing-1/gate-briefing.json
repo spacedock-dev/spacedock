@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:n28423efmj358m5av61z2fxx:ideation:attempt-1:revision-1",
+  "question": "Approve the reviewed ten-file CLI acknowledgment design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:n28423efmj358m5av61z2fxx:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/829daad9aaf7914d4879a8666387b259ddbdc17e/mechanically-acknowledge-codex-implementation-dispatch.md",
+      "rev": "sha256:bfa98159f3d24c2514efbbe58dca10bc84ce99207e3d6b59dbcdf140423eaa3d",
+      "mediaType": "text/markdown",
+      "summary": "Captain approves state 829daad9a: supported Claude and Codex CLI cannot advance past an unacknowledged implementation dispatch; exact cap 10 files and 492 gross lines."
+    }
+  ]
+}
