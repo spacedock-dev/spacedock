@@ -48,7 +48,7 @@ func commandFilesViaNew(command, slug string) bool {
 	if !strings.Contains(command, slug) {
 		return false
 	}
-	if newInvocation.MatchString(command) {
+	if regexp.MustCompile(newInvocation.String() + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`).MatchString(command) {
 		return true
 	}
 	return capturedLauncherFilesViaNew(command, slug)
@@ -80,15 +80,15 @@ func capturedLauncherFilesViaNew(command, slug string) bool {
 	captureEnd := strings.Index(command, m[0]) + len(m[0])
 	segments := regexp.MustCompile(`\r?\n|;|&&|\|\||\|`).Split(command[captureEnd:], -1)
 	executable := regexp.QuoteMeta(varName)
-	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)\b`)
-	displayCall := regexp.MustCompile(`^\\""'\$` + executable + `"[ \t]+(?:new|--new)\b`)
+	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
+	displayCall := regexp.MustCompile(`^\\""'\$` + executable + `"[ \t]+(?:new|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
 	for _, segment := range segments {
 		segment = strings.TrimSpace(segment)
 		matched := call.MatchString(segment)
 		if strings.HasPrefix(command, "/bin/bash -lc ") {
 			matched = matched || displayCall.MatchString(segment)
 		}
-		if matched && strings.Contains(segment, slug) {
+		if matched {
 			return true
 		}
 	}
@@ -177,10 +177,8 @@ func successfulCodexCommands(jsonl string) []string {
 	var commands []string
 	for _, line := range strings.Split(jsonl, "\n") {
 		var event codexCommandItem
-		if json.Unmarshal([]byte(line), &event) != nil ||
-			event.Type != "item.completed" ||
-			event.Item.Type != "command_execution" ||
-			event.Item.Status != "completed" ||
+		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" ||
+			event.Item.Type != "command_execution" || event.Item.Status != "completed" ||
 			event.Item.ExitCode == nil || *event.Item.ExitCode != 0 {
 			continue
 		}

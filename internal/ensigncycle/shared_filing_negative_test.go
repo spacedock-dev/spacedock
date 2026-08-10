@@ -105,8 +105,6 @@ func TestAssertClaudeFilingViaNew(t *testing.T) {
 func TestAssertCodexFilingViaNew(t *testing.T) {
 	slug := filingSlug
 
-	// Positive regression: artifact 9078284956 used Codex's /bin/bash -lc
-	// display form for a captured launcher and created wire-the-thing atomically.
 	artifactCommand := `/bin/bash -lc 'set -eu
 sd_bin="${SPACEDOCK_BIN:-spacedock}"
 printf '"'%s\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire the thing so it is connected and ready for follow-up work.' | \""'$sd_bin" new wire-the-thing --workflow-dir /tmp/TestLiveCommonFiling1757938389/002
@@ -122,7 +120,7 @@ printf '"'%s\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire 
 	redControls := map[string]string{
 		"manual file creation": codexCommand("printf body > " + slug + ".md"),
 		"preview plus write":   codexCommand("spacedock status --next-id; printf body > " + slug + ".md"),
-		"wrong slug":           codexCommand("spacedock new other-slug"),
+		"wrong slug":           codexCommand("spacedock new other-slug --workflow-dir /tmp/wire-the-thing"),
 		"narration only":       `{"type":"item.completed","item":{"type":"agent_message","text":"spacedock new wire-the-thing"}}`,
 	}
 	for name, stream := range redControls {
