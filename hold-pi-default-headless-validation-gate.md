@@ -344,3 +344,46 @@ This finding is not owned by fh6. The Captain accepted the fh6 value proof from 
 
 PASSED. Pi now reaches a clean, open validation gate with a correlated implementation lifecycle.
 The exact target passes without the fh6 binding. A later zh-owned rejection-flow timeout does not change the fh6 result.
+
+## Stage Report: validation
+
+- DONE: Verify the exact candidate and worktree state.
+  Candidate `cae0a19d91f3b8b8f129de83fad65613dd6894aa` equals the remote head. The code worktree is clean.
+- DONE: Inspect the approved surface and the reset limits.
+  The repaired candidate has six files, 81 insertions, and 21 deletions. The reset has 37 insertions and 3 deletions.
+  The final commit removes only the fh6 binding and its reconciliation row.
+- DONE: Inspect the implementation evidence without duplicate execution.
+  The implementation report records format, focused, registry, owner, full, and race results.
+  Run `31388978952` also passed the offline suite and deterministic live-harness controls.
+- DONE: Verify AC-1 with exact live state evidence.
+  Artifact `9064353436` records a normal Pi PASS in 475830 ms.
+  The entity has `status: validation`, empty terminal fields, and one open Briefing.
+  The command log has no decision, Application, consumption, withdrawal, or successor dispatch.
+- DONE: Verify AC-2 with the strict binding sequence.
+  Artifact `9062678223` records fh6 XPASS with `observed=[]` in 528147 ms.
+  Candidate `cae0a19d9` removes the binding. Artifact `9064353436` then records a normal PASS.
+  The terminal-field mutant retains the exact `gate-hold-terminal-fields-set` code.
+- DONE: Verify AC-3 with the command-order evidence.
+  The clean live runs need no cleanup and finish with empty terminal fields.
+  The focused controls reject dirty final state, duplicate cleanup, reordered cleanup, post-prepare cleanup, and missing completion.
+- DONE: Verify AC-4 and all ownership boundaries.
+  The Pi rule changes no command grammar, stored format, fixture, worker authority, or product code.
+  The n28 Sonnet and Codex bindings remain. The zh, dvd, and xp6 bindings also remain.
+- DONE: Perform the semantic adversarial inspection.
+  The invariant is one correlated implementation completion before validation and one clean open gate after validation.
+  Clean, terminal, repeated, reordered, post-prepare, and incomplete lifecycle variants preserve this invariant or fail closed.
+  The root-session inputs measured 750173 and 418714 bytes. No supported scaling boundary failed.
+- DONE: Classify the later Pi rejection-flow timeout.
+  Released user: the supported Pi rejection-flow maintainer cadence.
+  Observable harm: the journey times out before second-gate completion and terminal state.
+  Affected authority: `value-ac[AC-1]` applies to fh6 only, and the fh6 journey passes before this timeout.
+  Trigger evidence: run `31388978952` times out in the zh-owned rejection-flow journey after 769.17 seconds.
+  Disposition: this Material finding belongs to `zhcb4bcz1qgcn7ajx2ctxpxk`. It does not change fh6 candidate ownership.
+- DONE: Give the validation recommendation.
+  PASSED. All four acceptance criteria have valid code, command, and live state evidence.
+  No Material fh6 finding remains. No deferred risk or polish finding remains.
+
+### Summary
+
+PASSED. The exact Pi target reaches a clean open validation gate after a correlated implementation lifecycle.
+The strict fh6 binding first reports XPASS. The same target then reports PASS after the authorized binding removal.
