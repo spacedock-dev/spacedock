@@ -34,11 +34,6 @@ type PrepareResult struct {
 	State    string
 }
 
-// PrepareCommit publishes the entity commit unit while Prepare still holds the
-// entity lock. durable reports whether the binding and room crossed the local
-// Git commit boundary even when remote publication failed.
-type PrepareCommit func(PrepareResult) (durable bool, err error)
-
 type preparedReference struct {
 	Type      string `json:"type"`
 	ID        string `json:"id"`
@@ -59,21 +54,6 @@ type preparedBriefing struct {
 // Prepare validates selected committed sources, constructs one canonical open
 // room under the entity lock, publishes it, and binds it to the current stage.
 func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
-	return prepare(entityPath, input, nil)
-}
-
-// PrepareTransactional extends Prepare with one commit callback under the same
-// entity lock. A pre-commit callback failure restores the exact entity bytes and
-// removes only the room created by this invocation. Exact replay invokes the
-// callback without creating or rewriting an attempt so publication can resume.
-func PrepareTransactional(entityPath string, input PrepareInput, commit PrepareCommit) (PrepareResult, error) {
-	if commit == nil {
-		return PrepareResult{}, fmt.Errorf("gate prepare transaction requires a commit callback")
-	}
-	return prepare(entityPath, input, commit)
-}
-
-func prepare(entityPath string, input PrepareInput, commit PrepareCommit) (PrepareResult, error) {
 	if strings.TrimSpace(input.Question) == "" {
 		return PrepareResult{}, fmt.Errorf("--question must be nonblank")
 	}
@@ -185,11 +165,6 @@ func prepare(entityPath string, input PrepareInput, commit PrepareCommit) (Prepa
 	if replay, matched, err := preparedReplay(entityPath, previous, briefingID, input.Question, input.Summary, sources); err != nil {
 		return PrepareResult{}, err
 	} else if matched {
-		if commit != nil {
-			if _, err := commit(replay); err != nil {
-				return replay, err
-			}
-		}
 		return replay, nil
 	}
 	primarySummary := input.Summary
@@ -300,35 +275,13 @@ func prepare(entityPath string, input PrepareInput, commit PrepareCommit) (Prepa
 			return PrepareResult{}, err
 		}
 	}
-	entityBefore, err := os.ReadFile(entityPath)
-	if err != nil {
-		if created {
-			rollbackPreparedRoom(room, createdParents)
-		}
-		return PrepareResult{}, err
-	}
 	if err := prepareWriteBinding(entityPath, oldNode, doc); err != nil {
 		if created {
 			rollbackPreparedRoom(room, createdParents)
 		}
 		return PrepareResult{}, err
 	}
-	result := PrepareResult{Room: room, Briefing: briefingID, Digest: briefingDigest, State: "open"}
-	if commit != nil {
-		durable, commitErr := commit(result)
-		if commitErr != nil {
-			if !durable {
-				if restoreErr := atomicWrite(entityPath, entityBefore); restoreErr != nil {
-					return result, fmt.Errorf("%v; restore gate binding: %w", commitErr, restoreErr)
-				}
-				if created {
-					rollbackPreparedRoom(room, createdParents)
-				}
-			}
-			return result, commitErr
-		}
-	}
-	return result, nil
+	return PrepareResult{Room: room, Briefing: briefingID, Digest: briefingDigest, State: "open"}, nil
 }
 
 func preparedEntityReplaySource(entityPath string, roots gitsource.Roots, previous *Attempt, ordinal int) (gitsource.Source, bool, error) {

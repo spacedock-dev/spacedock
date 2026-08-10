@@ -86,13 +86,8 @@ func TestUnsetNestedSessionArgs(t *testing.T) {
 
 func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error {
 	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
-	publish, reviewCount := strings.Index(log, " --publish "), strings.Count(log, " --publish ")
-	reviewPrepare := strings.LastIndex(log[:max(publish, 0)], "exit=0\tgate prepare-review recorded-gate-task ")
-	prepare := max(strings.Index(log, prepareToken), reviewPrepare)
+	prepare := strings.Index(log, prepareToken)
 	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
-	if reviewPrepare >= 0 {
-		commit = reviewPrepare
-	}
 	head := strings.LastIndex(log, "state-head\t")
 	dispatches := strings.Split(log[:max(prepare, 0)], "exit=0\tdispatch build ")
 	const boundary = "gate hold crossed its committed no-authority boundary: "
@@ -101,9 +96,9 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "no successful gate prepare recorded")
 	case commit < prepare:
 		return errGraded(boundary + "state commit missing or before the successful gate prepare")
-	case reviewPrepare < 0 && head < commit:
+	case head < commit:
 		return errGraded(boundary + "state-head missing or before the state commit")
-	case strings.Count(log, prepareToken)+reviewCount != 1:
+	case strings.Count(log, prepareToken) != 1:
 		return errGraded(boundary + "more than one successful gate prepare recorded")
 	case strings.Contains(log[prepare:], " --decision "):
 		return errGraded(boundary + "a decision was recorded after prepare")
@@ -145,10 +140,6 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		"state-head\tabc123\n"
 	if err := assertRecordedGateHoldLog(prepared, true); err != nil {
 		t.Fatalf("prepare-first hold log rejected: %v", err)
-	}
-	composite := strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\nstate-head\tabc123\n", "exit=0\tgate prepare-review recorded-gate-task --workflow-dir /wf --publish --json\n", 1)
-	if err := assertRecordedGateHoldLog(composite, true); err != nil {
-		t.Fatalf("atomic prepare-review hold log rejected: %v", err)
 	}
 	for name, tc := range map[string]struct {
 		mutation string
