@@ -1,6 +1,6 @@
 ---
 title: Stop Sonnet zero-discovery broad search
-status: ideation
+status: implementation
 score: "0.90"
 source: "PR #663 Sonnet zero-discovery failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -49,7 +49,7 @@ gates:
                 reason: Captain directed this Sonnet product repair. The exact two-file design preserves all excluded surfaces and has a 14-line hard limit.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-10T18:38:46Z
 ---
 ## Problem
