@@ -12,7 +12,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-make-gate-presentations-stage-specific
 pr:
-mod-block:
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
