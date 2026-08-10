@@ -11,8 +11,8 @@ sprint-readiness: ready
 group: common-evidence
 worktree: .worktrees/spacedock-ensign-commit-pi-gate-prepare-before-presentation
 issue:
-pr:
-mod-block:
+pr: "#656"
+mod-block: merge:pr-merge
 id: 2e4fe65gy9vcr4xck6akzmdd
 gates:
     version: 1
