@@ -697,3 +697,12 @@ Both n28 bindings remain active, and the bounded offline candidate passes all re
 
 The correction has standard Go formatting and no unrelated change.
 The recarved candidate keeps both executing gaps under n28 and preserves the approved product behavior.
+
+## Captain decision: formatting-only cap exception
+
+The Captain approved the exact formatting-only correction on candidate
+`edea2ac9aa8f33d53fd738c6fc53a10095577f44`.
+
+The approved full-candidate limit is now seven files and 222 gross changed lines.
+Behavior and net scope are unchanged. This decision authorizes validation
+consumption and the required exact PR checks.
