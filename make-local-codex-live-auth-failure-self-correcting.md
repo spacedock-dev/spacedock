@@ -124,3 +124,16 @@ No model-backed run, manual Runtime Live E2E run, GitHub workflow dispatch, or d
 ### Summary
 
 The design limits implementation to one corrective fatal message and one adjacent documentation paragraph. Under the captain's proof narrowing, wording is reviewed directly while existing mode and on-disk tests preserve isolated OAuth and protected-CI policy; deterministic full and race verification add no live-runtime work.
+
+## Stage Report: implementation
+
+- DONE: Deliver only the approved diagnostic and adjacent documentation paragraph within two files and five changed lines.
+  Commit `94c15a79a` changes exactly the two approved files with 3 insertions and 1 deletion; adding a third file or another changed line would fail the declared surface check.
+- DONE: Preserve all Codex auth decisions and isolated-home contents, with no output-text comparison.
+  The focused tests retain every auth mode and exact isolated-home contents; changing decision priority, the copied credential path, or adding copied operator state makes them fail, and no test compares diagnostic prose.
+- DONE: Pass the focused auth/isolation checks, formatting, full suite, and race suite without any model or GitHub workflow run.
+  The three named focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed; mode/path/state regressions or package and concurrency failures make these checks fail, and no live or workflow command ran.
+
+### Summary
+
+The required-lane failure now gives the corrective local `unset` command and names isolated Codex OAuth, while the adjacent guide paragraph explains the same local path. Authentication policy and isolation behavior are unchanged, and commit `94c15a79a` contains the complete four-line, two-file deliverable.
