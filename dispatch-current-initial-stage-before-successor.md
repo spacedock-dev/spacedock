@@ -450,3 +450,16 @@ Candidate `974a318b162b7fc895e018e8d902470474c31a4a` is ready for the protected 
 ### Summary
 
 HOLD candidate `974a318b162b7fc895e018e8d902470474c31a4a` unchanged. The required Pi proof is absent because another owned XPASS stopped the suite before the exact target.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Record the Captain's merge-order exception A.
+  Land task 2e4 before task 6x. Then rebase 6x and rerun the exact protected Pi target.
+- DONE: Record why the exception is required.
+  Run `31360479606` and artifact `9052397854` show that the 2e4 XPASS triggered `-failfast` before the 6x target started.
+- DONE: Preserve the candidate while 2e4 is not landed.
+  Candidate `974a318b162b7fc895e018e8d902470474c31a4a` remains unchanged. Wait for the 2e4 landing SHA before rebase or rerun.
+
+### Summary
+
+HOLD the unchanged 6x candidate until the 2e4 landing SHA is available. Exception A permits the required 2e4-first landing order.
