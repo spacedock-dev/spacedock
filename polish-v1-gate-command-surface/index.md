@@ -6,7 +6,7 @@ started: 2026-08-08T00:04:11Z
 completed:
 verdict:
 score: "0.8"
-worktree:
+worktree: .worktrees/spacedock-ensign-polish-v1-gate-command-surface
 issue:
 pr:
 sprint: durable-decisions
