@@ -870,3 +870,21 @@ All authorized focused checks pass. The validation recommendation is PASSED, and
 
 The candidate now uses immutable main `2bbff4a8044934fbd565b304e7d90b13c7fe8caf`. The rebase was clean and preserved all evidence.
 All authorized focused checks pass. The remote branch now identifies `1df6b4ab182c658205c0763b6423cca47bb54305`.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Confirm the final exact head, remote match, base, and clean worktree.
+  Local and remote heads match `1df6b4ab`. Main `2bbff4a8` is the merge base, and the worktree is clean.
+- DONE: Inspect the clean rebase delta.
+  All nine dvd commits map unchanged. All seven candidate file blob identifiers match the prior validated head `47d39b62`.
+- DONE: Inspect the authorized focused results.
+  The retained parser, malformed-round, registry, owner, binding, format, and diff checks passed.
+- DONE: Preserve the test boundary.
+  No full, race, or live check ran. The candidate remains seven existing files, +131/-40, and net +91.
+- DONE: Update and push the final Simplified-English validation report.
+  PASSED: the clean rebase changes no validated byte, and no Material finding remains.
+
+### Summary
+
+The final exact candidate preserves every validated product, oracle, registry, and binding byte. The clean rebase changes only commit identities.
+The validation recommendation remains PASSED. No Material finding remains.
