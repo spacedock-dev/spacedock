@@ -987,3 +987,35 @@ The validation recommendation is PASSED. No DVD-owned Material finding remains.
 
 The durable oracle now accepts a cleanly withdrawn early gate followed by one fresh open gate. It still rejects two active attempts.
 All required local checks pass. Fresh validation can now inspect exact candidate `f754ba1765956d52b5dc16a4aba8b07508072e0e`.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Confirm the exact candidate, remote match, base, and clean worktree.
+  Local and remote heads match `f754ba17`. Main `2bbff4a8` is the merge base, and the worktree is clean.
+- DONE: Inspect the exact one-file gate-history correction and approved cap.
+  The correction is +22/-5 in one test file. The full seven-file candidate is +158/-45, net +113.
+- DONE: Confirm exactly one active final attempt and clean withdrawals for all earlier attempts.
+  The oracle requires a withdrawal on each earlier attempt. It rejects earlier evidence, resolution, application, or active state.
+- DONE: Confirm derived final identifiers and the exact withdrawn-attempt positive.
+  Attempt 2 uses derived attempt and Briefing identifiers. Artifact `9081220482` records withdrawn attempt 1 and open attempt 2.
+- DONE: Confirm the prior-attempt-still-active negative and preserved controls.
+  The focused oracle passed in 0.947s. Removing the earlier withdrawal fails, and all advisory, status, round, path, open, and terminal controls remain red.
+- DONE: Inspect implementation-owned focused, full, race, format, and diff evidence.
+  Normal and race suites passed in 541.056s and 587.687s. The implementation focused, format, and diff checks passed.
+- DONE: Preserve live evidence without a rerun.
+  Validation ran only the focused oracle. No live run occurred after the correction.
+- DONE: Report four-field findings and write the recommendation.
+  PASSED: the recorded gate-history finding is fixed, no new DVD-owned Material finding remains, and all acceptance evidence applies.
+
+### Finding disposition
+
+- Released user and normal workflow: A Sonnet operator completed the shared rejection-flow journey for PR #664.
+- Observable harm: Candidate `83de0c32` falsely reported `rejection-round-missing` for a clean recovered gate history.
+- Value authority: `value-ac[AC-3]` requires validation/2 before exactly one fresh unresolved gate.
+- Trigger evidence: Run `31432758302`, job `93600120801`, and artifact `9081220482` contain withdrawn attempt 1 and open attempt 2.
+- First Officer disposition: FIX. Commit `f754ba17` accepts clean historical withdrawals and rejects an active prior attempt.
+
+### Summary
+
+The exact candidate accepts one active final gate after any number of cleanly withdrawn attempts. It preserves every other durable and transcript constraint.
+The validation recommendation is PASSED. No DVD-owned Material finding remains.
