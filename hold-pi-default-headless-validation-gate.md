@@ -9,7 +9,7 @@ score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-evidence
-worktree:
+worktree: .worktrees/spacedock-ensign-hold-pi-default-headless-validation-gate
 issue:
 pr:
 mod-block:
