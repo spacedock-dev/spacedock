@@ -70,7 +70,7 @@ func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, res
 		Executor:   "llm",
 		Host:       "claude",
 		Model:      model,
-	}, journeymetrics.BehaviorResult{Passed: true}, observation)
+	}, scenarioBehaviorResult(scenario), observation)
 	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
 		t.Fatalf("emit Claude journey metrics for %s: %v", scenario.name, err)
 	}
@@ -147,7 +147,7 @@ func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, resu
 		Executor:   "llm",
 		Host:       "codex",
 		Model:      characterization.Model,
-	}, characterization, journeymetrics.BehaviorResult{Passed: true})
+	}, characterization, scenarioBehaviorResult(scenario))
 	record.DurationMS = result.duration.Milliseconds()
 	record.ToolCalls = characterization.ToolCalls
 	record.ToolCallsByName = characterization.ToolCallsByName
@@ -170,10 +170,18 @@ func emitPiScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result 
 		Executor:   "llm",
 		Host:       "pi",
 		Model:      model,
-	}, journeymetrics.BehaviorResult{Passed: true}, journeymetrics.Observation{
+	}, scenarioBehaviorResult(scenario), journeymetrics.Observation{
 		Duration: result.duration,
 	})
 	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
 		t.Fatalf("emit Pi journey metrics for %s: %v", scenario.name, err)
 	}
+}
+
+func scenarioBehaviorResult(scenario sharedRuntimeScenario) journeymetrics.BehaviorResult {
+	result := journeymetrics.BehaviorResult{Passed: true}
+	if scenario.gap.kind == "xfail" {
+		result.Outcome = &journeymetrics.Outcome{Status: scenario.grade.status, Owner: scenario.gap.owner, ExpectedCode: scenario.gap.code, FailureCodes: scenario.grade.codes}
+	}
+	return result
 }

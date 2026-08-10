@@ -1,6 +1,7 @@
 package contractlint
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -22,10 +23,10 @@ type desiredLiveJourney struct {
 type actualLiveJourney struct {
 	id, test, builder, exercise, assertion string
 	fixtures                               []string
-	todos                                  []liveTODORow
+	gaps                                   []liveGapRow
 }
 
-type liveTODORow struct{ target, owner string }
+type liveGapRow struct{ kind, target, owner, code string }
 
 var (
 	registryHeading, registryEntry = regexp.MustCompile("^### `([^`]+)`$"), regexp.MustCompile("^- \\*\\*Entry point:\\*\\* `([^`]+)`$")
@@ -66,12 +67,12 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 			t.Errorf("journey %q fixtures = %v, want %v", id, got.fixtures, want.fixtures)
 		}
 		seenTargets := map[string]bool{}
-		for _, todo := range got.todos {
-			if seenTargets[todo.target] {
-				t.Errorf("journey %q repeats TODO target %q", id, todo.target)
+		for _, gap := range got.gaps {
+			if seenTargets[gap.target] {
+				t.Errorf("journey %q repeats gap target %q", id, gap.target)
 			}
-			seenTargets[todo.target] = true
-			gapCounts[todo.target]++
+			seenTargets[gap.target] = true
+			gapCounts[gap.kind+"/"+gap.target]++
 		}
 	}
 	for id := range fixtureOwners {
@@ -80,12 +81,12 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 		}
 	}
 	gapRows := make([]string, 0, len(targets))
-	for target := range targets {
+	for target := range gapCounts {
 		gapRows = append(gapRows, target)
 	}
 	sort.Strings(gapRows)
 	for _, target := range gapRows {
-		t.Logf("derived common TODO gap %s=%s", target, strconv.Itoa(gapCounts[target]))
+		t.Logf("derived common gap %s=%s", target, strconv.Itoa(gapCounts[target]))
 	}
 
 	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
@@ -116,9 +117,9 @@ func TestRuntimeLiveTODOOwnersAreActive(t *testing.T) {
 	actual, _ := readActualLiveJourneys(t, repo, readRegistryTargets(t, registryPath))
 	active := readActiveEntityIDs(t, stateDir)
 	for journeyID, journey := range actual {
-		for _, todo := range journey.todos {
-			if !active[todo.owner] {
-				t.Errorf("journey %q target %q names inactive TODO owner %q", journeyID, todo.target, todo.owner)
+		for _, gap := range journey.gaps {
+			if !active[gap.owner] {
+				t.Errorf("journey %q target %q names inactive %s owner %q", journeyID, gap.target, gap.kind, gap.owner)
 			}
 		}
 	}
@@ -366,23 +367,65 @@ func parseLiveJourneyCall(t *testing.T, fn *ast.FuncDecl, targets map[string]boo
 	}
 	list, ok := args[4].(*ast.CompositeLit)
 	if !ok {
-		t.Fatalf("%s TODO metadata must be nil or a composite literal", fn.Name.Name)
+		t.Fatalf("%s gap metadata must be nil or a composite literal", fn.Name.Name)
 	}
 	for _, element := range list.Elts {
-		call, ok := element.(*ast.CallExpr)
-		if !ok || exprName(call.Fun) != "liveTODO" {
-			t.Fatalf("%s TODO element must be liveTODO(two string literals)", fn.Name.Name)
+		gap, err := parseLiveGap(element, targets)
+		if err != nil {
+			t.Fatalf("%s: %v", fn.Name.Name, err)
 		}
-		if len(call.Args) != 2 {
-			t.Fatalf("%s has malformed liveTODO", fn.Name.Name)
-		}
-		target, owner := stringLiteral(t, call.Args[0]), stringLiteral(t, call.Args[1])
-		if !ownerID.MatchString(owner) || !targets[target] {
-			t.Fatalf("%s has malformed TODO(%q, %q)", fn.Name.Name, target, owner)
-		}
-		got.todos = append(got.todos, liveTODORow{target: target, owner: owner})
+		got.gaps = append(got.gaps, gap)
 	}
 	return got
+}
+
+func parseLiveGap(expr ast.Expr, targets map[string]bool) (liveGapRow, error) {
+	call, ok := expr.(*ast.CallExpr)
+	if !ok {
+		return liveGapRow{}, fmt.Errorf("gap element must be liveTODO or liveXFail")
+	}
+	kind := strings.TrimPrefix(exprName(call.Fun), "live")
+	wantArgs := map[string]int{"TODO": 2, "XFail": 3}[kind]
+	if wantArgs == 0 || len(call.Args) != wantArgs {
+		return liveGapRow{}, fmt.Errorf("malformed live%s", kind)
+	}
+	values := make([]string, wantArgs)
+	for i, arg := range call.Args {
+		literal, ok := arg.(*ast.BasicLit)
+		if !ok || literal.Kind != token.STRING {
+			return liveGapRow{}, fmt.Errorf("gap argument is not a string literal")
+		}
+		values[i], _ = strconv.Unquote(literal.Value)
+	}
+	if !targets[values[0]] || !ownerID.MatchString(values[1]) || (kind == "XFail" && values[2] == "") {
+		return liveGapRow{}, fmt.Errorf("malformed live%s binding", kind)
+	}
+	code := ""
+	if kind == "XFail" {
+		code = values[2]
+	}
+	return liveGapRow{strings.ToLower(kind), values[0], values[1], code}, nil
+}
+
+func TestRuntimeLiveGapBindingValidation(t *testing.T) {
+	targets := map[string]bool{"codex": true}
+	for source, valid := range map[string]bool{
+		`liveTODO("codex", "98aa776adg66gn823a8gamdq")`:                                            true,
+		`liveXFail("codex", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched")`:   true,
+		`liveTODO("codex", "98aa776adg66gn823a8gamdq", "code")`:                                    false,
+		`liveXFail("codex", "bad-owner", "implementation-worker-not-dispatched")`:                  false,
+		`liveXFail("unknown", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched")`: false,
+		`liveXFail("codex", "98aa776adg66gn823a8gamdq", "")`:                                       false,
+	} {
+		expr, err := parser.ParseExpr(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = parseLiveGap(expr, targets)
+		if (err == nil) != valid {
+			t.Errorf("parseLiveGap(%s) error = %v, valid=%t", source, err, valid)
+		}
+	}
 }
 
 func exprName(expr ast.Expr) string {

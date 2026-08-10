@@ -223,13 +223,19 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	if err != nil {
 		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
 	}
+	var semantic []error
 	if err := assert(before, after, expected); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+		semantic = append(semantic, &gradedErr{code: "gate-not-held", msg: err.Error()})
 	}
-	if err := assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
+	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))
+	scenario.grade = gradeLive(scenario.gap.code, semantic...)
 	runner.emitMetrics(t, scenario, result)
+	if scenario.grade.status == "xfail" {
+		t.Logf("XFAIL %s/%s owner=%s code=%s", scenario.gap.target, scenario.name, scenario.gap.owner, scenario.gap.code)
+	}
+	if scenario.grade.status == "fail" || scenario.grade.status == "xpass" {
+		t.Fatalf("%s %s/%s owner=%s expected=%s observed=%v\nFinal message:\n%s\nArtifacts: %s", strings.ToUpper(scenario.grade.status), scenario.gap.target, scenario.name, scenario.gap.owner, scenario.gap.code, scenario.grade.codes, result.finalMessage, result.artifactDir)
+	}
 }
 
 func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(*gates.Document) error) {

@@ -5,8 +5,10 @@ The live lanes prove runtime behavior, not text shape. Static grep checks over w
 A runtime regression is proved by one of the 17 exported `TestLiveCommon...`
 functions registered in [`runtime-live-ci-registry.md`](runtime-live-ci-registry.md).
 Each declaration has an adjacent `liveJourney(...)` call that binds its stable
-journey ID, fixture builder, target-scoped TODO owner, runtime-neutral exercise,
-and durable assertion. There is no scenario table or runtime runner registry.
+journey ID, fixture builder, target-scoped TODO or strict-XFAIL owner, runtime-
+neutral exercise, and durable assertion. A TODO skips only when the journey
+cannot run. An XFAIL runs the journey and names its expected semantic code.
+There is no scenario table or runtime runner registry.
 
 The helper selects only the Claude, Codex, or Pi transport from
 `SPACEDOCK_LIVE_RUNTIME`. The selected transport launches the current checkout;
@@ -36,8 +38,14 @@ SPACEDOCK_LIVE_STATE_DIR=docs/dev/.spacedock-state \
   go test ./internal/contractlint -run '^TestRuntimeLiveTODOOwnersAreActive$'
 ```
 
-This check fails when a TODO names a missing, completed, rejected, or archived
-entity. Stable code CI does not fetch mutable workflow state.
+This check fails when a TODO or XFAIL names an inactive entity. Stable code CI
+does not fetch mutable workflow state.
+
+Strict live records use `pass`, `xfail`, `xpass`, or `fail`. After infrastructure
+succeeds, the grade runs every durable semantic assertion. XFAIL requires the
+sole observed code to equal the expected code. An empty code set is XPASS and
+fails the lane until the source binding is removed. An additional or different
+code is FAIL. Infrastructure failures remain ordinary test failures.
 
 ### Local live execution
 
