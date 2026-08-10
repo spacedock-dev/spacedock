@@ -341,3 +341,92 @@ Candidate `159ba44a6605213b4efb4f3600b5636cd6a44a31` and its code worktree HEAD 
 ### Summary
 
 The binary bundle shipped at `9e21db9c3` and reduced the prior 28-turn/28-call run to 21/22 while preserving exact gate authority, candidate identity, and dirty-sibling exclusion. It still misses the approved 16/18 value: after the correct bundle call, the model made forbidden plugin grep, help, skill grep, and `pwd`/`ls` probes before prepare, then a post-presenter README read and ListAgents call. Exact stream/final/metrics SHA-256 values are `bedb642e6c43ff30c37eb6d57f30f1d6b29feb49a111fd24c1175ca6903ab1ee`, `d0a62c126a892c9b4bb59e26aa178d105ba5a887163eb91c68ba77c88cb348fe`, and `530f2342fbbe7a36e833e211dd240c996c484e48428e53148972413945b40497` under `/private/tmp/spacedock-gate-live.3fPRvk/cycle5-bundle-{artifacts,metrics}/`; the candidate is frozen with no rerun.
+
+## Design Reset: Atomic Gate-Review Preparation Composite
+
+Captain direction retains the original 16-turn/18-call value and authorizes one binary composite over deterministic post-selection work. Candidate `9e21db9c3` remains the unchanged design baseline.
+
+### Command and ownership
+
+Add one split-root command surface with two modes under the same owner:
+
+```text
+spacedock gate prepare-review ENTITY --workflow-dir WORKFLOW_DIR --json
+spacedock gate prepare-review ENTITY --workflow-dir WORKFLOW_DIR --publish \
+  --question TEXT --artifact INPUT_PATH --summary TEXT --recommendation TEXT \
+  [--reference INPUT_PATH ...] --json
+```
+
+Inspect mode is read-only. It emits the current `gate-evidence` entity/stage/candidate envelope plus an exact `publish_argv` skeleton and launch cwd. Publish mode re-resolves the envelope, accepts only its unique `input_path` candidates, and treats question, Artifact/References, summary, and recommendation as First Officer inputs. It invokes the existing gate preparation, publishes the entity plus two-file room in one path-scoped state commit/sync, and emits the committed checklist/acceptance-evidence and complete presenter inputs. It does not choose or synthesize evidence, summary, recommendation, or verdict.
+
+The First Officer still loads `spacedock:present-gate`, presents once, and later uses the existing recorder. The composite never presents, records, consumes, advances, dispatches, recommends, decides, or adds a gate state, lease, scheduler, retry loop, room format, or alternate recorder. Existing `status --read --gate-evidence`, `gate prepare`, `state commit`, checklist/AC reads, and recorder commands remain compatible; lifecycle routing adopts the composite.
+
+### Quantitative call projection
+
+| Measured cycle-5 calls | Composite effect |
+|---|---|
+| 1–12: FO load through lifecycle load and gate evidence | Calls 1–11 stay; call 12 becomes `gate prepare-review` inspect. |
+| 13 plugin grep, 14 `gate prepare --help`, 15 skill grep, 16 `pwd; ls` | Removed: inspect output supplies authoritative argv grammar, cwd, and candidate input paths. |
+| 17 prepare, 18 binding commit, 19 checklist/AC projection | Replaced by one `gate prepare-review --publish` call. |
+| 20 presenter Skill | Stays. |
+| 21 post-presenter README read | Removed: publish output carries current stage prose, workflow-owned presentation labels, checklist, and acceptance evidence. |
+| 22 ListAgents | Conservatively stays; it is not needed by the composite but remains inside the budget. |
+
+The exact projected path is 15 host calls: 11 pre-composite calls, inspect, publish, presenter, and conservative ListAgents. From the measured 22 calls it removes calls 13–16 and 21, then folds calls 17–19 into one: `22 - 5 - 2 = 15`, leaving three calls under 18. Those seven removed/folded calls occupied seven dependent tool-bearing turns, so 21 measured turns project to 14, leaving two turns under 16. Even if one presenter-owned call remains beyond ListAgents, the path is 15 turns/16 calls and still passes; no lucky omission is required.
+
+### Atomic failure and restart semantics
+
+Local Git commit is the durability point. Before any write, publish mode requires a clean active entity commit unit, exact current gate/stage, unchanged committed candidates, unique selection, and valid nonblank First Officer text. Under the existing entity lock, a transaction-aware preparation wrapper creates the canonical room and binding, then calls the existing path-scoped commit/sync seam before releasing the lock. The commit contains the entity binding and both room files together; unrelated dirty siblings remain unstaged.
+
+- Prepare or validation failure uses the existing room rollback and leaves entity bytes/HEAD unchanged.
+- Git add/commit failure restores the pre-prepare entity bytes/index and removes only the room created by this invocation; no binding is durable.
+- A crash before commit leaves no new HEAD. Exact restart replays the frozen canonical binding and commits it once; divergent input is refused by the existing open-binding freeze. A crash after commit replays as a clean no-op and resumes sync/projection without a second attempt.
+- Push/rebase failure after a successful local commit is not rolled back: binding and room are already atomically durable together. Return nonzero with `phase=sync-pending|halted`, local commit, branch, and conflict evidence. The exact command retries publication only; it never prepares another attempt. `local-only` is a successful locally durable result and is reported explicitly.
+- Checklist/AC or response-render failure after commit returns `phase=projection-pending` with the local commit. Exact restart validates the bound digest, performs no mutation, and re-emits projection.
+
+### Expected migration surface
+
+- `internal/cli/cli.go`: route `gate prepare-review` (about +8/-0).
+- `internal/cli/gate_prepare_review.go`: parse both modes, orchestrate evidence, preparation, path-scoped publication, restart, and one JSON envelope (about +190/-0).
+- `internal/cli/gate_prepare_review_test.go`: real-Git happy/failure/restart/authority matrix and call-output fixtures (about +210/-0).
+- `internal/gates/prepare.go`: transaction callback held under the existing entity lock, preimage rollback, and replay signal; standalone prepare behavior unchanged (about +65/-12).
+- `internal/status/gate_evidence.go`: expose the existing immutable bundle builder and presentation labels without changing `status` output (about +35/-15).
+- `skills/fo-gate-lifecycle/SKILL.md`: replace bundle/prepare/commit/projection sequence with inspect then publish (about +4/-8).
+- `docs/site/reference/command-reference.md`: document the composite and failure phases (about +5/-1).
+
+Correction estimate: seven files, about +517/-36 lines; hard stop at eight files or 650 changed lines. No schema, room, recorder, presenter, workflow, fixture-only simulator, or live-harness change.
+
+### Revised acceptance criteria
+
+**AC-1 (VALUE)** — One new max-effort Sonnet-5 gate-guardrail run uses at most 16 assistant turns and 18 host calls from boot through presentation.
+
+**AC-2** — The stream orders next → lifecycle → composite inspect → composite publish → presenter and contains no help, plugin/source grep, filesystem listing, broad Git/status inspection, standalone prepare/commit/checklist/AC calls, or presenter-side README evidence read.
+
+**AC-3** — Inspect is byte-clean. Publish accepts only exact bundle candidates and one First Officer-authored question, selection, summary, and recommendation; its output contains the same identities, one open binding, state commit/sync result, checklist/AC projection, and presenter inputs.
+
+**AC-4** — No local commit can contain a prepared room without its matching entity binding or vice versa. Failure/restart produces zero attempts before durability or exactly one durable attempt afterward; dirty siblings and peer commits are preserved.
+
+**AC-5** — `assertGateHeld` still passes: no Resolution, decision, consume, status advance, successor dispatch, archive, automated recommendation, or presentation occurs in the composite.
+
+**AC-6** — The correction stays within the seven-file/+517/-36 estimate and eight-file/650-line stop boundary, with no second lifecycle or changed stable command semantics.
+
+### Falsifiable test plan
+
+1. Add tests before implementation. Inspect fixtures require exact evidence identities, input paths, publish argv/cwd, stage labels, zero Git diff, and zero process mutation. Removing any identity or changing candidate order must fail.
+2. Drive publish through real main/state Git roots. Require one attempt, two room files, one path-scoped commit containing all three paths, clean entity unit, untouched dirty sibling, exact checklist/AC projection, and no recorder/consume/status/dispatch events. Mutants that auto-select, author recommendation, omit a bound file, or call an unauthorized verb must fail.
+3. Inject failures before room publication, entity write, git add, git commit, sync, and projection. Before local commit, assert byte-identical entity/HEAD and no room; after local commit, assert binding+room together and exact replay only syncs/projects. Kill subprocesses at pre-commit and post-commit barriers and exercise the same restart matrix. Divergent replay, dirty selection, duplicate/root-swapped identity, peer conflict, and traversal must fail closed.
+4. Run focused gates/status/CLI/lifecycle/contract tests, formatting, full, serial race, and a detached exact-head audit that makes commit report success before writing the binding and makes replay append a second attempt; both claim-breaking mutants must turn tests red.
+5. Spend exactly one new authenticated max-effort Sonnet-5 run after deterministic proof. Require AC-1/AC-2 plus real `assertGateHeld`, exact identities, dirty-sibling preservation, and one durable commit. Any threshold, discovery, atomicity, identity, or authority miss returns to the checkpoint without rerun.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Design one binary gate-review preparation command that combines committed evidence resolution, gate preparation, binding publication, and checklist/acceptance projection while preserving First Officer judgment and presentation authority.
+  The two-mode `gate prepare-review` composite owns only deterministic inspection/publication/projection; First Officer selection, summary, recommendation, presenter, decision recorder, and all authority boundaries remain external.
+- DONE: Project the exact required call sequence against the measured 21-turn/22-call stream and show how the mechanism reaches 16 turns/18 calls without relying on stronger prose, threshold changes, or lucky reruns.
+  It removes five measured probe/read calls and folds three deterministic calls into one, projecting 14 turns/15 calls with a two-turn/three-call margin; a conservative extra presenter call still passes at 15/16.
+- DONE: Record exact ownership, command and state semantics, migration surface, failure atomicity, tests, adversarial proof, and one-live-run plan; keep candidate 9e21db9c3 unchanged and run no tests.
+  Seven files/+517/-36 are estimated with an eight-file/650-line stop boundary; local commit atomically contains binding+room and exact replay resumes sync/projection. Candidate `9e21db9c3` stayed clean and no test or live workflow ran.
+
+### Summary
+
+Designed a single binary composite with read-only inspection and atomic publication modes. It preserves human/First Officer judgment and recorder authority while folding the deterministic calls that kept cycle 5 above the value ceiling; implementation remains subject to distinct authorization.
