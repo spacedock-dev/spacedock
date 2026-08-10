@@ -1,6 +1,6 @@
 ---
 title: Make gate presentations stage-specific and omit empty result classes
-status: validation
+status: implementation
 id: krbaeb3resfpbh1qvnb65krf
 score: 0.8
 source: "Captain feedback on 2026-08-08 after repeated gate reviews rendered FAILED: None."
@@ -11,8 +11,8 @@ started: 2026-08-09T14:51:39Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-make-gate-presentations-stage-specific
-pr: "#654"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 gates:
     version: 1
     records:
@@ -75,7 +75,7 @@ gates:
                 reason: All five ACs are reproduced; workflow-owned content, zero-source omission, empty-findings omission, deterministic suites, and targeted local Codex authority are green.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 ## Outcome
