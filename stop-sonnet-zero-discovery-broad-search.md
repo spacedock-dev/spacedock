@@ -1,6 +1,6 @@
 ---
 title: Stop Sonnet zero-discovery broad search
-status: backlog
+status: ideation
 score: "0.90"
 source: "PR #663 Sonnet zero-discovery failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -29,7 +29,7 @@ gates:
                 reason: Captain directed immediate ideation for the exact Sonnet zero-discovery product repair.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 ## Problem
 
