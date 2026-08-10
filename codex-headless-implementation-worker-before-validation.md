@@ -374,3 +374,29 @@ The projected full candidate cap is seven files and 217 gross changed lines.
 The package adds no production, contract, registry, documentation, or XFAIL file.
 
 Captain approval authorizes the two rejected-finding fixes within these limits.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Require one native implementation-worker spawn and its matching completion before validation.
+  The live oracle reads Claude events and the Codex parent rollout. A command-only baseline now fails.
+- DONE: Require one parsed implementation report with a DONE result.
+  The oracle uses the fence-safe section parser and rejects a missing or incomplete report.
+- DONE: Move the observer log outside the workflow.
+  The runner passes an external path to the shim and copies only the finished log into the live artifacts.
+- DONE: Add the observer isolation control.
+  The focused control rejects `evidence/command.log` inside the workflow and accepts an external temporary path.
+- DONE: Keep both correction limits.
+  The correction changes two approved files and 121 gross lines. The full candidate has seven files and 217 gross lines.
+- DONE: Run the focused falsifiers.
+  The normal and live-tag focused tests pass. The command-only and in-root controls fail the corrected assertions as required.
+- DONE: Run the exact Codex and Sonnet targets.
+  Codex passed in 229.76s. Sonnet passed in 262.46s after one model-variance retry.
+- DONE: Run the required checks.
+  `gofmt`, `go test ./...`, and `go test ./... -race` completed successfully on the final bytes.
+- DONE: Commit and push the correction.
+  Commit `79b539410` is on the remote task branch.
+
+### Summary
+
+The live target now proves one native implementation worker, matching completion, and a DONE report before validation.
+The harness observer no longer changes the workflow that Codex inspects.
