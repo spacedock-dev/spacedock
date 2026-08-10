@@ -592,3 +592,25 @@ Only then can the First Officer wait, read reports, advance status, or use `--ad
 The correction limit is `+2/-2` across the same two approved files.
 The full candidate must remain at seven files and 217 gross lines.
 This approval authorizes validation and PR cycle 4 within these limits.
+
+## Captain decision: 98a Codex recarve
+
+The Captain approved the Codex recarve after the cycle-4 live failure.
+The AC value stays unchanged: Codex must run one native implementation worker to completion before validation.
+
+Task `mechanically-acknowledge-codex-implementation-dispatch` now owns the Codex gap.
+Its owner ID is `n28423efmj358m5av61z2fxx`, and its ideation worker is active.
+
+The recarve restores one target-level Codex XFAIL and its exact reconciliation row.
+The XFAIL uses observed code `implementation-worker-not-dispatched` and keeps strict XPASS behavior.
+
+The recarve changes only these existing files:
+
+- `internal/ensigncycle/shared_live_runner_test.go`
+- `internal/contractlint/live_registry_reconciliation_test.go`
+
+The cycle-4 `+2/-2` prose experiment must be reverted.
+The cycle-3 AutoContinue correction and the Sonnet repair must stay unchanged.
+
+End-user disposition: Sonnet remains repaired, and Codex remains an executing known gap under its new mechanical owner.
+No other target binding, product byte, or AC value changes.
