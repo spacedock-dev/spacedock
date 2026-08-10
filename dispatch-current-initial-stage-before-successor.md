@@ -379,3 +379,20 @@ rule in the First Officer dispatch contract. Native command and durable-oracle
 spikes passed; host strict-XFAIL execution remains a required pre-implementation
 step because task `ts7gq0mr9s3chx2w4wppd1kt` has not landed yet. The M4 owner
 transfer and `6x` then `9a` landing order now protect the shared files.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved initial-stage target-selection rule for current initial stage with terminal successor.
+  `skills/first-officer/references/fo-dispatch-core.md:11-17` selects `current` and uses one `dispatch_stage` for each dispatch boundary.
+- DONE: Add task-local proof that status stamp, dispatch commit, and dispatch build all target the current initial stage.
+  `internal/contractlint/initial_stage_dispatch_test.go:9-23` fails if one boundary loses the selected current stage or the legacy rule returns.
+- DONE: Do not edit shared XFAIL bindings, registry reconciliation, sprint package files, or shared runtime documentation before ts lands.
+  Commit `f350e3d27` changes only the approved dispatch contract and its task-local test.
+- DONE: Preserve ordinary successor, entered-stage, gate-consume, terminalization, command, format, and authority behavior.
+  The selection table retains entered-stage and ordinary-successor behavior. Focused status, stamp, durable-oracle, and contract tests passed.
+- DONE: Commit the product behavior checkpoint and report exact files, lines, tests, and deferred post-ts live proof.
+  Commit `f350e3d27` contains the checkpoint. Both full suites passed. The three post-`ts` host runs and their durable metrics remain deferred.
+
+### Summary
+
+The dispatch contract now runs an initial current stage before its terminal successor. The first race run hit a transient 250 ms subprocess timeout. Its focused rerun and the complete race rerun passed.
