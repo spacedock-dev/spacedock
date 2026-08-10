@@ -76,6 +76,7 @@ gates:
                 state: pending
 sprint-readiness: ready
 group: common-evidence
+pr: "#662"
 ---
 
 ## Problem
