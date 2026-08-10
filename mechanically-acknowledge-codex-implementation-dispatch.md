@@ -6,7 +6,7 @@ started: 2026-08-10T09:23:06Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-mechanically-acknowledge-codex-implementation-dispatch
 issue:
 milestone: 0.27.0
 sprint: test-behavior-completeness
