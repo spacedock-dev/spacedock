@@ -3,7 +3,7 @@ id: pma2c1j7wmg9yvf5n25tx2ff
 title: Make local Codex live auth failure self-correcting
 status: ideation
 source: "Captain fast-track direction on 2026-08-09 after a targeted local gate-guardrail run incorrectly set the CI-only required flag and bypassed supported isolated OAuth."
-started:
+started: 2026-08-10T03:00:30Z
 completed:
 verdict:
 score: 0.95
