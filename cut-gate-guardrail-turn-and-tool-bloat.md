@@ -618,3 +618,16 @@ Validated the Captain-corrected contract-only candidate at exact HEAD `339d05a23
 ### Summary
 
 Repaired the Material evidence defect in state only: the canonical acceptance section now carries the Captain-corrected contract-only criteria and concrete cycle-3 evidence, while the superseded live-mechanism criteria remain explicitly historical without active AC labels. Candidate HEAD `339d05a23` and all candidate bytes remain unchanged; recommendation remains PASSED.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Reconcile the contract-only candidate with origin/main, limiting product edits to the one conflicting lifecycle skill plus the existing three-file scope where possible.
+  Candidate `bbfad5b4c` merges moved base `f2887b5e7` without force-push; its cumulative diff is exactly the existing three allowed files and +13/-16 lines, so a fourth path or 31st changed line falsifies the boundary.
+- DONE: Preserve the absence of status --gate-evidence, gate prepare-review, transaction, CLI, harness, fixture, and new-test mechanisms.
+  `git diff --name-only f2887b5e7..bbfad5b4c` contains only the gate lifecycle skill, shared FO core, and public gate concept; no Go, command reference, harness, fixture, or test surface is present.
+- DONE: Run focused contract checks, gofmt, git diff --check, go test ./..., and go test ./... -race; report the exact new candidate and merge-base diff.
+  Recorded lifecycle/status and full contractlint checks pass, including the 7,000-byte component cap at 6,946 bytes; `gofmt`, diff check, full, and race suites pass at candidate `bbfad5b4c` over merge base `f2887b5e7`.
+
+### Summary
+
+Reconciled the contract-only candidate with moved `origin/main` through a normal merge, preserving upstream changes and resolving the sole lifecycle-skill conflict within the original three-file/30-line boundary. The new candidate is `bbfad5b4c`; all required offline verification passes, and no model journey, GitHub Actions run, force-push, or rejected mechanism was introduced.
