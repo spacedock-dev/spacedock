@@ -7,9 +7,9 @@ import (
 	"testing"
 )
 
-const initialWorkerSpawnGuard = "After a successful initial `«dispatch.build»`, call `«worker.spawn»` in the same turn."
+const initialWorkerSpawnGuard = "On exit 0, the next host action MUST be `«worker.spawn»` with every helper-emitted field unchanged."
 
-const initialWorkerHandleGuard = "Record its returned handle before any later status change, report read, gate preparation, narration, or wait."
+const initialWorkerHandleGuard = "Record the returned handle before narration, a file edit, status change, report read, gate action, or wait."
 
 const initialWorkerCompletionGuard = "Do not advance to validation until `«completion-signal»` arrives and the entity-file stage report passes the completion gate."
 
