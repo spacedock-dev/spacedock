@@ -61,27 +61,66 @@ $ echo $?
 129
 ```
 
+The fallback needs one committed-tree query, not worktree or index discovery. It must stay under the intended candidate path already selected from the gate/workflow context; this task does not introduce a new search root or selection policy.
+
 ## Proposed approach
 
-Specify one complete read-only command shape with an explicit tree-ish and intended path. Keep discovery limited to committed Markdown. Prove the documented command by executing it in a fixture and through the exact Codex missing-path fallback.
+Replace the abbreviated fallback command:
+
+```sh
+git -C ... ls-tree
+```
+
+with this complete, directly executable command shape:
+
+```sh
+git -C "$GIT_ROOT" ls-tree -r --name-only HEAD -- "$INTENDED_PATH" | awk 'tolower($0) ~ /\.(md|markdown)$/ { print }'
+```
+
+`GIT_ROOT` is the Git root that contains the already-intended candidate location. `INTENDED_PATH` is that location expressed relative to the Git root. It is not broadened to `.` unless the intended location is the root. `HEAD` supplies the required committed tree-ish, `-r --name-only` yields recursive candidate paths, `-- "$INTENDED_PATH"` fences discovery, and the `awk` filter admits the same case-insensitive `.md`/`.markdown` extensions that `gate prepare` accepts.
+
+Smaller alternatives do not meet the value boundary:
+
+- Adding only `HEAD` still yields tree entries rather than recursive Markdown candidates and does not fence the intended path.
+- `ls-tree -r --name-only HEAD` is committed-only but scans the whole repository and includes non-Markdown files.
+- Git `:(glob)` pathspecs would avoid the pipe, but the spike proved `ls-tree` rejects that pathspec magic (`fatal: ... pathspec magic not supported by this command: 'glob'`).
+- `git ls-files` observes the index, so a staged but uncommitted Markdown path leaks into discovery. `find` or filesystem globbing likewise observes uncommitted worktree files.
+
+The instruction remains a one-shot read-only discovery fallback. The implementation adds a fixture-backed smoke test that executes the instruction's command shape and a Codex live journey whose prompt omits Artifact and Reference paths, forcing the installed skill to discover the committed package before `gate prepare`.
+
+### Risk spike
+
+A temporary Git fixture contained committed `intended/review.md`, committed `intended/nested/reference.markdown`, committed `unrelated/noise.md`, committed `intended/note.txt`, and staged-only `intended/uncommitted.md`. The proposed command exited 0 and printed exactly the two intended committed Markdown paths. The same fixture's `git ls-files` output included the staged-only path, proving why the shorter index-based alternative is insufficient.
+
+### Expected surface and semantic boundary
+
+- `skills/fo-gate-lifecycle/SKILL.md`: replace the incomplete fallback wording with the exact command; approximately +5/-1 lines.
+- `internal/contractlint/fo_gate_lifecycle_fallback_test.go` (new): execute the exact instruction command against a controlled Git fixture; approximately +75 lines.
+- `internal/ensigncycle/codex_live_runner_test.go`: add the exact missing-path Codex journey and assertions that discovery precedes successful preparation; approximately +35 lines.
+
+Expected total: 3 files, about +115/-1 lines. Tolerance: one additional existing `internal/ensigncycle` helper/fixture file and up to +60 insertions if needed to reuse the recorded-gate harness without duplicating it. No production Go, stored format, authority, gate lifecycle, supplied-path, CLI grammar, or documentation-site change is permitted. The only permitted runtime semantic change is that the absent-path Codex fallback now returns committed Markdown candidates beneath the already-intended path instead of exiting 129. The site command reference has no fallback-selection wording, so no site documentation diff is proposed.
 
 ## Out of scope
 
 - Changing gate authority, preparation, digest, or consume semantics.
 - Changing the supplied Artifact/Reference path.
 - Broad repository discovery or uncommitted-file discovery.
+- Changing how the intended candidate path or Git root is selected.
+- Adding a reusable discovery API or production Go implementation.
 
 ## Acceptance criteria
 
 **AC-1 (VALUE) - A Codex First Officer with missing Artifact and Reference paths discovers the intended committed Markdown and prepares the gate without a Git usage failure.**
-Verified by: an exact local Codex fallback journey that passes with paths omitted; omitting the tree-ish or broadening discovery makes the journey fail.
+Verified by: an exact local Codex recorded-gate journey whose prompt omits both supplied paths and whose copied `fo-gate-lifecycle` skill is the implementation under test. The test requires a successful discovery command before exactly one successful `gate prepare`, and no Git usage exit; removing `HEAD` makes the journey stop at exit 129.
 
 **AC-2 - The fallback command is complete, read-only, path-scoped, and excludes uncommitted Markdown.**
-Verified by: a fixture-backed command test with committed intended Markdown, committed unrelated Markdown, and uncommitted Markdown; changing the tree-ish, path, or committed-only rule makes the test fail.
+Verified by: a fixture-backed command test with committed intended `.md` and nested `.markdown`, committed unrelated Markdown, committed non-Markdown, and staged-only intended Markdown. It executes the exact documented command and asserts exit 0 plus the two-path output exactly; removing the intended path, recursive flag, tree-ish, or committed-tree source changes the observed output or exit and fails.
 
 ## Test plan
 
-First run the exact documented command against a small Git fixture. Then run the targeted local Codex missing-path gate journey. Run the applicable focused Go tests, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` before completion.
+Implementation starts by preserving the spike as the focused fixture-backed smoke test, then changes the skill wording. Run that test directly and confirm the exact output and exit code. Next run the dedicated local Codex missing-path recorded-gate journey and inspect its command trace/on-disk room state: it must use the fallback, prepare exactly once, and produce the expected open gate package without supplied paths. The supplied-path recorded-gate journey remains the regression control and must not invoke discovery.
+
+Finally run the applicable focused `internal/contractlint` and `internal/ensigncycle` packages, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. No generic prose substring check or full live matrix is accepted as proof for AC-1 or AC-2.
 
 ## Stage Report: backlog
 
@@ -92,3 +131,16 @@ Included scope: Complete the read-only, path-scoped `git ls-tree` command with a
 Excluded scope: Do not change gate authority, gate record semantics, supplied-path behavior, or discovery of uncommitted files.
 
 Proof needed for ideation: Reproduce the PR #659 regression, run the proposed command against a controlled Git fixture, and confirm that the Codex journey reaches gate preparation. The evidence must show runtime behavior, not compare instruction text.
+
+## Stage Report: ideation
+
+- DONE: Define the exact before/after fallback command and why the smaller alternatives do not satisfy intended-path, committed-only discovery.
+  The body specifies `ls-tree -r --name-only HEAD -- <intended-path> | awk ...`; the spike also disproved `:(glob)`, while `ls-files`, broad `ls-tree`, and filesystem discovery violate the boundary.
+- DONE: Declare expected files, insertion count, tolerance, and the only permitted runtime semantic change.
+  The design declares 3 files, about +115/-1 lines, one helper-file/+60-line tolerance, and only repairs absent-path committed Markdown discovery; production Go and all gate/supplied-path semantics remain unchanged.
+- DONE: Tie each acceptance criterion to fixture-backed command proof and the exact missing-path Codex journey; exercise the riskiest Git command shape first.
+  The temporary Git fixture produced exactly two intended committed Markdown paths and excluded unrelated, non-Markdown, and staged-only entries; AC-1 names the forced missing-path Codex journey and AC-2 names the exact-output fixture test.
+
+### Summary
+
+Ideation now defines the complete fallback command, a narrow semantic boundary, and falsifiable proof for both the Git behavior and the exact Codex journey. The risk spike found and avoided unsupported `ls-tree` glob magic, then proved the selected path-scoped committed-tree pipeline before any implementation work.
