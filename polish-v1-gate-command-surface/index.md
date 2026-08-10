@@ -193,3 +193,37 @@ Ideation turns F6C into a finite proof-hygiene cleanup: semantic prose-search de
 ### Summary
 
 Implementation removes every inventoried prose-dependent semantic oracle and keeps only the deliberately published help text exact. Commit e481864e4 reconciles the self-syncing v1 lifecycle and operational guidance without changing command grammar, stored authority, or runtime behavior; full and race suites are green.
+
+## Review-finding disposition
+
+### V1 — AC-1 baseline count is not reconstructible
+
+- Reviewer observation: the inventory contains 15 data rows, not 16 groups. Eleven rows are explicitly classified as semantic-output coupling; four are retained or non-semantic (KD snapshots, BV published help, EP2 documentation-only, and SK direct cold-report behavior).
+- Released user and normal workflow: validation uses this finite inventory to certify that the durable-decisions proof estate has no remaining prose-search dependency.
+- Observable harm: the gate can claim “all 16 to zero” without identifying all 16 inputs, so neither inventory completeness nor the zero endpoint can be independently reproduced.
+- Affected authority: value-ac[AC-1] Semantic behavior has zero prose-search proof dependencies, down from the 16-group baseline.
+- Trigger evidence: a bounded table parse reports `inventory_rows=15 semantic_rows=11 retained_or_nonsemantic_rows=4`; state history shows ideation commit `bf4e56336` introduced the same unsupported 16-group sentence and 15-row table together.
+- Validator proposal: Evidence defect; Material; ownership is ideation/captain because changing the baseline or AC changes approved proof scope; disposition is Needs decision and a scope/design reset, not candidate mutation or an automatic implementation feedback cycle.
+
+## Stage Report: validation
+
+- FAILED: Audit all 16 inventory groups and prove semantic claims now use structured, parsed, durable-state, or behavioral evidence; allow exact text only for published help.
+  Candidate commit `e481864e4` replaces every explicitly inventoried semantic row with decoded envelopes, bounded sections, typed events, parsed reports, Git outcomes, or command behavior, but the promised baseline is unreproducible: 15 rows, 11 semantic and 4 retained/non-semantic, with no splitting rule that yields 16.
+- DONE: Verify help and lifecycle documentation match executable 0.27.0 behavior while production changes remain limited to published help and no command/state/authority/runtime semantics change.
+  Executed top-level and `gate --help` show all five retained verbs; CLI lifecycle tests exercise removed-form byte-clean refusal, prepare/withdraw, record/consume sync, terminal merge/rework, readiness, stamping, conflict ownership, and recovery; only `internal/cli/help.go` is non-test production Go.
+- DONE: Reproduce focused controls, formatting, full, race, diff, help, and Mermaid rendering evidence; verify the 23-file/770-line boundary and recommend PASSED or REJECTED.
+  Focused CLI/dispatch/ensigncycle/status/contractlint packages, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` pass; the clean worktree remains unchanged, the diff is 23 files/770 lines, and Kroki renders the lifecycle to a 28,651-byte SVG. Recommendation: REJECTED.
+- FAILED: AC-1 — Semantic behavior has zero prose-search proof dependencies, down from the 16-group baseline.
+  Mutation-sensitive replacements are present for all 11 explicitly semantic rows, but the unenumerated 16-group baseline makes the completeness and zero claims non-reproducible.
+- DONE: AC-2 — Every retained v1 gate verb is discoverable, and removed provider/eligibility verbs are absent.
+  `TestTopLevelHelpFormsAreIdentical`, `TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface`, and removed-provider/unknown-verb controls fail if published verbs drift or removed grammar writes state.
+- DONE: AC-3 — One canonical lifecycle and its summaries describe the final executable `0.27.0` behavior.
+  Focused command tests cover preparation, withdrawal, self-synced close/consume, collapsed approval, terminal merge/rework, readiness, dispatch stamping, owner handoff, and durable recovery; changing any transition or terminal state fails its outcome assertion.
+- DONE: AC-4 — The shipped contract contains no sprint-owner scaffolding or prototype surface.
+  The Mermaid service parsed and rendered the full lifecycle, its SVG carries the recorder-close and successor-sync nodes, and the canonical spec contains no listed sprint aliases or owner tags.
+- DONE: AC-5 — The cleanup changes no command grammar, stored format, authority, or runtime behavior.
+  Production classification finds only the published help row changed; canonical behavior suites, the full suite, and the race suite remain green with no worktree mutation.
+
+### Summary
+
+The candidate is behaviorally clean, within its exact 23-file/770-line boundary, and all executable, formatting, help, lifecycle, and render checks pass. Validation nevertheless recommends REJECTED because AC-1's claimed 16-group baseline cannot be reconstructed from its 15-row inventory; resolving that evidence defect changes approved proof scope and requires an ideation/captain design reset rather than candidate edits.
