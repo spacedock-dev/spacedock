@@ -1,6 +1,6 @@
 ---
 title: Commit Sonnet gate before presentation
-status: ideation
+status: implementation
 score: "0.90"
 source: "n28 exact Claude default-headless finding, 2026-08-10"
 sprint: test-behavior-completeness
@@ -49,7 +49,7 @@ gates:
                 reason: Captain assigned this exact Sonnet gate-lifecycle repair. The one-file design preserves the approved boundary.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-10T18:44:40Z
 ---
 ## Problem
