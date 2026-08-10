@@ -214,3 +214,24 @@ Codex now continues monitoring after a fresh validation spawn when no other work
 The two-line instruction change is within the approved scope. The retained journey reaches validation, but its proof cannot establish the fresh worker boundary.
 
 REJECTED. The First Officer must authorize a proof-surface change or request a design decision.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebase the product repair onto the exact n28 landing.
+  Rebased head `46368d1c1` preserves the one-file, two-line product change on `5fca1605d`.
+- DONE: Add the approved three-file evidence reset within its cap.
+  The uncommitted test reset changes three existing files and has exactly 80 gross lines.
+- FAILED: Prove validation-stage pending, armed, and consumed acknowledgment states.
+  The exact single-root run retained only the `pending` audit ref for epoch `30c04c28fc1482a5b240406bb4a2e121`.
+- SKIPPED: Prove the later complete-and-committed predicate and open gate.
+  The receipt-chain check failed first, so later evidence cannot repair the missing worker start.
+- DONE: Preserve the product head, evidence reset, and all artifacts without claiming a solution.
+  New evidence remains at `.spacedock-evidence/v8pcpdmrdf-n28-reset`; earlier evidence also remains unchanged.
+- DONE: Avoid transcript parsing, Pi work, and new production files.
+  The check used immutable n28 acknowledgment refs and stopped at the first missing state.
+
+### Summary
+
+HOLD. The landed n28 mechanism did not attest the validation worker start in the exact Codex journey.
+
+A separate mechanical-continuation prerequisite owns the missing host primitive. The v8 product repair and all evidence remain preserved for that prerequisite.
