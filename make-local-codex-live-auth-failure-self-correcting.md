@@ -46,6 +46,17 @@ gates:
                 digest: sha256:cd0596992278060b9c5fbec95bd550798ec5990717fb5d057ea80f86fcd0bd0f
                 request-digest: sha256:4a6cc4f46d1f7bd6d31be0d68255171439531fa29697dbb9f27e0e1b333979ce
                 room-ref: ./make-local-codex-live-auth-failure-self-correcting/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pma2c1j7wmg9yvf5n25tx2ff:ideation:1
+                briefing: briefing:pma2c1j7wmg9yvf5n25tx2ff:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T03:17:52.296781Z"
+                decision: approve
+                reason: 'The design is the smallest sufficient correction: two files, no auth-policy change, no output comparison, and deterministic proof only.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Make the existing local Codex OAuth path obvious when a developer accidentally uses the CI-only live-test flag.
