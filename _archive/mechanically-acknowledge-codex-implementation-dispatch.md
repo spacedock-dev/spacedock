@@ -1,10 +1,10 @@
 ---
 title: Make Codex implementation dispatch mechanically acknowledged
-status: validation
+status: done
 source: "98a cycle-4 live evidence: identical spawn envelopes produced two native-spawn passes and one empty-wait failure"
 started: 2026-08-10T09:23:06Z
-completed:
-verdict:
+completed: 2026-08-10T20:56:57Z
+verdict: PASSED
 score: 0.95
 worktree: .worktrees/spacedock-ensign-mechanically-acknowledge-codex-implementation-dispatch
 issue:
@@ -75,8 +75,9 @@ gates:
                 reason: Captain conn approves recarved n28 after independent PASSED validation. Required exact PR lanes remain the merge boundary.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:666
+archived: 2026-08-10T20:56:57Z
 ---
 
 ## Problem
