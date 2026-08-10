@@ -1,6 +1,6 @@
 ---
 title: Polish the v1 gate command and documentation surface
-status: implementation
+status: validation
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: top-level help omits gate prepare and the prose still describes prototype lifecycle details that the semantic cuts will remove."
 started: 2026-08-08T00:04:11Z
 completed:
