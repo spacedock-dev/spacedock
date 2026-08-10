@@ -504,3 +504,110 @@ both provide stable native start and completion identities.
 
 The receipt journal is separate from the worker report. Every stage mutation
 door consumes the same completed receipt.
+
+## Ideation HOLD report: supported-hooks spike
+
+Date: 2026-08-10
+
+Readiness recommendation: **HOLD**.
+
+This report records the authorized supported-hooks spike. It does not revise
+the product design, acceptance criteria, expected surface, registry, or XFAIL
+bindings.
+
+### Durable spike artifact
+
+The complete evidence report is:
+
+```text
+/tmp/n284-hooks-spike.9atOqU/EVIDENCE.md
+sha256:57c348f1974c369df9291106cc6997cbe11e7a06c5c9b8adfb80eb30646a723b
+```
+
+The main evidence artifacts are:
+
+```text
+sha256:7d6b8cc069d2f9f862fd941c835b95217276cee7120d6062ac7127e767df7220  receipt-hook.sh
+sha256:dd123005cf742ed0c66b07b61d9e3b4e5d60aa18f1aa73012ccc8318754b1d56  codex-v2-hooks.jsonl
+sha256:9ba3641972295e6bc161325175b9b9258b046928c4c976b2b65ce58a703b2bb1  claude-v2-hooks.jsonl
+sha256:eca9af9843cd1bb10081ae3f45f39b55dffbe68bc77efb342ae8e2ec259451a0  codex-parallel-v2-hooks.jsonl
+sha256:336c4d52a4676f3938edc7f8f29b4f470249396a98e3629d5c4af9491676480e  codex-reuse-hooks.jsonl
+sha256:2379efd23cdea9a23c5bd15fdfec2d95ad43bc47ef43eade2a8db0733ffb859b  recovery-fixed.log
+sha256:07c7de09ab6af80ee30bc8806246063d6217d53ff5f04a879c13a58b489d3cfa  codex-disabled.stream.jsonl
+sha256:3f0b425503ec9b1e5f9e1ec581819cd653d5cc087c5b58f856bff0b29ee111c2  claude-disabled.stream.jsonl
+```
+
+All paths are below `/tmp/n284-hooks-spike.9atOqU`.
+
+### Passed cells
+
+- Codex CLI created and completed one schema-v2 receipt.
+- Claude CLI created and completed one schema-v2 receipt.
+- A duplicate same-generation prepare returned exit code 128.
+- Codex feedback generation g2 reused the g1 native agent ID.
+- A consumed captain resolution abandoned one exact receipt.
+- Resolution reuse failed, and abandonment did not satisfy completion.
+- Private Git refs survived 240 concurrent compare updates.
+- A production-style `git add -A` commit changed only `entity-a.md`.
+- Codex with hooks disabled left its receipt pending.
+- Claude with hooks disabled left its receipt pending.
+- Both disabled-hook cells refused a second same-stage prepare.
+
+The Codex CLI version was `0.147.0`. The Claude Code version was `2.1.226`.
+
+### Failed parallel correlation
+
+The Codex parallel cell emitted two `PreToolUse` events before any
+`SubagentStart` event.
+
+Each pre-use event had a task name and tool-use ID. Each start event had an
+agent ID, but it had no parent correlation ID.
+
+The probe assigned the starts by arrival order. This assignment swapped the
+two receipts.
+
+Entity n recorded agent `019feb30-33d6-7f40-98e3-0b43f75f7f85`. That agent
+stopped with `V2_MARKER_O`.
+
+Entity o recorded agent `019feb30-27b6-7d40-a67e-3639385ba896`. That agent
+stopped with `V2_MARKER_N`.
+
+The parent command returned zero. The attestation result was still incorrect.
+
+### Unexecutable host surfaces
+
+The local Codex Desktop application was not installed. The environment could
+not execute the available VS Code launcher.
+
+The Codex cloud CLI had no authorized disposable cloud project. It also had no
+controllable web session.
+
+Claude Remote Control could not start because feature-flag evaluation was
+disabled.
+
+Therefore, the IDE, Desktop, and web cells were unexecutable. This spike gives
+no product evidence for those surfaces.
+
+### Evidence-record defect
+
+The race generator command was not saved. The final ref value, commit, Git
+integrity check, and worktree result remain available.
+
+This missing command is an evidence-record defect. A later spike must save the
+complete race command before it makes a concurrency claim.
+
+### Required host prerequisite
+
+Codex must add one stable parent correlation value to supported
+`SubagentStart` events.
+
+The preferred value is the parent `tool_use_id`. A stable assignment ID is also
+sufficient.
+
+Codex must include the same value in `SubagentStop`. CLI and in-app hosts must
+use the same contract.
+
+After that host change, rerun the disposable spike. Then run supported in-app
+cells before any product design revision.
+
+No product implementation can start from this report.
