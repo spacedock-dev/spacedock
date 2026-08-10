@@ -33,6 +33,17 @@ gates:
                 digest: sha256:819dd15e568e3a55efc09967edd4acfaf7485728be52ca08b89b892103d09a25
                 request-digest: sha256:fc1a79f889bcfcc19d8666e6dae5f108ce568c2e56121a2999103e1f436e45e5
                 room-ref: ./fix-gate-lifecycle-ls-tree-fallback/review/backlog/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qbppyssy13pyh1gtkh2n8vp5:backlog:2
+                briefing: briefing:qbppyssy13pyh1gtkh2n8vp5:backlog:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T22:53:09.147634Z"
+                decision: approve
+                reason: 'Captain directed dispatch of QBP; the recovered seed is bounded to the PR #659 fallback regression and defines falsifiable fixture and exact-Codex proof.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 When gate Artifact or Reference paths are absent, the First Officer must discover committed Markdown with a complete, path-scoped Git command. The current instruction abbreviates this as `git -C ... ls-tree`, which deterministically exits 129 because it omits the required tree-ish.
