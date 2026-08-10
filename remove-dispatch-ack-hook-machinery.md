@@ -1,12 +1,13 @@
 ---
 title: Remove dispatch acknowledgment hook machinery
-status: backlog
+status: implementation
 score: "1.0"
 source: Captain emergency no-global-hook directive, 2026-08-10
 sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-product
 id: ca7w23pffeynv53swt2b8zf3
+started: 2026-08-10T22:49:48Z
 ---
 ## Problem
 
