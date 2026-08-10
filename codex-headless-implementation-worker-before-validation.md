@@ -542,3 +542,23 @@ This approval authorizes validation and PR cycle 3 within these limits.
 ### Summary
 
 Fresh validation now runs before its gate. The exact Sonnet proofs and all required offline checks pass.
+
+## Stage Report: validation PR cycle 3
+
+- DONE: Inspect exact candidate 61d31a349ecbccf5f68fe11539575ad749966243. Preserve bytes.
+  `git rev-parse HEAD` returned the exact candidate. The code worktree stayed clean.
+- DONE: Verify only the Captain-approved product guard line and matching stale test constant changed.
+  The cycle diff replaces one guard line and its exact contract-test constant. No other file changed in this cycle.
+- DONE: Verify exact Sonnet AutoContinue and default-headless passing evidence came from the committed bytes.
+  The implementation record identifies `61d31a349` and records AutoContinue at 653.04s and default-headless at 306.88s.
+- DONE: Reproduce the focused negative controls and inspect the green full/race evidence after disk recovery.
+  AutoContinue, lifecycle, observer, and reconciliation controls passed. The implementation record reports green normal and restored race runs.
+- DONE: Confirm seven files and 217 gross lines, unchanged XFAIL inventory, and no new surface.
+  The full diff has seven files and 217 gross lines. Only the existing Pi binding remains for `default-headless-gate-stop`.
+- DONE: Recommend PASSED or REJECTED in Simplified Technical English and record any finding with four fields.
+  I recommend PASSED. No Material finding, deferred risk, or polish finding remains.
+
+### Summary
+
+The approved two-line correction dispatches validation before its gate. The focused controls pass, and the bounded surface stays unchanged.
+I did not repeat the live, full, or race runs. PR #657 points to this exact candidate, and its required live lanes are running.
