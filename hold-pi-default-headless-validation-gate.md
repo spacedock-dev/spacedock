@@ -297,3 +297,14 @@ The Captain approved a bounded reset after exact Pi run `31382215343` exposed tw
 - Preserve the product, fixture, command grammar, authority, n28 bindings, and Claude and Codex branches.
 
 The end value remains a clean open Pi validation gate with correlated implementation lifecycle evidence.
+
+## Captain Decision: exact Pi XPASS accepted
+
+The Captain accepted protected run `31386886972` and artifact `9062678223` on head `ae1c20ae780b43c3e8147ab2526f52e41aa6a6fa`.
+
+- The exact target reported `XPASS pi/default-headless-gate-stop owner=fh6rv0k6wr25zty0jjan4jp7 observed=[]`.
+- The measured result was `xpass` in `528147 ms` with model `openai/gpt-5.6-luna:max`.
+- Implementation run `4277388b-74fa-48d0-814c-d759ae26480a` reached `State: complete` with a child session before validation.
+- The final entity had `status: validation`, empty `completed`, empty `verdict`, and one open gate awaiting the Captain.
+
+The Captain authorized removal of only the fh6 Pi binding and its reconciliation entry.
