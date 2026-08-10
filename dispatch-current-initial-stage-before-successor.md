@@ -481,3 +481,31 @@ HOLD the unchanged 6x candidate until the 2e4 landing SHA is available. Exceptio
 ### Summary
 
 Candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` is ready for the exact Pi-only manual cadence.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Run the approved Pi-only cadence at the rebased candidate.
+  `Runtime Live E2E` run `31365184470` used exact head `a7ea84f63ffa5d3c2fb44232b4f8637951690646` and deployment `5827847941`.
+- DONE: Download and inspect the journey artifact.
+  Artifact `9054268664` contains metrics for full-cycle and gate-guardrail only. Both journeys passed.
+- DONE: Check the earlier 2e4 concern on the same Pi model path.
+  The gate-guardrail pass on Luna falsifies a deterministic 2e4 defect.
+- DONE: Inspect the exact 6x target result.
+  `TestLiveCommonSmallestSufficientMechanism` did not run because an earlier failure triggered `-failfast`.
+- DONE: Inspect the independent Pi front-door result.
+  `TestLivePiFrontDoorSmoke` passed with its grade artifact.
+- DONE: Preserve candidate and binding ownership.
+  Candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` remains unchanged. No 98a or 9a binding changed.
+- FAILED: Obtain the required exact Pi result.
+  `TestLiveCommonDefaultHeadlessGateStop` failed first. Its prepared fixture had zero requests instead of one.
+
+### Workflow evidence
+
+- Released workflow: The manual Pi cadence runs common live journeys in source order with `-failfast`.
+- Observable harm: The 6x target produced no Pi result, so the required cross-host proof remains incomplete.
+- Value authority: `value-ac[AC-1]` requires the smallest-mechanism journey to pass on each executable host target.
+- Exact trigger: Run `31365184470` stopped at the default-headless target before the 6x target started.
+
+### Summary
+
+HOLD candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` unchanged. After 98a lands, task fh6 owns the default-headless repair and must land first.
