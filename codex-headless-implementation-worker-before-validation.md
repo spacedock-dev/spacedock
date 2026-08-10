@@ -641,3 +641,33 @@ The cycle-3 AutoContinue correction and native lifecycle oracle stay unchanged.
 All other bindings stay unchanged.
 
 End-user disposition: Sonnet and Codex remain known executing gaps under n28 until mechanical acknowledgment lands.
+
+## Stage Report: implementation (combined reset)
+
+- DONE: Apply the stage-aware command-log oracle.
+  One implementation build and one validation build pass. Missing or duplicate validation builds use `dispatch-envelope-not-acknowledged`.
+- DONE: Preserve the native implementation lifecycle oracle.
+  The focused lifecycle control passed and still rejects command-only worker evidence.
+- DONE: Restore both n28 target-level XFAIL bindings.
+  Sonnet and Codex use owner `n28423efmj358m5av61z2fxx`. Strict XPASS behavior stays active.
+- DONE: Update only the matching reconciliation row.
+  The registry check passed with the Sonnet, Codex, and existing Pi bindings.
+- DONE: Run the focused AutoContinue and live-tag checks.
+  The AutoContinue controls and live-tag compile passed.
+- DONE: Run the exact Codex default-headless target.
+  The target passed as XFAIL in 330.40s with only `implementation-worker-not-dispatched`.
+- DONE: Run the exact Sonnet default-headless target.
+  The target reported strict XPASS in 412.65s with no code. The Commander assigned this evidence to n28.
+- DONE: Record the Sonnet boot diagnostic.
+  The harness reported a boot-time filesystem search in the `present-gate` skill directory.
+- DONE: Run the required offline checks.
+  `go test ./...` and `go test ./... -race` passed.
+- DONE: Preserve the approved surface and cap.
+  The candidate changes seven files and 221 gross lines against `f2428ddee`.
+- DONE: Commit and push PR #657.
+  The remote task branch points to `700e61cdb2b8ddd2149e59c348352ef64bf9c9da`.
+
+### Summary
+
+The oracle now separates missing implementation from validation-envelope faults.
+Both n28 bindings remain active, and the bounded offline candidate passes all required checks.
