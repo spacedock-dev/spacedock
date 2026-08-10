@@ -617,3 +617,40 @@ open gate after a valid validation/2 publication.
 
 Codex records validation/1, applies the correction, and records validation/2. It prepares one fresh open gate and stops without a successor.
 The pushed product candidate stays unchanged at `29a4dd5dc440d8fbc34cb3b635396ee8040144c6`.
+
+## Stage Report: validation
+
+- DONE: Confirm exact candidate 29a4dd5dc440d8fbc34cb3b635396ee8040144c6, remote match, clean worktree, and base 4dc83c0f8.
+  Local HEAD and the remote branch match `29a4dd5dc`. Base `4dc83c0f8` is an ancestor, and the worktree is clean.
+- DONE: Verify the exact seven-file, +122/-31, +91 net surface stays within the approved five-file reset plus previously authorized oracle files and adds no unapproved file.
+  The diff contains seven approved existing files and no new file.
+- DONE: Inspect baseline XFAIL, adjusted bound XPASS, and final unbound Codex PASS artifacts and SHA-256 values.
+  The JSONL digests are `abede885b2bd575f61bff10dc9f05e850af3b9a3be89210479a0a699e496c050`, `ec484832ca840edccfe43418b54cff464ae1dc708d84557bbae808867f86d4e3`, and `2c71f508fc2da50081cc8cc2db72907986a4bedfe3b255921d6fcf6df3b63b55`. Each process reached its terminal event.
+- DONE: Verify validation/1 and validation/2 publications, exactly one fresh unresolved gate, and the gate-review artifact outside immutable advisory-round rooms.
+  The final transcript has both successful publications, one successful prepare, one open attempt, and an external gate-review artifact.
+- DONE: Verify no-reuse, wrong-reviewer, duplicate prepare, malformed round, invalid summary, terminal state, and extra-round-file negative controls.
+  Focused controls passed. Temporary probes also rejected terminal fields and an extra validation/2 room file.
+- DONE: Verify only dvd's Codex rejection-flow binding and mirrored row were removed; preserve Pi and every unrelated binding.
+  The base diff removes only owner `dvddbpsf4tdt3yjw1yjyp14k`. Pi owner `p17swb3375rt525fn7f8xt7e` remains.
+- DONE: Run focused reviewer, round, gate, registry, active-owner, binding, format, and diff checks independently.
+  The focused Go checks passed. The format and diff checks produced no error.
+- DONE: Inspect the implementation full/race evidence without duplicating owned full/race/live runs.
+  The retained report records normal completion in 366.333s and race completion in 556.475s. No duplicate run occurred.
+- DONE: Report every finding with released user, observable harm, value authority, and exact trigger evidence.
+  One proposed evidence finding entered disposition. The First Officer declined it under the Captain ruling from 2026-08-10.
+- DONE: Write and push a Simplified-English validation report with PASSED or REJECTED recommendation.
+  PASSED: all value criteria have applicable evidence, and no Material finding remains.
+
+### Finding disposition
+
+- Released user and normal workflow: The Codex operator relies on the target-level XFAIL admission sequence.
+- Observable harm: The validator proposed that two semantic codes left the baseline without valid admission evidence.
+- Value authority: `value-ac[AC-1]` requires a typed target-level XFAIL and rejects infrastructure failures.
+- Trigger evidence: Artifact `abede885…` ran source `06e87a3c` and produced the expected target-level XFAIL plus a reviewer-identity code.
+- First Officer disposition: DECLINE. The Captain permits multiple semantic codes for dvd, and the artifact contains no infrastructure failure.
+
+### Summary
+
+The exact candidate preserves the complete Codex correction journey. It removes only the dvd Codex binding.
+The retained final run stops at one fresh unresolved gate.
+The validation recommendation is PASSED. No Material finding remains after the recorded First Officer disposition.
