@@ -10,7 +10,7 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 worktree: .worktrees/spacedock-ensign-publish-rejection-round-before-regate
 issue:
-pr:
+pr: "#661"
 mod-block:
 id: zhcb4bcz1qgcn7ajx2ctxpxk
 gates:
