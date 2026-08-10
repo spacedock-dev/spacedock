@@ -254,3 +254,25 @@ Codex selection remains bound to its new active owner, and Pi did not run.
 The retained Sonnet evidence proves a durable clean open gate and supports AC-1 through AC-3.
 The candidate stays within scope and transfers Codex ownership without a Codex or Pi behavior claim.
 Recommendation: REJECTED until the narrow AC-4 evidence defect is fixed.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add the approved AC-4 evidence correction in one test file.
+  The oracle now requires a successful state head before the checklist and requires the checklist before the AC scan.
+- DONE: Add failed-commit and late-after-read mutants before the oracle correction.
+  The late-after-read mutant first failed because the old oracle accepted it. Both mutants pass after the correction.
+- DONE: Verify the corrected order from retained Sonnet evidence.
+  Both Sonnet logs show commit, state head, checklist, and AC scan in the required order.
+- DONE: Preserve live artifacts and avoid an unnecessary live rerun.
+  The retained evidence was sufficient. Codex and Pi did not run.
+- DONE: Preserve the approved product and ownership scope.
+  The one-line product change is unchanged. Codex remains bound to active owner `272j6s25f9mry6nxbf4yjxvt`.
+- DONE: Run focused, full, race, registry, owner, format, and diff checks.
+  All checks passed. The corrected candidate is `ee110954751dd1d9783e64194d154917a1b29e2a`.
+- DONE: Keep the complete candidate within the approved correction cap.
+  The diff has 11 insertions and four deletions across four files, for 15 gross lines.
+
+### Summary
+
+The corrected oracle rejects a failed commit and rejects structured reads before the successful committed state head.
+The retained Sonnet evidence satisfies this stronger oracle without a new live run.
