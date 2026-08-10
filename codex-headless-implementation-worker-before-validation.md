@@ -1,6 +1,6 @@
 ---
 title: Make headless Sonnet and Codex spawn implementation before validation
-status: implementation
+status: validation
 source: "PR #583 run 31320596435, Codex job 93262943132 and Sonnet job 93262943118, 2026-08-09"
 started: 2026-08-09T18:34:21Z
 completed:
