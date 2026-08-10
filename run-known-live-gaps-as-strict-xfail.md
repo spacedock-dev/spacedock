@@ -65,11 +65,12 @@ A `liveTODO(...)` stops before the fixture or journey runs. It records ownership
 but it gives no current behavior evidence. It also cannot report that a product
 repair made the journey pass.
 
-The current `default-headless-gate-stop` cells for Sonnet and Codex have a real
-product failure. Their headless runs prepare the validation gate without first
-dispatching the implementation worker. The live evidence labels this failure
-as `implementation-worker-not-dispatched` for candidate
-`7c8708c8537fc73761e56813ddbd6a498959ef19`.
+The Sonnet `default-headless-gate-stop` cell has a stable product failure. Its
+headless run prepares the validation gate before it dispatches the implementation
+worker. The stable failure code is `implementation-worker-not-dispatched`.
+
+The Codex cell is not stable enough for strict XFAIL. Task `98a` owns its
+classification and the consistent-pass proof that permits removal of its TODO.
 
 Go has no native XFAIL result. A broad inversion of the test process can hide
 authentication, launch, timeout, fixture, and unrelated assertion failures.
@@ -96,8 +97,8 @@ The source binding owns the target, active task ID, and stable failure code. A
 `liveXFail(target, owner, code)` binding runs the fixture and expects `code`.
 The desired-state registry does not copy this actual-state information.
 
-Keep TODO only when the journey cannot run. Examples include a missing adapter,
-fixture, selector, or authentication path.
+Keep TODO when the journey cannot run or has no repeatable semantic
+classification. Task `98a` owns the evidence that can change the Codex TODO.
 
 Infrastructure failures stay outside the grade result. Fixture setup, process
 start, authentication, timeout, output parsing, and state reads must succeed
@@ -113,17 +114,17 @@ failure. Only typed semantic grade errors reach this classification.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — Sonnet and Codex execute the known headless gap.**
+**AC-1 (VALUE) — Sonnet executes the known headless gap.**
 
-The Sonnet and Codex `default-headless-gate-stop` cells run the real fixture,
-host, exercise, and every durable assertion. On the current failing candidate,
-each cell reports `xfail` only when the unique code set is
-`{implementation-worker-not-dispatched}` for owner
-`98aa776adg66gn823a8gamdq`. Neither cell reports a skip.
+The Sonnet `default-headless-gate-stop` cell runs the real fixture, host,
+exercise, and every durable assertion. It reports `xfail` only when the unique
+code set is `{implementation-worker-not-dispatched}` for owner
+`98aa776adg66gn823a8gamdq`. The Codex cell remains TODO with the same owner.
+Pi remains TODO with owner `xp6c9qfe7y4wwp46enc3f85n`.
 
-Verified by: run both exact-candidate live commands and inspect the two existing
-journey metric records plus the test result. The independent baseline is the two
-current TODO skips.
+Verified by: run the exact-candidate Sonnet command and inspect its existing
+journey metric record plus the test result. Run the Codex command and require
+the source-owned TODO skip.
 
 **AC-2 (VALUE) — A repaired journey reports XPASS and fails the lane.**
 
@@ -133,9 +134,9 @@ first assertion passed. The result names `default-headless-gate-stop`, target,
 owner, and expected code. The source binding remains until a later change
 removes it.
 
-Verified by: focused classifier tests feed no semantic codes to each expected
-binding and assert `xpass` plus a failing disposition. A later exact-candidate
-run after task `98a` repairs the behavior and proves the live lane fails.
+Verified by: focused classifier tests feed no semantic codes to the expected
+binding and assert `xpass` plus a failing disposition. A later Sonnet run after
+task `98a` repairs the behavior proves that the live lane fails.
 
 **AC-3 — Infrastructure and different semantic failures remain failures.**
 
@@ -155,19 +156,17 @@ inversion is added.
 Reconciliation distinguishes TODO from XFAIL. It validates target, active owner,
 and expected code for each XFAIL. The mutable owner join checks both binding kinds.
 
-Verified by: `TestRuntimeLiveRegistryReconciliation` parses one TODO and one
-XFAIL source binding, then rejects mutations that change kind, owner, target, or
-code. `TestRuntimeLiveTODOOwnersAreActive` runs with the state checkout and checks
-both rows.
+Verified by: `TestRuntimeLiveRegistryReconciliation` requires Sonnet XFAIL,
+Codex TODO, and Pi TODO. It rejects mutations that change the kind, owner,
+target, or code. `TestRuntimeLiveTODOOwnersAreActive` checks all three rows.
 
 **AC-5 — Journey metrics include the strict outcome.**
 
-The existing Claude and Codex journey records include `pass`, `xfail`, `xpass`,
-or `fail`. An XFAIL record includes its owner and its sole observed failure
-code. An XPASS record includes its owner and expected code as binding metadata,
-but no observed semantic failure. A FAIL record includes every observed
-semantic code. Existing metric consumers continue to read the same artifact
-directory and schema shape.
+Strict journey records include `pass`, `xfail`, `xpass`, or `fail`. An XFAIL
+record includes its owner and sole observed failure code. An XPASS record
+includes its owner and expected code, but no observed semantic failure. A FAIL
+record includes every observed semantic code. Existing metric consumers
+continue to read the same artifact directory and schema shape.
 
 Verified by: journeymetrics serialization tests build all four strict outcomes,
 round-trip the JSON, and assert owner, expected-code, and observed-code fields.
@@ -178,7 +177,7 @@ code set fails.
 
 - Add the smallest grade result needed at the semantic assertion boundary.
 - Preserve immediate failures for infrastructure and setup errors.
-- Convert the two evidenced `98a` cells in the same change.
+- Convert only the evidenced Sonnet cell. Keep Codex and Pi as TODO.
 - Keep the registry as desired state.
 - Use the existing journey metrics artifact.
 
@@ -201,7 +200,7 @@ the stable semantic code. The first landing changes only this call:
 ```go
 []liveJourneyGap{
     liveXFail("claude-sonnet", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched"),
-    liveXFail("codex", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched"),
+    liveTODO("codex", "98aa776adg66gn823a8gamdq"),
     liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n"),
 }
 ```
@@ -256,8 +255,8 @@ describes required journeys, not current evidence.
 
 ### Alternatives rejected
 
-- Keep TODO and count the gap: this hides the current journey and cannot detect
-  a repaired behavior.
+- Keep the stable Sonnet failure as TODO: this hides the current journey and
+  cannot detect a repaired behavior.
 - Invert every test failure: this hides authentication, launch, timeout, and
   fixture failures.
 - Match the full assertion text: model and harness text can change without a
@@ -280,10 +279,9 @@ runner calls `t.Fatalf` for launch and stall errors before this boundary. This
 spike supports enriching the existing error with a code. It does not support a
 test-process inversion.
 
-The exact candidate and live evidence remain the independent baseline. Sonnet
-ran for 414.17 seconds and Codex ran for 166.56 seconds before both reported the
-missing-worker failure. The first landing must rerun both real cells and record
-two XFAIL artifacts before task `98a` changes First Officer behavior.
+The exact Sonnet evidence remains the independent baseline. Run `31346297295`
+recorded the sole expected code on candidate `886f2d6ae`. Codex evidence varies
+between runs, so task `98a` owns its classification and consistent-pass proof.
 
 ## Test plan
 
@@ -296,27 +294,30 @@ binding with no semantic code is PASS. Run the registry parser and owner join
 tests with source mutations. Run the metrics round-trip tests against the
 existing `Record` type. Do not add a second JSON format.
 
-Then run the real Sonnet and Codex default-headless cells on the exact candidate:
+Then run the real Sonnet cell on the exact candidate:
 
 ```bash
 SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=sonnet \
   go test -tags live -count=1 -timeout 40m \
   -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v
+```
 
+Run the Codex command without paid CI:
+
+```bash
 SPACEDOCK_LIVE_RUNTIME=codex \
   go test -tags live -count=1 -timeout 40m \
   -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v
 ```
 
-The expected first-landing result is one executed XFAIL per lane with the sole
-code `implementation-worker-not-dispatched`. A skipped test, an infrastructure
-error classified as XFAIL, or a different or additional semantic code fails the
-proof. After task `98a` repairs the product behavior, rerun both commands and
-expect XPASS failure with no observed semantic code before removing each source
-binding.
+The Sonnet result must be an executed XFAIL with the sole code
+`implementation-worker-not-dispatched`. The Codex result must be a TODO skip.
+Task `98a` must classify Codex and obtain consistent-pass proof before it removes
+the TODO. After task `98a` repairs Sonnet, rerun Sonnet and require XPASS before
+removing its XFAIL binding.
 
 Estimated complexity is moderate. The work needs fixture-backed live tests for
-the two real lanes, Go unit tests for classifier and metrics behavior, and a
+the real Sonnet lane, Go unit tests for classifier and metrics behavior, and a
 registry parser test. It needs no new fixture, CLI command, host adapter, or
 product behavior change.
 
@@ -469,3 +470,29 @@ evidence remains blocked by missing local authentication, and no paid CI ran.
 
 The exact candidate now has Sonnet and Codex XFAIL evidence. The Sonnet job and
 metric prove one observed code with no skip. The implementation is ready for validation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Preserve the strict-XFAIL framework and stable Sonnet XFAIL value.
+  Tip `966ac857f126ad9c122034708592da5d3b04044e` keeps the grade, metrics,
+  failure code, and Sonnet XFAIL binding unchanged.
+- DONE: Restore only the unstable Codex `default-headless-gate-stop` binding to an honest TODO.
+  Codex now uses TODO owner `98aa776adg66gn823a8gamdq`. Pi remains TODO with
+  owner `xp6c9qfe7y4wwp46enc3f85n`. No other XFAIL binding changed.
+- DONE: Move Codex classification and consistent-pass proof into task `98a`.
+  The task body, acceptance criteria, approach, and test plan name this `98a` work.
+  Reconciliation requires the exact Sonnet-XFAIL, Codex-TODO, and Pi-TODO shape.
+- DONE: Run the required formatting, offline, race, registry, active-owner, and local Codex checks.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed.
+  Both contractlint checks passed. If the source shape changes, reconciliation fails.
+  The exact local Codex command skipped at 0.00 seconds before fixture launch.
+- DONE: Preserve the approved surface and hard +210 net budget.
+  The candidate changes 10 files and adds 187 net lines against `main`.
+- FAILED: Obtain exact Sonnet XFAIL evidence on the corrected tip.
+  Run `31346297295` proves the stable Sonnet value on `886f2d6ae`. No paid CI
+  ran for `966ac857f`. The corrected tip still needs one exact Sonnet XFAIL run.
+
+### Summary
+
+The recarve keeps Sonnet strict and restores Codex to TODO. All local and
+offline checks pass. Exact Sonnet evidence on `966ac857f` remains required.
