@@ -1,0 +1,46 @@
+// ABOUTME: Pins the initial First Officer worker-spawn and completion boundary.
+// ABOUTME: Rejects ceremonial substitutes that previously let validation start.
+package contractlint
+
+import (
+	"strings"
+	"testing"
+)
+
+const initialWorkerSpawnGuard = "After a successful initial `«dispatch.build»`, call `«worker.spawn»` in the same turn."
+
+const initialWorkerHandleGuard = "Record its returned handle before any later status change, report read, gate preparation, narration, or wait."
+
+const initialWorkerCompletionGuard = "Do not advance to validation until `«completion-signal»` arrives and the entity-file stage report passes the completion gate."
+
+const initialWorkerFalseEvidenceGuard = "A successful dispatch build, narration, direct status change, or self-authored report is not worker evidence."
+
+const initialWorkerEmptyWaitGuard = "An empty wait without a completion signal is not worker evidence."
+
+func TestInitialWorkerSpawnGuardPrecedesCompletionAndValidation(t *testing.T) {
+	body := readRepoFile(t, "skills/first-officer/references/fo-dispatch-core.md")
+
+	spawn := strings.Index(body, initialWorkerSpawnGuard)
+	handle := strings.Index(body, initialWorkerHandleGuard)
+	completion := strings.Index(body, initialWorkerCompletionGuard)
+	falseEvidence := strings.Index(body, initialWorkerFalseEvidenceGuard)
+	emptyWait := strings.Index(body, initialWorkerEmptyWaitGuard)
+	if spawn < 0 {
+		t.Fatalf("initial dispatch contract missing real spawn guard %q", initialWorkerSpawnGuard)
+	}
+	if handle < 0 {
+		t.Fatalf("initial dispatch contract missing returned-handle guard %q", initialWorkerHandleGuard)
+	}
+	if completion < 0 {
+		t.Fatalf("initial dispatch contract missing completion-before-validation guard %q", initialWorkerCompletionGuard)
+	}
+	if falseEvidence < 0 {
+		t.Fatalf("initial dispatch contract missing false-evidence guard %q", initialWorkerFalseEvidenceGuard)
+	}
+	if emptyWait < 0 {
+		t.Fatalf("initial dispatch contract missing empty-wait guard %q", initialWorkerEmptyWaitGuard)
+	}
+	if !(spawn < handle && handle < completion && completion < falseEvidence && falseEvidence < emptyWait) {
+		t.Fatalf("initial dispatch guard order = spawn:%d handle:%d completion:%d false-evidence:%d empty-wait:%d", spawn, handle, completion, falseEvidence, emptyWait)
+	}
+}

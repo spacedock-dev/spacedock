@@ -18,6 +18,12 @@ Interpret the scheduler row before mutation. `current == next` dispatches that e
 6. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.
 7. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
 
+After a successful initial `«dispatch.build»`, call `«worker.spawn»` in the same turn.
+Record its returned handle before any later status change, report read, gate preparation, narration, or wait.
+Do not advance to validation until `«completion-signal»` arrives and the entity-file stage report passes the completion gate.
+A successful dispatch build, narration, direct status change, or self-authored report is not worker evidence.
+An empty wait without a completion signal is not worker evidence.
+
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
 
 **Routing through a standing prose-polisher.** When composing drafts for captain review, the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Best-effort, non-blocking regardless of duration; if absent, proceed un-polished. Read the polisher's usage (when to polish, the polish modes) from its mod.
