@@ -1,6 +1,6 @@
 ---
 title: Continue Codex rejection after the first validation
-status: validation
+status: implementation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:16Z
 completed:
@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: common-evidence
 worktree: .worktrees/spacedock-ensign-continue-codex-rejection-after-first-validation
 issue:
-pr: "#664"
+pr:
 mod-block:
 id: dvddbpsf4tdt3yjw1yjyp14k
 gates:
@@ -103,7 +103,7 @@ gates:
                 reason: Captain conn approves dvd after independent PASSED cycle-2 validation of exact candidate 3d0c02c194; required PR lanes remain the merge boundary.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 ## Problem
