@@ -8,7 +8,7 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-run-known-live-gaps-as-strict-xfail
 issue:
-pr: 652
+pr: pr-merge:652
 mod-block:
 sprint: test-behavior-completeness
 group: common-evidence
