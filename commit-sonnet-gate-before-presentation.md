@@ -7,6 +7,29 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-evidence
 id: kky8pg7wc8xgb985epwss092
+gates:
+    version: 1
+    records:
+        - id: gate:kky8pg7wc8xgb985epwss092:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:kky8pg7wc8xgb985epwss092-backlog-1
+              briefing:
+                id: briefing:kky8pg7wc8xgb985epwss092:backlog:attempt-1:revision-1
+                digest: sha256:a45f5479086379c8c2fa589df282f75f9fd2e98afa472f24c553480dae7f0398
+                request-digest: sha256:2315b198901a80e371d222f7a35ec38f11019774d5b8ef5237989e6c0fe5cf8d
+                room-ref: ./commit-sonnet-gate-before-presentation/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kky8pg7wc8xgb985epwss092:backlog:1
+                briefing: briefing:kky8pg7wc8xgb985epwss092:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T18:44:24.797313Z"
+                decision: approve
+                reason: Captain created this active Sonnet owner to repair the target-external gate lifecycle defect.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 ## Problem
 

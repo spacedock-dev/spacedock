@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kky8pg7wc8xgb985epwss092:backlog:attempt-1:revision-1",
+  "question": "Is the Sonnet gate-commit repair ready for ideation with the exact n28 Claude baseline and fixed authority boundary?",
+  "artifacts": [
+    {
+      "id": "artifact:kky8pg7wc8xgb985epwss092:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b04e8259c3d30305a4caaebc6dcc7b70267a4303/commit-sonnet-gate-before-presentation.md",
+      "rev": "sha256:271182543ab689cf4683f047688a82a621fb18df74d4799543e077b0cf5df8be",
+      "mediaType": "text/markdown",
+      "summary": "The exact Claude run prepared and presented a gate without the required durable state commit."
+    }
+  ]
+}
