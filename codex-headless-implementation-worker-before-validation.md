@@ -1,6 +1,6 @@
 ---
 title: Make headless Sonnet and Codex spawn implementation before validation
-status: validation
+status: implementation
 source: "PR #583 run 31320596435, Codex job 93262943132 and Sonnet job 93262943118, 2026-08-09"
 started: 2026-08-09T18:34:21Z
 completed:
@@ -8,8 +8,8 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-codex-headless-implementation-worker-before-validation
 issue:
-pr: "#657"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 sprint: test-behavior-completeness
 group: common-evidence
 sprint-readiness: ready
@@ -124,7 +124,7 @@ gates:
                 reason: Captain explicitly approved cycle 3. Exact candidate 61d31a349 fixes fresh-validation ordering, passes focused and required evidence, and remains within seven files and 217 gross.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 ## Problem
@@ -579,3 +579,16 @@ Fresh validation now runs before its gate. The exact Sonnet proofs and all requi
 
 The approved two-line correction dispatches validation before its gate. The focused controls pass, and the bounded surface stays unchanged.
 I did not repeat the live, full, or race runs. PR #657 points to this exact candidate, and its required live lanes are running.
+
+## Captain decision: validation and PR cycle 4
+
+The Captain approved the 98a Codex default-headless finding as a Material, task-owned FIX.
+The end-user value stays unchanged: one native implementation worker must complete before validation.
+
+The correction replaces only the existing dispatch guard and its matching contract-test constant.
+A successful spawn envelope must immediately call native `worker.spawn` and record its handle.
+Only then can the First Officer wait, read reports, advance status, or use `--advance`.
+
+The correction limit is `+2/-2` across the same two approved files.
+The full candidate must remain at seven files and 217 gross lines.
+This approval authorizes validation and PR cycle 4 within these limits.
