@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -82,6 +83,31 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 	}
 	if byID["unit-fake"].ToolCalls != 1 || byID["live-fake"].ToolCalls != 2 {
 		t.Errorf("metrics not emitted independently: %+v", byID)
+	}
+}
+
+func TestBuildRecordRoundTripsTargetOutcomes(t *testing.T) {
+	for _, outcome := range []Outcome{
+		{Status: "pass"},
+		{Status: "xfail", Owner: "98aa776adg66gn823a8gamdq", FailureCodes: []string{"gate-hold-violation"}},
+		{Status: "xpass", Owner: "98aa776adg66gn823a8gamdq"},
+		{Status: "fail", Owner: "98aa776adg66gn823a8gamdq"},
+	} {
+		record := BuildRecord(JourneySpec{ScenarioID: "strict"}, BehaviorResult{Outcome: &outcome}, Observation{})
+		data, err := json.Marshal(record)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var decoded Record
+		if err := json.Unmarshal(data, &decoded); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(decoded.Outcome, outcome) {
+			t.Errorf("round-trip outcome = %#v, want %#v", decoded.Outcome, outcome)
+		}
+	}
+	if got := BuildRecord(JourneySpec{}, BehaviorResult{Passed: true}, Observation{}).Outcome.Status; got != "passed" {
+		t.Fatalf("legacy outcome = %q, want passed", got)
 	}
 }
 

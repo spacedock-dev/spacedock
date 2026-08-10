@@ -112,8 +112,9 @@ deterministic coverage to the default suite, or delete it.
 ### `default-headless-gate-stop`
 
 - **Entry point:** `TestLiveCommonDefaultHeadlessGateStop`
-- **Required outcome:** A headless launch without decision authority advances
-  from the preceding stage to the first human gate, presents it, and stops open.
+- **Required outcome:** A headless launch without decision authority dispatches
+  and completes the preceding-stage worker, then presents the first human gate
+  and stops open.
 - **Fixtures:**
   - `recorded-gate/pre-gate` — the held-gate workflow with the member starting in
     the preceding implementation stage.

@@ -14,14 +14,19 @@ The binary owns preparation, withdrawal, recording, and one-use consume; this sk
 
 **Boot projection.** Use `ready_gates` from `status --boot --identify --json`; retain `definition_dir`, `entity_dir`, slug, stage, and readiness. Engage `slug` through `status --read <slug> --json`, never `find` or broad search. `needs-preparation` needs report review; `awaiting-captain` is open; `withdrawn-awaiting-prepare` needs a successor; approved routes are unblocked. Malformed/ambiguous fails closed.
 
-**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select and commit a Markdown gate-review Artifact and References, then author the summary. When exact paths are absent, list committed Markdown candidates once with path-scoped `git -C ... ls-tree`, then read and use selected bytes once. Do not inspect harness logs, broad Git history, or worktree status for cleanliness owned by `gate prepare`. Supply judgment and launch-cwd paths; never author binary-owned JSON, ids, digests, Git-root locators, or room coordinates. Invoke the real command once without a help/shape probe:
+**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select and commit a Markdown gate-review Artifact and References, then author the summary. When exact paths are absent, list committed Markdown candidates once with path-scoped `git -C ... ls-tree`, then read and use selected bytes once. Do not inspect harness logs, broad Git history, or worktree status for cleanliness owned by `gate prepare`. Supply judgment and launch-cwd paths; never author binary-owned JSON, ids, digests, Git-root locators, or room coordinates. Invoke the real command without a help/shape probe.
+
+Run this sequence once and in this order:
 
 ```text
-${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
+1. ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
+2. ${SPACEDOCK_BIN:-spacedock} state commit ENTITY --workflow-dir WORKFLOW_DIR
+3. In one shell event, run `${SPACEDOCK_BIN:-spacedock} status --read ENTITY --checklist --json --workflow-dir WORKFLOW_DIR` and the same command with `--ac-scan` instead of `--checklist`.
+4. Load spacedock:present-gate and present once from that structured evidence.
 ```
 
 **Cold report candidate.** Structurally review the path-resolved entity's latest exact-stage report/checklist and commit. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and no prepare, mutation, presentation, idle, or repeat-next. Otherwise invoke prepare once; nonzero/mismatch stops with its exact error and no retry or `gate record --briefing`.
-Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct the room. Commit via `«state.commit»(slug)`. After exit 0, run `status --read ENTITY --checklist --json` and `--ac-scan --json` in one read-only shell event. Use their stage, checklist text/ranges, and citations to cross-check ACs; do not full-read/grep the entity or project boot after prepare or presentation. Load `spacedock:present-gate` and present once. No conn: ask and stop open. Explicit conn: immediately record and consume; never final after presentation.
+Require prepare to emit `room`, `briefing`, `digest`, and `state=open`; never reconstruct the room. On nonzero commit, structured-read failure, or stage mismatch, stop before presentation or any later lifecycle effect. Use checklist text/ranges and AC citations to cross-check the gate; do not full-read/grep the entity or project boot after prepare or presentation. No conn: ask and stop open. Explicit conn: immediately record and consume; never final after presentation.
 
 **Withdraw stale open authority.** If a prepared room is stale before the Captain decision, run:
 
