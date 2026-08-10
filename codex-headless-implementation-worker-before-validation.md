@@ -131,6 +131,17 @@ gates:
                 digest: sha256:b6934589820eff840c8c3257f7d234e1e9597a10929e608b62ed7e3a011355f3
                 request-digest: sha256:fbf8686e537da3e968e761bb1736e95d79e461cbe15a307dd9e659a1f79165bb
                 room-ref: ./codex-headless-implementation-worker-before-validation/review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:98aa776adg66gn823a8gamdq:validation:5
+                briefing: briefing:98aa776adg66gn823a8gamdq:validation:attempt-5:revision-1
+                by: person:captain
+                at: "2026-08-10T10:08:13.953434Z"
+                decision: approve
+                reason: Captain approved exact candidate edea2ac9a and its formatting-only 222-gross cap. Independent validation found no Material, deferred, or polish issue. Required exact PR checks remain the merge boundary.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
