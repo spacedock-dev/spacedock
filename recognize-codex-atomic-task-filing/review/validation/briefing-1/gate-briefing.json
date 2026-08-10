@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:n513fy4c3c9mtqkq38bfh3fh:validation:attempt-1:revision-1",
+  "question": "Does the exact filing evidence repair recognize blessed atomic Codex task creation without accepting wrong-slug or non-atomic commands?",
+  "artifacts": [
+    {
+      "id": "artifact:n513fy4c3c9mtqkq38bfh3fh:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ee5ac4f7b061d6201a47353aeb331e32dfd78073/recognize-codex-atomic-task-filing.md",
+      "rev": "sha256:1c2b9d9decbcb504b8e25c67100e314051f922c989358fef5e7abaa5d9f6bc48",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE. Exact local Codex filing passes; the positional slug correction keeps contextual wrong-slug, manual, preview-plus-write, failed, and narration-only evidence red; full/race and the three-file 105-gross boundary pass."
+    }
+  ]
+}

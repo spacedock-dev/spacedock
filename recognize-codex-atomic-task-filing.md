@@ -50,6 +50,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:n513fy4c3c9mtqkq38bfh3fh:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:n513fy4c3c9mtqkq38bfh3fh-validation-1
+              briefing:
+                id: briefing:n513fy4c3c9mtqkq38bfh3fh:validation:attempt-1:revision-1
+                digest: sha256:33e8f9b2a88842fcbe8cef42b416aa33fcfbda1bbe5a2aa86140404865f71efe
+                request-digest: sha256:832cb2778f7b0481283f6ca5c663498153b2339bec07561b88efd1a7c9be224e
+                room-ref: ./recognize-codex-atomic-task-filing/review/validation/briefing-1
 started: 2026-08-10T20:28:23Z
 worktree: .worktrees/spacedock-ensign-recognize-codex-atomic-task-filing
 ---
