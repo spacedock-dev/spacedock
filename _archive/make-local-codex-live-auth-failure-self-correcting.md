@@ -1,11 +1,11 @@
 ---
 id: pma2c1j7wmg9yvf5n25tx2ff
 title: Make local Codex live auth failure self-correcting
-status: validation
+status: done
 source: "Captain fast-track direction on 2026-08-09 after a targeted local gate-guardrail run incorrectly set the CI-only required flag and bypassed supported isolated OAuth."
 started: 2026-08-10T03:00:30Z
-completed:
-verdict:
+completed: 2026-08-10T05:04:11Z
+verdict: PASSED
 score: 0.95
 sprint: durable-decisions
 sprint-readiness: ready
@@ -13,7 +13,7 @@ group: runtime-live-ux
 worktree: .worktrees/spacedock-ensign-make-local-codex-live-auth-failure-self-correcting
 issue:
 pr: pr-merge:655
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -76,7 +76,8 @@ gates:
                 reason: All ACs pass within the two-file/four-line boundary; auth behavior is unchanged and deterministic focused, full, and race checks are green.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T05:04:11Z
 ---
 
 Make the existing local Codex OAuth path obvious when a developer accidentally uses the CI-only live-test flag.
