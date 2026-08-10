@@ -447,3 +447,25 @@ real first-landing cells. No product change is included.
 The commit implements strict grading, source bindings, metrics, reconciliation,
 and documentation. The Codex cell proves the exact XFAIL result. The Sonnet
 evidence remains blocked by missing local authentication, and no paid CI ran.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Implement host-neutral strict grading after infrastructure succeeds: run every durable assertion and classify exact sole code as XFAIL, empty as failing XPASS, and different/additional codes as FAIL.
+  Commit `886f2d6ae` contains the strict grade. The offline and race suites passed.
+  If the code-set result changes or an assertion stops early, the grade matrix fails.
+- DONE: Convert only the real Sonnet and Codex `default-headless-gate-stop` cells to owner `98aa776adg66gn823a8gamdq` and sole code `implementation-worker-not-dispatched`, then obtain exact-candidate executed XFAIL evidence for both.
+  The local Codex cell reported XFAIL on commit `886f2d6ae` in 385.77 seconds.
+  Sonnet job `93328920242` succeeded in run `31346297295` on the full commit.
+  `TestLiveCommonDefaultHeadlessGateStop` ran for 370.21 seconds and reported XFAIL.
+  Artifact `9047954403` contains `default-headless-gate-stop--claude--llm--llm-live--claude-sonnet-5--measured.json`.
+  The metric has only `implementation-worker-not-dispatched`. Its SHA-256 is
+  `7f61d4ac8591490309d306df26e7b95f5d3e554693f142c0d5ec9381001ea05c`.
+  The separate Codex job in this manual run failed. The local Codex proof remains exact.
+- DONE: Extend existing metrics, reconciliation, active-owner proof, and runtime-live documentation within the approved file surface and hard +210 net cap; run all required offline/race/registry checks.
+  The code change is +182 net lines. The complete offline, race, registry, and
+  active-owner checks passed. The Sonnet metric uses the existing artifact schema.
+
+### Summary
+
+The exact candidate now has Sonnet and Codex XFAIL evidence. The Sonnet job and
+metric prove one observed code with no skip. The implementation is ready for validation.
