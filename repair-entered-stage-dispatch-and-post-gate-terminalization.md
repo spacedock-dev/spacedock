@@ -234,3 +234,15 @@ PR #656 run `31361524485` used exact 2e4 head `f7a86be96`. Codex job `9337139765
 The observed semantic set was empty. The process exited with code 0 after 145.69 seconds. All durable assertions passed.
 
 This result supports the repaired target. It is not a 9a exact-candidate run. It does not authorize removal of the 9a binding.
+
+## Assigned 9a live evidence from PR #657
+
+PR #657 run `31377533871` used head `edea2ac9a`. Codex job `93420358904` produced strict XPASS for `codex/keep-moving-posture`.
+
+Artifact `9059342936` has ZIP SHA-256 `20e82852a8e72fbf9376e2846a4468fbd3621fef30002e85f631b95939ca80b6`.
+
+The observed semantic set was empty. The product exited correctly after 176.89 seconds. The final message completed the required concurrent work.
+
+This result is assigned supporting evidence for 9a. It is not the final rebased 9a candidate proof.
+
+The 9a binding and candidate remain unchanged. The binding can change only after 6x lands and the exact rebased target passes.
