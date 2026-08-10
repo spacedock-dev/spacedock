@@ -68,3 +68,72 @@ After `gate prepare`, the Sonnet First Officer commits the durable gate state. I
 - Name exact files and gross/net estimate before product edits.
 - Preserve the existing gate grammar and authority.
 - Define one focused falsifier for the missing commit.
+
+## Proposed approach
+
+Change only the open-gate resume rule in `skills/fo-gate-lifecycle/SKILL.md`.
+The rule will require `state commit ENTITY` before the structured reads and presentation.
+This rule also applies when a worker prepared or committed the open gate.
+The First Officer will stop if the commit command fails.
+
+The exact design replaces the `open → present` clause near line 74.
+The replacement names the commit, the two structured reads, and the presentation order.
+No other lifecycle branch changes.
+
+The simplest alternative was a new binary command that combines commit and presentation.
+That alternative is too large because `state commit` already supports a clean no-op.
+The retained logger also observes its successful state head.
+
+No spike is needed.
+The clean no-op behavior exists in `TestStateCommitNoOpWhenClean`.
+The command-order oracle exists in `assertRecordedGateHoldLog`.
+
+## Expected surface
+
+- `skills/fo-gate-lifecycle/SKILL.md`: 3 insertions and 1 deletion.
+- Expected total: 1 file, 4 gross lines, and 2 net lines.
+- Hard tolerance: 1 file and 8 gross lines.
+
+The change alters Sonnet runtime instruction behavior only.
+It does not alter command grammar, stored formats, or authority.
+It does not alter n28 dispatch acknowledgment, Codex, Pi, or zero-discovery behavior.
+
+## Acceptance criteria and test plan
+
+**AC-1: A successful open-gate presentation has a successful `state commit` after `gate prepare` and before structured reads.**
+The exact local Sonnet journey verifies the command order in `command.log`.
+
+**AC-2: The exact local Sonnet target first reports XPASS-green and then passes after its binding is removed.**
+The live journey verifies the repaired behavior and the final open gate.
+
+**AC-3: The final gate remains open without a Resolution, an Application, terminal fields, or successor dispatch.**
+The existing `assertGateHeld` and `assertRecordedGateHoldLog` checks verify this state.
+
+**AC-4: A missing, failed, or late commit does not qualify the gate hold.**
+The focused `missing commit` case in `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` is the primary falsifier.
+The same oracle rejects a commit before the successful prepare.
+
+**AC-5: The product checks and exact required PR checks pass.**
+Implementation runs the focused lifecycle tests, full tests, race tests, formatting, registry checks, and active-owner checks.
+The required PR lanes run for Sonnet and Codex.
+Pi remains skipped.
+
+## Stage Report: ideation
+
+- DONE: Read the complete task and exact n28 Claude baseline.
+  The log shows successful `gate prepare`, structured reads, and presentation without a binary `state commit` after prepare.
+- DONE: Inspected the prepare-and-bind contract and the Sonnet instruction path.
+  The cold prepare sequence requires the commit, but the open resume clause routes directly to presentation.
+- DONE: Defined the smallest repair and a missing-commit falsifier.
+  One resume clause changes, and the retained command-log mutant rejects the exact omission.
+- DONE: Named the exact file and line estimate before product edits.
+  The design changes one file with 4 gross lines and a hard limit of 8 gross lines.
+- DONE: Preserved the excluded behavior and authority.
+  The design changes no grammar, format, authority, n28 mechanism, Codex behavior, Pi behavior, or zero-discovery behavior.
+- DONE: Wrote the ideation report in Simplified English.
+  This report gives the approach, expected surface, semantics, acceptance criteria, and test plan.
+
+### Summary
+
+The design adds the missing open-gate commit boundary before Sonnet presentation.
+It uses one instruction file and the existing command-log falsifier.
