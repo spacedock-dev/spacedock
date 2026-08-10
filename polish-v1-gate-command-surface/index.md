@@ -8,7 +8,7 @@ verdict:
 score: "0.8"
 worktree: .worktrees/spacedock-ensign-polish-v1-gate-command-surface
 issue:
-pr:
+pr: "#667"
 sprint: durable-decisions
 id: f6cvn0s87ywbs158yy0b5q7k
 gates:
@@ -74,6 +74,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. Remove sprint-added tests that infer behavior by searching free-form command, prompt, document, or transcript prose. Exact text remains asserted only for deliberately published human-facing help.
