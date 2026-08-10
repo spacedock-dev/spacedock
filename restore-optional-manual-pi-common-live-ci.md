@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: live-ci-evidence
 worktree: .worktrees/spacedock-ensign-restore-optional-manual-pi-common-live-ci
 issue:
-pr: "#651"
+pr: pr-merge:651
 mod-block: merge:pr-merge
 id: 0aqnm6v8ajns6cpsknxn9wf2
 gates:
