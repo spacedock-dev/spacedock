@@ -618,14 +618,12 @@ Focused reviewer, round, gate, registry, binding, and owner controls passed.
 The race run took 556.475s for `internal/ensigncycle`.
 The post-rebase registry, active-owner, and binding checks passed in 0.416s.
 `git diff --check` passed. Pi and all non-dvd bindings remain present.
-
 AC evidence: the transcript orders validation/1, validation/2, and one prepare.
 The gate has one open attempt and the expected prepared Briefing.
 The gate artifact is outside every immutable advisory-round room.
 Negative controls reject missing or malformed validation/1 rooms, an invalid
 validation/2 summary, reuse, a wrong reviewer, duplicate prepare, resolution,
 terminal state, and an extra immutable-round file.
-
 DONE: Rebase from exact zh landing e2f07a40e6bf45eeec8d133723b25cef18f5cb9a and preserve Pi and all non-dvd bindings.
 DONE: Before product edits, update the task report with exact files, gross/net estimate, tolerance, and Codex operator value.
 DONE: Build the non-product Codex extractor, strict final-gate oracle, negative controls, and dvd Codex XFAIL baseline only.
