@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: common-evidence
 worktree: .worktrees/spacedock-ensign-hold-pi-default-headless-validation-gate
 issue:
-pr: "#658"
+pr: pr-merge:658
 mod-block:
 id: fh6rv0k6wr25zty0jjan4jp7
 gates:
