@@ -31,7 +31,7 @@ The skill loader supplies the absolute base directory for this `first-officer` s
 ## Runtime adapter
 
 Load the runtime adapter for your platform:
-- Claude Code (`CLAUDECODE` env var is set): read `references/claude-first-officer-runtime.md`
+- Claude Code (`CLAUDECODE` env var is set): read exactly `{first_officer_base}/references/claude-first-officer-runtime.md`; do not list or search the references directory.
 - Codex (`CODEX_THREAD_ID` env var is set): read `references/codex-first-officer-runtime.md`
 - Pi (`PI_CODING_AGENT_DIR` is set, or this session is running under Pi without the Claude/Codex markers above): read `references/pi-first-officer-runtime.md`
 
