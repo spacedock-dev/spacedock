@@ -444,3 +444,27 @@ offline checks pass. Exact Sonnet evidence on `966ac857f` remains required.
 
 The candidate applies target-level XFAIL to every runnable sprint target. It keeps product repair ownership unchanged and leaves no TODO row.
 All required offline checks pass. The pull request still needs exact required live-lane evidence on code tip `02b2296a1`.
+
+## Stage Report: validation
+
+- DONE: Review exact candidate `02b2296a18750cf3eb2ed6975b8446a6b3198d8d` against the Captain-approved target-level XFAIL policy.
+  The worktree HEAD equals the pushed candidate. The diff has only the approved test, metric, registry, and document surfaces.
+- DONE: Verify all 19 executable sprint target cells run as task-owned XFAIL, no TODO remains, and the stale passing Codex binding is absent.
+  `TestRuntimeLiveRegistryReconciliation` passed and checks the exact 19 rows, owners, zero TODO rows, and the absent withdrawal row.
+- DONE: Verify typed semantic failure becomes XFAIL, empty semantic failure becomes red XPASS, and infrastructure failure stays red.
+  `TestGradeLiveTargetMatrix` passed. A changed status for any of these three inputs makes this test fail.
+- DONE: Verify existing metrics retain observed semantic codes without a source expected-code requirement.
+  `TestBuildRecordRoundTripsTargetOutcomes` passed. It checks the owner, observed codes, empty expected code, and all four statuses.
+- DONE: Verify registry reconciliation, active-owner proof, formatting, full tests, race tests, live-tag compile, and diff hygiene evidence.
+  Both registry checks, `gofmt -d`, `git diff --check`, and the live-tag compile passed. The implementation report records green full and race suites.
+- DONE: Check all five acceptance criteria and the revised +285 net estimate with +25 tolerance.
+  AC-1 through AC-5 have executable evidence. The candidate is +198 net lines, below the +310 review limit.
+- DONE: Recommend PASSED or REJECTED with the workflow four evidence fields for every finding. Do not require manual cadence runs before PR.
+  Recommendation: PASSED. There is no Material, Deferred risk, Polish, or Needs decision finding, so no four-field finding record applies.
+- SKIPPED: Repeat the complete full and race suites during validation.
+  The Captain stopped duplicate runs and accepted the implementation-owned green evidence. Two unrelated timeout tests passed in isolated reruns.
+
+### Summary
+
+Validation recommends PASSED for exact candidate `02b2296a1`. All five acceptance criteria have valid policy-level evidence, and no independent Material finding exists.
+Target-level XFAIL is sufficient before the pull request. Infrastructure failures and XPASS results remain red.
