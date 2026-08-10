@@ -71,13 +71,13 @@ Replace the abbreviated fallback command:
 git -C ... ls-tree
 ```
 
-with this complete, directly executable command shape:
+with this complete command shape after resolving and substituting concrete values:
 
 ```sh
-git -C "$GIT_ROOT" ls-tree -r --name-only HEAD -- "$INTENDED_PATH" | awk 'tolower($0) ~ /\.(md|markdown)$/ { print }'
+git -C "<resolved-git-root>" ls-tree -r --name-only HEAD -- "<root-relative-intended-path>" | awk 'tolower($0) ~ /\.(md|markdown)$/ { print }'
 ```
 
-`GIT_ROOT` is the Git root that contains the already-intended candidate location. `INTENDED_PATH` is that location expressed relative to the Git root. It is not broadened to `.` unless the intended location is the root. `HEAD` supplies the required committed tree-ish, `-r --name-only` yields recursive candidate paths, `-- "$INTENDED_PATH"` fences discovery, and the `awk` filter admits the same case-insensitive `.md`/`.markdown` extensions that `gate prepare` accepts.
+Before execution, the First Officer resolves `<resolved-git-root>` to the retained absolute `entity_dir` from boot and resolves `<root-relative-intended-path>` to the path-resolved entity's containing directory relative to that root. It substitutes those two shell-quoted values into the command; they are notation, not environment variables. It does not broaden the intended path to `.` unless the resolved entity is flat at the entity root. `HEAD` supplies the required committed tree-ish, `-r --name-only` yields recursive candidate paths, the value after `--` fences discovery, and the `awk` filter admits the same case-insensitive `.md`/`.markdown` extensions that `gate prepare` accepts.
 
 Smaller alternatives do not meet the value boundary:
 
@@ -86,7 +86,7 @@ Smaller alternatives do not meet the value boundary:
 - Git `:(glob)` pathspecs would avoid the pipe, but the spike proved `ls-tree` rejects that pathspec magic (`fatal: ... pathspec magic not supported by this command: 'glob'`).
 - `git ls-files` observes the index, so a staged but uncommitted Markdown path leaks into discovery. `find` or filesystem globbing likewise observes uncommitted worktree files.
 
-The instruction remains a one-shot read-only discovery fallback. The implementation adds a fixture-backed smoke test that executes the instruction's command shape and a Codex live journey whose prompt omits Artifact and Reference paths, forcing the installed skill to discover the committed package before `gate prepare`.
+The instruction remains a one-shot read-only discovery fallback. No test or harness mechanism is added: the existing `TestLiveCommonGateGuardrail` prompt already omits Artifact and Reference paths, forcing the installed skill to discover committed sources before `gate prepare`, and its durable assertions require exactly one prepared package held at the human decision boundary.
 
 ### Risk spike
 
@@ -95,32 +95,31 @@ A temporary Git fixture contained committed `intended/review.md`, committed `int
 ### Expected surface and semantic boundary
 
 - `skills/fo-gate-lifecycle/SKILL.md`: replace the incomplete fallback wording with the exact command; approximately +5/-1 lines.
-- `internal/contractlint/fo_gate_lifecycle_fallback_test.go` (new): execute the exact instruction command against a controlled Git fixture; approximately +75 lines.
-- `internal/ensigncycle/codex_live_runner_test.go`: add the exact missing-path Codex journey and assertions that discovery precedes successful preparation; approximately +35 lines.
 
-Expected total: 3 files, about +115/-1 lines. Tolerance: one additional existing `internal/ensigncycle` helper/fixture file and up to +60 insertions if needed to reuse the recorded-gate harness without duplicating it. No production Go, stored format, authority, gate lifecycle, supplied-path, CLI grammar, or documentation-site change is permitted. The only permitted runtime semantic change is that the absent-path Codex fallback now returns committed Markdown candidates beneath the already-intended path instead of exiting 129. The site command reference has no fallback-selection wording, so no site documentation diff is proposed.
+Expected total: exactly 1 product file, about +5/-1 lines. Tolerance: up to +10/-2 lines in that same skill file and no additional files. No Go, fixture, harness, stored format, authority, gate lifecycle, supplied-path, CLI grammar, or documentation-site change is permitted. The only permitted runtime semantic change is that the absent-path Codex fallback uses the resolved entity Git root and root-relative intended directory to select committed Markdown instead of exiting 129. The site command reference has no fallback-selection wording, so no site documentation diff is proposed.
 
 ## Out of scope
 
 - Changing gate authority, preparation, digest, or consume semantics.
 - Changing the supplied Artifact/Reference path.
 - Broad repository discovery or uncommitted-file discovery.
-- Changing how the intended candidate path or Git root is selected.
+- Introducing another root/path policy beyond the retained `entity_dir` and path-resolved entity directory.
 - Adding a reusable discovery API or production Go implementation.
+- Adding or modifying Go tests, fixtures, live journeys, or harness code.
 
 ## Acceptance criteria
 
 **AC-1 (VALUE) - A Codex First Officer with missing Artifact and Reference paths discovers the intended committed Markdown and prepares the gate without a Git usage failure.**
-Verified by: an exact local Codex recorded-gate journey whose prompt omits both supplied paths and whose copied `fo-gate-lifecycle` skill is the implementation under test. The test requires a successful discovery command before exactly one successful `gate prepare`, and no Git usage exit; removing `HEAD` makes the journey stop at exit 129.
+Verified by: existing `TestLiveCommonGateGuardrail` under `SPACEDOCK_LIVE_RUNTIME=codex`. Its existing prompt supplies no Artifact or Reference paths, loads the copied product skill, and must leave exactly one persisted prepared gate package open at the human decision boundary. Removing the explicit tree-ish prevents that package from being created and fails the existing durable assertion.
 
 **AC-2 - The fallback command is complete, read-only, path-scoped, and excludes uncommitted Markdown.**
-Verified by: a fixture-backed command test with committed intended `.md` and nested `.markdown`, committed unrelated Markdown, committed non-Markdown, and staged-only intended Markdown. It executes the exact documented command and asserts exit 0 plus the two-path output exactly; removing the intended path, recursive flag, tree-ish, or committed-tree source changes the observed output or exit and fails.
+Verified by: inspect the persisted package produced by that same existing journey and its selected source identities, not console output. Every selected source must resolve beneath the entity's intended directory at `HEAD`; the unrelated dirty sibling and any staged-only input must be absent. Removing `HEAD` or the intended-path fence either prevents preparation or changes the persisted selection and fails this package/state check.
 
 ## Test plan
 
-Implementation starts by preserving the spike as the focused fixture-backed smoke test, then changes the skill wording. Run that test directly and confirm the exact output and exit code. Next run the dedicated local Codex missing-path recorded-gate journey and inspect its command trace/on-disk room state: it must use the fallback, prepare exactly once, and produce the expected open gate package without supplied paths. The supplied-path recorded-gate journey remains the regression control and must not invoke discovery.
+Implementation changes only `skills/fo-gate-lifecycle/SKILL.md`; it adds no standing test or fixture. Validation runs the existing `TestLiveCommonGateGuardrail` once with `SPACEDOCK_LIVE_RUNTIME=codex`. AC-1 checks the resulting on-disk gate state for exactly one open prepared package. AC-2 opens that package and verifies its selected source identities are committed at `HEAD`, remain under the resolved intended directory, and exclude the fixture's unrelated dirty sibling and any staged-only input. No command-output comparison, prose substring check, duplicate Codex journey, full live matrix, or new test infrastructure is permitted.
 
-Finally run the applicable focused `internal/contractlint` and `internal/ensigncycle` packages, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. No generic prose substring check or full live matrix is accepted as proof for AC-1 or AC-2.
+The supplied-path behavior is outside the changed branch and receives no additional journey. The one-off Git spike remains risk evidence for the command mechanism, not acceptance proof and not a committed test.
 
 ## Stage Report: backlog
 
@@ -144,3 +143,16 @@ Proof needed for ideation: Reproduce the PR #659 regression, run the proposed co
 ### Summary
 
 Ideation now defines the complete fallback command, a narrow semantic boundary, and falsifiable proof for both the Git behavior and the exact Codex journey. The risk spike found and avoided unsupported `ls-tree` glob magic, then proved the selected path-scoped committed-tree pipeline before any implementation work.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Define the exact before/after fallback command and why the smaller alternatives do not satisfy intended-path, committed-only discovery.
+  The revised design makes the Git root and root-relative intended directory concrete substitutions resolved from retained workflow state, while preserving the exercised `HEAD`/recursive/path-fenced command shape.
+- DONE: Declare expected files, insertion count, tolerance, and the only permitted runtime semantic change.
+  The authorized surface is exactly `skills/fo-gate-lifecycle/SKILL.md`, about +5/-1 lines with +10/-2 same-file tolerance; all Go, fixture, harness, and unrelated semantic changes are forbidden.
+- DONE: Tie each acceptance criterion to fixture-backed command proof and the exact missing-path Codex journey; exercise the riskiest Git command shape first.
+  Both ACs now reuse `TestLiveCommonGateGuardrail`: AC-1 requires exactly one persisted prepared package, while AC-2 inspects that package's committed, intended-path source identities and excludes unrelated or staged-only inputs without comparing console output.
+
+### Summary
+
+The authorized correction removes both proposed test mechanisms and narrows implementation to one product skill edit. Proof now comes from the existing missing-path Codex journey and its persisted package, with explicit root/path substitution and no command-output oracle.
