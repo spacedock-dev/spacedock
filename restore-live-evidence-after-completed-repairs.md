@@ -8,7 +8,7 @@ verdict:
 score: 0.9
 worktree: .worktrees/spacedock-ensign-restore-live-evidence-after-completed-repairs
 issue:
-pr: "#663"
+pr: pr-merge:663
 mod-block:
 sprint: test-behavior-completeness
 group: common-evidence
