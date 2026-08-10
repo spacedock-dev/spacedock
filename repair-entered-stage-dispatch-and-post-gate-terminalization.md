@@ -289,3 +289,54 @@ The 9a binding and candidate remain unchanged. The binding can change only after
 PASSED for Sonnet and Codex. Entered-stage evidence is complete, and consumed nonterminal journeys can finish without forced status writes.
 
 Pi stays as a pending strict XFAIL. The Captain made its proof non-blocking and prohibited a new Pi run in this stage.
+
+## Stage Report: validation
+
+- DONE: Inspect the exact candidate and required 6x base.
+  Candidate `4a20f3f632f619f56ad6860df4ace04842793ba8` matches the remote and has a clean worktree.
+  Its merge base is the landed 6x merge `8832664ddbec8ac024c4e5251410d0422fa7ca04`.
+  The conflict resolution keeps the 6x non-gated dispatch rule and adds only the approved gate-consumed rule.
+- DONE: Inspect the acceptance evidence without repeating implementation checks.
+  The focused dispatch test reads the exact path-scoped commit blob and requires status plus nonempty `started`.
+  The terminal test proves ordinary atomic terminal fields preserve the worker report without `--force`.
+  The existing refusal matrix covers pending, stale, unreadable, and terminal-target authority.
+  The implementation record reports that focused, registry, owner, format, full, and race checks passed.
+- DONE: Inspect the bound and unbound live evidence.
+  Bound commit `cb2015ade` produced Sonnet and Codex XPASS alerts with `observed=[]`.
+  Exact final head passed normally for Sonnet in 413.16 seconds and Codex in 279.76 seconds.
+  Both exact-head metrics report `outcome.status=passed` for `keep-moving-posture`.
+  The Sonnet evidence archive SHA-256 is `5770f0624e574743938eb09d4ecc40fd3c0834e37468569d98ccc67cef83cd55`.
+  The Codex evidence archive SHA-256 is `883069ccea6e49de5115e3032c6afa93797f9d41db21c5ce558c56069cfa711f`.
+  Every per-file manifest entry and both archive digests passed an independent digest check.
+- DONE: Inspect binding ownership and implementation scope.
+  The final commit removes only the 9a Sonnet and Codex `keep-moving-posture` bindings.
+  The Pi binding stays XFAIL with owner `9adv48yhye5s2vkhwd7ge52d`.
+  The Captain made Pi pending and non-blocking and prohibited a Pi run in this stage.
+  The branch changes ten files with 140 insertions and 10 deletions.
+  This smaller surface matches the approved design decision and preserves the 130-line net change.
+
+### Review-finding disposition
+
+Material evidence finding 1 is CLOSED.
+
+- Released user and normal workflow: Sonnet and Codex run `keep-moving-posture` from the exact final candidate.
+- Observable harm: Before closure, the final instruction bytes had no retained exact-head live proof.
+- Affected value AC: `value-ac[AC-1]` requires each executable host cell to prove normal completion after gate consume.
+- Trigger evidence: The worker ran four live checks, then changed `skills/fo-gate-lifecycle/SKILL.md` in final commit `4a20f3f63`.
+
+The First Officer authorized exact-final-head Sonnet and Codex reruns without candidate mutation.
+Both reruns passed, retained complete evidence, and matched source head `4a20f3f632f619f56ad6860df4ace04842793ba8`.
+No Material, Deferred risk, or Polish finding remains.
+
+### Acceptance evidence
+
+- AC-1: Exact-final-head Sonnet and Codex live targets passed the unchanged durable journey oracle.
+- AC-2: `TestGateCeremonyDispatchCommitContainsEnteredStageEvidence` inspects the exact dispatch commit blob.
+- AC-3: `TestConsumedNonterminalApprovalAllowsOrdinaryTerminalFields` and the refusal matrix preserve fail-closed authority.
+- AC-4: The candidate uses exact 6x landing `8832664dd` and has final-head host evidence.
+
+### Summary
+
+PASSED. The exact candidate preserves 6x dispatch behavior and adds complete post-gate evidence.
+
+Consumed nonterminal journeys finish without `--force`. Sonnet and Codex pass the exact-final-head live target. Pi remains a non-blocking XFAIL.
