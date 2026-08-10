@@ -30,6 +30,26 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:kky8pg7wc8xgb985epwss092:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:kky8pg7wc8xgb985epwss092-ideation-1
+              briefing:
+                id: briefing:kky8pg7wc8xgb985epwss092:ideation:attempt-1:revision-1
+                digest: sha256:8e843810ce2f0f10b39cd9689c4dbc41b323f372695c969fbc7374a5a903d2da
+                request-digest: sha256:21635b1a8292b76f2e135f53131b93f11c7969f8afbd02cf4cf9581023c6fd50
+                room-ref: ./commit-sonnet-gate-before-presentation/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kky8pg7wc8xgb985epwss092:ideation:1
+                briefing: briefing:kky8pg7wc8xgb985epwss092:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T18:49:10.674133Z"
+                decision: approve
+                reason: Captain assigned this exact Sonnet gate-lifecycle repair. The one-file design preserves the approved boundary.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-10T18:44:40Z
 ---
 ## Problem

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kky8pg7wc8xgb985epwss092:ideation:attempt-1:revision-1",
+  "question": "Does the one-file, eight-gross-line design restore the required durable gate commit without changing gate authority or another runtime?",
+  "artifacts": [
+    {
+      "id": "artifact:kky8pg7wc8xgb985epwss092:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9e06a9015567318f0736db72db052891dc2109ef/commit-sonnet-gate-before-presentation.md",
+      "rev": "sha256:ce3cbf7c6bb4946d134469bd3b17103b8aef2f697cecd45dd80caa3aece444de",
+      "mediaType": "text/markdown",
+      "summary": "Ideation recommends one ordered state-commit clause and the retained missing-commit falsifier."
+    }
+  ]
+}
