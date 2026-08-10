@@ -1,6 +1,6 @@
 ---
 title: Stop Sonnet zero-discovery broad search
-status: validation
+status: done
 score: "0.90"
 source: "PR #663 Sonnet zero-discovery failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -69,10 +69,13 @@ gates:
                 reason: Captain conn approves 3rns after independent PASSED validation. Required exact PR lanes remain the merge boundary.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-10T18:38:46Z
 worktree: .worktrees/spacedock-ensign-stop-sonnet-zero-discovery-broad-search
 pr: pr-merge:665
+verdict: passed
+completed: 2026-08-10T20:02:16Z
+archived: 2026-08-10T20:02:16Z
 ---
 ## Problem
 
