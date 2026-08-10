@@ -438,3 +438,28 @@ Validation recommends REJECTED. Run `31348183583` supplies the real authenticate
 - Trigger evidence: Codex artifact `9048334088`, `codex-shared-scenarios-detail.jsonl` lines 6-9, and `live-artifacts/codex/codex-shared-scenarios/gate-guardrail/codex-final-message.txt`; Sonnet artifact `9048510715`, `live-e2e-detail.jsonl` target pass, and its gate-guardrail `claude-final-message.txt` line 14.
 - Classification: Material product-behavior defect in KRB's presenter surface, plus a test-coverage gap because the canonical live journey does not grade the visible KRB semantics.
 - Proposed disposition: route to implementation through the workflow checkpoint. Preserve exact candidate `4e3be373f` until distinct authorization; do not substitute the durable-state pass for presentation evidence or absorb unrelated runtime behavior into KRB.
+
+## Worker proposal: live fallback leakage and empty findings
+
+- Exact finding: Runtime Live E2E run 31348183583 shows Codex fallback presentation adding checklist/AC/review rows although the fetched stage declares no Gate content, Inputs, Outputs, Good/Bad criteria, or transition; both Codex and Sonnet also render `no material findings` instead of omitting the empty findings group.
+- Released user and normal workflow: the normal pull-request Runtime Live E2E executes the shipped `present-gate` skill on Codex and Sonnet at a human gate whose workflow definition supplies no fallback evidence fields.
+- Observable harm: the Captain is shown undeclared checklist, acceptance-criterion, and retained-review claims as decision evidence, plus a non-finding represented as a finding; the green job conceals both visible contract failures because it grades only the durable held state.
+- Affected value AC or non-negotiable boundary: `value-ac[AC-2]` requires fallback to stay within declared Inputs, Outputs, Good/Bad criteria, and transition; `value-ac[AC-3]` requires empty result and finding groups to be absent.
+- Trigger evidence: run `31348183583` is exact head `4e3be373f`. Codex artifact `9048334088` shows `dispatch show-stage-def` returning only `### validation` and `Validate and present the retained package.`, then the final message adds checklist, AC-1, committed-review, and `No material findings` rows. Sonnet artifact `9048510715` adds the same classes of rows and `Findings: no material findings`. Static inspection confirms `recordedGateReadme()` declares no evidence field in the validation subsection, while `recordedGateEntity()` and `recordedGateSourceReview()` contain the leaked distractors; `runGateStopScenario()` passes only before/after state to `assertGateHeld()` and never grades `result.finalMessage`.
+- Root cause: the presenter says fallback uses only declared sources but does not state the zero-source terminal behavior or forbid entity checklist, AC scan, and retained package material from becoming fallback rows. It also says to omit empty findings without defining a negative statement such as `no material findings` as empty. Both hosts filled those gaps the same way, and the live oracle did not observe the presentation.
+- Proposed materiality: Material. The trigger occurred in the released PR workflow on both supported hosts and directly violates the two value criteria at the Captain-facing decision boundary.
+- Proposed task ownership: KRB owns the presenter correction and the semantic grade for its canonical gate journey. The remedy changes no runtime adapter, command, schema, recorder, gate-state assertion, or xp6-owned runtime mechanism.
+- Proposed disposition: `fix`.
+
+### Smallest concrete correction
+
+1. In `skills/present-gate/SKILL.md`, state that when `Gate content` and every permitted fallback declaration are absent, the presenter emits no evidence block or row. Checklist, AC-scan, entity report, and retained review/package data may inform recommendation judgment but cannot become fallback evidence. State that negative summaries such as `no material findings` mean the finding group is empty and must not render.
+2. Add one fixture-backed presentation assertion to `runGateStopScenario()` that rejects the recorded-gate fixture's checklist, AC, and retained-review distractors plus any `no material findings` row, without changing `assertGateHeld()`. Give that assertion default-build positive and negative table cases so the semantic oracle proves red offline without a model. This is test evidence for KRB output, not a production renderer or fallback implementation.
+
+### Proof boundary after authorization
+
+- Before the presenter edit, add and run only the focused default-build presentation-oracle cases; require them to fail on the retained Codex and Sonnet messages and pass on a review containing only the common task/stage, Briefing, recommendation, and decision facts.
+- After the single skill correction, run the focused offline oracle, registry reconciliation, existing gate-state controls, contract/integration tests, formatting, full tests, race tests, and strict docs build. Do not alter fixture stage declarations to make the check pass.
+- Trigger one normal PR Runtime Live E2E at the exact correction commit. Require both Codex and Sonnet `TestLiveCommonGateGuardrail` targets to execute and pass the new presentation assertion; inspect both retained final messages to confirm zero unsupported evidence rows and zero empty findings rows. Aggregate job success without those target-level facts is insufficient. No local model run, Pi expansion, runtime repair, fallback mechanism, or repeat-for-luck run belongs to this correction.
+
+Candidate bytes and HEAD remain exactly `4e3be373f`; no edit, test, model rerun, or CI trigger occurred during this proposal.
