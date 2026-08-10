@@ -462,3 +462,16 @@ The candidate now includes exact integration tip `944f323ac` without a content c
 
 Fresh validation passed on the rebased candidate. The patch and all local checks match the approved candidate.
 The Pi and Opus evidence remains valid because the task patch is byte-identical. AC-2 remains pending at the exact pull-request merge boundary.
+
+## Stage Report: validation (merge boundary)
+
+- DONE: Exact PR #651 candidate `20910e6351a42f0f2ca30a92c269ddffbc069582` ran Runtime Live E2E `31343555111` with offline, Sonnet, and Codex passed.
+  The workflow completed successfully on the exact candidate.
+- DONE: Pi skipped with zero steps and no Pi deployment while deployments were only `CI-E2E` and `CI-E2E-CODEX`.
+  The run requested no `CI-E2E-PI` approval.
+- DONE: Docs build and Ubuntu/macOS install checks passed.
+  The PR checks completed successfully.
+
+### Summary
+
+AC-2 is now satisfied. All required merge-boundary evidence passed, and validation recommends merge.
