@@ -56,6 +56,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:krbaeb3resfpbh1qvnb65krf:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:krbaeb3resfpbh1qvnb65krf-validation-1
+              briefing:
+                id: briefing:krbaeb3resfpbh1qvnb65krf:validation:attempt-1:revision-1
+                digest: sha256:05c661f7caa79f20a97c323cdbfba0f6de346d3d8bcef17924ac6d95241fba0e
+                request-digest: sha256:0cccb28015e6e7fc60090c7ec8035c4195ef8d5716b1a28a40b0dfb92f41a113
+                room-ref: ./review/validation/briefing-1
 ---
 
 ## Outcome

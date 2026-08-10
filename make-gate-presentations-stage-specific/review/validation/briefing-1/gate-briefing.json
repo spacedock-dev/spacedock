@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:krbaeb3resfpbh1qvnb65krf:validation:attempt-1:revision-1",
+  "question": "Approve validated KRB delivery for PR and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:krbaeb3resfpbh1qvnb65krf:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ee64a92a2b08dbdbbda576d466bb058431293cc7/make-gate-presentations-stage-specific/index.md",
+      "rev": "sha256:fbbd1c105dc34bb05375d4960041c9630c2f4708408c7fcffbdb8fe3af673d10",
+      "mediaType": "text/markdown",
+      "summary": "Workflow-owned stage gate content now drives presentation; zero-source fallback emits no evidence, negative empty findings are omitted, all deterministic suites pass, and the sole targeted local Codex OAuth journey passed the semantic and durable gate assertions."
+    }
+  ]
+}
