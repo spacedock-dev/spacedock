@@ -284,3 +284,16 @@ The live process completed without timeout. The expected open Briefing and no-de
 ### Summary
 
 Ideation isolates the Pi failure to terminal fields set on an otherwise open validation gate. The plan adds a bounded First Officer cleanup, a stable semantic code, command-order proof, and a strict-XFAIL Pi binding owned by `fh6rv0k6wr25zty0jjan4jp7`. It leaves the fixture unchanged and makes the final-state journey measurable.
+
+## Captain Decision: implementation design reset
+
+The Captain approved a bounded reset after exact Pi run `31382215343` exposed two oracle errors.
+
+- Change only `internal/ensigncycle/claude_runtime_helpers_test.go` and `internal/ensigncycle/pi_shared_live_runner_test.go` in this reset.
+- Limit the reset to 37 insertions and 3 deletions. Limit the full candidate to six files, 84 insertions, and 24 deletions.
+- Keep cleanup conditional. If cleanup is present, require one successful cleanup before validation.
+- Append the exact root Pi session JSONL. Require a correlated implementation spawn, run, and completion before validation.
+- Keep missing-completion, dirty-final-state, duplicate, reordered, and post-prepare controls red.
+- Preserve the product, fixture, command grammar, authority, n28 bindings, and Claude and Codex branches.
+
+The end value remains a clean open Pi validation gate with correlated implementation lifecycle evidence.
