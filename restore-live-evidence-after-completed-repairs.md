@@ -384,3 +384,32 @@ Opus TODOs until authenticated execution is available. xp6 removes the passed
 
 The candidate removes only the proven Sonnet owner-handoff XFAIL and its reconciliation row. Codex passed unbound on exact merged main.
 The accepted PR artifact supplies Sonnet XPASS proof. The candidate preserves all Opus, Pi, n28, assertion, and repair bytes.
+
+## Stage Report: validation
+
+- DONE: Confirm exact candidate 975a07f2845e0c5ab2e62f281986ebb401a8f117, remote match, base 4dc83c0f8, and the exact two-row diff.
+  Local and remote heads match. The parent is `4dc83c0f8`. The diff has one replacement in each of two files.
+- DONE: Inspect PR #662 Sonnet artifact 9071229649 and confirm the xp6 owner-handoff XPASS alert was green on the unchanged landed behavior.
+  Archive SHA-256 is `2eaa3a26...f8a6d04d`. The test passed in 299.48 seconds with `observed=[]`.
+- DONE: Inspect the exact-head Codex owner-handoff normal PASS artifact and the Sonnet OAuth-blocked artifact.
+  Codex reached a terminal result in 206.41 seconds. Sonnet stopped on expired OAuth before First Officer work.
+- DONE: Verify only the Sonnet owner-handoff binding and mirrored reconciliation row were removed.
+  The word diff removes only the `claude-sonnet` xp6 tuple from the runner and expected reconciliation map.
+- DONE: Verify every Pi, Opus, n28, product, assertion, and other target byte is preserved.
+  The two-file word diff preserves both remaining tuples. No product, assertion, n28, fixture, or other target file changed.
+- DONE: Run focused registry, active-owner, grade, format, and diff checks independently.
+  Registry, gap validation, active-owner, grade, and focused assertion tests passed. `gofmt -d` and `git diff --check` were clean.
+- DONE: Inspect implementation full/race evidence without duplicating owned full/race runs. Classify the three load-sensitive results and focused-race passes.
+  The full test passed. The first race run failed from disk exhaustion, not behavior or a race report.
+  The second race run failed three 250ms quiet-budget timing tests under aggregate load. All three passed together under focused race.
+- DONE: Report every finding with released user, observable harm, value authority, and exact trigger evidence.
+  No Material finding exists. The released user uses the normal local Sonnet subscription workflow.
+  The OAuth error stopped the unrelated smallest-mechanism run before First Officer work.
+  `captain-ruling[2026-08-10]` requires authentication failures to remain visible. The trigger was the exact expired-OAuth error in 3.36 seconds.
+- DONE: Write and push a Simplified-English validation report with PASSED or REJECTED recommendation.
+  Recommendation: PASSED. The current Captain recarve supersedes the older eight-cell execution plan for this cycle.
+
+### Summary
+
+Exact local and remote candidate heads match. The accepted Sonnet XPASS and local Codex pass support the evidence-only removal.
+The focused controls passed. No Material finding or deferred product risk remains, and the recommendation is PASSED.
