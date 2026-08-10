@@ -104,7 +104,7 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "state-head missing or before the state commit")
 	case checklist < head || acScan < checklist:
 		return errGraded(boundary + "structured gate reads missing, reordered, or before the committed state head")
-	case strings.Contains(log[prepare:], "exit=1\tstate commit recorded-gate-task"):
+	case strings.Count(log[prepare:], "\tstate commit recorded-gate-task") > strings.Count(log[prepare:], "begin\tstate commit recorded-gate-task")+strings.Count(log[prepare:], "exit=0\tstate commit recorded-gate-task"):
 		return errGraded(boundary + "state commit failed after the successful gate prepare")
 	case strings.Count(log, prepareToken) != 1:
 		return errGraded(boundary + "more than one successful gate prepare recorded")
@@ -374,6 +374,8 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		"missing commit":      {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\n", 1), "state commit missing or before the successful gate prepare"},
 		"failed commit":       {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\nexit=1\tstate commit recorded-gate-task\n", 1), "state commit missing or before the successful gate prepare"},
 		"failed commit retry": {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\nexit=1\tstate commit recorded-gate-task\nexit=0\tstate commit recorded-gate-task\n", 1), "state commit failed after the successful gate prepare"},
+		"failed retry exit 2": {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\nexit=2\tstate commit recorded-gate-task\nexit=0\tstate commit recorded-gate-task\n", 1), "state commit failed after the successful gate prepare"},
+		"failed retry exit 3": {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\nexit=3\tstate commit recorded-gate-task\nexit=0\tstate commit recorded-gate-task\n", 1), "state commit failed after the successful gate prepare"},
 		"late after read":     {strings.Replace(prepared, "exit=0\tstate commit recorded-gate-task\nstate-head\tabc123\nexit=0\tstatus --read recorded-gate-task --checklist --json\nexit=0\tstatus --read recorded-gate-task --ac-scan --json\n", "exit=1\tstate commit recorded-gate-task\nexit=0\tstatus --read recorded-gate-task --checklist --json\nexit=0\tstatus --read recorded-gate-task --ac-scan --json\nexit=0\tstate commit recorded-gate-task\nstate-head\tabc123\n", 1), "structured gate reads missing, reordered, or before the committed state head"},
 		"decision":            {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
 		"consume":             {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
