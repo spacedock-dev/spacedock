@@ -23,6 +23,10 @@ gates:
                 digest: sha256:7ca8a11685cfba977d897cea574e18061a7fe81a1cb8a565f4c272f5a09f7593
                 request-digest: sha256:90c2970ab0e6992546e9f0ae718f393fc3bc37336d7a3a48669896d5b76cfb08
                 room-ref: ./fix-gate-lifecycle-ls-tree-fallback/review/backlog/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-10T22:37:04.823517Z"
+                reason: Backlog record has no Stage Report, so checklist and acceptance evidence cannot be assembled.
 ---
 
 When gate Artifact or Reference paths are absent, the First Officer must discover committed Markdown with a complete, path-scoped Git command. The current instruction abbreviates this as `git -C ... ls-tree`, which deterministically exits 129 because it omits the required tree-ish.
