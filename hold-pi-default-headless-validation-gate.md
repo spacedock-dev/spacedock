@@ -308,3 +308,39 @@ The Captain accepted protected run `31386886972` and artifact `9062678223` on he
 - The final entity had `status: validation`, empty `completed`, empty `verdict`, and one open gate awaiting the Captain.
 
 The Captain authorized removal of only the fh6 Pi binding and its reconciliation entry.
+
+## Material Finding: Pi rejection-flow timeout
+
+- **Released user:** The Pi rejection-flow maintainer cadence.
+- **Harm:** The supported journey times out before second-gate completion and terminal state.
+- **Authority:** The zh rejection-flow value target and its required live proof.
+- **Trigger:** Run `31388978952`, artifact `9064353436`, timed out after `769.17s`, after second validation PASSED at an open gate.
+
+This finding is not owned by fh6. The Captain accepted the fh6 value proof from the same run.
+
+## Stage Report: implementation
+
+- DONE: Run the exact current Pi target first and retain its result.
+  Local attempts retained two exact infrastructure blockers. Protected run `31382215343` then retained the target-level XFAIL evidence.
+- DONE: Implement only the approved Pi boundary and proof surface.
+  The candidate adds conditional cleanup checks, stable codes, command-order controls, and correlated Pi lifecycle evidence.
+- DONE: Preserve the fixture, product boundaries, and other owners.
+  The command grammar, stored format, gate authority, fixture, n28 bindings, and Claude and Codex branches remain unchanged.
+- DONE: Prove the conditional cleanup and final-state rules.
+  Focused controls reject dirty final state, duplicate cleanup, reordered cleanup, post-prepare cleanup, and missing completion.
+- DONE: Prove XPASS, remove only fh6 binding, and prove normal PASS.
+  Run `31386886972` and artifact `9062678223` reported fh6 XPASS with `observed=[]`.
+  Run `31388978952` and artifact `9064353436` reported normal PASS in `475830 ms`.
+- DONE: Run the required local verification.
+  Focused gate, lifecycle, registry, owner, format, and XPASS-policy checks passed.
+  The full and race suites passed before the final binding-only change, as approved.
+- DONE: Stop for and follow the approved design reset.
+  The reset stayed within its 37-insertion and 3-deletion increment.
+  The pre-binding-removal candidate stayed within six files and the approved gross and net limits.
+- DONE: Commit and push the exact candidate and durable report.
+  The clean candidate is `cae0a19d91f3b8b8f129de83fad65613dd6894aa`, rebased onto `0175d4399a9259acc5c3311ea467d972f1c8351d`.
+
+### Summary
+
+PASSED. Pi now reaches a clean, open validation gate with a correlated implementation lifecycle.
+The exact target passes without the fh6 binding. A later zh-owned rejection-flow timeout does not change the fh6 result.
