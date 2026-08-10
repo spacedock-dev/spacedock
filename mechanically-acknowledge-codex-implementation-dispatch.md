@@ -658,3 +658,496 @@ defect, but it does not reopen the private-ref commit boundary.
 
 No product implementation is authorized. Resolve the two open Material
 findings and prove all listed cells before design revision or implementation.
+
+## Captain rescope for staff review
+
+Date: 2026-08-10
+
+Review state: **HOLD — staff review requested**.
+
+This section supersedes the earlier approach, criteria, surface estimate, and
+readiness recommendation. It does not authorize product implementation.
+
+### Narrow product claim
+
+The supported hosts are Claude CLI and Codex CLI only.
+
+One workflow entity and stage can have one in-flight native worker. The host
+must attest the start and stop of that worker.
+
+The mechanism denies ambiguous concurrent starts. It does not correlate a
+general parallel spawn batch.
+
+These surfaces are out of scope:
+
+- Claude Desktop and Codex Desktop;
+- IDE extensions;
+- web and cloud sessions;
+- general parallel worker acknowledgment;
+- cryptographic proof of the local operating-system user;
+- Pi acknowledgment;
+- a new acknowledgment for `dispatch build --advance` worker reuse.
+
+The in-app surfaces were unexecutable in the authorized environment. This task
+makes no compatibility claim for them.
+
+### Trust boundary
+
+Supported host hooks are the attestation source. The mechanism does not parse a
+Claude transcript or Codex rollout file.
+
+The local host process, launcher process, and Spacedock binary are trusted. The
+threat model does not resist a malicious local process with state-repository
+write access.
+
+No public command accepts a caller-supplied native start, stop, or worker ID.
+Caller text, reports, final messages, and empty waits have no receipt authority.
+
+### Single-flight mechanism
+
+The CLI launcher creates a random launcher session ID. It also creates a private
+runtime directory with mode `0700`.
+
+The launcher exports both values to its Claude or Codex child. A fresh build
+refuses when these launcher values are absent.
+
+A fresh Claude or Codex `dispatch build` uses this sequence:
+
+1. Resolve the entity ID, entity path, stage, host, and state Git repository.
+2. Create a random 128-bit assignment generation and a random 128-bit epoch.
+3. Create one schema-v2 pending receipt through a zero-old compare update.
+4. Write one mode-`0600` runtime registration for the epoch.
+5. Put the bounded epoch token in Claude `description` or Codex `task_name`.
+6. Emit the existing schema-v2 build envelope with one receipt object.
+
+The receipt ref is:
+
+```text
+refs/spacedock/dispatch/v2/<entity-id>/<stage>/<assignment-generation>
+```
+
+Each receipt update writes a new JSON blob. The blob contains the prior blob ID.
+The ref moves with one compare-and-swap update.
+
+The receipt states are:
+
+```text
+pending -> armed -> spawned -> completed -> advanced
+                    \-> abandoned
+pending|armed ------> abandoned
+```
+
+`abandoned` never satisfies a stage guard. `advanced` records that one completed
+stage instance left its stage.
+
+### Hook behavior
+
+The plugin registers supported `PreToolUse`, `SubagentStart`, and
+`SubagentStop` hooks for each CLI host.
+
+`PreToolUse` extracts the bounded epoch from the native assignment field. It
+then resolves the exact runtime registration and pending receipt.
+
+The hook acquires one launcher-session `unbound-start` file with atomic create.
+It records the host session and tool-use ID, then moves the receipt to `armed`.
+
+If an unbound start already exists, `PreToolUse` returns the host's supported
+deny result. The second native tool call must not execute.
+
+This denial applies across entities in one launcher session. It is deliberately
+stricter than the entity-and-stage rule.
+
+`SubagentStart` can bind only the single armed receipt. It records the native
+worker ID, moves the receipt to `spawned`, and removes the unbound-start file.
+
+`SubagentStop` finds the spawned receipt by host session and native worker ID.
+It moves only that receipt to `completed`.
+
+An absent, duplicate, stale, or ambiguous event changes no authoritative state.
+The affected receipt stays blocked or moves to an explicit error state.
+
+The future spike must prove that both hosts deny the second tool call. A hook
+warning or non-blocking error is not sufficient.
+
+### Schema-v2 receipt
+
+Each receipt blob has these required fields:
+
+```json
+{
+  "schema_version": 2,
+  "state": "pending|armed|spawned|completed|abandoned|advanced|error",
+  "entity_id": "stable workflow entity ID",
+  "entity_path": "state-root-relative path",
+  "stage": "implementation",
+  "host": "claude|codex",
+  "assignment_generation": "random-128-bit value",
+  "epoch": "random-128-bit value",
+  "launcher_session_id": "random launcher value",
+  "host_session_id": "supported hook session ID",
+  "tool_use_id": "supported PreToolUse ID",
+  "native_worker_id": "supported SubagentStart ID",
+  "previous_blob": "Git object ID or empty",
+  "observed_at": "RFC3339 timestamp"
+}
+```
+
+Fields that are not known in the current state are empty. A state transition
+must add every field that becomes required for that state.
+
+The existing build request and response remain schema version 2. A fresh Claude
+or Codex response adds this object:
+
+```json
+{
+  "dispatch_receipt": {
+    "schema_version": 2,
+    "assignment_generation": "...",
+    "epoch": "...",
+    "ref": "refs/spacedock/dispatch/v2/..."
+  }
+}
+```
+
+Pi, validation-only, and schema-print output do not add this object.
+
+### Build replay and reuse
+
+A fresh build refuses an active `pending`, `armed`, `spawned`, or `completed`
+receipt for the same entity and stage. It emits no second envelope.
+
+A successful stage change moves the matching completed receipt to `advanced`.
+A later feedback re-entry can then create a new assignment generation.
+
+`dispatch build --advance` does not start a native worker. It stays outside the
+new native-spawn acknowledgment claim.
+
+The advance path must name the completed source receipt and existing native
+worker handle. It refuses a pending, abandoned, missing, or ambiguous source.
+
+The task does not claim a new host-attested completion for a follow-up message.
+That separate reuse-generation claim needs a future task.
+
+### Every mutation surface
+
+One shared receipt guard covers all lifecycle mutation doors. `--force` does
+not bypass this guard.
+
+The exact guarded surfaces are:
+
+1. `status --set` when `status` changes to another stage.
+2. `status --set` when `completed` or `verdict` finalizes lifecycle state.
+3. `status --archive <entity>`.
+4. Standalone `gate consume <entity>` when it changes stage.
+5. `gate record --consume` through the same consume path.
+6. `merge guard --verdict passed|rejected` when it finalizes or archives.
+7. `merge guard --rework` when it routes to `feedback-to`.
+8. `dispatch build --advance` before it emits a reuse envelope.
+
+Non-lifecycle field updates, gate preparation, gate presentation, and gate
+recording without `--consume` do not consume a receipt.
+
+A fresh `dispatch build` is also a receipt mutation. It uses the zero-old
+compare update before it emits an envelope.
+
+`dispatch build --stamp` reserves the receipt before stamp writes. If stamping
+fails, the receipt stays blocked and uses recovery.
+
+Each guarded command uses this order:
+
+1. Read the active receipt and current entity bytes.
+2. Require `completed` for the entity, stage, host, and generation.
+3. Perform the existing entity or gate mutation.
+4. Move the completed receipt to `advanced` after a successful stage exit.
+5. Fail closed if receipt advancement cannot become durable.
+
+No command changes entity or gate bytes after a receipt refusal.
+
+### Recovery surfaces and authority
+
+The public recovery surfaces are:
+
+```text
+spacedock dispatch receipt show --workflow-dir DIR --entity REF --stage STAGE
+spacedock dispatch receipt recovery-request --workflow-dir DIR --entity REF \
+  --stage STAGE --generation GEN --reason TEXT
+spacedock dispatch receipt abandon --workflow-dir DIR --entity REF \
+  --stage STAGE --generation GEN --reason TEXT --resolution-file FILE
+spacedock dispatch receipt reconcile --workflow-dir DIR --entity REF --stage STAGE
+```
+
+`show` is read-only. `recovery-request` is also read-only and prints canonical
+JSON plus its SHA-256 digest.
+
+The captain resolution is a separate retained record. The abandon command does
+not create or modify that approval.
+
+The resolution must name the request digest, entity ID, stage, generation,
+epoch, action, reason, decision, and captain authority.
+
+`abandon` rebuilds the canonical request from current state. It recomputes the
+digest and compares every bound field.
+
+One Git ref transaction moves the receipt to `abandoned` and the resolution to
+`consumed`. Resolution reuse or digest drift changes neither ref.
+
+`reconcile` can apply only supported hook evidence already registered for the
+same launcher session and native worker ID. It cannot accept caller IDs.
+
+These failures stay blocked until reconciliation or authorized abandonment:
+
+- envelope output fails after pending creation;
+- hooks are absent or disabled;
+- a hook exits, times out, or returns malformed output;
+- the host CLI or launcher crashes;
+- the state-ref push fails;
+- an event is stale, duplicated, or ambiguous.
+
+Abandonment permits a replacement generation. It never satisfies a mutation
+guard and never advances the entity.
+
+### Private-ref durability and concurrency
+
+Receipt and resolution refs live outside the Git index. Therefore, a worker's
+production-style `git add -A` cannot stage them.
+
+Every ref write uses an expected old object ID. A compare failure preserves the
+winning value and returns a blocking error.
+
+Split-root publication pushes the exact private ref with a compare lease. A
+push failure leaves local evidence and blocks lifecycle mutation.
+
+The concurrency proof must save its full generator command before execution.
+The prior 240-update result is useful, but its unsaved command is not sufficient.
+
+### Acceptance criteria
+
+**AC-1 — One fresh CLI envelope gets one native worker.**
+
+Claude CLI and Codex CLI each create one pending receipt. Supported hooks move
+that receipt through armed, spawned, and completed.
+
+Falsifier: a caller statement changes state, a native ID is missing, or more
+than one native worker starts for the epoch.
+
+**AC-2 — Same entity and stage is single-flight.**
+
+A second fresh build refuses pending, armed, spawned, and completed states. It
+emits no envelope and changes no receipt.
+
+Falsifier: any active state permits a second envelope.
+
+**AC-3 — Ambiguous concurrency fails closed.**
+
+For each CLI host, two spawn calls in one parallel batch cause one supported
+PreToolUse denial. Only one native worker starts.
+
+Falsifier: both tool calls execute, receipt identities swap, or denial is only a
+warning.
+
+**AC-4 — Completion uses supported host identity.**
+
+The completing stop must match host session and native worker ID from the start.
+
+Falsifier: a report, transcript, rollout, final message, or stale stop completes
+the receipt.
+
+**AC-5 — Every lifecycle mutation door uses one guard.**
+
+All eight listed doors refuse pending, spawned, abandoned, missing, and error
+states before entity or gate bytes change.
+
+Falsifier: one door mutates bytes or `--force` bypasses the receipt.
+
+**AC-6 — Recovery has separate authority.**
+
+Abandonment requires a separate unconsumed captain resolution. The binary
+recomputes the request digest and consumes both records atomically.
+
+Falsifier: the abandon path creates its approval, accepts digest drift, reuses a
+resolution, or advances the entity.
+
+**AC-7 — Private refs survive production Git writes.**
+
+A saved race command performs ref compare updates while a worker runs
+`git add -A` and commits its report.
+
+Falsifier: the report commit includes receipt data, either value is lost, or Git
+integrity fails.
+
+**AC-8 — Disabled or broken hooks fail closed.**
+
+Both CLI hosts complete a native child with hooks disabled. The receipt stays
+pending, every lifecycle door refuses, and a second build refuses.
+
+Falsifier: disabled hooks permit stage change or replacement dispatch.
+
+**AC-9 — Scope exclusions stay explicit.**
+
+No test or documentation claims in-app or general parallel acknowledgment. Pi
+and legacy entities keep their current results.
+
+Falsifier: an in-app or Pi claim appears, or a legacy fixture gains a receipt.
+
+**AC-10 — Both default-headless bindings leave only after exact live proof.**
+
+The Claude Sonnet and Codex CLI cells first produce strict XPASS with their
+bindings present. After binding removal, both cells pass normally.
+
+Falsifier: either cell skips, XFAILs, uses private host files, or loses the open
+human gate.
+
+### Exact default-headless proof
+
+Run the Claude CLI cell with this command:
+
+```sh
+SPACEDOCK_LIVE_RUNTIME=claude \
+SPACEDOCK_LIVE_MODEL=sonnet \
+SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/n284-live-claude \
+go test -tags=live ./internal/ensigncycle \
+  -run '^TestLiveCommonDefaultHeadlessGateStop$' -count=1 -v
+```
+
+Run the Codex CLI cell with this command:
+
+```sh
+SPACEDOCK_LIVE_RUNTIME=codex \
+SPACEDOCK_CODEX_LIVE_REQUIRED=1 \
+SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/n284-live-codex \
+go test -tags=live ./internal/ensigncycle \
+  -run '^TestLiveCommonDefaultHeadlessGateStop$' -count=1 -v
+```
+
+Each artifact directory must prove all these facts:
+
+- one fresh build envelope contains one schema-v2 receipt object;
+- one supported PreToolUse event names the same epoch and tool-use ID;
+- one supported start records one native worker ID;
+- one supported stop records the same native worker ID;
+- the receipt journal ends at `completed` with no error or unbound lock;
+- the implementation report is complete, committed, and owned by that worker;
+- the entity enters validation only after completion;
+- the validation gate is prepared, committed, presented, and still open;
+- the entity is not terminal and is not archived;
+- the command log contains no second fresh build;
+- the harness reads receipt artifacts, not Claude transcripts or Codex rollouts.
+
+With both XFAIL bindings present, each command must fail only as strict XPASS.
+The log must show `XPASS ALERT` with no semantic failure code.
+
+Then remove only the Claude Sonnet and Codex entries from
+`TestLiveCommonDefaultHeadlessGateStop`. Remove their matching expected entries
+from `live_registry_reconciliation_test.go` in the same binding-only commit.
+
+Rerun both commands. Each must report normal PASS with the same durable receipt
+and open-gate evidence.
+
+Finally, run:
+
+```sh
+go test ./internal/contractlint -run LiveRegistryReconciliation -count=1
+go test ./...
+go test ./... -race
+```
+
+The Pi binding and every unrelated TODO or XFAIL entry must remain unchanged.
+
+### Reconciliation of prior staff findings
+
+| Prior finding | Narrow disposition |
+|---|---|
+| Private Claude transcripts and Codex rollouts are unsupported. | In scope and closed by design. Only supported hooks can attest start and stop. Live proof remains required. |
+| The resident observer excludes in-app hosts. | Removed from the claim. In-app hosts are out of scope and were unexecutable. |
+| Companion receipt files enter `git add -A`. | Closed by private refs. The race must be rerun with its command saved. |
+| Completed same-stage state blocks feedback re-entry. | Addressed by `completed -> advanced` on stage exit. A later stage instance gets a new generation. |
+| Exact reuse generation is unproved. | Removed from native-spawn acknowledgment. `--advance` starts no native worker and must name the completed source receipt. |
+| TTY confirmation does not prove recovery authority. | TTY confirmation is removed. A separate retained captain resolution is required, and abandon recomputes its digest. |
+| Schema and build-to-observer IPC were undefined. | Addressed by schema-v2 private refs and a mode-`0600` launcher-session registration. Proof remains required. |
+| Parallel Codex correlation is unsafe. | General parallel acknowledgment is out of scope. The second unbound start must receive a supported denial. |
+| Parallel Claude correlation is unproved. | General parallel acknowledgment is out of scope. The same negative denial proof is required for Claude CLI. |
+| IDE, Desktop, and web cells are unproved. | They remain unexecutable and out of scope. |
+| Six mutation doors were unproved. | The rescope names eight exact doors. Every door is an acceptance-test requirement. |
+
+### Exact expected implementation surface
+
+The estimate includes exactly 40 files:
+
+| File | Insertions | Deletions | Purpose |
+|---|---:|---:|---|
+| `.claude-plugin/plugin.json` | 1 | 0 | Register the Claude hook file. |
+| `claude-hooks.json` | 58 | 0 | Register supported Claude CLI events. |
+| `hooks.json` | 55 | 2 | Register supported Codex CLI events. |
+| `internal/dispatchack/model.go` | 150 | 0 | Define schema-v2 receipt and resolution models. |
+| `internal/dispatchack/store.go` | 280 | 0 | Own private refs, blobs, compare updates, and pushes. |
+| `internal/dispatchack/hook.go` | 260 | 0 | Process supported hook input and single-flight denial. |
+| `internal/dispatchack/guard.go` | 165 | 0 | Reduce receipts and guard lifecycle mutation. |
+| `internal/dispatchack/recovery.go` | 185 | 0 | Build requests, verify resolutions, and reconcile. |
+| `internal/dispatchack/model_test.go` | 180 | 0 | Test schema and canonical digests. |
+| `internal/dispatchack/store_test.go` | 310 | 0 | Test compare updates, ref pushes, and races. |
+| `internal/dispatchack/hook_test.go` | 340 | 0 | Test both hosts, denial, replay, and native IDs. |
+| `internal/dispatchack/guard_test.go` | 245 | 0 | Test allowed and refused receipt states. |
+| `internal/dispatchack/recovery_test.go` | 260 | 0 | Test separate authority and digest recomputation. |
+| `internal/dispatch/build.go` | 78 | 14 | Reserve and emit fresh receipt data. |
+| `internal/dispatch/dispatch.go` | 120 | 8 | Route hook, show, request, abandon, and reconcile. |
+| `internal/dispatch/build_ack_test.go` | 260 | 0 | Test fresh, stamped, no-stamp, Pi, and replay builds. |
+| `internal/dispatch/dispatch_ack_command_test.go` | 285 | 0 | Test every receipt command and help result. |
+| `internal/cli/frontdoor.go` | 28 | 4 | Create and export the CLI launcher session. |
+| `internal/cli/host_exec.go` | 18 | 2 | Preserve the private runtime environment. |
+| `internal/cli/host_launch_test.go` | 125 | 0 | Test CLI session setup, cleanup, and crash behavior. |
+| `internal/status/handlers.go` | 32 | 2 | Guard status changes and archive. |
+| `internal/status/merge.go` | 24 | 2 | Guard finalize and rework routes. |
+| `internal/status/dispatch_ack_guard_test.go` | 260 | 0 | Test status, archive, force, merge, and byte-clean refusal. |
+| `internal/gates/application.go` | 20 | 2 | Guard stage-changing consumption. |
+| `internal/gates/application_test.go` | 105 | 0 | Test pending and completed consume states. |
+| `internal/cli/gate_ceremony.go` | 14 | 2 | Keep standalone and record-consume on one guard path. |
+| `internal/cli/terminal_consume_test.go` | 155 | 0 | Test terminal, consume, and merge command doors. |
+| `internal/cli/help.go` | 28 | 4 | Document receipt and recovery commands. |
+| `internal/cli/help_test.go` | 75 | 0 | Pin root and dispatch help. |
+| `skills/first-officer/references/fo-dispatch-core.md` | 24 | 8 | Use the single-flight CLI workflow. |
+| `skills/first-officer/references/claude-fo-dispatch.md` | 12 | 5 | State Claude CLI hook and denial behavior. |
+| `skills/first-officer/references/codex-first-officer-runtime.md` | 12 | 5 | State Codex CLI hook and denial behavior. |
+| `docs/specs/dispatch-acknowledgment.md` | 220 | 0 | Specify trust, refs, states, guards, and recovery. |
+| `docs/runtime-support.md` | 35 | 8 | Limit the support claim to both CLIs. |
+| `internal/ensigncycle/shared_live_runner_test.go` | 10 | 2 | Read receipts, then remove two runtime bindings. |
+| `internal/ensigncycle/claude_live_runner_test.go` | 80 | 8 | Retain supported Claude hook artifacts. |
+| `internal/ensigncycle/codex_live_runner_test.go` | 75 | 32 | Replace rollout reads with receipt evidence. |
+| `internal/contractlint/live_registry_reconciliation_test.go` | 1 | 1 | Remove the two mirrored expected bindings. |
+| `skills/integration/plugin_manifest_test.go` | 45 | 0 | Pin both hook registrations. |
+| `internal/ensigncycle/shared_assertions_impl_test.go` | 55 | 10 | Assert receipt order and the open gate. |
+
+The estimate is 4,685 insertions and 121 deletions. It is 4,806 gross lines
+and 4,564 net lines.
+
+The gross tolerance is 480 lines. A new file, a new host, or a general parallel
+claim requires another staff review before implementation.
+
+### Test order
+
+1. Add model and canonical-digest tests.
+2. Add private-ref compare and saved-command race tests.
+3. Add Claude and Codex hook fixture tests.
+4. Prove supported PreToolUse denial for both hosts in disposable CLI runs.
+5. Add recovery authority and digest-drift tests.
+6. Add fresh build, no-stamp, stamp-failure, replay, Pi, and legacy tests.
+7. Add all eight mutation-door tests.
+8. Add launcher crash, missing hooks, disabled hooks, and malformed hook tests.
+9. Run both default-headless cells with bindings and require strict XPASS.
+10. Remove only the two runtime bindings and their mirrored expected entries.
+11. Rerun both cells and require normal PASS.
+12. Run formatting, the full suite, and the race suite.
+
+### Staff review request
+
+Please review these exact questions:
+
+1. Does supported PreToolUse denial establish safe single-flight behavior for
+   each CLI host?
+2. Is the local-host trust boundary sufficiently narrow and explicit?
+3. Does the separate captain resolution close the recovery-authority finding?
+4. Do the eight listed doors cover every lifecycle mutation path?
+5. Is `completed -> advanced` sufficient for later feedback re-entry?
+6. Does the exact XPASS-to-PASS sequence justify both binding removals?
+
+No product implementation is authorized before this review accepts the
+rescope and all Material findings.
