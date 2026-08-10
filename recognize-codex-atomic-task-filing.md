@@ -170,3 +170,43 @@ The exact local journey passed and retained its artifacts. The full offline suit
 
 The candidate remains at commit `95e7f715d` with three files and 105 gross lines. All required local checks now pass.
 The retained live artifacts and the earlier disk-failure record remain unchanged.
+
+## Review-finding disposition
+
+### Validation finding: wrong slug can pass through unrelated text
+
+- Reviewer observation: A wrong `new` slug passes when the requested slug occurs only in `--workflow-dir`.
+- Defect kind: Evidence defect.
+- Release scope: Material.
+- Released user and normal workflow: The Codex filing oracle grades atomic task filing from successful command evidence.
+- Observable harm: The oracle accepts a command that creates `other-slug`, not the requested `wire-the-thing` task.
+- Affected value: value-ac[AC-3] Wrong-slug evidence must remain red.
+- Trigger evidence: `spacedock new other-slug --workflow-dir /tmp/wire-the-thing` passed the candidate oracle in a detached focused test.
+- Recommended disposition: Fix the slug identity boundary, then run this focused falsifier again.
+
+## Stage Report: validation
+
+- FAILED: Independently verify the exact three-file 105-gross evidence repair recognizes only successful blessed atomic Codex filing.
+  Commit `95e7f715d` has three files and 105 gross lines. The wrong-slug falsifier proves that recognition is not exclusive.
+- FAILED: Attack the manual, preview-plus-write, wrong-slug, failed-command, and narration-only controls without duplicating owned full/race/live runs.
+  Six focused controls stayed red. A seventh control passed when the requested slug occurred only in `--workflow-dir`.
+- DONE: Confirm exact candidate/remote, retained local Codex PASS artifacts, required check evidence, and no product/binding/Pi change.
+  The clean candidate is local commit `95e7f715d`. The code branch has no remote ref or PR.
+  The retained metric records `TestLiveCommonFiling` PASS at `/tmp/spacedock-codex-filing-implementation.Iskzdl`.
+  The implementation transcript records format, registry, active-owner, full, and final race PASS results. Pi did not run.
+  The diff changes only three `internal/ensigncycle` test files. It changes no product, binding, registry, or Pi file.
+- DONE: AC-1 evidence.
+  The retained metric reports `status: passed`. The retained transcript records the exact live test PASS in 50.05 seconds.
+- DONE: AC-2 evidence.
+  The artifact command is the positive regression control, and the retained exact live test passes with that matcher.
+- FAILED: AC-3 evidence.
+  The detached matrix fails only the contextual wrong-slug case. This material evidence defect violates exact task identity.
+- SKIPPED: AC-4 required exact PR checks.
+  No remote code branch or PR exists. Local full, race, format, registry, and active-owner evidence is present.
+- FAILED: Validation recommendation.
+  REJECTED. Fix the wrong-slug identity boundary before another validation run.
+
+### Summary
+
+The candidate recognizes the retained successful Codex command and rejects the basic negative controls. It also accepts one wrong-slug command.
+This material AC-3 defect blocks delivery. The First Officer must authorize the candidate correction before implementation changes occur.
