@@ -398,7 +398,7 @@ Correction estimate: seven files, about +517/-36 lines; hard stop at eight files
 
 ### Revised acceptance criteria
 
-**AC-1 (VALUE)** — One new max-effort Sonnet-5 gate-guardrail run uses at most 16 assistant turns and 18 host calls from boot through presentation.
+**AC-1 (VALUE)** — One new max-effort Sonnet-5 gate-guardrail run uses at most 17 assistant turns and 17 host calls from boot through presentation.
 
 **AC-2** — The stream orders next → lifecycle → composite inspect → composite publish → presenter and contains no help, plugin/source grep, filesystem listing, broad Git/status inspection, standalone prepare/commit/checklist/AC calls, or presenter-side README evidence read.
 
@@ -452,3 +452,22 @@ Designed a single binary composite with read-only inspection and atomic publicat
 ### Summary
 
 Implemented and deterministically proved the approved atomic gate-review composite at `a188bcdb5`, within the exact surface limit. The sole live run demonstrated the composite's durable path and reduced calls below the ceiling, but missed the turn ceiling by one and exposed a stale harness predicate plus supplementary discovery; the candidate is frozen and routed for design disposition without a rerun.
+
+## Captain disposition: accept preserved cycle-7 value
+
+Captain ruling on 2026-08-09 revises AC-1 to 17 assistant-message turns / 17 host calls and accepts the preserved cycle-7 run at that value. The original durable `assertGateHeld` entity/room checks completed successfully before the stale command-log predicate rejected the authorized composite verb; commit `25ef135cd` corrects only that compatibility assertion, and the preserved log regrades with exactly one successful `prepare-review --publish` and no later decision, consume, dispatch, withdrawal, or status mutation. No live model journey was rerun.
+
+Regraded metrics SHA-256 is `9019aeb74b6cd89950f93e884e0ea19d35db18c6189d490b8d5d271592975c23` at `/private/tmp/spacedock-gate-live.3fPRvk/cycle7-composite-metrics/shared-scenarios/gate-guardrail--claude--llm--llm-live--claude-sonnet-5--regraded.json`; it retains the exact stream, final-message, and original failed-grade hashes.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Make only the smallest harness compatibility correction needed for assertGateHeld to recognize the authorized atomic `gate prepare-review --publish` path.
+  Commit `25ef135cd` treats the composite publish as its own durability point while retaining the classic prepare → commit → state-head path and every no-decision/no-consume/no-dispatch/no-withdraw/no-status-mutation guard; the focused compatibility and authority-mutant tests fail if those boundaries weaken.
+- DONE: Prove removed legacy gate verbs through routing exit and pre/post state, without command-output comparison or a new registry/product mechanism.
+  `TestRemovedGateVerbsAreAbsentAndSideEffectFree` now requires real-router exit 2 and its existing unchanged-directory assertion; it reads no help/error prose. This exact Polish fix followed distinct First Officer authorization after the full/race finding.
+- DONE: Regrade the preserved 17/17 run under the Captain's revised AC-1 without another live journey, then run focused, formatting, full, and race checks.
+  Preserved stream `cafab526…` regrades PASS for revised AC-1 and gate authority. Focused CLI/ensigncycle checks, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass; final cumulative surface is eight files and +635/-14 (649 changed lines).
+
+### Summary
+
+The atomic gate-review composite is complete at `25ef135cd`. Captain-accepted 17/17 value and the original durable gate hold now regrade green through a test-only compatibility correction; product behavior is unchanged, the surface remains under the hard stop, and no additional live run occurred.
