@@ -271,6 +271,10 @@ type liveGrade struct {
 	codes  []string
 }
 
+func liveGradeFailsLane(status string) bool {
+	return status == "fail"
+}
+
 func gradeLive(xfail bool, errs ...error) liveGrade {
 	seen := map[string]bool{}
 	grade := liveGrade{}

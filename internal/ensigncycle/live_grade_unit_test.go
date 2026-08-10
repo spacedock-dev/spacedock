@@ -36,3 +36,16 @@ func TestGradeLiveRunsEveryAssertion(t *testing.T) {
 		t.Fatalf("assertion calls = %d, want 2", calls)
 	}
 }
+
+func TestLiveGradeLaneResult(t *testing.T) {
+	for status, wantFail := range map[string]bool{
+		"pass":  false,
+		"xfail": false,
+		"xpass": false,
+		"fail":  true,
+	} {
+		if got := liveGradeFailsLane(status); got != wantFail {
+			t.Errorf("liveGradeFailsLane(%q) = %t, want %t", status, got, wantFail)
+		}
+	}
+}

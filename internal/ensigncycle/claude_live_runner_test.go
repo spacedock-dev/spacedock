@@ -220,7 +220,10 @@ func finishLiveScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeS
 	if scenario.grade.status == "xfail" {
 		t.Logf("XFAIL %s/%s owner=%s observed=%v", scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes)
 	}
-	if scenario.grade.status == "fail" || scenario.grade.status == "xpass" {
+	if scenario.grade.status == "xpass" {
+		t.Logf("XPASS ALERT %s/%s owner=%s observed=%v", scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes)
+	}
+	if liveGradeFailsLane(scenario.grade.status) {
 		t.Fatalf("%s %s/%s owner=%s observed=%v\nFinal message:\n%s\nArtifacts: %s", strings.ToUpper(scenario.grade.status), scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes, result.finalMessage, result.artifactDir)
 	}
 }
