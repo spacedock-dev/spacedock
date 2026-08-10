@@ -1,6 +1,6 @@
 ---
 title: Recognize Codex atomic task filing
-status: validation
+status: done
 score: "0.90"
 source: "PR #664 Codex filing evidence failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -69,11 +69,14 @@ gates:
                 reason: Exact local filing value passes; positional slug identity and all adjacent negative controls are independently verified; full/race and the approved scope pass.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-10T20:28:23Z
 worktree: .worktrees/spacedock-ensign-recognize-codex-atomic-task-filing
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:668
+verdict: PASSED
+completed: 2026-08-10T22:24:41Z
+archived: 2026-08-10T22:24:41Z
 ---
 ## Problem
 
