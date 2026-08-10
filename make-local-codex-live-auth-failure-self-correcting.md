@@ -26,6 +26,17 @@ gates:
                 digest: sha256:027f0c349f06b44d4299c4eeb239938ef923bce635f16cc50e369c4f8b3706ee
                 request-digest: sha256:043aac914ad272034a2af4c8e58768a17afe191c817495ea7a31dfe20b9d7b1f
                 room-ref: ./make-local-codex-live-auth-failure-self-correcting/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pma2c1j7wmg9yvf5n25tx2ff:backlog:1
+                briefing: briefing:pma2c1j7wmg9yvf5n25tx2ff:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T03:00:04.328183Z"
+                decision: approve
+                reason: The seed isolates the operator error, keeps authentication behavior unchanged, and defines deterministic proof with no live-runtime spend.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make the existing local Codex OAuth path obvious when a developer accidentally uses the CI-only live-test flag.
