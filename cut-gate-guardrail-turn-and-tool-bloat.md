@@ -12,7 +12,7 @@ group: gate-lifecycle-ux
 worktree: .worktrees/spacedock-ensign-cut-gate-guardrail-turn-and-tool-bloat
 issue:
 pr:
-mod-block:
+mod-block: merge:pr-merge
 id: 5k704rrfk5r75vqv3bwn1yhf
 gates:
     version: 1
