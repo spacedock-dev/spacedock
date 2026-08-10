@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ts7gq0mr9s3chx2w4wppd1kt:validation:attempt-1:revision-1",
+  "question": "Approve target-level XFAIL candidate 02b2296a1 for pull-request delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:ts7gq0mr9s3chx2w4wppd1kt:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/41712e4b615f74d690602d4d520847120e7fb11f/run-known-live-gaps-as-strict-xfail.md",
+      "rev": "sha256:b62da3f656fc841118c3965d864365ed807d1b1507dc741d0a86e72a39c6b4f4",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed the 19-target XFAIL policy, red XPASS and infrastructure controls, ownership reconciliation, metrics, full and race evidence, and scope budget."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ts7gq0mr9s3chx2w4wppd1kt:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/02b2296a18750cf3eb2ed6975b8446a6b3198d8d/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:b54102236d30f02dacb83772547b905a9e799eb4a5e78701deeb6b6726bf1de2"
+    }
+  ]
+}

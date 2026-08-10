@@ -57,6 +57,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ts7gq0mr9s3chx2w4wppd1kt:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ts7gq0mr9s3chx2w4wppd1kt-validation-1
+              briefing:
+                id: briefing:ts7gq0mr9s3chx2w4wppd1kt:validation:attempt-1:revision-1
+                digest: sha256:18a55b7beaa6c0025ef2bf70a626dea73988ec61468fcd3b241885a2d8327b7e
+                request-digest: sha256:cae88610bb24f208736012e241d7fb8f38e44be5af3254ac98bbb0e50fe294fc
+                room-ref: ./run-known-live-gaps-as-strict-xfail/review/validation/briefing-1
 ---
 
 ## Problem
