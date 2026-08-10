@@ -2,7 +2,7 @@
 title: Make Codex implementation dispatch mechanically acknowledged
 status: ideation
 source: "98a cycle-4 live evidence: identical spawn envelopes produced two native-spawn passes and one empty-wait failure"
-started:
+started: 2026-08-10T09:23:06Z
 completed:
 verdict:
 score: 0.95
