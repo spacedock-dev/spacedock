@@ -1,6 +1,6 @@
 ---
 title: Restore live evidence whose original repair owners are complete
-status: ideation
+status: implementation
 source: "Live-test-truth close reconciliation, 2026-08-09"
 started: 2026-08-09T18:34:33Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: Captain approved the evidence-only capstone with no repair bytes.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
