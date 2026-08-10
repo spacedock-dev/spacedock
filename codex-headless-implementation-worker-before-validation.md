@@ -97,6 +97,17 @@ gates:
                 digest: sha256:3372d5aad9060fea4dfd1d9886d00f457b32028313370e77a8e1f9a684a3adb8
                 request-digest: sha256:74e2de026a129464c6011dda5c36790632f7b13dbb437a0cb81052eda6c66a43
                 room-ref: ./codex-headless-implementation-worker-before-validation/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:98aa776adg66gn823a8gamdq:validation:3
+                briefing: briefing:98aa776adg66gn823a8gamdq:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T07:27:47.0654Z"
+                decision: approve
+                reason: Exact rebased candidate 6e281f31c preserves 2e4 and 98a reconciliation, all focused and required offline checks pass, and no Material finding remains.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
