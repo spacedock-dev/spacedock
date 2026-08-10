@@ -54,7 +54,7 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}},
 		"rejection-flow":                {{"xfail", "claude-sonnet", "zhcb4bcz1qgcn7ajx2ctxpxk"}, {"xfail", "claude-opus", "zhcb4bcz1qgcn7ajx2ctxpxk"}, {"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "zhcb4bcz1qgcn7ajx2ctxpxk"}},
-		"smallest-sufficient-mechanism": {{"xfail", "claude-sonnet", "6x50qafc8566zc6p1qpb6y30"}, {"xfail", "codex", "6x50qafc8566zc6p1qpb6y30"}, {"xfail", "pi", "6x50qafc8566zc6p1qpb6y30"}},
+		"smallest-sufficient-mechanism": nil,
 		"keep-moving-posture":           {{"xfail", "claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"}, {"xfail", "codex", "9adv48yhye5s2vkhwd7ge52d"}, {"xfail", "pi", "9adv48yhye5s2vkhwd7ge52d"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-sonnet", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "pi", "xp6c9qfe7y4wwp46enc3f85n"}},
 	}

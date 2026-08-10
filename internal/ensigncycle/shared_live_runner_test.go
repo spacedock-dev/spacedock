@@ -162,7 +162,7 @@ func TestLiveCommonSelfEvidenceMergeTriage(t *testing.T) {
 
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
-	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "6x50qafc8566zc6p1qpb6y30"), liveXFail("codex", "6x50qafc8566zc6p1qpb6y30"), liveXFail("pi", "6x50qafc8566zc6p1qpb6y30")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, nil, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events

@@ -36,6 +36,9 @@ func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
 
 func (d piSharedLiveDriver) model() string { return d.modelName }
 func (d piSharedLiveDriver) home() string  { return d.piHome }
+func (d piSharedLiveDriver) smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace {
+	return claudeMechanismTrace(result.stream, edits, commissioned)
+}
 func (d piSharedLiveDriver) withStubPATH(dir string) liveDriver {
 	d.env = withPATHPrefix(d.env, dir)
 	d.env = withSpacedockShimShellEnv(d.t, d.env, dir)

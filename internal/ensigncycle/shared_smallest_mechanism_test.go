@@ -283,6 +283,13 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 	return tr
 }
 
+func smallestMechanismTraceForDialect(dialect, stream string, edits, commissioned []string) mechanismTrace {
+	if dialect == "codex" {
+		return codexMechanismTrace(stream, edits, commissioned)
+	}
+	return claudeMechanismTrace(stream, edits, commissioned)
+}
+
 // ssmTargetsAny reports whether text names any of the given tokens.
 func ssmTargetsAny(text string, tokens []string) bool {
 	for _, tok := range tokens {

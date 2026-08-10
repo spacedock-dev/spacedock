@@ -87,6 +87,7 @@ type liveDriver interface {
 	emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult)
 	gradeShallowBootObservation(t *testing.T, result liveResult)
 	prepareRecordedGate(t *testing.T) (liveDriver, func(liveResult))
+	smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
@@ -166,7 +167,10 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 var _ liveDriver = claudeLiveRunner{}
 
 func (r claudeLiveRunner) model() string { return r.modelName }
-func (r claudeLiveRunner) home() string  { return r.homeDir }
+func (r claudeLiveRunner) smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace {
+	return smallestMechanismTraceForDialect("claude", result.stream, edits, commissioned)
+}
+func (r claudeLiveRunner) home() string { return r.homeDir }
 func (r claudeLiveRunner) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitClaudeScenarioMetrics(t, scenario, result, r.modelName)
 }
@@ -450,7 +454,7 @@ func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDrive
 	workflowRoot := build(t, t.TempDir())
 
 	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot))
-	trace := claudeMechanismTrace(result.stream, ssmEditFiles(), ssmCommissioned())
+	trace := runner.smallestMechanismTrace(result, ssmEditFiles(), ssmCommissioned())
 	finishLiveScenario(t, runner, scenario, result,
 		durableSemantic("smallest-mechanism-violation", assert(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned())))
 }
