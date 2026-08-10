@@ -729,3 +729,35 @@ lines out of one existing file. The full candidate remains net +91.
 The validator accepts the exact `$launcher` validation/2 command only with canonical briefing and log files. All negative controls remain active.
 Product instructions and bindings do not change.
 The candidate remains within the approved net +91 cap and retains the superseded PR evidence.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Confirm exact corrected candidate 3d0c02c1947824d30e3cac3f874ee179092ee50d, remote match, clean worktree, and base 4dc83c0f8.
+  Local HEAD and the remote branch match `3d0c02c`. Base `4dc83c0f8` remains an ancestor, and the worktree is clean.
+- DONE: Verify the cycle-2 correction changes only one existing oracle file by +10/-10 and keeps the full candidate seven files and +91 net.
+  The bounded correction is net zero. The full candidate is +127/-36 across seven existing files.
+- DONE: Inspect run 31416271663, job 93546268920, artifact 9074101972 and confirm the product journey completed validation/1, validation/2, one prepare, and one open gate.
+  The retained transcript contains both successful publications before one successful prepare. Its final state is open and nonterminal.
+- DONE: Verify the corrected oracle accepts the exact `$launcher` successful command and rejects wrong briefing, log, entity, round, and failed command controls.
+  The focused oracle tests passed in 0.894s. Each mutation removes the required `stage=2, prepares=1` result.
+- DONE: Verify product instructions, bindings, Pi ownership, and all unrelated bytes are unchanged from validated candidate 29a4dd5dc.
+  The correction changes only `internal/ensigncycle/shared_round_recording_test.go`. Pi owner `p17swb3375rt525fn7f8xt7e` remains.
+- DONE: Inspect focused pre-fix failure and post-fix pass evidence without repeating full, race, or live runs.
+  The retained failure was `stage/prepares = 0/1`. The corrected focused tests passed. No full, race, or live run occurred.
+- DONE: Report every finding with released user, observable harm, value authority, and exact trigger evidence.
+  The wrong-file evidence defect entered disposition before rerun. The bounded correction closes it, and no new Material finding remains.
+- DONE: Write and push a Simplified-English validation cycle-2 report with PASSED or REJECTED recommendation.
+  PASSED: the corrected oracle matches the retained journey and rejects all required adjacent command variants.
+
+### Finding disposition
+
+- Released user and normal workflow: A Codex operator relies on the strict validation/2 command oracle for PR evidence.
+- Observable harm: Candidate `c334febb` accepted a command that used a wrong briefing or log file.
+- Value authority: `value-ac[AC-3]` requires a successful validation/2 publication before exactly one fresh gate.
+- Trigger evidence: The changed regex lacked file constraints. Its named wrong-file control exercised the separate validation/1 recognizer.
+- First Officer disposition: FIX. Commit `3d0c02c` requires both canonical files and adds five direct negative controls.
+
+### Summary
+
+The exact candidate matches the remote branch and preserves the complete Codex correction journey. The bounded oracle correction rejects every required adjacent variant.
+The validation recommendation is PASSED. No Material finding remains.
