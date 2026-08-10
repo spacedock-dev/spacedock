@@ -231,3 +231,28 @@ Implementation removes every inventoried prose-dependent semantic oracle and kee
 ### Summary
 
 The candidate is behaviorally clean, within its exact 23-file/770-line boundary, and all executable, formatting, help, lifecycle, and render checks pass. Validation nevertheless recommends REJECTED because AC-1's claimed 16-group baseline cannot be reconstructed from its 15-row inventory; resolving that evidence defect changes approved proof scope and requires an ideation/captain design reset rather than candidate edits.
+
+### V1 disposition update — resolved by captain ruling
+
+The `## Captain ruling: inventory accounting` section resolves V1 by declaring the reconstructible finite boundary: 15 rows, 11 semantic-output couplings, and four retained/non-semantic rows. The historical 16 count is explicitly non-authoritative bookkeeping, so V1 no longer identifies a failed value AC or material release finding; candidate `e481864e4` remains unchanged.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Regrade the existing validation evidence against the Captain-corrected active F6C state without rerunning green checks or mutating the candidate.
+  HEAD remains `e481864e4`; the prior focused, formatting, full, race, diff, help, and 28,651-byte Mermaid render evidence is reused unchanged, and the captain ruling removes the sole prior evidence defect.
+- DONE: AC-1 — Semantic behavior has zero prose-search proof dependencies in the finite inventory; exact text remains only for deliberately published help.
+  Diff audit covers all 15 rows: KD uses decoded envelopes, bounded sections, exact source comparison, invocation logs, and byte-clean refusal; 824 uses typed events, parsed Stage Reports, durable markers, clean paths, and Git commits; D8 uses durable owner outcomes and exact bounded scope input; A7's prose oracle is deleted in favor of CLI/state/file-absence behavior; BV and SK decode JSON structurally. The four retained rows are snapshots not cited as behavior, deliberately published help, documentation-only EP2 reconciliation, and production-parsed cold-report behavior.
+- DONE: AC-2 — Every retained v1 gate verb is discoverable, and removed provider/eligibility verbs are absent.
+  `TestTopLevelHelpFormsAreIdentical` and `TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface` pin the five published verbs; `TestGateRecordRejectsProviderRoomBeforeMutation` and unknown-subcommand controls fail if removed provider or eligibility grammar is accepted or writes state.
+- DONE: AC-3 — One canonical lifecycle and its summaries describe the final executable `0.27.0` behavior.
+  Existing focused evidence maps prepare/withdraw, record/consume sync, collapsed approval, terminal merge/rework, readiness, `dispatch build --stamp`, stamped conflict ownership, and durable recovery to exact exit, state, Git, or worker outcomes; a transition or terminal-state change breaks those assertions.
+- DONE: AC-4 — The shipped contract contains no sprint-owner scaffolding or prototype surface.
+  Prior release evidence rendered the canonical Mermaid to a 28,651-byte SVG and inspected the recorder-close, consume, and successor-sync flow; the spec audit found no listed sprint aliases, owner tags, `--room`, Result, inventory, or eligibility prototype surface.
+- DONE: AC-5 — The cleanup changes no command grammar, stored format, authority, or runtime behavior.
+  The 23-file/770-line diff changes only `internal/cli/help.go` in non-test production Go; unchanged canonical behavior fixtures plus focused, full, and race suites passed, and the candidate worktree stayed byte-clean.
+- DONE: Recommend PASSED or REJECTED against the corrected boundary.
+  Recommendation: PASSED. All five corrected ACs have reproducible evidence, the earlier V1 count finding is resolved by the captain's authoritative accounting ruling, and no material or deferred finding remains.
+
+### Summary
+
+Re-review recommends PASSED for unchanged candidate `e481864e4`. The captain-corrected 15/11/4 inventory makes AC-1 reconstructible, and the existing executable, structured, durable-state, scope, and rendering evidence satisfies AC-1 through AC-5 without another test run or candidate mutation.
