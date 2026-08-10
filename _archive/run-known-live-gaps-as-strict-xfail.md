@@ -1,10 +1,10 @@
 ---
 title: Run known live behavior gaps as strict XFAIL
-status: validation
+status: done
 source: "Captain decision after live-test-truth sprint close, 2026-08-09"
 started: 2026-08-09T18:34:17Z
-completed:
-verdict:
+completed: 2026-08-10T05:24:39Z
+verdict: PASSED
 score: 0.95
 worktree: .worktrees/spacedock-ensign-run-known-live-gaps-as-strict-xfail
 issue:
@@ -76,7 +76,8 @@ gates:
                 reason: Exact candidate 02b2296a1 passed independent policy, ownership, metrics, scope, and implementation-owned full/race validation; no independent finding exists.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T05:24:40Z
 ---
 
 ## Problem
