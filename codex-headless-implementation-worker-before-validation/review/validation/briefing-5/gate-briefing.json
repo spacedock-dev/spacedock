@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:98aa776adg66gn823a8gamdq:validation:attempt-5:revision-1",
+  "question": "Approve recarved 98a candidate edea2ac9a for PR #657 merge?",
+  "artifacts": [
+    {
+      "id": "artifact:98aa776adg66gn823a8gamdq:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/18b69438f14ce85d32b09abe0dc3321ba6e13d58/codex-headless-implementation-worker-before-validation.md",
+      "rev": "sha256:6c964ef559032b68ca8bf4c45c1af1582a80240fd8c4841e20e3a1eddffddbf7",
+      "mediaType": "text/markdown",
+      "summary": "Validation recommends PASSED for exact head edea2ac9a. The candidate preserves the Sonnet and Codex n28 target-level XFAILs, the AutoContinue correction, strict XPASS, green full/race evidence, standard formatting, and the Captain-approved seven-file, 222-gross cap."
+    }
+  ]
+}
