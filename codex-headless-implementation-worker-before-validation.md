@@ -1,6 +1,6 @@
 ---
 title: Make headless Sonnet and Codex spawn implementation before validation
-status: validation
+status: implementation
 source: "PR #583 run 31320596435, Codex job 93262943132 and Sonnet job 93262943118, 2026-08-09"
 started: 2026-08-09T18:34:21Z
 completed:
@@ -8,8 +8,8 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-codex-headless-implementation-worker-before-validation
 issue:
-pr: "#657"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 sprint: test-behavior-completeness
 group: common-evidence
 sprint-readiness: ready
@@ -107,7 +107,7 @@ gates:
                 reason: Exact rebased candidate 6e281f31c preserves 2e4 and 98a reconciliation, all focused and required offline checks pass, and no Material finding remains.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 ## Problem
@@ -506,3 +506,16 @@ The merge rework preserves the landed 2e4 inventory and the approved 98a repair.
 
 The merge reconciliation preserves the landed 2e4 inventory and the approved 98a repair. The focused checks pass on the exact rebased candidate.
 The exact live runs were not repeated. The required PR lanes will run on this head.
+
+## Captain decision: validation and PR cycle 3
+
+The Captain approved the 98a AutoContinue finding as a Material, task-owned FIX.
+The end-user value stays unchanged: completed implementation must dispatch fresh validation before its gate.
+
+The correction replaces one existing guard line in `skills/first-officer/references/fo-dispatch-core.md`.
+The line must dispatch the stage under normal freshness rules before gate lifecycle.
+It must preserve the implementation-worker completion guard and every XFAIL binding.
+
+The correction estimate is `+1/-1`, or two gross lines and zero net lines.
+The full candidate must remain at seven files and 217 gross lines.
+This approval authorizes validation and PR cycle 3 within these limits.
