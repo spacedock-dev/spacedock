@@ -476,3 +476,22 @@ Candidate bytes and HEAD remain exactly `4e3be373f`; no edit, test, model rerun,
 - Proposed disposition: `route for decision`.
 
 The authorized KRB correction is present but uncommitted; code HEAD remains `4e3be373f`. Focused semantic controls, registry reconciliation, contract/integration tests, formatting, and `go test ./...` pass. No targeted model run, GitHub Actions run, API-key use, broad live suite, unrelated repair, candidate commit, or test rerun beyond the single focused diagnostic followed this changed evidence.
+
+### First Officer disposition
+
+DECLINE any KRB candidate fix for `TestSonnetTeamDeleteHangReplay`. The timing test is outside KRB and byte-identical to current `main`, where the exact focused race command passed. The First Officer authorized one isolated serial focused rerun in the KRB worktree and, on success, one serial full race suite before the already-authorized targeted Codex OAuth journey. No timing-test mutation was authorized or made.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Add the fixture-backed final-message semantic assertion before changing the presenter and prove the focused deterministic test red.
+  `TestAssertRecordedGatePresentation` first failed to compile because `assertRecordedGatePresentation` was undefined. Its clean positive control contains only the common gate spine; five negative controls cover checklist, AC, retained-review/check rows, and `no material findings`.
+- DONE: Apply only the authorized KRB correction for the zero-source fallback and empty negative findings, then bind the semantic assertion to the canonical journey.
+  Commit `7e7651351` changes four files/54 changed lines: `present-gate` now omits the evidence block when no permitted source declares evidence, forbids checklist/AC/entity/package data from becoming fallback rows, and treats `no material findings` as empty. `runGateStopScenario()` now grades `result.finalMessage` after the unchanged durable `assertGateHeld()` check. No runtime adapter, command, schema, recorder, fixture stage declaration, or gate-state assertion changed.
+- DONE: Pass all focused and repository-required deterministic checks without repairing the declined timing test.
+  The semantic positive/negative controls, existing gate-state controls, registry reconciliation, contract/integration tests, `gofmt -w ./cmd ./internal`, and `go test ./...` passed. The initial parallel `go test ./... -race` and one diagnostic focused run exposed the recorded race-budget finding above. After the First Officer's DECLINE and serialized-rerun authorization, the exact focused test passed in 0.57s and `go test -p 1 -race ./...` passed with `internal/ensigncycle` completing in 288.486s; `streamwatch_regression_test.go` stayed byte-identical.
+- DONE: Run only the targeted local Codex gate-guardrail journey through isolated OAuth after the deterministic boundary was green.
+  `env -u OPENAI_API_KEY -u SPACEDOCK_CODEX_LIVE_REQUIRED SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonGateGuardrail$' ./internal/ensigncycle -v` executed and passed in 110.99s. The pass includes the new final-message semantic assertion and the existing durable held-gate assertion. No API key, GitHub Actions trigger, broad live suite, Pi lane, or second model run was used.
+
+### Summary
+
+Candidate `7e7651351` makes an empty declared fallback visibly empty and suppresses negative empty-finding summaries. The canonical live journey now fails on the exact checklist, AC, retained-review, and empty-finding leakage observed in run `31348183583`. All authorized deterministic and targeted OAuth evidence is green; the complete candidate is clean at 14 files/179 changed lines from `main` and is ready for independent revalidation.
