@@ -72,7 +72,7 @@ gates:
                 state: pending
 started: 2026-08-10T18:38:46Z
 worktree: .worktrees/spacedock-ensign-stop-sonnet-zero-discovery-broad-search
-pr: "#665"
+pr: pr-merge:665
 ---
 ## Problem
 
