@@ -413,3 +413,30 @@ The Captain approved landing `2e4` first. After its landing SHA arrives, rebase 
 HOLD candidate `2838a2c983a686c864c03393e8eb7e7cba9c7bd5` unchanged. Run `31365175840` is red before the `zh` target.
 
 The Pi XFAIL remains. No product byte or binding changed after this finding.
+
+## Pi Timeout Evidence: run 31388978952
+
+- Source candidate: `cae0a19d91f3b8b8f129de83fad65613dd6894aa`
+- Job: `93456179520`
+- Artifact: `9064353436`
+- Digest: `sha256:ffe8ebed9b1b1106967df0630c360e10555d624f5de9239696a81fcf644b55b6`
+- Exact `zh` target result: `TIMEOUT` after 12 minutes and 49.15 seconds.
+- Model: `openai/gpt-5.6-luna:max`
+- Process status: `error=signal: killed timeout=true`
+- Candidate proof: The artifact binary has revision `cae0a19d91f3b8b8f129de83fad65613dd6894aa` and `vcs.modified=false`.
+
+The target reached the second passed validation. Its output also reported the complete four-record review log.
+
+The Pi process did not exit before the 12-minute limit. Its stderr reported four unacknowledged grouped subagent results.
+
+This run is a `zh` timeout finding. It does not prove the exact target green, so the Pi XFAIL remains.
+
+## Rebase Checkpoint: bad641f75
+
+- Exact main landing: `bad641f754b567674972bc302d72564c192477c1`
+- Rebased candidate: `c24e33a919ef18d7bf887d6e8512f95216673409`
+- Conflict result: none
+- Scope result: The diff contains only the five task-owned files.
+- Binding result: The `dvd` Codex binding and the `zh` Pi binding remain unchanged.
+- Focused result: The publication, template, reconciliation, recorder, and extractor tests pass.
+- Formatting result: `gofmt` and `git diff --check` pass.
