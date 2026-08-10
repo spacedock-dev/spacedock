@@ -97,7 +97,7 @@ dispatch epoch. Caller text cannot complete the receipt.
 | The grammar has no unique epoch. | Material | This task | Accepted. The new envelope has a random epoch token in a native field. |
 | Pending receipts have no recovery authority. | Material | This task | Accepted. A confirmed operator can abandon one exact epoch. |
 | Receipt writes race report writes. | Material | This task | Accepted. The spike used separate immutable files during a worker report commit. |
-| A Codex build without `--stamp` bypasses receipts. | Material | This task | Accepted. Every fresh Claude or Codex build creates pending state. |
+| A Codex build without `--stamp` bypasses receipts. | Material | Deferred | No-stamp same-stage owner handoff belongs to `egsrea0tppbaphb61kc9wj5s`. |
 | Mutation doors, schema, help, and tests are absent. | Material | This task | Accepted. The exact surface below includes each item. |
 
 ## Current boundaries
@@ -175,8 +175,8 @@ The pending receipt refused these six prototype doors:
 - `dispatch build --advance`;
 - fresh Claude or Codex build without receipt creation.
 
-The first five doors passed only after a matching completion. The no-stamp fresh
-build always created pending state or refused.
+The first five doors passed only after a matching completion. No-stamp
+same-stage owner handoff is outside this task.
 
 ## Selected approach
 
@@ -262,8 +262,8 @@ event durable and blocks stage advance.
 
 ## Replay and build rules
 
-A fresh Claude or Codex build always creates pending state. `--stamp` still
-controls the existing stage-entry stamp only.
+A commissioned fresh Claude or Codex build uses `--stamp` and creates pending
+state.
 
 The build locks the entity and stage, commits pending state, and then emits the
 envelope. A pending-state failure prevents envelope output.
@@ -271,8 +271,8 @@ envelope. A pending-state failure prevents envelope output.
 An output failure can leave pending state. Recovery then follows the normal
 operator abandonment path.
 
-Plain builds without `--stamp` cannot bypass receipt creation. `--validate-only`
-and `--print-schema` do not create envelopes or receipts.
+Plain builds without `--stamp` are outside this task. `--validate-only` and
+`--print-schema` do not create envelopes or receipts.
 
 A build refuses when the same entity and stage has a pending, spawned, or
 completed epoch. It emits no second envelope.
@@ -349,7 +349,7 @@ envelopes. It fails before output when the observer session is absent.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — Each fresh envelope has one native worker.**
+**AC-1 (VALUE) — Each commissioned stamped fresh envelope has one native worker.**
 
 The exact Claude and Codex journeys create pending state, record one host start,
 record matching completion, and then enter validation.
@@ -472,7 +472,7 @@ The two one-line XFAIL edits occur only after strict XPASS evidence.
 2. Add store tests for immutable events, locks, atomic create, and state sync.
 3. Add parser fixtures from the exact Claude and Codex spike events.
 4. Add parser tests for unknown schemas, truncation, duplicate events, and stale IDs.
-5. Add build tests for pending creation with and without `--stamp`.
+5. Add build tests for pending creation through commissioned stamped dispatch.
 6. Add second-build tests for pending, spawned, completed, and abandoned states.
 7. Add operator tests with an injected terminal confirmer.
 8. Add guard tests for every mutation door and `--force`.
@@ -942,7 +942,7 @@ The prior 240-update result is useful, but its unsaved command is not sufficient
 
 ### Acceptance criteria
 
-**AC-1 — One fresh CLI envelope gets one native worker.**
+**AC-1 — One commissioned stamped fresh CLI envelope gets one native worker.**
 
 Claude CLI and Codex CLI each create one pending receipt. Supported hooks move
 that receipt through armed, spawned, and completed.
@@ -952,8 +952,8 @@ than one native worker starts for the epoch.
 
 **AC-2 — Same entity and stage is single-flight.**
 
-A second fresh build refuses pending, armed, spawned, and completed states. It
-emits no envelope and changes no receipt.
+A second commissioned stamped build refuses pending, armed, spawned, and
+completed states. It emits no envelope and changes no receipt.
 
 Falsifier: any active state permits a second envelope.
 
@@ -1149,7 +1149,7 @@ claim requires another staff review before implementation.
 3. Add Claude and Codex hook fixture tests.
 4. Prove supported PreToolUse denial for both hosts in disposable CLI runs.
 5. Add recovery authority and digest-drift tests.
-6. Add fresh build, no-stamp, stamp-failure, replay, Pi, and legacy tests.
+6. Add stamped fresh-build, stamp-failure, replay, Pi, and legacy tests.
 7. Add all eight mutation-door tests.
 8. Add launcher crash, missing hooks, disabled hooks, and malformed hook tests.
 9. Run both default-headless cells with bindings and require strict XPASS.
@@ -1185,11 +1185,12 @@ No product implementation is authorized.
 
 ### Exact claim
 
-The task supports one fresh Claude CLI or Codex CLI worker for one workflow
-entity and stage.
+The task supports one commissioned fresh Claude CLI or Codex CLI worker for one
+workflow entity and stage. Commissioned fresh dispatch uses
+`dispatch build --stamp`.
 
-`dispatch build` creates one binary-owned pending envelope. Supported host hooks
-consume it when the native worker starts.
+`dispatch build --stamp` creates one binary-owned pending envelope. Supported
+host hooks consume it when the native worker starts.
 
 While the envelope is pending, these existing paths fail closed:
 
@@ -1212,6 +1213,8 @@ The task excludes these items:
 - Pi acknowledgment;
 - host-attested follow-up completion;
 - cryptographic local-user identity.
+- no-stamp same-stage owner handoff, which deferred task
+  `egsrea0tppbaphb61kc9wj5s` owns.
 
 The in-app surfaces remain unexecutable. General parallel acknowledgment
 remains unsupported.
@@ -1243,12 +1246,14 @@ The active blob contains only these internal fields:
 This internal blob does not define a new public schema family. The existing
 build envelope stays at schema version 2.
 
-A fresh build adds only `dispatch_ack_epoch` and `dispatch_ack_ref` to its
-existing output. Pi and `--advance` output do not add these fields.
+A commissioned stamped build adds only `dispatch_ack_epoch` and
+`dispatch_ack_ref` to its existing output. Pi and `--advance` output do not add
+these fields.
 
 The happy path is:
 
-1. A fresh build creates the active ref with a zero-old compare update.
+1. A commissioned stamped build creates the active ref with a zero-old compare
+   update.
 2. The build puts the bounded epoch in Claude `description` or Codex `task_name`.
 3. `PreToolUse` matches that epoch and changes `pending` to `armed`.
 4. `SubagentStart` records the native worker ID and changes `armed` to `consumed`.
@@ -1271,8 +1276,8 @@ message, or an empty wait cannot consume the envelope.
 
 ### Single-flight and replay
 
-Fresh build refuses an existing `pending`, `armed`, or `consumed` active ref. It
-emits no second envelope.
+A commissioned stamped build refuses an existing `pending`, `armed`, or
+`consumed` active ref. It emits no second envelope.
 
 The same envelope cannot arm twice. A stale hook event changes no ref.
 
@@ -1299,8 +1304,9 @@ this rescope.
 
 The focused tests must prove these cases for both hosts:
 
-1. A fresh build creates one pending ref and one epoch-bearing envelope.
-2. A second fresh build returns nonzero and emits no envelope.
+1. A commissioned stamped build creates one pending ref and one epoch-bearing
+   envelope.
+2. A second commissioned stamped build returns nonzero and emits no envelope.
 3. `dispatch build --advance` returns nonzero while pending or armed.
 4. A stage-changing `status --set` returns nonzero and changes no entity bytes.
 5. Disabled hooks leave the ref pending and keep both refusals active.
@@ -1335,7 +1341,7 @@ go test -tags=live ./internal/ensigncycle \
 
 For each host, the bound run must prove these facts:
 
-- one fresh implementation envelope created one pending ref;
+- one commissioned stamped implementation envelope created one pending ref;
 - supported `PreToolUse` armed that exact epoch;
 - supported `SubagentStart` consumed it with one native worker ID;
 - no second implementation envelope was emitted;
@@ -1623,16 +1629,16 @@ complete latest stage report and a clean tracked entity path in local `HEAD`.
 
 `--force` cannot bypass this consumed-receipt predicate.
 
-### Stamped and unstamped value
+### Commissioned stamped value
 
-Every fresh Claude CLI or Codex CLI build creates the pending envelope. This
-rule applies with and without `--stamp`.
+Every commissioned fresh Claude CLI or Codex CLI dispatch uses
+`dispatch build --stamp` and creates the pending envelope.
 
-`--stamp` keeps its current stage-entry work. It is not an acknowledgment
-prerequisite and does not define the supported user value.
+`--stamp` keeps its current stage-entry work and defines the supported
+commissioned acknowledgment path.
 
-An unstamped fresh build gets the same pending, armed, consumed, report, and
-stage-transition rules.
+No-stamp same-stage owner handoff is outside this task. Deferred task
+`egsrea0tppbaphb61kc9wj5s` owns that path.
 
 ### Real audit-ref oracle
 
@@ -1684,7 +1690,7 @@ Add these focused cases to the existing ten-file test plan:
 3. `consumed` plus an empty `worktree` and an uncommitted report refuses.
 4. `consumed` plus an empty `worktree` and a complete committed report passes.
 5. Each refusal also fails with `--force` and preserves entity bytes.
-6. Stamped and unstamped fresh builds create equivalent pending refs.
+6. A commissioned stamped fresh build creates the required pending ref.
 7. The three real audit refs share one epoch and one ordered transition chain.
 
 ### Corrected XPASS-green proof
@@ -1905,4 +1911,42 @@ The Captain-approved recarve keeps the Sonnet binding until the separate gate du
 
 The stamped acknowledgment path and the Captain-approved binding recarve have valid focused and retained evidence. The unstamped supported path bypasses the mechanism.
 
-Validation recommends REJECTED. The next implementation cycle must create equivalent acknowledgment state with and without `--stamp`.
+The Captain superseded the equivalence requirement. The stamped commissioned
+path remains in this task, and `egsrea0tppbaphb61kc9wj5s` owns no-stamp
+same-stage handoff.
+
+## Captain-authorized feedback recarve
+
+Date: 2026-08-10
+
+Ordinary commissioned fresh dispatch uses `dispatch build --stamp`. This task
+does not claim acknowledgment for a no-stamp same-stage owner handoff.
+
+Deferred task `egsrea0tppbaphb61kc9wj5s` owns that handoff. This recarve adds no
+mechanism, product byte, Pi work, or binding change.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Read the rejected validation snapshot and Captain recarve.
+  - Evidence: The recarve accepts the stamped commissioned path and transfers the no-stamp handoff to `egsrea0tppbaphb61kc9wj5s`.
+- DONE: Update the task body so ordinary commissioned fresh dispatch requires --stamp and no-stamp same-stage handoff is excluded.
+  - Evidence: The active claim now requires `dispatch build --stamp` and names the deferred owner.
+- DONE: Remove stamped and unstamped equivalence from claims and focused tests.
+  - Evidence: The task criteria, claims, and test plans contain no stamped-and-unstamped equivalence requirement. The candidate had no such focused product test.
+- DONE: Preserve the 10-file and 492-gross cap with no new mechanism or Pi work.
+  - Evidence: Product head `042f926db1ec452354cae7d1accd0cbfde201dae` remains unchanged at 473 insertions and 19 deletions.
+- DONE: Preserve the exact acknowledged Codex PASS and Sonnet owner transfer.
+  - Evidence: The retained Codex PASS artifacts and the Sonnet owner `kky8pg7wc8xgb985epwss092` remain unchanged.
+- DONE: Run focused, full, race, format, reconciliation, and owner checks.
+  - Evidence: Focused, full, format, reconciliation, and owner checks passed. The prior exact-candidate race suite passed.
+  - Evidence: A duplicate race run failed one load-sensitive 250 ms timing test. The First Officer found no released-user harm and declined candidate ownership.
+- DONE: Commit and push the corrected candidate and a Simplified-English implementation cycle report.
+  - Evidence: The product candidate was already committed and pushed. This state commit contains the recarve and corrected report only.
+
+### Summary
+
+The product candidate remains unchanged. Commissioned stamped dispatch keeps
+the proved acknowledgment value.
+
+The deferred task owns no-stamp same-stage handoff. This cycle is ready for
+independent revalidation.
