@@ -1,6 +1,6 @@
 ---
 title: Continue Codex to validation after implementation
-status: implementation
+status: validation
 score: "0.90"
 source: "PR #664 Codex auto-continue failure, 2026-08-10"
 sprint: test-behavior-completeness
