@@ -56,6 +56,26 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:n28423efmj358m5av61z2fxx:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:n28423efmj358m5av61z2fxx-validation-1
+              briefing:
+                id: briefing:n28423efmj358m5av61z2fxx:validation:attempt-1:revision-1
+                digest: sha256:9fb3869ee74463a2d21929afab4ad957d8676aa9be3a2a1d4576bd0f9bb765d3
+                request-digest: sha256:a32fc15807a1b765959dc84676fbef558843264907c3f8d0d11261c9d8f09fd4
+                room-ref: ./mechanically-acknowledge-codex-implementation-dispatch/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:n28423efmj358m5av61z2fxx:validation:1
+                briefing: briefing:n28423efmj358m5av61z2fxx:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T19:43:34.163158Z"
+                decision: approve
+                reason: Captain conn approves recarved n28 after independent PASSED validation. Required exact PR lanes remain the merge boundary.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem

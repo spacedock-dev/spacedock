@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:n28423efmj358m5av61z2fxx:validation:attempt-1:revision-1",
+  "question": "Does exact candidate 042f926db1ec452354cae7d1accd0cbfde201dae satisfy the recarved stamped-dispatch acknowledgment value and remain safe to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:n28423efmj358m5av61z2fxx:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a8878199150ef66737ec45d293aff551645db9bc/mechanically-acknowledge-codex-implementation-dispatch.md",
+      "rev": "sha256:67b781cf445966ffad9593c051ee90790f0ab3e77aaa8f8033084c6fe5cd5c57",
+      "mediaType": "text/markdown",
+      "summary": "Independent cycle-2 validation PASSED. Supported stamped Claude and Codex dispatch use one binary-owned acknowledgment chain; no-stamp handoff is deferred."
+    }
+  ]
+}
