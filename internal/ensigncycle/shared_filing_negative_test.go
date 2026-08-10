@@ -1,6 +1,10 @@
 package ensigncycle
 
-import "testing"
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+)
 
 // Offline positive + negative cases for the `filing` scenario assertions. They
 // build synthetic host streams — a stream that filed via `new` (passes) and the
@@ -16,7 +20,21 @@ func claudeToolUse(name, inputJSON string) string {
 
 // codexCommand builds a `codex exec --json` command_execution item line.
 func codexCommand(command string) string {
-	return `{"type":"item.completed","item":{"type":"command_execution","command":"` + command + `"}}`
+	if !strings.Contains(command, "\n") {
+		var decoded string
+		if json.Unmarshal([]byte(`"`+command+`"`), &decoded) == nil {
+			command = decoded
+		}
+	}
+	exitCode := 0
+	var event codexCommandItem
+	event.Type = "item.completed"
+	event.Item.Type = "command_execution"
+	event.Item.Command = command
+	event.Item.Status = "completed"
+	event.Item.ExitCode = &exitCode
+	encoded, _ := json.Marshal(event)
+	return string(encoded)
 }
 
 func TestAssertClaudeFilingViaNew(t *testing.T) {
@@ -87,6 +105,33 @@ func TestAssertClaudeFilingViaNew(t *testing.T) {
 func TestAssertCodexFilingViaNew(t *testing.T) {
 	slug := filingSlug
 
+	// Positive regression: artifact 9078284956 used Codex's /bin/bash -lc
+	// display form for a captured launcher and created wire-the-thing atomically.
+	artifactCommand := `/bin/bash -lc 'set -eu
+sd_bin="${SPACEDOCK_BIN:-spacedock}"
+printf '"'%s\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire the thing so it is connected and ready for follow-up work.' | \""'$sd_bin" new wire-the-thing --workflow-dir /tmp/TestLiveCommonFiling1757938389/002
+"$sd_bin" status --boot --identify --json
+"$sd_bin" status --read wire-the-thing --json'`
+	if err := assertCodexFilingViaNew(codexCommand(artifactCommand), slug); err != nil {
+		t.Fatalf("expected artifact 9078284956's successful atomic filing to count: %v", err)
+	}
+	failed := strings.Replace(codexCommand(artifactCommand), `"exit_code":0`, `"exit_code":1`, 1)
+	if err := assertCodexFilingViaNew(failed, slug); err == nil {
+		t.Fatal("expected a failed atomic filing command to fail")
+	}
+	redControls := map[string]string{
+		"manual file creation": codexCommand("printf body > " + slug + ".md"),
+		"preview plus write":   codexCommand("spacedock status --next-id; printf body > " + slug + ".md"),
+		"wrong slug":           codexCommand("spacedock new other-slug"),
+		"narration only":       `{"type":"item.completed","item":{"type":"agent_message","text":"spacedock new wire-the-thing"}}`,
+	}
+	for name, stream := range redControls {
+		t.Run(name, func(t *testing.T) {
+			if assertCodexFilingViaNew(stream, slug) == nil {
+				t.Fatalf("%s counted as atomic filing", name)
+			}
+		})
+	}
 	// Positive: the FO filed via a `spacedock new <slug>` command_execution.
 	filed := codexCommand("spacedock new " + slug + " --workflow-dir .")
 	if err := assertCodexFilingViaNew(filed, slug); err != nil {
