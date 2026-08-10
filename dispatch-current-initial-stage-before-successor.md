@@ -509,3 +509,26 @@ Candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` is ready for the exact Pi-o
 ### Summary
 
 HOLD candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` unchanged. After 98a lands, task fh6 owns the default-headless repair and must land first.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Rebase 6x onto the exact fh6 landing.
+  Rebase onto `bad641f754b567674972bc302d72564c192477c1` kept main's `started` stamp and 6x's selected `dispatch_stage`.
+- DONE: Repair the rebase integration guard.
+  Run `31398403065` showed that the legacy guard counted only `next_stage`. It now also counts `dispatch_stage`.
+- DONE: Apply the Captain's final host scope.
+  Run `31399181746` was cancelled after offline passed. The Pi live job did not execute.
+- DONE: Preserve Pi as pending while Sonnet and Codex remain strict.
+  The 6x Pi XFAIL and its reconciliation row remain. The Sonnet and Codex bindings remain removed.
+- DONE: Run the exact Sonnet target on the final candidate.
+  `TestLiveCommonSmallestSufficientMechanism` passed in 256.99 seconds.
+- DONE: Run the exact Codex target on the final candidate.
+  `TestLiveCommonSmallestSufficientMechanism` passed in 237.81 seconds.
+- DONE: Run required offline checks.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed.
+- SKIPPED: Run the final exact Pi target.
+  The Captain made Pi pending and non-blocking. No new Pi proof is required for this landing.
+
+### Summary
+
+Candidate `e2ead5f4367598f806a1162f8c0c36bee97f091c` is ready for PR and merge on proven Sonnet and Codex value.
