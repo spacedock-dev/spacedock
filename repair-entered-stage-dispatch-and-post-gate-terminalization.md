@@ -246,3 +246,46 @@ The observed semantic set was empty. The product exited correctly after 176.89 s
 This result is assigned supporting evidence for 9a. It is not the final rebased 9a candidate proof.
 
 The 9a binding and candidate remain unchanged. The binding can change only after 6x lands and the exact rebased target passes.
+
+## Stage Report: implementation
+
+- DONE: Rebase onto the required 6x checkpoints.
+  Product work started from checkpoint `f350e3d27`.
+  The final rebase used landed 6x merge `8832664ddbec8ac024c4e5251410d0422fa7ca04`.
+  The rebase skipped only the duplicated 6x checkpoint commit.
+  One dispatch-contract conflict stopped the rebase.
+  The Captain approved the narrow semantic resolution.
+  The resolution keeps 6x non-gated `started` behavior and adds 9a gate-consumed evidence.
+- DONE: Repair complete dispatch evidence and safe terminalization.
+  Consumed nonterminal approval now becomes ordinary history for later terminal fields.
+  Pending, stale, unreadable, and terminal-target authority still fails closed.
+  No terminal status write uses `--force`.
+  The stamped dispatch commit contains the entered status and nonempty `started` value.
+- DONE: Add both focused falsifier tests.
+  `TestGateCeremonyDispatchCommitContainsEnteredStageEvidence` reads the exact dispatch commit blob.
+  `TestConsumedNonterminalApprovalAllowsOrdinaryTerminalFields` proves the consumed nonterminal journey.
+  Pending, stale, unreadable, and merge-guard refusal controls also passed.
+- DONE: Run the exact owned live target and retire only proven bindings.
+  Bound Sonnet passed in 440.57 seconds with `observed=[]` and an XPASS alert.
+  Bound Codex passed in 321.23 seconds with `observed=[]` and an XPASS alert.
+  After binding removal, Sonnet passed normally in 446.16 seconds.
+  After binding removal, Codex passed normally in 398.50 seconds.
+  Only the 9a Sonnet and Codex bindings were removed.
+  The Pi XFAIL remains pending and non-blocking by Captain direction.
+  No Pi or Opus run started.
+- DONE: Run all required local checks.
+  Focused CLI, durable journey, registry, owner, and gap validation checks passed.
+  `gofmt -w ./cmd ./internal` and `git diff --check` passed.
+  The first full suite found a 122-byte instruction cap overrun after rebase.
+  The task wording was shortened without changing its rule.
+  The final `go test ./...` and `go test ./... -race` runs passed.
+- DONE: Commit and push all task-owned changes and this report.
+  Final surface is ten files, 140 insertions, and 10 deletions.
+  The net change is 130 lines, unchanged from the approved smaller design.
+  Exact candidate `4a20f3f632f619f56ad6860df4ace04842793ba8` is pushed.
+
+### Summary
+
+PASSED for Sonnet and Codex. Entered-stage evidence is complete, and consumed nonterminal journeys can finish without forced status writes.
+
+Pi stays as a pending strict XFAIL. The Captain made its proof non-blocking and prohibited a new Pi run in this stage.
