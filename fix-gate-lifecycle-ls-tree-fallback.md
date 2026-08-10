@@ -1,7 +1,7 @@
 ---
 id: qbppyssy13pyh1gtkh2n8vp5
 title: Fix the gate-lifecycle ls-tree fallback command
-status: ideation
+status: implementation
 source: Captain intake; recovered from deleted public issue spacedock-dev/spacedock#669
 started: 2026-08-10T22:53:32Z
 completed:
@@ -63,7 +63,7 @@ gates:
                 reason: Captain directed dispatch; independent review passed the one-skill, no-new-test, split-root design with falsifiable existing-journey proof.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 When gate Artifact or Reference paths are absent, the First Officer must discover committed Markdown with a complete, path-scoped Git command. The current instruction abbreviates this as `git -C ... ls-tree`, which deterministically exits 129 because it omits the required tree-ish.
