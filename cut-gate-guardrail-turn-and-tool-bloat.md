@@ -83,6 +83,17 @@ gates:
                 digest: sha256:1fb466a96f70b90e4d03b0955c20a3b79a282357877ef083e6940ea040d0c574
                 request-digest: sha256:cef968ba5d141869dc45fe648bcbd1b4dafcd5b71536821c10580f9a57a454f1
                 room-ref: ./cut-gate-guardrail-turn-and-tool-bloat/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5k704rrfk5r75vqv3bwn1yhf:validation:2
+                briefing: briefing:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T05:23:04.026874Z"
+                decision: approve
+                reason: 'Validation proves the Captain-corrected contract-only scope: three files, 25 changed lines, rejected mechanisms absent, and all offline checks green.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
