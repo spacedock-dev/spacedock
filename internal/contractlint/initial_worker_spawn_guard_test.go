@@ -23,7 +23,7 @@ const initialWorkerChecklistFallback = "When neither source supplies an item, us
 
 const initialWorkerStartedTransition = "status={next_stage} started"
 
-const initialWorkerGateSuccessorGuard = "If the next stage has `gate: true`, update it with `status={next_stage} started`, then enter `«gate.lifecycle»`; do not run `«dispatch.build» --advance` or route work to the completed worker."
+const initialWorkerGateSuccessorGuard = "If the next stage has `gate: true`, update it with `status={next_stage} started`. Dispatch it under the normal reuse and freshness rules. Enter `«gate.lifecycle»` only after `«completion-signal»` arrives and the stage report passes the completion gate."
 
 func TestInitialWorkerSpawnGuardPrecedesCompletionAndValidation(t *testing.T) {
 	body := readRepoFile(t, "skills/first-officer/references/fo-dispatch-core.md")
