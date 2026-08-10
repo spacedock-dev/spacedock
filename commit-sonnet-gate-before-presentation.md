@@ -204,3 +204,53 @@ It uses one instruction file and the existing command-log falsifier.
 The shared resume rule now commits every open gate before the structured reads and presentation.
 The exact Sonnet journey passed with and without its expected-failure binding.
 Codex selection remains bound to its new active owner, and Pi did not run.
+
+## Stage Report: validation
+
+- DONE: Independently verify the one-line Sonnet gate-commit rule delivers a durable clean open gate before presentation.
+  Both retained Sonnet logs show prepare, commit, state head, structured reads, and presentation in the required order.
+- DONE: Inspect retained bound XPASS and unbound Sonnet PASS evidence, component cap, exact candidate scope, and transferred Codex ownership without rerunning owned live/full/race checks.
+  The evidence maps to commits `9b561e4d1` and `43ce24b6d`. The final diff is three one-line replacements.
+- DONE: Confirm registry/active-owner/format evidence and no Codex or Pi behavior claim is made by kky.
+  The focused registry and active-owner tests passed, and both changed Go files have standard formatting.
+
+### Acceptance evidence
+
+- DONE: AC-1
+  Each Sonnet log has one successful prepare, then a successful commit, state head, checklist read, AC read, and presentation.
+- DONE: AC-2
+  The bound artifact has clean Sonnet semantics with the old binding. The unbound artifact has clean semantics after binding removal.
+- DONE: AC-3
+  Both streams report `state=open`. The entity has no completion or verdict. Each log has no successor dispatch after prepare.
+- FAILED: AC-4
+  A detached mutant proved that the oracle accepts a commit after structured reads and accepts continuation after a failed commit.
+- DONE: AC-5 within the Captain-approved recarve
+  Focused format, registry, and active-owner checks passed. Implementation owns the retained full and race results. Pi did not run.
+
+### Reviewer findings
+
+- Material evidence defect: the AC-4 oracle does not enforce the complete commit boundary.
+  Released workflow: the local Sonnet default-headless gate stop.
+  Observable harm: a wrong command order can pass the focused oracle.
+  Authority: `value-ac[AC-4]` requires rejection of a missing, failed, or late commit.
+  Trigger: prepare, structured read, successful commit, and state head return no oracle error.
+  A second trigger continues after a failed commit, reads evidence, then commits successfully.
+  Defect kind: evidence defect. Release scope: Material. Proposed owner: this task. Proposed disposition: narrow fix.
+  The exact boundary is `assertRecordedGateHoldLog`. It must reject reads after prepare and before the successful commit.
+
+### Checks run
+
+- PASS: `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` passed its current mutation set.
+  Removing the successful post-prepare commit makes this test fail.
+- PASS: `TestRuntimeLiveRegistryReconciliation` and `TestRuntimeLiveTODOOwnersAreActive` passed.
+  A stale Sonnet binding or an inactive Codex owner makes these tests fail.
+- PASS: `git diff --check` and focused `gofmt -d` checks returned no output.
+  Whitespace damage or nonstandard Go formatting makes these checks fail.
+- EXPECTED FAIL: detached `TestValidationOracleRejectsLateCommit` failed both adversarial cases.
+  The candidate oracle accepted late commit and failed-commit continuation logs.
+
+### Summary
+
+The retained Sonnet evidence proves a durable clean open gate and supports AC-1 through AC-3.
+The candidate stays within scope and transfers Codex ownership without a Codex or Pi behavior claim.
+Recommendation: REJECTED until the narrow AC-4 evidence defect is fixed.
