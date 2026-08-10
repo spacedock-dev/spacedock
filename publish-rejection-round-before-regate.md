@@ -442,6 +442,7 @@ This run is a `zh` timeout finding. It does not prove the exact target green, so
 ## Stage Report: implementation (final)
 
 - DONE: Publish the complete rejected round before correction and re-gating.
+  The repaired flow records all four `validation/1` entries before it starts correction or prepares the next gate.
 - DONE: Prove AC-1 with the exact Sonnet target.
   `TestLiveCommonRejectionFlow` passed without its `zh` XFAIL in 513.65 seconds.
 - DONE: Preserve honest runtime ownership for AC-2.
