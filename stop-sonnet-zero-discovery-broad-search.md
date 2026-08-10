@@ -194,3 +194,42 @@ APPROVE ideation. Implement the one-line Claude adapter path and the exact detec
 Sonnet searched for a file whose exact path was already available. The smallest repair gives Sonnet that exact retained-base path at the selection point.
 
 The existing live journey proves the outcome. The new focused control preserves the exact failing command from artifact 9074747236.
+
+## Stage Report: implementation
+
+- DONE: Read the complete task and approved ideation report.
+  The approved scope permits two files and 14 gross lines.
+- DONE: Confirm the exact baseline artifact and run the focused detector proof before the product edit.
+  Artifact 9074747236 retains the failing command and has the recorded SHA-256 digest.
+  The full detector passed on base `9c28d633a`.
+  Two pre-edit Sonnet runs also passed without a search.
+  The retained pre-edit run used a direct adapter read despite the relative instruction.
+- DONE: Change only the two approved files within 14 gross lines.
+  Candidate `289ede00015c7fa29961714f4c727cac77423524` changes two files and 10 gross lines.
+  The diff is +9/-1 lines and +8 net lines.
+- DONE: Run the exact local Sonnet zero-discovery target and retain normal PASS artifacts.
+  The repaired target passed in 26.87 seconds with local subscription authentication.
+  The stream contains the exact adapter `Read` action and no broad-search tool call.
+  The evidence remains under `.spacedock-evidence/3rns/post-edit-sonnet/` in the code worktree.
+- DONE: Run focused, format, full, race, registry, and active-owner checks.
+  The focused detector, `gofmt`, full suite, race suite, and registry reconciliation passed.
+  All five remaining XFAIL owner IDs resolve to active workflow records.
+- DONE: Keep n28, Pi, Codex, XFAIL policy, and unrelated journeys unchanged.
+  The candidate changes only the Claude adapter instruction and the exact detector table case.
+- DONE: Commit and push the exact candidate and a Simplified-English implementation Stage Report.
+  The candidate branch contains commit `289ede00015c7fa29961714f4c727cac77423524` on `origin`.
+  This report records the implementation evidence for independent validation.
+
+### Acceptance evidence
+
+- **AC-1:** The repaired Sonnet target passed normally and emitted zero broad-search commands.
+- **AC-2:** The retained stream reads `{first_officer_base}/references/claude-first-officer-runtime.md` directly.
+- **AC-3:** The exact artifact command passes as a focused detector control and reports `find` as the signature.
+- **AC-4:** The full, race, format, registry, and active-owner checks passed.
+- **AC-5:** Required pull-request lanes remain for the First Officer after validation.
+
+### Summary
+
+The entry skill now gives Sonnet the exact Claude adapter path. The focused control retains the prohibited command from the failing artifact.
+
+The local Sonnet target passes and uses the direct adapter read. The candidate is ready for independent validation.
