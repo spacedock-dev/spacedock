@@ -155,3 +155,24 @@ Artifact 9075649719 exercised the highest-risk runtime handoff. It proves that d
 ### Summary
 
 The exact failure is a premature Codex stop after successful validation dispatch. The smallest repair is a two-line Codex runtime rule.
+
+## Stage Report: implementation
+
+- DONE: Read the complete task and approved ideation report.
+  The approved report limits the repair to one Codex runtime file and four gross lines.
+- DONE: Confirm the exact PR #664 baseline and split-root failure sequence.
+  Artifact 9075649719 stops after the validator spawn and contains no validation Stage Report.
+- DONE: Change only skills/first-officer/references/codex-first-officer-runtime.md within four gross lines.
+  Commit `c42b1dfdf` adds two lines to the Codex async-dispatch binding.
+- DONE: Run the exact local Codex auto-continue target and retain normal PASS artifacts.
+  The retained run passed in 357.10 seconds and fails if validation dispatch, monitoring, or the report is absent.
+- DONE: Run focused, format, full, race, registry, and active-owner checks.
+  The negative control, `gofmt`, both full suites, registry check, and active-owner check passed.
+- DONE: Keep dvd, n28, Pi, XFAIL policy, and unrelated journeys unchanged.
+  The candidate changes only the Codex single-entity stop rule.
+- DONE: Commit and push the exact candidate and a Simplified-English implementation Stage Report.
+  Branch `spacedock-ensign/continue-codex-to-validation-after-implementation` contains pushed commit `c42b1dfdf`.
+
+### Summary
+
+Codex now continues monitoring after a fresh validation spawn when no other work is unresolved. The retained evidence is in `.spacedock-evidence/v8pcpdmrdf-local-codex`.
