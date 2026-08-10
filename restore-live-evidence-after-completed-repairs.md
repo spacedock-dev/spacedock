@@ -6,7 +6,7 @@ started: 2026-08-09T18:34:33Z
 completed:
 verdict:
 score: 0.9
-worktree:
+worktree: .worktrees/spacedock-ensign-restore-live-evidence-after-completed-repairs
 issue:
 pr:
 mod-block:
