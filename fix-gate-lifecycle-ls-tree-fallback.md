@@ -197,8 +197,8 @@ The split-root correction preserves the approved one-file implementation and exi
 - DONE: The change preserves both-root intended source selection while excluding unrelated and uncommitted inputs, without changing supplied paths or gate authority.
   A temporary Git fixture returned only committed `intended/review.md` and `intended/nested/reference.markdown`; removing `HEAD` or the `intended` fence would admit the staged-only or unrelated controls.
 - FAILED: The candidate stays within the one-file +10/-2 tolerance and passes applicable focused, full, race, formatting, and diff checks; no new test infrastructure is added.
-  The candidate is one file at +2/-2 with no tests added; focused and focused-race checks passed, but full `go test ./...` exhausted the shared temp volume and failed with `no space left on device` before the full race command could run.
+  `gofmt -w ./cmd ./internal`, a clean rerun of `go test ./...`, and `git diff --check` passed with the one-file +2/-2 candidate unchanged; `go test ./... -race` failed when `internal/cli` and `internal/ensigncycle` reached the 10-minute package timeout, so this item remains incomplete.
 
 ### Summary
 
-The gate-lifecycle fallback now supplies one committed, recursive, Markdown-filtered and intended-path-fenced tree query for each applicable retained root while leaving supplied paths unchanged. Commit `81e1dbdfe` is ready for independent validation; the existing Codex live journey remains the specified acceptance proof, and full-suite verification needs a temp volume with sufficient free space.
+The gate-lifecycle fallback now supplies one committed, recursive, Markdown-filtered and intended-path-fenced tree query for each applicable retained root while leaving supplied paths unchanged. Product commit `81e1dbdfe` remains byte-clean; the non-race suite is green after cache reclamation, while the required full race suite still needs completion beyond its current 10-minute package timeout.
