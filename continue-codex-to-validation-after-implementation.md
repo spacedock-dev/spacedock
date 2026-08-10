@@ -7,6 +7,29 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-evidence
 id: v8pcpdmrdfmq7emm65cjdc4p
+gates:
+    version: 1
+    records:
+        - id: gate:v8pcpdmrdfmq7emm65cjdc4p:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:v8pcpdmrdfmq7emm65cjdc4p-backlog-1
+              briefing:
+                id: briefing:v8pcpdmrdfmq7emm65cjdc4p:backlog:attempt-1:revision-1
+                digest: sha256:ceb846a40def6bfd03d0986cab331263c5349ac078c6bbf35ca24de60708f1f0
+                request-digest: sha256:0f8fe2d8e42b2052f020580ef332395f4710b57d3aa288cf7b380258df269c65
+                room-ref: ./continue-codex-to-validation-after-implementation/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v8pcpdmrdfmq7emm65cjdc4p:backlog:1
+                briefing: briefing:v8pcpdmrdfmq7emm65cjdc4p:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T19:01:54.942236Z"
+                decision: approve
+                reason: Captain directed immediate ideation for the exact Codex auto-continue product repair.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 ## Problem
 
