@@ -1,6 +1,6 @@
 ---
 title: Make gate presentations stage-specific and omit empty result classes
-status: validation
+status: done
 id: krbaeb3resfpbh1qvnb65krf
 score: 0.8
 source: "Captain feedback on 2026-08-08 after repeated gate reviews rendered FAILED: None."
@@ -8,11 +8,11 @@ issue:
 sprint: durable-decisions
 sprint-readiness: ready
 started: 2026-08-09T14:51:39Z
-completed:
-verdict:
+completed: 2026-08-10T18:07:31Z
+verdict: PASSED
 worktree: .worktrees/spacedock-ensign-make-gate-presentations-stage-specific
 pr: pr-merge:654
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -92,7 +92,8 @@ gates:
                 reason: Validation proves the Captain-corrected presentation override and meaningful fallback, empty-class omission, documentation alignment, and deterministic repository checks.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T18:07:31Z
 ---
 
 ## Outcome
