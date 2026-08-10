@@ -563,3 +563,25 @@ validation/1 room and an invalid current validation/2 summary.
 
 The end-user value does not change. Codex completes the correction, publishes
 validation/2, prepares one fresh unresolved gate, and stops.
+
+## Implementation Finding: Gate Artifact Location
+
+The unbound run used candidate
+`4c1bc36e44df8638a466e6ade42a72f6955a4341`. Codex completed both validation
+rounds and prepared one open gate. It placed `gate-review.md` inside the
+immutable validation/2 advisory room. The strict oracle correctly rejected the
+extra room file.
+
+The First Officer classified this finding as Material and owned by this task.
+The authorized correction replaces one existing line in each product file:
+
+- `skills/feedback-rejection-flow/SKILL.md`
+- `skills/first-officer/references/codex-first-officer-runtime.md`
+
+The estimate is two additions and two deletions. The net change is zero. The
+full candidate stays at the approved 91-line net limit and adds no file.
+
+The lines require the gate-review artifact to stay outside every
+`review/STAGE/round-CYCLE` advisory room. The oracle continues to reject any
+extra file in an immutable round room. The end-user value remains one fresh
+open gate after a valid validation/2 publication.
