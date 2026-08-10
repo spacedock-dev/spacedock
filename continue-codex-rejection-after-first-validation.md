@@ -798,3 +798,25 @@ The validation recommendation is PASSED. No Material finding remains.
 
 The parser now accepts the exact Sonnet validation/1 result with two entries. The matching malformed result remains red.
 The correction changes no product instruction or binding. The full candidate remains within the approved seven-file and net +91 limits.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Rebase exact candidate d02dd14096bc7a5a87f1b8e3f8ae53399ee9f01a onto immutable origin/main 0bbe9d46c02328930253bfbe619f9827d6da5109.
+  Rebased candidate `47d39b624edbdb9590b9fbabf7c8c9dd27534989` has `0bbe9d46c02328930253bfbe619f9827d6da5109` as its merge base.
+- DONE: Stop on any conflict except the two known registry and binding files.
+  Conflicts occurred only in the registry file. The binding file merged automatically during the authorized commits.
+- DONE: Keep all current main Opus and Pi owners and current Sonnet rows.
+  The registry and binding checks accept the current main owners. The dvd Codex row is absent from both files.
+- DONE: Preserve every product and oracle byte from d02dd140.
+  The five product and oracle blob identifiers match `d02dd1409`. The two binding files contain the authorized semantic union.
+- DONE: Run focused parser, registry, owner, format, and diff checks only.
+  Parser checks passed in 0.630s. Registry and owner checks passed in 0.340s. Format and diff checks passed.
+- DONE: Do not repeat full, race, or live runs.
+  No full, race, or live run occurred after the rebase. The prior durable results remain applicable to unchanged behavior bytes.
+- DONE: Push the rebased exact head and update the Simplified-English report.
+  Local and remote code heads match `47d39b624edbdb9590b9fbabf7c8c9dd27534989`. The seven-file candidate remains +131/-40 and net +91.
+
+### Summary
+
+The rebased candidate keeps current main ownership and removes only the dvd Codex binding. All product and oracle bytes remain unchanged.
+The focused checks pass. The remote branch now identifies `47d39b624edbdb9590b9fbabf7c8c9dd27534989`.
