@@ -210,3 +210,17 @@ The retained live artifacts and the earlier disk-failure record remain unchanged
 
 The candidate recognizes the retained successful Codex command and rejects the basic negative controls. It also accepts one wrong-slug command.
 This material AC-3 defect blocks delivery. The First Officer must authorize the candidate correction before implementation changes occur.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Recognize the exact successful blessed Codex filing command while every manual, preview-plus-write, wrong-slug, failed, and narration-only control remains red.
+  Commit `90d41cad4` binds the requested slug to the positional token after `new`. The exact contextual wrong-slug control stays red.
+- DONE: Prove the repaired exact local Codex filing journey passes normally with retained artifacts.
+  The retained exact-command evidence remains at `/tmp/spacedock-codex-filing-implementation.Iskzdl`. The authorized correction changed no product bytes.
+- DONE: Keep the approved three-file, 105-gross evidence-only boundary and complete required offline checks.
+  The candidate remains three files and 105 gross lines. Focused controls, `go test ./...`, and `go test ./... -race` passed.
+
+### Summary
+
+The matcher now requires the requested slug immediately after direct and captured `new` forms. Later path text cannot satisfy the slug check.
+The live-runner file remains byte-identical to `95e7f715d`. The retained successful launcher-variable command still passes the focused control.
