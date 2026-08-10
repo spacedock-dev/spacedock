@@ -180,3 +180,16 @@ Tolerance is **±6 files and +250/−150 changed lines** because KD/824/D8 may l
 ### Summary
 
 Ideation turns F6C into a finite proof-hygiene cleanup: semantic prose-search dependencies fall from 16 groups to zero, while exact published help remains stable. The design also reconciles the self-syncing gate lifecycle, provider and eligibility cuts, pinned dispatch/recovery/conflict ownership, mergeability policy, canonical contract landing pass, and final documentation without adding behavior.
+
+## Stage Report: implementation
+
+- DONE: Reduce the 16 inventoried semantic prose-search proof groups to zero, retaining exact text only for deliberately published top-level and gate help.
+  Commit e481864e4 replaces KD body sentinels with decoded envelopes and bounded sections; 824/D8 prompt and provider-event prose with typed dispatch, parsed report, exact scope input, and Git outcomes; A7's prose oracle is deleted; BV/SK JSON is decoded structurally. Removing any owned fetch/checklist/scope field, selected dispatch shape, standalone worker marker, report entry, clean path-scoped commit, or readiness value now fails its focused test, while equivalent narration changes do not.
+- DONE: Reconcile help, canonical lifecycle, docs, and First Officer guidance with the final landed 0.27.0 behavior without changing command grammar, stored state, authority, or runtime behavior.
+  Top-level and gate help publish all five retained verbs; the canonical Mermaid, concept/reference pages, roadmap journeys, and runtime proof registry describe prepare's one explicit commit and record/consume self-sync. The contract contains no sprint aliases or owner labels; `mods/pr-merge.md`, recovery mode selection, stamped owner handoff, ready-gate ordering, and split-root sync guidance already matched the final surface and required zero churn.
+- DONE: Stay within the approved finite cleanup surface and explicit cuts; run focused behavior controls, formatting, diff checks, full tests, and race tests with exact files/LOC reported.
+  The final surface is 23 files / 770 changed lines (275 additions, 495 deletions), exactly the declared upper LOC tolerance and within the 18-40-file tolerance; only `internal/cli/help.go` changes production Go. `gofmt -w ./cmd ./internal`, focused package controls, `go test ./...`, `go test ./... -race`, `git diff --check`, exact help execution, and a rendered 28,651-byte Mermaid SVG all pass.
+
+### Summary
+
+Implementation removes every inventoried prose-dependent semantic oracle and keeps only the deliberately published help text exact. Commit e481864e4 reconciles the self-syncing v1 lifecycle and operational guidance without changing command grammar, stored authority, or runtime behavior; full and race suites are green.
