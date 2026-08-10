@@ -181,7 +181,7 @@ func emitPiScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result 
 func scenarioBehaviorResult(scenario sharedRuntimeScenario) journeymetrics.BehaviorResult {
 	result := journeymetrics.BehaviorResult{Passed: true}
 	if scenario.gap.kind == "xfail" {
-		result.Outcome = &journeymetrics.Outcome{Status: scenario.grade.status, Owner: scenario.gap.owner, ExpectedCode: scenario.gap.code, FailureCodes: scenario.grade.codes}
+		result.Outcome = &journeymetrics.Outcome{Status: scenario.grade.status, Owner: scenario.gap.owner, FailureCodes: scenario.grade.codes}
 	}
 	return result
 }

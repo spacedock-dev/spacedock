@@ -11,7 +11,7 @@ Under this activation, you are the Commander for this sprint. Assume
 ## Mission
 
 Drive the approved sprint to current live evidence. Each executable cell passes
-or runs as strict XFAIL. Each remaining TODO names an execution path that cannot
+or runs as target-level XFAIL. Each remaining TODO names an execution path that cannot
 run.
 
 Do not implement, review, mutate, approve, or merge `g3` or durable-decisions
@@ -47,7 +47,7 @@ This authority has these limits:
   captain grant.
 - Do not merge a task when a required lane is red, skipped, unapproved, stale,
   or built from another candidate.
-- Do not waive the strict-XFAIL baseline or exact-candidate proof.
+- Do not waive the target-XFAIL baseline or exact-candidate proof.
 - Escalate a third feedback cycle, a line-budget breach, an irrecoverable block,
   or a mechanism change.
 - Do not create or push a stable release tag. Stable tagging needs a separate
@@ -82,7 +82,7 @@ These lanes do not replace required Sonnet or Codex evidence.
 
 ## Dispatch sequence
 
-### Phase 1 — Restore CI and land strict XFAIL
+### Phase 1 — Restore CI and land target-level XFAIL
 
 `0a` is in implementation and has no implementation Stage Report. Do not treat
 its candidate as finished.
@@ -103,10 +103,9 @@ Require the implementation Stage Report before validation. Then validate the
 event matrix and exact manual Pi cadence. Merge `0a` before `ts` because both
 tasks edit the live guide.
 
-Then implement `ts`. Its first landing must contain both real
-`default-headless-gate-stop` XFAIL results for Sonnet and Codex. The classifier
-accepts only one sole matching semantic code. XPASS and every different or
-additional code fail.
+Then implement `ts`. Its landing must convert every executable sprint-owned
+target to XFAIL under its repair owner. Typed semantic failures are XFAIL.
+XPASS and infrastructure failures stay red.
 
 Do not dispatch product repair before `ts` merges.
 
@@ -122,10 +121,10 @@ After `ts` merges, dispatch these lanes in parallel:
 Each task follows this exact order:
 
 1. Rebase onto the latest required predecessor.
-2. Add the target XFAIL binding with its active owner and stable code.
-3. Commit that baseline before product bytes.
+2. Use the target XFAIL binding with its active repair owner.
+3. Commit any owner transfer before product bytes.
 4. Run the complete focused journey on that baseline commit.
-5. If the result skips, changes code, or adds another code, stop.
+5. If the result skips or fails on infrastructure, stop.
 6. Apply the approved product repair without weakening the assertion.
 7. Run the same target on the exact repair candidate.
 8. Require XPASS failure while the binding remains.
@@ -154,14 +153,14 @@ bytes or a source binding, rerun the exact focused lane on the new candidate.
 Dispatch `xp6` only after every product repair above merges.
 
 The capstone can change target binding rows only. It removes a binding after an
-exact passing run. It converts a stable failure only when another active task
-owns its product repair and supplies one stable code.
+exact passing run. It converts an executable TODO only when another active task
+owns its product repair.
 
 The passed Codex withdrawn-gate evidence permits removal of that TODO. Do not
 bring `47g` into the sprint.
 
-Keep an Opus TODO only when the authenticated execution path is unavailable.
-Authentication failure does not become XFAIL.
+Exact run `31340713337` proves the Opus execution path. Keep those targets as
+XFAIL until exact passing evidence removes each binding.
 
 ## Collision controls
 

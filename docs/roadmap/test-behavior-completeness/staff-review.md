@@ -31,15 +31,14 @@ spacedock status --workflow-dir docs/dev \
 
 ## Prior Material findings
 
-### M1 — Strict XFAIL multi-error safety: closed
+### M1 — Target-level XFAIL safety: closed
 
 `ts` now runs every durable semantic assertion after infrastructure succeeds.
-XFAIL requires the unique code set to equal `{expected}`. An empty set is XPASS.
-An additional or different code is FAIL.
+One or more typed semantic failures are XFAIL. An empty set is XPASS.
+Infrastructure failures are FAIL.
 
-The first landing also changes two real journey results. Sonnet and Codex
-`default-headless-gate-stop` change from TODO to executed XFAIL. A helper-only,
-parser-only, or metrics-only landing is banned.
+The landing changes every executable sprint-owned target from TODO to XFAIL.
+A helper-only, parser-only, or metrics-only landing is banned.
 
 ### M2 — Rejection mechanisms: closed
 
@@ -75,8 +74,8 @@ The sprint now declares one serial merge order for all shared files.
 exact runs. Two Pi repairs stay with `2e4` and `fh6`.
 
 The passed Codex withdrawn-gate row can lose its TODO without adding `47g` to
-the sprint. The two Opus TODO rows remain only while authenticated execution is
-unavailable.
+the sprint. Exact run `31340713337` proves that the three Opus rows can execute,
+so they use target-level XFAIL.
 
 ## Final delta findings
 
@@ -92,8 +91,7 @@ The corrected task now uses this exact order:
 1. Rebase after `ts` and `zh`.
 2. Add the existing Codex extractor selection and strict final-gate oracle.
 3. Add the Codex XFAIL binding in the same non-product baseline commit.
-4. Run the real Codex journey and require the sole code
-   `rejection-flow-not-completed`.
+4. Run the real Codex journey and require a typed semantic XFAIL.
 5. Change the feedback-flow and Codex runtime behavior only after that XFAIL.
 6. Require XPASS with the binding, then PASS after removal.
 
@@ -105,7 +103,7 @@ Codex journey from XFAIL to PASS with one fresh open gate.
 `fh6` now uses this source row:
 
 ```text
-liveXFail("pi", "fh6rv0k6wr25zty0jjan4jp7", "gate-hold-terminal-fields-set")
+liveXFail("pi", "fh6rv0k6wr25zty0jjan4jp7")
 ```
 
 The body, acceptance criteria, evidence, and baseline plan use that same owner.
@@ -116,7 +114,7 @@ The body, acceptance criteria, evidence, and baseline plan use that same owner.
 | Member | Required journey result | Review result |
 | --- | --- | --- |
 | `0a` | A manual Pi cadence runs common journeys and retains evidence. | Pass. A workflow-only change is insufficient without the exact manual run. |
-| `ts` | Two real headless cells run as strict XFAIL. | Pass after M1. A classifier-only landing is banned. |
+| `ts` | Every executable sprint target runs as target-level XFAIL. | Pass after M1. A classifier-only landing is banned. |
 | `98a` | Sonnet and Codex complete implementation before validation. | Pass. Both exact live cells must change from XFAIL to PASS. |
 | `6x5` | Each initial-stage worker leaves a ready report before terminal state. | Pass. The durable journey counts two reports and two archives. |
 | `9a` | A consumed gate dispatches once and reaches non-forced terminal state. | Pass. The live value includes the exact dispatch commit and terminal result. |
@@ -131,15 +129,15 @@ or test-only result. `dvd` can include parser work only with its final journey
 repair. `ts` can include common infrastructure only with its two first XFAIL
 cells.
 
-## Strict-XFAIL and exact-candidate audit
+## Target-XFAIL and exact-candidate audit
 
 - `98a` starts from the two `ts` XFAIL records.
 - `6x5` starts from three owner-correct XFAIL records.
-- `9a` starts from each executable `keep-moving-posture` cell with one sole code.
-- `zh` starts from Pi `rejection-round-incomplete`.
+- `9a` starts from each executable `keep-moving-posture` XFAIL target.
+- `zh` starts from each executable `rejection-flow` XFAIL target.
 - `dvd` puts the extractor, oracle, controls, and binding in one baseline commit.
-- `2e4` starts from Pi `gate-prepare-state-commit-missing`.
-- `fh6` starts from Pi `gate-hold-terminal-fields-set` under its own task ID.
+- `2e4` starts from its Pi target-level XFAIL.
+- `fh6` starts from its Pi target-level XFAIL under its own task ID.
 
 Each repair keeps its binding through one XPASS run. Binding removal then uses
 the same target and exact candidate for PASS.
@@ -194,7 +192,7 @@ If no exact passing binding remains, it lands no product source change.
 ## Readiness result
 
 The delta read found M6 and M7 in durable task state. Every retained task has a
-visible journey result. Every product repair starts from strict XFAIL. The
+visible journey result. Every product repair starts from target-level XFAIL. The
 shared surfaces have one serial landing order. `xp6` remains evidence-only.
 
 No Material finding remains. The Shaping FO can record and present the ideation

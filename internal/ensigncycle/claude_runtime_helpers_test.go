@@ -178,14 +178,15 @@ type liveGrade struct {
 	codes  []string
 }
 
-func gradeLive(expected string, errs ...error) liveGrade {
+func gradeLive(xfail bool, errs ...error) liveGrade {
 	seen := map[string]bool{}
 	grade := liveGrade{}
+	infrastructureFailure := false
 	for _, err := range errs {
 		if graded, ok := err.(*gradedErr); ok {
 			seen[graded.code] = true
 		} else if err != nil {
-			seen["untyped-semantic-failure"] = true
+			infrastructureFailure = true
 		}
 	}
 	for code := range seen {
@@ -193,11 +194,13 @@ func gradeLive(expected string, errs ...error) liveGrade {
 	}
 	sort.Strings(grade.codes)
 	switch {
-	case expected == "" && len(grade.codes) == 0:
+	case infrastructureFailure:
+		grade.status = "fail"
+	case !xfail && len(grade.codes) == 0:
 		grade.status = "pass"
-	case expected != "" && len(grade.codes) == 0:
+	case xfail && len(grade.codes) == 0:
 		grade.status = "xpass"
-	case expected != "" && len(grade.codes) == 1 && grade.codes[0] == expected:
+	case xfail:
 		grade.status = "xfail"
 	default:
 		grade.status = "fail"

@@ -27,7 +27,7 @@ type actualLiveJourney struct {
 	gaps                                   []liveGapRow
 }
 
-type liveGapRow struct{ kind, target, owner, code string }
+type liveGapRow struct{ kind, target, owner string }
 
 var (
 	registryHeading, registryEntry = regexp.MustCompile("^### `([^`]+)`$"), regexp.MustCompile("^- \\*\\*Entry point:\\*\\* `([^`]+)`$")
@@ -48,9 +48,20 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	targets := readRegistryTargets(t, registryPath)
 	registryFixtures := readRegistryFixtureUnion(t, registryPath)
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
-	wantHeadless := []liveGapRow{{"xfail", "claude-sonnet", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched"}, {"todo", "codex", "98aa776adg66gn823a8gamdq", ""}, {"todo", "pi", "xp6c9qfe7y4wwp46enc3f85n", ""}}
-	if !reflect.DeepEqual(actual["default-headless-gate-stop"].gaps, wantHeadless) {
-		t.Errorf("default-headless-gate-stop gaps = %#v, want %#v", actual["default-headless-gate-stop"].gaps, wantHeadless)
+	wantGaps := map[string][]liveGapRow{
+		"gate-guardrail":                {{"xfail", "codex", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "pi", "2e4fe65gy9vcr4xck6akzmdd"}},
+		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "98aa776adg66gn823a8gamdq"}, {"xfail", "codex", "98aa776adg66gn823a8gamdq"}, {"xfail", "pi", "fh6rv0k6wr25zty0jjan4jp7"}},
+		"withdrawn-gate-recovery":       nil,
+		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}},
+		"rejection-flow":                {{"xfail", "claude-sonnet", "zhcb4bcz1qgcn7ajx2ctxpxk"}, {"xfail", "claude-opus", "zhcb4bcz1qgcn7ajx2ctxpxk"}, {"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "zhcb4bcz1qgcn7ajx2ctxpxk"}},
+		"smallest-sufficient-mechanism": {{"xfail", "claude-sonnet", "6x50qafc8566zc6p1qpb6y30"}, {"xfail", "codex", "6x50qafc8566zc6p1qpb6y30"}, {"xfail", "pi", "6x50qafc8566zc6p1qpb6y30"}},
+		"keep-moving-posture":           {{"xfail", "claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"}, {"xfail", "codex", "9adv48yhye5s2vkhwd7ge52d"}, {"xfail", "pi", "9adv48yhye5s2vkhwd7ge52d"}},
+		"owned-conflict-owner-handoff":  {{"xfail", "claude-sonnet", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "pi", "xp6c9qfe7y4wwp46enc3f85n"}},
+	}
+	for id, want := range wantGaps {
+		if !reflect.DeepEqual(actual[id].gaps, want) {
+			t.Errorf("%s gaps = %#v, want %#v", id, actual[id].gaps, want)
+		}
 	}
 	if len(desired) != len(actual) {
 		t.Errorf("common live registry/source counts = %d/%d", len(desired), len(actual))
@@ -390,7 +401,7 @@ func parseLiveGap(expr ast.Expr, targets map[string]bool) (liveGapRow, error) {
 		return liveGapRow{}, fmt.Errorf("gap element must be liveTODO or liveXFail")
 	}
 	kind := strings.TrimPrefix(exprName(call.Fun), "live")
-	wantArgs := map[string]int{"TODO": 2, "XFail": 3}[kind]
+	wantArgs := map[string]int{"TODO": 2, "XFail": 2}[kind]
 	if wantArgs == 0 || len(call.Args) != wantArgs {
 		return liveGapRow{}, fmt.Errorf("malformed live%s", kind)
 	}
@@ -402,25 +413,21 @@ func parseLiveGap(expr ast.Expr, targets map[string]bool) (liveGapRow, error) {
 		}
 		values[i], _ = strconv.Unquote(literal.Value)
 	}
-	if !targets[values[0]] || !ownerID.MatchString(values[1]) || (kind == "XFail" && values[2] == "") {
+	if !targets[values[0]] || !ownerID.MatchString(values[1]) {
 		return liveGapRow{}, fmt.Errorf("malformed live%s binding", kind)
 	}
-	code := ""
-	if kind == "XFail" {
-		code = values[2]
-	}
-	return liveGapRow{strings.ToLower(kind), values[0], values[1], code}, nil
+	return liveGapRow{strings.ToLower(kind), values[0], values[1]}, nil
 }
 
 func TestRuntimeLiveGapBindingValidation(t *testing.T) {
 	targets := map[string]bool{"codex": true}
 	for source, valid := range map[string]bool{
-		`liveTODO("codex", "98aa776adg66gn823a8gamdq")`:                                            true,
-		`liveXFail("codex", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched")`:   true,
-		`liveTODO("codex", "98aa776adg66gn823a8gamdq", "code")`:                                    false,
-		`liveXFail("codex", "bad-owner", "implementation-worker-not-dispatched")`:                  false,
-		`liveXFail("unknown", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched")`: false,
-		`liveXFail("codex", "98aa776adg66gn823a8gamdq", "")`:                                       false,
+		`liveTODO("codex", "98aa776adg66gn823a8gamdq")`:                                          true,
+		`liveXFail("codex", "98aa776adg66gn823a8gamdq")`:                                         true,
+		`liveTODO("codex", "98aa776adg66gn823a8gamdq", "code")`:                                  false,
+		`liveXFail("codex", "bad-owner")`:                                                        false,
+		`liveXFail("unknown", "98aa776adg66gn823a8gamdq")`:                                       false,
+		`liveXFail("codex", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched")`: false,
 	} {
 		expr, err := parser.ParseExpr(source)
 		if err != nil {

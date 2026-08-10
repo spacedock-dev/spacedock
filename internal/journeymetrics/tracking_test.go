@@ -86,13 +86,12 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 	}
 }
 
-func TestBuildRecordRoundTripsStrictOutcomes(t *testing.T) {
-	expected := "implementation-worker-not-dispatched"
+func TestBuildRecordRoundTripsTargetOutcomes(t *testing.T) {
 	for _, outcome := range []Outcome{
 		{Status: "pass"},
-		{Status: "xfail", Owner: "98aa776adg66gn823a8gamdq", ExpectedCode: expected, FailureCodes: []string{expected}},
-		{Status: "xpass", Owner: "98aa776adg66gn823a8gamdq", ExpectedCode: expected},
-		{Status: "fail", Owner: "98aa776adg66gn823a8gamdq", ExpectedCode: expected, FailureCodes: []string{expected, "gate-not-held"}},
+		{Status: "xfail", Owner: "98aa776adg66gn823a8gamdq", FailureCodes: []string{"gate-hold-violation"}},
+		{Status: "xpass", Owner: "98aa776adg66gn823a8gamdq"},
+		{Status: "fail", Owner: "98aa776adg66gn823a8gamdq"},
 	} {
 		record := BuildRecord(JourneySpec{ScenarioID: "strict"}, BehaviorResult{Outcome: &outcome}, Observation{})
 		data, err := json.Marshal(record)

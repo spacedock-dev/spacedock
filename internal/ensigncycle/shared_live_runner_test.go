@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-type liveJourneyGap struct{ kind, target, owner, code string }
+type liveJourneyGap struct{ kind, target, owner string }
 type sharedRuntimeScenario struct {
 	name  string
 	gap   liveJourneyGap
@@ -20,8 +20,8 @@ func liveTODO(target, owner string) liveJourneyGap {
 	return liveJourneyGap{kind: "todo", target: target, owner: owner}
 }
 
-func liveXFail(target, owner, code string) liveJourneyGap {
-	return liveJourneyGap{kind: "xfail", target: target, owner: owner, code: code}
+func liveXFail(target, owner string) liveJourneyGap {
+	return liveJourneyGap{kind: "xfail", target: target, owner: owner}
 }
 
 func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, builder Builder, gaps []liveJourneyGap, exercise func(*testing.T, liveDriver, sharedRuntimeScenario, Builder, Assertion), assertion Assertion) {
@@ -102,27 +102,27 @@ func TestLiveCommonFullEnsignCycle(t *testing.T) {
 
 //spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
 func TestLiveCommonGateGuardrail(t *testing.T) {
-	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyGap{liveTODO("codex", "xp6c9qfe7y4wwp46enc3f85n"), liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, []liveJourneyGap{liveXFail("codex", "xp6c9qfe7y4wwp46enc3f85n"), liveXFail("pi", "2e4fe65gy9vcr4xck6akzmdd")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched"), liveTODO("codex", "98aa776adg66gn823a8gamdq"), liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "98aa776adg66gn823a8gamdq"), liveXFail("codex", "98aa776adg66gn823a8gamdq"), liveXFail("pi", "fh6rv0k6wr25zty0jjan4jp7")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
 func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
-	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, []liveJourneyGap{liveTODO("codex", "47gnqfm1ft6f2hcahz98m2jv")}, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, nil, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
 }
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
 func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
-	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyGap{liveTODO("claude-opus", "xp6c9qfe7y4wwp46enc3f85n")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
+	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyGap{liveXFail("claude-opus", "xp6c9qfe7y4wwp46enc3f85n")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
 }
 
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveTODO("claude-sonnet", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("claude-opus", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("codex", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveTODO("pi", "zhcb4bcz1qgcn7ajx2ctxpxk")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveXFail("claude-opus", "zhcb4bcz1qgcn7ajx2ctxpxk"), liveXFail("codex", "dvddbpsf4tdt3yjw1yjyp14k"), liveXFail("pi", "zhcb4bcz1qgcn7ajx2ctxpxk")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
 //spacedock:live-journey id=feedback-3-cycle-escalation fixture=rejection/before-validation-3
@@ -162,12 +162,12 @@ func TestLiveCommonSelfEvidenceMergeTriage(t *testing.T) {
 
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
-	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveTODO("claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("codex", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("pi", "9adv48yhye5s2vkhwd7ge52d")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "6x50qafc8566zc6p1qpb6y30"), liveXFail("codex", "6x50qafc8566zc6p1qpb6y30"), liveXFail("pi", "6x50qafc8566zc6p1qpb6y30")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveTODO("claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("codex", "9adv48yhye5s2vkhwd7ge52d"), liveTODO("pi", "9adv48yhye5s2vkhwd7ge52d")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"), liveXFail("codex", "9adv48yhye5s2vkhwd7ge52d"), liveXFail("pi", "9adv48yhye5s2vkhwd7ge52d")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 //spacedock:live-journey id=ac-value-reanchor fixture=ac-reanchor/means-pass-value-regressed
@@ -177,5 +177,5 @@ func TestLiveCommonACValueReanchor(t *testing.T) {
 
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveTODO("claude-sonnet", "xp6c9qfe7y4wwp46enc3f85n"), liveTODO("claude-opus", "xp6c9qfe7y4wwp46enc3f85n"), liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-sonnet", "xp6c9qfe7y4wwp46enc3f85n"), liveXFail("claude-opus", "xp6c9qfe7y4wwp46enc3f85n"), liveXFail("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
