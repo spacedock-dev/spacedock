@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f6cvn0s87ywbs158yy0b5q7k:validation:attempt-1:revision-1",
+  "question": "Approve the validated F6C cleanup for PR and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:f6cvn0s87ywbs158yy0b5q7k:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3f3e26b942b446748ca794991d8b6b1d24192926/polish-v1-gate-command-surface/index.md",
+      "rev": "sha256:5ad96ece03f853fe766b5a3f5810b78fc624f65fec8a630a0caa3ae04f853aa2",
+      "mediaType": "text/markdown",
+      "summary": "The candidate removes all 11 semantic prose-search proof dependencies in the finite inventory, retains exact published help, reconciles lifecycle documentation, and passes focused, full, race, diff, help, and render verification."
+    }
+  ]
+}

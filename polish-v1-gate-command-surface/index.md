@@ -54,6 +54,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:f6cvn0s87ywbs158yy0b5q7k:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:f6cvn0s87ywbs158yy0b5q7k-validation-1
+              briefing:
+                id: briefing:f6cvn0s87ywbs158yy0b5q7k:validation:attempt-1:revision-1
+                digest: sha256:57157057f0b460b56b1bb2bdc4ddb8c65716454726312e2b2474c94693afb781
+                request-digest: sha256:4b5c1b80f5df0b812e816945087f5cc1c78e39754d85165a6b8e4c614bd1a69b
+                room-ref: ./review/validation/briefing-1
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. Remove sprint-added tests that infer behavior by searching free-form command, prompt, document, or transcript prose. Exact text remains asserted only for deliberately published human-facing help.
