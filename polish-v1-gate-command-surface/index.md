@@ -63,6 +63,17 @@ gates:
                 digest: sha256:57157057f0b460b56b1bb2bdc4ddb8c65716454726312e2b2474c94693afb781
                 request-digest: sha256:4b5c1b80f5df0b812e816945087f5cc1c78e39754d85165a6b8e4c614bd1a69b
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f6cvn0s87ywbs158yy0b5q7k:validation:1
+                briefing: briefing:f6cvn0s87ywbs158yy0b5q7k:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T21:12:34.883305Z"
+                decision: approve
+                reason: Validation proves all 11 semantic prose-search dependencies in the finite 15-row inventory are removed or replaced, all five acceptance criteria have evidence, and the full required verification is green.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. Remove sprint-added tests that infer behavior by searching free-form command, prompt, document, or transcript prose. Exact text remains asserted only for deliberately published human-facing help.
