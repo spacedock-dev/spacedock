@@ -354,6 +354,8 @@ stages:
 
 {One paragraph expanding on the mission, describing what this workflow processes and why.}
 
+For every gated stage, add `- **Gate content:**` to its stage subsection and state the evidence needed for that decision. This rule also applies to custom stages and template variants.
+
 ## File Naming
 
 Each {entity_label} lives as either:

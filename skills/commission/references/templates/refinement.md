@@ -64,6 +64,8 @@ The artifact is produced or revised — every time it enters the loop, including
 
 A reviewer reads the whole draft and makes a clear accept/reject decision behind an approval gate: gate-approval to `polish`, or rejection back to `draft` with specific, actionable notes.
 
+- **Gate content:** Show the review decision, non-empty actionable findings, and whether approval advances to polish or rejection returns to draft.
+
 ### `polish`
 
 Final cleanup before the artifact is locked — formatting, copy edits, last-pass consistency. Cosmetic only; preserves the substance the reviewer accepted and reopens nothing structural.

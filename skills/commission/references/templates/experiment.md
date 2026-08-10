@@ -91,9 +91,13 @@ Every experiment file has YAML frontmatter. Fields are documented below; see **E
 
 The experiment is being defined behind a captain-curated gate: a falsifiable hypothesis, the reproducible methodology that tests it, the success criteria fixed before any evidence is gathered, and the smoke pre-flight design.
 
+- **Gate content:** Show the falsifiable hypothesis, method, fixed success criteria, and smoke design needed to decide whether testing should start.
+
 ### `smoke`
 
 A genuinely cheap pre-flight (minutes, not days) that catches broken instrumentation or no-signal-at-all before the full run. Parked while it executes. Gate-approval to `run`, or rejection back to `hypothesis` to revise the methodology.
+
+- **Gate content:** Show the pre-flight result, instrumentation health, observed signal, and any blocker to the full run.
 
 ### `run`
 
@@ -102,6 +106,8 @@ The main execution, parked while evidence accumulates. Run the same methodology 
 ### `analysis`
 
 The run evidence is interpreted against the hypothesis's pre-fixed success criteria, behind a gate that distinguishes signal from noise without moving the goalposts. Gate-approval to `holdout` (verify out-of-sample), or rejection straight to `rejected`.
+
+- **Gate content:** Show actual results against fixed success criteria, uncertainty and limitations, and the recommendation to verify on holdout or reject.
 
 ### `holdout`
 

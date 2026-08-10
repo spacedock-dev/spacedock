@@ -9,5 +9,6 @@ emits rather than a hand-written approximation: it carries the
 
 Drive `skills/refit/SKILL.md` Phase 3b against `site-workflow/` and read the emitted
 README diff. Against a template that has gained content, the diff carries those content
-hunks; against a template that has not, it carries only the `commissioned-by:` stamp line.
+hunks, including the gated stages' `Gate content` instructions; against a template that
+has not, it carries only the `commissioned-by:` stamp line.
 That contrast is the observation the fixture exists for.

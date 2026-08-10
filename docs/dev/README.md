@@ -118,6 +118,7 @@ A task enters backlog when it is first proposed. It has a seed description but n
 - **Outputs:** A seed task file with title, source, brief description, acceptance criteria, and stage-specific test gates
 - **Good:** Clear enough to understand what the task is about and what proof future stages must provide
 - **Bad:** Mixing launcher, status, skill integration, and tracker work without a testable boundary
+- **Gate content:** Show the seed outcome, included and excluded scope, and the proof needed to decide whether design should start.
 
 ### `ideation`
 
@@ -143,6 +144,7 @@ A task moves to ideation when a pilot starts fleshing out the idea: clarify the 
 - **Good:** Clearly scoped, behavior-first, actionable, addresses a real need, considers edge cases, avoids unnecessary runtime-internal modeling, and uses tests that prove the intended behavior directly
 - **Bad:** Vague hand-waving, scope creep, solving problems that do not exist yet, no clear definition of done, acceptance criteria without a test plan, static prose tests for behavioral requirements, or tests that pass while missing the intended behavior
 - **Staff review:** When the FO assesses ideation as complex, such as native status parity, split-root behavior, or skill integration, it should request an independent review before presenting the ideation gate. The review's first question is **necessity, not coherence**: *should this mechanism exist at all* — is each mechanism the design introduces required by the value transaction itself, and could the same end be reached with less? A review pass that hardens a mechanism without challenging its existence is a coherence ratchet, not a review (lesson recorded: resolution-consume-terminal-before-delivery ideation cycle 1, where three coherence rounds hardened a wrong architecture — captain ruling 2026-08-01). Only after necessity comes soundness: design soundness, test plan sufficiency, gaps, and that the riskiest unverified mechanism was exercised first (or that the task records an auditable "no spike needed" with the proven mechanisms it relies on). A design whose soundness rests on an unexercised, unverified mechanism is not ready for the gate.
+- **Gate content:** Show the selected approach, risk evidence, expected files and lines with tolerance, semantic changes, and proposed proof for each acceptance criterion.
 
 ### `implementation`
 
@@ -185,6 +187,7 @@ A task moves to validation after implementation is complete. The work here is to
   - A PASSED/REJECTED recommendation, with deferred risks listed separately from material and polish findings.
 - **Good:** Thorough testing against acceptance criteria, clear evidence of pass/fail, honest assessment, and validation that tests prove the current intended behavior
 - **Bad:** Rubber-stamping without testing, ignoring failing edge cases, validating against wrong criteria, accepting passing tests that encode stale prose or obsolete assumptions, or accepting a string/substring/regex match over an instruction file (the contract, this README, a skill) as proof of a behavioral claim. A check whose expected value is just the text the implementer wrote into the file under test proves nothing — it cannot fail. Proof of behavior must run the behavior and observe output, exit code, or on-disk state; a static check counts only when it tests a real value against an independent source that can diverge from it, not as a spelling check over a file the model reads.
+- **Gate content:** Show non-empty Stage Report results, checks run, evidence for each acceptance criterion, reviewer findings under workflow labels, and whether delivery can proceed.
 - **Spot-check principle:** Before committing to an expensive live workflow or compatibility run, do a cheap fixture or single-command spot-check to verify the infrastructure works end-to-end.
 - **Detached adversarial audit:** for the high-stakes surfaces named in the Proof policy above, run (or dispatch) the audit on a throwaway checkout, never the implementation worktree, before merging. Routine, low-blast-radius changes do not need it, except that the AC-provenance trigger in the Proof policy applies to them too, on that AC alone. Findings enter `## Review-finding disposition` before candidate mutation or rerun; the First Officer owns any workflow-defined `### Feedback Cycles` entry, while the neutral round producer retains only canonical Briefing/log bytes. Note a clean audit in the gate's reviewer-findings block. Real catches on the record: #262 (two test-strength holes in `contract_gate_test.go`), `1x` and `external-tracker-checkpoint` AC-6 (self-referential ACs that can never fail), and `7h` AC-3 (a tag-cut that folded the release notes into the tag subject).
 
