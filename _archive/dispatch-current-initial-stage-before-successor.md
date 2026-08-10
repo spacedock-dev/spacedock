@@ -1,10 +1,10 @@
 ---
 title: Dispatch the current initial stage before its successor
-status: validation
+status: done
 source: "Recarved from 9adv48yhye5s2vkhwd7ge52d during test-behavior-completeness shaping, 2026-08-09"
 started: 2026-08-09T18:34:37Z
-completed:
-verdict:
+completed: 2026-08-10T15:42:00Z
+verdict: passed
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -76,7 +76,8 @@ gates:
                 reason: Captain conn accepts exact-green product evidence and retains the historical premature-merge defect.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T15:42:00Z
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
