@@ -224,3 +224,34 @@ This material AC-3 defect blocks delivery. The First Officer must authorize the 
 
 The matcher now requires the requested slug immediately after direct and captured `new` forms. Later path text cannot satisfy the slug check.
 The live-runner file remains byte-identical to `95e7f715d`. The retained successful launcher-variable command still passes the focused control.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Revalidate exact corrected filing head `90d41cad4de0863814674c359b5763bae8e21ca3`.
+  The clean local head and the remote branch resolve to the exact requested commit.
+- DONE: Inspect only the cap-neutral positional-slug correction and exact contextual wrong-slug negative.
+  The correction binds the slug directly after `new`. The contextual wrong-slug focused control passed.
+- DONE: Confirm candidate scope and remote identity.
+  The range changes three test files with 75 insertions and 30 deletions, for 105 gross lines.
+  Commit `90d41cad4` matches `origin/spacedock-ensign/recognize-codex-atomic-task-filing` with no local difference.
+- DONE: Confirm retained exact local Codex PASS evidence.
+  The retained metric reports PASS at `/tmp/spacedock-codex-filing-implementation.Iskzdl`.
+  The focused control also runs the exact artifact command assertion, which passed after the correction.
+- DONE: Confirm implementation-owned full and race evidence without reruns.
+  The implementation transcript records `go test ./...` PASS after the correction.
+  It also records `go test ./... -race` PASS after the correction.
+- DONE: Confirm no product, binding, registry, or Pi change.
+  The range changes only three `internal/ensigncycle` test files. The live-runner file is unchanged by the correction.
+- DONE: AC-1 and AC-2 evidence.
+  The retained live metric is green, and the exact launcher-variable artifact assertion passes at the corrected head.
+- DONE: AC-3 evidence.
+  The contextual wrong-slug command stays red. The correction binds exact slug identity to the positional argument.
+- DONE: AC-4 local evidence.
+  Retained full, race, format, registry, and active-owner results pass. Pi remains skipped.
+- DONE: Validation recommendation.
+  PASSED. No material finding or deferred risk remains in the inspected correction surface.
+
+### Summary
+
+The corrected matcher requires the requested slug in the correct command position. The exact successful Codex command still passes.
+The candidate remains within the approved three-file, 105-gross boundary. Validation recommends PASSED.
