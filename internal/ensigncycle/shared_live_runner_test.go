@@ -177,5 +177,5 @@ func TestLiveCommonACValueReanchor(t *testing.T) {
 
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-sonnet", "xp6c9qfe7y4wwp46enc3f85n"), liveXFail("claude-opus", "xp6c9qfe7y4wwp46enc3f85n"), liveXFail("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-opus", "xp6c9qfe7y4wwp46enc3f85n"), liveXFail("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
