@@ -76,6 +76,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:krbaeb3resfpbh1qvnb65krf-validation-2
+              briefing:
+                id: briefing:krbaeb3resfpbh1qvnb65krf:validation:attempt-2:revision-1
+                digest: sha256:b716bfaa876f9b1d6ae54992a1c0224a6cfb3ae483e6b7a0ae7c251b5cfe601b
+                request-digest: sha256:bb36c0ade5ef66ffbf5ae45163ed2b960e328f97172ec41a0b57d14993bf9f99
+                room-ref: ./review/validation/briefing-2
 ---
 
 ## Outcome

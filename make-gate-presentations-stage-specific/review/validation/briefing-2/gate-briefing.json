@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:krbaeb3resfpbh1qvnb65krf:validation:attempt-2:revision-1",
+  "question": "Approve the Captain-corrected KRB candidate for PR update and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:krbaeb3resfpbh1qvnb65krf:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/2fb337f4b604ad13c891e21b60df2ea2a9b682bc/make-gate-presentations-stage-specific/index.md",
+      "rev": "sha256:b9ae02c8179a8c7557c97d6d28af91612e0fd8475e27045454388e193b320db1",
+      "mediaType": "text/markdown",
+      "summary": "The candidate treats Gate content as a presentation override, provides a concise supported fallback, omits empty result classes, removes the brittle phrase oracle, and passes all required deterministic validation."
+    }
+  ]
+}
