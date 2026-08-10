@@ -16,15 +16,20 @@ The binary owns preparation, withdrawal, recording, and one-use consume; this sk
 
 **Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select a Markdown gate-review Artifact and References, author its concise summary, then commit selections. Supply judgment and paths; never author JSON, ids, digests, Git-root locators, or room coordinates. Paths use launch cwd.
 
+Run this sequence once and in this order:
+
 ```text
-${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
+1. ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
+2. ${SPACEDOCK_BIN:-spacedock} state commit ENTITY --workflow-dir WORKFLOW_DIR
+3. ${SPACEDOCK_BIN:-spacedock} status --read ENTITY --json --workflow-dir WORKFLOW_DIR
+4. Load spacedock:present-gate and present the reread gate once.
 ```
 
 Preflight one lifecycle surface: `prepare`, `withdraw`, `record`, `validate`, `consume`, and withdrawal's `--reason`. A nonzero command halts; surface its exact error and refresh or rebuild the version-gated bundle when unavailable. Never hand-edit `gates:` or replace binary-owned entity/room authority.
 
-Require emitted `room`, `briefing`, `digest`, `state=open`; never reconstruct the room. `«state.commit»(slug)` commits the binding. Load `spacedock:present-gate`, cross-check ACs, and present once after commit. No conn: ask and stop open. Explicit conn: presentation is notification; immediately record the delegated decision below.
+Require prepare to emit `room`, `briefing`, `digest`, and `state=open`. Prepare output is not presentation input. After commit, reread the same room and Briefing digest in open state. On nonzero commit or mismatch, stop. Until reread succeeds, never present, decide, consume, dispatch, withdraw, archive, or mutate status. Then cross-check ACs and present once. No conn: ask and stop open. Explicit conn: immediately record the delegated decision below.
 
-**Cold report candidate.** For one `needs-preparation` row, re-read the entity, latest exact-stage report/checklist, and its commit; this is structural only. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and zero prepare, mutation, presentation, idle, or repeat-next. Otherwise choose question, committed Markdown Artifact, summary, and References; invoke `gate prepare` once. Require `room`, `briefing`, `digest`, `state=open`; commit, re-read, and present the same-slug `awaiting-captain`. With a conn, immediately record and consume; never final after presentation. Nonzero/mismatch stops; no retry or `gate record --briefing`.
+**Cold report candidate.** Re-read the entity, latest exact-stage report/checklist, and commit. On insufficiency, stop with `report-incomplete: <concrete defect>` and no effect. Otherwise select the gate inputs and run the sequence above. Present the same-slug `awaiting-captain`. With a conn, immediately record and consume; never final after presentation. Never retry or use `gate record --briefing`.
 
 **Withdraw stale open authority.** If a prepared room is stale before the Captain decision, run:
 

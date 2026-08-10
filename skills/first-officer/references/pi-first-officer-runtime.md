@@ -12,6 +12,7 @@ This file defines how the shared first-officer core executes on Pi. The shared c
 - `«worker.shutdown»`: For `pi-subagents`, a completed child invocation needs no mailbox shutdown; mark the worker complete/closed in first-officer memory. For `pi-agent-teams`, map teardown to `member_shutdown` or `team_done` according to the active adapter lifecycle.
 - `«context-budget»`: ABSENT; its reuse condition is satisfied for Pi.
 - `«roster-reconcile»`: ABSENT; Pi relies on durable entity state and adapter-held worker identity, not a shared roster sweep.
+- `«gate.lifecycle»`: After `gate prepare` returns `state=open`, run `state commit` once. Then run `status --read` for the same entity. Reread the committed gate. Require the same room, Briefing digest, and open state. After this reread succeeds, load `spacedock:present-gate`. Then emit one captain-facing review block. If the commit fails, stop at the gate. If the reread has a mismatch, stop at the gate. A summary, child output, or second presentation cannot repair the run.
 
 The build artifact carries the entity slug/name, entity path, workflow directory, target stage, stage definition fetch command, worktree path when applicable, completion checklist, and completion-signal wording. It must not be replaced by a locally composed assignment. The model stamped through `«worker-identity»` is a Pi-native value used by `«reuse.model-match»`.
 
@@ -25,4 +26,4 @@ Live Pi tests should run with an isolated Pi config directory and an isolated se
 
 Ordinary Pi worker proof is durable-state based: dispatch a Pi ensign against a temp split-root workflow and verify process exit, state checkout file changes, git log, and stage report content.
 
-Recorded-gate presentation is the explicit exception. On Pi, the captain-facing review is one root-session assistant text block after the selected Briefing commit and before the decision mutation; shell output, tool results, child output, and later summaries do not qualify. Recorded-gate lifecycle proof combines that root event with the durable command, state, git, and successor-effect evidence.
+Recorded-gate presentation is the explicit exception. On Pi, the captain-facing review is one root-session assistant text block after the selected Briefing commit and reread, and before the decision mutation; shell output, tool results, child output, and later summaries do not qualify. Recorded-gate lifecycle proof combines that root event with the durable command, state, git, and successor-effect evidence.
