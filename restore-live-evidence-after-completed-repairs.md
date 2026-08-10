@@ -339,3 +339,48 @@ Opus TODOs until authenticated execution is available. xp6 removes the passed
   M3 is folded into the eight-cell matrix. Seven cells are ordinary xp6 targets. The eighth is the passed withdrawn-gate removal. It names `2e4fe65gy9vcr4xck6akzmdd` for the Pi gate-commit failure and `fh6rv0k6wr25zty0jjan4jp7` for the Pi headless-hold failure.
 - DONE: Give gross and net line estimates with product-repair routing outside this capstone.
   The binding-only estimate is about three additions and three deletions, net zero. No component-only or product-repair landing is allowed.
+
+## Stage Report: implementation
+
+- DONE: Read the task body and exact PR #662 artifacts 9071229649 and 9071279647 before mutation.
+  Archive `9071229649.zip` is `2eaa3a26d4d8b4bfb94d49aa76fa78deb7387c23fa38cde5a6a974b7f8a6d04d`.
+  Archive `9071279647.zip` is `42d26bbc94d5394de163df378f18a4a10339bc198bff4524a2af208b98059e7a`.
+- DONE: Confirm the exact current source binding and reconciliation rows for Sonnet smallest-sufficient-mechanism and Codex owned-conflict-owner-handoff.
+  Base `6027afca9` had neither named binding. Sonnet owner-handoff remained xp6-bound in source and reconciliation.
+- DONE: Use local subscription-backed Sonnet and Codex target runs before paid CI.
+  Sonnet stopped on expired OAuth. Codex owner-handoff passed unbound in 206.41 seconds. No paid CI ran.
+- DONE: Remove a binding only after exact target proof passes on the exact candidate.
+  Artifact `9071229649` records Sonnet owner-handoff XPASS in 299.48 seconds. The Captain accepted it for current head.
+- DONE: Preserve every Pi, Opus, n28, and product-repair byte.
+  Commit `975a07f2845e0c5ab2e62f281986ebb401a8f117` changes only the Sonnet binding and reconciliation rows.
+- DONE: Keep semantic failure, timeout, launch failure, and infrastructure failure visible and assigned.
+  Opus and Pi owner-handoff XFAIL rows remain. The unrelated Sonnet OAuth failure stays visible below.
+- DONE: Run focused registry and active-owner checks, gofmt, go test ./..., and go test ./... -race for any candidate edit.
+  Grade, registry, full, format, and post-rebase owner checks passed. The full race run had three load-sensitive timing failures.
+  The same three race tests passed in a focused rerun. The first race attempt failed only because the disk was full.
+- DONE: Retain exact commands, artifacts, SHA-256 evidence, candidate SHA, and all four finding fields in the implementation report.
+  The Evidence and Sonnet finding sections below retain these items.
+- DONE: Stop for First Officer disposition before any product repair or evidence-oracle surface beyond the approved task.
+  The Captain authorized only the Sonnet owner-handoff binding removal. No assertion or repair byte changed.
+
+### Evidence
+
+- Candidate SHA: `975a07f2845e0c5ab2e62f281986ebb401a8f117`, based on main `4dc83c0f897115e1696d42832f4b34d7d6f8e341`.
+- PR #662 Sonnet XPASS: `TestLiveCommonOwnedConflictOwnerHandoff` passed in 299.48 seconds with `observed=[]`.
+- Sonnet command: `env -u ANTHROPIC_API_KEY -u OPENAI_API_KEY SPACEDOCK_BIN="$PWD/spacedock" SPACEDOCK_REPO_ROOT="$PWD" SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/.spacedock-evidence/local-6027afca-sonnet" SPACEDOCK_LIVE_MODEL=claude-sonnet-5 SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 20m -run '^TestLiveCommonSmallestSufficientMechanism$' -parallel 1 ./internal/ensigncycle -v`.
+- Sonnet artifact: `claude-stream.jsonl`, SHA-256 `37502c0aa471ac9fd84783bdcbd4fd37b118bb85d9072c7ced05b5c5082156ca`.
+- Codex command: `env -u OPENAI_API_KEY -u SPACEDOCK_CODEX_LIVE_REQUIRED SPACEDOCK_BIN="$PWD/spacedock" SPACEDOCK_REPO_ROOT="$PWD" SPACEDOCK_LIVE_ARTIFACT_DIR="$PWD/.spacedock-evidence/local-6027afca-codex" SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonOwnedConflictOwnerHandoff$' ./internal/ensigncycle -v`.
+- Codex artifact: `codex-exec.jsonl`, SHA-256 `440021fc96578ffb045af7a3861266f1abeb535f57b31631f3bd895ca9621e84`.
+- Codex result: `codex-process-result.txt`, SHA-256 `f5a06780f018379ea5a1251f10e640605c2af73d2d3e188371fd1a2f251ea44d`.
+
+### Sonnet finding
+
+1. Released user and normal workflow: The exact local Sonnet target used the normal subscription-backed live runner.
+2. Observable harm: The runner stopped before FO work. It produced no new local evidence for the unrelated smallest-mechanism target.
+3. Affected boundary: `captain-ruling[2026-08-10]` requires authentication failure to stay visible and forbids CI fallback.
+4. Trigger evidence: The runner returned `Failed to authenticate: OAuth session expired and could not be refreshed` in 3.36 seconds.
+
+### Summary
+
+The candidate removes only the proven Sonnet owner-handoff XFAIL and its reconciliation row. Codex passed unbound on exact merged main.
+The accepted PR artifact supplies Sonnet XPASS proof. The candidate preserves all Opus, Pi, n28, assertion, and repair bytes.
