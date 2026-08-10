@@ -164,18 +164,23 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string, required ..
 		return fmt.Errorf("final gate selection does not identify exactly one rejection-task validation gate")
 	}
 	record := doc.Records[0]
-	if record.Stage != "validation" || len(record.Attempts) != 1 {
+	if record.Stage != "validation" || len(record.Attempts) == 0 {
 		return fmt.Errorf("selected validation gate does not contain exactly one attempt")
 	}
-	attempt := record.Attempts[0]
+	for _, earlier := range record.Attempts[:len(record.Attempts)-1] {
+		if earlier.Withdrawal == nil || earlier.ProviderEvidence != nil || earlier.Resolution != nil || earlier.Application != nil {
+			return fmt.Errorf("earlier validation gate attempt is not cleanly withdrawn")
+		}
+	}
+	attemptNumber, attempt := len(record.Attempts), record.Attempts[len(record.Attempts)-1]
 	if attempt.Briefing.ID == rejectionBriefingID {
 		return fmt.Errorf("validation/1 advisory round was retained as a gate attempt")
 	}
-	if attempt.ID != "gate-attempt:rejection-task-validation-1" ||
-		attempt.Briefing.ID != rejectionPreparedBriefingID {
+	if attempt.ID != fmt.Sprintf("gate-attempt:rejection-task-validation-%d", attemptNumber) ||
+		attempt.Briefing.ID != fmt.Sprintf("briefing:rejection-task:validation:attempt-%d:revision-1", attemptNumber) {
 		return fmt.Errorf("selected validation gate is not bound to the expected prepared Briefing")
 	}
-	if attempt.Resolution != nil || attempt.Application != nil {
+	if attempt.Withdrawal != nil || attempt.ProviderEvidence != nil || attempt.Resolution != nil || attempt.Application != nil {
 		return fmt.Errorf("final round-2 validation gate is not open")
 	}
 	if len(required) != 0 && required[0] {
@@ -353,6 +358,18 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		}
 	}
 	writeFile(t, entityPath, openGateEntity)
+	if _, err := gates.Withdraw(entityPath, gates.WithdrawInput{Reason: "replace premature validation gate", WorkflowDir: root}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := gates.Prepare(entityPath, gates.PrepareInput{WorkflowDir: root, Question: "Is the corrected candidate ready?", Artifact: gateReviewPath, Summary: "Ready for a decision."}); err != nil {
+		t.Fatal(err)
+	}
+	recoveredGateEntity := readFile(t, entityPath)
+	writeFile(t, entityPath, regexp.MustCompile(`(?m)^              withdrawal:\n(?:                .+\n){3}`).ReplaceAllString(recoveredGateEntity, ""))
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil || !strings.Contains(err.Error(), "not cleanly withdrawn") {
+		t.Fatalf("active prior-attempt control diagnostic = %v", err)
+	}
+	writeFile(t, entityPath, recoveredGateEntity)
 	round1Briefing := filepath.Join(filepath.Dir(entityPath), "review", "validation", "round-1", "briefing.json")
 	savedBriefing := readFile(t, round1Briefing)
 	for _, mutation := range []string{"", "malformed"} {
