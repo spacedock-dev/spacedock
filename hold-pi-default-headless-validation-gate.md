@@ -66,6 +66,17 @@ gates:
                 digest: sha256:8c9e8d5f92a86f120ff1e348a7ac5535f422d1a3934d868646e06c95212472ca
                 request-digest: sha256:5fdd0667d9e4e743518b35368c8512dee1b0b2d83054958825073286166ff414
                 room-ref: ./hold-pi-default-headless-validation-gate/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:fh6rv0k6wr25zty0jjan4jp7:validation:1
+                briefing: briefing:fh6rv0k6wr25zty0jjan4jp7:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-10T13:36:52.175873Z"
+                decision: approve
+                reason: Captain conn approves fh6 after independent PASSED validation and exact Pi XPASS-to-PASS evidence.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
