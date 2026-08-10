@@ -508,3 +508,18 @@ Pi remains an explicit XFAIL. The separate `dvd` task owns the Codex repair.
 PASSED. The Sonnet journey proves AC-1. The exact candidate preserves the Pi and Codex ownership seams for AC-2.
 
 The change reuses the current recorder and lifecycle for AC-3 and AC-4. The existing Pi evidence does not change this verdict.
+
+## Post-validation Rebase Identity
+
+- Exact main landing: `8832664ddbec8ac024c4e5251410d0422fa7ca04`
+- Superseded candidate: `c24e33a919ef18d7bf887d6e8512f95216673409`
+- Rebased candidate: `f8fa527e477a1275fc0c11b073099106297ceaa6`
+- Conflict scope: `internal/contractlint/live_registry_reconciliation_test.go` only
+- Registry result: Smallest-sufficient keeps only the `6x` Pi XFAIL.
+- Registry result: Rejection-flow keeps the `dvd` Codex XFAIL and the `zh` Pi XFAIL.
+- Preservation result: Every other registry row remains from the main landing.
+- Check result: Registry reconciliation and the active-owner join pass.
+- Hygiene result: `gofmt` and `git diff --check` pass.
+- Identity result: The remote head equals the rebased candidate, and the product worktree is clean.
+
+This rebase changes no product behavior. It preserves the approved validation result and updates its candidate identity.
