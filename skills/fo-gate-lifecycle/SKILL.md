@@ -14,7 +14,7 @@ The binary owns preparation, withdrawal, recording, and one-use consume; this sk
 
 **Boot projection.** Use `ready_gates` from `status --boot --identify --json`; retain `definition_dir`, `entity_dir`, slug, stage, and readiness. Engage `slug` through `status --read <slug> --json`, never `find` or broad search. `needs-preparation` needs report review; `awaiting-captain` is open; `withdrawn-awaiting-prepare` needs a successor; approved routes are unblocked. Malformed/ambiguous fails closed.
 
-**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select and commit a Markdown gate-review Artifact and References, then author the summary. When exact paths are absent, list committed Markdown candidates once with path-scoped `git -C ... ls-tree`, then read and use selected bytes once. Do not inspect harness logs, broad Git history, or worktree status for cleanliness owned by `gate prepare`. Supply judgment and launch-cwd paths; never author binary-owned JSON, ids, digests, Git-root locators, or room coordinates. Invoke the real command without a help/shape probe.
+**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select committed Markdown Artifact/References and author the summary. If paths are absent, list committed Markdown once with path-scoped `git -C ... ls-tree`; read and use selections once. Skip harness logs, broad Git history, worktree status, and help/shape probes. Supply judgment and launch-cwd paths; never author binary-owned JSON, ids, digests, Git-root locators, or room coordinates.
 
 Run this sequence once and in this order:
 
