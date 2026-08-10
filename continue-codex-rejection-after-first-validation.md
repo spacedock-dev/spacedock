@@ -929,3 +929,25 @@ The validation recommendation remains PASSED. No Material finding remains.
 
 The parser accepts both canonical validation/1 summary counts that the retained runs produced. All adjacent malformed or failed evidence remains red.
 The correction changes one test file. Fresh validation can now examine exact candidate `83de0c327ef70ed565af7eee7f7ba6def587afb4`.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Confirm the exact candidate, remote match, base, and clean worktree.
+  Local and remote heads match `83de0c32`. Main `2bbff4a8` is the merge base, and the worktree is clean.
+- DONE: Inspect the exact entries=2-or-4 correction and approved cap.
+  One test file changes by +6/-1. The full seven-file candidate is +137/-40, net +97.
+- DONE: Inspect retained Sonnet artifact 9079211737.
+  Validation/1 reports four canonical entries and `EXIT: 0`. The command uses the exact entity, round, paths, and workflow directory.
+- DONE: Confirm the malformed-round negative and adjacent parser controls.
+  The focused extractor test passed in 0.421s. Both count forms reject a malformed round, and all prior path and identity controls remain red.
+- DONE: Inspect implementation-owned full, race, registry, owner, binding, format, and diff evidence.
+  The report records normal and race completion in 267.856s and 380.916s. The focused contract, format, and diff checks passed.
+- DONE: Do not duplicate owned full, race, or live runs.
+  Validation ran only the focused extractor. No full, race, or live run occurred.
+- DONE: Confirm that no DVD-owned finding remains and write the recommendation.
+  PASSED: both retained canonical counts are accepted, malformed evidence stays red, and no Material finding remains.
+
+### Summary
+
+The exact candidate accepts the two canonical validation/1 summary counts observed in retained Sonnet runs. It preserves every product and binding byte.
+The validation recommendation is PASSED. No DVD-owned Material finding remains.
