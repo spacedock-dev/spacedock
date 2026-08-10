@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-1:revision-1",
+  "question": "Approve the validated Codex rejection-flow repair for PR delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4370272ba636c912b7f1e1193a7bd8e8f2504cea/continue-codex-rejection-after-first-validation.md",
+      "rev": "sha256:7d3aeebb10bfcbb7573c5b3ad1581162010d3cfed9d4b76b5fa75c3c87d36401",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation PASSED exact candidate 29a4dd5dc: Codex completes correction, publishes validation/2, prepares exactly one fresh unresolved gate, and stops; only dvd Codex XFAIL is removed."
+    }
+  ]
+}

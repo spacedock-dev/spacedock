@@ -67,6 +67,26 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:dvddbpsf4tdt3yjw1yjyp14k:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:dvddbpsf4tdt3yjw1yjyp14k-validation-1
+              briefing:
+                id: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-1:revision-1
+                digest: sha256:38ae354a6e8f34d8f82c078252a2dffeff90656dc27322d3496e6e8aa67922e8
+                request-digest: sha256:e2d4a6243cea4aba4bf58b3bc5c7a5fa833111e69bdaf4fa8201b62102ed6709
+                room-ref: ./continue-codex-rejection-after-first-validation/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dvddbpsf4tdt3yjw1yjyp14k:validation:1
+                briefing: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T17:52:00.369733Z"
+                decision: approve
+                reason: Captain conn approves dvd after independent PASSED validation of exact candidate 29a4dd5dc and the target-level XFAIL disposition.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
