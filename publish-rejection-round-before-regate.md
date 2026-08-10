@@ -346,3 +346,25 @@ Ideation keeps the end-user value: the complete rejected round is visible before
 The rejection flow now publishes the complete round before reviewer rerun or gate preparation. Recorder failure or an incomplete log now holds the flow.
 
 The focused contract and recorder tests pass. `go test ./...` and `go test ./... -race` pass after the required `gofmt` run.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebase onto `origin/main` at or after `a8688cabf`, preserving the product repair.
+  Rebased commit `1547a7bb5` contains the complete-round ordering, template update, and focused smoke test.
+- DONE: Run the exact Claude Sonnet target and remove its `zh` XFAIL after proof.
+  The bound run reported XPASS. The unbound rerun passed `TestLiveCommonRejectionFlow` in 513.65 seconds.
+- DONE: Run the exact Claude Opus target and remove its `zh` XFAIL after proof.
+  The bound run reported XPASS. The unbound rerun passed `TestLiveCommonRejectionFlow` in 635.20 seconds.
+- FAILED: Run the exact Pi target and remove its `zh` XFAIL after proof.
+  OpenRouter returned HTTP 402 before the journey started. The account limit was 22226 tokens, not the requested 128000 tokens.
+- DONE: Preserve XFAIL ownership and update the exact reconciliation row.
+  Commit `ea11da278` removes only the Sonnet and Opus `zh` rows at `internal/ensigncycle/shared_live_runner_test.go:125`.
+  `internal/contractlint/live_registry_reconciliation_test.go:56` keeps the `dvd` Codex row and the blocked `zh` Pi row.
+- DONE: Run the required checks and push the branch.
+  The focused recorder tests, registry reconciliation, `go test ./...`, and `go test ./... -race` pass after `gofmt`.
+
+### Summary
+
+Sonnet and Opus now pass the repaired rejection flow without XFAIL bindings. Pi remains bound because an external credit limit blocked its exact run.
+
+The branch is rebased on `a8688cabf` and pushed. No `dvd` or other task binding changed.
