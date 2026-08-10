@@ -11,8 +11,8 @@ started: 2026-08-09T14:51:39Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-make-gate-presentations-stage-specific
-pr:
-mod-block:
+pr: "#654"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
