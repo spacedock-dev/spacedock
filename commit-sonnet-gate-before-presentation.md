@@ -326,3 +326,21 @@ The retained Sonnet evidence satisfies this stronger oracle without a new live r
 
 The correction fixes the reported late-read gap and all retained Sonnet behavior remains clean.
 Recommendation: REJECTED because the oracle still accepts a retry after a failed gate-state commit.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Add the approved retry-after-failure mutant before the oracle correction.
+  The focused test failed because the old oracle accepted the retry sequence.
+- DONE: Reject a failed post-prepare state commit before a successful retry can qualify the gate hold.
+  The existing failed-only and late-read controls keep their original error classifications.
+- DONE: Preserve the approved product and ownership scope.
+  Product bytes and retained Sonnet evidence are unchanged. Codex remains bound to owner `272j6s25f9mry6nxbf4yjxvt`.
+- DONE: Run the required changed-byte checks without another live run.
+  Focused lifecycle, registry, owner, contract, format, cap, and diff checks passed.
+- DONE: Keep the full candidate within the approved cap.
+  Candidate `3f437a8cf17879ad400bf2876a5266a7801dac96` has 14 insertions and four deletions across four files.
+
+### Summary
+
+The oracle now rejects a failed state commit after prepare, even when a later retry succeeds.
+The correction adds three gross lines. Full and race tests did not run in this correction cycle.
