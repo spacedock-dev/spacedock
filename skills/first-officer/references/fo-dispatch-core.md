@@ -41,6 +41,8 @@ This is not a work breakdown: the ensign already reads the body, commits before 
 
 Advancing a completed worker. The gate-presentation spine is in the boot-resident core's `## Completion and Gates`; the reuse rules it defers to live here.
 
+**Gate successor guard.** If the next stage has `gate: true`, update it with `status={next_stage} started`, then enter `«gate.lifecycle»`; do not run `«dispatch.build» --advance` or route work to the completed worker.
+
 **Freshness invariant.** A fresh dispatch creates a new worker handle with no inherited parent turns. Runtime adapters enforce that boundary with the host's spawn mechanism. It does not change stage selection — the conditions below do.
 
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
