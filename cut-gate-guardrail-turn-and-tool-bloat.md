@@ -635,11 +635,11 @@ Reconciled the contract-only candidate with moved `origin/main` through a normal
 ## Stage Report: validation (cycle 5)
 
 - DONE: Reproduce the exact three-file and 30-line boundary against moved main, including a failing fourth-path or 31st-line boundary.
-  Candidate `bbfad5b4c` over moved-main merge base `f2887b5e7` is exactly three allowed files at +13/-16 (29 lines); executable controls rejected a fourth path at 30 lines and the same three paths at 31 lines.
+  AC-1: Candidate `bbfad5b4c` over moved-main merge base `f2887b5e7` is exactly three allowed files at +13/-16 (29 lines); executable controls rejected a fourth path at 30 lines and the same three paths at 31 lines.
 - DONE: Verify the rejected command, transaction, CLI, harness, fixture, and new-test surfaces remain absent while existing lifecycle behavior still passes.
-  The cumulative diff contains only the three allowed Markdown files and no rejected terms or code/test paths; lifecycle replay and missing-event controls fail on lost prepare/decision/consume authority, status matrices fail on text/JSON stage/readiness drift, and contractlint passes at 6,946/7,000 lifecycle bytes.
+  AC-2: The cumulative diff contains only the three allowed Markdown files and no rejected terms or code/test paths; lifecycle replay and missing-event controls fail on lost prepare/decision/consume authority, status matrices fail on text/JSON stage/readiness drift, and contractlint passes at 6,946/7,000 lifecycle bytes.
 - DONE: Reproduce the focused, formatting, diff, full, and race evidence without an authenticated model run or GitHub workflow; recommend PASSED or REJECTED.
-  Focused lifecycle/status/contractlint, `gofmt -w ./cmd ./internal`, `git diff --check main...HEAD`, `go test ./...`, and `go test ./... -race` pass; no authenticated journey or GitHub workflow ran, so recommendation is PASSED.
+  AC-3: Focused lifecycle/status/contractlint, `gofmt -w ./cmd ./internal`, `git diff --check main...HEAD`, `go test ./...`, and `go test ./... -race` pass. AC-4: No authenticated journey or GitHub workflow ran, so recommendation is PASSED.
 
 ### Summary
 
