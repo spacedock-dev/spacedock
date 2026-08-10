@@ -50,7 +50,7 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
 	wantGaps := map[string][]liveGapRow{
 		"gate-guardrail":                nil,
-		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "98aa776adg66gn823a8gamdq"}, {"xfail", "codex", "98aa776adg66gn823a8gamdq"}, {"xfail", "pi", "fh6rv0k6wr25zty0jjan4jp7"}},
+		"default-headless-gate-stop":    {{"xfail", "pi", "fh6rv0k6wr25zty0jjan4jp7"}},
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}},
 		"rejection-flow":                {{"xfail", "claude-sonnet", "zhcb4bcz1qgcn7ajx2ctxpxk"}, {"xfail", "claude-opus", "zhcb4bcz1qgcn7ajx2ctxpxk"}, {"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "zhcb4bcz1qgcn7ajx2ctxpxk"}},
