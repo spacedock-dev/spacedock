@@ -1565,3 +1565,151 @@ The current proposal is `Smallest CLI happy-path rescope`. It has ten files and
 
 Please review that rescope against its five exact questions. No product
 implementation is authorized before staff accepts it.
+
+## Second correction: consumed receipt completion gate
+
+Date: 2026-08-10
+
+Review state: **HOLD — staff review requested**.
+
+This correction applies to `Smallest CLI happy-path rescope`. It supersedes any
+conflicting completion or line-estimate text in that section.
+
+No product implementation is authorized.
+
+### Material finding and correction
+
+An active `consumed` receipt proves native worker start. It does not prove
+worker completion.
+
+Before a stage-changing `status --set`, the handler must inspect the active
+receipt for the current entity and stage.
+
+The corrected rules are:
+
+- `pending` refuses the stage change before any entity write.
+- `armed` refuses the stage change before any entity write.
+- `consumed` always calls the existing complete-and-committed stage-report
+  predicate.
+- A false predicate result refuses the stage change and preserves entity bytes.
+- A true predicate result permits the existing stage transition.
+- No active receipt preserves current legacy behavior.
+
+The handler calls the predicate even when `worktree` is empty. It does not use
+worktree presence as a completion shortcut.
+
+The predicate must check the exact entity path and current stage. It requires a
+complete latest stage report and a clean tracked entity path in local `HEAD`.
+
+`--force` cannot bypass this consumed-receipt predicate.
+
+### Stamped and unstamped value
+
+Every fresh Claude CLI or Codex CLI build creates the pending envelope. This
+rule applies with and without `--stamp`.
+
+`--stamp` keeps its current stage-entry work. It is not an acknowledgment
+prerequisite and does not define the supported user value.
+
+An unstamped fresh build gets the same pending, armed, consumed, report, and
+stage-transition rules.
+
+### Real audit-ref oracle
+
+The implementation writes these immutable audit refs during the real state
+transitions:
+
+```text
+refs/spacedock/dispatch-ack-audit/<entity-id>/<stage>/<epoch>/pending
+refs/spacedock/dispatch-ack-audit/<entity-id>/<stage>/<epoch>/armed
+refs/spacedock/dispatch-ack-audit/<entity-id>/<stage>/<epoch>/consumed
+```
+
+Each audit ref points to the actual active-ref blob from that transition. The
+active compare update and matching audit-ref create use one `git update-ref`
+transaction.
+
+The live oracle reads these Git refs directly. It does not construct an audit
+record after the run.
+
+For each host, the oracle must prove this exact order:
+
+1. A real fresh build writes `pending` with epoch E.
+2. Supported `PreToolUse` writes `armed` with the same epoch E.
+3. Supported `SubagentStart` writes `consumed` with epoch E.
+4. The consumed blob contains one non-empty native worker ID.
+5. The implementation report becomes complete and committed.
+6. A later stage-changing status command succeeds.
+7. The validation gate is prepared, committed, presented, and left open.
+
+The pending, armed, and consumed refs must contain the same entity ID, entity
+path, stage, host, and epoch.
+
+The armed ref must contain one supported tool-use ID. The consumed ref must
+contain one supported native worker ID.
+
+The status command time must be later than the consumed audit transition. The
+validation gate commit must be later than the complete implementation report
+commit.
+
+The oracle reads no Claude transcript, Codex rollout, final message, or private
+host activity file to establish acknowledgment or completion.
+
+### Corrected negative proof
+
+Add these focused cases to the existing ten-file test plan:
+
+1. `consumed` plus an empty `worktree` and no report refuses byte-clean.
+2. `consumed` plus an empty `worktree` and an incomplete report refuses.
+3. `consumed` plus an empty `worktree` and an uncommitted report refuses.
+4. `consumed` plus an empty `worktree` and a complete committed report passes.
+5. Each refusal also fails with `--force` and preserves entity bytes.
+6. Stamped and unstamped fresh builds create equivalent pending refs.
+7. The three real audit refs share one epoch and one ordered transition chain.
+
+### Corrected XPASS-green proof
+
+Keep both default-headless bindings for the first live runs. Each exact target
+must exit zero and log `XPASS ALERT` with no semantic failure code.
+
+The lane-green XPASS artifact must contain the real three-ref chain, one worker
+ID, a complete committed implementation report, a later stage change, and the
+open validation gate.
+
+Then remove only the Claude Sonnet and Codex bindings. Remove only their two
+mirrored registry expectations in the same binding-only commit.
+
+Each normal rerun must exit zero and report PASS. It must prove the same audit
+chain, report, stage order, and open gate.
+
+### Recalculated ten-file estimate
+
+The exact file set remains unchanged:
+
+| File | Insertions | Deletions |
+|---|---:|---:|
+| `.claude-plugin/plugin.json` | 1 | 0 |
+| `hooks.json` | 36 | 2 |
+| `internal/dispatchack/ack.go` | 148 | 0 |
+| `internal/dispatchack/ack_test.go` | 138 | 0 |
+| `internal/dispatch/build.go` | 30 | 6 |
+| `internal/dispatch/dispatch.go` | 35 | 4 |
+| `internal/status/handlers.go` | 24 | 4 |
+| `internal/ensigncycle/claude_live_runner_test.go` | 34 | 24 |
+| `internal/ensigncycle/shared_live_runner_test.go` | 2 | 2 |
+| `internal/contractlint/live_registry_reconciliation_test.go` | 1 | 1 |
+
+The corrected estimate is 449 insertions and 43 deletions. It is 492 gross
+lines and 406 net lines.
+
+The exact set remains ten files. The 500-gross hard cap remains in force.
+
+### Staff review request
+
+Please confirm these three points:
+
+1. Does the consumed-state predicate close the empty-worktree completion gap?
+2. Does the real three-ref oracle prove the exact host acknowledgment order?
+3. Can the corrected implementation stay within ten files and 492 gross lines?
+
+No product bytes or live CI can run before staff accepts this correction.
