@@ -1733,3 +1733,62 @@ Please confirm these three points:
 3. Can the corrected implementation stay within ten files and 492 gross lines?
 
 No product bytes or live CI can run before staff accepts this correction.
+
+## Captain-approved per-host implementation recarve
+
+Date: 2026-08-10
+
+The captain approved delivery of the shared acknowledgment mechanism and the
+proved Codex CLI value. The Claude Sonnet binding remains until its separate
+gate-hold defect is fixed by `commit-sonnet-gate-before-presentation`
+(`kky8pg7wc8xgb985epwss092`).
+
+This recarve changes only the all-or-nothing binding-release rule in AC-7 and
+the corrected XPASS-green proof. It does not change the shared mechanism,
+supported hosts, native-worker claim, or other acceptance criteria.
+
+The exact binding changes are:
+
+- Remove the n28 Codex binding after an exact unbound local OAuth PASS.
+- Keep the Claude Sonnet binding and transfer its owner from n28 to
+  `kky8pg7wc8xgb985epwss092`.
+- Apply the same removal and transfer to the registry reconciliation row.
+
+The eight-path candidate is 124 insertions and 17 deletions in tracked files,
+plus 347 lines in two approved new files. It is 488 gross lines. The two
+binding-row replacements add four gross lines. The approved ten-file candidate
+therefore remains at the 492-gross reviewed limit.
+
+### Codex value evidence
+
+The bound local OAuth target exited zero and logged:
+
+```text
+XPASS ALERT codex/default-headless-gate-stop owner=n28423efmj358m5av61z2fxx observed=[]
+```
+
+The immutable audit chain used epoch
+`d7cf074b927c6d50f0cb0781496bd7c1`. It moved through `pending`, `armed`, and
+`consumed`. The consumed record stored native worker ID
+`019fecf6-9ee3-77b1-87ff-127c89d9bee3`.
+
+The run used isolated Codex OAuth. It did not set or use `OPENAI_API_KEY`.
+
+### Claude target-external finding
+
+- Released user and normal workflow: local-subscription Claude Sonnet ran the
+  bound `default-headless-gate-stop` journey without captain conn.
+- Observable harm: the first officer prepared and presented an open gate but
+  omitted `state commit`. The gate-hold oracle reported
+  `gate-hold-violation`, so the required durability boundary was not proved.
+- Affected boundary:
+  `contract[skills/fo-gate-lifecycle/SKILL.md#Prepare and bind]` requires gate
+  preparation, then state commit, then structured reads and presentation.
+- Trigger evidence: `/tmp/n284-happy-claude/claude-shared-scenarios/default-headless-gate-stop/command.log`
+  contains successful `gate prepare`, then reads and presentation, with no
+  `state commit`.
+
+The n28 Claude acknowledgment oracle itself passed. Its immutable audit refs
+formed one identity-preserving `pending -> armed -> consumed` chain. The armed
+record stored tool-use ID `toolu_01TkTr4ZiNiqKNEEjb1hVH4m`. The consumed record
+stored native worker ID `af41493a4fac622cd`.
