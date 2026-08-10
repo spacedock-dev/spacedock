@@ -523,3 +523,26 @@ The change reuses the current recorder and lifecycle for AC-3 and AC-4. The exis
 - Identity result: The remote head equals the rebased candidate, and the product worktree is clean.
 
 This rebase changes no product behavior. It preserves the approved validation result and updates its candidate identity.
+
+## Stage Report: validation (delivery reconciliation)
+
+- DONE: Verify the new exact identity.
+  The worktree and remote branch point to `f8fa527e477a1275fc0c11b073099106297ceaa6`.
+  Its exact merge base is `8832664ddbec8ac024c4e5251410d0422fa7ca04`, and the worktree is clean.
+- DONE: Compare the old and new task patches.
+  `git range-diff` preserves the publication commit without a change.
+  The XFAIL commit changes only the registry union from the new main landing.
+- DONE: Verify every registry row.
+  `smallest-sufficient-mechanism` keeps only the `6x` Pi XFAIL from main.
+  `rejection-flow` keeps the `dvd` Codex XFAIL and the `zh` Pi XFAIL.
+  The candidate preserves every other row from main.
+- DONE: Inspect the implementation-owned reconciliation evidence.
+  `TestRuntimeLiveRegistryReconciliation` passed at transcript ordinal 2438.
+  The state-backed `TestRuntimeLiveTODOOwnersAreActive` passed at transcript ordinal 2444.
+  No full, race, or live test was repeated for this validation.
+- DONE: Recommend the delivery verdict.
+  No Material, Deferred-risk, or Polish finding exists in the authorized reconciliation scope.
+
+### Summary
+
+PASSED. The delivery reconciliation preserves the prior validation value and all current owner assignments.
