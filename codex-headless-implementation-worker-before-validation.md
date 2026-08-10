@@ -57,6 +57,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:98aa776adg66gn823a8gamdq:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:98aa776adg66gn823a8gamdq-validation-1
+              briefing:
+                id: briefing:98aa776adg66gn823a8gamdq:validation:attempt-1:revision-1
+                digest: sha256:990469b68099b67e2e0b079e4d50be7ea2d03a9bdb915957ac65b18e4ffffee2
+                request-digest: sha256:e169af07ba1c664957e035be20095299c4294fbced09f2ed3a294d6bbd95e014
+                room-ref: ./codex-headless-implementation-worker-before-validation/review/validation/briefing-1
 ---
 
 ## Problem
