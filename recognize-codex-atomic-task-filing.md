@@ -73,7 +73,7 @@ gates:
 started: 2026-08-10T20:28:23Z
 worktree: .worktrees/spacedock-ensign-recognize-codex-atomic-task-filing
 mod-block: merge:pr-merge
-pr: "#668"
+pr: pr-merge:668
 ---
 ## Problem
 
