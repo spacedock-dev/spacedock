@@ -15,6 +15,8 @@ import (
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
+var rejectionValidation2Command = regexp.MustCompile(`(?:spacedock|\$\{SPACEDOCK_BIN(?::-[^}]*)?\}|/[^ \t\r\n'";&|]+/spacedock)["']?\s+gate\s+record\s+["']?rejection-task["']?.*--round(?:=|\s+)["']?validation/2["']?`)
+var rejectionPrepareCommand = regexp.MustCompile(`(?:spacedock|\$\{SPACEDOCK_BIN(?::-[^}]*)?\}|/[^ \t\r\n'";&|]+/spacedock)["']?\s+gate\s+prepare\s+["']?rejection-task["']?(?:\s|$)`)
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
 
@@ -105,30 +107,55 @@ func claudeRecordedRejectionRound(stream string) bool {
 }
 
 func codexRecordedRejectionRound(jsonl string) bool {
-	for _, line := range strings.Split(jsonl, "\n") {
-		var entry struct {
-			Type string `json:"type"`
-			Item struct {
-				Type     string `json:"type"`
-				Command  string `json:"command"`
-				ExitCode *int   `json:"exit_code"`
-			} `json:"item"`
-		}
-		if json.Unmarshal([]byte(line), &entry) == nil &&
-			entry.Type == "item.completed" &&
-			entry.Item.Type == "command_execution" &&
-			entry.Item.ExitCode != nil &&
-			*entry.Item.ExitCode == 0 &&
-			commandRecordsRejectionRound(entry.Item.Command) {
+	for _, command := range codexSuccessfulCommands(jsonl) {
+		if commandRecordsRejectionRound(command) {
 			return true
 		}
 	}
 	return false
 }
 
-func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
+func codexSuccessfulCommands(jsonl string) (commands []string) {
+	for _, line := range strings.Split(jsonl, "\n") {
+		var entry struct {
+			Type string `json:"type"`
+			Item struct {
+				Type, Command string
+				ExitCode      *int `json:"exit_code"`
+			} `json:"item"`
+		}
+		if json.Unmarshal([]byte(line), &entry) == nil && entry.Type == "item.completed" && entry.Item.Type == "command_execution" && entry.Item.ExitCode != nil && *entry.Item.ExitCode == 0 {
+			commands = append(commands, entry.Item.Command)
+		}
+	}
+	return commands
+}
+
+func codexRejectionGateSequence(jsonl string) error {
+	stage, prepares := 0, 0
+	for _, command := range codexSuccessfulCommands(jsonl) {
+		if rejectionValidation2Command.MatchString(command) {
+			stage = 1
+		}
+		if rejectionPrepareCommand.MatchString(command) {
+			prepares++
+			if stage == 1 {
+				stage = 2
+			}
+		}
+	}
+	if stage != 2 || prepares != 1 {
+		return fmt.Errorf("Codex final-gate sequence stage/prepares = %d/%d, want 2/1", stage, prepares)
+	}
+	return nil
+}
+
+func assertRejectionRoundGateBoundary(entityPath, wantStatus string, required ...bool) error {
 	doc, _, err := gates.Read(entityPath)
 	if err != nil && strings.Contains(err.Error(), "entity has no gates record") {
+		if len(required) != 0 && required[0] {
+			return fmt.Errorf("required final validation gate is absent")
+		}
 		return nil
 	}
 	if err != nil {
@@ -155,7 +182,20 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 	if attempt.Resolution != nil || attempt.Application != nil {
 		return fmt.Errorf("final round-2 validation gate is not open")
 	}
+	if len(required) != 0 && required[0] {
+		entity, readErr := os.ReadFile(entityPath)
+		if readErr != nil || regexp.MustCompile(`(?m)^(?:completed|verdict):[^\S\n]*\S`).Match(entity) {
+			return fmt.Errorf("final validation gate has terminal entity state: %v", readErr)
+		}
+	}
 	return nil
+}
+
+func assertCodexRejectionFinalGate(entityPath, jsonl string) error {
+	if err := assertRejectionRoundGateBoundary(entityPath, "validation", true); err != nil {
+		return err
+	}
+	return codexRejectionGateSequence(jsonl)
 }
 
 func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, invoked bool) error {
@@ -273,6 +313,9 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
 		t.Fatalf("recorded-round oracle rejected valid final validation state without a gate: %v", err)
 	}
+	if err := assertRejectionRoundGateBoundary(entityPath, "validation", true); err == nil {
+		t.Fatal("strict final-gate oracle accepted an absent gate")
+	}
 	gateReviewPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "gate-review.md")
 	writeFile(t, gateReviewPath, "# Rejection Task — validation review\n\nThe corrected candidate is ready for its prepared decision gate.\n")
 	gateReviewRel, err := filepath.Rel(root, gateReviewPath)
@@ -309,6 +352,20 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		}
 	}
 	writeFile(t, entityPath, openGateEntity)
+	validSequence := codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/2", "", 0, "completed") + "\n" +
+		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate prepare rejection-task validation", "", 0, "completed")
+	if err := assertCodexRejectionFinalGate(entityPath, validSequence); err != nil {
+		t.Fatalf("strict final-gate oracle rejected valid state: %v", err)
+	}
+	for _, mutation := range []string{
+		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/2", "", 0, "completed"),
+		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate prepare rejection-task validation", "", 0, "completed") + "\n" +
+			codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/2", "", 0, "completed"),
+	} {
+		if err := assertCodexRejectionFinalGate(entityPath, mutation); err == nil {
+			t.Fatal("strict final-gate oracle accepted an invalid command sequence")
+		}
+	}
 	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
 		Decision: "hold", Actor: "person:captain", Reason: "exercise closed-gate counterexample", WorkflowDir: root,
 	}); err != nil {

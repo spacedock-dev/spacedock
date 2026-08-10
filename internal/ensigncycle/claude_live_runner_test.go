@@ -367,19 +367,21 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 
 	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
 	after := readFile(t, entityPath)
-	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
-	// `spacedock claude -- -p {prompt}` with a prompt naming one entity, so the run
-	// is single-entity → bare; the contract's bare-mode feedback flow is sequential
-	// fresh dispatch, so the cycle-2 re-review is a DISTINCT freshly-dispatched
-	// validation worker (not a reuse of the bare cycle-1 reviewer, not the impl
-	// worker serving as its own validator). assertClaudeReviewerReuse encoded a
-	// team-mode keepalive a `-p` run can never satisfy (the AC-3 finding); the
-	// contract-correct single-entity assertion is used here. The team-mode
-	// reviewer-reuse question is the spun-off option-(a) task.
-	finishLiveScenario(t, runner, scenario, result,
+	roundRecorded, reviewer, strict := claudeRecordedRejectionRound(result.stream), assertClaudeSingleEntityRejectionFlow(result.stream), false
+	if _, ok := runner.(codexAsLiveDriver); ok {
+		roundRecorded, reviewer, strict = codexRecordedRejectionRound(result.stream), assertCodexReviewerReuse(result.stream), true
+	}
+	// Codex has distinct command and reviewer evidence shapes. Claude and Pi keep
+	// the existing stream-json assertions.
+	semantic := []error{
 		durableSemantic("rejection-flow-state", assert(after, result.finalMessage+"\n"+result.stream)),
-		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream))),
-		durableSemantic("rejection-reviewer-flow", assertClaudeSingleEntityRejectionFlow(result.stream)))
+		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", roundRecorded)),
+		durableSemantic("rejection-reviewer-flow", reviewer),
+	}
+	if strict {
+		semantic = append(semantic, durableSemantic("rejection-flow-not-completed", assertCodexRejectionFinalGate(entityPath, result.stream)))
+	}
+	finishLiveScenario(t, runner, scenario, result, semantic...)
 }
 
 // runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture
