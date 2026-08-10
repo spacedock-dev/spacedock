@@ -123,12 +123,14 @@ Unavailable authentication or missing runtime access are valid TODO reasons.
 
 ## Exact target inventory
 
-These 19 sprint-owned target cells can run. Each cell must use target-level
-XFAIL under its current repair-task owner.
+These 18 unresolved sprint-owned target cells can run. Each cell must use
+target-level XFAIL under its current repair-task owner.
+
+The Codex `gate-guardrail` target is not in this table. Run `31354941325`, job
+`93352946253`, and artifact `9050378671` proved XPASS. Its binding is absent.
 
 | Journey | Target | Owner |
 | --- | --- | --- |
-| `gate-guardrail` | `codex` | `xp6c9qfe7y4wwp46enc3f85n` |
 | `gate-guardrail` | `pi` | `2e4fe65gy9vcr4xck6akzmdd` |
 | `default-headless-gate-stop` | `claude-sonnet` | `98aa776adg66gn823a8gamdq` |
 | `default-headless-gate-stop` | `codex` | `98aa776adg66gn823a8gamdq` |
@@ -160,9 +162,11 @@ CI-E2E-OPUS authentication and runtime path reached the shared live tests.
 
 **AC-1 (VALUE) — Every executable sprint target runs.**
 
-The 19 inventory cells run their real fixture, host, exercise, and durable
+The 18 XFAIL cells run their real fixture, host, exercise, and durable
 semantic assertions. Each cell reports XFAIL when it has a typed semantic
 failure. The result keeps the current owner and all observed semantic codes.
+
+The Codex `gate-guardrail` cell has no binding. Its assertion remains active.
 
 Verified by: reconcile the source inventory. Run authenticated local target
 probes. Inspect each test result and existing journey metric.
@@ -185,8 +189,8 @@ failure. Existing launch and stream controls remain red.
 
 **AC-4 — Reconciliation reports execution state and checks ownership.**
 
-Reconciliation distinguishes TODO from XFAIL. It requires the 19 XFAIL rows,
-zero TODO rows, and no stale Codex withdrawal row. The owner join checks
+Reconciliation distinguishes TODO from XFAIL. It requires the 18 XFAIL rows,
+zero TODO rows, and no stale Codex gate or withdrawal row. The owner join checks
 both binding kinds.
 
 Verified by: `TestRuntimeLiveRegistryReconciliation` checks the exact source
@@ -204,7 +208,7 @@ check the owner and observed codes.
 ## Scope
 
 - Use one target-level grade at the existing semantic boundary.
-- Convert the 19 executable sprint targets to XFAIL.
+- Convert the 18 unresolved executable sprint targets to XFAIL.
 - Remove the stale passing Codex withdrawal TODO.
 - Keep no TODO because all target runtime paths can execute.
 - Preserve the existing registry and journey metric.
@@ -320,7 +324,7 @@ in this surface.
   codes. Target-level XFAIL leaves the optional expected code empty.
 - Authority: unchanged. The registry remains desired state. Source bindings own
   current target evidence and active task ownership.
-- Runtime behavior: the 19 inventory cells execute. Typed semantic failures are
+- Runtime behavior: the 18 XFAIL cells execute. Typed semantic failures are
   XFAIL. XPASS and infrastructure failures stay red.
 - Documentation: update the runtime live guide with the binding and outcome
   semantics described below.
@@ -488,3 +492,21 @@ All required offline checks pass. The pull request still needs exact required li
 
 Validation recommends PASSED for exact candidate `02b2296a1`. All five acceptance criteria have valid policy-level evidence, and no independent Material finding exists.
 Target-level XFAIL is sufficient before the pull request. Infrastructure failures and XPASS results remain red.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Remove only the stale xp6-owned Codex `gate-guardrail` XFAIL binding.
+  Run `31354941325`, job `93352946253`, and artifact `9050378671` proved exact XPASS for this target.
+- DONE: Preserve the target assertion and all product bytes.
+  The patch changes one source binding row and its exact reconciliation expectation. The journey, fixture, exercise, and assertion are unchanged.
+- DONE: Correct the source inventory and reconciliation total.
+  The source now has 18 XFAIL rows and zero TODO rows. Reconciliation requires the Codex gate binding to be absent.
+- DONE: Run only the authorized focused checks.
+  The focused classifier, registry, owner, and live-tag compile checks passed. No full, race, manual live, or paid CI run started.
+- DONE: Commit and push the corrected candidate and durable state.
+  Code tip `4d7c72e164f64e2b486d5034b8e837236e0c1178` is pushed. This report uses a path-scoped state commit.
+
+### Summary
+
+The correction removes one stale evidence binding. It does not change product behavior or another target binding.
+The Codex `gate-guardrail` assertion remains active as a normal passing target.
