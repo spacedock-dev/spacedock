@@ -1792,3 +1792,35 @@ The n28 Claude acknowledgment oracle itself passed. Its immutable audit refs
 formed one identity-preserving `pending -> armed -> consumed` chain. The armed
 record stored tool-use ID `toolu_01TkTr4ZiNiqKNEEjb1hVH4m`. The consumed record
 stored native worker ID `af41493a4fac622cd`.
+
+## Stage Report: implementation
+
+- DONE: Added the shared acknowledgment state machine and immutable Git audit
+  refs for pending, armed, and consumed states.
+- DONE: Added Claude and Codex hook handling for supported fresh-worker events.
+- DONE: Blocked stage changes until a supported host records one native worker
+  identity and commits a complete report.
+- DONE: Added unit and lifecycle controls for replay, malformed events, stale
+  events, clearing, and ordered audit evidence.
+- DONE: Kept the Claude Sonnet binding. Transferred its owner to
+  `kky8pg7wc8xgb985epwss092` in both required registry rows.
+- DONE: Removed only the Codex binding after an exact unbound local OAuth PASS.
+  The run did not set or use `OPENAI_API_KEY`.
+- DONE: The normal Codex PASS recorded epoch
+  `ec84b11a003f39cbc1d1b47de1a38c1b` and native worker ID
+  `019fed06-a0da-7272-b827-6240670fa845`.
+- DONE: Retained both Codex artifacts at `/tmp/n284-happy-codex` and
+  `/tmp/n284-happy-codex-rerun`.
+- DONE: Retained the Claude artifact at `/tmp/n284-happy-claude`.
+- DONE: `go test ./...` passed on the final candidate.
+- DONE: `go test ./... -race` passed on the final candidate.
+- DONE: Formatting, reconciliation, active-owner, acknowledgment, and
+  whitespace checks passed after the rebase.
+- DONE: The final diff contains exactly ten approved files. It has 473
+  insertions and 19 deletions, for 492 gross lines.
+- DONE: Rebasing onto `origin/main` at `0bbe9d46c02328930253bfbe619f9827d6da5109`
+  completed without a conflict.
+- DONE: Pushed candidate commit `042f926db1ec452354cae7d1accd0cbfde201dae`
+  on `spacedock-ensign/mechanically-acknowledge-codex-implementation-dispatch`.
+
+The candidate is ready for independent validation.
