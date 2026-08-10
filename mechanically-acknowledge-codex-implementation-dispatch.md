@@ -1857,3 +1857,52 @@ The candidate is ready for independent validation.
 The candidate adds native acknowledgment for supported fresh Claude and Codex workers. Codex proved the value with a normal local OAuth PASS.
 
 The Captain-approved recarve keeps the Sonnet binding until the separate gate durability repair lands. This report changes no product bytes.
+
+## Stage Report: validation
+
+- DONE: Confirm exact candidate, remote match, base, and clean worktree.
+  Candidate `042f926db1ec452354cae7d1accd0cbfde201dae` matches its remote and has base `0bbe9d46c02328930253bfbe619f9827d6da5109`.
+- DONE: Inspect the exact 10-file diff and 492-gross hard cap.
+  The diff has 473 insertions and 19 deletions across the ten approved files.
+- DONE: Inspect retained Claude and both Codex artifacts, including the authorized nondeterministic rerun.
+  The three retained directories contain 20 files and 776,530 bytes. Their SHA-256 digests and content were examined.
+- DONE: Run focused acknowledgment, registry, owner, format, and diff checks without repeating owned full, race, or live runs.
+  The acknowledgment, registry, and active-owner tests passed. JSON, Go format, and `git diff --check` checks passed.
+- DONE: Confirm only the Codex binding is removed and the Sonnet owner is transferred to kky8pg7wc8xgb985epwss092.
+  The two binding rows contain the exact removal and transfer. No other runtime binding changed.
+- DONE: Report each finding with four workflow evidence fields.
+  One Material, task-owned outcome defect is recorded below.
+- DONE: Write and push a Simplified-English PASSED or REJECTED validation Stage Report.
+  This report recommends REJECTED. State commit and push evidence is in the state branch history.
+
+- FAILED: AC-1 fresh-envelope acknowledgment.
+  An unstamped supported Codex build emitted no epoch, no acknowledgment ref, and no private Git ref.
+- DONE: AC-2 caller text has no acknowledgment authority.
+  The candidate has no public command that accepts spawned or consumed state.
+- DONE: AC-3 same-stage replay fails closed for the implemented stamped path.
+  `TestLifecycleAndReplay` rejects a second create and a repeated arm event for Claude and Codex.
+- SKIPPED: AC-4 recovery authority.
+  The approved smallest CLI rescope excludes recovery and abandonment.
+- DONE: AC-5 concurrent records use private Git refs.
+  The inspected transition uses one `git update-ref` transaction for each active and audit ref pair.
+- SKIPPED: AC-6 broad mutation inventory.
+  The approved smallest CLI rescope limits the claim to `--advance` and stage-changing `status --set`.
+- DONE: AC-7 exact live proof and binding recarve.
+  The retained Codex rerun shows a normal pass chain. The Claude binding remains with its new owner.
+- DONE: AC-8 Pi and legacy behavior stay stable.
+  The ten-file diff changes no Pi path and creates acknowledgments only for marked Claude or Codex sessions.
+
+### Material finding: unstamped builds bypass acknowledgment
+
+- Released user and normal workflow: A supported fresh Claude or Codex CLI build can omit `--stamp`.
+- Observable harm: The envelope can start a native worker without pending, armed, or consumed state. Later stage changes use legacy behavior.
+- Affected value AC or boundary: `value-ac[AC-1]` requires each fresh envelope to bind one native worker through acknowledgment state.
+- Trigger evidence: The disposable unstamped Codex build exited zero with null acknowledgment fields and zero acknowledgment refs.
+- Complement evidence: The same fixture with `--stamp` created one pending active ref and one pending audit ref.
+- Disposition: Material, task-owned outcome defect. The First Officer accepted this classification. Candidate bytes remain unchanged.
+
+### Summary
+
+The stamped acknowledgment path and the Captain-approved binding recarve have valid focused and retained evidence. The unstamped supported path bypasses the mechanism.
+
+Validation recommends REJECTED. The next implementation cycle must create equivalent acknowledgment state with and without `--stamp`.
