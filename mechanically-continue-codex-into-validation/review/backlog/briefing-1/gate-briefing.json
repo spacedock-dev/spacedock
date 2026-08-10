@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s9hn38t0gwhzknnmr5w4m9d6:backlog:attempt-1:revision-1",
+  "question": "Should the sprint ideate the smallest supported-host primitive that makes Codex acknowledge validation continuation before gate entry?",
+  "artifacts": [
+    {
+      "id": "artifact:s9hn38t0gwhzknnmr5w4m9d6:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/34f8b9017e6d5eeedb02dbf46d9fc3d7959c228f/mechanically-continue-codex-into-validation.md",
+      "rev": "sha256:f0819e716c5cd38f5829fa596506231cb8690cb1d3fc70d0326846c4e38c22ff",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE for read-only ideation. Exact v8 post-n28 evidence proves a stamped validation receipt remained pending, so the missing host primitive and bounded surface must be designed before product work."
+    }
+  ]
+}

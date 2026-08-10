@@ -7,6 +7,18 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-product
 id: s9hn38t0gwhzknnmr5w4m9d6
+gates:
+    version: 1
+    records:
+        - id: gate:s9hn38t0gwhzknnmr5w4m9d6:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:s9hn38t0gwhzknnmr5w4m9d6-backlog-1
+              briefing:
+                id: briefing:s9hn38t0gwhzknnmr5w4m9d6:backlog:attempt-1:revision-1
+                digest: sha256:4c2c68c1961c9dd1ab3d21e5b189b7f6c4546128a403d51f53004b0f54f91b2d
+                request-digest: sha256:efc83f4ac33ab3a44f89b547f447cf1e4db2cddca95baade21ae538798d692cb
+                room-ref: ./mechanically-continue-codex-into-validation/review/backlog/briefing-1
 ---
 ## Problem
 
