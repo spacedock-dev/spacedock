@@ -471,3 +471,23 @@ The tolerance is one file and 14 net lines.
 
 A Codex operator gets one complete correction journey. The journey ends at one
 fresh unresolved validation gate after validation/2.
+
+## Implementation Finding
+
+The exact baseline SHA is `06e87a3cb7f5608afe6b12e518f10de3642ea6c8`.
+The local Codex run produced two semantic codes. The expected code was
+`rejection-flow-not-completed`. The additional code was
+`rejection-reviewer-flow`.
+
+- Released user and normal workflow: the subscription-backed Codex rejection
+  journey reached validation/2.
+- Observable harm: the extra code prevents the required single typed XFAIL.
+- Affected value: `value-ac[AC-4]` requires structured identity only when Codex
+  emits that identity.
+- Trigger evidence: the transcript contains only `wait` collaboration events.
+  It contains no structured worker spawn or follow-up event. The validation/2
+  report is durable and PASSED.
+
+The proposal is Material. This task owns the finding. The proposed disposition
+is a test-only fix for the absent structured-identity case. Candidate bytes
+remain unchanged until the First Officer gives a distinct authorization.
