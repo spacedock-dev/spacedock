@@ -75,7 +75,7 @@ No spike needed: current command fixtures already decode JSON envelopes and cano
 
 ## Prose-coupling inventory and replacements
 
-The baseline is **16 semantic-coupling groups** across KD, 824, D8, A7, BV, and SK. Implementation reduces that count to zero. A group is one repeated assertion strategy, not every individual `strings.Contains` call.
+The finite inventory contains **15 rows**: **11 semantic-output couplings** require removal or replacement, and **four retained/non-semantic rows** remain as regression snapshots, published help, documentation-only reconciliation, or direct behavior. Implementation reduces semantic prose-search proof dependencies in this inventory to zero.
 
 | Owner | Current coupling | Classification | Smallest replacement |
 |---|---|---|---|
@@ -110,8 +110,8 @@ No new gate logic, schema field, compatibility decoder, provider integration, ru
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - Semantic behavior has zero prose-search proof dependencies, down from the 16-group baseline.**
-Verified by: diff-audit every inventory row; mutate or remove the claimed structured/state/behavior outcome and observe its focused test fail while equivalent prose rewording stays green. The only exact-text assertions added or retained by this cleanup are explicitly labeled published top-level and `gate --help` contracts.
+**AC-1 (VALUE) - Semantic behavior has zero prose-search proof dependencies in the finite inventory; exact text remains only for deliberately published help.**
+Verified by: diff-audit all 15 inventory rows, including replacement or removal of all 11 semantic-output couplings; mutate or remove the claimed structured/state/behavior outcome and observe its focused test fail while equivalent prose rewording stays green. The only exact-text assertions added or retained by this cleanup are explicitly labeled published top-level and `gate --help` contracts.
 
 **AC-2 - Every retained v1 gate verb is discoverable, and removed provider/eligibility verbs are absent.**
 Verified by: byte-exact top-level and `gate --help` fixtures for `prepare | withdraw | record | validate | consume`, plus command-level unknown-verb and byte-clean state tests for removed `--room` and eligibility forms. Adding or removing a retained verb fails the published help fixture; accepting a removed form fails the behavior test.
@@ -167,6 +167,10 @@ Tolerance is **±6 files and +250/−150 changed lines** because KD/824/D8 may l
 - No new JSON field merely to make a test easier; decode fields that already exist.
 - No new live scenario. Reuse 824 and D8 lanes only where live runtime behavior is already the acceptance claim.
 - No cleanup of unrelated historical prose assertions outside the durable-decisions diff unless a touched test directly depends on them.
+
+## Captain ruling: inventory accounting
+
+The historical “16” starting count is unsupported bookkeeping, not a value or validation boundary. The reconstructible inventory is 15 rows: 11 semantic-output couplings requiring removal or replacement and four retained/non-semantic rows. This ruling supersedes contrary count claims in the historical stage reports below without rewriting those reports.
 
 ## Stage Report: ideation
 
