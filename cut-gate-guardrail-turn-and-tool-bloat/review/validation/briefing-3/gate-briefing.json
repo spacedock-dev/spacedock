@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-3:revision-1",
+  "question": "Approve the reconciled contract-only 5K candidate for PR and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/4dbbdf1797b132342a60b2ae06cf394e68a0bad6/cut-gate-guardrail-turn-and-tool-bloat.md",
+      "rev": "sha256:600ef62e5633a80696da095255c674a5a66e1bd7ddb2e9468bb473c5da20ad16",
+      "mediaType": "text/markdown",
+      "summary": "The reconciled candidate remains within the three-file and 30-line contract-only boundary, excludes rejected mechanisms, and passes focused, full, and race verification."
+    }
+  ]
+}
