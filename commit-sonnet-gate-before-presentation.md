@@ -51,6 +51,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-10T18:44:40Z
+worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
 ---
 ## Problem
 
