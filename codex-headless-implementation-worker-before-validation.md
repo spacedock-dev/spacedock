@@ -6,7 +6,7 @@ started: 2026-08-09T18:34:21Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-headless-implementation-worker-before-validation
 issue:
 pr:
 mod-block:
