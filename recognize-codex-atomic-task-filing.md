@@ -51,6 +51,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-10T20:28:23Z
+worktree: .worktrees/spacedock-ensign-recognize-codex-atomic-task-filing
 ---
 ## Problem
 
