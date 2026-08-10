@@ -453,3 +453,21 @@ fresh final gate.
 The AC structure now matches the DVD extractor. The scan finds AC-1 through
 AC-5, including the VALUE final-gate criterion. No acceptance-criteria or
 semantic requirement changed.
+
+## Implementation Work Plan
+
+The exact code base is `e2f07a40e6bf45eeec8d133723b25cef18f5cb9a`.
+The approved surface contains these six existing files:
+
+- `internal/ensigncycle/claude_live_runner_test.go`
+- `internal/ensigncycle/shared_round_recording_test.go`
+- `internal/ensigncycle/shared_live_runner_test.go`
+- `skills/feedback-rejection-flow/SKILL.md`
+- `skills/first-officer/references/codex-first-officer-runtime.md`
+- `docs/runtime-live-ci.md`
+
+The estimate is 46 additions and 20 deletions. The net estimate is 26 lines.
+The tolerance is one file and 14 net lines.
+
+A Codex operator gets one complete correction journey. The journey ends at one
+fresh unresolved validation gate after validation/2.
