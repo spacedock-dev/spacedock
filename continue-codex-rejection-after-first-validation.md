@@ -674,3 +674,25 @@ The pushed product candidate stays unchanged at `29a4dd5dc440d8fbc34cb3b635396ee
 The exact candidate preserves the complete Codex correction journey. It removes only the dvd Codex binding.
 The retained final run stops at one fresh unresolved gate.
 The validation recommendation is PASSED. No Material finding remains after the recorded First Officer disposition.
+
+## Validation Finding: Launcher Variable
+
+- Released user and workflow: The exact Codex `rejection-flow` uses candidate `29a4dd5dc`.
+- Observable harm: The oracle reports `rejection-flow-not-completed` for a complete journey. This false result blocks required PR evidence.
+- Value authority: `value-ac[AC-3]` requires validation/2 before exactly one fresh unresolved gate.
+- Trigger evidence: Run `31416271663`, job `93546268920`, and artifact `9074101972` contain the failing transcript.
+
+The transcript contains validation/1, validation/2, one gate prepare, an open
+validation gate, and the terminal final message. The successful validation/2
+command uses `launcher=${SPACEDOCK_BIN:-spacedock}; "$launcher" gate record ...`.
+The `rejectionValidation2Command` expression does not accept `$launcher`.
+
+The First Officer classified this finding as Material and owned by dvd.
+The disposition is FIX. The correction changes only
+`internal/ensigncycle/shared_round_recording_test.go` with a same-line
+replacement. The planned net change is zero, so the seven-file net +91 cap
+does not change. Product instructions and bindings stay unchanged.
+
+The focused positive uses the exact `$launcher` command. Existing controls
+continue to reject a wrong entity, round, file, or failed command. Cancelled
+and superseded PR live evidence stays retained.
