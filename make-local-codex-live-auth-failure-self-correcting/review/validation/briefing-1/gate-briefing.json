@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pma2c1j7wmg9yvf5n25tx2ff:validation:attempt-1:revision-1",
+  "question": "Approve the validated local Codex auth diagnostic correction for PR and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:pma2c1j7wmg9yvf5n25tx2ff:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b1dbfa050e689d54299e912538792f08c76a7fec/make-local-codex-live-auth-failure-self-correcting.md",
+      "rev": "sha256:a8cf8dc5932426ce4e5101d603bc866e8c25490e0ea7024e5675f1d4574fa24d",
+      "mediaType": "text/markdown",
+      "summary": "The CI-only failure now tells local developers to unset the flag and use isolated Codex OAuth; the adjacent guide explains the same path. Auth decisions and isolation behavior are unchanged, with focused, full, and race checks green and no output-text assertion or model run."
+    }
+  ]
+}
