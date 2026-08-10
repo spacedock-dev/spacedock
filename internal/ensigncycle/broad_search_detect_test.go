@@ -114,6 +114,14 @@ func TestDetectBroadSearchAtBoot(t *testing.T) {
 			wantNames: "find",
 		},
 		{
+			name: "artifact_9074747236_adapter_find_reds",
+			lines: []string{
+				streamLine(`find /tmp/spacedock-live-plugin-3439009114/skills/first-officer/references -iname "*claude*"`),
+			},
+			wantRed:   true,
+			wantNames: "find",
+		},
+		{
 			name: "find_scoped_under_resolved_workflow_passes",
 			lines: []string{
 				streamLine(`spacedock status --discover`),
