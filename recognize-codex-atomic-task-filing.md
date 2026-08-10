@@ -68,3 +68,54 @@ A task created through actual `spacedock new` command evidence passes the filing
 - Name exact files and gross/net estimate before product edits.
 - Define one actual-command positive and adjacent non-atomic negative controls.
 - Keep local failing baseline, repaired normal PASS, validation, PR, and merge flow.
+
+## Stage Report: ideation
+
+- DONE: Read the complete task and artifact `9078284956` at `/tmp/dvd-final-codex.XdHiIa`.
+  The filing event creates and reads `wire-the-thing`. The completed command has `exit_code: 0`.
+- DONE: Inspect the filing oracle and the exact launcher command.
+  The command uses `/bin/bash -lc`, captures `sd_bin`, and invokes the captured launcher after a pipeline.
+  The recorded display form starts that segment with `\""'$sd_bin" new wire-the-thing`.
+- DONE: Define the smallest evidence repair.
+  Extend only the captured-launcher recognizer for the exact `/bin/bash -lc` display form.
+  Accept only completed Codex command records with exit code zero.
+- DONE: Define the actual-command positive and adjacent negative controls.
+  Copy the complete artifact command into one positive control.
+  Keep manual creation, `--next-id` plus a write, wrong slug, failed command, and narration-only controls red.
+- DONE: Name the exact files and estimate the change before product edits.
+  Change three existing test files. Estimate +90/-15 lines, 105 gross lines, and +75 net lines.
+- DONE: Preserve unrelated behavior.
+  Do not change dvd, n28, Pi, XFAIL policy, filed state, runtime instructions, registry rows, bindings, or other journeys.
+- DONE: Define the evidence sequence.
+  Run the focused control as a failing baseline before the repair.
+  Then run the focused controls, exact local Codex filing journey, full suite, race suite, format, registry, and owner checks.
+
+### Exact file design
+
+1. `internal/ensigncycle/shared_filing_test.go`
+   - Add Codex command status and exit-code fields to the existing event shape.
+   - Add one shared extractor for completed commands with exit code zero.
+   - Use this extractor in the Codex filing assertion.
+   - Recognize the exact display-quoted captured launcher only inside `/bin/bash -lc`.
+   - Require the captured variable, `new`, and the requested slug in the same command segment.
+2. `internal/ensigncycle/codex_live_runner_test.go`
+   - Reuse the shared successful-command extractor in `codexObservedCommands`.
+   - Ignore started records and completed records with a nonzero or missing exit code.
+3. `internal/ensigncycle/shared_filing_negative_test.go`
+   - Build valid completed Codex records with JSON encoding.
+   - Add the complete artifact command as the positive regression control.
+   - Add direct controls for manual creation, preview plus write, wrong slug, failed command, and narration only.
+
+### Control boundary
+
+The positive control contains the exact successful command from artifact `9078284956`.
+It includes the `/bin/bash -lc` wrapper, `sd_bin` assignment, pipeline, quoted launcher, slug, and follow-up reads.
+
+The matcher does not accept a general `$VAR new` pattern.
+It also does not infer success from a started record or command text alone.
+Thus, a failed atomic-looking command stays red.
+
+### Summary
+
+The design repairs only the Codex filing evidence boundary.
+It recognizes the successful atomic command and keeps each adjacent non-atomic or unsuccessful command red.
