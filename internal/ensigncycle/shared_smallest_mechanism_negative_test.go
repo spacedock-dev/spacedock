@@ -316,3 +316,10 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 		t.Fatal("expected a per-entity gate justification in an agent_message to fail the Codex assertion")
 	}
 }
+
+func TestSmallestMechanismTraceSelectsCodexDialect(t *testing.T) {
+	trace := smallestMechanismTraceForDialect("codex", ssmCodexRealDialectStream(), ssmEditFiles(), ssmCommissioned())
+	if err := gradeSmallestSufficientMechanism(trace, ssmEditFiles(), ssmCommissioned()); err != nil {
+		t.Fatalf("Codex dialect selection failed: %v", err)
+	}
+}

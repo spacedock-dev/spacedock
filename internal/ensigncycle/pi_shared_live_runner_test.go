@@ -36,13 +36,18 @@ func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
 
 func (d piSharedLiveDriver) model() string { return d.modelName }
 func (d piSharedLiveDriver) home() string  { return d.piHome }
+func (d piSharedLiveDriver) smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace {
+	return claudeMechanismTrace(result.stream, edits, commissioned)
+}
 func (d piSharedLiveDriver) withStubPATH(dir string) liveDriver {
 	d.env = withPATHPrefix(d.env, dir)
 	d.env = withSpacedockShimShellEnv(d.t, d.env, dir)
 	return d
 }
-func (d piSharedLiveDriver) emitMetrics(*testing.T, sharedRuntimeScenario, liveResult) {}
-func (d piSharedLiveDriver) gradeShallowBootObservation(*testing.T, liveResult)        {}
+func (d piSharedLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
+	emitPiScenarioMetrics(t, scenario, result, d.modelName)
+}
+func (d piSharedLiveDriver) gradeShallowBootObservation(*testing.T, liveResult) {}
 func (d piSharedLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liveResult)) {
 	return d, noLiveGrade
 }
@@ -75,6 +80,7 @@ func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, ro
 		t.Fatalf("Pi journey %q failed: %v; artifacts: %s\n%s", scenario.name, err, artifactDir, tail(stderr.String(), 4000))
 	}
 	rootSession := onePiSession(t, filepath.Join(sessionDir, "*.jsonl"), "root")
+	stderr.WriteString("\n" + readFile(t, rootSession))
 	return liveResult{finalMessage: stdout.String(), stream: stdout.String() + "\n" + stderr.String(), commands: piObservedCommands(t, rootSession), artifactDir: artifactDir, duration: duration}
 }
 

@@ -66,16 +66,16 @@ func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
 	}
 }
 
-func TestRuntimeLiveWorkflowGuardRejectsPaidPiJob(t *testing.T) {
+func TestRuntimeLiveWorkflowGuardRejectsMissingPiJourneyMetricUpload(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := live + `
-  pi-live:
-    environment:
-      name: CI-E2E-PI
-`
+	last := strings.LastIndex(live, `live-artifacts/journey-metrics/**`)
+	if last < 0 {
+		t.Fatal("fixture workflow missing Pi journey metrics upload path")
+	}
+	adversarial := live[:last] + `live-artifacts/pi/**` + live[last+len(`live-artifacts/journey-metrics/**`):]
 
 	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted a paid Pi live job")
+		t.Fatal("runtime live workflow guard accepted a Pi producer without retained journey metrics")
 	}
 }
 

@@ -8,15 +8,21 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 
 For each entity reported by `status --next`:
 
-Interpret the scheduler row before mutation. `current == next` dispatches that entered stage itself with idempotent `status={current} started`; neither FO nor helper manufactures its report or completion signal. Initial-stage successor rows retain legacy meaning.
+Interpret the scheduler row before mutation. If `current == next`, set `dispatch_stage = current`. If `current` is initial and `next` is terminal, set `dispatch_stage = current`. Otherwise, set `dispatch_stage = next`. Use the selected target for every dispatch boundary: the idempotent `status={dispatch_stage}` stamp, the exact path-scoped `dispatch: {slug} entering {dispatch_stage}` commit, and `«dispatch.build» --stage {dispatch_stage}`. Neither FO nor helper manufactures the worker's report or completion signal.
 
-1. Read the entity file and the target stage definition.
-2. Invoke `«dispatch.checklist»(entity, stage)` and retain its numbered output.
+1. Read the entity file and the `dispatch_stage` definition.
+2. Invoke `«dispatch.checklist»(entity, dispatch_stage)` and retain its numbered output.
 3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
-5. For a gate-consumed entry, `status` is already advanced: run `«dispatch.build» --stamp`, which stamps `started`/`worktree=`, commits+syncs state, and creates the declared worktree before emitting the envelope. For a non-gated entry, first advance with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, then the same `--stamp` build.
+5. For a gate-consumed entry, `status` already equals `dispatch_stage`: run `«dispatch.build» --stamp --stage {dispatch_stage}`, which stamps `started`/`worktree=`, commits+syncs state, and creates the declared worktree before emitting the envelope. For a non-gated entry, first advance with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={dispatch_stage} started`, then run the same `--stamp --stage {dispatch_stage}` build.
 6. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.
 7. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
+
+On exit 0, the next host action MUST be `«worker.spawn»` with every helper-emitted field unchanged.
+Record the returned handle before narration, a file edit, status change, report read, gate action, or wait.
+Do not advance to validation until `«completion-signal»` arrives and the entity-file stage report passes the completion gate.
+A successful dispatch build, narration, direct status change, or self-authored report is not worker evidence.
+An empty wait without a completion signal is not worker evidence.
 
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
 
@@ -24,7 +30,7 @@ A feedback-stage worker checks and reports on what was produced; it does not sil
 
 ## «dispatch.checklist»(entity, stage): assemble dispatch linchpins
 
-Build a numbered checklist of ≤3 dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage naturally advances. Zero to three items are valid; do not pad. Name what separates a good outcome from a ceremonial one.
+Build a numbered checklist of one to three dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage naturally advances. When neither source supplies an item, use the target stage's declared requirement as one linchpin; do not pad. Name what separates a good outcome from a ceremonial one.
 
 This is not a work breakdown: the ensign already reads the body, commits before signaling, and writes a stage report, so structural conventions do not appear. Entity-level acceptance criteria are finished-entity properties, not stage actions; every gate cross-checks them independently of checklist DONE/SKIPPED/FAILED accounting.
 
@@ -35,6 +41,8 @@ This is not a work breakdown: the ensign already reads the body, commits before 
 
 Advancing a completed worker. The gate-presentation spine is in the boot-resident core's `## Completion and Gates`; the reuse rules it defers to live here.
 
+**Gate successor guard.** If the next stage has `gate: true`, update it with `status={next_stage} started`. Dispatch it under the normal reuse and freshness rules. Enter `«gate.lifecycle»` only after `«completion-signal»` arrives and the stage report passes the completion gate.
+
 **Freshness invariant.** A fresh dispatch creates a new worker handle with no inherited parent turns. Runtime adapters enforce that boundary with the host's spawn mechanism. It does not change stage selection — the conditions below do.
 
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
@@ -44,7 +52,7 @@ Advancing a completed worker. The gate-presentation spine is in the boot-residen
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
 4. `«reuse.model-match»` — the reused worker's stamped model matches `next_stage.effective_model`.
 
-**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Build the advancement with `«dispatch.build» --advance` and send the emitted `prompt` through the runtime adapter's reuse-advance handle (its live-worker messaging call). On non-zero helper exit only, fall back to the adapter's manual advance template (the break-glass rule).
+**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} started`, commit: `advance: {slug} entering {next_stage}`). Build the advancement with `«dispatch.build» --advance` and send the emitted `prompt` through the runtime adapter's reuse-advance handle (its live-worker messaging call). On non-zero helper exit only, fall back to the adapter's manual advance template (the break-glass rule).
 
 **If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise invoke `«worker.shutdown»` when the host binds it. Then run `status --next` and dispatch the next stage.
 

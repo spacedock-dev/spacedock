@@ -60,6 +60,9 @@ func (d codexAsLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liv
 }
 func (d codexAsLiveDriver) model() string { return envOr("SPACEDOCK_CODEX_LIVE_MODEL", "codex") }
 func (d codexAsLiveDriver) home() string  { return d.runner.codexHome }
+func (d codexAsLiveDriver) smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace {
+	return smallestMechanismTraceForDialect("codex", result.stream, edits, commissioned)
+}
 func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
 	d.runner = d.runner.withStubPATH(d.t, dir)
 	return d

@@ -87,6 +87,7 @@ type liveDriver interface {
 	emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult)
 	gradeShallowBootObservation(t *testing.T, result liveResult)
 	prepareRecordedGate(t *testing.T) (liveDriver, func(liveResult))
+	smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
@@ -131,10 +132,8 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 	}
 	gradePreparation(result)
 	observation := recordedGateLiveObservation(t, fixture, before, commandLog)
-	if err := assert(observation); err != nil {
-		t.Fatalf("recorded gate lifecycle graded FAIL: %v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	runner.emitMetrics(t, scenario, result)
+	finishLiveScenario(t, runner, scenario, result,
+		durableSemantic("recorded-gate-lifecycle-violation", assert(observation)))
 }
 
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
@@ -168,7 +167,10 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 var _ liveDriver = claudeLiveRunner{}
 
 func (r claudeLiveRunner) model() string { return r.modelName }
-func (r claudeLiveRunner) home() string  { return r.homeDir }
+func (r claudeLiveRunner) smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace {
+	return smallestMechanismTraceForDialect("claude", result.stream, edits, commissioned)
+}
+func (r claudeLiveRunner) home() string { return r.homeDir }
 func (r claudeLiveRunner) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitClaudeScenarioMetrics(t, scenario, result, r.modelName)
 }
@@ -205,16 +207,49 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	return r
 }
 
+func durableSemantic(code string, err error) error {
+	if err == nil {
+		return nil
+	}
+	if _, ok := err.(*gradedErr); ok {
+		return err
+	}
+	return &gradedErr{code: code, msg: err.Error()}
+}
+
+func finishLiveScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, result liveResult, semantic ...error) {
+	t.Helper()
+	scenario.grade = gradeLive(scenario.gap.kind == "xfail", semantic...)
+	runner.emitMetrics(t, scenario, result)
+	if scenario.grade.status == "xfail" {
+		t.Logf("XFAIL %s/%s owner=%s observed=%v", scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes)
+	}
+	if scenario.grade.status == "xpass" {
+		t.Logf("XPASS ALERT %s/%s owner=%s observed=%v", scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes)
+	}
+	if liveGradeFailsLane(scenario.grade.status) {
+		t.Fatalf("%s %s/%s owner=%s observed=%v\nFinal message:\n%s\nArtifacts: %s", strings.ToUpper(scenario.grade.status), scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes, result.finalMessage, result.artifactDir)
+	}
+}
+
 func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(string, string, gateHeldExpectation) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	fixture := build(t, workflowRoot)
 	before := readFile(t, fixture.entity)
-	commandLog := filepath.Join(fixture.root, "evidence", "command.log")
+	observerRoot := t.TempDir()
+	if err := os.Symlink(fixture.stateRoot, filepath.Join(observerRoot, ".spacedock-state")); err != nil {
+		t.Fatal(err)
+	}
+	commandLog := filepath.Join(observerRoot, "command.log")
+	if err := assertObserverOutsideWorkflow(workflowRoot, commandLog); err != nil {
+		t.Fatal(err)
+	}
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	runner = runner.withStubPATH(shimDir)
 
 	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
+	writeFile(t, filepath.Join(result.artifactDir, "command.log"), readFile(t, commandLog))
 	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
 		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
 	}
@@ -223,16 +258,32 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	if err != nil {
 		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assert(before, after, expected); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	var semantic []error
+	semantic = append(semantic, durableSemantic("gate-not-held", assert(before, after, expected)))
+	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))
+	if scenario.name == "default-headless-gate-stop" {
+		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after))
 	}
-	if err := assertRecordedGatePresentation(result.finalMessage); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	semantic = append(semantic, assertRecordedGatePresentation(result.finalMessage))
+	finishLiveScenario(t, runner, scenario, result, semantic...)
+}
+
+func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) string {
+	t.Helper()
+	var started struct {
+		Type     string `json:"type"`
+		ThreadID string `json:"thread_id"`
 	}
-	if err := assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	for _, line := range strings.Split(result.stream, "\n") {
+		if json.Unmarshal([]byte(line), &started) == nil && started.Type == "thread.started" {
+			paths, _ := filepath.Glob(filepath.Join(runner.home(), "sessions", "*", "*", "*", "rollout-*"+started.ThreadID+".jsonl"))
+			if len(paths) != 1 {
+				t.Fatalf("Codex parent rollout for %q = %v, want one", started.ThreadID, paths)
+			}
+			return result.stream + "\n" + readFile(t, paths[0])
+		}
 	}
-	runner.emitMetrics(t, scenario, result)
+	return result.stream
 }
 
 func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(*gates.Document) error) {
@@ -317,12 +368,6 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 
 	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
 	after := readFile(t, entityPath)
-	if err := assert(after, result.finalMessage+"\n"+result.stream); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream)); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
 	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
 	// `spacedock claude -- -p {prompt}` with a prompt naming one entity, so the run
 	// is single-entity → bare; the contract's bare-mode feedback flow is sequential
@@ -332,10 +377,10 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	// team-mode keepalive a `-p` run can never satisfy (the AC-3 finding); the
 	// contract-correct single-entity assertion is used here. The team-mode
 	// reviewer-reuse question is the spun-off option-(a) task.
-	if err := assertClaudeSingleEntityRejectionFlow(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	runner.emitMetrics(t, scenario, result)
+	finishLiveScenario(t, runner, scenario, result,
+		durableSemantic("rejection-flow-state", assert(after, result.finalMessage+"\n"+result.stream)),
+		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream))),
+		durableSemantic("rejection-reviewer-flow", assertClaudeSingleEntityRejectionFlow(result.stream)))
 }
 
 // runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture
@@ -410,11 +455,9 @@ func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDrive
 	workflowRoot := build(t, t.TempDir())
 
 	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot))
-	trace := claudeMechanismTrace(result.stream, ssmEditFiles(), ssmCommissioned())
-	if err := assert(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned()); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	runner.emitMetrics(t, scenario, result)
+	trace := runner.smallestMechanismTrace(result, ssmEditFiles(), ssmCommissioned())
+	finishLiveScenario(t, runner, scenario, result,
+		durableSemantic("smallest-mechanism-violation", assert(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned())))
 }
 
 // runClaudeKeepMovingScenario grades each completed task from its own ordered,
@@ -424,10 +467,8 @@ func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario share
 	workflowRoot := build(t, t.TempDir())
 
 	result := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot))
-	if err := assert(t, workflowRoot); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	runner.emitMetrics(t, scenario, result)
+	finishLiveScenario(t, runner, scenario, result,
+		durableSemantic("keep-moving-violation", assert(t, workflowRoot)))
 }
 
 // runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it

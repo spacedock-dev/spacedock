@@ -75,8 +75,8 @@ After completion verification, a gate with no current-stage authority remains
 `needs-preparation` on boot and every machine scheduler read. Engage performs
 semantic report review. A concrete `report-incomplete:` veto stops without
 mutation; otherwise the First Officer calls `gate prepare` exactly once with its
-question, Artifact, summary, and References, commits the emitted binding,
-re-reads `awaiting-captain`, and presents it. Open, withdrawn, stale, closed,
+question, Artifact, summary, and References, commits the emitted `state=open`
+binding, performs one structured checklist/AC read, and presents it without another boot projection. Open, withdrawn, stale, closed,
 and spent attempts retain their existing lifecycle routes.
 
 Approval to a terminal target is *held* at consume: `gate consume` spends

@@ -42,6 +42,11 @@ func TestAssertGateHeld(t *testing.T) {
 	resolved := strings.Replace(after, "          briefing:\n", "          resolution:\n            type: Resolution\n            id: resolution:docs-dev:3k:validation:1\n            briefing: "+recordedGateBriefingID+"\n            by: captain\n            at: 2026-07-28T00:00:00Z\n            decision: approve\n          briefing:\n", 1)
 	applied := strings.Replace(resolved, "          briefing:\n", "          application:\n            action: advance\n            target-stage: handoff\n            state: pending\n          briefing:\n", 1)
 	applied = strings.Replace(applied, "            action: advance\n", "", 1)
+	terminal := strings.Replace(after, "verdict:\n", "verdict: passed\n", 1)
+	graded, ok := assertGateHeld(before, terminal, expected).(*gradedErr)
+	if !ok || graded.code != "gate-hold-terminal-fields-set" {
+		t.Fatalf("terminal-field control code = %#v, want gate-hold-terminal-fields-set", graded)
+	}
 	for name, mutant := range map[string]string{
 		"unbound":         before,
 		"advanced":        strings.Replace(after, "status: validation", "status: handoff", 1),
@@ -50,7 +55,6 @@ func TestAssertGateHeld(t *testing.T) {
 		"wrong-briefing":  strings.Replace(after, recordedGateBriefingID, "briefing:docs-dev:wrong", 1),
 		"resolved":        resolved,
 		"applied":         applied,
-		"verdict":         strings.Replace(after, "verdict:\n", "verdict: passed\n", 1),
 	} {
 		requireRecordedGate(t, assertGateHeld(before, mutant, expected) != nil, "%s control qualified", name)
 	}
@@ -59,6 +63,7 @@ func TestAssertGateHeld(t *testing.T) {
 func TestAssertGateHeldAcceptsPreparedFixtureBinding(t *testing.T) {
 	fixture := writePreparedRecordedGateFixture(t)
 	before := readFile(t, fixture.entity)
+	binary := buildRecordedGateBinary(t)
 	args := []string{
 		"gate", "prepare", "recorded-gate-task",
 		"--question", "Should the recorded validation gate advance?",
@@ -69,7 +74,7 @@ func TestAssertGateHeldAcceptsPreparedFixtureBinding(t *testing.T) {
 		args = append(args, "--reference", reference)
 	}
 	args = append(args, "--workflow-dir", fixture.root)
-	prepared := runRecordedGateCommand(buildRecordedGateBinary(t), fixture.root, "prepare", args...)
+	prepared := runRecordedGateCommand(binary, fixture.root, "prepare", args...)
 	if prepared.exit != 0 {
 		t.Fatalf("prepare exit=%d\nstdout=%s\nstderr=%s", prepared.exit, prepared.stdout, prepared.stderr)
 	}
@@ -78,9 +83,21 @@ func TestAssertGateHeldAcceptsPreparedFixtureBinding(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	after := readFile(t, fixture.entity)
+	stateHead := commitRecordedGateState(t, binary, fixture, "bind retained gate package")
+	after := recordedGateEntityAt(t, fixture, stateHead)
+	reread := mustRecordedGate(t, binary, fixture.root, "status", "--read", fixture.entity, "--json", "--workflow-dir", fixture.root)
+	for _, want := range []string{fixture.entity, `"status":"validation"`} {
+		if !strings.Contains(reread.stdout, want) {
+			t.Fatalf("status reread missing %q:\n%s", want, reread.stdout)
+		}
+	}
+	for _, want := range []string{expected.briefingID, expected.digest} {
+		if !strings.Contains(after, want) {
+			t.Fatalf("committed state head missing %q:\n%s", want, after)
+		}
+	}
 	if err := assertGateHeld(before, after, expected); err != nil {
-		t.Fatalf("prepared fixture binding rejected: %v", err)
+		t.Fatalf("committed and reread fixture binding rejected: %v", err)
 	}
 	for name, mutant := range map[string]string{
 		"attempt": strings.Replace(after, expected.attemptID, "gate-attempt:wrong", 1),

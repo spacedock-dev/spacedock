@@ -5,8 +5,10 @@ The live lanes prove runtime behavior, not text shape. Static grep checks over w
 A runtime regression is proved by one of the 17 exported `TestLiveCommon...`
 functions registered in [`runtime-live-ci-registry.md`](runtime-live-ci-registry.md).
 Each declaration has an adjacent `liveJourney(...)` call that binds its stable
-journey ID, fixture builder, target-scoped TODO owner, runtime-neutral exercise,
-and durable assertion. There is no scenario table or runtime runner registry.
+journey ID, fixture builder, target-scoped TODO or strict-XFAIL owner, runtime-
+neutral exercise, and durable assertion. A TODO skips only when the target
+cannot run. An XFAIL runs the target and accepts its typed semantic failures.
+There is no scenario table or runtime runner registry.
 
 The helper selects only the Claude, Codex, or Pi transport from
 `SPACEDOCK_LIVE_RUNTIME`. The selected transport launches the current checkout;
@@ -36,8 +38,16 @@ SPACEDOCK_LIVE_STATE_DIR=docs/dev/.spacedock-state \
   go test ./internal/contractlint -run '^TestRuntimeLiveTODOOwnersAreActive$'
 ```
 
-This check fails when a TODO names a missing, completed, rejected, or archived
-entity. Stable code CI does not fetch mutable workflow state.
+This check fails when a TODO or XFAIL names an inactive entity. Stable code CI
+does not fetch mutable workflow state.
+
+Live records use `pass`, `xfail`, `xpass`, or `fail`. After infrastructure
+succeeds, the grade runs the durable semantic assertions. One or more typed
+semantic failures produce XFAIL for an XFAIL target. The metric keeps all
+observed semantic codes. An empty semantic set is XPASS. XPASS keeps the lane
+green and emits an alert with the target and owner so the binding can be removed.
+Authentication, launch, timeout, fixture, parsing, state-read, and metric
+failures remain ordinary failures.
 
 ### Local live execution
 
@@ -72,6 +82,8 @@ For Codex, install and authenticate the CLI (or set `OPENAI_API_KEY`), then run:
 ```bash
 SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v
 ```
+
+Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI_API_KEY` is set, the harness copies `~/.codex/auth.json` into an isolated `CODEX_HOME`; if the variable is already set, run `unset SPACEDOCK_CODEX_LIVE_REQUIRED` first.
 
 Run the Pi live proofs locally with the same package versions pinned in CI:
 
@@ -113,7 +125,7 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 | Codex resolver and `TestLiveCommon...` | Current-checkout resolution and common journeys | Both PR and release jobs consume Codex metrics. |
 | Pi `TestLiveCommon...` and `TestLivePiFrontDoorSmoke` | Common journeys plus one four-part substrate proof | The detail artifacts preserve each run. |
 
-The deletion removes 17 seconds of tmux setup and avoids a 172.5-second duplicate Pi smoke per run.
+The manual Pi lane keeps the lean surface: it does not install tmux and runs one front-door substrate smoke.
 
 The optional journey-delta job uses the newest metrics artifact for each live producer in the run.
 If one artifact is unavailable or incomplete, the job warns and skips the comment. The required test result does not change.
@@ -121,8 +133,8 @@ If one artifact is unavailable or incomplete, the job warns and skips the commen
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
 - Pull requests run `claude-sonnet-5` at maximum effort and `gpt-5.6-luna` at maximum effort.
-- An explicit `live_cadence=opus-pre-release` dispatch runs `claude-opus-4-8` at maximum effort.
-- Pi live evidence runs locally with `pi login`. The offline job keeps the registry reconciliation. An explicit local API key is also supported.
+- An explicit `live_cadence=opus-pre-release` dispatch runs offline plus `claude-opus-4-8` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
+- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai/gpt-5.6-luna` at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests still run only Sonnet and Codex; Pi is optional and is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 
