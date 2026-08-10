@@ -63,6 +63,17 @@ gates:
                 digest: sha256:f76e5b18eef2f18a5038a9b71b2e594d199ffb063aaa160c5239d71a7977615e
                 request-digest: sha256:9f8542f7648e4e5b698cdf9a591b73b49fca5e755169931d60938b15f7dafd0b
                 room-ref: ./repair-entered-stage-dispatch-and-post-gate-terminalization/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9adv48yhye5s2vkhwd7ge52d:validation:1
+                briefing: briefing:9adv48yhye5s2vkhwd7ge52d:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T15:57:17.786375Z"
+                decision: approve
+                reason: Captain conn approves 9a after independent exact-final-head Sonnet and Codex validation with Pi ownership preserved.
+              application:
+                target-stage: done
+                state: pending
 sprint-readiness: ready
 group: common-evidence
 ---
