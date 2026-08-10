@@ -241,3 +241,27 @@ evidence first, then prove spawn and completion ordering in both live lanes.
 The entity parser and gofmt check passed. The normal and race Go suites were
 attempted, but internal/cli stalled and both runs were interrupted after about
 five minutes; no product files changed.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved shared First Officer worker-spawn and completion guard for the initial implementation stage.
+  Commit 29d11fed3 adds the five rules at `skills/first-officer/references/fo-dispatch-core.md:21`.
+- DONE: Add task-local focused proof for real spawn evidence, completion before validation, and rejection of build/status/narration/empty-wait substitutes.
+  `TestInitialWorkerSpawnGuardPrecedesCompletionAndValidation` fails if a rule is absent or out of order.
+- DONE: Do not edit shared XFAIL bindings, registry reconciliation, sprint package files, or shared runtime documentation before ts lands.
+  The checkpoint changes only the task-owned dispatch core and its focused contract test.
+- DONE: Keep runtime adapters, command grammar, stored formats, and product ownership unchanged.
+  The diff changes no adapter, command implementation, stored format, or ownership rule.
+- DONE: Commit the product behavior checkpoint and report exact files, lines, tests, and deferred post-ts live proof.
+  Commit 29d11fed3 changes the dispatch core at line 21 and the test at line 20.
+- DONE: Run the task-local normal and race proof.
+  `go test ./internal/contractlint -count=1` and its race form pass. Removing or reordering a guard makes the focused test fail.
+- FAILED: Complete the repository-wide normal and race suites.
+  Both `go test ./...` commands stalled in `internal/cli`. The runs stopped after 334.291s and 254.890s.
+- SKIPPED: Run the Sonnet and Codex live acceptance proof.
+  The post-ts stage owns the exact-candidate live runs, XFAIL removal, and registry reconciliation.
+
+### Summary
+
+Commit 29d11fed3 requires a real initial spawn and verified completion before validation. The focused normal and race tests pass.
+The shared XFAIL bindings, registry, sprint package, runtime documentation, adapters, command grammar, and stored formats remain unchanged.
