@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:98aa776adg66gn823a8gamdq:validation:attempt-4:revision-1",
+  "question": "Approve 98a cycle-3 correction for PR #657 merge?",
+  "artifacts": [
+    {
+      "id": "artifact:98aa776adg66gn823a8gamdq:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/f5194b73c30dfe542514c8eb3c1ef380c084bf2d/codex-headless-implementation-worker-before-validation.md",
+      "rev": "sha256:9e93136df4d2cb6c405d0a5a0e8ddd5dd6077fc2874c6112931eda8e8cdd1a03",
+      "mediaType": "text/markdown",
+      "summary": "Validation recommends PASSED for 61d31a349. Fresh validation now dispatches before its gate; exact Sonnet AutoContinue and default-headless pass; full/race and focused controls are green within seven files and 217 gross."
+    }
+  ]
+}
