@@ -10,7 +10,7 @@ score: 0.95
 sprint: durable-decisions
 sprint-readiness: ready
 group: runtime-live-ux
-worktree:
+worktree: .worktrees/spacedock-ensign-make-local-codex-live-auth-failure-self-correcting
 issue:
 pr:
 mod-block:
