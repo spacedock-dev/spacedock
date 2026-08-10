@@ -545,3 +545,47 @@ Candidate `e2ead5f4367598f806a1162f8c0c36bee97f091c` is ready for PR and merge o
 ### Summary
 
 Implementation is complete. Sonnet and Codex passed the exact value target, and merge commit `8832664ddbec8ac024c4e5251410d0422fa7ca04` landed it.
+
+## Stage Report: validation
+
+- DONE: Verify exact candidate e2ead5f4367598f806a1162f8c0c36bee97f091c and merge commit 8832664ddbec8ac024c4e5251410d0422fa7ca04.
+  PR 660 and Git identify that exact head and merge commit.
+- DONE: Inspect the 6x-owned initial-stage dispatch behavior and confirm other product bindings remain unchanged.
+  The selected `dispatch_stage` controls each boundary. The three 9a keep-moving bindings remain unchanged.
+- DONE: Inspect exact pre-merge Sonnet PASS in 256.99 seconds and Codex PASS in 237.81 seconds.
+  Implementation cycle 7 records both exact candidate runs and their durations.
+- DONE: Inspect implementation full, race, focused, registry, owner, and format evidence without repeating owned checks.
+  Cycle 7 records both suites and focused checks. The final diff has no format error.
+- DONE: Confirm the Pi XFAIL remains pending and non-blocking under the Captain priority recarve.
+  The Pi binding still names task `6x50qafc8566zc6p1qpb6y30`. PR job `93494489487` was skipped.
+- DONE: Inspect exact PR run 31400544313 after its Sonnet and Codex jobs finish.
+  Sonnet job `93494488520` and Codex job `93494488495` finished with SUCCESS.
+- DONE: Record the Material process defect that PR #660 merged before required live checks and before independent validation; do not hide or repair this fact.
+  PR 660 merged at 14:53:04Z. Both required live jobs started at 14:55:09Z.
+- DONE: Write a Simplified Technical English validation report with PASSED or REJECTED and four evidence fields for each finding.
+  Recommendation: PASSED. The exact merged product value is green, and the Captain accepted the historical process defect.
+- DONE: Commit and push only the durable validation report, then send a completion signal that starts with "We love you."
+  This report is the only planned state change. The completion signal follows the push.
+
+### Acceptance evidence
+
+- AC-1: Exact PR artifacts `9069076294` and `9068796373` report the 6x target passed in 225.28 and 174.10 seconds.
+  The durable oracle fails for a missing dispatch, report, terminal field, archive, wrong order, or wrong path.
+- AC-2: The focused dispatch test and both live runs exercised the initial-stage selection through the supported host path.
+- AC-3: The implementation report records the entered-stage, ordinary-successor, durable, full, race, registry, owner, and format checks.
+- AC-4: The candidate keeps command grammar, stored formats, authority, and host adapters unchanged. The final integration diff is host-neutral.
+- AC-5: Commit `c87e82bc3` contains the three 6x smallest-mechanism owners. The 9a keep-moving owners remain unchanged.
+
+### Material finding: premature merge
+
+- Released user and normal workflow: PR 660 changed the host-neutral dispatch core, so Sonnet and Codex were required before merge.
+- Observable harm: The merge placed an unvalidated contract on `main` while both required live jobs were pending.
+- Affected boundary: `contract[docs/dev/README.md#Proof-policy]` requires each exercised live lane to be green before merge.
+- Trigger evidence: PR 660 merged at 14:53:04Z. The required jobs started at 14:55:09Z. Independent validation started later.
+- Defect kind: evidence defect. Release scope: Material historical process defect. Ownership: First Officer process.
+- Captain disposition: Accept and retain the event in the record. No corrective product work exists.
+
+### Summary
+
+The 6x product value passes on Sonnet and Codex. Pi remains pending under the Captain recarve.
+The validation recommendation is PASSED. The Captain accepted the premature merge as a historical process defect.
