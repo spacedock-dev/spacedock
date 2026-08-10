@@ -1,6 +1,6 @@
 ---
 title: Dispatch the current initial stage before its successor
-status: ideation
+status: implementation
 source: "Recarved from 9adv48yhye5s2vkhwd7ge52d during test-behavior-completeness shaping, 2026-08-09"
 started: 2026-08-09T18:34:37Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: Captain approved current initial-stage dispatch before successor advancement.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
