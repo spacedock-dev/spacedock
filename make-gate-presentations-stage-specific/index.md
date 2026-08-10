@@ -617,3 +617,28 @@ The Codex `report-incomplete` refusal before `gate prepare` and Claude `default-
 ### Summary
 
 The candidate now follows the Captain's evidence model: explicit `Gate content` narrows presentation, while its absence still permits concise supported evidence. The brittle prose denylist is gone, empty classes remain omitted, and every authorized deterministic check is green. Codex fixture reachability and the unrelated Claude default-headless failure remain outside KRB and unchanged.
+
+## Review-finding disposition: published fallback and empty-class example contradict the Captain ruling
+
+- Exact finding: candidate `7ed08279c` leaves `docs/site/concepts/gates-and-decisions.md` saying a no-override gate uses only stage Inputs, Outputs, Good/Bad, and transition, while the Captain ruling and presenter permit a concise supported subset from selected Artifact/References, report, checklist/AC evidence, and findings. `docs/site/get-started/first-workflow.md` also says skipped and failed groups are empty, the exact negative-summary form the presenter says to omit.
+- Released user and normal workflow: these two published pages teach operators what evidence the First Officer may present and show a new user's first gate review.
+- Observable harm: users receive a narrower false fallback contract and an example that foregrounds the two empty result classes KRB exists to remove. The implementation report's statement that the pages can be “read under” the ruling does not make their literal claims agree with it.
+- Affected value AC or non-negotiable boundary: `captain-ruling[2026-08-10]` Gate content is an override; without it, the presenter may select concise supported evidence from the stage definition, selected Artifact/References, report, checklist/AC evidence, and findings, while empty negative summaries remain omitted.
+- Trigger evidence: strict MkDocs succeeds on the unchanged claims; direct visual comparison finds the fallback sentence at `gates-and-decisions.md:16` and the empty-class sentence at `first-workflow.md:68`. The latter also differs from KRB's approved concrete documentation diff, which named passed checks and acceptance readiness without naming zero classes.
+- Defect kind: outcome defect. The shipped user-facing documentation fails AC-5 alignment and its sample violates the AC-3 omission contract under the active re-estimate.
+- Release scope: Material. Both triggers are normal published reading paths, the mismatches concern the task's promised user-visible value, and both files are KRB-owned expected surface.
+- Proposed task ownership: KRB; no adjacent command, runtime, fixture, lifecycle, recorder, or oracle owner is needed.
+- Proposed disposition: `fix` the two published sentences and synchronize the superseded fallback wording in the active acceptance-criteria/test-plan text before validation reruns deterministic docs and contract checks. No model or CI rerun is needed for this documentation-only correction.
+
+## Stage Report: validation (cycle 8)
+
+- DONE: Verify explicit Gate content remains the presentation override while the no-override path still gives concise, supported, decision-relevant evidence under the Captain ruling.
+  `skills/present-gate/SKILL.md` has the override and bounded fallback; retained Claude artifact `9070558260` remains supported evidence, but the published fallback sentence contradicts that ruling and is recorded above as Material.
+- DONE: Confirm the fixed-phrase oracle and bindings are absent, empty classes remain omitted, and the Codex fixture/default-headless findings are outside KRB without related candidate changes.
+  Commit `7ed08279c` removes the oracle table and Claude hook; repository search finds no binding, and the 10-file KRB diff contains no fixture, lifecycle, gap, runtime, command, schema, recorder, or default-headless change. The first-workflow sample still names empty classes, so AC-5/omission alignment fails.
+- DONE: Reproduce focused integration and contract checks, formatting, full, and serial race suites; cross-check all active acceptance criteria and recommend PASSED or REJECTED without a model or CI rerun.
+  Fresh contract lint and skills integration, `gofmt`, full Go tests, serial race, shell syntax, diff checks, and isolated `mkdocs build --strict` pass. AC-1/AC-2 behavior evidence and AC-4 ownership are retained, AC-3 authority is unchanged, but the published AC-5 mismatch is Material; recommend REJECTED without a model or CI rerun.
+
+### Summary
+
+Candidate code and deterministic checks are green, and the Captain-authorized removal of the fixed-phrase oracle is correctly scoped. Validation recommends REJECTED because both published gate pages still contradict the active fallback and omission contract; this is a narrow KRB-owned documentation correction, not a reason to revisit the model, CI, fixture, or default-headless findings.
