@@ -1972,6 +1972,30 @@ the proved acknowledgment value.
 The deferred task owns no-stamp same-stage handoff. This cycle is ready for
 independent revalidation.
 
+## Stage Report: implementation (cycle 4)
+
+- DONE: Restore the Codex `default-headless-gate-stop` XFAIL binding.
+  - Evidence: The shared journey now binds both `claude-sonnet` and `codex`.
+- DONE: Transfer both binding owners and reconciliation rows to the active kky task.
+  - Evidence: Both runtime rows and both mirrored rows use `kky8pg7wc8xgb985epwss092`.
+- DONE: Preserve the acknowledgment mechanism, Pi behavior, and retained proof.
+  - Evidence: The correction changes only the two approved binding files. It changes no mechanism or Pi row.
+- DONE: Record the exact assigned evidence from run 31425564473 attempt 2 and job 93590380530.
+  - Evidence: The n28 pending, armed, and consumed chain passed. The sole assigned result after that chain was `gate-hold-violation`.
+- DONE: Run focused grade, registry, owner, format, and changed-byte checks.
+  - Evidence: All focused checks passed. The final diff remains ten files and 492 gross lines.
+- DONE: Avoid live reruns and Pi work.
+  - Evidence: This correction ran no live target, paid CI, or Pi test.
+- DONE: Commit and push the corrected product head and report.
+  - Evidence: Product commit `ea27ef61f` restores the Codex binding and transfers both owners.
+
+### Summary
+
+Both default-headless bindings now belong to the active kky repair. The n28
+mechanism passed its exact acknowledgment chain before the gate-hold defect.
+
+The corrected candidate is ready for independent revalidation.
+
 ## Stage Report: validation (cycle 2)
 
 - DONE: Confirm exact unchanged product candidate, remote match, base, and clean worktree.
