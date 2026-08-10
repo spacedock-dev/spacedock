@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:2e4fe65gy9vcr4xck6akzmdd:validation:attempt-1:revision-1",
+  "question": "Approve validated Pi gate preparation repair for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:2e4fe65gy9vcr4xck6akzmdd:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2eb2eba3a8261710905b6cfc0ef015587ecfc633/commit-pi-gate-prepare-before-presentation.md",
+      "rev": "sha256:1c726bb101f7638d724c014ec850a38f66eb2daca646917aaae398e308134f24",
+      "mediaType": "text/markdown",
+      "summary": "Validation recommends PASSED for f7a86be96. AC-1 through AC-5 pass. Independent gate identity, ordering, authority, cleanup, and registry controls found no Material finding."
+    }
+  ]
+}
