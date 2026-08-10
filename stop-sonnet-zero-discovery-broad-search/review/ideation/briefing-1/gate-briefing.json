@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3rns0vh3svq49w43cfr0wdqd:ideation:attempt-1:revision-1",
+  "question": "Does the two-file, 14-gross-line design remove Sonnet filesystem discovery without changing other runtimes or policies?",
+  "artifacts": [
+    {
+      "id": "artifact:3rns0vh3svq49w43cfr0wdqd:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8cd6b485c40e6bef746da629ad7d25854238128e/stop-sonnet-zero-discovery-broad-search.md",
+      "rev": "sha256:8aee5ba028d59e80c3cafcd22bcc3999934ef7ba499fa6d648573e3f7d2c76f1",
+      "mediaType": "text/markdown",
+      "summary": "Ideation recommends one exact Claude adapter path and one detector control from artifact 9074747236."
+    }
+  ]
+}

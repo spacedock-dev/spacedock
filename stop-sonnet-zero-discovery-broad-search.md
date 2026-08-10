@@ -30,6 +30,26 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:3rns0vh3svq49w43cfr0wdqd:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:3rns0vh3svq49w43cfr0wdqd-ideation-1
+              briefing:
+                id: briefing:3rns0vh3svq49w43cfr0wdqd:ideation:attempt-1:revision-1
+                digest: sha256:9a4d63cd96d5b7951a57d9c433ba2978e7a636f927493ebc57678d78e4067ae0
+                request-digest: sha256:4676d3306a8138d0c187cfe03be796f30b2e44c081be21b9793ae0bd1db0ae4e
+                room-ref: ./stop-sonnet-zero-discovery-broad-search/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3rns0vh3svq49w43cfr0wdqd:ideation:1
+                briefing: briefing:3rns0vh3svq49w43cfr0wdqd:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T18:42:37.269787Z"
+                decision: approve
+                reason: Captain directed this Sonnet product repair. The exact two-file design preserves all excluded surfaces and has a 14-line hard limit.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-10T18:38:46Z
 ---
 ## Problem
