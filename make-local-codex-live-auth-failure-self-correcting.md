@@ -1,7 +1,7 @@
 ---
 id: pma2c1j7wmg9yvf5n25tx2ff
 title: Make local Codex live auth failure self-correcting
-status: ideation
+status: implementation
 source: "Captain fast-track direction on 2026-08-09 after a targeted local gate-guardrail run incorrectly set the CI-only required flag and bypassed supported isolated OAuth."
 started: 2026-08-10T03:00:30Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: 'The design is the smallest sufficient correction: two files, no auth-policy change, no output comparison, and deterministic proof only.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Make the existing local Codex OAuth path obvious when a developer accidentally uses the CI-only live-test flag.
