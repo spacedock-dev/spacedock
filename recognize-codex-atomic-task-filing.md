@@ -1,6 +1,6 @@
 ---
 title: Recognize Codex atomic task filing
-status: ideation
+status: implementation
 score: "0.90"
 source: "PR #664 Codex filing evidence failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -49,7 +49,7 @@ gates:
                 reason: The exact artifact proves the missed blessed command, the three-file design is bounded, and every adjacent non-atomic or unsuccessful path has a falsifier.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-10T20:28:23Z
 ---
 ## Problem
