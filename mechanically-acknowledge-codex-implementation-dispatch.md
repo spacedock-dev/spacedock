@@ -1151,3 +1151,150 @@ Please review these exact questions:
 
 No product implementation is authorized before this review accepts the
 rescope and all Material findings.
+
+## Staff review of CLI single-flight rescope
+
+Date: 2026-08-10
+
+We love you.
+
+Recommendation: **HOLD**.
+
+The CLI-only rescope removes the unsafe parallel-correlation claim. The design
+still has three open Material findings and one incomplete proof contract.
+
+### 1. Supported PreToolUse denial
+
+Answer: **Yes, with a required correction and live proof.**
+
+Both supported hosts can deny a tool before execution. Claude supports a
+`PreToolUse` deny result or exit code 2. Codex supports the same deny result.
+
+The official Codex hook contract also states that `spawn_agent` matches
+`Agent`. Thus, the selected event is a supported CLI boundary.
+
+The design denies only when an `unbound-start` file exists (lines 751-755). It
+does not explicitly deny a missing, stale, duplicate, or non-pending epoch.
+
+Those events only change no receipt at lines 766-767. A second native worker
+can still start if the hook returns success.
+
+The hook must deny every assignment that cannot bind one exact pending receipt.
+The live cells must prove this rule for both hosts.
+
+The supported denial closes the prior assignment-swap defect only under that
+rule. One armed receipt then exists when `SubagentStart` arrives.
+
+This task does not claim general parallel correlation. It also makes no claim
+for an in-app host (lines 681-692).
+
+References:
+
+- <https://learn.chatgpt.com/docs/hooks>
+- <https://code.claude.com/docs/en/hooks>
+
+### 2. Local-host trust boundary
+
+Answer: **Yes, for a cooperative local CLI host.**
+
+Lines 694-704 identify the trusted host, launcher, and binary. They also exclude
+a malicious local process that can write the state repository.
+
+This boundary is explicit. It is not a security boundary against a malicious
+model, shell process, or operating-system user.
+
+The product documentation must keep that limitation. It must not describe the
+receipt as cryptographic proof or user authentication.
+
+### 3. Separate recovery authority
+
+Answer: **No. The recovery-authority finding remains Material.**
+
+The new flow correctly separates request creation from abandonment. It also
+requires digest recomputation and atomic consumption (lines 879-892).
+
+However, `abandon` accepts `--resolution-file FILE` at lines 870-876. The design
+does not identify an authority key, protected store, or trusted record creator.
+
+A worker can run `recovery-request`, create the stated file, and name itself as
+captain authority. The binary has no defined fact that rejects this forgery.
+
+The text later calls the resolution a Git ref. It does not define how the file
+maps to that retained ref.
+
+The design must name a separate authority source and its verification rule. The
+abandon command must consume that exact retained record.
+
+### 4. Eight mutation doors
+
+Answer: **No. The list misses one current lifecycle mutation.**
+
+The eight doors cover the public stage, terminal, archive, gate, merge, and
+advance commands at lines 836-845.
+
+However, `status --set worktree=` also removes lifecycle ownership. Current
+code classifies this update as terminal at `internal/status/handlers.go:133-145`.
+
+The list guards `completed` and `verdict`, but it does not guard a standalone
+worktree clear. `--force` makes this omission important.
+
+Add this mutation to the shared guard or state why it cannot affect an active
+receipt. Add a byte-clean refusal test for its forced and unforced forms.
+
+The post-mutation order also needs a failure rule. Lines 856-864 mutate entity
+bytes before the receipt moves to `advanced`.
+
+If the ref update fails, entity bytes already changed. The design must specify
+one atomic transaction or a tested rollback that restores all entity and gate
+bytes.
+
+### 5. Completed-to-advanced feedback re-entry
+
+Answer: **Yes, if the stage-exit transaction is atomic.**
+
+Lines 816-820 block a second active generation. A successful exit moves the
+completed receipt to `advanced`.
+
+A later feedback return can then create a new generation for the same entity
+and stage. This state model closes the permanent same-stage block.
+
+The guard must select the exact completed generation. The stage mutation and
+the `advanced` transition must succeed or fail together.
+
+### 6. Exact XPASS-to-PASS proof
+
+Answer: **No. The stated strict-XPASS sequence does not match the harness.**
+
+The two bindings exist at `internal/ensigncycle/shared_live_runner_test.go:108-111`.
+Their mirrored entries exist at
+`internal/contractlint/live_registry_reconciliation_test.go:51-54`.
+
+The harness classifies a clean expected failure as XPASS at
+`internal/ensigncycle/claude_runtime_helpers_test.go:330-356`.
+
+However, `liveGradeFailsLane` fails only `fail` at lines 326-328. The runner
+only logs `XPASS ALERT` at `internal/ensigncycle/claude_live_runner_test.go:216-228`.
+
+Therefore, the command does not fail as strict XPASS. Lines 1036-1037 require
+an outcome that the current harness cannot produce.
+
+Define one exact proof rule. Either make XPASS fail this lane, or require a
+successful command with an exact XPASS record and empty semantic codes.
+
+Then remove only the two bindings and mirrored entries. Both reruns must pass
+with the same durable receipt and open-gate evidence.
+
+### Surface verification
+
+The table has exactly 40 files. Its arithmetic is correct:
+
+- 4,685 insertions;
+- 121 deletions;
+- 4,806 gross lines;
+- 4,564 net lines;
+- 480 lines of gross tolerance.
+
+The surface is large for a CLI-only feature. The estimate is acceptable only as
+a ceiling after the Material design gaps close.
+
+No product implementation is authorized by this review.
