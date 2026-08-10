@@ -205,7 +205,7 @@ The existing live journey proves the outcome. The new focused control preserves 
   Two pre-edit Sonnet runs also passed without a search.
   The retained pre-edit run used a direct adapter read despite the relative instruction.
 - DONE: Change only the two approved files within 14 gross lines.
-  Candidate `289ede00015c7fa29961714f4c727cac77423524` changes two files and 10 gross lines.
+  Candidate `8af37edcd9bc2a4033cd0bfa077f5a872ae597e3` changes two files and 10 gross lines.
   The diff is +9/-1 lines and +8 net lines.
 - DONE: Run the exact local Sonnet zero-discovery target and retain normal PASS artifacts.
   The repaired target passed in 26.87 seconds with local subscription authentication.
@@ -213,11 +213,11 @@ The existing live journey proves the outcome. The new focused control preserves 
   The evidence remains under `.spacedock-evidence/3rns/post-edit-sonnet/` in the code worktree.
 - DONE: Run focused, format, full, race, registry, and active-owner checks.
   The focused detector, `gofmt`, full suite, race suite, and registry reconciliation passed.
-  All five remaining XFAIL owner IDs resolve to active workflow records.
+  All eight remaining XFAIL owner IDs resolve to active workflow records.
 - DONE: Keep n28, Pi, Codex, XFAIL policy, and unrelated journeys unchanged.
   The candidate changes only the Claude adapter instruction and the exact detector table case.
 - DONE: Commit and push the exact candidate and a Simplified-English implementation Stage Report.
-  The candidate branch contains commit `289ede00015c7fa29961714f4c727cac77423524` on `origin`.
+  The candidate branch contains commit `8af37edcd9bc2a4033cd0bfa077f5a872ae597e3` on `origin`.
   This report records the implementation evidence for independent validation.
 
 ### Acceptance evidence
@@ -233,3 +233,11 @@ The existing live journey proves the outcome. The new focused control preserves 
 The entry skill now gives Sonnet the exact Claude adapter path. The focused control retains the prohibited command from the failing artifact.
 
 The local Sonnet target passes and uses the direct adapter read. The candidate is ready for independent validation.
+
+### Rebase update
+
+The candidate now uses exact base `0bbe9d46c02328930253bfbe619f9827d6da5109`. The rebase completed without a conflict.
+
+The focused detector, registry, owner, format, and diff checks passed. The product diff did not change.
+
+The full, race, and live runs were not repeated. Their product bytes did not change, and the First Officer prohibited duplicate runs.
