@@ -1,6 +1,6 @@
 ---
 title: Commit the Pi gate before presentation
-status: ideation
+status: implementation
 source: "Staff review M3 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:19Z
 completed:
@@ -66,7 +66,7 @@ gates:
                 reason: Captain approved committed and reread Pi gate state before presentation.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
