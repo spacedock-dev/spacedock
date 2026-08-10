@@ -525,3 +525,37 @@ Independently validated the frozen cycle-7 evidence and the narrow compatibility
 ### Summary
 
 Revalidated all six revised acceptance criteria after the authorized AC-2 state-only correction. The frozen cycle-7 evidence now aligns with the Captain ruling without weakening pre-publication discipline or gate authority; no material, deferred-risk, or polish finding remains, so the recommendation is PASSED.
+
+## Design Reset: Contract-only gate path
+
+This Captain correction supersedes the atomic `gate prepare-review` design, its validation, the terminal approval, and the 17-turn/17-call product guarantee. Runtime counts remain historical observations only; this candidate adds no runtime mechanism and claims no measured threshold.
+
+### Contract design and boundary
+
+Retain only direct First Officer instructions and the public gate description that remove documented path waste. The First Officer reuses boot-provided workflow/entity identity, resolves the known entity without broad search, invokes the existing `gate prepare` grammar without a help probe, commits the open binding, and uses existing structured checklist/AC reads without another boot projection.
+
+The entire candidate is limited to `skills/fo-gate-lifecycle/SKILL.md`, `skills/first-officer/references/first-officer-shared-core.md`, and `docs/site/concepts/gates-and-decisions.md`. It adds no Go code, CLI command or format, controller, transaction callback, rollback mechanism, fixture, harness compatibility, or test infrastructure.
+
+### Corrected acceptance criteria
+
+1. The merge-base diff contains at most the three allowed files and 30 changed lines, all directly reducing the documented First Officer gate path.
+2. `status --gate-evidence`, `gate prepare-review`, transactional preparation/rollback, their documentation/tests, and prepare-review-only harness/removed-verb compatibility changes are absent from the candidate.
+3. Existing focused gate-lifecycle, status, and contract smoke checks pass, as do formatting, the full suite, and the race suite.
+4. No authenticated model journey or GitHub Actions run is required or triggered; prior runtime counts are observational evidence, not acceptance guarantees.
+
+### Corrected test plan
+
+Run the existing focused recorded-gate lifecycle tests, status default-stage/open-readiness tests, and contractlint suite. Then run `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race`; inspect the cumulative merge-base name/numstat diff for the three-file/30-line hard stop.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: The candidate contains only the contract and public-description changes needed to remove the documented gate-path waste.
+  Commit `339d05a23` has a cumulative merge-base diff of exactly three allowed files and +11/-14 lines; changing another file or exceeding 30 lines breaks the recorded name/numstat boundary.
+- DONE: All gate-evidence, prepare-review, transactional-prepare, CLI, harness, and new-test surfaces are removed.
+  The cumulative diff contains no Go, CLI reference, fixture, harness, or test file; `go test ./...` would fail if the restored baseline did not compile or existing behavior regressed.
+- DONE: Existing focused contract checks, full tests, race tests, and formatting pass without an authenticated model run.
+  Recorded lifecycle/status/contractlint checks, `gofmt`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass; no live journey or GitHub Actions run was started.
+
+### Summary
+
+Restored the original contract-only design and removed the rejected product/test mechanism in commit `339d05a23`. The final candidate is three documentation/skill files and 25 changed lines, with existing focused, full, and race verification green and runtime counts retained only as historical observations.
