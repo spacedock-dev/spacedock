@@ -37,6 +37,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:pma2c1j7wmg9yvf5n25tx2ff:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:pma2c1j7wmg9yvf5n25tx2ff-ideation-1
+              briefing:
+                id: briefing:pma2c1j7wmg9yvf5n25tx2ff:ideation:attempt-1:revision-1
+                digest: sha256:cd0596992278060b9c5fbec95bd550798ec5990717fb5d057ea80f86fcd0bd0f
+                request-digest: sha256:4a6cc4f46d1f7bd6d31be0d68255171439531fa29697dbb9f27e0e1b333979ce
+                room-ref: ./make-local-codex-live-auth-failure-self-correcting/review/ideation/briefing-1
 ---
 
 Make the existing local Codex OAuth path obvious when a developer accidentally uses the CI-only live-test flag.
