@@ -230,6 +230,11 @@ outside `gates` and the Markdown body are preserved byte-for-byte. The per-entit
 rejects concurrent recorder writers; there is no retry, lease, daemon, or recovery
 protocol.
 
+A consumed nonterminal application is ordinary history after it enters its
+non-gated successor. After the worker report is durable, ordinary atomic
+terminal fields can complete that successor without `--force`. Pending,
+unreadable, stale, superseded, and terminal-target authority still fails closed.
+
 The model enforces unique gate, stage, attempt, Briefing, and Resolution ids; a unique
 status-matched logical gate when one exists; non-empty attempt histories; exact Resolution-to-Briefing binding;
 and portable `approve`, `revise`, or `hold` decisions. `revise` and `hold` require a

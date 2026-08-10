@@ -129,6 +129,61 @@ func gateApplicationStates(t *testing.T, entity string) []string {
 	return states
 }
 
+// consumedNonterminalWorkflow creates a gate whose successor is nonterminal.
+// The real consume command advances the entity and spends the approval.
+func consumedNonterminalWorkflow(t *testing.T) (root, entity string) {
+	t.Helper()
+	root = t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nmerge: local\nstages:\n  states:\n"+
+		"    - name: review\n      initial: true\n      gate: true\n"+
+		"    - name: implementation\n"+
+		"    - name: done\n      terminal: true\n---\n# Workflow\n")
+	writeFile(t, filepath.Join(root, "gate-review.md"), "# Review\n")
+	entity = filepath.Join(root, "task.md")
+	writeFile(t, entity, "---\nid: task\nstatus: review\ntitle: Task\n---\n# Task\n")
+	testgit.InitRepo(t, root, "-q")
+	terminalRunGit(t, root, "add", "-A")
+	terminalRunGit(t, root, "commit", "-q", "-m", "seed")
+	if code, out, errOut := terminalInvoke(t, root,
+		"gate", "prepare", "task", "--question", "Advance?", "--artifact", filepath.Join(root, "gate-review.md"),
+		"--summary", "Enter implementation.", "--workflow-dir", root,
+	); code != 0 {
+		t.Fatalf("prepare exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	if code, out, errOut := terminalInvoke(t, root,
+		"gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--workflow-dir", root,
+	); code != 0 {
+		t.Fatalf("record exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 || !strings.Contains(out, "consumed=true") {
+		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	return root, entity
+}
+
+// TestConsumedNonterminalApprovalAllowsOrdinaryTerminalFields pins AC-1 and
+// AC-3. Removing the consumed-history classification makes the normal write
+// fail. Requiring --force also makes this test fail because no such flag runs.
+func TestConsumedNonterminalApprovalAllowsOrdinaryTerminalFields(t *testing.T) {
+	root, entity := consumedNonterminalWorkflow(t)
+	if fields := entityFields(t, entity); fields["status"] != "implementation" {
+		t.Fatalf("consume status=%q, want implementation", fields["status"])
+	}
+	if got := gateApplicationStates(t, entity); !slices.Equal(got, []string{"consumed"}) {
+		t.Fatalf("consume application states=%v, want [consumed]", got)
+	}
+
+	code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task",
+		"status=done", "verdict=PASSED", "completed")
+	if code != 0 {
+		t.Fatalf("ordinary terminal fields exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	fields := entityFields(t, entity)
+	if fields["status"] != "done" || fields["verdict"] != "PASSED" || strings.TrimSpace(fields["completed"]) == "" {
+		t.Fatalf("terminal fields = status:%q verdict:%q completed:%q", fields["status"], fields["verdict"], fields["completed"])
+	}
+}
+
 // TestTerminalDeliveryFailureReworkRoundTrip is AC-1's value spine: approval
 // recorded -> consume routes without spending (pending, approved-awaiting-merge)
 // -> merge guard arms; delivery fails beyond retry -> --rework supersedes

@@ -226,6 +226,25 @@ func TestGateCeremonyCollapseAC1(t *testing.T) {
 	})
 }
 
+// TestGateCeremonyDispatchCommitContainsEnteredStageEvidence pins AC-2 to the
+// exact dispatch commit. A later commit that adds started makes this test fail.
+func TestGateCeremonyDispatchCommitContainsEnteredStageEvidence(t *testing.T) {
+	hostClone, workflowDir, entityPath, checklistFile := gateCeremonyFixture(t)
+	runAfterCeremonyCommands(t, hostClone, workflowDir, entityPath, checklistFile)
+
+	statePath := filepath.Join(workflowDir, ".spacedock-state")
+	wantSubject := "dispatch: task entering implementation"
+	commit := strings.TrimSpace(git(t, statePath, "log", "-1", "--format=%H", "--grep=^"+wantSubject+"$"))
+	if commit == "" {
+		t.Fatalf("no exact dispatch commit with subject %q", wantSubject)
+	}
+	blob := git(t, statePath, "show", commit+":task.md")
+	fields := status.ParseFrontmatterData([]byte(blob))
+	if fields["status"] != "implementation" || strings.TrimSpace(fields["started"]) == "" {
+		t.Fatalf("exact dispatch commit lacks complete entered-stage evidence: status=%q started=%q", fields["status"], fields["started"])
+	}
+}
+
 func TestGateJourneyUsesStatusAndActingCommandsWithoutEligibilityPreflight(t *testing.T) {
 	hostClone, workflowDir, entityPath, checklistFile := gateCeremonyFixture(t)
 	commands := []string{}
