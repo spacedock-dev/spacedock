@@ -532,3 +532,29 @@ Candidate `7e7651351` makes an empty declared fallback visibly empty and suppres
 ### Summary
 
 Validation recommends PASSED. Candidate `7e7651351` closes the exact live fallback and empty-findings defect with a deterministic semantic oracle bound to the canonical journey; every AC and authorized disposition has green, proportionate evidence. Candidate bytes and HEAD remain unchanged.
+
+## Review-finding disposition: PR #654 Claude presentation leakage
+
+- Exact finding: KRB PR #654 candidate `7e765135172422b37c1d7fadae1d6347d452ff9c` has a new PR-attached Claude result: `TestLiveCommonGateGuardrail` failed at `shared_live_runner_test.go:93` with `gate presentation contains undeclared retained review result`. The final message included `Validation stage report confirms the retained package replay is green...` although the stage definition declared only the validation output and the KRB contract says undeclared evidence is omitted.
+- Released user and normal workflow: PR Runtime Live E2E runs the current-checkout shared gate journey on Claude Sonnet and Codex before merge; Sonnet is a supported presenter host at the normal human gate boundary.
+- Observable harm: the Captain receives validation-report, retained-review, acceptance-criterion, and empty-finding prose that the workflow did not declare. The semantic oracle correctly turns this visible contract violation red, but the KRB candidate still fails its supported Claude presentation boundary.
+- Affected value AC or non-negotiable boundary: `value-ac[AC-1]` requires every supported gate review to follow its workflow's declared stage-specific evidence boundary without stage-name inference or fabricated rows.
+- Trigger evidence: PR #654 Runtime Live E2E run `31357260048`, Claude job `93359352038`, artifact `9051614205`, exact head `7e7651351`. `dispatch show-stage-def` returned only `### validation` and `Validate and present the retained package.` The final message then stated the retained replay/check results, cited the committed review/reference, added an unevidenced AC-1 paragraph, and said `no material findings surfaced`; the target failed in 138.18s with the exact oracle error above. Offline, docs/build, install, and Codex checks passed.
+- Root cause: `present-gate` says undeclared checklist, AC, entity, report, review, and package data may inform the recommendation but cannot become fallback evidence. It does not explicitly keep those inputs out of free-standing prose outside an `Evidence` heading. Sonnet followed the internal-judgment permission by paraphrasing and citing those undeclared inputs between the reviewed snapshot and Decision. The existing final-message oracle caught the behavior; the missing contract sentence, not the oracle, is the product defect.
+- Proposed materiality: Material. The supported PR workflow observed a Captain-facing AC-1 violation on exact candidate bytes.
+- Proposed task ownership: KRB owns the presenter clarification and reattachment of its semantic oracle after 5K. 5K owns the landed `finishLiveScenario`/gap-classification structure, so KRB must preserve that structure rather than resolve the overlap by restoring its older runner flow.
+- Proposed disposition: `fix`.
+
+### Smallest correction after owner reconciliation
+
+1. Reconcile candidate `7e7651351` onto `origin/main` `f9ddae640`. In `claude_live_runner_test.go`, keep 5K's `semantic` collection and `finishLiveScenario(...)`; append `assertRecordedGatePresentation(result.finalMessage)` to that collection. In `shared_live_runner_test.go`, keep 5K's gap-free `gate-guardrail` declaration (`nil`) and do not resurrect the old Pi or Codex TODO. Reapply the clean KRB oracle additions around current-main test code without changing their meaning.
+2. Tighten the single `present-gate` fallback rule: undeclared checklist, AC, entity, report, retained-review, and package inputs may affect internal recommendation judgment only. They must not be stated, paraphrased, cited, summarized, or otherwise appear anywhere in the captain-facing presentation. At a zero-source gate, the reviewed snapshot is followed by the Decision with no intervening evidence or justification prose. Retain the existing empty-negative-findings rule.
+3. Make no fixture-stage declaration, runtime, command, schema, recorder, lifecycle, gap-classification, or assertion-vocabulary change. The current oracle already rejects the exact PR paragraph through its retained-review-result and AC controls.
+
+### Fresh proof plan
+
+- Before product mutation, replay the retained PR final message through the focused default-build semantic oracle and require the exact undeclared-result rejection; keep the clean common-spine positive control green. This spends no model.
+- After reconciliation and the one rule clarification, run the focused semantic/gate-state controls, registry reconciliation, contract/integration tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and the required serial race suite. Audit that the only true merge conflicts were resolved by retaining 5K's lifecycle/gap owners and adding KRB's semantic error at their extension point.
+- Push one exact reconciled candidate to PR #654 and use the automatically attached Runtime Live E2E as the fresh supported-host proof. Require both Claude Sonnet and Codex `TestLiveCommonGateGuardrail` targets to execute and pass the semantic plus durable grades; inspect both retained final messages for no validation-report, retained-review, AC, or empty-finding prose. Do not manually rerun GitHub Actions or spend a second model run for luck if evidence changes.
+
+Candidate bytes, code HEAD `7e7651351`, Git refs, PR state, tests, model lanes, and CI remain frozen during this investigation. Only this durable proposal was written.
