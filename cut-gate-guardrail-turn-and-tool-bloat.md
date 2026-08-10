@@ -486,3 +486,22 @@ The atomic gate-review composite is complete at `25ef135cd`. Captain-accepted 17
 ### Summary
 
 Independently validated the frozen cycle-7 evidence and the narrow compatibility correction without comparing command/help prose or triggering another model journey. The candidate satisfies the revised 17/17 value, atomicity and authority boundaries, exact surface cap, formatting, full-suite, race-suite, and cleanliness requirements; recommendation: PASSED.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: AC-1 — Captain-revised value.
+  Frozen stream `cafab526…` independently contains 17 unique assistant-message IDs and 17 host calls; regraded metrics hash `9019aeb…` remains exact and no model journey was run.
+- DONE: AC-2 — Authorized state-only stream boundary.
+  State commit `86d694048` matches the Captain ruling: calls 9–13 order next → lifecycle → inspect → publish → presenter with no intervening discovery; calls 14–17 are read-only post-presentation diagnostics with no evidence, binding/room, presenter-input, or authority effect.
+- DONE: AC-3 — Inspect and publish identities.
+  Preserved evidence plus unchanged focused tests establish byte-clean inspect, exact candidate selection and First Officer-authored inputs, one open binding, commit/sync projection, and complete presenter inputs.
+- DONE: AC-4 — Atomic durability and restart.
+  Unchanged real-Git tests establish one binding-plus-two-room-file commit, byte-clean pre-commit failure, exact one-attempt replay, dirty-sibling preservation, and peer-conflict preservation.
+- DONE: AC-5 — Gate authority hold.
+  Corrected grade recognizes exactly one composite publish; the composite performs no Resolution, decision, consume, advance, dispatch, archive, automated recommendation, or presentation, and the preserved presenter occurs only afterward.
+- DONE: AC-6 — Surface and stable semantics.
+  Exact candidate `25ef135cd` remains clean at eight files, +635/-14 (649 lines); the prior formatting, full, race, focused authority, and behavioral removed-verb results remain applicable because no code, tests, or artifacts changed.
+
+### Summary
+
+Revalidated all six revised acceptance criteria after the authorized AC-2 state-only correction. The frozen cycle-7 evidence now aligns with the Captain ruling without weakening pre-publication discipline or gate authority; no material, deferred-risk, or polish finding remains, so the recommendation is PASSED.
