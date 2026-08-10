@@ -1950,3 +1950,53 @@ the proved acknowledgment value.
 
 The deferred task owns no-stamp same-stage handoff. This cycle is ready for
 independent revalidation.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Confirm exact unchanged product candidate, remote match, base, and clean worktree.
+  Candidate `042f926db1ec452354cae7d1accd0cbfde201dae` matches its remote and has base `0bbe9d46c02328930253bfbe619f9827d6da5109`.
+- DONE: Confirm the Captain recarve limits value to ordinary commissioned fresh dispatch through --stamp.
+  Gate-consumed and non-gated fresh dispatches use the same `dispatch build --stamp` procedure.
+- DONE: Confirm no-stamp same-stage owner handoff is excluded and owned by egsrea0tppbaphb61kc9wj5s.
+  The sole no-stamp fresh branch is the excluded Same-Stage Conflict Owner Handoff path.
+- DONE: Inspect retained Claude and both Codex artifacts.
+  The three directories contain 19 files and 776,530 bytes. The validator recorded a SHA-256 digest for each file.
+- DONE: Run focused acknowledgment, registry, owner, format, and diff checks without repeating owned full, race, or live runs.
+  The focused tests passed. JSON, Go format, worktree cleanliness, and `git diff --check` checks passed.
+- DONE: Report each finding with four workflow evidence fields.
+  One deferred risk is recorded below. No Material finding remains.
+- DONE: Write and push a Simplified-English PASSED or REJECTED validation cycle report.
+  This report recommends PASSED. State commit and push evidence is in the state branch history.
+
+### Current acceptance evidence
+
+- DONE: The commissioned stamped path creates one pending envelope.
+  Both retained host journeys used `dispatch build --stamp` before the native spawn.
+- DONE: Supported hooks bind one native worker identity.
+  The retained audit chains contain matching pending, armed, and consumed identities.
+- DONE: Caller text has no acknowledgment authority.
+  The candidate has no public command that accepts spawned or consumed state.
+- DONE: Same-stage replay fails closed for the commissioned path.
+  `TestLifecycleAndReplay` rejects a second create and a repeated arm event for both hosts.
+- DONE: A consumed receipt does not replace the complete-report guard.
+  The status handler requires the existing complete and committed stage report before it clears the receipt.
+- DONE: The Captain-approved binding recarve is exact.
+  Codex is unbound. Sonnet remains bound to `kky8pg7wc8xgb985epwss092` in both registry rows.
+- DONE: Pi and legacy behavior stay stable.
+  The ten-file diff changes no Pi path and gates acknowledgment on a Claude or Codex session marker.
+
+### Deferred risk: no-stamp same-stage owner handoff
+
+- Released user and normal workflow: The no-stamp path is only the excluded same-stage conflict-owner handoff.
+- Observable harm: That handoff can emit a native-worker envelope without an acknowledgment chain.
+- Affected value AC or boundary: `captain-ruling[2026-08-10]` excludes this handoff from n28 commissioned stamped value.
+- Trigger evidence: The retained disposable no-stamp Codex build emitted null acknowledgment fields and zero refs.
+- Supported-path evidence: The equivalent stamped fixture created one pending active ref and one pending audit ref.
+- Promote condition: This risk becomes Material here if commissioned fresh dispatch omits `--stamp` or n28 scope expands to the handoff.
+- Disposition: Deferred and owned by `egsrea0tppbaphb61kc9wj5s`. The owner task is active in backlog.
+
+### Summary
+
+The unchanged candidate satisfies the Captain-recarved commissioned stamped value. Focused checks and retained host evidence support the acknowledgment chain.
+
+Validation recommends PASSED. The separate deferred task owns the excluded no-stamp handoff.
