@@ -344,3 +344,53 @@ Recommendation: REJECTED because the oracle still accepts a retry after a failed
 
 The oracle now rejects a failed state commit after prepare, even when a later retry succeeds.
 The correction adds three gross lines. Full and race tests did not run in this correction cycle.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Revalidate exact candidate `3f437a8cf17879ad400bf2876a5266a7801dac96` and report `633c41360620d41a836e3e8ac0206665c5918ec4`.
+  Both commits were present, and the candidate matched its remote branch.
+- DONE: Verify the exact three-line retry correction and existing controls.
+  The focused test passed the failed-only, failed-retry, late-read, and other existing mutants.
+- DONE: Verify the complete candidate cap and unchanged product bytes.
+  The diff has four files, 14 insertions, four deletions, and 18 gross lines. The product remains 6,993 bytes.
+- DONE: Verify retained Sonnet evidence and transferred Codex ownership.
+  Both Sonnet logs pass the new oracle. Codex remains bound to `272j6s25f9mry6nxbf4yjxvt`.
+- FAILED: Verify all nonzero failed-commit retries and exact-head full/race evidence.
+  An exit-2 retry passed the oracle, and prior full/race runs predate the changed relevant bytes.
+- DONE: Preserve the candidate and unrelated workflow state.
+  No candidate, live artifact, or unrelated entity changed during validation.
+- DONE: AC-1 through AC-3
+  The retained Sonnet logs and streams still prove the ordered durable open gate.
+- FAILED: AC-4
+  The oracle rejects exit 1 but accepts another nonzero commit failure followed by a successful retry.
+- FAILED: AC-5
+  The exact candidate has no full or race result after its relevant oracle and test bytes changed.
+
+### Reviewer findings
+
+- Material evidence defect: the retry guard matches only exit 1.
+  Released workflow: the local Sonnet default-headless gate-stop observer.
+  Observable harm: a supported nonzero commit failure and retry can receive a clean PASS or XPASS grade.
+  Authority: `value-ac[AC-4]` requires the focused negative control to reject a failed commit.
+  Trigger: prepare, exit-2 or exit-3 commit failure, successful retry, state head, checklist read, and AC read.
+  A detached mutant reproduced exit-2 acceptance. The shipped conflict path proves exit 3 is supported.
+  Defect kind: evidence defect. Release scope: Material. Proposed owner: this task. Proposed disposition: narrow fix.
+- Material evidence defect: prior full/race results do not cover the exact candidate.
+  Released workflow: validation of candidate `3f437a8cf17879ad400bf2876a5266a7801dac96`.
+  Observable harm: the changed oracle and mutant bytes lack exact-head suite evidence.
+  Authority: `value-ac[AC-5]` requires full and race checks to pass.
+  Trigger: prior runs used `ee1109547`, then `3f437a8cf` changed `claude_runtime_helpers_test.go`.
+  Defect kind: evidence defect. Release scope: Material. Proposed owner: this task. Proposed disposition: run required checks.
+
+### Checks run
+
+- PASS: the focused oracle, registry, active-owner, diff, and format checks passed.
+- PASS: detached retained-log tests passed for bound and unbound Sonnet evidence.
+- EXPECTED FAIL: the detached nonzero-retry mutant proved the remaining AC-4 gap.
+- SKIPPED: live, full, and race runs did not run in this cycle.
+  Live evidence was retained. Prior full/race evidence was not valid for the changed relevant bytes.
+
+### Summary
+
+The three-line change closes the exact exit-1 retry gap and preserves all retained Sonnet value.
+Recommendation: REJECTED for the nonzero retry gap and missing exact-head full/race evidence.
