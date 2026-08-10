@@ -53,9 +53,9 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "n28423efmj358m5av61z2fxx"}, {"xfail", "codex", "n28423efmj358m5av61z2fxx"}},
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}},
-		"rejection-flow":                {{"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "zhcb4bcz1qgcn7ajx2ctxpxk"}},
-		"smallest-sufficient-mechanism": {{"xfail", "pi", "6x50qafc8566zc6p1qpb6y30"}},
-		"keep-moving-posture":           {{"xfail", "pi", "9adv48yhye5s2vkhwd7ge52d"}},
+		"rejection-flow":                {{"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
+		"smallest-sufficient-mechanism": {{"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
+		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-sonnet", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "pi", "xp6c9qfe7y4wwp46enc3f85n"}},
 	}
 	for id, want := range wantGaps {
