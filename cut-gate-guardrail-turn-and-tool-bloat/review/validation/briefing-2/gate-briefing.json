@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-2:revision-1",
+  "question": "Approve the validated contract-only 5K candidate for PR and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/3134fef56d1fd6bb0dbe832e058dbbf709bb59c7/cut-gate-guardrail-turn-and-tool-bloat.md",
+      "rev": "sha256:a814448898a11ccb92ede83c4be27d153858922d44b9fe527a423e8b07677bd6",
+      "mediaType": "text/markdown",
+      "summary": "The corrected candidate removes the rejected command and test infrastructure, retaining only three contract and documentation files with 25 changed lines and green offline verification."
+    }
+  ]
+}

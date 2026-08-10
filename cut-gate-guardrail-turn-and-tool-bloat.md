@@ -77,6 +77,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:5k704rrfk5r75vqv3bwn1yhf-validation-2
+              briefing:
+                id: briefing:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-2:revision-1
+                digest: sha256:1fb466a96f70b90e4d03b0955c20a3b79a282357877ef083e6940ea040d0c574
+                request-digest: sha256:cef968ba5d141869dc45fe648bcbd1b4dafcd5b71536821c10580f9a57a454f1
+                room-ref: ./cut-gate-guardrail-turn-and-tool-bloat/review/validation/briefing-2
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
