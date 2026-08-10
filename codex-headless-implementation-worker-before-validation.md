@@ -354,6 +354,7 @@ The exact Sonnet target passed, but the exact Codex target failed. The independe
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation; surface 5 files/96 gross LOC vs estimate 2 files/10 gross LOC (+860%); AC unchanged
+- Cycle 2: PASSED — validation re-review; surface 7 files/217 gross LOC vs estimate 2 files/10 gross LOC (+2070%); AC unchanged under Captain-approved reset
 
 ## Captain-approved correction package
 
