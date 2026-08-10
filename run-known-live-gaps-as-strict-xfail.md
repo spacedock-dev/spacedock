@@ -66,6 +66,17 @@ gates:
                 digest: sha256:18a55b7beaa6c0025ef2bf70a626dea73988ec61468fcd3b241885a2d8327b7e
                 request-digest: sha256:cae88610bb24f208736012e241d7fb8f38e44be5af3254ac98bbb0e50fe294fc
                 room-ref: ./run-known-live-gaps-as-strict-xfail/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ts7gq0mr9s3chx2w4wppd1kt:validation:1
+                briefing: briefing:ts7gq0mr9s3chx2w4wppd1kt:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T04:14:58.050896Z"
+                decision: approve
+                reason: Exact candidate 02b2296a1 passed independent policy, ownership, metrics, scope, and implementation-owned full/race validation; no independent finding exists.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
