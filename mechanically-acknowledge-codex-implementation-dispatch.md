@@ -76,7 +76,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#666"
+pr: pr-merge:666
 ---
 
 ## Problem
