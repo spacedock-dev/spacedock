@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:n513fy4c3c9mtqkq38bfh3fh:ideation:attempt-1:revision-1",
+  "question": "Does the three-file evidence repair recognize blessed atomic Codex filing while keeping manual and unsuccessful creation red?",
+  "artifacts": [
+    {
+      "id": "artifact:n513fy4c3c9mtqkq38bfh3fh:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6f5660942a8ab0000b848c7b601c200a807721d7/recognize-codex-atomic-task-filing.md",
+      "rev": "sha256:8db1e344adbbac672264cd16138cfb58f01c166b9616a8d6992836f7b019c5ea",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE. The design changes only three existing test files, uses artifact 9078284956 as the exact positive, and retains manual, preview-plus-write, wrong-slug, failed-command, and narration negatives."
+    }
+  ]
+}

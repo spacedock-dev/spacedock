@@ -30,6 +30,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:n513fy4c3c9mtqkq38bfh3fh:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:n513fy4c3c9mtqkq38bfh3fh-ideation-1
+              briefing:
+                id: briefing:n513fy4c3c9mtqkq38bfh3fh:ideation:attempt-1:revision-1
+                digest: sha256:82916450a3bb3dd212ed85a0cae8ef3c858e60d07a86cbf3a8145920df074ae1
+                request-digest: sha256:2a38cac752f0fbd21d6219838aead3238547a1bd4d7125c907ab1ca1d4fdb4c4
+                room-ref: ./recognize-codex-atomic-task-filing/review/ideation/briefing-1
 started: 2026-08-10T20:28:23Z
 ---
 ## Problem
