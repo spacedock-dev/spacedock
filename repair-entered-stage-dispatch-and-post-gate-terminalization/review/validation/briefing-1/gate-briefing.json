@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9adv48yhye5s2vkhwd7ge52d:validation:attempt-1:revision-1",
+  "question": "Approve 9a for merge after exact-final-head Sonnet and Codex keep-moving proofs?",
+  "artifacts": [
+    {
+      "id": "artifact:9adv48yhye5s2vkhwd7ge52d:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/99564b6979746df3ffe2fbdc4b3ff06bd04f0eb2/repair-entered-stage-dispatch-and-post-gate-terminalization.md",
+      "rev": "sha256:46465d1bbdec70b6bedc1d6ca4e4aca7345470aead3de4c296838355328c27da",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED. Exact final head passes Sonnet and Codex keep-moving targets. Only 9a Sonnet and Codex bindings are removed; Pi remains a non-blocking XFAIL."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:9adv48yhye5s2vkhwd7ge52d:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f9ddae6400bf18cc6548f296e50efea2071c3266/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:423f7bb245ba43e13863ac5fdaee30267c1465ea2c1426dbfce1fcbace66e2e7"
+    }
+  ]
+}
