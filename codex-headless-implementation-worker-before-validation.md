@@ -265,3 +265,30 @@ five minutes; no product files changed.
 
 Commit 29d11fed3 requires a real initial spawn and verified completion before validation. The focused normal and race tests pass.
 The shared XFAIL bindings, registry, sprint package, runtime documentation, adapters, command grammar, and stored formats remain unchanged.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebase the product work onto `origin/main` at or after `a8688cabf`.
+  The branch rebased without a conflict and preserved the original product checkpoint as `e407abc61`.
+- DONE: Implement the approved shared First Officer worker-spawn and completion guard for the initial implementation stage.
+  Commits `1ab889f1e`, `a371ff490`, `f9935a20a`, and `b2c1ad9ba` complete the guard at `fo-dispatch-core.md:17`.
+- DONE: Add task-local focused proof for real spawn evidence, completion before validation, and rejection of build/status/narration/empty-wait substitutes.
+  The three focused tests start at `initial_worker_spawn_guard_test.go:28`. Removing a pinned boundary makes a test fail.
+- DONE: Run each exact owned live target on the same committed candidate.
+  Codex passed in 228.03s. Sonnet passed in 408.55s on commit `a00bd2c97`.
+- DONE: Remove only the 98a-owned XFAIL bindings after passing product evidence.
+  `shared_live_runner_test.go:110` retains only the Pi binding owned by `fh6rv0k6wr25zty0jjan4jp7`.
+- DONE: Update the exact reconciliation rows and runtime registry outcome.
+  The gap row is at `live_registry_reconciliation_test.go:53`. The outcome is at `runtime-live-ci-registry.md:115`.
+- DONE: Keep runtime adapters, command grammar, stored formats, and product ownership unchanged.
+  The candidate changes no runtime adapter, command implementation, stored format, sprint package, or other task binding.
+- DONE: Run the required checks.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` completed successfully.
+- DONE: Commit and push the completed product repair.
+  Commit `a00bd2c97` and its five predecessor commits are on the remote task branch.
+
+### Summary
+
+The repair now requires a real initial worker, completion evidence, started stage transitions, and direct gate entry after completion.
+Both owned live targets pass without XFAIL bindings. The normal and race suites also pass.
+The Pi binding and all bindings owned by other tasks remain unchanged.
