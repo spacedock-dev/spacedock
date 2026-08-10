@@ -82,6 +82,17 @@ gates:
                 digest: sha256:b716bfaa876f9b1d6ae54992a1c0224a6cfb3ae483e6b7a0ae7c251b5cfe601b
                 request-digest: sha256:bb36c0ade5ef66ffbf5ae45163ed2b960e328f97172ec41a0b57d14993bf9f99
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:krbaeb3resfpbh1qvnb65krf:validation:2
+                briefing: briefing:krbaeb3resfpbh1qvnb65krf:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T18:04:47.28289Z"
+                decision: approve
+                reason: Validation proves the Captain-corrected presentation override and meaningful fallback, empty-class omission, documentation alignment, and deterministic repository checks.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Outcome
