@@ -1,6 +1,6 @@
 ---
 title: Repair entered-stage dispatch evidence and post-gate terminalization
-status: ideation
+status: implementation
 source: "PR #585 exact-head run 30706782428: Codex job 91387287118 and Sonnet job 91387287120"
 started: 2026-08-09T18:34:29Z
 completed:
@@ -53,7 +53,7 @@ gates:
                 reason: Captain approved the post-gate dispatch and terminalization direction.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 sprint-readiness: ready
 group: common-evidence
 ---
