@@ -584,3 +584,36 @@ The Captain must decide whether KRB may expand or replace the final-message sema
 ### First Officer disposition
 
 HOLD. Preserve candidate `833f0a958` and all retained artifacts unchanged. Do not mutate, expand the output-text oracle, rerun CI/model lanes, or update PR refs. The Captain must decide the contract clarification, fixture reachability, and one-run semantic review approach without introducing a larger phrase matcher.
+
+## Captain design ruling: Gate content is a presentation override
+
+The Captain superseded the HOLD and prior AC-1 permission-boundary interpretation. `Gate content` is an authoritative presentation preference and override, not an evidence permission boundary. Without it, the presenter selects a concise, meaningful, decision-relevant subset from the stage definition, selected Artifact and References, current stage report, checklist and AC evidence, and findings; it must not fabricate facts or dump every source.
+
+Under this ruling, retained Claude artifact `9070558260` passed the KRB target correctly. Its concise statement that retained evidence replayed successfully and the package was ready is supported by the selected Artifact/References and current report evidence. The former fixed-phrase oracle incorrectly rejected allowed evidence and could not represent the Captain's semantic boundary, so candidate `7ed08279c` removes the denylist, unit table, and live-runner hook.
+
+The Codex `report-incomplete` refusal before `gate prepare` and Claude `default-headless-gate-stop` failure remain recorded outside KRB. They are not KRB acceptance evidence and received no fixture, lifecycle, gap, runtime, or lane change.
+
+### Revised AC evidence
+
+- AC-1: the workflow's explicit `Gate content` remains the override; absent that preference, the bounded fallback uses only meaningful evidence from the declared stage and selected committed review sources. The retained Claude gate-guardrail target passed in 106.90s with a concise supported fallback. The explicit/fallback integration fixture still exercises non-development stage names and rejects unrelated favorite-color evidence.
+- AC-2: `present-gate` still omits missing evidence, empty result classes, empty findings, zero-result rows, `None`, `N/A`, and zero-class aggregate labels. The focused integration package passed and its explicit/fallback checks retain those negative controls without a broad final-message phrase matcher.
+- AC-3: authority is unchanged. The retained Claude command log shows `gate prepare`, state commit, checklist/AC reads, and `dispatch show-stage-def`, then stops at the human boundary without recording a decision. The existing durable held-gate and command-log controls passed after removal of the presentation denylist.
+- AC-4: the final diff contains no semantic phrase oracle, new command, schema, recorder, runtime route, lifecycle rule, fixture-stage repair, or default-headless gap change. F6C retains semantic-oracle ownership; the Codex and default-headless findings remain with their named owners.
+- AC-5: the existing commission/refit propagation and published docs remain in the candidate, now read under the Captain's override/fallback ruling. `go test ./skills/integration` and contract lint passed; this correction changed no published page or generated workflow fixture.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Apply the Captain ruling within KRB and regrade the retained Claude gate-guardrail result.
+  `Gate content` is now an authoritative preference/override; the no-override path selects concise evidence from the stage, Artifact/References, report, checklist/AC evidence, and findings. Artifact `9070558260` is allowed and its KRB target remains a 106.90s pass.
+- DONE: Remove the fixed-phrase presentation denylist and all of its bindings.
+  Commit `7ed08279c` removes `assertRecordedGatePresentation`, its unit table, and the `runGateStopScenario` hook. Relative to reconciliation base `8832664dd`, those three Go test files have no KRB delta.
+- DONE: Preserve Gate-content override, bounded fallback, omission rules, authority spine, propagation, docs, and current-main reconciliation.
+  The correction changes only two lines in `skills/present-gate/SKILL.md` beyond deleting the obsolete oracle surface. It does not modify Codex report completeness, fixtures, lifecycle, default-headless grading, runtime adapters, commands, schemas, or recorders.
+- DONE: Pass focused and repository-required deterministic checks without running external proof.
+  Focused gate-state controls, contract lint, and `go test ./skills/integration` passed; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test -p 1 -race ./...` passed. A missing durable-state transition or malformed gate binding fails the focused controls; contract drift or integration omission fails the other focused packages.
+- DONE: Commit the candidate and report its exact surface without pushing PR refs.
+  Candidate `7ed08279cd3da10bd6e0ca2561c84194e5382d9f` is clean at 10 files, 106 insertions and 24 deletions (130 changed lines) versus merge base `8832664dd`. No model, CI rerun, environment approval, or PR push occurred.
+
+### Summary
+
+The candidate now follows the Captain's evidence model: explicit `Gate content` narrows presentation, while its absence still permits concise supported evidence. The brittle prose denylist is gone, empty classes remain omitted, and every authorized deterministic check is green. Codex fixture reachability and the unrelated Claude default-headless failure remain outside KRB and unchanged.
