@@ -156,23 +156,37 @@ Concrete documentation diff:
 +binding, performs one structured checklist/AC read, and presents it without another boot projection.
 ```
 
-## Acceptance criteria
+### Superseded live-mechanism acceptance criteria (historical)
 
-**AC-1 (VALUE) — The real gate journey requires materially less operator effort.**
+1. The real gate journey requires materially less operator effort.
 
 One candidate run of `TestLiveCommonGateGuardrail` with Claude Sonnet 5 at maximum effort uses at most 16 assistant turns and 18 host tool calls, measured from its archived Claude stream with the same journey-metrics collector used for baseline run `31297186020` (22 turns, 24 calls).
 
-**AC-2 — Known search and retry waste is absent.**
+2. Known search and retry waste is absent.
 
 The candidate stream contains no filesystem search for the known workflow/entity/contract path, no `gate ... --help` or failed command-shape probe, no broad/repeated Git or worktree-status inspection, and no boot projection after successful `gate prepare`.
 
-**AC-3 — Gate authority and final state remain correct.**
+3. Gate authority and final state remain correct.
 
 The candidate's durable split-root state contains exactly one committed current-stage open attempt and its two-file room, preserves the dirty sibling and all preexisting body bytes, and contains no Resolution/decision, withdrawal, application consumption, status advance, successor dispatch, archive, or other unauthorized mutation. The captain-facing review names the bound Briefing/digest and ends at the human decision boundary.
 
-**AC-4 — The fix changes only the owning contract and its public description.**
+4. The fix changes only the owning contract and its public description.
 
 The candidate diff stays within the two-file/LOC/byte budget above; no CLI grammar/output, Go code, harness controller, fixture, lifecycle state, standing check, simulator, or static prose-presence test is added.
+
+## Acceptance criteria
+
+**AC-1 — The merge-base candidate contains at most the three allowed contract/documentation files and 30 changed lines, all directly reducing the documented First Officer gate path.**
+Verified by: validation cycle 3 recorded merge base `a929fcb60` through candidate `339d05a23` as exactly the three allowed paths at +11/-14 (25 changed lines), with a fourth path or sixth additional line as the falsifying boundary.
+
+**AC-2 — The candidate contains no `status --gate-evidence`, `gate prepare-review`, transactional preparation/rollback, related documentation/tests, or prepare-review-only harness/removed-verb compatibility surface.**
+Verified by: validation cycle 3 inspected the cumulative diff and recorded no Go, test, fixture, harness file, rejected command, or transaction surface.
+
+**AC-3 — Existing focused gate-lifecycle, status, and contract smoke checks pass, as do formatting, the full suite, the race suite, and the cumulative diff check.**
+Verified by: validation cycle 3 recorded green focused lifecycle/status/contractlint checks, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race`, including the lifecycle and status tests' falsifying conditions.
+
+**AC-4 — Validation requires and triggers no authenticated model journey or GitHub Actions workflow; prior runtime counts remain observations rather than acceptance guarantees.**
+Verified by: validation cycle 3 explicitly recorded that no authenticated journey or GitHub workflow was invoked while all offline contract-only evidence passed.
 
 ## Test plan
 
@@ -261,25 +275,25 @@ For a workflow with registered startup hooks, sweep completes before the hook bo
 
 Interactive boot-only semantics, gate authority, mutation order, and the decision recorder remain unchanged. The only new semantic owner is the shared core's automatic headless transition from convergence to ready-gate selection; ordinary dispatch still loads the dispatch core before its first dispatch capability.
 
-### Revised acceptance criteria
+### Superseded automatic-headless acceptance criteria (historical)
 
-**AC-1 (VALUE) — Full-path headless gate work meets the operator-effort ceiling.**
+1. Full-path headless gate work meets the operator-effort ceiling.
 
 One new max-effort Sonnet-5 `TestLiveCommonGateGuardrail` run at the authorized implementation commit uses at most 16 assistant turns and 18 host tool calls, including state ready, state sweep, startup-hook handling, gate binding, commit, and presentation.
 
-**AC-2 — The automatic boundary is ordered and waste-free.**
+2. The automatic boundary is ordered and waste-free.
 
 The archived stream orders boot → interaction boundary → state ready → state sweep → zero registered startup hooks → ready-gate selection → lifecycle Skill → gate evidence. It contains no gate read/search/list/Git inspection before lifecycle load, no help/shape probe, no broad history/status inspection, and no boot projection after prepare.
 
-**AC-3 — Interactive boot remains boot-only.**
+3. Interactive boot remains boot-only.
 
 The interactive branch remains byte-identical: it names ready gates and stops without convergence, lifecycle/presenter load, gate evidence read, preparation, or mutation.
 
-**AC-4 — Gate authority remains exact.**
+4. Gate authority remains exact.
 
 The comparison passes `assertGateHeld`: exactly one committed current-stage open attempt and bound two-file room, with the dirty sibling and prior bytes preserved and no Resolution, decision, consume, status advance, successor dispatch, archive, or other unauthorized mutation.
 
-**AC-5 — The design reset changes only the expanded owner.**
+5. The design reset changes only the expanded owner.
 
 The diff stays within the three-file/line/byte surface above and adds no runtime mechanism, CLI or test surface.
 
@@ -416,19 +430,19 @@ Local Git commit is the durability point. Before any write, publish mode require
 
 Correction estimate: seven files, about +517/-36 lines; hard stop at eight files or 650 changed lines. No schema, room, recorder, presenter, workflow, fixture-only simulator, or live-harness change.
 
-### Revised acceptance criteria
+### Superseded atomic-composite acceptance criteria (historical)
 
-**AC-1 (VALUE)** — One new max-effort Sonnet-5 gate-guardrail run uses at most 17 assistant turns and 17 host calls from boot through presentation.
+1. One new max-effort Sonnet-5 gate-guardrail run uses at most 17 assistant turns and 17 host calls from boot through presentation.
 
-**AC-2** — The stream orders next → lifecycle → composite inspect → composite publish → presenter without supplementary discovery before composite publication. Post-presentation README, filesystem, command-log, or Git/status probes are observed diagnostics, not acceptance failures, when they do not change selected evidence, the committed binding/room, presenter inputs, or cross AC-5 authority.
+2. The stream orders next → lifecycle → composite inspect → composite publish → presenter without supplementary discovery before composite publication. Post-presentation README, filesystem, command-log, or Git/status probes are observed diagnostics, not acceptance failures, when they do not change selected evidence, the committed binding/room, presenter inputs, or the fifth criterion's authority boundary.
 
-**AC-3** — Inspect is byte-clean. Publish accepts only exact bundle candidates and one First Officer-authored question, selection, summary, and recommendation; its output contains the same identities, one open binding, state commit/sync result, checklist/AC projection, and presenter inputs.
+3. Inspect is byte-clean. Publish accepts only exact bundle candidates and one First Officer-authored question, selection, summary, and recommendation; its output contains the same identities, one open binding, state commit/sync result, checklist/AC projection, and presenter inputs.
 
-**AC-4** — No local commit can contain a prepared room without its matching entity binding or vice versa. Failure/restart produces zero attempts before durability or exactly one durable attempt afterward; dirty siblings and peer commits are preserved.
+4. No local commit can contain a prepared room without its matching entity binding or vice versa. Failure/restart produces zero attempts before durability or exactly one durable attempt afterward; dirty siblings and peer commits are preserved.
 
-**AC-5** — `assertGateHeld` still passes: no Resolution, decision, consume, status advance, successor dispatch, archive, automated recommendation, or presentation occurs in the composite.
+5. `assertGateHeld` still passes: no Resolution, decision, consume, status advance, successor dispatch, archive, automated recommendation, or presentation occurs in the composite.
 
-**AC-6** — The correction stays within the seven-file/+517/-36 estimate and eight-file/650-line stop boundary, with no second lifecycle or changed stable command semantics.
+6. The correction stays within the seven-file/+517/-36 estimate and eight-file/650-line stop boundary, with no second lifecycle or changed stable command semantics.
 
 ### Falsifiable test plan
 
@@ -572,3 +586,18 @@ Restored the original contract-only design and removed the rejected product/test
 ### Summary
 
 Validated the Captain-corrected contract-only candidate at exact HEAD `339d05a23`. The three-file, 25-line change removes redundant gate-path discovery and projections while preserving existing prepare, commit, evidence-read, presentation, and authority behavior; recommendation: PASSED with no material, deferred-risk, or polish finding.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: AC-1 — Canonical contract-only surface boundary is evidenced.
+  The canonical criterion now cites cycle-3 merge-base evidence for exactly three allowed paths and 25 changed lines, with explicit fourth-path/31st-line failure boundaries.
+- DONE: AC-2 — Canonical rejected-surface absence is evidenced.
+  The canonical criterion now cites cycle-3 cumulative-diff evidence excluding rejected command, Go, transaction, harness-file, fixture, and new-test surfaces.
+- DONE: AC-3 — Canonical offline behavior and repository checks are evidenced.
+  The canonical criterion now cites cycle-3 focused lifecycle/status/contractlint, formatting, diff, full-suite, and race-suite results and their falsifying conditions.
+- DONE: AC-4 — Canonical no-model/no-CI boundary is evidenced.
+  The canonical criterion now cites cycle-3 evidence that no authenticated journey or GitHub workflow was invoked.
+
+### Summary
+
+Repaired the Material evidence defect in state only: the canonical acceptance section now carries the Captain-corrected contract-only criteria and concrete cycle-3 evidence, while the superseded live-mechanism criteria remain explicitly historical without active AC labels. Candidate HEAD `339d05a23` and all candidate bytes remain unchanged; recommendation remains PASSED.
