@@ -14,7 +14,7 @@ import (
 )
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
-var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
+var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=2$`)
 var rejectionValidation2Command = regexp.MustCompile(`(?:spacedock|\$\{SPACEDOCK_BIN(?::-[^}]*)?\}|\$launcher|/[^ \t\r\n'";&|]+/spacedock)["']?\s+gate\s+record\s+["']?rejection-task["']?.*--round(?:=|\s+)["']?validation/2["']?`)
 var rejectionPrepareCommand = regexp.MustCompile(`(?:spacedock|\$\{SPACEDOCK_BIN(?::-[^}]*)?\}|/[^ \t\r\n'";&|]+/spacedock)["']?\s+gate\s+prepare\s+["']?rejection-task["']?(?:\s|$)`)
 
@@ -397,8 +397,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 }
 
 func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
-	command := `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir "$WD" --round validation/1 --briefing "$WD/rejection-task/inputs/briefing.json" --log "$WD/rejection-task/inputs/briefing.review.jsonl"`
-	result := "round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4"
+	command, result := "${SPACEDOCK_BIN:-spacedock} gate record rejection-task \\\n  --round validation/1 \\\n  --briefing /tmp/TestLiveCommonRejectionFlow2642046300/003/rejection-task/inputs/briefing.json \\\n  --log /tmp/TestLiveCommonRejectionFlow2642046300/003/rejection-task/inputs/briefing.review.jsonl \\\n  --workflow-dir /tmp/TestLiveCommonRejectionFlow2642046300/003", "round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=2\nentry=annotation:rejection-task:missing-marker type=Annotation advisory=false decision=\nentry=resolution:rejection-task:reviewer type=Resolution advisory=true decision=revise"
 	claudeStream := strings.Join([]string{
 		bashToolLine("toolu_round", command),
 		toolResultLine("toolu_round", false, result),
@@ -407,7 +406,7 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 		t.Fatal("Claude extractor missed correlated round invocation with prefixed artifact paths")
 	}
 	for name, invalid := range map[string]string{
-		"wrong_suffix": strings.Replace(command, "briefing.json\"", "briefing.json.bak\"", 1),
+		"wrong_suffix": strings.Replace(command, "briefing.json", "briefing.json.bak", 1),
 		"wrong_file":   strings.Replace(command, "briefing.review.jsonl", "other.review.jsonl", 1),
 		"wrong_entity": strings.Replace(command, "gate record rejection-task", "gate record other-task", 1),
 		"wrong_round":  strings.Replace(command, "validation/1", "validation/2", 1),
@@ -419,6 +418,7 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 		})
 	}
 	if claudeRecordedRejectionRound(bashToolLine("toolu_round", command)) ||
+		claudeRecordedRejectionRound(strings.Join([]string{bashToolLine("toolu_round", command), toolResultLine("toolu_round", false, strings.Replace(result, "round=round:rejection-task:validation:1", "round=malformed", 1))}, "\n")) ||
 		claudeRecordedRejectionRound(strings.Join([]string{
 			bashToolLine("toolu_round", command),
 			toolResultLine("toolu_round", true, result),
