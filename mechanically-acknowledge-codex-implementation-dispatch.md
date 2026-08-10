@@ -76,6 +76,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+pr: "#666"
 ---
 
 ## Problem
