@@ -393,3 +393,34 @@ ac=AC-5 line=237 unevidenced=false citations=1
 The withdrawn gate's structural issue is corrected. The AC scan now discovers
 all five criteria, including the real Pi value criterion. The criteria,
 semantic boundary, repair scope, and estimates were not changed.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved Pi prepare, commit, reread, then present
+  behavior with the existing gate commands and room.
+  Commit `9550735b8` adds the shared sequence at
+  `skills/fo-gate-lifecycle/SKILL.md:19-32` and the Pi binding at
+  `skills/first-officer/references/pi-first-officer-runtime.md:15,29`.
+- DONE: Add task-local proof for one successful prepare, later state commit,
+  state-head reread, and unchanged open gate.
+  `TestAssertGateHeldAcceptsPreparedFixtureBinding` at
+  `internal/ensigncycle/gate_assert_test.go:59-108` runs the real commands.
+  Missing state or changed gate identity makes it fail.
+- DONE: Do not edit shared XFAIL bindings, registry reconciliation, sprint
+  package files, or shared runtime documentation before ts lands.
+  `git show --stat 9550735b8` lists only the two task-owned product files and
+  the task-local gate test.
+- DONE: Preserve command grammar, stored formats, authority, fixtures, and other runtime behavior.
+  The candidate uses existing commands and fixtures. Focused gate, CLI, and contract tests passed.
+- DONE: Commit the product behavior checkpoint and report exact files, lines,
+  tests, and deferred post-ts live proof.
+  Product commit `9550735b8` contains 26 additions and 7 deletions across 3
+  files. The exact normal and race suites passed.
+- SKIPPED: Run the post-ts exact Pi XFAIL, XPASS, and normal-pass sequence.
+  The Captain deferred this live proof until ts lands. This checkpoint does not change the shared Pi XFAIL binding.
+
+### Summary
+
+The shared gate lifecycle and Pi adapter now require prepare, commit, reread,
+and presentation in order. The focused test proves the durable-state sequence
+and unchanged open gate. Post-ts live Pi proof remains deferred.
