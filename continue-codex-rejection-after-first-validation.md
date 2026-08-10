@@ -540,3 +540,26 @@ A smaller alternative can omit transcript ordering and accept the durable gate
 alone. This alternative removes the successful-command parser and its controls.
 It loses AC-3 value because it cannot prove that preparation occurred once and
 after validation/2. It can accept a failed, duplicated, or early command path.
+
+## Implementation Finding: Current Round Pointer
+
+The repaired candidate is `274c6b1f2768eb43b79db891a23f0e53b94c12b6`.
+The exact Codex run published validation/1 and validation/2. It then prepared
+one fresh open gate. The oracle rejected this correct state because it asked
+`ValidateRoundFile` to resolve validation/1 through the current validation/2
+pointer.
+
+The First Officer classified this finding as Material and owned by this task.
+The authorized correction changes only
+`internal/ensigncycle/shared_round_recording_test.go`. The estimate is 18
+additions and three deletions, for a net increase of 15 lines. The projected
+full net increase is 87 lines. This value is inside the approved 71-to-91-line
+range and adds no file.
+
+The correction validates the current validation/2 summary when that pointer
+exists. It keeps baseline validation/1 behavior. It also keeps exact byte checks
+for the validation/1 room. Focused controls reject a missing or malformed
+validation/1 room and an invalid current validation/2 summary.
+
+The end-user value does not change. Codex completes the correction, publishes
+validation/2, prepares one fresh unresolved gate, and stops.
