@@ -461,3 +461,30 @@ This run is a `zh` timeout finding. It does not prove the exact target green, so
 The Sonnet target proves the repaired rejection-flow value. The implementation is ready for validation.
 
 Pi remains an explicit XFAIL. The separate `dvd` task owns the Codex repair.
+
+## Stage Report: validation
+
+- DONE: Verify the exact candidate and its published identity.
+  The worktree and remote branch both point to `c24e33a919ef18d7bf887d6e8512f95216673409`.
+  The worktree is clean. Its merge base is `bad641f754b567674972bc302d72564c192477c1`.
+- DONE: Inspect the five-file `zh` surface without repeating implementation-owned checks.
+  The change publishes the complete rejected round before reviewer rerun or gate preparation.
+  It adds one focused contract test and removes only the repaired Sonnet and Opus XFAIL rows.
+  The implementation transcript records green focused, registry, full, race, formatting, and owner checks.
+- DONE: Verify the exact unbound Sonnet value.
+  The exact command passed `TestLiveCommonRejectionFlow` in 513.65 seconds with exit code 0.
+  The content candidate was `ea11da278b3fffadd99a9f349cbd9ba3bf3555be` before its conflict-free rebase.
+  The retained transcript is `rollout-2026-08-09T20-48-02-019fe9c8-dbd7-7171-b7b8-ffa1e9c59b11.jsonl`, ordinals 1084 and 1085.
+- DONE: Verify the retained runtime ownership.
+  Pi keeps the `zhcb4bcz1qgcn7ajx2ctxpxk` XFAIL.
+  Codex keeps the `dvddbpsf4tdt3yjw1yjyp14k` XFAIL.
+  Run `31398482864` remains non-blocking Pi evidence under the Captain priority recarve.
+- DONE: Review findings and recommend a verdict.
+  No Material, Deferred-risk, or Polish finding remains in this validation scope.
+  Therefore, no four-field finding record is required.
+
+### Summary
+
+PASSED. The Sonnet journey proves AC-1. The exact candidate preserves the Pi and Codex ownership seams for AC-2.
+
+The change reuses the current recorder and lifecycle for AC-3 and AC-4. The existing Pi evidence does not change this verdict.
