@@ -659,11 +659,11 @@ The correction changes only the two authorized published lines and the directly 
 ## Stage Report: validation (cycle 9)
 
 - DONE: Verify the concepts page now describes Gate content as the presentation preference/override and the full bounded fallback without fabrication or source dumping.
-  Source and rendered HTML name the override, every Captain-approved fallback source, concise decision relevance, and the prohibitions on invented facts and showing every source.
+  AC-1: retained Claude artifact `9070558260` remains the recorded 106.90s supported fallback proof under the Captain ruling. AC-2: source and rendered HTML name the override, every approved fallback source, concise decision relevance, and the prohibitions on invented facts and showing every source.
 - DONE: Verify the first-workflow example keeps useful passed-check/readiness evidence while omitting empty skipped/failed classes.
-  Source and rendered HTML retain the 429 and counter-reset checks plus the approval recommendation; no skipped/failed empty-class sentence or placeholder remains.
+  AC-3: source and rendered HTML retain the 429 and counter-reset checks plus the single approval recommendation and decision effect; no skipped/failed empty-class sentence or placeholder remains, and recorder authority is unchanged.
 - DONE: Reproduce focused contract, integration, and strict docs checks; confirm the correction stayed at two files/four lines and recommend PASSED or REJECTED.
-  Fresh contract lint, skills integration, and `mkdocs build --strict` pass. Commit `362bc8871` is exactly two files with one insertion and one deletion each; no other candidate path changed. Recommend PASSED.
+  AC-4: the recorded fresh contract/integration results remain green and the final diff contains no adjacent command, schema, recorder, runtime, fixture, lifecycle, or oracle change. AC-5: the recorded strict MkDocs/rendered comparison is green, and commit `362bc8871` is exactly two files with one insertion and one deletion each. Recommend PASSED.
 
 ### Summary
 
