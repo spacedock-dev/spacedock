@@ -65,3 +65,13 @@ Verified by: a fixture-backed command test with committed intended Markdown, com
 ## Test plan
 
 First run the exact documented command against a small Git fixture. Then run the targeted local Codex missing-path gate journey. Run the applicable focused Go tests, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` before completion.
+
+## Stage Report: backlog
+
+Seed outcome: When gate paths are absent, Codex discovers the intended committed Markdown and prepares the gate without a Git usage failure.
+
+Included scope: Complete the read-only, path-scoped `git ls-tree` command with an explicit tree-ish. Keep discovery limited to committed Markdown. Prove the command in a Git fixture and in the Codex missing-path journey.
+
+Excluded scope: Do not change gate authority, gate record semantics, supplied-path behavior, or discovery of uncommitted files.
+
+Proof needed for ideation: Reproduce the PR #659 regression, run the proposed command against a controlled Git fixture, and confirm that the Codex journey reaches gate preparation. The evidence must show runtime behavior, not compare instruction text.
