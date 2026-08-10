@@ -778,3 +778,23 @@ The candidate remains within the approved net +91 cap and retains the superseded
 
 The exact candidate matches the remote branch and preserves the complete Codex correction journey. The bounded oracle correction rejects every required adjacent variant.
 The validation recommendation is PASSED. No Material finding remains.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Read the exact Sonnet artifact and Captain parser disposition.
+  Artifact `9076566633` shows validation/1 with `entries=2`, validation/2, one external gate-review artifact, and one open gate.
+- DONE: Change only the validation/1 result count from entries=4 to entries=2.
+  Commit `d02dd14096bc7a5a87f1b8e3f8ae53399ee9f01a` makes the exact count change in `internal/ensigncycle/shared_round_recording_test.go`.
+- DONE: Add the exact Sonnet multiline positive and malformed-round negative in the same test file.
+  The focused extractor test accepts the multiline command and three-line result. It rejects the same result after its round identifier becomes malformed.
+- DONE: Keep all product instructions, bindings, and other oracle behavior unchanged.
+  The correction changes one test file by +4/-4. The full candidate has seven existing files, +131/-40, and net +91.
+- DONE: Run focused, full, race, format, registry, and owner checks for the changed test bytes.
+  Focused and contract checks passed. Normal and race suites passed. `internal/ensigncycle` took 283.091s and 271.190s.
+- DONE: Commit and push the corrected candidate and a Simplified-English implementation cycle report.
+  Local and remote code heads match `d02dd14096bc7a5a87f1b8e3f8ae53399ee9f01a`. No live runtime test ran before fresh validation.
+
+### Summary
+
+The parser now accepts the exact Sonnet validation/1 result with two entries. The matching malformed result remains red.
+The correction changes no product instruction or binding. The full candidate remains within the approved seven-file and net +91 limits.
