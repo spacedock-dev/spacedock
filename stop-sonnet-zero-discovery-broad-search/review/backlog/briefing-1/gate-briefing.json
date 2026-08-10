@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3rns0vh3svq49w43cfr0wdqd:backlog:attempt-1:revision-1",
+  "question": "Is the Sonnet zero-discovery repair task ready for ideation with the stated product boundary and retained exact baseline?",
+  "artifacts": [
+    {
+      "id": "artifact:3rns0vh3svq49w43cfr0wdqd:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f1cc0381364d6cb1230747746625841725d4d536/stop-sonnet-zero-discovery-broad-search.md",
+      "rev": "sha256:ee34104e3e27014e0f3571a4a27d0c11718c21f3507f7862ba26908cb5b3230e",
+      "mediaType": "text/markdown",
+      "summary": "Exact PR #663 evidence proves a Sonnet boot broad-search defect. Ideation must select the smallest product repair and focused falsifier."
+    }
+  ]
+}

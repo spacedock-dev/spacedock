@@ -7,6 +7,29 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-evidence
 id: 3rns0vh3svq49w43cfr0wdqd
+gates:
+    version: 1
+    records:
+        - id: gate:3rns0vh3svq49w43cfr0wdqd:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:3rns0vh3svq49w43cfr0wdqd-backlog-1
+              briefing:
+                id: briefing:3rns0vh3svq49w43cfr0wdqd:backlog:attempt-1:revision-1
+                digest: sha256:065ca5a81f4f0358e6bf789fba0888899021fb8a1236a79d56a9cb8504ae8ab2
+                request-digest: sha256:6478d6c2a4d6f48380b4bbed9541397c34fef4b40ff9afabb286da733bf8f069
+                room-ref: ./stop-sonnet-zero-discovery-broad-search/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3rns0vh3svq49w43cfr0wdqd:backlog:1
+                briefing: briefing:3rns0vh3svq49w43cfr0wdqd:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T18:38:26.692525Z"
+                decision: approve
+                reason: Captain directed immediate ideation for the exact Sonnet zero-discovery product repair.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 ## Problem
 
