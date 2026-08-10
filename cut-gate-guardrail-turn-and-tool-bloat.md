@@ -66,6 +66,17 @@ gates:
                 digest: sha256:426f9cf05a4aa03f8a58e83b1a8828ab60fe565998f23e992dab11c8a1e5816a
                 request-digest: sha256:50ef47bd95988565b70026652460f0f31f64d7c603f38dd2eb525f5f9dbe04f2
                 room-ref: ./cut-gate-guardrail-turn-and-tool-bloat/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5k704rrfk5r75vqv3bwn1yhf:validation:1
+                briefing: briefing:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T04:50:05.224524Z"
+                decision: approve
+                reason: Validation proves the Captain-accepted 17-turn/17-call path while preserving atomic gate durability and all human decision authority.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
