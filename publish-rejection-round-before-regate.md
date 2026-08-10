@@ -65,6 +65,17 @@ gates:
                 digest: sha256:336e229d82ed61726a7ed20876643cf2abd6aa09d242523b5949dcf69d9242e7
                 request-digest: sha256:1fbd9b0ae6619d855665b8b3ec143f6a2dbd1c4414ae03e18bcea0404d372122
                 room-ref: ./publish-rejection-round-before-regate/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zhcb4bcz1qgcn7ajx2ctxpxk:validation:1
+                briefing: briefing:zhcb4bcz1qgcn7ajx2ctxpxk:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T15:00:04.760338Z"
+                decision: approve
+                reason: Captain conn approves zh because independent validation confirms the exact Sonnet value and preserves Pi and Codex ownership seams.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Restore durable recorder publication for supported rejection-flow failures. Keep the complete rejected round visible before correction re-gating.
