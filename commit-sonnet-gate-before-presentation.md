@@ -55,44 +55,49 @@ worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
 ---
 ## Problem
 
-The exact local Sonnet and Codex default-headless journeys prepared an open validation gate.
-Neither host committed the gate state.
+The exact local Sonnet default-headless journey prepared an open validation gate.
+The host did not commit the gate state.
 The First Officer then read and presented the gate.
-Both targets reported `gate-hold-violation`.
+The target reported `gate-hold-violation`.
 
 ## Value
 
-After `gate prepare`, each supported First Officer commits the durable gate state. It stops at the same clean open validation gate and dispatches no successor.
+After `gate prepare`, the Sonnet First Officer commits the durable gate state. It stops at the same clean open validation gate and dispatches no successor.
 
 ## Scope
 
 - Repair the host-neutral gate lifecycle at the prepare-and-bind boundary.
-- Use the exact n28 Claude artifact and Codex PR rerun as the baseline.
-- Own the Sonnet and Codex `default-headless-gate-stop` bindings after n28 transfers them.
+- Use the exact n28 Claude artifact as the baseline.
+- Remove the Sonnet `default-headless-gate-stop` binding after bound XPASS evidence.
+- Transfer the Codex binding to `select-actionable-codex-default-headless-task`.
 - Do not change n28 acknowledgment mechanics, Pi, or the zero-discovery repair.
-- Use local Sonnet and Codex subscription authentication before required PR CI.
+- Use local Sonnet subscription authentication before required PR CI.
 
 ## Acceptance criteria
 
 - AC-1: The command order is successful `gate prepare`, then `state commit`, then structured reads and presentation.
-- AC-2: The exact local Sonnet and Codex default-headless targets first report bound XPASS-green and then pass normally after binding removal.
+- AC-2: The exact local Sonnet default-headless target first reports bound XPASS-green and then passes normally after binding removal.
 - AC-3: The final entity is a clean open validation gate with no terminal fields and no successor dispatch.
 - AC-4: A focused negative control rejects a missing, failed, or late state commit.
 - AC-5: Full, race, format, registry, active-owner, and required exact PR checks pass. Pi remains skipped.
 
 ## Baseline evidence
 
-- Released user and workflow: local-subscription Sonnet and Codex default-headless gate stops without Captain authority.
+- Released user and workflow: local-subscription Sonnet default-headless gate stop without Captain authority.
 - Observable harm: the prepared gate is not proven durable before presentation.
 - Value authority: `skills/fo-gate-lifecycle/SKILL.md` requires prepare, commit, structured reads, and presentation in that order.
 - Sonnet trigger: `/tmp/n284-happy-claude/claude-shared-scenarios/default-headless-gate-stop/command.log` has gate prepare, reads, and presentation, but no state commit.
-- Codex trigger: PR #666 run `31425564473`, attempt 2, job `93590380530`, has a valid acknowledgment chain and only `gate-hold-violation`.
 
-## Captain-approved scope expansion
+## Captain-approved scope disposition
 
 On 2026-08-10, the Captain expanded this task from Sonnet to the host-neutral Sonnet and Codex gate commit boundary.
-This decision supersedes the Sonnet-only language in the earlier ideation report.
-The approved one-file product design and eight-line hard limit remain unchanged.
+Later Codex evidence did not reach the gate-commit behavior.
+The Captain recarved accepted value to Sonnet and assigned Codex selection to `272j6s25f9mry6nxbf4yjxvt`.
+The host-neutral product bytes, one-file design, and eight-line hard limit remain unchanged.
+
+The first local Codex run collided with a concurrent Sonnet dispatch artifact.
+The authorized sequential Codex run selected the queued task as a gate and stopped before dispatch.
+Its artifact remains at `/tmp/kky-bound-codex-sequential.CHE1eq`.
 
 ## Ideation requirements
 
@@ -132,10 +137,10 @@ It does not alter n28 dispatch acknowledgment, Pi, or zero-discovery behavior.
 ## Acceptance criteria and test plan
 
 **AC-1: A successful open-gate presentation has a successful `state commit` after `gate prepare` and before structured reads.**
-The exact local Sonnet and Codex journeys verify the command order in `command.log`.
+The exact local Sonnet journey verifies the command order in `command.log`.
 
-**AC-2: The exact local Sonnet and Codex targets first report XPASS-green and then pass after their bindings are removed.**
-Both live journeys verify the repaired behavior and the final open gate.
+**AC-2: The exact local Sonnet target first reports XPASS-green and then passes after its binding is removed.**
+The live journey verifies the repaired behavior and the final open gate.
 
 **AC-3: The final gate remains open without a Resolution, an Application, terminal fields, or successor dispatch.**
 The existing `assertGateHeld` and `assertRecordedGateHoldLog` checks verify this state.
