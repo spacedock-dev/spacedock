@@ -456,3 +456,28 @@ and unchanged open gate. Post-ts live Pi proof remains deferred.
 The Pi gate-guardrail journey now passes without an XFAIL. The review follows
 the committed-state reread and leaves the same gate open. The product branch
 and this durable report contain the completed transition.
+
+## Stage Report: validation
+
+- DONE: Inspect exact candidate `f7a86be96` and the implementation report. Do not change candidate bytes.
+  The worktree stayed clean at `f7a86be96`. The diff has 28 additions and 9 deletions across five files.
+- DONE: Verify every acceptance criterion with independent evidence, including the exact Pi target pass and committed-state reread behavior.
+  AC-1 passed in the unbound 99.91-second Pi run. The focused real-command check proved the commit and reread boundary.
+  AC-2 used the bound 102.45-second XPASS and the unbound normal pass.
+  AC-3 passed the order and forbidden-action controls in `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle`.
+  AC-4 passed the gate-identity and terminal-state controls in `TestAssertGateHeldAcceptsPreparedFixtureBinding`.
+  AC-5 uses the recorded normal and race suite results. The focused gate and registry checks also passed.
+- DONE: Inspect the owned XFAIL removal and exact registry reconciliation. Confirm no other task binding changed.
+  The candidate removes only `xfail/pi/2e4fe65gy9vcr4xck6akzmdd` and its matching reconciliation row.
+- DONE: Perform the required semantic adversarial pass on gate identity, commit order, authority, and failure cleanup.
+  Mutants for a missing commit, duplicate prepare, wrong attempt, wrong digest, mutation, and successor dispatch all failed.
+  The sequence keeps one open gate. It adds no Resolution, Application, successor, archive, or status mutation.
+- DONE: Use existing implementation full and race results without duplicate owned reruns. Run only independent focused checks that can falsify the claims.
+  The focused gate checks and `TestRuntimeLiveRegistryReconciliation` passed. I did not repeat the full or race suites.
+- DONE: Classify each finding with the workflow four evidence fields and recommend PASSED or REJECTED.
+  No finding exists. I recommend PASSED for exact candidate `f7a86be96`.
+
+### Summary
+
+Exact candidate `f7a86be96` meets AC-1 through AC-5. The independent focused checks found no Material finding.
+Three additional Pi attempts had external setup failures. They did not reach a product result and do not change the PASSED recommendation.
