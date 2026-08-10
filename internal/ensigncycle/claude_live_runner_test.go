@@ -226,6 +226,9 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	if err := assert(before, after, expected); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertRecordedGatePresentation(result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
 	if err := assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}

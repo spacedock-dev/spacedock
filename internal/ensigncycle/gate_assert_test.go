@@ -93,3 +93,27 @@ func TestAssertGateHeldAcceptsPreparedFixtureBinding(t *testing.T) {
 		})
 	}
 }
+
+func TestAssertRecordedGatePresentation(t *testing.T) {
+	clean := "Gate review: Recorded Gate Task — validation\n" +
+		"Recommend approve.\n" +
+		"Reviewed snapshot: briefing:recorded-gate-task:validation:attempt-1:revision-1 (sha256:abc123)\n" +
+		"Decision: approve to advance; revise to return to implementation.\n"
+	if err := assertRecordedGatePresentation(clean); err != nil {
+		t.Fatalf("clean presentation rejected: %v", err)
+	}
+
+	for name, row := range map[string]string{
+		"checklist":       "Replayed retained evidence — the real command fixture is green.",
+		"acceptance":      "AC-1 satisfied: successor dispatch requires consumed approval.",
+		"retained-review": "Capability/change: provider-neutral preparation retains committed source identities.",
+		"review-checks":   "Test and evidence: fresh-binary command replay and byte comparisons pass.",
+		"empty-findings":  "Findings: no material findings.",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := assertRecordedGatePresentation(clean + row + "\n"); err == nil {
+				t.Fatal("undeclared or empty row graded PASS")
+			}
+		})
+	}
+}
