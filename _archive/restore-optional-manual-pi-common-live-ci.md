@@ -1,10 +1,10 @@
 ---
 title: Restore optional manual Pi common-live CI
-status: validation
+status: done
 source: "Captain correction, 2026-08-09: PR #639 removed pi-live when it removed Pi from pull-request approvals. Restore manual CI Pi evidence without making Pi a merge requirement."
 started: 2026-08-09T15:42:25Z
-completed:
-verdict:
+completed: 2026-08-10T00:41:08Z
+verdict: PASSED
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -12,7 +12,7 @@ group: live-ci-evidence
 worktree: .worktrees/spacedock-ensign-restore-optional-manual-pi-common-live-ci
 issue:
 pr: pr-merge:651
-mod-block: merge:pr-merge
+mod-block:
 id: 0aqnm6v8ajns6cpsknxn9wf2
 gates:
     version: 1
@@ -107,7 +107,8 @@ gates:
                 reason: 'Approved under sprint conn: rebased candidate 20910e635 contains origin/main 944f323ac, preserves the approved patch byte-for-byte, and passes fresh validation. AC-2 remains a mandatory exact-PR merge blocker.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T00:41:08Z
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
