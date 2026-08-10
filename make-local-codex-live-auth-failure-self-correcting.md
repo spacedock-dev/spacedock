@@ -12,8 +12,8 @@ sprint-readiness: ready
 group: runtime-live-ux
 worktree: .worktrees/spacedock-ensign-make-local-codex-live-auth-failure-self-correcting
 issue:
-pr:
-mod-block:
+pr: "#655"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
