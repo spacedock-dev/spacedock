@@ -51,6 +51,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-10T19:02:21Z
+worktree: .worktrees/spacedock-ensign-continue-codex-to-validation-after-implementation
 ---
 ## Problem
 
