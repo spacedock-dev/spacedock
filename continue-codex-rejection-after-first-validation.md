@@ -961,3 +961,29 @@ The validation recommendation is PASSED. No DVD-owned Material finding remains.
 - Disposition: FIX. `assertRejectionRoundGateBoundary` requires one historical attempt and hard-codes attempt 1, so it rejects the valid recovered gate history.
 - Approved correction: Change only `internal/ensigncycle/shared_round_recording_test.go`. Require exactly one active final attempt and clean withdrawals for all earlier attempts. Derive final IDs by ordinal.
 - Approved controls and cap: Add the exact withdrawn-attempt positive and the matching prior-attempt-still-active negative. The correction cap is +22/-8, and the full candidate target is about net +111.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Apply the approved DVD gate-history compatibility correction.
+  Commit `f754ba1765956d52b5dc16a4aba8b07508072e0e` changes only `internal/ensigncycle/shared_round_recording_test.go`.
+- DONE: Accept one active final attempt after cleanly withdrawn earlier attempts.
+  The oracle checks every earlier attempt for a withdrawal and rejects earlier evidence, resolution, or application state.
+- DONE: Derive the active attempt and Briefing identifiers from the final ordinal.
+  The oracle derives both identifiers from the attempt count and keeps the existing advisory Briefing rejection.
+- DONE: Add the exact recovered-history positive and matching active-prior negative.
+  The focused test withdraws attempt 1, opens attempt 2, and passes. Removing the prior withdrawal produces the required failure.
+- DONE: Preserve all existing status, entity, round, path, open-state, and terminal-state checks.
+  The correction changes no transcript parser, product instruction, binding, registry, runtime, or documentation file.
+- DONE: Stay within the Captain-confirmed correction cap.
+  The correction is +22/-5. The full seven-file candidate is +158/-45, net +113, which is below the confirmed net +114 ceiling.
+- DONE: Run focused, full, race, format, and diff checks.
+  Focused checks passed in 2.263s. Normal and race suites passed; `internal/ensigncycle` took 541.056s and 587.687s.
+- DONE: Preserve live evidence and stop before fresh validation.
+  Run `31432758302`, job `93600120801`, and artifact `9081220482` remain retained. No live or CI run started.
+- DONE: Push the exact corrected candidate.
+  Local and remote code heads match `f754ba1765956d52b5dc16a4aba8b07508072e0e`, and the code worktree is clean.
+
+### Summary
+
+The durable oracle now accepts a cleanly withdrawn early gate followed by one fresh open gate. It still rejects two active attempts.
+All required local checks pass. Fresh validation can now inspect exact candidate `f754ba1765956d52b5dc16a4aba8b07508072e0e`.
