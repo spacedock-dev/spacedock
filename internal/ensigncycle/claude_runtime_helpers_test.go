@@ -89,7 +89,10 @@ func TestUnsetNestedSessionArgs(t *testing.T) {
 
 func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error {
 	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
+	const cleanupToken = " --set recorded-gate-task completed= verdict="
 	prepare := strings.Index(log, prepareToken)
+	cleanup := strings.Index(log, cleanupToken)
+	validation := strings.Index(log, " --set recorded-gate-task status=validation started")
 	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
 	head := strings.LastIndex(log, "state-head\t")
 	dispatches := strings.Split(log[:max(prepare, 0)], "exit=0\tdispatch build ")
@@ -113,9 +116,13 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "the gate was withdrawn after prepare")
 	case successfulStatusSet(log[prepare:]):
 		return errGraded(boundary + "status changed after prepare")
+	case len(requireImplementation) > 0 && requireImplementation[0] && strings.Count(log[:prepare], cleanupToken) > 1:
+		return errGraded(boundary + "more than one terminal-field cleanup recorded")
+	case len(requireImplementation) > 0 && requireImplementation[0] && (cleanup < 0 || cleanup > validation):
+		return errGraded(boundary + "terminal-field cleanup missing or after validation")
 	case len(requireImplementation) > 0 && requireImplementation[0] && strings.Count(log[:prepare], " --stage implementation") == 1 && strings.Count(log[:prepare], " --stage validation") != 1:
 		return &gradedErr{code: "dispatch-envelope-not-acknowledged", msg: boundary + "validation dispatch envelope count was not one"}
-	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 3 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
+	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 3 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "completed= verdict=", "status=validation started")):
 		return &gradedErr{code: "implementation-worker-not-dispatched", msg: boundary + "implementation was not dispatched before validation"}
 	}
 	return nil
@@ -206,14 +213,22 @@ func TestImplementationLifecycleAndObserverNegativeControls(t *testing.T) {
 	}
 }
 
-func successfulStatusSet(log string, allowed ...string) (found bool) {
+func successfulStatusSet(log string, allowed ...string) bool {
+	var found []string
 	for _, line := range strings.Split(log, "\n") {
-		if strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ") && (len(allowed) == 0 || found || !strings.HasSuffix(line, " "+allowed[0])) {
+		if strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ") {
+			found = append(found, line)
+		}
+	}
+	if len(found) != len(allowed) {
+		return true
+	}
+	for i := range found {
+		if !strings.HasSuffix(found[i], " "+allowed[i]) {
 			return true
 		}
-		found = found || strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ")
 	}
-	return len(allowed) > 0 && !found
+	return false
 }
 
 func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
@@ -221,6 +236,7 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		"exit=0\tstate commit recorded-gate-task\n" +
 		"state-head\timplementation\n" +
 		"exit=0\tdispatch build --stage implementation\n" +
+		"exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n" +
 		"exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=validation started\n" +
 		"exit=0\tstate commit recorded-gate-task\n" +
 		"state-head\tvalidation\n" +
@@ -239,17 +255,20 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		mutation string
 		want     string
 	}{
-		"retired bind":      {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1), "no successful gate prepare recorded"},
-		"missing commit":    {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\n", 1), "state commit missing or before the successful gate prepare"},
-		"decision":          {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
-		"consume":           {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
-		"withdraw":          {prepared + "exit=0\tgate withdraw recorded-gate-task\n", "the gate was withdrawn after prepare"},
-		"status repair":     {prepared + "exit=0\tstatus --set recorded-gate-task status=validation\n", "status changed after prepare"},
-		"successor build":   {prepared + "exit=0\tdispatch build successor\n", "a successor was dispatched after prepare"},
-		"duplicate prepare": {prepared + "exit=0\tgate prepare recorded-gate-task validation\n", "more than one successful gate prepare recorded"},
+		"retired bind":         {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1), "no successful gate prepare recorded"},
+		"missing commit":       {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\n", 1), "state commit missing or before the successful gate prepare"},
+		"decision":             {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
+		"consume":              {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
+		"withdraw":             {prepared + "exit=0\tgate withdraw recorded-gate-task\n", "the gate was withdrawn after prepare"},
+		"duplicate cleanup":    {strings.Replace(prepared, "completed= verdict=\n", "completed= verdict=\nexit=0\tstatus --set recorded-gate-task completed= verdict=\n", 1), "more than one terminal-field cleanup"},
+		"reordered cleanup":    {strings.Replace(prepared, "completed= verdict=\nexit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=validation started", "status=validation started\nexit=0\tstatus --set recorded-gate-task completed= verdict=", 1), "cleanup missing or after validation"},
+		"missing cleanup":      {strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n", "", 1), "cleanup missing or after validation"},
+		"post-prepare cleanup": {strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n", "", 1) + "exit=0\tstatus --set recorded-gate-task completed= verdict=\n", "status changed after prepare"},
+		"successor build":      {prepared + "exit=0\tdispatch build successor\n", "a successor was dispatched after prepare"},
+		"duplicate prepare":    {prepared + "exit=0\tgate prepare recorded-gate-task validation\n", "more than one successful gate prepare recorded"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := assertRecordedGateHoldLog(tc.mutation)
+			err := assertRecordedGateHoldLog(tc.mutation, true)
 			if err == nil {
 				t.Fatal("mutated hold log unexpectedly accepted")
 			}
