@@ -671,3 +671,29 @@ End-user disposition: Sonnet and Codex remain known executing gaps under n28 unt
 
 The oracle now separates missing implementation from validation-envelope faults.
 Both n28 bindings remain active, and the bounded offline candidate passes all required checks.
+
+## Stage Report: validation recarve
+
+- DONE: Inspect the exact corrected head `edea2ac9aa8f33d53fd738c6fc53a10095577f44`.
+  The code worktree was clean. I did not change the candidate bytes.
+- DONE: Inspect only the correction from `700e61cdb2b8ddd2149e59c348352ef64bf9c9da`.
+  The correction splits one Go statement into two lines. It does not change behavior.
+- DONE: Confirm standard Go formatting and diff hygiene.
+  `gofmt -d` returned no output. `git diff --check` found no error.
+- DONE: Confirm the approved product state.
+  The cycle-4 prose experiment is absent. The cycle-3 AutoContinue product correction remains.
+- DONE: Confirm the stage-aware oracle and both n28 bindings.
+  The oracle gives validation-envelope faults a separate code. Sonnet and Codex use owner `n28423efmj358m5av61z2fxx`.
+- DONE: Confirm strict XPASS behavior and registry reconciliation.
+  Strict XPASS stays an error. The registry has only the approved Sonnet and Codex n28 rows and the existing Pi row.
+- DONE: Inspect the recorded live and offline evidence without repeating owned checks.
+  Codex has the exact recorded XFAIL. Sonnet has the exact recorded XPASS. The full and race checks are green.
+- DONE: Confirm the final diff surface.
+  The final diff changes seven files and 222 gross lines. The approved `gofmt` correction adds the one extra gross line.
+- DONE: Record the final recommendation.
+  I recommend PASSED. No Material finding, deferred risk, or polish finding remains.
+
+### Summary
+
+The correction has standard Go formatting and no unrelated change.
+The recarved candidate keeps both executing gaps under n28 and preserves the approved product behavior.
