@@ -107,6 +107,11 @@ before one recoverable successor dispatch. Revise routes feedback after its clos
 commit, and hold stays at the gate. `status` projects the next action from durable
 facts; the acting command reports any authoritative refusal.
 
+After the nonterminal approval is consumed, it is ordinary stage history. The
+worker can write atomic terminal fields without `--force` after its report is
+durable. Pending terminal approval and unreadable or stale authority still fail
+closed. A consumed application that targets a terminal stage also fails closed.
+
 The review itself stays concise: capability, evidence, reviewed snapshot, findings, recommendation, and decision ask. The entity, spec, and package remain linked references rather than replacing that review with raw artifacts.
 
 ## Rejections

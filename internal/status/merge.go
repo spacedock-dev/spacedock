@@ -557,10 +557,11 @@ func reworkDelivery(roots roots, slug, entityPath string, fields map[string]stri
 // successor AND that successor is terminal — the shape consume leaves behind
 // when routing approved-awaiting-merge. A genuinely gate-less entity (no gates
 // record at all) reports (nil-record legacy): pending=false, err=nil. Every
-// other shape — unreadable or digest-stale retained authority, a consumed or
-// superseded application, a non-terminal or non-successor target — returns an
-// error so the ceremony refuses byte-clean instead of terminalizing with
-// authority left pending.
+// A consumed nonterminal application that entered the current ordinary stage
+// is completed history, so it reports pending=false, err=nil. Every other
+// shape — unreadable or digest-stale retained authority, a superseded
+// application, or a non-binding target — returns an error so the ceremony
+// refuses byte-clean instead of terminalizing with authority left pending.
 func pendingTerminalApproval(entityPath, workflowDir, currentStatus string) (gates.Eligibility, bool, error) {
 	elig, err := gates.EligibilityFileAt(entityPath, workflowDir)
 	if err != nil {
@@ -573,7 +574,41 @@ func pendingTerminalApproval(entityPath, workflowDir, currentStatus string) (gat
 		terminalTargetSuccessor(workflowDir, currentStatus, elig.TargetStage) {
 		return elig, true, nil
 	}
+	if consumed, err := consumedNonterminalHistory(entityPath, workflowDir, currentStatus); err != nil {
+		return elig, false, fmt.Errorf("gate authority unreadable: %w", err)
+	} else if consumed {
+		return elig, false, nil
+	}
 	return elig, false, fmt.Errorf("entity carries no binding pending terminal-target approval (condition %q)", elig.Condition)
+}
+
+// consumedNonterminalHistory reports whether the latest gate application is
+// the spent authority that entered the current ordinary stage.
+func consumedNonterminalHistory(entityPath, workflowDir, currentStatus string) (bool, error) {
+	doc, _, err := gates.Read(entityPath)
+	if err != nil {
+		return false, err
+	}
+	if len(doc.Records) == 0 {
+		return false, nil
+	}
+	record := doc.Records[len(doc.Records)-1]
+	if len(record.Attempts) == 0 {
+		return false, nil
+	}
+	app := record.Attempts[len(record.Attempts)-1].Application
+	if app == nil || app.State != "consumed" || app.TargetStage != currentStatus {
+		return false, nil
+	}
+	stages := parseStagesBlock(filepath.Join(workflowDir, "README.md"))
+	for i, stage := range stages {
+		if stage.Name != record.Stage || i+1 >= len(stages) {
+			continue
+		}
+		target := stages[i+1]
+		return target.Name == currentStatus && !target.gate && !target.terminal, nil
+	}
+	return false, nil
 }
 
 // terminalTargetSuccessor reports whether current's immediate README successor
