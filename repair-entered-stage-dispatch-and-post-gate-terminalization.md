@@ -226,3 +226,11 @@ The current candidate does not change `internal/ensigncycle/shared_live_runner_t
 The Commander approved this smaller surface under the sprint connection. The repair uses the planned narrow classifier, two focused falsifiers, and existing contracts.
 
 The acceptance criteria do not change. The end-user value does not change. The candidate still completes consumed nonterminal journeys without `--force`.
+
+## Read-only live evidence
+
+PR #656 run `31361524485` used exact 2e4 head `f7a86be96`. Codex job `93371397654` produced XPASS for `codex/keep-moving-posture`.
+
+The observed semantic set was empty. The process exited with code 0 after 145.69 seconds. All durable assertions passed.
+
+This result supports the repaired target. It is not a 9a exact-candidate run. It does not authorize removal of the 9a binding.
