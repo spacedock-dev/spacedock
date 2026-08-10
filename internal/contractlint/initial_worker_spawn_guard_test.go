@@ -23,6 +23,8 @@ const initialWorkerChecklistFallback = "When neither source supplies an item, us
 
 const initialWorkerStartedTransition = "status={next_stage} started"
 
+const initialWorkerDispatchStartedTransition = "status={dispatch_stage} started"
+
 const initialWorkerGateSuccessorGuard = "If the next stage has `gate: true`, update it with `status={next_stage} started`. Dispatch it under the normal reuse and freshness rules. Enter `«gate.lifecycle»` only after `«completion-signal»` arrives and the stage report passes the completion gate."
 
 func TestInitialWorkerSpawnGuardPrecedesCompletionAndValidation(t *testing.T) {
@@ -64,7 +66,8 @@ func TestInitialWorkerDispatchAlwaysBuildsANonemptyChecklist(t *testing.T) {
 
 func TestInitialWorkerDispatchStampsBothStageTransitionsStarted(t *testing.T) {
 	body := readRepoFile(t, "skills/first-officer/references/fo-dispatch-core.md")
-	if got := strings.Count(body, initialWorkerStartedTransition); got != 3 {
+	got := strings.Count(body, initialWorkerStartedTransition) + strings.Count(body, initialWorkerDispatchStartedTransition)
+	if got != 3 {
 		t.Fatalf("initial dispatch contract has %d started stage transitions, want 3", got)
 	}
 	if !strings.Contains(body, initialWorkerGateSuccessorGuard) {
