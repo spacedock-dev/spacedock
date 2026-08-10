@@ -905,3 +905,27 @@ All authorized focused checks pass. The remote branch now identifies `1df6b4ab18
 
 The final exact candidate preserves every validated product, oracle, registry, and binding byte. The clean rebase changes only commit identities.
 The validation recommendation remains PASSED. No Material finding remains.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Apply the Captain-authorized DVD compatibility correction for PR #664.
+  Commit `83de0c327ef70ed565af7eee7f7ba6def587afb4` changes only `internal/ensigncycle/shared_round_recording_test.go`.
+- DONE: Accept canonical validation/1 summaries with exactly two or exactly four entries.
+  The summary expression accepts only `entries=2` or `entries=4`. It keeps the exact entity, stage, cycle, Briefing, and round identifiers.
+- DONE: Add the retained Sonnet four-entry positive and matching malformed-round negative.
+  Run `31427144353`, job `93581749683`, and artifact `9079211737` supply the exact command, result, and successful exit evidence.
+- DONE: Retain canonical path and successful-command constraints without other parser broadening.
+  The focused checks keep wrong path, entity, round, missing result, failed result, and malformed-round cases red.
+- DONE: Record the exact cap delta.
+  The correction is +6/-1, net +5. The full seven-file candidate is +137/-40, net +97.
+- DONE: Run the focused, full, and race checks required by the changed bytes.
+  Focused checks passed in 1.259s. Normal and race suites passed. `internal/ensigncycle` took 267.856s and 380.916s.
+- DONE: Preserve product instructions, bindings, and live evidence.
+  No product or binding file changed. No live CI run started. All prior evidence remains in the durable report.
+- DONE: Commit and push the exact corrected candidate and report.
+  Local and remote code heads match `83de0c327ef70ed565af7eee7f7ba6def587afb4`.
+
+### Summary
+
+The parser accepts both canonical validation/1 summary counts that the retained runs produced. All adjacent malformed or failed evidence remains red.
+The correction changes one test file. Fresh validation can now examine exact candidate `83de0c327ef70ed565af7eee7f7ba6def587afb4`.
