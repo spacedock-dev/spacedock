@@ -276,3 +276,53 @@ Recommendation: REJECTED until the narrow AC-4 evidence defect is fixed.
 
 The corrected oracle rejects a failed commit and rejects structured reads before the successful committed state head.
 The retained Sonnet evidence satisfies this stronger oracle without a new live run.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Revalidate exact corrected candidate `ee110954751dd1d9783e64194d154917a1b29e2a` and state report `80727bdd26bd867932ac43ba4f0014dd928a3e21`.
+  Both exact commits were present, and the candidate matched its remote branch.
+- DONE: Inspect the exact delta and retained Sonnet evidence without another live run.
+  A detached focused test passed both retained Sonnet logs through the corrected oracle.
+- DONE: Verify the failed-commit and late-after-read mutants.
+  Both named mutants passed and returned their required gate-hold errors.
+- DONE: Verify focused, full, race, registry, active-owner, and format evidence.
+  All independent non-live checks passed on the exact candidate.
+- DONE: Verify the approved component cap and product size.
+  The four-file, 15-gross candidate keeps the 6,993-byte product and binds Codex to active owner `272j6s25f9mry6nxbf4yjxvt`.
+- DONE: Preserve the candidate and make no Codex or Pi behavior claim.
+  Candidate HEAD stayed exact. This validation did not run a live runtime.
+
+- DONE: AC-1
+  Both retained Sonnet logs pass the corrected order oracle.
+- DONE: AC-2
+  The retained bound and unbound Sonnet artifacts remain clean.
+- DONE: AC-3
+  The retained streams show an open gate with no terminal fields or successor dispatch.
+- FAILED: AC-4
+  The corrected oracle accepts a failed commit followed by a successful retry before the structured reads.
+- DONE: AC-5 within the Captain-approved recarve
+  Focused, full, race, registry, active-owner, diff, and format checks passed. Pi did not run.
+
+### Reviewer findings
+
+- Material evidence defect: the oracle permits a retry after a failed gate-state commit.
+  Released workflow: the local Sonnet default-headless gate-stop observer.
+  Observable harm: a failure-stop violation can receive a clean PASS or XPASS grade.
+  Authority: `value-ac[AC-4]` requires the focused negative control to reject a failed commit.
+  Trigger: prepare, failed commit, successful retry, state head, checklist read, and AC read.
+  The detached `TestValidationOracleRejectsRetryAfterFailedCommit` reproduced the acceptance against the exact candidate.
+  Defect kind: evidence defect. Release scope: Material. Proposed owner: this task. Proposed disposition: narrow fix.
+  The oracle must reject any failed post-prepare state commit, even when a later retry succeeds.
+
+### Checks run
+
+- PASS: the focused oracle test passed, including `failed_commit` and `late_after_read`.
+- PASS: both retained Sonnet logs passed the corrected oracle in a detached test.
+- PASS: `go test ./...` and `go test ./... -race` passed.
+- PASS: registry, active-owner, diff, and focused format checks passed.
+- EXPECTED FAIL: the detached retry-after-failure mutant proved the remaining AC-4 gap.
+
+### Summary
+
+The correction fixes the reported late-read gap and all retained Sonnet behavior remains clean.
+Recommendation: REJECTED because the oracle still accepts a retry after a failed gate-state commit.
