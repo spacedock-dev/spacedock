@@ -86,6 +86,31 @@ cells plus the withdrawn-gate removal. The expected result is four passing
 cells, two stable semantic failures, and two unexecutable cells. No cell is
 unclassified.
 
+## Captain recarve — current Sonnet and Codex evidence only
+
+The 2026-08-10 Captain direction replaces the older eight-cell execution plan
+for this implementation cycle. This cycle can inspect only these exact PR #662
+findings on candidate `4a20f3f632f619f56ad6860df4ace04842793ba8`:
+
+- Sonnet `smallest-sufficient-mechanism` failed with
+  `smallest-mechanism-violation`. The retained diagnostic says that the First
+  Officer broad-searched the project root at boot. Evidence is run
+  `31406529111`, job `93514469105`, artifact `9071229649`.
+- Codex `owned-conflict-owner-handoff` did not finish before the 40-minute Go
+  timeout. The stack remained in `drainCodexToTerminal`. Evidence is run
+  `31406529111`, job `93514469079`, artifact `9071279647`.
+
+This cycle is evidence-only. It must not repair product behavior, change n28,
+or run Pi or Opus. It can remove an xp6 binding only after the exact target
+passes on the exact candidate. A real semantic failure, timeout, launch error,
+or infrastructure error stays visible and keeps its owner. If the Sonnet
+broad-search finding requires any change other than an evidence-only binding or
+test-oracle correction, stop and route it to a product owner before mutation.
+
+The end-user value is truthful Sonnet and Codex evidence after completed
+repairs. The implementation report must retain both PR #662 artifacts and state
+which target can remove a binding, which target remains assigned, and why.
+
 ## Spike result
 
 The riskiest mechanism was the live assertion boundary. A temporary isolated
