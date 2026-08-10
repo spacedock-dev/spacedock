@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:fh6rv0k6wr25zty0jjan4jp7:validation:attempt-1:revision-1",
+  "question": "Approve fh6 for merge after exact Pi XPASS-to-PASS evidence and independent validation?",
+  "artifacts": [
+    {
+      "id": "artifact:fh6rv0k6wr25zty0jjan4jp7:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/dd5489239bc931c7036e6f6d743acf98b5f4e2d7/hold-pi-default-headless-validation-gate.md",
+      "rev": "sha256:2a87b88e1a3d6ec73b507ae66f769b54c20149f9f63c4d931a8243d85573fdce",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED. Exact Pi run 31386886972 produced the owned XPASS; after removing only fh6 binding, run 31388978952 produced normal PASS. Candidate cae0a19d9 is clean and within the approved bounded reset."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:fh6rv0k6wr25zty0jjan4jp7:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0175d4399a9259acc5c3311ea467d972f1c8351d/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:423f7bb245ba43e13863ac5fdaee30267c1465ea2c1426dbfce1fcbace66e2e7"
+    }
+  ]
+}
