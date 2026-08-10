@@ -1,6 +1,6 @@
 ---
 title: Continue Codex to validation after implementation
-status: backlog
+status: ideation
 score: "0.90"
 source: "PR #664 Codex auto-continue failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -29,7 +29,7 @@ gates:
                 reason: Captain directed immediate ideation for the exact Codex auto-continue product repair.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 ## Problem
 
