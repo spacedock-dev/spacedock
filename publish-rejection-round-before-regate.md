@@ -183,11 +183,9 @@ retained round each fail.
 
 **AC-2 (VALUE) - Recorder-failure coverage has honest target ownership.**
 
-Verified by: Pi reports XFAIL only for `rejection-round-incomplete` after its
-exact evidence. Sonnet and Opus remain unbound until an exact repeat confirms a
-stable recorder code. Codex has no binding in this task. The separate task
-`dvddbpsf4tdt3yjw1yjyp14k` owns `rejection-flow-not-completed` and the complete
-Codex continuation.
+Verified by: Pi keeps the `zh` XFAIL after its exact timeout evidence. Sonnet
+and Opus are unbound after exact passes. The separate task
+`dvddbpsf4tdt3yjw1yjyp14k` owns the Codex repair and its remaining binding.
 
 **AC-3 - The change reuses the current rejection lifecycle and recorder.**
 
@@ -440,3 +438,24 @@ This run is a `zh` timeout finding. It does not prove the exact target green, so
 - Binding result: The `dvd` Codex binding and the `zh` Pi binding remain unchanged.
 - Focused result: The publication, template, reconciliation, recorder, and extractor tests pass.
 - Formatting result: `gofmt` and `git diff --check` pass.
+
+## Stage Report: implementation (final)
+
+- DONE: Publish the complete rejected round before correction and re-gating.
+- DONE: Prove AC-1 with the exact Sonnet target.
+  `TestLiveCommonRejectionFlow` passed without its `zh` XFAIL in 513.65 seconds.
+- DONE: Preserve honest runtime ownership for AC-2.
+  Sonnet and Opus are unbound. Pi keeps the `zh` XFAIL. Codex repair belongs to `dvddbpsf4tdt3yjw1yjyp14k`.
+- DONE: Reuse the current lifecycle and recorder for AC-3.
+  The final product diff adds no recorder, gate field, flag, schema, or authority source.
+- DONE: Keep workflow policy separate from recorder bytes for AC-4.
+  The focused recorder and extractor tests pass without a recorder change.
+- DONE: Retain Pi run `31398482864` as non-blocking evidence only.
+  Its current or final result does not block the Captain-approved Sonnet value. Do not remove the Pi XFAIL from this run.
+- DONE: Push exact candidate `c24e33a919ef18d7bf887d6e8512f95216673409`.
+
+### Summary
+
+The Sonnet target proves the repaired rejection-flow value. The implementation is ready for validation.
+
+Pi remains an explicit XFAIL. The separate `dvd` task owns the Codex repair.
