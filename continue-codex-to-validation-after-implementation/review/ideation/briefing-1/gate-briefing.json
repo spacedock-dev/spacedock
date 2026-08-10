@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v8pcpdmrdfmq7emm65cjdc4p:ideation:attempt-1:revision-1",
+  "question": "Does the one-file, four-gross-line design make Codex monitor its only unresolved validator without changing authority or another runtime?",
+  "artifacts": [
+    {
+      "id": "artifact:v8pcpdmrdfmq7emm65cjdc4p:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/18f516ed0564877d38f3c74bd8c8c31fd7d2668a/continue-codex-to-validation-after-implementation.md",
+      "rev": "sha256:80bcef624f8eb704c88572edfc3789e425f6a566841233bd422d13dc57bd4c1b",
+      "mediaType": "text/markdown",
+      "summary": "Ideation found that Codex spawned validation but ended before the completion signal. The smallest repair requires continued async monitoring."
+    }
+  ]
+}

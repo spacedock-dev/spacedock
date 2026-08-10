@@ -30,6 +30,26 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:v8pcpdmrdfmq7emm65cjdc4p:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:v8pcpdmrdfmq7emm65cjdc4p-ideation-1
+              briefing:
+                id: briefing:v8pcpdmrdfmq7emm65cjdc4p:ideation:attempt-1:revision-1
+                digest: sha256:454e049070257771e2d127c6c5cd945cedf45cb591496f4b64554b4bf08d3cd5
+                request-digest: sha256:11cef063c866477dac13329e146e5669cacc88d6715660cf5e3203507aa26541
+                room-ref: ./continue-codex-to-validation-after-implementation/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v8pcpdmrdfmq7emm65cjdc4p:ideation:1
+                briefing: briefing:v8pcpdmrdfmq7emm65cjdc4p:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T19:07:31.694893Z"
+                decision: approve
+                reason: Captain directed this exact Codex auto-continue repair. The one-file design preserves every excluded surface.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-10T19:02:21Z
 ---
 ## Problem
