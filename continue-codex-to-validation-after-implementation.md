@@ -1,6 +1,6 @@
 ---
 title: Continue Codex to validation after implementation
-status: ideation
+status: implementation
 score: "0.90"
 source: "PR #664 Codex auto-continue failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -49,7 +49,7 @@ gates:
                 reason: Captain directed this exact Codex auto-continue repair. The one-file design preserves every excluded surface.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-10T19:02:21Z
 ---
 ## Problem
