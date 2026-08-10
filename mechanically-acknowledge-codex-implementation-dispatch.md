@@ -1,6 +1,6 @@
 ---
 title: Make Codex implementation dispatch mechanically acknowledged
-status: ideation
+status: implementation
 source: "98a cycle-4 live evidence: identical spawn envelopes produced two native-spawn passes and one empty-wait failure"
 started: 2026-08-10T09:23:06Z
 completed:
@@ -55,7 +55,7 @@ gates:
                 reason: 'Captain approves exact reviewed state 829daad9a: ten files, +449/-43, 492 gross hard cap, CLI-only acknowledgment value, and required focused plus exact local XPASS-to-PASS proofs.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
