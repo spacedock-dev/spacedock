@@ -123,11 +123,14 @@ Unavailable authentication or missing runtime access are valid TODO reasons.
 
 ## Exact target inventory
 
-These 18 unresolved sprint-owned target cells can run. Each cell must use
+These 17 unresolved sprint-owned target cells can run. Each cell must use
 target-level XFAIL under its current repair-task owner.
 
 The Codex `gate-guardrail` target is not in this table. Run `31354941325`, job
 `93352946253`, and artifact `9050378671` proved XPASS. Its binding is absent.
+
+The Codex `keep-moving-posture` target is also absent. Run `31355420304`, job
+`93354246740`, and artifact `9050897861` proved exact XPASS.
 
 | Journey | Target | Owner |
 | --- | --- | --- |
@@ -144,7 +147,6 @@ The Codex `gate-guardrail` target is not in this table. Run `31354941325`, job
 | `smallest-sufficient-mechanism` | `codex` | `6x50qafc8566zc6p1qpb6y30` |
 | `smallest-sufficient-mechanism` | `pi` | `6x50qafc8566zc6p1qpb6y30` |
 | `keep-moving-posture` | `claude-sonnet` | `9adv48yhye5s2vkhwd7ge52d` |
-| `keep-moving-posture` | `codex` | `9adv48yhye5s2vkhwd7ge52d` |
 | `keep-moving-posture` | `pi` | `9adv48yhye5s2vkhwd7ge52d` |
 | `owned-conflict-owner-handoff` | `claude-sonnet` | `xp6c9qfe7y4wwp46enc3f85n` |
 | `owned-conflict-owner-handoff` | `claude-opus` | `xp6c9qfe7y4wwp46enc3f85n` |
@@ -162,11 +164,11 @@ CI-E2E-OPUS authentication and runtime path reached the shared live tests.
 
 **AC-1 (VALUE) — Every executable sprint target runs.**
 
-The 18 XFAIL cells run their real fixture, host, exercise, and durable
+The 17 XFAIL cells run their real fixture, host, exercise, and durable
 semantic assertions. Each cell reports XFAIL when it has a typed semantic
 failure. The result keeps the current owner and all observed semantic codes.
 
-The Codex `gate-guardrail` cell has no binding. Its assertion remains active.
+The two proven Codex XPASS cells have no binding. Their assertions remain active.
 
 Verified by: reconcile the source inventory. Run authenticated local target
 probes. Inspect each test result and existing journey metric.
@@ -189,8 +191,8 @@ failure. Existing launch and stream controls remain red.
 
 **AC-4 — Reconciliation reports execution state and checks ownership.**
 
-Reconciliation distinguishes TODO from XFAIL. It requires the 18 XFAIL rows,
-zero TODO rows, and no stale Codex gate or withdrawal row. The owner join checks
+Reconciliation distinguishes TODO from XFAIL. It requires the 17 XFAIL rows,
+zero TODO rows, and no stale Codex gate, keep-moving, or withdrawal row. The owner join checks
 both binding kinds.
 
 Verified by: `TestRuntimeLiveRegistryReconciliation` checks the exact source
@@ -208,7 +210,7 @@ check the owner and observed codes.
 ## Scope
 
 - Use one target-level grade at the existing semantic boundary.
-- Convert the 18 unresolved executable sprint targets to XFAIL.
+- Convert the 17 unresolved executable sprint targets to XFAIL.
 - Remove the stale passing Codex withdrawal TODO.
 - Keep no TODO because all target runtime paths can execute.
 - Preserve the existing registry and journey metric.
@@ -324,7 +326,7 @@ in this surface.
   codes. Target-level XFAIL leaves the optional expected code empty.
 - Authority: unchanged. The registry remains desired state. Source bindings own
   current target evidence and active task ownership.
-- Runtime behavior: the 18 XFAIL cells execute. Typed semantic failures are
+- Runtime behavior: the 17 XFAIL cells execute. Typed semantic failures are
   XFAIL. XPASS and infrastructure failures stay red.
 - Documentation: update the runtime live guide with the binding and outcome
   semantics described below.
@@ -510,3 +512,21 @@ Target-level XFAIL is sufficient before the pull request. Infrastructure failure
 
 The correction removes one stale evidence binding. It does not change product behavior or another target binding.
 The Codex `gate-guardrail` assertion remains active as a normal passing target.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Remove only the stale 9a-owned Codex `keep-moving-posture` XFAIL binding.
+  Run `31355420304`, job `93354246740`, and artifact `9050897861` proved exact XPASS for this target.
+- DONE: Preserve the target assertion and all product bytes.
+  The patch changes one source binding row and its exact reconciliation expectation. The journey and assertion are unchanged.
+- DONE: Correct the source inventory and reconciliation total.
+  The source now has 17 XFAIL rows and zero TODO rows. Reconciliation requires the Codex binding to be absent.
+- DONE: Run only the authorized focused checks.
+  The focused classifier, registry, owner, and live-tag compile checks passed. No full, race, manual live, or paid CI run started.
+- DONE: Commit and push the corrected candidate and durable state.
+  Code tip `14d2a67157adf45e8a86a3f33bf103ba8d2b559f` is pushed. This report uses a path-scoped state commit.
+
+### Summary
+
+The correction removes one stale evidence binding. It changes no product behavior and no other binding.
+The Codex `keep-moving-posture` assertion remains active as a normal passing target.
