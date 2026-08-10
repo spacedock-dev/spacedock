@@ -588,51 +588,32 @@ open gate after a valid validation/2 publication.
 
 ## Stage Report: implementation
 
-Summary: Codex now completes a rejected validation journey. It records
-validation/1, applies the correction, records validation/2, prepares one fresh
-open gate, and stops.
+- DONE: Rebase from exact zh landing e2f07a40e6bf45eeec8d133723b25cef18f5cb9a and preserve Pi and all non-dvd bindings.
+  The final rebase target is `4dc83c0f8`. Candidate `29a4dd5dc` keeps Pi owner `p17swb3375rt525fn7f8xt7e` and all non-dvd rows.
+- DONE: Before product edits, update the task report with exact files, gross/net estimate, tolerance, and Codex operator value.
+  The Implementation Design Reset records five planned files, +107/-26, net +81 plus or minus 10, and the complete Codex journey.
+- DONE: Build the non-product Codex extractor, strict final-gate oracle, negative controls, and dvd Codex XFAIL baseline only.
+  Commits `6ecd0abf7` and `ba024e403` add the extractor, strict oracle, absent-identity rule, and red reviewer controls.
+- DONE: Run the exact local subscription-backed Codex rejection-flow baseline and retain typed target-level XFAIL artifacts; stop on parser, auth, launch, timeout, or a second semantic failure.
+  `/tmp/spacedock-dvd-codex-baseline-local.3wLIwh` ran 395.28s and produced the two recorded typed codes. Its SHA-256 is `abede885b2bd575f61bff10dc9f05e850af3b9a3be89210479a0a699e496c050`.
+- DONE: After valid baseline evidence, implement only the approved feedback and Codex runtime instructions plus documentation.
+  Commits `cf24e4030` and `fb9a41507` change the approved skill, Codex runtime, and behavior documentation.
+- DONE: Prove the complete two-validation correction state and exactly one fresh unresolved validation gate with all required negative controls.
+  The oracle proves validation/1, validation/2, one prepare, one open attempt, the Briefing, correct rooms, and all recorded red controls.
+- DONE: Run the exact repaired Codex target with binding retained and retain XPASS evidence, then remove only dvd Codex binding and retain normal PASS evidence.
+  First XPASS `/tmp/spacedock-dvd-codex-repaired-xpass-2.Z4shfn` ran 574.99s with SHA-256 `c845f4eaee450eb00caa50028e20a95b4f6664c441ca96f40c0d8c680e769cd0`. Adjusted XPASS `/tmp/spacedock-dvd-codex-adjusted-xpass.4AbVtR` ran 554.31s with SHA-256 `ec484832ca840edccfe43418b54cff464ae1dc708d84557bbae808867f86d4e3`. Final PASS `/tmp/spacedock-dvd-codex-adjusted-pass.YvjTPg` ran 535.78s with SHA-256 `2c71f508fc2da50081cc8cc2db72907986a4bedfe3b255921d6fcf6df3b63b55`.
+- DONE: Do not run Pi, Opus, or Sonnet. Preserve the Pi XFAIL and all unrelated ownership rows.
+  No Pi, Opus, or Sonnet run occurred. The post-rebase registry and active-owner controls passed in 0.416s.
+- DONE: Run focused tests, gofmt, registry, active-owner, go test ./..., and go test ./... -race.
+  All named commands passed. `internal/ensigncycle` took 366.333s normally and 556.475s with the race detector.
+- DONE: Keep within six existing files, plus/minus one file, and net +26 plus/minus 14 lines. Stop for Captain approval before exceeding tolerance or changing grammar, formats, authority, or other runtime behavior.
+  The Captain approved the reset before mutation. The final seven-file change has 122 additions, 31 deletions, and net +91.
+- DONE: Write a Simplified Technical English implementation report with exact commits, commands, timings, artifact paths, digests, checklist status, and AC evidence.
+  This report gives commits, commands, times, four artifact paths and digests, checklist status, and falsifiable acceptance evidence.
+- DONE: Commit and push the exact product candidate and durable report, then send a completion signal that starts with "We love you."
+  Candidate `29a4dd5dc` is pushed. The path-scoped report commit and completion signal finish this item.
 
-The work started from `e2f07a40e6bf45eeec8d133723b25cef18f5cb9a`.
-The final rebase target is `4dc83c0f897115e1696d42832f4b34d7d6f8e341`.
-The pushed candidate is `29a4dd5dc440d8fbc34cb3b635396ee8040144c6`.
-Candidate commits are `6ecd0abf7`, `ba024e403`, `cf24e4030`, `7a36c233f`,
-`a37442005`, `fb9a41507`, `17154d816`, and `29a4dd5dc`.
-The final change has 122 additions and 31 deletions across seven existing files.
-The net increase is 91 lines. The Captain approved net +81 plus or minus 10.
+### Summary
 
-Baseline XFAIL: `/tmp/spacedock-dvd-codex-baseline-local.3wLIwh`, 395.28s,
-SHA-256 `abede885b2bd575f61bff10dc9f05e850af3b9a3be89210479a0a699e496c050`.
-Its typed codes were `rejection-flow-not-completed` and
-`rejection-reviewer-flow`.
-First bound XPASS: `/tmp/spacedock-dvd-codex-repaired-xpass-2.Z4shfn`,
-574.99s, SHA-256 `c845f4eaee450eb00caa50028e20a95b4f6664c441ca96f40c0d8c680e769cd0`.
-Adjusted bound XPASS: `/tmp/spacedock-dvd-codex-adjusted-xpass.4AbVtR`,
-554.31s, SHA-256 `ec484832ca840edccfe43418b54cff464ae1dc708d84557bbae808867f86d4e3`.
-Final unbound PASS: `/tmp/spacedock-dvd-codex-adjusted-pass.YvjTPg`,
-535.78s, SHA-256 `2c71f508fc2da50081cc8cc2db72907986a4bedfe3b255921d6fcf6df3b63b55`.
-
-Focused reviewer, round, gate, registry, binding, and owner controls passed.
-`gofmt -w ./cmd ./internal` completed with no change.
-`go test ./...` passed. `internal/ensigncycle` took 366.333s.
-`go test ./... -race` passed after reproducible cache repair.
-The race run took 556.475s for `internal/ensigncycle`.
-The post-rebase registry, active-owner, and binding checks passed in 0.416s.
-`git diff --check` passed. Pi and all non-dvd bindings remain present.
-AC evidence: the transcript orders validation/1, validation/2, and one prepare.
-The gate has one open attempt and the expected prepared Briefing.
-The gate artifact is outside every immutable advisory-round room.
-Negative controls reject missing or malformed validation/1 rooms, an invalid
-validation/2 summary, reuse, a wrong reviewer, duplicate prepare, resolution,
-terminal state, and an extra immutable-round file.
-DONE: Rebase from exact zh landing e2f07a40e6bf45eeec8d133723b25cef18f5cb9a and preserve Pi and all non-dvd bindings.
-DONE: Before product edits, update the task report with exact files, gross/net estimate, tolerance, and Codex operator value.
-DONE: Build the non-product Codex extractor, strict final-gate oracle, negative controls, and dvd Codex XFAIL baseline only.
-DONE: Run the exact local subscription-backed Codex rejection-flow baseline and retain typed target-level XFAIL artifacts; stop on parser, auth, launch, timeout, or a second semantic failure.
-DONE: After valid baseline evidence, implement only the approved feedback and Codex runtime instructions plus documentation.
-DONE: Prove the complete two-validation correction state and exactly one fresh unresolved validation gate with all required negative controls.
-DONE: Run the exact repaired Codex target with binding retained and retain XPASS evidence, then remove only dvd Codex binding and retain normal PASS evidence.
-DONE: Do not run Pi, Opus, or Sonnet. Preserve the Pi XFAIL and all unrelated ownership rows.
-DONE: Run focused tests, gofmt, registry, active-owner, go test ./..., and go test ./... -race.
-DONE: Keep within six existing files, plus/minus one file, and net +26 plus/minus 14 lines. Stop for Captain approval before exceeding tolerance or changing grammar, formats, authority, or other runtime behavior.
-DONE: Write a Simplified Technical English implementation report with exact commits, commands, timings, artifact paths, digests, checklist status, and AC evidence.
-DONE: Commit and push the exact product candidate and durable report, then send a completion signal that starts with "We love you."
+Codex records validation/1, applies the correction, and records validation/2. It prepares one fresh open gate and stops without a successor.
+The pushed product candidate stays unchanged at `29a4dd5dc440d8fbc34cb3b635396ee8040144c6`.
