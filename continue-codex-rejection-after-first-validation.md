@@ -1,6 +1,6 @@
 ---
 title: Continue Codex rejection after the first validation
-status: validation
+status: implementation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:16Z
 completed:
@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: common-evidence
 worktree: .worktrees/spacedock-ensign-continue-codex-rejection-after-first-validation
 issue:
-pr: "#664"
+pr:
 mod-block:
 id: dvddbpsf4tdt3yjw1yjyp14k
 gates:
@@ -86,7 +86,7 @@ gates:
                 reason: Captain conn approves dvd after independent PASSED validation of exact candidate 29a4dd5dc and the target-level XFAIL disposition.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 ## Problem
@@ -702,3 +702,25 @@ alternative and changes the existing positive to the exact command shape.
 The focused test first failed with `stage/prepares = 0/1`. It then passed with
 the retained negative controls. The correction changes two lines in and two
 lines out of one existing file. The full candidate remains net +91.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Record the exact corrected candidate head.
+  The corrected candidate head is `c334febb28d45705362d3485abbda6dc7993f47f`.
+- DONE: Keep the correction in one existing file with a net-zero diff.
+  `internal/ensigncycle/shared_round_recording_test.go` changes by +2/-2, so the correction is net zero.
+- DONE: Prove the focused failure before the correction and the focused pass after it.
+  The focused control first failed with `stage/prepares = 0/1`. The same control passed after the regex correction.
+- DONE: Preserve the wrong entity, wrong round, wrong file, and failed-command controls.
+  The focused extractor run passed with all four negative controls still active.
+- DONE: Keep product instructions, bindings, and the approved net cap unchanged.
+  The correction changes no product or binding file. The full seven-file candidate remains net +91.
+- DONE: Retain the superseded PR live evidence.
+  Run `31416271663` and artifact `9074101972` remain in the durable finding record.
+- DONE: Push the exact corrected candidate to the remote branch.
+  Local HEAD and the remote branch both identify `c334febb28d45705362d3485abbda6dc7993f47f`.
+
+### Summary
+
+The correction accepts the exact `$launcher` validation/2 command and keeps all negative controls. Product instructions and bindings do not change.
+The candidate remains within the approved net +91 cap and retains the superseded PR evidence.
