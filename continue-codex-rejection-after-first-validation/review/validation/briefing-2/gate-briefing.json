@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-2:revision-1",
+  "question": "Does exact candidate 3d0c02c1947824d30e3cac3f874ee179092ee50d satisfy the approved Codex rejection-flow acceptance criteria and remain safe to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/950e4b383cfe70c2f16ce93ac2410354849ff5c4/continue-codex-rejection-after-first-validation.md",
+      "rev": "sha256:1351a161626481480180ff9b5a295fba5dedac06d8654ca17532ca41fa911ab4",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 validation PASSED. The exact candidate preserves the repaired Codex journey and now requires canonical validation/2 artifacts."
+    }
+  ]
+}

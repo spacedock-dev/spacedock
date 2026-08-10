@@ -87,6 +87,23 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:dvddbpsf4tdt3yjw1yjyp14k-validation-2
+              briefing:
+                id: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-2:revision-1
+                digest: sha256:ca626f734a1f32129070102a853cc50fffffc0cc5f35018ba828529fca6e0f81
+                request-digest: sha256:29a8c2ed9bf2e2a6feb2ea10012a4411dab48c29f44fd436e84ee20e28ff86cd
+                room-ref: ./continue-codex-rejection-after-first-validation/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dvddbpsf4tdt3yjw1yjyp14k:validation:2
+                briefing: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T18:36:18.337897Z"
+                decision: approve
+                reason: Captain conn approves dvd after independent PASSED cycle-2 validation of exact candidate 3d0c02c194; required PR lanes remain the merge boundary.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
