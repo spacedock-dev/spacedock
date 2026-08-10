@@ -1,10 +1,10 @@
 ---
 title: Make headless Sonnet and Codex spawn implementation before validation
-status: validation
+status: done
 source: "PR #583 run 31320596435, Codex job 93262943132 and Sonnet job 93262943118, 2026-08-09"
 started: 2026-08-09T18:34:21Z
-completed:
-verdict:
+completed: 2026-08-10T11:01:15Z
+verdict: passed
 score: 0.95
 worktree: .worktrees/spacedock-ensign-codex-headless-implementation-worker-before-validation
 issue:
@@ -141,7 +141,8 @@ gates:
                 reason: Captain approved exact candidate edea2ac9a and its formatting-only 222-gross cap. Independent validation found no Material, deferred, or polish issue. Required exact PR checks remain the merge boundary.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T11:01:15Z
 ---
 
 ## Problem
