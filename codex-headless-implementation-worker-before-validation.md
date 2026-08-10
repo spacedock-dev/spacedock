@@ -519,3 +519,26 @@ It must preserve the implementation-worker completion guard and every XFAIL bind
 The correction estimate is `+1/-1`, or two gross lines and zero net lines.
 The full candidate must remain at seven files and 217 gross lines.
 This approval authorizes validation and PR cycle 3 within these limits.
+
+## Stage Report: implementation (PR cycle 3)
+
+- DONE: Dispatch fresh validation before its gate.
+  The guard stamps the stage, applies normal freshness rules, and enters gate lifecycle only after worker completion and report acceptance.
+- DONE: Update only the matching contract expectation.
+  The focused contract check fails if the guard omits the `started` transition or retains the obsolete no-dispatch rule.
+- DONE: Preserve the worker-completion guard and external bindings.
+  No worker-lifecycle line, XFAIL binding, registry row, runtime adapter, or stored format changed.
+- DONE: Run the focused negative controls.
+  AutoContinue rejects status-only advancement. The lifecycle controls reject missing worker evidence and an in-workflow observer.
+- DONE: Use the completed exact Sonnet evidence.
+  AutoContinue passed in 653.04s. Default-headless passed in 306.88s with the native implementation lifecycle oracle.
+- DONE: Run the required offline checks.
+  `gofmt`, `go test ./...`, and the restored `go test ./... -race` run completed successfully.
+- DONE: Keep the approved correction limits.
+  The correction is two line replacements. The full candidate remains seven files and 217 gross lines.
+- DONE: Commit and push PR #657 head.
+  Commit `61d31a349ecbccf5f68fe11539575ad749966243` is on the remote task branch.
+
+### Summary
+
+Fresh validation now runs before its gate. The exact Sonnet proofs and all required offline checks pass.
