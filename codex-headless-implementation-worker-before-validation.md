@@ -400,3 +400,35 @@ Captain approval authorizes the two rejected-finding fixes within these limits.
 
 The live target now proves one native implementation worker, matching completion, and a DONE report before validation.
 The harness observer no longer changes the workflow that Codex inspects.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-review exact corrected candidate 79b539410. Preserve candidate bytes.
+  `git rev-parse HEAD` returned `79b539410`. The code worktree stayed clean.
+- DONE: Reproduce both cycle-1 negative controls: missing worker lifecycle and in-workflow observer path.
+  The command-only lifecycle failed the oracle. The in-workflow observer path also failed its boundary check.
+- DONE: Verify native Claude and Codex spawn, matching completion, DONE implementation report, and ordering before validation.
+  Each exact target passed the native lifecycle oracle with one spawn, its matching completion, one DONE report, and later validation.
+- DONE: Verify exact Codex and Sonnet passing evidence and the isolated finished observer artifact.
+  Codex passed in 220.21s. Sonnet passed in 297.53s. Each artifact contains its finished external `command.log`.
+- DONE: Confirm the correction stays within two test files, 121 gross lines, and the approved 217-gross full cap.
+  The correction is 120 insertions and one deletion across two approved files. The full candidate is 217 gross lines across seven files.
+- DONE: Re-check all ACs, classify any new finding, and write the cycle-2 PASSED or REJECTED report in Simplified Technical English.
+  AC-1 and AC-2 have independent native lifecycle evidence. AC-3 has a passing reconciliation check on the same candidate.
+
+### Acceptance criteria
+
+- AC-1: PASSED.
+  Both exact runtime targets observed one native implementation worker and its matching completion before validation.
+- AC-2: PASSED.
+  The command-only control cannot replace native lifecycle evidence. The report parser also requires one implementation report with a DONE result.
+- AC-3: PASSED.
+  The reconciliation check confirms that only the owned Sonnet and Codex bindings remain removed.
+
+### Findings
+
+No Material finding, deferred risk, or polish finding remains.
+
+### Summary
+
+The corrected candidate resolves both cycle-1 findings. The exact Codex and Sonnet targets pass with native lifecycle and isolated observer evidence. I recommend PASSED.
