@@ -326,3 +326,23 @@ and honest target coverage.
 ### Summary
 
 Ideation keeps the end-user value: the complete rejected round is visible before correction re-gating. It limits this task to stable recorder-publication failures, admits Pi from current evidence, gates Sonnet and Opus on exact repeatable evidence, and assigns Codex continuation to its separate owner.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved complete rejected-round publication before reviewer rerun and next-gate preparation.
+  Commit `267de20d6` changes `skills/feedback-rejection-flow/SKILL.md:17-22` and `skills/commission/references/templates/development.md:118`.
+- DONE: Admit no new source binding now; preserve the existing recorder, round format, authority, and task-specific ownership.
+  The change reuses `gate record --round`. It adds no field, command, flag, writer, or target binding.
+- DONE: Add task-local focused proof for one complete four-entry validation/1 publication and the no-invocation control.
+  `internal/contractlint/feedback_rejection_publication_smoke_test.go:9-45` fails if publication moves after reviewer or gate work.
+  `TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl` fails without the four-entry round or observed invocation.
+- DONE: Do not edit shared XFAIL bindings, registry reconciliation, sprint package files, or shared process documentation before ts lands.
+  This checkpoint changes no shared binding, registry, sprint package, or `docs/dev/README.md` file.
+- DONE: Commit the product behavior checkpoint and report exact files, lines, tests, and deferred post-ts live proof.
+  Commit `267de20d6` contains three files. The Pi XFAIL binding and live proof remain deferred until `ts7gq0mr9s3chx2w4wppd1kt` lands.
+
+### Summary
+
+The rejection flow now publishes the complete round before reviewer rerun or gate preparation. Recorder failure or an incomplete log now holds the flow.
+
+The focused contract and recorder tests pass. `go test ./...` and `go test ./... -race` pass after the required `gofmt` run.
