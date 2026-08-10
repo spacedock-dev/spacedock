@@ -416,3 +416,31 @@ metric prove one observed code with no skip. The implementation is ready for val
 
 The recarve keeps Sonnet strict and restores Codex to TODO. All local and
 offline checks pass. Exact Sonnet evidence on `966ac857f` remains required.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Update the task body before product edits.
+  The body lists 19 runnable targets, no TODO exceptions, exact files, user value, and the revised estimate.
+- DONE: Convert every executable sprint target to target-level XFAIL.
+  Candidate `02b2296a18750cf3eb2ed6975b8446a6b3198d8d` has 19 owner-correct XFAIL rows and zero TODO rows.
+- DONE: Keep infrastructure failures and XPASS red.
+  Focused controls prove semantic failure becomes XFAIL, no semantic failure becomes XPASS, and an untyped failure stays FAIL.
+- DONE: Preserve the existing metric and observed semantic codes.
+  The metric keeps `failure_codes` and owner data. Target-level records do not require `expected_code` from source.
+- DONE: Update reconciliation, owner proof, documents, and downstream tasks.
+  Reconciliation checks all 19 rows and exact owners. State commit `9e5b0c0a7` updates eight downstream task bodies.
+- DONE: Run formatting, full, race, registry, and active-owner checks.
+  `gofmt`, `go test ./...`, `go test ./... -race`, reconciliation, and the mutable owner join passed.
+- DONE: Run an authenticated local target probe without paid CI.
+  Codex `default-headless-gate-stop` ran for 551.46 seconds and passed as XFAIL with its observed semantic code.
+- DONE: Preserve the revised surface and line estimate.
+  The candidate changes 14 files with 335 additions and 137 deletions, for `+198` net lines against `main`.
+- DONE: Commit and push the corrected candidate and durable state.
+  Code tip `02b2296a1` and state commit `9e5b0c0a7` are pushed to their registered branches.
+- SKIPPED: Run paid live CI before the pull request.
+  Captain policy reserves exact Sonnet, Codex, Opus, and Pi evidence for the required pull-request lanes.
+
+### Summary
+
+The candidate applies target-level XFAIL to every runnable sprint target. It keeps product repair ownership unchanged and leaves no TODO row.
+All required offline checks pass. The pull request still needs exact required live-lane evidence on code tip `02b2296a1`.
