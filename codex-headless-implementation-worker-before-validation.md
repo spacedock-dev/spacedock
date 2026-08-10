@@ -471,3 +471,21 @@ The corrected candidate resolves both cycle-1 findings. The exact Codex and Sonn
 ### Summary
 
 The merge rework preserves the landed 2e4 inventory and the approved 98a repair. All required checks pass on the rebased candidate.
+
+## Stage Report: validation merge recheck
+
+- DONE: Inspect exact rebased candidate 6e281f31c624eab611c8a3ba6f05adf0f17e4229. Preserve bytes.
+  `git rev-parse HEAD` returned the exact candidate. The code worktree stayed clean.
+- DONE: Verify the manual reconciliation retains landed 2e4 removals and only 98a-owned Sonnet/Codex removals.
+  `gate-guardrail` has no gap. `default-headless-gate-stop` retains only the Pi binding owned by `fh6rv0k6wr25zty0jjan4jp7`.
+- DONE: Verify shared runner inventory, lifecycle falsifiers, live-tag compile, and implementation full/race evidence.
+  Reconciliation, both falsifiers, and the live-tag compile passed. The implementation report records passing full and race suites.
+- DONE: Confirm the seven-file, 217-gross bounded surface and unchanged product semantics.
+  The diff against rebased main has seven files and 217 gross lines. The rebase adds only landed upstream behavior.
+- DONE: Recommend PASSED or REJECTED for the exact rebased merge candidate in Simplified Technical English.
+  I recommend PASSED. No Material finding, deferred risk, or polish finding remains.
+
+### Summary
+
+The merge reconciliation preserves the landed 2e4 inventory and the approved 98a repair. The focused checks pass on the exact rebased candidate.
+The exact live runs were not repeated. The required PR lanes will run on this head.
