@@ -89,7 +89,10 @@ func TestUnsetNestedSessionArgs(t *testing.T) {
 
 func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error {
 	const prepareToken = "exit=0\tgate prepare recorded-gate-task "
+	const cleanupToken = " --set recorded-gate-task completed= verdict="
 	prepare := strings.Index(log, prepareToken)
+	cleanup := strings.Index(log, cleanupToken)
+	validation := strings.Index(log, " --set recorded-gate-task status=validation started")
 	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
 	head := strings.LastIndex(log, "state-head\t")
 	dispatches := strings.Split(log[:max(prepare, 0)], "exit=0\tdispatch build ")
@@ -113,9 +116,13 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "the gate was withdrawn after prepare")
 	case successfulStatusSet(log[prepare:]):
 		return errGraded(boundary + "status changed after prepare")
+	case len(requireImplementation) > 0 && requireImplementation[0] && strings.Count(log[:prepare], cleanupToken) > 1:
+		return errGraded(boundary + "more than one terminal-field cleanup recorded")
+	case len(requireImplementation) > 0 && requireImplementation[0] && cleanup >= 0 && cleanup > validation:
+		return errGraded(boundary + "terminal-field cleanup missing or after validation")
 	case len(requireImplementation) > 0 && requireImplementation[0] && strings.Count(log[:prepare], " --stage implementation") == 1 && strings.Count(log[:prepare], " --stage validation") != 1:
 		return &gradedErr{code: "dispatch-envelope-not-acknowledged", msg: boundary + "validation dispatch envelope count was not one"}
-	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 3 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
+	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 3 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started") && successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "completed= verdict=", "status=validation started")):
 		return &gradedErr{code: "implementation-worker-not-dispatched", msg: boundary + "implementation was not dispatched before validation"}
 	}
 	return nil
@@ -140,11 +147,23 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 		}
 	}
 	spawnID, codexWorker, spawns, completed, validation := "", "", 0, -1, -1
+	piRunID := ""
 	for i, line := range strings.Split(stream, "\n") {
 		var event row
 		if json.Unmarshal([]byte(line), &event) != nil {
 			continue
 		}
+		var pi struct {
+			Message struct {
+				ToolName, ToolCallID string
+				Details              struct{ RunID string }
+				Content              []struct {
+					Type, Name, ID, Text string
+					Arguments            struct{ Task, Command string }
+				}
+			}
+		}
+		_ = json.Unmarshal([]byte(line), &pi)
 		if event.Payload.Type == "function_call" && event.Payload.Name == "spawn_agent" && strings.Contains(event.Payload.Arguments, "implementation") {
 			spawns++
 			var args struct {
@@ -158,6 +177,21 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 		}
 		if event.Payload.Type == "custom_tool_call" && strings.Contains(line, "status=validation") {
 			validation = i
+		}
+		if pi.Message.ToolName == "subagent" && pi.Message.ToolCallID == spawnID {
+			piRunID = pi.Message.Details.RunID
+		}
+		for _, item := range pi.Message.Content {
+			if item.Type == "toolCall" && item.Name == "subagent" && strings.Contains(strings.ToLower(item.Arguments.Task), "implementation") {
+				spawns++
+				spawnID = item.ID
+			}
+			if item.Type == "toolCall" && item.Name == "bash" && strings.Contains(item.Arguments.Command, "status=validation") {
+				validation = i
+			}
+			if piRunID != "" && pi.Message.ToolName == "subagent" && strings.Contains(item.Text, "Run: "+piRunID) && strings.Contains(item.Text, "State: complete") && strings.Contains(item.Text, "\nSession: /") {
+				completed = i
+			}
 		}
 		if event.Message != nil {
 			for _, item := range event.Message.Content {
@@ -197,6 +231,12 @@ func TestImplementationLifecycleAndObserverNegativeControls(t *testing.T) {
 	if err := assertImplementationWorkerLifecycle(claude, entity); err != nil {
 		t.Fatalf("complete native lifecycle rejected: %v", err)
 	}
+	pi := `{"type":"message","message":{"content":[{"type":"toolCall","id":"spawn-1","name":"subagent","arguments":{"task":"implementation assignment"}}]}}
+{"type":"message","message":{"toolCallId":"spawn-1","toolName":"subagent","details":{"runId":"run-1"}}}
+{"type":"message","message":{"toolName":"subagent","content":[{"type":"text","text":"Run: run-1\nState: complete\nSession: /tmp/session.jsonl"}]}}
+{"type":"message","message":{"content":[{"type":"toolCall","name":"bash","arguments":{"command":"spacedock status --set task status=validation"}}]}}`
+	requireRecordedGate(t, assertImplementationWorkerLifecycle(pi, entity) == nil, "complete Pi lifecycle rejected")
+	requireRecordedGate(t, assertImplementationWorkerLifecycle(strings.Replace(pi, "State: complete", "State: running", 1), entity) != nil, "Pi lifecycle without completion passed")
 	root := t.TempDir()
 	if assertObserverOutsideWorkflow(root, filepath.Join(root, "evidence", "command.log")) == nil {
 		t.Fatal("in-workflow observer path passed")
@@ -206,14 +246,22 @@ func TestImplementationLifecycleAndObserverNegativeControls(t *testing.T) {
 	}
 }
 
-func successfulStatusSet(log string, allowed ...string) (found bool) {
+func successfulStatusSet(log string, allowed ...string) bool {
+	var found []string
 	for _, line := range strings.Split(log, "\n") {
-		if strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ") && (len(allowed) == 0 || found || !strings.HasSuffix(line, " "+allowed[0])) {
+		if strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ") {
+			found = append(found, line)
+		}
+	}
+	if len(found) != len(allowed) {
+		return true
+	}
+	for i := range found {
+		if !strings.HasSuffix(found[i], " "+allowed[i]) {
 			return true
 		}
-		found = found || strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ")
 	}
-	return len(allowed) > 0 && !found
+	return false
 }
 
 func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
@@ -221,6 +269,7 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		"exit=0\tstate commit recorded-gate-task\n" +
 		"state-head\timplementation\n" +
 		"exit=0\tdispatch build --stage implementation\n" +
+		"exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n" +
 		"exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=validation started\n" +
 		"exit=0\tstate commit recorded-gate-task\n" +
 		"state-head\tvalidation\n" +
@@ -232,6 +281,7 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 	if err := assertRecordedGateHoldLog(prepared, true); err != nil {
 		t.Fatalf("prepare-first hold log rejected: %v", err)
 	}
+	requireRecordedGate(t, assertRecordedGateHoldLog(strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n", "", 1), true) == nil, "clean worker without cleanup rejected")
 	if err := assertImplementationWorkerLifecycle(prepared, "---\nstatus: validation\n---\n# Task\n"); err == nil {
 		t.Fatal("command-only baseline passed the native lifecycle oracle")
 	}
@@ -239,17 +289,19 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		mutation string
 		want     string
 	}{
-		"retired bind":      {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1), "no successful gate prepare recorded"},
-		"missing commit":    {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\n", 1), "state commit missing or before the successful gate prepare"},
-		"decision":          {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
-		"consume":           {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
-		"withdraw":          {prepared + "exit=0\tgate withdraw recorded-gate-task\n", "the gate was withdrawn after prepare"},
-		"status repair":     {prepared + "exit=0\tstatus --set recorded-gate-task status=validation\n", "status changed after prepare"},
-		"successor build":   {prepared + "exit=0\tdispatch build successor\n", "a successor was dispatched after prepare"},
-		"duplicate prepare": {prepared + "exit=0\tgate prepare recorded-gate-task validation\n", "more than one successful gate prepare recorded"},
+		"retired bind":         {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1), "no successful gate prepare recorded"},
+		"missing commit":       {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\n", 1), "state commit missing or before the successful gate prepare"},
+		"decision":             {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
+		"consume":              {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
+		"withdraw":             {prepared + "exit=0\tgate withdraw recorded-gate-task\n", "the gate was withdrawn after prepare"},
+		"duplicate cleanup":    {strings.Replace(prepared, "completed= verdict=\n", "completed= verdict=\nexit=0\tstatus --set recorded-gate-task completed= verdict=\n", 1), "more than one terminal-field cleanup"},
+		"reordered cleanup":    {strings.Replace(prepared, "completed= verdict=\nexit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=validation started", "status=validation started\nexit=0\tstatus --set recorded-gate-task completed= verdict=", 1), "cleanup missing or after validation"},
+		"post-prepare cleanup": {strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n", "", 1) + "exit=0\tstatus --set recorded-gate-task completed= verdict=\n", "status changed after prepare"},
+		"successor build":      {prepared + "exit=0\tdispatch build successor\n", "a successor was dispatched after prepare"},
+		"duplicate prepare":    {prepared + "exit=0\tgate prepare recorded-gate-task validation\n", "more than one successful gate prepare recorded"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			err := assertRecordedGateHoldLog(tc.mutation)
+			err := assertRecordedGateHoldLog(tc.mutation, true)
 			if err == nil {
 				t.Fatal("mutated hold log unexpectedly accepted")
 			}
