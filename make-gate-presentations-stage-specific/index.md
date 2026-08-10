@@ -655,3 +655,16 @@ Candidate code and deterministic checks are green, and the Captain-authorized re
 ### Summary
 
 The correction changes only the two authorized published lines and the directly superseded active design text. Candidate `362bc88713e9b5ca4d4e7991d9d07b2e3ef10df7` is clean at 10 files, 106 insertions and 24 deletions (130 changed lines) versus reconciliation base `8832664dd`. No product mechanism, model lane, CI workflow, fixture, lifecycle, runtime, command, schema, recorder, oracle, unrelated page, or PR ref changed.
+
+## Stage Report: validation (cycle 9)
+
+- DONE: Verify the concepts page now describes Gate content as the presentation preference/override and the full bounded fallback without fabrication or source dumping.
+  Source and rendered HTML name the override, every Captain-approved fallback source, concise decision relevance, and the prohibitions on invented facts and showing every source.
+- DONE: Verify the first-workflow example keeps useful passed-check/readiness evidence while omitting empty skipped/failed classes.
+  Source and rendered HTML retain the 429 and counter-reset checks plus the approval recommendation; no skipped/failed empty-class sentence or placeholder remains.
+- DONE: Reproduce focused contract, integration, and strict docs checks; confirm the correction stayed at two files/four lines and recommend PASSED or REJECTED.
+  Fresh contract lint, skills integration, and `mkdocs build --strict` pass. Commit `362bc8871` is exactly two files with one insertion and one deletion each; no other candidate path changed. Recommend PASSED.
+
+### Summary
+
+The narrow correction resolves the sole Material finding and keeps the Captain-ruling mechanism, active ACs, tests, and published examples aligned. No material, deferred-risk, or polish finding remains, so validation recommends PASSED without a model or CI rerun.
