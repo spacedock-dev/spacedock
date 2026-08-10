@@ -400,3 +400,16 @@ Validation recommends REJECTED for one material verification defect: the require
 ### Summary
 
 Validation remains REJECTED and is now held by First Officer authorization. Candidate `6b36ecfe5` is unchanged; revalidation waits for xp6's real passing Codex gate-guardrail evidence.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Remove only the Codex `gate-guardrail` TODO authorized by the Captain while preserving the Pi TODO and every other registry entry.
+  Commit `4e3be373f` changes only `internal/ensigncycle/shared_live_runner_test.go`: it removes `liveTODO("codex", "xp6c9qfe7y4wwp46enc3f85n")` from `TestLiveCommonGateGuardrail` and leaves `liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n")` in place. The complete candidate is now 11 files/133 changed lines from `main`, within the reset tolerance.
+- DONE: Run the focused registry and offline gate-authority controls before the live invocation.
+  `TestRuntimeLiveRegistryReconciliation`, `TestAssertGateHeld`, `TestAssertGateHeldAcceptsPreparedFixtureBinding`, and `TestGateGuardrailNegativeBrokenStateTransition` passed after the one-line change; the same focused controls also passed before the edit.
+- FAILED: Execute and pass the one authorized authenticated Codex `TestLiveCommonGateGuardrail` run through the real durable `assertGateHeld` check.
+  The sole invocation was `SPACEDOCK_CODEX_LIVE_REQUIRED=1 SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonGateGuardrail$' ./internal/ensigncycle -v`. It did not skip, but failed before the scenario and assertion ran with exact evidence: `shared_live_runner_test.go:66: OPENAI_API_KEY is required for the approval-gated codex-live lane`; Go reported `--- FAIL: TestLiveCommonGateGuardrail (0.00s)`. Per the Captain's authorization, no rerun, runtime repair, harness change, fallback, alternate evidence, or further candidate mutation followed.
+
+### Summary
+
+The authorized Codex TODO removal is committed at `4e3be373f`, and all focused deterministic controls pass. The single required-auth live invocation could not authenticate, so it produced no real `assertGateHeld` evidence. Implementation stops with that exact failure preserved and the candidate otherwise unchanged.
