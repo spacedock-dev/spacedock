@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: common-evidence
 worktree: .worktrees/spacedock-ensign-dispatch-current-initial-stage-before-successor
 issue:
-pr:
+pr: pr-merge:660
 mod-block:
 id: 6x50qafc8566zc6p1qpb6y30
 gates:
