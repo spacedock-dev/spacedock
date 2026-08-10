@@ -1,6 +1,6 @@
 ---
 title: Continue Codex rejection after the first validation
-status: ideation
+status: implementation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:16Z
 completed:
@@ -66,7 +66,7 @@ gates:
                 reason: Captain approved the complete Codex correction journey and fresh final gate.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
