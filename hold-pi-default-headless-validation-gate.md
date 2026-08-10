@@ -1,6 +1,6 @@
 ---
 title: Hold the Pi default headless validation gate
-status: ideation
+status: implementation
 source: "Staff review M3 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:21Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: Captain approved the Pi headless open-validation-gate result.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
