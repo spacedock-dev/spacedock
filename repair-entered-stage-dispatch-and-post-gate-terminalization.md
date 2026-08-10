@@ -205,3 +205,24 @@ The spike found the remaining proof gaps. No current test reads the entity blob 
 Ideation is complete. The plan keeps one post-gate value slice, requires exact dispatch-commit evidence, and narrows terminal authority only for consumed nonterminal history.
 
 Task `6x50qafc8566zc6p1qpb6y30` owns all smallest-sufficient-mechanism bindings and must land before 9a implementation. Staff finding M4 now requires a serial rebase and exact-candidate reruns for the shared runner and dispatch files.
+
+## Implementation surface decision
+
+Candidate `ea4684fd7` changes eight files. It adds 138 lines and removes 8 lines, for a net change of 130 lines.
+
+The changed files are:
+
+- `internal/status/merge.go`
+- `internal/cli/terminal_consume_test.go`
+- `internal/cli/gate_ceremony_count_test.go`
+- `skills/fo-gate-lifecycle/SKILL.md`
+- `skills/first-officer/references/fo-dispatch-core.md`
+- `docs/site/concepts/gates-and-decisions.md`
+- `docs/site/reference/command-reference.md`
+- `docs/specs/gate-resolution-frontmatter-contract.md`
+
+The current candidate does not change `internal/ensigncycle/shared_live_runner_test.go`. The final 6x rebase and exact live proof will add the owned binding removal.
+
+The Commander approved this smaller surface under the sprint connection. The repair uses the planned narrow classifier, two focused falsifiers, and existing contracts.
+
+The acceptance criteria do not change. The end-user value does not change. The candidate still completes consumed nonterminal journeys without `--force`.
