@@ -8,6 +8,7 @@ sprint-readiness: ready
 group: common-product
 id: ca7w23pffeynv53swt2b8zf3
 started: 2026-08-10T22:49:48Z
+worktree: .worktrees/spacedock-ensign-remove-dispatch-ack-hook-machinery
 ---
 ## Problem
 
