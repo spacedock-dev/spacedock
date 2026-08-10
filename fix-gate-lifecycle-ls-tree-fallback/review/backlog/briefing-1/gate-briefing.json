@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qbppyssy13pyh1gtkh2n8vp5:backlog:attempt-1:revision-1",
+  "question": "Approve QBP for ideation and implementation before the prerelease cut?",
+  "artifacts": [
+    {
+      "id": "artifact:qbppyssy13pyh1gtkh2n8vp5:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/cd16d7d047928097a91de7a8763861b29569e223/fix-gate-lifecycle-ls-tree-fallback.md",
+      "rev": "sha256:c0aa112c08c9e4151e30752bb5dbeeb4cc76c09e072768f1f88b524b8d3808d5",
+      "mediaType": "text/markdown",
+      "summary": "PR #659 introduced an incomplete ls-tree fallback. Two Codex live runs failed before gate preparation. QBP defines the bounded correction and proof."
+    }
+  ]
+}
