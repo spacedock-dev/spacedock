@@ -1,6 +1,6 @@
 ---
 title: Continue Codex rejection after the first validation
-status: implementation
+status: validation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:16Z
 completed:
