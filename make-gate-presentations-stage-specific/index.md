@@ -413,3 +413,28 @@ Validation remains REJECTED and is now held by First Officer authorization. Cand
 ### Summary
 
 The authorized Codex TODO removal is committed at `4e3be373f`, and all focused deterministic controls pass. The single required-auth live invocation could not authenticate, so it produced no real `assertGateHeld` evidence. Implementation stops with that exact failure preserved and the candidate otherwise unchanged.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Verify Runtime Live E2E run `31348183583` against the exact candidate rather than trusting its aggregate conclusion.
+  GitHub records workflow `Runtime Live E2E`, event `workflow_dispatch`, head SHA `4e3be373f56be96f340d6322d07033865e99f31b`, and overall `success`. Jobs `offline` (`93333965496`), `claude-live (sonnet, claude-sonnet-5, max, CI-E2E)` (`93334128215`), and `codex-live` (`93334128222`) all completed successfully. The Codex checkout log fetches that exact SHA, requires `OPENAI_API_KEY`, sets `SPACEDOCK_CODEX_LIVE_REQUIRED=1`, and installs the current checkout as the Codex plugin.
+- DONE: Inspect the target-level artifacts and prove that the formerly missing journey genuinely ran.
+  Artifact `runtime-live-e2e-codex-live` (`9048334088`) records `TestLiveCommonGateGuardrail` as `run`, then `--- PASS` and `Action:"pass"` in 67.96s; its journey metric records `scenario_id: gate-guardrail`, runtime `codex`, `outcome.status: passed`, and run ID `31348183583`. The Sonnet detail artifact independently records the same target passing in 170.81s. Neither target was a TODO skip, and the durable held-gate assertion therefore clears the prior missing-auth evidence defect.
+- FAILED: Regrade the retained visible presentations against the Captain-corrected bounded-fallback and empty-finding requirements.
+  The exact Codex target fetches a validation stage definition containing only `Validate and present the retained package.`: it has no `Gate content`, Inputs, Outputs, Good/Bad criteria, or evidence declaration. Its visible `Evidence for validation` nevertheless adds checklist, AC-scan, and committed-review rows, then emits `- No material findings.` The retained Sonnet presentation likewise emits `- Findings: no material findings.` These are unsupported fallback rows and explicit empty finding rows; they violate AC-2's declared-criteria/transition bound and AC-3's requirement to omit empty result/finding groups. The green live assertion checks the durable held boundary, not these presentation semantics, so its pass cannot override the observed AC failure.
+- DONE: Reconcile the remaining ACs, Captain wording correction, and final candidate classification without changing product bytes.
+  Retained independent evidence for AC-1 and AC-4 remains valid: the non-development explicit/rename matrix follows workflow Gate content, all commission/refit shapes propagate it, and the legacy fixture stays at blob `5565f9b3b6c183aa04c2b60969139daddcc24a1e`. AC-5's direct docs, strict generated rendering, and Captain-requested removal of the abstract prose/11-item list remain valid. Exact candidate `4e3be373f` / tree `cd208b728b` is clean at 11 files/133 changed lines; its only delta from `6b36ecfe5` is the Captain-authorized test-only Codex TODO removal. The final product diff still contains no F6C semantic-oracle cleanup or inventory, W5 digest mechanism, XX dispatch validation, command/schema/parser/recorder change, or product runtime-routing change.
+
+### Summary
+
+Validation recommends REJECTED. Run `31348183583` supplies the real authenticated Codex evidence that was previously missing, but the evidence itself refutes AC-2 and AC-3: the presenter leaks undeclared fallback material and renders an empty findings row on both Codex and Sonnet. The live harness's durable-state grade passes while leaving that visible semantic defect ungraded. Candidate `4e3be373f` remains unchanged.
+
+## Review-finding disposition: live fallback leakage and empty findings
+
+- Exact finding: in exact-head run `31348183583`, Codex presents checklist/AC/review rows although the fetched fallback stage declares none of the permitted evidence fields, and both Codex and Sonnet present a `no material findings` row instead of omitting the empty finding group.
+- Released user and normal workflow: workflow-owned `Gate content` is authoritative; absent it, fallback is limited to declared Inputs, Outputs, Good/Bad criteria, and transition, while missing and empty evidence/finding groups are omitted.
+- Observable harm: a Captain receives evidence the workflow did not request and an empty findings row the corrected design promised to suppress; an aggregate green live job can conceal the regression because `assertGateHeld` grades only durable gate state.
+- Authority: value-ac[AC-2]: undeclared fallback is bounded to declared criteria and transition; value-ac[AC-3]: empty evidence and finding groups are absent.
+- Trigger evidence: Codex artifact `9048334088`, `codex-shared-scenarios-detail.jsonl` lines 6-9, and `live-artifacts/codex/codex-shared-scenarios/gate-guardrail/codex-final-message.txt`; Sonnet artifact `9048510715`, `live-e2e-detail.jsonl` target pass, and its gate-guardrail `claude-final-message.txt` line 14.
+- Classification: Material product-behavior defect in KRB's presenter surface, plus a test-coverage gap because the canonical live journey does not grade the visible KRB semantics.
+- Proposed disposition: route to implementation through the workflow checkpoint. Preserve exact candidate `4e3be373f` until distinct authorization; do not substitute the durable-state pass for presentation evidence or absorb unrelated runtime behavior into KRB.
