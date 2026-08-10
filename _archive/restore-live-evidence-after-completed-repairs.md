@@ -1,10 +1,10 @@
 ---
 title: Restore live evidence whose original repair owners are complete
-status: validation
+status: done
 source: "Live-test-truth close reconciliation, 2026-08-09"
 started: 2026-08-09T18:34:33Z
-completed:
-verdict:
+completed: 2026-08-10T18:35:38Z
+verdict: passed
 score: 0.9
 worktree: .worktrees/spacedock-ensign-restore-live-evidence-after-completed-repairs
 issue:
@@ -76,7 +76,8 @@ gates:
                 reason: Captain conn approves xp6 after independent PASSED validation of exact two-row evidence-only candidate 975a07f.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T18:35:38Z
 ---
 
 ## Problem
