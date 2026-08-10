@@ -491,3 +491,8 @@ The local Codex run produced two semantic codes. The expected code was
 The proposal is Material. This task owns the finding. The proposed disposition
 is a test-only fix for the absent structured-identity case. Candidate bytes
 remain unchanged until the First Officer gives a distinct authorization.
+
+The First Officer authorized the fix. The correction changes only
+`internal/ensigncycle/claude_live_runner_test.go`. The estimate is four added
+lines and no deleted lines. The correction accepts only
+`errReviewerIdentityUnsupported`. A detected wrong reviewer route remains red.
