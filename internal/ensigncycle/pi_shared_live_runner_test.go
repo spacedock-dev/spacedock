@@ -77,6 +77,7 @@ func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, ro
 		t.Fatalf("Pi journey %q failed: %v; artifacts: %s\n%s", scenario.name, err, artifactDir, tail(stderr.String(), 4000))
 	}
 	rootSession := onePiSession(t, filepath.Join(sessionDir, "*.jsonl"), "root")
+	stderr.WriteString("\n" + readFile(t, rootSession))
 	return liveResult{finalMessage: stdout.String(), stream: stdout.String() + "\n" + stderr.String(), commands: piObservedCommands(t, rootSession), artifactDir: artifactDir, duration: duration}
 }
 
