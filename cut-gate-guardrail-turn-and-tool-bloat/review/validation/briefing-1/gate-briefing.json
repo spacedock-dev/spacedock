@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-1:revision-1",
+  "question": "Approve validated 5K gate-path optimization for PR and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2ee4b97005885fe6f87e30356ed49bb08bbe2afd/cut-gate-guardrail-turn-and-tool-bloat.md",
+      "rev": "sha256:e6313777819c105b8551ef53ecd860f434e6569722391ebefdad4c56028d79ef",
+      "mediaType": "text/markdown",
+      "summary": "The atomic prepare-review path reduces the preserved supported journey to the Captain-accepted 17 turns and 17 calls while preserving exact evidence identity, atomic binding-room durability, restart behavior, dirty siblings, and all human decision authority."
+    }
+  ]
+}
