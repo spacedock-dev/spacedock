@@ -92,6 +92,7 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 	prepare := strings.Index(log, prepareToken)
 	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
 	head := strings.LastIndex(log, "state-head\t")
+	checklist, acScan := strings.Index(log, "exit=0\tstatus --read recorded-gate-task --checklist --json"), strings.Index(log, "exit=0\tstatus --read recorded-gate-task --ac-scan --json")
 	dispatches := strings.Split(log[:max(prepare, 0)], "exit=0\tdispatch build ")
 	const boundary = "gate hold crossed its committed no-authority boundary: "
 	switch {
@@ -101,6 +102,8 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "state commit missing or before the successful gate prepare")
 	case head < commit:
 		return errGraded(boundary + "state-head missing or before the state commit")
+	case checklist < head || acScan < checklist:
+		return errGraded(boundary + "structured gate reads missing, reordered, or before the committed state head")
 	case strings.Count(log, prepareToken) != 1:
 		return errGraded(boundary + "more than one successful gate prepare recorded")
 	case strings.Contains(log[prepare:], " --decision "):
@@ -351,7 +354,9 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		"exit=1\tgate prepare recorded-gate-task validation\n" +
 		"exit=0\tgate prepare recorded-gate-task validation\n" +
 		"exit=0\tstate commit recorded-gate-task\n" +
-		"state-head\tabc123\n"
+		"state-head\tabc123\n" +
+		"exit=0\tstatus --read recorded-gate-task --checklist --json\n" +
+		"exit=0\tstatus --read recorded-gate-task --ac-scan --json\n"
 	if err := assertRecordedGateHoldLog(prepared, true); err != nil {
 		t.Fatalf("prepare-first hold log rejected: %v", err)
 	}
@@ -365,6 +370,8 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 	}{
 		"retired bind":      {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation", "exit=0\tgate record recorded-gate-task --briefing briefing.md", 1), "no successful gate prepare recorded"},
 		"missing commit":    {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\n", 1), "state commit missing or before the successful gate prepare"},
+		"failed commit":     {strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\nexit=1\tstate commit recorded-gate-task\n", 1), "state commit missing or before the successful gate prepare"},
+		"late after read":   {strings.Replace(prepared, "exit=0\tstate commit recorded-gate-task\nstate-head\tabc123\nexit=0\tstatus --read recorded-gate-task --checklist --json\nexit=0\tstatus --read recorded-gate-task --ac-scan --json\n", "exit=1\tstate commit recorded-gate-task\nexit=0\tstatus --read recorded-gate-task --checklist --json\nexit=0\tstatus --read recorded-gate-task --ac-scan --json\nexit=0\tstate commit recorded-gate-task\nstate-head\tabc123\n", 1), "structured gate reads missing, reordered, or before the committed state head"},
 		"decision":          {prepared + "exit=0\tgate record recorded-gate-task --decision approve\n", "a decision was recorded after prepare"},
 		"consume":           {prepared + "exit=0\tgate consume recorded-gate-task\n", "the gate was consumed after prepare"},
 		"withdraw":          {prepared + "exit=0\tgate withdraw recorded-gate-task\n", "the gate was withdrawn after prepare"},
