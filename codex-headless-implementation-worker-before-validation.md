@@ -1,6 +1,6 @@
 ---
 title: Make headless Sonnet and Codex spawn implementation before validation
-status: validation
+status: implementation
 source: "PR #583 run 31320596435, Codex job 93262943132 and Sonnet job 93262943118, 2026-08-09"
 started: 2026-08-09T18:34:21Z
 completed:
@@ -90,7 +90,7 @@ gates:
                 reason: Corrected candidate 79b539410 satisfies AC-1 through AC-3, resolves both Material cycle-1 findings, and stays within the Captain-approved two-file and 217-gross caps.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 ## Problem
@@ -450,3 +450,24 @@ No Material finding, deferred risk, or polish finding remains.
 ### Summary
 
 The corrected candidate resolves both cycle-1 findings. The exact Codex and Sonnet targets pass with native lifecycle and isolated observer evidence. I recommend PASSED.
+
+## Stage Report: implementation merge rework
+
+- DONE: Rebase the exact candidate `79b539410` onto landed main `f2428ddee6b5b52d1478be25c345e47aae43aa97`.
+  The rebased candidate is `6e281f31c624eab611c8a3ba6f05adf0f17e4229`.
+- DONE: Resolve only `internal/contractlint/live_registry_reconciliation_test.go`.
+  The result keeps the landed `gate-guardrail` removal and the 98a Sonnet and Codex removals.
+- DONE: Verify the clean merge of `shared_live_runner_test.go`.
+  The gate-guardrail inventory is empty. The default-headless gate inventory contains only Pi issue `fh6rv0k6wr25zty0jjan4jp7`.
+- DONE: Run the focused reconciliation and lifecycle falsifiers.
+  Both focused checks passed. The live-tag compile and focused run also passed.
+- DONE: Run the required checks.
+  `gofmt`, `go test ./...`, and `go test ./... -race` completed successfully.
+- DONE: Preserve the approved product surface.
+  The candidate still changes exactly seven files and 217 gross lines. Product behavior did not change during the rebase.
+- DONE: Push the rebased candidate.
+  The remote task branch now points to `6e281f31c624eab611c8a3ba6f05adf0f17e4229`.
+
+### Summary
+
+The merge rework preserves the landed 2e4 inventory and the approved 98a repair. All required checks pass on the rebased candidate.
