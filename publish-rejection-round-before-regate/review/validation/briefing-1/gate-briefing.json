@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zhcb4bcz1qgcn7ajx2ctxpxk:validation:attempt-1:revision-1",
+  "question": "Approve zh for merge on proven Sonnet rejection-flow value with Pi and Codex bindings preserved?",
+  "artifacts": [
+    {
+      "id": "artifact:zhcb4bcz1qgcn7ajx2ctxpxk:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/db51906677d992f135401e377215ac7a45086cdf/publish-rejection-round-before-regate.md",
+      "rev": "sha256:171d5c06e2d3043bf027b3ef011915337a0d65c6dae6b5526d030bb7c3ccc87e",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED. Exact unbound Sonnet rejection-flow passed in 513.65 seconds. Pi and Codex XFAIL ownership remains explicit for later repair tasks."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zhcb4bcz1qgcn7ajx2ctxpxk:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/f9ddae6400bf18cc6548f296e50efea2071c3266/docs/roadmap/test-behavior-completeness/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:423f7bb245ba43e13863ac5fdaee30267c1465ea2c1426dbfce1fcbace66e2e7"
+    }
+  ]
+}

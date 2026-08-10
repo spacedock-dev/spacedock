@@ -56,6 +56,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:zhcb4bcz1qgcn7ajx2ctxpxk:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:zhcb4bcz1qgcn7ajx2ctxpxk-validation-1
+              briefing:
+                id: briefing:zhcb4bcz1qgcn7ajx2ctxpxk:validation:attempt-1:revision-1
+                digest: sha256:336e229d82ed61726a7ed20876643cf2abd6aa09d242523b5949dcf69d9242e7
+                request-digest: sha256:1fbd9b0ae6619d855665b8b3ec143f6a2dbd1c4414ae03e18bcea0404d372122
+                room-ref: ./publish-rejection-round-before-regate/review/validation/briefing-1
 ---
 
 Restore durable recorder publication for supported rejection-flow failures. Keep the complete rejected round visible before correction re-gating.
