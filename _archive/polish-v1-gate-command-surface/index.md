@@ -1,10 +1,10 @@
 ---
 title: Polish the v1 gate command and documentation surface
-status: validation
+status: done
 source: "Pre-0.27 gate-machinery necessity audit, 2026-08-01: top-level help omits gate prepare and the prose still describes prototype lifecycle details that the semantic cuts will remove."
 started: 2026-08-08T00:04:11Z
-completed:
-verdict:
+completed: 2026-08-10T21:20:37Z
+verdict: PASSED
 score: "0.8"
 worktree: .worktrees/spacedock-ensign-polish-v1-gate-command-surface
 issue:
@@ -73,8 +73,9 @@ gates:
                 reason: Validation proves all 11 semantic prose-search dependencies in the finite 15-row inventory are removed or replaced, all five acceptance criteria have evidence, and the full required verification is green.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
+archived: 2026-08-10T21:20:37Z
 ---
 
 Make the stable help, command reference, specification, and First Officer instructions describe the final minimal gate lifecycle after the semantic cuts land. Remove sprint-added tests that infer behavior by searching free-form command, prompt, document, or transcript prose. Exact text remains asserted only for deliberately published human-facing help.
