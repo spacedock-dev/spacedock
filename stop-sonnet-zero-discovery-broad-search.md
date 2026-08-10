@@ -1,6 +1,6 @@
 ---
 title: Stop Sonnet zero-discovery broad search
-status: implementation
+status: validation
 score: "0.90"
 source: "PR #663 Sonnet zero-discovery failure, 2026-08-10"
 sprint: test-behavior-completeness
