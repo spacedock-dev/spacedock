@@ -97,6 +97,17 @@ gates:
                 digest: sha256:ece7aa0d2114c1f27bb75d2ef1977d2a4ff598a041e2037b3613d2f720558a0a
                 request-digest: sha256:8aa95e57461fe487561f2bd493a0e18f88e5f04b1f3ea63f4965f2b161f37083
                 room-ref: ./restore-optional-manual-pi-common-live-ci/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0aqnm6v8ajns6cpsknxn9wf2:validation:3
+                briefing: briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T00:05:22.410292Z"
+                decision: approve
+                reason: 'Approved under sprint conn: rebased candidate 20910e635 contains origin/main 944f323ac, preserves the approved patch byte-for-byte, and passes fresh validation. AC-2 remains a mandatory exact-PR merge blocker.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
