@@ -44,6 +44,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:qbppyssy13pyh1gtkh2n8vp5:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:qbppyssy13pyh1gtkh2n8vp5-ideation-1
+              briefing:
+                id: briefing:qbppyssy13pyh1gtkh2n8vp5:ideation:attempt-1:revision-1
+                digest: sha256:a5b43398f187ec19f74141482044f230b0fe6851b2f942e8949856b0276bd9e4
+                request-digest: sha256:3df64bcb04e181fbb2fea036bda380a60028121b2062e963d352c2ef1d7ea145
+                room-ref: ./fix-gate-lifecycle-ls-tree-fallback/review/ideation/briefing-1
 ---
 
 When gate Artifact or Reference paths are absent, the First Officer must discover committed Markdown with a complete, path-scoped Git command. The current instruction abbreviates this as `git -C ... ls-tree`, which deterministically exits 129 because it omits the required tree-ish.

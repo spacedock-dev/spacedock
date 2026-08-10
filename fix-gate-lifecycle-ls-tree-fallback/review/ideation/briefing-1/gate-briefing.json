@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qbppyssy13pyh1gtkh2n8vp5:ideation:attempt-1:revision-1",
+  "question": "Approve the bounded QBP design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:qbppyssy13pyh1gtkh2n8vp5:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/97d296bd2edd953820bd5aa41b1e081ede306821/fix-gate-lifecycle-ls-tree-fallback.md",
+      "rev": "sha256:108dcd5d3bcfb111b839a6da3970296d3a6d1a0360804e2d75a27659aa9cad27",
+      "mediaType": "text/markdown",
+      "summary": "One shipped skill file clarifies complete path-fenced committed-tree discovery across applicable retained roots. Existing gate-guardrail evidence proves the end value; no new test infrastructure is added."
+    }
+  ]
+}
