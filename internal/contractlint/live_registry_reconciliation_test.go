@@ -49,7 +49,7 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	registryFixtures := readRegistryFixtureUnion(t, registryPath)
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
 	wantGaps := map[string][]liveGapRow{
-		"gate-guardrail":                {{"xfail", "codex", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "pi", "2e4fe65gy9vcr4xck6akzmdd"}},
+		"gate-guardrail":                {{"xfail", "pi", "2e4fe65gy9vcr4xck6akzmdd"}},
 		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "98aa776adg66gn823a8gamdq"}, {"xfail", "codex", "98aa776adg66gn823a8gamdq"}, {"xfail", "pi", "fh6rv0k6wr25zty0jjan4jp7"}},
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}},
