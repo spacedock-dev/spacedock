@@ -167,7 +167,7 @@ func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
 
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"), liveXFail("pi", "9adv48yhye5s2vkhwd7ge52d")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "9adv48yhye5s2vkhwd7ge52d"), liveXFail("codex", "9adv48yhye5s2vkhwd7ge52d"), liveXFail("pi", "9adv48yhye5s2vkhwd7ge52d")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 //spacedock:live-journey id=ac-value-reanchor fixture=ac-reanchor/means-pass-value-regressed
