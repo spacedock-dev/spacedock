@@ -389,3 +389,27 @@ The branch is rebased on `a8688cabf` and pushed. No `dvd` or other task binding 
 HOLD the current `zh` candidate unchanged. Run `31361230251` is an upstream `2e4` product failure, not a `zh` finding.
 
 The Captain approved landing `2e4` first. After its landing SHA arrives, rebase `zh`. Then rerun only the exact Pi cadence.
+
+## Pi Evidence Hold: run 31365175840
+
+- Candidate: `2838a2c983a686c864c03393e8eb7e7cba9c7bd5`
+- Protected deployment: `5827848249`
+- Environment: `CI-E2E-PI`
+- Job: `93382159866`
+- Artifact: `9054092470`
+- Digest: `sha256:44050af0079841004c8396a90daa62c6a3ed81e08078ceaee57df2da7cfc82fd`
+- Exact `zh` target result: `NOT RUN`. The artifact contains only the full-cycle and gate-guardrail common journeys.
+- Candidate proof: The artifact binary has revision `2838a2c983a686c864c03393e8eb7e7cba9c7bd5` and `vcs.modified=false`.
+
+### Four evidence fields
+
+1. Released user and normal workflow: The protected manual Pi cadence is the normal paid Pi evidence path.
+2. Observable harm: `TestLiveCommonRejectionFlow` did not run. This evidence cannot remove the Pi XFAIL.
+3. Affected value AC: `value-ac[AC-1]:` Pi must publish one complete four-entry `validation/1` round before correction re-gating.
+4. Trigger evidence: `-failfast` stopped after `TestLiveCommonGateGuardrail` failed with `prepared fixture request count = 0, want 1`.
+
+### Disposition
+
+HOLD candidate `2838a2c983a686c864c03393e8eb7e7cba9c7bd5` unchanged. Run `31365175840` is red before the `zh` target.
+
+The Pi XFAIL remains. No product byte or binding changed after this finding.
