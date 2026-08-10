@@ -61,335 +61,255 @@ gates:
 
 ## Problem
 
-A `liveTODO(...)` stops before the fixture or journey runs. It records ownership,
-but it gives no current behavior evidence. It also cannot report that a product
-repair made the journey pass.
+A `liveTODO(...)` stops before the fixture or journey runs. The current sprint
+owns executable targets that still stop at this skip.
 
-The Sonnet `default-headless-gate-stop` cell has a stable product failure. Its
-headless run prepares the validation gate before it dispatches the implementation
-worker. The stable failure code is `implementation-worker-not-dispatched`.
+The old XFAIL policy required one expected semantic code in source. Live model
+behavior can expose a different durable semantic failure on each run. This
+variation made an executable target red before its repair task changed product
+behavior.
 
-The Codex cell is not stable enough for strict XFAIL. Task `98a` owns its
-classification and the consistent-pass proof that permits removal of its TODO.
-
-Go has no native XFAIL result. A broad inversion of the test process can hide
-authentication, launch, timeout, fixture, and unrelated assertion failures.
+Go has no native XFAIL result. The harness must classify results only after the
+target reaches its durable semantic assertions.
 
 ## Value
 
-Known product gaps run in their required live lanes. CI records the expected
-failure, rejects a different failure, and detects a repaired journey immediately.
-The live artifact then measures execution instead of counting an early skip.
+Known product gaps run in their required live lanes. CI records current semantic
+failures and detects a repaired journey immediately. The metric measures a real
+target run instead of an early skip.
+
+The end user gets honest live evidence for every runnable sprint target. A
+product repair cannot hide behind a stale TODO.
 
 ## Required semantics
 
-A strict XFAIL applies only at the durable semantic assertion boundary.
+A target-level XFAIL applies only at the durable semantic assertion boundary.
 
-- `PASS` means that the journey passed.
-- `XFAIL` means that the journey ran and the named semantic failure occurred.
-- `XPASS` means that an expected failure disappeared. `XPASS` fails the lane until
-  its source binding is removed.
-- `FAIL` means that infrastructure failed or a different semantic failure
-  occurred.
+- `PASS` means that a normal target has no semantic failure.
+- `XFAIL` means that an XFAIL target has one or more typed semantic failures.
+- `XPASS` means that an XFAIL target has no semantic failure. XPASS stays red.
+- `FAIL` means that infrastructure failed. An untyped failure also stays red.
 
-The source binding owns the target, active task ID, and stable failure code. A
-`liveTODO(target, owner)` binding keeps the current skip behavior. A
-`liveXFail(target, owner, code)` binding runs the fixture and expects `code`.
-The desired-state registry does not copy this actual-state information.
+The source binding owns the target and active repair-task ID. The
+`liveXFail(target, owner)` binding does not own one expected code. The existing
+metric keeps all observed semantic codes.
 
-Keep TODO when the journey cannot run or has no repeatable semantic
-classification. Task `98a` owns the evidence that can change the Codex TODO.
+Authentication, launch, timeout, fixture, parsing, state-read, and metric
+failures stay normal failures. The harness does not invert the complete test
+result.
 
-Infrastructure failures stay outside the grade result. Fixture setup, process
-start, authentication, timeout, output parsing, and state reads must succeed
-before semantic assertions start. Then every durable semantic assertion runs,
-even after another assertion returns a semantic error. Metric emission remains a
-hard failure after grading.
+A `liveTODO(target, owner)` binding is valid only when that target cannot run.
+Unavailable authentication or missing runtime access are valid TODO reasons.
 
-The runner collects the unique stable codes from all durable semantic
-assertions. XFAIL is valid only when this set is exactly `{expected}`. An empty
-set for an XFAIL binding is XPASS. The expected code plus any additional code,
-or any different code, is FAIL. The runner does not stop at the first semantic
-failure. Only typed semantic grade errors reach this classification.
+## Exact target inventory
+
+These 19 sprint-owned target cells can run. Each cell must use target-level
+XFAIL under its current repair-task owner.
+
+| Journey | Target | Owner |
+| --- | --- | --- |
+| `gate-guardrail` | `codex` | `xp6c9qfe7y4wwp46enc3f85n` |
+| `gate-guardrail` | `pi` | `2e4fe65gy9vcr4xck6akzmdd` |
+| `default-headless-gate-stop` | `claude-sonnet` | `98aa776adg66gn823a8gamdq` |
+| `default-headless-gate-stop` | `codex` | `98aa776adg66gn823a8gamdq` |
+| `default-headless-gate-stop` | `pi` | `fh6rv0k6wr25zty0jjan4jp7` |
+| `recorded-gate-lifecycle` | `claude-opus` | `xp6c9qfe7y4wwp46enc3f85n` |
+| `rejection-flow` | `claude-sonnet` | `zhcb4bcz1qgcn7ajx2ctxpxk` |
+| `rejection-flow` | `claude-opus` | `zhcb4bcz1qgcn7ajx2ctxpxk` |
+| `rejection-flow` | `codex` | `dvddbpsf4tdt3yjw1yjyp14k` |
+| `rejection-flow` | `pi` | `zhcb4bcz1qgcn7ajx2ctxpxk` |
+| `smallest-sufficient-mechanism` | `claude-sonnet` | `6x50qafc8566zc6p1qpb6y30` |
+| `smallest-sufficient-mechanism` | `codex` | `6x50qafc8566zc6p1qpb6y30` |
+| `smallest-sufficient-mechanism` | `pi` | `6x50qafc8566zc6p1qpb6y30` |
+| `keep-moving-posture` | `claude-sonnet` | `9adv48yhye5s2vkhwd7ge52d` |
+| `keep-moving-posture` | `codex` | `9adv48yhye5s2vkhwd7ge52d` |
+| `keep-moving-posture` | `pi` | `9adv48yhye5s2vkhwd7ge52d` |
+| `owned-conflict-owner-handoff` | `claude-sonnet` | `xp6c9qfe7y4wwp46enc3f85n` |
+| `owned-conflict-owner-handoff` | `claude-opus` | `xp6c9qfe7y4wwp46enc3f85n` |
+| `owned-conflict-owner-handoff` | `pi` | `xp6c9qfe7y4wwp46enc3f85n` |
+
+The Codex `withdrawn-gate-recovery` target has passing live evidence. Remove its
+stale TODO instead of converting it to XFAIL.
+
+## TODO exceptions
+
+There are no TODO exceptions. Exact run `31340713337` proved that the
+CI-E2E-OPUS authentication and runtime path reached the shared live tests.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — Sonnet executes the known headless gap.**
+**AC-1 (VALUE) — Every executable sprint target runs.**
 
-The Sonnet `default-headless-gate-stop` cell runs the real fixture, host,
-exercise, and every durable assertion. It reports `xfail` only when the unique
-code set is `{implementation-worker-not-dispatched}` for owner
-`98aa776adg66gn823a8gamdq`. The Codex cell remains TODO with the same owner.
-Pi remains TODO with owner `xp6c9qfe7y4wwp46enc3f85n`.
+The 19 inventory cells run their real fixture, host, exercise, and durable
+semantic assertions. Each cell reports XFAIL when it has a typed semantic
+failure. The result keeps the current owner and all observed semantic codes.
 
-Verified by: run the exact-candidate Sonnet command and inspect its existing
-journey metric record plus the test result. Run the Codex command and require
-the source-owned TODO skip.
+Verified by: reconcile the source inventory. Run authenticated local target
+probes. Inspect each test result and existing journey metric.
 
 **AC-2 (VALUE) — A repaired journey reports XPASS and fails the lane.**
 
 When all durable assertions produce no semantic code for an XFAIL binding, the
-live test fails with `XPASS`. XPASS means no semantic failure, not only that the
-first assertion passed. The result names `default-headless-gate-stop`, target,
-owner, and expected code. The source binding remains until a later change
-removes it.
+live test fails with XPASS. The result names the journey, target, and owner.
 
-Verified by: focused classifier tests feed no semantic codes to the expected
-binding and assert `xpass` plus a failing disposition. A later Sonnet run after
-task `98a` repairs the behavior proves that the live lane fails.
+Verified by: a focused negative control gives the XFAIL target no semantic
+failure. The control requires a red XPASS result.
 
 **AC-3 — Infrastructure and different semantic failures remain failures.**
 
-Authentication, launch, timeout, fixture, state-read, and artifact failures keep
-their existing hard-failure behavior. A semantic grade with a different code,
-or with the expected code plus another code, also fails and never becomes
-XFAIL. The classifier must inspect all durable assertion results before it
-chooses this outcome.
+Authentication, launch, timeout, fixture, parsing, state-read, and metric
+failures keep normal failure behavior. An untyped error cannot become XFAIL.
 
-Verified by: focused grade-matrix tests cover the matching code, no code, a
-different code, and expected plus additional code. Existing runner failure tests
-continue to exercise launch and stream failure paths. No test-only failure
-inversion is added.
+Verified by: a focused negative control gives the classifier an infrastructure
+failure. Existing launch and stream controls remain red.
 
 **AC-4 — Reconciliation reports execution state and checks ownership.**
 
-Reconciliation distinguishes TODO from XFAIL. It validates target, active owner,
-and expected code for each XFAIL. The mutable owner join checks both binding kinds.
+Reconciliation distinguishes TODO from XFAIL. It requires the 19 XFAIL rows,
+zero TODO rows, and no stale Codex withdrawal row. The owner join checks
+both binding kinds.
 
-Verified by: `TestRuntimeLiveRegistryReconciliation` requires Sonnet XFAIL,
-Codex TODO, and Pi TODO. It rejects mutations that change the kind, owner,
-target, or code. `TestRuntimeLiveTODOOwnersAreActive` checks all three rows.
+Verified by: `TestRuntimeLiveRegistryReconciliation` checks the exact source
+inventory. `TestRuntimeLiveTODOOwnersAreActive` checks every binding owner.
 
 **AC-5 — Journey metrics include the strict outcome.**
 
-Strict journey records include `pass`, `xfail`, `xpass`, or `fail`. An XFAIL
-record includes its owner and sole observed failure code. An XPASS record
-includes its owner and expected code, but no observed semantic failure. A FAIL
-record includes every observed semantic code. Existing metric consumers
-continue to read the same artifact directory and schema shape.
+Journey records include `pass`, `xfail`, `xpass`, or `fail`. An XFAIL record
+includes its owner and all observed semantic codes. It does not need an expected
+code from source. Existing consumers keep the same artifact and schema.
 
-Verified by: journeymetrics serialization tests build all four strict outcomes,
-round-trip the JSON, and assert owner, expected-code, and observed-code fields.
-Emitter tests use one Claude and one Codex fixture record. A missing outcome or
-code set fails.
+Verified by: metric tests round-trip target-level XFAIL and XPASS records. They
+check the owner and observed codes.
 
 ## Scope
 
-- Add the smallest grade result needed at the semantic assertion boundary.
-- Preserve immediate failures for infrastructure and setup errors.
-- Convert only the evidenced Sonnet cell. Keep Codex and Pi as TODO.
-- Keep the registry as desired state.
-- Use the existing journey metrics artifact.
+- Use one target-level grade at the existing semantic boundary.
+- Convert the 19 executable sprint targets to XFAIL.
+- Remove the stale passing Codex withdrawal TODO.
+- Keep no TODO because all target runtime paths can execute.
+- Preserve the existing registry and journey metric.
+- Update downstream sprint acceptance criteria and test plans.
 
 ## Out of scope
 
 - Inverting the exit status of the complete test process.
-- Matching unstable CLI text or complete error strings.
-- Converting an unexecuted TODO without stable failure evidence.
+- Matching one expected semantic code from source.
+- Converting a target that cannot execute.
 - Adding tests that only test test infrastructure.
-- Repairing the product behavior owned by `98a`.
+- Repairing product behavior that another sprint task owns.
+- Adding a result format, simulator, copied ledger, or runtime adapter.
 
 ## Proposed approach
 
-### 1. Bind the expected failure in source
+### 1. Bind target-level XFAIL in source
 
-Keep the existing `liveJourney` call shape and replace its target gap list with
-one list of typed gap bindings. `liveTODO` keeps two arguments. `liveXFail` adds
-the stable semantic code. The first landing changes only this call:
+Keep the existing `liveJourney` call shape. Both `liveTODO` and `liveXFail`
+take a target and owner. The XFAIL binding has no source expected code.
 
-```go
-[]liveJourneyGap{
-    liveXFail("claude-sonnet", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched"),
-    liveTODO("codex", "98aa776adg66gn823a8gamdq"),
-    liveTODO("pi", "xp6c9qfe7y4wwp46enc3f85n"),
-}
-```
-
-The source parser must record the binding kind, target, owner, and code. It must
-reject a missing code on `liveXFail`, an unexpected code on `liveTODO`, a bad
-target, or an inactive owner. No copied gap table belongs in the registry.
+The source parser records the binding kind, target, and owner. It rejects an
+additional code argument, a bad target, or an inactive owner.
 
 ### 2. Grade at the semantic boundary
 
-Enrich the existing `gradedErr` with a stable code. The gate-hold oracle assigns
-`implementation-worker-not-dispatched` only to its committed no-authority branch.
-Other semantic branches use different codes. The classifier compares codes, not
-the unstable prose after the code.
+Keep the existing typed semantic errors and observed codes. Add the smallest
+shared finish function for affected exercises.
 
-The shared scenario carries a small grade state. After setup, launch, timeout,
-fixture, and state reads succeed, `runGateStopScenario` invokes every durable
-assertion. It appends each typed semantic error to the state and does not return
-after the first one. Metric errors remain hard test failures. The shared runner
-resolves the unique observed code set after the exercise:
+After infrastructure succeeds, the finish function uses these rules:
 
-1. Record `XFAIL` only when the set is exactly `{expected}`.
-2. Record `XPASS` and fail the test when an expected binding has an empty set.
-3. Record `FAIL` and fail the test when the set has an additional or different
-   code. This includes expected plus another code.
-4. Record `PASS` when no expected binding exists and all grades pass.
+1. Record XFAIL when an XFAIL target has one or more typed semantic errors.
+2. Record XPASS and fail when an XFAIL target has no semantic error.
+3. Record FAIL for an untyped error.
+4. Record PASS for a normal target with no semantic error.
 
-The classifier is host-neutral. Claude and Codex continue to use their current
-launchers, authentication, output, and liveness paths.
+The runtime launchers keep their current authentication, output, and liveness
+paths. The task does not add a runtime adapter.
 
 ### 3. Extend the existing metrics record
 
-Use the current journey metrics artifact. Strict live records use
-`outcome.status` values `pass`, `xfail`, `xpass`, and `fail`. The outcome carries
-the source `owner`, the `expected_code` when a strict binding exists, and the
-unique observed `failure_codes` list. XFAIL has one observed code and that code
-is the expected code. XPASS has an empty observed-code list, because it means
-no semantic failure. FAIL preserves every observed code, including the expected
-code when an additional code also occurs.
-
-Add these optional fields to the existing outcome object. Do not create a second
-artifact or a copied gap ledger. Preserve the current `passed` and `failed`
-values for older non-strict records unless the metrics package already provides
-a compatible normalization point.
+Use the current journey metrics artifact. The outcome keeps status, owner, and
+the unique observed semantic codes. Target-level XFAIL leaves
+`expected_code` empty. No new record type or artifact is necessary.
 
 ### 4. Reconcile both gap states
 
-`TestRuntimeLiveRegistryReconciliation` must distinguish TODO and XFAIL in its
-derived execution report. `TestRuntimeLiveTODOOwnersAreActive` must join active
-owners for both binding kinds. The desired registry remains unchanged because it
-describes required journeys, not current evidence.
+`TestRuntimeLiveRegistryReconciliation` must check the exact inventory.
+`TestRuntimeLiveTODOOwnersAreActive` must join active owners for both binding
+kinds. The desired registry remains unchanged.
 
 ### Alternatives rejected
 
-- Keep the stable Sonnet failure as TODO: this hides the current journey and
-  cannot detect a repaired behavior.
+- Keep executable targets as TODO: this hides their current behavior.
 - Invert every test failure: this hides authentication, launch, timeout, and
   fixture failures.
-- Match the full assertion text: model and harness text can change without a
-  semantic change.
+- Require one semantic code: the target can expose another product failure.
 - Copy actual gap rows into the desired registry: two owners can drift.
 - Emit a second metrics artifact: release jobs would need another reader.
 
 ### Riskiest mechanism spike
 
-The existing semantic boundary was exercised first:
-
-```text
-go test ./internal/ensigncycle -run 'TestAssertRecordedGateHoldLog|TestAssertGateHeld' -count=1 -v
-```
-
-The targeted tests passed. `assertRecordedGateHoldLog` already returns a typed
-`*gradedErr` for the exact missing-worker branch. Its setup, commit, decision,
-withdrawal, status, and successor branches remain separate semantic errors. The
-runner calls `t.Fatalf` for launch and stall errors before this boundary. This
-spike supports enriching the existing error with a code. It does not support a
-test-process inversion.
-
-The exact Sonnet evidence remains the independent baseline. Run `31346297295`
-recorded the sole expected code on candidate `886f2d6ae`. Codex evidence varies
-between runs, so task `98a` owns its classification and consistent-pass proof.
+The existing gate-stop runner already separates launch and state-read failures
+from typed semantic errors. The failed Sonnet run `31349634178` observed
+`gate-hold-violation`. This result proves why source must not require one code.
 
 ## Test plan
 
-Run the pure grade matrix before any live spend. It must invoke every durable
-assertion after infrastructure succeeds and prove these outcomes: exactly the
-expected code is XFAIL, no code is XPASS, a different code is FAIL, and the
-expected code plus an additional code is FAIL. It must also prove that a later
-assertion runs after an earlier assertion returns a semantic error. A normal
-binding with no semantic code is PASS. Run the registry parser and owner join
-tests with source mutations. Run the metrics round-trip tests against the
-existing `Record` type. Do not add a second JSON format.
+Run focused negative controls before a live probe:
 
-Then run the real Sonnet cell on the exact candidate:
+1. Give an XFAIL target one typed semantic error. Require XFAIL.
+2. Give an XFAIL target no semantic error. Require red XPASS.
+3. Give an XFAIL target one infrastructure error. Require FAIL.
 
-```bash
-SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=sonnet \
-  go test -tags live -count=1 -timeout 40m \
-  -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v
-```
+Run registry parser, owner join, metric, full, race, and formatting checks.
+Then run local subscription-backed probes for authenticated targets. Do not
+start paid CI.
 
-Run the Codex command without paid CI:
-
-```bash
-SPACEDOCK_LIVE_RUNTIME=codex \
-  go test -tags live -count=1 -timeout 40m \
-  -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v
-```
-
-The Sonnet result must be an executed XFAIL with the sole code
-`implementation-worker-not-dispatched`. The Codex result must be a TODO skip.
-Task `98a` must classify Codex and obtain consistent-pass proof before it removes
-the TODO. After task `98a` repairs Sonnet, rerun Sonnet and require XPASS before
-removing its XFAIL binding.
-
-Estimated complexity is moderate. The work needs fixture-backed live tests for
-the real Sonnet lane, Go unit tests for classifier and metrics behavior, and a
-registry parser test. It needs no new fixture, CLI command, host adapter, or
-product behavior change.
+The exact live lanes still required after local probes are the manual CI lanes
+that provide subscription access not present locally.
 
 ## Expected surface
 
-The implementation may touch only the following files. The estimates include
-tests. The aggregate net limit is `+210` lines. Each file has a tolerance of
-`±20%`. A larger change needs a new design review.
+The revised estimate is 520 gross changed lines and `+285` net lines against
+`main`. The net tolerance is `+25` lines. A result above `+310` needs review.
 
-| File | Purpose | Gross lines | Net delta |
-|---|---|---:|---:|
-| `internal/ensigncycle/shared_live_runner_test.go` | Gap bindings and host-neutral grade disposition | 70 | +40 |
-| `internal/ensigncycle/claude_runtime_helpers_test.go` | Stable semantic failure code at the existing oracle | 25 | +15 |
-| `internal/ensigncycle/claude_live_runner_test.go` | Record semantic assertion results without catching infrastructure errors | 25 | +5 |
-| `internal/ensigncycle/journey_metrics_live_test.go` | Emit strict outcomes through the existing artifact | 25 | +18 |
-| `internal/journeymetrics/types.go` | Add outcome owner, expected-code, and observed-code fields | 15 | +10 |
-| `internal/journeymetrics/record.go` | Preserve legacy mapping and add strict mapping | 20 | +12 |
-| `internal/journeymetrics/tracking_test.go` | Round-trip strict outcomes and legacy compatibility | 55 | +35 |
-| `internal/contractlint/live_registry_reconciliation_test.go` | Parse TODO/XFAIL and join both owner states | 55 | +40 |
-| `internal/ensigncycle/live_grade_unit_test.go` | Exercise the pure disposition matrix | 45 | +35 |
-| **Total estimate** |  | **335** | **+210** |
+The original ten-file candidate surface remains valid. These exact product
+files are additional:
 
-The total row is the hard aggregate limit. Shared helpers and compact tests must
-keep the implementation at or below `+210` net lines. No First Officer or
-launcher product package, skill, workflow, desired registry, or new metrics
-artifact belongs in the surface.
+- `internal/ensigncycle/conflict_owner_handoff_live_test.go`
+- `docs/roadmap/test-behavior-completeness/index.md`
+- `docs/roadmap/test-behavior-completeness/staff-review.md`
+- `docs/roadmap/test-behavior-completeness/dispatch-sprint-execution.md`
+
+These split-root task files also need acceptance-criteria and test-plan updates:
+
+- `codex-headless-implementation-worker-before-validation.md`
+- `dispatch-current-initial-stage-before-successor.md`
+- `repair-entered-stage-dispatch-and-post-gate-terminalization.md`
+- `publish-rejection-round-before-regate.md`
+- `continue-codex-rejection-after-first-validation.md`
+- `commit-pi-gate-prepare-before-presentation.md`
+- `hold-pi-default-headless-validation-gate.md`
+- `restore-live-evidence-after-completed-repairs.md`
+
+No launcher package, workflow file, new metric artifact, or runtime adapter is
+in this surface.
 
 ## Observable semantic scope
 
 - Command grammar: unchanged.
-- Stored formats: the existing journey metrics `outcome` object gains optional
-  strict status, owner, expected-code, and observed-code values. No second
-  artifact is added.
+- Stored formats: the existing journey metric keeps status, owner, and observed
+  codes. Target-level XFAIL leaves the optional expected code empty.
 - Authority: unchanged. The registry remains desired state. Source bindings own
   current target evidence and active task ownership.
-- Runtime behavior: the two named live cells execute and classify expected
-  semantic failures. XPASS and unexpected failures fail their lanes. The First
-  Officer product behavior is unchanged.
+- Runtime behavior: the 19 inventory cells execute. Typed semantic failures are
+  XFAIL. XPASS and infrastructure failures stay red.
 - Documentation: update the runtime live guide with the binding and outcome
   semantics described below.
 
 ## Documentation diff
 
-Apply these replacements to `docs/runtime-live-ci.md`.
-
-Before:
-
-```text
-Each declaration has an adjacent `liveJourney(...)` call that binds its stable
-journey ID, fixture builder, target-scoped TODO owner, runtime-neutral exercise,
-and durable assertion. There is no scenario table or runtime runner registry.
-```
-
-After:
-
-```text
-Each declaration has an adjacent `liveJourney(...)` call that binds its stable
-journey ID, fixture builder, target-scoped TODO or strict-XFAIL owner, runtime-
-neutral exercise, and durable assertion. A TODO skips only when the journey
-cannot run. An XFAIL runs the journey and names its expected semantic code.
-There is no scenario table or runtime runner registry.
-```
-
-After the existing mutable-owner paragraph, add:
-
-```text
-Strict live records use `pass`, `xfail`, `xpass`, or `fail`. After infrastructure
-succeeds, the grade runs every durable semantic assertion. XFAIL requires the
-sole observed code to equal the expected code. An empty code set is XPASS and
-fails the lane until the source binding is removed. An additional or different
-code is FAIL. Infrastructure failures remain ordinary test failures.
-```
+Update `docs/runtime-live-ci.md` to define target-level XFAIL. State that typed
+semantic failures are XFAIL. State that XPASS and infrastructure failures stay
+red. State that TODO requires an unavailable execution path.
 
 ## Stage Report: ideation
 

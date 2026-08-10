@@ -127,25 +127,24 @@ failure text above are the durable evidence for this ideation record.
 | `withdrawn-gate-recovery` | Codex | passing | xp6 `xp6c9qfe7y4wwp46enc3f85n` | Exit 0; 149.68s; exact rerun; stale TODO originated in `47g` |
 
 The table has eight xp6 evidence cells: seven ordinary cells plus one
-withdrawn-gate binding removal. Four pass, two have stable semantic failures,
-two are unexecutable, and zero are unclassified. The `47g` entity stays outside
-sprint membership.
+withdrawn-gate binding removal. Task `ts` converts every executable gap target
+to target-level XFAIL. No TODO remains. The `47g` entity stays outside sprint
+membership.
 
 ## Repair routing
 
 Staff finding M3 gives each Pi failure one owner and one mechanism.
 
 1. `2e4fe65gy9vcr4xck6akzmdd` (`commit-pi-gate-prepare-before-presentation`)
-   owns `gate-guardrail`. It starts from strict XFAIL code
-   `gate-prepare-state-commit-missing`. It must commit and reread the prepared
+   owns `gate-guardrail`. It starts from target-level XFAIL. It must commit and reread the prepared
    gate before the root session presents it.
 2. `fh6rv0k6wr25zty0jjan4jp7` (`hold-pi-default-headless-validation-gate`)
    owns `default-headless-gate-stop`. It must identify the failed final-state
    clause before it chooses a repair. It must not assume the Sonnet or Codex
    worker-dispatch mechanism.
 
-These tasks are separate. xp6 does not implement either repair or invent either
-semantic code. The `98aa776adg66gn823a8gamdq` task remains the owner of the
+These tasks are separate. xp6 does not implement either repair. The
+`98aa776adg66gn823a8gamdq` task remains the owner of the
 adjacent Codex and Sonnet default-headless failure. It does not expand xp6.
 
 The withdrawn-gate row needs no repair owner. xp6 owns its evidence-only TODO
@@ -154,14 +153,14 @@ binding change.
 
 ## Required order
 
-1. Land or expose strict XFAIL behavior from `ts7gq0mr9s3chx2w4wppd1kt` at the
+1. Land or expose target-level XFAIL behavior from `ts7gq0mr9s3chx2w4wppd1kt` at the
    durable assertion boundary.
 2. Run each xp6 target on its exact candidate and record the result artifact.
 3. Remove a binding only after its exact target passes its durable assertion.
-4. Keep each Pi failure with its named repair owner and its exact observed text.
+4. Keep each Pi failure with its named repair owner and its observed metric codes.
    Do not combine the two mechanisms.
-5. Keep each Opus target as `TODO` while authenticated execution is unavailable.
-6. Stop on an unclassified result. Do not convert it to `TODO` or XFAIL.
+5. Keep each Opus target as XFAIL until exact passing evidence removes the binding.
+6. Stop on an infrastructure failure. Do not convert it to XFAIL.
 7. Keep `47g` outside the sprint. After its passed withdrawn-gate rerun, xp6
    removes the stale binding as an evidence-only change. Do not assign this
    removal to `47g` or defer it outside xp6.
@@ -276,7 +275,7 @@ binding remains after reconciliation, xp6 lands no product source change.
 - Record the exact result for each of the eight xp6 evidence cells.
 - Remove all four passing xp6 bindings after exact evidence.
 - Name the two Pi repair owners and keep their mechanisms separate.
-- Keep the two Opus TODOs only while authenticated execution is unavailable.
+- Keep the three Opus XFAIL bindings until exact passing evidence removes them.
 - Keep `47g` outside sprint membership while xp6 removes its passed cell binding.
 
 ## Out of scope

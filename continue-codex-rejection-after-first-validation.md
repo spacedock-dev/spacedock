@@ -201,32 +201,28 @@ measuring the Codex value.
 
 ### Non-product baseline and strict-XFAIL source binding
 
-After the known `ts` strict-XFAIL machinery and the preceding `zh` recorder
+After the known `ts` target-XFAIL machinery and the preceding `zh` recorder
 work land, make one non-product baseline commit. This commit contains only
 the Codex host extractor, the strict final-gate oracle, its negative controls,
 and the target binding. It contains no skill text, Codex runtime instruction,
 or user-visible documentation change.
 
-The baseline commit replaces only the Codex `rejection-flow` TODO with the
-target-scoped expected semantic code:
+The baseline uses the Codex `rejection-flow` target binding:
 
 ```text
 target: codex
 owner: dvddbpsf4tdt3yjw1yjyp14k
-code: rejection-flow-not-completed
 ```
 
 Run the complete Codex rejection journey from that baseline commit. It must
 not skip. The Codex host extractor must select
 `codexRecordedRejectionRound`, and the strict final-gate oracle must reach the
-durable missing-gate state. The strict grade must report exactly one semantic
-code: `rejection-flow-not-completed`. A parser error, auth error, launch
-error, timeout, malformed state, or any extra semantic error is an ordinary
-failure. The baseline evidence is not valid until the live run reaches this
-sole-code result.
+durable missing-gate state. A typed semantic failure is target-level XFAIL.
+A parser error, auth error, launch error, timeout, or malformed state is an
+ordinary failure.
 
 Do not change skills, Codex runtime instructions, or user-visible behavior
-until the baseline has produced the sole expected XFAIL code. This order keeps
+until the baseline has produced a target-level XFAIL. This order keeps
 the baseline proof independent from the repair.
 
 With the binding still present, the repaired exact candidate must produce an
@@ -236,7 +232,7 @@ the Sonnet, Opus, and Pi ownership rows unchanged.
 
 ## Acceptance criteria
 
-**AC-1 — The Codex baseline executes the rejection-flow journey and records exactly `rejection-flow-not-completed` as its strict-XFAIL semantic outcome.**
+**AC-1 — The Codex baseline executes the rejection-flow journey and records a typed semantic XFAIL.**
 
 The cell does not skip. The focused live command, the strict outcome record,
 and the Codex artifact prove this. Any parser, process, auth, timeout, or
@@ -279,7 +275,7 @@ the same focused target and preserve the Codex artifact and metric record.
 
 The expected surface is six existing files. The first three files form one
 non-product baseline commit. The last three files change only after the live
-baseline produces the sole expected XFAIL code.
+baseline produces a target-level XFAIL.
 
 - `internal/ensigncycle/claude_live_runner_test.go`: route rejection evidence
   by host and call the strict Codex final-gate oracle.
@@ -345,10 +341,10 @@ documented 40-minute Codex timeout.
    controls, and XFAIL binding in one non-product baseline commit. Do not
    change skills or Codex runtime instructions.
 2. Run the exact Codex command from that baseline commit. Require the complete
-   journey and the sole semantic code `rejection-flow-not-completed`. A parser
-   failure or any additional code stops the repair. Save the baseline JSONL,
+   journey and a typed semantic XFAIL. A parser or infrastructure failure stops
+   the repair. Save the baseline JSONL,
    final message, entity, reports, round room, and gate evidence.
-3. Only after the sole-code XFAIL, add the feedback skill and Codex runtime
+3. Only after the target-level XFAIL, add the feedback skill and Codex runtime
    instruction changes. Add the documentation diff. Run the focused offline
    round, extractor, strict-oracle, and negative-control tests.
 4. Run the exact Codex command with the binding retained. Require XPASS. Save
@@ -420,12 +416,11 @@ than accepting a component-only helper.
   one non-product baseline commit. The live baseline runs only after that
   commit. Skill text, Codex runtime instructions, and user-visible docs wait
   for the baseline result.
-- DONE: Require the complete Codex journey to produce the sole expected
-  XFAIL. The baseline must reach the durable missing-gate state through
-  validation/2 and report only `rejection-flow-not-completed`. A parser error,
-  infrastructure error, or extra semantic code fails the baseline.
+- DONE: Require the complete Codex journey to produce a target-level XFAIL.
+  The baseline must reach a durable semantic failure through validation/2.
+  A parser or infrastructure error fails the baseline.
 - DONE: Preserve the complete correction value and the exact-candidate proof.
-  After the sole-code XFAIL, the repair produces XPASS with the binding and
+  After the target-level XFAIL, the repair produces XPASS with the binding and
   PASS after its removal. The final state still requires one fresh open gate,
   two implementation reports, two validation reports, and the retained
   four-entry advisory round.

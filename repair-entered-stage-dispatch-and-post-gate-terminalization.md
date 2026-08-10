@@ -82,7 +82,7 @@ The `keep-moving-posture` journey is the live value check. Its other ready entit
 
 ## Proposed approach
 
-1. Run the affected `keep-moving-posture` cells with the strict XFAIL mechanism from `ts7gq0mr9s3chx2w4wppd1kt` before any product edit. Bind one stable semantic failure code to each executable target. Keep a TODO only when that target cannot run. Do not add or change a `smallest-sufficient-mechanism` binding.
+1. Run the affected `keep-moving-posture` cells with the target-level XFAIL mechanism from `ts7gq0mr9s3chx2w4wppd1kt` before any product edit. Keep each executable target bound to this repair owner. Keep a TODO only when that target cannot run. Do not add or change a `smallest-sufficient-mechanism` binding.
 
 2. Keep gate consume and successor dispatch as one documented ceremony boundary. The consume command writes the successor status and `consumed` gate state. One `dispatch build --stamp` call then writes `started` and `worktree`, commits the path-scoped entity, and builds the envelope. Do not add a manual status write, a separate state commit, or a plain dispatch build between these commands.
 
@@ -109,7 +109,7 @@ The simplest alternatives are insufficient. Status prose cannot prove the exact 
 
 The `keep-moving-posture` fixture moves `approved-gate` from `review` to `implementation`, records the worker report, and reaches `done` with non-forced atomic terminal fields. The path-scoped history has the consume, dispatch, report, and terminal evidence. The journey does not use `--force`.
 
-Verified by: the strict XFAIL-enabled live cells for each executable host, plus the durable journey grader. Falsifiers: a refusal at `done`, a `--force` invocation, a missing report, or a missing terminal record.
+Verified by: the target-level XFAIL live cells for each executable host, plus the durable journey grader. Falsifiers: a refusal at `done`, a `--force` invocation, a missing report, or a missing terminal record.
 
 **AC-2 — The dispatch boundary contains complete entered-stage evidence.**
 
@@ -139,7 +139,7 @@ Run the smallest proof first:
 4. Add and run the `review(gate) -> implementation(consumed) -> done` CLI regression.
 5. Run the recorded gate lifecycle and durable journey tests.
 6. After 6x lands, rebase 9a onto the exact 6x landing commit.
-7. Run strict XFAIL for the three `keep-moving-posture` target cells before the repair, then rerun them after the repair.
+7. Run target-level XFAIL for the three `keep-moving-posture` target cells before the repair, then rerun them after the repair.
 8. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
 
 Each new test must name its falsifier. The consumed-nonterminal regression must prove that the final status write does not call `--force`. The dispatch smoke must inspect the exact commit, not only the final worktree.
@@ -153,7 +153,7 @@ The expected implementation surface is below. Estimates exclude the generic XFAI
 | `internal/status/merge.go` | 12 | 4 | +8 | Classify consumed nonterminal authority as ordinary history while preserving fail-closed terminal-target checks. |
 | `internal/cli/terminal_consume_test.go` | 120 | 0 | +120 | Add the focused consumed-nonterminal completion and refusal matrix. |
 | `internal/cli/gate_ceremony_count_test.go` | 45 | 0 | +45 | Inspect the exact dispatch commit entity blob. |
-| `internal/ensigncycle/shared_live_runner_test.go` | 28 | 6 | +22 | After 6x lands, bind only the three executable `keep-moving-posture` cells to strict XFAIL, then remove those bindings on XPASS. |
+| `internal/ensigncycle/shared_live_runner_test.go` | 28 | 6 | +22 | After 6x lands, keep only the three executable `keep-moving-posture` cells as target-level XFAIL, then remove those bindings on XPASS. |
 | `skills/fo-gate-lifecycle/SKILL.md` | 12 | 4 | +8 | State the one consume-then-`dispatch build --stamp` boundary. |
 | `skills/first-officer/references/fo-dispatch-core.md` | 10 | 2 | +8 | Require complete entered-stage evidence in the dispatch commit. |
 | `docs/site/concepts/gates-and-decisions.md` | 6 | 1 | +5 | Document ordinary terminalization after consumed nonterminal approval. |

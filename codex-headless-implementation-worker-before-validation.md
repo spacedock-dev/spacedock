@@ -85,7 +85,7 @@ worker dispatch.
 
 ## Proposed approach
 
-Wait for task ts7gq0mr9s3chx2w4wppd1kt to commit strict XFAIL evidence for both
+Wait for task ts7gq0mr9s3chx2w4wppd1kt to commit target-level XFAIL bindings for both
 runtime lanes. Then add one host-neutral guard to the shared First Officer
 dispatch contract:
 
@@ -106,10 +106,10 @@ adapter change. The binary cannot call a host-native worker API.
 ## Required order
 
 Task ts7gq0mr9s3chx2w4wppd1kt must land before this product repair starts. It
-must run the Sonnet and Codex cells as strict XFAIL evidence.
+must run the Sonnet and Codex cells as target-level XFAIL evidence.
 
-Do not change First Officer behavior before both cells report the expected
-implementation-worker-not-dispatched failure code. After the repair, XPASS
+Do not change First Officer behavior before both cells report target-level
+XFAIL. After the repair, XPASS
 must force removal of each repaired XFAIL binding.
 
 ## Acceptance criteria
@@ -223,10 +223,10 @@ boundary. A local replay was not authenticated, so it was not used as proof.
   Artifact inspection found Codex dispatch-build output without an accepted
   worker boundary; Sonnet had Agent transcript activity but the same durable
   oracle rejection.
-- DONE: Define the smallest portable worker-spawn repair after committed strict XFAIL evidence.
+- DONE: Define the smallest portable worker-spawn repair after committed target-level XFAIL evidence.
   The proposed repair is one shared-core initial-dispatch guard. It preserves
   adapter mappings, the advance reuse handle, the fixture, and the oracle.
-  Product work waits for task ts7gq0mr9s3chx2w4wppd1kt strict XFAIL evidence.
+  Product work waits for task ts7gq0mr9s3chx2w4wppd1kt target-level XFAIL evidence.
 - DONE: Give gross and net line estimates with exact-candidate live proof.
   The repair estimate is 8 insertions, 2 deletions, and 6 net lines, with plus
   or minus 2 lines tolerance and no extra files. The evidence candidate is
@@ -236,7 +236,7 @@ boundary. A local replay was not authenticated, so it was not used as proof.
 ### Summary
 
 Ideation records an authenticated failure on the exact candidate and defines a
-small, portable shared-core guard. The next stage must land strict XFAIL
+small, portable shared-core guard. The next stage must land target-level XFAIL
 evidence first, then prove spawn and completion ordering in both live lanes.
 The entity parser and gofmt check passed. The normal and race Go suites were
 attempted, but internal/cli stalled and both runs were interrupted after about

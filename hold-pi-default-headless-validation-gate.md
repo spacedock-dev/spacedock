@@ -93,7 +93,7 @@ Task `98aa776adg66gn823a8gamdq` must land next. It repairs the Sonnet and Codex 
 
 This task owns the Pi strict-XFAIL binding under `fh6rv0k6wr25zty0jjan4jp7`. The runtime label `xp6c9qfe7y4wwp46enc3f85n` is evidence-only.
 
-Run the current Pi journey as strict XFAIL for owner `fh6rv0k6wr25zty0jjan4jp7` after those dependencies. Start Pi product work only after the run reports the sole code `gate-hold-terminal-fields-set`.
+Run the current Pi journey as target-level XFAIL for owner `fh6rv0k6wr25zty0jjan4jp7` after those dependencies. Start Pi product work only after this semantic XFAIL.
 
 ## Proposed approach
 
@@ -119,7 +119,7 @@ Add the boundary rule to `skills/first-officer/references/pi-first-officer-runti
 
 Do not change the shared ensign contract in this task. It already says that a worker updates the entity body and does not modify YAML frontmatter. The observed run makes a First Officer boundary guard necessary.
 
-### 3. Give the final-state branch a stable code
+### 3. Keep the final-state semantic code in the metric
 
 Refine the first `assertGateHeld` branch into separate semantic codes. Use `gate-hold-terminal-fields-set` only when `completed` or `verdict` is non-empty. Keep separate codes for an unchanged entity and a non-validation status.
 
@@ -131,9 +131,9 @@ Allow one `completed= verdict=` cleanup line before the validation status change
 
 This command-log check proves the repair boundary. The final-state assertion proves the value.
 
-### 5. Bind Pi to strict XFAIL
+### 5. Use the Pi target-level XFAIL binding
 
-Replace the Pi `liveTODO` binding for `default-headless-gate-stop` with `liveXFail("pi", "fh6rv0k6wr25zty0jjan4jp7", "gate-hold-terminal-fields-set")`.
+Use `liveXFail("pi", "fh6rv0k6wr25zty0jjan4jp7")` for `default-headless-gate-stop`.
 
 Keep the binding until the exact repaired candidate passes. A repaired run must report XPASS while the binding remains. Remove the binding only after the passing run.
 
@@ -188,7 +188,7 @@ SPACEDOCK_LIVE_RUNTIME=pi \
   -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v
 ```
 
-The expected result is one executed XFAIL for owner `fh6rv0k6wr25zty0jjan4jp7` with the sole code `gate-hold-terminal-fields-set`. A skip, an infrastructure error, or another semantic code fails the proof.
+The expected result is one executed XFAIL for owner `fh6rv0k6wr25zty0jjan4jp7`. A skip or infrastructure error fails the proof.
 
 After the Pi runtime rule lands, run the same selector. Expect XPASS failure while the strict binding remains. Remove the binding and run the selector again. Expect PASS with the final-state count at zero.
 
@@ -262,7 +262,7 @@ The live process completed without timeout. The expected open Briefing and no-de
 - Repair the Pi `default-headless-gate-stop` final-state boundary.
 - Preserve the existing fixture, gate storage, command grammar, and worker envelope.
 - Keep the strict-XFAIL binding for owner `fh6rv0k6wr25zty0jjan4jp7` until the repaired Pi candidate passes.
-- Run after strict XFAIL and `98a` evidence.
+- Run after target-level XFAIL and `98a` evidence.
 
 ## Out of scope
 

@@ -63,7 +63,7 @@ A First Officer must dispatch work for the current initial stage before it advan
 
 The task owns the initial-stage defect from task 9a. It does not own gate-consume dispatch evidence or post-gate terminalization.
 
-Before the repair, run each executable affected journey through strict XFAIL. Use one stable semantic failure code and this active task ID.
+Before the repair, use each target-level XFAIL binding from `ts`. Transfer the three affected bindings to this active task ID.
 
 Ideation must exercise the current-stage dispatch path first. Then it must define the smallest product repair and exact live proof.
 
@@ -237,13 +237,13 @@ criterion.
 
 ## Strict-XFAIL-first dependency
 
-Task `ts7gq0mr9s3chx2w4wppd1kt` must provide the strict classifier before these
-cells leave TODO. Use one binding for this task's three registered targets:
+Task `ts7gq0mr9s3chx2w4wppd1kt` provides the target classifier and initial
+bindings. Transfer the three registered targets to this task:
 
 ```text
-liveXFail("claude-sonnet", "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-target-mismatch")
-liveXFail("codex",         "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-target-mismatch")
-liveXFail("pi",            "6x50qafc8566zc6p1qpb6y30", "initial-stage-dispatch-target-mismatch")
+liveXFail("claude-sonnet", "6x50qafc8566zc6p1qpb6y30")
+liveXFail("codex",         "6x50qafc8566zc6p1qpb6y30")
+liveXFail("pi",            "6x50qafc8566zc6p1qpb6y30")
 ```
 
 Use this baseline order:
@@ -366,7 +366,7 @@ No CLI help, workflow schema, or site documentation needs a diff.
   The plan changes only First Officer target selection and preserves ordinary,
   entered-stage, gate-consume, and terminalization behavior.
 - DONE: Give gross and net line estimates with strict-XFAIL and exact live proof.
-  The plan names the active owner, one stable code, three bindings, exact live
+  The plan names the active owner, three target bindings, exact live
   commands, expected surfaces, a line budget, and post-repair durable metrics.
 - DONE: Fold staff finding M4 into the owner map and serial landing order.
   The plan moves all three smallest-mechanism targets from `9a` to `6x` in the

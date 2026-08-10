@@ -70,7 +70,7 @@ at the wrong point.
 Pi is the current supported recorder-publication case. Run `31016570689`, job
 `92342373497`, and artifact `8935708302` show an exact recorder result with
 `entries=2`. The worker log and Cycle line came later. No second recorder call
-published the complete four-entry log. This evidence supports the stable code
+published the complete four-entry log. This evidence supports a typed semantic
 `rejection-round-incomplete` at the durable assertion boundary.
 
 Archived Sonnet and Opus results do not provide exact stable recorder evidence.
@@ -134,7 +134,7 @@ the rejected round visible before correction re-gating.
 
 ### XFAIL-first dependency and target seam
 
-Task `ts7gq0mr9s3chx2w4wppd1kt`, `Run known live behavior gaps as strict XFAIL`,
+Task `ts7gq0mr9s3chx2w4wppd1kt`, `Run known live behavior gaps as target-level XFAIL`,
 must land before this product change. Run the real
 `TestLiveCommonRejectionFlow` cell at the durable assertion boundary.
 
@@ -217,7 +217,7 @@ net change of about 2 lines. Tolerance is ±1 file and ±12 net lines.**
   rejection-flow target binding with the Pi XFAIL binding after `ts7g` lands.
   Do not add Codex, Sonnet, or Opus bindings without their evidence gate.
 
-The estimate excludes the strict XFAIL runner and the separate Codex task. The
+The estimate excludes the target-level XFAIL runner and the separate Codex task. The
 XFAIL task owns its result type, reconciliation, and metrics changes. The Codex
 task owns continuation after the recorder boundary. This task owns only the
 recorder publication order and its admitted target binding.
@@ -311,7 +311,7 @@ and honest target coverage.
 +++ b/internal/ensigncycle/shared_live_runner_test.go
 @@
 -liveJourney(... []liveJourneyTODO{... Sonnet ..., ... Opus ..., ... Codex ..., ... Pi ...})
-+liveJourney(... []liveJourneyGap{liveXFail("pi", "zhcb4bcz1qgcn7ajx2ctxpxk", "rejection-round-incomplete")})
++liveJourney(... []liveJourneyGap{liveXFail("pi", "zhcb4bcz1qgcn7ajx2ctxpxk")})
 ```
 
 ## Stage Report: ideation

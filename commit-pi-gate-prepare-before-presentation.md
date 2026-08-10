@@ -77,8 +77,7 @@ The real `gate-guardrail` journey prepares a gate, but Pi can present before a
 successful state commit and reread. The command log then has no committed
 binding for the review. The operator sees a review that is not durable.
 
-The task starts from strict XFAIL code
-`gate-prepare-state-commit-missing`. The repaired journey must prepare, commit,
+The task starts from target-level XFAIL under this task ID. The repaired journey must prepare, commit,
 reread, and present in that order.
 
 This is a journey repair. A command helper alone does not satisfy it. A prose
@@ -173,12 +172,10 @@ presentation order, yet the Pi adapter crossed that boundary. Edit only the Pi
 adapter is also insufficient because other hosts would lose the shared source
 of truth. Both layers are needed for the host binding.
 
-### 3. Replace the Pi TODO with the strict XFAIL binding
+### 3. Use the Pi target-level XFAIL binding
 
-In `internal/ensigncycle/shared_live_runner_test.go`, replace the Pi
-`gate-guardrail` TODO with the committed strict-XFAIL binding owned by this
-entity. The binding must name only
-`gate-prepare-state-commit-missing`.
+In `internal/ensigncycle/shared_live_runner_test.go`, use the Pi
+`gate-guardrail` target-level XFAIL binding owned by this entity.
 
 Use the existing `runGateStopScenario`, `assertGateHeld`, and command-log
 classifier. Do not add a new fixture, command helper, or alternate scenario.
@@ -221,15 +218,14 @@ successful commit.
 Test: exact Pi live target plus `assertRecordedGateHoldLog` and the saved live
 artifact.
 
-**AC-2 — Strict baseline and XPASS proof**
+**AC-2 — Target baseline and XPASS proof**
 
-Before the repair, the exact target must run as strict XFAIL with the sole code
-`gate-prepare-state-commit-missing`. A setup error, a skipped TODO, a second
-semantic code, or a different code must fail the baseline. After the repair,
+Before the repair, the exact target must run as target-level XFAIL. A setup
+error or a skipped target must fail the baseline. After the repair,
 the same binding must produce XPASS and fail. The binding is then removed, and
 the exact target must pass.
 
-Test: the strict-XFAIL classifier and the three exact-candidate runs.
+Test: the target-XFAIL classifier and the three exact-candidate runs.
 
 **AC-3 — No presentation before commit and reread**
 
@@ -305,7 +301,7 @@ Expected implementation surface:
 - `skills/first-officer/references/pi-first-officer-runtime.md`: about 7
   added lines and 1 removed line. Add the Pi root-session binding.
 - `internal/ensigncycle/shared_live_runner_test.go`: about 5 added lines and 3
-  removed lines. Replace the Pi TODO with the strict XFAIL binding and retain
+  removed lines. Use the Pi target-level XFAIL binding and retain
   the existing scenario and assertion.
 
 The estimate is about 22 gross additions, 8 gross deletions, and 14 net lines
