@@ -7,6 +7,29 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-evidence
 id: n513fy4c3c9mtqkq38bfh3fh
+gates:
+    version: 1
+    records:
+        - id: gate:n513fy4c3c9mtqkq38bfh3fh:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:n513fy4c3c9mtqkq38bfh3fh-backlog-1
+              briefing:
+                id: briefing:n513fy4c3c9mtqkq38bfh3fh:backlog:attempt-1:revision-1
+                digest: sha256:126f8c887e3849becc7f8fbfedc0d71c5f7e7ff1b3aca212332cf0d267e1961a
+                request-digest: sha256:e83c57568bf3cd06862e4d971bc04d97b767c22ae8fef6b57b41e5ca4a81c81b
+                room-ref: ./recognize-codex-atomic-task-filing/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:n513fy4c3c9mtqkq38bfh3fh:backlog:1
+                briefing: briefing:n513fy4c3c9mtqkq38bfh3fh:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T20:28:10.455087Z"
+                decision: approve
+                reason: Captain directed immediate ideation for the exact Codex filing evidence repair.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 ## Problem
 

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:n513fy4c3c9mtqkq38bfh3fh:backlog:attempt-1:revision-1",
+  "question": "Is the Codex atomic filing evidence repair ready for ideation with the exact PR #664 baseline and protected manual-creation negatives?",
+  "artifacts": [
+    {
+      "id": "artifact:n513fy4c3c9mtqkq38bfh3fh:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0e0b15fe1cad7bd1de0c1d003b955830a33df96a/recognize-codex-atomic-task-filing.md",
+      "rev": "sha256:4125a981c9678a3ea75ab75682a7c8352384e4eff750cca844af7676e14a09e3",
+      "mediaType": "text/markdown",
+      "summary": "The exact Codex command created the task through a launcher variable, but the filing oracle did not recognize it."
+    }
+  ]
+}
