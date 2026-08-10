@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -47,6 +48,10 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	targets := readRegistryTargets(t, registryPath)
 	registryFixtures := readRegistryFixtureUnion(t, registryPath)
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
+	wantHeadless := []liveGapRow{{"xfail", "claude-sonnet", "98aa776adg66gn823a8gamdq", "implementation-worker-not-dispatched"}, {"todo", "codex", "98aa776adg66gn823a8gamdq", ""}, {"todo", "pi", "xp6c9qfe7y4wwp46enc3f85n", ""}}
+	if !reflect.DeepEqual(actual["default-headless-gate-stop"].gaps, wantHeadless) {
+		t.Errorf("default-headless-gate-stop gaps = %#v, want %#v", actual["default-headless-gate-stop"].gaps, wantHeadless)
+	}
 	if len(desired) != len(actual) {
 		t.Errorf("common live registry/source counts = %d/%d", len(desired), len(actual))
 	}
