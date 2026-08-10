@@ -559,3 +559,16 @@ Run the existing focused recorded-gate lifecycle tests, status default-stage/ope
 ### Summary
 
 Restored the original contract-only design and removed the rejected product/test mechanism in commit `339d05a23`. The final candidate is three documentation/skill files and 25 changed lines, with existing focused, full, and race verification green and runtime counts retained only as historical observations.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently confirm the merge-base candidate is exactly the three allowed contract/doc files at no more than 30 changed lines.
+  Merge base `a929fcb60` to `339d05a23` is exactly the three allowed paths at +11/-14 (25 changed lines); any fourth path or sixth additional changed line breaks this proof.
+- DONE: Verify every rejected command, Go, transaction, harness, fixture, and new-test surface is absent while existing gate behavior remains intact.
+  The cumulative diff has no Go/test/fixture/harness file or rejected command/transaction surface; lifecycle replay fails on missing/duplicate authority events, status tests fail on stage/readiness drift, and contractlint all pass.
+- DONE: Reproduce applicable focused, full, race, formatting, and diff checks without an authenticated model run or GitHub workflow.
+  Focused lifecycle/status/contractlint, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass; no authenticated journey or GitHub workflow was invoked.
+
+### Summary
+
+Validated the Captain-corrected contract-only candidate at exact HEAD `339d05a23`. The three-file, 25-line change removes redundant gate-path discovery and projections while preserving existing prepare, commit, evidence-read, presentation, and authority behavior; recommendation: PASSED with no material, deferred-risk, or polish finding.
