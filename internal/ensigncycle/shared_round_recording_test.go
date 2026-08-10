@@ -221,13 +221,14 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if err := assertRejectionRoundGateBoundary(entityPath, wantStatus); err != nil {
 		return err
 	}
-	summary, err := gates.ValidateRoundFile(entityPath, "validation/1")
+	cycle := 1 + bytes.Count(entity, []byte("round:rejection-task:validation:2"))
+	summary, err := gates.ValidateRoundFile(entityPath, fmt.Sprintf("validation/%d", cycle))
 	if err != nil {
 		return fmt.Errorf("validate retained round: %w", err)
 	}
-	if summary.ID != "round:rejection-task:validation:1" ||
+	if summary.ID != fmt.Sprintf("round:rejection-task:validation:%d", cycle) ||
 		summary.Stage != "validation" ||
-		summary.Cycle != 1 ||
+		summary.Cycle != cycle ||
 		summary.Briefing != rejectionBriefingID ||
 		len(summary.Entries) != 4 {
 		return fmt.Errorf("retained round summary = %#v", summary)
@@ -316,6 +317,10 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	if err := assertRejectionRoundGateBoundary(entityPath, "validation", true); err == nil {
 		t.Fatal("strict final-gate oracle accepted an absent gate")
 	}
+	writeFile(t, entityPath, readFile(t, entityPath)+"- Cycle 2: PASSED\n")
+	if err := gates.RecordSemantic(entityPath, gates.RecordInput{Round: "validation/2", BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"), LogPath: filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"), WorkflowDir: root}); err != nil {
+		t.Fatalf("record validation/2: %v", err)
+	}
 	gateReviewPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "gate-review.md")
 	writeFile(t, gateReviewPath, "# Rejection Task — validation review\n\nThe corrected candidate is ready for its prepared decision gate.\n")
 	gateReviewRel, err := filepath.Rel(root, gateReviewPath)
@@ -344,6 +349,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		{strings.Replace(openGateEntity, "              briefing:\n", "              state: open\n              briefing:\n", 1), "malformed final validation gate"},
 		{strings.Replace(openGateEntity, rejectionPreparedBriefingID, rejectionBriefingID, 1), "validation/1 advisory round was retained as a gate attempt"},
 		{strings.Replace(openGateEntity, "      stage: validation", "      stage: wrong", 1), "final gate selection does not identify"},
+		{strings.Replace(openGateEntity, "round:rejection-task:validation:2", "round:rejection-task:validation:9", 1), "validate retained round"},
 	} {
 		writeFile(t, entityPath, control.entity)
 		if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
@@ -352,6 +358,19 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		}
 	}
 	writeFile(t, entityPath, openGateEntity)
+	round1Briefing := filepath.Join(filepath.Dir(entityPath), "review", "validation", "round-1", "briefing.json")
+	savedBriefing := readFile(t, round1Briefing)
+	for _, mutation := range []string{"", "malformed"} {
+		if mutation == "" {
+			_ = os.Remove(round1Briefing)
+		} else {
+			writeFile(t, round1Briefing, mutation)
+		}
+		if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil {
+			t.Fatal("round oracle accepted missing or malformed validation/1 room")
+		}
+		writeFile(t, round1Briefing, savedBriefing)
+	}
 	validSequence := codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/2", "", 0, "completed") + "\n" +
 		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate prepare rejection-task validation", "", 0, "completed")
 	if err := assertCodexRejectionFinalGate(entityPath, validSequence); err != nil {
