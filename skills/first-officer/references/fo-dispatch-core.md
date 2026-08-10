@@ -30,7 +30,7 @@ A feedback-stage worker checks and reports on what was produced; it does not sil
 
 ## «dispatch.checklist»(entity, stage): assemble dispatch linchpins
 
-Build a numbered checklist of ≤3 dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage naturally advances. Zero to three items are valid; do not pad. Name what separates a good outcome from a ceremonial one.
+Build a numbered checklist of one to three dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage naturally advances. When neither source supplies an item, use the target stage's declared requirement as one linchpin; do not pad. Name what separates a good outcome from a ceremonial one.
 
 This is not a work breakdown: the ensign already reads the body, commits before signaling, and writes a stage report, so structural conventions do not appear. Entity-level acceptance criteria are finished-entity properties, not stage actions; every gate cross-checks them independently of checklist DONE/SKIPPED/FAILED accounting.
 

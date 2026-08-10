@@ -17,6 +17,10 @@ const initialWorkerFalseEvidenceGuard = "A successful dispatch build, narration,
 
 const initialWorkerEmptyWaitGuard = "An empty wait without a completion signal is not worker evidence."
 
+const initialWorkerChecklistGuard = "Build a numbered checklist of one to three dispatch-specific linchpin signals"
+
+const initialWorkerChecklistFallback = "When neither source supplies an item, use the target stage's declared requirement as one linchpin; do not pad."
+
 func TestInitialWorkerSpawnGuardPrecedesCompletionAndValidation(t *testing.T) {
 	body := readRepoFile(t, "skills/first-officer/references/fo-dispatch-core.md")
 
@@ -42,5 +46,14 @@ func TestInitialWorkerSpawnGuardPrecedesCompletionAndValidation(t *testing.T) {
 	}
 	if !(spawn < handle && handle < completion && completion < falseEvidence && falseEvidence < emptyWait) {
 		t.Fatalf("initial dispatch guard order = spawn:%d handle:%d completion:%d false-evidence:%d empty-wait:%d", spawn, handle, completion, falseEvidence, emptyWait)
+	}
+}
+
+func TestInitialWorkerDispatchAlwaysBuildsANonemptyChecklist(t *testing.T) {
+	body := readRepoFile(t, "skills/first-officer/references/fo-dispatch-core.md")
+	for _, want := range []string{initialWorkerChecklistGuard, initialWorkerChecklistFallback} {
+		if !strings.Contains(body, want) {
+			t.Errorf("initial dispatch contract missing nonempty-checklist rule %q", want)
+		}
 	}
 }
