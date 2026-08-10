@@ -56,7 +56,7 @@ func writeConflictOwnerFixture(t *testing.T) conflictOwnerFixture {
 	return conflictOwnerFixture{root: root, entity: entity, worktree: worktree, marker: marker, before: readFile(t, entity), owner: owner}
 }
 
-func runConflictOwnerHandoffJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) conflictOwnerFixture, assert func(*testing.T, conflictOwnerFixture, liveResult)) {
+func runConflictOwnerHandoffJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) conflictOwnerFixture, assert func(*testing.T, conflictOwnerFixture, liveResult) error) {
 	t.Helper()
 	fixture := build(t)
 	owner := fixture.owner
@@ -65,33 +65,33 @@ func runConflictOwnerHandoffJourney(t *testing.T, driver liveDriver, scenario sh
 		"Then handle the existing conflict exactly through the first-officer conflict-owner contract. The owner handoff's next action is to write owner-handoff.marker containing runtime-worker-owner, commit it on the registered branch using the shared Git identity user.name=Captain and user.email=captain@example.test, and leave conflict.txt unresolved beyond the required rebase abort. " +
 		"Do not edit the entity. Stop after the owner completes the follow-up."
 	result := driver.run(t, scenario, fixture.root, prompt)
-	assert(t, fixture, result)
-	driver.emitMetrics(t, scenario, result)
+	finishLiveScenario(t, driver, scenario, result,
+		durableSemantic("conflict-owner-handoff-violation", assert(t, fixture, result)))
 }
 
-func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, _ liveResult) {
+func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, _ liveResult) error {
 	t.Helper()
 	if after := readFile(t, fixture.entity); after != fixture.before {
-		t.Fatalf("owner handoff changed authority bytes\nbefore:\n%s\nafter:\n%s", fixture.before, after)
+		return fmt.Errorf("owner handoff changed authority bytes\nbefore:\n%s\nafter:\n%s", fixture.before, after)
 	}
 	if got := strings.TrimSpace(readFile(t, fixture.marker)); got != "runtime-worker-owner" {
-		t.Fatalf("worker marker = %q, want runtime-worker-owner", got)
+		return fmt.Errorf("worker marker = %q, want runtime-worker-owner", got)
 	}
 	if got := strings.TrimSpace(git(t, fixture.worktree, "branch", "--show-current")); got != fixture.owner.Branch {
-		t.Fatalf("marker branch = %q, want stamped owner branch %q", got, fixture.owner.Branch)
+		return fmt.Errorf("marker branch = %q, want stamped owner branch %q", got, fixture.owner.Branch)
 	}
 	if got := strings.TrimSpace(git(t, fixture.worktree, "log", "-1", "--format=%an <%ae>")); got != "Captain <captain@example.test>" {
-		t.Fatalf("marker Git author = %q, want shared Captain credential", got)
+		return fmt.Errorf("marker Git author = %q, want shared Captain credential", got)
 	}
 	if got := strings.TrimSpace(git(t, fixture.worktree, "show", "HEAD:owner-handoff.marker")); got != "runtime-worker-owner" {
-		t.Fatalf("committed owner marker = %q, want runtime-worker-owner", got)
+		return fmt.Errorf("committed owner marker = %q, want runtime-worker-owner", got)
 	}
 	if got := strings.TrimSpace(git(t, fixture.worktree, "status", "--porcelain")); got != "" {
-		t.Fatalf("registered owner worktree is not clean after committed handoff:\n%s", got)
+		return fmt.Errorf("registered owner worktree is not clean after committed handoff:\n%s", got)
 	}
 	rebaseDir := strings.TrimSpace(git(t, fixture.worktree, "rev-parse", "--git-path", "rebase-merge"))
 	if _, err := os.Stat(rebaseDir); !os.IsNotExist(err) {
-		t.Fatalf("rebase was not cleanly aborted: %v", err)
+		return fmt.Errorf("rebase was not cleanly aborted: %v", err)
 	}
 	worktrees := strings.Split(strings.TrimSpace(git(t, fixture.root, "worktree", "list", "--porcelain")), "\n")
 	var worktreePaths []string
@@ -101,13 +101,13 @@ func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, _ li
 		}
 	}
 	if len(worktreePaths) != 2 || canonicalPath(t, worktreePaths[0]) != canonicalPath(t, fixture.root) || canonicalPath(t, worktreePaths[1]) != canonicalPath(t, fixture.worktree) {
-		t.Fatalf("worktree inventory = %q, want only root and stamped owner worktree", worktreePaths)
+		return fmt.Errorf("worktree inventory = %q, want only root and stamped owner worktree", worktreePaths)
 	}
 	branches := strings.Fields(git(t, fixture.root, "branch", "--format=%(refname:short)"))
 	if len(branches) != 2 || branches[0] != "main" || branches[1] != fixture.owner.Branch {
-		t.Fatalf("branch inventory = %q, want only main and stamped owner branch", branches)
+		return fmt.Errorf("branch inventory = %q, want only main and stamped owner branch", branches)
 	}
-	assertConflictOwnerFreshEnvelope(t, spacedockBinary(t), fixture.root, fixture.entity, fixture.owner)
+	return assertConflictOwnerFreshEnvelope(t, spacedockBinary(t), fixture.root, fixture.entity, fixture.owner)
 }
 
 func canonicalPath(t *testing.T, path string) string {
@@ -171,7 +171,7 @@ func readInitialDispatchPath(t *testing.T, raw []byte) string {
 	return envelope.DispatchFile
 }
 
-func assertConflictOwnerFreshEnvelope(t *testing.T, binary, root, entity string, owner conflictOwnerTuple) {
+func assertConflictOwnerFreshEnvelope(t *testing.T, binary, root, entity string, owner conflictOwnerTuple) error {
 	t.Helper()
 	checklist := filepath.Join(root, "fresh-owner.checklist")
 	scope := filepath.Join(root, "fresh-owner.scope.md")
@@ -191,14 +191,15 @@ func assertConflictOwnerFreshEnvelope(t *testing.T, binary, root, entity string,
 		t.Fatalf("decode fresh owner envelope: %v\n%s", err, out)
 	}
 	if envelope.Name != owner.WorkerName || envelope.DispatchFile == "" {
-		t.Fatalf("fresh owner envelope identity = %q, want stamped owner %q: %s", envelope.Name, owner.WorkerName, out)
+		return fmt.Errorf("fresh owner envelope identity = %q, want stamped owner %q: %s", envelope.Name, owner.WorkerName, out)
 	}
 	body := readFile(t, envelope.DispatchFile)
 	for _, want := range []string{owner.Entity, owner.Stage, owner.Branch, owner.Worktree, "conflict paths: conflict.txt"} {
 		if !strings.Contains(body, want) {
-			t.Errorf("fresh owner dispatch body missing %q\n%s", want, body)
+			return fmt.Errorf("fresh owner dispatch body missing %q\n%s", want, body)
 		}
 	}
+	return nil
 }
 
 func gitAsCaptain(t *testing.T, dir string, args ...string) string {

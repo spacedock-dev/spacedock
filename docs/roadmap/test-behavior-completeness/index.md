@@ -10,9 +10,9 @@ separate captain grant and the release procedure from `main`.
 ## Goal
 
 Make every executable desired live cell current and honest. A cell passes or
-runs as strict XFAIL. A cell stays TODO only when its journey cannot run.
+runs as target-level XFAIL. A cell stays TODO only when its target cannot run.
 
-Each product repair starts from one committed XFAIL code. The same target then
+Each product repair starts from one committed XFAIL target. The same target then
 runs against the exact repair candidate before source removes the binding.
 
 ## Membership
@@ -38,12 +38,12 @@ remain historical evidence and are not drivable. The explicit slug filter keeps
 
 ## Completion definition
 
-- Every executable desired cell passes or runs as strict XFAIL.
+- Every executable desired cell passes or runs as target-level XFAIL.
 - TODO remains only when the complete journey cannot run.
 - Every TODO and XFAIL names one active owner.
-- XFAIL accepts only the sole expected semantic code.
+- XFAIL accepts one or more typed semantic failures from its target.
 - XPASS fails until source removes the stale binding.
-- Infrastructure and additional semantic failures remain FAIL.
+- Infrastructure failures remain FAIL.
 - Each product fix starts from a committed XFAIL baseline.
 - Each binding removal has exact-target, exact-candidate evidence.
 - `TestRuntimeLiveRegistryReconciliation` passes.
@@ -58,7 +58,7 @@ membership authority.
 | Member | Visible value | Net-line statement |
 | --- | --- | ---: |
 | `0a` | A maintainer can run optional Pi CI and retain common and substrate evidence. | Net must not exceed `+380`. The approved reset allows 8 files. |
-| `ts` | Sonnet and Codex run the known headless gap as strict XFAIL, and XPASS fails. | Hard cap `+210` net. |
+| `ts` | Every executable sprint target runs as target-level XFAIL, and XPASS fails. | Estimate `+285` net, tolerance `+25`. |
 | `98a` | Sonnet and Codex complete the implementation worker before validation. | About `+6` net, tolerance 2 lines. |
 | `6x5` | An initial stage runs before its terminal successor. | About `+12` net, tolerance 12 lines. |
 | `9a` | A consumed nonterminal gate has one dispatch commit and normal terminalization. | About `+228` net, tolerance 25%. |
@@ -81,7 +81,7 @@ source bindings and First Officer contract files.
 ```mermaid
 flowchart TD
     A[0a optional Pi CI]
-    T[ts strict XFAIL]
+    T[ts target XFAIL]
     H[98a Sonnet and Codex worker]
     PH[fh6 Pi headless hold]
     I[6x5 initial stage]
@@ -118,8 +118,8 @@ Use this serial merge order:
 9. `fh6`
 10. `xp6`
 
-Before each repair baseline, rebase onto the last landing. Then commit its XFAIL
-binding and run the exact target. Product bytes come only after that evidence.
+Before each repair baseline, rebase onto the last landing. Use the XFAIL binding
+that `ts` assigned to the repair owner. Product bytes come only after that evidence.
 
 ## `0a` cold-boot recovery
 

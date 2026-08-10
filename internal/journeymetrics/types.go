@@ -35,6 +35,7 @@ type JourneySpec struct {
 type BehaviorResult struct {
 	Passed  bool
 	Failure string
+	Outcome *Outcome
 }
 
 type Observation struct {
@@ -107,8 +108,11 @@ type ModelUsage struct {
 }
 
 type Outcome struct {
-	Status  string `json:"status"`
-	Failure string `json:"failure,omitempty"`
+	Status       string   `json:"status"`
+	Failure      string   `json:"failure,omitempty"`
+	Owner        string   `json:"owner,omitempty"`
+	ExpectedCode string   `json:"expected_code,omitempty"`
+	FailureCodes []string `json:"failure_codes,omitempty"`
 }
 
 type Budget struct {

@@ -38,6 +38,9 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 	if result.Passed {
 		outcome = Outcome{Status: "passed"}
 	}
+	if result.Outcome != nil {
+		outcome = *result.Outcome
+	}
 	record := Record{
 		SchemaVersion:             RecordSchemaVersion,
 		ScenarioID:                firstNonEmpty(spec.ScenarioID, spec.ID),

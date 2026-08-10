@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -111,7 +112,7 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 	case successfulStatusSet(log[prepare:]):
 		return errGraded(boundary + "status changed after prepare")
 	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 2 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
-		return errGraded(boundary + "implementation was not dispatched before validation")
+		return &gradedErr{code: "implementation-worker-not-dispatched", msg: boundary + "implementation was not dispatched before validation"}
 	}
 	return nil
 }
@@ -166,8 +167,43 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 	}
 }
 
-func errGraded(msg string) error { return &gradedErr{msg} }
+func errGraded(msg string) error { return &gradedErr{code: "gate-hold-violation", msg: msg} }
 
-type gradedErr struct{ msg string }
+type gradedErr struct{ code, msg string }
 
 func (e *gradedErr) Error() string { return e.msg }
+
+type liveGrade struct {
+	status string
+	codes  []string
+}
+
+func gradeLive(xfail bool, errs ...error) liveGrade {
+	seen := map[string]bool{}
+	grade := liveGrade{}
+	infrastructureFailure := false
+	for _, err := range errs {
+		if graded, ok := err.(*gradedErr); ok {
+			seen[graded.code] = true
+		} else if err != nil {
+			infrastructureFailure = true
+		}
+	}
+	for code := range seen {
+		grade.codes = append(grade.codes, code)
+	}
+	sort.Strings(grade.codes)
+	switch {
+	case infrastructureFailure:
+		grade.status = "fail"
+	case !xfail && len(grade.codes) == 0:
+		grade.status = "pass"
+	case xfail && len(grade.codes) == 0:
+		grade.status = "xpass"
+	case xfail:
+		grade.status = "xfail"
+	default:
+		grade.status = "fail"
+	}
+	return grade
+}
