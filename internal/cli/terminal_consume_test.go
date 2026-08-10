@@ -158,6 +158,14 @@ func consumedNonterminalWorkflow(t *testing.T) (root, entity string) {
 	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 || !strings.Contains(out, "consumed=true") {
 		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
+	body, err := os.ReadFile(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report := "\n## Stage Report: implementation\n\n- DONE: Complete the entered stage.\n  The worker commit records this report.\n\n### Summary\n\nThe implementation is complete.\n"
+	writeFile(t, entity, string(body)+report)
+	terminalRunGit(t, root, "add", "--", "task.md")
+	terminalRunGit(t, root, "commit", "-q", "-m", "worker: complete implementation", "--", "task.md")
 	return root, entity
 }
 
@@ -181,6 +189,9 @@ func TestConsumedNonterminalApprovalAllowsOrdinaryTerminalFields(t *testing.T) {
 	fields := entityFields(t, entity)
 	if fields["status"] != "done" || fields["verdict"] != "PASSED" || strings.TrimSpace(fields["completed"]) == "" {
 		t.Fatalf("terminal fields = status:%q verdict:%q completed:%q", fields["status"], fields["verdict"], fields["completed"])
+	}
+	if body, err := os.ReadFile(entity); err != nil || !bytes.Contains(body, []byte("## Stage Report: implementation")) {
+		t.Fatalf("terminal write lost the worker report: read error=%v", err)
 	}
 }
 
