@@ -34,7 +34,7 @@ func decideCodexLiveAuth(openAIAPIKey string, localAuthAvailable bool, required 
 	if required != "" {
 		return codexLiveAuthDecision{
 			mode:    codexAuthFatal,
-			message: "OPENAI_API_KEY is required for the approval-gated codex-live lane",
+			message: "OPENAI_API_KEY is required when SPACEDOCK_CODEX_LIVE_REQUIRED is set; unset SPACEDOCK_CODEX_LIVE_REQUIRED for a local run that uses isolated Codex OAuth",
 		}
 	}
 	if localAuthAvailable {
