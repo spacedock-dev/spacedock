@@ -424,3 +424,26 @@ XFAIL records before the product repair task changes First Officer behavior.
 The ideation record now closes M1. It requires full durable semantic assertion
 coverage after infrastructure success, strict code-set classification, and two
 real first-landing cells. No product change is included.
+
+## Stage Report: implementation
+
+- DONE: Implement host-neutral strict grading after infrastructure succeeds: run every durable assertion and classify exact sole code as XFAIL, empty as failing XPASS, and different/additional codes as FAIL.
+  Commit `886f2d6ae` adds the code-set grade. If a strict result changes,
+  `TestGradeLiveStrictMatrix` fails. If a later assertion does not run,
+  `TestGradeLiveRunsEveryAssertion` fails.
+- FAILED: Convert only the real Sonnet and Codex `default-headless-gate-stop` cells to owner `98aa776adg66gn823a8gamdq` and sole code `implementation-worker-not-dispatched`, then obtain exact-candidate executed XFAIL evidence for both.
+  Commit `886f2d6ae` converts both cells and keeps Pi as TODO. The exact Codex
+  cell reported XFAIL in 385.77 seconds. Its metric SHA-256 is
+  `edded162c79f2433b02b7479bff9784430b8a494e1ca92771ca16a1ff4c403bf`.
+  Sonnet did not run because neither `~/.claude/benchmark-token` nor
+  `ANTHROPIC_API_KEY` exists. The harness skipped the test before the fixture launch.
+- DONE: Extend existing metrics, reconciliation, active-owner proof, and runtime-live documentation within the approved file surface and hard +210 net cap; run all required offline/race/registry checks.
+  The code change is +182 net lines. `go test ./...` and `go test ./... -race`
+  passed. The two contractlint checks passed. A malformed binding or inactive
+  owner makes these checks fail.
+
+### Summary
+
+The commit implements strict grading, source bindings, metrics, reconciliation,
+and documentation. The Codex cell proves the exact XFAIL result. The Sonnet
+evidence remains blocked by missing local authentication, and no paid CI ran.
