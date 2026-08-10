@@ -8,13 +8,13 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 
 For each entity reported by `status --next`:
 
-Interpret the scheduler row before mutation. `current == next` dispatches that entered stage itself with idempotent `status={current} started`; neither FO nor helper manufactures its report or completion signal. Initial-stage successor rows retain legacy meaning.
+Interpret the scheduler row before mutation. If `current == next`, set `dispatch_stage = current`. If `current` is initial and `next` is terminal, set `dispatch_stage = current`. Otherwise, set `dispatch_stage = next`. Use the selected target for every dispatch boundary: the idempotent `status={dispatch_stage}` stamp, the exact path-scoped `dispatch: {slug} entering {dispatch_stage}` commit, and `«dispatch.build» --stage {dispatch_stage}`. Neither FO nor helper manufactures the worker's report or completion signal.
 
-1. Read the entity file and the target stage definition.
-2. Invoke `«dispatch.checklist»(entity, stage)` and retain its numbered output.
+1. Read the entity file and the `dispatch_stage` definition.
+2. Invoke `«dispatch.checklist»(entity, dispatch_stage)` and retain its numbered output.
 3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
-5. For a gate-consumed entry, `status` is already advanced: run `«dispatch.build» --stamp`, which stamps `started`/`worktree=`, commits+syncs state, and creates the declared worktree before emitting the envelope. For a non-gated entry, first advance with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} started`, then the same `--stamp` build.
+5. For a gate-consumed entry, `status` already equals `dispatch_stage`: run `«dispatch.build» --stamp --stage {dispatch_stage}`, which stamps `started`/`worktree=`, commits+syncs state, and creates the declared worktree before emitting the envelope. For a non-gated entry, first advance with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={dispatch_stage} started`, then run the same `--stamp --stage {dispatch_stage}` build.
 6. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.
 7. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
 
