@@ -66,6 +66,17 @@ gates:
                 digest: sha256:f2cd1e5d922d73e8751b196e6c7529b5d64c3e3d8901ec516c48420f3d8d0f0d
                 request-digest: sha256:97dfa0bbb32dbddd7b52fa8a8a64e1e84c8405244f0ba24ca958c8a3614f11c4
                 room-ref: ./dispatch-current-initial-stage-before-successor/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6x50qafc8566zc6p1qpb6y30:validation:1
+                briefing: briefing:6x50qafc8566zc6p1qpb6y30:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T15:41:44.618652Z"
+                decision: approve
+                reason: Captain conn accepts exact-green product evidence and retains the historical premature-merge defect.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
