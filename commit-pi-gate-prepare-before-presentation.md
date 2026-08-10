@@ -424,3 +424,35 @@ semantic boundary, repair scope, and estimates were not changed.
 The shared gate lifecycle and Pi adapter now require prepare, commit, reread,
 and presentation in order. The focused test proves the durable-state sequence
 and unchanged open gate. Post-ts live Pi proof remains deferred.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebase onto `origin/main` at or after `a8688cabf` while preserving the
+  product work from `9550735b8`.
+  Rebase completed without conflict. The preserved product change is now
+  commit `1b529add2` above base `a8688cabf`.
+- DONE: Complete the 2e4 Pi product repair and task-local proof.
+  `skills/fo-gate-lifecycle/SKILL.md:19-32` and the Pi runtime binding enforce
+  commit and reread before presentation. The real-command test remains at
+  `internal/ensigncycle/gate_assert_test.go:59-108`.
+- DONE: Do not require baseline-XFAIL ceremony.
+  No pre-repair baseline run occurred in this cycle. The current strict binding
+  produced XPASS after the product repair.
+- DONE: Run the exact owned target and remove only the 2e4-owned XFAIL after
+  the product repair passes.
+  The bound Pi target produced XPASS in 102.45 seconds. The unbound target then
+  passed in 99.91 seconds with `openrouter/moonshotai/kimi-k2.5`.
+- DONE: Update the exact reconciliation row without editing another task's
+  binding.
+  Commit `f7a86be96` changes only the gate-guardrail binding and its desired
+  reconciliation row. `TestRuntimeLiveRegistryReconciliation` passes.
+- DONE: Run required checks, update the durable implementation report, commit,
+  and push.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`
+  pass. The branch is pushed through commit `f7a86be96`.
+
+### Summary
+
+The Pi gate-guardrail journey now passes without an XFAIL. The review follows
+the committed-state reread and leaves the same gate open. The product branch
+and this durable report contain the completed transition.
