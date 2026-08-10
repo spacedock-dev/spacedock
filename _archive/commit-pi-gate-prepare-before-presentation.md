@@ -1,10 +1,10 @@
 ---
 title: Commit the Pi gate before presentation
-status: validation
+status: done
 source: "Staff review M3 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:19Z
-completed:
-verdict:
+completed: 2026-08-10T07:14:50Z
+verdict: PASSED
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -12,7 +12,7 @@ group: common-evidence
 worktree: .worktrees/spacedock-ensign-commit-pi-gate-prepare-before-presentation
 issue:
 pr: pr-merge:656
-mod-block: merge:pr-merge
+mod-block:
 id: 2e4fe65gy9vcr4xck6akzmdd
 gates:
     version: 1
@@ -86,7 +86,8 @@ gates:
                 reason: Exact candidate f7a86be96 satisfies AC-1 through AC-5; independent validation found no Material finding, and the Captain approved the 2e4-first merge-order exception.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T07:14:50Z
 ---
 
 ## Problem
