@@ -2,7 +2,7 @@
 title: "Your first workflow"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-10 17:26:03"
+last_updated: "2026-08-10 18:07:14"
 ---
 
 # Your first workflow
@@ -61,9 +61,8 @@ On accept, commission dispatches your seed items in parallel, each moving throug
 
 ```
 Capability/change: token-bucket limiter at the API middleware layer.
-Test and evidence: the Stage Report records 2 DONE, 0 SKIPPED, 0 FAILED.
+Test and evidence: the sixth failed login returns 429, and a successful login resets the counter.
 Reviewed snapshot: Briefing `...` at compact digest `sha256:1a2b3c4d…`.
-Findings: none.
 Recommendation: approve the implementation.
 Decision ask: approve to close, revise with feedback, or hold at review.
 ```

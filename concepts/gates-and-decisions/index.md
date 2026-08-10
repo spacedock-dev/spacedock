@@ -2,7 +2,7 @@
 title: "Gates & decisions"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-10 17:26:03"
+last_updated: "2026-08-10 18:07:14"
 ---
 
 # Gates & decisions
@@ -20,7 +20,7 @@ Until then, the gates are yours.
 
 ## What you see at a gate
 
-A chat gate review has one concise evidence spine. The first officer emits it before recording either your decision or a decision made under delegated conn:
+Before it asks for a decision, the first officer reads the current stage's `Gate content` instruction and shows the evidence that instruction requests. `Gate content` is the authoritative presentation preference and override. Without it, the first officer selects concise evidence that supports the decision. This evidence comes from the stage definition, selected Artifact and References, current stage report, checklist, acceptance criteria, and findings. The first officer does not invent facts or show every source. It omits missing evidence and empty result or finding groups. The first officer shows the review before recording either your decision or a decision made under delegated conn:
 
 ```
 Capability/change: replace sleep-based waits with event polling.

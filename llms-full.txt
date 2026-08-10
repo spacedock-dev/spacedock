@@ -88,9 +88,8 @@ On accept, commission dispatches your seed items in parallel, each moving throug
 
 ```
 Capability/change: token-bucket limiter at the API middleware layer.
-Test and evidence: the Stage Report records 2 DONE, 0 SKIPPED, 0 FAILED.
+Test and evidence: the sixth failed login returns 429, and a successful login resets the counter.
 Reviewed snapshot: Briefing `...` at compact digest `sha256:1a2b3c4d…`.
-Findings: none.
 Recommendation: approve the implementation.
 Decision ask: approve to close, revise with feedback, or hold at review.
 ```
@@ -224,7 +223,7 @@ Until then, the gates are yours.
 
 ## What you see at a gate
 
-A chat gate review has one concise evidence spine. The first officer emits it before recording either your decision or a decision made under delegated conn:
+Before it asks for a decision, the first officer reads the current stage's `Gate content` instruction and shows the evidence that instruction requests. `Gate content` is the authoritative presentation preference and override. Without it, the first officer selects concise evidence that supports the decision. This evidence comes from the stage definition, selected Artifact and References, current stage report, checklist, acceptance criteria, and findings. The first officer does not invent facts or show every source. It omits missing evidence and empty result or finding groups. The first officer shows the review before recording either your decision or a decision made under delegated conn:
 
 ```
 Capability/change: replace sleep-based waits with event polling.
