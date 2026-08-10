@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pma2c1j7wmg9yvf5n25tx2ff:backlog:attempt-1:revision-1",
+  "question": "Approve this narrow diagnostic-and-documentation fast track for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:pma2c1j7wmg9yvf5n25tx2ff:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e868475a0c92d62374cd73b0a3e6005eeacec3e2/make-local-codex-live-auth-failure-self-correcting.md",
+      "rev": "sha256:6dcf38f04ae716c667f251b9d038d5ea9f43e2a6d69eae7ba581ddfeaa3644a5",
+      "mediaType": "text/markdown",
+      "summary": "Keep authentication behavior unchanged. Make the existing CI-only flag error tell local developers to unset it and use isolated Codex OAuth, then clarify the local command in the runtime-live documentation."
+    }
+  ]
+}

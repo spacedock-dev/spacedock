@@ -14,6 +14,18 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:pma2c1j7wmg9yvf5n25tx2ff:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:pma2c1j7wmg9yvf5n25tx2ff-backlog-1
+              briefing:
+                id: briefing:pma2c1j7wmg9yvf5n25tx2ff:backlog:attempt-1:revision-1
+                digest: sha256:027f0c349f06b44d4299c4eeb239938ef923bce635f16cc50e369c4f8b3706ee
+                request-digest: sha256:043aac914ad272034a2af4c8e58768a17afe191c817495ea7a31dfe20b9d7b1f
+                room-ref: ./make-local-codex-live-auth-failure-self-correcting/review/backlog/briefing-1
 ---
 
 Make the existing local Codex OAuth path obvious when a developer accidentally uses the CI-only live-test flag.
