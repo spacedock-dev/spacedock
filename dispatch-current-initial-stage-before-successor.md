@@ -532,3 +532,16 @@ HOLD candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` unchanged. After 98a l
 ### Summary
 
 Candidate `e2ead5f4367598f806a1162f8c0c36bee97f091c` is ready for PR and merge on proven Sonnet and Codex value.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Open the final candidate PR.
+  PR 660 used exact head `e2ead5f4367598f806a1162f8c0c36bee97f091c` with Sonnet and Codex proof recorded.
+- DONE: Merge the validated candidate.
+  PR 660 merged as `8832664ddbec8ac024c4e5251410d0422fa7ca04`.
+- DONE: Preserve the pending Pi scope.
+  The merged change keeps the 6x Pi XFAIL. Pi remains pending and non-blocking.
+
+### Summary
+
+Implementation is complete. Sonnet and Codex passed the exact value target, and merge commit `8832664ddbec8ac024c4e5251410d0422fa7ca04` landed it.
