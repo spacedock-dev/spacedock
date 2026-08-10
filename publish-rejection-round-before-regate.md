@@ -454,6 +454,7 @@ This run is a `zh` timeout finding. It does not prove the exact target green, so
 - DONE: Retain Pi run `31398482864` as non-blocking evidence only.
   Its current or final result does not block the Captain-approved Sonnet value. Do not remove the Pi XFAIL from this run.
 - DONE: Push exact candidate `c24e33a919ef18d7bf887d6e8512f95216673409`.
+  The remote head equals this candidate, and the product worktree is clean.
 
 ### Summary
 
