@@ -1,6 +1,6 @@
 ---
 title: Make Codex implementation dispatch mechanically acknowledged
-status: backlog
+status: ideation
 source: "98a cycle-4 live evidence: identical spawn envelopes produced two native-spawn passes and one empty-wait failure"
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
                 reason: Captain explicitly approved creating and shaping this smallest end-user mechanical prerequisite after 98a cycle-4 nondeterminism.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
