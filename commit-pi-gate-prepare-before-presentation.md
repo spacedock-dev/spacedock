@@ -76,6 +76,17 @@ gates:
                 digest: sha256:a4e4223e0b3707927e0a1a0f0145366f82e8e41f62eebdeb9b9561bc27d60f00
                 request-digest: sha256:eece0af7910df93f58e62723cae6bdab2143c8962544d9a9bbaa82e01a6ac515
                 room-ref: ./commit-pi-gate-prepare-before-presentation/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:2e4fe65gy9vcr4xck6akzmdd:validation:1
+                briefing: briefing:2e4fe65gy9vcr4xck6akzmdd:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T06:17:36.833725Z"
+                decision: approve
+                reason: Exact candidate f7a86be96 satisfies AC-1 through AC-5; independent validation found no Material finding, and the Captain approved the 2e4-first merge-order exception.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
