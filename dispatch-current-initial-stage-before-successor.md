@@ -424,3 +424,29 @@ The dispatch contract now runs an initial current stage before its terminal succ
 ### Summary
 
 Candidate `974a318b162b7fc895e018e8d902470474c31a4a` is ready for the protected Pi lane. Run the exact Pi target at this SHA. The lane must pass without an XFAIL binding.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Run the approved manual Pi cadence at the exact candidate.
+  `Runtime Live E2E` run `31360479606` used head `974a318b162b7fc895e018e8d902470474c31a4a` and deployment `5827064190`.
+- DONE: Keep the paid run limited to Pi.
+  Job `pi-live` used environment `CI-E2E-PI`. The Claude and Codex jobs were skipped.
+- DONE: Inspect the exact target result.
+  `TestLiveCommonSmallestSufficientMechanism` did not run. The suite stopped at an earlier failure because it used `-failfast`.
+- DONE: Download and inspect the journey artifact.
+  Artifact `9052397854` contains full-cycle and gate-guardrail metrics. It contains no smallest-mechanism metric because that test did not start.
+- DONE: Preserve the candidate bytes.
+  Candidate `974a318b162b7fc895e018e8d902470474c31a4a` remains unchanged. No runtime setting or XFAIL binding changed.
+- FAILED: Obtain the required protected Pi result.
+  `TestLiveCommonGateGuardrail` produced an XPASS for owner `2e4fe65gy9vcr4xck6akzmdd`. This earlier finding stopped the common suite.
+
+### Workflow evidence
+
+- Released workflow: The manual Pi cadence runs the common live suite with `-failfast` before the Pi front-door smoke.
+- Observable harm: The 6x Pi target produced no result, so the required cross-host proof remains incomplete.
+- Value authority: `value-ac[AC-1]` requires the smallest-mechanism journey to pass on each executable host target.
+- Exact trigger: Run `31360479606` reached an XPASS in `TestLiveCommonGateGuardrail` before `TestLiveCommonSmallestSufficientMechanism` started.
+
+### Summary
+
+HOLD candidate `974a318b162b7fc895e018e8d902470474c31a4a` unchanged. The required Pi proof is absent because another owned XPASS stopped the suite before the exact target.
