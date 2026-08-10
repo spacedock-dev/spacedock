@@ -396,3 +396,31 @@ transfer and `6x` then `9a` landing order now protect the shared files.
 ### Summary
 
 The dispatch contract now runs an initial current stage before its terminal successor. The first race run hit a transient 250 ms subprocess timeout. Its focused rerun and the complete race rerun passed.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rebase onto `origin/main` at or after `a8688cabf`, preserving the product repair.
+  Rebase completed without conflict. Product commit `4daf341aa` retains the `dispatch_stage` rule at `fo-dispatch-core.md:11-17`.
+- DONE: Complete the 6x product repair and task-local proof.
+  `TestSmallestMechanismTraceSelectsCodexDialect` proves that the shared runner selects the Codex extractor instead of the Claude extractor.
+- DONE: Run the exact owned target after the product repair.
+  Claude Sonnet and Codex produced XPASS with two ready reports, zero wrong-target dispatches, and two terminal archives.
+- DONE: Remove only the 6x-owned XFAIL and update its exact reconciliation row.
+  `shared_live_runner_test.go:165` has no gap. `live_registry_reconciliation_test.go:57` now expects `nil`.
+- DONE: Do not edit another task's binding.
+  The three `keep-moving-posture` bindings at `shared_live_runner_test.go:170` still name task `9adv48yhye5s2vkhwd7ge52d`.
+- DONE: Run required checks, commit, and push the candidate.
+  `go test ./...`, `go test ./... -race`, focused proof, and registry reconciliation passed. Candidate `974a318b1` is pushed.
+- FAILED: Run the exact owned Pi target locally.
+  OpenRouter returned HTTP 402 before execution. The account supports 31695 tokens, but the configured request requires 128000 tokens.
+
+### Debugging evidence
+
+- Released workflow: The common smallest-mechanism journey runs on Claude Sonnet, Codex, and Pi through supported first-officer front doors.
+- Observable harm: Correct Codex ready dispatches and archives remained XFAIL because the shared runner applied the Claude transcript extractor to Codex JSONL.
+- Value authority: `value-ac[AC-1]` requires two ready reports, zero wrong-target dispatches, and two terminal archives for each executable host target.
+- Exact trigger: The Codex run completed both journeys, but `runClaudeSmallestSufficientMechanismScenario` called `claudeMechanismTrace` for every `liveDriver`.
+
+### Summary
+
+Candidate `974a318b162b7fc895e018e8d902470474c31a4a` is ready for the protected Pi lane. Run the exact Pi target at this SHA. The lane must pass without an XFAIL binding.
