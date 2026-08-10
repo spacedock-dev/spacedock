@@ -54,13 +54,14 @@ func TestSonnetTeamDeleteHangReplay(t *testing.T) {
 	// assertion to the recording's actual content (cycle-1 audit fix).
 	rec := &transcriptRecorder{}
 
-	// Shrink the budgets so the offline replay finishes in well under a second;
-	// the production budgets are 60s. The poll interval matches the unit test's
-	// fast cadence. One line drips per poll, so the whole 341-line stream drains
-	// over ~341 polls before the steps reach their assertions.
+	// Shrink the budgets well below the production value of 60s. The poll
+	// interval matches the unit test's fast cadence. One line drips per poll, so
+	// the whole 341-line stream drains over ~341 polls before the steps reach
+	// their assertions. Keep the exit budget large enough to drain the remaining
+	// fixture under race-detector scheduling before the intentional hang trips it.
 	w := newStreamWatcher(src, proc, rec.tee)
 	w.quietBudget = 2 * time.Second
-	w.exitBudget = 150 * time.Millisecond
+	w.exitBudget = 2 * time.Second
 	w.pollInterval = time.Millisecond
 
 	// 1. TeamCreate — the first progress beat. The captured stream opens with the
