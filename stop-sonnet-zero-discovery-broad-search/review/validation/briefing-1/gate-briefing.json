@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3rns0vh3svq49w43cfr0wdqd:validation:attempt-1:revision-1",
+  "question": "Does exact candidate 8af37edcd9bc2a4033cd0bfa077f5a872ae597e3 satisfy the zero-discovery acceptance criteria and remain safe to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:3rns0vh3svq49w43cfr0wdqd:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/658b6fd271f61780cadc382dda03b8467d65be76/stop-sonnet-zero-discovery-broad-search.md",
+      "rev": "sha256:a073aa4f4e3d483fa0f0d2acd7beb649ea2b18bee6213fa5d1c2bfa6689dc2ec",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation PASSED. The exact candidate uses a direct Claude adapter path and no filesystem discovery."
+    }
+  ]
+}

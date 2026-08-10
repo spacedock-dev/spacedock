@@ -50,6 +50,26 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:3rns0vh3svq49w43cfr0wdqd:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:3rns0vh3svq49w43cfr0wdqd-validation-1
+              briefing:
+                id: briefing:3rns0vh3svq49w43cfr0wdqd:validation:attempt-1:revision-1
+                digest: sha256:bd8c13d02731efc23a4d62f5ddd0fae8664ec629501fe498ced30f5997c8308a
+                request-digest: sha256:594f6e0c6155dea00071a6242d7c77953b454f27277bd0b059f6aef6e85ab188
+                room-ref: ./stop-sonnet-zero-discovery-broad-search/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3rns0vh3svq49w43cfr0wdqd:validation:1
+                briefing: briefing:3rns0vh3svq49w43cfr0wdqd:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T19:08:35.289219Z"
+                decision: approve
+                reason: Captain conn approves 3rns after independent PASSED validation. Required exact PR lanes remain the merge boundary.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-10T18:38:46Z
 worktree: .worktrees/spacedock-ensign-stop-sonnet-zero-discovery-broad-search
 ---
