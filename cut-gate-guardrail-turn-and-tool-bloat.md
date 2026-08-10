@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: gate-lifecycle-ux
 worktree: .worktrees/spacedock-ensign-cut-gate-guardrail-turn-and-tool-bloat
 issue:
-pr:
+pr: "#659"
 mod-block: merge:pr-merge
 id: 5k704rrfk5r75vqv3bwn1yhf
 gates:
