@@ -696,3 +696,9 @@ does not change. Product instructions and bindings stay unchanged.
 The focused positive uses the exact `$launcher` command. Existing controls
 continue to reject a wrong entity, round, file, or failed command. Cancelled
 and superseded PR live evidence stays retained.
+
+Commit `c334febb28d45705362d3485abbda6dc7993f47f` adds the `$launcher`
+alternative and changes the existing positive to the exact command shape.
+The focused test first failed with `stage/prepares = 0/1`. It then passed with
+the retained negative controls. The correction changes two lines in and two
+lines out of one existing file. The full candidate remains net +91.
