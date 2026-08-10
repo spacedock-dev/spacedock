@@ -463,3 +463,21 @@ HOLD candidate `974a318b162b7fc895e018e8d902470474c31a4a` unchanged. The require
 ### Summary
 
 HOLD the unchanged 6x candidate until the 2e4 landing SHA is available. Exception A permits the required 2e4-first landing order.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Record the incidental Sonnet supporting evidence.
+  PR 656 job `93371397610` produced strict XPASS for `smallest-sufficient-mechanism` with an empty observed semantic set.
+  The product exited 0, and the durable assertions passed. This baseline result did not authorize an early binding removal.
+- DONE: Rebase 6x onto the exact 2e4 landing.
+  Rebase onto `f2428ddee6b5b52d1478be25c345e47aae43aa97` completed without conflict.
+- DONE: Preserve only task-owned changes.
+  The 6x smallest-mechanism binding remains removed. The three 9a keep-moving bindings remain unchanged.
+- DONE: Run focused checks.
+  The Codex extractor proof, durable smallest-mechanism assertion, and registry reconciliation passed.
+- DONE: Push the rebased candidate.
+  Candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` is clean and pushed.
+
+### Summary
+
+Candidate `a7ea84f63ffa5d3c2fb44232b4f8637951690646` is ready for the exact Pi-only manual cadence.
