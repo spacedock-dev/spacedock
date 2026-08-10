@@ -310,18 +310,18 @@ This re-estimate supersedes the earlier three-file/35-75-line surface and narrow
 
 ### Revised mechanism
 
-Each gated `### <stage>` subsection may declare one direct `- **Gate content:** ...` instruction. The presenter treats that instruction as authoritative; without it, the presenter uses only the subsection's Inputs, Outputs, Good/Bad criteria, and the workflow-declared advance/feedback transition. Generic hints distinguish gates before direction selection, after direction selection, and after execution without assigning meaning to a stage name. Missing evidence and empty result/finding groups are omitted, never replaced with placeholders or invented facts.
+Each gated `### <stage>` subsection may declare one direct `- **Gate content:** ...` instruction. The presenter treats that instruction as the authoritative presentation preference and override. Without it, the presenter selects concise evidence that supports the decision. This evidence comes from the stage definition, selected Artifact and References, current stage report, checklist and AC evidence, and findings. Generic hints distinguish gates before direction selection, after direction selection, and after execution without assigning meaning to a stage name. The presenter omits missing evidence, empty result/finding groups, and negative empty summaries. It does not use placeholders, invent facts, or show every source.
 
 ### Revised acceptance criteria
 
 **AC-1 (VALUE) - Gate reviews follow their workflow's stage definition, improving from a hardcoded development-stage table to correct declared evidence for every controlled non-development gate with zero stage-name inference or fabricated rows.**
 Verified by: exercise explicit Gate content across controlled refinement and experiment gates with non-development names; grade every visible row against the declaration. Renaming a stage without changing its definition must not change the evidence, while changing the Gate content must change the review.
 
-**AC-2 - Explicit Gate content overrides generic hints, and an undeclared Gate content falls back only to declared stage criteria and transition.**
-Verified by: one conflict case requests a narrow metric while Inputs/Outputs mention additional material, and one fallback case has no Gate content. The first fails if extra material appears; the second fails if output cannot be traced to Inputs, Outputs, Good/Bad, or transition.
+**AC-2 - Explicit Gate content overrides generic hints, and an undeclared Gate content falls back to concise, supported, decision-relevant evidence.**
+Verified by: use one conflict case that requests a narrow metric while other sources mention more material. Use one fallback case that has no Gate content. The conflict case fails if extra material appears. The fallback case fails if evidence is fabricated or irrelevant to the decision. It also fails if evidence has no support in the stage definition, Artifact/References, current report, checklist/AC evidence, or findings.
 
 **AC-3 - Empty evidence is absent while the common gate authority remains singular and unchanged.**
-Verified by: controlled reviews with missing/zero evidence contain no empty heading, `None`, `N/A`, or zero-result row and contain exactly one task/stage, supplied Briefing identity/digest, recommendation, and decision effect; workflow finding labels remain exact and `${SPACEDOCK_BIN:-spacedock} gate record --decision` remains the sole recorder.
+Verified by: controlled reviews with missing or zero evidence contain no empty heading, `None`, `N/A`, zero-result row, or negative empty summary. Each review contains exactly one task/stage, supplied Briefing identity/digest, recommendation, and decision effect. Workflow finding labels remain exact. `${SPACEDOCK_BIN:-spacedock} gate record --decision` remains the sole recorder.
 
 **AC-4 - Commission and refit propagate workflow-owned Gate content without rewriting old fixture truth.**
 Verified by: commission one workflow from each built-in template and one custom/variant shape, then run refit Phase 3b against `skills/integration/testdata/refit-content-propagation/site-workflow/`. Generated gated stage subsections contain their template/mission-specific Gate content, and the refit diff exposes the additive declarations while the legacy fixture README remains byte-unchanged.
@@ -347,8 +347,8 @@ Tolerance is **plus or minus 1 file and +35/-20 changed lines** for existing tem
 
 ### Revised test plan
 
-1. Run the AC-1/AC-2 controlled presenter matrix across development, refinement, experiment, and a custom shape. Grade semantic output rather than searching instruction prose; include rename invariance, explicit-override, fallback, and absent-evidence controls.
-2. Run the AC-3 common-spine grader with empty classes/findings and a workflow-owned finding-label order. Fail on a placeholder, invented section, missing/duplicate authority fact, reclassification, or alternate recorder.
+1. Run the AC-1/AC-2 controlled presenter matrix across development, refinement, experiment, and a custom shape. Grade semantic output rather than searching instruction prose; include rename invariance, explicit-override, concise supported fallback, and absent-evidence controls.
+2. Run the AC-3 common-spine grader with empty classes/findings and a workflow-owned finding-label order. Fail on a placeholder, negative empty summary, invented section, missing/duplicate authority fact, reclassification, or alternate recorder.
 3. Drive commission for all three built-in templates plus one custom/variant gate, then drive refit Phase 3b against the retained old site-workflow fixture. Compare generated stage subsections and refit diff; do not update the old fixture to make the proof pass.
 4. Run contract lint, strict MkDocs plus available visual review, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. Run the live gate journeys required by the shared-skill path mapping, including one visible non-development gate that proves stage-definition read before presentation and presentation before the unchanged recorder.
 5. Audit final paths and line count against the estimate and F6C boundary. Add no committed semantic prose-presence test.
@@ -642,3 +642,16 @@ The candidate now follows the Captain's evidence model: explicit `Gate content` 
 ### Summary
 
 Candidate code and deterministic checks are green, and the Captain-authorized removal of the fixed-phrase oracle is correctly scoped. Validation recommends REJECTED because both published gate pages still contradict the active fallback and omission contract; this is a narrow KRB-owned documentation correction, not a reason to revisit the model, CI, fixture, or default-headless findings.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Align the published fallback sentence with Gate content as an override and the bounded meaningful fallback under the Captain ruling.
+  Commit `362bc8871` states that `Gate content` is the presentation preference and override; without it, concise decision evidence comes from the approved sources without invented facts or a source dump.
+- DONE: Remove the first-workflow example’s explicit empty skipped/failed summaries while preserving the useful passed-check and readiness evidence.
+  The example keeps both positive login checks and the readiness recommendation, but it no longer describes the omitted empty classes.
+- DONE: Synchronize only superseded active acceptance/test-plan wording needed for consistency; run focused docs/contract checks and report the exact candidate surface without model or CI work.
+  The active mechanism, AC-2/AC-3 proof text, and matching test-plan controls now use the Captain ruling and reject negative empty summaries. Contract drift fails the focused Go packages; invalid site configuration or links fail strict MkDocs. All three checks passed.
+
+### Summary
+
+The correction changes only the two authorized published lines and the directly superseded active design text. Candidate `362bc88713e9b5ca4d4e7991d9d07b2e3ef10df7` is clean at 10 files, 106 insertions and 24 deletions (130 changed lines) versus reconciliation base `8832664dd`. No product mechanism, model lane, CI workflow, fixture, lifecycle, runtime, command, schema, recorder, oracle, unrelated page, or PR ref changed.
