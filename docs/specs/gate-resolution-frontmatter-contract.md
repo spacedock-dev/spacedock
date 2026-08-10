@@ -41,11 +41,9 @@ flowchart TD
     CHANNEL --> SUBSPACE --> SEMANTIC
     SEMANTIC --> RECORD
 
-    RECORD --> CLOSED["Recorder closes the gate attempt"]
-    CLOSED --> COMMIT_CLOSE["spacedock state commit<br/>publishes the Resolution"]
-    COMMIT_CLOSE --> CONSUME["spacedock gate consume"]
-    CONSUME --> COMMIT_CONSUME["spacedock state commit<br/>publishes application"]
-    COMMIT_CONSUME --> NEXT["Successor stage"]
+    RECORD --> CLOSED["Recorder closes, commits,<br/>and syncs the gate attempt"]
+    CLOSED --> CONSUME["spacedock gate consume"]
+    CONSUME --> NEXT["Consumer advances, commits,<br/>and syncs the successor stage"]
 ```
 
 ## Canonical v1 schema
@@ -167,6 +165,9 @@ Resolution, provider evidence, application, status change, successor, or room wr
 `spacedock gate record` accepts a semantic chat decision and closes only the last open
 attempt for the current stage. Approve derives one `application` with
 `target-stage` and `state: pending`; revise and hold write no application.
+In a split-root workflow, a successful close commits and synchronizes its own write.
+`gate record --decision approve --consume` is the shortest approval path: it closes,
+syncs, consumes, and syncs in one invocation.
 
 Before an ordinary close, the recorder resolves authoritative current status in the
 workflow taxonomy and requires a nonterminal `gate: true` stage. The bound Briefing must use the canonical v1 stage-qualified identity and name that same stage. Malformed identity, mismatch, or non-actionable stage fails before Resolution construction and leaves entity bytes unchanged.
@@ -248,7 +249,8 @@ withdrawn attempts can carry neither Resolution, provider evidence, nor applicat
 ```text
 spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
 spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]
-spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--workflow-dir DIR]
+spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]
+spacedock gate record ENTITY --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]
 spacedock gate validate ENTITY [--workflow-dir DIR]
 spacedock gate consume ENTITY [--workflow-dir DIR]
 ```

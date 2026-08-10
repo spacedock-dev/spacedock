@@ -51,40 +51,42 @@ The remainder of this sprint is the pre-stable necessity cut, and the cut table 
 
 ### Chat approval into a nonterminal stage
 
-1. The First Officer runs `gate prepare`, then `state commit` so the canonical Briefing and request are durable.
-2. The First Officer presents the Briefing in chat and records the decision with `gate record --decision ... --actor ...`, then commits it. The actor is the renderer identity required by the recording-identity ruling: `agent:first-officer` for an FO-rendered delegated close, or `person:captain` for a Captain-rendered decision over content the Captain saw.
-3. On approval, `gate consume` atomically spends the pending application with the next-stage transition; the First Officer commits and dispatches that stage.
-
-The agent constructs no JSON and supplies no output paths. Chat is the default and requires no Subspace installation.
+Prepare and commit the selected review inputs and binding, then present the committed
+Briefing. `gate record --decision approve --consume` is the shortest path: it closes,
+syncs, consumes, and syncs before `dispatch build --stamp` enters the successor. The
+standalone record-then-consume path remains supported. Neither successful close nor
+consume needs a separate state commit.
 
 ### Chat approval into the terminal stage
 
-1. Preparation, presentation, recording, and state commits are identical to the nonterminal journey.
-2. `gate consume` leaves the terminal application pending and returns `approved-awaiting-merge`; it does not write terminal status.
-3. The merge guard proves delivery. Success atomically writes pending to consumed together with terminal status, verdict, and completion. Retryable trouble changes none of them. Rework atomically writes pending to superseded, clears delivery state, and routes to the declared feedback stage.
-4. A later validation uses a fresh gate attempt and fresh approval; superseded authority is never re-spent.
+Prepare, commit, and present as above. `gate record --decision approve --consume`
+closes and syncs, then returns `approved-awaiting-merge` without spending the pending
+application. `merge guard` spends and terminalizes only after delivery proof;
+`merge guard --rework` supersedes the application and routes through `feedback-to`.
 
 ### Review input changes before a decision
 
-1. The First Officer runs `gate withdraw --reason ...` against the open prepared attempt and commits the withdrawal.
-2. `gate prepare` creates the ordinary successor attempt and room.
-3. No `hold` Resolution is fabricated for content that was never decided.
-
-### Invalid preparation request
-
-At an ungated or terminal current stage, `gate prepare` exits nonzero before allocating an attempt or writing a room. The operator advances or completes the real workflow stage; there is nothing to withdraw or repair.
+Run `gate withdraw --reason ...`, commit the withdrawal, then prepare and commit an
+ordinary successor attempt. No Resolution or hold is fabricated for review content
+that was never decided.
 
 ### Hold and revise
 
-A hold records the Resolution and stops. A revise records the Resolution and routes through the workflow's declared feedback behavior. Neither case carries application metadata unless a demonstrated consumer actually applies it.
+`gate record` commits and syncs the Resolution. Revise follows the workflow feedback
+route; hold stops. Neither carries application metadata.
 
 ### Provider recording cut
 
-Stable v1 permits chat or Subspace to present the committed gate. Both return semantic
-decision and reason input to the First Officer, who records it through the same
-`gate record --decision` path. Stable v1 does not ship `gate record --room`, Result or
-inventory ingestion, or another recorder. The prepared room continues to bind the
-canonical Briefing used by validation and one-use consumption.
+Chat and Subspace present the same committed Briefing and return semantic decision and
+reason input. Only `gate record --decision` records it. Stable v1 has no `--room`,
+Result, or inventory ingestion surface.
+
+### Conflict and recovery
+
+A moving-target conflict returns to the owner tuple stamped by the initial dispatch,
+preserving authority and requiring fresh evidence after reconciliation. Break-glass
+recovery preserves the already selected bare or team mode and succeeds only when the
+assigned durable result is committed.
 
 ## Constraints
 

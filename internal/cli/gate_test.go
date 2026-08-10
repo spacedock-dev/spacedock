@@ -103,19 +103,26 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 	if code != 0 {
 		t.Fatalf("help exit=%d stderr=%q", code, errOut.String())
 	}
-	for _, token := range []string{"gate prepare", "gate withdraw", "--reason", "--question", "--artifact", "--summary", "--reference", "--workflow-dir", "record", "validate", "consume"} {
-		if !strings.Contains(out.String(), token) {
-			t.Fatalf("gate help missing %q:\n%s", token, out.String())
-		}
-	}
-	if strings.Contains(out.String(), "eligibility") {
-		t.Fatalf("gate help retained the standalone eligibility ceremony:\n%s", out.String())
-	}
-	if !strings.Contains(out.String(), "gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json") {
-		t.Fatalf("gate help lost the intentional advisory-round Briefing input:\n%s", out.String())
-	}
-	if strings.Contains(out.String(), "--feedback-cycle") || strings.Contains(out.String(), "triage=") {
-		t.Fatalf("gate help retained removed workflow policy:\n%s", out.String())
+	// Published gate help is the intentional exact-text exception to the semantic
+	// prose-oracle ban. Grammar additions/removals must change this fixture openly.
+	wantHelp := "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n" +
+		"       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n" +
+		"       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n" +
+		"       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n" +
+		"       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n" +
+		"       spacedock gate consume <entity> [--workflow-dir DIR]\n\n" +
+		"On an approval whose target stage is terminal, consume spends nothing: it leaves the\n" +
+		"application pending and reports route=approved-awaiting-merge. The terminal merge\n" +
+		"ceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\n" +
+		"consumer; `merge guard --rework` sends a failed delivery back through the declared\n" +
+		"feedback-to (pending -> superseded, delivery state cleared).\n\n" +
+		"`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\n" +
+		"in one call. `--consume` requires --decision approve and is rejected as a usage error\n" +
+		"with --decision revise|hold. In a split-root workflow, a successful close or consume\n" +
+		"ends with a machine-parseable `sync=.../phase=...` line; branch on that final line plus\n" +
+		"the exit code, never on which prose lines printed.\n"
+	if out.String() != wantHelp {
+		t.Fatalf("gate help differs from the published contract:\n--- got ---\n%s--- want ---\n%s", out.String(), wantHelp)
 	}
 }
 

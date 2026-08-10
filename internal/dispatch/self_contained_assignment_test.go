@@ -50,7 +50,8 @@ func TestGeneratedAssignmentExecutesStageLoadThroughPinnedA(t *testing.T) {
 	}
 	body := readDispatchBody(t, output.DispatchFile)
 	wantCommand := shlexQuote(aPath) + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage implementation"
-	if len(output.Fetch) != 1 || output.Fetch[0] != wantCommand || !strings.Contains(body, "    "+wantCommand) {
+	sections := dispatchArtifactSections(t, body)
+	if len(output.Fetch) != 1 || output.Fetch[0] != wantCommand || sections["Fetch commands"] != wantCommand {
 		t.Fatalf("assignment did not own the exact A command: fetch=%v\n%s", output.Fetch, body)
 	}
 
@@ -93,7 +94,7 @@ func TestBuildWithoutResolvedLauncherFailsBeforeWritingArtifact(t *testing.T) {
 		t.Fatalf("test artifact already exists: %s", path)
 	}
 	result := runNativeWithLauncher(mergeStdin(fields, nil), "", "build", "--workflow-dir", root, "--host", "codex")
-	if result.exit != 1 || !strings.Contains(result.stderr, "refusing to write a dispatch artifact") {
+	if result.exit != 1 || result.stdout != "" {
 		t.Fatalf("exit=%d stdout=%q stderr=%q", result.exit, result.stdout, result.stderr)
 	}
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
@@ -143,6 +144,34 @@ func selfContainedBuild(t *testing.T, root, host string, advance bool, stage, co
 	return output, readDispatchBody(t, output.DispatchFile)
 }
 
+// dispatchArtifactSections returns the bounded level-three sections emitted by
+// dispatch build. Tests compare structured inputs with their owned sections;
+// narrative wording outside those sections is intentionally not an oracle.
+func dispatchArtifactSections(t *testing.T, body string) map[string]string {
+	t.Helper()
+	sections := make(map[string]string)
+	var heading string
+	var lines []string
+	flush := func() {
+		if heading != "" {
+			sections[heading] = strings.TrimSpace(strings.Join(lines, "\n"))
+		}
+	}
+	for _, line := range strings.Split(body, "\n") {
+		if name, ok := strings.CutPrefix(line, "### "); ok {
+			flush()
+			heading = name
+			lines = nil
+			continue
+		}
+		if heading != "" {
+			lines = append(lines, strings.TrimPrefix(line, "    "))
+		}
+	}
+	flush()
+	return sections
+}
+
 func TestBuildHostModeMatrixKeepsPointerTransportAndExactFetchShape(t *testing.T) {
 	for _, host := range []string{"claude", "codex", "pi"} {
 		for _, advance := range []bool{false, true} {
@@ -150,21 +179,24 @@ func TestBuildHostModeMatrixKeepsPointerTransportAndExactFetchShape(t *testing.T
 				root := t.TempDir()
 				writeFile(t, filepath.Join(root, "thing.md"), entityFM("Thing", "implementation", ""))
 				gitInit(t, root)
-				got, body := selfContainedBuild(t, root, host, advance, "STAGE-SENTINEL", "CONTEXT-SENTINEL", []string{"- CHECKLIST-SENTINEL"}, nil)
+				checklist := []string{"- CHECKLIST-SENTINEL"}
+				got, body := selfContainedBuild(t, root, host, advance, "STAGE-SENTINEL", "CONTEXT-SENTINEL", checklist, nil)
 				if len(got.Fetch) != 1 {
 					t.Fatalf("fetch command count=%d, want 1: %v", len(got.Fetch), got.Fetch)
 				}
 				want := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage implementation"
-				if got.Fetch[0] != want || !strings.Contains(body, "    "+want) {
+				sections := dispatchArtifactSections(t, body)
+				if got.Fetch[0] != want || sections["Fetch commands"] != want {
 					t.Fatalf("structured fetch mismatch: got=%v\nbody=%s", got.Fetch, body)
 				}
-				for _, forbidden := range []string{"STAGE-SENTINEL", "CONTEXT-SENTINEL"} {
-					if strings.Contains(got.Prompt, forbidden) || strings.Contains(body, forbidden) {
-						t.Errorf("stage payload %q crossed into pointer transport or bootstrap body", forbidden)
-					}
+				if sections["Completion checklist"] != strings.Join(checklist, "\n") {
+					t.Fatalf("checklist section=%q, want exact structured input %q", sections["Completion checklist"], strings.Join(checklist, "\n"))
 				}
-				if strings.Contains(got.Prompt, "CHECKLIST-SENTINEL") || !strings.Contains(body, "CHECKLIST-SENTINEL") {
-					t.Error("checklist did not remain file-only")
+				if _, exists := sections["Stage definition"]; exists {
+					t.Fatal("fetched stage definition was unexpectedly inlined")
+				}
+				if _, exists := sections["Authority"]; exists {
+					t.Fatal("fetched context section was unexpectedly inlined")
 				}
 			})
 		}

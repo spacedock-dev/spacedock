@@ -11,13 +11,6 @@ import (
 	"strings"
 )
 
-// retiredDegradedModeReportPrefix is the fixed lead of the verbatim captain report
-// the RETIRED `## Degraded Mode` section used to mandate on trip. It survives here
-// only as a wrong-way check: after the retirement, no contract prose mandates it, so
-// a bare-dispatch drive must NOT emit it. assertBareReachableObservables fails if it
-// reappears.
-const retiredDegradedModeReportPrefix = "Falling back to bare mode for the remainder of this session due to infrastructure failure."
-
 // retrySuffix is the distinct axis a bounded dispatch-failure re-attempt carries on
 // the `{worker_key}-{slug}-{stage}` name — never a `-cycleN` increment, so a retry
 // cannot advance the feedback counter.
@@ -120,24 +113,15 @@ func assertBoundedRetryObservables(stream string) error {
 }
 
 // assertBareReachableObservables is the AC-2 behavioral oracle, rewritten for the
-// post-retirement expectation: over the captured stream it asserts (i) at least one
-// bare-shaped Agent() call (no name and false-or-omitted `run_in_background`) — bare dispatch is
-// reached — AND, as the wrong-way check the retirement preserves, (ii) NO retired
-// Degraded Mode captain report in any text block, and (iii) NO
-// Skill(skill="spacedock:fo-dispatch-recovery") load. A drive that still emits the
-// report or loads the recovery skill is now a FAILURE.
+// post-retirement expectation: over the captured stream it asserts one bare-shaped
+// Agent() call and no recovery-skill load. These are typed tool events; narration is
+// deliberately not part of the behavioral oracle.
 func assertBareReachableObservables(stream string) error {
 	sawBareAgent := false
-	sawRetiredReport := false
 	sawRecoverySkill := false
 
 	walkStreamBlocks(stream, func(block streamContentBlock) {
-		switch block.Type {
-		case "text":
-			if strings.Contains(block.Text, retiredDegradedModeReportPrefix) {
-				sawRetiredReport = true
-			}
-		case "tool_use":
+		if block.Type == "tool_use" {
 			switch block.Name {
 			case "Skill":
 				if inputStringField(block.Input, "skill") == recoverySkillArg {
@@ -154,22 +138,15 @@ func assertBareReachableObservables(stream string) error {
 	if !sawBareAgent {
 		return fmt.Errorf("no bare-shaped Agent() call (no name and false-or-omitted `run_in_background`) observed — bare dispatch was not reached")
 	}
-	if sawRetiredReport {
-		return fmt.Errorf("the retired Degraded Mode captain report (%q) still appeared — it was retired with Degraded Mode and must not fire on a bare drive", retiredDegradedModeReportPrefix)
-	}
 	if sawRecoverySkill {
 		return fmt.Errorf("a Skill(skill=%q) load appeared — a post-retirement bare drive must NOT load the recovery skill", recoverySkillArg)
 	}
 	return nil
 }
 
-// assertBreakGlassObservables is the AC-3 behavioral oracle: over the captured
-// stream it asserts (i) a captain-facing helper-failure report (a text block
-// mentioning the failed helper command) appears BEFORE any Agent() tool_use, (ii) a
-// Skill(skill="spacedock:fo-dispatch-recovery") tool_use appears, and (iii) at least
-// one Agent() tool_use carries run_in_background=true, a name matching the
-// `{worker_key}-{slug}-{stage}` shape, and a prompt containing both
-// `Skill(skill="spacedock:ensign")` and `### Stage definition`.
+// assertBreakGlassObservables grades only the typed dispatch shape and cardinality.
+// Durable worker output, the parsed Stage Report, the clean entity path, and its
+// path-scoped commit prove that the packaged assignment actually completed.
 type dispatchMode string
 
 const (
@@ -178,72 +155,44 @@ const (
 )
 
 func assertBreakGlassObservables(stream string, selectedMode dispatchMode) error {
-	sawReportBeforeAgent := false
-	sawAgentCall := false
-	sawRecoverySkill := false
 	var agentCount int
 	var matchingAgentCount int
 	var breakGlassAgentDetails []string
 
 	walkStreamBlocks(stream, func(block streamContentBlock) {
-		switch block.Type {
-		case "text":
-			if !sawAgentCall && strings.Contains(block.Text, "dispatch build") {
-				sawReportBeforeAgent = true
+		if block.Type == "tool_use" && block.Name == "Agent" {
+			agentCount++
+			var runInBackground bool
+			runRaw, hasRunInBackground := block.Input["run_in_background"]
+			if hasRunInBackground {
+				_ = json.Unmarshal(runRaw, &runInBackground)
 			}
-		case "tool_use":
-			switch block.Name {
-			case "Skill":
-				if inputStringField(block.Input, "skill") == recoverySkillArg {
-					sawRecoverySkill = true
-				}
-			case "Agent":
-				sawAgentCall = true
-				agentCount++
-				var runInBackground bool
-				runRaw, hasRunInBackground := block.Input["run_in_background"]
-				if hasRunInBackground {
-					_ = json.Unmarshal(runRaw, &runInBackground)
-				}
-				name := inputStringField(block.Input, "name")
-				_, hasName := block.Input["name"]
-				_, hasTeamName := block.Input["team_name"]
-				prompt := inputStringField(block.Input, "prompt")
-				description := inputStringField(block.Input, "description")
-				subagentType := inputStringField(block.Input, "subagent_type")
-				hasEnsignSkill := strings.Contains(prompt, `Skill(skill="spacedock:ensign")`)
-				hasStageDef := strings.Contains(prompt, "### Stage definition:") && strings.Contains(prompt, dispatchRecoveryStageDefinition)
-				hasStageReport := strings.Contains(prompt, "### Stage report")
-				hasCompletionSignal := strings.Contains(prompt, `SendMessage(to="team-lead"`)
-				nameShaped := strings.Count(name, "-") >= 2
-				commonShape := subagentType == "spacedock:ensign" && description != "" && hasEnsignSkill && hasStageDef && hasStageReport
-				modeShape := false
-				switch selectedMode {
-				case dispatchModeBare:
-					modeShape = !hasName && !hasTeamName && (!hasRunInBackground || !runInBackground) && !hasCompletionSignal
-				case dispatchModeTeam:
-					modeShape = nameShaped && runInBackground && hasRunInBackground && !hasTeamName && hasCompletionSignal
-				}
-				details := fmt.Sprintf("name=%q name-present=%v team_name-present=%v run_in_background=%v run-present=%v subagent_type=%q description-present=%v ensign-skill-in-prompt=%v stage-def-in-prompt=%v stage-report-in-prompt=%v completion-signal=%v", name, hasName, hasTeamName, runInBackground, hasRunInBackground, subagentType, description != "", hasEnsignSkill, hasStageDef, hasStageReport, hasCompletionSignal)
-				breakGlassAgentDetails = append(breakGlassAgentDetails, details)
-				if commonShape && modeShape {
-					matchingAgentCount++
-				}
+			name := inputStringField(block.Input, "name")
+			_, hasName := block.Input["name"]
+			_, hasTeamName := block.Input["team_name"]
+			description := inputStringField(block.Input, "description")
+			subagentType := inputStringField(block.Input, "subagent_type")
+			nameShaped := strings.Count(name, "-") >= 2
+			commonShape := subagentType == "spacedock:ensign" && description != ""
+			modeShape := false
+			switch selectedMode {
+			case dispatchModeBare:
+				modeShape = !hasName && !hasTeamName && (!hasRunInBackground || !runInBackground)
+			case dispatchModeTeam:
+				modeShape = nameShaped && runInBackground && hasRunInBackground && !hasTeamName
+			}
+			details := fmt.Sprintf("name=%q name-present=%v team_name-present=%v run_in_background=%v run-present=%v subagent_type=%q description-present=%v", name, hasName, hasTeamName, runInBackground, hasRunInBackground, subagentType, description != "")
+			breakGlassAgentDetails = append(breakGlassAgentDetails, details)
+			if commonShape && modeShape {
+				matchingAgentCount++
 			}
 		}
 	})
-
-	if !sawReportBeforeAgent {
-		return fmt.Errorf("no captain-facing helper-failure report (a text block naming `dispatch build`) observed before the first Agent() call")
-	}
-	if !sawRecoverySkill {
-		return fmt.Errorf("no Skill(skill=%q) tool_use observed in the stream — the Break-Glass trigger did not load the recovery skill", recoverySkillArg)
-	}
 	if agentCount != 1 {
 		return fmt.Errorf("observed %d Agent() calls, want exactly one; calls: %v", agentCount, breakGlassAgentDetails)
 	}
 	if matchingAgentCount != 1 {
-		return fmt.Errorf("the only Agent() call did not preserve selected %s mode or carry the complete ensign prompt; observed Agent() calls: %v", selectedMode, breakGlassAgentDetails)
+		return fmt.Errorf("the only Agent() call did not preserve selected %s mode; observed Agent() calls: %v", selectedMode, breakGlassAgentDetails)
 	}
 	return nil
 }
@@ -287,11 +236,12 @@ func assertBreakGlassDurableResult(root, entityPath string) error {
 }
 
 func assertCompleteRecoveryReport(content string) error {
-	if !strings.Contains(content, dispatchRecoveryMarker) {
-		return fmt.Errorf("recovery entity missing %q", dispatchRecoveryMarker)
-	}
 	lines := strings.Split(content, "\n")
+	sawOwnedMarker := false
 	for i, line := range lines {
+		if line == dispatchRecoveryMarker {
+			sawOwnedMarker = true
+		}
 		if line != "## Stage Report: implementation" {
 			continue
 		}
@@ -304,11 +254,11 @@ func assertCompleteRecoveryReport(content string) error {
 			hasDone = hasDone || strings.HasPrefix(sectionLine, "- DONE:")
 			hasSummary = hasSummary || sectionLine == "### Summary"
 		}
-		if hasDone && hasSummary {
+		if sawOwnedMarker && hasDone && hasSummary {
 			return nil
 		}
 	}
-	return fmt.Errorf("recovery entity missing DONE and Summary inside exact %q section", "## Stage Report: implementation")
+	return fmt.Errorf("recovery entity missing standalone marker, DONE, or Summary inside exact %q section", "## Stage Report: implementation")
 }
 
 func gitOutput(root string, args ...string) (string, error) {

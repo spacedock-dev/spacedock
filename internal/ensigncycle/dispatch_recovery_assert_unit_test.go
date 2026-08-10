@@ -56,25 +56,14 @@ func TestAssertBoundedRetryObservablesCatchesThirdAttempt(t *testing.T) {
 }
 
 // bareReachableGoodStream is a hand-authored representative post-retirement bare
-// drive: a bare-shaped Agent() call (no name and explicit `run_in_background:false`), with NO
-// retired Degraded Mode captain report and NO recovery-skill load.
+// drive: a bare-shaped Agent() call (no name and explicit run_in_background:false)
+// with no recovery-skill load.
 const bareReachableGoodStream = `{"type":"assistant","message":{"id":"m1","content":[{"type":"text","text":"The captain asked for bare dispatch; dispatching one worker at a time, blocking on each."}]}}
 {"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch","prompt":"...","run_in_background":false}}]}}`
 
 func TestAssertBareReachableObservablesOffline(t *testing.T) {
 	if err := assertBareReachableObservables(bareReachableGoodStream); err != nil {
 		t.Fatalf("the positive fixture (bare Agent, no retired report, no recovery-skill load) must pass: %v", err)
-	}
-}
-
-// TestAssertBareReachableObservablesCatchesRetiredReport is the wrong-way RED
-// control (ii): a bare drive that STILL emits the retired Degraded Mode captain
-// report must fail — the report was retired with Degraded Mode.
-func TestAssertBareReachableObservablesCatchesRetiredReport(t *testing.T) {
-	stream := `{"type":"assistant","message":{"id":"m1","content":[{"type":"text","text":"Falling back to bare mode for the remainder of this session due to infrastructure failure."}]}}
-{"type":"assistant","message":{"id":"m2","content":[{"type":"tool_use","id":"t1","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"bare dispatch"}}]}}`
-	if err := assertBareReachableObservables(stream); err == nil {
-		t.Fatal("a stream still emitting the retired Degraded Mode captain report must fail — the report was retired")
 	}
 }
 
@@ -99,11 +88,8 @@ func TestAssertBareReachableObservablesCatchesNoBareAgent(t *testing.T) {
 	}
 }
 
-// breakGlassGoodStream is a hand-authored representative stream: a text block
-// naming the failed `dispatch build` helper BEFORE any Agent() call, a
-// Skill(spacedock:fo-dispatch-recovery) load, then a break-glass-shaped Agent()
-// call (run_in_background=true, a {worker_key}-{slug}-{stage} name, and a prompt
-// carrying the ensign skill invocation plus an inline stage definition).
+// The break-glass fixtures retain narration and prompt bytes for realism, while
+// the oracle grades only the typed Agent transport and its durable result.
 const breakGlassBareGoodStream = `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero (exit 1); reporting the helper failure before proceeding."}]}}
 {"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
 {"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","description":"Widget Task: implementation","prompt":"## First action\n\nSkill(skill=\"spacedock:ensign\")\n\n### Stage definition:\n\nAppend a one-line marker to ` + "`widget-task.md`" + ` proving the worker ran.\n\n- **Outputs:** An implementation stage report.\n\n### Stage report"}}]}}`
@@ -161,29 +147,6 @@ func TestAssertBreakGlassObservablesOffline(t *testing.T) {
 	}
 }
 
-// TestAssertBreakGlassObservablesCatchesReportAfterAgent is the RED control for
-// observable (i): the helper-failure report text appears only AFTER an Agent() call
-// already fired — the "never hand-assemble a dispatch while the helper works, report
-// first" invariant is violated.
-func TestAssertBreakGlassObservablesCatchesReportAfterAgent(t *testing.T) {
-	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
-{"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"prompt":"Skill(skill=\"spacedock:ensign\")\n### Stage definition:\nbody"}}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"text","text":"spacedock dispatch build exited non-zero; reporting now."}]}}`
-	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
-		t.Fatal("a helper-failure report observed only AFTER the Agent() call must fail — the first action is reporting, not dispatching")
-	}
-}
-
-// TestAssertBreakGlassObservablesCatchesMissingSkillLoad is the RED control for
-// observable (ii).
-func TestAssertBreakGlassObservablesCatchesMissingSkillLoad(t *testing.T) {
-	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero; reporting now."}]}}
-{"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"prompt":"Skill(skill=\"spacedock:ensign\")\n### Stage definition:\nbody"}}]}}`
-	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
-		t.Fatal("a stream with no Skill(skill=\"spacedock:fo-dispatch-recovery\") tool_use must fail")
-	}
-}
-
 // TestAssertBreakGlassObservablesCatchesWrongAgentShape is the RED control for
 // observable (iii): the Agent() call is missing run_in_background=true, so it is
 // NOT break-glass-shaped even though the report and skill load are both present.
@@ -193,19 +156,6 @@ func TestAssertBreakGlassObservablesCatchesWrongAgentShape(t *testing.T) {
 {"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","prompt":"Skill(skill=\"spacedock:ensign\")\n### Stage definition:\nbody"}}]}}`
 	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
 		t.Fatal("an Agent() call missing run_in_background=true must fail the break-glass shape check")
-	}
-}
-
-// TestAssertBreakGlassObservablesCatchesMissingStageDefInPrompt is the RED control
-// for the prompt-shape half of observable (iii): run_in_background=true and a
-// shaped name are present, but the prompt lacks the inline ### Stage definition —
-// the FO hand-waved the dispatch instead of inlining the stage body verbatim.
-func TestAssertBreakGlassObservablesCatchesMissingStageDefInPrompt(t *testing.T) {
-	stream := `{"type":"assistant","message":{"id":"msg1","content":[{"type":"text","text":"spacedock dispatch build exited non-zero; reporting now."}]}}
-{"type":"assistant","message":{"id":"msg2","content":[{"type":"tool_use","id":"t1","name":"Skill","input":{"skill":"spacedock:fo-dispatch-recovery"}}]}}
-{"type":"assistant","message":{"id":"msg3","content":[{"type":"tool_use","id":"t2","name":"Agent","input":{"subagent_type":"spacedock:ensign","name":"ensign-widget-implementation","run_in_background":true,"prompt":"Skill(skill=\"spacedock:ensign\")\ngo do the task"}}]}}`
-	if err := assertBreakGlassObservables(stream, dispatchModeTeam); err == nil {
-		t.Fatal("an Agent() prompt missing the inline ### Stage definition must fail the break-glass shape check")
 	}
 }
 

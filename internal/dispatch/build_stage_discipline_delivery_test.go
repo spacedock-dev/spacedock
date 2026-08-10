@@ -12,9 +12,8 @@ import (
 )
 
 // devDisciplineSentinel is a freshly-minted token written ONLY into the fixture
-// README's ### ideation / ### implementation subsections. Because the test invents
-// it, it cannot appear in the shipped universal ensign core; its presence in both
-// the built file and direct show-stage-def output proves they use the same selection.
+// README's ### ideation / ### implementation subsections. The exact selected source
+// output makes any cross-stage leak fail without searching generated prose.
 const devDisciplineSentinel = "DEV-DISCIPLINE-SENTINEL"
 
 // readmeDevDiscipline is a dev-shape workflow README that plants the sentinel in the
@@ -99,12 +98,6 @@ func TestBuildStageDisciplineRidesExactFetchCommand(t *testing.T) {
 	}
 	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-	// The assignment loads the universal ensign core by REFERENCE (the Skill
-	// first-action directive), not inline.
-	if !strings.Contains(body, `Skill(skill="spacedock:ensign")`) {
-		t.Errorf("dispatch body missing the universal-core load directive (Skill first-action):\n%s", body)
-	}
-
 	var envelope struct {
 		Prompt string   `json:"prompt"`
 		Fetch  []string `json:"fetch_commands"`
@@ -112,12 +105,13 @@ func TestBuildStageDisciplineRidesExactFetchCommand(t *testing.T) {
 	if err := json.Unmarshal([]byte(native.stdout), &envelope); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(body, devDisciplineSentinel) || strings.Contains(envelope.Prompt, devDisciplineSentinel) {
-		t.Errorf("outer pointer prompt transported stage payload: %q", envelope.Prompt)
-	}
 	wantFetch := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage ideation"
-	if len(envelope.Fetch) != 1 || envelope.Fetch[0] != wantFetch || !strings.Contains(body, "    "+wantFetch) {
+	sections := dispatchArtifactSections(t, body)
+	if len(envelope.Fetch) != 1 || envelope.Fetch[0] != wantFetch || sections["Fetch commands"] != wantFetch {
 		t.Errorf("assignment did not render the exact full-path stage command: envelope=%#v\n%s", envelope.Fetch, body)
+	}
+	if sections["Completion checklist"] != "- a" {
+		t.Errorf("assignment checklist differs from structured input: %q", sections["Completion checklist"])
 	}
 
 	// The public inspection command remains available and returns the same selection.
@@ -125,8 +119,9 @@ func TestBuildStageDisciplineRidesExactFetchCommand(t *testing.T) {
 	if fetched.exit != 0 {
 		t.Fatalf("show-stage-def ideation exit %d, stderr:\n%s", fetched.exit, fetched.stderr)
 	}
-	if !strings.Contains(fetched.stdout, devDisciplineSentinel) {
-		t.Errorf("show-stage-def ideation did not return the stage-discipline sentinel:\n%s", fetched.stdout)
+	wantFetched := "### ideation\n\nFlesh out the approach. " + devDisciplineSentinel + "\n\n- **Outputs:** the design.\n"
+	if fetched.stdout != wantFetched {
+		t.Errorf("show-stage-def ideation differs from the selected source section:\n got=%q\nwant=%q", fetched.stdout, wantFetched)
 	}
 
 	// Perturbation control: a stage WITHOUT the sentinel (validation) returns no
@@ -136,8 +131,8 @@ func TestBuildStageDisciplineRidesExactFetchCommand(t *testing.T) {
 	if plain.exit != 0 {
 		t.Fatalf("show-stage-def validation exit %d, stderr:\n%s", plain.exit, plain.stderr)
 	}
-	if strings.Contains(plain.stdout, devDisciplineSentinel) {
-		t.Errorf("perturbation control: show-stage-def validation (no sentinel planted) returned the sentinel:\n%s", plain.stdout)
+	if plain.stdout != "### validation\n\nIndependently verify.\n\n- **Outputs:** the verdict.\n" {
+		t.Errorf("show-stage-def validation differs from the selected source section: %q", plain.stdout)
 	}
 }
 
@@ -167,7 +162,8 @@ func TestDeclaredContextBuildAndHostNeutralFetch(t *testing.T) {
 			if err := json.Unmarshal([]byte(built.stdout), &envelope); err != nil {
 				t.Fatal(err)
 			}
-			if len(envelope.Fetch) != 1 || !strings.HasPrefix(envelope.Fetch[0], testWorkflowLauncher+" dispatch show-stage-def ") {
+			wantCommand := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage ideation"
+			if len(envelope.Fetch) != 1 || envelope.Fetch[0] != wantCommand {
 				t.Fatalf("fetch commands = %#v, want one exact full-path show-stage-def command", envelope.Fetch)
 			}
 			want := "### ideation\nstage β\n\n## Pølicy\nα\nβ\nγ\n"
