@@ -1,6 +1,6 @@
 ---
 title: Publish the rejected validation round before correction and re-gating
-status: ideation
+status: implementation
 source: "Replacement for archived rejected zbc; Runtime Live E2E rejection-flow evidence showed the FO claimed validation/1 was recorded without invoking gate record --round validation/1."
 started: 2026-08-09T18:34:24Z
 completed:
@@ -55,7 +55,7 @@ gates:
                 reason: Captain approved complete rejected-round publication before correction.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Restore durable recorder publication for supported rejection-flow failures. Keep the complete rejected round visible before correction re-gating.
