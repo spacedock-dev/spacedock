@@ -706,7 +706,7 @@ lines out of one existing file. The full candidate remains net +91.
 ## Stage Report: implementation (cycle 2)
 
 - DONE: Record the exact corrected candidate head.
-  The corrected candidate head is `c334febb28d45705362d3485abbda6dc7993f47f`.
+  The corrected candidate head is `3d0c02c1947824d30e3cac3f874ee179092ee50d`.
 - DONE: Keep the correction in one existing file with a net-zero diff.
   `internal/ensigncycle/shared_round_recording_test.go` changes by +2/-2, so the correction is net zero.
 - DONE: Prove the focused failure before the correction and the focused pass after it.
@@ -718,11 +718,14 @@ lines out of one existing file. The full candidate remains net +91.
 - DONE: Retain the superseded PR live evidence.
   Run `31416271663` and artifact `9074101972` remain in the durable finding record.
 - DONE: Push the exact corrected candidate to the remote branch.
-  Local HEAD and the remote branch both identify `c334febb28d45705362d3485abbda6dc7993f47f`.
+  Local HEAD and the remote branch both identify `3d0c02c1947824d30e3cac3f874ee179092ee50d`.
 - DONE: Bound the validation/2 evidence correction before mutation.
   `internal/ensigncycle/shared_round_recording_test.go` has an estimated +10/-10 change. Net +91 and the seven-file tolerance stay unchanged. Users get exact validation/2 evidence with canonical files.
+- DONE: Require canonical validation/2 artifacts and preserve all focused controls.
+  Commit `3d0c02c1947824d30e3cac3f874ee179092ee50d` is +10/-10. Wrong briefing, log, entity, round, and failed-command controls pass.
 
 ### Summary
 
-The correction accepts the exact `$launcher` validation/2 command and keeps all negative controls. Product instructions and bindings do not change.
+The validator accepts the exact `$launcher` validation/2 command only with canonical briefing and log files. All negative controls remain active.
+Product instructions and bindings do not change.
 The candidate remains within the approved net +91 cap and retains the superseded PR evidence.
