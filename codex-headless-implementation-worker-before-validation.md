@@ -114,6 +114,17 @@ gates:
                 digest: sha256:efd7cad28ca243af2b2290da71e5c423274b780fe1857f4c50423e84b092406c
                 request-digest: sha256:70fffe7777a0eb826cba5d2f41a0850a146234f9db84555e2cb8134d18f27370
                 room-ref: ./codex-headless-implementation-worker-before-validation/review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:98aa776adg66gn823a8gamdq:validation:4
+                briefing: briefing:98aa776adg66gn823a8gamdq:validation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T08:55:03.747592Z"
+                decision: approve
+                reason: Captain explicitly approved cycle 3. Exact candidate 61d31a349 fixes fresh-validation ordering, passes focused and required evidence, and remains within seven files and 217 gross.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
