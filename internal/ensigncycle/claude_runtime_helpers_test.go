@@ -113,7 +113,8 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "the gate was withdrawn after prepare")
 	case successfulStatusSet(log[prepare:]):
 		return errGraded(boundary + "status changed after prepare")
-	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 2 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
+	case len(requireImplementation) > 0 && requireImplementation[0] && strings.Count(log[:prepare], " --stage implementation") == 1 && strings.Count(log[:prepare], " --stage validation") != 1: return &gradedErr{code: "dispatch-envelope-not-acknowledged", msg: boundary + "validation dispatch envelope count was not one"}
+	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 3 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
 		return &gradedErr{code: "implementation-worker-not-dispatched", msg: boundary + "implementation was not dispatched before validation"}
 	}
 	return nil
@@ -222,6 +223,7 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		"exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=validation started\n" +
 		"exit=0\tstate commit recorded-gate-task\n" +
 		"state-head\tvalidation\n" +
+		"exit=0\tdispatch build --stage validation\n" +
 		"exit=1\tgate prepare recorded-gate-task validation\n" +
 		"exit=0\tgate prepare recorded-gate-task validation\n" +
 		"exit=0\tstate commit recorded-gate-task\n" +
