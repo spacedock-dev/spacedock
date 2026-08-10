@@ -100,6 +100,17 @@ gates:
                 digest: sha256:4656724fc8b77c469fb270d01933b23e695437f8366ba12930fd1088de900c68
                 request-digest: sha256:ade3162a4d5f73d48142dc1d6147de1973cfea4de104b9df45f8d37657b9c089
                 room-ref: ./cut-gate-guardrail-turn-and-tool-bloat/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5k704rrfk5r75vqv3bwn1yhf:validation:3
+                briefing: briefing:5k704rrfk5r75vqv3bwn1yhf:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T14:41:29.995795Z"
+                decision: approve
+                reason: Validation proves the reconciled contract-only candidate stays within three files and 30 lines, excludes rejected mechanisms, and passes all required offline checks.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
