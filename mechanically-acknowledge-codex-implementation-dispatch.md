@@ -2045,3 +2045,51 @@ The corrected candidate is ready for independent revalidation.
 The unchanged candidate satisfies the Captain-recarved commissioned stamped value. Focused checks and retained host evidence support the acknowledgment chain.
 
 Validation recommends PASSED. The separate deferred task owns the excluded no-stamp handoff.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Confirm the exact candidate, remote match, base, and clean worktree.
+  Candidate `ea27ef61f73b92b30a7f5eb1e4d48095d9612893` matches its remote and has base `0bbe9d46c02328930253bfbe619f9827d6da5109`.
+- DONE: Inspect only the binding and owner correction.
+  The correction changes two approved files, with two insertions and two deletions.
+- DONE: Confirm that both default-headless bindings belong to active owner kky8pg7wc8xgb985epwss092.
+  The Sonnet and Codex bindings and both reconciliation rows use the same active owner.
+- DONE: Confirm that n28 mechanism bytes remain unchanged.
+  The correction changes no acknowledgment, dispatch, status, hook, or live-oracle mechanism byte.
+- DONE: Confirm the approved scope and hard cap.
+  The complete candidate changes ten approved files, with 473 insertions and 19 deletions. The gross count is 492.
+- DONE: Inspect run 31425564473 attempt 2 without a live rerun.
+  Job `93590380530` records the exact n28 chain before one `gate-hold-violation` result.
+- DONE: Run focused grade, registry, owner, format, and diff checks.
+  The focused tests and static checks passed. The candidate worktree stayed clean.
+- SKIPPED: Repeat owned live, full, and race checks.
+  The assignment requires the existing exact evidence and forbids these duplicate runs.
+- DONE: Write and push a Simplified-English PASSED or REJECTED validation report.
+  This report recommends PASSED. State commit and push evidence is in the state branch history.
+
+### Acceptance evidence
+
+- DONE: The n28 live chain has one exact identity and one native worker.
+  Pending, armed, and consumed records share entity, path, stage, host, and epoch `68237d1149bd5b76e57b2df912fa83f5`.
+- DONE: The armed record has tool-use ID `tool-2`.
+  The consumed record has native worker ID `/root/spacedock_ensign_recorded_g_sda_68237d1149bd5b76e57b2df912fa83f5`.
+- DONE: The only later semantic result is outside n28 ownership.
+  The job reports only `gate-hold-violation` after the acknowledgment chain.
+- DONE: The grade and registry agree on ownership.
+  Both targets are XFAIL bindings for kky. No default-headless binding names n28.
+- DONE: The no-stamp deferred risk remains separate.
+  Task `egsrea0tppbaphb61kc9wj5s` still owns the excluded same-stage handoff.
+
+### Target-external finding: gate hold lacks a state commit
+
+- Released user and normal workflow: The exact Codex default-headless journey prepares and presents a validation gate.
+- Observable harm: The gate presentation lacks the required durable state commit.
+- Affected value AC or boundary: `contract[skills/fo-gate-lifecycle/SKILL.md#Prepare and bind]` requires preparation, state commit, structured reads, and presentation.
+- Trigger evidence: Run `31425564473`, attempt 2, job `93590380530` reports only `gate-hold-violation` after the valid acknowledgment chain.
+- Disposition: Material but target-external. The Captain routed it to active task `kky8pg7wc8xgb985epwss092` and retained both XFAIL bindings.
+
+### Summary
+
+The corrected candidate preserves the proved n28 acknowledgment mechanism and assigns the remaining gate defect to its active owner.
+
+Validation recommends PASSED. No n28-owned finding remains.
