@@ -57,6 +57,26 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:xp6c9qfe7y4wwp46enc3f85n:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:xp6c9qfe7y4wwp46enc3f85n-validation-1
+              briefing:
+                id: briefing:xp6c9qfe7y4wwp46enc3f85n:validation:attempt-1:revision-1
+                digest: sha256:d95ca06d13f534647c5b72fd5bf53d8ba09522be55243e7178cfca475312d8e7
+                request-digest: sha256:11ff17a995a75bc66e79fd2247644c57aa3bfb02e78bc6320ecb4d40d5622478
+                room-ref: ./restore-live-evidence-after-completed-repairs/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:xp6c9qfe7y4wwp46enc3f85n:validation:1
+                briefing: briefing:xp6c9qfe7y4wwp46enc3f85n:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T17:43:07.203461Z"
+                decision: approve
+                reason: Captain conn approves xp6 after independent PASSED validation of exact two-row evidence-only candidate 975a07f.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem

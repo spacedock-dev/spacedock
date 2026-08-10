@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:xp6c9qfe7y4wwp46enc3f85n:validation:attempt-1:revision-1",
+  "question": "Approve the xp6 evidence-only Sonnet owner-handoff binding removal for PR delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:xp6c9qfe7y4wwp46enc3f85n:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c3e73e2ccb26da56a6f76637d518fd66c1ed3a9a/restore-live-evidence-after-completed-repairs.md",
+      "rev": "sha256:8bfeb5379716e08fef047c5989bc5c9c3abc9e5d2c129d85d8743081b0b6ab40",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation PASSED exact candidate 975a07f: only the Sonnet owner-handoff binding and mirrored reconciliation row are removed; PR #662 exact XPASS evidence is retained; focused registry and active-owner checks pass."
+    }
+  ]
+}
