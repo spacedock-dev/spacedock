@@ -614,3 +614,30 @@ The cycle-3 AutoContinue correction and the Sonnet repair must stay unchanged.
 
 End-user disposition: Sonnet remains repaired, and Codex remains an executing known gap under its new mechanical owner.
 No other target binding, product byte, or AC value changes.
+
+## Captain decision: 98a combined reset
+
+The Captain approved the combined oracle and XFAIL reset.
+The full candidate limit is seven files and 221 gross changed lines.
+
+Task `mechanically-acknowledge-codex-implementation-dispatch` owns both remaining live gaps.
+Its owner ID is `n28423efmj358m5av61z2fxx`.
+
+The AC value stays unchanged: one native implementation worker must complete before validation.
+Fresh validation must dispatch before its gate.
+
+The approved correction changes only these existing files:
+
+- `internal/ensigncycle/claude_runtime_helpers_test.go`
+- `internal/ensigncycle/shared_live_runner_test.go`
+- `internal/contractlint/live_registry_reconciliation_test.go`
+
+The oracle must give missing implementation and duplicate or missing validation builds distinct codes.
+Codex uses `implementation-worker-not-dispatched`.
+Sonnet uses `dispatch-envelope-not-acknowledged`.
+Both target-level XFAIL bindings keep strict XPASS behavior.
+
+The cycle-3 AutoContinue correction and native lifecycle oracle stay unchanged.
+All other bindings stay unchanged.
+
+End-user disposition: Sonnet and Codex remain known executing gaps under n28 until mechanical acknowledgment lands.
