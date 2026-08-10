@@ -412,3 +412,36 @@ The exact Pi cadence retained complete metrics and used only its selected runtim
 ### Summary
 
 The candidate now includes exact integration tip `944f323ac` without a content change. All checks pass on the rebased tree. The normal push preserved the old remote ancestry and the approved patch.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Independently verify candidate `20910e6351a42f0f2ca30a92c269ddffbc069582` contains `origin/main` tip `944f323ac` and preserves the approved pre-rebase patch byte-for-byte with no source-binding change.
+  `944f323ac` is an ancestor, and the first-parent tree equals the candidate tree.
+  Both complete plain patches are byte-identical and have stable patch ID `7c0cea6b`.
+- DONE: Re-run focused, formatting, full, race, registry, owner, and adversarial checks on the new candidate; confirm the ten-file/+299 boundary.
+  `gofmt -d ./cmd ./internal`, both full suites, and all focused checks passed.
+  The registry and owner checks passed for 17 journeys. The patch changes ten approved files and adds 299 net lines.
+  The detached no-op failed with `Pi journey metric files = 0, want 1`.
+- DONE: Report PASSED or REJECTED for fresh validation, carry exact Pi/Opus evidence only if patch identity justifies it, and retain AC-2 as a mandatory exact-PR merge blocker.
+  Recommendation: PASSED. Exact patch identity permits the prior live evidence to remain current.
+- DONE: AC-1 (VALUE) - A maintainer can obtain retained Pi CI evidence on demand.
+  Pi run `31338875783` attempt 2 passed. Artifact `9045701917` retained 12 valid metrics records for 12 completed executions.
+- SKIPPED: AC-2 - Pi does not become a pull-request merge requirement.
+  No exact pull-request run exists for `20910e635`. AC-2 remains a mandatory merge blocker under the Captain's ruling.
+  The exact PR run must pass Sonnet and Codex. Pi must skip with zero steps and no approval.
+- DONE: AC-3 - A Pi-only dispatch spends no Claude or Codex lane.
+  Pi run `31338875783` used `CI-E2E-PI`. Its Claude and Codex jobs skipped with zero steps.
+- DONE: AC-4 (VALUE) - Each manual release cadence spends only its selected runtime.
+  Opus run `31340713337` used only `CI-E2E-OPUS`. Its Pi and Codex jobs skipped with zero steps.
+  The run retained the prior task-external failures. The First Officer declined a task change and rerun.
+- DONE: AC-5 - The desired journey registry stays unchanged.
+  Registry reconciliation and the mutable owner join passed for the same 17 journeys.
+- DONE: Preserve candidate bytes and source bindings during fresh validation.
+  The worktree stayed clean at `20910e6351a42f0f2ca30a92c269ddffbc069582`.
+- DONE: Explain why no paid live rerun is necessary after the rebase.
+  The rebase changed no task byte, source binding, or test behavior. A paid rerun cannot add candidate-specific evidence.
+
+### Summary
+
+Fresh validation passed on the rebased candidate. The patch and all local checks match the approved candidate.
+The Pi and Opus evidence remains valid because the task patch is byte-identical. AC-2 remains pending at the exact pull-request merge boundary.
