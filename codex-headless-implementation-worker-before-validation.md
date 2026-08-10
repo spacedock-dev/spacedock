@@ -74,6 +74,12 @@ gates:
                 at: "2026-08-10T06:38:16.194318Z"
                 decision: revise
                 reason: Two Material AC-1 findings are confirmed and 98a-owned. Fix the native spawn/completion/report oracle and isolate the observer log under the Captain-approved two-file, 130-gross correction cap.
+            - id: gate-attempt:98aa776adg66gn823a8gamdq-validation-2
+              briefing:
+                id: briefing:98aa776adg66gn823a8gamdq:validation:attempt-2:revision-1
+                digest: sha256:0c136007c67438fd4f66b18d71247157dec9b9e7de6de0bd044cc372ca64aedd
+                request-digest: sha256:04aa47939257d1690935c10d327599eb84d179ef15d82631fd001344d250fea7
+                room-ref: ./codex-headless-implementation-worker-before-validation/review/validation/briefing-2
 ---
 
 ## Problem

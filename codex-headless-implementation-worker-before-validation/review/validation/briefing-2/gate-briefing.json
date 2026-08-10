@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:98aa776adg66gn823a8gamdq:validation:attempt-2:revision-1",
+  "question": "Approve corrected 98a worker-lifecycle repair for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:98aa776adg66gn823a8gamdq:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/ed722397ce84ff2803b48e34f604a827767179c5/codex-headless-implementation-worker-before-validation.md",
+      "rev": "sha256:766177505811a1c4ad4c1b37e4a47d749bbb429fb415b86899be7cd42508b788",
+      "mediaType": "text/markdown",
+      "summary": "Validation cycle 2 recommends PASSED for 79b539410. Exact Sonnet and Codex prove one native spawn, matching completion, DONE report, and isolated observer before validation. Both rejected falsifiers now fail correctly."
+    }
+  ]
+}
