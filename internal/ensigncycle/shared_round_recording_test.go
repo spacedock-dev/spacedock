@@ -24,7 +24,9 @@ func rejectionRoundArtifactArg(flag, filename string) *regexp.Regexp {
 	return regexp.MustCompile(`--` + regexp.QuoteMeta(flag) + `(?:=|\s+)['"]?(?:[^ \t\r\n'";&|]*/)?rejection-task/inputs/` +
 		regexp.QuoteMeta(filename) + `['"]?(?:\s|[;&|]|$)`)
 }
-
+func commandRecordsRejectionValidation2(command string) bool {
+	return rejectionValidation2Command.MatchString(command) && rejectionRoundArtifactArg("briefing", "briefing.json").MatchString(command) && rejectionRoundArtifactArg("log", "briefing.review.jsonl").MatchString(command)
+}
 func commandRecordsRejectionRound(command string) bool {
 	command = strings.ReplaceAll(command, "\\\n", " ")
 	for _, required := range []*regexp.Regexp{
@@ -64,13 +66,11 @@ func commandRecordsRejectionRound(command string) bool {
 	}
 	return false
 }
-
 func successfulRejectionRoundResult(content json.RawMessage, isError *bool) bool {
 	var text string
 	return isError != nil && !*isError && json.Unmarshal(content, &text) == nil &&
 		rejectionRoundSuccess.MatchString(text)
 }
-
 func claudeRecordedRejectionRound(stream string) bool {
 	invocations := map[string]bool{}
 	for _, line := range strings.Split(stream, "\n") {
@@ -105,7 +105,6 @@ func claudeRecordedRejectionRound(stream string) bool {
 	}
 	return false
 }
-
 func codexRecordedRejectionRound(jsonl string) bool {
 	for _, command := range codexSuccessfulCommands(jsonl) {
 		if commandRecordsRejectionRound(command) {
@@ -114,7 +113,6 @@ func codexRecordedRejectionRound(jsonl string) bool {
 	}
 	return false
 }
-
 func codexSuccessfulCommands(jsonl string) (commands []string) {
 	for _, line := range strings.Split(jsonl, "\n") {
 		var entry struct {
@@ -130,11 +128,10 @@ func codexSuccessfulCommands(jsonl string) (commands []string) {
 	}
 	return commands
 }
-
 func codexRejectionGateSequence(jsonl string) error {
 	stage, prepares := 0, 0
 	for _, command := range codexSuccessfulCommands(jsonl) {
-		if rejectionValidation2Command.MatchString(command) {
+		if commandRecordsRejectionValidation2(command) {
 			stage = 1
 		}
 		if rejectionPrepareCommand.MatchString(command) {
@@ -149,7 +146,6 @@ func codexRejectionGateSequence(jsonl string) error {
 	}
 	return nil
 }
-
 func assertRejectionRoundGateBoundary(entityPath, wantStatus string, required ...bool) error {
 	doc, _, err := gates.Read(entityPath)
 	if err != nil && strings.Contains(err.Error(), "entity has no gates record") {
@@ -190,7 +186,6 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string, required ..
 	}
 	return nil
 }
-
 func assertCodexRejectionFinalGate(entityPath, jsonl string) error {
 	if err := assertRejectionRoundGateBoundary(entityPath, "validation", true); err != nil {
 		return err
@@ -371,7 +366,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		}
 		writeFile(t, round1Briefing, savedBriefing)
 	}
-	validSequence := codexCommandOutput(`launcher=${SPACEDOCK_BIN:-spacedock}; "$launcher" gate record rejection-task --round validation/2`, "", 0, "completed") + "\n" +
+	validSequence := codexCommandOutput(`launcher=${SPACEDOCK_BIN:-spacedock}; "$launcher" gate record rejection-task --round validation/2 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl`, "", 0, "completed") + "\n" +
 		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate prepare rejection-task validation", "", 0, "completed")
 	if err := assertCodexRejectionFinalGate(entityPath, validSequence); err != nil {
 		t.Fatalf("strict final-gate oracle rejected valid state: %v", err)
@@ -380,6 +375,11 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/2", "", 0, "completed"),
 		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate prepare rejection-task validation", "", 0, "completed") + "\n" +
 			codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/2", "", 0, "completed"),
+		strings.Replace(validSequence, "rejection-task/inputs/briefing.json", "rejection-task/inputs/wrong.json", 1),
+		strings.Replace(validSequence, "rejection-task/inputs/briefing.review.jsonl", "rejection-task/inputs/wrong.review.jsonl", 1),
+		strings.Replace(validSequence, "gate record rejection-task", "gate record wrong-task", 1),
+		strings.Replace(validSequence, "--round validation/2", "--round validation/9", 1),
+		strings.Replace(validSequence, `"exit_code":0`, `"exit_code":1`, 1),
 	} {
 		if err := assertCodexRejectionFinalGate(entityPath, mutation); err == nil {
 			t.Fatal("strict final-gate oracle accepted an invalid command sequence")
