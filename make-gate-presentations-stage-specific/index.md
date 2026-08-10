@@ -463,3 +463,16 @@ Validation recommends REJECTED. Run `31348183583` supplies the real authenticate
 - Trigger one normal PR Runtime Live E2E at the exact correction commit. Require both Codex and Sonnet `TestLiveCommonGateGuardrail` targets to execute and pass the new presentation assertion; inspect both retained final messages to confirm zero unsupported evidence rows and zero empty findings rows. Aggregate job success without those target-level facts is insufficient. No local model run, Pi expansion, runtime repair, fallback mechanism, or repeat-for-luck run belongs to this correction.
 
 Candidate bytes and HEAD remain exactly `4e3be373f`; no edit, test, model rerun, or CI trigger occurred during this proposal.
+
+## Review-finding disposition: race replay budget
+
+- Exact finding: `go test ./... -race` fails `TestSonnetTeamDeleteHangReplay` at `streamwatch_regression_test.go:129` because the transcript has not reached the required `"terminal_reason":"completed"` beat after the prior beats.
+- Released user and normal workflow: repository completion requires the full race suite after every implementation, including KRB's test-only assertion change.
+- Observable harm: KRB cannot establish the required all-green deterministic boundary and therefore cannot spend the separately authorized targeted Codex live run or claim the correction ready for revalidation.
+- Affected value AC or non-negotiable boundary: `contract[AGENTS.md#Expected Commands]` requires `go test ./... -race` before work is complete.
+- Trigger evidence: the full race suite failed after 380.631s with `TestSonnetTeamDeleteHangReplay` reporting `replay: the recording must contain the diagnosed beat "\"terminal_reason\":\"completed\"" in order after the prior beat`. One focused diagnostic, `go test -race ./internal/ensigncycle -run '^TestSonnetTeamDeleteHangReplay$' -count=1 -v`, reproduced the same failure in 0.95s. Static inspection shows the untouched test drips a 341-line recording one line per 1 ms poll but gives `expectExit` only 150 ms under race instrumentation; KRB changes none of `streamwatch_regression_test.go`, its fixture, or the stream watcher.
+- Proposed materiality: Material evidence defect at the repository completion boundary; no KRB product regression is established.
+- Proposed task ownership: outside KRB. The remedy belongs to the existing streamwatch replay/test owner and is not part of the presenter, canonical gate semantic assertion, or authorized three-file correction.
+- Proposed disposition: `route for decision`.
+
+The authorized KRB correction is present but uncommitted; code HEAD remains `4e3be373f`. Focused semantic controls, registry reconciliation, contract/integration tests, formatting, and `go test ./...` pass. No targeted model run, GitHub Actions run, API-key use, broad live suite, unrelated repair, candidate commit, or test rerun beyond the single focused diagnostic followed this changed evidence.
