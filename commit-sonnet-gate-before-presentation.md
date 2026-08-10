@@ -173,3 +173,34 @@ Pi remains skipped.
 
 The design adds the missing open-gate commit boundary before Sonnet presentation.
 It uses one instruction file and the existing command-log falsifier.
+
+## Stage Report: implementation
+
+- DONE: Read the complete task and approved ideation report.
+  The implementation followed the one-file product design and the eight-gross-line limit.
+- DONE: Confirm the exact n28 Claude baseline and retained missing-commit falsifier.
+  The baseline omitted `state commit`, and the focused oracle rejects the same omission.
+- DONE: Change only `skills/fo-gate-lifecycle/SKILL.md` within eight gross lines.
+  Product commit `9b561e4d1` replaces one line and keeps the skill at 6,993 bytes.
+- DONE: Run the exact local bound Sonnet target and retain XPASS-green evidence.
+  The target logged XPASS with no observed error after 411.66 seconds.
+- DONE: Remove only the kky Sonnet binding after XPASS, then run exact local normal PASS.
+  The unbound target passed after 512.24 seconds and logged a complete acknowledgment chain.
+- DONE: Apply the Captain-approved Codex disposition.
+  Commit `43ce24b6d` transfers the Codex binding and mirrored row to `272j6s25f9mry6nxbf4yjxvt`.
+- DONE: Preserve local live evidence and use subscription authentication.
+  Sonnet evidence remains in `/tmp/kky-bound-sonnet.Ny8xiL` and `/tmp/kky-unbound-sonnet.wXJRIp`.
+- DONE: Preserve the two Codex finding artifacts without another live run.
+  The collision and queued-selection artifacts remain in `/tmp/kky-bound-codex.PTOBkb` and `/tmp/kky-bound-codex-sequential.CHE1eq`.
+- DONE: Run focused, format, full, race, registry, and active-owner checks.
+  All final checks passed after the authorized stale-cache cleanup removed the disk blocker.
+- DONE: Keep the final surface within the approved boundaries.
+  The final diff has three insertions and three deletions across one product file and two authorized binding files.
+- DONE: Commit and push the exact candidate and a Simplified-English implementation Stage Report.
+  Candidate `43ce24b6d16e0287ab115bcbc4b774d08a710e05` matches its remote branch.
+
+### Summary
+
+The shared resume rule now commits every open gate before the structured reads and presentation.
+The exact Sonnet journey passed with and without its expected-failure binding.
+Codex selection remains bound to its new active owner, and Pi did not run.
