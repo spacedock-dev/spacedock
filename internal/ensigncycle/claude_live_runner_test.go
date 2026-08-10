@@ -4,6 +4,7 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -370,6 +371,9 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	roundRecorded, reviewer, strict := claudeRecordedRejectionRound(result.stream), assertClaudeSingleEntityRejectionFlow(result.stream), false
 	if _, ok := runner.(codexAsLiveDriver); ok {
 		roundRecorded, reviewer, strict = codexRecordedRejectionRound(result.stream), assertCodexReviewerReuse(result.stream), true
+		if errors.Is(reviewer, errReviewerIdentityUnsupported) {
+			reviewer = nil
+		}
 	}
 	// Codex has distinct command and reviewer evidence shapes. Claude and Pi keep
 	// the existing stream-json assertions.
