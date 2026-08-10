@@ -91,6 +91,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:98aa776adg66gn823a8gamdq-validation-3
+              briefing:
+                id: briefing:98aa776adg66gn823a8gamdq:validation:attempt-3:revision-1
+                digest: sha256:3372d5aad9060fea4dfd1d9886d00f457b32028313370e77a8e1f9a684a3adb8
+                request-digest: sha256:74e2de026a129464c6011dda5c36790632f7b13dbb437a0cb81052eda6c66a43
+                room-ref: ./codex-headless-implementation-worker-before-validation/review/validation/briefing-3
 ---
 
 ## Problem

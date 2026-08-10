@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:98aa776adg66gn823a8gamdq:validation:attempt-3:revision-1",
+  "question": "Approve rebased 98a repair for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:98aa776adg66gn823a8gamdq:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/abbab109753311d1ee3d8957e75c385f9b019c13/codex-headless-implementation-worker-before-validation.md",
+      "rev": "sha256:2223df511953d05f02a8073049100439323d5ed5d40601a60398d89175b531a8",
+      "mediaType": "text/markdown",
+      "summary": "Merge recheck recommends PASSED for 6e281f31c. The sole reconciliation conflict preserves landed 2e4 rows and 98a removals. Seven-file 217-gross scope and product semantics are unchanged."
+    }
+  ]
+}
