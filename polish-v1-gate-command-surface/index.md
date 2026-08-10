@@ -8,7 +8,7 @@ verdict:
 score: "0.8"
 worktree: .worktrees/spacedock-ensign-polish-v1-gate-command-surface
 issue:
-pr: "#667"
+pr: pr-merge:667
 sprint: durable-decisions
 id: f6cvn0s87ywbs158yy0b5q7k
 gates:
