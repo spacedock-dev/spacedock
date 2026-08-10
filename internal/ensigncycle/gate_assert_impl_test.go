@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"gopkg.in/yaml.v3"
@@ -22,25 +21,6 @@ var (
 
 type gateHeldExpectation struct {
 	gateID, attemptID, briefingID, digest string
-}
-
-func assertRecordedGatePresentation(message string) error {
-	lower := strings.ToLower(message)
-	for label, phrase := range map[string]string{
-		"checklist result":       "replayed retained evidence",
-		"checklist detail":       "real command fixture",
-		"acceptance criterion":   "successor dispatch",
-		"retained review":        "provider-neutral preparation",
-		"retained review check":  "fresh-binary command replay",
-		"retained review result": "byte comparisons",
-		"retained review mutant": "skipped-step mutants",
-		"empty findings":         "no material findings",
-	} {
-		if strings.Contains(lower, phrase) {
-			return fmt.Errorf("gate presentation contains undeclared %s", label)
-		}
-	}
-	return nil
 }
 
 func recordedGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectation, error) {

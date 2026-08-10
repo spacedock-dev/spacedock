@@ -26,7 +26,7 @@ Gate review: {entity title} — {stage}
 Recommend {approve | reject: {one-line reason}}.
 Reviewed snapshot: {bound Briefing identity and compact digest prefix}
 
-{If the workflow declares gate evidence, render `Evidence for {stage}:` followed by only the rows required by Gate content or the bounded fallback. Otherwise omit the heading and all evidence rows.}
+{Render `Evidence for {stage}:` with only the rows selected by Gate content or the bounded fallback. Omit the heading when no decision-relevant evidence exists.}
 
 {If reviewer findings exist, render them under `Reviewer findings` in the active workflow's declared category order and exact labels. Preserve each recorded category and omit empty categories. If the workflow declares none, use one neutral `Findings:` list. If no reviewer ran, omit this whole block.}
 
@@ -36,7 +36,7 @@ Decision: {one-line decision prompt naming what approval/rejection does in concr
 ### Captain-facing assembly rules
 
 - Fetch the current stage with `${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir {workflow_dir} --stage {stage}` before selecting evidence. Never infer content from the stage name.
-- A `Gate content` instruction in that stage definition is authoritative. Without one, use only the decision-relevant subset of its declared Inputs, Outputs, Good/Bad criteria, and the workflow-declared advance or feedback transition. Checklist, AC scan, entity report, retained review, and package data may inform internal recommendation judgment only; do not state, paraphrase, cite, summarize, or otherwise include them anywhere in the captain-facing presentation. If none of the permitted sources declares evidence, go directly from `Reviewed snapshot` to `Decision` with no evidence or justification prose between them.
+- Treat a `Gate content` instruction as the workflow's authoritative presentation preference and override. When it is absent, show a concise, meaningful, decision-relevant subset of the current stage definition, selected Artifact and References, current stage report, checklist and AC evidence, and findings. Do not fabricate facts or dump every source.
 - Generic hints apply only inside that fallback: before a direction is selected, show what is proposed and what proof the decision needs; after selection, show the direction, risks, surface, and proposed proof; after execution, show actual results, checks, acceptance evidence, and readiness. The declared stage definition decides which hint fits.
 - Omit missing evidence, empty result classes, empty finding categories, zero-result rows, and placeholders such as `None` or `N/A`. A negative summary such as `no material findings` means the finding group is empty; omit it. Do not print an aggregate count that names a zero class. Preserve the workflow's finding labels and order; presentation does not classify findings.
 - Name the task and stage, Briefing identity and digest, one recommendation, and one concrete decision effect. Keep `${SPACEDOCK_BIN:-spacedock} gate record --decision` as the sole recorder; presentation adds no authority.

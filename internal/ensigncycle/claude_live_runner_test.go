@@ -264,7 +264,6 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	if scenario.name == "default-headless-gate-stop" {
 		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after))
 	}
-	semantic = append(semantic, assertRecordedGatePresentation(result.finalMessage))
 	finishLiveScenario(t, runner, scenario, result, semantic...)
 }
 
