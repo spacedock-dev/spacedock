@@ -65,6 +65,17 @@ gates:
                 digest: sha256:05c661f7caa79f20a97c323cdbfba0f6de346d3d8bcef17924ac6d95241fba0e
                 request-digest: sha256:0cccb28015e6e7fc60090c7ec8035c4195ef8d5716b1a28a40b0dfb92f41a113
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:krbaeb3resfpbh1qvnb65krf:validation:1
+                briefing: briefing:krbaeb3resfpbh1qvnb65krf:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T03:47:53.429328Z"
+                decision: approve
+                reason: All five ACs are reproduced; workflow-owned content, zero-source omission, empty-findings omission, deterministic suites, and targeted local Codex authority are green.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Outcome
