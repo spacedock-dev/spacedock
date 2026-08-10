@@ -1,10 +1,10 @@
 ---
 title: Repair entered-stage dispatch evidence and post-gate terminalization
-status: validation
+status: done
 source: "PR #585 exact-head run 30706782428: Codex job 91387287118 and Sonnet job 91387287120"
 started: 2026-08-09T18:34:29Z
-completed:
-verdict:
+completed: 2026-08-10T16:46:25Z
+verdict: PASSED
 score: 0.9
 worktree: .worktrees/spacedock-ensign-repair-entered-stage-dispatch-and-post-gate-terminalization
 issue:
@@ -73,10 +73,11 @@ gates:
                 reason: Captain conn approves 9a after independent exact-final-head Sonnet and Codex validation with Pi ownership preserved.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 sprint-readiness: ready
 group: common-evidence
 pr: pr-merge:662
+archived: 2026-08-10T16:46:26Z
 ---
 
 ## Problem
