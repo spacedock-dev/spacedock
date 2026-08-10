@@ -1,6 +1,6 @@
 ---
 title: Restore live evidence whose original repair owners are complete
-status: implementation
+status: validation
 source: "Live-test-truth close reconciliation, 2026-08-09"
 started: 2026-08-09T18:34:33Z
 completed:
