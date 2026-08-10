@@ -15,7 +15,7 @@ import (
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
-var rejectionValidation2Command = regexp.MustCompile(`(?:spacedock|\$\{SPACEDOCK_BIN(?::-[^}]*)?\}|/[^ \t\r\n'";&|]+/spacedock)["']?\s+gate\s+record\s+["']?rejection-task["']?.*--round(?:=|\s+)["']?validation/2["']?`)
+var rejectionValidation2Command = regexp.MustCompile(`(?:spacedock|\$\{SPACEDOCK_BIN(?::-[^}]*)?\}|\$launcher|/[^ \t\r\n'";&|]+/spacedock)["']?\s+gate\s+record\s+["']?rejection-task["']?.*--round(?:=|\s+)["']?validation/2["']?`)
 var rejectionPrepareCommand = regexp.MustCompile(`(?:spacedock|\$\{SPACEDOCK_BIN(?::-[^}]*)?\}|/[^ \t\r\n'";&|]+/spacedock)["']?\s+gate\s+prepare\s+["']?rejection-task["']?(?:\s|$)`)
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
@@ -371,7 +371,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		}
 		writeFile(t, round1Briefing, savedBriefing)
 	}
-	validSequence := codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/2", "", 0, "completed") + "\n" +
+	validSequence := codexCommandOutput(`launcher=${SPACEDOCK_BIN:-spacedock}; "$launcher" gate record rejection-task --round validation/2`, "", 0, "completed") + "\n" +
 		codexCommandOutput("${SPACEDOCK_BIN:-spacedock} gate prepare rejection-task validation", "", 0, "completed")
 	if err := assertCodexRejectionFinalGate(entityPath, validSequence); err != nil {
 		t.Fatalf("strict final-gate oracle rejected valid state: %v", err)
