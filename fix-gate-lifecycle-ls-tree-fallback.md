@@ -7,7 +7,7 @@ started: 2026-08-10T22:53:32Z
 completed:
 verdict:
 score: 0.9
-worktree:
+worktree: .worktrees/spacedock-ensign-fix-gate-lifecycle-ls-tree-fallback
 issue:
 pr:
 mod-block:
