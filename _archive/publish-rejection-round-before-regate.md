@@ -1,10 +1,10 @@
 ---
 title: Publish the rejected validation round before correction and re-gating
-status: validation
+status: done
 source: "Replacement for archived rejected zbc; Runtime Live E2E rejection-flow evidence showed the FO claimed validation/1 was recorded without invoking gate record --round validation/1."
 started: 2026-08-09T18:34:24Z
-completed:
-verdict:
+completed: 2026-08-10T15:55:21Z
+verdict: passed
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -75,7 +75,8 @@ gates:
                 reason: Captain conn approves zh because independent validation confirms the exact Sonnet value and preserves Pi and Codex ownership seams.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T15:55:21Z
 ---
 
 Restore durable recorder publication for supported rejection-flow failures. Keep the complete rejected round visible before correction re-gating.
