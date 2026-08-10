@@ -1152,6 +1152,262 @@ Please review these exact questions:
 No product implementation is authorized before this review accepts the
 rescope and all Material findings.
 
+## Smallest CLI happy-path rescope
+
+Date: 2026-08-10
+
+Review state: **HOLD — staff review requested**.
+
+This section supersedes every earlier implementation approach, acceptance
+criterion, file estimate, and readiness statement.
+
+No product implementation is authorized.
+
+### Exact claim
+
+The task supports one fresh Claude CLI or Codex CLI worker for one workflow
+entity and stage.
+
+`dispatch build` creates one binary-owned pending envelope. Supported host hooks
+consume it when the native worker starts.
+
+While the envelope is pending, these existing paths fail closed:
+
+- `dispatch build --advance` for that entity and stage;
+- `status --set` when it changes that entity from the current stage.
+
+After acknowledgment, the existing complete-stage-report guard still controls
+the stage transition. This task does not add a completion receipt.
+
+### Explicit exclusions
+
+The task excludes these items:
+
+- recovery commands and recovery files;
+- abandonment and supersession;
+- IDE, Desktop, web, and cloud hosts;
+- general parallel acknowledgment;
+- a new public schema family;
+- a broad mutation inventory;
+- Pi acknowledgment;
+- host-attested follow-up completion;
+- cryptographic local-user identity.
+
+The in-app surfaces remain unexecutable. General parallel acknowledgment
+remains unsupported.
+
+### Small mechanism
+
+The private active ref is:
+
+```text
+refs/spacedock/dispatch-ack/<entity-id>/<stage>
+```
+
+The active blob contains only these internal fields:
+
+```json
+{
+  "state": "pending|armed|consumed",
+  "entity_id": "stable entity ID",
+  "entity_path": "state-root-relative path",
+  "stage": "implementation",
+  "host": "claude|codex",
+  "epoch": "random-128-bit value",
+  "host_session_id": "supported hook session ID",
+  "tool_use_id": "supported PreToolUse ID",
+  "native_worker_id": "supported SubagentStart ID"
+}
+```
+
+This internal blob does not define a new public schema family. The existing
+build envelope stays at schema version 2.
+
+A fresh build adds only `dispatch_ack_epoch` and `dispatch_ack_ref` to its
+existing output. Pi and `--advance` output do not add these fields.
+
+The happy path is:
+
+1. A fresh build creates the active ref with a zero-old compare update.
+2. The build puts the bounded epoch in Claude `description` or Codex `task_name`.
+3. `PreToolUse` matches that epoch and changes `pending` to `armed`.
+4. `SubagentStart` records the native worker ID and changes `armed` to `consumed`.
+5. The hook writes one consumed audit ref for live proof.
+6. The existing worker writes and commits the complete stage report.
+7. The existing status transition guard validates that report.
+8. The successful stage transition removes the old active ref.
+
+The consumed audit ref is:
+
+```text
+refs/spacedock/dispatch-ack-audit/<entity-id>/<stage>/<epoch>
+```
+
+The binary writes one mode-`0700` temporary directory for hook lookup. The
+pending Git ref remains the authoritative block.
+
+No public command accepts a native worker ID. Caller text, a report, a final
+message, or an empty wait cannot consume the envelope.
+
+### Single-flight and replay
+
+Fresh build refuses an existing `pending`, `armed`, or `consumed` active ref. It
+emits no second envelope.
+
+The same envelope cannot arm twice. A stale hook event changes no ref.
+
+This claim covers one native spawn at a time. If the hook sees more than one
+armed candidate, it changes no ref and returns a blocking error.
+
+The task does not claim that two different parallel spawns can be correlated.
+
+### Exact fail-closed behavior
+
+`dispatch build --advance` reads the active ref before it emits output. It
+refuses only `pending` and `armed` states.
+
+`status --set` reads the active ref before a stage change. It also refuses only
+`pending` and `armed` states.
+
+A `consumed` ref does not replace the existing complete-report guard. A stage
+change still fails until that guard passes.
+
+Non-stage status fields, gate commands, archive, merge, and recovery are outside
+this rescope.
+
+### Exact negative proof
+
+The focused tests must prove these cases for both hosts:
+
+1. A fresh build creates one pending ref and one epoch-bearing envelope.
+2. A second fresh build returns nonzero and emits no envelope.
+3. `dispatch build --advance` returns nonzero while pending or armed.
+4. A stage-changing `status --set` returns nonzero and changes no entity bytes.
+5. Disabled hooks leave the ref pending and keep both refusals active.
+6. A malformed or stale hook event changes no ref.
+7. `PreToolUse` cannot consume the ref; it can only arm it.
+8. `SubagentStart` consumes only the single armed ref.
+9. The consumed record contains the supported native worker ID.
+10. A report or caller final message does not change the pending ref.
+
+The negative host cells use local subscription access only. They must not use
+paid CI.
+
+### Exact default-headless proof
+
+Use these existing exact targets:
+
+```sh
+SPACEDOCK_LIVE_RUNTIME=claude \
+SPACEDOCK_LIVE_MODEL=sonnet \
+SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/n284-happy-claude \
+go test -tags=live ./internal/ensigncycle \
+  -run '^TestLiveCommonDefaultHeadlessGateStop$' -count=1 -v
+```
+
+```sh
+SPACEDOCK_LIVE_RUNTIME=codex \
+SPACEDOCK_CODEX_LIVE_REQUIRED=1 \
+SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/n284-happy-codex \
+go test -tags=live ./internal/ensigncycle \
+  -run '^TestLiveCommonDefaultHeadlessGateStop$' -count=1 -v
+```
+
+For each host, the bound run must prove these facts:
+
+- one fresh implementation envelope created one pending ref;
+- supported `PreToolUse` armed that exact epoch;
+- supported `SubagentStart` consumed it with one native worker ID;
+- no second implementation envelope was emitted;
+- the implementation report became complete and committed;
+- the entity did not enter validation before acknowledgment;
+- the existing report guard passed before validation;
+- the validation gate was prepared, committed, presented, and left open;
+- the entity was not archived or terminalized;
+- no Claude transcript or Codex rollout supplied acknowledgment evidence.
+
+The current XPASS policy is lane-green. With each binding present, the exact
+target must log `XPASS ALERT`, report no semantic failure code, and exit zero.
+
+Then make one binding-only commit. Remove only these two runtime bindings:
+
+- `claude-sonnet` for `default-headless-gate-stop`;
+- `codex` for `default-headless-gate-stop`.
+
+Remove the same two expected entries from the registry reconciliation test. Do
+not change any other TODO, XFAIL, or runtime binding.
+
+Rerun both exact commands. Each target must report normal PASS with the same
+pending-to-consumed and open-gate evidence.
+
+Finally, run:
+
+```sh
+go test ./internal/contractlint -run LiveRegistryReconciliation -count=1
+go test ./...
+go test ./... -race
+```
+
+If either host lacks a supported blocking `PreToolUse` or stable
+`SubagentStart` worker ID, this design is **HOLD**. That missing hook primitive
+would prevent removal of that host's binding.
+
+The completed local spike already observed stable single-worker start IDs for
+Claude CLI and Codex CLI. Implementation proof is still required.
+
+### Prior finding reconciliation
+
+| Prior finding | Smallest-scope disposition |
+|---|---|
+| Caller acknowledgment is forgeable. | Removed. Only supported `SubagentStart` can consume the pending ref. |
+| Private transcript and rollout formats are unsupported. | Removed. The live proof uses the consumed audit ref. |
+| Parallel Codex correlation swapped receipts. | General parallel acknowledgment is excluded. Ambiguous armed state blocks without mutation. |
+| Parallel Claude correlation is unproved. | General parallel acknowledgment is excluded. |
+| Recovery authority is unproved. | Recovery and abandonment are excluded. Pending state needs manual product support in a later task. |
+| Companion files race with `git add -A`. | The active and audit records use private Git refs, not worktree files. |
+| Exact reuse generation is unproved. | Follow-up acknowledgment is excluded. `--advance` only refuses an unacknowledged fresh spawn. |
+| In-app surfaces are unproved. | They remain unexecutable and excluded. |
+| Broad mutation doors are unproved. | The claim covers only `--advance` and stage-changing `status --set`. |
+| A new schema and observer IPC were too large. | No new public schema exists. One small temporary lookup joins build and hooks. |
+
+### Exact file and line estimate
+
+The implementation target is exactly ten files:
+
+| File | Insertions | Deletions | Purpose |
+|---|---:|---:|---|
+| `.claude-plugin/plugin.json` | 1 | 0 | Reuse the shared hook file in Claude CLI. |
+| `hooks.json` | 36 | 2 | Register PreToolUse and SubagentStart for both CLI hosts. |
+| `internal/dispatchack/ack.go` | 145 | 0 | Own active refs, audit refs, hook parsing, and guards. |
+| `internal/dispatchack/ack_test.go` | 130 | 0 | Test both hosts, replay, disabled hooks, advance, and status. |
+| `internal/dispatch/build.go` | 28 | 6 | Create pending state and guard advance. |
+| `internal/dispatch/dispatch.go` | 35 | 4 | Route the internal hook command and print errors. |
+| `internal/status/handlers.go` | 14 | 2 | Refuse a stage change while pending or armed. |
+| `internal/ensigncycle/claude_live_runner_test.go` | 30 | 22 | Read audit refs instead of private host files. |
+| `internal/ensigncycle/shared_live_runner_test.go` | 2 | 2 | Remove only the two runtime bindings after XPASS. |
+| `internal/contractlint/live_registry_reconciliation_test.go` | 1 | 1 | Remove the two matching expected entries. |
+
+The estimate is 422 insertions and 39 deletions. It is 461 gross lines and 383
+net lines.
+
+The hard limit is ten files and 500 gross lines. Any extra file or line above
+that limit requires captain approval and another staff review.
+
+### Staff review request
+
+Please review these exact questions:
+
+1. Can each supported CLI deny a duplicate `PreToolUse` and expose one stable
+   `SubagentStart` worker ID?
+2. Does pending-only acknowledgment close both default-headless failures when
+   combined with the existing complete-report guard?
+3. Are `--advance` and stage-changing `status --set` the complete happy-path
+   mutation boundary for this narrow claim?
+4. Does the XPASS-green sequence prove each binding before removal?
+5. Can the ten-file, 461-gross limit hold without a component-only result?
+
+No product bytes can change before staff accepts this rescope.
+
 ## Staff review of CLI single-flight rescope
 
 Date: 2026-08-10
@@ -1298,3 +1554,14 @@ The surface is large for a CLI-only feature. The estimate is acceptable only as
 a ceiling after the Material design gaps close.
 
 No product implementation is authorized by this review.
+
+## Staff review request: ten-file happy path
+
+The preceding review evaluates the superseded 40-file proposal. It remains as
+durable review history.
+
+The current proposal is `Smallest CLI happy-path rescope`. It has ten files and
+461 gross lines.
+
+Please review that rescope against its five exact questions. No product
+implementation is authorized before staff accepts it.
