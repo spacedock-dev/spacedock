@@ -48,7 +48,7 @@ func commandFilesViaNew(command, slug string) bool {
 	if !strings.Contains(command, slug) {
 		return false
 	}
-	if newInvocation.MatchString(command) {
+	if regexp.MustCompile(newInvocation.String() + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`).MatchString(command) {
 		return true
 	}
 	return capturedLauncherFilesViaNew(command, slug)
@@ -80,10 +80,15 @@ func capturedLauncherFilesViaNew(command, slug string) bool {
 	captureEnd := strings.Index(command, m[0]) + len(m[0])
 	segments := regexp.MustCompile(`\r?\n|;|&&|\|\||\|`).Split(command[captureEnd:], -1)
 	executable := regexp.QuoteMeta(varName)
-	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)\b`)
+	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
+	displayCall := regexp.MustCompile(`^\\""'\$` + executable + `"[ \t]+(?:new|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`)
 	for _, segment := range segments {
 		segment = strings.TrimSpace(segment)
-		if call.MatchString(segment) && strings.Contains(segment, slug) {
+		matched := call.MatchString(segment)
+		if strings.HasPrefix(command, "/bin/bash -lc ") {
+			matched = matched || displayCall.MatchString(segment)
+		}
+		if matched {
 			return true
 		}
 	}
@@ -161,9 +166,25 @@ func assertClaudeFilingViaNew(stream, slug string) error {
 type codexCommandItem struct {
 	Type string `json:"type"`
 	Item struct {
-		Type    string `json:"type"`
-		Command string `json:"command"`
+		Type     string `json:"type"`
+		Command  string `json:"command"`
+		Status   string `json:"status"`
+		ExitCode *int   `json:"exit_code"`
 	} `json:"item"`
+}
+
+func successfulCodexCommands(jsonl string) []string {
+	var commands []string
+	for _, line := range strings.Split(jsonl, "\n") {
+		var event codexCommandItem
+		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" ||
+			event.Item.Type != "command_execution" || event.Item.Status != "completed" ||
+			event.Item.ExitCode == nil || *event.Item.ExitCode != 0 {
+			continue
+		}
+		commands = append(commands, event.Item.Command)
+	}
+	return commands
 }
 
 // assertCodexFilingViaNew scans the `codex exec --json` transcript for the FO
@@ -180,22 +201,11 @@ func assertCodexFilingViaNew(jsonl, slug string) error {
 	filedViaNew := false
 	sawNextID := false
 
-	for _, line := range strings.Split(jsonl, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		var ev codexCommandItem
-		if err := json.Unmarshal([]byte(line), &ev); err != nil {
-			continue
-		}
-		if ev.Item.Type != "command_execution" {
-			continue
-		}
-		if commandFilesViaNew(ev.Item.Command, slug) {
+	for _, command := range successfulCodexCommands(jsonl) {
+		if commandFilesViaNew(command, slug) {
 			filedViaNew = true
 		}
-		if nextIDInvocation.MatchString(ev.Item.Command) {
+		if nextIDInvocation.MatchString(command) {
 			sawNextID = true
 		}
 	}

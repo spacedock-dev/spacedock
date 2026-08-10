@@ -3,7 +3,6 @@
 package ensigncycle
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -42,14 +41,7 @@ func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, roo
 }
 
 func codexObservedCommands(jsonl string) []string {
-	var commands []string
-	for _, line := range strings.Split(jsonl, "\n") {
-		var event codexCommandItem
-		if json.Unmarshal([]byte(line), &event) == nil && event.Item.Type == "command_execution" {
-			commands = append(commands, event.Item.Command)
-		}
-	}
-	return commands
+	return successfulCodexCommands(jsonl)
 }
 func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})
