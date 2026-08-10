@@ -137,3 +137,24 @@ The design limits implementation to one corrective fatal message and one adjacen
 ### Summary
 
 The required-lane failure now gives the corrective local `unset` command and names isolated Codex OAuth, while the adjacent guide paragraph explains the same local path. Authentication policy and isolation behavior are unchanged, and commit `94c15a79a` contains the complete four-line, two-file deliverable.
+
+## Stage Report: validation
+
+- DONE: AC-1 - A mistaken local CI-only flag gives the corrective local command.
+  Direct review of commit `94c15a79a` confirms the sole changed literal names the required flag, corrective `unset` action, and isolated-OAuth local destination; no test or command compared diagnostic prose.
+- DONE: AC-2 - The documented local path cannot be confused with protected CI.
+  The unchanged local command omits the CI-only flag, its adjacent paragraph explains isolated `auth.json` copying and the corrective unset action, and the focused on-disk test would fail if auth were absent or plugin state appeared.
+- DONE: AC-3 - Authentication behavior is unchanged.
+  The focused mode-table and isolation tests passed; changing API-key priority, local/required/skip/fatal selection, credential path, copied bytes, or exact isolated-home entries would fail them.
+- DONE: Verify the exact two-file/four-line diff gives the corrective local path while changing no authentication decision or isolated-home behavior.
+  `git diff --numstat main...HEAD` reports 2 added doc lines and 1 added/1 removed Go line in exactly the approved files; the focused behavioral suite passed.
+- DONE: Reproduce focused auth/isolation behavior, formatting, full suite, and race suite without comparing diagnostic/help prose.
+  The three-test focused command, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed; formatting left the candidate clean and no executable assertion inspected help/error wording.
+- DONE: Confirm no model, GitHub workflow, environment-variable rename, credential-path change, or extra mechanism entered the candidate.
+  The complete diff contains only one existing-message replacement and one documentation paragraph; no live tag, model call, workflow command, workflow file, test, dependency, auth path, or mechanism changed.
+- DONE: Semantic adversarial pass and recommendation.
+  The API-key/local-auth/required-flag matrix preserves exact prior modes and decision order, all adjacent isolation states remain governed by unchanged helpers, no scaling path exists, and the recommendation is PASSED with no material, deferred-risk, or polish finding.
+
+### Summary
+
+Validation independently reproduced all three acceptance criteria and the repository-required offline, formatting, full, and race proofs. Commit `94c15a79a` stays within the approved two-file/four-line boundary, changes only the intended fatal diagnostic and adjacent documentation, and is recommended PASSED with no findings.
