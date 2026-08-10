@@ -951,3 +951,13 @@ The correction changes one test file. Fresh validation can now examine exact can
 
 The exact candidate accepts the two canonical validation/1 summary counts observed in retained Sonnet runs. It preserves every product and binding byte.
 The validation recommendation is PASSED. No DVD-owned Material finding remains.
+
+### Material finding after validation cycle 5
+
+- Released user and workflow: A Sonnet operator ran the shared rejection-flow journey for PR #664 at DVD candidate `83de0c327ef70ed565af7eee7f7ba6def587afb4`.
+- Observable harm: The completed correction journey is falsely graded `rejection-round-missing`, which blocks required PR evidence.
+- Value authority: `value-ac[AC-3]` requires validation/2 before exactly one fresh unresolved gate.
+- Trigger evidence: Run `31432758302`, job `93600120801`, and artifact `9081220482` show withdrawn attempt 1, both validation rounds, and open attempt 2.
+- Disposition: FIX. `assertRejectionRoundGateBoundary` requires one historical attempt and hard-codes attempt 1, so it rejects the valid recovered gate history.
+- Approved correction: Change only `internal/ensigncycle/shared_round_recording_test.go`. Require exactly one active final attempt and clean withdrawals for all earlier attempts. Derive final IDs by ordinal.
+- Approved controls and cap: Add the exact withdrawn-attempt positive and the matching prior-attempt-still-active negative. The correction cap is +22/-8, and the full candidate target is about net +111.
