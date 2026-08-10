@@ -368,3 +368,24 @@ The focused contract and recorder tests pass. `go test ./...` and `go test ./...
 Sonnet and Opus now pass the repaired rejection flow without XFAIL bindings. Pi remains bound because an external credit limit blocked its exact run.
 
 The branch is rebased on `a8688cabf` and pushed. No `dvd` or other task binding changed.
+
+## Pi Evidence Hold: run 31361230251
+
+- Candidate: `ea11da278b3fffadd99a9f349cbd9ba3bf3555be`
+- Job: `93370598869`
+- Artifact: `9052609649`
+- Digest: `sha256:1ea716600f514d92bf4a955bc646d291f7ab129d613286a942e3845ca8ba4fea`
+- Exact `zh` target result: `NOT RUN`. The run produced no `zh` semantic code.
+
+### Four evidence fields
+
+1. Released user and normal workflow: The protected manual Pi cadence is the normal paid Pi evidence path.
+2. Observable harm: `TestLiveCommonRejectionFlow` did not run. This evidence cannot remove the Pi XFAIL.
+3. Affected value AC: `value-ac[AC-1]:` Pi must publish one complete four-entry `validation/1` round before correction re-gating.
+4. Trigger evidence: `-failfast` stopped after `TestLiveCommonGateGuardrail` failed with `prepared fixture request count = 0, want 1`.
+
+### Disposition
+
+HOLD the current `zh` candidate unchanged. Run `31361230251` is an upstream `2e4` product failure, not a `zh` finding.
+
+The Captain approved landing `2e4` first. After its landing SHA arrives, rebase `zh`. Then rerun only the exact Pi cadence.
