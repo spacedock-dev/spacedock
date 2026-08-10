@@ -51,6 +51,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-10T18:38:46Z
+worktree: .worktrees/spacedock-ensign-stop-sonnet-zero-discovery-broad-search
 ---
 ## Problem
 
