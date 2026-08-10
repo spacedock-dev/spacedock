@@ -1,6 +1,6 @@
 ---
 title: Commit Sonnet gate before presentation
-status: backlog
+status: ideation
 score: "0.90"
 source: "n28 exact Claude default-headless finding, 2026-08-10"
 sprint: test-behavior-completeness
@@ -29,7 +29,7 @@ gates:
                 reason: Captain created this active Sonnet owner to repair the target-external gate lifecycle defect.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 ## Problem
 
