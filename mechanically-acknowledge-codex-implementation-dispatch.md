@@ -25,6 +25,17 @@ gates:
                 digest: sha256:2d7ed1f6f562e4b034a06241033654f1ec8f4c7c2b24888d096387f1c4b6a782
                 request-digest: sha256:5886795dd5d37b928946dd83b3364574ea2f37e56ddcb7a1cf77d79a1b0bd257
                 room-ref: ./mechanically-acknowledge-codex-implementation-dispatch/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:n28423efmj358m5av61z2fxx:backlog:1
+                briefing: briefing:n28423efmj358m5av61z2fxx:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T09:22:46.146101Z"
+                decision: approve
+                reason: Captain explicitly approved creating and shaping this smallest end-user mechanical prerequisite after 98a cycle-4 nondeterminism.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
