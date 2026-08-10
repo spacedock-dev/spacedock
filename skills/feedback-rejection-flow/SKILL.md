@@ -19,7 +19,11 @@ When a feedback stage recommends REJECTED:
 5. After correction completes, wait until the worker entries are complete. If the workflow declares a `### Feedback Cycles` correction-round projection, the First Officer must append its authorized line directly. Do not define, normalize, or interpret its category labels, fields, tolerance, estimate, or drift grammar.
 6. Invoke the neutral `${SPACEDOCK_BIN:-spacedock} gate record --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl` once. Require a successful result with the complete round summary. If the command fails, produces no result, or retains an incomplete log, hold the flow. Do not claim that the round was recorded. Do not re-run the reviewer or prepare the next gate. The recorder retains the canonical two-file room and advances `review-round`, without receiving or interpreting the Cycle line. On cycle 3, publish the rejected round, then escalate to the human instead of another reviewer round.
 7. Re-run the reviewer after publication. When the existing reviewer remains addressable and reuse conditions pass, re-run the kept-alive reviewer through the same `«addressable-worker»` capability used for feedback routing; the message must ask that reviewer to re-review the updated entity state, not validate its own fix work. Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail.
-8. Re-enter the normal gate flow with the updated result.
+8. If the re-review passes, read the completed validation/2 report and the workflow-owned Cycle line.
+9. Publish validation/2 through the same neutral `gate record --round` path.
+10. Re-enter the normal gate flow through the existing gate lifecycle. Commit one gate-review Markdown artifact for the corrected candidate.
+11. Invoke the existing `gate prepare` path once. Require one fresh open gate bound to its prepared Briefing.
+12. Read the durable gate state. Present the fresh gate, then stop without a resolution, application, terminal status, or successor dispatch.
 
 The FO owns the shared correction-round section and writes it under `«write.classify»`: worktree-side when `worktree:` is set, main-side otherwise. The generic recorder owns only the immutable room and pointer bytes.
 

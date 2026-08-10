@@ -83,6 +83,11 @@ For Codex, install and authenticate the CLI (or set `OPENAI_API_KEY`), then run:
 SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v
 ```
 
+The Codex `rejection-flow` journey uses a strict XFAIL baseline. A repaired
+candidate must show the first rejection, the correction, passed validation/2,
+and one fresh open validation gate. The gate remains unresolved. Parser,
+launch, authentication, and timeout errors are not expected semantic results.
+
 Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI_API_KEY` is set, the harness copies `~/.codex/auth.json` into an isolated `CODEX_HOME`; if the variable is already set, run `unset SPACEDOCK_CODEX_LIVE_REQUIRED` first.
 
 Run the Pi live proofs locally with the same package versions pinned in CI:

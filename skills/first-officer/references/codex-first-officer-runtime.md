@@ -49,7 +49,7 @@ The FO does not use async idle monitoring, performs no later captain message, to
 
 ## Feedback reviewer reuse
 
-Feedback rejection is the load-bearing exception to casual fresh dispatch. When `«addressable-worker»` is PRESENT, keep the validation reviewer addressable after its REJECTED report and MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`. Do not fresh-dispatch merely because the reviewer completed or already sent a completion signal. When `«addressable-worker»` is ABSENT, fresh-dispatch a separate validation reviewer for cycle 2. After a PASSED re-review, re-enter the normal gate flow and advance or terminalize from durable state.
+Feedback rejection is the load-bearing exception to casual fresh dispatch. When `«addressable-worker»` is PRESENT, keep the validation reviewer addressable after its REJECTED report and MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`. Do not fresh-dispatch merely because the reviewer completed or already sent a completion signal. When `«addressable-worker»` is ABSENT, fresh-dispatch a separate validation reviewer for cycle 2. After a PASSED validation/2, publish its advisory round. Then re-enter the existing gate lifecycle. Commit one gate-review Markdown artifact and invoke `gate prepare` once. Read and present the one fresh open gate. Stop without a resolution, application, terminal status, or successor dispatch.
 
 ## Captain Interaction
 
