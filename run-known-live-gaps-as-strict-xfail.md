@@ -1,6 +1,6 @@
 ---
 title: Run known live behavior gaps as strict XFAIL
-status: ideation
+status: implementation
 source: "Captain decision after live-test-truth sprint close, 2026-08-09"
 started: 2026-08-09T18:34:17Z
 completed:
@@ -56,7 +56,7 @@ gates:
                 reason: Captain approved the strict-XFAIL direction and Commander activation.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
