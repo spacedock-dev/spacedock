@@ -66,6 +66,17 @@ gates:
                 digest: sha256:2b8a4ebd1c9f03524eb8035570dd50858616308ed3039a9b1ed8230bde79a72d
                 request-digest: sha256:5ce894fb4ac1daf43689559ef73786002c9c4194410eb73e633a10958a5680cb
                 room-ref: ./make-local-codex-live-auth-failure-self-correcting/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pma2c1j7wmg9yvf5n25tx2ff:validation:1
+                briefing: briefing:pma2c1j7wmg9yvf5n25tx2ff:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T03:49:15.539856Z"
+                decision: approve
+                reason: All ACs pass within the two-file/four-line boundary; auth behavior is unchanged and deterministic focused, full, and race checks are green.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the existing local Codex OAuth path obvious when a developer accidentally uses the CI-only live-test flag.
