@@ -496,3 +496,47 @@ The First Officer authorized the fix. The correction changes only
 `internal/ensigncycle/claude_live_runner_test.go`. The estimate is four added
 lines and no deleted lines. The correction accepts only
 `errReviewerIdentityUnsupported`. A detected wrong reviewer route remains red.
+
+## Implementation Design Reset
+
+The exact baseline changes these two files:
+
+- `internal/ensigncycle/claude_live_runner_test.go`
+- `internal/ensigncycle/shared_round_recording_test.go`
+
+The current baseline has 87 additions and 24 deletions. The net increase is 63
+lines.
+
+The remaining repair changes these three files:
+
+- `skills/feedback-rejection-flow/SKILL.md`
+- `skills/first-officer/references/codex-first-officer-runtime.md`
+- `docs/runtime-live-ci.md`
+
+The remaining estimate is 20 additions and two deletions. The projected full
+change has 107 additions and 26 deletions. The projected net increase is 81
+lines across five existing files. The proposed revised tolerance is 81 plus or
+minus 10 net lines and zero additional files.
+
+The end-user value is one complete Codex correction journey. Codex records the
+rejected first validation, applies the correction, passes validation/2, and
+stops at one fresh unresolved validation gate.
+
+The strict oracle must prove these independent facts:
+
+- Codex records the validation/1 advisory round.
+- Codex reaches a durable validation/2 report.
+- Codex runs exactly one successful gate preparation after validation/2.
+- The durable gate has one open attempt and the prepared Briefing.
+- A decision, application, duplicate attempt, terminal state, or wrong reviewer
+  route remains red.
+- An absent structured reviewer identity does not create false evidence.
+
+The current oracle is the smallest implementation that keeps these controls.
+It reuses the existing gate reader, round oracle, Codex command parser, and
+reviewer classifier. It does not add a fixture, command, format, or authority.
+
+A smaller alternative can omit transcript ordering and accept the durable gate
+alone. This alternative removes the successful-command parser and its controls.
+It loses AC-3 value because it cannot prove that preparation occurred once and
+after validation/2. It can accept a failed, duplicated, or early command path.
