@@ -8,7 +8,7 @@ verdict:
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
-worktree:
+worktree: .worktrees/spacedock-ensign-publish-rejection-round-before-regate
 issue:
 pr:
 mod-block:
