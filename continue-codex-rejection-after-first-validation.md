@@ -820,3 +820,33 @@ The correction changes no product instruction or binding. The full candidate rem
 
 The rebased candidate keeps current main ownership and removes only the dvd Codex binding. All product and oracle bytes remain unchanged.
 The focused checks pass. The remote branch now identifies `47d39b624edbdb9590b9fbabf7c8c9dd27534989`.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Confirm exact corrected candidate, remote match, base, and clean worktree.
+  Local and remote heads match `47d39b62`. Base `0bbe9d46c` is the merge base, and the worktree is clean.
+- DONE: Inspect the exact +4/-4 correction in one existing test file and unchanged product bytes.
+  The correction changes only `shared_round_recording_test.go`. Five product and oracle blob identifiers match candidate `d02dd140`.
+- DONE: Inspect artifact 9076566633 and confirm validation/1 correctly reports entries=2.
+  The retained Sonnet result reports `entries=2` with the missing-marker Annotation and reviewer Resolution.
+- DONE: Run the exact focused Sonnet-shaped positive, malformed-round negative, registry, owner, format, and diff checks without repeating owned full, race, or live runs.
+  The parser, registry, and owner checks passed. The binding, format, and diff checks passed. No full, race, or live run occurred.
+- DONE: Confirm the full candidate remains seven files and net +91.
+  The base diff is +131/-40 across seven existing files.
+- DONE: Report each finding with four workflow evidence fields.
+  The external owner finding entered disposition before rerun. The owner-hygiene rebase closes it, and no Material finding remains.
+- DONE: Write and push a Simplified-English PASSED or REJECTED validation cycle report.
+  PASSED: the exact retained Sonnet evidence is accepted, malformed evidence stays red, and all ownership rows are active.
+
+### Finding disposition
+
+- Released user and normal workflow: Live registry consumers use the XFAIL ownership rows for shared runtime journeys.
+- Observable harm: Candidate `d02dd140` named an inactive owner in four registry rows, so the authorized owner check failed.
+- Value authority: `contract[internal/contractlint/live_registry_reconciliation_test.go#TestRuntimeLiveTODOOwnersAreActive]` requires each live gap owner to remain active.
+- Trigger evidence: The owner check identified four rows for inactive owner `xp6c9qfe7y4wwp46enc3f85n`.
+- First Officer disposition: HOLD for external owner hygiene. Rebase `47d39b62` uses current active owners, and the check passes.
+
+### Summary
+
+The rebased candidate preserves the exact dvd product and oracle bytes. It accepts the retained Sonnet validation/1 result with two entries.
+All authorized focused checks pass. The validation recommendation is PASSED, and no Material finding remains.
