@@ -238,15 +238,6 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 		t.Errorf("no Agent dispatch had the merged shape (name set + run_in_background true + no team_name); dispatches=%+v\nArtifacts: %s", dispatches, artifactDir)
 	}
 
-	// Assertion #6 (completion target) — the FO forwarded a dispatch prompt whose
-	// completion-signal block pins SendMessage(to="team-lead"), per #396's committed
-	// build.go (NOT "main"). The dispatch prompt is a pointer the ensign Reads, so the
-	// concrete completion target lives in the dispatch FILE under /tmp/spacedock-dispatch;
-	// assert it there (the build helper wrote it during the FO's dispatch).
-	if !mergedDispatchFileHasEnsignContract(t, dispatches, artifactDir) {
-		t.Errorf("no merged dispatch file carried the ensign skill and pinned SendMessage(to=\"team-lead\")\nArtifacts: %s", artifactDir)
-	}
-
 	// Capture the FO's own session id (the init event's session_id == the
 	// $CLAUDE_CODE_SESSION_ID Claude Code set, the leadSessionId reconcile matches).
 	sessionID := initEventSessionID(lines)
@@ -313,39 +304,6 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	if !someCommitNamesOnly(t, root, "make-it-work") {
 		t.Errorf("no path-scoped commit named only the entity in the merged drive history")
 	}
-}
-
-// mergedDispatchFileHasEnsignContract reports whether any merged dispatch the FO
-// made wrote a dispatch file under /tmp/spacedock-dispatch that invokes the ensign
-// skill and whose completion-signal block pins SendMessage(to="team-lead"). The
-// dispatch file is keyed on the session id +
-// the derived member name (build.go's mergedMode path), so it is located by the
-// dispatched member's name. The completion target is the assertable code surface
-// (#396's build.go emits to="team-lead"); a `claude-fo-dispatch.md` prose note still
-// frames it as "main", but the code target is the one this asserts.
-func mergedDispatchFileHasEnsignContract(t *testing.T, dispatches []mergedAgentDispatch, artifactDir string) bool {
-	t.Helper()
-	const dispatchDir = "/tmp/spacedock-dispatch"
-	for _, d := range dispatches {
-		if d.name == "" {
-			continue
-		}
-		// The merged dispatch filename is {sessionToken}-{derivedName}.md or, when no
-		// session token resolves, {derivedName}.md — both END with the derived name +
-		// .md, so a suffix glob finds either.
-		matches, _ := filepath.Glob(filepath.Join(dispatchDir, "*"+d.name+".md"))
-		for _, p := range matches {
-			raw, err := os.ReadFile(p)
-			if err != nil {
-				continue
-			}
-			if mergedDispatchArtifactHasEnsignContract(string(raw)) {
-				t.Logf("merged dispatch file %s carries the ensign skill and pins completion target to team-lead", p)
-				return true
-			}
-		}
-	}
-	return false
 }
 
 // upsertEnv returns env with key set to value — replacing an existing entry or

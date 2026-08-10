@@ -66,21 +66,22 @@ func TestGateReadinessPromotesMechanicallyCompleteColdReports(t *testing.T) {
 			if nextCode != 0 {
 				t.Fatalf("next exit=%d stderr=%q", nextCode, nextErr)
 			}
-			if !strings.HasPrefix(nextOut, `{"command":"next","dispatchable":`) || !strings.Contains(nextOut, `,"ready_gates":[`) {
-				t.Fatalf("next envelope=%q, want dispatchable then ready_gates", nextOut)
-			}
 			var next struct {
+				Command      string              `json:"command"`
 				Dispatchable []map[string]string `json:"dispatchable"`
 				ReadyGates   []map[string]string `json:"ready_gates"`
 			}
 			if err := json.Unmarshal([]byte(nextOut), &next); err != nil {
 				t.Fatalf("parse next: %v\n%s", err, nextOut)
 			}
-			if len(next.Dispatchable) != 0 || len(next.ReadyGates) != 1 || next.ReadyGates[0]["readiness"] != "needs-preparation" {
+			if next.Command != "next" || len(next.Dispatchable) != 0 || len(next.ReadyGates) != 1 || next.ReadyGates[0]["readiness"] != "needs-preparation" {
 				t.Fatalf("next envelope dispatchable=%v ready_gates=%v, want empty dispatchable + one candidate", next.Dispatchable, next.ReadyGates)
 			}
 			fieldOut, fieldErr, fieldCode := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--fields", "id,gate-readiness", "--json")
-			if fieldCode != 0 || !strings.Contains(fieldOut, `"gate-readiness":"needs-preparation"`) {
+			var projected struct {
+				Entities []map[string]string `json:"entities"`
+			}
+			if fieldCode != 0 || json.Unmarshal([]byte(fieldOut), &projected) != nil || len(projected.Entities) != 1 || projected.Entities[0]["gate-readiness"] != "needs-preparation" {
 				t.Fatalf("field projection exit=%d stderr=%q output=%q", fieldCode, fieldErr, fieldOut)
 			}
 		})

@@ -75,11 +75,13 @@ func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 	if len(env.FetchCommands) != 2 {
 		t.Fatalf("expected two fetch commands; got %v", env.FetchCommands)
 	}
-	if want := testWorkflowLauncher + " dispatch show-stage-def"; !strings.Contains(env.FetchCommands[0], want) {
-		t.Errorf("first fetch command does not pin stage loading to %q: %q", want, env.FetchCommands[0])
+	wantStage := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage backlog"
+	if env.FetchCommands[0] != wantStage {
+		t.Errorf("first fetch command = %q, want %q", env.FetchCommands[0], wantStage)
 	}
-	if want := testWorkflowLauncher + " dispatch show-standing"; !strings.Contains(env.FetchCommands[1], want) {
-		t.Errorf("second fetch command does not pin standing loading to %q: %q", want, env.FetchCommands[1])
+	wantStanding := testWorkflowLauncher + " dispatch show-standing --workflow-dir " + shlexQuote(root)
+	if env.FetchCommands[1] != wantStanding {
+		t.Errorf("second fetch command = %q, want %q", env.FetchCommands[1], wantStanding)
 	}
 }
 
@@ -115,7 +117,8 @@ func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
 		t.Fatalf("build output not JSON: %v\n%s", err, out.String())
 	}
-	if len(env.FetchCommands) != 1 || !strings.Contains(env.FetchCommands[0], testWorkflowLauncher+" dispatch show-stage-def") {
+	want := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage backlog"
+	if len(env.FetchCommands) != 1 || env.FetchCommands[0] != want {
 		t.Fatalf("expected exactly one full-path show-stage-def command; got %v", env.FetchCommands)
 	}
 }

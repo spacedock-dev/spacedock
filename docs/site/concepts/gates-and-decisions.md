@@ -71,7 +71,7 @@ Redo and reject differ only in whether you accept the direction; both carry your
 Your call translates into the existing `approve`, `revise`, and `hold` record; automatic bounce applies only when a reviewer recommends `REJECTED` at a configured feedback gate.
 
 After completion verification, a gate with no current-stage authority remains
-`validating` until gqs's mechanical report checks pass. It then appears as
+`validating` until the mechanical report checks pass. It then appears as
 `needs-preparation` on boot and every machine scheduler read. Engage performs
 semantic report review. A concrete `report-incomplete:` veto stops without
 mutation; otherwise the First Officer calls `gate prepare` exactly once with its
@@ -95,16 +95,18 @@ digest, and emitted room in committed machine state, then presents a compact sna
 identity in prose. A run without decision authority
 stops with that attempt open: it writes no Resolution, consumes nothing, advances
 nothing, and dispatches nothing. After an authorized decision, the recorder itself
-commits and syncs the Resolution before every route (`--consume` folds the approve's
-consume into the same call). Approval then uses `gate consume`, which rechecks
+commits and syncs the Resolution before every route. `gate record --decision approve --consume`
+is the shortest approval path: close, sync, consume, and sync in one call.
+The supported standalone `gate consume` path rechecks
 the retained request, Briefing, Git sources, and authority before atomically writing
 the successor stage and consumed mark. Until that first-entered working stage has
 a durable, complete Stage Report, `status --next` and boot name it as both
 `current` and `next`. Once the same-stage dispatch sets its worktree, every
 away-status `status --set`—backward or forward, even with `--force`—is refused
 until the report is durable. The consumed descendant commit therefore lands
-before one recoverable successor dispatch. Revise routes feedback after its close
-commit, and hold stays at the gate. `status` projects the next action from durable
+before one recoverable successor dispatch. No separate state commit follows a successful
+record or consume write. Revise routes feedback after its self-synced
+close, and hold stays at the gate. `status` projects the next action from durable
 facts; the acting command reports any authoritative refusal.
 
 After the nonterminal approval is consumed, it is ordinary stage history. The

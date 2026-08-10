@@ -193,13 +193,36 @@ func assertConflictOwnerFreshEnvelope(t *testing.T, binary, root, entity string,
 	if envelope.Name != owner.WorkerName || envelope.DispatchFile == "" {
 		return fmt.Errorf("fresh owner envelope identity = %q, want stamped owner %q: %s", envelope.Name, owner.WorkerName, out)
 	}
-	body := readFile(t, envelope.DispatchFile)
-	for _, want := range []string{owner.Entity, owner.Stage, owner.Branch, owner.Worktree, "conflict paths: conflict.txt"} {
-		if !strings.Contains(body, want) {
-			return fmt.Errorf("fresh owner dispatch body missing %q\n%s", want, body)
-		}
+	sections := boundedDispatchSections(readFile(t, envelope.DispatchFile))
+	wantScope := strings.TrimSpace(readFile(t, scope))
+	if sections["Scope notes"] != wantScope {
+		return fmt.Errorf("fresh owner scope-notes section differs from typed input\nwant:\n%s\ngot:\n%s", wantScope, sections["Scope notes"])
 	}
 	return nil
+}
+
+func boundedDispatchSections(body string) map[string]string {
+	sections := make(map[string]string)
+	var heading string
+	var lines []string
+	flush := func() {
+		if heading != "" {
+			sections[heading] = strings.TrimSpace(strings.Join(lines, "\n"))
+		}
+	}
+	for _, line := range strings.Split(body, "\n") {
+		if name, ok := strings.CutPrefix(line, "### "); ok {
+			flush()
+			heading = name
+			lines = nil
+			continue
+		}
+		if heading != "" {
+			lines = append(lines, line)
+		}
+	}
+	flush()
+	return sections
 }
 
 func gitAsCaptain(t *testing.T, dir string, args ...string) string {

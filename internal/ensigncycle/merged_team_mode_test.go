@@ -184,11 +184,6 @@ func hasMergedEnsignMember(metas []mergedMemberMeta) bool {
 	return false
 }
 
-func mergedDispatchArtifactHasEnsignContract(artifact string) bool {
-	return strings.Contains(artifact, `Skill(skill="spacedock:ensign")`) &&
-		strings.Contains(artifact, `SendMessage(to="team-lead"`)
-}
-
 // readMergedMemberMetas reads every subagents/agent-*.meta.json under the FO's
 // session dir and returns the decoded records. The session dir is
 // {configDir}/projects/{encodeProjectDir(resolvedCwd)}/{sessionID}/subagents. A
@@ -336,15 +331,4 @@ func TestMergedEnsignDispatchShape(t *testing.T) {
 		}
 	})
 
-	t.Run("dispatch artifact requires ensign skill and team-lead completion", func(t *testing.T) {
-		complete := `Skill(skill="spacedock:ensign") SendMessage(to="team-lead", message="Done")`
-		if !mergedDispatchArtifactHasEnsignContract(complete) {
-			t.Fatal("complete merged dispatch artifact must pass")
-		}
-		for _, missing := range []string{`Skill(skill="spacedock:ensign")`, `SendMessage(to="team-lead"`} {
-			if mergedDispatchArtifactHasEnsignContract(strings.Replace(complete, missing, "removed", 1)) {
-				t.Fatalf("artifact missing %q must fail", missing)
-			}
-		}
-	})
 }

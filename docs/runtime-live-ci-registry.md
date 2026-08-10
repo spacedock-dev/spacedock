@@ -276,7 +276,7 @@ limited to the named runtime boundary.
 - **Entry point:** `TestLiveBareReachable`
 - **Lane:** `claude-live`
 - **Required outcome:** Explicit bare mode uses the supported bare dispatch shape
-  without loading break-glass recovery or reporting retired degraded mode.
+  without loading break-glass recovery, and the assigned durable result is committed.
 - **Fixture:** `dispatch-recovery/base` — one dispatchable member under a workflow
   that exercises the supported Claude dispatch boundary.
 
@@ -284,9 +284,9 @@ limited to the named runtime boundary.
 
 - **Entry point:** `TestLiveBreakGlassShimRecovery`
 - **Lane:** `claude-live`
-- **Required outcome:** A real `dispatch build` failure is reported before worker
-  dispatch, then recovery preserves the selected blocking-bare or
-  named-background-team mode and commits the complete worker report.
+- **Required outcome:** A real `dispatch build` failure reaches recovery, preserves
+  the selected blocking-bare or named-background-team dispatch shape, and commits the
+  complete worker result and parsed Stage Report in a path-scoped clean commit.
 - **Fixtures:**
   - `dispatch-recovery/base` — the shared dispatchable workflow.
   - `dispatch-recovery/failing-build` — the same workflow with `dispatch build`

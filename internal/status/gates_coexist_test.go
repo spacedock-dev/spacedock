@@ -41,7 +41,8 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 		t.Fatalf("text status exit=%d stderr=%q output=%q", code, stderr, text)
 	}
 	jsonOut, stderr, code := runNative(t, root, nil, append(args, "--json")...)
-	if code != 0 || !strings.Contains(jsonOut, `"gate-application":"advance/pending"`) || !strings.Contains(jsonOut, `"gate-target-stage":"implementation"`) || strings.Contains(jsonOut, "gate-eligible") || strings.Contains(jsonOut, "gate-condition") {
+	fields := decodeSingleStatusEntity(t, jsonOut)
+	if code != 0 || fields["gate-application"] != "advance/pending" || fields["gate-target-stage"] != "implementation" || fields["gate-eligible"] != "" || fields["gate-condition"] != "" {
 		t.Fatalf("json status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
 	}
 	changed := strings.Replace(readme, "name: implementation", "name: validation", 1)
@@ -49,9 +50,21 @@ func TestStatusTextAndJSONProjectApprovedPendingApplication(t *testing.T) {
 		t.Fatal(err)
 	}
 	jsonOut, stderr, code = runNative(t, root, nil, append(args, "--json")...)
-	if code != 0 || !strings.Contains(jsonOut, `"gate-target-stage":"implementation"`) || strings.Contains(jsonOut, "gate-eligible") || strings.Contains(jsonOut, "gate-condition") {
+	fields = decodeSingleStatusEntity(t, jsonOut)
+	if code != 0 || fields["gate-target-stage"] != "implementation" || fields["gate-eligible"] != "" || fields["gate-condition"] != "" {
 		t.Fatalf("changed-taxonomy canonical status exit=%d stderr=%q output=%q", code, stderr, jsonOut)
 	}
+}
+
+func decodeSingleStatusEntity(t *testing.T, output string) map[string]string {
+	t.Helper()
+	var result struct {
+		Entities []map[string]string `json:"entities"`
+	}
+	if err := json.Unmarshal([]byte(output), &result); err != nil || len(result.Entities) != 1 {
+		t.Fatalf("decode one status entity: err=%v entities=%#v output=%q", err, result.Entities, output)
+	}
+	return result.Entities[0]
 }
 
 func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
@@ -100,8 +113,17 @@ func TestStatusProjectsSharedGateReadinessReducer(t *testing.T) {
 		t.Fatalf("human gate-readiness exit=%d stderr=%q output=%q", code, errOut, text)
 	}
 	all, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--all-fields", "--json")
-	if code != 0 || !strings.Contains(all, `"gate-readiness":"validating"`) ||
-		!strings.Contains(all, `"gate-readiness":"approved-awaiting-advance"`) {
+	var allResult struct {
+		Entities []map[string]string `json:"entities"`
+	}
+	if err := json.Unmarshal([]byte(all), &allResult); err != nil {
+		t.Fatalf("decode --all-fields output: %v\n%s", err, all)
+	}
+	seen := map[string]bool{}
+	for _, entity := range allResult.Entities {
+		seen[entity["gate-readiness"]] = true
+	}
+	if code != 0 || !seen["validating"] || !seen["approved-awaiting-advance"] {
 		t.Fatalf("--all-fields gate-readiness exit=%d stderr=%q output=%q", code, errOut, all)
 	}
 }

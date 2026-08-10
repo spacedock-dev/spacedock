@@ -8,6 +8,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -566,8 +567,13 @@ func TestRoutedTerminalApprovalSurfacesExistingDisplay(t *testing.T) {
 		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	code, out, errOut := terminalInvoke(t, root, "status", "--fields", "id,gate-readiness,gate-application", "--json", "--workflow-dir", root)
-	if code != 0 || !strings.Contains(out, `"gate-application":"advance/pending"`) ||
-		!strings.Contains(out, `"gate-readiness":"approved-awaiting-merge"`) {
+	var statusEnvelope struct {
+		Entities []map[string]string `json:"entities"`
+	}
+	decodeErr := json.Unmarshal([]byte(out), &statusEnvelope)
+	if code != 0 || decodeErr != nil || len(statusEnvelope.Entities) != 1 ||
+		statusEnvelope.Entities[0]["gate-application"] != "advance/pending" ||
+		statusEnvelope.Entities[0]["gate-readiness"] != "approved-awaiting-merge" {
 		t.Fatalf("routed entity must surface through status readiness: exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	if fields := entityFields(t, entity); strings.TrimSpace(fields["status"]) != "validation" {

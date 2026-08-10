@@ -11,6 +11,10 @@ import (
 // `-h`, and the `help` subcommand render byte-identical output to `--help`.
 func TestTopLevelHelpFormsAreIdentical(t *testing.T) {
 	ref := helpStdout(t, "--help")
+	wantGateRow := "  gate        prepare | withdraw | record | validate | consume\n                                      Record, inspect, or consume durable gate resolutions\n"
+	if strings.Count(ref, wantGateRow) != 1 {
+		t.Fatalf("top-level help gate row differs from the published contract:\n%s", ref)
+	}
 	for _, form := range [][]string{nil, {"-h"}, {"help"}} {
 		got := helpStdout(t, form...)
 		if got != ref {

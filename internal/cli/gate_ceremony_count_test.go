@@ -5,6 +5,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -254,7 +255,10 @@ func TestGateJourneyUsesStatusAndActingCommandsWithoutEligibilityPreflight(t *te
 	}
 
 	statusOut := run("status", "--boot", "--identify", "--json", "--workflow-dir", workflowDir)
-	if !strings.Contains(statusOut, `"readiness":"awaiting-captain"`) {
+	var boot struct {
+		ReadyGates []map[string]string `json:"ready_gates"`
+	}
+	if err := json.Unmarshal([]byte(statusOut), &boot); err != nil || len(boot.ReadyGates) != 1 || boot.ReadyGates[0]["readiness"] != "awaiting-captain" {
 		t.Fatalf("status did not project the gate's next action: %s", statusOut)
 	}
 	run("gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--consume", "--workflow-dir", workflowDir)
