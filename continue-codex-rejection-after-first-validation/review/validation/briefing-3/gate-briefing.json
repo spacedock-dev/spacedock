@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-3:revision-1",
+  "question": "Does exact candidate 1df6b4ab182c658205c0763b6423cca47bb54305 satisfy the complete Codex rejection-flow value and shared Sonnet oracle compatibility?",
+  "artifacts": [
+    {
+      "id": "artifact:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/85a35583f5b21a2cc660ce0918cb5631c9f58c1d/continue-codex-rejection-after-first-validation.md",
+      "rev": "sha256:b78b3cb43acd051476be69ee8ffa99e1a96187a9258ddcc970c87a18f35972fb",
+      "mediaType": "text/markdown",
+      "summary": "Final independent validation PASSED. The candidate accepts exact validation/1 entries=2, rejects malformed rounds, and preserves the complete rejection journey."
+    }
+  ]
+}

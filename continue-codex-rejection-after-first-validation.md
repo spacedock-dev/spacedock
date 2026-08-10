@@ -104,6 +104,23 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:dvddbpsf4tdt3yjw1yjyp14k-validation-3
+              briefing:
+                id: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-3:revision-1
+                digest: sha256:2669801ccb3535dcf195c05b6be377924be34898bce5620af64edb70a2acee59
+                request-digest: sha256:830b7ea8847327fccf6129e78cf787a7ddfa5cbee898c98ab460c8c6c51c1f65
+                room-ref: ./continue-codex-rejection-after-first-validation/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dvddbpsf4tdt3yjw1yjyp14k:validation:3
+                briefing: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-10T20:05:39.286606Z"
+                decision: approve
+                reason: Captain conn approves final dvd candidate after PASSED cycle-4 validation. One exact PR rerun remains the merge boundary.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
