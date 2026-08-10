@@ -6,7 +6,7 @@ started: 2026-08-09T18:34:29Z
 completed:
 verdict:
 score: 0.9
-worktree:
+worktree: .worktrees/spacedock-ensign-repair-entered-stage-dispatch-and-post-gate-terminalization
 issue:
 milestone: 0.27.0
 id: 9adv48yhye5s2vkhwd7ge52d
