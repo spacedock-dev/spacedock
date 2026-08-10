@@ -292,3 +292,44 @@ The shared XFAIL bindings, registry, sprint package, runtime documentation, adap
 The repair now requires a real initial worker, completion evidence, started stage transitions, and direct gate entry after completion.
 Both owned live targets pass without XFAIL bindings. The normal and race suites also pass.
 The Pi binding and all bindings owned by other tasks remain unchanged.
+
+## Stage Report: validation
+
+- DONE: Inspect exact candidate a00bd2c97 and the implementation report. Do not change candidate bytes.
+  `git rev-parse HEAD` returned `a00bd2c97`. The code worktree stayed clean.
+- FAILED: Verify each acceptance criterion with independent evidence, including exact Sonnet and Codex target passes.
+  Sonnet passed in 337.11s. Codex failed in 281.74s because gate preparation created no request.
+- FAILED: Confirm worker spawn, completion evidence, stage-start stamping, and direct gate entry remain ordered across normal paths.
+  Codex spawned and completed the worker, then `gate prepare` rejected the changed `evidence/command.log` reference.
+- DONE: Inspect removal of only the 98a-owned XFAIL bindings and exact reconciliation rows.
+  The diff removes only the Sonnet and Codex `98aa776adg66gn823a8gamdq` bindings. The reconciliation check passed.
+- FAILED: Perform the semantic adversarial pass on missing spawn, premature validation, empty wait, terminal state, and failure cleanup.
+  The accepted command-log baseline contains no spawn, completion signal, or implementation report. The gate-state mutants failed as expected.
+- DONE: Use existing implementation full and race results. Run only independent focused falsifiers.
+  I did not repeat the full or race suites. Four focused contract and four focused gate checks passed.
+- DONE: Classify findings with four evidence fields and write a PASSED or REJECTED report in Simplified Technical English.
+  The recommendation is REJECTED because two Material findings affect AC-1.
+
+### Material findings
+
+1. Evidence defect: the live oracle can pass without a worker spawn or completion.
+   - Released user and normal workflow: A headless Sonnet or Codex run advances from implementation to the validation gate.
+   - Observable harm: A skipped implementation worker can receive passing release evidence.
+   - Affected authority: `value-ac[AC-1]` requires one implementation-worker spawn and completion before validation.
+   - Trigger evidence: `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` passes a log with status, build, validation, and prepare only.
+     `runGateStopScenario` checks gate state and this command log. It does not check the host spawn, completion signal, or implementation report.
+
+2. Outcome defect: the exact Codex target does not pass on the candidate.
+   - Released user and normal workflow: A headless Codex run must complete implementation and present the first validation gate.
+   - Observable harm: The run stops at validation without a prepared gate request.
+   - Affected authority: `value-ac[AC-1]` requires a passing Codex `TestLiveCommonDefaultHeadlessGateStop` run on the candidate.
+   - Trigger evidence: The exact target failed in 281.74s on `a00bd2c97`.
+     `gate prepare` rejected `evidence/command.log` because the command changed that selected source before preparation.
+
+### Deferred risks
+
+None.
+
+### Summary
+
+The exact Sonnet target passed, but the exact Codex target failed. The independent adversarial control also proves that the oracle does not establish worker spawn or completion. I recommend REJECTED.
