@@ -719,6 +719,8 @@ lines out of one existing file. The full candidate remains net +91.
   Run `31416271663` and artifact `9074101972` remain in the durable finding record.
 - DONE: Push the exact corrected candidate to the remote branch.
   Local HEAD and the remote branch both identify `c334febb28d45705362d3485abbda6dc7993f47f`.
+- DONE: Bound the validation/2 evidence correction before mutation.
+  `internal/ensigncycle/shared_round_recording_test.go` has an estimated +10/-10 change. Net +91 and the seven-file tolerance stay unchanged. Users get exact validation/2 evidence with canonical files.
 
 ### Summary
 
