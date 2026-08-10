@@ -1,10 +1,10 @@
 ---
 title: Hold the Pi default headless validation gate
-status: validation
+status: done
 source: "Staff review M3 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:21Z
-completed:
-verdict:
+completed: 2026-08-10T14:27:33Z
+verdict: passed
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -76,7 +76,8 @@ gates:
                 reason: Captain conn approves fh6 after independent PASSED validation and exact Pi XPASS-to-PASS evidence.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-10T14:27:34Z
 ---
 
 ## Problem
