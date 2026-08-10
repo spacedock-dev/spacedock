@@ -400,7 +400,7 @@ Correction estimate: seven files, about +517/-36 lines; hard stop at eight files
 
 **AC-1 (VALUE)** — One new max-effort Sonnet-5 gate-guardrail run uses at most 17 assistant turns and 17 host calls from boot through presentation.
 
-**AC-2** — The stream orders next → lifecycle → composite inspect → composite publish → presenter and contains no help, plugin/source grep, filesystem listing, broad Git/status inspection, standalone prepare/commit/checklist/AC calls, or presenter-side README evidence read.
+**AC-2** — The stream orders next → lifecycle → composite inspect → composite publish → presenter without supplementary discovery before composite publication. Post-presentation README, filesystem, command-log, or Git/status probes are observed diagnostics, not acceptance failures, when they do not change selected evidence, the committed binding/room, presenter inputs, or cross AC-5 authority.
 
 **AC-3** — Inspect is byte-clean. Publish accepts only exact bundle candidates and one First Officer-authored question, selection, summary, and recommendation; its output contains the same identities, one open binding, state commit/sync result, checklist/AC projection, and presenter inputs.
 
@@ -466,7 +466,7 @@ Regraded metrics SHA-256 is `9019aeb74b6cd89950f93e884e0ea19d35db18c6189d490b8d5
 - DONE: Prove removed legacy gate verbs through routing exit and pre/post state, without command-output comparison or a new registry/product mechanism.
   `TestRemovedGateVerbsAreAbsentAndSideEffectFree` now requires real-router exit 2 and its existing unchanged-directory assertion; it reads no help/error prose. This exact Polish fix followed distinct First Officer authorization after the full/race finding.
 - DONE: Regrade the preserved 17/17 run under the Captain's revised AC-1 without another live journey, then run focused, formatting, full, and race checks.
-  Preserved stream `cafab526…` regrades PASS for revised AC-1 and gate authority. Focused CLI/ensigncycle checks, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass; final cumulative surface is eight files and +635/-14 (649 changed lines).
+  Preserved stream `cafab526…` regrades PASS for revised AC-1/AC-2 and gate authority: the Captain ruling classifies its post-presentation probes as observed diagnostics with no behavioral or authority effect. Focused CLI/ensigncycle checks, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass; final cumulative surface is eight files and +635/-14 (649 changed lines).
 
 ### Summary
 
