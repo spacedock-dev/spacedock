@@ -1,6 +1,6 @@
 ---
 title: Cut gate-guardrail turn and tool bloat
-status: validation
+status: implementation
 source: "Journey-metrics audit of PR #643, Runtime Live E2E run 31297186020, Claude job 93204212216, artifact 9033837253. The gate-guardrail journey used 22 assistant turns and 24 tool calls, up from 11 and 11 in the v0.26 Sonnet observation. Captain directed a separate filing on 2026-08-09."
 started: 2026-08-09T14:51:32Z
 completed:
@@ -12,7 +12,7 @@ group: gate-lifecycle-ux
 worktree: .worktrees/spacedock-ensign-cut-gate-guardrail-turn-and-tool-bloat
 issue:
 pr:
-mod-block: merge:pr-merge
+mod-block:
 id: 5k704rrfk5r75vqv3bwn1yhf
 gates:
     version: 1
@@ -93,7 +93,7 @@ gates:
                 reason: 'Validation proves the Captain-corrected contract-only scope: three files, 25 changed lines, rejected mechanisms absent, and all offline checks green.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Make the supported gate-guardrail journey reach one committed open gate with materially fewer turns and tool calls.
