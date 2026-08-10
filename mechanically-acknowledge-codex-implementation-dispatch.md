@@ -1824,3 +1824,36 @@ stored native worker ID `af41493a4fac622cd`.
   on `spacedock-ensign/mechanically-acknowledge-codex-implementation-dispatch`.
 
 The candidate is ready for independent validation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Read the exact reviewed task state at commit 829daad9a and the implementation stage definition before edits.
+  - Evidence: The implementation used the reviewed ten-file scope, 492-line limit, and implementation stage contract.
+- DONE: Change only the ten approved existing files and stay at or below 492 gross changed lines.
+  - Evidence: Candidate `042f926db1ec452354cae7d1accd0cbfde201dae` changes ten approved files, with 473 insertions and 19 deletions.
+- DONE: Add one binary-owned pending envelope per entity and stage for supported Claude and Codex CLI fresh builds.
+  - Evidence: `internal/dispatchack/ack.go` owns the active Git ref and creates one pending record for each entity and stage.
+- DONE: Use supported PreToolUse to arm the exact epoch and supported SubagentStart to consume it with one native worker ID.
+  - Evidence: Unit and live proofs recorded one identity-preserving pending, armed, and consumed chain with one native worker ID.
+- DONE: Fail closed on replay, --advance, and stage-changing status while pending or armed.
+  - Evidence: Focused dispatch, acknowledgment, and status controls passed before the full test runs.
+- DONE: For every consumed receipt, including empty-worktree and --force, require the existing complete-and-committed stage-report predicate before stage change.
+  - Evidence: The status guard applies the existing report predicate before it clears a consumed receipt or changes the stage.
+- DONE: Preserve Pi and every excluded recovery, abandonment, in-app, parallel, schema-family, and broad mutation surface.
+  - Evidence: The final diff contains only the ten approved files. It adds no Pi or excluded-surface behavior.
+- DONE: Run all focused fail-closed controls and verify real immutable pending, armed, and consumed audit refs.
+  - Evidence: Focused controls passed. The live Codex proof recorded all three immutable audit refs for epoch `ec84b11a003f39cbc1d1b47de1a38c1b`.
+- DONE: Use exact targeted local subscription runs only: bound green XPASS for Sonnet and Codex, then remove only n28 bindings and prove exact normal PASS.
+  - Evidence: Codex produced a bound XPASS and an unbound normal PASS through local OAuth. The Captain-approved recarve kept Sonnet bound and transferred its owner to `kky8pg7wc8xgb985epwss092`.
+- DONE: Report local auth blockers and do not switch to paid CI before repository-required PR lanes.
+  - Evidence: The report records the isolated OAuth route. No run set `OPENAI_API_KEY`, and no paid CI ran.
+- DONE: Run gofmt, go test ./..., go test ./... -race, registry reconciliation, and active-owner checks.
+  - Evidence: Formatting, full, race, reconciliation, and active-owner checks passed on the final candidate.
+- DONE: Retain exact commands, artifacts, digests, candidate SHA, line count, and a Simplified-English implementation report.
+  - Evidence: The report records the candidate SHA and line count. Both Codex artifact directories and the Claude artifact directory remain in `/tmp` with their command and gate records.
+
+### Summary
+
+The candidate adds native acknowledgment for supported fresh Claude and Codex workers. Codex proved the value with a normal local OAuth PASS.
+
+The Captain-approved recarve keeps the Sonnet binding until the separate gate durability repair lands. This report changes no product bytes.
