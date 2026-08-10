@@ -241,3 +241,47 @@ The candidate now uses exact base `0bbe9d46c02328930253bfbe619f9827d6da5109`. Th
 The focused detector, registry, owner, format, and diff checks passed. The product diff did not change.
 
 The full, race, and live runs were not repeated. Their product bytes did not change, and the First Officer prohibited duplicate runs.
+
+## Stage Report: validation
+
+- DONE: Confirm exact candidate, remote match, base, and tracked worktree cleanliness.
+  Candidate `8af37edcd9bc2a4033cd0bfa077f5a872ae597e3` matches its remote and uses base `0bbe9d46c02328930253bfbe619f9827d6da5109`.
+- DONE: Inspect only the exact two-file diff and 14-gross-line cap.
+  The byte-equivalent rebased patch changes two files, +9/-1 lines, and 10 gross lines.
+- DONE: Inspect retained local Sonnet PASS artifacts and direct adapter read evidence.
+  The retained stream reads the exact Claude adapter path and contains no filesystem-discovery action.
+- DONE: Run focused detector, registry, owner, format, and diff checks without duplicating owned full, race, or live runs.
+  The focused detector, registry reconciliation, active-owner, `gofmt -d`, and `git diff --check` commands passed.
+- DONE: Report each finding with four workflow evidence fields.
+  The external owner-hygiene finding and its repair are recorded below.
+- DONE: Write and push a Simplified-English PASSED or REJECTED validation Stage Report.
+  This report recommends PASSED for the exact rebased candidate.
+- SKIPPED: Repeat implementation-owned full, race, or live checks.
+  The implementation report retains these results, and the rebased product patch is byte-equivalent.
+
+### Acceptance evidence
+
+- **AC-1:** The retained Sonnet run passed normally and used no broad-search command.
+- **AC-2:** The stream reads the Claude adapter from the exact loader-supplied base.
+- **AC-3:** The focused control rejects the exact artifact `find` command and reports the `find` signature.
+- **AC-4:** The retained full and race results passed. The fresh focused, format, registry, and active-owner commands passed.
+- **AC-5:** The required pull-request lanes remain a merge condition for the First Officer. Pi remains skipped.
+
+### Finding disposition
+
+- Released user and normal workflow: a maintainer runs the required active-owner command before merge.
+- Observable harm: three unrelated bindings named an archived owner, so the active-owner command failed.
+- Authority: `value-ac[AC-4]` requires the active-owner command to pass.
+- Trigger evidence: the command failed on base `9c28d633a` with state HEAD `001d690b1`.
+- Disposition: the First Officer accepted a Material external evidence defect and held this candidate unchanged.
+- Repair evidence: base `0bbe9d46c02328930253bfbe619f9827d6da5109` assigns three active owners. The fresh command passed.
+
+### Recommendation
+
+PASSED. No Material finding remains in this task. The exact candidate can proceed to its required pull-request lanes.
+
+### Summary
+
+The candidate gives Sonnet the exact adapter path. The retained run reaches the declared zero-workflow stop without filesystem discovery.
+
+The rebased patch stays within scope and the line cap. All authorized focused commands pass.
