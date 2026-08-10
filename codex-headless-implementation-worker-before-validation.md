@@ -354,3 +354,23 @@ The exact Sonnet target passed, but the exact Codex target failed. The independe
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation; surface 5 files/96 gross LOC vs estimate 2 files/10 gross LOC (+860%); AC unchanged
+
+## Captain-approved correction package
+
+The Captain approved both Material fixes for implementation cycle 2.
+The end-user value remains unchanged: Sonnet and Codex must run one implementation worker to completion before validation.
+
+The correction can change only these two files:
+
+- `internal/ensigncycle/claude_runtime_helpers_test.go`
+- `internal/ensigncycle/claude_live_runner_test.go`
+
+Finding 1 is estimated at `+92/-1`, or 93 gross lines and 91 net lines.
+Finding 2 is estimated at `+26/-2`, or 28 gross lines and 24 net lines.
+The combined estimate is `+118/-3`, or 121 gross lines and 115 net lines.
+
+The correction cap is 130 gross changed lines across exactly these two additional files.
+The projected full candidate cap is seven files and 217 gross changed lines.
+The package adds no production, contract, registry, documentation, or XFAIL file.
+
+Captain approval authorizes the two rejected-finding fixes within these limits.
