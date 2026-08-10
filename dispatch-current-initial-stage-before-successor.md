@@ -57,6 +57,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:6x50qafc8566zc6p1qpb6y30:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:6x50qafc8566zc6p1qpb6y30-validation-1
+              briefing:
+                id: briefing:6x50qafc8566zc6p1qpb6y30:validation:attempt-1:revision-1
+                digest: sha256:f2cd1e5d922d73e8751b196e6c7529b5d64c3e3d8901ec516c48420f3d8d0f0d
+                request-digest: sha256:97dfa0bbb32dbddd7b52fa8a8a64e1e84c8405244f0ba24ca958c8a3614f11c4
+                room-ref: ./dispatch-current-initial-stage-before-successor/review/validation/briefing-1
 ---
 
 A First Officer must dispatch work for the current initial stage before it advances to a terminal successor.
