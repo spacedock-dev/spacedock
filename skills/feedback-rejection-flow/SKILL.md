@@ -21,7 +21,7 @@ When a feedback stage recommends REJECTED:
 7. Re-run the reviewer after publication. When the existing reviewer remains addressable and reuse conditions pass, re-run the kept-alive reviewer through the same `«addressable-worker»` capability used for feedback routing; the message must ask that reviewer to re-review the updated entity state, not validate its own fix work. Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail.
 8. If the re-review passes, read the completed validation/2 report and the workflow-owned Cycle line.
 9. Publish validation/2 through the same neutral `gate record --round` path.
-10. Re-enter the normal gate flow through the existing gate lifecycle. Commit one gate-review Markdown artifact for the corrected candidate.
+10. Re-enter the normal gate flow through the existing gate lifecycle. Commit one gate-review Markdown artifact outside every `review/STAGE/round-CYCLE` advisory room.
 11. Invoke the existing `gate prepare` path once. Require one fresh open gate bound to its prepared Briefing.
 12. Read the durable gate state. Present the fresh gate, then stop without a resolution, application, terminal status, or successor dispatch.
 
