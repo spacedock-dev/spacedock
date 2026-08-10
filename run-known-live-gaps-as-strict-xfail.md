@@ -6,7 +6,7 @@ started: 2026-08-09T18:34:17Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-run-known-live-gaps-as-strict-xfail
 issue:
 pr:
 mod-block:
