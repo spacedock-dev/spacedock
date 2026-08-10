@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-3:revision-1",
+  "question": "Does fresh validation of rebased candidate 20910e635 support approval with AC-2 held at merge?",
+  "artifacts": [
+    {
+      "id": "artifact:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/14e11bfcc2b89a19cf96798c837bd8860d2f4d2a/restore-optional-manual-pi-common-live-ci.md",
+      "rev": "sha256:d5c55c5d2f2db7eda9a064e11a9cd7069229adbdcebc3885485a47d4b21cc0cd",
+      "mediaType": "text/markdown",
+      "summary": "PASSED: candidate 20910e635 contains origin/main 944f323ac, preserves patch-id 7c0cea6b byte-for-byte, and passes all local checks. Prior exact Pi/Opus evidence remains valid; AC-2 is pending at merge."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/e0f2812d68db3ee3ef0a61dc006792fbb29a065a/docs/runtime-live-ci.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8042b3a42369859fd0a37c8f03724dfb200936819a23b68aac15fb1acd78fc58"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/e0f2812d68db3ee3ef0a61dc006792fbb29a065a/docs/roadmap/test-behavior-completeness/dispatch-sprint-execution.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e0772dfdf509be2ace9ad67f8650166ef3d14303155b4c27d001a715c77c3b1f"
+    }
+  ]
+}

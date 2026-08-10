@@ -91,6 +91,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:0aqnm6v8ajns6cpsknxn9wf2-validation-3
+              briefing:
+                id: briefing:0aqnm6v8ajns6cpsknxn9wf2:validation:attempt-3:revision-1
+                digest: sha256:ece7aa0d2114c1f27bb75d2ef1977d2a4ff598a041e2037b3613d2f720558a0a
+                request-digest: sha256:8aa95e57461fe487561f2bd493a0e18f88e5f04b1f3ea63f4965f2b161f37083
+                room-ref: ./restore-optional-manual-pi-common-live-ci/review/validation/briefing-3
 ---
 
 Give maintainers one optional GitHub Actions command that runs the Pi common journeys and retains their evidence.
