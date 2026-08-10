@@ -611,3 +611,50 @@ After that host change, rerun the disposable spike. Then run supported in-app
 cells before any product design revision.
 
 No product implementation can start from this report.
+
+## Independent staff-review HOLD
+
+Date: 2026-08-10
+
+Staff recommendation: **HOLD**.
+
+This review does not revise the product design. It records the remaining proof
+gaps from the supported-hooks spike.
+
+### Open Material findings
+
+| Finding | Status | Materiality | Review result |
+|---|---|---|---|
+| Parallel Codex correlation | OPEN | Material | Two starts had no parent correlation ID. The probe assigned the wrong native IDs to both receipts. |
+| Recovery authority | OPEN | Material | The probe script created its own approval. The abandon action did not recompute and verify the stored digest. |
+
+The recovery cell proved atomic consumption only. It did not prove independent
+captain authority.
+
+### Unproved cells
+
+- Parallel Claude correlation remains unproved.
+- Exact feedback reuse generation remains unproved.
+- IDE, Desktop, and web host surfaces remain unproved.
+- Direct `status --set` remains unproved.
+- Terminal status mutation remains unproved.
+- Archive mutation remains unproved.
+- Gate consumption remains unproved.
+- Merge finalization remains unproved.
+- `dispatch build --advance` remains unproved.
+
+The feedback cell reused one native agent. It did not bind the follow-up call to
+one exact pending generation from supported host data.
+
+### Closed commit-race finding
+
+Private Git refs close the companion-file commit race. The production-style
+`git add -A` commit included only the worker report.
+
+The race generator command was not saved. This remains an evidence-record
+defect, but it does not reopen the private-ref commit boundary.
+
+### Authorization
+
+No product implementation is authorized. Resolve the two open Material
+findings and prove all listed cells before design revision or implementation.
