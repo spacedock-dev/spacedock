@@ -155,3 +155,18 @@ It recognizes the successful atomic command and keeps each adjacent non-atomic o
 
 The oracle now grades only completed Codex commands with exit code zero. It recognizes the exact artifact command and keeps all required controls red.
 The exact local journey passed and retained its artifacts. The full offline suites need a machine with sufficient temporary disk space.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Recognize the exact successful blessed Codex filing command while every manual, preview-plus-write, wrong-slug, failed, and narration-only control remains red.
+  Commit `95e7f715d` remains unchanged. The focused controls pass.
+- DONE: Prove the repaired exact local Codex filing journey passes normally with retained artifacts.
+  `TestLiveCommonFiling` passed. The artifacts remain at `/tmp/spacedock-codex-filing-implementation.Iskzdl`.
+- DONE: Keep the approved three-file, 105-gross evidence-only boundary and complete required offline checks.
+  `go test ./...` passed. `go test ./... -race` passed on the final broad run.
+  The first race run had one transient 250 ms timing failure. Its focused rerun passed before the final broad run.
+
+### Summary
+
+The candidate remains at commit `95e7f715d` with three files and 105 gross lines. All required local checks now pass.
+The retained live artifacts and the earlier disk-failure record remain unchanged.
