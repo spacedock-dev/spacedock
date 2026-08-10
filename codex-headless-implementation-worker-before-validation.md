@@ -8,7 +8,7 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-codex-headless-implementation-worker-before-validation
 issue:
-pr:
+pr: "#657"
 mod-block:
 sprint: test-behavior-completeness
 group: common-evidence
