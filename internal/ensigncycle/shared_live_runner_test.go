@@ -117,7 +117,7 @@ func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
 func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
-	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyGap{liveXFail("claude-opus", "xp6c9qfe7y4wwp46enc3f85n")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
+	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyGap{liveXFail("claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
 }
 
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
@@ -177,5 +177,5 @@ func TestLiveCommonACValueReanchor(t *testing.T) {
 
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-opus", "xp6c9qfe7y4wwp46enc3f85n"), liveXFail("pi", "xp6c9qfe7y4wwp46enc3f85n")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-opus", "bqy97b9npym3zs62pagjchpk"), liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }

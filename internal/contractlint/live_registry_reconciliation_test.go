@@ -52,11 +52,11 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 		"gate-guardrail":                nil,
 		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "n28423efmj358m5av61z2fxx"}, {"xfail", "codex", "n28423efmj358m5av61z2fxx"}},
 		"withdrawn-gate-recovery":       nil,
-		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}},
+		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
 		"rejection-flow":                {{"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
 		"smallest-sufficient-mechanism": {{"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
 		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
-		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "xp6c9qfe7y4wwp46enc3f85n"}, {"xfail", "pi", "xp6c9qfe7y4wwp46enc3f85n"}},
+		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
 	}
 	for id, want := range wantGaps {
 		if !reflect.DeepEqual(actual[id].gaps, want) {
