@@ -471,3 +471,18 @@ Regraded metrics SHA-256 is `9019aeb74b6cd89950f93e884e0ea19d35db18c6189d490b8d5
 ### Summary
 
 The atomic gate-review composite is complete at `25ef135cd`. Captain-accepted 17/17 value and the original durable gate hold now regrade green through a test-only compatibility correction; product behavior is unchanged, the surface remains under the hard stop, and no additional live run occurred.
+
+## Stage Report: validation
+
+- DONE: Independently verify the preserved cycle-7 stream satisfies the Captain-revised 17-turn/17-call value and the corrected authority grade without a model rerun.
+  Independent JSONL counting found 17 unique assistant-message IDs and 17 tool calls (12 Bash, 2 Read, 3 Skill); source hashes and regraded hash `9019aeb…` match, with exactly one successful composite publish and no model journey run.
+- DONE: Attack atomic binding-room durability, restart identity, dirty-sibling preservation, and every forbidden decision or lifecycle effect.
+  Focused real-Git tests fail on split binding/room durability, duplicate restart, identity substitution, pre-commit residue, peer overwrite, dirty-sibling capture, decision, consume, withdraw, status mutation, or successor dispatch; all passed at `25ef135cd`.
+- DONE: Verify the eight-file/649-line boundary, behavioral removed-verb proof, formatting, full suite, race suite, and exact candidate cleanliness.
+  Diff from `9e21db9c3` is exactly 8 files, +635/-14 (649 lines); removed verbs reject through the real router with exit 2 and unchanged directory, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, and `go test ./... -race` pass, and the code worktree remains clean at exact HEAD `25ef135cd`.
+- DONE: Recommend PASSED with deferred risks listed separately from material and polish findings.
+  PASSED: all Captain-revised value and authority evidence reproduces; no material, deferred-risk, or polish finding remains.
+
+### Summary
+
+Independently validated the frozen cycle-7 evidence and the narrow compatibility correction without comparing command/help prose or triggering another model journey. The candidate satisfies the revised 17/17 value, atomicity and authority boundaries, exact surface cap, formatting, full-suite, race-suite, and cleanliness requirements; recommendation: PASSED.
