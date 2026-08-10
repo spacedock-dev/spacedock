@@ -3,7 +3,7 @@ id: qbppyssy13pyh1gtkh2n8vp5
 title: Fix the gate-lifecycle ls-tree fallback command
 status: ideation
 source: Captain intake; recovered from deleted public issue spacedock-dev/spacedock#669
-started:
+started: 2026-08-10T22:53:32Z
 completed:
 verdict:
 score: 0.9
