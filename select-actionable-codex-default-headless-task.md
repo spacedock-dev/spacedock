@@ -2,7 +2,7 @@
 title: Select the actionable Codex default-headless task
 status: backlog
 score: "0.90"
-source: "Repeated Codex wrong-entity and queued-entity default-headless artifacts, 2026-08-10"
+source: Repeated Codex wrong-entity/queued-entity evidence; DVD final run 31432758302 job 93600120765 artifact 9080028678, 2026-08-10
 sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-product
