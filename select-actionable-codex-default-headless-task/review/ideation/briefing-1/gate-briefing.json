@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:272j6s25f9mry6nxbf4yjxvt:ideation:attempt-1:revision-1",
+  "question": "Approve the bounded Codex First Officer runtime correction and its single XPASS-to-unbound-PASS verification ladder?",
+  "artifacts": [
+    {
+      "id": "artifact:272j6s25f9mry6nxbf4yjxvt:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f7637d555d7a186716b51a9b957b5b488cafffae/select-actionable-codex-default-headless-task.md",
+      "rev": "sha256:926650ab4d94ba0a8d05b6c19b1795eed027712ee0c680ae10a4065cf6605554",
+      "mediaType": "text/markdown",
+      "summary": "Exact main produced bound Codex XFAIL implementation-worker-not-dispatched. The smallest correction changes one declarative Codex runtime paragraph within 6 gross lines; after bound XPASS, only the Codex binding and mirrored reconciliation row are removed. Total hard cap is 3 files and 12 gross lines, with no hooks, observer state, transcript product mechanism, instrumentation, or other-host work."
+    }
+  ]
+}

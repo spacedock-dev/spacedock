@@ -30,6 +30,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:272j6s25f9mry6nxbf4yjxvt:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:272j6s25f9mry6nxbf4yjxvt-ideation-1
+              briefing:
+                id: briefing:272j6s25f9mry6nxbf4yjxvt:ideation:attempt-1:revision-1
+                digest: sha256:a1f9e70c1b9d4caf0dae8e8ae24d7d81ba9892c9997b254233044947c1946e01
+                request-digest: sha256:5a7226a4a0ebddb2c7914d1386c17d8515eee86a684139bbb7a18fa1560dd40c
+                room-ref: ./select-actionable-codex-default-headless-task/review/ideation/briefing-1
 started: 2026-08-11T05:24:54Z
 ---
 ## Problem
