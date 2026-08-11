@@ -7,6 +7,18 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-product
 id: 272j6s25f9mry6nxbf4yjxvt
+gates:
+    version: 1
+    records:
+        - id: gate:272j6s25f9mry6nxbf4yjxvt:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:272j6s25f9mry6nxbf4yjxvt-backlog-1
+              briefing:
+                id: briefing:272j6s25f9mry6nxbf4yjxvt:backlog:attempt-1:revision-1
+                digest: sha256:d276a71ce0905bc7454b3df2bf92eef7fbe8e938fc575908afa97d493ba37c21
+                request-digest: sha256:38daadfeab1726b731607f66dd5ce060bd32fd2eb3bb1ef583818480aa604e69
+                room-ref: ./select-actionable-codex-default-headless-task/review/backlog/briefing-1
 ---
 ## Problem
 

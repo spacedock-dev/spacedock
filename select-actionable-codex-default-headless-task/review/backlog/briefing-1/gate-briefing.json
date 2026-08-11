@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:272j6s25f9mry6nxbf4yjxvt:backlog:attempt-1:revision-1",
+  "question": "Should design begin for deterministic Codex default-headless task selection?",
+  "artifacts": [
+    {
+      "id": "artifact:272j6s25f9mry6nxbf4yjxvt:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/70696350b8a3fc30a586bdf260250414d837bb3d/select-actionable-codex-default-headless-task.md",
+      "rev": "sha256:951626c6357d6af64d945e8e3a198dc9a5dae9e7df81887c6d2ed9083bd442e4",
+      "mediaType": "text/markdown",
+      "summary": "The repaired backlog report defines one product-only Codex target-selection outcome, excludes hook and observer mechanisms, and requires bound XFAIL through unbound PASS proof."
+    }
+  ]
+}
