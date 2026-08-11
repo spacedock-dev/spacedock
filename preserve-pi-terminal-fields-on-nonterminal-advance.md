@@ -193,6 +193,10 @@ The full runs retained two external load artifacts: one quiet timeout and one 10
   `578ed943a` is exactly two files at +49/-1; the runtime line and approved after-text share SHA-256 `7d56f4b...a23a528`, all seven blobs equal `ff9bb4506`, and the reconciliation/active-owner tests passed.
 - DONE: Independently assess AC-1 through AC-4 using the accepted focused/race/full-load evidence, run no redundant full/race/live/Pi/CI, and return one PASSED or REJECTED report under the two-round rule.
   PASSED in round 1: AC-1 through AC-4 have valid evidence, no material finding remains, and validation ran no full, race, live, Pi, or CI rerun.
+  AC-1 evidence: The complete four-row preservation matrix passed, while the detached clearing falsifier failed every populated adjacent state.
+  AC-2 evidence: The approved instruction replacement is byte-identical and the candidate has the exact two-file +49/-1 diff.
+  AC-3 evidence: All seven protected blobs are baseline-identical, and the registry-reconciliation and active-owner checks are green.
+  AC-4 evidence: The accepted focused and race evidence passed; both full-load failures passed unchanged in isolation under the captain's no-third-run ruling.
 
 ### Summary
 
