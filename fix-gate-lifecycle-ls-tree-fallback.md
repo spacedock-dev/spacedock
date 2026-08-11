@@ -87,6 +87,17 @@ gates:
                 digest: sha256:cdfb43872d56046662630a0f480af8b8893bfb9bfb8c2ff8f8fb251434aedd49
                 request-digest: sha256:b41caf52cc6ab2a92fab08427908271c59d7e4dd07e3d35040349aa562733c85
                 room-ref: ./fix-gate-lifecycle-ls-tree-fallback/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qbppyssy13pyh1gtkh2n8vp5:validation:2
+                briefing: briefing:qbppyssy13pyh1gtkh2n8vp5:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-11T05:39:43.254631Z"
+                decision: approve
+                reason: Captain has the conn; cycle-2 validation passed both ACs on the bounded one-file +2/-2 candidate, including observed state P=recorded-gate-task and exact package inventory.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 When gate Artifact or Reference paths are absent, the First Officer must discover committed Markdown with a complete, path-scoped Git command. The current instruction abbreviates this as `git -C ... ls-tree`, which deterministically exits 129 because it omits the required tree-ish.
