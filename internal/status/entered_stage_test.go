@@ -183,6 +183,16 @@ func TestEnteredWorktreeStageAwayStatusMutationsAreByteClean(t *testing.T) {
 }
 
 func TestEnteredStageMutationControls(t *testing.T) {
+	terminalLines := func(body string) string {
+		var lines []string
+		for _, line := range strings.Split(body, "\n") {
+			if strings.HasPrefix(line, "completed:") || strings.HasPrefix(line, "verdict:") {
+				lines = append(lines, line)
+			}
+		}
+		return strings.Join(lines, "\n")
+	}
+
 	t.Run("same-stage dispatch mutation remains allowed", func(t *testing.T) {
 		def, _, entity := buildEnteredStageFixture(t, enteredStageEntity)
 		stdout, stderr, code := runNative(t, def, pinnedEnv(t),
@@ -213,6 +223,44 @@ func TestEnteredStageMutationControls(t *testing.T) {
 		}
 		if !strings.Contains(readBytes(t, entity), "status: validation") {
 			t.Fatal("completed transition did not update status")
+		}
+	})
+
+	t.Run("successor preserves unspecified terminal fields", func(t *testing.T) {
+		cases := []struct {
+			name      string
+			completed string
+			verdict   string
+		}{
+			{name: "both empty"},
+			{name: "completed only", completed: "2026-08-10T12:34:56Z"},
+			{name: "verdict only", verdict: "PASSED"},
+			{name: "both nonempty", completed: "2026-08-10T12:34:56Z", verdict: "PASSED"},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				completedLine := "completed:"
+				if tc.completed != "" {
+					completedLine += " " + tc.completed
+				}
+				verdictLine := "verdict:"
+				if tc.verdict != "" {
+					verdictLine += " " + tc.verdict
+				}
+				body := strings.Replace(enteredStageEntity,
+					"completed:\nverdict:",
+					completedLine+"\n"+verdictLine, 1)
+				def, _, entity := buildEnteredStageFixture(t, body+completeImplementationReport)
+				before := terminalLines(readBytes(t, entity))
+				stdout, stderr, code := runNative(t, def, pinnedEnv(t),
+					"--workflow-dir", def, "--set", "entered-task", "status=validation")
+				if code != 0 || !strings.Contains(stdout, "status: implementation -> validation") {
+					t.Fatalf("completed transition exit=%d stdout=%q stderr=%q", code, stdout, stderr)
+				}
+				if after := terminalLines(readBytes(t, entity)); after != before {
+					t.Fatalf("terminal lines changed\n--- before ---\n%s\n--- after ---\n%s", before, after)
+				}
+			})
 		}
 	})
 	t.Run("normal worktree dispatch stays guarded until report is committed", func(t *testing.T) {
