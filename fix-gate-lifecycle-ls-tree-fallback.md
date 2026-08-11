@@ -202,3 +202,33 @@ The split-root correction preserves the approved one-file implementation and exi
 ### Summary
 
 The gate-lifecycle fallback now supplies one committed, recursive, Markdown-filtered and intended-path-fenced tree query for each applicable retained root while leaving supplied paths unchanged. Product commit `81e1dbdfe` remains byte-clean, and the required full race suite passed unchanged after external capacity remediation; the report retains the prior constrained-host failures as history.
+
+## Review-finding disposition
+
+### V-1 — Live state-root fallback used the whole repository
+
+- Reviewer observation: Codex item_11 invoked both `ls-tree` commands with `P='.'` including the state checkout, rather than the designed state task directory. The persisted-package oracle cannot distinguish this whole-root scan because the fixture has no unrelated committed state Markdown.
+- Released user and normal workflow: a Codex First Officer preparing a missing-path gate in the supported split-root `TestLiveCommonGateGuardrail` workflow.
+- Observable harm: the fallback exposes every committed Markdown path in the state checkout to discovery instead of fencing selection to `recorded-gate-task`; the correct final package does not erase that broader observation boundary.
+- Affected authority: `contract[skills/fo-gate-lifecycle/SKILL.md#Prepare]` requires each retained root query to use its resolved root-relative intended location `P`, while the task boundary forbids broad repository discovery.
+- Trigger evidence: the sole authorized live run recorded completed Codex command item `item_11` with exit 0 and `-- .` for both roots; the state root and known slug/task directory were already available.
+- Defect kind: outcome defect (the state query is whole-root) and evidence defect (the persisted inventory still passes, so the cited oracle cannot detect the wrong fence).
+- Release scope: Material; the trigger is the supported missing-path split-root journey, and it violates the explicit discovery-scope contract on that normal path.
+- Task ownership: the current task owns the fallback and its AC proof, but the authorized one-file candidate cannot repair both the runtime instruction result and the observation boundary.
+- Correction shape: mechanism/design reset, not a bounded correction; re-anchor `P` to the known entity task directory and make the proof distinguish intended-path discovery from whole-root discovery.
+- Proposed disposition: route for decision.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 with the existing exact local Codex TestLiveCommonGateGuardrail and verify exactly one prepared package without the Git usage failure.
+  The single `SPACEDOCK_LIVE_RUNTIME=codex` run passed in 121.04s; one `request.json` was held open, `gate prepare` exited 0 exactly once, and the retained stream had no exit-129/`git ls-tree` usage failure.
+- FAILED: Reproduce AC-2 from persisted package/source identities across definition_dir and entity_dir, excluding unrelated and uncommitted inputs without command-output comparison.
+  The canonical Briefing had exactly state `gate-review.md`, main `recorder-contract.md`, and state `entity-snapshot.md` with independently matching SHA-256 revisions and no dirty sibling, but completed command item `item_11` used state `P='.'`; the package-only oracle therefore passes the prohibited whole-root scan.
+- DONE: Verify the one-file +2/-2 candidate, applicable focused/full/race/formatting checks, and unchanged supplied-path and gate-authority behavior; recommend PASSED or REJECTED.
+  Commit `81e1dbdfe` is one file at +2/-2 and `git diff --check` clean; focused tests, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` passed, while the live log stopped after one prepare/commit with no decision, consume, dispatch, or archive and the supplied-path branch remained unchanged.
+- FAILED: Recommend PASSED or REJECTED with findings classified under workflow policy.
+  REJECTED: V-1 is a Material outcome-plus-evidence defect in the chosen mechanism/proof boundary; route the design reset for decision without mutating or rerunning candidate `81e1dbdfe`.
+
+### Summary
+
+AC-1 and the exact persisted inventory passed in the sole authorized Codex journey, and all offline, race, formatting, surface, supplied-path, and gate-authority checks are green. Validation nevertheless recommends REJECTED because the live state query used the whole root and the specified persisted-package proof cannot detect that path-scope failure; V-1 requires a mechanism/design reset rather than a silent bounded correction.
