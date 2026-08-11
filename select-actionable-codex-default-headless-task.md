@@ -322,3 +322,50 @@ The test observability defect is fixed: Codex lifecycle grading now uses the iso
 ### Summary
 
 Cycle 3 closes the observability defect and the live transition without changing product semantics: the grader reads the parent session, correlates the returned worker handle, and freezes the first implementation completion. The exact bound target XPASSed, only its two bindings were removed, and a fresh unbound target passed; checklist count is 14 DONE, 0 SKIPPED, and 0 FAILED.
+
+## Review-finding disposition
+
+- Finding: the lifecycle oracle retains the first Codex completion but overwrites
+  `validation` for every matching transition, so `validation -> matching Done ->
+  validation` passes against the last transition.
+- Defect kind: evidence defect. The exact failing boundary is AC-1's required
+  completion-before-validation order in `assertImplementationWorkerLifecycle`.
+- Released user and normal workflow: the unbound Codex default-headless live
+  journey now relies on this oracle as its normal PASS observation boundary.
+- Observable harm: a future run can report PASS after implementation completed
+  only after validation had already started, hiding the original workflow defect.
+- Authority: value-ac[AC-1] the native implementation worker must complete before
+  validation.
+- Trigger evidence: a focused temporary negative control on `2b660fb6f` inserted
+  an early validation event into the canonical fixture; the oracle accepted the
+  reordered stream and the control failed with `validation -> completion ->
+  validation was accepted`.
+- Worker proposal: Material, owned by this task, narrow fix. Retain only the first
+  validation index, add the repeated/reordered negative control, and rerun the
+  focused lifecycle and required downstream evidence after FO authorization.
+- Validator recommendation: REJECTED. Candidate mutation and reviewer rerun remain
+  unauthorized until the First Officer records a distinct disposition.
+
+## Stage Report: validation
+
+- FAILED: Independently verify the isolated Codex parent-session grader correlates the unique spawn handle and freezes the first implementation completion; exercise its missing, ambiguous, and reordered lifecycle controls.
+  Focused tests passed handle correlation, missing completion, handle-less output, after-validation-only completion, and missing/ambiguous rollout lookup; an added temporary control proved repeated validation can overwrite the first transition and falsely pass reordered completion.
+- DONE: Verify AC-1 through AC-5 from the retained focused, full, race, bound-XPASS, binding-only, and unbound-PASS evidence without repeating owned full, race, or live runs.
+  Retained logs prove the owned focused/full/race ladder, `d7b099181` bound XPASS, two-row-only `2b660fb6f` unbinding, reconciliation, and final normal PASS; no owned full, race, or live run was repeated.
+- DONE: Inspect the exact six-file test-only diff for product-boundary leakage and report PASSED or REJECTED with any material findings classified under workflow policy.
+  `main...2b660fb6f` is exactly six test files at +105/-20 with clean `git diff --check` and zero product/skill/runtime bytes; recommendation is REJECTED for the Material AC-1 evidence defect above, not product-boundary leakage.
+
+- DONE: AC-1 retained-run outcome evidence.
+  Raw bound and unbound parent sessions each show exactly one spawn, its returned handle, the matching first implementation `Done:`, then validation; the current runs satisfy AC-1, but the oracle's repeated-transition hole invalidates the general observation boundary.
+- DONE: AC-2 retained gate evidence.
+  Bound XPASS and unbound PASS have empty semantic-code sets, and the gate-hold checks would fail on decision, consume, terminal state, post-prepare mutation, or successor dispatch.
+- DONE: AC-3 surface evidence.
+  The final candidate changes no product file and only the declared six test surfaces, preserving product, command, state, authority, and runtime bytes.
+- DONE: AC-4 transition evidence.
+  The retained bound verdict names `d7b099181` XPASS; commit `2b660fb6f` changes only the two binding rows; reconciliation passed and the retained final verdict is unbound PASS.
+- DONE: AC-5 retained ladder evidence.
+  Focused, full, and race logs passed on immutable correction bytes; validation reran only the narrow lifecycle and reconciliation controls, both green.
+
+### Summary
+
+The retained artifacts support the current live outcomes and the six-file diff has no product-boundary leakage. Validation nevertheless recommends REJECTED because the lifecycle oracle can accept completion after the first validation event when a later validation event overwrites the index; this is a Material evidence defect against AC-1.
