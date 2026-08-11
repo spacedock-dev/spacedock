@@ -254,12 +254,11 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
 	}
 	after := readFile(t, fixture.entity)
-	expected, err := recordedGateHeldExpectation(fixture)
-	if err != nil {
-		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
-	}
 	var semantic []error
-	if err := assert(before, after, expected); err != nil {
+	expected, err := semanticGateHeldExpectation(fixture)
+	if err != nil {
+		semantic = append(semantic, err)
+	} else if err := assert(before, after, expected); err != nil {
 		semantic = append(semantic, &gradedErr{code: "gate-not-held", msg: err.Error()})
 	}
 	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))
@@ -267,6 +266,24 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after))
 	}
 	finishLiveScenario(t, runner, scenario, result, semantic...)
+}
+
+func semanticGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectation, error) {
+	expected, err := recordedGateHeldExpectation(fixture)
+	if err != nil {
+		return gateHeldExpectation{}, durableSemantic("gate-not-held", fmt.Errorf("read prepared gate expectation: %w", err))
+	}
+	return expected, nil
+}
+
+func TestMissingPreparedGateExpectationIsSemanticallyGraded(t *testing.T) {
+	fixture := recordedGateFixture{entity: filepath.Join(t.TempDir(), "index.md")}
+	_, err := semanticGateHeldExpectation(fixture)
+	for xfail, want := range map[bool]string{true: "xfail", false: "fail"} {
+		if got := gradeLive(xfail, err); got.status != want || len(got.codes) != 1 || got.codes[0] != "gate-not-held" {
+			t.Errorf("gradeLive(xfail=%t) = %#v, want status=%s codes=[gate-not-held]", xfail, got, want)
+		}
+	}
 }
 
 func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) string {
