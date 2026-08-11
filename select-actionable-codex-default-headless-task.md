@@ -1,6 +1,6 @@
 ---
 title: Select the actionable Codex default-headless task
-status: backlog
+status: ideation
 score: "0.90"
 source: Repeated Codex wrong/queued target entry; DVD run 31432758302 artifact 9080028678; filing run 31434160297 artifact 9080564383, 2026-08-10
 sprint: test-behavior-completeness
@@ -29,7 +29,7 @@ gates:
                 reason: The repaired seed isolates one product-only Codex target-selection outcome, excludes prohibited mechanisms and other hosts, and defines the required bound-to-unbound proof ladder.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 ## Problem
 
