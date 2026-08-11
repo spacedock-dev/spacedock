@@ -1,6 +1,6 @@
 ---
 title: Select the actionable Codex default-headless task
-status: validation
+status: implementation
 score: "0.90"
 source: Repeated Codex wrong/queued target entry; DVD run 31432758302 artifact 9080028678; filing run 31434160297 artifact 9080564383, 2026-08-10
 sprint: test-behavior-completeness
@@ -369,3 +369,7 @@ Cycle 3 closes the observability defect and the live transition without changing
 ### Summary
 
 The retained artifacts support the current live outcomes and the six-file diff has no product-boundary leakage. Validation nevertheless recommends REJECTED because the lifecycle oracle can accept completion after the first validation event when a later validation event overwrites the index; this is a Material evidence defect against AC-1.
+
+### Feedback Cycles
+
+- Cycle 3: REJECTED — fresh validation; surface 6 files/125 gross lines vs estimate 3 files/8 gross lines; AC unchanged. Captain approved the exact one-file, approximately +5/-1 oracle correction on 2026-08-11.
