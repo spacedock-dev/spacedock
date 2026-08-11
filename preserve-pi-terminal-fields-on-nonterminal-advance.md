@@ -61,6 +61,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-11T00:45:13Z
+worktree: .worktrees/spacedock-ensign-preserve-pi-terminal-fields-on-nonterminal-advance
 ---
 
 Pi must not erase legitimate `completed` or `verdict` fields during a nonterminal advance.
