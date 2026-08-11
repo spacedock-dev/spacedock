@@ -12,9 +12,9 @@ Load before engaged gate action. It grants no writes; read `fo-write-core.md` be
 
 The binary owns preparation, withdrawal, recording, and one-use consume; this skill only routes their observed results.
 
-**Boot projection.** Use `ready_gates` from `status --boot --identify --json`; retain `definition_dir`, `entity_dir`, slug, stage, and readiness. Engage `slug` through `status --read <slug> --json`, never `find` or broad search. `needs-preparation` needs report review; `awaiting-captain` is open; `withdrawn-awaiting-prepare` needs a successor; approved routes are unblocked. Malformed/ambiguous fails closed.
+**Boot.** `status --boot --identify --json` `ready_gates` gives `definition_dir`, `entity_dir`, slug/stage/readiness. Engage slug via `status --read <slug> --json`, never search. `needs-preparation`: review report; `awaiting-captain`: open; `withdrawn-awaiting-prepare`: successor; approved: unblocked; malformed/ambiguous: fail closed.
 
-**Prepare and bind.** Resolve `${SPACEDOCK_BIN:-spacedock}`. Select committed Markdown Artifact/References and author the summary. If paths are absent, list committed Markdown once with path-scoped `git -C ... ls-tree`; read and use selections once. Skip harness logs, broad Git history, worktree status, and help/shape probes. Supply judgment and launch-cwd paths; never author binary-owned JSON, ids, digests, Git-root locators, or room coordinates.
+**Prepare.** Resolve `${SPACEDOCK_BIN:-spacedock}`; keep supplied paths. Else, per distinct applicable retained absolute R=`definition_dir`/`entity_dir`, resolve intended root-relative P; state R uses the engaged task directory, never `.`. Run: `git -C "<R>" ls-tree -r --name-only HEAD -- "<P>" | awk 'tolower($0)~/\.(md|markdown)$/{print}'`. `<R>/<P>`: shell-quoted values. Read/use once; summarize. No harness logs/history/status/help probes. Supply judgment/cwd paths; no binary JSON/ids/digests/Git locators/room coords.
 
 Run this sequence once and in this order:
 
