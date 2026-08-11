@@ -165,11 +165,20 @@ Ideation narrows the recovery to one Pi instruction-line replacement and one det
 
 - DONE: Apply only the exact Pi completion-signal line replacement and the four-row entered-stage preservation ladder within the approved 2-file +57/-6 cap.
   Commit `578ed943a` changes two files with 49 insertions and 1 deletion. The Pi replacement matches the approved text.
+  AC-2 evidence: The runtime diff is the approved one-line replacement. Only the runtime reference and entered-stage test changed.
 - DONE: Prove the ladder can fail when an unspecified completed or verdict line is cleared, then keep all fh6 oracle blobs and XFAIL registry/owner bytes unchanged.
   A temporary `completed` clear failed the completed-only and both-nonempty rows. All seven protected blobs match baseline `ff9bb4506`.
+  AC-1 evidence: Four rows preserve raw `completed:` and `verdict:` lines across empty/empty, completed-only, verdict-only, and both-nonempty advances.
+  The temporary completed-clear fault failed two populated rows. The verdict-only and both-nonempty comparisons also detect a verdict clear.
+  AC-3 evidence: The protected blobs for six `internal/ensigncycle` oracle files and `live_registry_reconciliation_test.go` match the baseline.
+  `TestRuntimeLiveRegistryReconciliation` and `TestRuntimeLiveTODOOwnersAreActive` passed with the unchanged registry and active owners.
 - DONE: Produce one immutable candidate with focused, full, race, gofmt, registry, active-owner, and diff checks green; run no live, Pi, or CI checks.
   The focused, race, gofmt, registry, active-owner, and diff checks passed on `578ed943a`. No live runtime, Pi session, or CI job ran.
   Two full runs found external suite load failures. Both isolated tests passed unchanged. The captain stopped additional verification.
+  AC-4 evidence: `TestEnteredStageMutationControls`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` passed.
+  The first `go test ./...` had a quiet timeout in `TestCodexProcessRequiresFinalMessageForTerminalTurn`. Its exact isolated run passed.
+  The second `go test ./...` reached the 10-minute package timeout during `TestDurableKeepMovingDelayedPersistence`. Its exact isolated run passed.
+  The Captain prohibited a third full run and timeout changes. No standalone output artifact file was recorded.
 
 ### Summary
 
