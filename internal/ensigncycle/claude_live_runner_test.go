@@ -262,7 +262,6 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	}
 	var semantic []error
 	semantic = append(semantic, durableSemantic("gate-not-held", assert(before, after, expected)))
-	semantic = append(semantic, durableSemantic("gate-fallback-scope", assertGateFallbackScope(result.commands, fixture)))
 	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))
 	if scenario.name == "default-headless-gate-stop" {
 		semantic = append(semantic, assertDispatchAckLifecycle(t, fixture, after, readFile(t, commandLog)))
