@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:272j6s25f9mry6nxbf4yjxvt:validation:attempt-1:revision-1",
+  "question": "Approve the validated Codex lifecycle grader and repaired default-headless XFAIL removal for PR and CI delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:272j6s25f9mry6nxbf4yjxvt:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/14a9b31d5dec840ddfd01fa78a5768b929eca826/select-actionable-codex-default-headless-task.md",
+      "rev": "sha256:851702ac5b03ae873ecb7f346a2ab6c43068a58ba6c68b343278577963b396ef",
+      "mediaType": "text/markdown",
+      "summary": "Codex default-headless grading now reads the isolated parent session, correlates the native worker handle, freezes first completion and validation events, and has passed bound XPASS to unbound PASS validation without product changes."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:272j6s25f9mry6nxbf4yjxvt:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/1d1e2b503d2ebf3605a6795842c06f2334c24f00/docs/runtime-support.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:85095ed267a76bfa924c05cbe3d8a30a2f3f69c2e97d71f7dd5a0cf4b8f1adbf"
+    }
+  ]
+}
