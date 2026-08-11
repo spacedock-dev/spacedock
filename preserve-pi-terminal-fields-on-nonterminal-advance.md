@@ -56,3 +56,13 @@ Verified by: focused tests, `go test ./...`, `go test ./... -race`, gofmt, and `
 ## Test plan
 
 Ideation must locate the exact shipped clause and the nearest existing behavioral test boundary before implementation. Use the smallest unit or fixture-backed test that can falsify field preservation. No live, Pi, or CI run is permitted. The validator batches one complete adversarial matrix before one verdict. One authorized correction pass is allowed; a second candidate-owned rejection requires design reset or HOLD.
+
+## Stage Report: backlog
+
+- DONE: A Pi nonterminal advance preserves legitimate `completed` and `verdict` bytes.
+- DONE: The scope reverts only the terminal-field-clearing clause from fh6 commit `4a98f40b4`. It retains the oracle improvements and adds the smallest behavioral test.
+- DONE: The exclusions are mechanisms, hooks, protocols, state stores, parser loops, XFAIL changes, live runs, Pi runs, and CI changes.
+- DONE: AC-1 uses a focused behavioral test that proves byte-for-byte preservation of both terminal fields.
+- DONE: AC-2 uses the exact source diff and focused contract checks to prove the narrow instruction reversal.
+- DONE: AC-3 uses exact diff inspection and focused ownership checks to prove that the oracle improvements and XFAIL records are unchanged.
+- DONE: AC-4 uses focused tests, full tests, race tests, gofmt, and `git diff --check` on one immutable candidate.
