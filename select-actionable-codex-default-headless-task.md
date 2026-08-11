@@ -29,3 +29,18 @@ Codex headless uses durable boot and next state to select the prepared actionabl
 - AC-2: The selected target completes pending → armed → consumed implementation acknowledgment.
 - AC-3: Codex commits the prepared clean validation gate, stops open, and dispatches no successor.
 - AC-4: The Codex binding is removed only after bound XPASS-green and unbound normal PASS.
+
+## Stage Report: backlog
+
+- DONE: Seed end value
+  Codex selects the actionable implementation task from durable boot and next state. It reaches a clean, open validation gate.
+- DONE: Included scope
+  The scope permits the smallest declarative Codex First Officer or public binary behavior correction. It uses existing public-behavior tests. The exact local subscription moves from bound XFAIL to XPASS, binding-only removal, and unbound PASS.
+- DONE: Excluded scope
+  The scope excludes global or host hooks, observer references, temporary state, transcript-driven product mechanisms, product instrumentation, and new standing CI or lint. It excludes target-only CI and work for Pi, Opus, or Sonnet.
+- DONE: Proof plan
+  Record the current bound local Codex XFAIL baseline. Run one focused, full, and race ladder, then record the exact XPASS. Remove only the Codex binding and reconciliation. Record the exact unbound PASS, independent validation, and required PR CI.
+
+### Summary
+
+The Captain's current directive supersedes the seed's historical n28 acknowledgment wording. This report defines the current boundary without changes to the seed body.
