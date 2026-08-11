@@ -1,6 +1,6 @@
 ---
 title: Continue Codex rejection after the first validation
-status: validation
+status: implementation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:16Z
 completed:
@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: common-evidence
 worktree: .worktrees/spacedock-ensign-continue-codex-rejection-after-first-validation
 issue:
-pr: "#664"
+pr:
 mod-block:
 id: dvddbpsf4tdt3yjw1yjyp14k
 gates:
@@ -120,7 +120,7 @@ gates:
                 reason: Captain conn approves final dvd candidate after PASSED cycle-4 validation. One exact PR rerun remains the merge boundary.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 ## Problem
@@ -1019,3 +1019,12 @@ All required local checks pass. Fresh validation can now inspect exact candidate
 
 The exact candidate accepts one active final gate after any number of cleanly withdrawn attempts. It preserves every other durable and transcript constraint.
 The validation recommendation is PASSED. No DVD-owned Material finding remains.
+
+## Current-main implementation finding
+
+- Released user and workflow: A Codex operator ran the public rejection-flow journey on immutable main `07ce3ddd30e644b289deda98d3a589ec18e57e41`.
+- Observable harm: The complete journey stopped before validation/2 publication and final gate preparation. The bound proof also selected a Claude-only reviewer parser.
+- Value authority: `value-ac[AC-3]` requires validation/2 before exactly one fresh unresolved gate.
+- Trigger evidence: The bound baseline completed in 827.15s with `rejection-reviewer-flow` and `rejection-round-missing`. Its artifact is `/tmp/dvd-current-main-codex.xbcK2k`.
+- Disposition: FIX. The Captain approved one product handoff correction and one test-only runtime selection correction.
+- Approved surface and cap: Change only `skills/feedback-rejection-flow/SKILL.md` and `internal/ensigncycle/claude_live_runner_test.go`. The estimated cap is +8/-2, net +6.
