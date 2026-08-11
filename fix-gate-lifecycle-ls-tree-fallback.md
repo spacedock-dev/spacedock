@@ -73,6 +73,14 @@ gates:
                 digest: sha256:bbf3c3b6872ec6c61acfd87bfdce5b9c85a5e75b17af1e51d9062c2439e9999b
                 request-digest: sha256:0b9e6a2acc234fb999602ee392e53ac0910b92f68beb011c3713ffa8106387e4
                 room-ref: ./fix-gate-lifecycle-ls-tree-fallback/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qbppyssy13pyh1gtkh2n8vp5:validation:1
+                briefing: briefing:qbppyssy13pyh1gtkh2n8vp5:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-11T03:23:31.885533Z"
+                decision: revise
+                reason: 'Accept validation rejection and route QBP to implementation: bind the state query to the known task directory and make proof detect whole-root discovery without adding a new test framework.'
 ---
 
 When gate Artifact or Reference paths are absent, the First Officer must discover committed Markdown with a complete, path-scoped Git command. The current instruction abbreviates this as `git -C ... ls-tree`, which deterministically exits 129 because it omits the required tree-ish.
