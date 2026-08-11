@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kqdnfzjh921ryad7n6h82m1a:backlog:attempt-2:revision-1",
+  "question": "Approve this narrow Pi field-preservation task for ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:kqdnfzjh921ryad7n6h82m1a:backlog:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/f3d17fa0e36bd7ad67f8c9633602658e5180907b/preserve-pi-terminal-fields-on-nonterminal-advance.md",
+      "rev": "sha256:376c781b98ec986c99f1bbd73abce303bdbfe413727c2ec9cbe5520288785f6a",
+      "mediaType": "text/markdown",
+      "summary": "Reverse only the fh6 terminal-field-clearing clause, preserve every unrelated oracle and binding, and require one behavioral field-preservation proof with no live or Pi run. The repaired backlog report records seven complete seed obligations."
+    }
+  ]
+}

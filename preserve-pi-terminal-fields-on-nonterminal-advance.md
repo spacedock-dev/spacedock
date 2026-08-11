@@ -23,6 +23,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-11T00:41:41.736257Z"
                 reason: seed lacks required backlog Stage Report
+            - id: gate-attempt:kqdnfzjh921ryad7n6h82m1a-backlog-2
+              briefing:
+                id: briefing:kqdnfzjh921ryad7n6h82m1a:backlog:attempt-2:revision-1
+                digest: sha256:7a96f5c08af39757fb5ce74b61f8c733a2ce4029204f66286cd12c0893e72f4e
+                request-digest: sha256:f6e73e87b5350b673a1ff7f0a87aea5a506dd6e91ffdce3c7ce5aac6b28e2790
+                room-ref: ./preserve-pi-terminal-fields-on-nonterminal-advance/review/backlog/briefing-2
 ---
 
 Pi must not erase legitimate `completed` or `verdict` fields during a nonterminal advance.
