@@ -51,6 +51,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-11T05:24:54Z
+worktree: .worktrees/spacedock-ensign-select-actionable-codex-default-headless-task
 ---
 ## Problem
 
