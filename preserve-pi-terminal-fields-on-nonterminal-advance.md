@@ -1,6 +1,6 @@
 ---
 title: Preserve Pi terminal fields on nonterminal advance
-status: implementation
+status: validation
 score: "1.0"
 source: Captain recovery directive; fh6 commit 4a98f40b4, 2026-08-11
 sprint: test-behavior-completeness
