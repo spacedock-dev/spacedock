@@ -1,6 +1,6 @@
 ---
 title: Remove dispatch acknowledgment hook machinery
-status: implementation
+status: validation
 score: "1.0"
 source: Captain emergency no-global-hook directive, 2026-08-10
 sprint: test-behavior-completeness
