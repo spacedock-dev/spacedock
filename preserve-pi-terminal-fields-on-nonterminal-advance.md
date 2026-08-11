@@ -128,10 +128,13 @@ No spike needed. The design relies only on already-proven mechanisms: `runSet` a
 
 - DONE: Declare the exact before/after instruction change, exact files, insertion/deletion estimate, tolerance, and unchanged semantic surfaces.
   Commit `d4fbb505c` specifies a two-file 45-insertion/1-deletion baseline, bounded tolerance, exact Pi bullet replacement, and unchanged semantic surfaces.
+  AC-2 evidence: compare the candidate to `ff9bb4506be73787a684e5fd80b7b772ea7473a5`; only the exact Pi instruction replacement and `internal/status/entered_stage_test.go` may differ.
 - DONE: Define the smallest behavioral test that fails when a legitimate completed or verdict value is cleared and covers the complete adjacent-state matrix in one ladder.
   One `entered_stage_test.go` ladder advances four empty/set combinations and compares raw terminal-field lines; blanking either populated value falsifies AC-1.
 - DONE: Record no-spike-needed evidence or the smallest falsifier, preserve oracle/XFAIL ownership, and apply the two-round reset rule.
   Existing `runSet` and split-root fixtures provide the observation boundary; seven protected blobs stay fixed, and a second candidate-owned rejection requires reset or HOLD before cycle-3 escalation.
+  AC-3 evidence: compare the seven named protected oracle/registry blobs and their active registry owners byte-for-byte to baseline `ff9bb4506be73787a684e5fd80b7b772ea7473a5`.
+  AC-4 evidence: run the focused entered-stage and ownership checks, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` on one immutable candidate.
 
 ### Summary
 
