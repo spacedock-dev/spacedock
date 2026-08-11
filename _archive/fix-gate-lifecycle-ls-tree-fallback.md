@@ -1,16 +1,16 @@
 ---
 id: qbppyssy13pyh1gtkh2n8vp5
 title: Fix the gate-lifecycle ls-tree fallback command
-status: validation
+status: done
 source: Captain intake; recovered from deleted public issue spacedock-dev/spacedock#669
 started: 2026-08-10T22:53:32Z
-completed:
-verdict:
+completed: 2026-08-11T14:58:00Z
+verdict: PASSED
 score: 0.9
 worktree: .worktrees/spacedock-ensign-fix-gate-lifecycle-ls-tree-fallback
 issue:
 pr: pr-merge:673
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -97,7 +97,8 @@ gates:
                 reason: Captain has the conn; cycle-2 validation passed both ACs on the bounded one-file +2/-2 candidate, including observed state P=recorded-gate-task and exact package inventory.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-11T14:58:01Z
 ---
 
 When gate Artifact or Reference paths are absent, the First Officer must discover committed Markdown with a complete, path-scoped Git command. The current instruction abbreviates this as `git -C ... ls-tree`, which deterministically exits 129 because it omits the required tree-ish.
