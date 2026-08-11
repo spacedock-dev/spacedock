@@ -170,7 +170,7 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 			_ = json.Unmarshal([]byte(event.Payload.Output), &output)
 			codexWorker = output.TaskName
 		}
-		if event.Payload.Type == "agent_message" && event.Payload.Author == codexWorker && strings.Contains(string(event.Payload.Content), "Done:") {
+		if completed < 0 && event.Payload.Type == "agent_message" && event.Payload.Author == codexWorker && strings.Contains(string(event.Payload.Content), "Done:") {
 			completed = i
 		}
 		if event.Payload.Type == "custom_tool_call" && strings.Contains(line, "status=validation") {
@@ -292,6 +292,14 @@ func TestCodexNativeLifecycleUsesCorrelatedSessionHandle(t *testing.T) {
 	}
 	if err := assertImplementationWorkerLifecycle(combined, entity); err != nil {
 		t.Fatalf("correlated parent rollout rejected: %v", err)
+	}
+	withoutCompletion := strings.ReplaceAll(combined, "Done:", "Result:")
+	if err := assertImplementationWorkerLifecycle(withoutCompletion, entity); err == nil {
+		t.Fatal("lifecycle without a matching completion passed")
+	}
+	afterValidationOnly := strings.Replace(combined, "Done:", "Result:", 1)
+	if err := assertImplementationWorkerLifecycle(afterValidationOnly, entity); err == nil {
+		t.Fatal("matching completion only after validation passed")
 	}
 	withoutHandle := strings.Replace(combined, `"output":"{\"task_name\":\"/root/spacedock_ensign_task_implementation\",\"nickname\":\"Mill\"}"`, `"output":"{}"`, 1)
 	if err := assertImplementationWorkerLifecycle(withoutHandle, entity); err == nil {
