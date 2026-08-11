@@ -259,7 +259,9 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
 	}
 	var semantic []error
-	semantic = append(semantic, durableSemantic("gate-not-held", assert(before, after, expected)))
+	if err := assert(before, after, expected); err != nil {
+		semantic = append(semantic, &gradedErr{code: "gate-not-held", msg: err.Error()})
+	}
 	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))
 	if scenario.name == "default-headless-gate-stop" {
 		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after))
