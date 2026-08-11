@@ -21,6 +21,17 @@ gates:
                 digest: sha256:aeb61ccb352ed0228ea178896445894cd1a6c3a799afab6e39201953a4eb7d56
                 request-digest: sha256:617bc292f332b01b14553404bb7a5aecdbdc2873805152713149e75aa86867b3
                 room-ref: ./remove-dispatch-ack-hook-machinery/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ca7w23pffeynv53swt2b8zf3:validation:1
+                briefing: briefing:ca7w23pffeynv53swt2b8zf3:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-11T00:13:20.626007Z"
+                decision: approve
+                reason: Independent validation passed. The candidate removes the unauthorized global hooks and acknowledgment state without replacement, while preserving unrelated hooks and current XFAIL bindings.
+              application:
+                target-stage: done
+                state: pending
 ---
 ## Problem
 
