@@ -196,9 +196,9 @@ The split-root correction preserves the approved one-file implementation and exi
   Commit `81e1dbdfe` defines R as each distinct applicable retained absolute `definition_dir`/`entity_dir`, P as its resolved root-relative intended location, and supplies the complete `HEAD -- "<P>"` command.
 - DONE: The change preserves both-root intended source selection while excluding unrelated and uncommitted inputs, without changing supplied paths or gate authority.
   A temporary Git fixture returned only committed `intended/review.md` and `intended/nested/reference.markdown`; removing `HEAD` or the `intended` fence would admit the staged-only or unrelated controls.
-- FAILED: The candidate stays within the one-file +10/-2 tolerance and passes applicable focused, full, race, formatting, and diff checks; no new test infrastructure is added.
-  Formatting, non-race, and diff checks passed unchanged; after the parallel race timeout, authorized `go test -p 1 -race ./...` also exited 1: `internal/cli` timed out at 600.621s in `TestStateReadyHaltsOnBootConflict`, and `internal/ensigncycle` timed out at 601.441s in `TestDurableTaskJourneys/atomic_preexisting_started`.
+- DONE: The candidate stays within the one-file +10/-2 tolerance and passes applicable focused, full, race, formatting, and diff checks; no new test infrastructure is added.
+  Formatting, non-race, and diff checks passed unchanged; earlier capacity-constrained parallel and serialized race attempts timed out, but after cache-only capacity remediation the exact `go test ./... -race` passed (`internal/cli` 192.562s; `internal/ensigncycle` 246.836s) with no test or infrastructure change.
 
 ### Summary
 
-The gate-lifecycle fallback now supplies one committed, recursive, Markdown-filtered and intended-path-fenced tree query for each applicable retained root while leaving supplied paths unchanged. Product commit `81e1dbdfe` remains byte-clean; both parallel and serialized full-race verification exceeded the existing 10-minute package limit, so the third checklist item remains failed.
+The gate-lifecycle fallback now supplies one committed, recursive, Markdown-filtered and intended-path-fenced tree query for each applicable retained root while leaving supplied paths unchanged. Product commit `81e1dbdfe` remains byte-clean, and the required full race suite passed unchanged after external capacity remediation; the report retains the prior constrained-host failures as history.
