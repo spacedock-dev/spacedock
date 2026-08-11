@@ -40,6 +40,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:kqdnfzjh921ryad7n6h82m1a:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:kqdnfzjh921ryad7n6h82m1a-ideation-1
+              briefing:
+                id: briefing:kqdnfzjh921ryad7n6h82m1a:ideation:attempt-1:revision-1
+                digest: sha256:d155e03a82bca4007326625c56aa2f1b8af3233b7395d1f06ee7ea2dc3529470
+                request-digest: sha256:74fbe0474f2374721cf53e6f128ee85c25dc01294dd87df9f986a27f70181b28
+                room-ref: ./preserve-pi-terminal-fields-on-nonterminal-advance/review/ideation/briefing-1
 started: 2026-08-11T00:45:13Z
 ---
 

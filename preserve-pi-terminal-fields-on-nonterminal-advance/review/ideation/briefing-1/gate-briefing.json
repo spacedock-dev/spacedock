@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kqdnfzjh921ryad7n6h82m1a:ideation:attempt-1:revision-1",
+  "question": "Approve this two-file Pi field-preservation design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:kqdnfzjh921ryad7n6h82m1a:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1a04f23434b8002813fc78c8b37492f1cb8efeb2/preserve-pi-terminal-fields-on-nonterminal-advance.md",
+      "rev": "sha256:3030baaa34bffefcb30905693a92fde78db77fc37a1146c1360c39e8f3560f11",
+      "mediaType": "text/markdown",
+      "summary": "Replace only the fh6 Pi terminal-field-clearing instruction and add one four-row status preservation ladder. Approved baseline is 2 files, +45/-1, tolerance 2 files and at most +57/-6, with no XFAIL, oracle, live, Pi, CI, grammar, format, authority, or mechanism changes."
+    }
+  ]
+}
