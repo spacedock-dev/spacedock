@@ -1,6 +1,6 @@
 ---
 title: Preserve Pi terminal fields on nonterminal advance
-status: ideation
+status: implementation
 score: "1.0"
 source: Captain recovery directive; fh6 commit 4a98f40b4, 2026-08-11
 sprint: test-behavior-completeness
@@ -59,7 +59,7 @@ gates:
                 reason: The design reverses one destructive Pi instruction, uses an existing deterministic status boundary, defines a two-file +45/-1 baseline with bounded tolerance, and gives every AC falsifiable evidence without new mechanisms.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-11T00:45:13Z
 ---
 
