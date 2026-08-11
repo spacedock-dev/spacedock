@@ -1,6 +1,6 @@
 ---
 title: Preserve Pi terminal fields on nonterminal advance
-status: validation
+status: implementation
 score: "1.0"
 source: Captain recovery directive; fh6 commit 4a98f40b4, 2026-08-11
 sprint: test-behavior-completeness
@@ -79,9 +79,10 @@ gates:
                 reason: Independent validation passed. The candidate restores legitimate Pi workflow state without adding test-observability machinery or changing XFAIL ownership.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-11T00:45:13Z
 worktree: .worktrees/spacedock-ensign-preserve-pi-terminal-fields-on-nonterminal-advance
+mod-block:
 ---
 
 Pi must not erase legitimate `completed` or `verdict` fields during a nonterminal advance.
@@ -222,3 +223,19 @@ The full runs retained two external load artifacts: one quiet timeout and one 10
 
 PASSED. AC-1 is proven by the complete preservation matrix and a falsifier that turns every populated adjacent state red when clearing occurs; AC-2 is proven by the byte-identical approved instruction replacement and exact two-file diff.
 AC-3 is proven by seven baseline-identical blobs plus green registry and active-owner checks. AC-4 uses the accepted focused/race/full-load record: focused and race evidence passed, and both load-time full-suite failures passed unchanged in isolation under the captain's no-third-run ruling; reviewer findings are none, with no deferred risk or polish item.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Restore `internal/status/entered_stage_test.go` exactly to recovery base `c5d2e79c4fa220bb859c13495d180c9450c937e8`.
+  Candidate `9c2cda2aa` and the recovery base share test-file blob `54583521989afbfa382cc64ccc88d65fd9eb6c47`.
+- DONE: Preserve only the approved Pi completion-signal instruction replacement.
+  The candidate diff against the recovery base is exactly one file with 1 insertion and 1 deletion.
+- DONE: Add no replacement test or evidence mechanism.
+  The Captain rejected the 48-line test expansion. This correction removes it without replacement.
+- DONE: Run only the permitted formatting and diff checks.
+  `gofmt -w ./cmd ./internal`, `git diff --check`, exact blob equality, and exact diff-scope checks passed. No test ran.
+
+### Summary
+
+Cycle 2 removes the rejected preservation ladder and retains only the approved Pi instruction change. Earlier implementation and validation reports describe the rejected snapshot.
+Candidate `9c2cda2aa` is ready for independent validation against recovery base `c5d2e79c4fa220bb859c13495d180c9450c937e8`.
