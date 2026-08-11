@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qbppyssy13pyh1gtkh2n8vp5:validation:attempt-1:revision-1",
+  "question": "Accept validation rejection and route QBP to implementation for a design reset?",
+  "artifacts": [
+    {
+      "id": "artifact:qbppyssy13pyh1gtkh2n8vp5:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/eb1aea9970e5067101a4272420309f22bcec67ef/fix-gate-lifecycle-ls-tree-fallback.md",
+      "rev": "sha256:fa474d8e1c1f52f0fb84bf2dfd19956f59c4594d985cc2058f1b542b7c29a599",
+      "mediaType": "text/markdown",
+      "summary": "The exact Codex journey prepared the correct package and all deterministic checks passed, but Codex scanned the entire state root with P=dot. The package-only oracle cannot detect that prohibited broad discovery. Validation recommends REJECTED and a design reset."
+    }
+  ]
+}
