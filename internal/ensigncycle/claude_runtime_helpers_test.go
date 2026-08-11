@@ -136,10 +136,12 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 		Message   *struct{ Content []block }
 		Payload   struct {
 			Type, Name, Arguments, Author string
+			CallID                        string `json:"call_id"`
+			Output                        string `json:"output"`
 			Content                       json.RawMessage
 		}
 	}
-	spawnID, codexWorker, spawns, completed, validation := "", "", 0, -1, -1
+	spawnID, codexSpawnCall, codexWorker, spawns, completed, validation := "", "", "", 0, -1, -1
 	piRunID := ""
 	for i, line := range strings.Split(stream, "\n") {
 		var event row
@@ -159,11 +161,14 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 		_ = json.Unmarshal([]byte(line), &pi)
 		if event.Payload.Type == "function_call" && event.Payload.Name == "spawn_agent" && strings.Contains(event.Payload.Arguments, "implementation") {
 			spawns++
-			var args struct {
+			codexSpawnCall = event.Payload.CallID
+		}
+		if event.Payload.Type == "function_call_output" && codexSpawnCall != "" && event.Payload.CallID == codexSpawnCall {
+			var output struct {
 				TaskName string `json:"task_name"`
 			}
-			_ = json.Unmarshal([]byte(event.Payload.Arguments), &args)
-			codexWorker = "/root/" + args.TaskName
+			_ = json.Unmarshal([]byte(event.Payload.Output), &output)
+			codexWorker = output.TaskName
 		}
 		if event.Payload.Type == "agent_message" && event.Payload.Author == codexWorker && strings.Contains(string(event.Payload.Content), "Done:") {
 			completed = i
@@ -208,6 +213,34 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 	return nil
 }
 
+func codexNativeLifecycleStream(codexHome, publicStream string) (string, error) {
+	var threadIDs []string
+	for _, line := range strings.Split(publicStream, "\n") {
+		var started struct {
+			Type     string `json:"type"`
+			ThreadID string `json:"thread_id"`
+		}
+		if json.Unmarshal([]byte(line), &started) == nil && started.Type == "thread.started" && started.ThreadID != "" {
+			threadIDs = append(threadIDs, started.ThreadID)
+		}
+	}
+	if len(threadIDs) == 0 {
+		return publicStream, nil
+	}
+	if len(threadIDs) != 1 {
+		return "", fmt.Errorf("Codex public stream thread IDs = %v, want one", threadIDs)
+	}
+	paths, err := filepath.Glob(filepath.Join(codexHome, "sessions", "*", "*", "*", "rollout-*"+threadIDs[0]+".jsonl"))
+	if err != nil || len(paths) != 1 {
+		return "", fmt.Errorf("Codex parent rollout for %q = %v, want one (glob error: %v)", threadIDs[0], paths, err)
+	}
+	rollout, err := os.ReadFile(paths[0])
+	if err != nil {
+		return "", fmt.Errorf("read Codex parent rollout %s: %w", paths[0], err)
+	}
+	return publicStream + "\n" + string(rollout), nil
+}
+
 func assertObserverOutsideWorkflow(workflowRoot, observer string) error {
 	rel, err := filepath.Rel(workflowRoot, observer)
 	if err != nil || rel == "." || rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
@@ -236,6 +269,51 @@ func TestImplementationLifecycleAndObserverNegativeControls(t *testing.T) {
 	}
 	if err := assertObserverOutsideWorkflow(root, filepath.Join(t.TempDir(), "command.log")); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCodexNativeLifecycleUsesCorrelatedSessionHandle(t *testing.T) {
+	home := t.TempDir()
+	rolloutDir := filepath.Join(home, "sessions", "2026", "08", "11")
+	if err := os.MkdirAll(rolloutDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	rollout := readFile(t, filepath.Join("testdata", "codex_native_lifecycle", "parent-rollout.jsonl"))
+	writeFile(t, filepath.Join(rolloutDir, "rollout-2026-08-11-parent-thread.jsonl"), rollout)
+	public := readFile(t, filepath.Join("testdata", "codex_native_lifecycle", "public.jsonl"))
+	entity := "---\nstatus: validation\n---\n# Task\n\n## Stage Report: implementation\n\n- DONE: work\n"
+
+	if err := assertImplementationWorkerLifecycle(public, entity); err == nil {
+		t.Fatal("public Codex stdout without native spawn/completion evidence passed")
+	}
+	combined, err := codexNativeLifecycleStream(home, public)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := assertImplementationWorkerLifecycle(combined, entity); err != nil {
+		t.Fatalf("correlated parent rollout rejected: %v", err)
+	}
+	withoutHandle := strings.Replace(combined, `"output":"{\"task_name\":\"/root/spacedock_ensign_task_implementation\",\"nickname\":\"Mill\"}"`, `"output":"{}"`, 1)
+	if err := assertImplementationWorkerLifecycle(withoutHandle, entity); err == nil {
+		t.Fatal("child final message without the spawn call's returned handle passed")
+	}
+}
+
+func TestCodexNativeLifecycleParentRolloutLookupFailsClosed(t *testing.T) {
+	public := readFile(t, filepath.Join("testdata", "codex_native_lifecycle", "public.jsonl"))
+	if _, err := codexNativeLifecycleStream(t.TempDir(), public); err == nil {
+		t.Fatal("missing parent rollout passed")
+	}
+	home := t.TempDir()
+	for _, day := range []string{"11", "12"} {
+		path := filepath.Join(home, "sessions", "2026", "08", day, "rollout-parent-thread.jsonl")
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		writeFile(t, path, "{}\n")
+	}
+	if _, err := codexNativeLifecycleStream(home, public); err == nil {
+		t.Fatal("ambiguous parent rollouts passed")
 	}
 }
 

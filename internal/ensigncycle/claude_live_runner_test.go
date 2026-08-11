@@ -270,20 +270,11 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 
 func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) string {
 	t.Helper()
-	var started struct {
-		Type     string `json:"type"`
-		ThreadID string `json:"thread_id"`
+	stream, err := codexNativeLifecycleStream(runner.home(), result.stream)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, line := range strings.Split(result.stream, "\n") {
-		if json.Unmarshal([]byte(line), &started) == nil && started.Type == "thread.started" {
-			paths, _ := filepath.Glob(filepath.Join(runner.home(), "sessions", "*", "*", "*", "rollout-*"+started.ThreadID+".jsonl"))
-			if len(paths) != 1 {
-				t.Fatalf("Codex parent rollout for %q = %v, want one", started.ThreadID, paths)
-			}
-			return result.stream + "\n" + readFile(t, paths[0])
-		}
-	}
-	return result.stream
+	return stream
 }
 
 func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(*gates.Document) error) {

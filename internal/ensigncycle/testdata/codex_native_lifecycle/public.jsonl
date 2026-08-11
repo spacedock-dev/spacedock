@@ -1,0 +1,3 @@
+{"type":"thread.started","thread_id":"parent-thread"}
+{"type":"item.started","item":{"type":"collab_tool_call","tool":"wait","receiver_thread_ids":[],"agents_states":{}}}
+{"type":"turn.completed"}
