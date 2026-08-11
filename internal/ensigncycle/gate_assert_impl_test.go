@@ -56,13 +56,8 @@ func recordedGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectati
 }
 
 func assertGateHeld(before, after string, expected gateHeldExpectation) error {
-	switch {
-	case before == after:
-		return &gradedErr{code: "gate-hold-entity-unchanged", msg: "gated entity did not change"}
-	case !validatingStatus.MatchString(after):
-		return &gradedErr{code: "gate-hold-status-not-validation", msg: "gated entity is not in validation"}
-	case completedSet.MatchString(after) || verdictSetFM.MatchString(after):
-		return &gradedErr{code: "gate-hold-terminal-fields-set", msg: "gated entity has terminal fields set"}
+	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
+		return fmt.Errorf("gated entity is not held at its open validation boundary")
 	}
 	doc, err := decodeGateDocument(after)
 	if err != nil {

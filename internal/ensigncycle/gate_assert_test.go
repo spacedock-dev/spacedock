@@ -42,11 +42,6 @@ func TestAssertGateHeld(t *testing.T) {
 	resolved := strings.Replace(after, "          briefing:\n", "          resolution:\n            type: Resolution\n            id: resolution:docs-dev:3k:validation:1\n            briefing: "+recordedGateBriefingID+"\n            by: captain\n            at: 2026-07-28T00:00:00Z\n            decision: approve\n          briefing:\n", 1)
 	applied := strings.Replace(resolved, "          briefing:\n", "          application:\n            action: advance\n            target-stage: handoff\n            state: pending\n          briefing:\n", 1)
 	applied = strings.Replace(applied, "            action: advance\n", "", 1)
-	terminal := strings.Replace(after, "verdict:\n", "verdict: passed\n", 1)
-	graded, ok := assertGateHeld(before, terminal, expected).(*gradedErr)
-	if !ok || graded.code != "gate-hold-terminal-fields-set" {
-		t.Fatalf("terminal-field control code = %#v, want gate-hold-terminal-fields-set", graded)
-	}
 	for name, mutant := range map[string]string{
 		"unbound":         before,
 		"advanced":        strings.Replace(after, "status: validation", "status: handoff", 1),
@@ -55,6 +50,7 @@ func TestAssertGateHeld(t *testing.T) {
 		"wrong-briefing":  strings.Replace(after, recordedGateBriefingID, "briefing:docs-dev:wrong", 1),
 		"resolved":        resolved,
 		"applied":         applied,
+		"verdict":         strings.Replace(after, "verdict:\n", "verdict: passed\n", 1),
 	} {
 		requireRecordedGate(t, assertGateHeld(before, mutant, expected) != nil, "%s control qualified", name)
 	}
