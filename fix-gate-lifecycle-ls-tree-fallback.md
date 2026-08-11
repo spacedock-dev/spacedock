@@ -123,7 +123,7 @@ Smaller alternatives do not meet the value boundary:
 - Git `:(glob)` pathspecs would avoid the pipe, but the spike proved `ls-tree` rejects that pathspec magic (`fatal: ... pathspec magic not supported by this command: 'glob'`).
 - `git ls-files` observes the index, so a staged but uncommitted Markdown path leaks into discovery. `find` or filesystem globbing likewise observes uncommitted worktree files.
 
-The instruction remains a one-shot read-only discovery fallback with one query per applicable retained root, not repeated probing. The existing gate-guardrail semantic assertion now consumes the host-neutral observed command invocations and requires exactly one state-root `ls-tree` query fenced to `recorded-gate-task`; a deterministic negative control replaces that fence with `.` and must fail. This compares the invoked scope, not command output, and adds no test framework or duplicate live journey.
+The instruction remains a one-shot read-only discovery fallback with one query per applicable retained root, not repeated probing. Validation uses one exact local Codex `TestLiveCommonGateGuardrail` journey and inspects its observed command structure directly: the state-root invocation must use `P=recorded-gate-task`, and `P=.` fails AC-2. This is direct journey evidence paired with persisted package identities, not command-output comparison or standing test infrastructure.
 
 ### Risk spike
 
@@ -132,11 +132,8 @@ A temporary Git fixture contained committed `intended/review.md`, committed `int
 ### Expected surface and semantic boundary
 
 - `skills/fo-gate-lifecycle/SKILL.md`: bind state-root `P` to the engaged task directory while retaining the complete command.
-- `internal/ensigncycle/gate_assert_impl_test.go`: add the host-neutral state-query scope assertion.
-- `internal/ensigncycle/shared_scenarios_negative_test.go`: add task-fenced and whole-root deterministic controls to the existing gate test.
-- `internal/ensigncycle/claude_live_runner_test.go`: include the scope assertion in the existing gate-guardrail semantic grade.
 
-Expected total after the authorized design reset: exactly 4 files at about +40/-2 lines; tolerance: up to 4 files and +45/-3. No production Go, new fixture, new journey, stored format, authority, gate lifecycle, supplied-path, CLI grammar, or documentation-site change is permitted. The runtime change remains limited to absent-path discovery, now explicitly requiring the state-root query to use the known engaged task directory; the other Go changes are test-only semantic proof.
+Hard boundary: exactly 1 product file at +2/-2 lines versus `main`, with no enlarged tolerance. No Go, test, fixture, harness, stored format, authority, gate lifecycle, supplied-path, CLI grammar, or documentation-site change is permitted. The only runtime change remains absent-path discovery requiring the state-root query to use the known engaged task directory rather than `.`.
 
 ## Out of scope
 
@@ -145,7 +142,7 @@ Expected total after the authorized design reset: exactly 4 files at about +40/-
 - Broad repository discovery or uncommitted-file discovery.
 - Introducing another root/path policy beyond the retained `definition_dir`/`entity_dir` and their resolved intended candidate locations.
 - Adding a reusable discovery API or production Go implementation.
-- Adding a new fixture, live journey, framework, or command-output oracle.
+- Adding or modifying Go tests, fixtures, live journeys, frameworks, or command-output oracles.
 
 ## Acceptance criteria
 
@@ -153,11 +150,11 @@ Expected total after the authorized design reset: exactly 4 files at about +40/-
 Verified by: existing `TestLiveCommonGateGuardrail` under `SPACEDOCK_LIVE_RUNTIME=codex`. Its existing prompt supplies no Artifact or Reference paths, loads the copied product skill, and must leave exactly one persisted prepared gate package open at the human decision boundary. Removing the explicit tree-ish prevents that package from being created and fails the existing durable assertion.
 
 **AC-2 - The fallback command is complete, read-only, path-scoped, and excludes uncommitted Markdown.**
-Verified by: the existing gate-guardrail semantic grade requires exactly one observed state-root `ls-tree` invocation with `HEAD` and the root-relative `recorded-gate-task` fence, while the persisted package retains the expected definition-root contract and state-root review/snapshot identities. The deterministic negative control substitutes `-- .` for the state fence and must fail without comparing command output. Removing `HEAD`, the state task fence, or either retained root prevents the combined command-scope/package proof from passing.
+Verified by: one exact local Codex `TestLiveCommonGateGuardrail` journey. Its observed command structure must contain the state-root `ls-tree` invocation with `HEAD` and `P=recorded-gate-task`, not `P=.`, and its persisted package must retain the expected definition-root contract plus state-root review/snapshot identities. A state invocation using `-- .`, a missing retained root, a missing `HEAD`, or an incorrect persisted identity fails AC-2; no command output is compared.
 
 ## Test plan
 
-Correction does not rerun the spent Codex journey. Deterministic verification runs the existing `TestGateGuardrailNegativeBrokenStateTransition`, whose new good control supplies the definition-root `.` fence and state-root `recorded-gate-task` fence, and whose mutant changes only the state fence to `.` and must fail. The existing live gate-guardrail grade now applies the same host-neutral semantic assertion to observed invocations alongside the persisted package assertion, so a future validation run cannot pass whole-root state discovery even when the selected package inventory is correct. No command-output comparison, duplicate journey, new fixture, or new framework is added.
+Implementation does not run the model journey. It runs formatting, applicable focused existing gate tests, the full non-race suite, the full race suite, and `git diff --check` as deterministic repository-health checks. Validation then runs exactly one local `SPACEDOCK_LIVE_RUNTIME=codex` `TestLiveCommonGateGuardrail` journey and directly inspects its observed command structure for state `P=recorded-gate-task` rather than `.`, together with the persisted package identities required by AC-1 and AC-2. No command-output comparison, duplicate journey, new fixture, or standing assertion infrastructure is added.
 
 The supplied-path behavior is outside the changed branch and receives no additional journey. The one-off Git spike remains risk evidence for the command mechanism, not acceptance proof and not a committed test.
 
@@ -256,12 +253,12 @@ AC-1 and the exact persisted inventory passed in the sole authorized Codex journ
 ## Stage Report: implementation (cycle 2)
 
 - DONE: The fallback resolves the state-root path to the known task directory and cannot collapse it to `.` when the task directory is known.
-  Correction commit `34c43f548` makes the product skill require the state-root `P` to use the engaged task directory and explicitly forbids `.`. The existing split-root scenario therefore resolves the known state fence to `recorded-gate-task` while retaining the definition-root query.
+  Final correction commit `69139fb1a` leaves the product skill requiring state-root `P` to use the engaged task directory and explicitly forbidding `.`, while removing every test/harness delta.
 - DONE: Existing fixture or semantic proof makes whole-root discovery fail while preserving both-root intended selection, without a new test framework or command-output comparison.
-  The existing recorded-gate fixture now feeds a host-neutral semantic assertion that requires exactly one state-root `ls-tree` invocation fenced to `recorded-gate-task`. The existing negative test accepts the definition-root `.` plus state task fence, then changes only the state fence to `.` and requires failure; the proof inspects invocation scope, not command output.
+  The authorized proof is one exact local Codex gate-guardrail journey in validation: its observed state-root command must use `P=recorded-gate-task` rather than `.`, and its persisted package must retain both-root intended identities; this direct evidence compares no command output and adds no infrastructure.
 - DONE: Task design, acceptance evidence, test plan, implementation surface, and deterministic verification are updated consistently; the spent Codex journey is not rerun during correction.
-  The design and AC-2 now pair the persisted-package proof with the command-scope assertion, and the test plan preserves the sole prior live run for future validation rather than spending another journey. The authorized reset is exactly 4 files at cumulative +40/-2 against `main`, within the +45/-3 tolerance. `gofmt -w ./cmd ./internal`, the focused existing gate tests, `go test ./...`, `go test ./... -race`, and `git diff --check` all passed on the corrected candidate; the full suites reported `internal/cli` at 325.581s/207.158s and `internal/ensigncycle` at 475.896s/296.802s for non-race/race respectively.
+  The final candidate is exactly 1 file at +2/-2 against `main`, with no enlarged tolerance. `gofmt -w ./cmd ./internal`, focused existing gate tests, `go test ./...`, `go test ./... -race`, and `git diff --check` passed (`internal/cli` 217.646s/109.244s and `internal/ensigncycle` 287.604s/183.767s for non-race/race); no model journey ran during implementation.
 
 ### Summary
 
-The corrected fallback now fences state discovery to the known engaged task directory, and the existing test surface rejects the exact whole-state-root behavior observed in validation. Candidate `34c43f548` stays within the authorized four-file design reset, passes deterministic full and race verification, and does not rerun the spent Codex journey.
+The corrected fallback now fences state discovery to the known engaged task directory in a one-file +2/-2 candidate. Candidate `69139fb1a` passes deterministic full and race verification; the exact local Codex journey remains reserved for validation, where state `P=.` must fail the direct observed-command and persisted-package proof.
