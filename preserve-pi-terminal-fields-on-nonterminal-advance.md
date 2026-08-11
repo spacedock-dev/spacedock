@@ -49,6 +49,17 @@ gates:
                 digest: sha256:d155e03a82bca4007326625c56aa2f1b8af3233b7395d1f06ee7ea2dc3529470
                 request-digest: sha256:74fbe0474f2374721cf53e6f128ee85c25dc01294dd87df9f986a27f70181b28
                 room-ref: ./preserve-pi-terminal-fields-on-nonterminal-advance/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kqdnfzjh921ryad7n6h82m1a:ideation:1
+                briefing: briefing:kqdnfzjh921ryad7n6h82m1a:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-11T00:53:46.496189Z"
+                decision: approve
+                reason: The design reverses one destructive Pi instruction, uses an existing deterministic status boundary, defines a two-file +45/-1 baseline with bounded tolerance, and gives every AC falsifiable evidence without new mechanisms.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-11T00:45:13Z
 ---
 
