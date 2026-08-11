@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-11 14:57:36"
+last_updated: "2026-08-11 18:35:37"
 ---
 
 # Install Spacedock
