@@ -160,3 +160,18 @@ No spike needed. The design relies only on already-proven mechanisms: `runSet` a
 ### Summary
 
 Ideation narrows the recovery to one Pi instruction-line replacement and one deterministic status preservation ladder. It protects every fh6 oracle and current XFAIL/registry owner byte while making destructive clearing falsifiable across the full adjacent-state matrix.
+
+## Stage Report: implementation
+
+- DONE: Apply only the exact Pi completion-signal line replacement and the four-row entered-stage preservation ladder within the approved 2-file +57/-6 cap.
+  Commit `578ed943a` changes two files with 49 insertions and 1 deletion. The Pi replacement matches the approved text.
+- DONE: Prove the ladder can fail when an unspecified completed or verdict line is cleared, then keep all fh6 oracle blobs and XFAIL registry/owner bytes unchanged.
+  A temporary `completed` clear failed the completed-only and both-nonempty rows. All seven protected blobs match baseline `ff9bb4506`.
+- DONE: Produce one immutable candidate with focused, full, race, gofmt, registry, active-owner, and diff checks green; run no live, Pi, or CI checks.
+  The focused, race, gofmt, registry, active-owner, and diff checks passed on `578ed943a`. No live runtime, Pi session, or CI job ran.
+  Two full runs found external suite load failures. Both isolated tests passed unchanged. The captain stopped additional verification.
+
+### Summary
+
+Commit `578ed943a` removes the Pi field-clear instruction and adds the four-state preservation ladder. The race suite and all focused checks passed.
+The full runs retained two external load artifacts: one quiet timeout and one 10-minute package timeout. Both isolated tests passed unchanged.
