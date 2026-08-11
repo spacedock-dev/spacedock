@@ -40,6 +40,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-11T00:45:13Z
 ---
 
 Pi must not erase legitimate `completed` or `verdict` fields during a nonterminal advance.
