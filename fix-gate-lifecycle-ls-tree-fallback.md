@@ -294,3 +294,30 @@ The corrected fallback now fences state discovery to the known engaged task dire
 ### Summary
 
 Both acceptance criteria pass in the single authorized cycle-2 Codex journey, including direct observation of state `P=recorded-gate-task` and the exact persisted three-source inventory. The candidate stays within its one-file +2/-2 boundary, all deterministic checks pass, authority remains held at the human gate, and validation recommends PASSED.
+
+## Review-finding disposition (PR #673 attached CI)
+
+### CI-1 — Both runtimes failed owned conflict-owner handoff
+
+- Preserved observation: PR #673 run `31492862035` Codex job `93783606387` and Claude job `93783606366` both failed `TestLiveCommonOwnedConflictOwnerHandoff` at `shared_live_runner_test.go:180` with `observed=[conflict-owner-handoff-violation]`.
+- Released user and normal workflow: Codex and Claude First Officers performing the registered-owner handoff after aborting an owned moving-target worktree conflict.
+- Observable harm: both required PR live jobs are red even though archived evidence shows the owner marker committed with the Captain identity, the conflict left untouched, the rebase aborted, and authority bytes unchanged; the final shared fresh-envelope assertion cannot establish the owner tuple because the observed `--advance` envelope has no `name` field.
+- Affected authority: `contract[docs/runtime-live-ci-registry.md#owned-conflict-owner-handoff]` requires live reuse and ordinary fresh fallback to preserve the initial stamped owner tuple without changing workflow authority.
+- Trigger evidence: Codex completed item `item_18` and Claude tool result `toolu_01XLfa4AVmw7xucqdVzxHicd` both show successful `dispatch build --advance` envelopes with prompt/dispatch-file fields but no `name`; neither archived journey loaded or invoked the gate-lifecycle fallback.
+- Defect kind: evidence defect in the current-main conflict-owner assertion/advance-envelope contract, not an outcome defect in QBP's gate fallback.
+
+### CI-2 — Claude failed the default headless gate stop
+
+- Preserved observation: the same run's Claude job `93783606366` also failed `TestLiveCommonDefaultHeadlessGateStop` at `shared_live_runner_test.go:110` with `observed=[implementation-worker-not-dispatched]`; Codex job `93783606387` observed that same code as XFAIL owned by `kky8pg7wc8xgb985epwss092`.
+- Released user and normal workflow: a headless Claude First Officer driving a member from the preceding implementation stage to the first human gate without decision authority.
+- Observable harm: Claude advanced past an implementation report containing only `### Summary` and no `- DONE:` item, so the required completion evidence was invalid even though it later prepared and held the gate.
+- Affected authority: `contract[docs/runtime-live-ci-registry.md#default-headless-gate-stop]` requires the preceding-stage worker to be dispatched and completed before the first human gate is presented open.
+- Trigger evidence: archived `command.log` records implementation and validation dispatch builds before one successful gate prepare; the retained entity shows the malformed implementation report, while the later QBP fallback used `recorded-gate-task/selected` successfully. Current main commit `56151b66a08cbe1cc96c947b124c1bc316d5a839` removed the Claude XFAIL, while Codex retains owner `kky8pg7wc8xgb985epwss092`.
+- Defect kind: current-main/runtime outcome evidence failure before QBP's fallback boundary, not a QBP candidate defect.
+
+### Proposal (not authorization)
+
+- Materiality proposal: Material for PR delivery because both failures occur in supported common journeys and fail required attached live jobs; QBP's own `TestLiveCommonGateGuardrail` passed in Codex at 79.01s and Claude at 130.29s.
+- Task ownership proposal: CI-1 belongs to the current-main conflict-owner assertion/reuse-envelope contract; CI-2 belongs to the existing default-headless completion-gate owner `kky8pg7wc8xgb985epwss092` and current-main Claude XFAIL retirement. PR #673 changes only `skills/fo-gate-lifecycle/SKILL.md` by +2/-2 and owns neither failure.
+- Proposed disposition: hold.
+- Authorization state: pending distinct First Officer authorization; this checkpoint changes no candidate or PR bytes and authorizes no rerun.
