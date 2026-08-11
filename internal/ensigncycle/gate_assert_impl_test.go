@@ -55,6 +55,14 @@ func recordedGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectati
 	}, nil
 }
 
+func semanticGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectation, error) {
+	expected, err := recordedGateHeldExpectation(fixture)
+	if err != nil {
+		return gateHeldExpectation{}, &gradedErr{code: "gate-not-held", msg: fmt.Sprintf("read prepared gate expectation: %v", err)}
+	}
+	return expected, nil
+}
+
 func assertGateHeld(before, after string, expected gateHeldExpectation) error {
 	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
 		return fmt.Errorf("gated entity is not held at its open validation boundary")

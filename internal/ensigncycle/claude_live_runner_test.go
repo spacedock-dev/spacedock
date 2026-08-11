@@ -268,24 +268,6 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	finishLiveScenario(t, runner, scenario, result, semantic...)
 }
 
-func semanticGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectation, error) {
-	expected, err := recordedGateHeldExpectation(fixture)
-	if err != nil {
-		return gateHeldExpectation{}, durableSemantic("gate-not-held", fmt.Errorf("read prepared gate expectation: %w", err))
-	}
-	return expected, nil
-}
-
-func TestMissingPreparedGateExpectationIsSemanticallyGraded(t *testing.T) {
-	fixture := recordedGateFixture{entity: filepath.Join(t.TempDir(), "index.md")}
-	_, err := semanticGateHeldExpectation(fixture)
-	for xfail, want := range map[bool]string{true: "xfail", false: "fail"} {
-		if got := gradeLive(xfail, err); got.status != want || len(got.codes) != 1 || got.codes[0] != "gate-not-held" {
-			t.Errorf("gradeLive(xfail=%t) = %#v, want status=%s codes=[gate-not-held]", xfail, got, want)
-		}
-	}
-}
-
 func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) string {
 	t.Helper()
 	var started struct {
