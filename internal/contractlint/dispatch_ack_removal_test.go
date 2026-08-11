@@ -30,6 +30,27 @@ func TestDispatchAckMachineryIsAbsent(t *testing.T) {
 		}
 	}
 
+	for _, manifest := range []struct {
+		path      string
+		wantHooks bool
+	}{
+		{path: filepath.Join(".claude-plugin", "plugin.json")},
+		{path: filepath.Join(".codex-plugin", "plugin.json"), wantHooks: true},
+	} {
+		data, err := os.ReadFile(filepath.Join(repo, manifest.path))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal(data, &fields); err != nil {
+			t.Fatal(err)
+		}
+		_, hasHooks := fields["hooks"]
+		if hasHooks != manifest.wantHooks {
+			t.Errorf("%s hooks activation = %t, want %t", manifest.path, hasHooks, manifest.wantHooks)
+		}
+	}
+
 	if _, err := os.Stat(filepath.Join(repo, "internal", "dispatchack")); !os.IsNotExist(err) {
 		t.Errorf("internal/dispatchack still exists: %v", err)
 	}
