@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kqdnfzjh921ryad7n6h82m1a:validation:attempt-1:revision-1",
+  "question": "Approve preservation of completed and verdict during Pi nonterminal advance?",
+  "artifacts": [
+    {
+      "id": "artifact:kqdnfzjh921ryad7n6h82m1a:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5585c1ac7db6a3382bc28921dd9b2caf7d78c725/preserve-pi-terminal-fields-on-nonterminal-advance.md",
+      "rev": "sha256:a51cf30217c888fc9a4da3dea89d0cc28a11037ef58ce107028502f6c9d9e300",
+      "mediaType": "text/markdown",
+      "summary": "The two-file candidate removes the unauthorized Pi terminal-field clearing clause and proves all four preservation states. Focused and race checks passed, independent validation passed, and no XFAIL or test-observability mechanism changed."
+    }
+  ]
+}

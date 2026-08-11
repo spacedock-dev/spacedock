@@ -60,6 +60,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:kqdnfzjh921ryad7n6h82m1a:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:kqdnfzjh921ryad7n6h82m1a-validation-1
+              briefing:
+                id: briefing:kqdnfzjh921ryad7n6h82m1a:validation:attempt-1:revision-1
+                digest: sha256:81c4f32df3c595e5ee60a6613244aa0fbc16f365f3c2f96e312766a6c870fcd8
+                request-digest: sha256:727bc33f674c42f52c630d958acc26de7538521a0fd3f7f3f4cf61f91abe7a9c
+                room-ref: ./preserve-pi-terminal-fields-on-nonterminal-advance/review/validation/briefing-1
 started: 2026-08-11T00:45:13Z
 worktree: .worktrees/spacedock-ensign-preserve-pi-terminal-fields-on-nonterminal-advance
 ---
