@@ -1,6 +1,6 @@
 ---
 title: Remove dispatch acknowledgment hook machinery
-status: validation
+status: done
 score: "1.0"
 source: Captain emergency no-global-hook directive, 2026-08-10
 sprint: test-behavior-completeness
@@ -31,9 +31,12 @@ gates:
                 reason: Independent validation passed. The candidate removes the unauthorized global hooks and acknowledgment state without replacement, while preserving unrelated hooks and current XFAIL bindings.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:670
+verdict: passed
+completed: 2026-08-11T00:35:42Z
+archived: 2026-08-11T00:35:43Z
 ---
 ## Problem
 
