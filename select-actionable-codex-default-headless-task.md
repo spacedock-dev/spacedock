@@ -1,6 +1,6 @@
 ---
 title: Select the actionable Codex default-headless task
-status: ideation
+status: implementation
 score: "0.90"
 source: Repeated Codex wrong/queued target entry; DVD run 31432758302 artifact 9080028678; filing run 31434160297 artifact 9080564383, 2026-08-10
 sprint: test-behavior-completeness
@@ -49,7 +49,7 @@ gates:
                 reason: The exact bound Codex XFAIL proves the missing native implementation spawn. The selected one-file declarative correction and binding-only removal ladder are the smallest product-only design within the approved caps and exclusions.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-11T05:24:54Z
 ---
 ## Problem
