@@ -254,12 +254,11 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
 	}
 	after := readFile(t, fixture.entity)
-	expected, err := recordedGateHeldExpectation(fixture)
-	if err != nil {
-		t.Fatalf("read prepared gate expectation: %v\nArtifacts: %s", err, result.artifactDir)
-	}
 	var semantic []error
-	if err := assert(before, after, expected); err != nil {
+	expected, err := semanticGateHeldExpectation(fixture)
+	if err != nil {
+		semantic = append(semantic, err)
+	} else if err := assert(before, after, expected); err != nil {
 		semantic = append(semantic, &gradedErr{code: "gate-not-held", msg: err.Error()})
 	}
 	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))

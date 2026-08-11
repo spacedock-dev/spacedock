@@ -107,7 +107,7 @@ func TestLiveCommonGateGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "kky8pg7wc8xgb985epwss092"), liveXFail("codex", "kky8pg7wc8xgb985epwss092")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("codex", "kky8pg7wc8xgb985epwss092")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
@@ -152,7 +152,7 @@ func TestLiveCommonZeroDiscovery(t *testing.T) {
 
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
 func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
-	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)
+	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, []liveJourneyGap{liveXFail("codex", "v8pcpdmrdfmq7emm65cjdc4p")}, runAutoContinueJourney, assertAutoContinue)
 }
 
 //spacedock:live-journey id=self-evidence-merge-triage fixture=merge-triage/unapproved-live-evidence

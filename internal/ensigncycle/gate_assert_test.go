@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -53,6 +54,16 @@ func TestAssertGateHeld(t *testing.T) {
 		"verdict":         strings.Replace(after, "verdict:\n", "verdict: passed\n", 1),
 	} {
 		requireRecordedGate(t, assertGateHeld(before, mutant, expected) != nil, "%s control qualified", name)
+	}
+}
+
+func TestMissingPreparedGateExpectationIsSemanticallyGraded(t *testing.T) {
+	fixture := recordedGateFixture{entity: filepath.Join(t.TempDir(), "index.md")}
+	_, err := semanticGateHeldExpectation(fixture)
+	for xfail, want := range map[bool]string{true: "xfail", false: "fail"} {
+		if got := gradeLive(xfail, err); got.status != want || len(got.codes) != 1 || got.codes[0] != "gate-not-held" {
+			t.Errorf("gradeLive(xfail=%t) = %#v, want status=%s codes=[gate-not-held]", xfail, got, want)
+		}
 	}
 }
 
