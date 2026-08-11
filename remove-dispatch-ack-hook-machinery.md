@@ -9,6 +9,18 @@ group: common-product
 id: ca7w23pffeynv53swt2b8zf3
 started: 2026-08-10T22:49:48Z
 worktree: .worktrees/spacedock-ensign-remove-dispatch-ack-hook-machinery
+gates:
+    version: 1
+    records:
+        - id: gate:ca7w23pffeynv53swt2b8zf3:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ca7w23pffeynv53swt2b8zf3-validation-1
+              briefing:
+                id: briefing:ca7w23pffeynv53swt2b8zf3:validation:attempt-1:revision-1
+                digest: sha256:aeb61ccb352ed0228ea178896445894cd1a6c3a799afab6e39201953a4eb7d56
+                request-digest: sha256:617bc292f332b01b14553404bb7a5aecdbdc2873805152713149e75aa86867b3
+                room-ref: ./remove-dispatch-ack-hook-machinery/review/validation/briefing-1
 ---
 ## Problem
 

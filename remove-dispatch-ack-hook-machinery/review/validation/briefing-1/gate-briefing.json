@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ca7w23pffeynv53swt2b8zf3:validation:attempt-1:revision-1",
+  "question": "Approve removal of the global dispatch acknowledgment machinery without replacement?",
+  "artifacts": [
+    {
+      "id": "artifact:ca7w23pffeynv53swt2b8zf3:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3c1734cd142d9fa244c98556553d80f31da97700/remove-dispatch-ack-hook-machinery.md",
+      "rev": "sha256:ac0f1edbcb6ad7583e78932628f03c04394e115259504e2422f14a69bfa76816",
+      "mediaType": "text/markdown",
+      "summary": "The candidate removes global dispatch acknowledgment hooks, hidden acknowledgment state, and dispatch/status integration. Full, race, focused, registry, owner, formatting, and independent validation checks passed."
+    }
+  ]
+}
