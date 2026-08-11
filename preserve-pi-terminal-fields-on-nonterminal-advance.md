@@ -239,3 +239,34 @@ AC-3 is proven by seven baseline-identical blobs plus green registry and active-
 
 Cycle 2 removes the rejected preservation ladder and retains only the approved Pi instruction change. Earlier implementation and validation reports describe the rejected snapshot.
 Candidate `9c2cda2aa` is ready for independent validation against recovery base `c5d2e79c4fa220bb859c13495d180c9450c937e8`.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify the candidate and remote identity.
+  The local branch and remote branch both point to `9c2cda2aaa4294016173cc53a7e1a61a1ee57cf9`.
+- DONE: Verify the pure-revert surface against the recovery base.
+  The final tree changes one file by 1 insertion and 1 deletion from `c5d2e79c4fa220bb859c13495d180c9450c937e8`.
+- DONE: Inspect the exact Pi instruction replacement.
+  The diff removes only the clear, reread, stop, and `--force` clauses. It retains completion and file-verification instructions.
+- DONE: Verify that the rejected test expansion is absent.
+  `internal/status/entered_stage_test.go` has blob `54583521989afbfa382cc64ccc88d65fd9eb6c47` in the base and candidate.
+- DONE: Verify the protected oracle and XFAIL surface.
+  All seven named files have equal base and candidate blobs. The one-file diff excludes owner and XFAIL changes.
+- DONE: Exclude replacement mechanisms and unrelated product changes.
+  The exact name and number checks exclude every file except `skills/first-officer/references/pi-first-officer-runtime.md`.
+- DONE: Inspect the implementation report and run the permitted checks.
+  The cycle-2 report matches the candidate. `gofmt -d ./cmd ./internal` and `git diff --check` produced no output.
+- SKIPPED: Run full, race, live, Pi, or CI checks.
+  The Captain prohibited these checks for cycle 2. No test ran during this validation.
+- DONE: Assess AC-1 through AC-4 under the Captain's cycle-2 pure-revert ruling.
+  AC-1 evidence: the only shipped clear command is absent. Restoring that clause changes the exact approved diff.
+  AC-2 evidence: the candidate has the exact one-line replacement. All adjacent Pi instructions are base-identical.
+  AC-3 evidence: the seven protected files are byte-identical to the recovery base. No oracle or owner changed.
+  AC-4 evidence: no Go byte differs from the recovery base. The formatting and diff checks pass.
+- DONE: Issue one verdict under the two-round rule.
+  PASSED. The batch inspection found no material, deferred-risk, or polish finding.
+
+### Summary
+
+Cycle 2 validates the Captain-approved pure revert at candidate `9c2cda2aa`.
+The candidate removes the terminal-field-clearing instruction and contains no replacement test or mechanism.
