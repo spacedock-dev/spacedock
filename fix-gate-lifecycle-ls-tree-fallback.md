@@ -9,7 +9,7 @@ verdict:
 score: 0.9
 worktree: .worktrees/spacedock-ensign-fix-gate-lifecycle-ls-tree-fallback
 issue:
-pr: "#673"
+pr: pr-merge:673
 mod-block: merge:pr-merge
 gates:
     version: 1
