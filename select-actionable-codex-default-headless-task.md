@@ -252,3 +252,37 @@ The selected correction is a bounded Codex adapter clarification backed by the e
 ### Summary
 
 The approved declarative correction stayed inside its surface cap and passed every offline check, but the bound Codex journey read it and still skipped native dispatch before advancing on false evidence. AC-1, AC-2, AC-3, and AC-4 remain unmet; the Captain-directed outcome is HOLD/design reset until a supported fail-closed native dispatch primitive is approved.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Verify the exact clean candidate and push its branch without changing candidate bytes.
+  Local and remote `spacedock-ensign/grade-codex-session-lifecycle` both resolve to `229f5227ff127dbf2c813e7b239daa5a4cdd452d`, whose sole parent/base is `be0fd17c64081313ba7f5feeb9ed42bfb72f7049`.
+- DONE: Keep the correction test-only and record its exact surface.
+  The four files are `internal/ensigncycle/claude_live_runner_test.go`, `internal/ensigncycle/claude_runtime_helpers_test.go`, and the two `testdata/codex_native_lifecycle/{public,parent-rollout}.jsonl` fixtures; the diff is +93/-17.
+- DONE: Preserve focused, full, and race verification evidence without rerunning it.
+  Focused lifecycle/lookup falsifiers, `go test ./...`, and `go test ./... -race` passed on `229f5227f`; removing handle correlation, accepting ambiguous lookup, or introducing package/race failure makes this ladder red.
+- DONE: Prove the native Codex primitive from isolated plain-host evidence.
+  `/tmp/codex-v2-spawn-probe.hXx1Qu` maps each public parent thread ID to one internal rollout and records spawn < returned handle < child completion at 13<15<24 and 13<15<23; public stdout omits those authoritative rows.
+- FAILED: Prove the corrected bound Spacedock target as XPASS.
+  Exact candidate `229f5227f` remained bound XFAIL after 282.48s with `implementation-worker-not-dispatched`; `/tmp/272-session-grade-live.UuY9E5` retains the result, and diagnostic internal-session evidence showed the exact Spacedock run genuinely lacked `spawn_agent`.
+- DONE: Preserve every product, hook, skill, state-protocol, and binding byte.
+  The candidate changes only test harness and fixture files; both Codex default-headless XFAIL rows remain unchanged.
+- SKIPPED: Remove bindings, run an unbound target, rerun live/full/race, open a PR, or advance workflow state.
+  The bound prerequisite stayed red and the assignment explicitly forbids these actions.
+
+- FAILED: AC-1 — exactly one native implementation worker completes before validation with one DONE report.
+  The corrected evidence source no longer mistakes public-stream omission for absence, but the exact bound Spacedock run still had no native spawn, so AC-1 remains red.
+- DONE: AC-2 — one committed, clean, open validation gate with no consumed authority or successor dispatch.
+  The 282.48s corrected bound grade reported only `implementation-worker-not-dispatched`; the gate-held assertions emitted no AC-2 semantic code and would fail on decision, consume, post-prepare mutation, or successor build.
+- FAILED: AC-3 — the bounded correction serves green AC-1 while preserving runtime semantics.
+  Runtime semantics are preserved by a test-only diff, but AC-3 remains unmet by its value re-anchor because AC-1 is red.
+- FAILED: AC-4 — bound XPASS, binding-only removal, reconciliation, then unbound PASS.
+  The first step remained XFAIL, so both rows remain and every post-XPASS step was correctly skipped.
+- DONE: AC-5 — focused, full, and race ladder.
+  All three owned offline checks passed on `229f5227f`; the assignment forbids repeating them at this completion boundary.
+- DONE: Write and push this complete cycle-2 implementation report without advancing state.
+  This report records the pushed code SHA, exact test-only diff, falsifiable checks, retained probes, corrected XFAIL, unchanged bindings, and revised classification.
+
+### Summary
+
+The test observability defect is fixed: Codex lifecycle grading now uses the isolated parent rollout and correlates spawn to its returned handle before accepting child completion. The prior missing-native-primitive conclusion is withdrawn, but AC-1, AC-3, and AC-4 remain unmet because the exact bound Spacedock run still genuinely lacked spawn; checklist count is 8 DONE, 1 SKIPPED, and 4 FAILED.
