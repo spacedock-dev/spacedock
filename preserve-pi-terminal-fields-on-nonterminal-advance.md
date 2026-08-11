@@ -184,3 +184,17 @@ Ideation narrows the recovery to one Pi instruction-line replacement and one det
 
 Commit `578ed943a` removes the Pi field-clear instruction and adds the four-state preservation ladder. The race suite and all focused checks passed.
 The full runs retained two external load artifacts: one quiet timeout and one 10-minute package timeout. Both isolated tests passed unchanged.
+
+## Stage Report: validation
+
+- DONE: Batch the complete four-row preservation matrix and one adversarial clearing falsifier before issuing one verdict; do not add cases one at a time.
+  `TestEnteredStageMutationControls/successor_preserves_unspecified_terminal_fields` passed all four rows on `578ed943a`; one detached fault that cleared both unspecified fields failed completed-only, verdict-only, and both-nonempty while empty/empty stayed green.
+- DONE: Verify the exact two-file +49/-1 candidate, approved instruction bytes, and all seven protected oracle/registry blobs plus XFAIL owners against baseline.
+  `578ed943a` is exactly two files at +49/-1; the runtime line and approved after-text share SHA-256 `7d56f4b...a23a528`, all seven blobs equal `ff9bb4506`, and the reconciliation/active-owner tests passed.
+- DONE: Independently assess AC-1 through AC-4 using the accepted focused/race/full-load evidence, run no redundant full/race/live/Pi/CI, and return one PASSED or REJECTED report under the two-round rule.
+  PASSED in round 1: AC-1 through AC-4 have valid evidence, no material finding remains, and validation ran no full, race, live, Pi, or CI rerun.
+
+### Summary
+
+PASSED. AC-1 is proven by the complete preservation matrix and a falsifier that turns every populated adjacent state red when clearing occurs; AC-2 is proven by the byte-identical approved instruction replacement and exact two-file diff.
+AC-3 is proven by seven baseline-identical blobs plus green registry and active-owner checks. AC-4 uses the accepted focused/race/full-load record: focused and race evidence passed, and both load-time full-suite failures passed unchanged in isolation under the captain's no-third-run ruling; reviewer findings are none, with no deferred risk or polish item.
