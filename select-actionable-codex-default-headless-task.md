@@ -373,3 +373,21 @@ The retained artifacts support the current live outcomes and the six-file diff h
 ### Feedback Cycles
 
 - Cycle 3: REJECTED — fresh validation; surface 6 files/125 gross lines vs estimate 3 files/8 gross lines; AC unchanged. Captain approved the exact one-file, approximately +5/-1 oracle correction on 2026-08-11.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Freeze the first Codex validation event and add the repeated-validation reordered-completion negative control in the existing lifecycle helper only.
+  Commit `f982ad220a2b500d1aba76d4ac26712fbd8cdf84` adds `validation < 0` at the Codex validation match and derives `validation-1 -> Done -> validation-2` from the canonical combined stream; the unchanged candidate failed with `matching completion between validation transitions passed`.
+- DONE: Run the focused lifecycle controls and formatting on the unchanged candidate; preserve all product, fixture, binding, registry, full, race, and live evidence bytes.
+  The correlated-session, parent-lookup, and observer-negative focused controls passed after the guard; gofmt and `git diff --check` passed, while no full, race, live, fixture, binding, registry, product, skill, hook, command, or state-protocol byte/check was touched or repeated.
+- DONE: Commit and push the correction, then write a complete implementation report with exact delta and AC-1 evidence.
+  Local and remote candidate both resolve to `f982ad220a2b500d1aba76d4ac26712fbd8cdf84`; the authorized correction is exactly one file, `internal/ensigncycle/claude_runtime_helpers_test.go`, with `+5/-1` against `2b660fb6fb6ca6566abe086c6d7ee3adcee30eb0`.
+
+- DONE: AC-1 — the grader rejects implementation completion after the first validation transition even when a later validation repeats.
+  The new control was red before the guard and green after it; the existing valid completion-before-validation path remains green, while missing completion, after-validation-only completion, missing handle, and missing/ambiguous parent rollout controls remain red.
+- DONE: Preserve the authorized finding package and correction boundary.
+  The Material finding remains task-owned with Captain-approved `fix`; cycle 4 changes only its assigned Codex oracle seam and leaves the retained focused/full/race, bound-XPASS, two-row unbinding, registry/owner/format, and unbound-PASS evidence intact for fresh validation.
+
+### Summary
+
+Cycle 4 closes the repeated-validation evidence hole by comparing the first correlated implementation completion with the first Codex validation transition. The correction is committed and pushed at `f982ad220`, exactly matches the authorized one-file `+5/-1` delta, and is ready for independent validation; checklist count is 5 DONE, 0 SKIPPED, and 0 FAILED.
