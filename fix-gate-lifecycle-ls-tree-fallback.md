@@ -321,3 +321,8 @@ Both acceptance criteria pass in the single authorized cycle-2 Codex journey, in
 - Task ownership proposal: CI-1 belongs to the current-main conflict-owner assertion/reuse-envelope contract; CI-2 belongs to the existing default-headless completion-gate owner `kky8pg7wc8xgb985epwss092` and current-main Claude XFAIL retirement. PR #673 changes only `skills/fo-gate-lifecycle/SKILL.md` by +2/-2 and owns neither failure.
 - Proposed disposition: hold.
 - Authorization state: pending distinct First Officer authorization; this checkpoint changes no candidate or PR bytes and authorizes no rerun.
+
+### First Officer authorization
+
+- Authorized disposition: HOLD the PR #673 CI findings exactly as proposed in state commit `1a649b6a95707bcb6cd0140eef2df1fe1dc5d3f1`.
+- Execution boundary: preserve candidate and PR head `69139fb1a075d52fddc9fb0c92d74122d19661d8` unchanged; do not rerun CI or model journeys.
