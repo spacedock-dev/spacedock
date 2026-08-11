@@ -111,7 +111,6 @@ type Outcome struct {
 	Status       string   `json:"status"`
 	Failure      string   `json:"failure,omitempty"`
 	Owner        string   `json:"owner,omitempty"`
-	ExpectedCode string   `json:"expected_code,omitempty"`
 	FailureCodes []string `json:"failure_codes,omitempty"`
 }
 
