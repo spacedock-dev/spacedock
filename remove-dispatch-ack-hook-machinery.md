@@ -81,3 +81,41 @@ Spacedock no longer installs or runs the dispatch acknowledgment hook mechanism.
 
 Spacedock no longer installs or runs the dispatch acknowledgment mechanism.
 The compact session hook and all current live-test bindings and owners remain unchanged.
+
+## Stage Report: validation
+
+- DONE: Check the immutable candidate and remote branch.
+  Both resolve to `e2f4e90e604964ea15326f101b466edc9ed1127c`.
+- DONE: Inspect all eight changed files against base `ff9bb4506be73787a684e5fd80b7b772ea7473a5`.
+  The candidate changes 8 files with 67 additions and 469 deletions.
+- DONE: Check the production hook removal.
+  `hooks.json` contains no dispatch-ack `PreToolUse` or `SubagentStart` hook.
+- DONE: Check the unrelated hook.
+  The compact `SessionStart` hook is byte-equivalent to the base hook.
+- DONE: Check the package and integration removal.
+  The candidate deletes `internal/dispatchack` and its dispatch, envelope, status, hidden-ref, and temporary-state behavior.
+- DONE: Check for replacement machinery.
+  Repository search found acknowledgment mechanism strings only in the removal contract test.
+- DONE: Check the restored lifecycle assertion.
+  The default-headless journey again uses the existing native implementation-worker lifecycle assertion.
+- DONE: Check later behavior and live-test ownership.
+  The default-headless XFAIL bindings, assertions, reconciliation rows, and active owners match the base.
+- DONE: Inspect the accepted implementation evidence.
+  Private-cache full and race checks passed. The exact keep-moving check also passed.
+- DONE: Inspect the focused and structural evidence.
+  Removal, registry, owner, format, and diff checks passed.
+- DONE: Record the validation-shell termination.
+  The validation batch ended after its first passing focused command. This event is target-external infrastructure evidence.
+- DONE: Run no live or Pi check.
+  Validation used static inspection and the Captain-accepted local evidence.
+- DONE: Classify Material findings.
+  No Material product finding remains. Therefore, released workflow, harm, authority, and trigger fields do not apply.
+
+### Recommendation
+
+PASSED
+
+### Summary
+
+The candidate removes the global dispatch acknowledgment mechanism without a replacement.
+The unrelated hook, later product behavior, default-headless bindings, and active owners remain unchanged.
