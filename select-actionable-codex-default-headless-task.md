@@ -391,3 +391,27 @@ The retained artifacts support the current live outcomes and the six-file diff h
 ### Summary
 
 Cycle 4 closes the repeated-validation evidence hole by comparing the first correlated implementation completion with the first Codex validation transition. The correction is committed and pushed at `f982ad220`, exactly matches the authorized one-file `+5/-1` delta, and is ready for independent validation; checklist count is 5 DONE, 0 SKIPPED, and 0 FAILED.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify the first-validation freeze and the validation-1 -> Done -> validation-2 negative control, while preserving the valid Done -> validation path.
+  Fresh focused tests passed all three Codex lifecycle groups: the canonical Done-before-validation stream remains accepted, while the inserted first-validation-before-Done stream is rejected; removing `validation < 0` makes that new control fail.
+- DONE: Confirm the correction is exactly one existing test file at +5/-1 and that retained full, race, bound-XPASS, binding-only, and unbound-PASS evidence remains applicable.
+  `2b660fb6..f982ad220` is only `internal/ensigncycle/claude_runtime_helpers_test.go` at `+5/-1`; no product/runtime bytes changed, so the retained full/race logs and live transition evidence remain applicable, and fresh reconciliation passed.
+- DONE: Re-evaluate AC-1 through AC-5 and report PASSED or REJECTED without repeating full, race, or live runs.
+  The exact diff, focused controls, retained artifacts, and two-row binding transition establish every AC; recommendation is PASSED with no material, deferred-risk, or polish finding.
+
+- DONE: AC-1 — exactly one native implementation worker completes before validation with one DONE report.
+  The strengthened oracle freezes both first correlated completion and first validation; fresh tests reject missing, handle-less, after-validation-only, and validation-1 -> Done -> validation-2 variants while accepting Done -> validation.
+- DONE: AC-2 — one committed, clean, open validation gate without authority consumption or successor dispatch.
+  Retained bound XPASS and unbound PASS have empty semantic sets, and the unchanged gate-hold assertions still fail on decision, consume, terminal state, post-prepare mutation, or successor dispatch.
+- DONE: AC-3 — the bounded correction preserves all other runtime semantics and serves green AC-1.
+  Commit `f982ad220` changes one existing test file by five insertions and one deletion, has clean `git diff --check`, and strengthens only the AC-1 observation boundary.
+- DONE: AC-4 — bound XPASS, binding-only removal, reconciliation, then unbound PASS.
+  Retained `d7b099181` evidence reports bound XPASS; `2b660fb6` changes only the two declared binding rows; fresh reconciliation passed and retained final evidence reports normal unbound PASS.
+- DONE: AC-5 — focused, full, and race ladder.
+  Fresh focused lifecycle tests passed on `f982ad220`; retained full and race logs remain valid because the correction changes no compiled product path and the changed test behavior was exercised directly.
+
+### Summary
+
+Independent validation confirms the first-validation freeze closes the reported AC-1 evidence hole without rejecting the valid completion-before-validation lifecycle. The authorized correction is exactly one existing test file at `+5/-1`; all five ACs have applicable evidence, so validation recommends PASSED with no findings and without repeating full, race, or live runs.
