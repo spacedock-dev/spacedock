@@ -127,7 +127,7 @@ No spike needed. The design relies only on already-proven mechanisms: `runSet` a
 ## Stage Report: ideation
 
 - DONE: Declare the exact before/after instruction change, exact files, insertion/deletion estimate, tolerance, and unchanged semantic surfaces.
-  The body specifies a two-file 45-insertion/1-deletion baseline, bounded tolerance, exact Pi bullet replacement, and unchanged grammar, format, authority, runtime, oracle, and XFAIL surfaces.
+  Commit `d4fbb505c` specifies a two-file 45-insertion/1-deletion baseline, bounded tolerance, exact Pi bullet replacement, and unchanged semantic surfaces.
 - DONE: Define the smallest behavioral test that fails when a legitimate completed or verdict value is cleared and covers the complete adjacent-state matrix in one ladder.
   One `entered_stage_test.go` ladder advances four empty/set combinations and compares raw terminal-field lines; blanking either populated value falsifies AC-1.
 - DONE: Record no-spike-needed evidence or the smallest falsifier, preserve oracle/XFAIL ownership, and apply the two-round reset rule.
