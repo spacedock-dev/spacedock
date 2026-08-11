@@ -19,6 +19,17 @@ gates:
                 digest: sha256:d276a71ce0905bc7454b3df2bf92eef7fbe8e938fc575908afa97d493ba37c21
                 request-digest: sha256:38daadfeab1726b731607f66dd5ce060bd32fd2eb3bb1ef583818480aa604e69
                 room-ref: ./select-actionable-codex-default-headless-task/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:272j6s25f9mry6nxbf4yjxvt:backlog:1
+                briefing: briefing:272j6s25f9mry6nxbf4yjxvt:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-11T05:24:15.819247Z"
+                decision: approve
+                reason: The repaired seed isolates one product-only Codex target-selection outcome, excludes prohibited mechanisms and other hosts, and defines the required bound-to-unbound proof ladder.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 ## Problem
 
