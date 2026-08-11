@@ -286,3 +286,39 @@ The approved declarative correction stayed inside its surface cap and passed eve
 ### Summary
 
 The test observability defect is fixed: Codex lifecycle grading now uses the isolated parent rollout and correlates spawn to its returned handle before accepting child completion. The prior missing-native-primitive conclusion is withdrawn, but AC-1, AC-3, and AC-4 remain unmet because the exact bound Spacedock run still genuinely lacked spawn; checklist count is 8 DONE, 1 SKIPPED, and 4 FAILED.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Verify the exact base and push the final candidate without changing product bytes.
+  Base is `be0fd17c64081313ba7f5feeb9ed42bfb72f7049`; local and remote `spacedock-ensign/grade-codex-session-lifecycle` both resolve to `2b660fb6fb6ca6566abe086c6d7ee3adcee30eb0`.
+- DONE: Correct Codex lifecycle grading from the isolated parent session log and retain only the first correlated implementation completion.
+  Commit `d7b0991810c52f8f1a52a59226670b07688d0534` adds the `completed < 0` guard; the fixture passes with implementation `Done:` before validation plus a later same-handle validation `Done:`, while no completion and after-validation-only completion stay red.
+- DONE: Keep the final correction test-only and record its exact surface.
+  The four lifecycle files are `internal/ensigncycle/{claude_live_runner_test.go,claude_runtime_helpers_test.go}` and `internal/ensigncycle/testdata/codex_native_lifecycle/{public,parent-rollout}.jsonl`; only `internal/ensigncycle/shared_live_runner_test.go` and `internal/contractlint/live_registry_reconciliation_test.go` add the two row changes, for six files and `+105/-20` from base.
+- DONE: Run one focused lifecycle ladder, one full suite, and one race suite on the immutable correction bytes.
+  The correlated-session/lookup/negative-control focus passed in 1.71s, `go test ./...` passed in 280.95s, and `go test ./... -race` passed in 332.01s; removing first-completion retention, handle correlation, package correctness, or race safety makes the corresponding rung red.
+- DONE: Run one bound local Codex default-headless target and retain XPASS evidence before binding edits.
+  Exact head `d7b099181` reported `XPASS ALERT` with no semantic codes in 307.25s; internal evidence records one spawn at parent line 77, its correlated handle at 79, implementation `Done:` at 93, and validation at 103.
+- DONE: Remove only the Codex default-headless binding and mirrored reconciliation row, then verify registry ownership and formatting.
+  Commit `2b660fb6f` changes only those two rows; registry/binding-format passed in 1.59s, the mutable active-owner join passed in 2.01s, and gofmt plus `git diff --check` passed.
+- DONE: Run one fresh unbound local Codex default-headless target requiring normal PASS.
+  Exact final head `2b660fb6f` reported normal PASS with no binding annotation in 724.50s; its independent parent records one spawn at line 52, handle at 54, implementation `Done:` at 66, and validation at 76.
+- DONE: Retain the exact offline, bound, and unbound artifacts.
+  Offline logs are `/tmp/272-codex-transition.TcjLIT/artifacts/correction/{focused,full,race,unbind-registry-format,unbind-owner}.log`; bound evidence is under `/tmp/272-codex-transition.TcjLIT/artifacts/bound-xpass` and unbound evidence under `/tmp/272-codex-transition.TcjLIT/artifacts/unbound-pass`, including each `go-test.log`, `internal-lifecycle-verdict.txt`, `thread_spawn_edges.json`, `internal/sessions/`, `internal/state_5.sqlite`, and live process artifacts.
+- DONE: Preserve product, skill, hook, command, state-protocol, authority, and unrelated runtime bytes.
+  The final branch diff contains only the six named test files; no CI or PR was started, and the earlier adapter-text hypothesis is superseded by authoritative session evidence rather than shipped as a product change.
+
+- DONE: AC-1 — exactly one native implementation worker completes before validation with one DONE report.
+  Both preserved lifecycle verdicts independently prove one spawn, its returned handle, one matching implementation `Done:` before validation, and the durable report oracle; deleting spawn/completion or moving completion after validation restores red.
+- DONE: AC-2 — one committed, clean, open validation gate without authority consumption or successor dispatch.
+  Bound XPASS and unbound PASS both emitted an empty semantic set, so `assertGateHeld` and `assertRecordedGateHoldLog` accepted the gate; any decision, consume, terminal field, post-prepare mutation, or successor build would emit a gate-hold failure.
+- DONE: AC-3 — the bounded correction preserves all other runtime semantics and serves green AC-1.
+  The final correction is stricter than the declared product cap: zero product files and only the six test surfaces; AC-1 is green on two live runs, so the preservation/value re-anchor is satisfied without the rejected adapter prose.
+- DONE: AC-4 — bound XPASS, binding-only removal, reconciliation, then unbound PASS.
+  Preserved `bound-xpass/internal-lifecycle-verdict.txt` reports XPASS before commit `2b660fb6f`; only the two declared rows then changed, focused reconciliation passed, and `unbound-pass/internal-lifecycle-verdict.txt` reports normal PASS.
+- DONE: AC-5 — focused, full, and race ladder.
+  All three owned offline rungs passed once on final correction bytes before the bound run; no check or live target was retried after a failed rung because none failed.
+
+### Summary
+
+Cycle 3 closes the observability defect and the live transition without changing product semantics: the grader reads the parent session, correlates the returned worker handle, and freezes the first implementation completion. The exact bound target XPASSed, only its two bindings were removed, and a fresh unbound target passed; checklist count is 14 DONE, 0 SKIPPED, and 0 FAILED.
