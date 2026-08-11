@@ -1,6 +1,6 @@
 ---
 title: Preserve Pi terminal fields on nonterminal advance
-status: backlog
+status: ideation
 score: "1.0"
 source: Captain recovery directive; fh6 commit 4a98f40b4, 2026-08-11
 sprint: test-behavior-completeness
@@ -39,7 +39,7 @@ gates:
                 reason: The seed isolates one user-visible data-preservation defect, excludes mechanisms and live work, and defines falsifiable evidence for every acceptance criterion.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Pi must not erase legitimate `completed` or `verdict` fields during a nonterminal advance.
