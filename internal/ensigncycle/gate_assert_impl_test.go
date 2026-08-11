@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"gopkg.in/yaml.v3"
@@ -53,6 +54,31 @@ func recordedGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectati
 		gateID: request.Gate, attemptID: request.Attempt,
 		briefingID: request.Briefing.ID, digest: request.Briefing.Digest,
 	}, nil
+}
+
+func assertGateFallbackScope(commands []string, fixture recordedGateFixture) error {
+	taskDir, err := filepath.Rel(fixture.stateRoot, filepath.Dir(fixture.entity))
+	if err != nil || taskDir == "." || strings.HasPrefix(taskDir, "..") {
+		return fmt.Errorf("invalid state task directory %q: %w", taskDir, err)
+	}
+	stateQuery := regexp.MustCompile(`(?:^|\s)git\s+-C\s+["']?` + regexp.QuoteMeta(filepath.Clean(fixture.stateRoot)) + `["']?\s+ls-tree(?:\s|$)`)
+	taskFence := regexp.MustCompile(`\s--\s+["']?` + regexp.QuoteMeta(filepath.ToSlash(taskDir)) + `["']?(?:\s|\||$)`)
+	matched := 0
+	for _, command := range commands {
+		for _, segment := range strings.FieldsFunc(command, func(r rune) bool { return r == ';' || r == '\n' }) {
+			if !stateQuery.MatchString(segment) {
+				continue
+			}
+			matched++
+			if !taskFence.MatchString(segment) {
+				return fmt.Errorf("state-root gate fallback is not fenced to %q: %s", filepath.ToSlash(taskDir), strings.TrimSpace(segment))
+			}
+		}
+	}
+	if matched != 1 {
+		return fmt.Errorf("state-root gate fallback query count = %d, want 1", matched)
+	}
+	return nil
 }
 
 func assertGateHeld(before, after string, expected gateHeldExpectation) error {

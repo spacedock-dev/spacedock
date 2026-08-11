@@ -16,6 +16,17 @@ import (
 // entity-state + observed strings, so the negative cases spend no model.
 
 func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
+	fixture := writeGateWorkflow(t, t.TempDir())
+	definitionQuery := `git -C "` + fixture.root + `" ls-tree -r --name-only HEAD -- "."`
+	stateQuery := `git -C "` + fixture.stateRoot + `" ls-tree -r --name-only HEAD -- "recorded-gate-task"`
+	if err := assertGateFallbackScope([]string{definitionQuery, stateQuery}, fixture); err != nil {
+		t.Fatalf("task-fenced fallback rejected: %v", err)
+	}
+	wholeStateRoot := strings.Replace(stateQuery, `"recorded-gate-task"`, `"."`, 1)
+	if err := assertGateFallbackScope([]string{definitionQuery, wholeStateRoot}, fixture); err == nil {
+		t.Fatal("whole-state-root fallback qualified")
+	}
+
 	before := recordedGateEntity()
 	held := recordedGateHeldEntity()
 	expected := staticGateHeldExpectation()
