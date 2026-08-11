@@ -431,3 +431,29 @@ Independent validation confirms the first-validation freeze closes the reported 
 ### Summary
 
 Cycle 5 reconciles the validated Codex lifecycle grader with exact main authority without widening the candidate. The rebased four-file candidate is pushed at `8ab856623`, all authorized focused checks pass, and checklist count is 4 DONE, 0 SKIPPED, and 0 FAILED.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify the rebased four lifecycle files are byte-identical to validated f982ad220 and both registry files are byte-identical to main 1d1e2b503.
+  Git blob IDs match pairwise for all four lifecycle files (`a082cd32`, `bd82c19f`, `7f1a1f31`, `4abda043`) and both registries (`c9856a9e`, `22163c47`) on exact candidate `8ab85662355c1861501a9d57a172c632822efc03`.
+- DONE: Confirm focused lifecycle, registry, owner, formatting, and clean merge-tree evidence on exact candidate 8ab856623 without repeating full, race, or live runs.
+  Fresh lifecycle, reconciliation/binding-format, and active-owner tests passed; gofmt produced no diff, `git diff --check` passed, and `git merge-tree --write-tree 1d1e2b503 8ab856623` equaled candidate tree `362a1456`; full, race, and live were not repeated.
+- DONE: Re-evaluate AC-1 through AC-5 and report the final PASSED or REJECTED boundary verdict.
+  Every AC has applicable fresh or retained evidence on unchanged authoritative bytes; final recommendation is PASSED.
+- DONE: Reviewer findings.
+  No material, deferred-risk, or polish finding remains after the main reconciliation.
+
+- DONE: AC-1 — exactly one native implementation worker completes before validation with one DONE report.
+  Fresh lifecycle controls accept the canonical correlated Done-before-validation path and reject missing, handle-less, after-validation-only, and validation-1 -> Done -> validation-2 variants; changing first-event retention makes the negative control fail.
+- DONE: AC-2 — one committed, clean, open validation gate without authority consumption or successor dispatch.
+  Retained bound XPASS and unbound PASS have empty semantic sets, while the unchanged gate assertions fail on decision, consume, terminal state, post-prepare mutation, or successor build.
+- DONE: AC-3 — the bounded correction preserves all other runtime semantics and serves green AC-1.
+  Main-to-candidate is only the four lifecycle test files at `+108/-19`; both registry files equal main, product/runtime bytes are unchanged, formatting is clean, and AC-1 is green.
+- DONE: AC-4 — bound XPASS, binding-only removal, reconciliation, then unbound PASS.
+  Retained `d7b099181` verdict records one correlated spawn/completion and bound XPASS; the two registry rows were removed at `2b660fb6`, fresh reconciliation passed against main's current registry, and the retained final verdict records normal unbound PASS.
+- DONE: AC-5 — focused, full, and race ladder.
+  Fresh focused lifecycle tests passed on byte-identical rebased lifecycle code; retained full and race logs remain applicable because the rebase preserved those validated blobs and changed no compiled product path.
+
+### Summary
+
+Independent validation confirms that rebasing onto main preserved the complete validated Codex lifecycle grader while adopting main's registry authority exactly. Focused lifecycle, registry, ownership, formatting, and merge-tree checks are green on `8ab856623`; all five ACs pass with no findings, so the final recommendation is PASSED.
