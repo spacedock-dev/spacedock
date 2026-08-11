@@ -219,3 +219,36 @@ The Captain's current directive supersedes the seed's historical n28 acknowledgm
 
 The exact baseline proves correct task selection but no native implementation spawn.
 The selected correction is a bounded Codex adapter clarification backed by the existing live behavior oracle and an XPASS-to-PASS removal ladder.
+
+## Stage Report: implementation
+
+- DONE: Apply only the approved declarative Codex First Officer spawn-boundary correction within the one-file, six-gross product cap.
+  Candidate `c716f2c524a438083dcb581b1c9efbe91e4b10b5` has sole parent/base `07ce3ddd30e644b289deda98d3a589ec18e57e41`; its exact diff is one file, `skills/first-officer/references/codex-first-officer-runtime.md`, with 3 insertions and 1 deletion (4 gross), and it remains unpushed/unmerged under HOLD.
+- DONE: Run the exact focused contract checks, one full suite, and one race suite on the immutable product candidate.
+  Focused `TestInitialWorkerSpawnGuardPrecedesCompletionAndValidation|TestCodexSpawnSignatureBindsToolArgs`, `go test ./...`, and `go test ./... -race` all passed on clean immutable head `c716f2c5`; removing either generic spawn/signature contract or introducing a suite/race regression would fail this ladder.
+- FAILED: Run one bound local-subscription Codex default-headless target and retain exact XPASS evidence before any binding edit.
+  The bound run used exact source `c716f2c5`, `OPENAI_API_KEY` unset, and ChatGPT auth, but ended XFAIL after 418.61s with `[gate-hold-violation implementation-worker-not-dispatched]`; retained artifact `/tmp/272j-bound-xpass-c716.E4N8Jj` would instead have reported XPASS only if the native worker lifecycle and gate hold were both observed.
+- SKIPPED: Remove only the Codex default-headless XFAIL row and its mirrored reconciliation row, then run reconciliation and one fresh unbound local Codex target requiring normal PASS.
+  No binding row was edited and no reconciliation or unbound run was performed because the prerequisite bound XPASS failed and the Captain directed HOLD/design reset.
+- DONE: Write a complete implementation Stage Report with exact SHAs, diff, checks, retained artifacts, and explicit AC-1 through AC-5 evidence.
+  This report records the candidate/base, exact capped diff, green offline ladder, failed bound proof, unchanged bindings, retained artifacts, and HOLD recommendation.
+
+- FAILED: AC-1 — one native implementation `spawn_agent`, completion before validation, and one DONE implementation report.
+  The live stream read the new MUST-spawn text verbatim but emitted no `spawn_agent`; after the zero-exit implementation build it claimed dispatch, issued two empty waits, directly read the pre-existing report, and advanced to validation.
+- FAILED: AC-2 — one committed, clean, open validation gate without authority consumption or successor dispatch.
+  The final gate was open, but `gate-hold-violation` proves the full required gate-hold command/state boundary was not satisfied, and validation followed false implementation completion evidence.
+- FAILED: AC-3 — one bounded Codex adapter correction that preserves other semantics and serves green AC-1.
+  The one-file/four-gross surface and `git diff --check` passed, but AC-3 is unmet by its own value re-anchor because AC-1 remained red.
+- FAILED: AC-4 — bound XFAIL to XPASS, binding-only removal, reconciliation, then unbound PASS.
+  The candidate remained bound XFAIL, so both Codex rows remain intact and the post-XPASS steps were correctly not run.
+- DONE: AC-5 — focused, full, and race ladder.
+  All three exact commands passed on immutable `c716f2c5`; any contract, package, or data-race failure would invalidate this evidence.
+
+- FAILED: Missing supported primitive.
+  The product lacks an existing public host/binary dispatch boundary that actually invokes native spawn or fail-closes stage advance when no native worker handle exists; declarative text alone is not that primitive, and prohibited hooks or observer mechanisms are not authorized.
+- DONE: Retained evidence and disposition.
+  Baseline `/tmp/272j-bound-codex-07ce.6AuoNv`, invalid-infrastructure baseline `/tmp/272j-bound-codex.9vVlhU`, and failed-candidate `/tmp/272j-bound-xpass-c716.E4N8Jj` remain preserved; recommendation is HOLD/design reset and candidate `c716f2c5` must not be pushed or merged.
+
+### Summary
+
+The approved declarative correction stayed inside its surface cap and passed every offline check, but the bound Codex journey read it and still skipped native dispatch before advancing on false evidence. AC-1, AC-2, AC-3, and AC-4 remain unmet; the Captain-directed outcome is HOLD/design reset until a supported fail-closed native dispatch primitive is approved.
