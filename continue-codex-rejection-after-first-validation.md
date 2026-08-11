@@ -1028,3 +1028,27 @@ The validation recommendation is PASSED. No DVD-owned Material finding remains.
 - Trigger evidence: The bound baseline completed in 827.15s with `rejection-reviewer-flow` and `rejection-round-missing`. Its artifact is `/tmp/dvd-current-main-codex.xbcK2k`.
 - Disposition: FIX. The Captain approved one product handoff correction and one test-only runtime selection correction.
 - Approved surface and cap: Change only `skills/feedback-rejection-flow/SKILL.md` and `internal/ensigncycle/claude_live_runner_test.go`. The estimated cap is +8/-2, net +6.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Preserve the closed PR #664 and old branch evidence, then discard the superseded 12-step candidate only inside the assigned DVD worktree and start from exact current main 07ce3ddd30e644b289deda98d3a589ec18e57e41.
+  Closed PR and remote head `f754ba17` were verified first. Only the assigned clean worktree was reset to exact main `07ce3ddd3`.
+- DONE: Run exactly one bound local-subscription Codex rejection-flow target on current main before product edits and retain its exact semantic grade and artifact.
+  The 827.15s baseline was XFAIL with `rejection-reviewer-flow` and `rejection-round-missing`; `/tmp/dvd-current-main-codex.xbcK2k` is retained.
+- FAILED: Redesign and implement at most one smallest product-only correction using the existing normal feedback-rejection lifecycle: rejection, one correction, validation/2 publication, one fresh open validation gate, then stop.
+  Commit `9b9a883758f7885c24b9073c6b4678612c8ec6a0` reached validation/2, but the live run stopped at `needs-preparation` without an open gate.
+- DONE: Use no hooks, transcript-driven product mechanism, global observer state, host-specific 12-step flow, Pi, Opus, Sonnet, or new standing CI/lint.
+  The product change calls the existing public gate lifecycle. No forbidden mechanism or runtime ran.
+- DONE: Apply one focused/full/race verification ladder, bound XPASS, remove only the Codex rejection-flow binding and reconciliation row, then one unbound normal PASS; stop for one independent revalidation maximum.
+  Focused checks passed in 0.241s and 0.225s. Full and race suites passed in 171.496s and 188.795s for `internal/ensigncycle`.
+- FAILED: Prove the corrected candidate as a bound XPASS.
+  The sole bound candidate run remained XFAIL after 510.82s with the same two codes. Artifact `/tmp/dvd-current-main-xpass.pfbyfN` records source head `9b9a88375`.
+- SKIPPED: Remove only the DVD Codex binding and reconciliation row, then run focused reconciliation and one unbound normal PASS.
+  The Captain required an immediate HOLD when the bound run was not XPASS. No binding changed and no unbound run started.
+- DONE: Write one complete implementation Stage Report with exact SHAs, diff, checks, artifacts, and AC evidence; escalate only a genuine product design choice.
+  Base `07ce3ddd30e644b289deda98d3a589ec18e57e41` and candidate `9b9a883758f7885c24b9073c6b4678612c8ec6a0` differ by +8/-2 in two files. `value-ac[AC-3]` remains unmet.
+
+### Summary
+
+The approved correction publishes validation/2 but does not reach the fresh open gate. Structured Codex worker evidence also remains absent.
+The one-correction limit is spent, and the implementation is on HOLD. No code push, binding removal, unbound run, PR, or CI action occurred.
