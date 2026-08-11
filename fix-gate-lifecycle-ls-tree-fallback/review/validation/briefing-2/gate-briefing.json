@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qbppyssy13pyh1gtkh2n8vp5:validation:attempt-2:revision-1",
+  "question": "Approve the validated one-file QBP correction for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:qbppyssy13pyh1gtkh2n8vp5:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/95b5cc533ce396939c9975540bed0796abfddb2c/fix-gate-lifecycle-ls-tree-fallback.md",
+      "rev": "sha256:9ccfa528e82060e0fac669ebdd9dec6f74ff8e90ac03ac873aa5efa0a27079e6",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 validation passed. The one-file +2/-2 skill correction produced one held package, used state P=recorded-gate-task, retained exactly the intended three sources, and passed full deterministic and race suites."
+    }
+  ]
+}
