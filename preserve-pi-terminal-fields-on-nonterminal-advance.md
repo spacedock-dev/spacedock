@@ -19,6 +19,10 @@ gates:
                 digest: sha256:32e187c414902c2a7644a6db6ab005ed6909d8a31c409de008224bfa005637cf
                 request-digest: sha256:592276c34d915145bb9c1d69da1e820b377379c81dd858f964a5d593e95e14b9
                 room-ref: ./preserve-pi-terminal-fields-on-nonterminal-advance/review/backlog/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-11T00:41:41.736257Z"
+                reason: seed lacks required backlog Stage Report
 ---
 
 Pi must not erase legitimate `completed` or `verdict` fields during a nonterminal advance.
