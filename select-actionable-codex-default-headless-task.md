@@ -39,6 +39,17 @@ gates:
                 digest: sha256:a1f9e70c1b9d4caf0dae8e8ae24d7d81ba9892c9997b254233044947c1946e01
                 request-digest: sha256:5a7226a4a0ebddb2c7914d1386c17d8515eee86a684139bbb7a18fa1560dd40c
                 room-ref: ./select-actionable-codex-default-headless-task/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:272j6s25f9mry6nxbf4yjxvt:ideation:1
+                briefing: briefing:272j6s25f9mry6nxbf4yjxvt:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-11T05:45:24.861062Z"
+                decision: approve
+                reason: The exact bound Codex XFAIL proves the missing native implementation spawn. The selected one-file declarative correction and binding-only removal ladder are the smallest product-only design within the approved caps and exclusions.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-11T05:24:54Z
 ---
 ## Problem
