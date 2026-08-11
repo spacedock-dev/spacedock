@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
-	"github.com/spacedock-dev/spacedock/internal/dispatchack"
 	"github.com/spacedock-dev/spacedock/internal/runtimehost"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
@@ -100,8 +99,6 @@ type buildOutput struct {
 	RunInBackground *bool    `json:"run_in_background,omitempty"`
 	Agent           *string  `json:"agent,omitempty"`
 	Skill           *string  `json:"skill,omitempty"`
-	AckEpoch        string   `json:"dispatch_ack_epoch,omitempty"`
-	AckRef          string   `json:"dispatch_ack_ref,omitempty"`
 }
 
 // buildAdvanceOutput is the stdout JSON envelope for `--advance` mode: a pointer
@@ -563,10 +560,6 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	// still decomposes; short names pass through byte-identical.
 	workerKey := strings.ReplaceAll(subagentType, ":", "-")
 	slug := status.EntitySlug(entityPath)
-	entityID := entityFields["id"]
-	if entityID == "" {
-		entityID = slug
-	}
 	idStyle := readmeFields["id-style"]
 	derivedName := capWorkerName(workerKey, slug, stage, entityFields["id"], idStyle)
 
@@ -774,23 +767,6 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		return buildError(stderr, 1,
 			"dispatch filename '%s' exceeds %d characters", dispatchFileName, dispatchFileNameMaxLen)
 	}
-	var acknowledgment dispatchack.Record
-	if opts.Stamp && (host == "claude" && os.Getenv("CLAUDE_CODE_SESSION_ID") != "" || host == "codex" && os.Getenv("CODEX_THREAD_ID") != "") {
-		if advance {
-			state, err := dispatchack.State(entityPath, entityID, stage)
-			if err != nil {
-				return buildError(stderr, 1, "cannot read dispatch acknowledgment: %s", err)
-			}
-			if state == dispatchack.Pending || state == dispatchack.Armed {
-				return buildError(stderr, 1, "dispatch acknowledgment for entity %s stage %s is %s", slug, stage, state)
-			}
-		} else {
-			acknowledgment, err = dispatchack.Create(entityPath, entityID, stage, host)
-			if err != nil {
-				return buildError(stderr, 1, "%s", err)
-			}
-		}
-	}
 	dispatchFilePath := filepath.Join(dispatchFileDir, dispatchFileName+".md")
 	if err := os.MkdirAll(dispatchFileDir, 0o755); err != nil {
 		fmt.Fprintf(stderr, "dispatch_file_write_failed: %s: %s\n", dispatchFilePath, err)
@@ -838,33 +814,17 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		return emitBuildJSON(stdout, outAdvance)
 	}
 
-	description := fmt.Sprintf("%s: %s", entityTitle, stage)
-	if acknowledgment.Epoch != "" {
-		token := " [sda-" + acknowledgment.Epoch + "]"
-		prompt += token
-		if host == "claude" {
-			description += token
-		}
-	}
 	out := buildOutput{
 		SchemaVersion: schemaVersion,
 		SubagentType:  subagentType,
-		Description:   description,
+		Description:   fmt.Sprintf("%s: %s", entityTitle, stage),
 		FetchCommands: fetchCommands,
 		DispatchFile:  dispatchFilePath,
 		Prompt:        prompt,
 		Model:         effectiveModel,
-		AckEpoch:      acknowledgment.Epoch,
-	}
-	if acknowledgment.Epoch != "" {
-		out.AckRef = acknowledgment.Ref()
 	}
 	if !bareMode {
-		name := derivedName
-		if host == "codex" && acknowledgment.Epoch != "" {
-			name = acknowledgment.Name(name)
-		}
-		out.Name = &name
+		out.Name = &derivedName
 		if teamName != "" {
 			out.TeamName = &teamName
 		}

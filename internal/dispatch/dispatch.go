@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
-	"github.com/spacedock-dev/spacedock/internal/dispatchack"
 )
 
 // Run routes launcher-independent dispatch subcommands. Artifact builds must use
@@ -31,8 +30,6 @@ func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, a
 	}
 
 	switch args[0] {
-	case "ack-hook":
-		return dispatchack.HandleHook(stdin, stdout, stderr)
 	case "build":
 		if wantsHelp(args[1:]) {
 			printBuildUsage(stdout)

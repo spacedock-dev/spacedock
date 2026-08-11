@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spacedock-dev/spacedock/internal/dispatchack"
 	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
@@ -141,7 +140,6 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	t.Helper()
 	binary := buildRecordedGateBinary(t)
 	pluginDir := livePluginDir(t)
-	writeFile(t, filepath.Join(pluginDir, "hooks.json"), readFile(t, filepath.Join(repoRoot(t), "hooks.json")))
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	// isolatedClaudeEnv resolves the credential (OAuth benchmark-token locally,
@@ -264,43 +262,27 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	semantic = append(semantic, durableSemantic("gate-not-held", assert(before, after, expected)))
 	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))
 	if scenario.name == "default-headless-gate-stop" {
-		semantic = append(semantic, assertDispatchAckLifecycle(t, fixture, after, readFile(t, commandLog)))
+		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after))
 	}
 	finishLiveScenario(t, runner, scenario, result, semantic...)
 }
 
-func assertDispatchAckLifecycle(t *testing.T, fixture recordedGateFixture, entity, log string) error {
+func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) string {
 	t.Helper()
-	prefix := "refs/spacedock/dispatch-ack-audit/recorded-gate-task/implementation/"
-	refs := strings.Fields(git(t, fixture.stateRoot, "for-each-ref", "--format=%(refname)", prefix))
-	if len(refs) != 3 {
-		return fmt.Errorf("implementation acknowledgment refs = %v, want pending, armed, consumed", refs)
+	var started struct {
+		Type     string `json:"type"`
+		ThreadID string `json:"thread_id"`
 	}
-	type receipt = dispatchack.Record
-	chain := map[string]receipt{}
-	for _, ref := range refs {
-		var r receipt
-		if err := json.Unmarshal([]byte(git(t, fixture.stateRoot, "show", ref)), &r); err != nil {
-			return err
+	for _, line := range strings.Split(result.stream, "\n") {
+		if json.Unmarshal([]byte(line), &started) == nil && started.Type == "thread.started" {
+			paths, _ := filepath.Glob(filepath.Join(runner.home(), "sessions", "*", "*", "*", "rollout-*"+started.ThreadID+".jsonl"))
+			if len(paths) != 1 {
+				t.Fatalf("Codex parent rollout for %q = %v, want one", started.ThreadID, paths)
+			}
+			return result.stream + "\n" + readFile(t, paths[0])
 		}
-		chain[r.State] = r
 	}
-	t.Logf("dispatch acknowledgment chain: %#v", chain)
-	pending, armed, consumed := chain["pending"], chain["armed"], chain["consumed"]
-	identity := func(r receipt) string {
-		return r.EntityID + "\x00" + r.EntityPath + "\x00" + r.Stage + "\x00" + r.Host + "\x00" + r.Epoch
-	}
-	if pending.State == "" || identity(pending) != identity(armed) || identity(armed) != identity(consumed) || armed.ToolUseID == "" || consumed.NativeWorkerID == "" {
-		return fmt.Errorf("invalid acknowledgment chain: %#v", chain)
-	}
-	rel, _ := filepath.Rel(fixture.stateRoot, fixture.entity)
-	report := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-S## Stage Report: implementation", "--", rel))
-	gate := strings.TrimSpace(git(t, fixture.stateRoot, "log", "-1", "--format=%H", "-Sgate:recorded-gate-task:validation", "--", rel))
-	ordered := report != "" && gate != "" && report != gate && exec.Command("git", "-C", fixture.stateRoot, "merge-base", "--is-ancestor", report, gate).Run() == nil
-	if !ordered || !strings.Contains(entity, "## Stage Report: implementation") || !successfulStatusSet(log, "status=validation started") {
-		return fmt.Errorf("acknowledgment did not precede the committed report, validation status, and open gate")
-	}
-	return nil
+	return result.stream
 }
 
 func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(*gates.Document) error) {

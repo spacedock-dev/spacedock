@@ -10,27 +10,6 @@
           }
         ]
       }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Agent|Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${SPACEDOCK_BIN:-spacedock}\" dispatch ack-hook"
-          }
-        ]
-      }
-    ],
-    "SubagentStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"${SPACEDOCK_BIN:-spacedock}\" dispatch ack-hook"
-          }
-        ]
-      }
     ]
   }
 }
