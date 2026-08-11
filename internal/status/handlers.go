@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
-	"github.com/spacedock-dev/spacedock/internal/dispatchack"
 )
 
 // runSet handles the --set mutation flow with mod-block / merge-hook /
@@ -62,10 +61,6 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 	entityPath := mainEntityPath
 
 	currentFields := ParseFrontmatter(entityPath)
-	entityID := currentFields["id"]
-	if entityID == "" {
-		entityID = slug
-	}
 	currentStatus := strings.TrimSpace(currentFields["status"])
 	modBlock := strings.TrimSpace(currentFields["mod-block"])
 	currentPR := strings.TrimSpace(currentFields["pr"])
@@ -118,20 +113,6 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 	// Any away status token in a repeated/chained update refuses the whole
 	// command byte-clean; the same-stage dispatch mutation itself and unrelated
 	// non-status updates remain allowed.
-	stageChanging := false
-	for _, u := range set.updates {
-		stageChanging = stageChanging || u.field == "status" && u.hasValue && u.value != currentStatus
-	}
-	ackState, ackErr := dispatchack.State(entityPath, entityID, currentStatus)
-	if ackErr != nil {
-		return errExit(stderr, "cannot read dispatch acknowledgment: "+ackErr.Error())
-	}
-	if stageChanging && (ackState == dispatchack.Pending || ackState == dispatchack.Armed) {
-		return errExit(stderr, fmt.Sprintf("entity %s cannot change status while its dispatch acknowledgment is %s", slug, ackState))
-	}
-	if stageChanging && ackState == dispatchack.Consumed && !hasCompleteCommittedStageReport(entityPath, currentStatus) {
-		return errExit(stderr, fmt.Sprintf("entity %s cannot change status until a durable, complete ## Stage Report: %s is committed", slug, currentStatus))
-	}
 	if strings.TrimSpace(currentFields["worktree"]) != "" {
 		for _, stage := range stages {
 			if stage.Name != currentStatus || !enteredStageAwaitingCompletion(&entity{path: entityPath}, stage) {
@@ -390,11 +371,6 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 	resolvedFields, err := updateFrontmatter(entityPath, set.updates)
 	if err != nil {
 		return errExit(stderr, err.Error())
-	}
-	if stageChanging && ackState == dispatchack.Consumed {
-		if err := dispatchack.Clear(entityPath, entityID, currentStatus); err != nil {
-			return errExit(stderr, "cannot clear dispatch acknowledgment: "+err.Error())
-		}
 	}
 
 	switch {
