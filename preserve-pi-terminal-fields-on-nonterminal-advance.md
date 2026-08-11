@@ -51,7 +51,38 @@ Commit `4a98f40b4` added a Pi First Officer clause that clears `completed` and `
 
 ## Proposed approach
 
-Revert only the shipped terminal-field-clearing clause. Retain the useful fh6 oracle improvements. Add or adjust the smallest behavioral test that proves a nonterminal Pi advance leaves legitimate terminal fields unchanged.
+Replace the current `«completion-signal»` bullet in `skills/first-officer/references/pi-first-officer-runtime.md` with the exact after text below. The replacement removes only the read/clear/reread/stop rule and its `pi-agent-teams` application. It retains the current completion signal, advisory, file-verification, stage-report-read, and task/member-completion rules.
+
+Before:
+
+```markdown
+- `«completion-signal»`: For `pi-subagents`, the PRIMARY completion signal is the child return/status (`status: completed`); an optional advisory is only a non-blocking heads-up via raw `intercom send` before return (`contact_supervisor` carries no completion reason). Before a nonterminal status advance, the FO reads `completed` and `verdict`. If either field is non-empty, the FO runs `status --set <slug> completed= verdict=` once, reads the fields again, and stops if either field remains non-empty. The FO does not use `--force`. File verification remains the completion gate: the FO reads the entity file and reads the stage report before advancing state. For `pi-agent-teams`, apply the same field rule after task/member completion.
+```
+
+After:
+
+```markdown
+- `«completion-signal»`: For `pi-subagents`, the PRIMARY completion signal is the child return/status (`status: completed`); an optional advisory is only a non-blocking heads-up via raw `intercom send` before return (`contact_supervisor` carries no completion reason). File verification remains the completion gate: the FO reads the entity file and reads the stage report before advancing state. For `pi-agent-teams`, task/member completion is likewise verified against the entity file.
+```
+
+Extend `TestEnteredStageMutationControls` in `internal/status/entered_stage_test.go` with one table-driven preservation ladder. Each row builds the existing committed implementation fixture, performs the supported `status=validation` advance, and compares the raw `completed:` and `verdict:` lines before and after. Use one legitimate timestamp and the schema-cased `PASSED` verdict across the complete adjacent-state matrix: both empty, completed only, verdict only, and both nonempty. Every row must still assert exit 0 and `status: implementation -> validation`; clearing either populated line must fail its row.
+
+This test mechanism serves AC-1. The simpler existing single empty/empty transition cannot detect data loss; a Pi/live run is unnecessary and forbidden because the supported status mutation supplies a deterministic on-disk observation boundary. The exact instruction diff serves AC-2. Blob equality against the ideation baseline serves AC-3; no new oracle mechanism is introduced.
+
+## Expected surface and estimate
+
+- `skills/first-officer/references/pi-first-officer-runtime.md`: replace one line, 1 insertion and 1 deletion.
+- `internal/status/entered_stage_test.go`: add the four-row preservation ladder beside the existing committed-completion control, estimated 44 insertions and 0 deletions.
+- Total estimate: 2 existing files, 45 insertions, 1 deletion. Tolerance: at most 2 files, 57 insertions, and 6 deletions. A third file, more than +12 insertions or +5 deletions, or any semantic change outside the declaration below requires a design reset before another candidate.
+
+## Semantic scope
+
+- **Runtime behavior changed:** Pi First Officers no longer erase nonempty `completed` or `verdict` values as a prerequisite to a nonterminal status advance. Existing status mutation behavior remains the authority: fields not named by the command remain unchanged.
+- **Command grammar unchanged:** no CLI verb, option, argument order, exit code, or output contract changes.
+- **Stored formats unchanged:** no frontmatter field, value convention, schema, fixture, gate record, or dispatch envelope changes.
+- **Authority unchanged:** the First Officer remains the entity-state writer; the status binary retains its mutation guards; gate and captain authority do not move.
+- **Other runtime behavior unchanged:** completion signaling, worker identity/lifecycle, file verification, stage-report verification, gate preparation/hold behavior, and Claude/Codex behavior remain unchanged.
+- **Oracle and XFAIL surfaces unchanged:** preserve the current blobs of `internal/ensigncycle/claude_live_runner_test.go`, `claude_runtime_helpers_test.go`, `gate_assert_impl_test.go`, `gate_assert_test.go`, `pi_shared_live_runner_test.go`, and `shared_live_runner_test.go`, plus `internal/contractlint/live_registry_reconciliation_test.go`. This retains all fh6 assertion improvements and the current post-fh6 binding/owner state.
 
 ## Out of scope
 
@@ -60,20 +91,28 @@ No test-only product mechanism, hook, protocol, state store, parser loop, XFAIL 
 ## Acceptance criteria
 
 **AC-1 (VALUE) - A nonterminal Pi advance preserves legitimate `completed` and `verdict` fields byte-for-byte.**
-Verified by: a focused behavioral test that starts with nonempty legitimate values, performs the supported nonterminal-advance behavior, and asserts both values remain unchanged. Clearing either field must make the test fail.
+Verified by: the four-row ladder drives the supported implementation-to-validation mutation and compares both raw lines before and after. It covers empty/empty, set/empty, empty/set, and set/set in one batch. Clearing the timestamp or `PASSED` line must make the corresponding row fail.
 
 **AC-2 - The fh6 terminal-field-clearing instruction is absent while unrelated Pi runtime instructions remain unchanged.**
-Verified by: the exact source diff against main and focused instruction/runtime contract checks. Restoring the clearing clause or changing another Pi instruction must fail the scope check.
+Verified by: the implementation diff must equal the exact one-line before/after replacement declared above, aside from the separately declared test file. Restoring any clear/reread/stop sentence or changing another Pi instruction fails the diff comparison. This is a one-off existence/scope check, not a committed prose-grep test.
 
 **AC-3 - Useful fh6 oracle improvements and all XFAIL bindings, assertions, reconciliation rows, and owners remain unchanged.**
-Verified by: exact diff inspection plus focused oracle, registry-reconciliation, and active-owner checks. Any oracle or binding change must fail the comparison.
+Verified by: the seven named oracle/registry files must retain their blobs from ideation baseline `ff9bb4506be73787a684e5fd80b7b772ea7473a5`; focused oracle, registry-reconciliation, and active-owner tests must pass. Any blob or ownership change fails the comparison.
 
 **AC-4 - Repository behavior remains green after the narrow reversal.**
 Verified by: focused tests, `go test ./...`, `go test ./... -race`, gofmt, and `git diff --check` on one immutable candidate.
 
+## Spike determination
+
+No spike needed. The design relies only on already-proven mechanisms: `runSet` applies named status updates without clearing unspecified fields; `TestEnteredStageMutationControls` already drives the committed implementation-to-validation transition through `runNative`; and the split-root fixture exposes the resulting entity bytes. The smallest falsifier is to make that status transition blank either unspecified terminal line: the new completed-only, verdict-only, or both-set row turns red. No parser round-trip, runtime handoff, new format, or tool flag is assumed.
+
 ## Test plan
 
-Ideation must locate the exact shipped clause and the nearest existing behavioral test boundary before implementation. Use the smallest unit or fixture-backed test that can falsify field preservation. No live, Pi, or CI run is permitted. The validator batches one complete adversarial matrix before one verdict. One authorized correction pass is allowed; a second candidate-owned rejection requires design reset or HOLD.
+1. Before the instruction edit, add the preservation ladder to `internal/status/entered_stage_test.go`. Run its exact focused test and demonstrate the falsifier by temporarily blanking an unspecified terminal line in the status mutation path; at least the applicable populated rows must turn red, then restore the mutation path.
+2. Apply the exact instruction replacement. Run the focused entered-stage test and the relevant status package tests. No instruction-file grep is accepted as behavioral proof.
+3. Compare the seven protected blobs to baseline `ff9bb4506be73787a684e5fd80b7b772ea7473a5`; run the focused gate-hold oracle, live-registry reconciliation, and active-owner checks to confirm their current semantics and ownership remain intact.
+4. Run `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and `git diff --check` on one immutable candidate. Gofmt must not leave unrelated changes.
+5. Validation batches the complete four-row adjacent-state ladder and one adversarial falsifier before issuing one verdict. One candidate-owned rejection may receive one FO-authorized correction. A second candidate-owned rejection, any surface/tolerance breach, or any evidence fix that adds a mechanism triggers a design reset or HOLD; cycle 3 escalates to the captain. Preserve existing oracle and XFAIL ownership throughout both rounds.
 
 ## Stage Report: backlog
 
@@ -84,3 +123,16 @@ Ideation must locate the exact shipped clause and the nearest existing behaviora
 - DONE: AC-2 uses the exact source diff and focused contract checks to prove the narrow instruction reversal.
 - DONE: AC-3 uses exact diff inspection and focused ownership checks to prove that the oracle improvements and XFAIL records are unchanged.
 - DONE: AC-4 uses focused tests, full tests, race tests, gofmt, and `git diff --check` on one immutable candidate.
+
+## Stage Report: ideation
+
+- DONE: Declare the exact before/after instruction change, exact files, insertion/deletion estimate, tolerance, and unchanged semantic surfaces.
+  The body specifies a two-file 45-insertion/1-deletion baseline, bounded tolerance, exact Pi bullet replacement, and unchanged grammar, format, authority, runtime, oracle, and XFAIL surfaces.
+- DONE: Define the smallest behavioral test that fails when a legitimate completed or verdict value is cleared and covers the complete adjacent-state matrix in one ladder.
+  One `entered_stage_test.go` ladder advances four empty/set combinations and compares raw terminal-field lines; blanking either populated value falsifies AC-1.
+- DONE: Record no-spike-needed evidence or the smallest falsifier, preserve oracle/XFAIL ownership, and apply the two-round reset rule.
+  Existing `runSet` and split-root fixtures provide the observation boundary; seven protected blobs stay fixed, and a second candidate-owned rejection requires reset or HOLD before cycle-3 escalation.
+
+### Summary
+
+Ideation narrows the recovery to one Pi instruction-line replacement and one deterministic status preservation ladder. It protects every fh6 oracle and current XFAIL/registry owner byte while making destructive clearing falsifiable across the full adjacent-state matrix.
