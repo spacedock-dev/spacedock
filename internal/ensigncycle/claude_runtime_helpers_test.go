@@ -173,7 +173,7 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 		if completed < 0 && event.Payload.Type == "agent_message" && event.Payload.Author == codexWorker && strings.Contains(string(event.Payload.Content), "Done:") {
 			completed = i
 		}
-		if event.Payload.Type == "custom_tool_call" && strings.Contains(line, "status=validation") {
+		if validation < 0 && event.Payload.Type == "custom_tool_call" && strings.Contains(line, "status=validation") {
 			validation = i
 		}
 		if pi.Message.ToolName == "subagent" && pi.Message.ToolCallID == spawnID {
@@ -300,6 +300,10 @@ func TestCodexNativeLifecycleUsesCorrelatedSessionHandle(t *testing.T) {
 	afterValidationOnly := strings.Replace(combined, "Done:", "Result:", 1)
 	if err := assertImplementationWorkerLifecycle(afterValidationOnly, entity); err == nil {
 		t.Fatal("matching completion only after validation passed")
+	}
+	betweenValidations := strings.Replace(combined, `{"timestamp":"2026-08-11T14:01:31Z"`, `{"payload":{"type":"custom_tool_call","input":"status=validation"}}`+"\n"+`{"timestamp":"2026-08-11T14:01:31Z"`, 1)
+	if err := assertImplementationWorkerLifecycle(betweenValidations, entity); err == nil {
+		t.Fatal("matching completion between validation transitions passed")
 	}
 	withoutHandle := strings.Replace(combined, `"output":"{\"task_name\":\"/root/spacedock_ensign_task_implementation\",\"nickname\":\"Mill\"}"`, `"output":"{}"`, 1)
 	if err := assertImplementationWorkerLifecycle(withoutHandle, entity); err == nil {
