@@ -135,27 +135,22 @@ completion signal. Command grammar, stored formats, authority, other hosts,
 and gate behavior do not change. Crossing any undeclared semantic boundary or
 the file/line cap requires a new gate decision.
 
-## Acceptance criteria and test plan
+## Acceptance criteria
 
-**AC-1 (VALUE): The exact Codex default-headless journey records one native
-implementation `spawn_agent`, its completion before validation, and one DONE
-implementation report.** The existing `assertImplementationWorkerLifecycle`
+**AC-1 (VALUE): The exact Codex default-headless journey records one native implementation `spawn_agent`, its completion before validation, and one DONE implementation report.** The existing `assertImplementationWorkerLifecycle`
 oracle measures this end value. Removing the spawn or moving validation before
 completion restores `implementation-worker-not-dispatched`.
 
-**AC-2: The journey ends at one committed, clean, open validation gate, with no
-decision, consumed authority, terminal fields, or successor dispatch.** The
+**AC-2: The journey ends at one committed, clean, open validation gate, with no decision, consumed authority, terminal fields, or successor dispatch.** The
 existing `assertGateHeld` and `assertRecordedGateHoldLog` checks test the
 resulting state and command order. A gate decision, post-prepare status change,
 or successor build fails them.
 
-**AC-3: The correction remains one Codex adapter change within the declared
-product cap and preserves all other runtime semantics.** `git diff --stat`,
+**AC-3: The correction remains one Codex adapter change within the declared product cap and preserves all other runtime semantics.** `git diff --stat`,
 `git diff --check`, and review against the expected surface test this boundary.
 AC-3 serves AC-1; it is not satisfied if AC-1 is not green.
 
-**AC-4: The Codex target progresses from bound XFAIL to bound XPASS, then to
-unbound PASS after only its two binding rows change.** Retain the exact bound
+**AC-4: The Codex target progresses from bound XFAIL to bound XPASS, then to unbound PASS after only its two binding rows change.** Retain the exact bound
 XPASS artifact before editing the rows. Run reconciliation after the edit, then
 retain a fresh unbound normal-PASS artifact. Any semantic code, infrastructure
 failure, or extra binding change fails this criterion.
