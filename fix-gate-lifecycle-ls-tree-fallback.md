@@ -1,7 +1,7 @@
 ---
 id: qbppyssy13pyh1gtkh2n8vp5
 title: Fix the gate-lifecycle ls-tree fallback command
-status: implementation
+status: validation
 source: Captain intake; recovered from deleted public issue spacedock-dev/spacedock#669
 started: 2026-08-10T22:53:32Z
 completed:
@@ -262,3 +262,18 @@ AC-1 and the exact persisted inventory passed in the sole authorized Codex journ
 ### Summary
 
 The corrected fallback now fences state discovery to the known engaged task directory in a one-file +2/-2 candidate. Candidate `69139fb1a` passes deterministic full and race verification; the exact local Codex journey remains reserved for validation, where state `P=.` must fail the direct observed-command and persisted-package proof.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce AC-1 with the existing exact local Codex TestLiveCommonGateGuardrail and verify exactly one prepared package without the Git usage failure.
+  The sole authorized cycle-2 Codex journey passed in 94.43s; completed command item `item_8` exited 0, exactly one gate package was prepared and held, and the retained evidence contains no exit-129 or `git ls-tree` usage failure.
+- DONE: Reproduce AC-2 from persisted package/source identities across definition_dir and entity_dir, excluding unrelated and uncommitted inputs without command-output comparison.
+  The canonical Briefing contains exactly state `gate-review.md`, main `recorder-contract.md`, and state `entity-snapshot.md` with matching immutable revisions and no dirty sibling; direct grading of item `item_8` shows main `P=.` and state `P=recorded-gate-task`, resolving V-1 without comparing command output.
+- DONE: Verify the one-file +2/-2 candidate, applicable focused/full/race/formatting checks, and unchanged supplied-path and gate-authority behavior; recommend PASSED or REJECTED.
+  Candidate `69139fb1a` is clean at one file +2/-2; focused tests, `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and `git diff --check` passed, while the live log has one prepare/commit and no decision, consume, successor dispatch, or archive; supplied paths remain outside fallback discovery.
+- DONE: Recommend PASSED or REJECTED with material, deferred-risk, and polish findings separated.
+  PASSED: V-1 is resolved by the observed state task-directory fence; no material, deferred-risk, or polish findings remain.
+
+### Summary
+
+Both acceptance criteria pass in the single authorized cycle-2 Codex journey, including direct observation of state `P=recorded-gate-task` and the exact persisted three-source inventory. The candidate stays within its one-file +2/-2 boundary, all deterministic checks pass, authority remains held at the human gate, and validation recommends PASSED.
