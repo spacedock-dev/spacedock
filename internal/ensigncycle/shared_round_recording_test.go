@@ -181,13 +181,19 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if err := assertRejectionRoundGateBoundary(entityPath, wantStatus); err != nil {
 		return err
 	}
-	summary, err := gates.ValidateRoundFile(entityPath, "validation/1")
+	currentRound := "validation/1"
+	summary, err := gates.ValidateRoundFile(entityPath, currentRound)
+	if err != nil && strings.Contains(err.Error(), "current review-round pointer does not resolve validation/1") {
+		currentRound = "validation/2"
+		summary, err = gates.ValidateRoundFile(entityPath, currentRound)
+	}
 	if err != nil {
 		return fmt.Errorf("validate retained round: %w", err)
 	}
-	if summary.ID != "round:rejection-task:validation:1" ||
+	wantRoundID := map[string]string{"validation/1": "round:rejection-task:validation:1", "validation/2": "round:rejection-task:validation:2"}[currentRound]
+	if summary.ID != wantRoundID ||
 		summary.Stage != "validation" ||
-		summary.Cycle != 1 ||
+		summary.Cycle < 1 || summary.Cycle > 2 ||
 		summary.Briefing != rejectionBriefingID ||
 		len(summary.Entries) != 4 {
 		return fmt.Errorf("retained round summary = %#v", summary)
@@ -272,6 +278,17 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	writeFile(t, entityPath, strings.Replace(readFile(t, entityPath), "status: backlog", "status: validation", 1))
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
 		t.Fatalf("recorded-round oracle rejected valid final validation state without a gate: %v", err)
+	}
+	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
+		Round:        "validation/2",
+		BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
+		LogPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
+		WorkflowDir:  root,
+	}); err != nil {
+		t.Fatalf("record second validation round: %v", err)
+	}
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
+		t.Fatalf("recorded-round oracle rejected validation/2 pointer with retained validation/1 room: %v", err)
 	}
 	gateReviewPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "gate-review.md")
 	writeFile(t, gateReviewPath, "# Rejection Task — validation review\n\nThe corrected candidate is ready for its prepared decision gate.\n")
