@@ -459,3 +459,22 @@ Current main produced a bound Sonnet XPASS, and removing only the Sonnet XFAIL p
 ### Summary
 
 The exact pushed candidate is mechanically clean and all non-live suites pass, but its own retained unbound normal-PASS evidence violates the canonical gate sequence. Validation recommends REJECTED and a design reset because both runtime behavior and the evidence boundary must change.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Prove the current-main bound Sonnet default-headless target with retained local evidence.
+  Bound candidate `fc7457968` XPASSed in 320.51s; `/tmp/kky-cycle5-bound-sonnet.cviCQi/evidence` shows prepare immediately followed by commit, state head, and structured reads.
+- FAILED: Remove only the Sonnet binding after XPASS, then prove one unbound normal PASS.
+  Commit `9f9df4319` removes only the owned binding rows, but the single unbound run failed `gate-hold-violation`; evidence is `/tmp/kky-cycle5-unbound-sonnet.coxyXr/evidence`.
+- DONE: Preserve product/test firewall: no hooks, instrumentation, or unrelated runtime changes.
+  The correction changes one gate instruction, its existing oracle, one exact negative control, and the two owned binding rows only.
+- DONE: Make the authorized combined correction with focused-test-first evidence.
+  The new discovery-read mutant failed before the correction and passed after it; existing failed-commit and late-read classifications remain green.
+- FAILED: Require successful prepare to be followed immediately by state commit in the unbound run.
+  Unbound `command.log` lines 27-34 show prepare, entity status read, next-status read, then commit; the strengthened oracle correctly rejected it.
+- SKIPPED: Run full and race checks once on final relevant bytes.
+  The assignment required stopping on any new finding with no second patch; checks were not run after the unbound live failure.
+
+### Summary
+
+The combined instruction-and-oracle correction produced a clean bound XPASS, and the oracle now rejects the exact forbidden discovery sequence. The required unbound run repeated that sequence despite the stronger instruction, so implementation stopped without a second patch as directed; commits `fc7457968` and `9f9df4319` preserve the failed candidate and its binding-removal state.
