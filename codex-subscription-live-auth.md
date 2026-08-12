@@ -217,6 +217,10 @@ Insert under `### GitHub setup` in `docs/runtime-live-ci.md`:
 
 This is a documentation-only addition; no local-auth instructions are removed and no live model/thinking setting is changed.
 
+### Dispatch Retries
+
+- Retry 1: implementation — no-completion-signal; re-dispatched -retry
+
 ## Stage Report: ideation
 
 - DONE: Produce a problem statement and value framing for Codex and Pi CI subscription authentication with API-key fallback.
