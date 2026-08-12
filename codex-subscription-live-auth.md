@@ -1,6 +1,6 @@
 ---
 title: Use Codex subscription auth in live CI
-status: ideation
+status: implementation
 source: captain-request
 started: 2026-08-12T14:26:14Z
 completed:
@@ -49,7 +49,7 @@ gates:
                 reason: Captain approved the ideation direction and the declared 8-file, 220–340-line implementation estimate with its stated tolerance.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 # Use Codex subscription auth in live CI
 
