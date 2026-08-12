@@ -254,3 +254,29 @@ A separate mechanical-continuation prerequisite owns the missing host primitive.
 ### Summary
 
 Codex now monitors the sole fresh validator through completion and uses the reported active entity as the gate artifact with committed `README.md` as the distinct reference. Product scope is +2/-0 lines; isolated-home observation and shared live plumbing are +65/-11 lines; XFAIL binding and registry expectation removal are +1/-2 lines, for +67/-13 versus exact current main.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify the minimized exact candidate proves native validator spawn, handle, completion, committed report, and open gate.
+  Exact HEAD `db7d5de72` passed both live fixtures in 386.91 seconds; the oracle fails if one native spawn, its returned handle, matching completion order, durable report commit, or canonical open gate changes.
+- DONE: Reject stale n28 machinery, instrumentation, hooks, broad registry churn, or test-driven product behavior.
+  Diff from base `7cf03cd94` has no n28 acknowledgments, production Go, hooks, or fixture coaching; product behavior is only +2 Codex runtime lines, with native observation confined to tests.
+- DONE: Confirm only the Codex auto-continue XFAIL was removed after bound XPASS and exact-candidate PASS.
+  Retained bound run at `598149370` predates commit `db7d5de72`; that commit removes only owner `v8pcpdmrdfmq7emm65cjdc4p` and its matching registry expectation, and unbound exact HEAD passed.
+
+### Acceptance evidence
+
+- AC-1: `TestLiveCommonAutoContinueAfterImplementation` passed single-root and split-root normally at exact HEAD; retained artifacts are under `.spacedock-evidence/v8pcpdmrdf-validation-exact-head`.
+- AC-2: The live oracle consumed the isolated Codex parent rollout and required exactly one validation `spawn_agent`, its returned task path, and a matching completion author before gate preparation.
+- AC-3: The oracle resolved the active report entity, required one DONE validation section, found its Git commit with `git log -S`, and read the canonical validation gate as open.
+- AC-4: Native lifecycle controls reject public-only output, missing or late completion, missing returned handle, and ambiguous rollout; `TestAutoContinueNegativeStoppedAfterImplementation` rejects missing state or report.
+- AC-5: `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, registry reconciliation, active-owner, and diff checks passed. Codex and Sonnet PR checks remain required before merge; no PR exists. Pi remains skipped.
+
+### Reviewer findings
+
+- No material finding. The former V8-1 evidence defect is closed by native rollout correlation and exact live PASS.
+- Deferred delivery check: run required Codex and Sonnet PR lanes after PR creation; promote to Material if either fails or does not exercise commit `db7d5de72`.
+
+### Summary
+
+PASSED for gate and PR progression. The minimized candidate proves the complete native validation lifecycle without the rejected n28 mechanism or product instrumentation; required PR CI remains a pre-merge obligation.
