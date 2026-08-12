@@ -1,6 +1,6 @@
 ---
 title: Continue Codex to validation after implementation
-status: validation
+status: done
 score: "0.90"
 source: "PR #664 Codex auto-continue failure, 2026-08-10"
 sprint: test-behavior-completeness
@@ -69,11 +69,14 @@ gates:
                 reason: Captain directed push after independent validation passed the minimized exact candidate.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-10T19:02:21Z
 worktree: .worktrees/spacedock-ensign-continue-codex-to-validation-after-implementation
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:680
+verdict: PASSED
+completed: 2026-08-12T21:53:03Z
+archived: 2026-08-12T21:53:03Z
 ---
 ## Problem
 
