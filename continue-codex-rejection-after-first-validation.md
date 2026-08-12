@@ -127,6 +127,10 @@ gates:
                 digest: sha256:9b9dd831bcdd7a76b10656f6d382ddcbc79663b7318dc76e3f5756d15e8ed2d4
                 request-digest: sha256:5306ff0867500c1a82d9ff856257a56369f163ddd70d5780131642a319a97072
                 room-ref: ./continue-codex-rejection-after-first-validation/review/validation/briefing-4
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-12T20:53:20.451081Z"
+                reason: Validation report omitted explicit AC-1 through AC-5 citations required by the native gate scanner.
 ---
 
 ## Problem
