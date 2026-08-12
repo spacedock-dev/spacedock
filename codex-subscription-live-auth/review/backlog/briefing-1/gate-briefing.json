@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hrercm3ff4ww94rnqhqbqkyp:backlog:attempt-1:revision-1",
+  "question": "Approve design work for OAuth-preferred Codex and Pi live CI authentication with API-key fallback during migration?",
+  "artifacts": [
+    {
+      "id": "artifact:hrercm3ff4ww94rnqhqbqkyp:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/999a3f785b390fbe74de36ff5445e19e3785e0bc/codex-subscription-live-auth.md",
+      "rev": "sha256:ec5e6438b63ffee84bc9b0c02c179616447feb7beaecf53a92469dfca8189293",
+      "mediaType": "text/markdown",
+      "summary": "The task will update Codex and Pi CI authentication to prefer separate provider-native OAuth secrets, fall back to OPENAI_API_KEY when OAuth is unavailable, preserve isolated homes, and add workflow/authentication tests plus documentation. It will not change models, thinking levels, local developer auth, or persist refreshed GitHub secrets."
+    }
+  ]
+}

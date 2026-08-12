@@ -7,6 +7,18 @@ completed:
 verdict:
 worktree:
 id: hrercm3ff4ww94rnqhqbqkyp
+gates:
+    version: 1
+    records:
+        - id: gate:hrercm3ff4ww94rnqhqbqkyp:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:hrercm3ff4ww94rnqhqbqkyp-backlog-1
+              briefing:
+                id: briefing:hrercm3ff4ww94rnqhqbqkyp:backlog:attempt-1:revision-1
+                digest: sha256:4725aa1d24ef0107e1d244fd1e666415c73cded25f72011060f8069526344c87
+                request-digest: sha256:2f934a126b11db2e1a45db3445cf1ed198de1992864f2c63f7b69a8c2b39fa7a
+                room-ref: ./codex-subscription-live-auth/review/backlog/briefing-1
 ---
 # Use Codex subscription auth in live CI
 
