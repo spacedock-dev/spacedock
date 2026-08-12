@@ -270,7 +270,13 @@ func piSubagentsPackageRoot(t *testing.T) string {
 }
 
 func piLiveModelName() string {
-	return envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", defaultPiLiveModel)
+	if model := os.Getenv("SPACEDOCK_PI_LIVE_CHILD_MODEL"); model != "" {
+		return model
+	}
+	if strings.TrimSpace(os.Getenv("PI_OPENAI_CODEX_AUTH_JSON")) != "" {
+		return "openai-codex/gpt-5.6-luna:max"
+	}
+	return defaultPiLiveModel
 }
 
 func piLiveArtifactDir(t *testing.T, name string) string {
