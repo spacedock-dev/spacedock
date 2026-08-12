@@ -1,6 +1,6 @@
 ---
 title: Use Codex subscription auth in live CI
-status: backlog
+status: ideation
 source: captain-request
 started:
 completed:
@@ -29,7 +29,7 @@ gates:
                 reason: Captain approved the seed. A backlog stage report is not required for this gate.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 # Use Codex subscription auth in live CI
 
