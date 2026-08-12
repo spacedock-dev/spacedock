@@ -1,6 +1,6 @@
 ---
 title: Select the actionable Codex default-headless task
-status: validation
+status: done
 score: "0.90"
 source: Repeated Codex wrong/queued target entry; DVD run 31432758302 artifact 9080028678; filing run 31434160297 artifact 9080564383, 2026-08-10
 sprint: test-behavior-completeness
@@ -69,11 +69,14 @@ gates:
                 reason: Captain approved the validated Codex lifecycle grader and repaired default-headless XFAIL removal for PR and CI delivery.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-11T05:24:54Z
 worktree: .worktrees/spacedock-ensign-select-actionable-codex-default-headless-task
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:676
+verdict: PASSED
+completed: 2026-08-12T14:23:22Z
+archived: 2026-08-12T14:23:22Z
 ---
 ## Problem
 
