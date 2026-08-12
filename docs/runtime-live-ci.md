@@ -118,6 +118,29 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 
 ### GitHub setup
 
+#### Subscription OAuth secrets
+
+The `CI-E2E-CODEX` Environment accepts `CODEX_AUTH_JSON`, the complete
+`~/.codex/auth.json` payload. The `CI-E2E-PI` Environment accepts
+`PI_OPENAI_CODEX_AUTH_JSON`, only the `openai-codex` object from Pi's
+`~/.pi/agent/auth.json`. Keep `OPENAI_API_KEY` in each Environment during the
+migration; the lane uses it only when its OAuth secret is absent.
+
+Create or rotate the secrets from a trusted workstation without printing them:
+
+    gh secret set CODEX_AUTH_JSON --env CI-E2E-CODEX < "$HOME/.codex/auth.json"
+    jq -c '."openai-codex"' "$HOME/.pi/agent/auth.json" \
+      | gh secret set PI_OPENAI_CODEX_AUTH_JSON --env CI-E2E-PI
+
+The Codex value remains the full file object; the Pi value remains one OAuth
+record and the runner supplies the outer provider key. Refreshes stay in the
+isolated run home and are never written back to GitHub. Replace a revoked or
+expired secret from a trusted workstation. If OAuth is absent, `OPENAI_API_KEY`
+is used; a lane fails before launch only when both credentials are absent.
+
+For OAuth Pi uses `openai-codex/gpt-5.6-luna:max`; the API-key fallback uses
+`openai/gpt-5.6-luna:max`. The model ID and `max` thinking level are unchanged.
+
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
 | Claude `TestLiveCommon...` | The 17 registered common journeys | Journey metrics record duration, tokens, model, and available cost. |

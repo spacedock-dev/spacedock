@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-const defaultPiLiveModel = "openrouter/openai/gpt-5.4"
+const defaultPiLiveModel = "openai/gpt-5.6-luna:max"
 
 //spacedock:live-proof id=pi-front-door-subagent-dispatch lane=pi-live
 func TestLivePiFrontDoorSmoke(t *testing.T) {
@@ -44,7 +44,7 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 	piHome := t.TempDir()
 	sessionDir := t.TempDir()
 	cleanHome := t.TempDir()
-	seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
+	decision := seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("PI_OPENAI_CODEX_AUTH_JSON"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 	// Patch 3 (validation attempt-1 correction): seed piHome/settings.json with
 	// the repo as a path package so pi-subagents' settings-package skill
 	// discovery (skills.ts collectSettingsPackageSkillPaths over
@@ -56,7 +56,7 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	env = piLiveEnv(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot)
+	env = piLiveEnvForAuth(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot, os.Getenv("OPENAI_API_KEY"), decision.mode)
 	return workflowRoot, stateRoot, entityPath, artifactDir, env
 }
 
@@ -219,14 +219,23 @@ func piLiveSmokeEntity() string {
 
 func seedPiLocalAuth(t *testing.T, piHome, realHome string) {
 	t.Helper()
-	seedPiLiveAuth(t, piHome, realHome, os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
+	seedPiLiveAuth(t, piHome, realHome, "", os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 }
 
-func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required string) {
+func seedPiLiveAuth(t *testing.T, piHome, realHome, oauthJSON, openAIAPIKey, required string) piLiveAuthDecision {
 	t.Helper()
+	decision := decidePiLiveAuth(oauthJSON, openAIAPIKey, required)
+	if decision.mode == piAuthOAuth {
+		if err := seedPiOAuthAuth(piHome, oauthJSON); err != nil {
+			t.Fatal(err)
+		}
+		return decision
+	}
+	if decision.mode == piAuthAPIKey {
+		return decision
+	}
 	if realHome != "" {
-		authPath := filepath.Join(realHome, ".pi", "agent", "auth.json")
-		b, err := os.ReadFile(authPath)
+		b, err := os.ReadFile(filepath.Join(realHome, ".pi", "agent", "auth.json"))
 		if err == nil && strings.TrimSpace(string(b)) != "" {
 			if err := os.MkdirAll(piHome, 0o700); err != nil {
 				t.Fatal(err)
@@ -234,17 +243,14 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required strin
 			if err := os.WriteFile(filepath.Join(piHome, "auth.json"), b, 0o600); err != nil {
 				t.Fatal(err)
 			}
-			return
+			return piLiveAuthDecision{mode: piAuthOAuth, model: "openai-codex/gpt-5.6-luna:max"}
 		}
 	}
-	if strings.TrimSpace(openAIAPIKey) != "" {
-		return
-	}
-	message := "no live Pi auth available: expected ~/.pi/agent/auth.json or OPENAI_API_KEY"
 	if required != "" {
-		t.Fatal(message + " for the approval-gated pi-live lane")
+		t.Fatal(decision.message)
 	}
-	t.Skip(message + "; run pi login or set OPENAI_API_KEY to run the live Pi suite")
+	t.Skip(decision.message)
+	return decision
 }
 
 func piSubagentsPackageRoot(t *testing.T) string {

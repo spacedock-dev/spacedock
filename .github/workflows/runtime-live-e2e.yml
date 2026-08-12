@@ -11,7 +11,7 @@
 # and runs unconditionally on every PR. Only live jobs declare an `environment:`
 # (a required-reviewer approval gate, reviewer = clkao) and read only the
 # host-specific secret they need: ANTHROPIC_API_KEY for Claude and
-# OPENAI_API_KEY for Codex or Pi. Pull requests queue Sonnet 5 and Codex Luna.
+# CODEX_AUTH_JSON/OPENAI_API_KEY for Codex and PI_OPENAI_CODEX_AUTH_JSON/OPENAI_API_KEY for Pi. Pull requests queue Sonnet 5 and Codex Luna.
 # Manual Opus and Pi cadences run only their selected runtime.
 
 name: Runtime Live E2E
@@ -315,6 +315,8 @@ jobs:
     environment:
       name: CI-E2E-CODEX
     env:
+      CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+      CODEX_HOME: ${{ runner.temp }}/spacedock-codex-auth
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       SPACEDOCK_CODEX_LIVE_REQUIRED: "1"
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/codex
@@ -322,8 +324,8 @@ jobs:
     steps:
       - name: Check required secret
         run: |
-          if [ -z "${OPENAI_API_KEY}" ]; then
-            echo "OPENAI_API_KEY is required for codex-live after CI-E2E-CODEX approval." >&2
+          if [ -z "${CODEX_AUTH_JSON}" ] && [ -z "${OPENAI_API_KEY}" ]; then
+            echo "CODEX_AUTH_JSON or OPENAI_API_KEY is required for codex-live after CI-E2E-CODEX approval." >&2
             exit 1
           fi
 
@@ -385,9 +387,15 @@ jobs:
           printf 'SPACEDOCK_CODEX_REAL_BIN=%s\n' "$real_codex" >> "$GITHUB_ENV"
           printf '%s\n' "$shim_dir" >> "$GITHUB_PATH"
 
-      - name: Login to Codex
+      - name: Authenticate Codex
         run: |
-          printf '%s\n' "$OPENAI_API_KEY" | codex login --with-api-key
+          if [ -n "$CODEX_AUTH_JSON" ]; then
+            mkdir -p "$CODEX_HOME"
+            printf '%s' "$CODEX_AUTH_JSON" > "$CODEX_HOME/auth.json"
+            chmod 600 "$CODEX_HOME/auth.json"
+          else
+            printf '%s\n' "$OPENAI_API_KEY" | codex login --with-api-key
+          fi
           codex login status
 
       - name: Build spacedock binary
@@ -569,6 +577,7 @@ jobs:
     environment:
       name: CI-E2E-PI
     env:
+      PI_OPENAI_CODEX_AUTH_JSON: ${{ secrets.PI_OPENAI_CODEX_AUTH_JSON }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       SPACEDOCK_PI_LIVE_REQUIRED: "1"
       SPACEDOCK_PI_LIVE_CHILD_MODEL: openai/gpt-5.6-luna:max
@@ -578,8 +587,8 @@ jobs:
     steps:
       - name: Check required secret
         run: |
-          if [ -z "${OPENAI_API_KEY}" ]; then
-            echo "OPENAI_API_KEY is required for pi-live after CI-E2E-PI approval." >&2
+          if [ -z "${PI_OPENAI_CODEX_AUTH_JSON}" ] && [ -z "${OPENAI_API_KEY}" ]; then
+            echo "PI_OPENAI_CODEX_AUTH_JSON or OPENAI_API_KEY is required for pi-live after CI-E2E-PI approval." >&2
             exit 1
           fi
 

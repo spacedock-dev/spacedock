@@ -80,8 +80,9 @@ func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner 
 func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	t.Helper()
 	openAIAPIKey := os.Getenv("OPENAI_API_KEY")
+	oauthJSON := os.Getenv("CODEX_AUTH_JSON")
 	realHome := os.Getenv("HOME")
-	decision := decideCodexLiveAuth(openAIAPIKey, codexLocalAuthAvailable(realHome), os.Getenv("SPACEDOCK_CODEX_LIVE_REQUIRED"))
+	decision := decideCodexLiveAuthForCI(oauthJSON, openAIAPIKey, codexLocalAuthAvailable(realHome), os.Getenv("SPACEDOCK_CODEX_LIVE_REQUIRED"))
 	switch decision.mode {
 	case codexAuthSkip:
 		t.Skip(decision.message)
@@ -101,12 +102,17 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	if err := seedCodexLiveConfig(codexHome); err != nil {
 		t.Fatalf("seed live Codex config: %v", err)
 	}
-	if decision.mode == codexAuthLocal {
+	switch decision.mode {
+	case codexAuthOAuth:
+		if err := seedCodexOAuthAuth(codexHome, oauthJSON); err != nil {
+			t.Fatalf("seed Codex OAuth auth: %v", err)
+		}
+	case codexAuthLocal:
 		if err := seedCodexLocalAuth(codexHome, realHome); err != nil {
 			t.Fatalf("seed local Codex auth: %v", err)
 		}
 	}
-	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), openAIAPIKey)
+	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), openAIAPIKey, decision.mode)
 
 	setupDir := filepath.Join(artifactRoot, "_setup")
 	if err := os.MkdirAll(setupDir, 0o755); err != nil {
@@ -115,7 +121,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	switch decision.mode {
 	case codexAuthAPIKey:
 		runCodexLiveCommand(t, setupDir, "codex-login.txt", openAIAPIKey+"\n", env, codexBin, "login", "--with-api-key")
-	case codexAuthLocal:
+	case codexAuthOAuth, codexAuthLocal:
 		runCodexLiveCommand(t, setupDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
 	}
 

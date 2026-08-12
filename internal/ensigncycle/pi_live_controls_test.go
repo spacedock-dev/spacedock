@@ -53,7 +53,7 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 	env := cleanEnviron(
 		"CODEX_THREAD_ID", "CLAUDECODE", "HOME", "PI_CODING_AGENT_DIR",
 		"PI_CODING_AGENT_SESSION_DIR", "PI_INTERCOM_PACKAGE_ROOT",
-		"PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE",
+		"PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE", "OPENAI_API_KEY", "PI_OPENAI_CODEX_AUTH_JSON",
 	)
 	env = dropEnvPrefix(env, "PI_SUBAGENT_")
 	env = append(env,
@@ -65,6 +65,36 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 		"PI_OFFLINE=1",
 	)
 	return withBinaryOnPath(env, filepath.Join(binaryDir, "spacedock"))
+}
+
+func piLiveEnvForAuth(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot, openAIKey, mode string) []string {
+	env := piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot)
+	if mode == piAuthOAuth {
+		env = withoutPiEnvKey(env, "OPENAI_API_KEY")
+	} else if openAIKey != "" {
+		env = append(env, "OPENAI_API_KEY="+openAIKey)
+	}
+	return env
+}
+
+func TestPiLiveAuthSelectionAndSeeding(t *testing.T) {
+	oauth := `{"type":"oauth","access":"sentinel","refresh":"refresh"}`
+	if got := decidePiLiveAuth(oauth, "key", ""); got.mode != piAuthOAuth || got.model != "openai-codex/gpt-5.6-luna:max" {
+		t.Fatalf("OAuth decision = %#v", got)
+	}
+	home := t.TempDir()
+	if err := seedPiOAuthAuth(home, oauth); err != nil {
+		t.Fatal(err)
+	}
+	if mode := fileMode(t, filepath.Join(home, "auth.json")); mode != 0o600 {
+		t.Fatalf("mode = %o", mode)
+	}
+	if got := readFile(t, filepath.Join(home, "auth.json")); !strings.Contains(got, `"openai-codex"`) || !strings.Contains(got, "sentinel") {
+		t.Fatalf("seeded auth = %s", got)
+	}
+	if got := decidePiLiveAuth("", "key", ""); got.mode != piAuthAPIKey || got.model != "openai/gpt-5.6-luna:max" {
+		t.Fatalf("key decision = %#v", got)
+	}
 }
 
 func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
@@ -79,7 +109,7 @@ func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 		"PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/target/pi",
 		"PI_CODING_AGENT_SESSION_DIR": "/target/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/target/package",
 		"PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
-		"PI_OFFLINE":               "1", "HOME": "/target/home", "OPENAI_API_KEY": "key",
+		"PI_OFFLINE":               "1", "HOME": "/target/home", "OPENAI_API_KEY": "",
 		"PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
 	for key, value := range want {
 		assertEnvValue(t, env, key, value)
