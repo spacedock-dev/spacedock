@@ -394,3 +394,22 @@ The correction adds three gross lines. Full and race tests did not run in this c
 
 The three-line change closes the exact exit-1 retry gap and preserves all retained Sonnet value.
 Recommendation: REJECTED for the nonzero retry gap and missing exact-head full/race evidence.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Prove the current-main bound Sonnet default-headless target with retained local evidence.
+  Bound run XPASSed in 309.34s; `/tmp/kky-bound-sonnet-current-main.DdshkH/evidence` proves prepare, commit, state head, structured reads, and an open gate.
+- DONE: Remove only the Sonnet binding after XPASS, then prove one unbound normal PASS.
+  Commit `fbbb225a1` removes the two binding rows; corrected unbound run passed in 341.12s with evidence at `/tmp/kky-unbound-sonnet-corrected.a7weFp/evidence`.
+- DONE: Preserve product/test firewall: no hooks, instrumentation, or unrelated runtime changes.
+  The final diff from `7cf03cd94` changes only three test files; focused registry and active-owner checks passed.
+- DONE: Preserve and reconcile the existing task commits on exact current main.
+  Rebase retained commits `c96df8b01`, `15fd168f7`, and `f2126a56a`; duplicate product commit was skipped and the premature binding-removal commit was deferred until XPASS.
+- DONE: Diagnose the first unbound evidence failure with one smallest correction.
+  Retained log showed `dispatch build --help` was miscounted as a dispatch; test `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` now fails if that harmless probe is rejected.
+- DONE: Run final relevant-byte checks.
+  `go test ./...`, formatting, registry, active-owner, and focused race checks passed; the full race run had one unrelated 250ms timing failure, whose isolated race rerun passed.
+
+### Summary
+
+Current main produced a bound Sonnet XPASS, and removing only the Sonnet XFAIL produced an unbound normal PASS after one evidence-oracle correction for a harmless capability probe. Product instructions and runtime behavior were unchanged; commits `c96df8b01` through `c9efdf853` contain the reconciled test-only candidate and retained live evidence names the exact gate order.
