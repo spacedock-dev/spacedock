@@ -235,3 +235,22 @@ REJECTED. The First Officer must authorize a proof-surface change or request a d
 HOLD. The landed n28 mechanism did not attest the validation worker start in the exact Codex journey.
 
 A separate mechanical-continuation prerequisite owns the missing host primitive. The v8 product repair and all evidence remain preserved for that prerequisite.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Reproduce current-main Codex auto-continue with isolated-home native lifecycle evidence.
+  Exact unbound local target passed both fixtures in 392.15 seconds; artifacts are under `.spacedock-evidence/v8pcpdmrdf-minimized-unbound-pass`.
+- DONE: Prove one validator spawn, correlated handle/completion, committed validation report, and open gate.
+  The isolated-home parent rollout oracle requires exactly one validation spawn, its returned task path, matching completion before gate preparation, a report-bearing commit, and canonical open gate per fixture.
+- DONE: Remove only the auto-continue binding after XPASS, then prove one unbound normal PASS.
+  Commit `db7d5de72` removes the one Codex XFAIL row and its one registry expectation after the bound evidence, then the exact unbound target passed both variants.
+- DONE: Keep the correction narrow and avoid the rejected acknowledgment mechanism.
+  Product scope is two added Codex runtime lines; no dispatch acknowledgments, instrumentation, state protocol, fixture coaching, Pi behavior, or production Go code changed.
+- DONE: Run final format, diff, and registry checks on the exact committed bytes.
+  `gofmt -w ./cmd ./internal`, `git diff --check`, and `TestRuntimeLiveRegistryReconciliation` passed before commit.
+- DONE: Commit and push the minimized candidate.
+  Branch `spacedock-ensign/continue-codex-to-validation-after-implementation` is pushed at `db7d5de72` on exact base `7cf03cd94`.
+
+### Summary
+
+Codex now monitors the sole fresh validator through completion and uses the reported active entity as the gate artifact with committed `README.md` as the distinct reference. Product scope is +2/-0 lines; isolated-home observation and shared live plumbing are +65/-11 lines; XFAIL binding and registry expectation removal are +1/-2 lines, for +67/-13 versus exact current main.
