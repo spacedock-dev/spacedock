@@ -121,6 +121,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:dvddbpsf4tdt3yjw1yjyp14k-validation-4
+              briefing:
+                id: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-4:revision-1
+                digest: sha256:9b9dd831bcdd7a76b10656f6d382ddcbc79663b7318dc76e3f5756d15e8ed2d4
+                request-digest: sha256:5306ff0867500c1a82d9ff856257a56369f163ddd70d5780131642a319a97072
+                room-ref: ./continue-codex-rejection-after-first-validation/review/validation/briefing-4
 ---
 
 ## Problem

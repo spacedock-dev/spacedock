@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-4:revision-1",
+  "question": "Approve the validated Codex rejection-flow repair for PR delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/693b51e718b9f89605385461f413625bbf62472e/continue-codex-rejection-after-first-validation.md",
+      "rev": "sha256:061d230bcc54a1d5ed19126464de2ecdb86efa6f4d1c53b156ec8b1c15425d5d",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation passed the exact pushed candidate, including bound XPASS, owned binding removal, and unbound Codex PASS."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-4:revision-1:item-2",
+      "uri": "git-root://main/1d1e2b503d2ebf3605a6795842c06f2334c24f00/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:48953d66b08b64e6a00738e8c0407f203f87d1e0c7bfb8d4b609edcc54faf38c"
+    }
+  ]
+}
