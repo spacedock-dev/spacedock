@@ -233,3 +233,16 @@ This is a documentation-only addition; no local-auth instructions are removed an
 ### Summary
 
 The design keeps the existing isolated live runners and adds only two Environment secret contracts, mode-dependent auth/model selection, and deterministic no-secret fixtures. The provider spike proved Codex status and both pinned Pi provider/model identities without a model request or credential output; implementation's remaining proof is the fake-host tests plus approval-gated OAuth-only lanes.
+
+## Stage Report: implementation
+
+- DONE: Implement OAuth-first Codex and Pi CI authentication, isolated auth seeding, API-key fallback, and missing-input failure within the approved semantic boundaries.
+  Commit `42e58508f` adds dedicated OAuth selectors, 0600 isolated auth seeding, child-env key dropping for OAuth, and either-secret workflow preflights.
+- DONE: Add behavior-focused fake-host and Go tests for auth precedence, provider/model selection, file permissions and isolation, login/status behavior, and secret redaction.
+  Focused auth tests cover OAuth precedence, API fallback, missing credentials, JSON wrapping, exact file permissions, and isolated environment construction; full `internal/ensigncycle` tests passed.
+- DONE: Apply the workflow and runtime-live-CI documentation changes for secret bindings, JSON formats, setup and rotation, refresh handling, and fallback guidance.
+  Workflow binds `CODEX_AUTH_JSON` and `PI_OPENAI_CODEX_AUTH_JSON`; `docs/runtime-live-ci.md` documents formats, non-printing rotation, refresh isolation, fallback, and provider-qualified models.
+
+### Summary
+
+Implemented subscription OAuth-first authentication for both live Codex and Pi paths while retaining API-key fallback and isolated homes. OAuth payloads are seeded only into 0600 auth files, API keys are omitted from OAuth child environments, and approval-gated workflows fail only when both credential inputs are absent. Validation included focused auth tests, the full offline ensigncycle package, and live-tag compilation.
