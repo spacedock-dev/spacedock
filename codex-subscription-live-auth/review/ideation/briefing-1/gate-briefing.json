@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hrercm3ff4ww94rnqhqbqkyp:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction for OAuth-preferred Codex and Pi live CI authentication with API-key fallback, so implementation can begin?",
+  "artifacts": [
+    {
+      "id": "artifact:hrercm3ff4ww94rnqhqbqkyp:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e8c779d57aa510d2bff36a7e32ff49b4eadc52ba/codex-subscription-live-auth.md",
+      "rev": "sha256:1aa0d97afa4e08b7a8fe3d7b78162476022acbdc826c5efec0efcdc287bcad27",
+      "mediaType": "text/markdown",
+      "summary": "The ideation report defines separate provider-native OAuth secrets, API-key fallback, isolated homes, no-secret fixtures, and documentation changes; its spike records live provider identity evidence without making a model request or exposing credentials."
+    }
+  ]
+}

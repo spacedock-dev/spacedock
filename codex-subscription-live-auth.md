@@ -30,6 +30,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:hrercm3ff4ww94rnqhqbqkyp:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:hrercm3ff4ww94rnqhqbqkyp-ideation-1
+              briefing:
+                id: briefing:hrercm3ff4ww94rnqhqbqkyp:ideation:attempt-1:revision-1
+                digest: sha256:d0e95d39cb3defd5c5d9cc0a31d67d4f45a17f2861024517e2d773695a41bc0a
+                request-digest: sha256:308aaa9d79291082cbab9cb6bccade2d21413dcef2236c5d6ea3db1c144a3434
+                room-ref: ./codex-subscription-live-auth/review/ideation/briefing-1
 ---
 # Use Codex subscription auth in live CI
 
