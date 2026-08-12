@@ -137,6 +137,17 @@ gates:
                 digest: sha256:e7d504b91fb784505aea75222986a51b4a0a4282304b8aac4b86d89087912040
                 request-digest: sha256:8ddb6debd3186cc1b185bb670ba2e3232004e92d3c1a08bf258c2b8b6b40677e
                 room-ref: ./continue-codex-rejection-after-first-validation/review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dvddbpsf4tdt3yjw1yjyp14k:validation:5
+                briefing: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-5:revision-1
+                by: person:captain
+                at: "2026-08-12T20:55:27.631355Z"
+                decision: approve
+                reason: Captain directed push after independent validation passed the exact candidate.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
