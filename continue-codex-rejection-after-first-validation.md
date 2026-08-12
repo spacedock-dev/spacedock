@@ -1080,3 +1080,16 @@ The one-correction limit is spent, and the implementation is on HOLD. No code pu
 
 Codex now completes one correction, publishes validation/2, and stops at one fresh open validation gate. The bound run produced XPASS before binding removal.
 The unbound run passed with no semantic code. The change uses the public feedback and gate lifecycle without a new product mechanism.
+
+## Stage Report: validation (cycle 7)
+
+- DONE: Verify the exact pushed candidate completes the normal Codex rejection lifecycle without a host-specific 12-step flow.
+  Local and remote heads match `797aab1ff`; `/tmp/dvd-unbound-pass-final.QK4RN9` is source-bound to that SHA and records validation/1, correction, validation/2, and one open `awaiting-captain` gate through the public feedback and gate lifecycle.
+- DONE: Adversarially validate round identity, current-pointer handling, reviewer lifecycle, and one final open gate.
+  The focused oracle and native-lifecycle tests passed in 2.221s; changing the round identity/current pointer, omitting the correlated worker completion, or closing/duplicating the final gate makes these controls fail.
+- DONE: Confirm only the Codex rejection XFAIL was removed after bound XPASS and exact-candidate PASS.
+  `/tmp/dvd-bound-xpass-final.Nu1AiM` is source-bound to `a1edfaec6` with the Codex binding present; commit `797aab1ff` changes only the two binding/registry files, removes only DVD Codex, retains Pi, and the final source-bound run is unbound PASS.
+
+### Summary
+
+The exact pushed candidate completes the ordinary Codex rejection-to-correction lifecycle and stops nonterminal at one fresh open validation gate. The validation recommendation is PASSED; no Material finding remains.
