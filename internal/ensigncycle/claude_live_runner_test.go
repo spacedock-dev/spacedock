@@ -276,6 +276,38 @@ func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) s
 	}
 	return stream
 }
+func assertAutoContinueDispatchEvidence(t *testing.T, stream, workflowRoot, stateRoot, entityPath string) error {
+	t.Helper()
+	reportEntity := entityPath
+	if body, err := os.ReadFile(entityPath); err == nil {
+		if worktree := autoContinueWorktreeDir(string(body)); worktree != "" {
+			reportEntity = filepath.Join(stateRoot, worktree, filepath.Base(entityPath))
+		}
+	}
+	if canonical, err := filepath.EvalSymlinks(reportEntity); err == nil {
+		reportEntity = canonical
+	}
+	report, err := os.ReadFile(reportEntity)
+	if err != nil {
+		return err
+	}
+	if err := assertWorkerLifecycle(stream, string(report), "validation", "gate prepare"); err != nil {
+		return err
+	}
+	reportRepo := strings.TrimSpace(git(t, filepath.Dir(reportEntity), "rev-parse", "--show-toplevel"))
+	rel, _ := filepath.Rel(reportRepo, reportEntity)
+	if strings.TrimSpace(git(t, reportRepo, "log", "-1", "--format=%H", "-S## Stage Report: validation", "--", rel)) == "" {
+		return fmt.Errorf("validation report has no durable commit")
+	}
+	doc, _, err := gates.Read(entityPath)
+	if err != nil {
+		return err
+	}
+	if summary := gates.CurrentSummary(doc, "validation"); summary.State != "open" {
+		return fmt.Errorf("validation gate state = %q, want open", summary.State)
+	}
+	return nil
+}
 
 func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(*gates.Document) error) {
 	t.Helper()

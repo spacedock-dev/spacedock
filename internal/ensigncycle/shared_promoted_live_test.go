@@ -78,11 +78,16 @@ type sharedLiveScenarioAdapter struct {
 	t        *testing.T
 	driver   liveDriver
 	scenario sharedRuntimeScenario
+	result   *liveResult
 }
 
 func (a sharedLiveScenarioAdapter) Launch(_ context.Context, dir, _ string, runbook string) (string, error) {
 	result := a.driver.run(a.t, a.scenario, dir, runbook)
-	a.driver.emitMetrics(a.t, a.scenario, result)
+	if a.result != nil {
+		*a.result = result
+	} else {
+		a.driver.emitMetrics(a.t, a.scenario, result)
+	}
 	return result.finalMessage + "\n" + result.stream, nil
 }
 
@@ -118,7 +123,7 @@ func initializeAutoContinueFixtureGit(t *testing.T, workflowRoot, stateRoot stri
 func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() []autoContinueFixtureVariant, assert func(string, string, string) error) {
 	t.Helper()
 	for _, fixture := range build() {
-		var stateRoot string
+		var workflowRoot, stateRoot, entityPath string
 		var splitRoot bool
 		sc := livescenario.Scenario{
 			Name: scenario.name, Runbook: autoContinuePrompt(),
@@ -130,6 +135,7 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 					splitRoot = stateRoot != dir
 					initializeAutoContinueFixtureGit(t, dir, stateRoot)
 				}
+				workflowRoot, entityPath = dir, entity
 				return entity, err
 			},
 			Assert: func(before, after livescenario.EntityState, observed string) error {
@@ -138,10 +144,18 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 		}
 		fixtureScenario := scenario
 		fixtureScenario.name += "--" + fixture.id
-		adapter := sharedLiveScenarioAdapter{t: t, driver: driver, scenario: fixtureScenario}
+		var result liveResult
+		adapter := sharedLiveScenarioAdapter{t: t, driver: driver, scenario: fixtureScenario, result: &result}
+		var semantic []error
 		if err := livescenario.Run(context.Background(), t.TempDir(), sc, adapter); err != nil {
-			t.Fatalf("auto-continue fixture %s graded FAIL: %v", fixture.id, err)
+			semantic = append(semantic, durableSemantic("auto-continue-state", err))
 		}
+		if verifier, ok := driver.(interface {
+			verifyAutoContinueDispatch(*testing.T, liveResult, string, string, string) error
+		}); ok {
+			semantic = append(semantic, durableSemantic("validation-worker-lifecycle", verifier.verifyAutoContinueDispatch(t, result, workflowRoot, stateRoot, entityPath)))
+		}
+		finishLiveScenario(t, driver, fixtureScenario, result, semantic...)
 	}
 }
 

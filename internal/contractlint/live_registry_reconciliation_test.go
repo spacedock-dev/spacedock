@@ -58,7 +58,6 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
 	}
-	wantGaps["auto-continue-after-implementation"] = []liveGapRow{{"xfail", "codex", "v8pcpdmrdfmq7emm65cjdc4p"}}
 	for id, want := range wantGaps {
 		if !reflect.DeepEqual(actual[id].gaps, want) {
 			t.Errorf("%s gaps = %#v, want %#v", id, actual[id].gaps, want)

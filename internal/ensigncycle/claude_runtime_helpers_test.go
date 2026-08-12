@@ -122,6 +122,10 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 }
 
 func assertImplementationWorkerLifecycle(stream, entity string) error {
+	return assertWorkerLifecycle(stream, entity, "implementation", "status=validation")
+}
+
+func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 	type block struct {
 		Type  string `json:"type"`
 		Name  string `json:"name"`
@@ -159,7 +163,7 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 			}
 		}
 		_ = json.Unmarshal([]byte(line), &pi)
-		if event.Payload.Type == "function_call" && event.Payload.Name == "spawn_agent" && strings.Contains(event.Payload.Arguments, "implementation") {
+		if event.Payload.Type == "function_call" && event.Payload.Name == "spawn_agent" && strings.Contains(event.Payload.Arguments, stage) {
 			spawns++
 			codexSpawnCall = event.Payload.CallID
 		}
@@ -173,18 +177,18 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 		if completed < 0 && event.Payload.Type == "agent_message" && event.Payload.Author == codexWorker && strings.Contains(string(event.Payload.Content), "Done:") {
 			completed = i
 		}
-		if validation < 0 && event.Payload.Type == "custom_tool_call" && strings.Contains(line, "status=validation") {
+		if validation < 0 && event.Payload.Type == "custom_tool_call" && strings.Contains(line, nextSignal) {
 			validation = i
 		}
 		if pi.Message.ToolName == "subagent" && pi.Message.ToolCallID == spawnID {
 			piRunID = pi.Message.Details.RunID
 		}
 		for _, item := range pi.Message.Content {
-			if item.Type == "toolCall" && item.Name == "subagent" && strings.Contains(strings.ToLower(item.Arguments.Task), "implementation") {
+			if item.Type == "toolCall" && item.Name == "subagent" && strings.Contains(strings.ToLower(item.Arguments.Task), stage) {
 				spawns++
 				spawnID = item.ID
 			}
-			if item.Type == "toolCall" && item.Name == "bash" && strings.Contains(item.Arguments.Command, "status=validation") {
+			if item.Type == "toolCall" && item.Name == "bash" && strings.Contains(item.Arguments.Command, nextSignal) {
 				validation = i
 			}
 			if piRunID != "" && pi.Message.ToolName == "subagent" && strings.Contains(item.Text, "Run: "+piRunID) && strings.Contains(item.Text, "State: complete") && strings.Contains(item.Text, "\nSession: /") {
@@ -193,11 +197,11 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 		}
 		if event.Message != nil {
 			for _, item := range event.Message.Content {
-				if item.Type == "tool_use" && item.Name == "Agent" && strings.Contains(strings.ToLower(item.Input.Description), "implementation") {
+				if item.Type == "tool_use" && item.Name == "Agent" && strings.Contains(strings.ToLower(item.Input.Description), stage) {
 					spawns++
 					spawnID = item.ID
 				}
-				if item.Type == "tool_use" && item.Name == "Bash" && strings.Contains(item.Input.Command, "status=validation") {
+				if item.Type == "tool_use" && item.Name == "Bash" && strings.Contains(item.Input.Command, nextSignal) {
 					validation = i
 				}
 			}
@@ -206,7 +210,7 @@ func assertImplementationWorkerLifecycle(stream, entity string) error {
 			completed = i
 		}
 	}
-	spans, reportErr := statuspkg.FindSectionSpans([]byte(entity), []string{"Stage Report: implementation"})
+	spans, reportErr := statuspkg.FindSectionSpans([]byte(entity), []string{"Stage Report: " + stage})
 	if spawns != 1 || completed < 0 || validation < 0 || completed >= validation || reportErr != nil || len(spans) != 1 || !strings.Contains(entity[spans[0].Start:spans[0].End], "- DONE:") {
 		return &gradedErr{code: "implementation-worker-not-dispatched", msg: fmt.Sprintf("implementation lifecycle incomplete: spawns=%d completed=%d validation=%d report=%v", spawns, completed, validation, reportErr)}
 	}
