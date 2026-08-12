@@ -50,6 +50,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:v8pcpdmrdfmq7emm65cjdc4p:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:v8pcpdmrdfmq7emm65cjdc4p-validation-1
+              briefing:
+                id: briefing:v8pcpdmrdfmq7emm65cjdc4p:validation:attempt-1:revision-1
+                digest: sha256:575eb12e68ce66a7846d74e03da56c6c7d68398e2021efdf7bd79315afa5707d
+                request-digest: sha256:e01a245c88b7af8c744297f0716af586166944e59b3c73c726d3e58819801d8b
+                room-ref: ./continue-codex-to-validation-after-implementation/review/validation/briefing-1
 started: 2026-08-10T19:02:21Z
 worktree: .worktrees/spacedock-ensign-continue-codex-to-validation-after-implementation
 ---
