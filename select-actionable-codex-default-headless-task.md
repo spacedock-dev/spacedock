@@ -59,6 +59,17 @@ gates:
                 digest: sha256:91a7dc975f7ec5bcb5fa06db47c572e967175ef213354f12fa93ad6c52b01460
                 request-digest: sha256:62cb206230fa62828b7d4eea9cfc3e6140621f4eb5958f3f4f0c9f692e39f459
                 room-ref: ./select-actionable-codex-default-headless-task/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:272j6s25f9mry6nxbf4yjxvt:validation:1
+                briefing: briefing:272j6s25f9mry6nxbf4yjxvt:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-12T02:55:30.915414Z"
+                decision: approve
+                reason: Captain approved the validated Codex lifecycle grader and repaired default-headless XFAIL removal for PR and CI delivery.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-11T05:24:54Z
 worktree: .worktrees/spacedock-ensign-select-actionable-codex-default-headless-task
 ---
