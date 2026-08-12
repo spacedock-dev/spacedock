@@ -72,6 +72,8 @@ gates:
                 state: pending
 started: 2026-08-10T19:02:21Z
 worktree: .worktrees/spacedock-ensign-continue-codex-to-validation-after-implementation
+mod-block: merge:pr-merge
+pr: "#680"
 ---
 ## Problem
 
