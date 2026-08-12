@@ -742,3 +742,46 @@ Cycle 10 rebases the execution-grounded boot/filing evidence onto PR #680 main a
 ### Deferred Risks
 
 - Fresh independent validation and any replacement PR/CI/merge work remain First Officer responsibilities; implementation performed none of them.
+
+## Stage Report: validation (cycle 10)
+
+- DONE: Verify the execution-ledger correction captures valid Codex launcher-repin argv while negative command shapes remain rejected.
+  Exact-head focused tests accepted the PR #680 quoted `${SPACEDOCK_BIN:-spacedock} new wire-the-thing` execution after Codex front-door repinning; removing executed argv, malformed quoting, narration, `status --next-id`, duplicate identify, helper retry, deep-boot, mutation, or greeting drift makes the corresponding oracle fail.
+- DONE: Verify the current-main candidate satisfies every acceptance criterion without restoring obsolete harness or product behavior.
+  Against `origin/main` `65935a4b0`, head `c293037ba` is the four intended commits and 22 paths (+743/-476); AC-1–4 focused checks, full/race suites, formatting, and diff cleanliness passed without transcript parsing, deleted PR #399 fixtures, product hooks, CI mutation, or runtime semantic expansion.
+- DONE: Independently inspect the exact local Codex filing and multi-workflow evidence, scope, and required verification.
+  Fresh persistent-artifact runs passed filing in 40.42s and multi-workflow boot in 36.63s at source head `c293037ba`; filing ledgered atomic `spacedock new wire-the-thing` with no `status --next-id`, while boot ledgered exactly one identify and no `jq`, `python3`, `go run`, convergence, or workflow-specific call.
+
+### Acceptance Criteria Cross-check
+
+- AC-1 PASSED: the native two-workflow fixture emitted the ordered compatibility fields plus exact v1 schema, complete/multiple/terminal envelope, numeric count equal to both discoveries, and select-workflow action; malformed or missing values fail the typed assertion.
+- AC-2 PASSED: independently rerun zero/one/many, native-oracle, taxonomy/local-PR, side-effect, and structural checks preserve the original halt/deep-boot/no-mutation behavior; cycle 10 changes no product bytes beyond the previously approved terminal envelope.
+- AC-3 PASSED: the fresh Codex artifact names both workflow paths and the exact standalone selection greeting; its execution ledger contains one identify plus only `--version` and `gate --help` capability probes, so every named retry/helper/convergence variant remains absent and independently red-controlled.
+- AC-4 PASSED: first-officer topology/component-cap tests, the full docs-bearing suite, and the live loaded shared-core record verify the many-workflow terminal branch and operator-facing select/engage wording.
+
+### Semantic Adversarial Matrix
+
+- Identity/cardinality/order: NUL-delimited argv preserves exact tool and argument boundaries; filing requires the requested slug and rejects any next-id execution, while boot requires exactly one identify and zero adjacent retry classes.
+- Lifecycle/authority: both Codex runs resolved the checked-out plugin at `c293037ba`, exercised the supported launcher-repin boundary, and graded executed argv plus durable fixture state rather than transcript narration.
+- Empty/negative/scale: zero/one/two workflow behavior, malformed and nonexecuted filing shapes, repeated/out-of-order boot events, helper tools, mutation, and terminal greeting variants are covered; the ledger adds one bounded record per observed process and no product hot-path I/O or allocation.
+
+### Material Findings
+
+- None.
+
+### Deferred Risks
+
+- The inherited shell initially named removed pre3 via `SPACEDOCK_BIN`; rerunning with the dispatch-selected existing pre4 launcher passed twice. Promote only if supported CI or a clean install selects a nonexistent executable rather than this validator-local stale environment.
+
+### Verification
+
+- `go test -tags live ./internal/ensigncycle -run '^(TestInvocationLedgerRecordsExecutionNotCommandShapedNarration|TestAssertFilingViaNew.*|TestMultiWorkflowBootAfterOnlyInvariant)$' -count=1 -v` passed; each negative changes the executed argv or lifecycle value that the oracle must reject.
+- `SPACEDOCK_LIVE_RUNTIME=codex` filing and multi-workflow tests passed with persisted ledgers/final messages; `go test ./...`, `go test ./... -race`, focused status/contractlint/ensigncycle AC suites, `gofmt -w ./cmd ./internal`, and `git diff --check` passed on a clean tree.
+
+### Recommendation
+
+**PASSED.** Exact head `c293037ba` satisfies AC-1–4 on current `origin/main` with execution-grounded Codex evidence and no material finding; delivery may proceed to gate review.
+
+### Summary
+
+Validation independently reproduced the Codex launcher-repin correction, the filing and multi-workflow live outcomes, every acceptance criterion, and the required repository gates without changing candidate bytes. The remaining stale-environment observation is outside candidate behavior and has a concrete promotion condition.
