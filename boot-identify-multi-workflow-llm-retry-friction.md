@@ -710,3 +710,35 @@ Claude's front door intentionally repins `SPACEDOCK_BIN` to the resolved real la
 ### Summary
 
 Cycle 9 independently reproduced the front-door repin boundary, re-anchored boot and filing evidence to actual argv, and passed focused, full, race, format, diff, adversarial, and Roborev gates without changing the candidate. Local model evidence remains explicitly unestablished because of external quota exhaustion, so exact-head Claude CI is a required pre-merge proof rather than an inferred pass.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Rebase the existing execution-ledger repair onto exact current main and remove conflict-obsolete bytes without expanding product semantics.
+  Exact base `65935a4b0` (PR #680) and head `c293037ba`; obsolete transcript parsing, historical round rewrites, and deleted pre-unification live-runner surfaces were not restored. The retained four-commit candidate is 22 paths, +743/-476.
+
+- DONE: Make the retained PR #680 quoted launcher execution grade from actual recorded argv while narration, malformed, and manual filing remain red.
+  `TestAssertFilingViaNewRecordsPR680QuotedLauncherExecution` runs `printf … | "${SPACEDOCK_BIN:-spacedock}" new wire-the-thing` through the NUL-delimited ledger; narration, malformed quoting, wrong slug, and executed `status --next-id` controls fail. Removing Codex host-wrapper reinjection makes the exact supported journey create ID 001 but report an empty ledger.
+
+- DONE: Commit and push a minimal clean candidate with focused, full, race, and exact supported-host evidence recorded in the implementation report.
+  Remote branch `spacedock-ensign/boot-identify-multi-workflow-llm-retry-friction` resolves to `c293037ba`; no PR, CI, merge, product hook, parser, or runtime behavior was added.
+
+### Summary
+
+Cycle 10 rebases the execution-grounded boot/filing evidence onto PR #680 main and fixes the sole remaining substrate defect: the supported Codex front door repins `SPACEDOCK_BIN`, so the test-local Codex host wrapper must re-export the ledger launcher and resolve first on PATH. The exact Codex filing and multi-workflow journeys now pass from real executed argv while the product command and runtime semantics remain unchanged.
+
+### Verification
+
+- Focused: `go test ./internal/ensigncycle ./internal/status ./internal/contractlint` passed; the quoted-launcher positive and narration/malformed/manual negatives are execution-based and fail if the shim does not receive the real argv.
+- Formatting: `gofmt -w ./cmd ./internal` and `git diff --check` passed; the shared-core contract remains below its current 26,900-byte ratchet at 26,855 bytes.
+- Baseline: `go test ./...` passed on exact `c293037ba` after all candidate changes.
+- Race: `go test ./... -race` passed on the same exact head.
+- Supported Codex filing: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live ./internal/ensigncycle -run '^TestLiveCommonFiling$' -count=1 -v` passed in 41.70s; the task landed and the actual `spacedock new wire-the-thing` argv was ledgered.
+- Supported Codex multi-workflow: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live ./internal/ensigncycle -run '^TestLiveCommonMultiWorkflowBoot$' -count=1 -v` passed in 44.77s; exactly one identify executed with no retry/helper/convergence call.
+
+### Material Findings
+
+- None.
+
+### Deferred Risks
+
+- Fresh independent validation and any replacement PR/CI/merge work remain First Officer responsibilities; implementation performed none of them.
