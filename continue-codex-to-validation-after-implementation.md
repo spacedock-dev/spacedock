@@ -59,6 +59,17 @@ gates:
                 digest: sha256:575eb12e68ce66a7846d74e03da56c6c7d68398e2021efdf7bd79315afa5707d
                 request-digest: sha256:e01a245c88b7af8c744297f0716af586166944e59b3c73c726d3e58819801d8b
                 room-ref: ./continue-codex-to-validation-after-implementation/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v8pcpdmrdfmq7emm65cjdc4p:validation:1
+                briefing: briefing:v8pcpdmrdfmq7emm65cjdc4p:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-12T20:54:25.008194Z"
+                decision: approve
+                reason: Captain directed push after independent validation passed the minimized exact candidate.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-10T19:02:21Z
 worktree: .worktrees/spacedock-ensign-continue-codex-to-validation-after-implementation
 ---
