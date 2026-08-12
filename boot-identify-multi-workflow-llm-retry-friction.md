@@ -1,11 +1,11 @@
 ---
 title: Self-describing boot identify schema and contract hint to eliminate LLM duplicate CLI retry loop
-status: validation
+status: implementation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
 worktree: .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction
-pr: "#584"
+pr:
 gates:
     version: 1
     records:
@@ -41,10 +41,8 @@ gates:
                 decision: approve
                 reason: 'Approved under sprint conn: fresh cycle-8 validation reproduced AC-1 through AC-4, full/race/format and two Pi live runs passed, current 0.27 gate/review semantics remain intact, and classified Roborev review found no Material blocker.'
               application:
-                action: advance
                 target-stage: done
                 state: consumed
-                blockers: []
             - id: gate-attempt:32vshm0h2h04gs7hzcf315g0-validation-3
               briefing:
                 id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-3:revision-1
@@ -60,11 +58,9 @@ gates:
                 decision: approve
                 reason: 'Approved under sprint conn: exact f982e88b6 is a two-test-file +24/-7 repair at the Claude shell-startup ledger boundary; independent focused, adversarial, full, race, format, and Roborev checks passed with no Material finding, while exact-head Claude Sonnet and Opus CI remain mandatory before merge.'
               application:
-                action: advance
                 target-stage: done
-                state: pending
-                blockers: []
-mod-block: merge:pr-merge
+                state: superseded
+mod-block:
 completed:
 verdict:
 ---
