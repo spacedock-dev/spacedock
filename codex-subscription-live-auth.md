@@ -1,6 +1,6 @@
 ---
 title: Use Codex subscription auth in live CI
-status: implementation
+status: validation
 source: captain-request
 started: 2026-08-12T14:26:14Z
 completed:
