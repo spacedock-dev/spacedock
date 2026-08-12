@@ -39,6 +39,17 @@ gates:
                 digest: sha256:d0e95d39cb3defd5c5d9cc0a31d67d4f45a17f2861024517e2d773695a41bc0a
                 request-digest: sha256:308aaa9d79291082cbab9cb6bccade2d21413dcef2236c5d6ea3db1c144a3434
                 room-ref: ./codex-subscription-live-auth/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:hrercm3ff4ww94rnqhqbqkyp:ideation:1
+                briefing: briefing:hrercm3ff4ww94rnqhqbqkyp:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-12T22:32:07.22455Z"
+                decision: approve
+                reason: Captain approved the ideation direction and the declared 8-file, 220–340-line implementation estimate with its stated tolerance.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 # Use Codex subscription auth in live CI
 
