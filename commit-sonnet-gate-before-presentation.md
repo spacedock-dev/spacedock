@@ -413,3 +413,49 @@ Recommendation: REJECTED for the nonzero retry gap and missing exact-head full/r
 ### Summary
 
 Current main produced a bound Sonnet XPASS, and removing only the Sonnet XFAIL produced an unbound normal PASS after one evidence-oracle correction for a harmless capability probe. Product instructions and runtime behavior were unchanged; commits `c96df8b01` through `c9efdf853` contain the reconciled test-only candidate and retained live evidence names the exact gate order.
+
+## Review-finding disposition
+
+- Material outcome and evidence defect: the retained unbound Sonnet run performs discovery reads after successful `gate prepare` and before `state commit`, while the oracle accepts the run.
+  Released workflow: local Sonnet default-headless gate stop on exact candidate `c9efdf85330516e01c349288d020496c84fb31b6`.
+  Observable harm: the normal PASS retires the owned XFAIL even though the observed lifecycle violates the required prepare-then-commit sequence.
+  Authority: `value-ac[AC-1]` requires successful `gate prepare`, then `state commit`, then structured reads and presentation.
+  Trigger: retained unbound `command.log` contains successful prepare, `status --read ... --json`, `status --next --json`, then successful commit.
+  Proposed owner: this task. Proposed disposition: design reset; correcting only the oracle would expose the observed outcome failure, while correcting only runtime instructions would leave the evidence boundary permissive.
+
+## Stage Report: validation (cycle 4)
+
+- FAILED: Verify the exact pushed candidate preserves the Sonnet gate lifecycle and removes only its owned XFAIL.
+  HEAD and remote are exact at `c9efdf853`; the three-file test-only diff removes only the Sonnet binding, but retained unbound evidence violates AC-1 before commit.
+- DONE: Adversarially test the dispatch-log oracle against harmless probes and all failed commit exit codes.
+  A detached matrix accepted four placements/repetitions of canonical `dispatch build --help` and rejected commit exits 1, 2, 3, 64, 126, 127, and 255; deleting either guard would fail it.
+- DONE: Confirm local bound XPASS and exact-candidate unbound PASS evidence without repeating live work.
+  Both retained logs pass the shipped oracle; the bound log commits immediately, while the normal-PASS unbound log exposes the material pre-commit reads above.
+
+- DONE: AC-1 evidence reproduced.
+  Bound evidence has prepare → commit → state head → checklist → AC scan; unbound evidence instead has two discovery reads between prepare and commit, so AC-1 fails.
+- DONE: AC-2 evidence reproduced.
+  Retained current-main artifact records bound XPASS and retained exact-candidate artifact records unbound normal PASS after the two Sonnet binding rows were removed.
+- DONE: AC-3 evidence reproduced.
+  Both retained final messages stop at an open validation gate awaiting a decision, with no consume, successor dispatch, or terminal status after prepare.
+- DONE: AC-4 evidence reproduced.
+  The detached exit-code matrix rejects every representative nonzero commit failure even after retry; the focused missing, failed, retry, and late controls also pass.
+- DONE: AC-5 non-live evidence reproduced.
+  Exact candidate passed full, full race, format, registry reconciliation, active-owner, and diff checks; Pi and live work were not repeated.
+
+### Reviewer findings
+
+- Material: observed unbound Sonnet lifecycle and its oracle both violate AC-1 at the prepare/commit boundary.
+  Detached `TestKKYValidationRejectsPostPrepareDiscoveryReads` fails because the exact retained log is accepted; candidate bytes remained unchanged.
+- Deferred risks: none. Polish findings: none.
+- Recommendation: REJECTED; this is both an observed outcome defect and an evidence defect, so validation recommends a design reset instead of an automatic narrow oracle correction.
+
+### Checks run
+
+- PASS: `go test ./...`, `go test ./... -race`, focused lifecycle tests, registry reconciliation, active-owner join, `gofmt -w ./cmd ./internal`, and `git diff --check`.
+- PASS: detached retained-log, harmless-probe, and failed-exit-code matrix tests.
+- EXPECTED FAIL: detached pre-commit discovery-read mutant proves the shipped oracle accepts the observed AC-1 violation.
+
+### Summary
+
+The exact pushed candidate is mechanically clean and all non-live suites pass, but its own retained unbound normal-PASS evidence violates the canonical gate sequence. Validation recommends REJECTED and a design reset because both runtime behavior and the evidence boundary must change.
