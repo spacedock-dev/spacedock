@@ -92,6 +92,13 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 	prepare := strings.Index(log, prepareToken)
 	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
 	head := strings.LastIndex(log, "state-head\t")
+	prepareEnd := strings.Index(log[prepare+1:], "\n") + prepare + 2
+	interveningCommand := false
+	if prepare >= 0 && prepareEnd > prepare && commit >= prepareEnd {
+		for _, line := range strings.Split(log[prepareEnd:commit], "\n") {
+			interveningCommand = interveningCommand || line != "" && !strings.HasPrefix(line, "begin\tstate commit recorded-gate-task")
+		}
+	}
 	checklist, acScan := strings.Index(log, "exit=0\tstatus --read recorded-gate-task --checklist --json"), strings.Index(log, "exit=0\tstatus --read recorded-gate-task --ac-scan --json")
 	dispatchLog := strings.ReplaceAll(log[:max(prepare, 0)], "exit=0\tdispatch build --help\n", "")
 	dispatches := strings.Split(dispatchLog, "exit=0\tdispatch build ")
@@ -107,6 +114,8 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "structured gate reads missing, reordered, or before the committed state head")
 	case strings.Count(log[prepare:], "\tstate commit recorded-gate-task") > strings.Count(log[prepare:], "begin\tstate commit recorded-gate-task")+strings.Count(log[prepare:], "exit=0\tstate commit recorded-gate-task"):
 		return errGraded(boundary + "state commit failed after the successful gate prepare")
+	case interveningCommand:
+		return errGraded(boundary + "a command intervened between successful gate prepare and state commit")
 	case strings.Count(log, prepareToken) != 1:
 		return errGraded(boundary + "more than one successful gate prepare recorded")
 	case strings.Contains(log[prepare:], " --decision "):
@@ -366,6 +375,10 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 	withCapabilityProbe := strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=implementation started\n", "exit=0\tdispatch build --help\nexit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=implementation started\n", 1)
 	if err := assertRecordedGateHoldLog(withCapabilityProbe, true); err != nil {
 		t.Fatalf("harmless dispatch capability probe rejected: %v", err)
+	}
+	withPreCommitDiscovery := strings.Replace(prepared, "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstate commit recorded-gate-task\n", "exit=0\tgate prepare recorded-gate-task validation\nexit=0\tstatus --read recorded-gate-task --json\nexit=0\tstatus --next --json\nexit=0\tstate commit recorded-gate-task\n", 1)
+	if err := assertRecordedGateHoldLog(withPreCommitDiscovery, true); err == nil {
+		t.Fatal("post-prepare discovery before state commit passed")
 	}
 	requireRecordedGate(t, assertRecordedGateHoldLog(strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n", "", 1), true) == nil, "clean worker without cleanup rejected")
 	if err := assertImplementationWorkerLifecycle(prepared, "---\nstatus: validation\n---\n# Task\n"); err == nil {
