@@ -1,10 +1,10 @@
 ---
 title: Continue Codex rejection after the first validation
-status: done
+status: validation
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:16Z
-completed: 2026-08-12T20:55:46Z
-verdict: PASSED
+completed:
+verdict:
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -12,7 +12,7 @@ group: common-evidence
 worktree: .worktrees/spacedock-ensign-continue-codex-rejection-after-first-validation
 issue:
 pr: "#679"
-mod-block:
+mod-block: merge:pr-merge
 id: dvddbpsf4tdt3yjw1yjyp14k
 gates:
     version: 1
