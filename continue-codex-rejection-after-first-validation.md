@@ -1095,10 +1095,15 @@ The unbound run passed with no semantic code. The change uses the public feedbac
 
 - DONE: Verify the exact pushed candidate completes the normal Codex rejection lifecycle without a host-specific 12-step flow.
   Local and remote heads match `797aab1ff`; `/tmp/dvd-unbound-pass-final.QK4RN9` is source-bound to that SHA and records validation/1, correction, validation/2, and one open `awaiting-captain` gate through the public feedback and gate lifecycle.
+  AC-1 evidence: `/tmp/dvd-current-main-7cf-codex.MlRKig` records the executing Codex baseline as typed XFAIL with only `rejection-reviewer-flow` and `rejection-round-missing`, not an infrastructure or parser failure.
+  AC-2 evidence: the source-bound unbound PASS records two implementation reports, two validation reports, the exact fix marker, validation/1 rejection evidence, validation/2 publication, and preserved lifecycle state.
+  AC-3 evidence: the same final artifact records exactly one `gate prepare`, its `state=open` result after validation/2, `awaiting-captain`, and blank terminal fields at status `validation`.
 - DONE: Adversarially validate round identity, current-pointer handling, reviewer lifecycle, and one final open gate.
   The focused oracle and native-lifecycle tests passed in 2.221s; changing the round identity/current pointer, omitting the correlated worker completion, or closing/duplicating the final gate makes these controls fail.
+  AC-4 evidence: the exact Codex PASS satisfied the command-execution round extractor and correlated native worker-completion lifecycle; the focused negatives reject missing handle, wrong completion order, and an implementation worker validating itself.
 - DONE: Confirm only the Codex rejection XFAIL was removed after bound XPASS and exact-candidate PASS.
   `/tmp/dvd-bound-xpass-final.Nu1AiM` is source-bound to `a1edfaec6` with the Codex binding present; commit `797aab1ff` changes only the two binding/registry files, removes only DVD Codex, retains Pi, and the final source-bound run is unbound PASS.
+  AC-5 evidence: the same focused target produced bound XPASS at `a1edfaec6`, then commit `797aab1ff` removed only the DVD Codex binding and reconciliation row before the source-bound unbound PASS.
 
 ### Summary
 
