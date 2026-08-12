@@ -60,6 +60,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:32vshm0h2h04gs7hzcf315g0-validation-4
+              briefing:
+                id: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-4:revision-1
+                digest: sha256:331ab9b41e6871fbcadaa69954e5548ec84e130956c22392fc9359f1aab0659b
+                request-digest: sha256:5c0bcc0d1f2312777f044071c7f24e4434213975a697fb41c65d1f0c7b18db68
+                room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-4
 mod-block:
 completed:
 verdict:

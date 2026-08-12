@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-4:revision-1",
+  "question": "Approve the execution-grounded Codex filing and multi-workflow correction for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:32vshm0h2h04gs7hzcf315g0:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/5cf4a269a6a53916986dfa419c6a7df9bd9edc74/boot-identify-multi-workflow-llm-retry-friction.md",
+      "rev": "sha256:74c4769bc02396b5e854adde7a777aaa3a80cd32cb8132c56dda8af4bcf63037",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation passed AC-1 through AC-4 on exact head c293037ba. Codex filing and multi-workflow journeys passed from executed argv, with full and race suites green and no product hook or runtime protocol added."
+    }
+  ]
+}
