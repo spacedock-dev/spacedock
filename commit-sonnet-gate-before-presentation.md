@@ -478,3 +478,20 @@ The exact pushed candidate is mechanically clean and all non-live suites pass, b
 ### Summary
 
 The combined instruction-and-oracle correction produced a clean bound XPASS, and the oracle now rejects the exact forbidden discovery sequence. The required unbound run repeated that sequence despite the stronger instruction, so implementation stopped without a second patch as directed; commits `fc7457968` and `9f9df4319` preserve the failed candidate and its binding-removal state.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Restore the Sonnet default-headless XFAIL and its exact reconciliation row.
+  Commit `b50bd0665` restores only owner `kky8pg7wc8xgb985epwss092` in the journey and reconciliation map, then pushes the branch.
+- DONE: Preserve the product and oracle candidate without another correction or rerun.
+  Product/oracle bytes remain exactly at `fc7457968`; no live, full, or race test was rerun.
+- DONE: Record the bound XPASS and unchanged-byte unbound failure as nondeterministic instruction compliance.
+  Bound `/tmp/kky-cycle5-bound-sonnet.cviCQi/evidence` XPASSed with immediate commit; after binding-only bytes changed, unbound `/tmp/kky-cycle5-unbound-sonnet.coxyXr/evidence` repeated pre-commit reads and failed.
+- DONE: Run registry and diff checks.
+  Registry reconciliation and `git diff --check` passed; the candidate remains limited to the gate skill and three test files.
+- FAILED: Run the active-owner join cleanly.
+  The join rejected unrelated inactive Codex `rejection-flow` owner `dvddbpsf4tdt3yjw1yjyp14k`; this task's restored Sonnet owner was not reported.
+
+### Summary
+
+HOLD: identical product/oracle bytes yielded a bound XPASS and an unbound semantic failure because Sonnet followed the immediate-commit instruction nondeterministically. The safety binding is restored, no further fix or test rerun was attempted, and the candidate remains held for a later disposition.
