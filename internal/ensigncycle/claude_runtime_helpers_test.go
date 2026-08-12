@@ -93,7 +93,8 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 	commit := strings.LastIndex(log, "exit=0\tstate commit recorded-gate-task")
 	head := strings.LastIndex(log, "state-head\t")
 	checklist, acScan := strings.Index(log, "exit=0\tstatus --read recorded-gate-task --checklist --json"), strings.Index(log, "exit=0\tstatus --read recorded-gate-task --ac-scan --json")
-	dispatches := strings.Split(log[:max(prepare, 0)], "exit=0\tdispatch build ")
+	dispatchLog := strings.ReplaceAll(log[:max(prepare, 0)], "exit=0\tdispatch build --help\n", "")
+	dispatches := strings.Split(dispatchLog, "exit=0\tdispatch build ")
 	const boundary = "gate hold crossed its committed no-authority boundary: "
 	switch {
 	case prepare < 0:
@@ -120,7 +121,7 @@ func assertRecordedGateHoldLog(log string, requireImplementation ...bool) error 
 		return errGraded(boundary + "status changed after prepare")
 	case len(requireImplementation) > 0 && requireImplementation[0] && strings.Count(log[:prepare], " --stage implementation") == 1 && strings.Count(log[:prepare], " --stage validation") != 1:
 		return &gradedErr{code: "dispatch-envelope-not-acknowledged", msg: boundary + "validation dispatch envelope count was not one"}
-	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 3 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(log[:strings.Index(log, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
+	case len(requireImplementation) > 0 && requireImplementation[0] && (len(dispatches) != 3 || !strings.Contains(" "+strings.SplitN(dispatches[1], "\n", 2)[0]+" ", " --stage implementation ") || successfulStatusSet(dispatchLog[:strings.Index(dispatchLog, "exit=0\tdispatch build ")], "status=implementation started") || successfulStatusSet(strings.SplitN(dispatches[1], "\n", 2)[1], "status=validation started")):
 		return &gradedErr{code: "implementation-worker-not-dispatched", msg: boundary + "implementation was not dispatched before validation"}
 	}
 	return nil
@@ -361,6 +362,10 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 		"exit=0\tstatus --read recorded-gate-task --ac-scan --json\n"
 	if err := assertRecordedGateHoldLog(prepared, true); err != nil {
 		t.Fatalf("prepare-first hold log rejected: %v", err)
+	}
+	withCapabilityProbe := strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=implementation started\n", "exit=0\tdispatch build --help\nexit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task status=implementation started\n", 1)
+	if err := assertRecordedGateHoldLog(withCapabilityProbe, true); err != nil {
+		t.Fatalf("harmless dispatch capability probe rejected: %v", err)
 	}
 	requireRecordedGate(t, assertRecordedGateHoldLog(strings.Replace(prepared, "exit=0\tstatus --workflow-dir /tmp/workflow --set recorded-gate-task completed= verdict=\n", "", 1), true) == nil, "clean worker without cleanup rejected")
 	if err := assertImplementationWorkerLifecycle(prepared, "---\nstatus: validation\n---\n# Task\n"); err == nil {
