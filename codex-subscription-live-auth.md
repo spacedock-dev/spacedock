@@ -2,7 +2,7 @@
 title: Use Codex subscription auth in live CI
 status: ideation
 source: captain-request
-started:
+started: 2026-08-12T14:26:14Z
 completed:
 verdict:
 worktree:
