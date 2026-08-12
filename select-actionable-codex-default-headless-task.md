@@ -72,6 +72,8 @@ gates:
                 state: pending
 started: 2026-08-11T05:24:54Z
 worktree: .worktrees/spacedock-ensign-select-actionable-codex-default-headless-task
+mod-block: merge:pr-merge
+pr: "#676"
 ---
 ## Problem
 
