@@ -1052,3 +1052,31 @@ The validation recommendation is PASSED. No DVD-owned Material finding remains.
 
 The approved correction publishes validation/2 but does not reach the fresh open gate. Structured Codex worker evidence also remains absent.
 The one-correction limit is spent, and the implementation is on HOLD. No code push, binding removal, unbound run, PR, or CI action occurred.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Reproduce the current-main bound Codex rejection-flow result with isolated-home public and internal session evidence.
+  Main `7cf03cd94` produced XFAIL in 348.97s with `rejection-reviewer-flow` and `rejection-round-missing`. The artifact is `/tmp/dvd-current-main-7cf-codex.MlRKig`.
+- DONE: Diagnose actual native spawn, handle, and completion evidence versus the public JSONL omission.
+  The public stream contains thread `019ff747-49ab-7962-9d84-ec96347db86d` but no native collaboration events. The correlated parent rollout supplies those events.
+- DONE: Deliver the normal rejection-to-validation-to-open-gate lifecycle with at most one narrow correction.
+  Commit `186dad3de` changes one public feedback instruction and selects Codex evidence from the existing host surfaces.
+- DONE: Keep the normal feedback-rejection and gate lifecycle.
+  The instruction publishes validation/2, treats `needs-preparation` as work, and uses the existing gate lifecycle to prepare one open gate.
+- DONE: Correct the live oracle after the product reached the required gate.
+  Commit `a1edfaec6` accepts a validation/2 current pointer and checks the retained validation/1 room. Its exact live-shaped negative failed before this correction.
+- DONE: Prove the corrected candidate as a bound XPASS.
+  The bound run produced XPASS with no semantic codes in 452.94s. The artifact is `/tmp/dvd-bound-xpass-final.Nu1AiM`.
+- DONE: Remove only the Codex rejection binding after XPASS, then prove one unbound normal PASS.
+  Commit `797aab1ff` removes only the DVD Codex binding and registry row. The unbound run passed in 438.58s at `/tmp/dvd-unbound-pass-final.QK4RN9`.
+- DONE: Preserve other runtime bindings and avoid forbidden mechanisms.
+  The Pi rejection binding remains. The change adds no hook, observer state, command, instrumentation, or host-specific product flow.
+- DONE: Run focused, normal, race, format, and diff checks on the final relevant bytes.
+  Focused rejection, native-lifecycle, registry, and skill checks passed. `go test ./...` and `go test ./... -race` passed.
+- DONE: Commit and push the exact candidate.
+  Remote and local code heads match `797aab1ff`. The five-file candidate is +34/-8 against `7cf03cd94`.
+
+### Summary
+
+Codex now completes one correction, publishes validation/2, and stops at one fresh open validation gate. The bound run produced XPASS before binding removal.
+The unbound run passed with no semantic code. The change uses the public feedback and gate lifecycle without a new product mechanism.
