@@ -5,7 +5,7 @@ source: captain-request
 started: 2026-08-12T14:26:14Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-subscription-live-auth
 id: hrercm3ff4ww94rnqhqbqkyp
 gates:
     version: 1
