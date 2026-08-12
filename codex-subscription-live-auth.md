@@ -237,7 +237,7 @@ The design keeps the existing isolated live runners and adds only two Environmen
 ## Stage Report: implementation
 
 - DONE: Implement OAuth-first Codex and Pi CI authentication, isolated auth seeding, API-key fallback, and missing-input failure within the approved semantic boundaries.
-  Commit `42e58508f` adds dedicated OAuth selectors, 0600 isolated auth seeding, child-env key dropping for OAuth, and either-secret workflow preflights.
+  Commits `42e58508f` and `eab1f6447` add dedicated OAuth selectors, 0600 isolated auth seeding, child-env key dropping for OAuth, provider-qualified model selection, and either-secret workflow preflights.
 - DONE: Add behavior-focused fake-host and Go tests for auth precedence, provider/model selection, file permissions and isolation, login/status behavior, and secret redaction.
   Focused auth tests cover OAuth precedence, API fallback, missing credentials, JSON wrapping, exact file permissions, and isolated environment construction; full `internal/ensigncycle` tests passed.
 - DONE: Apply the workflow and runtime-live-CI documentation changes for secret bindings, JSON formats, setup and rotation, refresh handling, and fallback guidance.
