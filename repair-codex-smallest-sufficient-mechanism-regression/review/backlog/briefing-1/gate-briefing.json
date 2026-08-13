@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:bfmczd31ydpp4stqjstf6xwx:backlog:attempt-1:revision-1",
+  "question": "Approve this task for ideation so the Codex smallest-sufficient behavior can be restored without expanding the product or harness?",
+  "artifacts": [
+    {
+      "id": "artifact:bfmczd31ydpp4stqjstf6xwx:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/177be8a3712a2eeedad0e5a441ee39d8d822031a/repair-codex-smallest-sufficient-mechanism-regression.md",
+      "rev": "sha256:6e08d3824e1b336c04ad7d134fe09f650a20a28f7f563dcb53631da902083a6d",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval for ideation: the task preserves the observed PR #679 regression, requires public-behavior proof, and forbids product instrumentation or a second parser-only correction."
+    }
+  ]
+}
