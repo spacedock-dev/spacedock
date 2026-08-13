@@ -17,6 +17,7 @@ The stage definitions declare authoritative `Gate content`, but the reusable tas
 
 Align the template with the backlog, ideation, and validation gate-content contracts. Keep prompts compact and avoid duplicating stage instructions.
 Treat chosen direction as ideation-specific, not as a generic task-template field. Backlog prompts for scope and required proof; validation prompts for results, evidence, findings, and readiness.
+Treat repeated clarification on the same gate as evidence that its decision presentation is incomplete. Identify the missing decision input: if task evidence changed, withdraw the stale gate and prepare a new snapshot; if only presentation guidance changed, update the stage-specific `Gate content` for future gates. Never silently alter a bound snapshot.
 
 ## Out of scope
 
@@ -39,6 +40,9 @@ Verified by: the rendered template contains `Estimate net LOC change: +-{NNN}, a
 
 **AC-4 — Existing task files and gate lifecycle semantics remain unchanged.**
 Verified by: the diff is confined to `docs/dev/README.md` and workflow validation passes.
+
+**AC-5 — Repeated clarification routes according to snapshot currency.**
+Verified by: a behavior exercise shows evidence changes withdraw and reprepare the gate, while presentation-only clarifications preserve the bound snapshot and improve the stage-specific `Gate content` for future gates.
 
 ## Test plan
 
