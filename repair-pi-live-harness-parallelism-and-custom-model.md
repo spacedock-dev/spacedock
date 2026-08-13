@@ -19,6 +19,17 @@ gates:
                 digest: sha256:54bc1775cf5a638d29455dd68415d04c558715bb1f6009f0e6d93964c2e55b5f
                 request-digest: sha256:f166ecca01e94cb9f9f8861a808d8c9c2ac27140ac9080f31b7ee45578430e2d
                 room-ref: ./repair-pi-live-harness-parallelism-and-custom-model/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pnc09c4hz4wbzyegh3pnpb1d:backlog:1
+                briefing: briefing:pnc09c4hz4wbzyegh3pnpb1d:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-13T22:40:14.7204Z"
+                decision: approve
+                reason: Captain approved backlog gate; advance to ideation for the Pi-harness enablement bundle.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
