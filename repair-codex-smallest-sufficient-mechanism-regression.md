@@ -1,6 +1,6 @@
 ---
 title: Repair Codex smallest-sufficient mechanism regression
-status: backlog
+status: ideation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -28,7 +28,7 @@ gates:
                 reason: Captain approved the scoped direction for ideation.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Codex completed both ready tasks but also created `roadmap-strategy.md`, violating the smallest-sufficient mechanism contract.
