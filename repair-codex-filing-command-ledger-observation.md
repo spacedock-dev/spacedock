@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: ideation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -48,7 +48,7 @@ gates:
                 reason: Captain approved the correlated native-input/public-exit-status observation design for implementation.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-13T22:11:00Z
 ---
 
