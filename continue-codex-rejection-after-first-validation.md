@@ -1152,3 +1152,31 @@ The exact pushed candidate completes the ordinary Codex rejection-to-correction 
 ### Summary
 
 Sonnet and Codex now run every promoted common journey, so an earlier red result cannot suppress DVD evidence; any failing journey still makes its job red. Pi keeps its prior fail-fast policy, and the exact pushed DVD candidate retains the already-proven bound XPASS and unbound PASS evidence without another local live run.
+
+## Stage Report: validation (cycle 8)
+
+- DONE: Verify Sonnet and Codex promoted common-live commands run all journeys without failfast while Pi retains failfast.
+  Exact head `d559bc07c` has no `-failfast` on the Claude/Sonnet or Codex `TestLiveCommon` command and retains it on Pi; `TestRuntimeLiveCommonFailFastPolicy` passed and fails when either policy is reversed.
+- DONE: Verify DVD exact rejection-flow product and binding transition remain unchanged and backed by retained XPASS/PASS evidence.
+  Rebased commits `d865e8b2a`, `58c258b94`, and `437d20dc6` have the same stable patch IDs as `186dad3de`, `a1edfaec6`, and `797aab1ff`; the retained source-bound artifacts remain `/tmp/dvd-bound-xpass-final.Nu1AiM` and `/tmp/dvd-unbound-pass-final.QK4RN9`.
+- DONE: Verify the rebased candidate scope, full/race results, workflow guard, and acceptance criteria before PR rerun.
+  Local and remote heads match `d559bc07c`, merge base and `origin/main` match `65935a4b`, the seven-file worktree is clean, focused workflow/oracle guards pass, and implementation cycle 10 records passing exact-head full and race suites. No PR rerun was started.
+- DONE: AC-1 — The Codex baseline executes the rejection-flow journey and records a typed semantic XFAIL.
+  `/tmp/dvd-current-main-7cf-codex.MlRKig` is source-bound to `7cf03cd94` and records the executing baseline with the two intended semantic codes, no timeout, and no infrastructure or parser code.
+- DONE: AC-2 — The repaired exact candidate leaves the fixture in a complete correction state.
+  The retained unbound artifact records both implementation and validation cycles, the exact marker, the retained four-entry validation/1 room, and the source-bound ordinary PASS; the focused durable-oracle negatives passed on the rebased head.
+- DONE: AC-3 (VALUE) — The repaired exact candidate leaves exactly one fresh open validation gate after validation/2.
+  The retained PASS transcript records validation/2 before one successful `gate prepare`, `state=open`, `awaiting-captain`, status `validation`, and blank terminal fields; duplicate, closed, advisory, and out-of-order controls remain red.
+- DONE: AC-4 — The Codex result proves the host-specific and independent parts of the journey.
+  The rebased host selection uses Codex command evidence plus correlated native worker lifecycle; focused lifecycle tests passed and reject a missing handle, wrong completion order, or implementation-worker self-validation.
+- DONE: AC-5 — The strict-XFAIL sequence is complete.
+  Bound artifact head `a1edfaec6` retains the DVD Codex binding and XPASS; unbound artifact head `797aab1ff` follows the binding-only transition and passes, whose rebased equivalents have identical patch IDs.
+- DONE: Run applicable focused checks and inspect the semantic adversarial matrix.
+  Contractlint reconciliation, timeout, fail-fast policy, release workflow guard, durable round/gate oracle, native lifecycle, `gofmt`, and `git diff --check` passed; command extraction covers Claude, Codex, and Pi independently.
+- SKIPPED: Start a PR rerun or duplicate the retained live journeys.
+  Validation was assigned to verify readiness before rerun; it made no external CI mutation and retained the source-bound DVD XPASS/PASS evidence.
+
+### Summary
+
+PASSED. Exact rebased head `d559bc07c` preserves the proven DVD correction and binding transition, while the promoted Sonnet and Codex commands now run all common journeys and Pi retains failfast.
+All five acceptance criteria have executable or durable evidence, the focused adversarial checks pass, and no Material finding remains before the PR rerun.
