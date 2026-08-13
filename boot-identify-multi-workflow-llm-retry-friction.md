@@ -1,11 +1,11 @@
 ---
 title: Self-describing boot identify schema and contract hint to eliminate LLM duplicate CLI retry loop
-status: validation
+status: implementation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
 worktree: .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction
-pr: "#681"
+pr:
 gates:
     version: 1
     records:
@@ -76,8 +76,8 @@ gates:
                 reason: Captain approved validated task 32 for PR delivery and full CI.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: superseded
+mod-block:
 completed:
 verdict:
 started: 2026-08-12T21:56:27Z
@@ -802,3 +802,25 @@ Cycle 10 rebases the execution-grounded boot/filing evidence onto PR #680 main a
 ### Summary
 
 Validation independently reproduced the Codex launcher-repin correction, the filing and multi-workflow live outcomes, every acceptance criterion, and the required repository gates without changing candidate bytes. The remaining stale-environment observation is outside candidate behavior and has a concrete promotion condition.
+
+## Stage Report: implementation (cycle 11)
+
+- DONE: Make `«state.boot»()` require the exact canonical identify command once, with no workflow-root variant, fallback, or retry.
+  Commit `286b3677b` changes the one shipped effect line only; launcher, status implementation, boot schema, and parser bytes are unchanged.
+- DONE: Add the exact Sonnet compound-command execution shape to the existing command-shape falsifier.
+  `TestMultiWorkflowBootAfterOnlyInvariant` now rejects the observed workflow-root identify followed by canonical fallback; removing either cardinality or workflow-specific guard makes the planted negative pass.
+- DONE: Preserve the existing live one-identify oracle and prove the correction on local Sonnet.
+  `TestLiveCommonMultiWorkflowBoot` passed once with `SPACEDOCK_LIVE_RUNTIME=claude`, `SPACEDOCK_LIVE_MODEL=claude-sonnet-5`, and stale `SPACEDOCK_BIN` removed; the unchanged oracle required one identify, no retry/deep boot, correct greeting, and unchanged state.
+- DONE: Keep the correction within the Captain-approved bound and publish it without PR, CI, or merge activity.
+  Exact delta from `c293037ba` is two existing files and eight gross changed lines; remote branch resolves to `286b3677b`.
+
+### Verification
+
+- Focused: `go test ./internal/ensigncycle -run '^TestMultiWorkflowBootAfterOnlyInvariant$' -count=1` passed.
+- Format/diff: `gofmt -d internal/ensigncycle/multi_workflow_boot_assert_test.go` and `git diff --check` were clean; correction scope was 6 added test lines plus one replaced contract line.
+- Sonnet: `env -u SPACEDOCK_BIN SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=claude-sonnet-5 go test -tags live ./internal/ensigncycle -run '^TestLiveCommonMultiWorkflowBoot$' -count=1 -v` passed in 27.67s.
+- Baseline/race: cycle 10's `go test ./...` and `go test ./... -race` passes at `c293037ba` are reused because cycle 11 changes only contract prose and a negative test fixture, not Go product behavior.
+
+### Summary
+
+Cycle 11 closes the Sonnet-specific retry gap with the bounded contract correction the Captain approved: the already-canonical boot command is now a closed command shape, and the exact invented workflow-root-plus-fallback sequence is a durable negative. The local Sonnet journey passed the unchanged execution-ledger oracle, and commit `286b3677b` is pushed with no product status/schema or launcher protocol expansion.
