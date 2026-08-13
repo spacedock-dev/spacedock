@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:bfmczd31ydpp4stqjstf6xwx:ideation:attempt-1:revision-1",
+  "question": "Approve the evidence-backed parser-correlation repair for implementation, replacing the disproven premise that roadmap-strategy.md was unnecessary?",
+  "artifacts": [
+    {
+      "id": "artifact:bfmczd31ydpp4stqjstf6xwx:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ebff7643d9df714a2d8e149f901c2b8f69756f55/repair-codex-smallest-sufficient-mechanism-regression.md",
+      "rev": "sha256:5908594ffd8ee5d34ba6db913cd2fce48f9b48c33a989d4b78e4d562d471d18b",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: exact PR #679 JSONL replay shows product behavior was correct and the classifier falsely joined unrelated narration to a later dispatch; the design makes one bounded ordered-correlation correction with paired negative proof and unchanged-byte XPASS-to-PASS validation."
+    }
+  ]
+}

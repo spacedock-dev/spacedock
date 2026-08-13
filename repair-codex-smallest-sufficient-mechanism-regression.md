@@ -29,6 +29,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:bfmczd31ydpp4stqjstf6xwx:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:bfmczd31ydpp4stqjstf6xwx-ideation-1
+              briefing:
+                id: briefing:bfmczd31ydpp4stqjstf6xwx:ideation:attempt-1:revision-1
+                digest: sha256:f8cbfa8045523d26368153d05edeff806433a94d74556c933638951b43200058
+                request-digest: sha256:f6e1e151ecbae24ed89d7c631e3df2e7dd13ef48e25b45163ea102761a8dcbc5
+                room-ref: ./repair-codex-smallest-sufficient-mechanism-regression/review/ideation/briefing-1
 started: 2026-08-13T22:06:12Z
 ---
 
