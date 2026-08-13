@@ -83,6 +83,17 @@ gates:
                 digest: sha256:b5e093210d183486a25c6514fdda804aa585ea83627ae5f9050f2246baa90d6f
                 request-digest: sha256:adba64e93385806ce2d44e3f03639e54401a90ff10ff7b71c8135e9710e71ed1
                 room-ref: ./boot-identify-multi-workflow-llm-retry-friction/review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:32vshm0h2h04gs7hzcf315g0:validation:5
+                briefing: briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-5:revision-1
+                by: person:captain
+                at: "2026-08-13T02:35:01.521904Z"
+                decision: approve
+                reason: Captain approved replacement PR delivery and exact full CI.
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 completed:
 verdict:
