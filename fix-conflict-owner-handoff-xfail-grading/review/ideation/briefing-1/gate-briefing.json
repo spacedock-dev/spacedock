@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rzrx7a00yxk9kkvy4mxcj8ep:ideation:attempt-1:revision-1",
+  "question": "Approve this XFAIL grading fix for implementation: switch the marker read to readFileAllowMissing so a missing marker routes through gradeLive as XFAIL, not t.Fatal as a lane FAIL. Approve, revise, or hold?",
+  "artifacts": [
+    {
+      "id": "artifact:rzrx7a00yxk9kkvy4mxcj8ep:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c2a254d32c27417e509e5ec542b85ea6d0453d83/rzr-ideation-review.md",
+      "rev": "sha256:9618dc990003bbc7f4427bfb341efb19e9bcc9b99b4e2e40919cb91ce3bfcc33",
+      "mediaType": "text/markdown",
+      "summary": "One-line grading fix: missing marker returns an error (XFAIL) instead of t.Fatal (lane FAIL)."
+    }
+  ]
+}
