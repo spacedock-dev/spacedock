@@ -142,8 +142,11 @@ fixture file the test itself wrote, so missing there is a real setup failure).
 ## Stage Report: implementation
 
 - DONE: swapped `readFile(t, fixture.marker)` to `readFileAllowMissing(fixture.marker)` in `assertConflictOwnerHandoff` (`internal/ensigncycle/conflict_owner_handoff_live_test.go`), adding a `got == ""` branch returning `fmt.Errorf("worker marker missing, want runtime-worker-owner")`; the present-but-wrong `worker marker = %q` path is byte-unchanged and `readFile(t, fixture.entity)` is untouched.
+  `internal/ensigncycle/conflict_owner_handoff_live_test.go:77-78` — `if got := strings.TrimSpace(readFileAllowMissing(fixture.marker)); got == "" { return fmt.Errorf("worker marker missing, want runtime-worker-owner") }`; commit 6bebae7c8 (`1 file changed, 3 insertions(+), 1 deletion(-)`) touches only this assert.
 - DONE: ran `gofmt -w internal/ensigncycle`, `go vet -tags live ./internal/ensigncycle`, `go build -tags live ./internal/ensigncycle`, and `go test -run 'ConflictOwner|GradeLive|LiveGrade|KeepMovingDurable' ./internal/ensigncycle`; all pass.
+  `gofmt -l` empty; `go vet -tags live` silent; `go build -tags live` silent; `go test -run …` → `ok\tgithub.com/spacedock-dev/spacedock/internal/ensigncycle\t(cached)`.
 - DONE: did not touch any `liveXFail(...)` binding, any other assert, or any CI lane; fe7/bqy AC-3 preserved.
+  `git diff HEAD~1 HEAD -- internal/ensigncycle/ | grep liveXFail` empty; only `conflict_owner_handoff_live_test.go` changed (1 file, 3+/1-).
 
 ### Summary
 
