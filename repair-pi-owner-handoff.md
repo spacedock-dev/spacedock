@@ -3,7 +3,7 @@ title: Repair Pi owner handoff
 status: backlog
 score: "0.90"
 source: "xp6 owner-handoff retained evidence"
-sprint: test-behavior-completeness
+sprint: pi-live-completeness
 sprint-readiness: defer
 group: common-evidence
 id: fe7bfjz9sb8wyckmnnm3ncjx
