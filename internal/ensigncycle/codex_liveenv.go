@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ type codexAuthMode int
 const (
 	codexAuthSkip codexAuthMode = iota
 	codexAuthAPIKey
+	codexAuthOAuth
 	codexAuthLocal
 	codexAuthFatal
 )
@@ -27,14 +29,21 @@ tool_namespace = "agents"
 hide_spawn_agent_metadata = false
 `
 
-func decideCodexLiveAuth(openAIAPIKey string, localAuthAvailable bool, required string) codexLiveAuthDecision {
-	if openAIAPIKey != "" {
+func decideCodexLiveAuth(openAIKey string, localAuthAvailable bool, required string) codexLiveAuthDecision {
+	return decideCodexLiveAuthForCI("", openAIKey, localAuthAvailable, required)
+}
+
+func decideCodexLiveAuthForCI(oauthJSON, openAIKey string, localAuthAvailable bool, required string) codexLiveAuthDecision {
+	if strings.TrimSpace(oauthJSON) != "" {
+		return codexLiveAuthDecision{mode: codexAuthOAuth}
+	}
+	if openAIKey != "" {
 		return codexLiveAuthDecision{mode: codexAuthAPIKey}
 	}
 	if required != "" {
 		return codexLiveAuthDecision{
 			mode:    codexAuthFatal,
-			message: "OPENAI_API_KEY is required when SPACEDOCK_CODEX_LIVE_REQUIRED is set; unset SPACEDOCK_CODEX_LIVE_REQUIRED for a local run that uses isolated Codex OAuth",
+			message: "Codex OAuth or OPENAI_API_KEY is required when SPACEDOCK_CODEX_LIVE_REQUIRED is set",
 		}
 	}
 	if localAuthAvailable {
@@ -42,7 +51,7 @@ func decideCodexLiveAuth(openAIAPIKey string, localAuthAvailable bool, required 
 	}
 	return codexLiveAuthDecision{
 		mode:    codexAuthSkip,
-		message: "no live Codex auth available: set OPENAI_API_KEY or log in with codex to run the live Codex shared suite",
+		message: "no live Codex auth available: set CODEX_AUTH_JSON, OPENAI_API_KEY, or log in with codex to run the live Codex shared suite",
 	}
 }
 
@@ -64,6 +73,23 @@ func seedCodexLiveConfig(codexHome string) error {
 	}
 	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(codexLiveMultiAgentConfig), 0o600); err != nil {
 		return fmt.Errorf("write isolated Codex config: %w", err)
+	}
+	return nil
+}
+
+func seedCodexOAuthAuth(codexHome, authJSON string) error {
+	if strings.TrimSpace(authJSON) == "" {
+		return fmt.Errorf("Codex OAuth auth is empty")
+	}
+	var object map[string]any
+	if err := json.Unmarshal([]byte(authJSON), &object); err != nil || object == nil {
+		return fmt.Errorf("Codex OAuth auth is not a JSON object")
+	}
+	if err := os.MkdirAll(codexHome, 0o700); err != nil {
+		return fmt.Errorf("create isolated CODEX_HOME: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(codexHome, "auth.json"), []byte(authJSON), 0o600); err != nil {
+		return fmt.Errorf("write isolated Codex OAuth auth: %w", err)
 	}
 	return nil
 }

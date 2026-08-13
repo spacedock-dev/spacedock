@@ -53,7 +53,7 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 	env := cleanEnviron(
 		"CODEX_THREAD_ID", "CLAUDECODE", "HOME", "PI_CODING_AGENT_DIR",
 		"PI_CODING_AGENT_SESSION_DIR", "PI_INTERCOM_PACKAGE_ROOT",
-		"PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE",
+		"PI_SUBAGENTS_PACKAGE_ROOT", "PI_OFFLINE", "OPENAI_API_KEY", "CODEX_AUTH_JSON", "PI_OPENAI_CODEX_AUTH_JSON",
 	)
 	env = dropEnvPrefix(env, "PI_SUBAGENT_")
 	env = append(env,
@@ -67,11 +67,56 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 	return withBinaryOnPath(env, filepath.Join(binaryDir, "spacedock"))
 }
 
+func piLiveEnvForAuth(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot, openAIKey, mode string) []string {
+	env := piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot)
+	if mode == piAuthOAuth {
+		env = withoutPiEnvKey(env, "OPENAI_API_KEY")
+	} else if openAIKey != "" {
+		env = append(env, "OPENAI_API_KEY="+openAIKey)
+	}
+	return env
+}
+
+func TestPiLiveAuthSelectionAndSeeding(t *testing.T) {
+	oauth := codexFixtureAuthJSON()
+	if got := decidePiLiveAuth(oauth, "key", ""); got.mode != piAuthOAuth || got.model != piOAuthModel {
+		t.Fatalf("OAuth decision = %#v", got)
+	}
+	home := t.TempDir()
+	if err := seedPiOAuthAuth(home, oauth); err != nil {
+		t.Fatal(err)
+	}
+	if mode := fileMode(t, filepath.Join(home, "auth.json")); mode != 0o600 {
+		t.Fatalf("mode = %o", mode)
+	}
+	seeded := readFile(t, filepath.Join(home, "auth.json"))
+	for _, want := range []string{`"openai-codex"`, `"access":"header.eyJleHAiOjE3ODcwMjQ2ODF9.signature"`, `"refresh":"sentinel-refresh"`, `"expires":1787024681000`, `"accountId":"account-id"`} {
+		if !strings.Contains(seeded, want) {
+			t.Fatalf("seeded auth missing %q: %s", want, seeded)
+		}
+	}
+	if got := decidePiLiveAuth("", "key", ""); got.mode != piAuthAPIKey || got.model != piAPIKeyModel {
+		t.Fatalf("key decision = %#v", got)
+	}
+}
+
+func TestPiLiveAuthRejectsIncompleteCodexCredentials(t *testing.T) {
+	for _, input := range []string{"not-json", `{"tokens":{"refresh_token":"refresh"}}`, `{"tokens":{"access_token":"not-a-jwt","refresh_token":"refresh","account_id":"account"}}`} {
+		if err := seedPiOAuthAuth(t.TempDir(), input); err == nil {
+			t.Fatalf("seed accepted malformed Codex auth %q", input)
+		}
+	}
+}
+
+func codexFixtureAuthJSON() string {
+	return `{"auth_mode":"chatgpt","tokens":{"access_token":"header.eyJleHAiOjE3ODcwMjQ2ODF9.signature","refresh_token":"sentinel-refresh","account_id":"account-id"}}`
+}
+
 func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 	for key, value := range map[string]string{"CODEX_THREAD_ID": "codex", "CLAUDECODE": "claude", "PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/parent/pi",
 		"PI_CODING_AGENT_SESSION_DIR": "/parent/sessions", "PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
 		"PI_SUBAGENTS_PACKAGE_ROOT": "/parent/package",
-		"PI_OFFLINE":                "0", "HOME": "/parent/home", "OPENAI_API_KEY": "key", "PATH": "/parent/bin"} {
+		"PI_OFFLINE":                "0", "HOME": "/parent/home", "OPENAI_API_KEY": "key", "CODEX_AUTH_JSON": "oauth", "PATH": "/parent/bin"} {
 		t.Setenv(key, value)
 	}
 	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin", "/target/package")
@@ -79,7 +124,7 @@ func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 		"PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/target/pi",
 		"PI_CODING_AGENT_SESSION_DIR": "/target/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/target/package",
 		"PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
-		"PI_OFFLINE":               "1", "HOME": "/target/home", "OPENAI_API_KEY": "key",
+		"PI_OFFLINE":               "1", "HOME": "/target/home", "OPENAI_API_KEY": "", "CODEX_AUTH_JSON": "",
 		"PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
 	for key, value := range want {
 		assertEnvValue(t, env, key, value)

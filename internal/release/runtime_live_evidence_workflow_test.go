@@ -102,12 +102,24 @@ func assertOneClaudeCadence(workflow string) error {
 	if !ok || codex.Environment.Name != "CI-E2E-CODEX" || codex.If != codexCadenceIf {
 		return fmt.Errorf("Codex lane environment/if = %q/%q, want CI-E2E-CODEX/%q", codex.Environment.Name, codex.If, codexCadenceIf)
 	}
+	if codex.Env["CODEX_AUTH_JSON"] != `${{ secrets.CODEX_AUTH_JSON }}` || codex.Env["OPENAI_API_KEY"] != `${{ secrets.OPENAI_API_KEY }}` {
+		return fmt.Errorf("Codex lane auth = %q/%q, want OAuth and API-key fallback secrets", codex.Env["CODEX_AUTH_JSON"], codex.Env["OPENAI_API_KEY"])
+	}
+	if _, present := codex.Env["CODEX_HOME"]; present {
+		return fmt.Errorf("Codex HOME must be initialized in a step, not with the unavailable job-level runner.temp context")
+	}
 	pi, ok := parsed.Jobs["pi-live"]
 	if !ok || pi.Environment.Name != "CI-E2E-PI" || pi.If != piCadenceIf {
 		return fmt.Errorf("Pi lane environment/if = %q/%q, want CI-E2E-PI/%q", pi.Environment.Name, pi.If, piCadenceIf)
 	}
-	if pi.Env["OPENAI_API_KEY"] != `${{ secrets.OPENAI_API_KEY }}` || pi.Env["SPACEDOCK_PI_LIVE_CHILD_MODEL"] != "openai/gpt-5.6-luna:max" {
-		return fmt.Errorf("Pi lane key/model = %q/%q, want stored OpenAI key and Luna/max", pi.Env["OPENAI_API_KEY"], pi.Env["SPACEDOCK_PI_LIVE_CHILD_MODEL"])
+	if pi.Env["CODEX_AUTH_JSON"] != `${{ secrets.CODEX_AUTH_JSON }}` || pi.Env["OPENAI_API_KEY"] != `${{ secrets.OPENAI_API_KEY }}` {
+		return fmt.Errorf("Pi lane auth = %q/%q, want shared Codex auth and stored OpenAI key", pi.Env["CODEX_AUTH_JSON"], pi.Env["OPENAI_API_KEY"])
+	}
+	if _, present := pi.Env["PI_OPENAI_CODEX_AUTH_JSON"]; present {
+		return fmt.Errorf("Pi lane must not use the dedicated PI_OPENAI_CODEX_AUTH_JSON secret")
+	}
+	if _, present := pi.Env["SPACEDOCK_PI_LIVE_CHILD_MODEL"]; present {
+		return fmt.Errorf("Pi lane must derive its provider model from auth mode")
 	}
 	return nil
 }

@@ -61,6 +61,51 @@ func TestDecideCodexLiveAuth(t *testing.T) {
 	})
 }
 
+func TestDecideCodexLiveAuthForCI(t *testing.T) {
+	for _, tc := range []struct {
+		name, oauth, key string
+		want             codexAuthMode
+	}{
+		{"oauth_preferred", `{"auth_mode":"chatgpt"}`, "sk-key", codexAuthOAuth},
+		{"api_key_fallback", "", "sk-key", codexAuthAPIKey},
+		{"missing_required", "", "", codexAuthFatal},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := decideCodexLiveAuthForCI(tc.oauth, tc.key, false, map[bool]string{true: "1", false: ""}[tc.want == codexAuthFatal])
+			if got.mode != tc.want {
+				t.Fatalf("mode = %d, want %d (%s)", got.mode, tc.want, got.message)
+			}
+		})
+	}
+}
+
+func TestSeedCodexOAuthAuth(t *testing.T) {
+	home := t.TempDir()
+	payload := `{"auth_mode":"chatgpt","tokens":{"refresh_token":"sentinel"}}`
+	if err := seedCodexOAuthAuth(home, payload); err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(filepath.Join(home, "auth.json"))
+	if err != nil || string(got) != payload {
+		t.Fatalf("auth.json = %q, err=%v", got, err)
+	}
+	if mode := fileMode(t, filepath.Join(home, "auth.json")); mode != 0o600 {
+		t.Fatalf("auth mode = %o, want 600", mode)
+	}
+	if err := seedCodexOAuthAuth(home, "not-json"); err == nil {
+		t.Fatal("malformed OAuth payload must fail")
+	}
+}
+
+func fileMode(t *testing.T, path string) os.FileMode {
+	t.Helper()
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return info.Mode().Perm()
+}
+
 func TestCodexLocalAuthAvailable(t *testing.T) {
 	realHome := t.TempDir()
 	if codexLocalAuthAvailable(realHome) {
@@ -345,7 +390,7 @@ func codexLiveWorkflowExecShim(t *testing.T) string {
 }
 
 func TestCodexLiveEnvOmitsEmptyAPIKey(t *testing.T) {
-	env := codexLiveEnv("/tmp/codex-home", "/tmp/home", "", "")
+	env := codexLiveEnv("/tmp/codex-home", "/tmp/home", "", "", codexAuthOAuth)
 	if _, ok := envValue(env, "OPENAI_API_KEY"); ok {
 		t.Fatal("OPENAI_API_KEY must be omitted for local subscription auth")
 	}
@@ -357,7 +402,7 @@ func TestCodexLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 		t.Setenv(key, value)
 	}
 
-	env := codexLiveEnv("/target/codex", "/target/home", "/spacedock/bin", "target-key")
+	env := codexLiveEnv("/target/codex", "/target/home", "/spacedock/bin", "target-key", codexAuthAPIKey)
 
 	want := map[string]string{"CLAUDECODE": "", "PI_CODING_AGENT": "", "PI_CODING_AGENT_DIR": "",
 		"CODEX_THREAD_ID": "codex", "CODEX_HOME": "/target/codex", "HOME": "/target/home",
@@ -421,8 +466,8 @@ func TestCodexLiveHomeParentCandidatesRejectArtifactRootInsidePluginCheckout(t *
 	}
 }
 
-func codexLiveEnv(codexHome, home, pathPrefix, openAIAPIKey string) []string {
-	env := cleanEnviron("CODEX_HOME", "HOME", "OPENAI_API_KEY", "PATH",
+func codexLiveEnv(codexHome, home, pathPrefix, openAIAPIKey string, mode codexAuthMode) []string {
+	env := cleanEnviron("CODEX_HOME", "HOME", "OPENAI_API_KEY", "CODEX_AUTH_JSON", "PATH",
 		"CLAUDECODE", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR")
 	path := os.Getenv("PATH")
 	if pathPrefix != "" {
@@ -433,7 +478,7 @@ func codexLiveEnv(codexHome, home, pathPrefix, openAIAPIKey string) []string {
 		"HOME="+home,
 		"PATH="+path,
 	)
-	if openAIAPIKey != "" {
+	if mode == codexAuthAPIKey && openAIAPIKey != "" {
 		env = append(env, "OPENAI_API_KEY="+openAIAPIKey)
 	}
 	return env
