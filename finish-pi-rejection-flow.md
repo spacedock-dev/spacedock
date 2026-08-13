@@ -12,6 +12,7 @@ worktree:
 issue:
 pr:
 mod-block:
+sprint: pi-live-completeness
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.
