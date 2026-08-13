@@ -1,11 +1,11 @@
 ---
 title: Self-describing boot identify schema and contract hint to eliminate LLM duplicate CLI retry loop
-status: validation
+status: implementation
 score: 0.85
 id: 32vshm0h2h04gs7hzcf315g0
 source: "recorded Pi First Officer boot session at this repository root, cross-checked against PR #480"
 worktree: .worktrees/spacedock-ensign-boot-identify-multi-workflow-llm-retry-friction
-pr: "#683"
+pr:
 gates:
     version: 1
     records:
@@ -93,8 +93,8 @@ gates:
                 reason: Captain approved replacement PR delivery and exact full CI.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: superseded
+mod-block:
 completed:
 verdict:
 started: 2026-08-12T21:56:27Z
@@ -885,3 +885,30 @@ Cycle 11 closes the Sonnet-specific retry gap with the bounded contract correcti
 ### Summary
 
 Validation independently reproduced the two-file correction and the unchanged Sonnet journey at exact head, then re-ran the full non-race suite and relevant race oracle without changing candidate bytes. The host-capacity failure in a redundant full-race refresh does not invalidate cycle 10's eligible race evidence or any cycle-11 behavior proof.
+
+## Stage Report: implementation (cycle 12 HOLD)
+
+- FAILED: Establish stable multi-workflow boot behavior across supported Sonnet CI at exact head `286b3677b`.
+  PR #683 exact CI repeated the forbidden `status --boot --identify --json --workflow-dir … || status --boot --identify --json` sequence, so the bounded prose correction does not reliably satisfy AC-3.
+- FAILED: Preserve the supported bare-reachable boot path with the exact closed command shape.
+  The same CI stopped bare-reachable at zero discovery because that journey needs an explicit workflow path; forbidding every `--workflow-dir` boot removed its viable path.
+- DONE: Separate unrelated supported-host evidence from task 32's Sonnet finding.
+  Codex failed default-headless through wrong-entity selection; that is external to this multi-workflow command-shape correction and does not alter the Sonnet disposition.
+- DONE: Preserve failed delivery evidence and stop without a third prose correction.
+  Closed PRs #681 and #683, their artifacts, pushed head `286b3677b`, and the registered worktree remain intact; no candidate edit, test, live run, push, PR, CI, or merge was performed during closeout.
+
+### Material Finding
+
+- Task-owned: the shared-core wording is not a stable enforcement boundary for model-generated boot argv. Local Sonnet passed once, but exact supported CI repeated the original compound command and regressed bare-reachable behavior.
+
+### Decision Required
+
+Captain product-design approval is required before more implementation. The viable directions are an explicit launcher-to-FO boot-record handoff, or an AC revision that permits one workflow-specific boot call while still forbidding fallback/retry; neither is authorized by this cycle.
+
+### Recommendation
+
+**HOLD.** Exact head `286b3677b` must not advance: it does not satisfy stable multi-workflow behavior across supported Sonnet CI, and another prose-only patch is explicitly out of scope.
+
+### Summary
+
+Cycle 12 closes the failed bounded experiment without changing candidate bytes. Supported CI disproved both its reliability and its compatibility with bare-reachable startup, so the next step is a Captain product-design decision rather than another wording iteration.
