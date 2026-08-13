@@ -59,6 +59,17 @@ gates:
                 digest: sha256:02e6f969576960722644c24c7c3554c3c422a71bc53dbe785d8209d61e9372c5
                 request-digest: sha256:ada641b4aec591a8d8dba9e8ac0f56247a06fb917bdccfd13fea52baa7060060
                 room-ref: ./codex-subscription-live-auth/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:hrercm3ff4ww94rnqhqbqkyp:validation:1
+                briefing: briefing:hrercm3ff4ww94rnqhqbqkyp:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-13T01:31:05.034023Z"
+                decision: approve
+                reason: Captain approved delivery despite the unavailable OAuth-only current-checkout live proof; offline focused, full, race, workflow, formatting, and live-tag evidence passed, and the recorded direct-Pi local-auth concern remains deferred outside the CI scope.
+              application:
+                target-stage: done
+                state: pending
 ---
 # Use Codex subscription auth in live CI
 
