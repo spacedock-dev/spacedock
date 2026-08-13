@@ -9,6 +9,7 @@ verdict:
 score:
 worktree:
 issue:
+sprint: pi-ux
 ---
 
 The runtimehost marker table marks both pi rows with `identity: ""`, so every pi consumer of session identity (starting with the FO install-gate's one-attempt sentinel in `fo-install-gate.md`, D-3) must fall back to a project/cwd-hash scope. Live evidence from 2026-07-31 shows pi DOES inject a session-scoped identity variable: `PI_SUBAGENT_PARENT_SESSION`, set in the session's own tool shells (not just nested subagent shells) to the session's own id. Mapping it as pi's identity lets the install-gate sentinel be truly session-scoped on pi, removing the admitted over-reach where a failed install in session N suppresses the install offer in session N+1 of the same project until tmp cleanup. Follow-up to `fo-boot-install-hint-linux-direct-sandbox` (D-3).
