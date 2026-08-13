@@ -3,7 +3,7 @@ title: Repair Opus owner handoff
 status: backlog
 score: "0.90"
 source: "xp6 owner-handoff retained evidence"
-sprint: test-behavior-completeness
+sprint: opus-live-completeness
 sprint-readiness: defer
 group: common-evidence
 id: bqy97b9npym3zs62pagjchpk
