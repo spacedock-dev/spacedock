@@ -50,6 +50,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:hrercm3ff4ww94rnqhqbqkyp:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:hrercm3ff4ww94rnqhqbqkyp-validation-1
+              briefing:
+                id: briefing:hrercm3ff4ww94rnqhqbqkyp:validation:attempt-1:revision-1
+                digest: sha256:02e6f969576960722644c24c7c3554c3c422a71bc53dbe785d8209d61e9372c5
+                request-digest: sha256:ada641b4aec591a8d8dba9e8ac0f56247a06fb917bdccfd13fea52baa7060060
+                room-ref: ./codex-subscription-live-auth/review/validation/briefing-1
 ---
 # Use Codex subscription auth in live CI
 

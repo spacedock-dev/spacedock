@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hrercm3ff4ww94rnqhqbqkyp:validation:attempt-1:revision-1",
+  "question": "Approve the validation result for OAuth-preferred Codex and Pi live CI authentication, or route the missing OAuth-only live proof back to implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:hrercm3ff4ww94rnqhqbqkyp:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1c505255126812c67d682961712e38a9850bf28e/codex-subscription-live-auth.md",
+      "rev": "sha256:63a6b287f3f32ac5975e66a660d24caf4fa8881e83d40477d8f15ddaa30c5bcb",
+      "mediaType": "text/markdown",
+      "summary": "Offline focused, full, race, workflow, formatting, and live-tag checks passed. The candidate is 9 files and 246 insertions, within the approved tolerance. AC-1, AC-2, and AC-4 still lack approval-gated OAuth-only current-checkout evidence because no local OAuth credentials were available; a deferred direct-Pi local-auth risk is recorded outside the CI path."
+    }
+  ]
+}
