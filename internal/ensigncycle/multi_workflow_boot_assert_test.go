@@ -147,6 +147,12 @@ func TestMultiWorkflowBootAfterOnlyInvariant(t *testing.T) {
 	}
 	broken := map[string]func(*multiWorkflowBootObservation){
 		"duplicate identify": func(o *multiWorkflowBootObservation) { o.invocations = append(o.invocations, o.invocations[0]) },
+		"Sonnet workflow-root fallback": func(o *multiWorkflowBootObservation) {
+			o.invocations = []testInvocation{
+				{tool: "spacedock", args: []string{"status", "--boot", "--identify", "--json", "--workflow-dir", "/project"}},
+				{tool: "spacedock", args: []string{"status", "--boot", "--identify", "--json"}},
+			}
+		},
 		"status retry": func(o *multiWorkflowBootObservation) {
 			o.invocations = append(o.invocations, testInvocation{tool: "spacedock", args: []string{"status", "--boot", "--json"}})
 		},

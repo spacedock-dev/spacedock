@@ -117,7 +117,7 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 
 ## «state.boot»(): read all local startup identify in one call
 
-- **effect:** run `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` once for project root, workflow discovery, stage taxonomy, and local boot sections. Consume JSON, not the human table. These are local reads only: no `gh`, `state ready`, sweep, mod-file open, team creation, or mutation. PR_STATE is a local `pr:` mirror labeled not-gh-checked until «engage».
+- **effect:** run exactly `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` once, unchanged: no `--workflow-dir`, `||`, fallback, or retry. Consume JSON, not the human table. These are local reads only: no `gh`, `state ready`, sweep, mod-file open, team creation, or mutation. PR_STATE is a local `pr:` mirror labeled not-gh-checked until «engage».
 - **zero discovery:** report no managed workflow and STOP; do not broad-search the filesystem (`find`, `grep -r`, `ls -R`, or recursive Glob/Grep over the project root). The boot detector enforces this.
 - **one discovery:** return the workflow, NAME it in the greet, and leave convergence to «engage».
 - **many discovery:** accept the complete terminal `multiple_workflows` record; do not retry or deep-boot before selection.
