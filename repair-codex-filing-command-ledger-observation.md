@@ -50,6 +50,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-13T22:11:00Z
+worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 ---
 
 ## Problem
