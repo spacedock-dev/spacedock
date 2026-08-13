@@ -29,6 +29,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-13T22:06:12Z
 ---
 
 Codex completed both ready tasks but also created `roadmap-strategy.md`, violating the smallest-sufficient mechanism contract.
