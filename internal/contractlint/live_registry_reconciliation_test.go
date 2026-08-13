@@ -53,7 +53,7 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "kky8pg7wc8xgb985epwss092"}},
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
-		"rejection-flow":                {{"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
+		"rejection-flow":                {{"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
 		"smallest-sufficient-mechanism": {{"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
 		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
@@ -107,8 +107,8 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 
 	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
 	docs := string(mustRead(t, filepath.Join(repo, "docs", "runtime-live-ci.md")))
-	if strings.Count(workflow, "-run '^TestLiveCommon' -failfast") != 3 || strings.Count(workflow, "-run '^TestLiveCommon'") != 3 {
-		t.Errorf("workflow must contain exactly three common selectors with -failfast")
+	if strings.Count(workflow, "-run '^TestLiveCommon' -failfast") != 1 || strings.Count(workflow, "-run '^TestLiveCommon'") != 3 {
+		t.Errorf("workflow must contain exactly three common selectors and reserve -failfast for Pi")
 	}
 	for _, runtime := range []string{"claude", "codex", "pi"} {
 		if strings.Count(workflow, "SPACEDOCK_LIVE_RUNTIME="+runtime) != 1 {
@@ -225,8 +225,8 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 	for _, command := range []struct {
 		name, text, want string
 	}{
-		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle/`},
-		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
+		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 2 ./internal/ensigncycle/`},
+		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' ./internal/ensigncycle`},
 		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
 		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v`},
 		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
@@ -236,6 +236,32 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 			t.Errorf("%s common-suite command count = %d, want 1", command.name, count)
 		}
 	}
+}
+
+func TestRuntimeLiveCommonFailFastPolicy(t *testing.T) {
+	workflow := string(mustRead(t, filepath.Join(repoRoot(t), ".github", "workflows", "runtime-live-e2e.yml")))
+	for _, runtime := range []string{"claude", "codex"} {
+		command := runtimeLiveCommonCommand(t, workflow, runtime)
+		if strings.Contains(command, " -failfast") {
+			t.Errorf("%s common journeys must all run before the job reports failure", runtime)
+		}
+	}
+	if command := runtimeLiveCommonCommand(t, workflow, "pi"); !strings.Contains(command, " -failfast") {
+		t.Error("Pi common journeys must retain -failfast")
+	}
+}
+
+func runtimeLiveCommonCommand(t *testing.T, workflow, runtime string) string {
+	t.Helper()
+	prefix := "SPACEDOCK_LIVE_RUNTIME=" + runtime + " gotestsum "
+	for _, line := range strings.Split(workflow, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, prefix) && strings.Contains(line, "-run '^TestLiveCommon'") {
+			return line
+		}
+	}
+	t.Fatalf("workflow has no %s common-journey command", runtime)
+	return ""
 }
 
 func readDesiredLiveJourneys(t *testing.T, path string) map[string]desiredLiveJourney {

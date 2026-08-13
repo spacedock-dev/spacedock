@@ -391,6 +391,15 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 
 	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
 	after := readFile(t, entityPath)
+	recordedRound := claudeRecordedRejectionRound(result.stream)
+	reviewerFlow := assertClaudeSingleEntityRejectionFlow(result.stream)
+	if _, ok := runner.(codexAsLiveDriver); ok {
+		recordedRound = codexRecordedRejectionRound(result.stream)
+		reviewerFlow = assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after)
+		if _, _, err := gates.Read(entityPath); err != nil {
+			recordedRound = false
+		}
+	}
 	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
 	// `spacedock claude -- -p {prompt}` with a prompt naming one entity, so the run
 	// is single-entity → bare; the contract's bare-mode feedback flow is sequential
@@ -402,8 +411,8 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	// reviewer-reuse question is the spun-off option-(a) task.
 	finishLiveScenario(t, runner, scenario, result,
 		durableSemantic("rejection-flow-state", assert(after, result.finalMessage+"\n"+result.stream)),
-		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", claudeRecordedRejectionRound(result.stream))),
-		durableSemantic("rejection-reviewer-flow", assertClaudeSingleEntityRejectionFlow(result.stream)))
+		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", recordedRound)),
+		durableSemantic("rejection-reviewer-flow", reviewerFlow))
 }
 
 // runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture
