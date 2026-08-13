@@ -29,6 +29,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-13T22:11:00Z
 ---
 
 Codex created `wire-the-thing` correctly, but the filing oracle reported no `spacedock new` invocation.
