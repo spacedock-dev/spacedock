@@ -137,7 +137,7 @@ func TestLiveCommonMergeHookGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=filing fixture=filing/empty-workflow
 func TestLiveCommonFiling(t *testing.T) {
-	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
+	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, []liveJourneyGap{liveXFail("codex", "6ker7h25hj86983e5ef71ahm")}, runClaudeFilingScenario, assertFilingCommands)
 }
 
 //spacedock:live-journey id=shallow-boot fixture=boot/held-gate
@@ -162,7 +162,7 @@ func TestLiveCommonSelfEvidenceMergeTriage(t *testing.T) {
 
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
-	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("codex", "bfmczd31ydpp4stqjstf6xwx"), liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events

@@ -49,3 +49,21 @@ func TestLiveGradeLaneResult(t *testing.T) {
 		}
 	}
 }
+
+func TestFilingSemanticFailureUsesTargetXFail(t *testing.T) {
+	err := &gradedErr{code: "filing-command-not-observed", msg: "filing command log has no spacedock new invocation"}
+	for name, test := range map[string]struct {
+		xfail bool
+		want  string
+	}{
+		"bound":   {true, "xfail"},
+		"unbound": {false, "fail"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			got := gradeLive(test.xfail, err)
+			if got.status != test.want || !reflect.DeepEqual(got.codes, []string{"filing-command-not-observed"}) {
+				t.Fatalf("grade = %#v, want status=%s code=filing-command-not-observed", got, test.want)
+			}
+		})
+	}
+}

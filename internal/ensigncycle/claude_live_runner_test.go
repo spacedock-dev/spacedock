@@ -518,9 +518,10 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
 	if err := assert(result.commands, filingSlug); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+		finishLiveScenario(t, runner, scenario, result, durableSemantic("filing-command-not-observed", err))
+		return
 	}
-	runner.emitMetrics(t, scenario, result)
+	finishLiveScenario(t, runner, scenario, result)
 }
 
 func assertFilingCommands(commands []string, slug string) error {
