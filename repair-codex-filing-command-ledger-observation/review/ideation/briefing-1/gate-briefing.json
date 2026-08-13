@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-1:revision-1",
+  "question": "Approve the correlated native-input/public-exit-status observation design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5a1d38c6372838b55107d245e880b32081047dc0/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:5e22fa8621d034fc37682a30116f2208698839da04f7d2eeb1b441018a31692d",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: exact PR #679 evidence reproduces an outer-display false negative; the design reuses existing isolated-home thread correlation, changes test observation only, and retains fail-closed manual, failed, wrong-slug, missing, and ambiguous controls."
+    }
+  ]
+}
