@@ -25,7 +25,7 @@ Do not change gate authority, lifecycle behavior, product code, or live-runtime 
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +-30, across 1 file.
+Estimate net LOC change: +30, across 1 file.
 
 ## Acceptance criteria
 
@@ -36,7 +36,7 @@ Verified by: compare each gated stage's `Gate content` row with the completed te
 Verified by: backlog and validation prompts retain their own stage-specific evidence fields and do not request a chosen direction.
 
 **AC-3 — The template uses the compact LOC estimate form.**
-Verified by: the rendered template contains `Estimate net LOC change: +-{NNN}, across {M} files.`
+Verified by: the rendered template requests one explicit signed estimate, such as `+60` or `-25`, with tolerance stated separately.
 
 **AC-4 — Existing task files and gate lifecycle semantics remain unchanged.**
 Verified by: the diff is confined to `docs/dev/README.md` and workflow validation passes.
