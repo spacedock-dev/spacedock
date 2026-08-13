@@ -7,6 +7,18 @@ sprint: live-evidence-followups
 sprint-readiness: ready
 group: common-evidence
 id: rzrx7a00yxk9kkvy4mxcj8ep
+gates:
+    version: 1
+    records:
+        - id: gate:rzrx7a00yxk9kkvy4mxcj8ep:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:rzrx7a00yxk9kkvy4mxcj8ep-backlog-1
+              briefing:
+                id: briefing:rzrx7a00yxk9kkvy4mxcj8ep:backlog:attempt-1:revision-1
+                digest: sha256:d1824570ffe158b5c49568a68c6ee86694d16436a73112df5f4481c8fdb724d5
+                request-digest: sha256:39c1da392d035c198eb09647ab13e7ef3db540e6fabae2b802e672763979bf15
+                room-ref: ./fix-conflict-owner-handoff-xfail-grading/review/backlog/briefing-1
 ---
 
 ## Problem

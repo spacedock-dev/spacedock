@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rzrx7a00yxk9kkvy4mxcj8ep:backlog:attempt-1:revision-1",
+  "question": "Approve this XFAIL grading fix for ideation: a missing worker marker should grade as XFAIL (green for a bound target) instead of a hard lane FAIL. Approve, revise, or hold?",
+  "artifacts": [
+    {
+      "id": "artifact:rzrx7a00yxk9kkvy4mxcj8ep:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4a0caef7174db4a5ceca589d138d7cb00a6bc1fb/rzr-backlog-review.md",
+      "rev": "sha256:37f981030682b036133b21c630de9d0e7a6798a2f67bbee595a46f84d93ba832",
+      "mediaType": "text/markdown",
+      "summary": "Missing-marker failure routes through gradeLive as XFAIL, not t.Fatal as a lane FAIL."
+    }
+  ]
+}
