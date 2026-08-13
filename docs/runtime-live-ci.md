@@ -120,23 +120,26 @@ Without auth, the respective live suite skips locally (Claude/Codex/Pi), except 
 
 #### Subscription OAuth secrets
 
-The `CI-E2E-CODEX` Environment accepts `CODEX_AUTH_JSON`, the complete
-`~/.codex/auth.json` payload. The `CI-E2E-PI` Environment accepts
-`PI_OPENAI_CODEX_AUTH_JSON`, only the `openai-codex` object from Pi's
-`~/.pi/agent/auth.json`. Keep `OPENAI_API_KEY` in each Environment during the
-migration; the lane uses it only when its OAuth secret is absent.
+Both the `CI-E2E-CODEX` and `CI-E2E-PI` Environments accept `CODEX_AUTH_JSON`,
+the complete `~/.codex/auth.json` payload. Keep `OPENAI_API_KEY` in each
+Environment during the migration; the lane uses it only when its OAuth secret
+is absent.
 
-Create or rotate the secrets from a trusted workstation without printing them:
+Create or rotate the shared secret from a trusted workstation without printing
+it:
 
     gh secret set CODEX_AUTH_JSON --env CI-E2E-CODEX < "$HOME/.codex/auth.json"
-    jq -c '."openai-codex"' "$HOME/.pi/agent/auth.json" \
-      | gh secret set PI_OPENAI_CODEX_AUTH_JSON --env CI-E2E-PI
+    gh secret set CODEX_AUTH_JSON --env CI-E2E-PI < "$HOME/.codex/auth.json"
 
-The Codex value remains the full file object; the Pi value remains one OAuth
-record and the runner supplies the outer provider key. Refreshes stay in the
-isolated run home and are never written back to GitHub. Replace a revoked or
-expired secret from a trusted workstation. If OAuth is absent, `OPENAI_API_KEY`
-is used; a lane fails before launch only when both credentials are absent.
+For Codex the runner writes this object directly to the isolated
+`CODEX_HOME/auth.json`. For Pi it safely transforms `tokens.access_token`,
+`tokens.refresh_token`, `tokens.account_id`, and the access-token JWT `exp`
+into Pi's `openai-codex` record (`access`, `refresh`, `accountId`, and
+`expires`); the complete source payload is never passed to the Pi child.
+Refreshes stay in the isolated run home and are never written back to GitHub.
+Replace a revoked or expired secret from a trusted workstation. If OAuth is
+absent, `OPENAI_API_KEY` is used; a lane fails before launch only when both
+credentials are absent.
 
 For OAuth Pi uses `openai-codex/gpt-5.6-luna:max`; the API-key fallback uses
 `openai/gpt-5.6-luna:max`. The model ID and `max` thinking level are unchanged.
@@ -157,7 +160,7 @@ Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go te
 
 - Pull requests run `claude-sonnet-5` at maximum effort and `gpt-5.6-luna` at maximum effort.
 - An explicit `live_cadence=opus-pre-release` dispatch runs offline plus `claude-opus-4-8` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
-- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai/gpt-5.6-luna` at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests still run only Sonnet and Codex; Pi is optional and is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
+- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests still run only Sonnet and Codex; Pi is optional and is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 

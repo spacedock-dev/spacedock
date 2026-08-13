@@ -15,14 +15,12 @@ import (
 	"time"
 )
 
-const defaultPiLiveModel = "openai/gpt-5.6-luna:max"
-
 //spacedock:live-proof id=pi-front-door-subagent-dispatch lane=pi-live
 func TestLivePiFrontDoorSmoke(t *testing.T) {
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
 	binary := piSpacedockBinary(t, repo)
-	workflowRoot, stateRoot, entityPath, artifactDir, env := newPiLiveSmokeFixture(t, "pi-frontdoor-smoke", repo, piSubagentsRoot, binary)
+	workflowRoot, stateRoot, entityPath, artifactDir, env, model := newPiLiveSmokeFixture(t, "pi-frontdoor-smoke", repo, piSubagentsRoot, binary)
 
 	envelope := runPiSmokeDispatchBuild(t, binary, workflowRoot, entityPath)
 	prompt := piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath, envelope)
@@ -32,19 +30,19 @@ func TestLivePiFrontDoorSmoke(t *testing.T) {
 		"--plugin-dir", repo,
 		"--",
 		"--print",
-		"--model", piLiveModelName(),
+		"--model", model,
 		"--session-dir", filepath.Join(artifactDir, "sessions"),
 	)
 	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
 	assertPiEnsignBootContract(t, workflowRoot, envelope, artifactDir)
 }
 
-func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string) {
+func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string, model string) {
 	t.Helper()
 	piHome := t.TempDir()
 	sessionDir := t.TempDir()
 	cleanHome := t.TempDir()
-	decision := seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("PI_OPENAI_CODEX_AUTH_JSON"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
+	decision := seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("CODEX_AUTH_JSON"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 	// Patch 3 (validation attempt-1 correction): seed piHome/settings.json with
 	// the repo as a path package so pi-subagents' settings-package skill
 	// discovery (skills.ts collectSettingsPackageSkillPaths over
@@ -57,7 +55,11 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 		t.Fatal(err)
 	}
 	env = piLiveEnvForAuth(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot, os.Getenv("OPENAI_API_KEY"), decision.mode)
-	return workflowRoot, stateRoot, entityPath, artifactDir, env
+	model = decision.model
+	if override := os.Getenv("SPACEDOCK_PI_LIVE_CHILD_MODEL"); override != "" {
+		model = override
+	}
+	return workflowRoot, stateRoot, entityPath, artifactDir, env, model
 }
 
 func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []string, argv ...string) {
@@ -267,16 +269,6 @@ func piSubagentsPackageRoot(t *testing.T) string {
 		t.Fatalf("pi-subagents package extension not found at %s: %v; set PI_SUBAGENTS_PACKAGE_ROOT", p, err)
 	}
 	return p
-}
-
-func piLiveModelName() string {
-	if model := os.Getenv("SPACEDOCK_PI_LIVE_CHILD_MODEL"); model != "" {
-		return model
-	}
-	if strings.TrimSpace(os.Getenv("PI_OPENAI_CODEX_AUTH_JSON")) != "" {
-		return "openai-codex/gpt-5.6-luna:max"
-	}
-	return defaultPiLiveModel
 }
 
 func piLiveArtifactDir(t *testing.T, name string) string {
