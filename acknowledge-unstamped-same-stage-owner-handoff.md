@@ -3,7 +3,7 @@ title: Acknowledge unstamped same-stage owner handoff
 status: backlog
 score: "0.90"
 source: "n28 no-stamp validation finding, 2026-08-10"
-sprint: test-behavior-completeness
+sprint: live-evidence-followups
 sprint-readiness: defer
 group: common-evidence
 id: egsrea0tppbaphb61kc9wj5s
