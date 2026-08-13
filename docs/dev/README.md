@@ -252,6 +252,10 @@ Brief description of this task and what it aims to achieve.
 
 {What this task deliberately does not cover, so the boundary is explicit.}
 
+## Expected surface and tolerance
+
+Estimate net LOC change: {+NNN or -NNN}, across {M} files.
+
 ## Acceptance criteria
 
 Each AC names a property of the finished entity, not a stage action, and how it is verified.
