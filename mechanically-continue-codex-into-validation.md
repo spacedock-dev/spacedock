@@ -3,7 +3,7 @@ title: Mechanically continue Codex into validation
 status: backlog
 score: "0.90"
 source: "v8 post-n28 pending-only validation receipt, 2026-08-10"
-sprint: test-behavior-completeness
+sprint: live-evidence-followups
 sprint-readiness: ready
 group: common-product
 id: s9hn38t0gwhzknnmr5w4m9d6
