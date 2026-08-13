@@ -50,6 +50,8 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+started: 2026-08-13T22:55:16Z
+worktree: .worktrees/spacedock-ensign-fix-conflict-owner-handoff-xfail-grading
 ---
 
 ## Problem
