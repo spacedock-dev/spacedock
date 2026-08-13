@@ -495,3 +495,16 @@ The combined instruction-and-oracle correction produced a clean bound XPASS, and
 ### Summary
 
 HOLD: identical product/oracle bytes yielded a bound XPASS and an unbound semantic failure because Sonnet followed the immediate-commit instruction nondeterministically. The safety binding is restored, no further fix or test rerun was attempted, and the candidate remains held for a later disposition.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Reconstruct the minimal still-valid Sonnet gate-before-presentation candidate from exact origin/main, using pushed branch b50bd0665 only as read-only reference and preserving the test-product firewall.
+  Commit `1dd30d5e7` adds the immediate post-prepare commit rule and its existing focused oracle/control in two files; no instrumentation, hook, protocol, state store, or compaction behavior changed.
+- FAILED: Resolve the current-main conflict by behavior, retain the Sonnet binding until exact bound XPASS, and avoid changes to Codex, Pi, Opus, or another owner's reconciliation row.
+  Current main already isolates active ownership and the owner join passed, but the one exact bound Sonnet run graded XFAIL with `implementation-worker-not-dispatched`; owner `kky8pg7wc8xgb985epwss092` therefore remains bound and no other row changed.
+- DONE: Commit the frozen candidate and report focused checks plus the exact next bound/unbound live ladder without rerunning a stage-owned green check or spending more than the allowed final verification.
+  Focused lifecycle, registry, active-owner, format/diff, and one full `go test ./...` passed; race was not relevant to instruction/test-only bytes, and no second live run occurred.
+
+### Summary
+
+The current-main reconstruction is committed locally at `1dd30d5e7`; a normal push was rejected because the same remote branch intentionally remains at historical reference `b50bd0665`, and it was not overwritten. Next, run the exact bound Sonnet target once; only on bound XPASS remove the two kky Sonnet rows, commit, run registry and active-owner checks, then run the unchanged-behavior-byte target once unbound and require normal PASS.
