@@ -12,6 +12,7 @@ worktree:
 issue:
 pr:
 mod-block:
+sprint: pi-live-completeness
 ---
 
 Pi still needs a product repair for the `smallest-sufficient-mechanism` journey. Sonnet and Codex are complete. This task owns only the deferred Pi result.
