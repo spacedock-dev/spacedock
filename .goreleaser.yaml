@@ -26,9 +26,11 @@ builds:
     goos: &channel-goos
       - darwin
       - linux
+      - windows
     goarch: &channel-goarch
       - arm64
       - amd64
+      - 386
     # The version stamp the formula's `test do` asserts. Target is the
     # internal/cli.Version var (NOT main.Version — package main has no Version
     # symbol, so -X main.Version is a silent no-op). Version must be a var, not a
