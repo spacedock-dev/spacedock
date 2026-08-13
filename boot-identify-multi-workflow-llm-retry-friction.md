@@ -824,3 +824,47 @@ Validation independently reproduced the Codex launcher-repin correction, the fil
 ### Summary
 
 Cycle 11 closes the Sonnet-specific retry gap with the bounded contract correction the Captain approved: the already-canonical boot command is now a closed command shape, and the exact invented workflow-root-plus-fallback sequence is a durable negative. The local Sonnet journey passed the unchanged execution-ledger oracle, and commit `286b3677b` is pushed with no product status/schema or launcher protocol expansion.
+
+## Stage Report: validation (cycle 11)
+
+- DONE: Verify the exact two-file correction rejects the observed workflow-root-plus-fallback command while preserving the canonical once-only path.
+  Exact-head `TestMultiWorkflowBootAfterOnlyInvariant` passed its canonical one-identify baseline and rejected the planted Sonnet sequence of workflow-root identify plus canonical fallback; removing either exact cardinality or the workflow-specific-call guard would make that bad observation pass.
+- DONE: Verify the unchanged Sonnet multi-workflow oracle passed on exact head 286b3677b and no product launcher/status/schema behavior changed.
+  Fresh `claude-sonnet-5` live execution passed in 28.23s at `286b3677b`; `c293037ba..286b3677b` is only six added test lines and one contract-line replacement, with no `cmd/`, `internal/cli/`, `internal/status/`, schema, or command-reference path changed.
+- DONE: Verify cycle-11 scope, reused full/race evidence eligibility, and all acceptance criteria before delivery.
+  Fresh exact-head `go test ./...`, focused race, formatting, and diff checks passed; cycle-10 full-race evidence remains eligible because cycle 11 changes no Go product behavior, while a fresh full-race attempt failed only after the host temp volume reached `no space left on device` across unrelated TempDir users.
+
+### Acceptance Criteria Cross-check
+
+- AC-1 PASSED: cycle 10's native two-workflow fixture and the fresh exact-head full suite preserve the typed complete/terminal discovery envelope and count consistency; cycle 11 does not change status or schema bytes.
+- AC-2 PASSED: cycle 10's zero/one/many, taxonomy/local-PR, no-mutation, no-`gh`, and unflagged-boot proofs remain re-anchored by the fresh full suite; the correction touches no product launcher/status path.
+- AC-3 PASSED: the unchanged live Sonnet oracle ledgered one canonical identify, no workflow-root attempt, fallback, retry helper, deep boot, convergence, or mutation, and rendered the exact selection greeting.
+- AC-4 PASSED: the shipped `«state.boot»()` effect now closes the command shape to the canonical invocation exactly once, and the existing contract/full-suite checks preserve the terminal many-workflow greeting and operator action.
+
+### Semantic Adversarial Matrix
+
+- Identity/cardinality/order: canonical argv once passes; duplicate canonical, workflow-root only, and workflow-root followed by canonical fallback fail regardless of command order narration.
+- Adjacent lifecycle variants: status/helper retries, workflow deep boot, convergence, wrong or embedded greeting, missing workflow names, entity/git mutation, and convergence artifacts remain independently red-controlled.
+- Scope/hot path: the two-file correction adds no product I/O, allocation, parser, launcher, status, or schema work; the execution ledger remains bounded to observed process records.
+
+### Material Findings
+
+- None.
+
+### Deferred Risks
+
+- The fresh full-race rerun exhausted the validator host's temp volume (754 MiB free) and then failed unrelated TempDir/git-index writes. Promote only if the same tests fail after adequate temp capacity; focused exact-head race passes and the eligible cycle-10 full-race run covers unchanged product bytes.
+
+### Verification
+
+- `go test ./internal/ensigncycle -run '^TestMultiWorkflowBootAfterOnlyInvariant$' -count=1 -v` passed all positive and negative command/lifecycle observations.
+- `env -u SPACEDOCK_BIN SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=claude-sonnet-5 go test -tags live ./internal/ensigncycle -run '^TestLiveCommonMultiWorkflowBoot$' -count=1 -v` passed in 28.23s on exact head.
+- `go test ./...` passed; `go test -race ./internal/ensigncycle -run '^TestMultiWorkflowBootAfterOnlyInvariant$' -count=1` passed; `gofmt -w ./cmd ./internal`, `git diff --check`, exact-head/remote equality, and clean-tree checks passed.
+
+### Recommendation
+
+**PASSED.** Exact head `286b3677b` closes the observed Sonnet fallback mechanism, preserves the canonical once-only outcome and AC-1–4 product value, and has no material finding; delivery may proceed.
+
+### Summary
+
+Validation independently reproduced the two-file correction and the unchanged Sonnet journey at exact head, then re-ran the full non-race suite and relevant race oracle without changing candidate bytes. The host-capacity failure in a redundant full-race refresh does not invalidate cycle 10's eligible race evidence or any cycle-11 behavior proof.
