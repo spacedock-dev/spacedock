@@ -187,6 +187,75 @@ func successfulCodexCommands(jsonl string) []string {
 	return commands
 }
 
+// correlatedCodexCommands pairs the native invocation inputs from the one
+// isolated-home parent rollout with public completion results in execution
+// order. The native input avoids shell-display quote distortion; the public
+// event remains authoritative for completion and exit status.
+func correlatedCodexCommands(codexHome, publicStream string) ([]string, error) {
+	rollout, correlated, err := codexCorrelatedParentRollout(codexHome, publicStream)
+	if err != nil {
+		return nil, err
+	}
+	if !correlated {
+		return nil, fmt.Errorf("Codex public stream has no thread.started correlation")
+	}
+
+	var native []string
+	for _, line := range strings.Split(rollout, "\n") {
+		var event struct {
+			Payload struct {
+				Type  string `json:"type"`
+				Name  string `json:"name"`
+				Input string `json:"input"`
+			} `json:"payload"`
+		}
+		if json.Unmarshal([]byte(line), &event) == nil && event.Payload.Type == "custom_tool_call" &&
+			(event.Payload.Name == "exec" || event.Payload.Name == "functions.exec") {
+			command, err := nativeCodexCommand(event.Payload.Name, event.Payload.Input)
+			if err != nil {
+				return nil, err
+			}
+			native = append(native, command)
+		}
+	}
+
+	var public []codexCommandItem
+	for _, line := range strings.Split(publicStream, "\n") {
+		var event codexCommandItem
+		if json.Unmarshal([]byte(line), &event) == nil && event.Type == "item.completed" && event.Item.Type == "command_execution" {
+			public = append(public, event)
+		}
+	}
+	if len(native) == 0 || len(native) != len(public) {
+		return nil, fmt.Errorf("Codex native/public execution counts = %d/%d, want equal nonzero counts", len(native), len(public))
+	}
+
+	commands := make([]string, 0, len(native))
+	for i, result := range public {
+		if result.Item.Status == "completed" && result.Item.ExitCode != nil && *result.Item.ExitCode == 0 {
+			commands = append(commands, native[i])
+		}
+	}
+	return commands, nil
+}
+
+func nativeCodexCommand(toolName, input string) (string, error) {
+	if toolName == "functions.exec" {
+		return input, nil
+	}
+	const marker = "tools.exec_command({cmd:"
+	start := strings.Index(input, marker)
+	if start < 0 {
+		return "", fmt.Errorf("Codex native exec input has no exec_command cmd field")
+	}
+	var command string
+	decoder := json.NewDecoder(strings.NewReader(strings.TrimSpace(input[start+len(marker):])))
+	if err := decoder.Decode(&command); err != nil || command == "" {
+		return "", fmt.Errorf("decode Codex native exec command: %v", err)
+	}
+	return command, nil
+}
+
 // assertCodexFilingViaNew scans the `codex exec --json` transcript for the FO
 // filing the seed via `spacedock … new <slug>` and NOT via the manual flow. On
 // Codex there is no `Write` tool — the manual pair would be a `--next-id` command

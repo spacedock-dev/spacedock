@@ -37,11 +37,18 @@ func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, roo
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	return liveResult{finalMessage: result.finalMessage, stream: result.jsonl, commands: codexObservedCommands(result.jsonl), artifactDir: result.artifactDir, duration: result.duration}
+	commands := successfulCodexCommands(result.jsonl)
+	if scenario.name == "filing" {
+		commands, err = codexObservedCommands(d.home(), result.jsonl)
+		if err != nil {
+			t.Fatalf("observe correlated Codex filing commands: %v\nArtifacts: %s", err, result.artifactDir)
+		}
+	}
+	return liveResult{finalMessage: result.finalMessage, stream: result.jsonl, commands: commands, artifactDir: result.artifactDir, duration: result.duration}
 }
 
-func codexObservedCommands(jsonl string) []string {
-	return successfulCodexCommands(jsonl)
+func codexObservedCommands(codexHome, jsonl string) ([]string, error) {
+	return correlatedCodexCommands(codexHome, jsonl)
 }
 func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})

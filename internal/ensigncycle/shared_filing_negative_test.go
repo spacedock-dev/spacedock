@@ -2,6 +2,8 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -209,5 +211,58 @@ printf '"'%s\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire 
 	nextIDOnly := codexCommand("spacedock status --next-id --workflow-dir .")
 	if err := assertCodexFilingViaNew(nextIDOnly, slug); err == nil {
 		t.Fatal("expected a `--next-id`-only Codex stream to fail")
+	}
+}
+
+func TestCorrelatedCodexFilingPR679Ladder(t *testing.T) {
+	public := readFile(t, filepath.Join("testdata", "codex_filing_pr679", "public.jsonl"))
+	native := readFile(t, filepath.Join("testdata", "codex_filing_pr679", "parent-rollout.jsonl"))
+	failed := strings.Replace(public, `"exit_code":0`, `"exit_code":1`, 1)
+	mismatch := public + "\n" + codexCommand("spacedock status --boot")
+
+	tests := []struct {
+		name, rollout, stream string
+		copies                int
+		wantObserveErr        bool
+		wantGradeErr          bool
+	}{
+		{"exact PR 679 success", native, public, 1, false, false},
+		{"manual next-id and write", strings.Replace(native, `${SPACEDOCK_BIN:-spacedock}\\\" new wire-the-thing`, `spacedock status --next-id; printf body > wire-the-thing.md`, 1), public, 1, false, true},
+		{"failed atomic command", native, failed, 1, false, true},
+		{"wrong slug", strings.Replace(native, "new wire-the-thing", "new other-slug", 1), public, 1, false, true},
+		{"missing atomic command", strings.Replace(native, `${SPACEDOCK_BIN:-spacedock}\\\" new wire-the-thing`, `spacedock status --boot`, 1), public, 1, false, true},
+		{"missing correlation", native, public, 0, true, false},
+		{"ambiguous correlation", native, public, 2, true, false},
+		{"mismatched execution counts", native, mismatch, 1, true, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			home := t.TempDir()
+			for i := 0; i < tt.copies; i++ {
+				path := filepath.Join(home, "sessions", "2026", "08", string(rune('1'+i)), "rollout-pr679-thread.jsonl")
+				if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				writeFile(t, path, tt.rollout)
+			}
+			commands, err := correlatedCodexCommands(home, tt.stream)
+			if (err != nil) != tt.wantObserveErr {
+				t.Fatalf("observation error = %v, want error %v", err, tt.wantObserveErr)
+			}
+			if err != nil {
+				return
+			}
+			var observed []string
+			for _, command := range commands {
+				observed = append(observed, codexCommand(command))
+			}
+			if got := assertCodexFilingViaNew(strings.Join(observed, "\n"), filingSlug); (got != nil) != tt.wantGradeErr {
+				t.Fatalf("filing grade error = %v, want error %v; commands=%q", got, tt.wantGradeErr, commands)
+			}
+		})
+	}
+
+	if err := assertCodexFilingViaNew(public, filingSlug); err == nil {
+		t.Fatal("PR #679's distorted public display unexpectedly passed without native invocation input")
 	}
 }
