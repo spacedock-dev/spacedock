@@ -3,7 +3,7 @@ title: Repair Opus recorded gate lifecycle
 status: backlog
 score: "0.90"
 source: "xp6 recorded-gate retained evidence"
-sprint: test-behavior-completeness
+sprint: opus-live-completeness
 sprint-readiness: defer
 group: common-evidence
 id: 66dpwxgvsxt7cbxhmgvt3qp4
