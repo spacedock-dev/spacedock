@@ -213,3 +213,16 @@ Restore smallest-sufficient Codex behavior and keep any temporary expected failu
 ### Summary
 
 The exact run is product-correct; a Codex trace parser correlated unrelated narration with a much later dispatch. The design narrows attribution to ordered same-entity dispatch events, preserves true negatives, removes only the owning XFAIL after XPASS, and forbids a second parser tweak if revalidation fails.
+
+## Stage Report: implementation
+
+- DONE: Deliver the approved ordered same-entity narration/dispatch correlation and real dispatch-build engage recognition within the declared three-file surface and tolerance.
+  Commit c8108260b changes two approved files with 54 gross insertions and 41 net new lines; command engages require `dispatch build --entity-path .../<slug>.md` and consume only the latest narration.
+- DONE: Add paired falsifiable parser coverage proving the exact separated PR #679 shape passes while a true dispatch-framing justification still fails, without product instrumentation.
+  `TestCodexMechanismNarrationCorrelatesWithDispatch` passes the separated sequence and fails if its neutral intervening narration is removed; the focused parser group passes.
+- DONE: Commit the candidate and report focused results plus the frozen verification status without spending the one exact live revalidation reserved for the final candidate.
+  Candidate c8108260b is committed; `go test ./... -race` passed, the isolated timed-out durable subtest passed on rerun, and the exact live Codex command was not run.
+
+### Summary
+
+The Codex classifier now recognizes real dispatch-build engages and attributes gate narration only when the latest same-entity narration frames that dispatch. The candidate stays inside the approved test-only surface; validation retains the immutable artifact XPASS/unbind ladder and the sole live revalidation.
