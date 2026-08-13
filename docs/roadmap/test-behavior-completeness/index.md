@@ -15,6 +15,11 @@ runs as target-level XFAIL. A cell stays TODO only when its target cannot run.
 Each product repair starts from one committed XFAIL target. The same target then
 runs against the exact repair candidate before source removes the binding.
 
+## Canonical references
+
+- [Live CI policy](../../runtime-live-ci.md)
+- [Live CI registry](../../runtime-live-ci-registry.md)
+
 ## Membership
 
 The workflow query owns membership. The index does not own lifecycle state.
@@ -42,7 +47,7 @@ remain historical evidence and are not drivable. The explicit slug filter keeps
 - TODO remains only when the complete journey cannot run.
 - Every TODO and XFAIL names one active owner.
 - XFAIL accepts one or more typed semantic failures from its target.
-- XPASS fails until source removes the stale binding.
+- XPASS is green and emits an alert. Its binding remains until removal after exact proof.
 - Infrastructure failures remain FAIL.
 - Each product fix starts from a committed XFAIL baseline.
 - Each binding removal has exact-target, exact-candidate evidence.
