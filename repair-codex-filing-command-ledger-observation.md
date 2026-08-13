@@ -38,6 +38,17 @@ gates:
                 digest: sha256:52695675916f49dddf7ff6ef1ff802a349f6dbe73694f74d72523e35c9dddf28
                 request-digest: sha256:773d7f5796198796f52c789c4a5d551e46e604333ec1b278667dbff09b9c470c
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:ideation:1
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-13T22:29:12.030156Z"
+                decision: approve
+                reason: Captain approved the correlated native-input/public-exit-status observation design for implementation.
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-13T22:11:00Z
 ---
 
