@@ -246,3 +246,16 @@ The design keeps the existing isolated live runners and adds only two Environmen
 ### Summary
 
 Implemented subscription OAuth-first authentication for both live Codex and Pi paths while retaining API-key fallback and isolated homes. OAuth payloads are seeded only into 0600 auth files, API keys are omitted from OAuth child environments, and approval-gated workflows fail only when both credential inputs are absent. Validation included focused auth tests, the full offline ensigncycle package, and live-tag compilation.
+
+## Stage Report: validation
+
+- DONE: Independently verify Codex OAuth preference, API-key fallback, missing-input failure, isolated auth seeding, permissions, login/status behavior, and secret redaction.
+  Focused selectors/seeding/environment tests passed; isolated `codex login status` rejected a sentinel-bearing malformed auth file without echoing the sentinel; workflow preflight exits 1 with neither credential.
+- DONE: Independently verify Pi OAuth/API-key provider-model selection, auth wrapping, isolated-home preservation, permissions, and secret redaction.
+  `TestPiLiveAuthSelectionAndSeeding` and Pi environment-control tests passed, covering OAuth precedence, exact provider models, wrapped auth, 0600 mode, and API-key omission on OAuth.
+- DONE: Verify the workflow and runtime-live-CI documentation against the approved secret contracts, fallback behavior, refresh isolation, and model guidance; report any scope or tolerance deviation.
+  Workflow/docs inspection confirmed both Environment secret names, OR preflights, non-printing setup commands, isolated refresh guidance, fallback models, and the 9-file/246-insert implementation remains within the 8-file ±2 and 220–340-line tolerance.
+
+### Summary
+
+Offline focused tests, full tests, race tests, live-tag compilation, workflow checks, and formatting/diff checks passed with ambient Pi runtime markers removed. No OAuth-only live host run was attempted because all three local credential inputs were absent; the approval-gated workflow remains the required live evidence boundary. A deferred risk remains that direct Pi live-test invocation with required mode and an operator-local Pi auth file can use that local file, outside the CI preflight path and excluded local-auth scope.
