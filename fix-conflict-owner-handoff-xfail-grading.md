@@ -1,6 +1,6 @@
 ---
 title: Fix conflict-owner-handoff XFAIL grading for missing marker
-status: implementation
+status: validation
 source: "FO write-scope review, 2026-08-13: direct test edit routed through filing"
 score: 0.85
 sprint: live-evidence-followups
