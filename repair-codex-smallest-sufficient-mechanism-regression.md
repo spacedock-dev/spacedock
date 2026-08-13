@@ -18,6 +18,17 @@ gates:
                 digest: sha256:fbe0c77dc6680f348a746c335c9bb00b50dcf4bac9c42f0d6731a50433a01316
                 request-digest: sha256:56165dd9b5981ef952d2a5020d59ce18bbcaff0320dfe6946db4028d4964232c
                 room-ref: ./repair-codex-smallest-sufficient-mechanism-regression/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bfmczd31ydpp4stqjstf6xwx:backlog:1
+                briefing: briefing:bfmczd31ydpp4stqjstf6xwx:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-13T22:05:22.190377Z"
+                decision: approve
+                reason: Captain approved the scoped direction for ideation.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Codex completed both ready tasks but also created `roadmap-strategy.md`, violating the smallest-sufficient mechanism contract.
