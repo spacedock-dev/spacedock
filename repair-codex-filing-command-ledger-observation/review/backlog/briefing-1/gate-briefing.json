@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:backlog:attempt-1:revision-1",
+  "question": "Approve this task for ideation so the Codex filing command ledger can observe the existing atomic spacedock new behavior without product instrumentation?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/24f6926fe89adb8ad35f5016b6f6e1ac344bbf9a/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:be73495b5103b3a4c5cc0feb5be54b384e648e1643e2975832c67095ac3e3db5",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval for ideation: PR #679 proved filing succeeds but the public evidence boundary missed the required atomic command; the task preserves successful behavior and confines the repair to valid host evidence."
+    }
+  ]
+}

@@ -6,6 +6,18 @@ sprint: test-behavior-completeness
 sprint-readiness: ready
 score: 0.9
 id: 6ker7h25hj86983e5ef71ahm
+gates:
+    version: 1
+    records:
+        - id: gate:6ker7h25hj86983e5ef71ahm:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:6ker7h25hj86983e5ef71ahm-backlog-1
+              briefing:
+                id: briefing:6ker7h25hj86983e5ef71ahm:backlog:attempt-1:revision-1
+                digest: sha256:97242c2367a7b4e96084790b7765170b01ec932b6a9873d73c5233c694dc79cc
+                request-digest: sha256:96f4def00a71e0db7e1e41b3c0d0e4405e2deed271501dcdb2b4ad62429f82b3
+                room-ref: ./repair-codex-filing-command-ledger-observation/review/backlog/briefing-1
 ---
 
 Codex created `wire-the-thing` correctly, but the filing oracle reported no `spacedock new` invocation.
