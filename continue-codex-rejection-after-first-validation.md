@@ -1125,3 +1125,30 @@ The unbound run passed with no semantic code. The change uses the public feedbac
 ### Summary
 
 The exact pushed candidate completes the ordinary Codex rejection-to-correction lifecycle and stops nonterminal at one fresh open validation gate. The validation recommendation is PASSED; no Material finding remains.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Rebase the clean candidate onto exact current `origin/main` and stop on semantic conflict.
+  The clean candidate rebased without conflict onto `65935a4b05dfee6232576c84d59347f93256b38b`; the rebased DVD commits are `d865e8b2a`, `58c258b94`, and `437d20dc6`.
+- DONE: Remove `-failfast` only from the required Sonnet and Codex promoted `TestLiveCommon` commands; leave Pi unchanged.
+  Commit `d559bc07c` removes the flag from the Claude/Sonnet and Codex commands in `.github/workflows/runtime-live-e2e.yml`; the Pi command retains it.
+- DONE: Update nearby comments to state every journey runs and any failure still makes the job red.
+  The Claude and Codex step comments now state full journey execution; both retain `gotestsum`'s underlying failing `go test` exit code.
+- DONE: Add the smallest workflow/contract fixture that fails if Sonnet or Codex regain `-failfast` while preserving Pi.
+  `TestRuntimeLiveCommonFailFastPolicy` failed for both promoted commands before the edit and passes only when Claude/Codex omit the flag and Pi retains it.
+- DONE: Run focused workflow tests, formatting, and diff checks.
+  Contractlint reconciliation, timeout, and fail-fast policy tests passed; the release workflow guard passed; `gofmt -w ./cmd ./internal` and `git diff --check` passed.
+- DONE: Run `go test ./...` and `go test ./... -race` because workflow and test bytes changed.
+  Both suites passed; `internal/ensigncycle` completed in 261.715s normally and 291.610s with the race detector.
+- DONE: Adversarially audit the CI/release surface in a detached throwaway checkout.
+  Reintroducing `-failfast` failed the guard for Claude and Codex; separately removing Pi's flag failed its retention check. The throwaway checkout was removed.
+- SKIPPED: Run a new local live journey before CI.
+  The assignment explicitly prohibited a local live run at this stage; retained DVD evidence remains the bound XPASS at `a1edfaec6` and unbound PASS at `797aab1ff`.
+- DONE: Retain the exact DVD XPASS/PASS evidence.
+  XPASS artifact `/tmp/dvd-bound-xpass-final.Nu1AiM` ran in 452.94s; PASS artifact `/tmp/dvd-unbound-pass-final.QK4RN9` ran in 438.58s.
+- DONE: Commit and push the exact rebased candidate without starting PR CI or merge work.
+  Local and remote code heads match `d559bc07c2f2696b7e1dac8bcb9eef405f6130b5`; HTTPS lacked workflow scope, so the exact force-with-lease succeeded through the configured SSH identity. No CI or merge action was started.
+
+### Summary
+
+Sonnet and Codex now run every promoted common journey, so an earlier red result cannot suppress DVD evidence; any failing journey still makes its job red. Pi keeps its prior fail-fast policy, and the exact pushed DVD candidate retains the already-proven bound XPASS and unbound PASS evidence without another local live run.
