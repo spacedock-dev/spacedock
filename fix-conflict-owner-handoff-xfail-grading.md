@@ -1,6 +1,6 @@
 ---
 title: Fix conflict-owner-handoff XFAIL grading for missing marker
-status: backlog
+status: ideation
 source: "FO write-scope review, 2026-08-13: direct test edit routed through filing"
 score: 0.85
 sprint: live-evidence-followups
@@ -29,7 +29,7 @@ gates:
                 reason: Captain approved backlog gate; advance to ideation for the XFAIL grading fix.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
