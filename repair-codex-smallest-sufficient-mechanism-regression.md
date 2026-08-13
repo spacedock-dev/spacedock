@@ -50,6 +50,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-13T22:06:12Z
+worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 ---
 
 ## Problem statement
