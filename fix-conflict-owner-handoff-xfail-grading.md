@@ -138,3 +138,13 @@ fixture file the test itself wrote, so missing there is a real setup failure).
   runtime-specific repair entities.
 - Filed by the FO after a write-scope review caught direct test edits; the
   worker re-derives the edit from this spec.
+
+## Stage Report: implementation
+
+- DONE: swapped `readFile(t, fixture.marker)` to `readFileAllowMissing(fixture.marker)` in `assertConflictOwnerHandoff` (`internal/ensigncycle/conflict_owner_handoff_live_test.go`), adding a `got == ""` branch returning `fmt.Errorf("worker marker missing, want runtime-worker-owner")`; the present-but-wrong `worker marker = %q` path is byte-unchanged and `readFile(t, fixture.entity)` is untouched.
+- DONE: ran `gofmt -w internal/ensigncycle`, `go vet -tags live ./internal/ensigncycle`, `go build -tags live ./internal/ensigncycle`, and `go test -run 'ConflictOwner|GradeLive|LiveGrade|KeepMovingDurable' ./internal/ensigncycle`; all pass.
+- DONE: did not touch any `liveXFail(...)` binding, any other assert, or any CI lane; fe7/bqy AC-3 preserved.
+
+### Summary
+
+One-line change to the shared assert: missing `owner-handoff.marker` now returns an error (`worker marker missing, want runtime-worker-owner`) via `readFileAllowMissing` instead of `t.Fatal`, so `gradeLive` can grade the no-handoff mode as XFAIL on bound targets. Offline checks (`gofmt`, `go vet -tags live`, `go build -tags live`, and the `ConflictOwner|GradeLive|LiveGrade|KeepMovingDurable` tests) all pass.
