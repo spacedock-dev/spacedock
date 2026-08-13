@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:32vshm0h2h04gs7hzcf315g0:validation:attempt-5:revision-1",
+  "question": "Approve the bounded once-only boot correction for replacement PR delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:32vshm0h2h04gs7hzcf315g0:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/28429b30238284a42da26a18aab908845e2c3662/boot-identify-multi-workflow-llm-retry-friction.md",
+      "rev": "sha256:044c9d2237f33207097cb8dacfa43552f93d6054b5db86bbe21b3db68af9a9f8",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-11 validation passed exact head 286b3677b. The two-file eight-line correction rejects the observed Sonnet workflow-root fallback, exact local Sonnet passed, and no launcher/status/schema behavior changed."
+    }
+  ]
+}
