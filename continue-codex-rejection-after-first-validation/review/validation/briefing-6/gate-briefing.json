@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-6:revision-1",
+  "question": "Approve the validated DVD correction and non-failfast promoted live policy for PR #679 rerun?",
+  "artifacts": [
+    {
+      "id": "artifact:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-6:revision-1:item-1",
+      "uri": "git-root://state/bf803a3175039db2f3778618d8204f4c34f70324/continue-codex-rejection-after-first-validation.md",
+      "rev": "sha256:512ab2dbfe752858482c18fe34dea5475820f3b97d8431da78ff217149a4d024",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed exact head d559bc07c. DVD retains bound XPASS and unbound PASS evidence; Sonnet and Codex now run every promoted journey without failfast while Pi remains unchanged."
+    }
+  ]
+}

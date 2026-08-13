@@ -148,6 +148,12 @@ gates:
               application:
                 target-stage: done
                 state: consumed
+            - id: gate-attempt:dvddbpsf4tdt3yjw1yjyp14k-validation-6
+              briefing:
+                id: briefing:dvddbpsf4tdt3yjw1yjyp14k:validation:attempt-6:revision-1
+                digest: sha256:683a56fb831d014587eb7fb213ff8afe3e1f1faaa532dbd911589103994bded1
+                request-digest: sha256:b73e8c4cb92f86198251c573747b371cc5bb6e4457e59beeb8056fded79ec79e
+                room-ref: ./continue-codex-rejection-after-first-validation/review/validation/briefing-6
 ---
 
 ## Problem
