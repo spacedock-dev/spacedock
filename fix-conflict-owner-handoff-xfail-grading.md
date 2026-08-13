@@ -3,7 +3,7 @@ title: Fix conflict-owner-handoff XFAIL grading for missing marker
 status: backlog
 source: "FO write-scope review, 2026-08-13: direct test edit routed through filing"
 score: 0.85
-sprint: test-behavior-completeness
+sprint: live-evidence-followups
 sprint-readiness: ready
 group: common-evidence
 id: rzrx7a00yxk9kkvy4mxcj8ep
