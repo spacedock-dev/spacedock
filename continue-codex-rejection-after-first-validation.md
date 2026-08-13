@@ -11,7 +11,7 @@ sprint-readiness: ready
 group: common-evidence
 worktree: .worktrees/spacedock-ensign-continue-codex-rejection-after-first-validation
 issue:
-pr: "#679"
+pr: pr-merge:679
 mod-block:
 id: dvddbpsf4tdt3yjw1yjyp14k
 gates:
