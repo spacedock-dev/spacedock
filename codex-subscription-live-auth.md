@@ -281,3 +281,16 @@ Implemented subscription OAuth-first authentication for both live Codex and Pi p
 ### Summary
 
 Offline focused tests, full tests, race tests, live-tag compilation, workflow checks, and formatting/diff checks passed with ambient Pi runtime markers removed. No OAuth-only live host run was attempted because all three local credential inputs were absent; the approval-gated workflow remains the required live evidence boundary. A deferred risk remains that direct Pi live-test invocation with required mode and an operator-local Pi auth file can use that local file, outside the CI preflight path and excluded local-auth scope.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify Codex OAuth preference, API-key fallback, missing-input failure, isolated auth seeding, permissions, login/status behavior, and secret redaction.
+  Existing Codex focused tests and the corrected workflow contract passed; the job-level `CODEX_HOME: ${{ runner.temp }}` was removed and initialized in the authentication step.
+- DONE: Independently verify Pi OAuth/API-key provider-model selection, auth wrapping, isolated-home preservation, permissions, and secret redaction.
+  New Pi fixtures transform complete Codex credentials into the `openai-codex` record using access-token expiry, reject incomplete credentials, assert 0600 output, and select `openai-codex/...` versus `openai/...` from the actual branch.
+- DONE: Verify the workflow and runtime-live-CI documentation against the approved secret contracts, fallback behavior, refresh isolation, and model guidance; report any scope or tolerance deviation.
+  Workflow/release assertions, Ruby YAML parsing, full sanitized suite, focused race suite, live-tag compilation, formatting, and diff checks passed; the correction is committed as `2e709553d` and remains within the approved scope.
+
+### Summary
+
+This validation cycle corrected Pi to consume the shared `CODEX_AUTH_JSON` source, safely derive its provider record, scrub the source/API key boundary, and remove the hardcoded Pi model override. `env -u CODEX_THREAD_ID -u CLAUDECODE -u PI_CODING_AGENT go test ./...` passed; the unsanitized run's inherited Pi marker failure is not attributable to this correction. Branch push was attempted but GitHub rejected it because the OAuth token lacks workflow scope; the commit is present locally for a workflow-capable push.
