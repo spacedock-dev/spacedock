@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pnc09c4hz4wbzyegh3pnpb1d:backlog:attempt-1:revision-1",
+  "question": "Approve this Pi-harness enablement bundle for ideation: widen t.Parallel() to pi, mirror models.json into the isolated home, and make the per-run timeout cap overridable. Approve, revise, or hold?",
+  "artifacts": [
+    {
+      "id": "artifact:pnc09c4hz4wbzyegh3pnpb1d:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f342e62cf715698b8d0ba70fcd9b97090a5ab194/pnc-backlog-review.md",
+      "rev": "sha256:becd0950b7bc0d0bb693fd0fea15d3cabe951962fc50a59e69c203b375faad1e",
+      "mediaType": "text/markdown",
+      "summary": "Pi harness: real parallelism, custom-provider model resolution, and a slow-model timeout cap."
+    }
+  ]
+}

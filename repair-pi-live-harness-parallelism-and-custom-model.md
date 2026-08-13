@@ -7,6 +7,18 @@ sprint: pi-ux
 sprint-readiness: ready
 group: pi-live-followup
 id: pnc09c4hz4wbzyegh3pnpb1d
+gates:
+    version: 1
+    records:
+        - id: gate:pnc09c4hz4wbzyegh3pnpb1d:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:pnc09c4hz4wbzyegh3pnpb1d-backlog-1
+              briefing:
+                id: briefing:pnc09c4hz4wbzyegh3pnpb1d:backlog:attempt-1:revision-1
+                digest: sha256:54bc1775cf5a638d29455dd68415d04c558715bb1f6009f0e6d93964c2e55b5f
+                request-digest: sha256:f166ecca01e94cb9f9f8861a808d8c9c2ac27140ac9080f31b7ee45578430e2d
+                room-ref: ./repair-pi-live-harness-parallelism-and-custom-model/review/backlog/briefing-1
 ---
 
 ## Problem
