@@ -1,10 +1,10 @@
 ---
 title: Continue Codex rejection after the first validation
-status: validation
+status: done
 source: "Staff review M2 for test-behavior-completeness, 2026-08-09"
 started: 2026-08-09T20:36:16Z
-completed:
-verdict:
+completed: 2026-08-13T19:17:11Z
+verdict: PASSED
 score: 0.9
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -164,7 +164,8 @@ gates:
                 reason: Captain directed removal of failfast, DVD rerun, and merge when the targeted rejection-flow journey is green; other failures must be tracked separately.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-13T19:17:12Z
 ---
 
 ## Problem
