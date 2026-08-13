@@ -39,6 +39,17 @@ gates:
                 digest: sha256:084c62d6330371ecfaea2b39f47d880218695a675132524dd65133f1b3aae892
                 request-digest: sha256:fa188aa9ab7a0b1ae3bcf22039291ee1f71fc33e55b716ab208084f6eaf83361
                 room-ref: ./fix-conflict-owner-handoff-xfail-grading/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rzrx7a00yxk9kkvy4mxcj8ep:ideation:1
+                briefing: briefing:rzrx7a00yxk9kkvy4mxcj8ep:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-13T22:54:23.992116Z"
+                decision: approve
+                reason: Captain approved ideation gate; dispatch implementation for the one-line XFAIL grading fix.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
