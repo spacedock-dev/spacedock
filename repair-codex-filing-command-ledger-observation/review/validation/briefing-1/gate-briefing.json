@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-1:revision-1",
+  "question": "Approve the validated filing observer for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6bccb57224afe2a8cd2e750d6038d3b3dcc3c303/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:01871ca28d566320778074ee945e5d6d49054483297a21fb879b7a3893eb2521",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: exact PR #679 and fresh live evidence pass, six adjacent failure cases remain closed, full/race checks and detached audit pass, and the captain-approved six-file test-only surface changes no product behavior or other owner row."
+    }
+  ]
+}
