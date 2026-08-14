@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: ideation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -92,7 +92,7 @@ gates:
                 reason: Captain selected the existing correlated thread-log direction; the revised design preserves supported atomic-path evidence, rejects the known counterfeits, removes the forgeable ledger, and stays within five test files.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
