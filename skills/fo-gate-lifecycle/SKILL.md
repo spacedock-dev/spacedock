@@ -25,8 +25,6 @@ Run this sequence once and in this order:
 4. Load spacedock:present-gate and present once from that structured evidence.
 ```
 
-After successful prepare, run step 2 immediately in the next host event; no status, discovery, read, or other command may intervene before the commit.
-
 **Cold report candidate.** Structurally review the path-resolved entity's latest exact-stage report/checklist and commit. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and no prepare, mutation, presentation, idle, or repeat-next. Otherwise invoke prepare once; nonzero/mismatch stops with its exact error and no retry or `gate record --briefing`.
 Require prepare to emit `room`, `briefing`, `digest`, and `state=open`; never reconstruct the room. On nonzero commit, structured-read failure, or stage mismatch, stop before presentation or any later lifecycle effect. Use checklist text/ranges and AC citations to cross-check the gate; do not full-read/grep the entity or project boot after prepare or presentation. No conn: ask and stop open. Explicit conn: immediately record and consume; never final after presentation.
 

@@ -261,7 +261,7 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	} else if err := assert(before, after, expected); err != nil {
 		semantic = append(semantic, &gradedErr{code: "gate-not-held", msg: err.Error()})
 	}
-	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog), scenario.name == "default-headless-gate-stop"))
+	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog)))
 	if scenario.name == "default-headless-gate-stop" {
 		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after))
 	}
