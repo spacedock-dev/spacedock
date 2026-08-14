@@ -79,65 +79,73 @@ pr:
 
 PR #679 run `31728107636`, Codex job `94541783359`, created `wire-the-thing.md` atomically with ID `001`, but `TestLiveCommonFiling` reported `filing command log has no spacedock new wire-the-thing invocation`. The outer `codex exec --json` stream rendered the successful command as a shell-display string with quote seams around `${SPACEDOCK_BIN:-spacedock}`; `commandFilesViaNew` could not recognize that display even though `item.completed` recorded exit code 0 and stdout recorded `created: .../wire-the-thing.md id=001`.
 
-This is an observation defect in the Codex live-test adapter, not a product filing defect. The runner already owns an isolated `CODEX_HOME`, and exact `origin/main` already correlates its public `thread.started` ID to one parent rollout under `CODEX_HOME/sessions/**` for native lifecycle evidence. That public host session JSONL is the authoritative source for the pre-rendered execution input; the outer stream remains authoritative for completion and exit status.
+This is an observation defect in the Codex live-test adapter, not a product filing defect. Candidate `77a71f8e03cc2f2280ad69d47be58c36c4c28a74` is frozen after validation proved that parsing native JavaScript is not execution evidence: an unrelated successful executed call plus an unreachable dot-form `tools.exec_command({cmd:"spacedock new wire-the-thing"})` passed the ledger.
+
+The complete existing chain is non-injective. The correlated parent rollout proves which `functions.exec` payload Codex submitted; it does not prove which branch inside arbitrary JavaScript ran. The public `item.completed` proves one rendered shell command completed and carries its exit status/output, but its display is deliberately lossy. The final entity proves that some writer produced valid bytes, and the fixture Git history proves only the initial checkout plus later commits (the `new` operation itself does not commit). Even together, those observables cannot distinguish the detached counterfeit from a real atomic invocation without trusting either a JavaScript parser, a shell-display parser, or forgeable stdout. The cheapest execution-grounded discriminator is therefore a test-local launcher shim that records the real `spacedock` argv and exit code before returning control to the host.
 
 ## Risk spike
 
-Before proposing a change, a detached throwaway checkout at exact `origin/main` `177eb454011001a296f1f09bc2889d3436df0a54` ran a focused fixture containing PR #679 artifact `9194350789`'s exact successful `item_9`. `successfulCodexCommands` decoded one exit-0 command, then `assertCodexFilingViaNew` failed with the production error because the rendered command was `/bin/bash -lc ... | \""'${SPACEDOCK_BIN:-spacedock}" new wire-the-thing'`. This reproduces the false negative without modifying product code or invoking the created entity.
+No new spike is needed and no live run was spent. Repository history already exercises the riskiest mechanism: commit `603af41123d1509d130d952eb169d76c7215e8f0` contains a test-local NUL-delimited argv ledger whose negative control echoes command-shaped text without producing a record, and commit `c293037ba38ab0b15e385116c1e57ec103f64b81` contains a Codex front-door probe showing the shim remains bound after the launcher repins `SPACEDOCK_BIN`. These are mechanism precedents only; implementation will not absorb their boot, Claude, Pi, or other-owner changes.
 
-The riskiest mechanism is already proven on this base: `codexNativeLifecycleStream` correlates exactly one public thread ID to exactly one isolated-home parent rollout and fails closed on missing or ambiguous rollouts. Implementation extends that established evidence path; it does not introduce a new host hook or state store.
+The detached counterfeit is the first implementation test: its unrelated successful public command and unreachable native dot-form filing text must produce zero successful launcher-ledger entries. It fails the frozen candidate and passes only when observation is grounded at executable entry.
 
 ## Proposed approach
 
-For Codex live runs only, build the filing command ledger from the correlated parent rollout's native execution inputs and the matching completed outer-stream execution results. Pair execution observations in order within the single correlated thread, retain only calls whose public `item.completed` status is `completed` with exit code 0, and feed the native input text into the existing `assertFilingCommands` ladder. Fail closed when correlation or pairing is missing or ambiguous; never fall back to treating narration, stdout, the durable entity, or a malformed display string as command evidence.
+For the Codex `filing` journey only, bind both `SPACEDOCK_BIN` and the front of `PATH` to a test-local `spacedock` shim. The shim writes one atomic, NUL-delimited record containing exact argv and the real binary's exit code, forwards stdin/stdout/stderr unchanged, and exits with the real code. The Codex host shim reapplies this binding after the Spacedock front door repins `SPACEDOCK_BIN`. After the run, grade only completed exit-0 launcher records: `new <slug>` or `status --new <slug>` passes; any executed `status --next-id`, wrong slug, missing invocation, or nonzero create fails. The existing final-file assertion remains the independent result check.
 
-This native-input observation serves AC-1. The simplest alternative was another `commandFilesViaNew` quote-shape regex, but PR #679 followed earlier parser corrections for captured-launcher display forms; adding another shell-display exception spends the correction budget without making the ledger authoritative. The other alternative was a binary wrapper/logger, but it would add test instrumentation to the product execution path and violate the test-product firewall.
+This execution ledger serves AC-1 and AC-2. The simplest alternative is the existing public completion plus exact `created:` receipt and on-disk entity; it is insufficient because a shell command can print that receipt and hand-write identical bytes. The native/public correlation alternative is insufficient because the detached counterfeit proves call occurrence is not call execution. A full shell parser is larger and still cannot prove which conditional branch ran. The shim is the smallest observable at the boundary where execution becomes real.
 
-Keep the command grammar unchanged: the existing atomic-create recognizer still requires a resolved Spacedock launcher, `new`/`--new`, and the requested slug in one command. Keep the negative semantics unchanged: `--next-id` remains manual-flow evidence, nonzero execution is excluded, and narration or an unrelated slug cannot satisfy filing.
+Product bytes remain unchanged, and no product hook, protocol, or stored format is introduced. Runtime execution bytes cannot remain literally untouched: without one test-only executable boundary, the available traces cannot prove actual invocation. The allowed semantic change is therefore narrowly expanded from passive Codex trace observation to Codex filing-test launcher instrumentation; real `spacedock` argv, stdin, stdout, stderr, exit code, CLI grammar, and filesystem behavior remain unchanged.
 
 ## Verification ladder
 
-One table-driven offline fixture exercises the same observation-to-grade path as the live Codex adapter:
+The focused falsifier matrix is exact and does not spend a model run:
 
-1. A correlated native `${SPACEDOCK_BIN:-spacedock} new wire-the-thing` call paired with the exact PR #679 exit-0 public item passes.
-2. A `--next-id` plus shell write is manual and fails.
-3. The correct native `new wire-the-thing` paired with exit code 1 fails.
-4. An exit-0 `new other-slug` fails.
-5. A stream with no atomic-create command fails.
-6. Missing/ambiguous parent rollout or mismatched native/public execution counts fails closed.
+1. **Bound positive:** `"$SPACEDOCK_BIN" new wire-the-thing` reaches the shim, the real stub exits 0, exact argv is recorded, and grading passes.
+2. **PATH positive:** direct `spacedock status --new wire-the-thing` reaches the same shim with exit 0 and passes.
+3. **Detached counterfeit:** unrelated executed `echo` plus unreachable dot-form filing text, a forged public exit-0 completion, and even a landed entity produce no launcher record and fail.
+4. **Manual/non-atomic:** `status --next-id` plus a direct file write records no successful create and fails; `--next-id` also fails when a successful create is present.
+5. **Failed create:** exact `new wire-the-thing` with real exit 1 fails even if the file or public receipt is fabricated afterward.
+6. **Wrong/missing create:** exit-0 `new other-slug`, narration only, and no ledger file fail.
+7. **Ledger integrity:** truncated, duplicate-terminal, unknown-tool, or malformed NUL records fail closed; concurrent records are independent atomic files.
+8. **Front-door binding:** a live-tagged, no-model shell probe confirms the Codex launcher rebinds `SPACEDOCK_BIN` to the ledger shim after front-door pinning.
 
-The positive case fails if the implementation continues grading the distorted display string. Each negative case fails if the observer invents success, ignores exit status, weakens slug binding, or accepts absence/manual creation.
+Implementation runs rungs 1-8, focused filing tests, live-tag compile, `gofmt`, full, and race. Final validation alone spends one exact `TestLiveCommonFiling/codex` run on frozen bytes; it must show one exit-0 argv record for `new wire-the-thing`, the exact entity on disk, and no `--next-id` record. Replacing real execution with the detached counterfeit makes AC-1 fail; accepting any rung 4-7 makes AC-2 fail.
 
 ## Out of scope
 
-- No product hook, command, protocol, state store, lifecycle guard, global hook, or replacement for the compaction `SessionStart` hook.
+- No product hook, command, protocol, state store, lifecycle guard, global hook, or replacement for the compaction `SessionStart` hook; the ledger exists only under `t.TempDir()` for the Codex filing journey.
 - No change to `spacedock new`, command grammar, stored entity formats, write authority, or product runtime behavior.
 - No work on Pi, Opus, rejection flow, supporting-evidence, mechanically-continue-Codex validation, another owner's target binding, or reconciliation row.
 - PR #682's rejection-flow failure remains `live-evidence-followups` ownership.
 
 ## Acceptance criteria
 
-- **AC-1 (VALUE):** The exact PR #679 successful filing shape produces one valid atomic `wire-the-thing` ledger observation from correlated public Codex host evidence, and the filing grade passes. Verified by the focused PR #679 fixture through the live adapter's observation function; replacing native input with the outer display makes it fail.
-- **AC-2:** Manual, non-atomic, failed, wrong-slug, missing-command, and ambiguous-correlation cases remain failures. Verified by the six-rung table above through the same observation and grading path.
-- **AC-3:** The delivered diff changes Codex test observation only; command grammar, stored formats, authority, and runtime product behavior are unchanged. Verified by a base-to-candidate changed-path check limited to `_test.go` and `testdata`, plus `go test ./...` and `go test ./... -race`.
+- **AC-1 (VALUE):** A real exit-0 `spacedock new wire-the-thing` execution produces exactly one successful argv-ledger observation and the expected on-disk entity, while the detached unrelated-command/unreachable-call counterfeit produces none. Verified by focused matrix rungs 1-3 and the sole exact Codex filing live run; replacing executable entry with native JavaScript occurrence makes the counterfeit pass and the test fail.
+- **AC-2:** Bound and PATH-resolved aliases pass only on real exit-0 execution; manual/non-atomic, failed, wrong-slug, missing, malformed-ledger, duplicate-terminal, and `--next-id` cases remain failures. Verified by focused matrix rungs 2 and 4-8 through the same ledger reader and filing grade.
+- **AC-3:** The delivered diff changes only Codex filing-test observation: product bytes, CLI grammar, stored formats, authority, other runtimes, and non-filing journeys are unchanged. Verified by a base-to-candidate changed-path check limited to the named `_test.go` surface, plus live-tag compile, `go test ./...`, and `go test ./... -race`.
 
 ## Test plan
 
-- Add a default-tag offline fixture for the PR #679 outer event plus a correlated native rollout event. Run the focused test first; cost is milliseconds and no model/network spend.
-- Add table-driven positive and red controls for success pairing, manual flow, failed execution, wrong slug, missing command, and correlation ambiguity. These are fixture tests over public Codex JSONL shapes.
-- Run the exact targeted local Codex filing live test once on the final candidate as the single revalidation. It must create the entity and pass the ledger assertion; do not spend a second live correction on another display parser.
+- Add a default-tag Codex filing ledger helper and table-driven tests for the eight rungs above. Tests execute a local stub through the shim, so they prove argv/exit recording rather than inspect prose or arbitrary JavaScript.
+- Add a live-tagged no-model front-door binding test. It fails if launcher pinning bypasses either `SPACEDOCK_BIN` or PATH instrumentation.
+- Remove the PR #679 native/public parser fixtures and structural JavaScript decoder; retain the detached counterfeit as the negative control expressed against the executable ledger.
+- Run the exact targeted local Codex filing live test once on the final candidate as the single revalidation. Do not spend another live correction on trace parsing.
 - Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` before delivery.
 
 ## Expected surface and semantic budget
 
-Expected baseline: four test-only files, about 110 insertions and at most 15 deletions:
+Expected implementation delta from frozen `77a71f8e0`: **-034 net LOC across 7 files** (about 190 insertions and 224 deletions):
 
-- `internal/ensigncycle/codex_live_runner_test.go` — source the Codex command ledger from correlated host evidence.
-- `internal/ensigncycle/shared_filing_test.go` — bounded native/public execution pairing and fail-closed errors.
-- `internal/ensigncycle/shared_filing_negative_test.go` — focused ladder assertions.
-- `internal/ensigncycle/testdata/codex_filing_pr679/*.jsonl` — minimal public and parent-rollout fixtures carrying the reproduced shape.
+- `internal/ensigncycle/codex_filing_invocation_ledger_test.go` — new Codex-only argv/exit ledger and fail-closed reader.
+- `internal/ensigncycle/codex_live_runner_test.go` — bind the filing ledger across front-door pinning and grade its successful records.
+- `internal/ensigncycle/shared_filing_negative_test.go` — replace native/parser ladders with the eight execution-grounded rungs.
+- `internal/ensigncycle/shared_filing_test.go` — remove correlated-input and JavaScript decoder additions; retain shared command grammar.
+- `internal/ensigncycle/claude_runtime_helpers_test.go` — restore the pre-task native-lifecycle helper boundary.
+- `internal/ensigncycle/testdata/codex_filing_pr679/public.jsonl` — remove parser-only fixture.
+- `internal/ensigncycle/testdata/codex_filing_pr679/parent-rollout.jsonl` — remove parser-only fixture.
 
-Tolerance: one additional test-helper/fixture file and up to 60 additional insertions if separating dialect decoding makes the evidence path clearer; zero non-test product files. Allowed semantic change: Codex live-test command observation uses correlated native invocation input while preserving public exit status. No allowed change to CLI output, command grammar, stored formats, write authority, product runtime behavior, Claude/Pi grading, or documentation; no site doc diff is needed because user-visible behavior does not change.
+Tolerance: ±40 net LOC within these same seven paths; zero non-test product files and no borrowed boot/Claude/Pi ledger surface. Relative to the original task base, the expected delivered surface is about **+190 net LOC across 3 test files** because the four parser-only candidate paths return to base. Allowed semantic change: the Codex filing live test routes launcher execution through a test-local transparent shim and grades exact successful argv. No allowed change to CLI output, command grammar, stored formats, write authority, product runtime behavior, Claude/Pi grading, other journeys, or documentation; no site doc diff is needed because user-visible behavior does not change.
 
 ## Stage Report: backlog
 
@@ -241,3 +249,16 @@ REJECTED. The correction handles the observed spelling/layout variations and ret
 ### Summary
 
 REJECTED is preserved without changing candidate bytes, evidence, or findings. Validation hands frozen commit 77a71f8e0 back to ideation for a normal design reset; no correction or test rerun occurred.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Trace the complete filing evidence chain and identify the cheapest observable that distinguishes an actually executed atomic `spacedock new` from an unreachable or merely mentioned call.
+  Native call occurrence, public completion, durable entity bytes, and Git history remain non-injective; exact successful argv at a test-local launcher shim is the first execution-grounded discriminator.
+- DONE: Design the smallest mechanism that satisfies AC-1 and AC-2 without a permissive JavaScript token scan, preserving product/runtime bytes if the evidence can support that boundary; state clearly if it cannot.
+  The design preserves product bytes and all real binary I/O/exit behavior but explicitly permits a Codex-filing-only shim because passive trace/runtime bytes cannot prove which JavaScript or shell branch executed.
+- DONE: Specify the focused falsifier matrix, exact bound/unbound or live ladder, exact files, and signed net LOC estimate as +NNN or -NNN across M files; do not spend a live run.
+  Eight offline/no-model rungs plus one validation-only live target are specified; the frozen-to-final estimate is -034 net LOC across 7 exact paths (base-to-final +190 across 3 test files), and no live run was spent.
+
+### Summary
+
+Ideation resets the observer from trace interpretation to an execution-grounded, Codex-filing-only argv/exit ledger. The detached counterfeit becomes the primary negative control, the frozen parser candidate remains unchanged, and the plan excludes Pi, BFM, rejection flow, timeout, Sonnet, and other-owner work.
