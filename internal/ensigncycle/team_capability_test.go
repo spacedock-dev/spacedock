@@ -76,12 +76,8 @@ func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) [
 	}
 }
 
-func codexLiveFrontDoorArgvForScenario(pluginDir, workflowRoot, finalPath, prompt, scenario, codexHome string) []string {
-	args := codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt)
-	if scenario != "filing" {
-		return args
-	}
-	return slices.Concat(args[:6], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never", "--add-dir", codexHome + "/plugins"}, args[6:8], args[9:])
+func codexLiveFrontDoorArgvForScenario(pluginDir, workflowRoot, finalPath, prompt, _ string) []string {
+	return codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt)
 }
 
 func argvHasAdjacent(args []string, left, right string) bool {
@@ -128,15 +124,12 @@ func TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs(t *testing.T) {
 	}
 }
 
-func TestCodexLiveRunnerUsesRestrictedPostureOnlyForFiling(t *testing.T) {
-	codexHome := "/tmp/codex-home"
+func TestCodexLiveRunnerUsesCommonPostureForFiling(t *testing.T) {
 	base := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
-	if got := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", "shallow-boot", codexHome); !slices.Equal(got, base) {
-		t.Fatalf("non-filing argv changed: got=%v want=%v", got, base)
-	}
-	filing := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", "filing", codexHome)
-	if !slices.Equal(filing[6:13], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never", "--add-dir", codexHome + "/plugins", "exec"}) || strings.Count(strings.Join(filing, "\x00"), "--add-dir") != 1 || slices.Contains(filing, codexHome) || slices.Contains(filing, codexHome+"/sessions") || slices.Contains(filing, "--dangerously-bypass-approvals-and-sandbox") {
-		t.Fatalf("filing argv has wrong sandbox posture: %v", filing)
+	for _, scenario := range []string{"filing", "shallow-boot"} {
+		if got := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", scenario); !slices.Equal(got, base) {
+			t.Fatalf("%s argv changed: got=%v want=%v", scenario, got, base)
+		}
 	}
 }
 

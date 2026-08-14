@@ -39,17 +39,9 @@ func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, roo
 	}
 	commands := successfulCodexCommands(result.jsonl)
 	if scenario.name == "filing" {
-		rollout, correlated, observeErr := codexCorrelatedParentRollout(d.home(), result.jsonl)
-		if observeErr != nil || !correlated {
-			t.Fatalf("correlate Codex filing rollout: correlated=%t err=%v\nArtifacts: %s", correlated, observeErr, result.artifactDir)
-		}
-		executions, observeErr := codexCommandExecutions(rollout)
-		if observeErr != nil {
-			t.Fatalf("decode Codex filing transactions: %v\nArtifacts: %s", observeErr, result.artifactDir)
-		}
-		command, gradeErr := assertCodexFilingTransaction(executions, filepath.Join(root, filingSlug+".md"), filingSlug)
+		command, gradeErr := assertCodexPublicFilingTransaction(result.jsonl, filepath.Join(root, filingSlug+".md"), filingSlug)
 		if gradeErr != nil {
-			t.Logf("Codex filing transaction not established: %v", gradeErr)
+			t.Logf("Codex public filing transaction not established: %v", gradeErr)
 			commands = nil
 		} else {
 			commands = []string{command}
@@ -186,7 +178,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	finalPath := filepath.Join(artifactDir, "codex-final-message.txt")
 	return runCodexProcess(codexProcessSpec{
 		bin:         r.binary,
-		argv:        codexLiveFrontDoorArgvForScenario(r.pluginDir, workflowRoot, finalPath, prompt, scenario.name, r.codexHome),
+		argv:        codexLiveFrontDoorArgvForScenario(r.pluginDir, workflowRoot, finalPath, prompt, scenario.name),
 		env:         r.env,
 		artifactDir: artifactDir,
 		finalPath:   finalPath,

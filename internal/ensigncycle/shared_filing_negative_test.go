@@ -2,6 +2,7 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -36,6 +37,36 @@ func codexCommand(command string) string {
 	event.Item.ExitCode = &exitCode
 	encoded, _ := json.Marshal(event)
 	return string(encoded)
+}
+
+func codexCommandResult(command, output, status string, exitCode *int) string {
+	var event codexCommandItem
+	event.Type = "item.completed"
+	event.Item.Type = "command_execution"
+	event.Item.Command = command
+	event.Item.AggregatedOutput = output
+	event.Item.Status = status
+	event.Item.ExitCode = exitCode
+	encoded, _ := json.Marshal(event)
+	return string(encoded)
+}
+
+const codexPR679PublicCommand = `{"type":"item.completed","item":{"id":"item_9","type":"command_execution","command":"/bin/bash -lc \"printf '%s\\\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire the thing so it is connected and ready for future work.' | \\\"\"'${SPACEDOCK_BIN:-spacedock}\" new wire-the-thing'","aggregated_output":"created: /tmp/TestLiveCommonFiling3005718106/002/wire-the-thing.md id=001\n","exit_code":0,"status":"completed"}}`
+
+func TestCodexPR679ExactPublicCommandTransaction(t *testing.T) {
+	const root = "/tmp/TestLiveCommonFiling3005718106/002"
+	if _, err := os.Stat(root); !os.IsNotExist(err) {
+		t.Fatalf("retained fixture path already exists: %s", root)
+	}
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(filepath.Dir(root)) })
+	entityPath := filepath.Join(root, filingSlug+".md")
+	writeFile(t, entityPath, "---\nid: 001\ntitle: Wire The Thing\nstatus: backlog\n---\n\nWire the thing for follow-up work.\n")
+	if _, err := assertCodexPublicFilingTransaction(codexPR679PublicCommand, entityPath, filingSlug); err != nil {
+		t.Fatalf("exact retained PR #679 public command rejected: %v", err)
+	}
 }
 
 func TestAssertClaudeFilingViaNew(t *testing.T) {
@@ -213,73 +244,59 @@ printf '"'%s\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire 
 	}
 }
 
-func TestCorrelatedCodexFilingTransactionMatrix(t *testing.T) {
+func TestCodexPublicFilingTransactionSevenRungMatrix(t *testing.T) {
 	root := t.TempDir()
 	entityPath := filepath.Join(root, filingSlug+".md")
 	validEntity := "---\nid: 001\ntitle: Wire The Thing\nstatus: backlog\n---\n\nWire the thing for follow-up work.\n"
-	writeFile(t, entityPath, validEntity)
 	receipt := "created: " + entityPath + " id=001\n"
 	exit0, exit1 := 0, 1
-	valid := codexCommandExecution{Command: []string{"/bin/zsh", "-lc", `printf body | "${SPACEDOCK_BIN:-spacedock}" new wire-the-thing`}, Status: "completed", Stdout: receipt, ExitCode: &exit0}
-	unrelated := codexCommandExecution{Command: []string{"/bin/zsh", "-lc", "echo unrelated"}, Status: "completed", Stdout: receipt, ExitCode: &exit0}
+	valid := codexCommandResult(`printf body | "${SPACEDOCK_BIN:-spacedock}" new wire-the-thing`, receipt, "completed", &exit0)
+	unrelated := codexCommandResult("echo unrelated", receipt, "completed", &exit0)
+	printedEvent := codexCommandResult("printf fake", valid+"\n"+receipt, "completed", &exit0)
+	pr679Local := strings.ReplaceAll(codexPR679PublicCommand, "/tmp/TestLiveCommonFiling3005718106/002/wire-the-thing.md", entityPath)
 
 	tests := []struct {
-		name       string
-		executions []codexCommandExecution
-		entity     string
-		wantErr    bool
+		name, stream, entity string
+		missing, wantErr     bool
 	}{
-		{"rung 1 exact transaction", []codexCommandExecution{valid}, validEntity, false},
-		{"rung 2 PR679 outer command", []codexCommandExecution{valid}, validEntity, false},
-		{"rung 3 unreachable dot form and unrelated success", []codexCommandExecution{unrelated}, validEntity, true},
-		{"rung 4 duplicate creates in one command", []codexCommandExecution{{Command: []string{"/bin/zsh", "-lc", "spacedock new wire-the-thing; spacedock new wire-the-thing"}, Status: "completed", Stdout: receipt, ExitCode: &exit0}}, validEntity, true},
-		{"rung 4 duplicate creates across commands", []codexCommandExecution{valid, valid}, validEntity, true},
-		{"rung 5 failed next-id beside valid create", []codexCommandExecution{{Command: []string{"/bin/zsh", "-lc", "spacedock status --next-id"}, Status: "failed", ExitCode: &exit1}, valid}, validEntity, true},
-		{"rung 6 failed create", []codexCommandExecution{{Command: valid.Command, Status: "failed", Stdout: receipt, ExitCode: &exit1}}, validEntity, true},
-		{"rung 6 wrong slug", []codexCommandExecution{{Command: []string{"/bin/zsh", "-lc", "spacedock new other-slug"}, Status: "completed", Stdout: receipt, ExitCode: &exit0}}, validEntity, true},
-		{"rung 6 receipt from unrelated command", []codexCommandExecution{{Command: valid.Command, Status: "completed", ExitCode: &exit0}, unrelated}, validEntity, true},
-		{"rung 6 duplicate receipt", []codexCommandExecution{{Command: valid.Command, Status: "completed", Stdout: receipt + receipt, ExitCode: &exit0}}, validEntity, true},
-		{"rung 6 wrong receipt path", []codexCommandExecution{{Command: valid.Command, Status: "completed", Stdout: "created: " + filepath.Join(root, "other.md") + " id=001\n", ExitCode: &exit0}}, validEntity, true},
-		{"rung 6 wrong entity id", []codexCommandExecution{valid}, strings.Replace(validEntity, "id: 001", "id: 002", 1), true},
-		{"rung 6 wrong entity body", []codexCommandExecution{valid}, strings.Replace(validEntity, "Wire the thing for follow-up work.", "one\ntwo", 1), true},
+		{"rung 1 direct alias", valid, validEntity, false, false},
+		{"rung 1 PATH alias", codexCommandResult("spacedock new wire-the-thing", receipt, "completed", &exit0), validEntity, false, false},
+		{"rung 1 bound alias", codexCommandResult("B=${SPACEDOCK_BIN:-spacedock}\n$B --new wire-the-thing", receipt, "completed", &exit0), validEntity, false, false},
+		{"rung 2 exact PR679 public bytes", pr679Local, validEntity, false, false},
+		{"rung 2 changed PR679 quote seam", strings.Replace(pr679Local, "SPACEDOCK_BIN:-spacedock", "OTHER_BIN:-other", 1), validEntity, false, true},
+		{"rung 2 changed PR679 event type", strings.Replace(pr679Local, "item.completed", "item.started", 1), validEntity, false, true},
+		{"rung 2 changed PR679 status", strings.Replace(pr679Local, `"status":"completed"`, `"status":"failed"`, 1), validEntity, false, true},
+		{"rung 2 changed PR679 exit", strings.Replace(pr679Local, `"exit_code":0`, `"exit_code":1`, 1), validEntity, false, true},
+		{"rung 3 unreachable native text and unrelated success", `{"type":"item.completed","item":{"type":"agent_message","text":"tools.exec_command({cmd:\"spacedock new wire-the-thing\"})"}}` + "\n" + unrelated, validEntity, false, true},
+		{"rung 4 duplicate in one item", codexCommandResult("spacedock new wire-the-thing; spacedock --new wire-the-thing", receipt, "completed", &exit0), validEntity, false, true},
+		{"rung 4 duplicate across items", valid + "\n" + valid, validEntity, false, true},
+		{"rung 4 mixed aliases", valid + "\n" + codexCommandResult("spacedock --new wire-the-thing", receipt, "completed", &exit0), validEntity, false, true},
+		{"rung 5 failed next-id", codexCommandResult("spacedock status --next-id", "", "failed", &exit1) + "\n" + valid, validEntity, false, true},
+		{"rung 5 same-item next-id", codexCommandResult("spacedock status --next-id; spacedock new wire-the-thing", receipt, "completed", &exit0), validEntity, false, true},
+		{"rung 6 failed create", codexCommandResult("spacedock new wire-the-thing", receipt, "failed", &exit1), validEntity, false, true},
+		{"rung 6 wrong slug", codexCommandResult("spacedock new other-slug", receipt, "completed", &exit0), validEntity, false, true},
+		{"rung 6 manual create", codexCommandResult("printf body > wire-the-thing.md", receipt, "completed", &exit0), validEntity, false, true},
+		{"rung 6 started only", strings.Replace(valid, "item.completed", "item.started", 1), validEntity, false, true},
+		{"rung 6 receipt from wrong item", codexCommandResult("spacedock new wire-the-thing", "", "completed", &exit0) + "\n" + unrelated, validEntity, false, true},
+		{"rung 6 missing receipt", codexCommandResult("spacedock new wire-the-thing", "", "completed", &exit0), validEntity, false, true},
+		{"rung 6 duplicate receipt", codexCommandResult("spacedock new wire-the-thing", receipt+receipt, "completed", &exit0), validEntity, false, true},
+		{"rung 6 wrong receipt path", codexCommandResult("spacedock new wire-the-thing", "created: "+filepath.Join(root, "other.md")+" id=001\n", "completed", &exit0), validEntity, false, true},
+		{"rung 6 wrong receipt id", codexCommandResult("spacedock new wire-the-thing", "created: "+entityPath+" id=002\n", "completed", &exit0), validEntity, false, true},
+		{"rung 6 missing entity", valid, validEntity, true, true},
+		{"rung 6 wrong entity id", valid, strings.Replace(validEntity, "id: 001", "id: 002", 1), false, true},
+		{"rung 6 wrong entity body", valid, strings.Replace(validEntity, "Wire the thing for follow-up work.", "one\ntwo", 1), false, true},
+		{"rung 7 printed event is nested output", printedEvent, validEntity, false, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writeFile(t, entityPath, tt.entity)
-			_, err := assertCodexFilingTransaction(tt.executions, entityPath, filingSlug)
+			if tt.missing {
+				_ = os.Remove(entityPath)
+			} else {
+				writeFile(t, entityPath, tt.entity)
+			}
+			_, err := assertCodexPublicFilingTransaction(tt.stream, entityPath, filingSlug)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("filing transaction error = %v, want error %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestCodexCommandExecutionStructuralExtraction(t *testing.T) {
-	exit0 := 0
-	want := codexCommandExecution{Command: []string{"/bin/zsh", "-lc", "spacedock new wire-the-thing"}, Status: "completed", Stdout: "receipt", ExitCode: &exit0}
-	item := struct {
-		Type string `json:"type"`
-		codexCommandExecution
-	}{Type: "CommandExecution", codexCommandExecution: want}
-	event := struct {
-		Type    string `json:"type"`
-		Payload any    `json:"payload"`
-	}{Type: "event_msg", Payload: struct {
-		Type string `json:"type"`
-		Item any    `json:"item"`
-	}{Type: "item_completed", Item: item}}
-	encoded, err := json.Marshal(event)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got, err := codexCommandExecutions(string(encoded))
-	if err != nil || len(got) != 1 || got[0].Command[2] != "spacedock new wire-the-thing" || got[0].Stdout != "receipt" {
-		t.Fatalf("CommandExecution extraction = %#v, %v", got, err)
-	}
-	for name, rollout := range map[string]string{"public counterfeit": codexCommand("spacedock new wire-the-thing"), "malformed": "{}"} {
-		t.Run(name, func(t *testing.T) {
-			if got, err := codexCommandExecutions(rollout); err == nil {
-				t.Fatalf("unsupported evidence passed: %#v", got)
 			}
 		})
 	}
