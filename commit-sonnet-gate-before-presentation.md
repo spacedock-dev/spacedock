@@ -626,3 +626,16 @@ The current implementation did not deliver sprint value because its bound journe
 ### Summary
 
 The reset replaces the failed immediate-commit product premise with a test-only ownership correction: command logs prove the gate hold, while native host events and the durable report prove worker dispatch. The retained trace and focused helper tests make the design actionable without another ideation live run; thank you, Captain, and the affection is returned.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Make the repeated-envelope focused falsifier fail first, then remove command-log ownership of implementation dispatch while preserving the native missing-worker control and all product/runtime bytes.
+  The new repeated-envelope case first failed with `implementation-worker-not-dispatched`, then passed after `assertRecordedGateHoldLog` dropped its dispatch mode; the adjacent native oracle still rejects the command-only baseline.
+- DONE: Keep the candidate within +000 net LOC across 4 test files (hard tolerance -012 to +020), and run focused, full, race, format, registry, and active-owner checks on final relevant bytes.
+  Candidate `68d17cb1480dd6f244db6290d0fd86aa72429d90` changes exactly four test files by 10 insertions and 11 deletions; all named checks and `git diff --check` passed.
+- DONE: Run the exact bound Sonnet target once; only on XPASS remove the two owned kky rows and require one identical-behavior-byte unbound PASS, stopping on any other result.
+  The bound target XPASSed in 292.26s; commit `68d17cb14` removed only the two kky rows, and the identical command then passed unbound in 427.36s without behavior-byte changes.
+
+### Summary
+
+The command log now proves only gate-hold effects, while native lifecycle events and the durable report remain authoritative for implementation-worker evidence. The exact Sonnet ladder completed with a bound XPASS and unchanged-behavior unbound PASS, so the owned XFAIL is removed.
