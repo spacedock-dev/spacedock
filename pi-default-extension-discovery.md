@@ -19,6 +19,17 @@ gates:
                 digest: sha256:ea7fae5fe635ebedf7504254e21a6e10ac5b467da3049466a2ae2ffaf9f47856
                 request-digest: sha256:5bd2c1bebf60fb5a6261e2d6ec9e2f2b54564577d606af9f5d87079b59d884fd
                 room-ref: ./pi-default-extension-discovery/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3w1ncf1thj12aryvkf5gj1rd:backlog:1
+                briefing: briefing:3w1ncf1thj12aryvkf5gj1rd:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-14T06:43:06.589777Z"
+                decision: approve
+                reason: Captain approved backlog gate; advance to ideation for extension discovery.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
