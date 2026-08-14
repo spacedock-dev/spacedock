@@ -3,7 +3,7 @@ title: Live journey — FO routes blocked-product edits through a worker (write-
 status: backlog
 source: "FO write-scope violation 2026-08-14: the FO edited internal/ensigncycle/pi_live_runner_test.go (blocked-product) and pushed directly to main, skipping «write.classify». No live journey exercises the write-scope routing rule, so nothing on the live surface caught it. The existing offline fo_product_edit_guard tests cover the assert logic on canned Codex/Claude transcripts only; no live journey on any runtime drives the FO toward a blocked-product edit and asserts it classifies → routes."
 score: 0.85
-sprint: live-test-truth
+sprint: test-behavior-completeness
 sprint-readiness: ready
 group: common-evidence
 id: ssqk609a697e9wzbwxmk76t8
