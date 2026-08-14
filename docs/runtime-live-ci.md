@@ -59,11 +59,11 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the common journeys by selecting one transport. The Claude command runs at
-most two common journeys at one time. The Codex and Pi commands run the same
+Run the common journeys by selecting one transport. The Claude and Pi commands run at
+most two common journeys at one time. The Codex command runs the same
 17 journeys in sequence. The Claude command keeps `-failfast`, but Go can start
-queued parallel journeys after a failure. At most two Claude journeys run at one
-time. The sequential Codex and Pi commands stop at the first non-TODO failure.
+queued parallel journeys after a failure. At most two Claude or Pi journeys run at one
+time. The sequential Codex command stops at the first non-TODO failure.
 Claude's 90-minute timeout is a loose suite-wide runaway backstop; Codex and Pi
 retain the 40-minute backstop:
 
@@ -94,13 +94,17 @@ export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
 export PI_INTERCOM_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-intercom"
 ```
 
-Authenticate with `pi login` or `OPENAI_API_KEY`. Configure the child model with the exact provider-qualified spelling for that authentication path:
+Authenticate with `pi login` or `OPENAI_API_KEY`. Configure the child model with the exact provider-qualified spelling for that authentication path. Custom providers (e.g. `lunaroute`) declare their models in `~/.pi/agent/models.json`, not `auth.json`; the harness mirrors `models.json` (alongside `auth.json`, both `0o600`) into the isolated Pi home so a custom-provider model resolves. If the child reports `Model ... not found`, the `models.json` mirror is missing or does not declare that provider/model. Use the `provider/model:thinking` form to request a specific thinking effort:
 
 ```bash
 export SPACEDOCK_PI_LIVE_CHILD_MODEL=openrouter/openai/gpt-5.4 # OpenRouter login
 # or
 export SPACEDOCK_PI_LIVE_CHILD_MODEL=openai/gpt-5.4 # direct OpenAI provider
+# or, with an explicit thinking effort (provider/model:thinking):
+export SPACEDOCK_PI_LIVE_CHILD_MODEL='lunaroute/glm-5.2-vision-background:max'
 ```
+
+A slow `:max`-thinking model can take minutes per turn. Raise the per-run cap with `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` (a positive integer, in minutes) so multi-dispatch journeys complete to a graded result instead of timing out. Make the outer `go test -timeout` longer than the per-run cap so the suite backstop does not fire before the individual cap. Defaults: smoke `10m`, common `12m`. Example:
 
 `TestLivePiFrontDoorSmoke` is the only Pi substrate smoke. It checks the front door, child dispatch, durable output, and the boot contract. The grade artifact records both models, durations, and available costs.
 
@@ -108,11 +112,13 @@ export SPACEDOCK_PI_LIVE_CHILD_MODEL=openai/gpt-5.4 # direct OpenAI provider
 go test -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
 ```
 
-Run the common Pi journeys separately from that substrate proof:
+Run the common Pi journeys separately from that substrate proof. Pi runs at most two journeys at a time, so pass `-parallel 2` to fan them out concurrently:
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v
 ```
+
+When raising `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` for a slow model, set the outer `-timeout` above the per-run cap (e.g. `-timeout 120m` with `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES=40`).
 
 Without auth, the respective live suite skips locally (Claude/Codex/Pi), except in CI where the lane requires it.
 

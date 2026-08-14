@@ -59,7 +59,7 @@ func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, ro
 	if err := os.MkdirAll(sessionDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), piLiveRunTimeout(12*time.Minute))
 	defer cancel()
 	cmd := exec.CommandContext(ctx, d.binary, "pi", prompt, "--plugin-dir", d.pluginDir, "--", "--print", "--model", d.modelName, "--session-dir", sessionDir)
 	cmd.Dir, cmd.Env = root, d.env
@@ -74,7 +74,7 @@ func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, ro
 	writeFile(t, filepath.Join(artifactDir, "duration.txt"), duration.String()+"\n")
 	writeFile(t, filepath.Join(artifactDir, "process-status.txt"), fmt.Sprintf("error=%v timeout=%t\n", err, ctx.Err() == context.DeadlineExceeded))
 	if ctx.Err() == context.DeadlineExceeded {
-		t.Fatalf("Pi journey %q exceeded 12 minutes; artifacts: %s", scenario.name, artifactDir)
+		t.Fatalf("Pi journey %q exceeded the per-run cap (SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES, default 12m); artifacts: %s", scenario.name, artifactDir)
 	}
 	if err != nil {
 		t.Fatalf("Pi journey %q failed: %v; artifacts: %s\n%s", scenario.name, err, artifactDir, tail(stderr.String(), 4000))
