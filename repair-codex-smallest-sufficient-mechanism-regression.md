@@ -62,16 +62,21 @@ PR #679 run `31728107636`, Codex job `94541783359`, reported
 one-line file and commit it directly. Codex did so, made both deterministic edits,
 opened no PR, dispatched both commissioned entities, and left a clean tree.
 
-The regression is in the Codex trace classifier. At exact `origin/main`
-`177eb454011001a296f1f09bc2889d3436df0a54`, any `agent_message` that contains both
-smallest-sufficient vocabulary and a commissioned slug is treated as a per-entity
-dispatch justification, even when the message explicitly discusses separate in-house
-work. The run's early message says the boot view exposes `ready-one` while the
-captain-specified edits are the smallest sufficient mechanism and "outside worker
-dispatch". The real `dispatch build` for `ready-one` occurs 29 JSONL events later.
-The classifier correlates those unrelated events and creates the false red.
+The regression is in the Codex trace classifier at exact `origin/main`
+`177eb454011001a296f1f09bc2889d3436df0a54`. Its public `codex exec --json` stream
+does not expose a target on the wait records, so the old classifier did not recognize
+the two real commissioned worker lifecycles. The first repair candidate then treated
+shell `command_execution` text containing `dispatch build --entity-path` as engage
+evidence. Captain rejected that design: an echo, quotation, pseudo command, or failed
+command can contain identical bytes without spawning a child.
 
-## Read-only spike
+Engage must therefore be proved from native Codex lifecycle records, then paired with
+the durable entity journey. Shell command text is not execution evidence for engage.
+The held candidate commits `c8108260b` and `0b809073b` remain historical validation
+evidence only; no candidate code or binding changes are authorized before a new
+ideation gate.
+
+## Risk evidence and dependency
 
 The exact public session JSONL from the named run/job was downloaded read-only and
 replayed through the pinned parser in a throwaway checkout. The trace was:
@@ -84,86 +89,131 @@ replayed through the pinned parser in a throwaway checkout. The trace was:
 
 The focused replay failed with `the FO did not dispatch commissioned entity
 "ready-one"`; the live durable assertion independently proves both commissioned
-journeys and fills engage, after which the retained false justification produces the
-reported semantic code. This is the riskiest public-behavior spike: it demonstrates
-that the host behavior is correct and that the failure is an event-correlation defect.
+journeys. This establishes the value gap without accepting command strings as a
+repair.
+
+No new mechanism spike is needed before the gate. Existing
+`TestCodexIsolatedHomeCollaborationLifecycle` exercises the required public host
+records end to end in an isolated Codex home: one public `thread.started`, the unique
+parent rollout, structured `spawn_agent` calls, call-ID-matched handle outputs,
+`session_meta.source.subagent.thread_spawn` parent/agent identity, waits, assistant
+completion, and `task_complete`. A read-only 2026-08-13 session inspection confirmed
+the same fields on the current host, including `SubAgentActivity` with
+`agent_thread_id` and `agent_path`.
+
+Implementation has one explicit dependency: the filing repair candidate
+`ee53f53d2` (or its approved merged successor) supplies
+`codexCorrelatedParentRollout`, which binds exactly one public parent thread ID to
+exactly one isolated-home parent rollout and errors on missing or ambiguous matches.
+Do not cherry-pick, duplicate, or assume that candidate is merged. Implementation
+waits for it to land, rebases on its merged API, and requests a new surface decision if
+the API differs materially.
 
 ## Proposed approach
 
-Make one parser correction, with no product hook or new observability surface:
+Make one test-only correction with no product instrumentation:
 
-1. Recognize the existing Codex `spacedock dispatch build ... --entity-path
-   .../<slug>.md` command as the commissioned engage event. Preserve the existing
-   legacy `status --set ... status=done` and native `spawn_agent` paths.
-2. Replace the global `agent_message` substring attribution with ordered correlation.
-   Each new agent message replaces the pending narration. A dispatch of a commissioned
-   slug evaluates only the pending narration for that same slug, then consumes it.
-   Thus the run's later neutral "entering the standing workflow loop" message clears
-   the earlier edit explanation before dispatch, while a justification immediately
-   framing a dispatch still fails. A `spawn_agent` prompt continues to be graded
-   directly because prompt and dispatch are one event.
-3. Add a focused regression sequence derived from the exact JSONL and a discriminator
-   in which the justification actually frames the dispatch. Replay the exact public
-   artifact during validation; do not add a session hook, state store, protocol,
-   lifecycle guard, global hook, or replacement compaction hook.
-4. Remove only the Codex target binding for this journey after the corrected bytes
-   produce XPASS. Keep the Pi binding and every other target/reconciliation row intact.
+1. Use the filing observer dependency to resolve the one public parent thread to the
+   one parent rollout. Load sibling session JSONL files from the already isolated
+   Codex home; do not copy them into a product state store or add an archive hook.
+2. For each expected `(entity slug, stage)`, derive the existing dispatch worker name
+   (`spacedock-ensign-<slug>-<stage>`). In the parent rollout require exactly one
+   `response_item/function_call` in the `agents` namespace whose name is
+   `spawn_agent` and whose structured `task_name` equals that expected name.
+3. Bind the spawn atomically: its unique `call_id` must have exactly one
+   `SubAgentActivity(kind=started)` carrying non-empty `agent_thread_id` and canonical
+   `agent_path`, and exactly one `function_call_output` for the same call ID whose
+   returned task handle equals that path. Duplicate call IDs, names, handles, started
+   records, or child candidates are observation errors, never XFAIL evidence.
+4. Bind exactly one child session by all three typed fields: session ID equals
+   `agent_thread_id`, `session_meta` parent ID equals the public parent thread, and
+   `agent_path` equals the returned handle. Require one initial child task and one
+   `task_complete` whose terminal assistant message names the expected entity path and
+   stage.
+5. Bind targetless waits by exclusivity and order. Between a child's spawn and its
+   completion, at most one expected child may be outstanding. Require a structured
+   `wait_agent` call after spawn and its matched non-timeout output after child
+   `task_complete`; then require the next entity's spawn only after that lifecycle
+   closes. Any overlap makes the wait ambiguous and fails closed.
+6. Pair that typed lifecycle with the existing durable proof for the same slug/stage:
+   a scoped dispatch transition, later path-scoped worker stage report, later terminal
+   fields, canonical archive, and clean active path. Lifecycle alone cannot credit
+   work; durable state alone cannot credit a native spawn.
+7. Attribute a per-entity gate justification only from parent assistant commentary in
+   the same typed Codex `turn_id` as that entity's `spawn_agent` call. Earlier prose in
+   another turn cannot attach; a true same-turn justification still violates the
+   contract.
 
-The simplest alternative, adding a negation regex for "outside worker dispatch", is
-insufficient because equivalent truthful wording would regress again. Ignoring all
-Codex `agent_message` evidence is also insufficient because it would make a real
-per-entity justification invisible. Ordered correlation is the smallest mechanism
-that preserves both sides of the behavioral assertion. It serves AC-1 and AC-2.
+All shell `command_execution` items and native `exec` inputs are ignored for engage,
+whether successful, failed, quoted, echoed, or shaped like a real command. The simplest
+alternative, hardening the command regex or checking exit status, cannot distinguish a
+successful `echo spacedock dispatch build ...` from a spawn. Using durable state alone
+cannot prove the required native dispatch boundary. The correlated lifecycle plus
+durable identity is the smallest existing public-behavior proof serving AC-1 and AC-2.
 
 ## Acceptance criteria
 
-- **AC-1 (VALUE):** The unchanged PR #679 Codex session bytes classify as a correct
-  smallest-sufficient run: two direct edits, one direct strategy-doc commit, no
-  worker/PR climb, two commissioned engages, and zero per-entity justifications.
-  **Test:** replay the downloaded JSONL through `codexMechanismTrace` and
-  `gradeSmallestSufficientMechanism`; any missing behavior or false justification
-  makes the test fail.
-- **AC-2:** A real Codex per-entity justification still produces
-  `smallest-mechanism-violation`, while unrelated earlier narration that names the same
-  entity does not.
-  **Test:** paired parser fixtures differ only in whether neutral narration intervenes
-  before the same `dispatch build`; the bound case must fail and the separated case
-  must pass.
-- **AC-3:** The target binding changes only grading, never the observed session bytes:
-  corrected semantics are a green XPASS while bound and a normal PASS after unbinding.
-  **Test:** feed one immutable replay payload to the bound and unbound grade paths and
-  assert `xpass` then `pass`, with identical digest/bytes and no semantic codes.
-- **AC-4:** The final unbound targeted local Codex journey passes normally and leaves
-  the required one-line strategy doc, both resolved notes, both commissioned durable
-  journeys, and a clean tree.
-  **Test:** run only `TestLiveCommonSmallestSufficientMechanism` with the isolated-home
-  Codex harness and verify normal PASS plus the existing durable assertions.
-- **AC-5:** Existing host-neutral and Codex negative cases, the offline suite, and the
-  race suite remain green.
-  **Test:** focused parser tests, `go test ./...`, and `go test ./... -race`; changing
-  true-violation attribution, command grammar, or shared-host behavior makes one of
-  these checks fail.
+- **AC-1 (VALUE):** One supported Codex run produces exactly two complete, unambiguous
+  lifecycle-plus-durable bundles for `ready-one/ready` and `ready-two/ready`, zero
+  shell-derived engages, and zero per-entity justifications, while retaining both
+  direct edits, the direct strategy-doc commit, no edit-worker climb, and no PR.
+  **Test:** the atomic lifecycle grader returns two identities and the existing durable
+  grader returns the same two identities; set equality, count `2`, and zero
+  justification codes are asserted together.
+- **AC-2:** Failed, quoted, echoed, and pseudo dispatch command text can never create an
+  engage, and every incomplete or ambiguous native lifecycle fails closed.
+  **Test:** a table removes or duplicates each spawn, call ID, handle, started record,
+  child session, wait, wait output, task completion, and durable journey; it also adds
+  wrong entity/stage identity, timed-out wait, overlapping children, reordered events,
+  and command-text decoys. Every row must fail for its isolated reason.
+- **AC-3:** Only same-turn structured narration can justify a commissioned spawn.
+  **Test:** the exact PR #679 separated-turn narration passes; moving the same gate
+  vocabulary and entity name into the spawn's `turn_id` produces
+  `smallest-mechanism-violation` without changing lifecycle or durable bytes.
+- **AC-4:** Binding state changes grading only: one immutable observation bundle is a
+  green XPASS while the Codex target binding exists and a normal PASS when evaluated
+  unbound.
+  **Test:** hash the public stream, parent rollout, two child sessions, and durable Git
+  state; feed the same digests/bytes to bound and unbound grade calls and require
+  `xpass` then `pass` with no semantic codes.
+- **AC-5:** The final candidate preserves every other owner and passes focused, full,
+  race, and one exact local Codex target.
+  **Test:** run focused lifecycle/negative tests, `go test ./...`,
+  `go test ./... -race`, then the one allowed isolated-home live target after all
+  structured checks pass. Diff the live binding and reconciliation registries to prove
+  only this entity's Codex row changed; Sonnet, filing, Pi, and Opus rows are identical.
 
 ## Expected surface and tolerance
 
-- `internal/ensigncycle/shared_smallest_mechanism_test.go`: about 25 insertions and 8
-  replacements for ordered narration/dispatch correlation and `dispatch build`
-  recognition.
-- `internal/ensigncycle/shared_smallest_mechanism_negative_test.go`: about 35
-  insertions for the exact-shape regression, true-violation discriminator, and
-  unchanged-byte grade proof.
-- `internal/ensigncycle/shared_live_runner_test.go`: one binding removal after XPASS.
+- `internal/ensigncycle/codex_live_runner_test.go`: about `+35/-5` lines to pass the
+  isolated home into the smallest-mechanism observer and surface correlation errors.
+- `internal/ensigncycle/shared_smallest_mechanism_test.go`: about `+170/-70` lines to
+  replace command-text engage recognition with atomic lifecycle correlation.
+- `internal/ensigncycle/shared_smallest_mechanism_negative_test.go`: about `+185/-25`
+  lines for the fail-closed matrix, same-turn discriminator, and immutable grade pair.
+- `internal/ensigncycle/testdata/codex_smallest_mechanism_lifecycle/public.jsonl`:
+  about 8 inserted JSONL records.
+- `internal/ensigncycle/testdata/codex_smallest_mechanism_lifecycle/parent-rollout.jsonl`:
+  about 12 inserted JSONL records.
+- `internal/ensigncycle/testdata/codex_smallest_mechanism_lifecycle/child-ready-one.jsonl`
+  and `child-ready-two.jsonl`: about 12 inserted JSONL records total.
+- `internal/ensigncycle/shared_live_runner_test.go`: `+1/-1`, removing only this
+  entity's Codex binding after XPASS.
+- `internal/contractlint/live_registry_reconciliation_test.go`: `+1/-1`, changing only
+  the matching reconciliation row after XPASS.
 
-Tolerance: these three files only, at most 90 gross insertions and 60 net new lines.
-No committed transcript fixture is expected; the public artifact is validation input
-and the focused fixture keeps only its behaviorally relevant events. Crossing the
-file or line tolerance requires redesign before another correction.
+Signed estimate against exact `origin/main`: **+320 net LOC** (approximately 424
+insertions and 104 deletions) across exactly nine files. Separate tolerance: **±60 net
+LOC**, no more than 500 gross insertions, and no tenth file. The merged filing observer
+dependency is not part of this task's diff. Any need to modify its helper, add product
+instrumentation, or exceed a tolerance requires a new design gate.
 
 ## Declared semantic changes
 
-- **Test classification:** a Codex narration is attributed to a commissioned dispatch
-  only through an ordered same-entity dispatch event; real `dispatch build` commands
-  count as engage evidence. The exact run changes from false FAIL/XFAIL to XPASS/PASS.
+- **Test classification:** Codex engage exists only when one native spawn/handle/child/
+  wait/completion lifecycle and one durable entity journey agree on identity. Shell
+  command text never creates engage. Same-turn typed narration alone can attach a gate
+  justification. The supported run changes from false XFAIL to XPASS/PASS.
 - **Command grammar:** unchanged.
 - **Stored formats:** unchanged.
 - **Authority and write scope:** unchanged.
@@ -173,22 +223,29 @@ file or line tolerance requires redesign before another correction.
 
 ## Verification ladder and correction budget
 
-1. Preserve the baseline spike above and add the paired focused test before the parser
-   edit; confirm the separated exact-run shape fails on pinned source truth.
-2. Apply the single parser correction. Run the focused positive and negative parser
-   tests, then `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
-3. Replay the same captured JSONL bytes with the Codex XFAIL still bound. Require a
-   green XPASS alert and zero semantic codes.
-4. Remove only this Codex binding and replay those unchanged bytes. Require normal
-   PASS; a digest check proves the observation did not change between grading modes.
-5. Spend the one allowed revalidation on the exact unbound local command:
+1. Wait for the filing observer dependency to merge, rebase from exact approved main,
+   and confirm all other target rows equal `origin/main`. Do not restore or edit a
+   binding as a separate preparatory action.
+2. Add the structured happy fixture and every AC-2/AC-3 negative first. Confirm the
+   happy lifecycle is unsupported on pinned source truth while every decoy fails.
+3. Apply the single allowed correction: replace command-text engage recognition with
+   the lifecycle-plus-durable grader. Run focused tests, `gofmt -w ./cmd ./internal`,
+   `go test ./...`, and `go test ./... -race`. If any fail-closed discriminator fails,
+   stop; do not patch the parser again.
+4. With the safety binding still present from main, run the exact local target once:
    `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run
    '^TestLiveCommonSmallestSufficientMechanism$' ./internal/ensigncycle -v`, with
-   `SPACEDOCK_CODEX_LIVE_REQUIRED` unset so the existing isolated Codex home is used.
+   `SPACEDOCK_CODEX_LIVE_REQUIRED` unset. This is the sole live revalidation and must
+   emit green XPASS after two structured/durable bundles pass.
+5. Before changing source, hash the public stream, correlated parent/child sessions,
+   and durable repository state. Evaluate those same in-memory bytes through the
+   unbound grade path and require normal PASS with identical digests. Only then remove
+   this entity's Codex binding and matching reconciliation row; do not rerun the model
+   or touch Sonnet, filing, Pi, Opus, or any other owner row.
 
-If the discriminator weakens, the unchanged-byte replay remains red, or the one live
-revalidation fails semantically, stop. Do not make a second parser-only correction;
-redesign the assertion around a different public behavior boundary.
+If parent correlation is unavailable, lifecycle events are missing or ambiguous, the
+bound run is not XPASS, or unchanged bytes are not unbound PASS, stop and return to
+design. The correction budget permits no second parser-only repair.
 
 ## Stage Report: backlog
 
@@ -255,3 +312,16 @@ The Codex classifier now recognizes real dispatch-build engages and attributes g
 ### Summary
 
 PASSED. Exact public bytes proved XPASS before the owner-only unbind and normal PASS afterward, and the single final live Codex target passed on commit 0b809073b; no material finding remains.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Replace shell-command-text engage proof with a behavior-first design based on correlated native Codex lifecycle events and durable entity state.
+  The design requires atomic spawn/call-ID/handle/child/wait/completion evidence joined to the existing slug/stage durable journey; command text is never engage evidence.
+- DONE: Define fail-closed evidence for spawn, handle, wait, child completion, entity identity, failed commands, quoted commands, pseudo commands, missing events, and ambiguous correlation.
+  AC-2 and the seven-step approach enumerate isolated negatives, typed identity, exclusivity, ordering, duplicate rejection, durable completion, and command-text decoys.
+- DONE: Revise the expected surface, signed net LOC estimate, acceptance criteria, and one-correction verification ladder for captain review without changing candidate bytes.
+  The revision declares nine files, +320 net LOC with ±60 tolerance, five ACs, a filing-observer dependency, bound XPASS/immutable unbound PASS, and one live run; worktree HEAD remains 0b809073b.
+
+### Summary
+
+Cycle 2 removes the rejected command-text architecture and uses only existing public Codex lifecycle and durable workflow evidence. Implementation is gated on the filing observer merge and captain approval; the held code and binding commits were not changed.
