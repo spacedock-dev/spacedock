@@ -266,3 +266,32 @@ func TestCorrelatedCodexFilingPR679Ladder(t *testing.T) {
 		t.Fatal("PR #679's distorted public display unexpectedly passed without native invocation input")
 	}
 }
+
+func TestNativeCodexCommandStructuralDecoder(t *testing.T) {
+	const want = `spacedock new wire-the-thing`
+	tests := []struct {
+		name, input string
+		wantErr     bool
+	}{
+		{"current layout", `const r = await tools.exec_command({cmd:"spacedock new wire-the-thing",workdir:"/tmp"});text(r.output);`, false},
+		{"layout pragma and variable variation", "// @exec: {\"yield_time_ms\": 10000}\nconst observed = await tools.exec_command (\n {\n workdir : \"/tmp\",\n \"cmd\" : \"spacedock new wire-the-thing\"\n }\n); text(observed.output);", false},
+		{"multiple calls", `tools.exec_command({cmd:"spacedock new wire-the-thing"}); tools.exec_command({cmd:"echo duplicate"});`, true},
+		{"missing cmd", `tools.exec_command({workdir:"/tmp"});`, true},
+		{"duplicate cmd", `tools.exec_command({cmd:"spacedock new wire-the-thing",cmd:"echo duplicate"});`, true},
+		{"non-string cmd", `tools.exec_command({cmd:42});`, true},
+		{"blank cmd", `tools.exec_command({cmd:"  "});`, true},
+		{"malformed string", `tools.exec_command({cmd:"unterminated});`, true},
+		{"unsupported shape", `tools.other({cmd:"spacedock new wire-the-thing"});`, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := nativeCodexCommand("exec", tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("nativeCodexCommand() error = %v, want error %v", err, tt.wantErr)
+			}
+			if err == nil && got != want {
+				t.Fatalf("nativeCodexCommand() = %q, want %q", got, want)
+			}
+		})
+	}
+}

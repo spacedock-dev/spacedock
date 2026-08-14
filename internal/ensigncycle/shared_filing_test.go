@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"text/scanner"
 )
 
 // The host-specific filing assertions for the `filing` scenario. They grade the
@@ -241,17 +242,66 @@ func correlatedCodexCommands(codexHome, publicStream string) ([]string, error) {
 
 func nativeCodexCommand(toolName, input string) (string, error) {
 	if toolName == "functions.exec" {
+		if strings.TrimSpace(input) == "" {
+			return "", fmt.Errorf("Codex native functions.exec input is blank")
+		}
 		return input, nil
 	}
-	const marker = "tools.exec_command({cmd:"
-	start := strings.Index(input, marker)
-	if start < 0 {
-		return "", fmt.Errorf("Codex native exec input has no exec_command cmd field")
+	type token struct {
+		kind rune
+		text string
 	}
-	var command string
-	decoder := json.NewDecoder(strings.NewReader(strings.TrimSpace(input[start+len(marker):])))
-	if err := decoder.Decode(&command); err != nil || command == "" {
-		return "", fmt.Errorf("decode Codex native exec command: %v", err)
+	var lexer scanner.Scanner
+	lexer.Init(strings.NewReader(input))
+	var tokens []token
+	for kind := lexer.Scan(); kind != scanner.EOF; kind = lexer.Scan() {
+		tokens = append(tokens, token{kind, lexer.TokenText()})
+	}
+	if lexer.ErrorCount != 0 {
+		return "", fmt.Errorf("malformed Codex native exec input")
+	}
+	var calls []int
+	for i := 0; i+3 < len(tokens); i++ {
+		if tokens[i].kind == scanner.Ident && tokens[i].text == "tools" && tokens[i+1].kind == '.' &&
+			tokens[i+2].kind == scanner.Ident && tokens[i+2].text == "exec_command" && tokens[i+3].kind == '(' {
+			calls = append(calls, i+4)
+		}
+	}
+	if len(calls) != 1 {
+		return "", fmt.Errorf("Codex native exec input has %d tools.exec_command calls, want one", len(calls))
+	}
+	i, command, sawCmd := calls[0], "", false
+	if i >= len(tokens) || tokens[i].kind != '{' {
+		return "", fmt.Errorf("Codex native exec argument is not an object")
+	}
+	for i++; i < len(tokens) && tokens[i].kind != '}'; {
+		key := tokens[i].text
+		if tokens[i].kind == scanner.String && json.Unmarshal([]byte(key), &key) != nil ||
+			tokens[i].kind != scanner.String && tokens[i].kind != scanner.Ident {
+			return "", fmt.Errorf("malformed Codex native exec field name")
+		}
+		i++
+		if i+1 >= len(tokens) || tokens[i].kind != ':' {
+			return "", fmt.Errorf("malformed Codex native exec field %q", key)
+		}
+		i++
+		if key == "cmd" {
+			if sawCmd || tokens[i].kind != scanner.String || json.Unmarshal([]byte(tokens[i].text), &command) != nil || strings.TrimSpace(command) == "" {
+				return "", fmt.Errorf("Codex native exec cmd must be one nonblank JSON string")
+			}
+			sawCmd = true
+		} else if tokens[i].kind != scanner.String && tokens[i].kind != scanner.Int && tokens[i].kind != scanner.Float && tokens[i].kind != scanner.Ident {
+			return "", fmt.Errorf("unsupported Codex native exec field %q", key)
+		}
+		i++
+		if i < len(tokens) && tokens[i].kind == ',' {
+			i++
+		} else if i >= len(tokens) || tokens[i].kind != '}' {
+			return "", fmt.Errorf("malformed Codex native exec object")
+		}
+	}
+	if i+1 >= len(tokens) || tokens[i].kind != '}' || tokens[i+1].kind != ')' || !sawCmd {
+		return "", fmt.Errorf("malformed Codex native exec call")
 	}
 	return command, nil
 }
