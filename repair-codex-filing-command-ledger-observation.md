@@ -559,3 +559,16 @@ REJECTED. The plugins-only correction is narrow, keeps sessions outside every wr
 ### Summary
 
 The selected design grades one harness-owned public command-execution item instead of trusting a rollout, ledger, or nested sandbox. It preserves PR #679's exact lossy display as the positive fixture and requires every detached counterfeit to pass offline before the single validation live run.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Build the exact retained PR #679 public command_execution fixture and seven-rung counterfeit matrix first; all quote-seam, nested-output, duplicate/mixed, next-id, receipt, and entity controls must pass before other work.
+  `TestCodexPR679ExactPublicCommandTransaction` preserves and passes item_9 byte-for-byte; `TestCodexPublicFilingTransactionSevenRungMatrix` fails if a quote seam/envelope/exit changes, output is recursively decoded, creates duplicate or mix, any completed item uses `--next-id`, a receipt detaches, or durable entity bytes disagree.
+- DONE: Replace rollout/nested-sandbox grading with one top-level public transaction decoder using exact create count, exit 0, same-item receipt, and durable entity; restore common Codex front-door argv.
+  Commit 2e1530153 deletes the rollout decoder, reads each public line once, binds exactly one create to its exit-0 item receipt and entity, merges lifecycle-only rollout lookup back into its original helper, and proves filing argv byte-equals the common runner.
+- DONE: Run focused fixtures, detached controls, live-tag compile, gofmt, full, race, and exact six-path/LOC checks; do not run the model-backed filing target.
+  Focused and detached-clone tests, live-tag compile, `gofmt -w ./cmd ./internal`, full retry, and race passed; the exact six approved test paths are 158 insertions/196 deletions (net -038, within -090..-020), and no model run occurred.
+
+### Summary
+
+Implementation now grades Codex filing solely from the harness-captured top-level public command transaction and the durable entity, without recursively trusting command output or reading rollout state. The rejected filing-only sandbox and add-dir path are gone, common argv is restored byte-for-byte, and commit 2e1530153 is ready for independent validation.
