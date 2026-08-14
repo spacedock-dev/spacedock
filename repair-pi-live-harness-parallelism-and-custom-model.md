@@ -50,6 +50,8 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+started: 2026-08-14T01:55:02Z
+worktree: .worktrees/spacedock-ensign-repair-pi-live-harness-parallelism-and-custom-model
 ---
 
 ## Problem
