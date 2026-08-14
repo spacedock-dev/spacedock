@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: implementation
+status: validation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -440,3 +440,32 @@ REJECTED. The correlated transaction observer and detached falsifier matrix are 
 ### Summary
 
 The authorized correction moves only the filing permission flags to Codex's supported top-level position before `exec`. The transaction observer, ACs, product bytes, and every non-filing journey remain unchanged; validation retains ownership of the model-backed rerun.
+
+## Stage Report: validation (cycle 6)
+
+- FAILED: Reproduce AC-1 with the seven-rung correlated transaction matrix, then spend the single exact Codex filing run on frozen commit e851be3fe and verify one owned atomic command, exact receipt, correct durable entity, and zero unreachable/unrelated evidence.
+  On corrected frozen commit 354f4e362, rungs 1-3 passed and a no-model front-door probe proved the fixed argv launches, but the authorized replacement live run found no completed `CommandExecution` item and therefore established no atomic command, receipt, or entity evidence.
+- DONE: Reproduce AC-2 by attacking duplicate/mixed creates, any --next-id regardless of exit, failed/wrong/missing commands, forged public evidence, receipt ownership/bytes, malformed or ambiguous rollout, and entity mismatch.
+  The unchanged focused matrix, structural extraction, and correlated-rollout tests passed; cycle-5's detached 31-case audit already covers the unchanged transaction semantics and fails if any named counterfeit is accepted.
+- FAILED: Verify AC-3 with exact five-path -016 LOC evidence, filing-only workspace-write/never and non-filing argv parity, live-tag compile, gofmt, full, race, and a detached adversarial audit; recommend PASSED or REJECTED without editing candidate bytes.
+  The aggregate diff remains exactly 5 approved test paths and net -016, focused argv parity passed, and the candidate launcher accepted the exact top-level permission order; the new live finding stopped this pass before live-tag/full/race/gofmt and a fresh detached audit.
+- FAILED: Reproduce AC-1 evidence.
+  `TestLiveCommonFiling` launched the host on 354f4e362 but failed at `codex_live_runner_test.go:48` because the correlated rollout decoded to zero completed command executions.
+- DONE: Reproduce AC-2 evidence.
+  Rungs 4-7, structural extraction, missing/ambiguous rollout correlation, and the prior detached same-semantics audit remain green; the argv-only correction does not touch these bytes.
+- FAILED: Reproduce AC-3 evidence.
+  The exact signed surface and corrected top-level `--sandbox workspace-write --ask-for-approval never exec` order are proven, but the required live behavior failed and the finding-stop rule prohibited the remaining validation reruns.
+- DONE: Preserve the new finding and stop before candidate mutation or another live run for First Officer disposition.
+  Candidate HEAD remains 354f4e362; the authorized replacement model run was invoked exactly once and was not retried.
+
+### Review-finding disposition
+
+- Released user and normal workflow: the required exact Codex filing journey on the supported Codex CLI 0.147.0, using the corrected top-level workspace-write/never host argv.
+- Observable harm: the host launched, but its correlated rollout contained no completed `CommandExecution`; the live target could not establish the promised atomic filing path, same-item receipt, or durable entity.
+- Authority: value-ac[AC-1] requires the exact Codex filing live run to establish one completed exit-0 atomic filing transaction, its exact receipt, and the correct durable entity.
+- Trigger evidence: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags=live -count=1 -timeout 40m -run '^TestLiveCommonFiling$' ./internal/ensigncycle -v` failed after 42.22s with `correlated Codex rollout has no completed CommandExecution items`; the preceding candidate front-door `exec --help` probe exited 0 with the corrected flags.
+- Proposed classification: Material outcome defect; current task ownership requires First Officer investigation because the observer correctly rejected an actual supported live run with no command execution; hold 354f4e362 and do not mutate or rerun pending distinct disposition.
+
+### Summary
+
+REJECTED. The narrow argv-order correction fixes host launch and preserves the exact approved net -016 surface, while all unchanged offline transaction controls remain green. The authorized live rerun nevertheless produced zero completed command executions, so AC-1 lacks its required live proof; candidate bytes were not edited and no second run was attempted.
