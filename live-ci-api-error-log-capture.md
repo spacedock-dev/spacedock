@@ -5,6 +5,18 @@ group: tooling
 source: "2026-07-02 session: PR #461's claude-live sonnet lane failed the filing scenario on a 60s no-progress kill whose transcript tail ends mid-thinking (stream died mid-generation, work already complete on disk); the same window produced two explicit 'API Error: Connection closed mid-response' failures in an interactive subagent. The rerun went green with zero code change. Root cause was NOT determinable from CI: nothing captured distinguishes provider-side API weather / runner networking from the one actionable variant — the claude CLI hanging instead of retrying after a dropped stream. Captain direction: 'in any case, we should have api error logs etc, if we are not currently capturing that.'"
 id: r5y6qjr10k4m3gw9w5p3b2vj
 sprint: pi-ux
+gates:
+    version: 1
+    records:
+        - id: gate:r5y6qjr10k4m3gw9w5p3b2vj:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:r5y6qjr10k4m3gw9w5p3b2vj-backlog-1
+              briefing:
+                id: briefing:r5y6qjr10k4m3gw9w5p3b2vj:backlog:attempt-1:revision-1
+                digest: sha256:ab5631d7fc7f30835a41b462411b0dcc42702ec71b60b7c93b05fb8d71c1b8fe
+                request-digest: sha256:0b8b68120fec292362c6d3c2861e6242b730f46ace2255f02ab2f80f357c2c9b
+                room-ref: ./live-ci-api-error-log-capture/review/backlog/briefing-1
 ---
 
 ## Problem

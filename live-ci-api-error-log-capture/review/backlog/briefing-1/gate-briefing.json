@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:r5y6qjr10k4m3gw9w5p3b2vj:backlog:attempt-1:revision-1",
+  "question": "Approve this diagnostic capture for ideation: live CI captures API-error/retry logs so a stalled stream is diagnosable. Approve, revise, or hold?",
+  "artifacts": [
+    {
+      "id": "artifact:r5y6qjr10k4m3gw9w5p3b2vj:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7b8bd386bc21ce8f6889b41f3490267e165b6004/r5-backlog-review.md",
+      "rev": "sha256:86e2a4d50f6659250622135a6b716d5d82f67d34e53e20639d940e2c6c3f14f5",
+      "mediaType": "text/markdown",
+      "summary": "Per-scenario API-error/retry artifact; harness kill message points at it."
+    }
+  ]
+}
