@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-2:revision-1",
+  "question": "Approve validated Codex filing observation for delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/d7b119863710dd8177e6b701c472d90542aad036/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:3bd7adedda5dc81b7b30794958fd5e08bb0529132ed3d69ce01f67f64665eb07",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: 3 done, 0 skipped, 0 failed; AC-1 through AC-3 reproduced on frozen commit 2e1530153; exact live target XPASS; detached adversarial audit, full tests, race, live-tag compile, argv parity, and -038 net LOC across 6 files verified."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6ker7h25hj86983e5ef71ahm:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/4d1912a6969d25be190606ee2a44895c07045c9d/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1401e874d84a9a3c6a1d81495e56a578593dea5a58ff67e719cc0f26fb082ff8"
+    }
+  ]
+}
