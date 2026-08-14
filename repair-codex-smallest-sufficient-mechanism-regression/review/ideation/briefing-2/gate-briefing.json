@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:bfmczd31ydpp4stqjstf6xwx:ideation:attempt-2:revision-1",
+  "question": "Approve the native Codex lifecycle plus durable-state proof design for implementation after filing PR #686 merges?",
+  "artifacts": [
+    {
+      "id": "artifact:bfmczd31ydpp4stqjstf6xwx:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/698544e33b8d3331357b5dd8f08795fea2f0a5b7/repair-codex-smallest-sufficient-mechanism-regression.md",
+      "rev": "sha256:a3e0d829716ce5b3a62202b541b5c3f6cb0257ffd5b0f3f7abbe3e7c1f8d896b",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: the redesign rejects all shell-command engage evidence, requires typed spawn/handle/child/wait/completion identity plus durable state, preserves the safety binding, and fails closed across the declared negative matrix."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:bfmczd31ydpp4stqjstf6xwx:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/698544e33b8d3331357b5dd8f08795fea2f0a5b7/repair-codex-filing-command-ledger-observation.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:57827ab8d7f635160cf2fe4b710c3c1c4056bae567b7d10083dcd387ae0cbb9c"
+    }
+  ]
+}

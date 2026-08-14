@@ -49,6 +49,12 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+            - id: gate-attempt:bfmczd31ydpp4stqjstf6xwx-ideation-2
+              briefing:
+                id: briefing:bfmczd31ydpp4stqjstf6xwx:ideation:attempt-2:revision-1
+                digest: sha256:b3a8dca8eacd7c324f43a05f91a63f82133685fcdd9d447e6709a11a1d11aa73
+                request-digest: sha256:d7de4a9880e22be3746a1c5abf7389e167088c4702147e69611dd481b4227562
+                room-ref: ./repair-codex-smallest-sufficient-mechanism-regression/review/ideation/briefing-2
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 ---
