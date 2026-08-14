@@ -39,6 +39,17 @@ gates:
                 digest: sha256:0f88d0082b23330340b7234b5741b42d0828d42173d5212b5a26c6f0443814da
                 request-digest: sha256:7d6beada4a235da00201933a3bdcc516ec29dc4345d4d00adfcd2c5286c63030
                 room-ref: ./repair-pi-live-harness-parallelism-and-custom-model/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pnc09c4hz4wbzyegh3pnpb1d:ideation:1
+                briefing: briefing:pnc09c4hz4wbzyegh3pnpb1d:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-14T01:52:17.337776Z"
+                decision: approve
+                reason: Captain approved ideation gate; dispatch implementation for the Pi-harness bundle.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
