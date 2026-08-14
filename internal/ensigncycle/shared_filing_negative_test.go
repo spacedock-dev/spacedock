@@ -2,8 +2,6 @@ package ensigncycle
 
 import (
 	"encoding/json"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -215,69 +213,73 @@ printf '"'%s\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire 
 	}
 }
 
-func TestCodexFilingInvocationLedgerExecutionMatrix(t *testing.T) {
-	real := filepath.Join(t.TempDir(), "spacedock-real")
-	if err := os.WriteFile(real, []byte("#!/bin/sh\nexit \"${SPACEDOCK_TEST_REAL_EXIT:-0}\"\n"), 0o755); err != nil {
-		t.Fatal(err)
-	}
+func TestCorrelatedCodexFilingTransactionMatrix(t *testing.T) {
+	root := t.TempDir()
+	entityPath := filepath.Join(root, filingSlug+".md")
+	validEntity := "---\nid: 001\ntitle: Wire The Thing\nstatus: backlog\n---\n\nWire the thing for follow-up work.\n"
+	writeFile(t, entityPath, validEntity)
+	receipt := "created: " + entityPath + " id=001\n"
+	exit0, exit1 := 0, 1
+	valid := codexCommandExecution{Command: []string{"/bin/zsh", "-lc", `printf body | "${SPACEDOCK_BIN:-spacedock}" new wire-the-thing`}, Status: "completed", Stdout: receipt, ExitCode: &exit0}
+	unrelated := codexCommandExecution{Command: []string{"/bin/zsh", "-lc", "echo unrelated"}, Status: "completed", Stdout: receipt, ExitCode: &exit0}
 
 	tests := []struct {
-		name, command string
-		exit          string
-		wantErr       bool
+		name       string
+		executions []codexCommandExecution
+		entity     string
+		wantErr    bool
 	}{
-		{"bound new", `"$SPACEDOCK_BIN" new wire-the-thing --workflow-dir .`, "0", false},
-		{"PATH status new", `spacedock status --new wire-the-thing --workflow-dir .`, "0", false},
-		{"detached counterfeit", `echo unrelated >/dev/null; if false; then spacedock new wire-the-thing; fi`, "0", true},
-		{"manual next-id", `spacedock status --next-id; printf body > wire-the-thing.md`, "0", true},
-		{"next-id alongside new", `spacedock new wire-the-thing; spacedock status --next-id`, "0", true},
-		{"failed create", `spacedock new wire-the-thing || :; printf body > wire-the-thing.md`, "1", true},
-		{"wrong slug", `spacedock new other-slug`, "0", true},
-		{"missing create", `echo spacedock new wire-the-thing >/dev/null`, "0", true},
+		{"rung 1 exact transaction", []codexCommandExecution{valid}, validEntity, false},
+		{"rung 2 PR679 outer command", []codexCommandExecution{valid}, validEntity, false},
+		{"rung 3 unreachable dot form and unrelated success", []codexCommandExecution{unrelated}, validEntity, true},
+		{"rung 4 duplicate creates in one command", []codexCommandExecution{{Command: []string{"/bin/zsh", "-lc", "spacedock new wire-the-thing; spacedock new wire-the-thing"}, Status: "completed", Stdout: receipt, ExitCode: &exit0}}, validEntity, true},
+		{"rung 4 duplicate creates across commands", []codexCommandExecution{valid, valid}, validEntity, true},
+		{"rung 5 failed next-id beside valid create", []codexCommandExecution{{Command: []string{"/bin/zsh", "-lc", "spacedock status --next-id"}, Status: "failed", ExitCode: &exit1}, valid}, validEntity, true},
+		{"rung 6 failed create", []codexCommandExecution{{Command: valid.Command, Status: "failed", Stdout: receipt, ExitCode: &exit1}}, validEntity, true},
+		{"rung 6 wrong slug", []codexCommandExecution{{Command: []string{"/bin/zsh", "-lc", "spacedock new other-slug"}, Status: "completed", Stdout: receipt, ExitCode: &exit0}}, validEntity, true},
+		{"rung 6 receipt from unrelated command", []codexCommandExecution{{Command: valid.Command, Status: "completed", ExitCode: &exit0}, unrelated}, validEntity, true},
+		{"rung 6 duplicate receipt", []codexCommandExecution{{Command: valid.Command, Status: "completed", Stdout: receipt + receipt, ExitCode: &exit0}}, validEntity, true},
+		{"rung 6 wrong receipt path", []codexCommandExecution{{Command: valid.Command, Status: "completed", Stdout: "created: " + filepath.Join(root, "other.md") + " id=001\n", ExitCode: &exit0}}, validEntity, true},
+		{"rung 6 wrong entity id", []codexCommandExecution{valid}, strings.Replace(validEntity, "id: 001", "id: 002", 1), true},
+		{"rung 6 wrong entity body", []codexCommandExecution{valid}, strings.Replace(validEntity, "Wire the thing for follow-up work.", "one\ntwo", 1), true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ledger := newCodexFilingInvocationLedger(t, real)
-			cmd := exec.Command("/bin/sh", "-c", tt.command)
-			cmd.Dir = t.TempDir()
-			cmd.Env = replaceEnvValue(ledger.instrumentEnv(os.Environ()), "SPACEDOCK_TEST_REAL_EXIT", tt.exit)
-			if output, err := cmd.CombinedOutput(); err != nil {
-				t.Fatalf("shell: %v\n%s", err, output)
-			}
-			invocations, err := ledger.read()
-			if err != nil {
-				t.Fatalf("read ledger: %v", err)
-			}
-			if got := assertCodexFilingInvocations(invocations, filingSlug); (got != nil) != tt.wantErr {
-				t.Fatalf("filing grade = %v, want error %v; invocations=%#v", got, tt.wantErr, invocations)
+			writeFile(t, entityPath, tt.entity)
+			_, err := assertCodexFilingTransaction(tt.executions, entityPath, filingSlug)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("filing transaction error = %v, want error %v", err, tt.wantErr)
 			}
 		})
 	}
-	t.Run("concurrent records stay independent", func(t *testing.T) {
-		ledger := newCodexFilingInvocationLedger(t, real)
-		cmd := exec.Command("/bin/sh", "-c", `spacedock new wire-the-thing & spacedock new wire-the-thing & wait`)
-		cmd.Env = ledger.instrumentEnv(os.Environ())
-		if err := cmd.Run(); err != nil {
-			t.Fatal(err)
-		}
-		if got, err := ledger.read(); err != nil || len(got) != 2 {
-			t.Fatalf("concurrent ledger records = %#v, %v; want two complete records", got, err)
-		}
-	})
 }
 
-func TestCodexFilingInvocationLedgerFailsClosed(t *testing.T) {
-	for name, record := range map[string][]byte{
-		"truncated":          []byte("spacedock\x00argc\x002\x00new\x00wire-the-thing\x00exit\x00"),
-		"duplicate terminal": []byte("spacedock\x00argc\x002\x00new\x00wire-the-thing\x00exit\x000\x00exit\x000\x00"),
-		"unknown tool":       []byte("not-spacedock\x00argc\x002\x00new\x00wire-the-thing\x00exit\x000\x00"),
-		"malformed argc":     []byte("spacedock\x00argc\x00many\x00new\x00wire-the-thing\x00exit\x000\x00"),
-	} {
+func TestCodexCommandExecutionStructuralExtraction(t *testing.T) {
+	exit0 := 0
+	want := codexCommandExecution{Command: []string{"/bin/zsh", "-lc", "spacedock new wire-the-thing"}, Status: "completed", Stdout: "receipt", ExitCode: &exit0}
+	item := struct {
+		Type string `json:"type"`
+		codexCommandExecution
+	}{Type: "CommandExecution", codexCommandExecution: want}
+	event := struct {
+		Type    string `json:"type"`
+		Payload any    `json:"payload"`
+	}{Type: "event_msg", Payload: struct {
+		Type string `json:"type"`
+		Item any    `json:"item"`
+	}{Type: "item_completed", Item: item}}
+	encoded, err := json.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := codexCommandExecutions(string(encoded))
+	if err != nil || len(got) != 1 || got[0].Command[2] != "spacedock new wire-the-thing" || got[0].Stdout != "receipt" {
+		t.Fatalf("CommandExecution extraction = %#v, %v", got, err)
+	}
+	for name, rollout := range map[string]string{"public counterfeit": codexCommand("spacedock new wire-the-thing"), "malformed": "{}"} {
 		t.Run(name, func(t *testing.T) {
-			ledger := newCodexFilingInvocationLedger(t, "/bin/true")
-			writeFile(t, filepath.Join(ledger.dir, "invocation.bad"), string(record))
-			if _, err := ledger.read(); err == nil {
-				t.Fatal("malformed ledger record passed")
+			if got, err := codexCommandExecutions(rollout); err == nil {
+				t.Fatalf("unsupported evidence passed: %#v", got)
 			}
 		})
 	}

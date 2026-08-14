@@ -1,104 +1,99 @@
 package ensigncycle
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
-	"strconv"
+	"regexp"
 	"strings"
-	"testing"
 )
 
-type codexFilingInvocation struct {
-	argv     []string
-	exitCode int
+type codexCommandExecution struct {
+	Command  []string `json:"command"`
+	Status   string   `json:"status"`
+	Stdout   string   `json:"stdout"`
+	ExitCode *int     `json:"exit_code"`
 }
 
-type codexFilingInvocationLedger struct{ dir, shimDir, real string }
-
-func newCodexFilingInvocationLedger(t testing.TB, real string) codexFilingInvocationLedger {
-	root := t.TempDir()
-	l := codexFilingInvocationLedger{filepath.Join(root, "ledger"), filepath.Join(root, "bin"), real}
-	for _, dir := range []string{l.dir, l.shimDir} {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			t.Fatal(err)
+func codexCommandExecutions(rollout string) ([]codexCommandExecution, error) {
+	var executions []codexCommandExecution
+	for _, line := range strings.Split(rollout, "\n") {
+		var event struct {
+			Type    string `json:"type"`
+			Payload struct {
+				Type string `json:"type"`
+				Item struct {
+					Type string `json:"type"`
+					codexCommandExecution
+				} `json:"item"`
+			} `json:"payload"`
 		}
-	}
-	const shim = `#!/bin/sh
-set -u
-r=$(mktemp "$SPACEDOCK_CODEX_FILING_LEDGER_DIR/.pending.XXXXXX") || exit 125
-trap 'rm -f "$r"' EXIT HUP INT TERM
-printf 'spacedock\0argc\0%s\0' "$#" > "$r" || exit 125
-for arg in "$@"; do printf '%s\0' "$arg" >> "$r" || exit 125; done
-"$SPACEDOCK_CODEX_FILING_REAL" "$@"
-status=$?
-printf 'exit\0%s\0' "$status" >> "$r" || exit 125
-mv "$r" "$SPACEDOCK_CODEX_FILING_LEDGER_DIR/invocation.$$.${r##*.}" || exit 125
-trap - EXIT HUP INT TERM
-exit "$status"
-`
-	if err := os.WriteFile(filepath.Join(l.shimDir, "spacedock"), []byte(shim), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	return l
-}
-
-func (l codexFilingInvocationLedger) instrumentEnv(env []string) []string {
-	env = replaceEnvValue(env, "SPACEDOCK_BIN", filepath.Join(l.shimDir, "spacedock"))
-	env = replaceEnvValue(env, "SPACEDOCK_CODEX_FILING_LEDGER_DIR", l.dir)
-	env = replaceEnvValue(env, "SPACEDOCK_CODEX_FILING_REAL", l.real)
-	path, _ := envValue(env, "PATH")
-	return replaceEnvValue(env, "PATH", l.shimDir+string(os.PathListSeparator)+path)
-}
-
-func (l codexFilingInvocationLedger) read() ([]codexFilingInvocation, error) {
-	paths, _ := filepath.Glob(filepath.Join(l.dir, "invocation.*"))
-	var out []codexFilingInvocation
-	for _, path := range paths {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
-		fields := bytes.Split(data, []byte{0})
-		if len(fields) < 6 || len(fields[len(fields)-1]) != 0 || string(fields[0]) != "spacedock" || string(fields[1]) != "argc" {
-			return nil, fmt.Errorf("invalid Codex filing ledger record %s", path)
-		}
-		argc, argcErr := strconv.Atoi(string(fields[2]))
-		exitCode, exitErr := strconv.Atoi(string(fields[len(fields)-2]))
-		if argcErr != nil || exitErr != nil || argc < 0 || exitCode < 0 || exitCode > 255 || len(fields) != argc+6 || string(fields[3+argc]) != "exit" {
-			return nil, fmt.Errorf("invalid Codex filing ledger fields in %s", path)
-		}
-		invocation := codexFilingInvocation{exitCode: exitCode}
-		for _, field := range fields[3 : 3+argc] {
-			invocation.argv = append(invocation.argv, string(field))
-		}
-		out = append(out, invocation)
-	}
-	return out, nil
-}
-
-func assertCodexFilingInvocations(invocations []codexFilingInvocation, slug string) error {
-	filed := false
-	for _, invocation := range invocations {
-		args := invocation.argv
-		if invocation.exitCode != 0 || len(args) == 0 {
+		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "event_msg" ||
+			event.Payload.Type != "item_completed" || event.Payload.Item.Type != "CommandExecution" {
 			continue
 		}
-		if args[0] == "status" && slices.Contains(args[1:], "--next-id") {
-			return fmt.Errorf("filing previewed --next-id instead of using the atomic new path")
-		}
-		alias := slices.Index(args[1:], "--new")
-		filed = filed || len(args) > 1 && args[0] == "new" && args[1] == slug || args[0] == "status" && alias >= 0 && alias+2 < len(args) && args[alias+2] == slug
+		executions = append(executions, event.Payload.Item.codexCommandExecution)
 	}
-	if !filed {
-		return fmt.Errorf("filing ledger has no successful spacedock new %s invocation", slug)
+	if len(executions) == 0 {
+		return nil, fmt.Errorf("correlated Codex rollout has no completed CommandExecution items")
 	}
-	return nil
+	return executions, nil
 }
 
-func replaceEnvValue(env []string, key, value string) []string {
-	out := slices.DeleteFunc(append([]string(nil), env...), func(entry string) bool { return strings.HasPrefix(entry, key+"=") })
-	return append(out, key+"="+value)
+func assertCodexFilingTransaction(executions []codexCommandExecution, entityPath, slug string) (string, error) {
+	createPattern := regexp.MustCompile(`(?:\bnew\b|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t;|&]|$)`)
+	var filing *codexCommandExecution
+	creates := 0
+	for i := range executions {
+		if nextIDInvocation.MatchString(strings.Join(executions[i].Command, " ")) {
+			return "", fmt.Errorf("filing previewed --next-id instead of using the atomic new path")
+		}
+		if len(executions[i].Command) != 3 || executions[i].Command[1] != "-lc" && executions[i].Command[1] != "-c" {
+			continue
+		}
+		command := executions[i].Command[2]
+		if !commandFilesViaNew(command, slug) {
+			continue
+		}
+		count := len(createPattern.FindAllStringIndex(command, -1))
+		creates += count
+		if count == 1 && executions[i].Status == "completed" && executions[i].ExitCode != nil && *executions[i].ExitCode == 0 {
+			filing = &executions[i]
+		}
+	}
+	if creates != 1 || filing == nil {
+		return "", fmt.Errorf("correlated Codex rollout has %d atomic creates for %s, want one completed exit-0 transaction", creates, slug)
+	}
+
+	path := filepath.Clean(entityPath)
+	receiptPattern := regexp.MustCompile(`(?m)^created: ` + regexp.QuoteMeta(path) + ` id=([^[:space:]]+)$`)
+	receipts := receiptPattern.FindAllStringSubmatch(filing.Stdout, -1)
+	if len(receipts) != 1 {
+		return "", fmt.Errorf("atomic create stdout has %d exact receipts for %s, want one", len(receipts), path)
+	}
+	if err := assertCodexFiledEntity(path, receipts[0][1]); err != nil {
+		return "", err
+	}
+	return filing.Command[2], nil
+}
+
+func assertCodexFiledEntity(path, id string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read landed filing entity: %w", err)
+	}
+	parts := strings.SplitN(string(data), "---", 3)
+	if len(parts) != 3 || strings.TrimSpace(parts[0]) != "" {
+		return fmt.Errorf("landed filing entity has malformed frontmatter")
+	}
+	for _, field := range []string{"\ntitle: Wire The Thing\n", "\nstatus: backlog\n", "\nid: " + id + "\n"} {
+		if strings.Count("\n"+parts[1]+"\n", field) != 1 {
+			return fmt.Errorf("landed filing entity has invalid %s", strings.TrimSpace(field))
+		}
+	}
+	if body := strings.TrimSpace(parts[2]); body == "" || strings.ContainsAny(body, "\r\n") {
+		return fmt.Errorf("landed filing entity body is not one nonblank line")
+	}
+	return nil
 }
