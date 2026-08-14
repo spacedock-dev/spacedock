@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: validation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -146,11 +146,11 @@ gates:
                 reason: 'Independent validation reproduced AC-1 through AC-3 on frozen commit 2e1530153: exact live Codex target XPASSed, all adversarial counterfeits were rejected, full and race suites passed, and no finding remains.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
-mod-block: merge:pr-merge
-pr: "#686"
+mod-block:
+pr:
 ---
 
 ## Problem
@@ -602,3 +602,16 @@ Implementation now grades Codex filing solely from the harness-captured top-leve
 ### Summary
 
 PASSED. AC-1 through AC-3 have independent behavioral evidence and no material, deferred-risk, or polish finding remains; the candidate was not edited. Public JSONL, stderr, final message, process result, and the captured entity/boot workflow outcome remain under `/tmp/spacedock-6k-cycle9-live-artifacts.V6xuCC` (JSONL SHA-256 `1740a2252bd3fbb681e6a5d7b576736cb4111dc8819eebcc4dca6ef2027cc88b`).
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Implement collision-free Codex live parallelism at k=3, with slowest-first duration hints, while preserving all existing journey identities, metrics, and 6k filing behavior.
+  Commit f36a707ba admits Codex to `t.Parallel`, pins CI at `-parallel 3`, queues the 17 unchanged journey declarations from conservative longest to shortest retained duration, and gives each common journey `_setup/<journey-id>` while leaving scenario IDs, metrics, quiet budgets, and commit 2e1530153 filing bytes unchanged.
+- DONE: Add focused tests that fail without Codex parallel admission, the explicit -parallel 3 CI command, isolated per-journey setup artifacts, and the intended slowest-first queue order; update runtime documentation.
+  `TestRuntimeLiveCodexParallelCapacity` fails if admission, queue order, or setup isolation regresses; exact command tests require `-parallel 3`, registry reconciliation passes, and `docs/runtime-live-ci.md` documents the bounded queue and artifact layout.
+- DONE: Run gofmt, focused tests, go test ./..., and go test ./... -race; keep candidate bytes frozen after those checks for one PR Codex live run.
+  `gofmt -w ./cmd ./internal`, focused contract/live-tag compile, full, and race passed on f36a707ba; the captain-expanded delta is exactly five files and 99 insertions/62 deletions (net +037 versus +035 estimate), and no local model suite ran.
+
+### Summary
+
+Codex common live journeys now use the existing Go parallel-test mechanism with a hard CI capacity of three, per-journey setup artifacts, and retained-duration queue order. The five-file test/CI/documentation change is committed and frozen for the single PR Codex live proof.
