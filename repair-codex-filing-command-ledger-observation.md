@@ -108,7 +108,7 @@ PR #679 run `31728107636`, Codex job `94541783359`, created `wire-the-thing.md` 
 
 This is an observation defect in the Codex live-test adapter, not a product filing defect. Candidate `4faa23656` is frozen after two observation mechanisms failed. Native JavaScript occurrence could pair an unrelated successful execution with an unreachable dot-form filing call. The replacement launcher shim reached executable entry, but wrote its authority to a model-writable directory; a hand-written valid record passed without entry, duplicate successful creates passed, and a failed `--next-id` beside a successful create was ignored.
 
-The supported Codex observables stop one process too early. Public `codex exec --json` is a harness-owned pipe but exposes a lossy shell display. The correlated Codex session rollout exposes a runtime-generated `CommandExecution` with exact outer argv, status, and exit code, but the executable is `/bin/zsh -lc`; it does not expose child `execve` events. The rollout file is also model-writable under the filing journey's current sandbox-bypass posture. Durable entity bytes, stdout, and Git history cannot supply the missing child-process identity. Therefore no existing supported Codex surface proves real `spacedock` executable entry against the required counterexamples.
+The captain has re-anchored AC-1 from OS child-`execve` identity to proof that Codex executed the atomic filing path. Public `codex exec --json` remains too lossy by itself, but the already-supported thread correlation resolves its `thread.started` ID to exactly one Codex session rollout. That rollout contains runtime-generated `CommandExecution` items with the executed outer command, completion status, exit code, stdout, and stderr. Combined with the exact `created:` receipt and independently verified landed entity, this supported evidence distinguishes an executed atomic path from unreachable native JavaScript text and unrelated success without requiring OS-specific supervision.
 
 ## Risk spike
 
@@ -118,63 +118,69 @@ No model run was spent. Codex CLI `0.147.0` reports hooks as stable and persists
 - `/usr/bin/true; /usr/bin/true` produced one completed outer event, so the observable cannot count duplicate child executions.
 - `/usr/bin/false; /usr/bin/true` produced one completed outer event with exit 0, so a later success masks the earlier child failure.
 
-Codex hooks observe tool use at the same shell boundary and do not add child-process identity. Reading the session rollout from a workspace-write sandbox would remove model write authority but would not repair these three non-injective results. The reserved exact `TestLiveCommonFiling/codex` run remains unspent.
+The spike establishes the boundary of the selected claim: correlated `CommandExecution` can prove which outer command Codex actually ran, but not child `execve` identity or arbitrary shell branch execution. The revised grade therefore requires one unambiguous atomic-`new` filing observation, rejects mixed `--next-id` or duplicate create evidence within or across observed commands, and requires the exact successful receipt plus durable entity. A filing-only workspace-write/never launch removes model write access to the correlated session log. The reserved exact `TestLiveCommonFiling/codex` run remains unspent.
 
 ## Proposed approach
 
-Implementation is held for a captain scope decision; another parser, file ledger, or shim-only patch cannot satisfy AC-1 and AC-2.
+For the Codex `filing` journey only, replace the file ledger with the existing `codexNativeLifecycleStream` correlation: take the sole `thread.started` ID from the harness-owned public stream, resolve exactly one rollout under the isolated `CODEX_HOME`, and inspect only runtime-generated completed `CommandExecution` items. Launch only this journey with Codex `workspace-write` and approval `never`, keeping the rollout outside the writable workflow root.
 
-**Option A — preserve the end value (recommended):** authorize a new test-only child-execution authority outside the model's write capability. The smallest credible design is a filing-only process supervisor that receives records over a private Unix socket and accepts them only after verifying the peer process is the exact harness-created wrapper executable; it then counts every create and every `--next-id` attempt before forwarding to the real binary. This is custom OS/runtime instrumentation, requires a platform spike and platform-specific peer-identity support, and is outside the currently approved “existing supported observable” boundary.
+Grade the correlated execution evidence as one transaction:
 
-**Option B — preserve the current scope:** change AC-1/AC-2 from real `spacedock` executable entry to Codex outer-command execution. Run only the filing journey in `workspace-write` with `never` approval so the correlated session rollout is not model-writable, then grade its runtime-owned `CommandExecution` events. This is cheaper and uses a supported observable, but explicitly permits unreachable, duplicate, and masked-failure child commands; it abandons the stated end value and the three required falsifiers.
+1. Exactly one completed exit-0 observed command must contain exactly one atomic `new wire-the-thing` / `status --new wire-the-thing` invocation recognized by the existing `commandFilesViaNew` grammar.
+2. No observed command, successful or failed, may contain `--next-id`; no command may contain a second atomic create for the requested slug. Counts apply within one shell command and across commands.
+3. The same completed command must carry exactly one receipt line `created: <canonical-entity-path> id=<landed-id>` in runtime-recorded stdout. A receipt from an unrelated command, a forged public event, or command narration does not correlate.
+4. The existing filing assertion independently requires the canonical entity path, expected title/status/body, stamped ID, and clean durable workflow result.
 
-**Option C — product receipt:** authorize a product-owned, harness-verifiable execution receipt from `spacedock new`. This would be portable but changes product command/runtime surface and is currently forbidden.
+This serves AC-1 and AC-2 without a new JavaScript or shell parser: it structurally decodes the supported Codex event schema and reuses the existing bounded filing recognizer. Unreachable dot-form `tools.exec_command` text has no `CommandExecution` item and fails. Unrelated success cannot lend status or receipt to another item. Mixed `new`/`--next-id`, duplicate creates, failed commands, wrong slug, missing or duplicate receipt, and wrong entity fail closed.
 
-No option is selected in this ideation. The captain must either authorize Option A/C's expanded authority or explicitly relax AC-1/AC-2 to Option B. Until then there is no sound implementation target.
+The simplest alternative is the frozen launcher ledger; it is insufficient because the model can write its records. Public completion plus durable state is also insufficient because public command display is lossy and stdout/state can be forged independently. Platform process supervision was rejected by the captain as unnecessary for the revised atomic-path claim.
 
 ## Verification ladder
 
-After the scope decision, the first test remains the exact falsifier matrix:
+The focused no-model matrix exercises the selected transaction:
 
-1. One real exit-0 `new wire-the-thing` entry plus the landed entity passes.
-2. Hand-written valid old-ledger bytes, a forged public receipt, narration, and unreachable JavaScript or shell text produce zero accepted entries.
-3. Two successful creates fail the exactly-one rule, including concurrent creates.
-4. Any executed `status --next-id` fails regardless of its exit code or a successful create beside it.
-5. Failed create, wrong slug, missing create, malformed observer input, and manual entity write fail.
-6. The model cannot write, replace, truncate, or invoke the observation authority directly; the negative test exercises that capability boundary rather than checking pathname placement.
+1. One correlated completed exit-0 command with one recognized atomic create, one exact receipt, and the correct entity passes.
+2. PR #679's native command shape passes even though the public display alone remains unrecognized.
+3. Unreachable native dot-form filing text plus an unrelated successful `CommandExecution` produces zero creates and fails, even with a forged public receipt and landed entity.
+4. Duplicate create evidence within one command or across two completed commands fails the exactly-one count.
+5. Any `--next-id` evidence fails regardless of command exit or a valid create/receipt/entity beside it.
+6. Failed create, wrong slug, missing create, receipt from another command, missing/duplicate/wrong-path/wrong-ID receipt, malformed/missing/ambiguous rollout, and wrong entity fail.
+7. Filing-only argv proves `workspace-write` plus `never`; other journey argv remains byte-identical.
 
-Focused tests, live-tag compile, `gofmt`, full, and race run before validation. Validation alone spends the one exact Codex filing model run and requires one accepted real create, the exact entity on disk, and zero `--next-id` attempts.
+Focused tests, live-tag compile, `gofmt`, full, and race run before validation. Validation alone spends the one exact Codex filing model run and requires one accepted atomic-path observation, the exact receipt and entity, and zero `--next-id` evidence.
 
 ## Out of scope
 
-- No product hook, command, protocol, state store, lifecycle guard, global hook, or replacement for the compaction `SessionStart` hook; the ledger exists only under `t.TempDir()` for the Codex filing journey.
+- No product hook, command, protocol, state store, lifecycle guard, global hook, process supervisor, file ledger, or replacement for the compaction `SessionStart` hook.
 - No change to `spacedock new`, command grammar, stored entity formats, write authority, or product runtime behavior.
 - No work on Pi, Opus, rejection flow, supporting-evidence, mechanically-continue-Codex validation, another owner's target binding, or reconciliation row.
 - PR #682's rejection-flow failure remains `live-evidence-followups` ownership.
 
 ## Acceptance criteria
 
-- **AC-1 (VALUE):** A real exit-0 `spacedock new wire-the-thing` child execution produces exactly one accepted observation and the expected on-disk entity, while hand-written evidence and unreachable JavaScript or shell commands produce none. Verified by matrix rungs 1-3 and the sole exact Codex filing live run; substituting outer-shell occurrence or model-writable bytes makes the negative controls fail.
-- **AC-2:** Bound and PATH-resolved aliases pass only on real child execution; duplicate creates, any executed `--next-id` regardless of exit, manual/non-atomic, failed, wrong-slug, missing, malformed, forged, and concurrent cases remain failures. Verified by matrix rungs 3-6 through the same observer and grade.
-- **AC-3:** The selected implementation changes only Codex filing-test observation within the captain-approved expanded authority; product grammar, stored formats, write authority, other runtimes, and non-filing journeys remain unchanged unless the captain explicitly selects Option C. Verified by an exact changed-path/semantic-budget check, live-tag compile, `go test ./...`, and `go test ./... -race`.
+- **AC-1 (VALUE):** Supported Codex evidence establishes exactly one completed exit-0 atomic filing-path observation, its exact `created: <canonical-path> id=<landed-id>` receipt, and the correct durable entity; unreachable native filing text plus unrelated success establishes zero. Verified by matrix rungs 1-3 and the sole exact Codex filing live run; removing thread correlation, receipt correlation, or the landed-entity check makes a named negative control pass.
+- **AC-2:** Bound and PATH-resolved atomic aliases pass only with one correlated transaction; duplicate create evidence, any observed `--next-id` regardless of exit, manual/non-atomic, failed, wrong-slug, missing, malformed, forged-public, mixed-command, wrong-receipt, and ambiguous-rollout cases remain failures. Verified by matrix rungs 4-7 through the same observer and grade.
+- **AC-3:** The delivered diff changes only Codex filing-test observation and its filing-only sandbox posture; product bytes, CLI grammar, stored formats, authority, other runtimes, and non-filing journeys are unchanged. Verified by exact changed paths and signed LOC, filing/other-journey argv controls, live-tag compile, `go test ./...`, and `go test ./... -race`.
 
 ## Test plan
 
-- Before implementation, spike the captain-selected authority against peer forgery/model write access and all six verification rungs. A failed capability-boundary spike returns to ideation; it does not trigger another parser or file-ledger correction.
-- Add table-driven observer/grade tests that exercise real child processes and the three exact validation counterexamples.
-- Retain the correlated PR #679 fixture only as the historical false-negative shape; it is not execution authority.
+- Replace the ledger matrix with table-driven correlated `CommandExecution` transaction tests for all seven rungs. Fixtures structurally encode supported Codex events; they do not parse native JavaScript or infer child processes.
+- Extend the existing correlated-session fixture with PR #679 command/stdout evidence and the unreachable/unrelated-success control. Mutating thread ID, event type/status/exit, create count, receipt ownership, receipt bytes, or entity bytes must turn the corresponding positive red.
+- Add filing-only argv tests for workspace-write/never and a non-filing parity control.
 - Run the exact targeted Codex filing live test once on frozen final bytes in validation. Do not spend another live correction on trace parsing.
 - Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` before delivery.
 
 ## Expected surface and semantic budget
 
-No implementation estimate is authoritative until the captain selects the required scope; the alternatives have materially different authority and platform cost.
+Expected implementation delta from frozen `4faa23656`: **-050 net LOC across 5 test files** (about 150 insertions and 200 deletions), accepted range **-085 to -015**:
 
-- **Option A provisional surface from frozen `4faa23656`: +180 net LOC across 6 test files** (about 260 insertions and 80 deletions): `internal/ensigncycle/codex_filing_execution_observer_test.go` (replacement supervisor and peer check), `codex_filing_peer_darwin_test.go`, `codex_filing_peer_linux_test.go`, `codex_live_runner_test.go`, `shared_filing_negative_test.go`, and `team_capability_test.go`. Tolerance: ±60 after the required platform spike. Allowed semantic change: filing-only test process supervision and peer identity; no product or other-journey behavior.
-- **Option B provisional surface from frozen `4faa23656`: -050 net LOC across 5 test files** (about 120 insertions and 170 deletions): delete `codex_filing_invocation_ledger_test.go`; update `codex_live_runner_test.go`, `claude_runtime_helpers_test.go`, `shared_filing_negative_test.go`, and `team_capability_test.go`. Tolerance: ±35. Allowed semantic change: filing-only workspace-write sandbox and outer-command grading, plus explicit relaxation of AC-1/AC-2.
-- **Option C:** intentionally unestimated until product receipt authority, command surface, and portability are approved; it breaches the current zero-product-file semantic budget.
+- `internal/ensigncycle/codex_filing_invocation_ledger_test.go` — delete the model-writable file ledger and reader.
+- `internal/ensigncycle/codex_live_runner_test.go` — use correlated native execution evidence and receipt/entity grading; remove launcher/host shim binding.
+- `internal/ensigncycle/claude_runtime_helpers_test.go` — extend the existing thread-to-rollout correlation with structural `CommandExecution` transaction extraction and exact receipt ownership.
+- `internal/ensigncycle/shared_filing_negative_test.go` — replace ledger integrity tests with the seven-rung correlated evidence matrix.
+- `internal/ensigncycle/team_capability_test.go` — add filing-only workspace-write/never argv plus non-filing parity controls.
 
-For Options A/B, CLI output, command grammar, stored formats, write authority, Claude/Pi grading, other journeys, and site documentation remain unchanged. The current frozen candidate remains exactly `4faa23656` and the exact Codex filing model run remains reserved.
+Allowed semantic change: Codex filing-test evidence moves from a model-writable launcher ledger to correlated runtime `CommandExecution` plus exact receipt and durable entity; only the filing journey changes from sandbox bypass to workspace-write/never. No allowed change to CLI output, command grammar, stored formats, write authority, product runtime behavior, Claude/Pi grading, other journeys, or documentation. The candidate remains frozen at `4faa23656`; the exact Codex filing model run remains reserved for validation.
 
 ## Stage Report: backlog
 
@@ -347,3 +353,16 @@ REJECTED. The intended eight-rung controls pass and the approved signed surface 
 ### Summary
 
 Cycle 3 establishes that both the file ledger and Codex's supported outer-command events stop short of trustworthy child executable entry. The task now requires an explicit scope decision rather than another parser or model-writable attestation patch; no candidate bytes or reserved live evidence changed.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Replace the platform-supervisor options with one selected direction that reuses the existing correlated Codex thread-log infrastructure and the durable landed entity.
+  The captain-selected design correlates the harness thread ID to one isolated rollout, grades runtime `CommandExecution` transactions plus the exact receipt/entity, and removes the rejected file ledger and process supervisor.
+- DONE: Define supported evidence and negative controls: completed command execution, atomic new invocation, exact created receipt, correct entity, and rejection of any --next-id or unreachable/mixed-command counterfeit.
+  Seven no-model rungs require one completed exit-0 atomic command, its owned exact receipt and correct entity; unreachable native text, unrelated success, duplicate/mixed create, any `--next-id`, failed/wrong/missing evidence, and ambiguous rollout fail.
+- DONE: Update ACs, test plan, semantic budget, exact paths, and signed estimate to -050 net LOC across 5 files from frozen 4faa23656; keep the live run unspent.
+  AC-1 now measures supported atomic-path evidence, AC-2 preserves fail-closed controls, AC-3 fences semantics; the exact five test paths budget about 150 insertions/200 deletions in the accepted -085..-015 range, and no model run occurred.
+
+### Summary
+
+Cycle 4 adopts the captain's supported-evidence boundary and removes the unresolved platform alternatives. The design reuses existing Codex thread correlation, adds receipt ownership and durable-state checks, keeps product and other journeys unchanged, and reserves the sole exact live filing run for validation.
