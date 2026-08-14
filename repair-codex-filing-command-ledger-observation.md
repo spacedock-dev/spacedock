@@ -136,6 +136,17 @@ gates:
                 digest: sha256:8b08c80188d91a4876504f2148c41add2ac09a289030ba6bfbebd1789e6470cc
                 request-digest: sha256:9555b352be79e6c92a650ae430c5b4b6880e0b01975da99ef99482bf91c122d7
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:validation:2
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-14T19:40:34.685687Z"
+                decision: approve
+                reason: 'Independent validation reproduced AC-1 through AC-3 on frozen commit 2e1530153: exact live Codex target XPASSed, all adversarial counterfeits were rejected, full and race suites passed, and no finding remains.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 mod-block:
