@@ -37,6 +37,10 @@ gates:
                 digest: sha256:ce90c429547ac83a604105637315c4c3178ee6d54e5014bbb0deb08f37d81149
                 request-digest: sha256:fa93a503b3cef14b321ba2bae869c1f252a43f4988a0c0af1b086c622e2898f2
                 room-ref: ./live-ci-api-error-log-capture/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-14T14:30:13.252276Z"
+                reason: Captain dropped Phase 0; not relevant right now. Entity moved to live-evidence-followups; ideation work retained on the body.
 started: 2026-08-14T06:44:38Z
 ---
 
