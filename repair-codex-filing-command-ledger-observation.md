@@ -99,6 +99,17 @@ gates:
                 digest: sha256:8d81b2b8a93e6c7ac79aa60525fb6d5f583465b7e7b2e8c1f895ae966adfe09f
                 request-digest: sha256:ec47e1fdae1e9e12174a6b7dad778d5096373be4265293ed61bbbb122110bdc8
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/ideation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:ideation:5
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-5:revision-1
+                by: agent:first-officer
+                at: "2026-08-14T18:08:11.83885Z"
+                decision: approve
+                reason: 'The harness-owned public event boundary avoids every failed authority mechanism, binds command/exit/receipt/entity in one transaction, and preserves the exact PR #679 fixture plus detached negative controls.'
+              application:
+                target-stage: implementation
+                state: pending
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
