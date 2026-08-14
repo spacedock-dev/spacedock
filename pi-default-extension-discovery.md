@@ -1,6 +1,6 @@
 ---
 title: Pi default extension discovery for an isolated home
-status: backlog
+status: ideation
 source: "Pi-UX carve, 2026-08-13: runtime-support first-contact friction"
 score: 0.8
 sprint: pi-ux
@@ -29,7 +29,7 @@ gates:
                 reason: Captain approved backlog gate; advance to ideation for extension discovery.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
