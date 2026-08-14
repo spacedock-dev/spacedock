@@ -86,7 +86,7 @@ func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner 
 	return r
 }
 
-func newCodexLiveRunner(t *testing.T) codexLiveRunner {
+func newCodexLiveRunner(t *testing.T, setupIDs ...string) codexLiveRunner {
 	t.Helper()
 	openAIAPIKey := os.Getenv("OPENAI_API_KEY")
 	realHome := os.Getenv("HOME")
@@ -117,7 +117,11 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	}
 	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), openAIAPIKey)
 
-	setupDir := filepath.Join(artifactRoot, "_setup")
+	setupID := ""
+	if len(setupIDs) > 0 {
+		setupID = setupIDs[0]
+	}
+	setupDir := codexLiveSetupArtifactDir(artifactRoot, setupID)
 	if err := os.MkdirAll(setupDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -141,6 +145,13 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	}
 
 	return codexLiveRunner{binary: binary, pluginDir: repo, codexBin: codexBin, codexHome: codexHome, env: env, artifactRoot: artifactRoot}
+}
+
+func codexLiveSetupArtifactDir(artifactRoot, setupID string) string {
+	if setupID == "" {
+		return filepath.Join(artifactRoot, "_setup")
+	}
+	return filepath.Join(artifactRoot, "_setup", setupID)
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {

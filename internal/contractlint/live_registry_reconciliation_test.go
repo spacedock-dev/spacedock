@@ -227,15 +227,35 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 		name, text, want string
 	}{
 		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 2 ./internal/ensigncycle/`},
-		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' ./internal/ensigncycle`},
+		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle`},
 		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
 		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v`},
-		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
+		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v`},
 		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
 	} {
 		if count := strings.Count(command.text, command.want); count != 1 {
 			t.Errorf("%s common-suite command count = %d, want 1", command.name, count)
 		}
+	}
+}
+
+func TestRuntimeLiveCodexParallelCapacity(t *testing.T) {
+	repo := repoRoot(t)
+	shared := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "shared_live_runner_test.go")))
+	if !strings.Contains(shared, `liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME"))`) {
+		t.Fatal("shared live journeys do not admit Codex to t.Parallel")
+	}
+	last := -1
+	for _, name := range []string{"OwnedConflictOwnerHandoff", "RejectionFlow", "AutoContinueAfterImplementation", "KeepMovingPosture", "DefaultHeadlessGateStop", "SmallestSufficientMechanism", "RecordedGateLifecycle", "FullEnsignCycle", "ACValueReanchor", "WithdrawnGateRecovery", "GateGuardrail", "FeedbackThreeCycleEscalation", "SelfEvidenceMergeTriage", "MergeHookGuardrail", "Filing", "ZeroDiscovery", "ShallowBoot"} {
+		at := strings.Index(shared, "func TestLiveCommon"+name+"(")
+		if at <= last {
+			t.Fatalf("Codex live queue is not slowest-first at %s", name)
+		}
+		last = at
+	}
+	runner := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "codex_live_runner_test.go")))
+	if !strings.Contains(shared, `newCodexLiveRunner(t, id)`) || !strings.Contains(runner, `setupDir := codexLiveSetupArtifactDir(artifactRoot, setupID)`) || !strings.Contains(runner, `filepath.Join(artifactRoot, "_setup", setupID)`) {
+		t.Fatal("Codex setup artifacts are not isolated by journey ID")
 	}
 }
 
