@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: validation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -427,3 +427,16 @@ Codex filing evidence now comes from the single correlated rollout's runtime-own
 ### Summary
 
 REJECTED. The correlated transaction observer and detached falsifier matrix are clean, and the candidate has the exact approved five-file net -016 surface, but its filing-only approval argv cannot launch the installed supported Codex host. The candidate was not edited, the exact command was not rerun, and the race suite was intentionally stopped after the new finding.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Move the filing-only sandbox and approval flags to the Codex top-level position before exec, as proven by the existing launcher-order test; change no evidence semantics.
+  Commit 354f4e362 changes only two argv/test lines so the filing host suffix starts `--sandbox workspace-write --ask-for-approval never exec`; correlated transaction files and semantics are byte-identical to e851be3fe.
+- DONE: Add or correct the argv test so the exact Spacedock host fence produces --sandbox workspace-write --ask-for-approval never exec, while non-filing argv remains byte-identical.
+  `TestCodexLiveRunnerUsesRestrictedPostureOnlyForFiling` compares non-filing argv with `slices.Equal` and fails if the exact filing prefix order changes or bypass posture returns.
+- DONE: Run the focused argv/matrix checks, live-tag compile, gofmt, full, race, and exact five-path/LOC checks; do not spend another model run.
+  Focused argv/matrix/extraction and launcher-order tests, live-tag compile, `gofmt -w ./cmd ./internal`, full, race, diff, and surface checks passed; aggregate delta remains 174 insertions/190 deletions (net -016) across 5 paths, and no model run occurred.
+
+### Summary
+
+The authorized correction moves only the filing permission flags to Codex's supported top-level position before `exec`. The transaction observer, ACs, product bytes, and every non-filing journey remain unchanged; validation retains ownership of the model-backed rerun.
