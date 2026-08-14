@@ -572,3 +572,16 @@ The selected design grades one harness-owned public command-execution item inste
 ### Summary
 
 Implementation now grades Codex filing solely from the harness-captured top-level public command transaction and the durable entity, without recursively trusting command output or reading rollout state. The rejected filing-only sandbox and add-dir path are gone, common argv is restored byte-for-byte, and commit 2e1530153 is ready for independent validation.
+
+## Stage Report: validation (cycle 9)
+
+- DONE: Reproduce AC-1 with the exact PR #679 public event and seven-rung matrix, then run the exact Codex filing target on frozen commit 2e1530153 and verify one top-level atomic transaction, exact same-item receipt, correct entity, and zero unreachable/unrelated evidence.
+  The exact retained item_9 fixture and rungs 1-3 passed; the sole live run XPASSed in 47.9s with six top-level command items, exactly one create-owning item_8 (completed/exit 0), one same-item canonical receipt for id 001, the backlog entity and one-line body in the next captured command, no --next-id, and no nested event accepted.
+- DONE: Reproduce AC-2 by attacking duplicate/mixed creates, any --next-id regardless of exit, failed/wrong/missing events, nested fake events, detached receipts, malformed envelopes, and entity mismatch without recursive decoding.
+  Rungs 4-7 passed on the frozen checkout; the detached audit at `/tmp/spacedock-6k-cycle9-audit.M9ufWn/checkout` additionally rejected a malformed create envelope, nil-exit --next-id beside a valid transaction, and a detached receipt—removing any named invariant makes its counterfeit pass.
+- DONE: Verify AC-3 with exact six-path -038 LOC evidence, common argv byte parity, live-tag compile, gofmt, full, race, and detached audit; preserve durable live artifacts and recommend PASSED or REJECTED without editing candidate bytes.
+  Diff 470994d23..2e1530153 is exactly six approved test paths, 158 insertions/196 deletions (net -038); common argv parity, live compile, gofmt diff, `go test ./...`, `go test ./... -race`, and detached tests passed, while HEAD stayed 2e1530153 and the code worktree stayed clean.
+
+### Summary
+
+PASSED. AC-1 through AC-3 have independent behavioral evidence and no material, deferred-risk, or polish finding remains; the candidate was not edited. Public JSONL, stderr, final message, process result, and the captured entity/boot workflow outcome remain under `/tmp/spacedock-6k-cycle9-live-artifacts.V6xuCC` (JSONL SHA-256 `1740a2252bd3fbb681e6a5d7b576736cb4111dc8819eebcc4dca6ef2027cc88b`).
