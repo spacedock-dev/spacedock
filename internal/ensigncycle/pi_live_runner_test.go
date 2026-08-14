@@ -281,10 +281,6 @@ func piSubagentsPackageRoot(t *testing.T) string {
 	return p
 }
 
-func piLiveModelName() string {
-	return envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", defaultPiLiveModel)
-}
-
 // piLiveRunTimeout returns the per-run cap for a Pi live journey. It reads
 // SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES (a positive integer) and falls back to dflt
 // when the env var is unset or invalid. Raise it for slow :max-thinking models so
