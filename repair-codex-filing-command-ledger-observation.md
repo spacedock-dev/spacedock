@@ -72,6 +72,10 @@ gates:
                 digest: sha256:8dba3579ef91a9ced2995a667077516b1aa5eada6e9595612bf180aa0cde23a3
                 request-digest: sha256:d418fe0de2549e9429e0e823de4878e867fbf1b04a5f7d6b771e1ba4acc89fa3
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/ideation/briefing-3
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-14T14:33:25.477984Z"
+                reason: Captain rejected the platform-specific supervisor after confirming the existing correlated thread-log infrastructure; replace the briefing with supported thread-log plus durable-state evidence.
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
