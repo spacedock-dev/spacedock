@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: validation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -490,3 +490,16 @@ REJECTED. The narrow argv-order correction fixes host launch and preserves the e
 ### Summary
 
 Root cause is the filing-only workspace sandbox denying the model's first contract read, after which the model terminated without attempting the atomic filing command. This is not a correlation or extraction mismatch: the retained public stream contains only agent messages and a normal terminal event, and the retained workflow proves no entity landed. Candidate 354f4e362 remains byte-identical and no unapproved model run or workflow mutation occurred.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Add only the isolated CODEX_HOME/plugins subtree to the filing journey's sandbox roots so the first-officer contract is readable; keep CODEX_HOME/sessions outside every added/writable root.
+  Commit 470994d23 adds one top-level `--add-dir <isolated-CODEX_HOME>/plugins`; it never adds CODEX_HOME, sessions, danger-full-access, or bypass approvals, so the correlated rollout stays outside writable roots.
+- DONE: Strengthen argv tests to prove the exact plugin-root add-dir placement, reject adding CODEX_HOME or sessions, and preserve byte-identical non-filing argv.
+  `TestCodexLiveRunnerUsesRestrictedPostureOnlyForFiling` fails unless the exact host prefix is workspace-write/never plus one plugins-only add-dir before `exec`, and still compares non-filing argv byte-for-byte.
+- DONE: Run focused sandbox/argv and transaction matrices, live-tag compile, gofmt, full, race, and exact five-path/LOC checks; do not run the model-backed filing target.
+  Focused sandbox/argv, transaction, extraction, and launcher-order tests, live-tag compile, `gofmt -w ./cmd ./internal`, full, race, diff, and surface checks passed; final delta is 175 insertions/190 deletions (net -015) across 5 paths, with no model run.
+
+### Summary
+
+The filing sandbox now exposes only the installed plugin subtree needed for the first contract read while preserving the runtime-owned sessions rollout outside model-writable roots. Transaction semantics, product bytes, ACs, and non-filing argv are unchanged; validation owns the durable-artifact live rerun.
