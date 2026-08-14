@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: ideation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -109,7 +109,7 @@ gates:
                 reason: 'The harness-owned public event boundary avoids every failed authority mechanism, binds command/exit/receipt/entity in one transaction, and preserves the exact PR #679 fixture plus detached negative controls.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
