@@ -1,6 +1,6 @@
 ---
 title: Commit Sonnet gate before presentation
-status: implementation
+status: ideation
 score: "0.90"
 source: "n28 exact Claude default-headless finding, 2026-08-10"
 sprint: test-behavior-completeness
