@@ -2,7 +2,7 @@
 id: x02375wsg6q61xek7p0t36j2
 title: Repair the Pi keep-moving posture journey
 status: backlog
-source: "Deferred Pi follow-up from the test-behavior-completeness priority recarve, 2026-08-10"
+source: Deferred Pi follow-up 2026-08-10; CI XPASS 2026-08-14 run 31770740214 (openai/gpt-5.6-luna:max) observed=[] — binding x0 is stale, removable on exact normal PASS
 started:
 completed:
 verdict:
