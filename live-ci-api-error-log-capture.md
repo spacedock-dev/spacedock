@@ -17,6 +17,17 @@ gates:
                 digest: sha256:ab5631d7fc7f30835a41b462411b0dcc42702ec71b60b7c93b05fb8d71c1b8fe
                 request-digest: sha256:0b8b68120fec292362c6d3c2861e6242b730f46ace2255f02ab2f80f357c2c9b
                 room-ref: ./live-ci-api-error-log-capture/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:r5y6qjr10k4m3gw9w5p3b2vj:backlog:1
+                briefing: briefing:r5y6qjr10k4m3gw9w5p3b2vj:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-14T06:43:27.049969Z"
+                decision: approve
+                reason: Captain approved backlog gate; advance to ideation for API-error log capture.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
