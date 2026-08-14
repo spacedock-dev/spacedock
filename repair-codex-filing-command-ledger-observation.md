@@ -76,6 +76,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-14T14:33:25.477984Z"
                 reason: Captain rejected the platform-specific supervisor after confirming the existing correlated thread-log infrastructure; replace the briefing with supported thread-log plus durable-state evidence.
+            - id: gate-attempt:6ker7h25hj86983e5ef71ahm-ideation-4
+              briefing:
+                id: briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-4:revision-1
+                digest: sha256:7fbcbc97d3dc332f6bd273ccfd6274623bd4e9547a04ae7b37cc43b530de2f15
+                request-digest: sha256:a549e3c5a21bff888200c1fb8ee8701fcdad79705032963fb0fb9b47ff011ea8
+                room-ref: ./repair-codex-filing-command-ledger-observation/review/ideation/briefing-4
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
