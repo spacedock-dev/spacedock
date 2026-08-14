@@ -383,3 +383,16 @@ Cycle 3 establishes that both the file ledger and Codex's supported outer-comman
 ### Summary
 
 Cycle 4 adopts the captain's supported-evidence boundary and removes the unresolved platform alternatives. The design reuses existing Codex thread correlation, adds receipt ownership and durable-state checks, keeps product and other journeys unchanged, and reserves the sole exact live filing run for validation.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Build the seven-rung correlated CommandExecution transaction matrix first; every named unreachable, unrelated, duplicate, mixed, next-id, receipt, rollout, and entity counterfeit must fail.
+  `TestCorrelatedCodexFilingTransactionMatrix`, structural-extraction controls, and correlated-rollout lookup fail if public/unreachable text becomes execution, if duplicate/mixed evidence is accepted, or if receipt/entity/correlation bytes are weakened.
+- DONE: Replace the forgeable ledger with existing thread-to-rollout correlation and exact receipt/entity grading within the approved five test paths and -085 to -015 net LOC range.
+  Commit e851be3fe deletes the launcher shim/ledger, reuses the lifecycle correlation, and delivers exactly 5 test paths with 174 insertions/190 deletions (net -016).
+- DONE: Run focused, filing/non-filing argv, live-tag compile, gofmt, full, race, and exact diff checks; preserve the sole exact Codex filing model run for validation.
+  Focused matrix/argv tests, live-tag compile, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, `git diff --check`, and exact path/LOC checks passed; the model-backed filing target was not run.
+
+### Summary
+
+Codex filing evidence now comes from the single correlated rollout's runtime-owned completed `CommandExecution`, with exactly one atomic command, its exact same-item receipt, and an independently checked landed entity. Only filing uses `workspace-write`/`never`; non-filing argv is byte-identical, and the reserved validation run remains unspent.
