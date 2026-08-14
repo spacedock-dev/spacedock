@@ -218,17 +218,6 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 }
 
 func codexNativeLifecycleStream(codexHome, publicStream string) (string, error) {
-	rollout, correlated, err := codexCorrelatedParentRollout(codexHome, publicStream)
-	if err != nil {
-		return "", err
-	}
-	if !correlated {
-		return publicStream, nil
-	}
-	return publicStream + "\n" + rollout, nil
-}
-
-func codexCorrelatedParentRollout(codexHome, publicStream string) (string, bool, error) {
 	var threadIDs []string
 	for _, line := range strings.Split(publicStream, "\n") {
 		var started struct {
@@ -240,20 +229,20 @@ func codexCorrelatedParentRollout(codexHome, publicStream string) (string, bool,
 		}
 	}
 	if len(threadIDs) == 0 {
-		return "", false, nil
+		return publicStream, nil
 	}
 	if len(threadIDs) != 1 {
-		return "", false, fmt.Errorf("Codex public stream thread IDs = %v, want one", threadIDs)
+		return "", fmt.Errorf("Codex public stream thread IDs = %v, want one", threadIDs)
 	}
 	paths, err := filepath.Glob(filepath.Join(codexHome, "sessions", "*", "*", "*", "rollout-*"+threadIDs[0]+".jsonl"))
 	if err != nil || len(paths) != 1 {
-		return "", false, fmt.Errorf("Codex parent rollout for %q = %v, want one (glob error: %v)", threadIDs[0], paths, err)
+		return "", fmt.Errorf("Codex parent rollout for %q = %v, want one (glob error: %v)", threadIDs[0], paths, err)
 	}
 	rollout, err := os.ReadFile(paths[0])
 	if err != nil {
-		return "", false, fmt.Errorf("read Codex parent rollout %s: %w", paths[0], err)
+		return "", fmt.Errorf("read Codex parent rollout %s: %w", paths[0], err)
 	}
-	return string(rollout), true, nil
+	return publicStream + "\n" + string(rollout), nil
 }
 
 func assertObserverOutsideWorkflow(workflowRoot, observer string) error {

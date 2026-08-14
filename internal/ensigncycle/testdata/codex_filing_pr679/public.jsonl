@@ -1,2 +1,0 @@
-{"type":"thread.started","thread_id":"pr679-thread"}
-{"type":"item.completed","item":{"id":"item_9","type":"command_execution","command":"/bin/bash -lc \"printf '%s\\\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire the thing so it is connected and ready for future work.' | \\\"\"'${SPACEDOCK_BIN:-spacedock}\" new wire-the-thing'","aggregated_output":"created: /tmp/TestLiveCommonFiling3005718106/002/wire-the-thing.md id=001\n","exit_code":0,"status":"completed"}}

@@ -3,6 +3,7 @@ package ensigncycle
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -214,83 +215,69 @@ printf '"'%s\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire 
 	}
 }
 
-func TestCorrelatedCodexFilingPR679Ladder(t *testing.T) {
-	public := readFile(t, filepath.Join("testdata", "codex_filing_pr679", "public.jsonl"))
-	native := readFile(t, filepath.Join("testdata", "codex_filing_pr679", "parent-rollout.jsonl"))
-	failed := strings.Replace(public, `"exit_code":0`, `"exit_code":1`, 1)
-	mismatch := public + "\n" + codexCommand("spacedock status --boot")
+func TestCodexFilingInvocationLedgerExecutionMatrix(t *testing.T) {
+	real := filepath.Join(t.TempDir(), "spacedock-real")
+	if err := os.WriteFile(real, []byte("#!/bin/sh\nexit \"${SPACEDOCK_TEST_REAL_EXIT:-0}\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
-		name, rollout, stream string
-		copies                int
-		wantObserveErr        bool
-		wantGradeErr          bool
+		name, command string
+		exit          string
+		wantErr       bool
 	}{
-		{"exact PR 679 success", native, public, 1, false, false},
-		{"manual next-id and write", strings.Replace(native, `${SPACEDOCK_BIN:-spacedock}\\\" new wire-the-thing`, `spacedock status --next-id; printf body > wire-the-thing.md`, 1), public, 1, false, true},
-		{"failed atomic command", native, failed, 1, false, true},
-		{"wrong slug", strings.Replace(native, "new wire-the-thing", "new other-slug", 1), public, 1, false, true},
-		{"missing atomic command", strings.Replace(native, `${SPACEDOCK_BIN:-spacedock}\\\" new wire-the-thing`, `spacedock status --boot`, 1), public, 1, false, true},
-		{"missing correlation", native, public, 0, true, false},
-		{"ambiguous correlation", native, public, 2, true, false},
-		{"mismatched execution counts", native, mismatch, 1, true, false},
+		{"bound new", `"$SPACEDOCK_BIN" new wire-the-thing --workflow-dir .`, "0", false},
+		{"PATH status new", `spacedock status --new wire-the-thing --workflow-dir .`, "0", false},
+		{"detached counterfeit", `echo unrelated >/dev/null; if false; then spacedock new wire-the-thing; fi`, "0", true},
+		{"manual next-id", `spacedock status --next-id; printf body > wire-the-thing.md`, "0", true},
+		{"next-id alongside new", `spacedock new wire-the-thing; spacedock status --next-id`, "0", true},
+		{"failed create", `spacedock new wire-the-thing || :; printf body > wire-the-thing.md`, "1", true},
+		{"wrong slug", `spacedock new other-slug`, "0", true},
+		{"missing create", `echo spacedock new wire-the-thing >/dev/null`, "0", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			home := t.TempDir()
-			for i := 0; i < tt.copies; i++ {
-				path := filepath.Join(home, "sessions", "2026", "08", string(rune('1'+i)), "rollout-pr679-thread.jsonl")
-				if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-					t.Fatal(err)
-				}
-				writeFile(t, path, tt.rollout)
+			ledger := newCodexFilingInvocationLedger(t, real)
+			cmd := exec.Command("/bin/sh", "-c", tt.command)
+			cmd.Dir = t.TempDir()
+			cmd.Env = replaceEnvValue(ledger.instrumentEnv(os.Environ()), "SPACEDOCK_TEST_REAL_EXIT", tt.exit)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("shell: %v\n%s", err, output)
 			}
-			commands, err := correlatedCodexCommands(home, tt.stream)
-			if (err != nil) != tt.wantObserveErr {
-				t.Fatalf("observation error = %v, want error %v", err, tt.wantObserveErr)
-			}
+			invocations, err := ledger.read()
 			if err != nil {
-				return
+				t.Fatalf("read ledger: %v", err)
 			}
-			var observed []string
-			for _, command := range commands {
-				observed = append(observed, codexCommand(command))
-			}
-			if got := assertCodexFilingViaNew(strings.Join(observed, "\n"), filingSlug); (got != nil) != tt.wantGradeErr {
-				t.Fatalf("filing grade error = %v, want error %v; commands=%q", got, tt.wantGradeErr, commands)
+			if got := assertCodexFilingInvocations(invocations, filingSlug); (got != nil) != tt.wantErr {
+				t.Fatalf("filing grade = %v, want error %v; invocations=%#v", got, tt.wantErr, invocations)
 			}
 		})
 	}
-
-	if err := assertCodexFilingViaNew(public, filingSlug); err == nil {
-		t.Fatal("PR #679's distorted public display unexpectedly passed without native invocation input")
-	}
+	t.Run("concurrent records stay independent", func(t *testing.T) {
+		ledger := newCodexFilingInvocationLedger(t, real)
+		cmd := exec.Command("/bin/sh", "-c", `spacedock new wire-the-thing & spacedock new wire-the-thing & wait`)
+		cmd.Env = ledger.instrumentEnv(os.Environ())
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := ledger.read(); err != nil || len(got) != 2 {
+			t.Fatalf("concurrent ledger records = %#v, %v; want two complete records", got, err)
+		}
+	})
 }
 
-func TestNativeCodexCommandStructuralDecoder(t *testing.T) {
-	const want = `spacedock new wire-the-thing`
-	tests := []struct {
-		name, input string
-		wantErr     bool
-	}{
-		{"current layout", `const r = await tools.exec_command({cmd:"spacedock new wire-the-thing",workdir:"/tmp"});text(r.output);`, false},
-		{"layout pragma and variable variation", "// @exec: {\"yield_time_ms\": 10000}\nconst observed = await tools.exec_command (\n {\n workdir : \"/tmp\",\n \"cmd\" : \"spacedock new wire-the-thing\"\n }\n); text(observed.output);", false},
-		{"multiple calls", `tools.exec_command({cmd:"spacedock new wire-the-thing"}); tools.exec_command({cmd:"echo duplicate"});`, true},
-		{"missing cmd", `tools.exec_command({workdir:"/tmp"});`, true},
-		{"duplicate cmd", `tools.exec_command({cmd:"spacedock new wire-the-thing",cmd:"echo duplicate"});`, true},
-		{"non-string cmd", `tools.exec_command({cmd:42});`, true},
-		{"blank cmd", `tools.exec_command({cmd:"  "});`, true},
-		{"malformed string", `tools.exec_command({cmd:"unterminated});`, true},
-		{"unsupported shape", `tools.other({cmd:"spacedock new wire-the-thing"});`, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := nativeCodexCommand("exec", tt.input)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("nativeCodexCommand() error = %v, want error %v", err, tt.wantErr)
-			}
-			if err == nil && got != want {
-				t.Fatalf("nativeCodexCommand() = %q, want %q", got, want)
+func TestCodexFilingInvocationLedgerFailsClosed(t *testing.T) {
+	for name, record := range map[string][]byte{
+		"truncated":          []byte("spacedock\x00argc\x002\x00new\x00wire-the-thing\x00exit\x00"),
+		"duplicate terminal": []byte("spacedock\x00argc\x002\x00new\x00wire-the-thing\x00exit\x000\x00exit\x000\x00"),
+		"unknown tool":       []byte("not-spacedock\x00argc\x002\x00new\x00wire-the-thing\x00exit\x000\x00"),
+		"malformed argc":     []byte("spacedock\x00argc\x00many\x00new\x00wire-the-thing\x00exit\x000\x00"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			ledger := newCodexFilingInvocationLedger(t, "/bin/true")
+			writeFile(t, filepath.Join(ledger.dir, "invocation.bad"), string(record))
+			if _, err := ledger.read(); err == nil {
+				t.Fatal("malformed ledger record passed")
 			}
 		})
 	}

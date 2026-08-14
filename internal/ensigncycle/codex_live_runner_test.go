@@ -33,22 +33,70 @@ type codexAsLiveDriver struct {
 }
 
 func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, prompt string) liveResult {
-	result, err := d.runner.run(t, scenario, root, prompt)
+	runner := d.runner
+	var filingLedger *codexFilingInvocationLedger
+	if scenario.name == "filing" {
+		ledger := newCodexFilingInvocationLedger(t, runner.binary)
+		filingLedger = &ledger
+		runner = runner.withCodexFilingInvocationLedger(t, ledger)
+	}
+	result, err := runner.run(t, scenario, root, prompt)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	commands := successfulCodexCommands(result.jsonl)
-	if scenario.name == "filing" {
-		commands, err = codexObservedCommands(d.home(), result.jsonl)
-		if err != nil {
-			t.Fatalf("observe correlated Codex filing commands: %v\nArtifacts: %s", err, result.artifactDir)
+	if filingLedger != nil {
+		invocations, readErr := filingLedger.read()
+		if readErr != nil {
+			t.Fatalf("read Codex filing invocation ledger: %v\nArtifacts: %s", readErr, result.artifactDir)
+		}
+		if writeErr := os.WriteFile(filepath.Join(result.artifactDir, "invocation-ledger.txt"), []byte(fmt.Sprintf("%#v\n", invocations)), 0o644); writeErr != nil {
+			t.Fatalf("write Codex filing invocation ledger artifact: %v", writeErr)
+		}
+		commands = nil
+		for _, invocation := range invocations {
+			if invocation.exitCode == 0 {
+				commands = append(commands, "spacedock "+strings.Join(invocation.argv, " "))
+			}
 		}
 	}
 	return liveResult{finalMessage: result.finalMessage, stream: result.jsonl, commands: commands, artifactDir: result.artifactDir, duration: result.duration}
 }
 
-func codexObservedCommands(codexHome, jsonl string) ([]string, error) {
-	return correlatedCodexCommands(codexHome, jsonl)
+func (r codexLiveRunner) withCodexFilingInvocationLedger(t testing.TB, ledger codexFilingInvocationLedger) codexLiveRunner {
+	r.env = ledger.instrumentEnv(r.env)
+	shimDir := t.TempDir()
+	shim := filepath.Join(shimDir, "codex")
+	script := "#!/bin/sh\n" +
+		"export SPACEDOCK_BIN=" + shellQuote(filepath.Join(ledger.shimDir, "spacedock")) + "\n" +
+		"export PATH=" + shellQuote(ledger.shimDir) + ":\"$PATH\"\n" +
+		"exec " + shellQuote(r.codexBin) + " \"$@\"\n"
+	if err := os.WriteFile(shim, []byte(script), 0o755); err != nil {
+		t.Fatalf("write Codex filing-ledger host shim: %v", err)
+	}
+	r.env = withPATHPrefix(r.env, shimDir)
+	return r
+}
+
+func BenchmarkCodexFilingInvocationLedgerSurvivesFrontDoorPin(b *testing.B) {
+	probe := filepath.Join(b.TempDir(), "probe")
+	fakeCodex := filepath.Join(b.TempDir(), "codex-real")
+	if err := os.WriteFile(fakeCodex, []byte("#!/bin/sh\nprintf '%s\\n' \"$SPACEDOCK_BIN\" \"$(command -v spacedock)\" > \"$SPACEDOCK_TEST_BINDING_PROBE\"\n"), 0o755); err != nil {
+		b.Fatal(err)
+	}
+	ledger := newCodexFilingInvocationLedger(b, "/unused")
+	runner := codexLiveRunner{codexBin: fakeCodex, env: replaceEnvValue(os.Environ(), "SPACEDOCK_TEST_BINDING_PROBE", probe)}
+	runner = runner.withCodexFilingInvocationLedger(b, ledger)
+	cmd := exec.Command("/bin/sh", "-c", "codex")
+	cmd.Env = runner.env
+	if output, err := cmd.CombinedOutput(); err != nil {
+		b.Fatalf("run Codex front-door binding probe: %v\n%s", err, output)
+	}
+	want := filepath.Join(ledger.shimDir, "spacedock")
+	data, err := os.ReadFile(probe)
+	if got := strings.Fields(string(data)); err != nil || len(got) != 2 || got[0] != want || got[1] != want {
+		b.Fatalf("Codex filing bindings = %q, %v; want SPACEDOCK_BIN and PATH %q", got, err, want)
+	}
 }
 func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})

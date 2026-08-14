@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"text/scanner"
 )
 
 // The host-specific filing assertions for the `filing` scenario. They grade the
@@ -186,124 +185,6 @@ func successfulCodexCommands(jsonl string) []string {
 		commands = append(commands, event.Item.Command)
 	}
 	return commands
-}
-
-// correlatedCodexCommands pairs the native invocation inputs from the one
-// isolated-home parent rollout with public completion results in execution
-// order. The native input avoids shell-display quote distortion; the public
-// event remains authoritative for completion and exit status.
-func correlatedCodexCommands(codexHome, publicStream string) ([]string, error) {
-	rollout, correlated, err := codexCorrelatedParentRollout(codexHome, publicStream)
-	if err != nil {
-		return nil, err
-	}
-	if !correlated {
-		return nil, fmt.Errorf("Codex public stream has no thread.started correlation")
-	}
-
-	var native []string
-	for _, line := range strings.Split(rollout, "\n") {
-		var event struct {
-			Payload struct {
-				Type  string `json:"type"`
-				Name  string `json:"name"`
-				Input string `json:"input"`
-			} `json:"payload"`
-		}
-		if json.Unmarshal([]byte(line), &event) == nil && event.Payload.Type == "custom_tool_call" &&
-			(event.Payload.Name == "exec" || event.Payload.Name == "functions.exec") {
-			command, err := nativeCodexCommand(event.Payload.Name, event.Payload.Input)
-			if err != nil {
-				return nil, err
-			}
-			native = append(native, command)
-		}
-	}
-
-	var public []codexCommandItem
-	for _, line := range strings.Split(publicStream, "\n") {
-		var event codexCommandItem
-		if json.Unmarshal([]byte(line), &event) == nil && event.Type == "item.completed" && event.Item.Type == "command_execution" {
-			public = append(public, event)
-		}
-	}
-	if len(native) == 0 || len(native) != len(public) {
-		return nil, fmt.Errorf("Codex native/public execution counts = %d/%d, want equal nonzero counts", len(native), len(public))
-	}
-
-	commands := make([]string, 0, len(native))
-	for i, result := range public {
-		if result.Item.Status == "completed" && result.Item.ExitCode != nil && *result.Item.ExitCode == 0 {
-			commands = append(commands, native[i])
-		}
-	}
-	return commands, nil
-}
-
-func nativeCodexCommand(toolName, input string) (string, error) {
-	if toolName == "functions.exec" {
-		if strings.TrimSpace(input) == "" {
-			return "", fmt.Errorf("Codex native functions.exec input is blank")
-		}
-		return input, nil
-	}
-	type token struct {
-		kind rune
-		text string
-	}
-	var lexer scanner.Scanner
-	lexer.Init(strings.NewReader(input))
-	var tokens []token
-	for kind := lexer.Scan(); kind != scanner.EOF; kind = lexer.Scan() {
-		tokens = append(tokens, token{kind, lexer.TokenText()})
-	}
-	if lexer.ErrorCount != 0 {
-		return "", fmt.Errorf("malformed Codex native exec input")
-	}
-	var calls []int
-	for i := 0; i+3 < len(tokens); i++ {
-		if tokens[i].kind == scanner.Ident && tokens[i].text == "tools" && tokens[i+1].kind == '.' &&
-			tokens[i+2].kind == scanner.Ident && tokens[i+2].text == "exec_command" && tokens[i+3].kind == '(' {
-			calls = append(calls, i+4)
-		}
-	}
-	if len(calls) != 1 {
-		return "", fmt.Errorf("Codex native exec input has %d tools.exec_command calls, want one", len(calls))
-	}
-	i, command, sawCmd := calls[0], "", false
-	if i >= len(tokens) || tokens[i].kind != '{' {
-		return "", fmt.Errorf("Codex native exec argument is not an object")
-	}
-	for i++; i < len(tokens) && tokens[i].kind != '}'; {
-		key := tokens[i].text
-		if tokens[i].kind == scanner.String && json.Unmarshal([]byte(key), &key) != nil ||
-			tokens[i].kind != scanner.String && tokens[i].kind != scanner.Ident {
-			return "", fmt.Errorf("malformed Codex native exec field name")
-		}
-		i++
-		if i+1 >= len(tokens) || tokens[i].kind != ':' {
-			return "", fmt.Errorf("malformed Codex native exec field %q", key)
-		}
-		i++
-		if key == "cmd" {
-			if sawCmd || tokens[i].kind != scanner.String || json.Unmarshal([]byte(tokens[i].text), &command) != nil || strings.TrimSpace(command) == "" {
-				return "", fmt.Errorf("Codex native exec cmd must be one nonblank JSON string")
-			}
-			sawCmd = true
-		} else if tokens[i].kind != scanner.String && tokens[i].kind != scanner.Int && tokens[i].kind != scanner.Float && tokens[i].kind != scanner.Ident {
-			return "", fmt.Errorf("unsupported Codex native exec field %q", key)
-		}
-		i++
-		if i < len(tokens) && tokens[i].kind == ',' {
-			i++
-		} else if i >= len(tokens) || tokens[i].kind != '}' {
-			return "", fmt.Errorf("malformed Codex native exec object")
-		}
-	}
-	if i+1 >= len(tokens) || tokens[i].kind != '}' || tokens[i+1].kind != ')' || !sawCmd {
-		return "", fmt.Errorf("malformed Codex native exec call")
-	}
-	return command, nil
 }
 
 // assertCodexFilingViaNew scans the `codex exec --json` transcript for the FO
