@@ -615,3 +615,16 @@ PASSED. AC-1 through AC-3 have independent behavioral evidence and no material, 
 ### Summary
 
 Codex common live journeys now use the existing Go parallel-test mechanism with a hard CI capacity of three, per-journey setup artifacts, and retained-duration queue order. The five-file test/CI/documentation change is committed and frozen for the single PR Codex live proof.
+
+## Stage Report: validation (cycle 10)
+
+- DONE: Independently verify the frozen `f36a707ba` change admits Codex live journeys to Go parallel execution with CI capacity exactly 3, queues unchanged journey identities slowest-first, and isolates every journey's setup artifacts without changing metrics, quiet budgets, or the 6k filing transaction grade.
+  Runtime admission, exact `-parallel 3` pin, 17-name registry/order, unique `_setup/<journey-id>` paths, and unchanged filing/metrics/quiet-budget bytes passed; the candidate stayed clean at `f36a707ba`.
+- DONE: Reproduce focused behavioral and command-pinning tests for Codex parallel admission, `-parallel 3`, per-journey setup paths, retained-duration ordering, registry reconciliation, common runner argv parity, and the seven-rung public filing evidence matrix. Perform the semantic adversarial pass and report any finding before candidate mutation.
+  Focused tests and a detached variant/path audit passed; the exact PR #679 fixture and all seven filing rungs passed, with no material, deferred-risk, or polish finding and no candidate mutation.
+- DONE: Verify the exact rework surface is +37 net LOC across 5 files, the worktree is clean, documentation matches behavior, live-tag compilation passes, gofmt is clean, and `go test ./...` plus `go test ./... -race` pass. Do not run a local model-backed suite; preserve frozen bytes for the single PR Codex live proof after validation.
+  Diff `2e1530153..f36a707ba` is 99 insertions/62 deletions across five files; live-tag compile, gofmt diff, full, and race passed, and no local model-backed suite ran.
+
+### Summary
+
+PASSED. The bounded Codex parallel runner is independently verified offline, and AC-1 through AC-3 retain their prior filing evidence with no changed filing-grade bytes. Delivery can proceed to the single PR Codex live proof at capacity three.
