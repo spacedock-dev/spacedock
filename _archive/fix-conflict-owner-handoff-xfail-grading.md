@@ -1,6 +1,6 @@
 ---
 title: Fix conflict-owner-handoff XFAIL grading for missing marker
-status: validation
+status: done
 source: "FO write-scope review, 2026-08-13: direct test edit routed through filing"
 score: 0.85
 sprint: live-evidence-followups
@@ -69,11 +69,14 @@ gates:
                 reason: Captain approved validation; terminalize the XFAIL grading fix.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-13T22:55:16Z
 worktree: .worktrees/spacedock-ensign-fix-conflict-owner-handoff-xfail-grading
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:684
+verdict: PASSED
+completed: 2026-08-14T05:21:34Z
+archived: 2026-08-14T05:21:34Z
 ---
 
 ## Problem
