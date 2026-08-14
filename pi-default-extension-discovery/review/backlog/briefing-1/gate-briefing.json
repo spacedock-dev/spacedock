@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3w1ncf1thj12aryvkf5gj1rd:backlog:attempt-1:revision-1",
+  "question": "Approve this first-contact default for ideation: isolated Pi home auto-discovers extensions without PI_SUBAGENTS_PACKAGE_ROOT. Approve, revise, or hold?",
+  "artifacts": [
+    {
+      "id": "artifact:3w1ncf1thj12aryvkf5gj1rd:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f38f81efb0cb7731d1f9d27f85ab6adfbf28d4ef/3w1-backlog-review.md",
+      "rev": "sha256:b61bb4f49213df930904a490556ff6ebfcb506c1cb3169d8c44059289f335444",
+      "mediaType": "text/markdown",
+      "summary": "Isolated Pi home discovers installed extensions by default, no env var hand-wiring."
+    }
+  ]
+}

@@ -7,6 +7,18 @@ sprint: pi-ux
 sprint-readiness: ready
 group: tooling
 id: 3w1ncf1thj12aryvkf5gj1rd
+gates:
+    version: 1
+    records:
+        - id: gate:3w1ncf1thj12aryvkf5gj1rd:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:3w1ncf1thj12aryvkf5gj1rd-backlog-1
+              briefing:
+                id: briefing:3w1ncf1thj12aryvkf5gj1rd:backlog:attempt-1:revision-1
+                digest: sha256:ea7fae5fe635ebedf7504254e21a6e10ac5b467da3049466a2ae2ffaf9f47856
+                request-digest: sha256:5bd2c1bebf60fb5a6261e2d6ec9e2f2b54564577d606af9f5d87079b59d884fd
+                room-ref: ./pi-default-extension-discovery/review/backlog/briefing-1
 ---
 
 ## Problem
