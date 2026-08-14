@@ -157,22 +157,22 @@ work is authorized. Preserve all Sonnet and Codex behavior.
 
 ## Stage Report: implementation
 
-- [1] Pi common journeys call `t.Parallel()`, codex stays sequential.
-  - DONE: `internal/ensigncycle/shared_live_runner_test.go:44-46` — `switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime { case "claude", "pi": t.Parallel() }` replaces the `== "claude"` check; codex falls through with no `t.Parallel()`.
-- [2] `seedPiLiveAuth` mirrors `~/.pi/agent/models.json` into the isolated Pi home.
-  - DONE: `internal/ensigncycle/pi_live_runner_test.go:240-247` — after the `auth.json` write, reads `~/.pi/agent/models.json` and writes `piHome/models.json` (0o600) when present and non-empty, so custom-provider models resolve.
-- [3] `piLiveRunTimeout(dflt)` helper reads `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES`.
-  - DONE: `internal/ensigncycle/pi_live_runner_test.go:280-291` — `piLiveRunTimeout` parses the env var via `strconv.Atoi` (>0) and returns `dflt` when unset/invalid; `strconv` added to imports.
-- [4] `runPiLiveCommand` uses `piLiveRunTimeout` (default 10m) with env-naming fatal message.
-  - DONE: `internal/ensigncycle/pi_live_runner_test.go:68` uses `piLiveRunTimeout(10*time.Minute)`; `:88` fatal message names `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES, default 10m`.
-- [5] `pi_shared_live_runner_test.go` `run` uses `piLiveRunTimeout(12*time.Minute)` with env-naming fatal message.
-  - DONE: `internal/ensigncycle/pi_shared_live_runner_test.go:62` uses `piLiveRunTimeout(12*time.Minute)`; `:77` fatal message names `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES, default 12m`.
-- [6] `docs/runtime-live-ci.md` documents Pi `-parallel 2`, `provider/model:thinking`, `models.json` mirror + `Model ... not found` check, and `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` guidance.
-  - DONE: `docs/runtime-live-ci.md:62-66` describes Pi running at most two journeys at a time; `:97-100` documents `provider/model:thinking` and the `models.json` mirror + `Model ... not found` check; `:102` documents `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` with "make the outer `go test -timeout` longer than the per-run cap"; common Pi command now uses `-parallel 2` and `-timeout 90m`.
-- [7] Offline checks pass.
-  - DONE: `gofmt -w internal/ensigncycle` (no diff after apply), `go vet -tags live ./internal/ensigncycle` (no output), `go build -tags live ./internal/ensigncycle` (BUILD_OK), `go test -tags live -run 'PiLiveEnv|PiIntercom|TestPiLive' ./internal/ensigncycle` → `ok … 0.542s`; `TestPiLiveEnvDropsForeignRuntimeMarkers` and `TestPiLiveEnvScrubsAmbientPiSubagentMarkers` PASS.
-- [8] No journey exercise/fixture/durable assertion, XFAIL binding, `assertConflictOwnerHandoff`, or CI lane touched.
-  - DONE: `git diff --stat` for the code commit names only `shared_live_runner_test.go`, `pi_live_runner_test.go`, `pi_shared_live_runner_test.go`, and `docs/runtime-live-ci.md`; no CI workflow or journey body edits.
+- DONE: Pi common journeys call `t.Parallel()`, codex stays sequential.
+  `internal/ensigncycle/shared_live_runner_test.go:44-46` — `switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime { case "claude", "pi": t.Parallel() }` replaces the `== "claude"` check; codex falls through with no `t.Parallel()`.
+- DONE: `seedPiLiveAuth` mirrors `~/.pi/agent/models.json` into the isolated Pi home.
+  `internal/ensigncycle/pi_live_runner_test.go:240-247` — after the `auth.json` write, reads `~/.pi/agent/models.json` and writes `piHome/models.json` (0o600) when present and non-empty, so custom-provider models resolve.
+- DONE: `piLiveRunTimeout(dflt)` helper reads `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES`.
+  `internal/ensigncycle/pi_live_runner_test.go:280-291` — `piLiveRunTimeout` parses the env var via `strconv.Atoi` (>0) and returns `dflt` when unset/invalid; `strconv` added to imports.
+- DONE: `runPiLiveCommand` uses `piLiveRunTimeout` (default 10m) with env-naming fatal message.
+  `internal/ensigncycle/pi_live_runner_test.go:68` uses `piLiveRunTimeout(10*time.Minute)`; `:88` fatal message names `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES, default 10m`.
+- DONE: `pi_shared_live_runner_test.go` `run` uses `piLiveRunTimeout(12*time.Minute)` with env-naming fatal message.
+  `internal/ensigncycle/pi_shared_live_runner_test.go:62` uses `piLiveRunTimeout(12*time.Minute)`; `:77` fatal message names `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES, default 12m`.
+- DONE: `docs/runtime-live-ci.md` documents Pi `-parallel 2`, `provider/model:thinking`, `models.json` mirror + `Model ... not found` check, and `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` guidance.
+  `docs/runtime-live-ci.md:62-66` describes Pi running at most two journeys at a time; `:97-100` documents `provider/model:thinking` and the `models.json` mirror + `Model ... not found` check; `:102` documents `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` with "make the outer `go test -timeout` longer than the per-run cap"; common Pi command now uses `-parallel 2` and `-timeout 90m`.
+- DONE: Offline checks pass.
+  `gofmt -w internal/ensigncycle` (no diff after apply), `go vet -tags live ./internal/ensigncycle` (no output), `go build -tags live ./internal/ensigncycle` (BUILD_OK), `go test -tags live -run 'PiLiveEnv|PiIntercom|TestPiLive' ./internal/ensigncycle` → `ok … 0.542s`; `TestPiLiveEnvDropsForeignRuntimeMarkers` and `TestPiLiveEnvScrubsAmbientPiSubagentMarkers` PASS.
+- DONE: No journey exercise/fixture/durable assertion, XFAIL binding, `assertConflictOwnerHandoff`, or CI lane touched.
+  `git diff --stat` for the code commit names only `shared_live_runner_test.go`, `pi_live_runner_test.go`, `pi_shared_live_runner_test.go`, and `docs/runtime-live-ci.md`; no CI workflow or journey body edits.
 
 ### Summary
 
