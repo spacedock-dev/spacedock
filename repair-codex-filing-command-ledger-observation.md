@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: implementation
+status: validation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -503,3 +503,34 @@ Root cause is the filing-only workspace sandbox denying the model's first contra
 ### Summary
 
 The filing sandbox now exposes only the installed plugin subtree needed for the first contract read while preserving the runtime-owned sessions rollout outside model-writable roots. Transaction semantics, product bytes, ACs, and non-filing argv are unchanged; validation owns the durable-artifact live rerun.
+
+## Stage Report: validation (cycle 8)
+
+- FAILED: Reproduce AC-1 with the seven-rung correlated transaction matrix, then spend the single exact Codex filing run on frozen commit e851be3fe and verify one owned atomic command, exact receipt, correct durable entity, and zero unreachable/unrelated evidence.
+  On updated frozen commit 470994d23, rungs 1-3 passed, but the exact live target again produced zero `CommandExecution` items; nine runtime `custom_tool_call/exec` attempts all failed before execution with `sandbox-exec: sandbox_apply: Operation not permitted`.
+- DONE: Reproduce AC-2 by attacking duplicate/mixed creates, any --next-id regardless of exit, failed/wrong/missing commands, forged public evidence, receipt ownership/bytes, malformed or ambiguous rollout, and entity mismatch.
+  The focused matrix/extraction/correlation controls and detached audit at `/tmp/spacedock-codex-filing-cycle8-audit.RR2Kpy/checkout` passed; weakening any transaction, receipt, entity, or rollout invariant makes a named case pass.
+- FAILED: Verify AC-3 with exact five-path -016 LOC evidence, filing-only workspace-write/never and non-filing argv parity, live-tag compile, gofmt, full, race, and a detached adversarial audit; recommend PASSED or REJECTED without editing candidate bytes.
+  Updated approved surface is exactly 5 test paths and net -015; filing root containment, non-filing parity, live-tag compile, gofmt, diff, and detached audit passed, but the new live finding stopped full/race before rerun.
+- FAILED: Reproduce AC-1 evidence.
+  The retained rollout for thread `01a000f2-e990-77e0-a2c1-b14bf71385b7` contains zero `CommandExecution`, nine completed custom exec calls, and repeated sandbox-apply failures; no atomic command, receipt, or entity exists.
+- DONE: Reproduce AC-2 evidence.
+  Rungs 4-7 reject duplicate/mixed creates, every `--next-id` exit, failed/wrong/manual/missing commands, forged public evidence, wrong-item/inexact receipts, ambiguous rollout, and durable mismatch.
+- FAILED: Reproduce AC-3 evidence.
+  Exactly one `--add-dir <CODEX_HOME>/plugins` is present; detached containment proves `<CODEX_HOME>/sessions` is a sibling outside that and all other added roots, while non-filing argv is byte-identical. The supported host still cannot apply its nested workspace sandbox.
+- DONE: Preserve public stream, stderr, final message, process result, isolated rollout, and workflow outcome before cleanup.
+  Durable evidence is under `/tmp/spacedock-6k-cycle8-live-artifacts.qxb445`; rollout SHA-256 is d2f70fe9, public stream is 041a865e, and the clean copied workflow `retained-go-temp/002` tracks only `README.md` with no `wire-the-thing.md`.
+- DONE: Stop before candidate mutation, full/race reruns, or another live target after the new finding.
+  Candidate HEAD remains 470994d23 and the exact model-backed target was invoked once on these frozen bytes.
+
+### Review-finding disposition
+
+- Released user and normal workflow: the required Codex filing journey under the normal outer agent-safehouse, with filing-only top-level workspace-write/never and plugins-only added root.
+- Observable harm: Codex cannot apply its nested execution sandbox, so every shell attempt fails before command execution and the promised filing transaction/entity never occurs.
+- Authority: value-ac[AC-1] requires one completed exit-0 atomic filing transaction, exact same-item receipt, and correct durable entity from the exact supported live run.
+- Trigger evidence: retained rollout lines 35-50 show nine `custom_tool_call/exec` attempts and `sandbox_apply: Operation not permitted`, including `pwd` and `/bin/ls`; public/final bytes report every command rejected, and the retained workflow has no entity.
+- Proposed classification: Material outcome defect and chosen-mechanism failure; the plugins-only root is not causal because nested `sandbox-exec` cannot apply inside the outer agent-safehouse. Recommend scope/design reset and `Needs decision`, since bypass would violate rollout authority and changing the outer host/sandbox is outside this candidate.
+
+### Summary
+
+REJECTED. The plugins-only correction is narrow, keeps sessions outside every writable/add-dir root, preserves non-filing argv, and passes all offline and detached falsifiers, but the live host cannot nest Codex workspace sandboxing inside the existing agent-safehouse. This is a mechanism-level incompatibility rather than another missing path; candidate bytes remain unchanged and no additional validation runs followed the finding.
