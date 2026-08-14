@@ -76,6 +76,17 @@ gates:
                 digest: sha256:95c1aca1c264d5fd4a068348b7b66d81ebf8a7beb5dadf93402bbd4521312183
                 request-digest: sha256:4bb65fe5f597370ab5d6b1ea56115d50837e3b5d46bf0b16db3d70ce1dd2d8da
                 room-ref: ./commit-sonnet-gate-before-presentation/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kky8pg7wc8xgb985epwss092:validation:1
+                briefing: briefing:kky8pg7wc8xgb985epwss092:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-14T06:11:03.478985Z"
+                decision: approve
+                reason: The -001 LOC test-only candidate independently passes the exact bound/unbound ladder, full and race suites, registry and owner checks, detached audit, and current-main merge-tree check; PR live lanes remain a mandatory merge guard.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-10T18:44:40Z
 worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
 ---
