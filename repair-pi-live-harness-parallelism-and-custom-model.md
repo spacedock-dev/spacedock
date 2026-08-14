@@ -177,3 +177,24 @@ work is authorized. Preserve all Sonnet and Codex behavior.
 ### Summary
 
 Implemented the three Pi live-harness enablement changes from the spec: widened the shared `t.Parallel()` gate to include `pi` (codex stays sequential), mirrored `~/.pi/agent/models.json` into the isolated Pi home alongside `auth.json` so custom-provider models resolve, and added an overridable `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` per-run cap (via `piLiveRunTimeout`) used by both the smoke and common runners with env-var-naming timeout messages. Updated `docs/runtime-live-ci.md` to describe Pi `-parallel 2`, the `provider/model:thinking` child model form, the `models.json` mirror and `Model ... not found` check, and the timeout override guidance. Offline `gofmt`/`vet`/`build` and the `PiLiveEnv|PiIntercom|TestPiLive` unit tests (including the two env-scrub assertions) pass.
+
+## Stage Report: validation
+
+- DONE: `shared_live_runner_test.go` calls `t.Parallel()` for `SPACEDOCK_LIVE_RUNTIME == "pi"` as well as `"claude"`; codex stays sequential.
+  Read `internal/ensigncycle/shared_live_runner_test.go:44-47`: `switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime { case "claude", "pi": t.Parallel() }`; `grep -n Parallel` shows only line 46 inside that switch; `grep -in 'codex.*parallel'` returns no match (codex falls through with no `t.Parallel()`).
+- DONE: `seedPiLiveAuth` copies `~/.pi/agent/models.json` into the isolated Pi home (0o600) when present.
+  Read `internal/ensigncycle/pi_live_runner_test.go:240-247`: after the `auth.json` write (0o600), `os.ReadFile(filepath.Join(realHome, ".pi", "agent", "models.json"))`; on nil err and non-empty trimmed bytes, `os.WriteFile(filepath.Join(piHome, "models.json"), models, 0o600)`.
+- DONE: A `piLiveRunTimeout(dflt)` helper reads `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` and returns `dflt` when unset/invalid; used by both `run` (12m) and `runPiLiveCommand` (10m).
+  `pi_live_runner_test.go:285-292` defines `piLiveRunTimeout(dflt)` parsing `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` via `strconv.Atoi` (n>0) and returning `dflt` otherwise; `grep -rn piLiveRunTimeout` shows `pi_shared_live_runner_test.go:62` uses `piLiveRunTimeout(12*time.Minute)` and `pi_live_runner_test.go:68` uses `piLiveRunTimeout(10*time.Minute)`; `strconv` added to imports.
+- DONE: `docs/runtime-live-ci.md` documents the Pi parallel + custom-model + timeout surface.
+  `docs/runtime-live-ci.md:62-64` states Claude and Pi run at most two journeys at a time, Codex sequential; `:97-100` documents the `models.json` mirror (0o600) and `Model ... not found` check plus `provider/model:thinking`; `:102` documents `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` with "make the outer `go test -timeout` longer than the per-run cap"; common Pi command at `:118` uses `-timeout 90m -parallel 2`.
+- DONE: No journey exercise/fixture/durable assertion, XFAIL binding, `assertConflictOwnerHandoff`, or CI lane touched; `git diff --stat` reports the exact files/lines changed.
+  `git diff --stat HEAD~1 HEAD` names only `docs/runtime-live-ci.md` (+14/-6), `internal/ensigncycle/pi_live_runner_test.go` (+26/-2), `internal/ensigncycle/pi_shared_live_runner_test.go` (+2/-2), `internal/ensigncycle/shared_live_runner_test.go` (+2/-1); `git diff --name-only | grep -iE 'journey|xfail|assertConflictOwnerHandoff|\.github|workflow|fixture'` returns no matches.
+- DONE: Offline checks re-run in the worktree pass.
+  `gofmt -l internal/ensigncycle` → empty; `go vet -tags live ./internal/ensigncycle` → exit 0, no output; `go build -tags live ./internal/ensigncycle` → exit 0, no output; `go test -tags live -run 'PiLiveEnv|PiIntercom|TestPiLive' ./internal/ensigncycle -v` → `ok github.com/spacedock-dev/spacedock/internal/ensigncycle 0.619s` with `TestPiLiveEnvDropsForeignRuntimeMarkers` and `TestPiLiveEnvScrubsAmbientPiSubagentMarkers` both PASS.
+- DONE: Deliverable not edited during validation.
+  `git status --short` in the worktree is empty (no staged or unstaged changes); validation was read-only against the implementation commit `864a3ca97`.
+
+### Summary
+
+Recommend PASSED. The deliverable at commit `864a3ca97` satisfies all four checklist verifications and AC-2 through AC-6: the shared `t.Parallel()` gate now includes `pi` (codex sequential), `seedPiLiveAuth` mirrors `~/.pi/agent/models.json` (0o600), `piLiveRunTimeout(dflt)` overrides the per-run cap via `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` for both runners, and `docs/runtime-live-ci.md` documents the Pi parallel + custom-model + timeout surface. The offline `gofmt`/`vet`/`build` and the `PiLiveEnv|PiIntercom|TestPiLive` unit tests (including both env-scrub assertions) pass, and no journey body, XFAIL binding, `assertConflictOwnerHandoff`, or CI lane was touched. AC-1 (live custom-model `-parallel 2` run) is not exercised here per the test plan (offline-first; live Pi run only when Pi work is authorized).
