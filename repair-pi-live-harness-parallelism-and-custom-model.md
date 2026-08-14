@@ -59,6 +59,17 @@ gates:
                 digest: sha256:6e39275c667140ebb5ab71731a576c62df243a793414a5847377cfb8bcc25f91
                 request-digest: sha256:4ae1a20e637685989b1a286e580704d7b5f4da9b7780cca978e33724aff7a746
                 room-ref: ./repair-pi-live-harness-parallelism-and-custom-model/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pnc09c4hz4wbzyegh3pnpb1d:validation:1
+                briefing: briefing:pnc09c4hz4wbzyegh3pnpb1d:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-14T02:51:25.623951Z"
+                decision: approve
+                reason: Captain approved validation; terminalize the Pi-harness bundle.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-14T01:55:02Z
 worktree: .worktrees/spacedock-ensign-repair-pi-live-harness-parallelism-and-custom-model
 ---
