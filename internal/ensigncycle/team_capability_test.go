@@ -81,7 +81,7 @@ func codexLiveFrontDoorArgvForScenario(pluginDir, workflowRoot, finalPath, promp
 	if scenario != "filing" {
 		return args
 	}
-	return append(append(append([]string(nil), args[:8]...), "--sandbox", "workspace-write", "--ask-for-approval", "never"), args[9:]...)
+	return slices.Concat(args[:6], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never"}, args[6:8], args[9:])
 }
 
 func argvHasAdjacent(args []string, left, right string) bool {
@@ -134,7 +134,7 @@ func TestCodexLiveRunnerUsesRestrictedPostureOnlyForFiling(t *testing.T) {
 		t.Fatalf("non-filing argv changed: got=%v want=%v", got, base)
 	}
 	filing := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", "filing")
-	if !argvHasAdjacent(filing, "--sandbox", "workspace-write") || !argvHasAdjacent(filing, "--ask-for-approval", "never") || slices.Contains(filing, "--dangerously-bypass-approvals-and-sandbox") {
+	if !slices.Equal(filing[6:11], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never", "exec"}) || slices.Contains(filing, "--dangerously-bypass-approvals-and-sandbox") {
 		t.Fatalf("filing argv has wrong sandbox posture: %v", filing)
 	}
 }
