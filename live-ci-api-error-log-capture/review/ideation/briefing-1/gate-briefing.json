@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:r5y6qjr10k4m3gw9w5p3b2vj:ideation:attempt-1:revision-1",
+  "question": "Approve this claude-only diagnostic capture for implementation: add --debug api --debug-file to the claude runner, point the kill message at it. Approve, revise, or hold?",
+  "artifacts": [
+    {
+      "id": "artifact:r5y6qjr10k4m3gw9w5p3b2vj:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/fd194c3dc60f08aea0f1322ea366d32a6740864a/r5-ideation-review.md",
+      "rev": "sha256:7b9a109cc2e8351b46e433c65bb2173680eab01e56785c175e01aa2acdacb798",
+      "mediaType": "text/markdown",
+      "summary": "Claude-only --debug api capture; codex/pi already covered; spike-proven."
+    }
+  ]
+}

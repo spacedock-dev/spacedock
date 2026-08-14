@@ -28,6 +28,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:r5y6qjr10k4m3gw9w5p3b2vj:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:r5y6qjr10k4m3gw9w5p3b2vj-ideation-1
+              briefing:
+                id: briefing:r5y6qjr10k4m3gw9w5p3b2vj:ideation:attempt-1:revision-1
+                digest: sha256:ce90c429547ac83a604105637315c4c3178ee6d54e5014bbb0deb08f37d81149
+                request-digest: sha256:fa93a503b3cef14b321ba2bae869c1f252a43f4988a0c0af1b086c622e2898f2
+                room-ref: ./live-ci-api-error-log-capture/review/ideation/briefing-1
 started: 2026-08-14T06:44:38Z
 ---
 
