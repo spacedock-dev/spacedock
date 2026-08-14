@@ -1,6 +1,6 @@
 ---
 title: Repair Pi live harness — common-journey parallelism, custom-provider model mirror, and slow-model timeout
-status: validation
+status: done
 source: "FO write-scope review, 2026-08-13: direct test edits routed through filing"
 score: 0.85
 sprint: pi-ux
@@ -69,10 +69,13 @@ gates:
                 reason: Captain approved validation; terminalize the Pi-harness bundle.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-14T01:55:02Z
 worktree: .worktrees/spacedock-ensign-repair-pi-live-harness-parallelism-and-custom-model
 pr: pr-merge:685
+verdict: PASSED
+completed: 2026-08-14T05:21:51Z
+archived: 2026-08-14T05:21:51Z
 ---
 
 ## Problem
