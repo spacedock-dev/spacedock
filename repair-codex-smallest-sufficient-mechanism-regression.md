@@ -226,3 +226,32 @@ The exact run is product-correct; a Codex trace parser correlated unrelated narr
 ### Summary
 
 The Codex classifier now recognizes real dispatch-build engages and attributes gate narration only when the latest same-entity narration frames that dispatch. The candidate stays inside the approved test-only surface; validation retains the immutable artifact XPASS/unbind ladder and the sole live revalidation.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce AC-1 through AC-5, including the exact immutable PR #679 replay, paired true-violation control, and the bound XPASS then unchanged-byte unbound normal PASS sequence before changing only the owning Codex binding.
+  PASSED: run 31728107636/job 94541783359/artifact 9194350789 replay SHA-256 62404d67af406e0e3fc3f364dad10a94dfe6f2648b0621828385d7f1cda4137a (112102 bytes) graded XPASS/codes=[] then PASS/codes=[].
+- DONE: Run the required frozen verification once: focused checks, full suite, race suite, detached adversarial audit for the live-test surface, and one exact targeted local Codex smallest-sufficient live run on final bytes.
+  Focused and `go test ./...` passed; package-only `go test -race -timeout 20m ./internal/ensigncycle` passed; exact live target passed normally in 405.20s on 0b809073b.
+- DONE: Report PASSED or REJECTED with every failure classified from this run, exact evidence identifiers, final diff/tolerance, and confirmation that no other owner binding or reconciliation row changed.
+  PASSED: four approved test files, 56 gross insertions/15 deletions, +41 net versus ceilings 90 gross/60 net; only bfmczd31ydpp4stqjstf6xwx's Codex binding and matching reconciliation row changed.
+
+### Acceptance evidence
+
+- AC-1: The immutable replay trace contains both in-house edits, direct commit, no edit dispatch/PR, ready-one and ready-two engages, and zero justifications; changing any field fails the atomic assertion.
+- AC-2: The separated narration passes, while removing the neutral intervening narration and repeated later true justification both produce the commissioned-dispatch violation.
+- AC-3: The same digest and byte count produced bound XPASS/codes=[] before unbinding and unbound PASS/codes=[] afterward; no observation bytes changed.
+- AC-4: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonSmallestSufficientMechanism$' ./internal/ensigncycle -v` passed normally in 405.20s.
+- AC-5: Focused host-neutral/Codex negatives and `go test ./...` passed; the race-instrumented changed package passed in 1185.709s with its three 250ms timing controls also passing focused under `-race`.
+
+### Reviewer findings
+
+- Deferred risk (evidence defect): a non-executing command string such as `echo spacedock dispatch build ...` can counterfeit engage evidence because command success is not parsed.
+  Trigger is unobserved and outside the supported replay; the exact public and local supported paths satisfy AC-1/AC-4. Promote if a supported Codex trace emits a failed, quoted, or pseudo dispatch command.
+- Infrastructure classification: exact `go test ./... -race` exceeded the default 10m package timeout; the 20m all-package run completed every other package but three unrelated 250ms subprocess controls timed out under load.
+  Those three controls passed focused with `-race`, and the isolated changed package passed fully with `-race -timeout 20m`; no race detector finding or changed-surface failure occurred.
+- Clean detached audit: separated narration, Unicode/EOF, out-of-order dispatch, missing dispatch, repeated dispatch, and true-framing variants preserved the intended invariant apart from the deferred trigger above.
+
+### Summary
+
+PASSED. Exact public bytes proved XPASS before the owner-only unbind and normal PASS afterward, and the single final live Codex target passed on commit 0b809073b; no material finding remains.
