@@ -469,3 +469,24 @@ The authorized correction moves only the filing permission flags to Codex's supp
 ### Summary
 
 REJECTED. The narrow argv-order correction fixes host launch and preserves the exact approved net -016 surface, while all unchanged offline transaction controls remain green. The authorized live rerun nevertheless produced zero completed command executions, so AC-1 lacks its required live proof; candidate bytes were not edited and no second run was attempted.
+
+## Stage Report: validation (cycle 7)
+
+- DONE: Inspect the retained cycle-6 public stream, correlated rollout, final message, stderr, and durable workflow root to identify why zero completed CommandExecution items were observed.
+  The original `t.TempDir` artifacts were gone, so the First Officer authorized one unchanged diagnostic rerun; durable bytes are under `/tmp/spacedock-6k-cycle7-live-artifacts.dpYyUp`, and the copied workflow root is `retained-go-temp/002`.
+- DONE: Classify the failure as model behavior, sandbox/write posture, correlation/extraction mismatch, or another exact cause using retained bytes; do not edit candidate bytes or rerun the model.
+  Sandbox/write posture: the turn completed normally, but the model reported that its first contract read hit the environment path sandbox and that no command or contract read was permitted; this was one authorized diagnostic rerun on unchanged 354f4e362.
+- DONE: Report the smallest evidence-backed next action and whether the live invocation produced any entity, tool call, refusal, error, or alternate event schema.
+  Next action is a narrowly authorized filing-sandbox access correction that makes the first-officer contract path readable while keeping the rollout outside the writable workflow; then retain the isolated rollout and rerun once. This invocation produced no entity, tool event, refusal, or alternate schema—only a sandbox-error final message.
+- DONE: Preserve exact public stream, stderr, final message, process result, and filesystem outcome.
+  `codex-shared-scenarios/filing/` retains `codex-exec.jsonl`, `codex-exec.stderr.txt`, `codex-final-message.txt`, and `codex-process-result.txt`; SHA-256 values are b3273b9, a7ef0f9, be2c8b7, and 8fc3006 respectively.
+- DONE: Preserve relevant event types, status, and output.
+  Public JSONL has exactly `thread.started`, `turn.started`, three `item.completed/agent_message`, and `turn.completed`; process result is terminal=true, timed_out=false, duration=51.058505291s, while the harness reports exit_code=-1 after the front door remained alive past terminal.
+- DONE: Verify the durable workflow outcome.
+  `retained-go-temp/002` is clean at commit 886b79b, tracks only `README.md`, and has no `wire-the-thing.md`; the final message says no files changed, no workers dispatched, and no advancement.
+- SKIPPED: Preserve the correlated rollout file itself.
+  The harness resolved the sole rollout for thread `01a000e2-5fb2-7230-a0e0-5f7968d14be0` and decoded zero completed `CommandExecution` items, but its isolated `_codex-home` was removed by registered test cleanup before the external copier captured it; the public bytes contain no alternate command/tool item.
+
+### Summary
+
+Root cause is the filing-only workspace sandbox denying the model's first contract read, after which the model terminated without attempting the atomic filing command. This is not a correlation or extraction mismatch: the retained public stream contains only agent messages and a normal terminal event, and the retained workflow proves no entity landed. Candidate 354f4e362 remains byte-identical and no unapproved model run or workflow mutation occurred.
