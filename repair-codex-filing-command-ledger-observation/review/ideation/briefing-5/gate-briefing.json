@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-5:revision-1",
+  "question": "Approve harness-owned public command-execution transaction grading for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:ideation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/07fac660dacb813a88d2b095d149b00128c7db7e/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:29152901312f05928bfa75fc957cb4230a8b8e90228180e06e038fcb84cc8ac6",
+      "mediaType": "text/markdown",
+      "summary": "Grade one top-level public command_execution item with exact create count, exit 0, same-item receipt, and durable entity. Remove rollout, ledger, and nested-sandbox mechanisms; retain PR #679 bytes and all detached counterfeits."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6ker7h25hj86983e5ef71ahm:ideation:attempt-5:revision-1:item-2",
+      "uri": "git-root://main/17bd90a1edda7a8becd20b9f4447dac6cc1077aa/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1401e874d84a9a3c6a1d81495e56a578593dea5a58ff67e719cc0f26fb082ff8"
+    }
+  ]
+}
