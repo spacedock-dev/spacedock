@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-3:revision-1",
+  "question": "Approve Option A: expand scope to a filing-only peer-verified child-process supervisor that preserves exact executable-entry evidence?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/e5f629fbffeeab2d8b3a5be5ee8c6a141fb8b294/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:2ab64f1e8fc17a0a98a386aefa5bfba107e79570d4bb72048ef00f8acafa83b8",
+      "mediaType": "text/markdown",
+      "summary": "Two passive mechanisms failed. Supported Codex evidence stops at the outer shell. Option A preserves exact child-execution ACs with platform-specific test supervision; Option B is smaller but relaxes those ACs; Option C changes product behavior."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6ker7h25hj86983e5ef71ahm:ideation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/17bd90a1edda7a8becd20b9f4447dac6cc1077aa/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1401e874d84a9a3c6a1d81495e56a578593dea5a58ff67e719cc0f26fb082ff8"
+    }
+  ]
+}
