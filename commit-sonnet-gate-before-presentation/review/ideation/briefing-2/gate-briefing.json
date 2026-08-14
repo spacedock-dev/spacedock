@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kky8pg7wc8xgb985epwss092:ideation:attempt-2:revision-1",
+  "question": "Approve the test-only native-lifecycle ownership correction?",
+  "artifacts": [
+    {
+      "id": "artifact:kky8pg7wc8xgb985epwss092:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/e3158eb9cdd717d69dfa079d0db63b6235df79e8/commit-sonnet-gate-before-presentation.md",
+      "rev": "sha256:dda084cbc6a43577b17995bb51ac06f30721cc4056d32b4954a1aa6692f29f11",
+      "mediaType": "text/markdown",
+      "summary": "Use native spawn, completion, report, and transition evidence for worker dispatch; stop command-log envelope counting from overriding it. Expected change: +000 net LOC across 4 test files."
+    }
+  ]
+}

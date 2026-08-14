@@ -50,6 +50,12 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+            - id: gate-attempt:kky8pg7wc8xgb985epwss092-ideation-2
+              briefing:
+                id: briefing:kky8pg7wc8xgb985epwss092:ideation:attempt-2:revision-1
+                digest: sha256:e6f948ff70c666e23a8db3d00bf41180f61f69cfe6f844933fe19a00018a79e5
+                request-digest: sha256:98cfe23d64d099c0d22b2596b3ec5db1065d4a2e517a224f582a1d9e47adfc52
+                room-ref: ./commit-sonnet-gate-before-presentation/review/ideation/briefing-2
 started: 2026-08-10T18:44:40Z
 worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
 ---
