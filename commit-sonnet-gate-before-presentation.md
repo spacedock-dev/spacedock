@@ -639,3 +639,36 @@ The reset replaces the failed immediate-commit product premise with a test-only 
 ### Summary
 
 The command log now proves only gate-hold effects, while native lifecycle events and the durable report remain authoritative for implementation-worker evidence. The exact Sonnet ladder completed with a bound XPASS and unchanged-behavior unbound PASS, so the owned XFAIL is removed.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Independently audit that command-log evidence now owns only gate-hold effects while native spawn, completion, durable report, and transition evidence remain mandatory; exercise repeated-envelope and missing-native controls.
+  Focused and detached tests accept repeated pre-gate build/help envelopes but reject command-only, missing-completion, missing-report, late-completion, and uncorrelated-handle lifecycles; removing either oracle boundary makes these controls fail.
+- DONE: Verify the exact 4-test-file, -001 net candidate with focused, full, race, format, registry, active-owner, and detached adversarial checks, preserving the test-product firewall.
+  Candidate `68d17cb1480dd6f244db6290d0fd86aa72429d90` is 10 insertions/11 deletions across four `_test.go` files; all named checks passed and product/runtime bytes match base `0739553d7`.
+- DONE: Validate the retained bound XPASS and identical-behavior-byte unbound PASS evidence, the owned Sonnet row removal, and clean integration against current origin/main before recommending PASSED or REJECTED.
+  Transcript SHA-256 `e088f8558e176cd77ca4e23cb15af2a68d24029a8e5d8dab4fb55e394bc8f68a` records bound XPASS at 292.26s and the identical-command unbound PASS at 427.36s; merge tree `f100914c5e0f1af33b1648dd3995c7514493a9d7` is conflict-free against `024a507ab`.
+
+### Acceptance evidence
+
+- DONE: AC-1: The exact local Sonnet target first reports bound XPASS and then reports normal PASS after only the owned binding is removed.
+  The retained command executions are byte-identical; `ecd7b2856..68d17cb14` changes only the two kky binding rows, and the first/second outputs are XPASS/PASS.
+- DONE: AC-2: One implementation Agent spawn, its matching completion, one durable implementation report, and the later validation transition remain mandatory.
+  Native-lifecycle controls reject missing completion, missing report, completion after transition, duplicate/missing correlation, and command-only evidence; changing any required phase makes the focused test fail.
+- DONE: AC-3: Extra successful pre-gate dispatch-build envelopes do not cause `implementation-worker-not-dispatched`; command-log evidence continues to own only gate-hold effects.
+  The repeated-envelope/capability-probe case passes both in the candidate and a detached checkout while post-prepare decision, consume, successor, withdrawal, and status mutations remain red.
+- DONE: AC-4: The final entity is a clean open validation gate with no terminal fields, consumed decision, or successor dispatch.
+  Both retained live commands pass `assertGateHeld` plus the gate-hold command oracle, whose decision, consume, successor, withdrawal, duplicate-prepare, missing-commit, and status mutants fail.
+- DONE: AC-5: Focused, full, race, format, registry, active-owner, and required exact PR checks pass. Pi remains skipped.
+  `go test ./...`, `go test ./... -race`, focused controls, `gofmt -d ./cmd ./internal`, registry reconciliation, state-backed active-owner join, detached audit, and `git diff --check` all passed; no live or Pi run was added.
+
+### Reviewer findings
+
+- DONE: Material findings: none. Deferred risks: none. Polish findings: none.
+  The adversarial pass found no unsupported identity, cardinality, ordering, ownership, or integration behavior in the promised Sonnet path.
+- DONE: Recommendation: PASSED.
+  All five value ACs have independently reproduced behavioral evidence and no material finding remains.
+
+### Summary
+
+Validation independently confirms that the candidate removes duplicate command-log authority without weakening native lifecycle or durable gate-hold proof. The exact retained Sonnet ladder, detached adversarial controls, complete non-live suites, and current-main merge tree are clean; PASSED, and love returned to the Captain.
