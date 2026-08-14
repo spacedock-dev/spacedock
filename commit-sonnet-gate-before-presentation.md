@@ -508,3 +508,16 @@ HOLD: identical product/oracle bytes yielded a bound XPASS and an unbound semant
 ### Summary
 
 The current-main reconstruction is committed locally at `1dd30d5e7`; a normal push was rejected because the same remote branch intentionally remains at historical reference `b50bd0665`, and it was not overwritten. Next, run the exact bound Sonnet target once; only on bound XPASS remove the two kky Sonnet rows, commit, run registry and active-owner checks, then run the unchanged-behavior-byte target once unbound and require normal PASS.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Preserve the exact bound Sonnet failure and explain why it invalidates the current commit-order implementation premise.
+  The frozen `1dd30d5e7` target graded bound XFAIL with `implementation-worker-not-dispatched`, so it did not reach a clean journey that could prove the prepare → immediate commit rule or authorize binding removal.
+- SKIPPED: SKIP candidate edits and additional live runs because the captain-authorized next action is a normal design reset to ideation.
+  Candidate, test, binding, Git-ref, and frontmatter bytes remain unchanged; no live command ran in this handoff cycle.
+- DONE: Leave a complete current-stage handoff that permits the First Officer to move the task back to ideation without claiming the sprint value is delivered.
+  The Sonnet owner remains bound, the observed XFAIL is the retained outcome, and ideation must revise the premise before another implementation or verification ladder.
+
+### Summary
+
+The current implementation did not deliver sprint value because its bound journey stopped with `implementation-worker-not-dispatched` before the commit-order behavior could qualify for XPASS. This report preserves that failure and hands the unchanged candidate back for the Captain-authorized transition to ideation.
