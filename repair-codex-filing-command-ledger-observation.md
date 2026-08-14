@@ -55,6 +55,17 @@ gates:
                 digest: sha256:893f3a6684790a5a2840dff4c3047d3ebbd84710463b70e6d89564a52f8ed076
                 request-digest: sha256:35ae55712eebf94ed279a8f2a1d8dd1b2cb7fd03f2eb3ac27bc45ee86eceb842
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:ideation:2
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-14T07:23:04.943409Z"
+                decision: approve
+                reason: The execution-grounded test-only shim directly falsifies the observed counterfeit, preserves product behavior, and has a bounded signed surface and validation ladder.
+              application:
+                target-stage: implementation
+                state: pending
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
