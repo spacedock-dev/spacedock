@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rzrx7a00yxk9kkvy4mxcj8ep:validation:attempt-1:revision-1",
+  "question": "Approve this XFAIL grading fix for terminalization: the fresh validator verified the deliverable matches spec, offline checks pass, bindings preserved. Approve (merge) or reject (bounce back)?",
+  "artifacts": [
+    {
+      "id": "artifact:rzrx7a00yxk9kkvy4mxcj8ep:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/922362c6d3ed8f3d5bb9a32a32392f0803255533/rzr-validation-review.md",
+      "rev": "sha256:28aed9237faaddba2bb497f7a95fc58685e0fc85e63901b604e7500d06c2200b",
+      "mediaType": "text/markdown",
+      "summary": "Fresh validator verified the one-line grading fix; PASSED, no findings, bindings preserved."
+    }
+  ]
+}

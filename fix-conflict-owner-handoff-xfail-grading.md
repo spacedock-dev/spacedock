@@ -50,6 +50,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:rzrx7a00yxk9kkvy4mxcj8ep:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:rzrx7a00yxk9kkvy4mxcj8ep-validation-1
+              briefing:
+                id: briefing:rzrx7a00yxk9kkvy4mxcj8ep:validation:attempt-1:revision-1
+                digest: sha256:9e606e91a2427f4cf721b38c6dbc3c1fd0611586215759feda1356d3e4844982
+                request-digest: sha256:8b9ad4c9e9ded0402b0de34860ac28589f87ac9e57fae5fe538d0bb91e85c977
+                room-ref: ./fix-conflict-owner-handoff-xfail-grading/review/validation/briefing-1
 started: 2026-08-13T22:55:16Z
 worktree: .worktrees/spacedock-ensign-fix-conflict-owner-handoff-xfail-grading
 ---
