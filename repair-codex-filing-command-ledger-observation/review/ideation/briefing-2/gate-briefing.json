@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-2:revision-1",
+  "question": "Approve the execution-grounded Codex filing ledger design?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/5b3efb3dfb86cb984e976793750f0bf4093e6b21/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:405a984cd362e11355e501ae291f5969105e39b95b872a0742cdaffb47d3ca4c",
+      "mediaType": "text/markdown",
+      "summary": "Replace non-injective trace parsing with a Codex-filing-only transparent launcher shim that records exact argv and real exit code. Expected final surface: about +190 net LOC across 3 test files; no product/runtime change."
+    }
+  ]
+}

@@ -49,6 +49,12 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+            - id: gate-attempt:6ker7h25hj86983e5ef71ahm-ideation-2
+              briefing:
+                id: briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-2:revision-1
+                digest: sha256:893f3a6684790a5a2840dff4c3047d3ebbd84710463b70e6d89564a52f8ed076
+                request-digest: sha256:35ae55712eebf94ed279a8f2a1d8dd1b2cb7fd03f2eb3ac27bc45ee86eceb842
+                room-ref: ./repair-codex-filing-command-ledger-observation/review/ideation/briefing-2
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
