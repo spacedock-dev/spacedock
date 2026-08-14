@@ -41,7 +41,8 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 			}
 		}
 	}
-	if os.Getenv("SPACEDOCK_LIVE_RUNTIME") == "claude" {
+	switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime {
+	case "claude", "pi":
 		t.Parallel()
 	}
 	driver := newDriver()

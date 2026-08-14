@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -66,7 +67,7 @@ func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []stri
 	t.Helper()
 	stdoutPath := filepath.Join(artifactDir, "pi-stdout.txt")
 	stderrPath := filepath.Join(artifactDir, "pi-stderr.txt")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), piLiveRunTimeout(10*time.Minute))
 	defer cancel()
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = workflowRoot
@@ -86,7 +87,7 @@ func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []stri
 
 	runErr := cmd.Run()
 	if ctx.Err() == context.DeadlineExceeded {
-		t.Fatalf("pi live smoke timed out; artifacts in %s", artifactDir)
+		t.Fatalf("pi live smoke timed out after the per-run cap (SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES, default 10m); artifacts in %s", artifactDir)
 	}
 	if runErr != nil {
 		t.Fatalf("pi live smoke failed: %v; artifacts in %s\nstderr tail:\n%s", runErr, artifactDir, tail(readFile(t, stderrPath), 4000))
@@ -245,6 +246,15 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, oauthJSON, openAIAPIKey, req
 			if err := os.WriteFile(filepath.Join(piHome, "auth.json"), b, 0o600); err != nil {
 				t.Fatal(err)
 			}
+			// Custom providers (e.g. lunaroute) declare their models in
+			// models.json, not auth.json. Mirror it alongside auth.json so a
+			// custom-provider SPACEDOCK_PI_LIVE_CHILD_MODEL resolves instead
+			// of failing with "Model ... not found".
+			if models, merr := os.ReadFile(filepath.Join(realHome, ".pi", "agent", "models.json")); merr == nil && strings.TrimSpace(string(models)) != "" {
+				if err := os.WriteFile(filepath.Join(piHome, "models.json"), models, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
 			return piLiveAuthDecision{mode: piAuthOAuth, model: "openai-codex/gpt-5.6-luna:max"}
 		}
 	}
@@ -269,6 +279,20 @@ func piSubagentsPackageRoot(t *testing.T) string {
 		t.Fatalf("pi-subagents package extension not found at %s: %v; set PI_SUBAGENTS_PACKAGE_ROOT", p, err)
 	}
 	return p
+}
+
+// piLiveRunTimeout returns the per-run cap for a Pi live journey. It reads
+// SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES (a positive integer) and falls back to dflt
+// when the env var is unset or invalid. Raise it for slow :max-thinking models so
+// multi-dispatch journeys complete to a graded result instead of timing out;
+// make the outer `go test -timeout` longer than this per-run cap.
+func piLiveRunTimeout(dflt time.Duration) time.Duration {
+	if v := os.Getenv("SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return time.Duration(n) * time.Minute
+		}
+	}
+	return dflt
 }
 
 func piLiveArtifactDir(t *testing.T, name string) string {

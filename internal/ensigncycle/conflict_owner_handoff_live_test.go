@@ -74,7 +74,9 @@ func assertConflictOwnerHandoff(t *testing.T, fixture conflictOwnerFixture, _ li
 	if after := readFile(t, fixture.entity); after != fixture.before {
 		return fmt.Errorf("owner handoff changed authority bytes\nbefore:\n%s\nafter:\n%s", fixture.before, after)
 	}
-	if got := strings.TrimSpace(readFile(t, fixture.marker)); got != "runtime-worker-owner" {
+	if got := strings.TrimSpace(readFileAllowMissing(fixture.marker)); got == "" {
+		return fmt.Errorf("worker marker missing, want runtime-worker-owner")
+	} else if got != "runtime-worker-owner" {
 		return fmt.Errorf("worker marker = %q, want runtime-worker-owner", got)
 	}
 	if got := strings.TrimSpace(git(t, fixture.worktree, "branch", "--show-current")); got != fixture.owner.Branch {
