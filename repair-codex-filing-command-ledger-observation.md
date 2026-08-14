@@ -82,6 +82,17 @@ gates:
                 digest: sha256:7fbcbc97d3dc332f6bd273ccfd6274623bd4e9547a04ae7b37cc43b530de2f15
                 request-digest: sha256:a549e3c5a21bff888200c1fb8ee8701fcdad79705032963fb0fb9b47ff011ea8
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/ideation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:ideation:4
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:ideation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-08-14T14:38:34.725209Z"
+                decision: approve
+                reason: Captain selected the existing correlated thread-log direction; the revised design preserves supported atomic-path evidence, rejects the known counterfeits, removes the forgeable ledger, and stays within five test files.
+              application:
+                target-stage: implementation
+                state: pending
         - id: gate:6ker7h25hj86983e5ef71ahm:validation
           stage: validation
           attempts:
