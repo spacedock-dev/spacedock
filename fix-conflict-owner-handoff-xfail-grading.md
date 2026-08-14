@@ -151,3 +151,17 @@ fixture file the test itself wrote, so missing there is a real setup failure).
 ### Summary
 
 One-line change to the shared assert: missing `owner-handoff.marker` now returns an error (`worker marker missing, want runtime-worker-owner`) via `readFileAllowMissing` instead of `t.Fatal`, so `gradeLive` can grade the no-handoff mode as XFAIL on bound targets. Offline checks (`gofmt`, `go vet -tags live`, `go build -tags live`, and the `ConflictOwner|GradeLive|LiveGrade|KeepMovingDurable` tests) all pass.
+
+## Stage Report: validation
+
+- DONE: Independently verified the deliverable against the entity spec; did NOT edit the deliverable.
+  `git show HEAD~1:.../conflict_owner_handoff_live_test.go` vs current: `readFile(t, fixture.entity)` untouched at line 74; `readFileAllowMissing(fixture.marker)` at line 77; missing-marker branch `return fmt.Errorf("worker marker missing, want runtime-worker-owner")` at line 78; present-but-wrong `worker marker = %q, want runtime-worker-owner` byte-identical (base line 78 → current line 80, same bytes).
+- DONE: Confirmed no `liveXFail(...)` binding, no other assert, and no CI lane touched; fe7/bqy AC-3 preserved.
+  `git diff HEAD~1 HEAD --name-only` → only `internal/ensigncycle/conflict_owner_handoff_live_test.go`; `git diff HEAD~1 HEAD | grep liveXFail` → empty (exit 1); no `.github`/`ci`/`workflow`/`lane` files changed.
+- DONE: Re-ran the offline checks in the worktree and report actual output.
+  `gofmt -l internal/ensigncycle` → empty (exit 0); `go vet -tags live ./internal/ensigncycle` → silent (exit 0); `go build -tags live ./internal/ensigncycle` → silent (exit 0); `go test -count=1 -run 'ConflictOwner|GradeLive|LiveGrade|KeepMovingDurable' ./internal/ensigncycle` → `ok  github.com/spacedock-dev/spacedock/internal/ensigncycle  0.424s` (exit 0).
+- DONE: Appended this `## Stage Report: validation` with per-item DONE evidence and a Summary recommending PASSED.
+
+### Summary
+
+Recommending PASSED. The worktree deliverable matches the entity spec exactly: the shared assert reads the marker via `readFileAllowMissing`, returns `worker marker missing, want runtime-worker-owner` on absent file, keeps the present-but-wrong `worker marker = %q` path byte-unchanged, and leaves `readFile(t, fixture.entity)` and all `liveXFail` bindings untouched. Fresh (non-cached) offline checks — gofmt, go vet -tags live, go build -tags live, and the `ConflictOwner|GradeLive|LiveGrade|KeepMovingDurable` tests — all pass with exit 0.
