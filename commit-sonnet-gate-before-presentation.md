@@ -55,38 +55,74 @@ worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
 ---
 ## Problem
 
-The exact local Sonnet default-headless journey prepared an open validation gate.
-The host did not commit the gate state.
-The First Officer then read and presented the gate.
-The target reported `gate-hold-violation`.
+The exact bound Sonnet default-headless journey reports
+`implementation-worker-not-dispatched` even though its native stream records the
+implementation `Agent` spawn, matching completion notification, durable stage
+report, and later transition to validation.
+
+The false failure comes from `assertRecordedGateHoldLog`. It infers worker
+dispatch from the number and order of successful `dispatch build` command-log
+rows. The retained trace has a stamped build, a capability probe, and a second
+bare-mode build before the real Agent spawn, so that envelope-count heuristic
+rejects a worker lifecycle that the native lifecycle oracle accepts.
+
+The prior commit-order premise targeted a different observation. A validation
+worker can prepare the gate, read its entity to finish its report, and return.
+Current main then commits the open gate as the First Officer's first gate-resume
+action before structured checklist/AC reads and presentation. Banning every
+host event between prepare and commit crosses worker/First-Officer ownership and
+does not repair the reported dispatch failure.
 
 ## Value
 
-After `gate prepare`, the Sonnet First Officer commits the durable gate state. It stops at the same clean open validation gate and dispatches no successor.
+The bound Sonnet journey grades the implementation lifecycle from native spawn,
+completion, report, and transition evidence. Extra successful build envelopes
+cannot counterfeit or erase that evidence. The journey still requires a
+durable open validation gate and no successor dispatch.
 
 ## Scope
 
-- Repair the host-neutral gate lifecycle at the prepare-and-bind boundary.
-- Use the exact n28 Claude artifact as the baseline.
-- Remove the Sonnet `default-headless-gate-stop` binding after bound XPASS evidence.
-- Transfer the Codex binding to `select-actionable-codex-default-headless-task`.
-- Do not change n28 acknowledgment mechanics, Pi, or the zero-discovery repair.
-- Use local Sonnet subscription authentication before required PR CI.
+- Correct the test ownership boundary between command-log gate-hold evidence and
+  native worker-lifecycle evidence.
+- Keep product instructions and runtime behavior byte-identical to current main.
+- Preserve every runtime ownership row except this task's Sonnet
+  `default-headless-gate-stop` row after bound XPASS.
+- Do not change command grammar, stored formats, authority, fixtures, Codex, Pi,
+  Opus, dispatch acknowledgment, or zero-discovery behavior.
+- Do not spend a live run during ideation.
 
 ## Acceptance criteria
 
-- AC-1: The command order is successful `gate prepare`, then `state commit`, then structured reads and presentation.
-- AC-2: The exact local Sonnet default-headless target first reports bound XPASS-green and then passes normally after binding removal.
-- AC-3: The final entity is a clean open validation gate with no terminal fields and no successor dispatch.
-- AC-4: A focused negative control rejects a missing, failed, or late state commit.
-- AC-5: Full, race, format, registry, active-owner, and required exact PR checks pass. Pi remains skipped.
+- AC-1: The exact local Sonnet target first reports bound XPASS and then reports
+  normal PASS after only the owned binding is removed.
+- AC-2: One implementation Agent spawn, its matching completion, one durable
+  implementation report, and the later validation transition remain mandatory.
+- AC-3: Extra successful pre-gate dispatch-build envelopes do not cause
+  `implementation-worker-not-dispatched`; command-log evidence continues to own
+  only gate-hold effects.
+- AC-4: The final entity is a clean open validation gate with no terminal fields,
+  consumed decision, or successor dispatch.
+- AC-5: Focused, full, race, format, registry, active-owner, and required exact PR
+  checks pass. Pi remains skipped.
 
 ## Baseline evidence
 
-- Released user and workflow: local-subscription Sonnet default-headless gate stop without Captain authority.
-- Observable harm: the prepared gate is not proven durable before presentation.
-- Value authority: `skills/fo-gate-lifecycle/SKILL.md` requires prepare, commit, structured reads, and presentation in that order.
-- Sonnet trigger: `/tmp/n284-happy-claude/claude-shared-scenarios/default-headless-gate-stop/command.log` has gate prepare, reads, and presentation, but no state commit.
+- Retained trace:
+  `/private/tmp/dvd679-sonnet.uaXw42/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/default-headless-gate-stop`.
+- Native evidence: `claude-stream.jsonl` records the implementation Agent
+  `toolu_011gwxUK7zaH36D1viRUua3L`, its matching completed task notification,
+  and the durable implementation report before the validation status change.
+- Misclassification trigger: `command.log` records successful implementation
+  build rows at lines 17 and 23, with `dispatch build --help` at line 20. The
+  command-log heuristic requires exactly two successful pre-prepare build
+  envelopes in total and therefore emits `implementation-worker-not-dispatched`.
+- Current-main gate behavior: the First Officer commits the returned open gate
+  before its structured checklist/AC reads and presentation. The worker-owned
+  report read between prepare and return is not a First Officer presentation.
+- Existing independent oracle: `assertImplementationWorkerLifecycle` correlates
+  native spawn, completion, validation transition, and exact-stage durable
+  report. Its command-only negative control already rejects an envelope without
+  a native worker lifecycle.
 
 ## Captain-approved scope disposition
 
@@ -99,60 +135,99 @@ The first local Codex run collided with a concurrent Sonnet dispatch artifact.
 The authorized sequential Codex run selected the queued task as a gate and stopped before dispatch.
 Its artifact remains at `/tmp/kky-bound-codex-sequential.CHE1eq`.
 
+On 2026-08-13, the Captain authorized a normal design reset after the exact
+bound Sonnet run reported `implementation-worker-not-dispatched`. This reset
+abandons the immediate-commit product premise and keeps the Sonnet binding until
+the corrected test-only candidate XPASSes.
+
 ## Ideation requirements
 
-- Name exact files and gross/net estimate before product edits.
-- Preserve the existing gate grammar and authority.
-- Define one focused falsifier for the missing commit.
+- Explain the exact bound failure from native and command-log evidence.
+- Define one focused falsifier for a missing native worker lifecycle.
+- Name exact files and net estimate before edits.
+- Preserve the test-product firewall and every other runtime owner row.
 
 ## Proposed approach
 
-Change only the open-gate resume rule in `skills/fo-gate-lifecycle/SKILL.md`.
-The rule will require `state commit ENTITY` before the structured reads and presentation.
-This rule also applies when a worker prepared or committed the open gate.
-The First Officer will stop if the commit command fails.
+Keep product instructions unchanged. Narrow `assertRecordedGateHoldLog` to the
+gate-hold facts it can observe: successful prepare, later durable state head,
+one open attempt, and no decision, consume, successor build, withdrawal, or
+status mutation after prepare.
 
-The exact design replaces the `open → present` clause near line 74.
-The replacement names the commit, the two structured reads, and the presentation order.
-No other lifecycle branch changes.
+Remove its variadic implementation-dispatch mode and the two pre-prepare
+dispatch-envelope heuristics. `runGateStopScenario` will continue to call
+`assertImplementationWorkerLifecycle` separately for
+`default-headless-gate-stop`. That native oracle remains the sole owner of the
+implementation spawn, matching completion, durable report, and transition
+order.
 
-The simplest alternative was a new binary command that combines commit and presentation.
-That alternative is too large because `state commit` already supports a clean no-op.
-The retained logger also observes its successful state head.
+Add one focused regression case to the existing helper test: duplicate the
+successful implementation build envelope around a harmless capability probe
+and require the gate-hold oracle to remain green. Retain the adjacent
+command-only negative control: without a native spawn/completion/report, the
+native lifecycle oracle must return `implementation-worker-not-dispatched`.
+Deleting that control or replacing the native oracle with command-log counting
+would make the test fail.
 
-No spike is needed.
-The clean no-op behavior exists in `TestStateCommitNoOpWhenClean`.
-The command-order oracle exists in `assertRecordedGateHoldLog`.
+After the exact bound target XPASSes, remove only owner
+`kky8pg7wc8xgb985epwss092` from the Sonnet journey binding and reconciliation
+map. Then run the same target once with unchanged behavior bytes and require a
+normal PASS.
+
+The simplest alternative is to teach the command-log heuristic to tolerate
+retries and probes. It is insufficient because a successful build envelope is
+not a worker spawn or completion; it preserves two competing implementations of
+the same proof. An instruction change is also insufficient because current-main
+native behavior already dispatches and completes the worker.
+
+No spike is needed. The retained exact trace proves the false classification,
+and existing focused tests prove that the native oracle accepts correlated
+worker evidence and rejects command-only evidence.
 
 ## Expected surface
 
-- `skills/fo-gate-lifecycle/SKILL.md`: 3 insertions and 1 deletion.
-- Expected total: 1 file, 4 gross lines, and 2 net lines.
-- Hard tolerance: 1 file and 8 gross lines.
+- `internal/ensigncycle/claude_runtime_helpers_test.go`: remove the duplicate
+  command-log ownership and add the focused repeated-envelope regression case.
+- `internal/ensigncycle/claude_live_runner_test.go`: call the narrowed gate-hold
+  oracle without an implementation mode.
+- `internal/ensigncycle/shared_live_runner_test.go`: remove only the Sonnet
+  `kky8pg7wc8xgb985epwss092` binding after bound XPASS.
+- `internal/contractlint/live_registry_reconciliation_test.go`: remove only the
+  matching reconciliation row after bound XPASS.
+- Expected total: **+000 net LOC across 4 files**.
+- Hard tolerance: 4 files and -012 through +020 net LOC.
 
-The change alters host-neutral Sonnet and Codex runtime instruction behavior only.
-It does not alter command grammar, stored formats, or authority.
-It does not alter n28 dispatch acknowledgment, Pi, or zero-discovery behavior.
+The change alters test classification only. It changes no product/runtime
+instruction, command grammar, stored format, authority, fixture, or runtime
+behavior. Sonnet's owned XFAIL row is the only registry ownership change.
 
 ## Acceptance criteria and test plan
 
-**AC-1: A successful open-gate presentation has a successful `state commit` after `gate prepare` and before structured reads.**
-The exact local Sonnet journey verifies the command order in `command.log`.
+**AC-1: The exact local Sonnet target first reports bound XPASS and then normal PASS after only the owned binding is removed.**
+Run `SPACEDOCK_LIVE_RUNTIME=claude SPACEDOCK_LIVE_MODEL=claude-sonnet-5 go test -tags live -count=1 -timeout 30m -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v` once while bound. Only on XPASS remove the two owner rows, run registry and active-owner checks, and run the identical command once unbound. Any other first-run result stops the ladder; behavior bytes do not change between runs.
 
-**AC-2: The exact local Sonnet target first reports XPASS-green and then passes after its binding is removed.**
-The live journey verifies the repaired behavior and the final open gate.
+**AC-2: Native implementation lifecycle evidence remains mandatory.**
+Focused helper tests exercise one correlated Agent spawn, matching completion,
+later validation transition, and exact implementation report. Removing the
+completion or report must return `implementation-worker-not-dispatched`.
 
-**AC-3: The final gate remains open without a Resolution, an Application, terminal fields, or successor dispatch.**
-The existing `assertGateHeld` and `assertRecordedGateHoldLog` checks verify this state.
+**AC-3: Extra pre-gate build envelopes do not override native lifecycle truth.**
+The new repeated-envelope regression case is red on current main and green after
+the ownership correction. It supplies extra successful implementation/help
+build rows while the gate-hold facts stay unchanged.
 
-**AC-4: A missing, failed, or late commit does not qualify the gate hold.**
-The focused `missing commit` case in `TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle` is the primary falsifier.
-The same oracle rejects a commit before the successful prepare.
+**AC-4: The final gate remains open without a Resolution, consumed Application,
+terminal fields, or successor dispatch.**
+The existing `assertGateHeld` and narrowed `assertRecordedGateHoldLog` checks
+exercise durable state and command effects. Existing missing-commit, decision,
+consume, withdrawal, status-repair, successor-build, and duplicate-prepare
+mutants remain red.
 
-**AC-5: The product checks and exact required PR checks pass.**
-Implementation runs the focused lifecycle tests, full tests, race tests, formatting, registry checks, and active-owner checks.
-The required PR lanes run for Sonnet and Codex.
-Pi remains skipped.
+**AC-5: The test-only candidate passes all required checks.**
+Run focused helper tests, `go test ./...`, `go test ./... -race`,
+`gofmt -w ./cmd ./internal`, registry reconciliation, active-owner join, and
+`git diff --check`. Required exact PR lanes run for Sonnet and Codex. Pi remains
+skipped.
 
 ## Stage Report: ideation
 
@@ -521,3 +596,16 @@ The current-main reconstruction is committed locally at `1dd30d5e7`; a normal pu
 ### Summary
 
 The current implementation did not deliver sprint value because its bound journey stopped with `implementation-worker-not-dispatched` before the commit-order behavior could qualify for XPASS. This report preserves that failure and hands the unchanged candidate back for the Captain-authorized transition to ideation.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Explain why the exact bound Sonnet journey reports implementation-worker-not-dispatched, using the live trace and current-main behavior rather than the failed commit-order premise.
+  Retained native events prove one implementation Agent spawn, matching completion, durable report, and later validation transition; extra successful build envelopes trigger the false command-log classification.
+- DONE: Design the smallest test-only or instruction change that makes the bound journey XPASS, with one focused falsifier and the exact bound/unbound ladder.
+  The design removes duplicate envelope ownership, retains the native missing-worker falsifier, and permits binding removal only after one bound XPASS followed by one identical-byte unbound PASS.
+- DONE: Name exact files and estimate net LOC as +NNN or -NNN across M files before product edits; preserve the test-product firewall and all other runtime ownership rows.
+  Expected surface is +000 net LOC across 4 test files; product instructions stay unchanged and only the kky Sonnet owner rows may be removed after XPASS.
+
+### Summary
+
+The reset replaces the failed immediate-commit product premise with a test-only ownership correction: command logs prove the gate hold, while native host events and the durable report prove worker dispatch. The retained trace and focused helper tests make the design actionable without another ideation live run; thank you, Captain, and the affection is returned.
