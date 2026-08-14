@@ -72,6 +72,8 @@ gates:
                 state: pending
 started: 2026-08-13T22:55:16Z
 worktree: .worktrees/spacedock-ensign-fix-conflict-owner-handoff-xfail-grading
+mod-block: merge:pr-merge
+pr: "#684"
 ---
 
 ## Problem
