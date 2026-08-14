@@ -396,3 +396,34 @@ Cycle 4 adopts the captain's supported-evidence boundary and removes the unresol
 ### Summary
 
 Codex filing evidence now comes from the single correlated rollout's runtime-owned completed `CommandExecution`, with exactly one atomic command, its exact same-item receipt, and an independently checked landed entity. Only filing uses `workspace-write`/`never`; non-filing argv is byte-identical, and the reserved validation run remains unspent.
+
+## Stage Report: validation (cycle 5)
+
+- FAILED: Reproduce AC-1 with the seven-rung correlated transaction matrix, then spend the single exact Codex filing run on frozen commit e851be3fe and verify one owned atomic command, exact receipt, correct durable entity, and zero unreachable/unrelated evidence.
+  The matrix passed, but the sole exact run exited 2 before model execution because Codex CLI 0.147.0 does not accept the candidate's filing-only `--ask-for-approval never`; no transaction, receipt, or entity could be observed and no rerun was made.
+- DONE: Reproduce AC-2 by attacking duplicate/mixed creates, any --next-id regardless of exit, failed/wrong/missing commands, forged public evidence, receipt ownership/bytes, malformed or ambiguous rollout, and entity mismatch.
+  Focused tests plus detached `TestDetachedCodexFilingCorrelatedTransactionAudit`/`CorrelationAudit` rejected all named counterfeits and accepted bound, PATH, captured-launcher, and `status --new` aliases; weakening uniqueness, receipt ownership/bytes, rollout identity, or entity bytes makes a named case pass.
+- FAILED: Verify AC-3 with exact five-path -016 LOC evidence, filing-only workspace-write/never and non-filing argv parity, live-tag compile, gofmt, full, race, and a detached adversarial audit; recommend PASSED or REJECTED without editing candidate bytes.
+  Five test paths and 174 insertions/190 deletions give exact net -016; argv parity, live-tag compile, gofmt, full suite, and detached audit passed, but the filing argv's approval flag is incompatible with live Codex and the finding-stop rule left race unrun.
+- DONE: Reproduce AC-1 evidence.
+  Offline rungs 1-3 passed and reject public/unreachable text plus unrelated success, but the required sole live proof failed at host argument parsing before a `thread.started` or `CommandExecution` could exist.
+- DONE: Reproduce AC-2 evidence.
+  Rungs 4-7 and the detached matrix reject duplicate creates within/across commands, successful or failed `--next-id`, failed/wrong/manual/missing creates, forged public evidence, wrong-item or inexact receipts, correlation ambiguity, and durable mismatch.
+- FAILED: Reproduce AC-3 evidence.
+  Static surface, formatting, compile, full suite, and non-filing parity are exact, but a unit test asserted an argv spelling unsupported by the installed live-tag host and therefore did not prove filing-only workspace-write/never compatibility.
+- DONE: Run a detached adversarial audit and recommend PASSED or REJECTED without editing candidate bytes.
+  Throwaway checkout `/tmp/spacedock-codex-filing-audit.9pvbEM/checkout` at e851be3fe passed 31 alias/counterfeit/entity/correlation cases; the subsequent exact live run independently found a material host-argv defect, so recommendation is REJECTED.
+- DONE: Preserve the new finding and stop before candidate mutation or rerun for First Officer disposition.
+  Candidate HEAD remains e851be3fe; the one authorized model-run command was invoked exactly once, exited before model execution, and was not retried.
+
+### Review-finding disposition
+
+- Released user and normal workflow: the required supported Codex filing validation path constructs `codex exec --sandbox workspace-write --ask-for-approval never` through the normal Spacedock front door on installed Codex CLI 0.147.0.
+- Observable harm: the exact filing journey exits 2 during host argument parsing, so it cannot execute an atomic filing command or produce the correlated receipt and durable entity required for release evidence.
+- Authority: value-ac[AC-1] requires the sole exact Codex filing live run to establish one completed exit-0 atomic filing transaction, its exact receipt, and the correct durable entity.
+- Trigger evidence: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags=live -count=1 -timeout 40m -run '^TestLiveCommonFiling$' ./internal/ensigncycle -v` failed at `codex_live_runner_test.go:38` with `codex exec exited 2`; `codex exec --help` exposes `--sandbox` but no `--ask-for-approval` option.
+- Proposed classification: Material evidence defect, task-owned, narrow candidate fix affecting AC-1's live observation boundary; hold e851be3fe and route for distinct First Officer authorization before mutation or rerun.
+
+### Summary
+
+REJECTED. The correlated transaction observer and detached falsifier matrix are clean, and the candidate has the exact approved five-file net -016 surface, but its filing-only approval argv cannot launch the installed supported Codex host. The candidate was not edited, the exact command was not rerun, and the race suite was intentionally stopped after the new finding.
