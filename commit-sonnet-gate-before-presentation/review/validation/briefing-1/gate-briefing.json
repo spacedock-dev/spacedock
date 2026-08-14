@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kky8pg7wc8xgb985epwss092:validation:attempt-1:revision-1",
+  "question": "Approve the validated Sonnet ownership correction for PR delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:kky8pg7wc8xgb985epwss092:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/04147f162868baed8f538a068ffdc207f10adb2b/commit-sonnet-gate-before-presentation.md",
+      "rev": "sha256:c8ab80f473291cd53b1b6757433a66ef114ab02d955e7ef2a28f20dca2ff9e0b",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed on a -001 net LOC, 4-test-file candidate. Bound XPASS and unchanged-behavior unbound PASS are retained; detached and non-live checks pass. Required PR lanes remain delivery evidence before merge."
+    }
+  ]
+}
