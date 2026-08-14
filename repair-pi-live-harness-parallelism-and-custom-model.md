@@ -1,6 +1,6 @@
 ---
 title: Repair Pi live harness — common-journey parallelism, custom-provider model mirror, and slow-model timeout
-status: ideation
+status: implementation
 source: "FO write-scope review, 2026-08-13: direct test edits routed through filing"
 score: 0.85
 sprint: pi-ux
@@ -49,7 +49,7 @@ gates:
                 reason: Captain approved ideation gate; dispatch implementation for the Pi-harness bundle.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
