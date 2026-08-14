@@ -1,6 +1,6 @@
 ---
 title: Commit Sonnet gate before presentation
-status: ideation
+status: implementation
 score: "0.90"
 source: "n28 exact Claude default-headless finding, 2026-08-10"
 sprint: test-behavior-completeness
@@ -66,7 +66,7 @@ gates:
                 reason: Retained native evidence proves a valid worker lifecycle; the design removes only the competing command-log heuristic, preserves fail-closed controls, and is bounded to +000 net LOC across 4 test files.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-10T18:44:40Z
 worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
 ---
