@@ -76,12 +76,12 @@ func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) [
 	}
 }
 
-func codexLiveFrontDoorArgvForScenario(pluginDir, workflowRoot, finalPath, prompt, scenario string) []string {
+func codexLiveFrontDoorArgvForScenario(pluginDir, workflowRoot, finalPath, prompt, scenario, codexHome string) []string {
 	args := codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt)
 	if scenario != "filing" {
 		return args
 	}
-	return slices.Concat(args[:6], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never"}, args[6:8], args[9:])
+	return slices.Concat(args[:6], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never", "--add-dir", codexHome + "/plugins"}, args[6:8], args[9:])
 }
 
 func argvHasAdjacent(args []string, left, right string) bool {
@@ -129,12 +129,13 @@ func TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs(t *testing.T) {
 }
 
 func TestCodexLiveRunnerUsesRestrictedPostureOnlyForFiling(t *testing.T) {
+	codexHome := "/tmp/codex-home"
 	base := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
-	if got := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", "shallow-boot"); !slices.Equal(got, base) {
+	if got := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", "shallow-boot", codexHome); !slices.Equal(got, base) {
 		t.Fatalf("non-filing argv changed: got=%v want=%v", got, base)
 	}
-	filing := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", "filing")
-	if !slices.Equal(filing[6:11], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never", "exec"}) || slices.Contains(filing, "--dangerously-bypass-approvals-and-sandbox") {
+	filing := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", "filing", codexHome)
+	if !slices.Equal(filing[6:13], []string{"--sandbox", "workspace-write", "--ask-for-approval", "never", "--add-dir", codexHome + "/plugins", "exec"}) || strings.Count(strings.Join(filing, "\x00"), "--add-dir") != 1 || slices.Contains(filing, codexHome) || slices.Contains(filing, codexHome+"/sessions") || slices.Contains(filing, "--dangerously-bypass-approvals-and-sandbox") {
 		t.Fatalf("filing argv has wrong sandbox posture: %v", filing)
 	}
 }

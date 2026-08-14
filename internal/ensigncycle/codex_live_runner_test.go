@@ -186,7 +186,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	finalPath := filepath.Join(artifactDir, "codex-final-message.txt")
 	return runCodexProcess(codexProcessSpec{
 		bin:         r.binary,
-		argv:        codexLiveFrontDoorArgvForScenario(r.pluginDir, workflowRoot, finalPath, prompt, scenario.name),
+		argv:        codexLiveFrontDoorArgvForScenario(r.pluginDir, workflowRoot, finalPath, prompt, scenario.name, r.codexHome),
 		env:         r.env,
 		artifactDir: artifactDir,
 		finalPath:   finalPath,
