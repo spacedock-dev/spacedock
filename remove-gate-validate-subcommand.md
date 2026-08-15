@@ -3,7 +3,7 @@ id: 0tmv5bry1wbkww2758y88pay
 title: Remove the gate validate subcommand
 status: ideation
 source: "Captain directive, 2026-08-14: value review found near-zero value; every fault it reports also surfaces elsewhere"
-started:
+started: 2026-08-15T02:55:29Z
 completed:
 verdict:
 score:
