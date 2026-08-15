@@ -71,7 +71,7 @@ gates:
                 target-stage: done
                 state: pending
 mod-block: merge:pr-merge
-pr: "#682"
+pr: pr-merge:682
 ---
 # Use Codex subscription auth in live CI
 
