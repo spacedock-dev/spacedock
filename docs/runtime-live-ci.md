@@ -59,13 +59,11 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the common journeys by selecting one transport. The Claude and Pi commands run at
-most two common journeys at one time. The Codex command runs the same
-17 journeys in sequence. The Claude command keeps `-failfast`, but Go can start
-queued parallel journeys after a failure. At most two Claude or Pi journeys run at one
-time. The sequential Codex command stops at the first non-TODO failure.
-Claude's 90-minute timeout is a loose suite-wide runaway backstop; Codex and Pi
-retain the 40-minute backstop:
+Run the common journeys by selecting one transport. Claude and Pi run at most
+two common journeys at one time. Codex runs at most three, with setup artifacts
+isolated under `codex-shared-scenarios/_setup/<journey-id>/`. The Claude and Pi
+commands keep `-failfast`, but Go can start queued parallel journeys after a
+failure. The suite timeouts remain loose runaway backstops:
 
 ```bash
 SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v
@@ -80,7 +78,7 @@ go test -tags live -count=1 -timeout 20m -run 'TestLiveMergedTeamModeDispatch|Te
 For Codex, install and authenticate the CLI (or set `OPENAI_API_KEY`), then run:
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v
 ```
 
 Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI_API_KEY` is set, the harness copies `~/.codex/auth.json` into an isolated `CODEX_HOME`; if the variable is already set, run `unset SPACEDOCK_CODEX_LIVE_REQUIRED` first.
@@ -112,7 +110,7 @@ A slow `:max`-thinking model can take minutes per turn. Raise the per-run cap wi
 go test -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
 ```
 
-Run the common Pi journeys separately from that substrate proof. Pi now calls `t.Parallel()`, so `-parallel 2` fans common journeys out two at a time (Codex stays sequential):
+Run the common Pi journeys separately from that substrate proof. Pi now calls `t.Parallel()`, so `-parallel 2` fans common journeys out two at a time (Codex uses its separate `-parallel 3` command above):
 
 ```bash
 SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v

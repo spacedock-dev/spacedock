@@ -37,11 +37,17 @@ func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, roo
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	return liveResult{finalMessage: result.finalMessage, stream: result.jsonl, commands: codexObservedCommands(result.jsonl), artifactDir: result.artifactDir, duration: result.duration}
-}
-
-func codexObservedCommands(jsonl string) []string {
-	return successfulCodexCommands(jsonl)
+	commands := successfulCodexCommands(result.jsonl)
+	if scenario.name == "filing" {
+		command, gradeErr := assertCodexPublicFilingTransaction(result.jsonl, filepath.Join(root, filingSlug+".md"), filingSlug)
+		if gradeErr != nil {
+			t.Logf("Codex public filing transaction not established: %v", gradeErr)
+			commands = nil
+		} else {
+			commands = []string{command}
+		}
+	}
+	return liveResult{finalMessage: result.finalMessage, stream: result.jsonl, commands: commands, artifactDir: result.artifactDir, duration: result.duration}
 }
 func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})
@@ -80,7 +86,7 @@ func (r codexLiveRunner) withStubPATH(t *testing.T, dir string) codexLiveRunner 
 	return r
 }
 
-func newCodexLiveRunner(t *testing.T) codexLiveRunner {
+func newCodexLiveRunner(t *testing.T, setupIDs ...string) codexLiveRunner {
 	t.Helper()
 	openAIAPIKey := os.Getenv("OPENAI_API_KEY")
 	oauthJSON := os.Getenv("CODEX_AUTH_JSON")
@@ -117,7 +123,11 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	}
 	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), openAIAPIKey, decision.mode)
 
-	setupDir := filepath.Join(artifactRoot, "_setup")
+	setupID := ""
+	if len(setupIDs) > 0 {
+		setupID = setupIDs[0]
+	}
+	setupDir := codexLiveSetupArtifactDir(artifactRoot, setupID)
 	if err := os.MkdirAll(setupDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -141,6 +151,13 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	}
 
 	return codexLiveRunner{binary: binary, pluginDir: repo, codexBin: codexBin, codexHome: codexHome, env: env, artifactRoot: artifactRoot}
+}
+
+func codexLiveSetupArtifactDir(artifactRoot, setupID string) string {
+	if setupID == "" {
+		return filepath.Join(artifactRoot, "_setup")
+	}
+	return filepath.Join(artifactRoot, "_setup", setupID)
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
@@ -178,7 +195,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	finalPath := filepath.Join(artifactDir, "codex-final-message.txt")
 	return runCodexProcess(codexProcessSpec{
 		bin:         r.binary,
-		argv:        codexLiveFrontDoorArgv(r.pluginDir, workflowRoot, finalPath, prompt),
+		argv:        codexLiveFrontDoorArgvForScenario(r.pluginDir, workflowRoot, finalPath, prompt, scenario.name),
 		env:         r.env,
 		artifactDir: artifactDir,
 		finalPath:   finalPath,

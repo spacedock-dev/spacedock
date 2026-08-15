@@ -50,13 +50,13 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
 	wantGaps := map[string][]liveGapRow{
 		"gate-guardrail":                nil,
-		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "kky8pg7wc8xgb985epwss092"}},
+		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "kky8pg7wc8xgb985epwss092"}, {"xfail", "codex", "kky8pg7wc8xgb985epwss092"}},
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
-		"rejection-flow":                {{"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
-		"filing":                        {{"xfail", "codex", "6ker7h25hj86983e5ef71ahm"}},
+		"rejection-flow":                {{"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
+		"filing":                        nil,
 		"smallest-sufficient-mechanism": {{"xfail", "codex", "bfmczd31ydpp4stqjstf6xwx"}, {"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
-		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
+		"keep-moving-posture":           {{"xfail", "codex", "9adv48yhye5s2vkhwd7ge52d"}, {"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
 	}
 	for id, want := range wantGaps {
@@ -227,15 +227,43 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 		name, text, want string
 	}{
 		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 2 ./internal/ensigncycle/`},
-		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' ./internal/ensigncycle`},
+		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle`},
 		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
 		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v`},
-		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
+		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v`},
 		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
 	} {
 		if count := strings.Count(command.text, command.want); count != 1 {
 			t.Errorf("%s common-suite command count = %d, want 1", command.name, count)
 		}
+	}
+}
+
+func TestRuntimeLiveCodexParallelCapacityAndIsolation(t *testing.T) {
+	repo := repoRoot(t)
+	shared := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "shared_live_runner_test.go")))
+	if !strings.Contains(shared, `liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME"))`) {
+		t.Fatal("shared live journeys do not admit Codex to t.Parallel")
+	}
+	runner := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "codex_live_runner_test.go")))
+	if !strings.Contains(shared, `newCodexLiveRunner(t, id)`) || !strings.Contains(runner, `setupDir := codexLiveSetupArtifactDir(artifactRoot, setupID)`) || !strings.Contains(runner, `filepath.Join(artifactRoot, "_setup", setupID)`) {
+		t.Fatal("Codex setup artifacts are not isolated by journey ID")
+	}
+}
+
+func TestGateStopRunnerDoesNotShortCircuitBoundAssertion(t *testing.T) {
+	shared := string(mustRead(t, filepath.Join(repoRoot(t), "internal", "ensigncycle", "claude_live_runner_test.go")))
+	start := strings.Index(shared, "func runGateStopScenario(")
+	if start < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	end := strings.Index(shared[start:], "\nfunc nativeLifecycleStream(")
+	if end < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	body := shared[start : start+end]
+	if strings.Contains(body, "else if err := assert(") || !strings.Contains(body, "if err := assert(before, after, expected);") {
+		t.Fatal("runGateStopScenario must call its bound assertion independently of expectation extraction")
 	}
 }
 
