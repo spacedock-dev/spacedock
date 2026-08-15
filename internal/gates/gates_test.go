@@ -43,7 +43,6 @@ func TestWithdrawalDefinesThirdValidatedFrozenAttemptState(t *testing.T) {
 		"blank reason":     func(a *Attempt) { a.Withdrawal.Reason = " \t" },
 		"no request":       func(a *Attempt) { a.Briefing.RequestDigest = "" },
 		"with resolution":  func(a *Attempt) { a.Resolution = eligibleDocument().Records[0].Attempts[0].Resolution },
-		"with evidence":    func(a *Attempt) { a.ProviderEvidence = &ProviderEvidence{} },
 		"with application": func(a *Attempt) { a.Application = &Application{} },
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -212,6 +211,66 @@ func TestPrototypeAndUnknownGateShapesFailClosed(t *testing.T) {
 	}
 }
 
+// TestRetiredProviderEvidenceKeyReadsSilentlyWithoutWideningAttemptTolerance
+// fences the one attempt-level key a read drops instead of refusing. The
+// provider-backed closure writer was cut, but frozen archived attempts still
+// carry the key, so a read must tolerate it silently while every other unknown
+// attempt key stays fail-closed.
+func TestRetiredProviderEvidenceKeyReadsSilentlyWithoutWideningAttemptTolerance(t *testing.T) {
+	entity := writeEntity(t, retiredEvidenceFrontmatter())
+	before := readFile(t, entity)
+
+	doc, expected, warnings, err := ReadDiagnostics(entity)
+	if err != nil {
+		t.Fatalf("retired provider-evidence key refused: %v", err)
+	}
+	if len(warnings) != 0 {
+		t.Fatalf("retired key is not unknown and must stay silent, got %#v", warnings)
+	}
+	if got := readFile(t, entity); got != before {
+		t.Fatal("read rewrote the entity it only validated")
+	}
+	encoded, err := yaml.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(encoded), "provider-evidence") {
+		t.Fatalf("retired key reached the canonical model: %s", encoded)
+	}
+
+	// The drop must run on the validation clone. The returned node is the
+	// compare-and-swap expectation, so filtering it instead would both lose the
+	// stored bytes and make every later write refuse as a stale expectation.
+	if !strings.Contains(nodeYAML(t, expected), "provider-evidence") {
+		t.Fatal("retired key was dropped from the write node instead of the validation clone")
+	}
+	// The frozen-attempt check reads the stored node on the old side and the
+	// filtered model on the new side, so the retired key must stay symmetric.
+	if err := ValidateTransition(expected, doc); err != nil {
+		t.Fatalf("frozen transition refused over a retired key: %v", err)
+	}
+	mutated := cloneDocument(t, doc)
+	mutated.Records[0].Attempts[0].Resolution.Reason = "rewritten"
+	if err := ValidateTransition(expected, mutated); err == nil {
+		t.Fatal("frozen closed attempt mutation accepted")
+	}
+
+	outsideBefore := outsideGates(t, entity)
+	if err := writeDocument(entity, expected, doc); err != nil {
+		t.Fatalf("canonical write over a retired-key entity: %v", err)
+	}
+	if outsideGates(t, entity) != outsideBefore {
+		t.Fatal("canonical write changed bytes outside the gates mapping")
+	}
+
+	// Tolerance widened by exactly one named key, not by attempt level.
+	unknown := writeEntity(t, strings.Replace(retiredEvidenceFrontmatter(),
+		"        - id: attempt:a-1\n", "        - id: attempt:a-1\n          note: prototype\n", 1))
+	if _, _, err := Read(unknown); err == nil || !strings.Contains(err.Error(), "field") {
+		t.Fatalf("unknown attempt field alongside the retired key = %v, want refusal", err)
+	}
+}
+
 func TestDigestDomainFieldFailsClosed(t *testing.T) {
 	entity := writeEntity(t, strings.Replace(canonicalOpenGates(), "            room-ref: ./room", "            room-ref: ./room\n            digest-domain: canonical-bytes", 1))
 	before := readFile(t, entity)
@@ -298,16 +357,6 @@ func TestAuthorityDocumentDecodersRejectRecursiveDuplicateMembers(t *testing.T) 
 		t.Fatalf("request duplicate error=%v", err)
 	}
 
-	duplicateResult := []byte(`{"type":"review-v1-result","briefing":"briefing:a","artifact":{"id":"artifact:a","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"resolution":{"type":"Resolution","id":"resolution:a","briefing":"briefing:a","by":"person:captain","at":"now","decision":"approve","extra":{"authority":"one","authority":"two"}},"annotations":[]}`)
-	if _, err := decodeProviderResult(duplicateResult); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
-		t.Fatalf("Result duplicate error=%v", err)
-	}
-
-	duplicateInventory := []byte(`{"items":[{"type":"Artifact","id":"artifact:a","rev":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","extra":{"source":"one","source":"two"}}]}`)
-	if _, err := decodePresentedInventory(duplicateInventory); err == nil || !strings.Contains(err.Error(), "duplicate JSON object member") {
-		t.Fatalf("inventory duplicate error=%v", err)
-	}
-
 	deep := strings.Repeat(`{"nested":`, maxAuthorityJSONDepth+1) + `null` + strings.Repeat(`}`, maxAuthorityJSONDepth+1)
 	if err := rejectDuplicateMembers([]byte(deep)); err == nil || !strings.Contains(err.Error(), "nesting exceeds") {
 		t.Fatalf("deep authority JSON error=%v", err)
@@ -335,23 +384,6 @@ func TestPortableResolutionValidation(t *testing.T) {
 				t.Fatalf("err=%v, want %q", err, tc.wantErr)
 			}
 		})
-	}
-}
-
-func TestProviderResolutionIncludesRequireSameBriefingAnnotation(t *testing.T) {
-	result := providerResult{Briefing: "briefing:provider"}
-	result.Resolution = Resolution{Type: "Resolution", ID: "resolution:r", Briefing: result.Briefing, By: "person:reviewer", At: "now", Decision: "hold", Includes: []string{"annotation:a"}}
-	result.Annotations = append(result.Annotations, Annotation{Type: "Annotation", ID: "annotation:a", Briefing: result.Briefing})
-	if err := verifyProviderResolution(&result); err != nil {
-		t.Fatalf("compatible provider Annotation without by/at = %v", err)
-	}
-	result.Annotations[0].Briefing = "briefing:other"
-	if err := verifyProviderResolution(&result); err == nil || !strings.Contains(err.Error(), "same Briefing") {
-		t.Fatalf("cross-Briefing include = %v, want refusal", err)
-	}
-	result.Annotations[0].Briefing = result.Briefing
-	if err := verifyProviderResolution(&result); err != nil {
-		t.Fatalf("same-Briefing Annotation rejected: %v", err)
 	}
 }
 
@@ -389,6 +421,26 @@ func canonicalOpenGates() string {
 
 func canonicalClosedFrontmatter() string {
 	return "status: ideation\n" + canonicalOpenGates() + "          resolution:\n            type: Resolution\n            id: resolution:a-1\n            briefing: briefing:a-1\n            by: person:captain\n            at: 2026-07-22T00:00:00Z\n            decision: approve\n"
+}
+
+// retiredEvidenceFrontmatter mirrors the archived provider-closed attempt
+// shape: a closed attempt with a retained request-digest that still carries
+// both frozen provider-evidence digests.
+func retiredEvidenceFrontmatter() string {
+	return strings.Replace(canonicalClosedFrontmatter(),
+		"            room-ref: ./room\n",
+		"            room-ref: ./room\n            request-digest: sha256:"+strings.Repeat("3", 64)+"\n", 1) +
+		"          provider-evidence:\n            result-digest: sha256:" + strings.Repeat("4", 64) +
+		"\n            presented-inventory-digest: sha256:" + strings.Repeat("5", 64) + "\n"
+}
+
+func nodeYAML(t *testing.T, node *yaml.Node) string {
+	t.Helper()
+	b, err := yaml.Marshal(node)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
 }
 
 func canonicalTwoGateFrontmatter() string {

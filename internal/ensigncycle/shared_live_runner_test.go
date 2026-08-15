@@ -31,7 +31,7 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 	}
 	build, buildCalls := countedLiveFunction(t, builder)
 	assert, assertionCalls := countedLiveFunction(t, assertion)
-	newDriver, target := liveDriverForRuntime(t)
+	newDriver, target := liveDriverForRuntime(t, id)
 	var selected liveJourneyGap
 	for _, gap := range gaps {
 		if gap.target == target {
@@ -41,8 +41,7 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 			}
 		}
 	}
-	switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime {
-	case "claude", "pi":
+	if liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME")) {
 		t.Parallel()
 	}
 	driver := newDriver()
@@ -65,7 +64,11 @@ func countedLiveFunction[Function any](t *testing.T, function Function) (Functio
 
 func noLiveGrade(liveResult) {}
 
-func liveDriverForRuntime(t *testing.T) (func() liveDriver, string) {
+func liveRuntimeRunsParallel(runtime string) bool {
+	return runtime == "claude" || runtime == "codex" || runtime == "pi"
+}
+
+func liveDriverForRuntime(t *testing.T, id string) (func() liveDriver, string) {
 	t.Helper()
 	switch runtime := os.Getenv("SPACEDOCK_LIVE_RUNTIME"); runtime {
 	case "claude":
@@ -76,7 +79,7 @@ func liveDriverForRuntime(t *testing.T) (func() liveDriver, string) {
 		}
 		return func() liveDriver { return newClaudeLiveRunner(t) }, role
 	case "codex":
-		return func() liveDriver { return codexAsLiveDriver{t: t, runner: newCodexLiveRunner(t)} }, "codex"
+		return func() liveDriver { return codexAsLiveDriver{t: t, runner: newCodexLiveRunner(t, id)} }, "codex"
 	case "pi":
 		return func() liveDriver { return newPiSharedLiveDriver(t) }, "pi"
 	default:
@@ -96,24 +99,34 @@ func claudeLiveRole(model string) (string, error) {
 	}
 }
 
-//spacedock:live-journey id=full-ensign-cycle fixture=realistic-lifecycle
-func TestLiveCommonFullEnsignCycle(t *testing.T) {
-	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, nil, runFullEnsignCycleJourney, someCommitNamesOnly)
+//spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
+func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-opus", "bqy97b9npym3zs62pagjchpk"), liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
-//spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
-func TestLiveCommonGateGuardrail(t *testing.T) {
-	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, nil, runGateStopScenario, assertGateHeld)
+//spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
+func TestLiveCommonRejectionFlow(t *testing.T) {
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("codex", "dvddbpsf4tdt3yjw1yjyp14k"), liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+}
+
+//spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
+func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
+	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)
+}
+
+//spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
+func TestLiveCommonKeepMovingPosture(t *testing.T) {
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("codex", "9adv48yhye5s2vkhwd7ge52d"), liveXFail("pi", "x02375wsg6q61xek7p0t36j2")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "kky8pg7wc8xgb985epwss092")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("codex", "kky8pg7wc8xgb985epwss092")}, runGateStopScenario, assertGateHeld)
 }
 
-//spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
-func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
-	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, nil, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+//spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
+func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("codex", "bfmczd31ydpp4stqjstf6xwx"), liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
@@ -121,14 +134,34 @@ func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
 	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyGap{liveXFail("claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
 }
 
-//spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
-func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+//spacedock:live-journey id=full-ensign-cycle fixture=realistic-lifecycle
+func TestLiveCommonFullEnsignCycle(t *testing.T) {
+	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, nil, runFullEnsignCycleJourney, someCommitNamesOnly)
+}
+
+//spacedock:live-journey id=ac-value-reanchor fixture=ac-reanchor/means-pass-value-regressed
+func TestLiveCommonACValueReanchor(t *testing.T) {
+	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, nil, runACValueReanchorJourney, assertACReanchorScenario)
+}
+
+//spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
+func TestLiveCommonWithdrawnGateRecovery(t *testing.T) {
+	liveJourney(t, "withdrawn-gate-recovery", "recorded-gate/withdrawn", writeWithdrawnGateFixture, nil, runClaudeWithdrawnGateRecoveryScenario, assertWithdrawnGateRecovery)
+}
+
+//spacedock:live-journey id=gate-guardrail fixture=recorded-gate/held
+func TestLiveCommonGateGuardrail(t *testing.T) {
+	liveJourney(t, "gate-guardrail", "recorded-gate/held", writeGateWorkflow, nil, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=feedback-3-cycle-escalation fixture=rejection/before-validation-3
 func TestLiveCommonFeedbackThreeCycleEscalation(t *testing.T) {
 	liveJourney(t, "feedback-3-cycle-escalation", "rejection/before-validation-3", writeEscalationWorkflow, nil, runClaudeFeedback3CycleEscalationScenario, assertThirdCycleEscalation)
+}
+
+//spacedock:live-journey id=self-evidence-merge-triage fixture=merge-triage/unapproved-live-evidence
+func TestLiveCommonSelfEvidenceMergeTriage(t *testing.T) {
+	liveJourney(t, "self-evidence-merge-triage", "merge-triage/unapproved-live-evidence", writeMergeTriageWorkflow, nil, runClaudeSelfEvidenceMergeTriageScenario, assertSelfEvidenceMergeTriage)
 }
 
 //spacedock:live-journey id=merge-hook-guardrail fixture=merge-hook/blocked
@@ -138,12 +171,7 @@ func TestLiveCommonMergeHookGuardrail(t *testing.T) {
 
 //spacedock:live-journey id=filing fixture=filing/empty-workflow
 func TestLiveCommonFiling(t *testing.T) {
-	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, []liveJourneyGap{liveXFail("codex", "6ker7h25hj86983e5ef71ahm")}, runClaudeFilingScenario, assertFilingCommands)
-}
-
-//spacedock:live-journey id=shallow-boot fixture=boot/held-gate
-func TestLiveCommonShallowBoot(t *testing.T) {
-	liveJourney(t, "shallow-boot", "boot/held-gate", writeShallowBootWorkflow, nil, runClaudeShallowBootScenario, assertShallowBoot)
+	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
 }
 
 //spacedock:live-journey id=zero-discovery fixture=boot/no-workflow
@@ -151,32 +179,7 @@ func TestLiveCommonZeroDiscovery(t *testing.T) {
 	liveJourney(t, "zero-discovery", "boot/no-workflow", writeZeroDiscoveryFixture, nil, runZeroDiscoveryJourney, detectBroadSearchCommands)
 }
 
-//spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
-func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
-	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)
-}
-
-//spacedock:live-journey id=self-evidence-merge-triage fixture=merge-triage/unapproved-live-evidence
-func TestLiveCommonSelfEvidenceMergeTriage(t *testing.T) {
-	liveJourney(t, "self-evidence-merge-triage", "merge-triage/unapproved-live-evidence", writeMergeTriageWorkflow, nil, runClaudeSelfEvidenceMergeTriageScenario, assertSelfEvidenceMergeTriage)
-}
-
-//spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
-func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
-	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("codex", "bfmczd31ydpp4stqjstf6xwx"), liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
-}
-
-//spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
-func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("pi", "x02375wsg6q61xek7p0t36j2")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
-}
-
-//spacedock:live-journey id=ac-value-reanchor fixture=ac-reanchor/means-pass-value-regressed
-func TestLiveCommonACValueReanchor(t *testing.T) {
-	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, nil, runACValueReanchorJourney, assertACReanchorScenario)
-}
-
-//spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
-func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-opus", "bqy97b9npym3zs62pagjchpk"), liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+//spacedock:live-journey id=shallow-boot fixture=boot/held-gate
+func TestLiveCommonShallowBoot(t *testing.T) {
+	liveJourney(t, "shallow-boot", "boot/held-gate", writeShallowBootWorkflow, nil, runClaudeShallowBootScenario, assertShallowBoot)
 }

@@ -209,16 +209,44 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 	for _, command := range []struct {
 		name, text, want string
 	}{
-		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 2 ./internal/ensigncycle/`},
-		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' ./internal/ensigncycle`},
+		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/`},
+		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle`},
 		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
-		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v`},
-		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
+		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 3 ./internal/ensigncycle -v`},
+		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v`},
 		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
 	} {
 		if count := strings.Count(command.text, command.want); count != 1 {
 			t.Errorf("%s common-suite command count = %d, want 1", command.name, count)
 		}
+	}
+}
+
+func TestRuntimeLiveCodexParallelCapacityAndIsolation(t *testing.T) {
+	repo := repoRoot(t)
+	shared := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "shared_live_runner_test.go")))
+	if !strings.Contains(shared, `liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME"))`) {
+		t.Fatal("shared live journeys do not admit Codex to t.Parallel")
+	}
+	runner := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "codex_live_runner_test.go")))
+	if !strings.Contains(shared, `newCodexLiveRunner(t, id)`) || !strings.Contains(runner, `setupDir := codexLiveSetupArtifactDir(artifactRoot, setupID)`) || !strings.Contains(runner, `filepath.Join(artifactRoot, "_setup", setupID)`) {
+		t.Fatal("Codex setup artifacts are not isolated by journey ID")
+	}
+}
+
+func TestGateStopRunnerDoesNotShortCircuitBoundAssertion(t *testing.T) {
+	shared := string(mustRead(t, filepath.Join(repoRoot(t), "internal", "ensigncycle", "claude_live_runner_test.go")))
+	start := strings.Index(shared, "func runGateStopScenario(")
+	if start < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	end := strings.Index(shared[start:], "\nfunc nativeLifecycleStream(")
+	if end < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	body := shared[start : start+end]
+	if strings.Contains(body, "else if err := assert(") || !strings.Contains(body, "if err := assert(before, after, expected);") {
+		t.Fatal("runGateStopScenario must call its bound assertion independently of expectation extraction")
 	}
 }
 
