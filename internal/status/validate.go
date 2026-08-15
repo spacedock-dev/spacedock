@@ -235,6 +235,12 @@ func gateValidationDiagnostics(entities []*entity, workflowDir string) (errs, wa
 			errs = append(errs, entityEvidenceLine("Error", e, workflowDir, "invalid gates: "+err.Error(), e.displayID))
 			continue
 		}
+		// Warn tier only: archived scope is publish-only, so an application-field
+		// extension there can never be cleared by a tool-mediated write. The
+		// structural error above stays scope-inclusive.
+		if e.scope != "active" {
+			continue
+		}
 		for _, warning := range compatibility {
 			problem := fmt.Sprintf("unknown gate application field '%s' at %s", warning.Field, warning.Path)
 			warns = append(warns, entityEvidenceLine("Warning", e, workflowDir, problem, e.displayID))
