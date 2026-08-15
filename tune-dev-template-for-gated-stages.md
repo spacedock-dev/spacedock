@@ -28,6 +28,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:42chs9dh7nq22f8at4szvbxp:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:42chs9dh7nq22f8at4szvbxp-ideation-1
+              briefing:
+                id: briefing:42chs9dh7nq22f8at4szvbxp:ideation:attempt-1:revision-1
+                digest: sha256:ea7199bbce8f4e01dedf066c870f82a43b2045229f35d90e4e9856526fc06212
+                request-digest: sha256:a0b4129f1df539c8b2a8a43d221268a58637c614bee3420704c755ff098c8c60
+                room-ref: ./tune-dev-template-for-gated-stages/review/ideation/briefing-1
 ---
 
 Tune the reusable dev task template so task authors supply the decision evidence required by each gated stage without making task files verbose.

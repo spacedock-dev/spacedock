@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:42chs9dh7nq22f8at4szvbxp:ideation:attempt-1:revision-1",
+  "question": "Approve 42c ideation into implementation, ruling the live-lane approval framing and the ship-as-stack-layer AC?",
+  "artifacts": [
+    {
+      "id": "artifact:42chs9dh7nq22f8at4szvbxp:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/60333030d8277c1f32046142af01673a20c3f6ac/tune-dev-template-for-gated-stages.md",
+      "rev": "sha256:c8b13b5c7f296bfc36aa552bef7e5dcb6afb859e8d4ee7dd6ae66d2305fd0054",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: 13/13 gate-content coverage for +10 lines reusing author-coined headings; pr-merge gains a Stacked mode subsection via gh pr create plus gh stack link, preserving reviewed-bytes discipline; four mechanisms spiked live, one refuting the FO scope note."
+    }
+  ]
+}
