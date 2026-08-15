@@ -41,6 +41,17 @@ gates:
                 digest: sha256:b7dff507bf6cd8f42fda606661e7b10ec4d857d6cc71f9a2ec7ea1897687b836
                 request-digest: sha256:196941c9aecb1dc3a0424d313cda8f6d6871ad6ef300956c0d088a9691f92300
                 room-ref: ./trim-dispatch-core-stale-prose/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:71btbxdrken4kdmfsk0vptav:ideation:1
+                briefing: briefing:71btbxdrken4kdmfsk0vptav:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T03:55:23.282375Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-15 (approve all except x8): approved into implementation'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Two prose repairs in skills/first-officer/references/fo-dispatch-core.md.
