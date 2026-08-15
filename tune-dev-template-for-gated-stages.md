@@ -394,3 +394,7 @@ The captain's two findings moved the deliverable, not its design. Finding 1 relo
 Corrected surface is **+28 net LOC across 2 files** (template +16, mod +12), against the ideation estimate of +23 with tolerance +/-40% — a +21.7% deviation, inside the 13.8 to 32.2 band, with acceptance criteria unchanged and unnarrowed. The composition moved even though the total barely did: the template needed +16 rather than +10 because of the lower baseline, while the mod needed +12 rather than +14 because the live-lane paragraph was dropped.
 
 The CI-agnostic audit was run as a check rather than an assertion: every added mod line was grepped for `lane`, `e2e`, `WAITING`, `environment`, `runtime-live`, `stack27`, this repository's PR numbers and its owner name, all clean, and no added sentence names this repository. What survived is the six mechanics the captain listed as belonging — create-then-link, `gh stack view --json` read-back over the success banner, merged-ancestor-is-complete, the base chain as the ceremony's dependency, reviewed-bytes discipline, and REST PATCH over `gh pr edit`. The `gh stack submit` warning kept its behavioural claim but lost its citation of our PR #699, which a reader of a shipped mod cannot verify.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — Captain wrong-target and CI-agnostic scope correction (shipped template + canonical mod, not the installed workflow); surface +28 net/2 files vs estimate +23 (+21.7%, in band); AC unchanged
