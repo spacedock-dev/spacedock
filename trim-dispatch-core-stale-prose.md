@@ -52,6 +52,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:71btbxdrken4kdmfsk0vptav:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:71btbxdrken4kdmfsk0vptav-validation-1
+              briefing:
+                id: briefing:71btbxdrken4kdmfsk0vptav:validation:attempt-1:revision-1
+                digest: sha256:e63d2c2535e741b9962d8156eb4dfacddfceff301121e75bb87fde2c2d483bcc
+                request-digest: sha256:30690bedc010b1db73fb579f994c5f9435dd56b79f928948100ee00eeead15b5
+                room-ref: ./trim-dispatch-core-stale-prose/review/validation/briefing-1
 ---
 
 Two prose repairs in skills/first-officer/references/fo-dispatch-core.md.
