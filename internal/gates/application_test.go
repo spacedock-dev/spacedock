@@ -362,9 +362,16 @@ func TestResolutionSummaryDoesNotHashBriefing(t *testing.T) {
 	if err := os.Remove(briefing); err != nil {
 		t.Fatal(err)
 	}
-	summary, err := SummaryFile(entity)
-	if err != nil || summary.Decision != "approve" {
-		t.Fatalf("resolution-only summary = %#v, %v", summary, err)
+	summaryDoc, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stage, err := entityStatus(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary := CurrentSummary(summaryDoc, stage); summary.Decision != "approve" {
+		t.Fatalf("resolution-only summary = %#v", summary)
 	}
 	eligibility, err := EligibilityFileAt(entity, root)
 	if err != nil || eligibility.Condition != "ineligible" {

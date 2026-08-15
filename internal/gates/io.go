@@ -188,34 +188,6 @@ func filterApplicationMappings(gatesNode *yaml.Node) ([]Warning, error) {
 	return warnings, nil
 }
 
-func SummaryFile(path string) (Summary, error) {
-	return SummaryFileAt(path, nearestWorkflowDir(filepath.Dir(path)))
-}
-
-func SummaryFileAt(path, workflowDir string) (Summary, error) {
-	summary, _, err := SummaryFileDiagnosticsAt(path, workflowDir)
-	return summary, err
-}
-
-// SummaryFileDiagnosticsAt is the diagnostics-carrying form of SummaryFileAt:
-// the same retained-authority checks, plus any bounded application-extension
-// warnings. No command prints that warnings slice today — status --validate
-// derives the same class through its own reader.
-func SummaryFileDiagnosticsAt(path, workflowDir string) (Summary, []Warning, error) {
-	doc, _, warnings, err := ReadDiagnostics(path)
-	if err != nil {
-		return Summary{}, nil, err
-	}
-	if err := validateRetainedAuthority(path, workflowDir, doc); err != nil {
-		return Summary{}, nil, err
-	}
-	status, err := entityStatus(path)
-	if err != nil {
-		return Summary{}, nil, err
-	}
-	return CurrentSummary(doc, status), warnings, nil
-}
-
 func validateRetainedAuthority(entityPath, workflowDir string, doc *Document) error {
 	return validateRetainedAuthorityExcept(entityPath, workflowDir, doc, "", "")
 }
