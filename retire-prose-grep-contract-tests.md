@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:v7a6xqh2rm3asjvj8qz1y4p0:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:v7a6xqh2rm3asjvj8qz1y4p0-ideation-1
+              briefing:
+                id: briefing:v7a6xqh2rm3asjvj8qz1y4p0:ideation:attempt-1:revision-1
+                digest: sha256:e05717deab88ae353e7aa7a81776a2f6fbff1be6aebe2276d93f73a0eae11c0f
+                request-digest: sha256:98e8895855a32e8afeaf82cb2c6caea45aad62065aa2c912931a0fde213f1055
+                room-ref: ./retire-prose-grep-contract-tests/review/ideation/briefing-1
 ---
 
 Delete the committed prose-grep tests the Proof policy bans (paraphrase reds them, inversion passes them), dedupe the two double pins, and resolve the four gray cases. Base all work on the stack tip (branch stack27/09-trim-version-output); the deliverable becomes stack layer 10. This MUST land before make-shipped-contracts-self-contained (layer 11), whose prose rewrites would red several of these pins.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v7a6xqh2rm3asjvj8qz1y4p0:ideation:attempt-1:revision-1",
+  "question": "Approve retire-prose-grep-contract-tests ideation into implementation, and rule the two queued decisions?",
+  "artifacts": [
+    {
+      "id": "artifact:v7a6xqh2rm3asjvj8qz1y4p0:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e95dabd121af656596938ab57f7b97e5ee430dcc/retire-prose-grep-contract-tests.md",
+      "rev": "sha256:1bd3f376c1cb5c8ebdf4ccb4cc31484c60d2f34085beb2d121bd22a691297aba",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: ban classification proven by measurement (7 paraphrases red, 3 meaning-inversions green incl. an injected IGNORE-EVERY-RULE line); full deletion spiked -283 lines suite-green; two captain decisions queued with recommendations."
+    }
+  ]
+}
