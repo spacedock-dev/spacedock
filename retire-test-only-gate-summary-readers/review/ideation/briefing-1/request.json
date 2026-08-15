@@ -1,0 +1,13 @@
+{
+  "type": "spacedock-gate-presentation-request",
+  "version": "1",
+  "gate": "gate:77k7m0dmwm10mz6zrdq86tv3:ideation",
+  "attempt": "gate-attempt:77k7m0dmwm10mz6zrdq86tv3-ideation-1",
+  "briefing": {
+    "locator": "gate-briefing.json",
+    "id": "briefing:77k7m0dmwm10mz6zrdq86tv3:ideation:attempt-1:revision-1",
+    "digest": "sha256:de0d38445f0639c82598673eb74e46ec931f10b0fb0f1901b16780d0ef066fff"
+  },
+  "actor": "person:captain",
+  "approver": "person:captain"
+}

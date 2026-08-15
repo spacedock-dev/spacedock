@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:77k7m0dmwm10mz6zrdq86tv3:ideation:attempt-1:revision-1",
+  "question": "Approve retire-test-only-gate-summary-readers ideation into implementation as a stack layer?",
+  "artifacts": [
+    {
+      "id": "artifact:77k7m0dmwm10mz6zrdq86tv3:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/336ab9cb42cbd100b8f630649cd25e8ba7b7581f/retire-test-only-gate-summary-readers.md",
+      "rev": "sha256:1100f93d7bc8ce9ede17f38e493b796c1228567dde857f42c9163e1a8f63aea2",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: full change spiked (net -21, 3 files, suite exit 0); both re-points proven to fail under named breaking changes; Test B re-point is a net strengthening onto a production-called reader."
+    }
+  ]
+}
