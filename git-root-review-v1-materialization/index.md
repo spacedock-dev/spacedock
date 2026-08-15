@@ -2383,3 +2383,54 @@ gating rq's terminal PASSED**, per FO ruling — not an implementation deliverab
 the Subspace half plus an operator-driven fresh runtime with both candidate plugins, and
 was deliberately not attempted here. It also cannot run until the AC-1 recorder-continuation
 finding above is ruled on, since the drive's second half is `gate record --room`.
+
+## Stage Report: implementation (closing restatement — captain park, 2026-08-15)
+
+Captain ruling, 2026-08-15, quoted for the record:
+
+> rq is PARKED, not shipped and not re-scoped. Rationale for the record: root
+> resolution already landed with s4 (gitsource, inspect/resolve); the
+> room-materialization ceremony on top is packaging for a single provider whose
+> closure path a73 already cut; the sprint DoD forbids shipping machinery whose
+> journey has not run, and the cycle-7 journey never ran. 0.27 ships chat
+> presentation for git-root gates. Revisit in 0.28 only behind a demonstrated
+> Subspace presentation journey.
+
+This restates one checklist item. Every other line of the implementation stage report,
+the material finding, and the boundary-contract addendum stand unchanged as the
+preserved evidence base.
+
+- SKIPPED (was FAILED): Execute the approved ideation design exactly against the stack tip; every AC keeps its evidence discipline including AC-1's real Subspace presentation rendering 2/2 canonical Git-root sources
+  Parked by captain ruling above, not failed on execution and not deferred pending a fix. AC-1's real Subspace presentation was never reachable from this dispatch: the Subspace half was ruled out of scope to a peer, and the `gate record --room` continuation AC-1 depends on was already cut from v1 by a73. The captain's necessity finding supersedes the remaining work rather than rescheduling it — the sprint DoD forbids shipping machinery whose journey has not run, and the cycle-7 journey never ran.
+
+### Preserved for a possible 0.28 revival
+
+Nothing below is retracted; all of it remains true of the parked branch.
+
+- Code: commit `579f12a00` on `spacedock-ensign/git-root-review-v1-materialization`,
+  pushed and preserved **unmerged** as the park artifact. No PR was opened.
+- Green at park: `go test ./...` and `go test ./... -race` both exit 0 across 20
+  packages; `gofmt -w ./cmd ./internal` clean; gates, cli, and contractlint re-verified
+  green after the end-to-end exercise.
+- Working behavior, exercised with the built binary rather than asserted from source:
+  `gate materialize --room ROOM` resolved a real two-root prepared room to `sources=2`
+  with distinct `jcsDigest`/`rawSha256`, payloads byte-identical to their Git objects,
+  and the room still holding exactly its two authoritative files.
+- Falsifiability was checked by mutation: swapping the two digest domains, restoring the
+  ambiguous `digest` spelling, and dropping the provider mode-0700 check each turned the
+  suite red.
+- The `## Implementation addendum: published-manifest boundary contract` section is the
+  0.28 starting point. It is observed output, so a revival can rebuild either side
+  against it without re-deriving the contract from this branch.
+- The AC-1 recorder-continuation finding stays in the record as the reason the necessity
+  question reached the captain at all. Any 0.28 revival must answer it first: a
+  demonstrated Subspace presentation journey requires a closure path, and a73 cut the one
+  this design assumed.
+
+### Summary
+
+rq is parked with its evidence intact. The Spacedock materializer is complete, proven,
+and unmerged; the value chain was never closeable in 0.27 because its provider closure
+path had already been cut. The branch, the boundary contract, and the open AC-1 question
+are preserved together so a 0.28 revival starts from demonstrated behavior and a known
+blocker rather than from a fresh design cycle.
