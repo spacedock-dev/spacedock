@@ -51,6 +51,17 @@ gates:
                 digest: sha256:4022b65af8961c8adf3a2ab2fdcf60a518d535fe00f39b4c64c0e0de7195c7dc
                 request-digest: sha256:37945b7440e2eed7497915496ca68e9e0a1b7e2bb9745801cc15b07fc4343547
                 room-ref: ./remove-redundant-lint-mirrors/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zvk9cnew2ggpaqb3wty24xtf:ideation:2
+                briefing: briefing:zvk9cnew2ggpaqb3wty24xtf:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-15T03:56:35.282507Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-15 (approve all except x8): approved into implementation'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Three verified-redundant test mirrors.
