@@ -61,6 +61,17 @@ gates:
                 digest: sha256:0607c0748dda2c474d48c8607abb6dbb06562ea2ce49cece551ef10eacffc7a2
                 request-digest: sha256:13fa83a060fcff5df3403aa1315827095db27b88a1a2933c563f74d3ad6d049e
                 room-ref: ./retire-requires-contract-sentinel/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6qhgsezz7v4g4h76t0jf98b0:validation:1
+                briefing: briefing:6qhgsezz7v4g4h76t0jf98b0:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T16:08:22.880498Z"
+                decision: approve
+                reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Retire the pre-0.19 `requires-contract` sentinel; its audience is extinct and production code explicitly ignores it. Pure deletion, no behavior change.
