@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:v7a6xqh2rm3asjvj8qz1y4p0:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:v7a6xqh2rm3asjvj8qz1y4p0-backlog-1
+              briefing:
+                id: briefing:v7a6xqh2rm3asjvj8qz1y4p0:backlog:attempt-1:revision-1
+                digest: sha256:db3d3e2c2eabd9426e3eeec0af2179e2124792c069cecfb280ae50c060165f3e
+                request-digest: sha256:799382d8dca6e2b600e6141353217b02e347f0288e2749291aedb9d75fb1c687
+                room-ref: ./retire-prose-grep-contract-tests/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:v7a6xqh2rm3asjvj8qz1y4p0:backlog:1
+                briefing: briefing:v7a6xqh2rm3asjvj8qz1y4p0:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T18:15:14.081321Z"
+                decision: approve
+                reason: 'Captain directive 2026-08-15: file, dispatch based off stack tip, PR on top of the stack'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Delete the committed prose-grep tests the Proof policy bans (paraphrase reds them, inversion passes them), dedupe the two double pins, and resolve the four gray cases. Base all work on the stack tip (branch stack27/09-trim-version-output); the deliverable becomes stack layer 10. This MUST land before make-shipped-contracts-self-contained (layer 11), whose prose rewrites would red several of these pins.

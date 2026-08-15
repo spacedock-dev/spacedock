@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v7a6xqh2rm3asjvj8qz1y4p0:backlog:attempt-1:revision-1",
+  "question": "Approve retire-prose-grep-contract-tests into ideation (captain pre-directed: file, dispatch)?",
+  "artifacts": [
+    {
+      "id": "artifact:v7a6xqh2rm3asjvj8qz1y4p0:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/66d2d1a6ee5f075a01246ab3299ef2e764f4aaff/retire-prose-grep-contract-tests.md",
+      "rev": "sha256:6dce638c31738e97ec453eef509f7d3fa2e34ba4efd5fb50b8e763fbd3aeecfe",
+      "mediaType": "text/markdown",
+      "summary": "Captain-directed cleanup from the round-2 audit; stack-layered, order-bound 10 then 11."
+    }
+  ]
+}
