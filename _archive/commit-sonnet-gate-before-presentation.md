@@ -1,6 +1,6 @@
 ---
 title: Commit Sonnet gate before presentation
-status: validation
+status: done
 score: "0.90"
 source: "n28 exact Claude default-headless finding, 2026-08-10"
 sprint: test-behavior-completeness
@@ -103,11 +103,14 @@ gates:
                 reason: Captain delegated the conn toward the sprint goal; exact-head validation passed with no material findings.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-10T18:44:40Z
 worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:687
+verdict: PASSED
+completed: 2026-08-15T07:19:41Z
+archived: 2026-08-15T07:19:41Z
 ---
 ## Problem
 
