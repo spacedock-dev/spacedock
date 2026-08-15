@@ -1,7 +1,7 @@
 ---
 id: pph11xwsa2s3z73ts983wd0k
 title: Remove the copied proof-gap oracle from the reconciliation lint
-status: backlog
+status: ideation
 source: "Captain directive 2026-08-15 after ffacf584a reintroduced the pattern zvk9 deleted; zv ensign composition report flagged it"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain directive 2026-08-15: dispatch all five onto the stack tip'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ffacf584a added `wantProofGaps`, a hand-written map of proof-gap bindings, DeepEqual-checked against `readRuntimeProofGaps` - an AST reader that derives the same data from the live test sources three lines away. The copy's only failure mode is "you forgot to update the copy": it catches no real defect and reintroduces the two-file lockstep tax for XFAILs on live-proof tests, one abstraction above the wantGaps map the workflow just removed for the same reason.
