@@ -106,8 +106,8 @@ gates:
                 state: pending
 started: 2026-08-10T18:44:40Z
 worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
-mod-block:
-pr:
+mod-block: merge:pr-merge
+pr: "#687"
 ---
 ## Problem
 
