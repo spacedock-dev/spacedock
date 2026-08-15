@@ -1,7 +1,7 @@
 ---
 id: 9x6xw292fsz1b4648x9hn40y
 title: Make shipped contract content self-contained
-status: implementation
+status: validation
 source: "Captain review of the 0.27 stack + audit-r2 (2026-08-15); captain directive: file, dispatch off stack tip, PR as stack layer"
 started: 2026-08-15T18:35:12Z
 completed:
