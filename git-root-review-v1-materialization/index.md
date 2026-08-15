@@ -1,6 +1,6 @@
 ---
 title: Materialize Git-root Review v1 sources for provider presentation
-status: ideation
+status: implementation
 source: "s4 cycle-6 staff rejection: recorder-valid git-root:// sources are not renderable by current Subspace package mode, 2026-07-25"
 started:
 completed:
@@ -51,7 +51,7 @@ gates:
                 reason: The corrected design closes digest-domain, lifecycle-order, proof-policy, and circular-live-proof gaps. Record approval now; apply after s4 lands so both repositories implement against the final prepared-room contract.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Bridge recorder-ready Git-addressed Briefings to actual provider presentation without
