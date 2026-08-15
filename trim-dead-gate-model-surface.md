@@ -8,7 +8,7 @@ started: 2026-08-15T02:55:35Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-trim-dead-gate-model-surface
 issue:
 gates:
     version: 1
