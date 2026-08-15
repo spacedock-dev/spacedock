@@ -251,6 +251,22 @@ func TestRuntimeLiveCodexParallelCapacityAndIsolation(t *testing.T) {
 	}
 }
 
+func TestGateStopRunnerDoesNotShortCircuitBoundAssertion(t *testing.T) {
+	shared := string(mustRead(t, filepath.Join(repoRoot(t), "internal", "ensigncycle", "claude_live_runner_test.go")))
+	start := strings.Index(shared, "func runGateStopScenario(")
+	if start < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	end := strings.Index(shared[start:], "\nfunc nativeLifecycleStream(")
+	if end < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	body := shared[start : start+end]
+	if strings.Contains(body, "else if err := assert(") || !strings.Contains(body, "if err := assert(before, after, expected);") {
+		t.Fatal("runGateStopScenario must call its bound assertion independently of expectation extraction")
+	}
+}
+
 func TestRuntimeLiveCommonFailFastPolicy(t *testing.T) {
 	workflow := string(mustRead(t, filepath.Join(repoRoot(t), ".github", "workflows", "runtime-live-e2e.yml")))
 	for _, runtime := range []string{"claude", "codex"} {

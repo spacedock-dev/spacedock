@@ -1,9 +1,7 @@
 package ensigncycle
 
 import (
-	"errors"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -66,24 +64,6 @@ func TestMissingPreparedGateExpectationIsSemanticallyGraded(t *testing.T) {
 		if got := gradeLive(xfail, err); got.status != want || len(got.codes) != 1 || got.codes[0] != "gate-not-held" {
 			t.Errorf("gradeLive(xfail=%t) = %#v, want status=%s codes=[gate-not-held]", xfail, got, want)
 		}
-	}
-}
-
-func TestGateStopAssertionRunsWhenPreparedExpectationIsMissing(t *testing.T) {
-	fixture := recordedGateFixture{entity: filepath.Join(t.TempDir(), "index.md")}
-	assertionCalls := 0
-	semantic := gateStopSemanticErrors(fixture, "before", "after", func(string, string, gateHeldExpectation) error {
-		assertionCalls++
-		return errors.New("shared gate assertion ran")
-	})
-	if assertionCalls != 1 {
-		t.Fatalf("shared gate assertion calls = %d, want 1", assertionCalls)
-	}
-	if len(semantic) != 2 || !strings.Contains(semantic[0].Error(), "read prepared gate expectation") {
-		t.Fatalf("semantic errors = %v, want retained expectation error plus shared assertion error", semantic)
-	}
-	if got := gradeLive(true, semantic...); got.status != "xfail" || !reflect.DeepEqual(got.codes, []string{"gate-not-held"}) {
-		t.Fatalf("grade = %#v, want xfail [gate-not-held]", got)
 	}
 }
 
