@@ -72,6 +72,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+pr: "#709"
 ---
 
 Delete the committed prose-grep tests the Proof policy bans (paraphrase reds them, inversion passes them), dedupe the two double pins, and resolve the four gray cases. Base all work on the stack tip (branch stack27/09-trim-version-output); the deliverable becomes stack layer 10. This MUST land before make-shipped-contracts-self-contained (layer 11), whose prose rewrites would red several of these pins.
