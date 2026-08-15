@@ -62,6 +62,17 @@ gates:
                 digest: sha256:46e965126bca1650a31471ea5394e164141b00bcd664125dd2d194b2fa70da86
                 request-digest: sha256:7cb9fd97f694687348d02133172eb3ababbe4ff4429b9538f5d67cf6cc42e992
                 room-ref: ./remove-gate-validate-subcommand/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0tmv5bry1wbkww2758y88pay:validation:1
+                briefing: briefing:0tmv5bry1wbkww2758y88pay:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T16:07:48.648737Z"
+                decision: approve
+                reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Remove the `gate validate` CLI subcommand. It has zero live uses across 424 recorded attempts. Fatal faults surface identically on every gate command through the shared reader. The warning class prints at state publish. The read-only digest sweep and the round check have no recorded consumer.
