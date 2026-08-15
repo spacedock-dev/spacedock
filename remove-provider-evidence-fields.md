@@ -7,7 +7,7 @@ started: 2026-08-15T02:55:32Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-remove-provider-evidence-fields
 issue:
 sprint: durable-decisions
 gates:
