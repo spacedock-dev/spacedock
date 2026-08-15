@@ -2245,3 +2245,141 @@ Subspace. Falsifiability was checked by mutation rather than asserted: swapping 
 digest domains, restoring the ambiguous `digest` spelling, and dropping the mode-0700 check
 each turn the suite red. The value chain cannot close inside this dispatch — the Subspace
 repository half is out of worktree scope and AC-1's recorder continuation was cut from v1.
+
+## Implementation addendum: published-manifest boundary contract (for the Subspace peer)
+
+FO ruling (b): rq owns the Spacedock side; a peer ensign owns the Subspace side against
+this boundary. Everything below is **observed output of the built rq binary**, not a
+source reading — captured from a real `gate prepare` + `gate materialize` run over a real
+two-root fixture. The peer builds against this contract, not against the rq branch.
+
+### Invocation and exit contract
+
+```text
+${SPACEDOCK_BIN:-spacedock} gate materialize --room ROOM
+```
+
+`--room` exactly once is the whole grammar. Any other token exits **2** with
+`Error: gate materialize accepts only --room: <token>` and prints nothing on stdout.
+A room outside a commissioned workflow exits **1** with `Error: gate room is not inside a
+commissioned workflow`. Every other refusal exits **1** with a single `Error: ...` line.
+Success exits **0**.
+
+### Preconditions Subspace must satisfy before calling
+
+- `ROOM/provider` already exists, is a non-symlink directory, and is mode **0700**.
+  Spacedock refuses otherwise and never allocates, chmods, moves, or removes it.
+- `ROOM/provider/resolved-sources` does **not** exist. A present child is refused with
+  `Error: resolved-source child already exists at <path>`; on resume Subspace deletes the
+  child first, then re-materializes.
+
+### Success stdout — six lines, this fixed order
+
+```text
+manifest=<provider>/resolved-sources/resolved-sources.json
+sources=<decimal count>
+briefing=<absolute path to the located canonical Briefing>
+provider=<absolute ROOM/provider>
+actor=<request-frozen actor>
+approver=<request-frozen approver>
+```
+
+Paths are absolute and symlink-resolved. `actor`/`approver` come from the frozen
+`request.json`, never from the invoking session. Parse by key, not by line offset.
+
+### Published manifest (closed v1) — observed bytes
+
+```json
+{
+  "type": "spacedock-resolved-sources",
+  "version": "1",
+  "briefing": {
+    "id": "briefing:task:validation:attempt-1:revision-1",
+    "jcsDigest": "sha256:dba9e37a0f2f76cf00b56a3ebce5eb2dba6ef7614f99b017443cc074233cad38",
+    "rawSha256": "sha256:c7c29af2cf3ce5a30678d04ab2646176937a7f4bff294ebeee9eb3dc8e374911"
+  },
+  "items": [
+    {
+      "type": "Artifact",
+      "id": "artifact:task:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://main/64d81907dae93202561e0f8974077a1c5be78d12/gate-review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:55200b2d20efe109a78fec00b293d1035e7470ec59b284824a067a0a26993922",
+      "path": "payload/0001"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:task:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/d2574cb5e5571598ad2424a476d8b6645886c3b5/reference.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e072c5d51d5b53660f85240467c4d0a3ed7388b1638cdf6d820db0a4b053cc56",
+      "path": "payload/0002"
+    }
+  ]
+}
+```
+
+Members are exactly these; parse closed and reject unknown, missing, duplicate, or
+alternate-spelling members. The ambiguous `briefing.digest` spelling is **forbidden**, not
+an accepted alias — there is no compatibility parser, because no manifest has shipped.
+
+`jcsDigest` is the RFC 8785/JCS SHA-256 of the located Briefing and is the existing
+canonical recorder authority. `rawSha256` is the SHA-256 of that file's exact bytes and is
+only a handoff pin. They are independent: the run above shows `dba9e37a…` against
+`c7c29af2…`. Subspace recomputes **both**, in their own domains, before model installation
+or display, and must never compare them with each other, substitute one for the other, or
+promote `rawSha256` to canonical authority.
+
+### Payload layout and lifecycle
+
+Observed modes: `provider/`, `resolved-sources/`, and `payload/` are `drwx------`; every
+payload and the manifest are `-rw-------`.
+
+`items` covers every Git-root Artifact in order, then every recursively reached Git-root
+Reference in canonical context order, each exactly once. Room-relative sources never
+appear. `path` is manifest-relative `payload/NNNN` — 4-digit, 1-based, presentation order,
+deliberately unrelated to the repository path. Payload bytes are the exact local Git object
+bytes: both payloads above byte-match their sources and hash to their manifest `rev`.
+
+Publication is atomic by rename with the manifest written last, so the `resolved-sources`
+child never appears partially built. A handled failure removes the candidate, publishes no
+manifest, and leaves `ROOM/provider` to Subspace. After loading all bytes into memory,
+Subspace deletes the whole `resolved-sources` child; Spacedock never deletes it and never
+deletes `ROOM/provider`.
+
+### Frozen room binding the peer validates against
+
+```json
+{
+  "type": "spacedock-gate-presentation-request",
+  "version": "1",
+  "gate": "gate:task:validation",
+  "attempt": "gate-attempt:task-validation-1",
+  "briefing": { "locator": "gate-briefing.json", "id": "...", "digest": "sha256:<JCS>" },
+  "actor": "person:captain",
+  "approver": "person:captain"
+}
+```
+
+`briefing.locator` is an arbitrary clean room-relative path. A basename is never appended
+or required — a nested, non-`briefing.json` filename resolves and is covered by
+`TestMaterializeResolvesArbitraryCanonicalBriefingLocator`. `request.briefing.digest` is
+the **JCS** digest, matching manifest `jcsDigest`.
+
+### Shared control fixtures
+
+`internal/gates/testdata/materialize-s4-room/` carries the exact s4 artifact for both
+repositories: `gate-briefing.json` (31 lines, 1,675 bytes, raw
+`sha256:c3b6…fb1b`, JCS `sha256:0782…278f`) and its matching `request.json`. The peer's
+`internal/reviewv1/testdata/s4-prepared-gate-briefing.json` should be byte-identical to
+that Briefing so both sides pin the same unequal pair. Source of truth is state blob
+`de790a44aa5b47ecdd606fc711a0ad8f9f20a2d7` at state commit
+`684d6603c985030c3c6031f4b1a1462c0f1cbfa1`.
+
+### Pending validation, not implementation
+
+Cycle 7's one-off pre-terminal live First Officer drive is **validation-stage evidence
+gating rq's terminal PASSED**, per FO ruling — not an implementation deliverable. It needs
+the Subspace half plus an operator-driven fresh runtime with both candidate plugins, and
+was deliberately not attempted here. It also cannot run until the AC-1 recorder-continuation
+finding above is ruled on, since the drive's second half is `gate record --room`.
