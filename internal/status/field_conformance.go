@@ -78,9 +78,11 @@ func isISO8601(s string) bool {
 	return false
 }
 
-// fieldConformanceWarnings returns warn-tier diagnostics for every active +
-// archived entity whose frontmatter violates a schema field's declared
-// pattern / conventional enum / type, at the field's declared severity. Only
+// fieldConformanceWarnings returns warn-tier diagnostics for every active
+// entity whose frontmatter violates a schema field's declared
+// pattern / conventional enum / type, at the field's declared severity.
+// Archived entities are skipped: archived scope is publish-only, so a
+// non-conformant field there can never be cleared by a tool-mediated write. Only
 // fields whose severity is `warn` are surfaced here (no schema field is `error`
 // today; an `error`-severity field would route through the structural-error path
 // instead). Each line names the field and the violated rule plus the entity
@@ -89,6 +91,9 @@ func fieldConformanceWarnings(entities []*entity, workflowDir string) []string {
 	schema := loadEntitySchema()
 	var warns []string
 	for _, e := range entities {
+		if e.scope != "active" {
+			continue
+		}
 		for name, spec := range schema.fields {
 			if !isWarnSeverity(spec) {
 				continue
