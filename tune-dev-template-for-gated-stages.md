@@ -48,6 +48,8 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+worktree: .worktrees/spacedock-ensign-tune-dev-template-for-gated-stages
+started: 2026-08-15T21:25:11Z
 ---
 
 Tune the reusable dev task template so task authors supply the decision evidence required by each gated stage without making task files verbose.
