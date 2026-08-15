@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -130,11 +129,19 @@ func cloneYAMLNode(node *yaml.Node) *yaml.Node {
 	return &out
 }
 
-// filterApplicationMappings removes non-canonical keys only at
-// gates.records[*].attempts[*].application. It validates the application value
-// shape before filtering so null, sequence, and scalar legacy values remain
-// strict errors. Unknown keys are reported once per path/field and sorted for
-// deterministic operator output.
+// retiredAttemptKey is the one attempt-level key a read drops instead of
+// refusing. Its writer was cut with provider-backed closure, so no live command
+// produces it, but frozen archived attempts still carry the bytes. It is
+// retired rather than unknown: dropping it silently keeps those records
+// readable without widening attempt-level tolerance to any other key.
+const retiredAttemptKey = "provider-evidence"
+
+// filterApplicationMappings drops the retired attempt-level key and removes
+// non-canonical keys only at gates.records[*].attempts[*].application. It
+// validates the application value shape before filtering so null, sequence, and
+// scalar legacy values remain strict errors. Unknown keys are reported once per
+// path/field and sorted for deterministic operator output; the retired key is
+// silent and raises no warning.
 func filterApplicationMappings(gatesNode *yaml.Node) ([]Warning, error) {
 	var warnings []Warning
 	if gatesNode == nil || gatesNode.Kind != yaml.MappingNode {
@@ -156,6 +163,14 @@ func filterApplicationMappings(gatesNode *yaml.Node) ([]Warning, error) {
 			if attempt == nil || attempt.Kind != yaml.MappingNode {
 				continue
 			}
+			keptAttempt := make([]*yaml.Node, 0, len(attempt.Content))
+			for i := 0; i+1 < len(attempt.Content); i += 2 {
+				if attempt.Content[i].Value == retiredAttemptKey {
+					continue
+				}
+				keptAttempt = append(keptAttempt, attempt.Content[i], attempt.Content[i+1])
+			}
+			attempt.Content = keptAttempt
 			for i := 0; i+1 < len(attempt.Content); i += 2 {
 				if attempt.Content[i].Value != "application" {
 					continue
@@ -263,41 +278,6 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 			}
 			if err := validatePresentationGitSources(roots, items); err != nil {
 				return fmt.Errorf("attempt %s %w", attempt.ID, err)
-			}
-			if attempt.ProviderEvidence == nil {
-				continue
-			}
-			resultBytes, err := os.ReadFile(filepath.Join(room, "provider", "result.json"))
-			if err != nil {
-				return fmt.Errorf("attempt %s retained provider/result.json: %w", attempt.ID, err)
-			}
-			inventoryBytes, err := os.ReadFile(filepath.Join(room, "provider", "presented-inventory.json"))
-			if err != nil {
-				return fmt.Errorf("attempt %s retained provider/presented-inventory.json: %w", attempt.ID, err)
-			}
-			if RawDigest(resultBytes) != attempt.ProviderEvidence.ResultDigest {
-				return fmt.Errorf("attempt %s retained provider/result.json does not match its frozen digest", attempt.ID)
-			}
-			if RawDigest(inventoryBytes) != attempt.ProviderEvidence.PresentedInventoryDigest {
-				return fmt.Errorf("attempt %s retained provider/presented-inventory.json does not match its frozen digest", attempt.ID)
-			}
-			result, err := decodeProviderResult(resultBytes)
-			if err != nil {
-				return err
-			}
-			if attempt.Resolution == nil || !reflect.DeepEqual(result.Resolution, *attempt.Resolution) {
-				return fmt.Errorf("attempt %s retained provider Resolution does not match its durable Resolution", attempt.ID)
-			}
-			inventory, err := decodePresentedInventory(inventoryBytes)
-			if err != nil {
-				return err
-			}
-			association, err := deriveAssociation(resultBytes, result, inventory, request.Approver, attempt.Briefing, items)
-			if err != nil {
-				return err
-			}
-			if err := verifyAssociation(resultBytes, result, association, request.Approver, attempt.Briefing, items); err != nil {
-				return err
 			}
 		}
 	}

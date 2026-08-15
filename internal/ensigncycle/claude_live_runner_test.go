@@ -375,10 +375,10 @@ func assertWithdrawnGateRecovery(doc *gates.Document) error {
 		return fmt.Errorf("recovery attempts = %#v", doc.Records)
 	}
 	withdrawn, current := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
-	if withdrawn.Withdrawal == nil || withdrawn.Resolution != nil || withdrawn.ProviderEvidence != nil || withdrawn.Application != nil {
+	if withdrawn.Withdrawal == nil || withdrawn.Resolution != nil || withdrawn.Application != nil {
 		return fmt.Errorf("withdrawn attempt lost its clean terminal state: %#v", withdrawn)
 	}
-	if current.Withdrawal != nil || current.Resolution != nil || current.ProviderEvidence != nil || current.Application != nil || !strings.HasSuffix(current.ID, "-2") {
+	if current.Withdrawal != nil || current.Resolution != nil || current.Application != nil || !strings.HasSuffix(current.ID, "-2") {
 		return fmt.Errorf("recovery did not stop on open successor N+1: %#v", current)
 	}
 	return nil
