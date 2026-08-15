@@ -1,6 +1,6 @@
 ---
 title: Remove boot-time gate withdraw capability probe
-status: validation
+status: done
 source: "Captain directive, 2026-08-15: pedantic compat check for unreleased 0.27.x is overkill; incomplete upgrades already surface a proper error at use time"
 score: 0.9
 group: tooling
@@ -77,10 +77,13 @@ gates:
                 reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-15T02:55:22Z
 worktree: .worktrees/spacedock-ensign-remove-startup-capability-probe
 pr: pr-merge:704
+verdict: PASSED
+completed: 2026-08-15T19:56:34Z
+archived: 2026-08-15T19:56:34Z
 ---
 
 Remove the same-minor capability probe added in commit b331baf4f ("fix: reject stale same-minor launchers", 2026-08-09). The binary version gate should rely solely on the minor version match; if a stale build lacks `gate withdraw --reason`, the CLI already returns a clear "unknown subcommand" error at the point of use.
