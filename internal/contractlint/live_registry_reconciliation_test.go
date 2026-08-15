@@ -50,7 +50,7 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
 	wantGaps := map[string][]liveGapRow{
 		"gate-guardrail":                nil,
-		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "kky8pg7wc8xgb985epwss092"}, {"xfail", "codex", "kky8pg7wc8xgb985epwss092"}},
+		"default-headless-gate-stop":    {{"xfail", "codex", "kky8pg7wc8xgb985epwss092"}},
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
 		"rejection-flow":                {{"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
@@ -226,10 +226,10 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 	for _, command := range []struct {
 		name, text, want string
 	}{
-		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 2 ./internal/ensigncycle/`},
+		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/`},
 		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle`},
 		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
-		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v`},
+		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 3 ./internal/ensigncycle -v`},
 		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v`},
 		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
 	} {
