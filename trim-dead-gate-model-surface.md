@@ -52,6 +52,17 @@ gates:
                 digest: sha256:dba5432d8411d65efce2d20992db9eb9fd50777e8fd86443a0fc969e40678742
                 request-digest: sha256:35a3e0817a1cd3ccefebae773255ff4ad13f0d27cfdef569f5904fdda49e3590
                 room-ref: ./trim-dead-gate-model-surface/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ebgwr177kjjs6w5thhywz408:ideation:2
+                briefing: briefing:ebgwr177kjjs6w5thhywz408:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-15T03:55:57.81631Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-15 (approve all except x8): approved into implementation'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69` and re-verified at `ef8f55c83`; the two commits between them touch only workflow docs, and none of this entity's target files changed.
 
