@@ -1,7 +1,7 @@
 ---
 id: 9x6xw292fsz1b4648x9hn40y
 title: Make shipped contract content self-contained
-status: ideation
+status: implementation
 source: "Captain review of the 0.27 stack + audit-r2 (2026-08-15); captain directive: file, dispatch off stack tip, PR as stack layer"
 started:
 completed:
@@ -51,7 +51,7 @@ gates:
                 reason: 'Captain approved 2026-08-15 with a design correction: those references were likely never resolved by any FO, so prefer deleting the unresolvable fragment over expanding it - expand only where deletion loses operative meaning; PR review follows'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Shipped skills reference artifacts a user's machine does not have. Rewrite the seven audited instances so every shipped sentence resolves within the progressively-disclosed contract set. Base on stack layer 10 (retire-prose-grep-contract-tests); the deliverable becomes stack layer 11 - layer 10 removes the pins these rewrites would red.
