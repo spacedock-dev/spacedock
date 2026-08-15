@@ -3,7 +3,7 @@ id: 6qhgsezz7v4g4h76t0jf98b0
 title: Retire the extinct requires-contract manifest sentinel
 status: ideation
 source: "0.27 audit (2026-08-14) Priority 2; pre-ship cleanup companion to remove-startup-capability-probe"
-started:
+started: 2026-08-15T02:55:26Z
 completed:
 verdict:
 score:
