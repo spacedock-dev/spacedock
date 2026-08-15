@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: ideation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -695,3 +695,16 @@ Current main and the frozen Codex candidate now coexist without rebase or force:
 ### Summary
 
 REJECTED. The reconciliation keeps Pi, filing, registry, metrics, quiet-budget, argv, and isolated setup behavior intact, but the approved slowest-first Codex property is not observable under Go's parallel scheduler. Return to ideation for an explicit scheduler; candidate bytes remain unchanged.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Restore strict Codex XFAIL bindings for only the three gaps observed on PR #686 attempts 1-2, using their existing owners: `default-headless-gate-stop` -> `kky8pg7wc8xgb985epwss092`, `rejection-flow` -> `dvddbpsf4tdt3yjw1yjyp14k`, and `keep-moving-posture` -> `9adv48yhye5s2vkhwd7ge52d`. Update the registry reconciliation expectation in the same commit; do not weaken grading or bind filing.
+  Commit 9525035c0 adds exactly those three target-owner pairs to the live declarations and registry oracle; the strict XFAIL grade tests pass and the existing filing binding/grade is byte-unchanged.
+- DONE: Remove only the false slowest-first guarantee from tests and runtime documentation. Preserve Codex `t.Parallel`, CI `-parallel 3`, all 17 journey identities, per-journey `_setup/<journey-id>` isolation, metrics, failure attribution, and the 6k filing grade. Estimate net LOC change: -005, across 4 files.
+  The static declaration-order oracle and its two prose claims are gone; capacity/isolation tests, exact commands, registry identities, live-grade attribution, runner posture, and seven-rung filing controls pass. Product delta is 11 insertions/24 deletions (net -13) across three files, with this split-root report as the fourth artifact.
+- DONE: Run gofmt, focused live-grade/registry/runner/filing tests, live-tag compile, `go test ./...`, and `go test ./... -race` with isolated CODEX_HOME if ambient marketplace state requires it. Do not run a local model suite. Commit and freeze for immediate SSH push to PR #686 CI.
+  Gofmt, focused registry/live-grade/runner/filing tests, live-tag compile, and isolated-CODEX_HOME full/race suites passed on frozen 9525035c0; no local model suite ran.
+
+### Summary
+
+PR #686 now treats only its three observed Codex semantic gaps as strict owner-bound XFAILs and no longer promises nondeterministic slowest-first scheduling. Codex remains parallel at capacity three with all journey identities, isolated setup paths, metrics, attribution, and filing evidence preserved for immediate PR CI.
