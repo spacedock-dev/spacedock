@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f0zn4sr7nz7xsxmyw6aw6bsm:validation:attempt-1:revision-1",
+  "question": "Approve scope-validate-warnings-to-active-entities validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:f0zn4sr7nz7xsxmyw6aw6bsm:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/eef9818fd4592eca526684892b9d4b0dd72ecae7/scope-validate-warnings-to-active-entities.md",
+      "rev": "sha256:68314f2a2a768df30ebefcd1742cda0f5b0b8542d27a7226f029bb75ef1023be",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all four ACs by independent exercise with base and branch binaries; the call-site hazard is proven absent; adversarial pass clean; no material findings."
+    }
+  ]
+}
