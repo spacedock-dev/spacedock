@@ -461,3 +461,50 @@ outside this task's declared 8 files.
 
 The one red test in the run is environmental and pre-existing, reproduced on unmodified `main`
 before being attributed here.
+
+## Stage Report: validation
+
+- DONE: Independently re-exercise every AC against the worktree binary and merge-base, never by reading the report: usage-error exit 2 both arms, shortstat within -75 plus or minus 30 across the 8 declared files, FormatWarning grep empty, warning-count-5 test, race suite
+  AC-1: freshly built worktree binary, `gate validate task` and `gate validate task --round ideation/1`
+  both exit 2 with `unknown subcommand (want: prepare|withdraw|record|consume)`, zero stdout, no files
+  created in an empty dir, and sha256-identical bytes across a full copy of a real workflow tree;
+  `gate --help` contains zero `validate` lines. Mutation check in a throwaway checkout: restoring the
+  merge-base grammar makes `TestRemovedGateVerbsAreAbsentAndSideEffectFree/validate` fail (exit 1 — the
+  branch accepts the verb) and fails the exact-text help fixture, so both AC-1 tests are two-sided;
+  restoring merge-base `cli.go` alone breaks the build on `undefined: gates.FormatWarning`, proving the
+  helper died with its last caller. AC-2: `git diff --shortstat 4d1912a69..HEAD` = 8 files, +20/-102,
+  net -82, inside -75±30; numstat file list matches the 8 declared files exactly. AC-3:
+  `git grep FormatWarning` empty; `ValidateRoundFile` live at `internal/cli/cli.go:343`; keep-boundary
+  trio untouched. AC-4: `TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume` PASS solo (asserts
+  exit!=0, `frozen digest`, entity bytes unchanged); `AC5RefusalMatrix/forced-close-validation-mismatch`
+  PASS (asserts `application`, byte-clean tree digest, no `.gates.lock` residue);
+  `TestStatusValidateReportsGateApplicationExtensionsAsWarnings` PASS (all five named fields, exact
+  count 5, ordinary status silent); `TestGateConsumeRejectsBadRetainedRequestBinding` PASS. AC-5: plain
+  suite green in every package except the environmental Codex test; `go test ./... -race -timeout 25m`
+  green with the same single exception. No `gate validate` mention survives in any tracked file; the
+  three doc diffs match the approved doc-diff plan line for line; gofmt clean.
+- DONE: Calibrate suite verdicts to the merge-base baseline: reproduce any failure on unmodified 4d1912a69 in a clean control worktree before attributing it; TestCodexResolveManifestAgainstInstalledHost is known environmental
+  Reproduced the Codex failure myself on a clean control worktree at unmodified `4d1912a69`: identical
+  `Failed to read config file /Users/clkao/.codex/config.toml: Operation not permitted`. The first
+  contended full run also hit 10m default package timeouts in `internal/cli` and `internal/ensigncycle`
+  (several sibling ensign suites were running); solo reruns with `-timeout 25m` finished green in 814s
+  (cli, codex-only failure — the mid-panic state-commit test passes) and 790s (ensigncycle, fully ok),
+  so both timeouts are load, not the candidate.
+- DONE: Verdict PASSED or REJECTED with per-AC evidence citations; the flagged naming-rot items are out of scope, report-only
+  Verdict: PASSED. No material findings. Polish (report-only, out of scope per checklist): naming rot in
+  `TestGateRoundRecordAndValidateCLI` and
+  `TestGateRequestLocatorCarriesArbitraryBriefingNameThroughRecordValidateAndEligibility` (names cite
+  removed verbs), and `TestGateConsumeRejectsBadRetainedRequestBinding` living in
+  `gate_application_warning_test.go` which no longer holds a warning test. Deferred risk: `internal/cli`
+  and `internal/ensigncycle` exceed go test's default 10m package timeout under concurrent ensign load
+  on this machine; promotes to material if CI runs suites on similarly shared hardware without a raised
+  `-timeout`.
+
+### Summary
+
+Every AC re-exercised independently against the worktree binary and the merge-base, including a
+mutation check proving the AC-1 tests fail when the old grammar is restored. The diff is -82 LOC across
+exactly the 8 declared files, all re-pointed probes and the warning-count-5 verifier pass, and plain
+plus race suites are green with the single calibrated-environmental Codex exception reproduced on
+unmodified `4d1912a69`. Verdict PASSED; only polish-level naming rot and one environment-shaped
+deferred risk noted.
