@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9x6xw292fsz1b4648x9hn40y:validation:attempt-1:revision-1",
+  "question": "Approve make-shipped-contracts-self-contained validation as PASSED, stacking it as layer 11 for PR review?",
+  "artifacts": [
+    {
+      "id": "artifact:9x6xw292fsz1b4648x9hn40y:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/07cc8e98f268ae4635d29b0ececdcf0ad87380d2/make-shipped-contracts-self-contained.md",
+      "rev": "sha256:af625ae957fc27e46d59cc7eddd5b784cb31abce1d29ea46bf1cbb6bc6cbdff7",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all ACs from scratch; deletion bias verified in the diff; all three fixture probes reproduced with designed messages; two polish notes only."
+    }
+  ]
+}
