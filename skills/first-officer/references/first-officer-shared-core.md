@@ -32,7 +32,7 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 - **scope:** ONE workflow per invocation; the `workflow` argument is present so a future multi-workflow form extends this signature rather than replacing it.
 - **done-when:** after ordered mod/PR, gate, and dispatch handling, the loop reaches a captain/terminal stop, guarded unresolved-worker wait, or explicit post-retry `no-dispatchable` stop.
 - → **shipped** (converge): `` `spacedock state ready` `` then `` `spacedock state sweep` `` — two calls, each guard on its own.
-- → **prose** (drive): no binary backs the drive; it wraps the existing `«dispatch.next-action»()` skeleton (driver binary descoped to roadmap 0222).
+- → **prose** (drive): no binary backs the drive; it wraps the existing `«dispatch.next-action»()` skeleton.
 
 ## Deferred load points
 

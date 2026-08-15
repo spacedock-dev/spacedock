@@ -96,17 +96,17 @@ run_query() {  # run_query <name> — :repo_root → REPO_ROOT, :repo_project �
   printf ".param set :repo_root '%s'\n.param set :repo_project '%s'\n%s\n" "$REPO_ROOT" "$REPO_PROJECT" "$q" | sqlite3 "$DB"
 }
 
-run_query scoping            # #318 — sessions|blank_cwd|span over the cwd-prefix-scoped repo
-run_query codex-presence     # #69  — flagged Codex count|blank_cwd by project NAME (cwd unrecorded)
-run_query codex-scoped       # #321 — Codex attributed by exec_command.$.workdir prefix (sibling-free)
-run_query codex-workstreams  # #322 — cluster codex-scoped sessions into ensign-task workstreams
-run_query codex-activity     # #323 — exec_command/update_plan/spawn_agent tally over the codex-scoped set
-run_query scaffold-usage     # #319 — behavioral skill_name family tally (spacedock self EXCLUDED)
-run_query work-by-area       # #317.2 — Edit/Write file_path → LOGICAL area (worktree prefix stripped) + kind
-run_query decision-open      # #320 — AskUserQuestion/ExitPlanMode frontier; OPEN sorts first
-run_query decision-no-followup # 9h — done decisions with no later Edit/Write (message_id → ordinal join)
-run_query mode-classification # #324 — classify each git_branch track manual/exploration/knowledge-work/unlabeled
-run_query dispatch-fact      # za — orchestration FACT: distinct in-repo parents that dispatched subagents + total dispatched
+run_query scoping            # sessions|blank_cwd|span over the cwd-prefix-scoped repo
+run_query codex-presence     # flagged Codex count|blank_cwd by project NAME (cwd unrecorded)
+run_query codex-scoped       # Codex attributed by exec_command.$.workdir prefix (sibling-free)
+run_query codex-workstreams  # cluster codex-scoped sessions into ensign-task workstreams
+run_query codex-activity     # exec_command/update_plan/spawn_agent tally over the codex-scoped set
+run_query scaffold-usage     # behavioral skill_name family tally (spacedock self EXCLUDED)
+run_query work-by-area       # Edit/Write file_path → LOGICAL area (worktree prefix stripped) + kind
+run_query decision-open      # AskUserQuestion/ExitPlanMode frontier; OPEN sorts first
+run_query decision-no-followup # done decisions with no later Edit/Write (message_id → ordinal join)
+run_query mode-classification # classify each git_branch track manual/exploration/knowledge-work/unlabeled
+run_query dispatch-fact      # orchestration FACT: distinct in-repo parents that dispatched subagents + total dispatched
 ```
 
 `scoping` returns `sessions=0` → there is no Claude agent history for this repo; say so and stop. Nothing to discover. (Survey reads Claude history only for now; a repo whose only agent history is Codex/Gemini will report "no agent history" here — surfacing those agents is a deferred follow-up.) Note the `blank_cwd` count in the report if non-zero (sessions agentsview never captured a cwd for, which the repo-root scope cannot place).
