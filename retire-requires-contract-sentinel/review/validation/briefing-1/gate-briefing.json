@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6qhgsezz7v4g4h76t0jf98b0:validation:attempt-1:revision-1",
+  "question": "Approve retire-requires-contract-sentinel validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:6qhgsezz7v4g4h76t0jf98b0:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4b3faef146f03c69357ccec7badd4792ca5a70e3/retire-requires-contract-sentinel.md",
+      "rev": "sha256:6b74e57c8ef1401f27c331d60a38cde469c60f32c1c5717da28eb80a071d3591",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all four ACs against a clean control; both figure corrections confirmed as facts; both fixture classes exercised against real hosts; contract-3 sentinel intact with all six assertions."
+    }
+  ]
+}
