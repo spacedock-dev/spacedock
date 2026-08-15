@@ -1,10 +1,10 @@
 ---
 title: Use Codex subscription auth in live CI
-status: validation
+status: done
 source: captain-request
 started: 2026-08-12T14:26:14Z
-completed:
-verdict:
+completed: 2026-08-15T20:48:55Z
+verdict: PASSED
 worktree: .worktrees/spacedock-ensign-codex-subscription-live-auth
 id: hrercm3ff4ww94rnqhqbqkyp
 gates:
@@ -69,9 +69,10 @@ gates:
                 reason: Captain approved delivery despite the unavailable OAuth-only current-checkout live proof; offline focused, full, race, workflow, formatting, and live-tag evidence passed, and the recorded direct-Pi local-auth concern remains deferred outside the CI scope.
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:682
+archived: 2026-08-15T20:48:56Z
 ---
 # Use Codex subscription auth in live CI
 
