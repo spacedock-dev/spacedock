@@ -67,6 +67,17 @@ gates:
                 digest: sha256:98dbfcb7cca17f2487e3776c2b06bf258c88afef3ee6f9e4fbdb50be3258a261
                 request-digest: sha256:0eec08107c4effcf2d52df9ff05e3b76365e79374ec771feb7326f7c200c634c
                 room-ref: ./remove-startup-capability-probe/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dav9qnjhsbbg7k1a8x1260h6:validation:1
+                briefing: briefing:dav9qnjhsbbg7k1a8x1260h6:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T16:08:02.252469Z"
+                decision: approve
+                reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-15T02:55:22Z
 worktree: .worktrees/spacedock-ensign-remove-startup-capability-probe
 ---
