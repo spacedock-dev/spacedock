@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dav9qnjhsbbg7k1a8x1260h6:validation:attempt-1:revision-1",
+  "question": "Approve remove-startup-capability-probe validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:dav9qnjhsbbg7k1a8x1260h6:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/342fe5aedfb6e3556ea99f25391554aa4b25830b/remove-startup-capability-probe.md",
+      "rev": "sha256:b8cfc4228855b103655190abac5cdb460edd61d34acf05bb62835842ec9b7ef5",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all four ACs by independent re-exercise including a real merged-tree run with zvk9; environmental timeout reproduced on the clean merge-base; no material findings."
+    }
+  ]
+}

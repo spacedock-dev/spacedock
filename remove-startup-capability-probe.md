@@ -58,6 +58,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:dav9qnjhsbbg7k1a8x1260h6:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:dav9qnjhsbbg7k1a8x1260h6-validation-1
+              briefing:
+                id: briefing:dav9qnjhsbbg7k1a8x1260h6:validation:attempt-1:revision-1
+                digest: sha256:98dbfcb7cca17f2487e3776c2b06bf258c88afef3ee6f9e4fbdb50be3258a261
+                request-digest: sha256:0eec08107c4effcf2d52df9ff05e3b76365e79374ec771feb7326f7c200c634c
+                room-ref: ./remove-startup-capability-probe/review/validation/briefing-1
 started: 2026-08-15T02:55:22Z
 worktree: .worktrees/spacedock-ensign-remove-startup-capability-probe
 ---
