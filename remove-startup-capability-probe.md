@@ -37,6 +37,10 @@ gates:
                 digest: sha256:c74e56309a151da3019d51a56f33bca2bf25e4717e20519982c1d471e59d828d
                 request-digest: sha256:2dcee93188db3170f960d3c77fe661952c0bda28b1938a4d3daa5fa003fa9e0d
                 room-ref: ./remove-startup-capability-probe/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-15T03:50:34.621223Z"
+                reason: 'Entity amended post-prepare (966a9d384): AC-4 reframed as differential against the HEAD baseline; evidence re-run in slug-named worktrees; re-preparing against current bytes'
 started: 2026-08-15T02:55:22Z
 ---
 
