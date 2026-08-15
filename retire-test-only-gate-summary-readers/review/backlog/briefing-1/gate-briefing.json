@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:77k7m0dmwm10mz6zrdq86tv3:backlog:attempt-1:revision-1",
+  "question": "Approve retire-test-only-gate-summary-readers into ideation (captain pre-directed: dispatch all onto stack tip)?",
+  "artifacts": [
+    {
+      "id": "artifact:77k7m0dmwm10mz6zrdq86tv3:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2b9faf885b6cab52d0c18439d028da08a7315078/retire-test-only-gate-summary-readers.md",
+      "rev": "sha256:64baf6fadd395d9d04265e99aea387b71b779058f11dea9690988fb7e19316bd",
+      "mediaType": "text/markdown",
+      "summary": "Captain 0.27 dispatch order 2026-08-15."
+    }
+  ]
+}
