@@ -229,3 +229,31 @@ Re-run of every cited measurement in a slug-named directory after the FO's share
 ### Summary
 
 Everything load-bearing reproduced: 6 archived attempts carry the field, their rooms are intact, the verifier passes against them, the naive strip takes `status --validate` to rc=1, and the tolerant variant is byte-identical to HEAD on both streams. The collision did not change any conclusion, but it did corrupt two baselines that later stages would have compared against, and both were numbers I would have had no way to catch without re-running. Spike artifacts are under `scratchpad/spike-remove-provider-evidence-fields/`; the shared working tree was never modified, since all variants ran through `go build -overlay` / `go test -overlay`.
+
+## Stage Report: implementation
+
+- DONE: Retire-behind-tolerance exactly as gated: one named retired key, the prototype fail-closed test untouched green
+  `retiredAttemptKey = "provider-evidence"` is the only key `filterApplicationMappings` drops, and it drops it from the validation clone only; `TestPrototypeAndUnknownGateShapesFailClosed` is unedited and green. Code commit `5b7bb8cfd` on `spacedock-ensign/remove-provider-evidence-fields`.
+- DONE: Corpus decode 119/16 and status --validate byte-identical on both streams against the recorded baselines
+  At state `296876f46`, re-checked unchanged across all four runs: HEAD and changed builds both score read-ok=119 / read-err=16 / attempts=452 / warnings=121; HEAD decodes 6 `provider-evidence` attempts, the change decodes 0, and the two archived files still carry their 6 keys on disk. `status --workflow-dir docs/dev --validate` is rc=0 on both with `cmp`-identical stdout and stderr (`VALID`; 125 `Warning:`, 0 `Error:`).
+- DONE: Within -190 plus or minus 60 over 8 files; -timeout 30m; never chase the known environmental failure
+  `git diff --numstat` against merge-base `4d1912a69`: 8 files, +108 / -253, net **-145**, inside both declared tolerances. `go test ./... -timeout 30m` and `go test ./... -race -timeout 30m` are green in every package on both runs except `internal/cli`'s `TestCodexResolveManifestAgainstInstalledHost`, the declared sandbox carve-out (`~/.codex/config.toml`: Operation not permitted); not chased. `-timeout 30m` was load-bearing under contention: `internal/cli` took 1019s / 798s and `internal/ensigncycle` 1186s / 871s, all past the 600s default.
+
+### Tests and what falsifies them
+
+- New `TestRetiredProviderEvidenceKeyReadsSilentlyWithoutWideningAttemptTolerance` (`internal/gates`) asserts that a stored `provider-evidence` attempt reads with zero warnings, never reaches the model, remains present on the returned compare-and-swap node, passes the frozen-attempt transition check, and that an unknown sibling attempt key still refuses. Two mutation runs prove it falsifiable: deleting the key-drop loop fails it with `field provider-evidence not found`; changing `cloneYAMLNode(gatesNode)` to `gatesNode` fails it on the write-node assertion.
+- `TestPrototypeAndUnknownGateShapesFailClosed` is unedited. Its `unknown attempt field` case fails if the drop is ever widened from one named key to blanket attempt-level tolerance.
+- `TestWithdrawalDefinesThirdValidatedFrozenAttemptState` keeps `with application`, which fails if the withdrawn branch loses its application arm while the provider arm is removed. The `with evidence` case was deleted with the field.
+
+### Deviations and notes
+
+1. **Test-plan wording on byte preservation.** The plan asked that entity bytes be unchanged "after a subsequent canonical gate write". The canonical writer re-marshals the gates block from the model, so it has never round-tripped any tolerated-but-unmodeled key and it also renormalizes indentation; the literal assertion was not achievable before this change either. The test asserts what the writer actually promises: the read leaves bytes untouched, the write is accepted rather than CAS-refused, and every byte outside the gates mapping survives. No live command writes archived entities, so this is unreachable in practice.
+2. **One adjacency the design did not name.** `ValidateTransition` decodes the stored node without `KnownFields`, so the retired key is ignored symmetrically on the old-node and new-model sides. The frozen-attempt check still accepts an unchanged attempt and still refuses a mutated one. Proved by probe, then folded into the new test.
+3. **Left alone.** `docs/roadmap/durable-decisions/staff-review-sprint-close.md` still names the deleted helpers. It is a historical review record rather than a contract, and is outside the declared surface.
+4. **Coordination.** Branched from `4d1912a69`. The contract sentence rewritten here is shared with `remove-gate-validate-subcommand`; whichever lands second reconciles both edits.
+
+### Summary
+
+The retire-behind-tolerance design landed as approved and the recorded baselines reproduced exactly: 119/16 corpus decode and byte-identical `status --validate` on both streams against a freshly built HEAD binary at one verified-stable state SHA. Net -145 lines across 8 files, inside tolerance, with the 154 orphaned association helpers in `operation.go` carrying most of the deletion.
+
+Two things beyond the plan were worth the time. The new test was mutation-checked in both directions the design warned about, so its pass is evidence rather than assertion. And `ValidateTransition` turned out to read the raw stored node, which would have been a live regression path had the retired key decoded asymmetrically; it does not, and that is now fenced. The only red in the suite is the Codex config sandbox denial the ideation already classified as environmental.
