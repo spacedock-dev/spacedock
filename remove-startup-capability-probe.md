@@ -41,6 +41,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-15T03:50:34.621223Z"
                 reason: 'Entity amended post-prepare (966a9d384): AC-4 reframed as differential against the HEAD baseline; evidence re-run in slug-named worktrees; re-preparing against current bytes'
+            - id: gate-attempt:dav9qnjhsbbg7k1a8x1260h6-ideation-2
+              briefing:
+                id: briefing:dav9qnjhsbbg7k1a8x1260h6:ideation:attempt-2:revision-1
+                digest: sha256:80aef53eafe46b7a615a57383c007d77f87b28744fd134bfcbd1606436c9a638
+                request-digest: sha256:a3979025d6f14aa622803ea2d436f8f9ef6c30bdba45cc368e33563250118384
+                room-ref: ./remove-startup-capability-probe/review/ideation/briefing-2
 started: 2026-08-15T02:55:22Z
 ---
 

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dav9qnjhsbbg7k1a8x1260h6:ideation:attempt-2:revision-1",
+  "question": "Approve remove-startup-capability-probe ideation into implementation, including the one-line contractlint absence assertion?",
+  "artifacts": [
+    {
+      "id": "artifact:dav9qnjhsbbg7k1a8x1260h6:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/0db61138e4c01b9bd4ca48d8c1a961404a945ddd/remove-startup-capability-probe.md",
+      "rev": "sha256:ff3a8f0875752017e7eda7ef24aa11f1aa3c35345ffa6b8425b5b6548434e3b3",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: four sites confirmed, both zv landing orders exercised, stale-launcher premise proven by exercise; AC-4 reframed as a baseline differential because bare go test does not finish on this box."
+    }
+  ]
+}
