@@ -408,7 +408,7 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 	entityBeforeRefusal := readFile(t, fixture.entity)
 	firstRequestPath := filepath.Join(firstRoom, "request.json")
 	writeFile(t, firstRequestPath, strings.Replace(firstRequest, `"actor": "person:captain"`, `"actor": "agent:other"`, 1))
-	refused := runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
+	refused := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 	if refused.exit == 0 || !strings.Contains(refused.stderr, "frozen digest") {
 		t.Fatalf("withdrawn retained-authority drift validated: exit=%d stderr=%q", refused.exit, refused.stderr)
 	}
@@ -577,7 +577,7 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 		body := readFile(t, fixture.entity)
 		writeFile(t, fixture.entity, strings.Replace(body, "decision: approve", "decision: hold", 1))
 		before := treeDigest(t, fixture.stateRoot)
-		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
+		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 		assertRecordedGateByteCleanFailure(t, fixture, result, "application")
 		if after := treeDigest(t, fixture.stateRoot); after != before {
 			t.Fatal("close-validation mismatch changed workflow bytes")
