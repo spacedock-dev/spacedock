@@ -27,16 +27,14 @@ func readSkillFile(t *testing.T, rel string) string {
 }
 
 // TestVersionGateProseOSAwareHint pins the AC-1 prose shape in the lean core
-// skeleton: the binary-absent class must carry BOTH install leads (the curl|sh
-// path for Linux and both brew install forms for macOS), the `uname -s` OS
-// source (permanently load-bearing there — the absent binary produces no
-// `--version` output), and the unsupported-OS source-build escape.
+// skeleton: the `uname -s` OS source (permanently load-bearing there — the
+// absent binary produces no `--version` output) and the unsupported-OS
+// source-build escape. The install commands themselves are pinned by
+// TestInstallHintNoDrift as a relation against docs/site/get-started/install.md,
+// so they are deliberately not frozen here as literals.
 func TestVersionGateProseOSAwareHint(t *testing.T) {
 	body := readSkillFile(t, sharedCorePath)
 	for _, token := range []string{
-		"curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh",
-		"brew install spacedock-dev/homebrew-tap/spacedock",
-		"brew tap spacedock-dev/homebrew-tap",
 		"uname -s",
 		"go build -o spacedock ./cmd/spacedock",
 		"unsupported OS",
