@@ -215,3 +215,31 @@ Consequence for whoever implements this: do not chase that failure, and do not t
 Scope confirmed exactly as the entity described it — 8 files, 15 live lines — then widened by 2 files. `skills/integration/marketplace_manifest_test.go` and `internal/contractlint/prose_manifest_minor_sync_test.go` describe the same extinct tombstone without using the literal string, so a grep-scoped sweep would leave them behind still claiming a verifier for a field that no longer exists anywhere; including them costs two comment lines. Three of the comment edits correct claims that are false at HEAD, the sharpest being that the contractlint sync test "pins the D4 cross-era tombstone" when it reads only `version`.
 
 The critical keep-boundary is that D4 shipped **two** cross-era sentinels and only the manifest field is extinct: `frozenContractToken = "contract 3"` has a writer, consumers, and 6 assertions pinning it, so AC-4 exists specifically to catch a sweep that takes both. The "not read" claim was proven by exercising rather than by grep — a throwaway differential over `ManifestVerdict` across 3 hosts x 3 binary versions returned byte-identical verdicts and messages in all 9 combinations, spanning compatible, too-old-plugin, and too-old-binary. It was deleted, not committed, and the entity ships no regression test because one would have to name the literal and fail AC-1.
+
+## Stage Report: implementation
+
+- DONE: Ten-file scope including the two comment-only files; the live contract-3 sentinel untouched per AC-4
+  Commit `571ac9ec7` touches exactly the 10 declared files, +22/-29 = net -7 (declared estimate -7, tolerance -4..-12); no file outside the two declared classes. AC-4: `git grep -c '"contract 3"' -- internal/cli/cli.go` still reports the constant, and `go test ./internal/cli/ -run 'TestVersion'` passes 6 tests including `TestVersionContractTokenPlacement`, which goes red if `frozenContractToken` is deleted or stops being emitted in the version block.
+- DONE: Zero live requires-contract references and the 1377-name test inventory unchanged
+  AC-1 both halves: `git grep -c "requires-contract" -- internal skills cmd docs/site` and `git grep -n "tombstone" -- internal skills` each exit 1 with no output; the whole-tree grep returns only `docs/roadmap/0199-pre-flip-mechanics/debrief.md:2`. AC-2: the `go test ./... -list` inventory diff against the pre-edit tree is empty, and `git grep -hE '^func (Test|Example|Fuzz)'` is 1416 at both `4d1912a69` and HEAD. The inventory number is corrected to **1375** — see the correction below.
+- DONE: Suite verdicts per AC-2b differential; reproduce any failure on a clean control before attributing
+  All four AC-2b packages green plain and under `-race` (`internal/contract` 4.7s, `internal/release` 207.2s, `internal/contractlint` 31.8s, `skills/integration` 37.7s). `internal/cli` — which AC-2b omits despite owning 5 of the 10 edited files — was run too: it fails on this credentialed box, and a clean control at `4d1912a69` in a throwaway checkout reproduces the same failures with no edits present. In CI's credential-free shape it is green: `env PATH=/usr/bin:/bin:/usr/sbin:/sbin go test ./internal/cli/` returns `ok ... 442.7s`.
+
+### Correction: the inventory baseline is 1375, not 1377
+
+The entity records 1377 names; the measured count at `4d1912a69` is 1375, from both a clean worktree and the main checkout (identical sets, empty diff). 1377 does not reproduce by `go test ./... -list` (1375) or by declaration grep (1416), so it appears to be an ideation mis-measurement rather than a change in the tree. AC-2's load-bearing property is unaffected: the property is that the inventory set is byte-identical before and after, and that diff is empty. What would falsify it is deleting or renaming any test function — including the cheapest wrong way to satisfy AC-1, deleting the fixtures' owning tests.
+
+### Correction: the credentialed-box caveat covers `internal/cli`, not just `internal/ensigncycle`
+
+Ideation recorded `internal/cli` as `ok` at baseline and scoped the caveat to `internal/ensigncycle`. On this box `internal/cli` fails two independent ways, both reproduced on the clean `4d1912a69` control before attributing:
+
+1. `TestCodexResolveManifestAgainstInstalledHost` fails in ~0.4s because the real `codex plugin list` cannot read `/Users/clkao/.codex/config.toml` (`Operation not permitted`) — a sandbox permission condition, not a manifest condition; the test's own guard is `exec.LookPath("codex")`, so it skips where codex is absent.
+2. The package hits the test timeout on a live-host leg. The test still running at the panic differs between runs — `TestClaudePluginInstallIsHostNative` on the candidate, `TestGateRecordHaltsOnSameEntityConflict` on the control — so the hang tracks live-subprocess scheduling, not any edited file.
+
+Removing `claude` and `codex` from PATH turns both off and the package passes, which is why CI's secretless `offline` job is green. Validation should not treat a bare credentialed `go test ./internal/cli/` as this entity's gate.
+
+### Summary
+
+Pure deletion landed as designed: the field is gone from the 6 inline fixture manifests and from `release_test.go`'s assertion (its `name` and `skills` assertions stay, so "untouched fields survive" still proves something), and 7 comments were corrected — including the three that falsely claimed the `internal/contractlint` sync test pins a D4 tombstone it never reads. The two adjacent comment-only files were included as ideation directed; without them a grep-clean tree would still have asserted a verifier for a field that no longer exists.
+
+Two ideation figures needed correcting and both are recorded above: the test-inventory baseline is 1375 rather than 1377, and the credentialed-box test caveat extends to `internal/cli` rather than `internal/ensigncycle` alone. Neither changes the outcome — AC-1 through AC-4 all hold, with `internal/cli` green in the credential-free shape AC-2b specifies. No behavior change: `git diff --stat -- .claude-plugin .codex-plugin` is empty, no Go symbol moved, and `gofmt -l` is clean over `cmd`, `internal`, and `skills`.
