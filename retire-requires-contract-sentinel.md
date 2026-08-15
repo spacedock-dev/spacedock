@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:6qhgsezz7v4g4h76t0jf98b0:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:6qhgsezz7v4g4h76t0jf98b0-backlog-1
+              briefing:
+                id: briefing:6qhgsezz7v4g4h76t0jf98b0:backlog:attempt-1:revision-1
+                digest: sha256:886472682b4b65555d37be5b39151f04f478b618bebafce013e3c41dea56d935
+                request-digest: sha256:e3dfe8c776eebd1adfb7660b57d36d1886b392d9e26c2d6f3cc392d374eab563
+                room-ref: ./retire-requires-contract-sentinel/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6qhgsezz7v4g4h76t0jf98b0:backlog:1
+                briefing: briefing:6qhgsezz7v4g4h76t0jf98b0:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:19.566854Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Retire the pre-0.19 `requires-contract` sentinel; its audience is extinct and production code explicitly ignores it. Pure deletion, no behavior change.
