@@ -403,3 +403,61 @@ is the only archived-scope printer; no `publish` command exists) and rewrote thi
 warning-class rationale to stand on unactionability of archived findings alone. The removal
 plan and estimate are unchanged; only the rationale's precision and one declared semantic
 change moved. See Coordination.
+
+## Stage Report: implementation
+
+- DONE: Re-point the two refusal probes to gate consume BEFORE the deletion, per the approved test plan
+  Commit `18f851eb8` (re-point) precedes `d1d23b68a` (deletion), and both probes were run green
+  while `gate validate` still existed — so the coverage move is proven against the surviving
+  command rather than by the removal. `TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume`
+  asserts exit != 0, stderr containing `frozen digest`, and entity bytes unchanged;
+  `AC5RefusalMatrix/forced-close-validation-mismatch` asserts exit != 0, output containing
+  `application`, and no `.gates.lock` residue. Either fails if `gate consume` refused later than
+  `validateRetainedAuthority`, refused for a different reason (an eligibility message would miss
+  both substrings), or exited 0.
+- DONE: Deletion lands within -75 LOC plus or minus 30 across the 8 declared files; verb-table entry and help fixture change in the same commit
+  `git diff --shortstat` against the merge-base: 8 files changed, 20 insertions, 102 deletions —
+  net **-82**, inside the declared -75 +/- 30, across exactly the 8 declared files and no others.
+  AC-2 (deletions exceed insertions) holds. The verb-table entry and the exact-text help fixture
+  are both in `d1d23b68a` with the branch deletion.
+  AC-1 exercised on a freshly built binary, not just in unit scope: `gate validate task` and
+  `gate validate task --round ideation/1` each exit 2 with
+  `unknown subcommand (want: prepare|withdraw|record|consume)`, the working directory is
+  byte-identical by shasum before/after, and `gate --help` no longer prints the grammar line.
+  `TestRemovedGateVerbsAreAbsentAndSideEffectFree` now covers `validate` beside `review` and
+  `eligibility`; it fails if the branch survives or the verb is silently accepted. The help
+  fixture is a two-sided exact-text contract — changing only `cli.go` or only the fixture fails it.
+- DONE: Suite green including -race; FormatWarning goes with its last caller; keep-boundary trio untouched
+  `go test ./...` and `go test ./... -race` are green in every package except one pre-existing
+  environmental failure, `TestCodexResolveManifestAgainstInstalledHost`: the real `codex` CLI
+  cannot read `/Users/clkao/.codex/config.toml` ("Operation not permitted") under this session's
+  sandbox. Verified not mine — the identical failure reproduces on the unmodified merge-base
+  `4d1912a69` in a throwaway worktree. No data races reported.
+  AC-3: `git grep FormatWarning` returns nothing outside history; it was removed in the same
+  commit as its only caller. `printRound` and `ValidateRoundFile` stay live at `cli.go:343-344`
+  (`gate record --round`), so the keep-boundary for `ValidateRoundFile` is intact.
+  AC-4: `internal/status/gate_application_warning_test.go` still asserts all five named extension
+  fields and an exact warning count of 5 through `status --validate`; it fails if the surviving
+  warning channel drops or double-counts the class.
+  Keep-boundary trio untouched as approved: `SummaryFile` / `SummaryFileAt` /
+  `SummaryFileDiagnosticsAt` still compile and keep their two test consumers
+  (`prepare_test.go:956`, `application_test.go:365`). Confirmed they are now production-unreachable,
+  exactly as ideation predicted; only the stale doc comment naming `gate validate` was corrected.
+
+### Summary
+
+Removed the `gate validate` subcommand in two commits: the probe re-pointing first, proven green
+against the still-present command, then the deletion with the verb-table entry and help fixture in
+one commit. Surface came in at -82 LOC across exactly the 8 declared files, inside the -75 +/- 30
+tolerance. `gates.FormatWarning` went with its last caller.
+
+Two judgment calls stayed inside the approved surface rather than expanding it, both flagged for the
+gate. `TestGateValidateRejectsBadRetainedRequestBinding` was renamed to
+`TestGateConsumeRejectsBadRetainedRequestBinding` since its name otherwise cited a removed command;
+its file is still `gate_application_warning_test.go` though it no longer holds a warning test, and
+`TestGateRequestLocatorCarriesArbitraryBriefingNameThroughRecordValidateAndEligibility` keeps a name
+citing two now-removed verbs. Both are naming rot, not dead machinery, so renaming them is churn
+outside this task's declared 8 files.
+
+The one red test in the run is environmental and pre-existing, reproduced on unmodified `main`
+before being attributed here.
