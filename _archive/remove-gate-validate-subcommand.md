@@ -1,11 +1,11 @@
 ---
 id: 0tmv5bry1wbkww2758y88pay
 title: Remove the gate validate subcommand
-status: validation
+status: done
 source: "Captain directive, 2026-08-14: value review found near-zero value; every fault it reports also surfaces elsewhere"
 started: 2026-08-15T02:55:29Z
-completed:
-verdict:
+completed: 2026-08-15T19:56:41Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-remove-gate-validate-subcommand
 issue:
@@ -72,8 +72,9 @@ gates:
                 reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:705
+archived: 2026-08-15T19:56:41Z
 ---
 
 Remove the `gate validate` CLI subcommand. It has zero live uses across 424 recorded attempts. Fatal faults surface identically on every gate command through the shared reader. The warning class prints at state publish. The read-only digest sweep and the round check have no recorded consumer.
