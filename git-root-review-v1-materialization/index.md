@@ -2384,7 +2384,10 @@ the Subspace half plus an operator-driven fresh runtime with both candidate plug
 was deliberately not attempted here. It also cannot run until the AC-1 recorder-continuation
 finding above is ruled on, since the drive's second half is `gate record --room`.
 
-## Stage Report: implementation (closing restatement — captain park, 2026-08-15)
+## Stage Report: implementation
+
+Closing restatement — parked by captain ruling, 2026-08-15. This is the operative
+implementation report and supersedes the earlier one above; it carries no FAILED item.
 
 Captain ruling, 2026-08-15, quoted for the record:
 
@@ -2396,12 +2399,18 @@ Captain ruling, 2026-08-15, quoted for the record:
 > presentation for git-root gates. Revisit in 0.28 only behind a demonstrated
 > Subspace presentation journey.
 
-This restates one checklist item. Every other line of the implementation stage report,
-the material finding, and the boundary-contract addendum stand unchanged as the
-preserved evidence base.
+Only the first item's verdict changes. The material finding and the boundary-contract
+addendum stand unchanged as the preserved evidence base. All three checklist items are
+restated here so this section is a complete report on its own.
 
-- SKIPPED (was FAILED): Execute the approved ideation design exactly against the stack tip; every AC keeps its evidence discipline including AC-1's real Subspace presentation rendering 2/2 canonical Git-root sources
-  Parked by captain ruling above, not failed on execution and not deferred pending a fix. AC-1's real Subspace presentation was never reachable from this dispatch: the Subspace half was ruled out of scope to a peer, and the `gate record --room` continuation AC-1 depends on was already cut from v1 by a73. The captain's necessity finding supersedes the remaining work rather than rescheduling it — the sprint DoD forbids shipping machinery whose journey has not run, and the cycle-7 journey never ran.
+- SKIPPED: Execute the approved ideation design exactly against the stack tip; every AC keeps its evidence discipline including AC-1's real Subspace presentation rendering 2/2 canonical Git-root sources
+  Restated from FAILED in the superseded report above. Parked by the captain ruling, not failed on execution and not deferred pending a fix. AC-1's real Subspace presentation was never reachable from this dispatch: the Subspace half was ruled out of scope to a peer, and the `gate record --room` continuation AC-1 depends on was already cut from v1 by a73. The captain's necessity finding supersedes the remaining work rather than rescheduling it — the sprint DoD forbids shipping machinery whose journey has not run, and the cycle-7 journey never ran.
+- DONE: Declared surface within its gated tolerance; durable gate state stays free of copied selected-source payloads per AC-2
+  Unchanged from the superseded report. Declared 9 Spacedock files / +1,082/-25; actual 9 files / +1,291/-0, with the CLI route split into `internal/cli/gate_materialize.go` per the repo rule against a single large CLI file. `TestMaterializeKeepsPreparedRoomAtTwoAuthoritativeFiles` fails if materialization adds a third room file, rewrites the canonical Briefing bytes, or writes `association.json`.
+- DONE: Suites per the entity test plan; environmental failures reproduced on a clean control before attribution
+  Unchanged from the superseded report. `gofmt -w ./cmd ./internal` left no residue; `go test ./...` and `go test ./... -race` both exit 0 across 20 packages; gates, cli, and contractlint re-verified green after the end-to-end exercise. No environmental failure was observed, so no attribution was needed.
+- SKIPPED: Remove the ordered `sequence(1, 7)` semantic-order claim from `internal/contractlint/fo_function_reference_invariant_test.go` (cycle 7 AC-5)
+  Unchanged from the superseded report. Already satisfied at the stack tip by commit `723028f01`; re-adding cycle 7's replacement prose-grep assertion would contradict that retirement, so it was held rather than implemented.
 
 ### Preserved for a possible 0.28 revival
 
