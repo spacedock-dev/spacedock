@@ -192,11 +192,9 @@ After each agent completion, run `«dispatch.next-action»()` (skeleton below).
 
 For `needs-preparation`, load `spacedock:fo-gate-lifecycle`, re-read the entity, latest exact-stage report/checklist, and path-scoped clean commit, then decide semantic completeness. A defect stops once with `report-incomplete: <concrete reason>` and zero prepare, legacy bind, state mutation/commit, presentation, idle, or repeat-next effects. On a semantic pass, supply only question, one committed Markdown Artifact, summary, and References to exactly one existing `gate prepare`; require emitted `room`, `briefing`, `digest`, `state=open`, commit its binding, and re-read the same envelope. Present only one same-slug `awaiting-captain`; any nonzero/mismatched result stops without retry. Existing open, withdrawn, stale, closed, pending, revise, hold, blocked, feedback, consumed, superseded, not-applicable, terminal, archived, malformed, and mismatched states retain their owners and never route through this candidate.
 
-An exact prior-stage replay candidate may exercise s4's existing selection/replay idempotency during that one invocation; FO creates no attempt counter, retry token, cache, or alternate authority.
+An exact prior-stage replay candidate may exercise `gate prepare`'s existing selection/replay idempotency during that one invocation; FO creates no attempt counter, retry token, cache, or alternate authority.
 
-These are FO-internal scheduling reads — consume them as `--json` (compact, byte-stable, every value a string), not the padded human table a token proxy can mangle; `--fields` narrows to the keys needed. Envelopes: `status`/`--where` → `{"command":"status","entities":[…]}`; `--next` → `{"command":"next","dispatchable":[…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim.
-
-The `--next` envelope now also carries canonical `ready_gates`; the scheduler-envelope rule above supersedes the abbreviated shape in this historical sentence.
+These are FO-internal scheduling reads — consume them as `--json` (compact, byte-stable, every value a string), not the padded human table a token proxy can mangle; `--fields` narrows to the keys needed. Envelopes: `status`/`--where` → `{"command":"status","entities":[…],"pagination":{…}}`; `--next` → `{"command":"next","dispatchable":[…],"ready_gates":[…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim.
 
 ## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration
 
