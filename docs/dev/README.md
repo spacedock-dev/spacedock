@@ -289,9 +289,9 @@ Validators should pick the smallest test surface that proves the claim. Use Go u
 
 The session scratchpad is shared across all dispatched workers. Name every throwaway checkout or scratch directory with your entity slug (for example `spike-<slug>`), never a bare shared name — a path collision silently corrupts test evidence (incident recorded 2026-08-15).
 
-Never use `git stash` while peer workers are active: stash refs are repo-global, not worktree-scoped, and concurrent stash/pop swaps payloads between workers (incident recorded 2026-08-15). Use a scratch commit on your own branch, or `git diff > file.patch` plus `git checkout --` — both are worktree-local.
+Never use `git stash` while peer workers are active: stash refs are repo-global, not worktree-scoped, and concurrent stash/pop swaps payloads between workers (incident recorded 2026-08-15). Use a scratch commit on your own branch, or `git diff > file.patch` plus `git checkout --` — both are worktree-local. On any shared path, an unexpected pre-existing directory is a stop signal, never debris to clear: a worker who `rm -rf`'d one destroyed a live peer's checkout (incident recorded 2026-08-15).
 
-After you send a stage completion signal, treat the entity body as frozen while its gate briefing is open: route further findings and corrections to the first officer instead of committing them, because every post-prepare commit invalidates the briefing's frozen digest and forces a withdraw-and-re-prepare cycle (three occurrences recorded 2026-08-15).
+After you send a stage completion signal, treat the entity body as frozen while its gate briefing is open: route further findings and corrections to the first officer instead of committing them, because every post-prepare commit invalidates the briefing's frozen digest and forces a withdraw-and-re-prepare cycle (three occurrences recorded 2026-08-15). The freeze binds worker writes only: the first officer's gate-frontmatter commits are exempt, and a revise decision that re-dispatches the entity lifts the freeze for that rework until its next completion signal.
 
 ## Commit Discipline
 
