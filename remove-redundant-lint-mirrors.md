@@ -1,7 +1,7 @@
 ---
 id: zvk9cnew2ggpaqb3wty24xtf
 title: Remove redundant lint mirrors and the version-gate shell harness
-status: implementation
+status: validation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:48Z
 completed:
