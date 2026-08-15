@@ -1,11 +1,11 @@
 ---
 id: 71btbxdrken4kdmfsk0vptav
 title: Trim stale prose in the dispatch core contract
-status: validation
+status: done
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:45Z
-completed:
-verdict:
+completed: 2026-08-15T19:55:58Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-trim-dispatch-core-stale-prose
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:699
+archived: 2026-08-15T19:55:58Z
 ---
 
 Two prose repairs in skills/first-officer/references/fo-dispatch-core.md.
