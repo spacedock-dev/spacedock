@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:pph11xwsa2s3z73ts983wd0k:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:pph11xwsa2s3z73ts983wd0k-backlog-1
+              briefing:
+                id: briefing:pph11xwsa2s3z73ts983wd0k:backlog:attempt-1:revision-1
+                digest: sha256:f3a9c595b6653640f2bfa8e58198d69c5b65e5a73ddd9456b5d3fef6ccb89f8c
+                request-digest: sha256:55cd1712c5b2a8150909aad6747819de2dcefeb3886ee9b2c7d17c5ddf231828
+                room-ref: ./remove-proof-gap-copied-oracle/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pph11xwsa2s3z73ts983wd0k:backlog:1
+                briefing: briefing:pph11xwsa2s3z73ts983wd0k:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T21:24:34.622076Z"
+                decision: approve
+                reason: 'Captain directive 2026-08-15: dispatch all five onto the stack tip'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ffacf584a added `wantProofGaps`, a hand-written map of proof-gap bindings, DeepEqual-checked against `readRuntimeProofGaps` - an AST reader that derives the same data from the live test sources three lines away. The copy's only failure mode is "you forgot to update the copy": it catches no real defect and reintroduces the two-file lockstep tax for XFAILs on live-proof tests, one abstraction above the wantGaps map the workflow just removed for the same reason.

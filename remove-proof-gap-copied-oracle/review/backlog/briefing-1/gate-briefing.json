@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pph11xwsa2s3z73ts983wd0k:backlog:attempt-1:revision-1",
+  "question": "Approve remove-proof-gap-copied-oracle into ideation (captain pre-directed: dispatch all onto stack tip)?",
+  "artifacts": [
+    {
+      "id": "artifact:pph11xwsa2s3z73ts983wd0k:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/fee3be21b404d5f5854c85cb243fd7a6a8c2f743/remove-proof-gap-copied-oracle.md",
+      "rev": "sha256:3dc1eedbcc8ae1522a1184de8445826519593e73375d1e74566a4def57888d41",
+      "mediaType": "text/markdown",
+      "summary": "Captain 0.27 dispatch order 2026-08-15."
+    }
+  ]
+}
