@@ -42,6 +42,10 @@ gates:
                 digest: sha256:b496766d84d0bb0205e020157e7e84855669c88b3e411fac57b643f7ab638b90
                 request-digest: sha256:371679a1811510ae4dcd770a6ac5696aefe63569641263ed7a19cba5bea2ff50
                 room-ref: ./remove-provider-evidence-fields/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-15T03:38:03.431911Z"
+                reason: 'Entity corrected post-prepare (b4bff335b): collision-contaminated baselines re-measured in isolation; re-preparing against corrected ACs'
 ---
 
 Remove `ProviderEvidence` from the gate model: the struct, the `provider-evidence` field, the `Validate` branches that police it on open and withdrawn attempts, and their tests. Zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field. Re-introduce the fields only together with a real provider integration: writer, retention, and verifier.

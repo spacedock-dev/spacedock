@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7c4w88fnmnbtc0tgkrvx0vxj:ideation:attempt-1:revision-1",
+  "question": "Approve remove-provider-evidence-fields ideation into implementation with the corrected retire-behind-tolerance design?",
+  "artifacts": [
+    {
+      "id": "artifact:7c4w88fnmnbtc0tgkrvx0vxj:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/86e7eebc207c2f82218dbd8241eadc3f2ee4260f/remove-provider-evidence-fields.md",
+      "rev": "sha256:70c1aeaecaed8897835473304765e92331326a63a7b3d493f6e1b18a6e76c865",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: seed premise falsified by spike (6 archived attempts carry the field); corrected design retires the key behind one named read tolerance, reproduces the HEAD baseline byte-for-byte, and removes about 190 lines including 154 of orphaned helpers."
+    }
+  ]
+}
