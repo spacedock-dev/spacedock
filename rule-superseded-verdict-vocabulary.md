@@ -338,3 +338,30 @@ silencing the checker. AC-3 exists to close that hole.
 The main way to get this task wrong is the name collision with
 `application.state: superseded` in `internal/gates`, an unrelated field with its
 own vocabulary; it is called out in Keep boundaries and Out of scope.
+
+## Stage Report: implementation
+
+- DONE: Execute the gated design exactly: superseded stays OUT; --set gains the schema-lookup admission check; archived records untouched
+  `64c037b56`: enum unchanged; `conventionalViolation` (verdict.go) reuses `canonicalConventional`'s schema lookup for admission; guard in `runSet` immediately before the write, `--force` bypasses. No archived record edited — `git status` on the state checkout's `_archive/` is empty.
+- DONE: Value AC both numbers: active-entity supersede warning 1 to 0 AND --archive exit 1 to 0; AC-3 negative control intact (severity-hardening must not silence the check)
+  Both numbers moved, exercised end-to-end with the built binary: unsupported token → warnings 1, archive exit 1; supported path (clear `verdict`, then `--archive`) → warnings 0, archive exit 0.
+- DONE: Base is the stack top ab112b6d3; land as the next available layer per the ratified Stacked mode
+  `64c037b56` is `ab112b6d3` + 1 on `spacedock-ensign/rule-superseded-verdict-vocabulary` — the same one-layer-off-the-tip shape all four peer branches hold. Layer commit left unpushed, matching peers (only `tune-dev-template-for-gated-stages` has a remote, still at `ab112b6d3`); the FO owns merge sequencing.
+
+Tests — `internal/status/verdict_vocabulary_test.go`, 7 tests, grouped by claim:
+
+- **AC-2, the ruling is enforced where verdicts are written.** `TestSetRefusesNonConventionalToken` (3 rows: `superseded`, `banana`, `SUPERSEDED`) asserts exit non-zero AND the entity bytes unchanged; `TestSetForceWritesNonConventionalToken`; `TestSetClearAndCaseFoldStillPass` (5 rows). Fails if the guard is absent, mutates before refusing, loses the `--force` escape, swallows `verdict=`, breaks `passed`→`PASSED`, or reaches a field with no `conventional` list. The byte assertion is what a bare exit-code check would miss.
+- **AC-1, both numbers.** `TestSupersededVerdictBaselineWarnsAndBlocks` pins the wrong-way pair (warning count exactly 1, archive exit exactly 1); `TestSupersedePathIsWarningFree` pins 0 and 0 through the supported path. Fails if either number stops being what it is — which is what keeps 1→0 an end-value rather than a tautology.
+- **AC-3, negative control.** `TestNonConventionalVerdictStillWarns` requires exactly one warning naming `[PASSED REJECTED]`. Setting `verdict.invalid_severity: error` (which makes `isWarnSeverity` false and skips the field entirely) or deleting the `conventional` list drops the count to 0 and fails it — the spike's proven cheat is closed.
+- **AC-4, archived untouched and silent.** `TestArchivedScopeStaysSilent` requires zero warnings from an archived entity carrying the token. State half verified directly: exactly the four named records still carry `verdict: superseded`, no active entity does.
+- **AC-5.** `go test ./...` and `go test ./... -race` both green on the final tree; `gofmt -l` and `go vet` clean.
+
+### Summary
+
+The ruling is OUT, implemented as declared: the enum is unchanged and the only behavior change is that a schema `conventional` list, already consulted on write to fold case, is now also consulted for admission — advisory on read, closed on write, clearing always passes, `--force` bypasses.
+
+Two deviations to weigh at the gate. First, surface overran: **8 files, +365/-12 against the declared 6 files / ~+125/-2 (tolerance ±2 files, ±45 lines)**. Files are at the tolerance edge; lines are ~195 past it. The overrun is concentrated in one place — the new test file is +281 against the ~+90 estimated — because the estimate implied ~13 lines per test while this package's actual per-test density (see `live_guard_test.go`, `verdict_case_test.go`) runs 25-40 lines including the doc comment. Production code landed near estimate (verdict.go +39 vs ~+18, handlers.go +28 vs ~+14, docs on target). I did not cut AC-bearing tests to fit the number; recalibrate the estimate or tell me which claim to drop.
+
+Second, the declared semantic change had two consequences the ideation did not anticipate, both in the existing test corpus and neither altering an assertion: `live_guard_test.go` used `verdict=accepted` at four sites purely as a non-empty token while exercising the live-run guard (retargeted to `verdict=passed`; those tests assert `status: done`, never the verdict value), and `verdict_case_test.go`'s `needs-work` case already carried `--force` so it still passes — its comment gained the closed-on-write half. A corpus sweep found no other non-conventional `verdict=` writer.
+
+One incidental finding worth recording: `--set` refuses archived entities outright (`archived entity is read-only`), so AC-4's "never edited" boundary has a second, independent layer beneath this guard.
