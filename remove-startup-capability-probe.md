@@ -47,6 +47,17 @@ gates:
                 digest: sha256:80aef53eafe46b7a615a57383c007d77f87b28744fd134bfcbd1606436c9a638
                 request-digest: sha256:a3979025d6f14aa622803ea2d436f8f9ef6c30bdba45cc368e33563250118384
                 room-ref: ./remove-startup-capability-probe/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dav9qnjhsbbg7k1a8x1260h6:ideation:2
+                briefing: briefing:dav9qnjhsbbg7k1a8x1260h6:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-15T03:56:16.467825Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-15 (approve all except x8): approved into implementation'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-15T02:55:22Z
 ---
 
