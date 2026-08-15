@@ -3,11 +3,11 @@ id: v7a6xqh2rm3asjvj8qz1y4p0
 title: Retire banned prose-grep contract tests and dedupe surviving pins
 status: implementation
 source: "Captain review of the 0.27 stack + audit-r2 (2026-08-15); captain directive: file, dispatch off stack tip, PR as stack layer"
-started:
+started: 2026-08-15T18:31:08Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-retire-prose-grep-contract-tests
 issue:
 gates:
     version: 1
