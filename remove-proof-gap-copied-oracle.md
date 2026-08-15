@@ -3,11 +3,11 @@ id: pph11xwsa2s3z73ts983wd0k
 title: Remove the copied proof-gap oracle from the reconciliation lint
 status: implementation
 source: "Captain directive 2026-08-15 after ffacf584a reintroduced the pattern zvk9 deleted; zv ensign composition report flagged it"
-started:
+started: 2026-08-15T23:04:25Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-remove-proof-gap-copied-oracle
 issue:
 gates:
     version: 1
