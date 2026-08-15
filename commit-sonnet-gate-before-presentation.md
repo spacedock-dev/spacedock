@@ -1,6 +1,6 @@
 ---
 title: Commit Sonnet gate before presentation
-status: validation
+status: implementation
 score: "0.90"
 source: "n28 exact Claude default-headless finding, 2026-08-10"
 sprint: test-behavior-completeness
@@ -86,11 +86,11 @@ gates:
                 reason: The -001 LOC test-only candidate independently passes the exact bound/unbound ladder, full and race suites, registry and owner checks, detached audit, and current-main merge-tree check; PR live lanes remain a mandatory merge guard.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-10T18:44:40Z
 worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
-mod-block: merge:pr-merge
-pr: "#687"
+mod-block:
+pr:
 ---
 ## Problem
 
@@ -694,3 +694,16 @@ The command log now proves only gate-hold effects, while native lifecycle events
 ### Summary
 
 Validation independently confirms that the candidate removes duplicate command-log authority without weakening native lifecycle or durable gate-hold proof. The exact retained Sonnet ladder, detached adversarial controls, complete non-live suites, and current-main merge tree are clean; PASSED, and love returned to the Captain.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Preserve PR #687's existing KK fix while reconciling its exact remote head into an owned clean worktree without force-push or rebase.
+  The local branch fast-forwarded to exact PR head `84a7414a2`, then merge commit `280fe8438` integrated current `origin/main`; Sonnet remains unbound while main's Codex XFAIL remains unchanged.
+- DONE: Increase the Claude common live-journey lane to bounded concurrency k=3 using existing journey isolation and attribution; scheduling order is not required.
+  Commit `d898843a2` changes the existing Claude `-parallel` bound from 2 to 3 in CI and docs; per-journey setup, metrics, attribution, failure reporting, and all Pi/Codex controls are unchanged.
+- DONE: Run focused, gofmt, full, and race checks; push the amended exact head to PR #687 and report signed LOC/files.
+  The focused k=3 contract failed before the lane edit, then focused, gofmt, full, race, registry, owner, and diff checks passed; PR #687 is exact at `d898843a2205a89da92622f2963b21343383cea1`, with 19 insertions and 20 deletions across 7 files (-001 net).
+
+### Summary
+
+PR #687 now preserves the validated KK evidence correction and runs at most three Claude common journeys concurrently through the existing isolated harness. The amended exact head is pushed without rebase or force-push; ordering was not changed or treated as a blocker, and love is returned to the Captain.
