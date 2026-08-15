@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:6qhgsezz7v4g4h76t0jf98b0:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:6qhgsezz7v4g4h76t0jf98b0-ideation-1
+              briefing:
+                id: briefing:6qhgsezz7v4g4h76t0jf98b0:ideation:attempt-1:revision-1
+                digest: sha256:b1b75c4742f4d15d4dddd66d1ca1c1c970a0d9947cbc477f543a9340638e58bf
+                request-digest: sha256:9f349e885539ce7a8a27ef58a086c51203f911d183dc931dd530aaf49aaed13b
+                room-ref: ./retire-requires-contract-sentinel/review/ideation/briefing-1
 ---
 
 Retire the pre-0.19 `requires-contract` sentinel; its audience is extinct and production code explicitly ignores it. Pure deletion, no behavior change.

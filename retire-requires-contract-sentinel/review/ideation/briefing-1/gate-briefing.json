@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6qhgsezz7v4g4h76t0jf98b0:ideation:attempt-1:revision-1",
+  "question": "Approve retire-requires-contract-sentinel ideation into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:6qhgsezz7v4g4h76t0jf98b0:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d3590a590ab7654d9821b01b7c6a722cbf092049/retire-requires-contract-sentinel.md",
+      "rev": "sha256:f8e39a4e2c8ce32aaecf79cb83a99a3c8f78ce4ba1ce97afa2c974b1bb1d2cda",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: scope widened to 10 files at HEAD; the contract-3 sentinel keep-boundary is pinned; environmental baseline caveat recorded and folded into AC-2b; pure deletion."
+    }
+  ]
+}
