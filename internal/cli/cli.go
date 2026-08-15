@@ -824,7 +824,9 @@ func cwd() string {
 // the abort correct in the old prose's own terms.
 //
 // The value must stay 3 — bumping it would false-green old skills against every
-// future binary. It is pinned by the internal/contractlint sync test.
+// future binary. It is pinned by internal/cli/version_session_test.go, which
+// asserts the literal below the Sandbox line — internal/contractlint carries no
+// reference to it at all.
 //
 // RETIREMENT CONDITION: removable once no plugin or binary predating #468 can
 // still be running. Both reader populations are ours — old spacedock skills and
@@ -856,7 +858,7 @@ func printVersion(w io.Writer, getenv func(string) string, lookPath func(string)
 	fmt.Fprintf(w, "spacedock %s\n", displayVersion())
 	fmt.Fprintf(w, "OS: %s/%s\n", runtime.GOOS, runtime.GOARCH)
 
-	host, markers, identity, ambiguous := runtimehost.Detect(getenv)
+	host, markers, ambiguous := runtimehost.Detect(getenv)
 	if !ambiguous && host == "" {
 		// Outside every runtime — a human at a terminal. Two lines: the version
 		// line plus the OS line, nothing else.
@@ -864,29 +866,15 @@ func printVersion(w io.Writer, getenv func(string) string, lookPath func(string)
 	}
 
 	if ambiguous {
-		fmt.Fprintf(w, "Runtime: ambiguous (%s) — pass --host\n", strings.Join(markers, ", "))
+		fmt.Fprintf(w, "Runtime: ambiguous (%s)\n", strings.Join(markers, ", "))
 	} else {
-		fmt.Fprintf(w, "Runtime: %s\n", runtimeLine(host, markers, identity))
+		fmt.Fprintf(w, "Runtime: %s (%s)\n", host, strings.Join(markers, ", "))
 	}
 
 	insideName, inside := safehouse.Inside(getenv)
 	available, _ := safehouse.Available(lookPath)
 	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.SessionState(insideName, inside, available))
 	fmt.Fprintln(w, frozenContractToken)
-}
-
-// runtimeLine renders the resolved-host Runtime value: the host, the markers that
-// proved it, and this session's own identifier where the host exposes one. A host
-// with no identity variable (pi) and a host whose identity variable is unset take
-// the SAME path — the segment is omitted — so no empty or dangling parenthetical
-// is reachable, and the day pi gains a session variable the change is one table
-// cell in internal/runtimehost.
-func runtimeLine(host string, markers []string, identity string) string {
-	detail := strings.Join(markers, ", ")
-	if short := runtimehost.ShortID(identity); short != "" {
-		detail += ", session " + short
-	}
-	return host + " (" + detail + ")"
 }
 
 // runCompletion emits a static shell-completion script for bash or zsh to

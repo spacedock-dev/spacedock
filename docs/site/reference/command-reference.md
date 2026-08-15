@@ -9,29 +9,31 @@ The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, 
     spacedock 0.26.0
     OS: darwin/arm64
 
-Inside a session it also names the host OS/arch, the runtime it detected, the marker that proved it, which session this is, and whether this process is running inside a sandbox:
+Inside a session it also names the host OS/arch, the runtime it detected, the marker that proved it, and whether this process is running inside a sandbox:
 
     spacedock 0.26.0
     OS: darwin/arm64
-    Runtime: claude (CLAUDECODE, session afd74765)
-    Sandbox: inside (agent-safehouse)
+    Runtime: claude (CLAUDECODE)
+    Sandbox: agent-safehouse
     contract 3
 
-The session identifier is the first eight characters of the host's own session id — the same prefix Claude Code uses to name `~/.claude/teams/session-afd74765` — so you can tell two concurrent sessions apart and match one against its state on disk. Hosts that do not expose a session id, such as pi, omit it:
+A host detected by more than one marker reports all of them:
 
     Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)
 
 When markers for more than one runtime are set — a nested session can leak them — it reports the ambiguity rather than guessing, and still exits 0:
 
-    Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host
+    Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)
+
+Nothing on this surface fails, so it names no remedy. The one command the ambiguity does block is `spacedock dispatch build`, which refuses and prints the remedy with all three valid values.
 
 Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the two lines shown above (the version line plus the `OS:` line).
 
-The `Sandbox:` line answers one question — is this process sandboxed? Inside a sandbox it names it; otherwise it reports whether safehouse is available to sandbox future launches:
+The `Sandbox:` line answers one question — is this process sandboxed? Sandboxed, the value is the sandbox's name and nothing else; otherwise it is `none`, followed by whether safehouse is available to sandbox future launches:
 
-    Sandbox: inside (agent-safehouse)
-    Sandbox: not sandboxed (safehouse available)
-    Sandbox: not sandboxed (safehouse not installed)
+    Sandbox: agent-safehouse
+    Sandbox: none (safehouse available)
+    Sandbox: none (safehouse not installed)
 
 `spacedock status --boot` reports the same three. The pre-launch banner answers the neighbouring but different question — whether the launch it is about to perform will be wrapped — so its `Sandbox:` line reads in terms of that launch.
 

@@ -54,10 +54,10 @@ func TestSessionStateThreeWay(t *testing.T) {
 		available  bool
 		want       string
 	}{
-		{"inside-safehouse-absent-from-PATH", "agent-safehouse", true, false, "inside (agent-safehouse)"},
-		{"inside-safehouse-on-PATH", "agent-safehouse", true, true, "inside (agent-safehouse)"},
-		{"not-sandboxed-available", "", false, true, "not sandboxed (safehouse available)"},
-		{"not-sandboxed-not-installed", "", false, false, "not sandboxed (safehouse not installed)"},
+		{"inside-safehouse-absent-from-PATH", "agent-safehouse", true, false, "agent-safehouse"},
+		{"inside-safehouse-on-PATH", "agent-safehouse", true, true, "agent-safehouse"},
+		{"not-sandboxed-available", "", false, true, "none (safehouse available)"},
+		{"not-sandboxed-not-installed", "", false, false, "none (safehouse not installed)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

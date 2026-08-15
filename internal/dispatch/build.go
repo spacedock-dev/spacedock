@@ -273,7 +273,7 @@ func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (st
 	// dispositions of the same facts: a build must REFUSE against an ambiguous
 	// host, while --version must REPORT the ambiguity and exit 0. So the
 	// detection is shared and the policy stays here.
-	host, markers, _, ambiguous := runtimehost.Detect(getenv)
+	host, markers, ambiguous := runtimehost.Detect(getenv)
 	if ambiguous {
 		return "", fmt.Errorf("ambiguous runtime host sources: multiple runtime markers are set (%s); pass --host claude, codex, or pi", strings.Join(markers, ", "))
 	}

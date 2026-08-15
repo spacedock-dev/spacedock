@@ -1,5 +1,5 @@
-// ABOUTME: --version reports the session it is actually in — the Runtime line
-// ABOUTME: with its session id, the session sandbox state, and no host CLI exec.
+// ABOUTME: --version reports the session it is actually in — the Runtime line,
+// ABOUTME: the session sandbox state, and no host CLI exec.
 package cli
 
 import (
@@ -53,15 +53,18 @@ func TestVersionSessionRender(t *testing.T) {
 	}{
 		{
 			// The live regression case: sandboxed, and safehouse off PATH precisely
-			// BECAUSE the wrap already happened. This rendered
-			// `Sandbox: unavailable (safehouse not on PATH)` before this change.
+			// BECAUSE the wrap already happened. The sandbox line names the sandbox
+			// and nothing else. CLAUDE_CODE_SESSION_ID is SET here and appears
+			// nowhere in the render — the Runtime line is byte-identical to the
+			// `claude-no-session-id-var` case below, which is what the session
+			// segment's removal means.
 			name:     "claude-inside-safehouse",
 			vars:     claudeSession,
 			lookPath: lookMissing,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
-				"Runtime: claude (CLAUDECODE, session afd74765)\n" +
-				"Sandbox: inside (agent-safehouse)\n" +
+				"Runtime: claude (CLAUDECODE)\n" +
+				"Sandbox: agent-safehouse\n" +
 				"contract 3\n",
 		},
 		{
@@ -72,23 +75,22 @@ func TestVersionSessionRender(t *testing.T) {
 				"OS: " + osToken + "\n",
 		},
 		{
-			// A host whose identity variable is unset takes the same path as a host
-			// with no identity variable at all: the segment is omitted. A stray
-			// `, session ` or `()` fails this exact-match.
-			name:     "claude-without-session-id",
+			// The same host with no session variable set at all. Its Runtime line
+			// matches the case above character for character; only the sandbox
+			// differs. A stray `, session ` or `()` fails this exact-match.
+			name:     "claude-no-session-id-var",
 			vars:     map[string]string{"CLAUDECODE": "1"},
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
 				"Runtime: claude (CLAUDECODE)\n" +
-				"Sandbox: not sandboxed (safehouse available)\n" +
+				"Sandbox: none (safehouse available)\n" +
 				"contract 3\n",
 		},
 		{
-			// Pi exposes no per-session identifier at all (PI_CODING_AGENT_SESSION_DIR
-			// is the sessions COLLECTION), and two markers of the same host are not
-			// ambiguity.
-			name: "pi-two-markers-no-identity",
+			// Two markers of the SAME host are not ambiguity: pi resolves, and both
+			// markers are reported in table order.
+			name: "pi-two-markers-same-host",
 			vars: map[string]string{
 				"PI_CODING_AGENT":     "1",
 				"PI_CODING_AGENT_DIR": "/home/u/.pi/agent",
@@ -97,24 +99,27 @@ func TestVersionSessionRender(t *testing.T) {
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
 				"Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)\n" +
-				"Sandbox: not sandboxed (safehouse not installed)\n" +
+				"Sandbox: none (safehouse not installed)\n" +
 				"contract 3\n",
 		},
 		{
-			// codex's detection marker doubles as its identity variable — the only
-			// host where they coincide.
-			name:     "codex-marker-doubles-as-identity",
+			// codex's marker carries a UUID-shaped value. The Runtime line reports
+			// that the marker is SET, never any part of what it holds, so no
+			// fragment of `01937f2a-bbbb-cccc` may appear.
+			name:     "codex-marker-value-never-rendered",
 			vars:     map[string]string{"CODEX_THREAD_ID": "01937f2a-bbbb-cccc"},
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
-				"Runtime: codex (CODEX_THREAD_ID, session 01937f2a)\n" +
-				"Sandbox: not sandboxed (safehouse available)\n" +
+				"Runtime: codex (CODEX_THREAD_ID)\n" +
+				"Sandbox: none (safehouse available)\n" +
 				"contract 3\n",
 		},
 		{
-			// AC-3: ambiguity is REPORTED, not guessed at, and carries no session
-			// identifier — printing one would assert a host had been resolved.
+			// Ambiguity is REPORTED, not guessed at, and carries no remedy: this
+			// surface exits 0 and has no fault to remedy. The one command the
+			// ambiguity blocks, `dispatch build`, prints its own complete remedy
+			// naming all three valid hosts.
 			name: "ambiguous-markers",
 			vars: map[string]string{
 				"CODEX_THREAD_ID":        "01937f2a",
@@ -124,19 +129,32 @@ func TestVersionSessionRender(t *testing.T) {
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
-				"Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host\n" +
-				"Sandbox: not sandboxed (safehouse available)\n" +
+				"Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)\n" +
+				"Sandbox: none (safehouse available)\n" +
 				"contract 3\n",
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := renderSession(tc.vars, tc.lookPath)
+			// AC-2: the trimmed decorations are unreachable in EVERY shape. These
+			// run before the exact match on purpose: re-adding a decoration and
+			// regenerating the `want` literals in step would slip past an
+			// exact-match-only test, and these name what came back instead.
+			for _, banned := range []struct{ token, what string }{
+				{", session ", "a session identifier segment"},
+				{"pass --host", "a --host remedy suffix"},
+				{"inside", "the Sandbox line restating its own label"},
+			} {
+				if strings.Contains(got, banned.token) {
+					t.Fatalf("--version rendered %q — %s, which has no reader:\n%s", banned.token, banned.what, got)
+				}
+			}
 			if got != tc.want {
 				t.Fatalf("--version render mismatch:\n got=%q\nwant=%q", got, tc.want)
 			}
 			// AC-2a: no empty or dangling parenthetical is ever reachable.
-			if strings.Contains(got, "()") || strings.Contains(got, "session )") {
+			if strings.Contains(got, "()") {
 				t.Fatalf("--version rendered an empty parenthetical: %q", got)
 			}
 			// AC-2b: the session sandbox line never mentions a launch fact.
@@ -183,35 +201,46 @@ func TestVersionContractTokenPlacement(t *testing.T) {
 	}
 }
 
-// TestVersionRuntimeLineDistinguishesConcurrentSessions (AC-2) is the point of
-// printing an identifier at all: two concurrent sessions on the same host must
-// render DIFFERENT Runtime lines. An implementation that reused the detection
-// marker's value would render `session 1` for both and turn this red.
-func TestVersionRuntimeLineDistinguishesConcurrentSessions(t *testing.T) {
-	runtimeLineOf := func(sessionID string) string {
-		out := renderSession(map[string]string{
-			"CLAUDECODE":             "1",
-			"CLAUDE_CODE_SESSION_ID": sessionID,
-		}, lookFound)
+// TestVersionSandboxLineNamesTheSandbox (AC-2) is the positive half of the
+// Sandbox rename: the absence loop above says what must not appear, and this
+// says what must. Sandboxed, the value is the sandbox's NAME and nothing else —
+// under a `Sandbox: ` label the name alone already carries both facts. Both
+// unsandboxed arms lead with `none`, so a reader classifies on name-or-`none`
+// rather than on a relationship word.
+//
+// It holds independently of the banned literals: restoring SessionState's old
+// `inside (...)` / `not sandboxed (...)` shape turns this red by name even with
+// every `want` string in TestVersionSessionRender regenerated to match.
+func TestVersionSandboxLineNamesTheSandbox(t *testing.T) {
+	sandboxLineOf := func(out string) string {
 		for _, line := range strings.Split(out, "\n") {
-			if strings.HasPrefix(line, "Runtime: ") {
+			if strings.HasPrefix(line, "Sandbox: ") {
 				return line
 			}
 		}
-		t.Fatalf("no Runtime: line in %q", out)
+		t.Fatalf("no Sandbox: line in %q", out)
 		return ""
 	}
 
-	first := runtimeLineOf("afd74765-9000-4e63-acf4-3b1f4645a8f3")
-	second := runtimeLineOf("afd74799-9000-4e63-acf4-3b1f4645a8f3")
-	if first == second {
-		t.Fatalf("two sessions rendered the same Runtime line %q — the identifier does not distinguish them", first)
+	cases := []struct {
+		name     string
+		vars     map[string]string
+		lookPath func(string) (string, error)
+		want     string
+	}{
+		// Sandboxed with safehouse off PATH — the live configuration, and the one
+		// where the name is the only honest answer.
+		{"sandboxed-renders-the-bare-name", claudeSession, lookMissing, "Sandbox: agent-safehouse"},
+		{"unsandboxed-safehouse-available", map[string]string{"CLAUDECODE": "1"}, lookFound, "Sandbox: none (safehouse available)"},
+		{"unsandboxed-safehouse-not-installed", map[string]string{"CLAUDECODE": "1"}, lookMissing, "Sandbox: none (safehouse not installed)"},
 	}
-	if first != "Runtime: claude (CLAUDECODE, session afd74765)" {
-		t.Fatalf("first Runtime line = %q", first)
-	}
-	if second != "Runtime: claude (CLAUDECODE, session afd74799)" {
-		t.Fatalf("second Runtime line = %q", second)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := sandboxLineOf(renderSession(tc.vars, tc.lookPath))
+			if got != tc.want {
+				t.Fatalf("Sandbox line = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 
@@ -263,7 +292,7 @@ func TestVersionAmbiguousMarkersExitZero(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("--version with ambiguous markers exited %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := "Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE) — pass --host"
+	want := "Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)"
 	if !lineEquals(stdout.String(), want) {
 		t.Fatalf("--version output = %q, want a whole line %q", stdout.String(), want)
 	}
