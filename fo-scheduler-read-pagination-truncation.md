@@ -1,7 +1,7 @@
 ---
 id: pgdyphtaqfx1zn0h7ax31e5h
 title: FO scheduler reads must not silently truncate at the page limit
-status: backlog
+status: ideation
 source: "trim-dispatch-core-stale-prose ideation and validation, 2026-08-15; captain 2026-08-15: necessary before 0.27"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain directive 2026-08-15: dispatch all five onto the stack tip'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The FO event loop's scheduler reads (status --where, status --next) return paginated JSON with a default limit of 25, and the FO contract reads no pagination field. Past 25 mod-blocked or matching entities the loop silently never sees the rest: work is dropped with no signal. Captain: needed before 0.27 stable.
