@@ -17,8 +17,7 @@ func TestStampVersionRewritesPluginVersion(t *testing.T) {
 	src := `{
   "name": "spacedock",
   "version": "0.1.0-dev",
-  "skills": "./skills/",
-  "requires-contract": ">=1,<2"
+  "skills": "./skills/"
 }
 `
 	out, err := StampVersion([]byte(src), "0.19.0")
@@ -35,9 +34,6 @@ func TestStampVersionRewritesPluginVersion(t *testing.T) {
 	// Untouched fields survive.
 	if m["name"] != "spacedock" {
 		t.Errorf("name field lost: %v", m["name"])
-	}
-	if m["requires-contract"] != ">=1,<2" {
-		t.Errorf("requires-contract field lost: %v", m["requires-contract"])
 	}
 	if m["skills"] != "./skills/" {
 		t.Errorf("skills field lost: %v", m["skills"])

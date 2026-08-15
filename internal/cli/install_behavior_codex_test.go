@@ -159,7 +159,7 @@ func resolvedCodexManifestVersion(t *testing.T) string {
 // root and returns the marketplace directory. Codex reads the marketplace
 // manifest from .claude-plugin/marketplace.json (it reuses the claude manifest
 // layout) and the plugin manifest from the plugin's .codex-plugin/plugin.json.
-// The plugin manifest carries a requires-contract bracketing CONTRACT_VERSION.
+// The plugin manifest carries the display version the doctor verdict reads.
 func buildLocalCodexMarketplace(t *testing.T, root string) string {
 	return buildCodexMarketplaceAtVersion(t, root, "0.0.0")
 }
@@ -184,7 +184,7 @@ func buildCodexMarketplaceAtVersion(t *testing.T, root, version string) string {
 }
 `)
 	mustWrite(t, filepath.Join(plugin, ".codex-plugin", "plugin.json"),
-		`{ "name": "spacedock", "version": "`+version+`", "requires-contract": ">=2,<3", "skills": "./skills/" }
+		`{ "name": "spacedock", "version": "`+version+`", "skills": "./skills/" }
 `)
 	mustWrite(t, filepath.Join(plugin, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
 	return marketplace
