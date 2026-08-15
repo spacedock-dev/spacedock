@@ -708,3 +708,18 @@ REJECTED. The reconciliation keeps Pi, filing, registry, metrics, quiet-budget, 
 ### Summary
 
 PR #686 now treats only its three observed Codex semantic gaps as strict owner-bound XFAILs and no longer promises nondeterministic slowest-first scheduling. Codex remains parallel at capacity three with all journey identities, isolated setup paths, metrics, attribution, and filing evidence preserved for immediate PR CI.
+
+## Stage Report: implementation (cycle 11)
+
+- DONE: Fix PR #686 gate-stop XFAIL completion without weakening the invocation invariant or adding another XFAIL.
+  Commit `0fcc26457ec2d05e1cab9e56b73ac9aa20669c1f` makes the bound shared assertion an independent direct call after expectation extraction, so both semantic checks execute and `gradeLive` retains strict `XFAIL [gate-not-held]` behavior.
+- DONE: Add the smallest focused regression for the CI root cause.
+  `TestGateStopRunnerDoesNotShortCircuitBoundAssertion` fails on the former `else if`, requires the direct bound assertion call, and the existing registry reconciliation continues to enforce direct builder/assertion invocation.
+- DONE: Run gofmt, focused tests, full, and race without a model-backed live test.
+  Gofmt, focused gate-grade/registry tests, live-tag compile, isolated-CODEX_HOME `go test ./...`, and isolated-CODEX_HOME `go test ./... -race` passed; serial warm-ups avoided host Git process contention before both exact commands passed.
+- DONE: Report exact SHA and signed implementation surface.
+  SHA: `0fcc26457ec2d05e1cab9e56b73ac9aa20669c1f`. Estimate net LOC change: +017, across 2 files. Exact delta from `9525035c0` is 18 insertions/1 deletion across the same two files.
+
+### Summary
+
+Every gate-stop path now invokes its shared assertion even when prepared-expectation extraction already produced the known Codex semantic error. The strict XFAIL remains owner-bound and the invocation invariant remains intact; the frozen correction is ready for PR #686 CI.
