@@ -1,7 +1,7 @@
 ---
 id: f0zn4sr7nz7xsxmyw6aw6bsm
 title: Scope validate warn channels to active entities
-status: backlog
+status: ideation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Stop emitting warn-tier findings for archived entities in `status --validate`. Today 125 of 126 report lines are archived-scope warnings (121 unknown-gate-application-field, 4 verdict-enum), the report still ends VALID, and archived scope is publish-only, so no tool-mediated fix can ever silence them. The alarm fires identically forever and carries no information. The pre-commit hook echoes the full report on every state commit, so every commit dumps 51KB of noise.
