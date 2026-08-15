@@ -10,6 +10,29 @@ score:
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    records:
+        - id: gate:7c4w88fnmnbtc0tgkrvx0vxj:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:7c4w88fnmnbtc0tgkrvx0vxj-backlog-1
+              briefing:
+                id: briefing:7c4w88fnmnbtc0tgkrvx0vxj:backlog:attempt-1:revision-1
+                digest: sha256:163027efa9408cfc6b01e548d89f063de4a6cbc6257f1022c08a4b536bc2b27f
+                request-digest: sha256:6107a996b958133a0620aa02c9a5ee9071804f657c4ae61347c9c4b190ec1ccd
+                room-ref: ./remove-provider-evidence-fields/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7c4w88fnmnbtc0tgkrvx0vxj:backlog:1
+                briefing: briefing:7c4w88fnmnbtc0tgkrvx0vxj:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:31.794778Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Remove `ProviderEvidence` from the gate model: the struct, the `provider-evidence` field, the `Validate` branches that police it on open and withdrawn attempts, and their tests. Zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field. Re-introduce the fields only together with a real provider integration: writer, retention, and verifier.

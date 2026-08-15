@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7c4w88fnmnbtc0tgkrvx0vxj:backlog:attempt-1:revision-1",
+  "question": "Approve remove-provider-evidence-fields into ideation for the 0.27 pre-ship cut program?",
+  "artifacts": [
+    {
+      "id": "artifact:7c4w88fnmnbtc0tgkrvx0vxj:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a903207812b20ac97a5167845871db63569aa6fd/remove-provider-evidence-fields.md",
+      "rev": "sha256:c9cc3df0b0a26fd74a1c7f0b57f8ffa854e8654b0104856d65c931da32ad8a17",
+      "mediaType": "text/markdown",
+      "summary": "No writer, retained bytes, or verifier; executes the a73 clean-cut remainder."
+    }
+  ]
+}
