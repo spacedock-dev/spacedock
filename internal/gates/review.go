@@ -15,9 +15,6 @@ type Annotation struct {
 	Briefing string   `json:"briefing"`
 	By       string   `json:"by,omitempty"`
 	At       string   `json:"at,omitempty"`
-	Target   string   `json:"target,omitempty"`
-	Kind     string   `json:"kind,omitempty"`
-	Body     string   `json:"body,omitempty"`
 	Includes []string `json:"includes,omitempty"`
 }
 type reviewEntry struct {

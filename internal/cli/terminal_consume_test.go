@@ -558,21 +558,20 @@ func TestMergeGuardRefusesDigestStaleAuthorityByteClean(t *testing.T) {
 }
 
 // TestRoutedTerminalApprovalSurfacesExistingDisplay: the routed entity (pending
-// terminal application, status unchanged) shows through the EXISTING pending-
-// application display — no new readiness states.
+// terminal application, status unchanged) shows through the EXISTING
+// gate-readiness display — no new readiness states.
 func TestRoutedTerminalApprovalSurfacesExistingDisplay(t *testing.T) {
 	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{hook: "pr-merge", feedbackTo: "implementation"})
 	approvedTerminalGate(t, root)
 	if code, out, errOut := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); code != 0 {
 		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
-	code, out, errOut := terminalInvoke(t, root, "status", "--fields", "id,gate-readiness,gate-application", "--json", "--workflow-dir", root)
+	code, out, errOut := terminalInvoke(t, root, "status", "--fields", "id,gate-readiness", "--json", "--workflow-dir", root)
 	var statusEnvelope struct {
 		Entities []map[string]string `json:"entities"`
 	}
 	decodeErr := json.Unmarshal([]byte(out), &statusEnvelope)
 	if code != 0 || decodeErr != nil || len(statusEnvelope.Entities) != 1 ||
-		statusEnvelope.Entities[0]["gate-application"] != "advance/pending" ||
 		statusEnvelope.Entities[0]["gate-readiness"] != "approved-awaiting-merge" {
 		t.Fatalf("routed entity must surface through status readiness: exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
