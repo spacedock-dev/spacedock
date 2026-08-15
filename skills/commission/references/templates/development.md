@@ -172,17 +172,29 @@ pr:
 mod-block:
 ---
 
+Brief description of this task and what it aims to achieve.
+
 ## Problem
 
-{What is broken or missing, and why it matters now.}
+{What is broken or missing, why it matters now, and what a fix must cover. Backlog seeds it; ideation sharpens it.}
 
 ## Proposed approach
 
-{How the implementation will address the problem. Concrete enough that a worker can start.}
+{Ideation: the direction chosen, and the simplest alternative rejected with the reason it cannot deliver the value. Concrete enough that a worker can start.}
+
+## Risk evidence
+
+{Backlog: the check, artifact, or observation that decides whether design should start.}
+{Ideation: the riskiest unverified mechanism and what exercising it showed, or `no spike needed: {the proven mechanisms this relies on}`.}
+
+## Expected surface and tolerance
+
+Estimate: {+NNN} net LOC across {M} files, tolerance {±NN%}.
+Semantics this may change: {command grammar, stored formats, authority, runtime behavior, or `none`}.
 
 ## Acceptance criteria
 
-Each AC names a property of the finished task (not a stage action) and how it is verified.
+Each AC names a property of the finished task (not a stage action) and how it is verified. At least one measures the end-value against a baseline that can move the wrong way.
 
 **AC-1 — {End-state property.}**
 Verified by: {test name / command output or exit code / file the change produces / resulting on-disk state — something outside this task body that a future reader can reproduce and that can fail; name the concrete change that would make it fail.}
@@ -190,6 +202,10 @@ Verified by: {test name / command output or exit code / file the change produces
 ## Test plan
 
 {What tests verify the implementation, estimated cost, whether E2E is needed.}
+
+### Feedback Cycles
+
+{First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
 
 ## Out of scope
 
