@@ -45,6 +45,15 @@ officer. The first officer records that input through the same `gate record --de
 command; Subspace is not a second recorder and does not return Result or inventory
 files for Spacedock to ingest.
 
+Because the room addresses its sources as Git objects rather than copies, a presenter
+that cannot read Git needs those bytes resolved for it. Spacedock does that on demand
+from the room alone, writing the resolved bytes into a private directory the presenter
+owns and deletes after loading them. Nothing about that step records a decision, and
+the room keeps its two files: the review you see is assembled from the same immutable
+objects the gate was bound to, so a source cannot quietly differ from what was
+approved. If any addressed object is missing locally, the step fails rather than
+fetching it or falling back to whatever the working tree happens to hold.
+
 If a prepared room becomes stale before any Captain decision, the first officer runs
 `gate withdraw` with a reason. Withdrawal is not approve, revise, or hold: it preserves
 the old room without a Resolution, provider evidence, application, or stage change.

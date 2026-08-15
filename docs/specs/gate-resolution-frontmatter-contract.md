@@ -152,6 +152,87 @@ handled validation, publish, or bind failure removes the new candidate and any
 newly-created empty parents. Success prints exactly `room`, `briefing`, `digest`, and
 `state=open` lines; the emitted absolute room is the only later handoff coordinate.
 
+## Room-only source materialization
+
+A prepared room addresses its selected sources by immutable `git-root://` coordinate
+rather than by copied bytes, so a provider that cannot read Git objects cannot present
+them. `gate materialize` is the integration-private bridge that resolves those
+coordinates into provider-owned ephemeral payloads. It is a source-resolution
+operation only: it records nothing, ingests no Result or inventory, and creates no
+recording authority.
+
+```text
+spacedock gate materialize --room ROOM
+```
+
+The room is the sole operand. No entity, workflow directory, Briefing, actor,
+approver, destination, provider path, manifest path, or terminal vector is accepted,
+and every one of those coordinates is derived from the room by fixed code. From the
+canonical room, Spacedock derives the entity slug and form, entity path, state root,
+workflow definition root, and current gate and attempt. Both entity forms share the
+room shape `<state-root>/<slug>/review/<stage>/briefing-<attempt>`, so the folder
+candidate `<slug>/index.md` and flat candidate `<slug>.md` are collision-free; zero or
+two candidates fail closed rather than resolving by searching arbitrary parents.
+
+The provider integration allocates and owns `ROOM/provider`. Spacedock requires it to
+be an already-present mode-0700 non-symlink directory and neither creates, removes,
+selects, nor relocates it. Materialization then proceeds in this order:
+
+1. read `request.json`, reject duplicate JSON members, and require a complete
+   presentation request v1 with frozen actor and approver;
+2. resolve the canonical Briefing at the request's exact clean relative locator, with
+   no basename appended or required, so an arbitrary canonical filename resolves
+   without reconstruction;
+3. derive the Briefing id, recompute its full RFC 8785/JCS digest, and require both to
+   equal the frozen request and attempt binding;
+4. compute the separate raw-file SHA-256 only after that canonical authority holds;
+5. resolve every `git-root` Artifact and recursively reached Reference through the
+   local object reader, verifying each raw `rev` without fetching; and
+6. stage every payload mode 0600 inside a private candidate child, write the manifest
+   last, and publish the exact `resolved-sources` child with one rename.
+
+The two Briefing identities occupy separate domains and are never compared with each
+other. `jcsDigest` is the existing canonical recorder authority over the RFC 8785
+serialization; `rawSha256` is a provider-handoff pin over the exact located file bytes.
+Reindenting a semantically identical Briefing preserves `jcsDigest` and moves
+`rawSha256`. The ambiguous `digest` spelling is forbidden rather than retained as an
+alias, and this manifest is closed:
+
+```json
+{
+  "type": "spacedock-resolved-sources",
+  "version": "1",
+  "briefing": {
+    "id": "<canonical Briefing id>",
+    "jcsDigest": "sha256:<64 lowercase hexadecimal characters>",
+    "rawSha256": "sha256:<64 lowercase hexadecimal characters>"
+  },
+  "items": [
+    {
+      "type": "Artifact",
+      "id": "<canonical source id>",
+      "uri": "git-root://<main|state>/<full-commit>/<escaped-path>",
+      "mediaType": "text/markdown",
+      "rev": "sha256:<64 lowercase hexadecimal characters>",
+      "path": "payload/0001"
+    }
+  ]
+}
+```
+
+Items cover every Git-root Artifact and recursively reached Git-root Reference exactly
+once, in canonical presentation order. Room-relative sources keep their existing
+behavior and never appear. Each `path` is clean, manifest-relative, contained, and
+deliberately unrelated to the repository path. Missing, duplicate, reordered,
+unknown-field, and tuple-mismatched items fail closed.
+
+Success prints the derived private launch tuple: `manifest`, `sources`, `briefing`,
+`provider`, `actor`, and `approver`. Any handled failure removes the candidate and
+publishes no manifest, so a reader never observes a manifest that outruns its payloads.
+A failure leaves `ROOM/provider` to its owner rather than pretending it was never
+allocated. The prepared room itself keeps exactly its two authoritative metadata files
+throughout; no selected-source payload enters durable gate state or Git history.
+
 ## Recorder lifecycle
 
 `spacedock gate prepare` is the First Officer's normal lifecycle entry. With no record
@@ -252,6 +333,7 @@ withdrawn attempts can carry neither Resolution, provider evidence, nor applicat
 
 ```text
 spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
+spacedock gate materialize --room ROOM
 spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]
 spacedock gate record ENTITY --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]
@@ -290,3 +372,7 @@ The release tests must fail if any of these outcomes regress:
 5. A canonical write changes bytes outside `gates` or alters opaque application data.
 6. A presentation interface bypasses `gate record --decision` or changes the committed
    gate it presents.
+7. `gate materialize` accepts any coordinate other than `--room`, publishes a manifest
+   whose two Briefing identities are equal or swapped, restores the ambiguous `digest`
+   spelling, allocates or removes the provider root, leaves a payload child after a
+   handled failure, or writes a selected-source copy into the prepared room.
