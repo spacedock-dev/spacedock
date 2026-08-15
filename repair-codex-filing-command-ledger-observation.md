@@ -153,6 +153,17 @@ gates:
                 digest: sha256:dac6d16d375fee72a5723c46fc5581140a95c0f7a5c0a5fd9092a4e36b2b6da3
                 request-digest: sha256:4f2d8dd5880e4331332568c8b1fa437c0b4dc746d6915f3192c4ecfae028961f
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:validation:3
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-15T00:06:49.887335Z"
+                decision: approve
+                reason: 'Independent validation passed on frozen commit f36a707ba: all three checks are DONE, prior AC-1/AC-2 exact filing evidence remains unchanged, AC-3 plus the captain-expanded k=3 runner scope passed focused/adversarial/live-tag/gofmt/full/race checks, and the exact delta is +37 net LOC across 5 files. Approve delivery to PR #686; completion still requires green PR CI.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 mod-block:
