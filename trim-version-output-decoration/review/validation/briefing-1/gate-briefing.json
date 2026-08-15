@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x8g3dnqndfa1m85d8ga2cgem:validation:attempt-1:revision-1",
+  "question": "Approve trim-version-output-decoration validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:x8g3dnqndfa1m85d8ga2cgem:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/374e152ecb709ed9e604e21aa732e6bf3678f917/trim-version-output-decoration.md",
+      "rev": "sha256:aacbd870ffea41c8b3c4fbdc1c62cd00de246e7506b33af881ca1cb67ea759f4",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all six ACs by independent re-exercise - five-shape byte matrix, live drives of the keep-boundary commands, two falsifying mutations; one polish finding and one deferred risk tied to the already-landed zvk9 deletion."
+    }
+  ]
+}

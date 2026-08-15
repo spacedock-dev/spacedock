@@ -76,6 +76,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:x8g3dnqndfa1m85d8ga2cgem:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:x8g3dnqndfa1m85d8ga2cgem-validation-1
+              briefing:
+                id: briefing:x8g3dnqndfa1m85d8ga2cgem:validation:attempt-1:revision-1
+                digest: sha256:e513ed6c0febd4c09bf0527229925399ce44472dd86085bb212385e56da80ddb
+                request-digest: sha256:a1614106f574b7707a8c680e17dfab003dda3b75bd355dc0ce6e65003c63ef10
+                room-ref: ./trim-version-output-decoration/review/validation/briefing-1
 ---
 
 Trim `spacedock --version` output to what has a reader, and give the Sandbox line a value shape that does not repeat its own label.
