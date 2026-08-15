@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: validation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -163,7 +163,7 @@ gates:
                 reason: 'Independent validation passed on frozen commit f36a707ba: all three checks are DONE, prior AC-1/AC-2 exact filing evidence remains unchanged, AC-3 plus the captain-expanded k=3 runner scope passed focused/adversarial/live-tag/gofmt/full/race checks, and the exact delta is +37 net LOC across 5 files. Approve delivery to PR #686; completion still requires green PR CI.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 mod-block:
@@ -645,3 +645,16 @@ Codex common live journeys now use the existing Go parallel-test mechanism with 
 ### Summary
 
 PASSED. The bounded Codex parallel runner is independently verified offline, and AC-1 through AC-3 retain their prior filing evidence with no changed filing-grade bytes. Delivery can proceed to the single PR Codex live proof at capacity three.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Reconcile frozen candidate `f36a707ba` with current `origin/main` without rebasing or force-pushing. Resolve only the two proven overlaps in `docs/runtime-live-ci.md` and `internal/ensigncycle/shared_live_runner_test.go`, preserving PR #685 Pi parallel behavior and the approved Codex k=3 slowest-first, per-journey-isolated behavior. Estimate net LOC change: +015, across 2 files.
+  Merge commit 93d8bfc23 joins f36a707ba and current-main 4d1912a69; only the two assigned conflicts were hand-resolved, and the complete candidate versus current main is exactly 289 insertions/75 deletions (net +214) across eight files.
+- DONE: Add or strengthen focused tests only if needed to prove both runtime paths coexist: Pi remains parallel under its current controls; Codex admits `t.Parallel`, CI pins `-parallel 3`, order/identity/metrics remain stable, and `_setup/<journey-id>` paths cannot collide. Preserve the 6k public filing transaction grade byte-for-byte.
+  Existing focused contracts required all three runtimes through the shared parallel admission, exact Pi/Codex commands, 17-journey order, per-ID setup paths, and the exact PR #679 event plus seven-rung filing matrix; no new test was needed and all passed.
+- DONE: Run gofmt, focused runtime/registry/filing tests, live-tag compile, `go test ./...`, and `go test ./... -race`. Do not run a local model-backed suite. Commit the reconciliation and report exact signed LOC/files against current main; keep bytes frozen for independent validation and PR CI.
+  Gofmt, focused tests, live compile, clean-host full, and clean-host race passed; the first ambient full run exposed only an unrelated malformed `subspace-local` marketplace snapshot, reproduced green with isolated CODEX_HOME, and no model-backed suite ran.
+
+### Summary
+
+Current main and the frozen Codex candidate now coexist without rebase or force: Pi keeps its current parallel/fail-fast controls while Codex keeps capacity three, slowest-first declarations, and isolated setup artifacts. Commit 93d8bfc23 is frozen for independent validation and PR CI; the public filing observer remains unchanged.
