@@ -3,11 +3,11 @@ id: x2ezetxr82pztr4pqt1g4dhx
 title: Rule the superseded verdict into or out of the schema vocabulary
 status: implementation
 source: "scope-validate-warnings ideation, 2026-08-15: 4 archived entities carry verdict superseded, a token the conventional enum [PASSED REJECTED] never admitted"
-started:
+started: 2026-08-15T23:04:19Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-rule-superseded-verdict-vocabulary
 issue:
 gates:
     version: 1
