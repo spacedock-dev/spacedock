@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x2ezetxr82pztr4pqt1g4dhx:ideation:attempt-1:revision-1",
+  "question": "Approve rule-superseded-verdict-vocabulary ideation into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:x2ezetxr82pztr4pqt1g4dhx:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2716a77eec44e232defee749502f162ac35f8489/rule-superseded-verdict-vocabulary.md",
+      "rev": "sha256:662db2e41c1a9468fe3bdb6cd0d1638b86fc293c1900fba60d842cb61047d67d",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: ruling is OUT on necessity (no consumer, writer, or verifier); the one change closes the --set write gap via the existing schema lookup; spike found supersede also breaks --archive (AC-1 measures both) and that severity-hardening silences the check (AC-3 negative control added)."
+    }
+  ]
+}

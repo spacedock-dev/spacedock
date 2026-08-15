@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:x2ezetxr82pztr4pqt1g4dhx:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:x2ezetxr82pztr4pqt1g4dhx-ideation-1
+              briefing:
+                id: briefing:x2ezetxr82pztr4pqt1g4dhx:ideation:attempt-1:revision-1
+                digest: sha256:1cbd2f29086978446c2b292eb966aa96fe310c819eaf0a673d3fff578a16ebd1
+                request-digest: sha256:1205c00481df70ef3f4acf7f2cf898fbbd8defb65d456206248c99413e62c2c1
+                room-ref: ./rule-superseded-verdict-vocabulary/review/ideation/briefing-1
 ---
 
 Writers intentionally emit verdict: superseded for superseded entities, but the schema enum admits only PASSED and REJECTED. Archived-scope warnings are silenced now, so the bite is forward-looking: the next active entity superseded on purpose warns as invalid, and any tool trusting the enum misreads the four archived records. Decide: admit superseded (and define its semantics) or route supersede through a different field and stop the writer.
