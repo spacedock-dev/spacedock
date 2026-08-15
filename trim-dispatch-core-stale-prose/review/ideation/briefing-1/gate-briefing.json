@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:71btbxdrken4kdmfsk0vptav:ideation:attempt-1:revision-1",
+  "question": "Approve trim-dispatch-core-stale-prose ideation into implementation, including the flagged pagination fold-in?",
+  "artifacts": [
+    {
+      "id": "artifact:71btbxdrken4kdmfsk0vptav:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/86e7eebc207c2f82218dbd8241eadc3f2ee4260f/trim-dispatch-core-stale-prose.md",
+      "rev": "sha256:eb308421bae37751edbf12ca16ff463ce1699b6d4da4508e593c344148e63431",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE with the flagged addition: all three edits pre-applied and measured (-110 B, contractlint and prose-routing green); line 197 misstates both envelopes, so the fold-in should carry pagination too."
+    }
+  ]
+}
