@@ -2207,3 +2207,41 @@ exercised production and live paths.
 Every AC now has reproducible ideation evidence outside the claim itself and a
 concrete test or live-event condition that can fail later. The addendum preserves the
 cycle 7 architecture and makes no implementation or workflow-state claim.
+
+## Stage Report: implementation
+
+- FAILED: Execute the approved ideation design exactly against the stack tip; every AC keeps its evidence discipline including AC-1's real Subspace presentation rendering 2/2 canonical Git-root sources
+  The Spacedock half is complete at `579f12a00`; the Subspace half and AC-1's real presentation are not done. Two blockers, both raised to the FO and neither self-resolvable: the ~2,976 LOC Subspace surface is outside this dispatch's declared worktree, and AC-1's `gate record --room` continuation does not exist at the stack tip (see the material finding below).
+- DONE: Declared surface within its gated tolerance; durable gate state stays free of copied selected-source payloads per AC-2
+  Declared 9 Spacedock files / +1,082/-25; actual 9 files / +1,291/-0 (+19% additions, zero deletions because the one deletion surface was already satisfied upstream). One path deviation: the CLI route and its tests are `internal/cli/gate_materialize.go` and `internal/cli/gate_materialize_test.go` rather than inline in `cli.go`/`gate_test.go`, per the repo rule against a single large CLI file. AC-2 is proven by `TestMaterializeKeepsPreparedRoomAtTwoAuthoritativeFiles`, which fails if materialization adds a third room file, rewrites the canonical Briefing bytes, or writes `association.json`.
+- DONE: Suites per the entity test plan; environmental failures reproduced on a clean control before attribution
+  `gofmt -w ./cmd ./internal` left no residue, `go test ./...` and `go test ./... -race` both exit 0 across 20 packages with no data race. No environmental failure was observed, so no attribution was needed.
+- SKIPPED: Remove the ordered `sequence(1, 7)` semantic-order claim from `internal/contractlint/fo_function_reference_invariant_test.go` (cycle 7 AC-5)
+  Already satisfied at the stack tip: commit `723028f01` ("Retire banned prose-grep contract pins") removed it before this dispatch. Re-adding the replacement prose-grep closure assertion cycle 7 asks for would contradict that just-landed retirement, so it is held for a captain ruling rather than implemented.
+
+### Material finding (worker proposal; held for FO/captain authorization)
+
+AC-1 and AC-5 depend on a `gate record --room` recorder continuation and a
+`/subspace:r gate <room>` instruction surface that no longer exist. Ideation was written
+against the corrected-s4 ensign-branch candidate (`e328ecc6`/`66a937de`); what landed on
+main is the provider-neutral cut, which removed both.
+
+1. Released user and normal workflow: a First Officer presenting a gate through Subspace on the 0.27 pre-ship line.
+2. Observable harm: the chain stops at the published manifest. No installed instruction routes an agent to the materializer, and no provider Result can be recorded.
+3. Affected value AC: `value-ac[AC-1]` — the room-only path must present both Git-root sources and continue through `gate record --room`.
+4. Trigger evidence at stack tip `d1d8f745`: `internal/cli/gate_test.go:692` asserts exit 2 with stderr exactly `Error: unknown gate flag: --room`; `docs/specs/gate-resolution-frontmatter-contract.md` lists `gate record --room` under "Explicitly outside v1"; `grep -rn subspace skills/` returns zero matches; commit `cb267d09e` removed `/subspace:r gate` from present-gate.
+
+Proposal — materiality: Material. Ownership: not rq's; the remedy reverses a landed
+captain-visible scope ruling. Disposition: Needs decision. No candidate edit was made to
+`present-gate`, `gate record`, or that test.
+
+### Summary
+
+`gate materialize --room ROOM` is implemented, documented, and green: room-only entry
+with every other coordinate derived by fixed code, arbitrary canonical Briefing locator,
+separate `jcsDigest`/`rawSha256` domains pinned by the exact 1,675-byte s4 control, closed
+manifest published last by rename, mode-0600 payloads, and provider-root ownership left to
+Subspace. Falsifiability was checked by mutation rather than asserted: swapping the two
+digest domains, restoring the ambiguous `digest` spelling, and dropping the mode-0700 check
+each turn the suite red. The value chain cannot close inside this dispatch — the Subspace
+repository half is out of worktree scope and AC-1's recorder continuation was cut from v1.
