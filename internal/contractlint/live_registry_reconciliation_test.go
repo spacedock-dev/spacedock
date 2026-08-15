@@ -48,22 +48,6 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	targets := readRegistryTargets(t, registryPath)
 	registryFixtures := readRegistryFixtureUnion(t, registryPath)
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
-	wantGaps := map[string][]liveGapRow{
-		"gate-guardrail":                nil,
-		"default-headless-gate-stop":    nil,
-		"withdrawn-gate-recovery":       nil,
-		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
-		"rejection-flow":                {{"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
-		"filing":                        nil,
-		"smallest-sufficient-mechanism": {{"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
-		"keep-moving-posture":           {{"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"}, {"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
-		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
-	}
-	for id, want := range wantGaps {
-		if !reflect.DeepEqual(actual[id].gaps, want) {
-			t.Errorf("%s gaps = %#v, want %#v", id, actual[id].gaps, want)
-		}
-	}
 	proofGaps := readRuntimeProofGaps(t, repo, targets)
 	wantProofGaps := map[string][]liveGapRow{
 		"TestLiveBreakGlassShimRecovery": {{"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"}},

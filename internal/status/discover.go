@@ -214,18 +214,6 @@ func scanEntitiesActive(directory string, stderr io.Writer) []*entity {
 // fields (the oracle's entity['slug'] = slug) so formatters/filters can read it.
 func newEntity(fields map[string]string, slug, path, scope string) *entity {
 	doc, _, gateErr := gates.Read(path)
-	if gateErr == nil {
-		summary := gates.CurrentSummary(doc, fields["status"])
-		fields["gate"] = summary.Gate
-		fields["gate-attempt"] = summary.Attempt
-		fields["gate-state"] = summary.State
-		fields["gate-briefing"] = summary.Briefing
-		fields["gate-resolution"] = summary.Resolution
-		fields["gate-decision"] = summary.Decision
-		fields["gate-application"] = summary.Application
-		fields["gate-application-state"] = summary.ApplicationState
-		fields["gate-target-stage"] = summary.TargetStage
-	}
 	fields["slug"] = slug
 	for _, k := range defaultEntityKeys {
 		if _, ok := fields[k]; !ok {

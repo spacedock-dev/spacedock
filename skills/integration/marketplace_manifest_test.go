@@ -35,9 +35,8 @@ func TestMainCarriesMarketplaceBridgeManifest(t *testing.T) {
 // check: .codex-plugin/plugin.json's `version` field parses as a well-formed
 // major.minor semver (so `spacedock doctor --host codex` resolves a compatible
 // manifest under minor-version coupling), names the plugin `spacedock`, and
-// points skills at ./skills/. The D4 cross-era tombstone and its binding to the
-// FO shared-core's stamped minor are pinned by the internal/contractlint sync
-// test.
+// points skills at ./skills/. That version's binding to the FO shared-core's
+// stamped minor is pinned by the internal/contractlint sync test.
 func TestCodexManifestVersionParses(t *testing.T) {
 	path := filepath.Join(repoRoot(t), ".codex-plugin", "plugin.json")
 	data, err := os.ReadFile(path)

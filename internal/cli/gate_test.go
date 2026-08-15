@@ -71,7 +71,7 @@ func TestGateWithdrawCLIUsesExactGrammarAndImplicitFirstOfficerAttribution(t *te
 	if parsed, err := time.Parse(time.RFC3339Nano, attempt.Withdrawal.At); err != nil || parsed.Location() != time.UTC {
 		t.Fatalf("withdrawal timestamp = %q (%v)", attempt.Withdrawal.At, err)
 	}
-	if attempt.Resolution != nil || attempt.ProviderEvidence != nil || attempt.Application != nil {
+	if attempt.Resolution != nil || attempt.Application != nil {
 		t.Fatalf("withdrawal fabricated closure: %#v", attempt)
 	}
 }
@@ -109,7 +109,6 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 		"       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n" +
 		"       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n" +
 		"       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n" +
-		"       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n" +
 		"       spacedock gate consume <entity> [--workflow-dir DIR]\n\n" +
 		"On an approval whose target stage is terminal, consume spends nothing: it leaves the\n" +
 		"application pending and reports route=approved-awaiting-merge. The terminal merge\n" +
@@ -224,10 +223,6 @@ func TestGateRoundRecordAndValidateCLI(t *testing.T) {
 	if code := invoke(args...); code != 0 || !strings.Contains(out.String(), "round=round:task:implementation:1") || strings.Contains(out.String(), "triage=") {
 		t.Fatalf("round record exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
-	if code := invoke("gate", "validate", "task", "--workflow-dir", root, "--round", "implementation/1"); code != 0 ||
-		strings.Count(out.String(), "advisory=true") != 2 || !strings.Contains(out.String(), "annotation:job-592") {
-		t.Fatalf("round validate exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
-	}
 }
 
 func TestGateRoundRejectsRemovedFeedbackCycleWithoutMutation(t *testing.T) {
@@ -314,7 +309,7 @@ func TestGateRoundRejectsConsumeFlagWithoutMutation(t *testing.T) {
 }
 
 func TestRemovedGateVerbsAreAbsentAndSideEffectFree(t *testing.T) {
-	for _, verb := range []string{"review", "eligibility"} {
+	for _, verb := range []string{"review", "eligibility", "validate"} {
 		t.Run(verb, func(t *testing.T) {
 			root := t.TempDir()
 			before, err := os.ReadDir(root)
@@ -324,7 +319,7 @@ func TestRemovedGateVerbsAreAbsentAndSideEffectFree(t *testing.T) {
 
 			var out, errOut bytes.Buffer
 			code := run(context.Background(), []string{"gate", verb, "task"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
-			if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|validate|consume)") {
+			if code != 2 || !strings.Contains(errOut.String(), "unknown subcommand (want: prepare|withdraw|record|consume)") {
 				t.Fatalf("gate %s exit=%d stdout=%q stderr=%q", verb, code, out.String(), errOut.String())
 			}
 			after, err := os.ReadDir(root)
@@ -427,9 +422,6 @@ func TestGateRequestLocatorCarriesArbitraryBriefingNameThroughRecordValidateAndE
 	if code := invoke("gate", "record", "task", "--workflow-dir", root, "--decision", "approve", "--actor", "person:captain"); code != 0 {
 		t.Fatalf("record arbitrary locator chat decision exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
-	if code := invoke("gate", "validate", "task", "--workflow-dir", root); code != 0 || !strings.Contains(out.String(), "state=closed") {
-		t.Fatalf("validate arbitrary locator exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
-	}
 	if code := invoke("gate", "consume", "task", "--workflow-dir", root); code != 0 ||
 		!strings.Contains(out.String(), "consumed=false") || !strings.Contains(out.String(), "target-stage=done") ||
 		!strings.Contains(out.String(), "route=approved-awaiting-merge") {
@@ -485,11 +477,6 @@ func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
 
 	t.Run("prepared gate-briefing reaches consume", func(t *testing.T) {
 		fixture := prepareClosed(t)
-		if code, out, errOut := invoke(t, fixture.workflow,
-			"gate", "validate", "task", "--workflow-dir", fixture.workflow,
-		); code != 0 || !strings.Contains(out, "state=closed") {
-			t.Fatalf("validate prepared gate exit=%d stdout=%q stderr=%q", code, out, errOut)
-		}
 		if code, out, errOut := invoke(t, fixture.workflow,
 			"gate", "consume", "task", "--workflow-dir", fixture.workflow,
 		); code != 0 || !strings.Contains(out, "consumed=false") || !strings.Contains(out, "target-stage=done") ||

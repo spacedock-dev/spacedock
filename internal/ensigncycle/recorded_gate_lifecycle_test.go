@@ -387,10 +387,10 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 	}
 	stale, current := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
 	if stale.Withdrawal == nil || stale.Withdrawal.By != "agent:first-officer" ||
-		stale.Resolution != nil || stale.ProviderEvidence != nil || stale.Application != nil {
+		stale.Resolution != nil || stale.Application != nil {
 		t.Fatalf("withdrawn authority was not retained cleanly: %#v", stale)
 	}
-	if current.Withdrawal != nil || current.Resolution == nil || current.ProviderEvidence != nil ||
+	if current.Withdrawal != nil || current.Resolution == nil ||
 		current.Application == nil || current.Application.State != "consumed" {
 		t.Fatalf("replacement did not exclusively own consumed authority: %#v", current)
 	}
@@ -408,7 +408,7 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 	entityBeforeRefusal := readFile(t, fixture.entity)
 	firstRequestPath := filepath.Join(firstRoom, "request.json")
 	writeFile(t, firstRequestPath, strings.Replace(firstRequest, `"actor": "person:captain"`, `"actor": "agent:other"`, 1))
-	refused := runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
+	refused := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 	if refused.exit == 0 || !strings.Contains(refused.stderr, "frozen digest") {
 		t.Fatalf("withdrawn retained-authority drift validated: exit=%d stderr=%q", refused.exit, refused.stderr)
 	}
@@ -560,16 +560,6 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 			}
 		})
 	}
-	t.Run("validate-read", func(t *testing.T) {
-		fixture := writeRecordedGateFixture(t)
-		bindRecordedGate(t, binary, fixture)
-		closeRecordedGate(t, binary, fixture, "approve")
-		before := treeDigest(t, fixture.stateRoot)
-		mustRecordedGate(t, binary, fixture.root, "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
-		if after := treeDigest(t, fixture.stateRoot); after != before {
-			t.Fatal("validate read changed workflow bytes")
-		}
-	})
 	t.Run("forced-close-validation-mismatch", func(t *testing.T) {
 		fixture := writeRecordedGateFixture(t)
 		bindRecordedGate(t, binary, fixture)
@@ -577,7 +567,7 @@ func TestRecordedGateLifecycleAC5RefusalMatrix(t *testing.T) {
 		body := readFile(t, fixture.entity)
 		writeFile(t, fixture.entity, strings.Replace(body, "decision: approve", "decision: hold", 1))
 		before := treeDigest(t, fixture.stateRoot)
-		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "validate", "recorded-gate-task", "--workflow-dir", fixture.root)
+		result := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 		assertRecordedGateByteCleanFailure(t, fixture, result, "application")
 		if after := treeDigest(t, fixture.stateRoot); after != before {
 			t.Fatal("close-validation mismatch changed workflow bytes")

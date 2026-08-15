@@ -87,9 +87,13 @@ The binary-owned model is closed for canonical validation and writes. In particu
 the pilot-only attempt selector, `current-attempt`, `sequence`, `previous-attempt`,
 and explicit attempt `state` encodings are rejected. A read tolerates unknown keys
 only under each `records[*].attempts[*].application` mapping, reports them as warnings
-on explicit `status --validate` or `gate validate`, ignores them for authority, and
-never writes them. All other unknown or malformed fields fail closed. There is no
-migration or compatibility rewrite. The `application` field is an approval-only
+on explicit `status --validate`, ignores them for authority, and
+never writes them. A read also drops the retired
+`records[*].attempts[*].provider-evidence` key silently: its writer was cut with
+provider-backed closure, frozen archived records still carry it, and it is retired
+rather than unknown, so it raises no warning and never reaches the model. All other
+unknown or malformed fields fail closed. There is no migration or compatibility
+rewrite. The `application` field is an approval-only
 authority token whose canonical fields are exactly `target-stage` and `state`, where
 state is `pending`, `consumed`, or `superseded`. Revise and hold carry no application.
 
@@ -190,8 +194,8 @@ recorder and remain the responsibility of the active workflow and First Officer.
 `review/<stage>/round-<cycle>`, then atomically writes the exact `review-round` pointer.
 The producer does not parse or write a `### Feedback Cycles` section. A workflow may
 append its authorized Cycle line before invoking the producer; the recorder preserves
-that body byte-for-byte. `spacedock gate validate <entity> --round STAGE/CYCLE`
-replays the pointer and reports every Resolution as advisory structural evidence.
+that body byte-for-byte. The published round is the durable evidence; `gate record
+--round` reports every Resolution as advisory structural evidence on publication.
 
 Round recording requires a folder-form entity at `<slug>/index.md`, so its accumulating
 `review/` artifacts are scoped beside that entity. Flat entities refuse before locking
@@ -251,13 +255,12 @@ spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEX
 spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]
 spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]
 spacedock gate record ENTITY --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]
-spacedock gate validate ENTITY [--workflow-dir DIR]
 spacedock gate consume ENTITY [--workflow-dir DIR]
 ```
 
 The decision and actor are required. Supported chat actor IDs are `person:captain` and `agent:first-officer`. The binary derives operation, ids, stage target,
 and compare-and-swap state; callers cannot submit an operation envelope or candidate
-identities. `gate validate` is read-only and reports the selected record's last attempt.
+identities.
 
 New delegated chat resolutions use `by: agent:first-officer`, require a nonblank
 evidence reason, and reject `adoption-note` as an unknown prototype field. The recorder

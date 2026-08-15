@@ -55,14 +55,6 @@ type briefingManifest struct {
 	Context   []json.RawMessage  `json:"context"`
 }
 
-type providerResult struct {
-	Type        string       `json:"type"`
-	Briefing    string       `json:"briefing"`
-	Artifact    artifactRef  `json:"artifact"`
-	Resolution  Resolution   `json:"resolution"`
-	Annotations []Annotation `json:"annotations"`
-}
-
 type gateRoomRequest struct {
 	Type     string `json:"type"`
 	Version  string `json:"version"`
@@ -77,10 +69,6 @@ type gateRoomRequest struct {
 	Approver string `json:"approver"`
 }
 
-type presentedInventory struct {
-	Items []presentedItem `json:"items"`
-}
-
 type presentedItem struct {
 	Type string `json:"type"`
 	artifactRef
@@ -92,41 +80,6 @@ func decodeGateRoomRequest(data []byte) (*gateRoomRequest, error) {
 		return nil, err
 	}
 	return &request, nil
-}
-
-func decodeProviderResult(data []byte) (*providerResult, error) {
-	var result providerResult
-	if err := decodeAuthorityJSON(data, "parse Result", &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-func decodePresentedInventory(data []byte) (*presentedInventory, error) {
-	var inventory presentedInventory
-	if err := decodeAuthorityJSON(data, "parse presented inventory", &inventory); err != nil {
-		return nil, err
-	}
-	return &inventory, nil
-}
-
-type resultAssociation struct {
-	Type    string `json:"type"`
-	Version string `json:"version"`
-	Result  struct {
-		Digest   string `json:"digest"`
-		Briefing string `json:"briefing"`
-	} `json:"result"`
-	Actor     string `json:"actor"`
-	Canonical struct {
-		Briefing  string        `json:"briefing"`
-		Revision  string        `json:"revision"`
-		Artifacts []artifactRef `json:"artifacts"`
-	} `json:"canonical"`
-	Presentation []struct {
-		Provider  artifactRef `json:"provider"`
-		Canonical artifactRef `json:"canonical"`
-	} `json:"presentation"`
 }
 
 // RecordSemantic accepts exactly one decision source while the entity lock is
@@ -500,113 +453,6 @@ func applicationStages(readme string) ([]applicationStage, error) {
 		return nil, fmt.Errorf("workflow has no application stages")
 	}
 	return result, nil
-}
-
-func verifyAssociation(resultBytes []byte, result *providerResult, association *resultAssociation, actor string, binding Briefing, inventory []presentedItem) error {
-	if result.Type != "review-v1-result" || result.Briefing == "" || result.Artifact.ID == "" || !digestRE.MatchString(result.Artifact.Rev) {
-		return fmt.Errorf("gate room Result is not a complete review-v1-result")
-	}
-	if association.Type != "spacedock-result-association" || association.Version != "1" {
-		return fmt.Errorf("derived presentation association is not spacedock-result-association v1")
-	}
-	if association.Result.Digest != RawDigest(resultBytes) || association.Result.Briefing != result.Briefing {
-		return fmt.Errorf("association does not bind the exact Result bytes and provider Briefing")
-	}
-	if association.Actor != actor || result.Resolution.By != actor {
-		return fmt.Errorf("Result actor is not authorized by the retained association")
-	}
-	if err := verifyProviderResolution(result); err != nil {
-		return err
-	}
-	if association.Canonical.Briefing != binding.ID || association.Canonical.Revision != binding.Digest {
-		return fmt.Errorf("association does not bind the current canonical Briefing revision")
-	}
-	if len(inventory) == 0 || len(association.Canonical.Artifacts) != len(inventory) || len(association.Presentation) != len(inventory) {
-		return fmt.Errorf("association does not cover the complete presentation mapping")
-	}
-	canonical := make(map[string]presentedItem, len(inventory))
-	for i, artifact := range inventory {
-		declared := association.Canonical.Artifacts[i]
-		if artifact.ID == "" || !digestRE.MatchString(artifact.Rev) || canonical[artifact.ID].ID != "" || declared.ID != artifact.ID || declared.Rev != artifact.Rev {
-			return fmt.Errorf("association canonical artifacts do not match the bound Briefing inventory")
-		}
-		canonical[artifact.ID] = artifact
-	}
-	seenCanonical := map[string]bool{}
-	seenProvider := map[string]bool{}
-	resultArtifactPresent := false
-	for _, mapping := range association.Presentation {
-		canonicalItem := canonical[mapping.Canonical.ID]
-		if mapping.Provider.ID == "" || !digestRE.MatchString(mapping.Provider.Rev) || canonicalItem.Rev != mapping.Canonical.Rev || seenCanonical[mapping.Canonical.ID] || seenProvider[mapping.Provider.ID] {
-			return fmt.Errorf("association does not cover the complete presentation mapping")
-		}
-		seenCanonical[mapping.Canonical.ID] = true
-		seenProvider[mapping.Provider.ID] = true
-		if canonicalItem.Type == "Artifact" && mapping.Provider.ID == result.Artifact.ID && mapping.Provider.Rev == result.Artifact.Rev {
-			resultArtifactPresent = true
-		}
-	}
-	if len(seenCanonical) != len(canonical) || !resultArtifactPresent {
-		return fmt.Errorf("association does not cover the exact Result artifact and complete presentation mapping")
-	}
-	return nil
-}
-
-func deriveAssociation(resultBytes []byte, result *providerResult, presented *presentedInventory, actor string, binding Briefing, inventory []presentedItem) (*resultAssociation, error) {
-	if len(inventory) == 0 || len(presented.Items) != len(inventory) {
-		return nil, fmt.Errorf("presented inventory does not cover the complete presentation mapping")
-	}
-	canonical := make(map[string]presentedItem, len(inventory))
-	for _, item := range inventory {
-		if item.ID == "" || !digestRE.MatchString(item.Rev) || canonical[item.ID].ID != "" {
-			return nil, fmt.Errorf("canonical Briefing has incomplete or duplicate presentation identity")
-		}
-		canonical[item.ID] = item
-	}
-	association := &resultAssociation{Type: "spacedock-result-association", Version: "1", Actor: actor}
-	association.Result.Digest = RawDigest(resultBytes)
-	association.Result.Briefing = result.Briefing
-	association.Canonical.Briefing = binding.ID
-	association.Canonical.Revision = binding.Digest
-	for _, item := range inventory {
-		association.Canonical.Artifacts = append(association.Canonical.Artifacts, item.artifactRef)
-	}
-	seen := make(map[string]bool, len(presented.Items))
-	for _, item := range presented.Items {
-		expected := canonical[item.ID]
-		if (item.Type != "Artifact" && item.Type != "Reference") || expected.ID == "" ||
-			item.Type != expected.Type || item.Rev != expected.Rev || seen[item.ID] {
-			return nil, fmt.Errorf("presented inventory does not cover the complete presentation mapping")
-		}
-		seen[item.ID] = true
-		association.Presentation = append(association.Presentation, struct {
-			Provider  artifactRef `json:"provider"`
-			Canonical artifactRef `json:"canonical"`
-		}{
-			Provider:  item.artifactRef,
-			Canonical: expected.artifactRef,
-		})
-	}
-	return association, nil
-}
-
-func verifyProviderResolution(result *providerResult) error {
-	if result.Resolution.Briefing != result.Briefing {
-		return fmt.Errorf("provider Resolution does not bind its provider Briefing")
-	}
-	annotations := map[string]string{}
-	for _, annotation := range result.Annotations {
-		if annotation.Type != "Annotation" || annotation.ID == "" || annotations[annotation.ID] != "" {
-			return fmt.Errorf("provider annotations have missing or duplicate identity")
-		}
-		annotations[annotation.ID] = annotation.Briefing
-	}
-	for _, included := range result.Resolution.Includes {
-		if annotations[included] != result.Briefing {
-			return fmt.Errorf("Resolution includes must name a provider Annotation from the same Briefing")
-		}
-	}
-	return validateResolution(&result.Resolution, result.Briefing)
 }
 
 func chatResolutionID(gateID, attemptID string) string {

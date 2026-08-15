@@ -45,19 +45,25 @@ func Inside(getenv func(string) string) (name string, ok bool) {
 // nothing more, because "not wrapped" would be constant across every such case
 // and so would carry no information while reading as though it did.
 //
-//   - inside — this process is running inside the named sandbox. This dominates:
+// The value never restates its own label. Under a `Sandbox: ` prefix, the
+// sandbox's NAME alone is the whole answer — it both says that this process is
+// sandboxed and says which sandbox — and `none` is its counterpart, so a reader
+// classifies on a name-or-`none` distinction rather than on a relationship word
+// like "inside" or "not sandboxed" that the label already implies.
+//
+//   - <name> — this process is running inside the named sandbox. This dominates:
 //     whether safehouse could wrap a future launch says nothing about a session
 //     that is already sandboxed.
-//   - not sandboxed (safehouse available) — the binary resolves on PATH.
-//   - not sandboxed (safehouse not installed) — it does not.
+//   - none (safehouse available) — the binary resolves on PATH.
+//   - none (safehouse not installed) — it does not.
 func SessionState(insideName string, inside, available bool) string {
 	if inside {
-		return "inside (" + insideName + ")"
+		return insideName
 	}
 	if available {
-		return "not sandboxed (safehouse available)"
+		return "none (safehouse available)"
 	}
-	return "not sandboxed (safehouse not installed)"
+	return "none (safehouse not installed)"
 }
 
 // LaunchState renders the answer to "will this launch be wrapped?" — the

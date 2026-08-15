@@ -90,10 +90,10 @@ func TestBootSandboxSection(t *testing.T) {
 		available bool
 		want      string
 	}{
-		{"inside-safehouse-absent-from-PATH", true, false, "SANDBOX: inside (agent-safehouse)"},
-		{"inside-safehouse-on-PATH", true, true, "SANDBOX: inside (agent-safehouse)"},
-		{"not-sandboxed-available", false, true, "SANDBOX: not sandboxed (safehouse available)"},
-		{"not-sandboxed-not-installed", false, false, "SANDBOX: not sandboxed (safehouse not installed)"},
+		{"inside-safehouse-absent-from-PATH", true, false, "SANDBOX: agent-safehouse"},
+		{"inside-safehouse-on-PATH", true, true, "SANDBOX: agent-safehouse"},
+		{"not-sandboxed-available", false, true, "SANDBOX: none (safehouse available)"},
+		{"not-sandboxed-not-installed", false, false, "SANDBOX: none (safehouse not installed)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -126,8 +126,8 @@ func TestBootSandboxJSONField(t *testing.T) {
 		available bool
 		want      string
 	}{
-		{"inside-safehouse-absent-from-PATH", true, false, "inside (agent-safehouse)"},
-		{"not-sandboxed-not-installed", false, false, "not sandboxed (safehouse not installed)"},
+		{"inside-safehouse-absent-from-PATH", true, false, "agent-safehouse"},
+		{"not-sandboxed-not-installed", false, false, "none (safehouse not installed)"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
