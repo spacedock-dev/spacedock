@@ -59,6 +59,12 @@ gates:
                 at: "2026-08-15T04:07:34.176429Z"
                 decision: revise
                 reason: 'Captain revise 2026-08-15: keep the OS line (bug-report value is real); Sandbox line must not need the word inside while keeping the install-gate corroboration parse working; investigate retiring the contract-3 sentinel per its documented retirement condition with minor version as the sole requirement; the session-segment and pass-host cuts stand'
+            - id: gate-attempt:x8g3dnqndfa1m85d8ga2cgem-ideation-3
+              briefing:
+                id: briefing:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-3:revision-1
+                digest: sha256:f7c9d39c51706d10aa484f1fa6b57ff5ba814fb18ced8c071da3c23b7cae318e
+                request-digest: sha256:429d6cbeeb7b8dc2a24eea349e4fce01c465fdc5f4a41bdde27b4c2c0ff77712
+                room-ref: ./trim-version-output-decoration/review/ideation/briefing-3
 ---
 
 Trim `spacedock --version` output to what has a reader, and give the Sandbox line a value shape that does not repeat its own label.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-3:revision-1",
+  "question": "Approve trim-version-output-decoration ideation (cycle 2) into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/ffa405268084268001a32d938a762ff99005d7eb/trim-version-output-decoration.md",
+      "rev": "sha256:f48278ad6959bd21ebf3b3a89f6f12a22956355049edd80753eda87d864f0e38",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: all three captain directives delivered - OS line kept, Sandbox value loses inside with the real consumer verified needing no edit, contract-3 retirement blocked by a demonstrable pre-#468 cache population and recorded for the 0.28 re-query; coordination repaired to touch zero zvk9 files; net -100 across 9 files."
+    }
+  ]
+}
