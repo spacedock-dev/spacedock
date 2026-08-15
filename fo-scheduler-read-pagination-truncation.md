@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:pgdyphtaqfx1zn0h7ax31e5h:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:pgdyphtaqfx1zn0h7ax31e5h-ideation-1
+              briefing:
+                id: briefing:pgdyphtaqfx1zn0h7ax31e5h:ideation:attempt-1:revision-1
+                digest: sha256:8d0dff62a156a12a2c0242eb142ee068ce109e8fd6e8f757d47f6f1ee7f944f8
+                request-digest: sha256:5fbd9ac55b422949c6147de131eb4f0989c5a91e438035b95e680c10b3a5e5fb
+                room-ref: ./fo-scheduler-read-pagination-truncation/review/ideation/briefing-1
 ---
 
 The FO event loop's `status --where` scheduler read returns paginated JSON with a default limit of 25, and the FO contract reads no pagination field. Past 25 matching entities the loop silently never sees the rest: work is dropped with no signal. Captain: needed before 0.27 stable.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pgdyphtaqfx1zn0h7ax31e5h:ideation:attempt-1:revision-1",
+  "question": "Approve fo-scheduler-read-pagination-truncation ideation into implementation as a stack layer?",
+  "artifacts": [
+    {
+      "id": "artifact:pgdyphtaqfx1zn0h7ax31e5h:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6f04c16bc036a5796ebfeeff4da2250cf7e4208b/fo-scheduler-read-pagination-truncation.md",
+      "rev": "sha256:abfe724459a9b5e837c6f35f02aaab2f1e7866e2357eb41d194fcf85b6776259",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: seed corrected by exercise (only --where and bare status truncate; --next is already complete); FO-internal JSON reads become uncapped while text-mode and explicit paging are preserved; blast radius spiked at exactly 5 failures returning green under the retargets; live workflow today returns 25 of 172 rows."
+    }
+  ]
+}
