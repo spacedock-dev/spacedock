@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:v7a6xqh2rm3asjvj8qz1y4p0:validation:attempt-1:revision-1",
+  "question": "Approve retire-prose-grep-contract-tests validation as PASSED, stacking it as layer 10 for PR review?",
+  "artifacts": [
+    {
+      "id": "artifact:v7a6xqh2rm3asjvj8qz1y4p0:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/07cc8e98f268ae4635d29b0ececdcf0ad87380d2/retire-prose-grep-contract-tests.md",
+      "rev": "sha256:70c658b178e168fda414a7544e82d2b4d1b96a4134e0a485cd7c2f9de571d9d8",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all ACs with independently authored probes both directions; deletion inventory exact; two declared deferred risks, both captain-ruled."
+    }
+  ]
+}
