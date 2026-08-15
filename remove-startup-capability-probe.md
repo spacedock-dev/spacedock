@@ -174,20 +174,35 @@ prose, a shell fixture, Go tests, and a docs page, all already exercised by the
 existing suite. There is no parser round-trip, runtime handoff, on-disk format,
 or unproven flag in the change.
 
-The one non-obvious risk was not the mechanism but the *blast radius* — whether
-deleting the two shared-core bullets would strand a prose lint, since
-`internal/contractlint` pins shared-core tokens and cross-checks install.md. That
-was resolved by exercise rather than by reading: in a throwaway worktree at HEAD
-4d1912a69 the deletion was applied and the lints run.
+The one non-obvious risk was not the mechanism but the *blast radius*: the two
+shared-core bullets sit in a file that seven Go packages read, and
+`internal/contractlint` both pins shared-core tokens and cross-checks install.md.
+Deleting a bullet that a lint pins would strand the build. That was resolved by
+exercise, not by reading — in a throwaway worktree at HEAD 4d1912a69 the deletion
+was applied and the tests run.
 
-- Sites 1+4 applied: `go test ./internal/contractlint/ ./skills/integration/` → both ok.
-- All four sites applied: same two packages ok, `gofmt -l` clean, diff -117/+1.
+- Sites 1+4 only: `go test ./internal/contractlint/ ./skills/integration/` → both ok.
+- All four sites: `gofmt -l` clean, diff -117/+1, and every package that reads a
+  changed file passes — `cmd/spacedock-release`, `internal/claudeteam`,
+  `internal/contractlint`, `internal/ensigncycle` (385s run alone),
+  `internal/release`, `skills/integration`, plus `internal/cli`'s three
+  `TestProseFunction*` tests, which are that package's shared-core readers.
+
+Two full-suite failures appeared and both were shown NOT to be caused by the
+change, by re-running them in a second clean worktree at the same HEAD:
+`TestCodexResolveManifestAgainstInstalledHost` fails identically at clean HEAD
+(sandbox denies reading `~/.codex/config.toml`), and the `internal/cli` and
+`internal/ensigncycle` package timeouts are load artifacts — clean-HEAD
+`internal/cli` also takes 503s, and `internal/ensigncycle` passes in 385s when it
+is not competing with two other test runs. `internal/ensigncycle`'s two
+shared-core mentions are inert string literals inside fixture transcripts; neither
+reads the file's contents.
 
 The tokens the lints pin (`curl -fsSL …install.sh | sh`, `brew tap …`,
 `brew install …`, `uname -s`, the sandbox registry rows, the launcher-invariant
 sentence) all live in the surviving binary-absent bullet and the step-1 sentence,
 and `TestInstallHintNoDrift` reads install.md's tab sections, never the
-Troubleshooting paragraph. The throwaway worktree is deleted; the implementation
+Troubleshooting paragraph. The throwaway worktrees are deleted; the implementation
 reruns these as its own tests.
 
 ## Acceptance criteria
@@ -233,3 +248,50 @@ regression floor. No new test fixtures.
   in the suite, so it cannot stop a regression after this entity closes.
 - No live workflow test. The claim is boot prose plus deletion, not runtime
   orchestration; the FO boot path is already covered by the contractlint pins.
+
+## Stage Report: ideation
+
+- DONE: Design confirms the four-site removal scope against HEAD and reconciles the overlap with remove-redundant-lint-mirrors, which supersedes scope items 2-3
+  All four sites exist at HEAD 4d1912a69 and are the only tracked matches; body records three seed corrections and routes sites 2-3 to zvk9 with both landing orders exercised.
+- DONE: Value AC measures negative LOC with no surviving capability-probe reference
+  AC-1 pairs a negative `git diff --shortstat origin/main...HEAD` with an empty `git grep -nE 'REQUIRED_CAPABILITY|withdrawCapability|Missing capability|Compatible minor'`; spike measured -117/+1 (all four sites) and -6/+0 (sites 1+4).
+- DONE: No-spike determination recorded: pure deletion over proven mechanisms
+  Recorded under "Spike determination" with the blast-radius risk resolved by exercise in a throwaway worktree rather than by assertion.
+
+### Summary
+
+The removal scope holds at HEAD, with three corrections to the seed: the second
+deleted test is `TestGateFlowCompatibleSameMinorProbesThenBootsOnce`;
+`writeGateLauncher` dies whole rather than losing one branch, because its only two
+callers are the deleted tests; and restoring `exit 0` in the shell mirror also
+reverts the `status --boot --identify --json` call that b331baf4f added to give
+the probe an ordering to be asserted against. The overlap with
+remove-redundant-lint-mirrors is settled by scope rather than by sequencing: zvk9
+deletes both files this entity's sites 2-3 edit, so sites 1 and 4 are the durable
+contribution and sites 2-3 are contingent on landing first. Both orders were
+exercised green.
+
+The design rests on two things proved by exercising rather than reading. The
+premise for removal — that a stale launcher already fails clearly at the point of
+use — was confirmed against `spacedock@next/0.27.0-pre4`: an unknown gate
+subcommand exits 2 with
+`spacedock gate: unknown subcommand (want: prepare|withdraw|record|validate|consume)`.
+The blast-radius risk was confirmed harmless by applying the deletion in a
+throwaway worktree at HEAD and running every package that reads a changed file.
+
+Tests cited, and what would falsify each: `TestInstallHintNoDrift` asserts the FO
+prose's curl and brew tokens equal install.md's tab-section forms — deleting the
+surviving binary-absent bullet, or an install.md install tab, fails it, while
+deleting the Troubleshooting paragraph does not, because it reads only the tab
+sections. `TestVersionGateProseOSAwareHint`, `TestVersionGateDeferredTrigger`,
+`TestVersionGateSandboxRegistry`, and
+`TestVersionGateProseLauncherInvariantAmendment` assert the surviving Startup
+classes keep their OS hints, deferred-read trigger, sandbox registry rows, and
+launcher-invariant sentence — removing a class other than the two probe bullets
+fails them. `internal/cli`'s three `TestProseFunction*` tests bind shared-core
+prose notation to routing; deleting a `«function»` line fails them.
+
+One gap is declared rather than closed: no existing check fails if the probe is
+reintroduced, since every prose lint asserts presence. AC-2 therefore adds the
+single line of new test code in this task — a contractlint assertion that the
+Startup section carries no `gate --help`.
