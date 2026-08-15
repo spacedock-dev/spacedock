@@ -4,7 +4,7 @@ title: Trim dead gate model and projection surface
 status: ideation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 sprint: durable-decisions
-started:
+started: 2026-08-15T02:55:35Z
 completed:
 verdict:
 score:
