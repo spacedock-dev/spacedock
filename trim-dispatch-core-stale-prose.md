@@ -1,7 +1,7 @@
 ---
 id: 71btbxdrken4kdmfsk0vptav
 title: Trim stale prose in the dispatch core contract
-status: implementation
+status: validation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:45Z
 completed:
