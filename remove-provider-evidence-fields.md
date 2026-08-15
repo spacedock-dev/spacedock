@@ -1,7 +1,7 @@
 ---
 id: 7c4w88fnmnbtc0tgkrvx0vxj
 title: Remove the provider-evidence gate fields
-status: backlog
+status: ideation
 source: "Captain directive, 2026-08-14: value review found zero value; no writer, no retained bytes, no verifier"
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Remove `ProviderEvidence` from the gate model: the struct, the `provider-evidence` field, the `Validate` branches that police it on open and withdrawn attempts, and their tests. Zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field. Re-introduce the fields only together with a real provider integration: writer, retention, and verifier.
