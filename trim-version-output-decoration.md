@@ -45,6 +45,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-15T03:39:58.026643Z"
                 reason: Entity gained evidence re-verification section post-prepare (33ccb5479); re-preparing against current bytes; all figures unchanged
+            - id: gate-attempt:x8g3dnqndfa1m85d8ga2cgem-ideation-2
+              briefing:
+                id: briefing:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-2:revision-1
+                digest: sha256:6e30054ac3fde139a894d01bf35b9a142abecab1f06c8a91d4e358e3cd1b1b1f
+                request-digest: sha256:0ca46318fe779c2e22774ab54d918b443eb15751254104524e1fab9594ccb4df
+                room-ref: ./trim-version-output-decoration/review/ideation/briefing-2
 ---
 
 Remove three decorations from `spacedock --version` output. Each has no reader.

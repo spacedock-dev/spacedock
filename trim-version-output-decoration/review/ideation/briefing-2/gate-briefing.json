@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-2:revision-1",
+  "question": "Approve trim-version-output-decoration ideation into implementation, ratifying the declared sole-consumer scope expansion?",
+  "artifacts": [
+    {
+      "id": "artifact:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/e1b1194961d186667aec36c9f2c12fc0d870dd70/trim-version-output-decoration.md",
+      "rev": "sha256:9f4e046ceed52a2f40d9720b1b1c335e840f34f6df65de5b0959775644fa951a",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: full cut spiked and re-verified in an isolated slug-named path (-165 LOC, 7 files, all figures reproduced); keep-boundaries proven live; expansion to sole-consumer machinery declared with the narrower alternative recorded."
+    }
+  ]
+}
