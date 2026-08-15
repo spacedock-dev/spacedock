@@ -1,7 +1,7 @@
 ---
 id: zvk9cnew2ggpaqb3wty24xtf
 title: Remove redundant lint mirrors and the version-gate shell harness
-status: ideation
+status: implementation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:48Z
 completed:
@@ -61,7 +61,7 @@ gates:
                 reason: 'Captain ruling 2026-08-15 (approve all except x8): approved into implementation'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Three verified-redundant test mirrors.
