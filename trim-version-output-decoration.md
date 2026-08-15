@@ -51,6 +51,14 @@ gates:
                 digest: sha256:6e30054ac3fde139a894d01bf35b9a142abecab1f06c8a91d4e358e3cd1b1b1f
                 request-digest: sha256:0ca46318fe779c2e22774ab54d918b443eb15751254104524e1fab9594ccb4df
                 room-ref: ./trim-version-output-decoration/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x8g3dnqndfa1m85d8ga2cgem:ideation:2
+                briefing: briefing:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-15T04:07:34.176429Z"
+                decision: revise
+                reason: 'Captain revise 2026-08-15: keep the OS line (bug-report value is real); Sandbox line must not need the word inside while keeping the install-gate corroboration parse working; investigate retiring the contract-3 sentinel per its documented retirement condition with minor version as the sole requirement; the session-segment and pass-host cuts stand'
 ---
 
 Remove three decorations from `spacedock --version` output. Each has no reader.
