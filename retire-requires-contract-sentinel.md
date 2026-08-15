@@ -72,7 +72,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#692"
+pr: "#701"
 ---
 
 Retire the pre-0.19 `requires-contract` sentinel; its audience is extinct and production code explicitly ignores it. Pure deletion, no behavior change.
