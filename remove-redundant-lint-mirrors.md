@@ -41,6 +41,10 @@ gates:
                 digest: sha256:f08a7dd457ba1d216afae6b1c415b08ccf767b59716eda86e068de6222f90ca4
                 request-digest: sha256:cf35bb141a5c8c378380bc539b47298b8f1d5e965e09f2eab0e8b55d6e8478ef
                 room-ref: ./remove-redundant-lint-mirrors/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-15T03:50:40.91333Z"
+                reason: 'Entity corrected post-prepare (cca195bae): contaminated line citation fixed 418 to 401 after clean re-run; re-preparing against current bytes'
 ---
 
 Three verified-redundant test mirrors.
