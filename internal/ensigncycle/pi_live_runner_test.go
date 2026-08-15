@@ -10,19 +10,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
-
-const defaultPiLiveModel = "openrouter/openai/gpt-5.4"
 
 //spacedock:live-proof id=pi-front-door-subagent-dispatch lane=pi-live
 func TestLivePiFrontDoorSmoke(t *testing.T) {
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
 	binary := piSpacedockBinary(t, repo)
-	workflowRoot, stateRoot, entityPath, artifactDir, env := newPiLiveSmokeFixture(t, "pi-frontdoor-smoke", repo, piSubagentsRoot, binary)
+	workflowRoot, stateRoot, entityPath, artifactDir, env, model := newPiLiveSmokeFixture(t, "pi-frontdoor-smoke", repo, piSubagentsRoot, binary)
 
 	envelope := runPiSmokeDispatchBuild(t, binary, workflowRoot, entityPath)
 	prompt := piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath, envelope)
@@ -32,19 +31,19 @@ func TestLivePiFrontDoorSmoke(t *testing.T) {
 		"--plugin-dir", repo,
 		"--",
 		"--print",
-		"--model", piLiveModelName(),
+		"--model", model,
 		"--session-dir", filepath.Join(artifactDir, "sessions"),
 	)
 	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
 	assertPiEnsignBootContract(t, workflowRoot, envelope, artifactDir)
 }
 
-func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string) {
+func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string, model string) {
 	t.Helper()
 	piHome := t.TempDir()
 	sessionDir := t.TempDir()
 	cleanHome := t.TempDir()
-	seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
+	decision := seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("CODEX_AUTH_JSON"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 	// Patch 3 (validation attempt-1 correction): seed piHome/settings.json with
 	// the repo as a path package so pi-subagents' settings-package skill
 	// discovery (skills.ts collectSettingsPackageSkillPaths over
@@ -56,15 +55,19 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	env = piLiveEnv(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot)
-	return workflowRoot, stateRoot, entityPath, artifactDir, env
+	env = piLiveEnvForAuth(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot, os.Getenv("OPENAI_API_KEY"), decision.mode)
+	model = decision.model
+	if override := os.Getenv("SPACEDOCK_PI_LIVE_CHILD_MODEL"); override != "" {
+		model = override
+	}
+	return workflowRoot, stateRoot, entityPath, artifactDir, env, model
 }
 
 func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []string, argv ...string) {
 	t.Helper()
 	stdoutPath := filepath.Join(artifactDir, "pi-stdout.txt")
 	stderrPath := filepath.Join(artifactDir, "pi-stderr.txt")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), piLiveRunTimeout(10*time.Minute))
 	defer cancel()
 	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = workflowRoot
@@ -84,7 +87,7 @@ func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []stri
 
 	runErr := cmd.Run()
 	if ctx.Err() == context.DeadlineExceeded {
-		t.Fatalf("pi live smoke timed out; artifacts in %s", artifactDir)
+		t.Fatalf("pi live smoke timed out after the per-run cap (SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES, default 10m); artifacts in %s", artifactDir)
 	}
 	if runErr != nil {
 		t.Fatalf("pi live smoke failed: %v; artifacts in %s\nstderr tail:\n%s", runErr, artifactDir, tail(readFile(t, stderrPath), 4000))
@@ -219,14 +222,23 @@ func piLiveSmokeEntity() string {
 
 func seedPiLocalAuth(t *testing.T, piHome, realHome string) {
 	t.Helper()
-	seedPiLiveAuth(t, piHome, realHome, os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
+	seedPiLiveAuth(t, piHome, realHome, "", os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 }
 
-func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required string) {
+func seedPiLiveAuth(t *testing.T, piHome, realHome, oauthJSON, openAIAPIKey, required string) piLiveAuthDecision {
 	t.Helper()
+	decision := decidePiLiveAuth(oauthJSON, openAIAPIKey, required)
+	if decision.mode == piAuthOAuth {
+		if err := seedPiOAuthAuth(piHome, oauthJSON); err != nil {
+			t.Fatal(err)
+		}
+		return decision
+	}
+	if decision.mode == piAuthAPIKey {
+		return decision
+	}
 	if realHome != "" {
-		authPath := filepath.Join(realHome, ".pi", "agent", "auth.json")
-		b, err := os.ReadFile(authPath)
+		b, err := os.ReadFile(filepath.Join(realHome, ".pi", "agent", "auth.json"))
 		if err == nil && strings.TrimSpace(string(b)) != "" {
 			if err := os.MkdirAll(piHome, 0o700); err != nil {
 				t.Fatal(err)
@@ -234,17 +246,23 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required strin
 			if err := os.WriteFile(filepath.Join(piHome, "auth.json"), b, 0o600); err != nil {
 				t.Fatal(err)
 			}
-			return
+			// Custom providers (e.g. lunaroute) declare their models in
+			// models.json, not auth.json. Mirror it alongside auth.json so a
+			// custom-provider SPACEDOCK_PI_LIVE_CHILD_MODEL resolves instead
+			// of failing with "Model ... not found".
+			if models, merr := os.ReadFile(filepath.Join(realHome, ".pi", "agent", "models.json")); merr == nil && strings.TrimSpace(string(models)) != "" {
+				if err := os.WriteFile(filepath.Join(piHome, "models.json"), models, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			return piLiveAuthDecision{mode: piAuthOAuth, model: "openai-codex/gpt-5.6-luna:max"}
 		}
 	}
-	if strings.TrimSpace(openAIAPIKey) != "" {
-		return
-	}
-	message := "no live Pi auth available: expected ~/.pi/agent/auth.json or OPENAI_API_KEY"
 	if required != "" {
-		t.Fatal(message + " for the approval-gated pi-live lane")
+		t.Fatal(decision.message)
 	}
-	t.Skip(message + "; run pi login or set OPENAI_API_KEY to run the live Pi suite")
+	t.Skip(decision.message)
+	return decision
 }
 
 func piSubagentsPackageRoot(t *testing.T) string {
@@ -263,8 +281,18 @@ func piSubagentsPackageRoot(t *testing.T) string {
 	return p
 }
 
-func piLiveModelName() string {
-	return envOr("SPACEDOCK_PI_LIVE_CHILD_MODEL", defaultPiLiveModel)
+// piLiveRunTimeout returns the per-run cap for a Pi live journey. It reads
+// SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES (a positive integer) and falls back to dflt
+// when the env var is unset or invalid. Raise it for slow :max-thinking models so
+// multi-dispatch journeys complete to a graded result instead of timing out;
+// make the outer `go test -timeout` longer than this per-run cap.
+func piLiveRunTimeout(dflt time.Duration) time.Duration {
+	if v := os.Getenv("SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return time.Duration(n) * time.Minute
+		}
+	}
+	return dflt
 }
 
 func piLiveArtifactDir(t *testing.T, name string) string {

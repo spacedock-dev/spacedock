@@ -65,7 +65,7 @@ func countedLiveFunction[Function any](t *testing.T, function Function) (Functio
 func noLiveGrade(liveResult) {}
 
 func liveRuntimeRunsParallel(runtime string) bool {
-	return runtime == "claude" || runtime == "codex"
+	return runtime == "claude" || runtime == "codex" || runtime == "pi"
 }
 
 func liveDriverForRuntime(t *testing.T, id string) (func() liveDriver, string) {
