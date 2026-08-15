@@ -658,3 +658,26 @@ PASSED. The bounded Codex parallel runner is independently verified offline, and
 ### Summary
 
 Current main and the frozen Codex candidate now coexist without rebase or force: Pi keeps its current parallel/fail-fast controls while Codex keeps capacity three, slowest-first declarations, and isolated setup artifacts. Commit 93d8bfc23 is frozen for independent validation and PR CI; the public filing observer remains unchanged.
+
+## Stage Report: validation (cycle 11)
+
+- FAILED: Independently validate merge commit `93d8bfc23` against current `origin/main`: prove the two conflict resolutions preserve PR #685 Pi parallel/fail-fast controls and the approved Codex k=3 slowest-first, per-journey setup isolation without altered journey identities, metrics, quiet budgets, or filing-grade bytes.
+  The merge preserves Pi admission/fail-fast text, Codex capacity three, unique setup paths, and unchanged registry/filing/argv/quiet-budget behavior, but an exact no-auth Codex probe resumed `OwnedConflictOwnerHandoff`, `WithdrawnGateRecovery`, then `DefaultHeadlessGateStop`, disproving the promised slowest-first admission.
+- FAILED: Reproduce mergeability and focused behavior: exact Pi/Codex CI commands, shared parallel admission, 17-journey order, collision-free `_setup/<journey-id>`, registry reconciliation, common runner argv parity, exact PR #679 fixture, and the seven-rung public filing counterfeit matrix. Perform the semantic adversarial pass and report findings before candidate mutation.
+  Registry, command pins, source order, direct runtime-admission/setup-path probe, argv parity, exact PR #679 fixture, all seven filing rungs, and quiet-budget tests passed; however, Go's shared parallel wait channel does not preserve declaration order, so the static source-order test passes while observable scheduling is wrong. The finding was reported before mutation and `93d8bfc23` stayed frozen.
+- SKIPPED: Audit the complete PR surface of +214 net LOC across 8 files against the approved filing and parallel-runner semantics; explain why it differs from the +15 two-file reconciliation estimate. Verify clean worktree, gofmt, live-tag compile, isolated-CODEX_HOME `go test ./...`, and isolated-CODEX_HOME `go test ./... -race`. Do not run a local model-backed suite; freeze bytes for PR CI.
+  The full surface is 289 insertions/75 deletions (net +214) across eight files because +15/two files estimated only conflict reconciliation, not the inherited filing and Codex-runner commits; clean HEAD, gofmt, live-tag compile, and focused suites passed, while full/race reproduction was stopped after the FO HOLD made the material scheduling defect dispositive. No model-backed suite ran.
+
+### Review-finding disposition
+
+- Finding: declaration order is not an observable scheduling queue; the static test cannot prove slowest-first k=3 execution.
+- Released user and normal workflow: required PR Codex common lane at capacity three.
+- Observable harm: the slowest journeys are not reliably admitted first, so the 40-minute completion strategy is not delivered.
+- Authority: `captain-ruling[2026-08-14]` requires k=3 slowest-first admission.
+- Trigger evidence: exact no-auth `TestLiveCommon` probe on `93d8bfc23` with `-parallel 3`; first continuations were OwnedConflict, WithdrawnGate, and DefaultHeadless rather than OwnedConflict, RejectionFlow, and AutoContinue.
+- Proposal: Material, task-owned mechanism/evidence defect; reset design to ideation for an explicit scheduler, not another declaration-order tweak.
+- FO authorization: HOLD `93d8bfc23` unchanged and complete validation as REJECTED.
+
+### Summary
+
+REJECTED. The reconciliation keeps Pi, filing, registry, metrics, quiet-budget, argv, and isolated setup behavior intact, but the approved slowest-first Codex property is not observable under Go's parallel scheduler. Return to ideation for an explicit scheduler; candidate bytes remain unchanged.
