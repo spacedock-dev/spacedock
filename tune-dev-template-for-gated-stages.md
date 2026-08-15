@@ -37,6 +37,17 @@ gates:
                 digest: sha256:ea7199bbce8f4e01dedf066c870f82a43b2045229f35d90e4e9856526fc06212
                 request-digest: sha256:a0b4129f1df539c8b2a8a43d221268a58637c614bee3420704c755ff098c8c60
                 room-ref: ./tune-dev-template-for-gated-stages/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:42chs9dh7nq22f8at4szvbxp:ideation:1
+                briefing: briefing:42chs9dh7nq22f8at4szvbxp:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T21:24:21.17569Z"
+                decision: approve
+                reason: 'Captain approved 2026-08-15 with both rulings as recommended: per-layer live approval framed as the diff-rule''s stacked realization with the named carve-out; ships as a real stack layer'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Tune the reusable dev task template so task authors supply the decision evidence required by each gated stage without making task files verbose.
