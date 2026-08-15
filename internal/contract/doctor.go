@@ -15,8 +15,7 @@ import (
 var errNoManifest = errors.New("manifest not found")
 
 // readManifest reads a plugin manifest JSON and returns its display version. A
-// missing file yields errNoManifest. requires-contract, if present, is not read —
-// it is a frozen cross-era sentinel for integer-era binaries only (D4). The
+// missing file yields errNoManifest. Every other manifest field is ignored. The
 // display version is the user-facing semver shown in the verdict message.
 func readManifest(manifestPath string) (version string, err error) {
 	data, err := os.ReadFile(manifestPath)

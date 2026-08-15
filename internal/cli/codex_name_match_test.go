@@ -100,7 +100,7 @@ func buildCodexNamedMarketplace(t *testing.T, root, marketplaceName, entryName s
 }
 `)
 	mustWrite(t, filepath.Join(plugin, ".codex-plugin", "plugin.json"),
-		`{ "name": "spacedock", "version": "0.0.0", "requires-contract": ">=2,<3", "skills": "./skills/" }
+		`{ "name": "spacedock", "version": "0.0.0", "skills": "./skills/" }
 `)
 	mustWrite(t, filepath.Join(plugin, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
 	return marketplace
