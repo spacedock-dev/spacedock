@@ -288,3 +288,33 @@ The revise inverted one of the three original cuts and added two investigations,
 ### Summary
 
 The FO's defect was real and I did not try to save the work. The dual-era corroboration mechanism was placed in two files that `remove-redundant-lint-mirrors` deletes whole, and with the shell parse gone there is no deterministic classifier for an era-spanning mechanism to live in — the one surviving consumer is prose that anchors on the line prefix. The strongest evidence arrived from the repaired spike rather than from reasoning: with the reshaped `SessionState` in place and both doomed files left completely untouched, `go test ./skills/integration/` passes, because the harness drives hardcoded captive scripts and never the real binary. So it never observed this value at all, and the arms I added were pinning synthetic strings — independently the same defect zvk9 deletes the harness for. Repaired scope is net -100 across 9 files, all six affected packages green, AC-1 unchanged at 130 to 103 bytes in-session and 148 to 123 ambiguous. One thing worth the captain's attention: the revise named the gate-flow parse as a consumer to verify, and that artifact is being deleted by an approved sibling, so half of directive 2's named verification target no longer exists.
+
+## Stage Report: implementation
+
+- DONE: OS line kept exactly as at HEAD; cuts are the session segment, the pass-host suffix, and the Sandbox value rename to name-or-none; touch zero files under skills/integration
+  Commit `d8fe1e74d` on `spacedock-ensign/trim-version-output-decoration`. `OS: <goos>/<goarch>` is byte-unchanged and still line 2 in both shapes; `git diff --name-only b7b5b33c3` lists 9 files and not one is under `skills/integration/`, which passes unmodified (26s under `-race`).
+- DONE: The install-gate prose consumer needs no edit (prefix-anchored, env-wins) - verify, do not modify; version_session_test covers the new shape; net -100 within plus or minus 30 over 9 files
+  `skills/first-officer/references/fo-install-gate.md:22` read and left untouched — it anchors on the `^Sandbox: ` prefix, says the line "corroborates the env verdict only", and names no value literal. Measured net **-76 across 9 files** (136 insertions, 212 deletions), inside the +/-30 tolerance.
+- DONE: Fold in the cli.go:853 pin-attribution comment fix; contract-3 token untouched; suite differential against the merge-base baseline
+  The comment now names `internal/cli/version_session_test.go` as the real pin; AC-5's falsifying check `grep -rn "contract 3\|frozenContractToken" internal/contractlint/` still returns nothing. `const frozenContractToken = "contract 3"` and every emission of it are byte-unchanged.
+
+### Evidence
+
+AC-1, both binaries built from this worktree on one machine, `wc -lc` per shape: in-session **130 -> 103 bytes**, ambiguous **159 -> 134**, outside 38 -> 38. Line counts unchanged at 5 / 5 / 2, so the cut is bytes and no line was removed.
+
+**Correction to a declared figure.** The body declares the ambiguous baseline as 148 -> 123. Measured here it is 159 -> 134. The delta is identical (-25) and the direction is unchanged; the declared pair is 11 bytes low, exactly the `contract 3\n` line, which the ideation measurement evidently omitted from that shape. The in-session pair reproduces at 130 -> 103 exactly as declared. No scope or AC change follows — AC-1 asks that every session shape get smaller with no line removed, and both shapes do.
+
+Falsifying change per test claim, each exercised rather than asserted:
+
+- `TestVersionSessionRender` (6 render cases + a named absence loop over `, session `, `pass --host`, `inside`) — reintroducing the session segment fails with `--version rendered ", session " — a session identifier segment, which has no reader`; reintroducing ` — pass --host` fails the same way on `"pass --host"`, and takes `TestVersionAmbiguousMarkersExitZero` with it. The absence loop runs BEFORE the exact match so a mutation reports what came back, not just that bytes differed.
+- `TestVersionSandboxLineNamesTheSandbox` (new; bare-name arm plus both `none` arms) — reverting `SessionState` to `inside (...)` / `not sandboxed (...)` **with every `want` literal in `TestVersionSessionRender` regenerated in step** still fails all three arms by name. That is what makes AC-2 not a tautology: a coordinated rename cannot green it.
+- `TestVersionContractTokenPlacement` — moving or dropping `contract 3` from below the Sandbox line fails; unchanged and green.
+- `internal/dispatch/build_host_test.go:38` plus a live drive of `dispatch build` under two markers: baseline and cut binaries print `ambiguous runtime host sources: ...; pass --host claude, codex, or pi` byte-identically. Deleting the three-value remedy is what would fail it.
+- `internal/runtimehost` marker matrix — unchanged rows, `Detect` now 3 returns; a `>1 marker set` ambiguity rule still turns the pi row red.
+- `skills/integration` — run unmodified as the AC-3 regression check and green, which is the behavioural evidence that the harness never consumed this value.
+
+AC-6: `go test ./...` and `go test ./... -race` both green in every package except `internal/cli`, whose sole failure is `TestCodexResolveManifestAgainstInstalledHost` (sandbox denies `~/.codex/config.toml`). Proven pre-existing rather than assumed: the branch point `b7b5b33c3` was extracted with `git archive` into a clean tree and the same test fails there identically.
+
+### Summary
+
+All three cuts landed as designed and the keep-boundaries hold: the `OS:` line, the ambiguous reporting arm and its exit 0, `dispatch build`'s complete remedy, and the `contract 3` token are unchanged. The Sandbox rename reaches `status --boot` as the body declared, since both surfaces render the same `SessionState`. Two figures moved off the declared estimate and both are recorded above rather than smoothed over: net is -76 rather than -100 (inside tolerance — `version_session_test.go` came out +29 instead of -13 because AC-2's named absence loop and the new sandbox test are net additions, and the deletions elsewhere landed lighter than estimated), and the ambiguous byte baseline is 159 rather than the declared 148, with the same -25 delta. The differential was measured against the branch point `b7b5b33c3`, not `git merge-base main HEAD` — the local `main` ref is stale at `4d1912a69`, so a merge-base diff would have swept in unrelated merged work.
