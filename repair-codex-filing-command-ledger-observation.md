@@ -738,3 +738,16 @@ Every gate-stop path now invokes its shared assertion even when prepared-expecta
 ### Summary
 
 Codex filing is now an unbound required pass, so a green journey grades PASS rather than XPASS-alerting. The release-blocking two-file correction is frozen with focused and race-instrumented local evidence plus fully green clean-host PR #686 attempt-2 offline, Claude, and Codex verification.
+
+## Stage Report: validation (cycle 13)
+
+- DONE: Verify PR #686 filing passes unbound in the exact green Codex CI artifact while all unrelated owner-bound XFAILs remain strict.
+  Run `31865042571`, job `94968448945`, and artifact `9242381900` are green at exact SHA `8b19cb82b`; archive digest `ce49346...ceef3` matches GitHub, filing is plain PASS, and the four unrelated Codex bindings remain two XFAILs plus two XPASS ALERTs with their original owners.
+- DONE: Reproduce acceptance-criteria evidence, including the public command/exit/receipt/entity transaction and counterfeit controls, without another model run.
+  AC-1/2: the archived stream has six exit-0 public command items, exactly one `new wire-the-thing`, one same-item canonical `created:` receipt for id 001, one matching title/backlog/id/nonblank-body entity check, and zero `--next-id`; the exact PR #679 fixture and seven-rung counterfeit matrix passed and fail when transaction identity, cardinality, receipt ownership, or entity agreement changes.
+- DONE: Audit the final diff, required tests, and current intended scope; report PASSED or REJECTED with only material findings blocking.
+  AC-3: commit `8b19cb82b` is exactly 2 insertions/2 deletions in the registry oracle and filing declaration, removes only filing's owner binding, leaves all unrelated bindings and evidence machinery unchanged, and passes focused grading/registry tests, gofmt check, `go test ./...`, and `go test ./... -race` on a clean worktree.
+
+### Summary
+
+PASSED. PR #686's completed Codex artifact proves filing now passes unbound on the exact candidate while every unrelated owner-bound gap remains strictly classified; the offline counterfeit matrix and full/race suites independently remain green. No material, deferred-risk, or polish finding was found, no model-backed test was rerun, and candidate bytes stayed unchanged.
