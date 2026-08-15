@@ -72,6 +72,17 @@ gates:
                 digest: sha256:11b054ad5582a543e76eb10760a9697e0fb7c8720463dc985b3e1ffd3fa79814
                 request-digest: sha256:89678880ad3050c7171f563ef9ea48f1dd3626d8ff0ca15652bb2e72ee2d860a
                 room-ref: ./remove-provider-evidence-fields/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7c4w88fnmnbtc0tgkrvx0vxj:validation:1
+                briefing: briefing:7c4w88fnmnbtc0tgkrvx0vxj:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T16:08:32.933999Z"
+                decision: approve
+                reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Remove `ProviderEvidence` from the gate model: the struct, the `provider-evidence` field, the `Validate` branches that police it on open and withdrawn attempts, and their tests. Zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field. Re-introduce the fields only together with a real provider integration: writer, retention, and verifier.
