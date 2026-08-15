@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: validation
+status: done
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -194,11 +194,14 @@ gates:
                 reason: 'Validation PASSED: the exact green artifact proves unbound Codex filing, AC-1 and AC-2 share explicit transaction evidence despite the combined report label, AC-3 has diff and full-suite evidence, and no finding remains.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:686
+verdict: PASSED
+completed: 2026-08-15T05:49:35Z
+archived: 2026-08-15T05:49:35Z
 ---
 
 ## Problem
