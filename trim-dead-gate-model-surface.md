@@ -42,6 +42,10 @@ gates:
                 digest: sha256:0f49d00d8e9fe41e802777816cf94fd221e4e9282708bdd5e853909b27db446b
                 request-digest: sha256:3adf5e1c8e03dad83a2c99383cc8b8afbf35d0342fcaa3c35fe9cf08a4a0caaf
                 room-ref: ./trim-dead-gate-model-surface/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-15T03:45:43.758307Z"
+                reason: Entity re-verified and amended post-prepare (b60807187); re-preparing against current bytes; all figures unchanged
 ---
 Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69` and re-verified at `ef8f55c83`; the two commits between them touch only workflow docs, and none of this entity's target files changed.
 
