@@ -7,7 +7,7 @@ started: 2026-08-15T02:55:48Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-remove-redundant-lint-mirrors
 issue:
 gates:
     version: 1
