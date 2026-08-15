@@ -257,3 +257,32 @@ Everything load-bearing reproduced: 6 archived attempts carry the field, their r
 The retire-behind-tolerance design landed as approved and the recorded baselines reproduced exactly: 119/16 corpus decode and byte-identical `status --validate` on both streams against a freshly built HEAD binary at one verified-stable state SHA. Net -145 lines across 8 files, inside tolerance, with the 154 orphaned association helpers in `operation.go` carrying most of the deletion.
 
 Two things beyond the plan were worth the time. The new test was mutation-checked in both directions the design warned about, so its pass is evidence rather than assertion. And `ValidateTransition` turned out to read the raw stored node, which would have been a live regression path had the retired key decoded asymmetrically; it does not, and that is now fenced. The only red in the suite is the Codex config sandbox denial the ideation already classified as environmental.
+
+## Stage Report: validation
+
+- DONE: Independently re-exercise the ACs against worktree commit 5b7bb8cfd, never by reading the report: corpus decode 119/16 with zero provider-evidence values decoded, status --validate byte-identical to the recorded HEAD baseline on BOTH stdout and stderr (125 warning lines), grep clean per AC-4, net delta at least -130
+  All re-measured from scratch: frozen copy of docs/dev, freshly built HEAD (4d1912a69) and changed (5b7bb8cfd) binaries, own corpus-decode program; per-AC evidence below.
+- DONE: The two guard tests are the fence: TestPrototypeAndUnknownGateShapesFailClosed unknown-attempt-field case must still refuse byte-clean (proves tolerance is one named key, not blanket), and the withdrawal with-application case must still refuse
+  Both pass at 5b7bb8cfd (refusal + unchanged-bytes assertions confirmed in source), and both were falsified by overlay mutation: a blanket attempt-tolerance mutant fails unknown_attempt_field plus the new test's sibling-key case; deleting the withdrawn application arm fails with_application.
+- DONE: Suite per AC-5 no-worse-than-baseline with -timeout 30m; reproduce any failure on clean 4d1912a69 before attributing; verdict PASSED or REJECTED with per-AC citations
+  `go test ./... -timeout 30m` and `-race -timeout 30m` fail only TestCodexResolveManifestAgainstInstalledHost (`~/.codex/config.toml`: Operation not permitted), reproduced identically on a clean 4d1912a69 checkout. Verdict: **PASSED**.
+
+### Per-AC evidence
+
+- AC-1 PASS: `git diff --numstat 4d1912a69..5b7bb8cfd` = 8 files, +119/-253, net **-134** (floor is -130). The implementation report's "+108/-253, net -145" does not reproduce; the corrected figure still passes.
+- AC-2 PASS: frozen-snapshot corpus decode (925 md files, 135 with gates): HEAD build read-ok=119 / read-err=16 / attempts=455 with 6 provider-evidence attempts decoded (the two `_archive` entities); changed build 119/16/455 with **0** decoded; error-file lists identical.
+- AC-3 PASS: both binaries rc=0 printing `VALID` on the same snapshot; stdout AND stderr cmp-identical; HEAD stderr is exactly 125 `Warning:` lines, 0 `Error:` lines.
+- AC-4 PASS: the AC grep over `internal cmd skills` matches only the new test's name in `gates_test.go`. A repo-wide sweep additionally finds only `docs/roadmap/durable-decisions/staff-review-sprint-close.md`, the declared historical review record.
+- AC-5 PASS: both suites green except the environmental codex sandbox failure, attributed by clean-baseline reproduction, not by trusting the report.
+
+### Adversarial pass
+
+Four overlay mutants each fail exactly their fencing assertion: blanket attempt tolerance; deleted key-drop (`field provider-evidence not found`); filtering the write node instead of the validation clone (CAS-node assertion); dropped withdrawn-application arm. Level scoping probed empirically on the changed build: `provider-evidence` at record level and briefing level still refuses; only the attempt-level key is dropped. The contract-spec wording matches the approved ideation diff verbatim, and the keep-boundary held: request.json digest checks and `validatePresentationGitSources` are intact in `validateRetainedAuthorityExcept`.
+
+### Findings
+
+Material: none. Deferred risks: none new — the shared contract sentence with `remove-gate-validate-subcommand` stays a land-second reconciliation, already recorded in Coordination. Polish: the implementation report's AC-1 arithmetic (+108/-253, net -145) is not reproducible; actual is +119/-253, net -134. Evidence-report inaccuracy only; no AC fails under the corrected number and no candidate change is needed.
+
+### Summary
+
+Every AC was re-exercised from scratch rather than replayed: fresh HEAD and changed binaries, a frozen snapshot of docs/dev (the live state checkout moved twice during setup, confirming the pin was necessary), and an independent reflection-based corpus decoder. All five ACs hold, all four mutation directions fail their fences, tolerance is provably one named key at one level, and the only suite failure is environmental and present on clean 4d1912a69. Recommend PASSED with one polish-level reporting correction and no material or deferred findings.
