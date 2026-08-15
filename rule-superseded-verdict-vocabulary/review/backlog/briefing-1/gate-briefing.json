@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x2ezetxr82pztr4pqt1g4dhx:backlog:attempt-1:revision-1",
+  "question": "Approve rule-superseded-verdict-vocabulary into ideation (captain pre-directed: dispatch all onto stack tip)?",
+  "artifacts": [
+    {
+      "id": "artifact:x2ezetxr82pztr4pqt1g4dhx:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8131be977adb5b4ae10a8ebfffa886624c54d738/rule-superseded-verdict-vocabulary.md",
+      "rev": "sha256:eb4586dfe844bdc0ef1baae58899604fd69f60d3e0429fe2afab679a235b5a9a",
+      "mediaType": "text/markdown",
+      "summary": "Captain 0.27 dispatch order 2026-08-15."
+    }
+  ]
+}

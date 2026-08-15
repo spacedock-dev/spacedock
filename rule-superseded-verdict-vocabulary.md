@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:x2ezetxr82pztr4pqt1g4dhx:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:x2ezetxr82pztr4pqt1g4dhx-backlog-1
+              briefing:
+                id: briefing:x2ezetxr82pztr4pqt1g4dhx:backlog:attempt-1:revision-1
+                digest: sha256:d361d63a1849a995f40b359b0a666f56642c0c060b80186f813f2d6c235f23f4
+                request-digest: sha256:3b81644f231329651f19ea0d696ce81ad85c558246a98dea5bdc85ad77b93f85
+                room-ref: ./rule-superseded-verdict-vocabulary/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x2ezetxr82pztr4pqt1g4dhx:backlog:1
+                briefing: briefing:x2ezetxr82pztr4pqt1g4dhx:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T21:24:45.264332Z"
+                decision: approve
+                reason: 'Captain directive 2026-08-15: dispatch all five onto the stack tip'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Writers intentionally emit verdict: superseded for superseded entities, but the schema enum admits only PASSED and REJECTED. Archived-scope warnings are silenced now, so the bite is forward-looking: the next active entity superseded on purpose warns as invalid, and any tool trusting the enum misreads the four archived records. Decide: admit superseded (and define its semantics) or route supersede through a different field and stop the writer.
