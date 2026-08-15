@@ -1,7 +1,7 @@
 ---
 id: v7a6xqh2rm3asjvj8qz1y4p0
 title: Retire banned prose-grep contract tests and dedupe surviving pins
-status: ideation
+status: implementation
 source: "Captain review of the 0.27 stack + audit-r2 (2026-08-15); captain directive: file, dispatch off stack tip, PR as stack layer"
 started:
 completed:
@@ -51,7 +51,7 @@ gates:
                 reason: 'Captain approved 2026-08-15 with both queued rulings as recommended: install-gate goes checkless per the 2026-07-20 ruling with the sentinel behavior test filed separately; the narrow read-quarantine exemption is adopted'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Delete the committed prose-grep tests the Proof policy bans (paraphrase reds them, inversion passes them), dedupe the two double pins, and resolve the four gray cases. Base all work on the stack tip (branch stack27/09-trim-version-output); the deliverable becomes stack layer 10. This MUST land before make-shipped-contracts-self-contained (layer 11), whose prose rewrites would red several of these pins.
