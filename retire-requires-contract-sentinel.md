@@ -1,7 +1,7 @@
 ---
 id: 6qhgsezz7v4g4h76t0jf98b0
 title: Retire the extinct requires-contract manifest sentinel
-status: ideation
+status: implementation
 source: "0.27 audit (2026-08-14) Priority 2; pre-ship cleanup companion to remove-startup-capability-probe"
 started: 2026-08-15T02:55:26Z
 completed:
@@ -51,7 +51,7 @@ gates:
                 reason: 'Captain ruling 2026-08-15 (approve all except x8): approved into implementation'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Retire the pre-0.19 `requires-contract` sentinel; its audience is extinct and production code explicitly ignores it. Pure deletion, no behavior change.
