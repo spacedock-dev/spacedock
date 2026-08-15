@@ -387,10 +387,10 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 	}
 	stale, current := doc.Records[0].Attempts[0], doc.Records[0].Attempts[1]
 	if stale.Withdrawal == nil || stale.Withdrawal.By != "agent:first-officer" ||
-		stale.Resolution != nil || stale.ProviderEvidence != nil || stale.Application != nil {
+		stale.Resolution != nil || stale.Application != nil {
 		t.Fatalf("withdrawn authority was not retained cleanly: %#v", stale)
 	}
-	if current.Withdrawal != nil || current.Resolution == nil || current.ProviderEvidence != nil ||
+	if current.Withdrawal != nil || current.Resolution == nil ||
 		current.Application == nil || current.Application.State != "consumed" {
 		t.Fatalf("replacement did not exclusively own consumed authority: %#v", current)
 	}

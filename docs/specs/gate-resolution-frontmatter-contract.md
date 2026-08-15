@@ -88,8 +88,12 @@ the pilot-only attempt selector, `current-attempt`, `sequence`, `previous-attemp
 and explicit attempt `state` encodings are rejected. A read tolerates unknown keys
 only under each `records[*].attempts[*].application` mapping, reports them as warnings
 on explicit `status --validate` or `gate validate`, ignores them for authority, and
-never writes them. All other unknown or malformed fields fail closed. There is no
-migration or compatibility rewrite. The `application` field is an approval-only
+never writes them. A read also drops the retired
+`records[*].attempts[*].provider-evidence` key silently: its writer was cut with
+provider-backed closure, frozen archived records still carry it, and it is retired
+rather than unknown, so it raises no warning and never reaches the model. All other
+unknown or malformed fields fail closed. There is no migration or compatibility
+rewrite. The `application` field is an approval-only
 authority token whose canonical fields are exactly `target-stage` and `state`, where
 state is `pending`, `consumed`, or `superseded`. Revise and hold carry no application.
 
