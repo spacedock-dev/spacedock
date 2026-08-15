@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-3:revision-1",
+  "question": "Approve validated commit f36a707ba for delivery to PR #686 and its required Codex live CI run at parallel capacity 3?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/6de0ac08cad88b0c0145e375e7e43085692bf7ea/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:23142b0c13235d9961515cd257d16668ce17411c9b1dcb6d44922e44fb495383",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation passed all three assigned checks on frozen commit f36a707ba. The k=3 runner, setup isolation, slowest-first ordering, unchanged filing evidence, focused/adversarial tests, live-tag compile, gofmt, full, and race all passed. The rework is +37 net LOC across 5 files with no findings or local model run; delivery remains incomplete until PR #686 CI is green."
+    }
+  ]
+}
