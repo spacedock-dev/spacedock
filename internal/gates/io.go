@@ -34,13 +34,6 @@ type Warning struct {
 // diagnostic vocabulary. Warning is the canonical name used by this package.
 type Diagnostic = Warning
 
-// FormatWarning renders the stable operator-facing form used by gate
-// validation. The entity path is included so a warning from a direct gate
-// command remains actionable without a surrounding status table.
-func FormatWarning(entityPath string, warning Warning) string {
-	return fmt.Sprintf("Warning: unknown gate application field '%s' at %s: path=%s", warning.Field, warning.Path, entityPath)
-}
-
 func Read(path string) (*Document, *yaml.Node, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -200,9 +193,10 @@ func SummaryFileAt(path, workflowDir string) (Summary, error) {
 	return summary, err
 }
 
-// SummaryFileDiagnosticsAt is the gate-validate read surface. It performs the
-// same retained-authority checks as SummaryFileAt and returns any bounded
-// application-extension warnings for explicit presentation by the CLI.
+// SummaryFileDiagnosticsAt is the diagnostics-carrying form of SummaryFileAt:
+// the same retained-authority checks, plus any bounded application-extension
+// warnings. No command prints that warnings slice today — status --validate
+// derives the same class through its own reader.
 func SummaryFileDiagnosticsAt(path, workflowDir string) (Summary, []Warning, error) {
 	doc, _, warnings, err := ReadDiagnostics(path)
 	if err != nil {
