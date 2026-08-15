@@ -1,7 +1,7 @@
 ---
 id: x8g3dnqndfa1m85d8ga2cgem
 title: Trim version output decoration without a reader
-status: backlog
+status: ideation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Remove three decorations from `spacedock --version` output. Each has no reader.
