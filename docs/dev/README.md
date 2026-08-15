@@ -291,6 +291,8 @@ The session scratchpad is shared across all dispatched workers. Name every throw
 
 Never use `git stash` while peer workers are active: stash refs are repo-global, not worktree-scoped, and concurrent stash/pop swaps payloads between workers (incident recorded 2026-08-15). Use a scratch commit on your own branch, or `git diff > file.patch` plus `git checkout --` — both are worktree-local.
 
+After you send a stage completion signal, treat the entity body as frozen while its gate briefing is open: route further findings and corrections to the first officer instead of committing them, because every post-prepare commit invalidates the briefing's frozen digest and forces a withdraw-and-re-prepare cycle (three occurrences recorded 2026-08-15).
+
 ## Commit Discipline
 
 - Commit state changes at dispatch and archive boundaries.
