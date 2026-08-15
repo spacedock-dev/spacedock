@@ -59,14 +59,14 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the common journeys by selecting one transport. Claude and Pi run at most
-two common journeys at one time. Codex runs at most three, with setup artifacts
+Run the common journeys by selecting one transport. Claude and Codex run at most
+three common journeys at one time. Pi runs at most two. Codex setup artifacts are
 isolated under `codex-shared-scenarios/_setup/<journey-id>/`. The Claude and Pi
 commands keep `-failfast`, but Go can start queued parallel journeys after a
 failure. The suite timeouts remain loose runaway backstops:
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 3 ./internal/ensigncycle -v
 ```
 
 Run all three current Claude substrate proofs with one 20-minute backstop:
