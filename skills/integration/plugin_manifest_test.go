@@ -24,12 +24,11 @@ func repoRoot(t *testing.T) string {
 
 // TestVendoredManifestVersionParses locks the manifest<->binary drift check
 // under minor-version coupling: the vendored .claude-plugin/plugin.json's
-// `version` field (the compatibility declaration itself — D2, no separate
-// requires-contract range is read by this binary) parses as a well-formed
-// major.minor semver. The D4 cross-era tombstone (requires-contract ">=3,<4")
-// and its binding to the FO shared-core's stamped minor are pinned by the
-// internal/contractlint sync test — the sanctioned home for a check that reads
-// the prose file this manifest binds against.
+// `version` field (the compatibility declaration itself — D2) parses as a
+// well-formed major.minor semver. That version's binding to the FO shared-core's
+// stamped minor is pinned by the internal/contractlint sync test — the
+// sanctioned home for a check that reads the prose file this manifest binds
+// against.
 func TestVendoredManifestVersionParses(t *testing.T) {
 	manifestPath := filepath.Join(repoRoot(t), ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(manifestPath)

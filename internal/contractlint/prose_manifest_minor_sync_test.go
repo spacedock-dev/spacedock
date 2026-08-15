@@ -1,5 +1,5 @@
 // ABOUTME: D5 sync test — the FO shared-core's stamped minor must equal the
-// ABOUTME: vendored plugin manifests' own minor; the D4 tombstones stay frozen.
+// ABOUTME: vendored plugin manifests' own minor.
 package contractlint
 
 import (
