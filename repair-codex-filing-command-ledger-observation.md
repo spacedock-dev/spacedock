@@ -164,6 +164,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:6ker7h25hj86983e5ef71ahm-validation-4
+              briefing:
+                id: briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-4:revision-1
+                digest: sha256:a07b84d651f6b8790b6af0c143ddfdc7df7f7a31c5ad6ed599180167e692ca5a
+                request-digest: sha256:4fbc2f6408e9a263b97b308ba424ca2dda7354ec46607b1d3c753df68138bd5e
+                room-ref: ./repair-codex-filing-command-ledger-observation/review/validation/briefing-4
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 mod-block:

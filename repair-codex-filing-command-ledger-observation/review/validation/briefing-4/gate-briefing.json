@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-4:revision-1",
+  "question": "Reject validation of 93d8bfc23 and return the task to ideation for an explicit k=3 slowest-first scheduler design?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/0fc4b1172061e8e4e70a453461d02a11ea0580e7/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:38a7811f6f53f36f209f9deb1e92799d7d9e675ca365209df7176fb5c518ca8b",
+      "mediaType": "text/markdown",
+      "summary": "Validation REJECTED frozen commit 93d8bfc23. A no-auth runtime probe showed Go t.Parallel does not preserve declaration order: the first three admitted journeys were OwnedConflictOwnerHandoff, WithdrawnGateRecovery, and DefaultHeadlessGateStop, not the three longest. The static test passed while observable scheduling violated the captain's k=3 slowest-first ruling. Candidate unchanged; no model run spent. Recommend design reset to ideation for an explicit scheduler."
+    }
+  ]
+}
