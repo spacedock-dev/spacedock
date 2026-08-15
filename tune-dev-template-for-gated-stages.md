@@ -1,7 +1,7 @@
 ---
 id: 42chs9dh7nq22f8at4szvbxp
 title: Tune the dev task template for gated stages
-status: implementation
+status: validation
 source: Captain direction, 2026-08-13
 sprint-readiness: ready
 score: 0.8
