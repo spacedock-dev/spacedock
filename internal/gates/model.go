@@ -86,8 +86,6 @@ type Summary struct {
 	Decision         string
 	Application      string
 	ApplicationState string
-	Condition        string
-	Eligible         bool
 	TargetStage      string
 }
 
