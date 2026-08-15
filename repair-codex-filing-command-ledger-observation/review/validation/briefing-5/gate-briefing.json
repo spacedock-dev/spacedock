@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-5:revision-1",
+  "question": "Approve validated PR #686 for terminal delivery and merge?",
+  "artifacts": [
+    {
+      "id": "artifact:6ker7h25hj86983e5ef71ahm:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/81e3f1deac5908564db74c4788e1fc351eac20f1/repair-codex-filing-command-ledger-observation.md",
+      "rev": "sha256:76138d9739841c01d4420257076b909062ff9c89252b0babe32baff422cb287e",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: exact green PR #686 artifact proves Codex filing passes unbound; offline, full/race, Claude, and Codex checks are green with no findings."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6ker7h25hj86983e5ef71ahm:validation:attempt-5:revision-1:item-2",
+      "uri": "git-root://main/0eac8800c3bbbf92bec409e75d20d4d904e58fd6/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:c1baad1e4682c58ff77ae258dd266696fc747f4b5bdca5d30c9c4e5a7bb676b0"
+    }
+  ]
+}
