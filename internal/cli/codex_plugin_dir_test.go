@@ -322,14 +322,14 @@ func TestInstallCodexLocalPluginDirResolvesOnEdgeChannel(t *testing.T) {
 }
 
 // buildCodexPluginCheckout writes a minimal valid codex plugin checkout under root
-// (a .codex-plugin/plugin.json bracketing CONTRACT_VERSION + one skill), the shape a
+// (a .codex-plugin/plugin.json with a version + one skill), the shape a
 // --plugin-dir target must have for codex's `plugin add` to copy it into its cache.
 func buildCodexPluginCheckout(t *testing.T, root, version string) string {
 	t.Helper()
 	mustMkdir(t, filepath.Join(root, ".codex-plugin"))
 	mustMkdir(t, filepath.Join(root, "skills", "demo"))
 	mustWrite(t, filepath.Join(root, ".codex-plugin", "plugin.json"),
-		`{ "name": "spacedock", "version": "`+version+`", "requires-contract": ">=2,<3", "skills": "./skills/" }
+		`{ "name": "spacedock", "version": "`+version+`", "skills": "./skills/" }
 `)
 	mustWrite(t, filepath.Join(root, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
 	return root
@@ -340,7 +340,7 @@ func buildCodexFirstOfficerCheckout(t *testing.T, root, version, description str
 	mustMkdir(t, filepath.Join(root, ".codex-plugin"))
 	mustMkdir(t, filepath.Join(root, "skills", "first-officer"))
 	mustWrite(t, filepath.Join(root, ".codex-plugin", "plugin.json"),
-		`{ "name": "spacedock", "version": "`+version+`", "requires-contract": ">=3,<4", "skills": "./skills/" }
+		`{ "name": "spacedock", "version": "`+version+`", "skills": "./skills/" }
 `)
 	mustWrite(t, filepath.Join(root, "skills", "first-officer", "SKILL.md"), "---\nname: first-officer\ndescription: "+description+"\n---\n"+description+"\n")
 	return root

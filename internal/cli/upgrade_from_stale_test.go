@@ -1,5 +1,5 @@
 // ABOUTME: AC-3 live upgrade-from-stale smoke — a real isolated-CLAUDE_CONFIG_DIR
-// ABOUTME: install of a stale (no requires-contract) plugin, then the 3-command upgrade to green.
+// ABOUTME: install of an ancient-minor (0.12.1) plugin, then the 3-command upgrade to green.
 package cli
 
 import (
@@ -125,9 +125,9 @@ func TestFreshBoxInstallSucceeds(t *testing.T) {
 	t.Fatalf("spacedock@spacedock not installed after fresh-box Install; combined output=%q\nplugin list=%s", out, listOut)
 }
 
-// buildStaleMarketplace writes a local-path marketplace whose plugin manifest has
-// NO requires-contract field — the 0.12.1 shape that predates the contract
-// mechanism. Returns the marketplace directory.
+// buildStaleMarketplace writes a local-path marketplace whose plugin manifest
+// declares version 0.12.1 — an ancient minor that resolves to too-old-plugin.
+// Returns the marketplace directory.
 func buildStaleMarketplace(t *testing.T, root string) string {
 	t.Helper()
 	marketplace := filepath.Join(root, "stale")

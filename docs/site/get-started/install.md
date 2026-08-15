@@ -106,10 +106,6 @@ See [supported sandboxes](../reference/sandbox.md).
 
 Run `spacedock doctor`.
 
-If startup says the installed launcher is missing a required command, upgrade
-Spacedock and relaunch. On macOS, run `brew upgrade spacedock`. On Linux, rerun
-the checksum-verified binary installer shown above.
-
 ## Next
 
 Read about the [survey report](survey.md) to understand your usage pattern

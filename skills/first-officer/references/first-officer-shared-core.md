@@ -9,8 +9,6 @@ Shared first-officer semantics — the boot-resident core. The active runtime ad
 1. **Binary gate.** Check `[ "${APP_SANDBOX_CONTAINER_ID:-}" = "agent-safehouse" ]`; inside, never offer/run installation; say to run it outside the sandbox. `${SPACEDOCK_BIN:-spacedock} --version` line 1 must be `spacedock <version>`. These skills require binary minor 0.27.
    - **Binary absent:** retry bare `spacedock` once if `SPACEDOCK_BIN` is unusable. Use `uname -s`, not `doctor`/`OS:`. Linux: `curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh`; macOS: `brew tap spacedock-dev/homebrew-tap`, then `brew install spacedock-dev/homebrew-tap/spacedock`; other OS: unsupported OS, hint `go build -o spacedock ./cmd/spacedock`, ABORT. Outside sandbox read `references/fo-install-gate.md`.
    - **Wrong version:** major.minor below/above/absent (bare `dev`) → ABORT; `${SPACEDOCK_BIN:-spacedock} doctor`.
-   - **Compatible minor:** `${SPACEDOCK_BIN:-spacedock} gate --help` once; stdout must contain `spacedock gate withdraw <entity> --reason TEXT`. Read-only; no workflow state.
-   - **Missing capability** (nonzero/absent line): ABORT before boot. Name executable, line-1 version, missing `gate withdraw … --reason`. Give only macOS `brew upgrade spacedock` or Linux `curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh`; say relaunch. No in-session install/repoint, source/repository advice, plugin refresh, network lookup, or alternate launcher.
 2. **Boot — local identify.** Invoke `«state.boot»()` once and retain its boot record.
 3. **Interaction boundary.** Invoke `«interaction.boundary»()` with that boot record and the launch context.
 

@@ -24,23 +24,17 @@ type GateRecord struct {
 }
 
 type Attempt struct {
-	ID               string            `yaml:"id" json:"id"`
-	Briefing         Briefing          `yaml:"briefing" json:"briefing"`
-	Withdrawal       *Withdrawal       `yaml:"withdrawal,omitempty" json:"withdrawal,omitempty"`
-	ProviderEvidence *ProviderEvidence `yaml:"provider-evidence,omitempty" json:"provider-evidence,omitempty"`
-	Resolution       *Resolution       `yaml:"resolution,omitempty" json:"resolution,omitempty"`
-	Application      *Application      `yaml:"application,omitempty" json:"application,omitempty"`
+	ID          string       `yaml:"id" json:"id"`
+	Briefing    Briefing     `yaml:"briefing" json:"briefing"`
+	Withdrawal  *Withdrawal  `yaml:"withdrawal,omitempty" json:"withdrawal,omitempty"`
+	Resolution  *Resolution  `yaml:"resolution,omitempty" json:"resolution,omitempty"`
+	Application *Application `yaml:"application,omitempty" json:"application,omitempty"`
 }
 
 type Withdrawal struct {
 	By     string `yaml:"by" json:"by"`
 	At     string `yaml:"at" json:"at"`
 	Reason string `yaml:"reason" json:"reason"`
-}
-
-type ProviderEvidence struct {
-	ResultDigest             string `yaml:"result-digest" json:"result-digest"`
-	PresentedInventoryDigest string `yaml:"presented-inventory-digest" json:"presented-inventory-digest"`
 }
 
 type Application struct {
@@ -262,9 +256,6 @@ func Validate(doc *Document) error {
 			}
 			switch attemptState(a) {
 			case "open":
-				if a.ProviderEvidence != nil {
-					return fmt.Errorf("open attempt %s cannot carry provider evidence", a.ID)
-				}
 				if a.Application != nil {
 					return fmt.Errorf("open attempt %s cannot carry application data", a.ID)
 				}
@@ -276,20 +267,13 @@ func Validate(doc *Document) error {
 				if err := validateWithdrawal(a.Withdrawal); err != nil {
 					return fmt.Errorf("attempt %s: %w", a.ID, err)
 				}
-				if a.ProviderEvidence != nil || a.Application != nil {
-					return fmt.Errorf("withdrawn attempt %s cannot carry provider evidence or application data", a.ID)
+				if a.Application != nil {
+					return fmt.Errorf("withdrawn attempt %s cannot carry application data", a.ID)
 				}
 				continue
 			case "closed":
 			default:
 				return fmt.Errorf("attempt %s has conflicting withdrawal and resolution state", a.ID)
-			}
-			if a.ProviderEvidence != nil {
-				if a.Briefing.RequestDigest == "" ||
-					!digestRE.MatchString(a.ProviderEvidence.ResultDigest) ||
-					!digestRE.MatchString(a.ProviderEvidence.PresentedInventoryDigest) {
-					return fmt.Errorf("provider-closed attempt %s has invalid provider evidence", a.ID)
-				}
 			}
 			if err := validateResolution(a.Resolution, a.Briefing.ID); err != nil {
 				return fmt.Errorf("attempt %s: %w", a.ID, err)

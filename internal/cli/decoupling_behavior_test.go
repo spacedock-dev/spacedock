@@ -99,7 +99,7 @@ func TestStableChannelDecoupledFromBranchHead(t *testing.T) {
 // buildPluginGitRepo writes a plugin git repo under root with a `next` branch
 // carrying tag v0.0.1 (version 0.0.1, skill body "body v0.0.1") on an early commit
 // and a `next` HEAD advanced to 0.0.2 ("body v0.0.2"). Returns the repo path. The
-// plugin manifest carries a requires-contract bracketing CONTRACT_VERSION.
+// plugin manifest carries the display version the doctor verdict reads.
 func buildPluginGitRepo(t *testing.T, root string) string {
 	t.Helper()
 	mustMkdir(t, filepath.Join(root, ".claude-plugin"))
@@ -123,7 +123,7 @@ func buildPluginGitRepo(t *testing.T, root string) string {
 func writePluginVersion(t *testing.T, root, version string) {
 	t.Helper()
 	mustWrite(t, filepath.Join(root, ".claude-plugin", "plugin.json"),
-		fmt.Sprintf(`{ "name": "spacedock", "version": "%s", "requires-contract": ">=2,<3", "skills": "./skills/" }`+"\n", version))
+		fmt.Sprintf(`{ "name": "spacedock", "version": "%s", "skills": "./skills/" }`+"\n", version))
 	mustWrite(t, filepath.Join(root, "skills", "demo", "SKILL.md"),
 		fmt.Sprintf("---\nname: demo\ndescription: demo\n---\nbody v%s\n", version))
 }
