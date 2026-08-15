@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f0zn4sr7nz7xsxmyw6aw6bsm:backlog:attempt-1:revision-1",
+  "question": "Approve scope-validate-warnings-to-active-entities into ideation for the 0.27 pre-ship cut program?",
+  "artifacts": [
+    {
+      "id": "artifact:f0zn4sr7nz7xsxmyw6aw6bsm:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/935b7524533317f592ec5dcf4bd3942cdd3f603c/scope-validate-warnings-to-active-entities.md",
+      "rev": "sha256:1a880b5dcebf79d36cee3e2bf4b6f29fd8873411a0e47e5e18cb274bb5c19046",
+      "mediaType": "text/markdown",
+      "summary": "125 archived-scope warnings fire forever; filter warn channels to active scope."
+    }
+  ]
+}

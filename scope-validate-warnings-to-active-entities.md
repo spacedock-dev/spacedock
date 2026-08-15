@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:f0zn4sr7nz7xsxmyw6aw6bsm:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:f0zn4sr7nz7xsxmyw6aw6bsm-backlog-1
+              briefing:
+                id: briefing:f0zn4sr7nz7xsxmyw6aw6bsm:backlog:attempt-1:revision-1
+                digest: sha256:fb33a5d317815de37d2dd3915e99879cee89c15c0c8e151f382e99e8ab1d4e31
+                request-digest: sha256:ae895696854c9670e468ff95993a9192b1c7136794226febf95723e25e7b7ad6
+                room-ref: ./scope-validate-warnings-to-active-entities/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f0zn4sr7nz7xsxmyw6aw6bsm:backlog:1
+                briefing: briefing:f0zn4sr7nz7xsxmyw6aw6bsm:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:49.94516Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Stop emitting warn-tier findings for archived entities in `status --validate`. Today 125 of 126 report lines are archived-scope warnings (121 unknown-gate-application-field, 4 verdict-enum), the report still ends VALID, and archived scope is publish-only, so no tool-mediated fix can ever silence them. The alarm fires identically forever and carries no information. The pre-commit hook echoes the full report on every state commit, so every commit dumps 51KB of noise.
