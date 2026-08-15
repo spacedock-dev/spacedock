@@ -7,7 +7,7 @@ started: 2026-08-15T02:55:29Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-remove-gate-validate-subcommand
 issue:
 sprint: durable-decisions
 gates:
@@ -213,21 +213,30 @@ the `gate validate` branch (`cli.go:337`). The other caller, `SummaryFileAt`
 (`io.go:199`), is itself reached only from `SummaryFile` (`io.go:195`) and from
 `internal/gates/prepare_test.go:956`; `SummaryFile`'s only caller is
 `internal/gates/application_test.go:365`. So after this removal the whole
-`SummaryFile` / `SummaryFileAt` / `SummaryFileDiagnosticsAt` trio is exercised by tests
-only.
+`SummaryFile` / `SummaryFileAt` / `SummaryFileDiagnosticsAt` trio is production-unreachable
+— reached from tests only. Two further points, both confirmed independently by the
+`scope-validate-warnings-to-active-entities` ideation (see Coordination): nothing prints
+the warnings slice `SummaryFileDiagnosticsAt` returns, since `SummaryFileAt` discards it
+with `_`; and the `newSummaryFile` hits in `cmd/spacedock-release/e2e_gate_test.go` are an
+unrelated local helper, not this function, so a naive `git grep SummaryFile` over-reports
+consumers (as do the stale `.worktrees/` copies).
 
-Sharper still: after this removal nothing prints the warnings slice that
-`SummaryFileDiagnosticsAt` returns, since `SummaryFileAt` discards it with `_`. The
-retained reader keeps a return value no caller can observe — independently reached by the
-`scope-validate-warnings-to-active-entities` ideation (see Coordination).
+**Why it stays anyway: scope discipline, not liveness.** This is the honest answer if the
+gate asks why the keep-boundary survives the evidence above. The trio is a general read
+surface rather than gate-validate machinery, its retirement is a separate value-chain
+question, and removing it here would mean re-pointing two `internal/gates` tests
+(`prepare_test.go:956`, `application_test.go:365`) that currently prove retained-authority
+refusal through it. Neither this task's value AC nor the peer's needs it gone. Recommend
+filing it as its own audit entity — but the keep-boundary should not be read as a claim
+that the reader is still used, because after this cut it is not.
 
-This task keeps the trio as instructed and does not expand into it. Retiring it is a
-separate value-chain question: it is a general read surface rather than gate-validate
-machinery, and removing it would require re-pointing two `internal/gates` tests that
-currently prove retained-authority refusal through it. Recommend filing it as its own
-audit entity. The doc comment on `SummaryFileDiagnosticsAt` ("is the gate-validate read
-surface") does become stale and is corrected in place, since it names a command that no
-longer exists.
+One blast-radius claim raised in coordination does **not** hold, checked rather than
+accepted: retiring the trio would not orphan `nearestWorkflowDir`. That helper has five
+other callers — `application.go:72` and `:109`, `operation.go:212`, `:277`, and `:345` —
+so `io.go:195` is one of six. The reasons to defer are the two above, not this one.
+
+The doc comment on `SummaryFileDiagnosticsAt` ("is the gate-validate read surface") does
+become stale and is corrected in place, since it names a command that no longer exists.
 
 ## Coordination
 
