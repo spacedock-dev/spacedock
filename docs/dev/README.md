@@ -289,6 +289,8 @@ Validators should pick the smallest test surface that proves the claim. Use Go u
 
 The session scratchpad is shared across all dispatched workers. Name every throwaway checkout or scratch directory with your entity slug (for example `spike-<slug>`), never a bare shared name — a path collision silently corrupts test evidence (incident recorded 2026-08-15).
 
+Never use `git stash` while peer workers are active: stash refs are repo-global, not worktree-scoped, and concurrent stash/pop swaps payloads between workers (incident recorded 2026-08-15). Use a scratch commit on your own branch, or `git diff > file.patch` plus `git checkout --` — both are worktree-local.
+
 ## Commit Discipline
 
 - Commit state changes at dispatch and archive boundaries.
