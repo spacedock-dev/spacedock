@@ -56,7 +56,17 @@ Each of the three faults it reports already has another verifier, confirmed agai
    `status --validate` through `gateValidationDiagnostics` (`internal/status/validate.go:228`),
    with its own formatting and its own test
    (`internal/status/gate_application_warning_test.go`, which asserts an exact warning
-   count of 5).
+   count of 5). **Scope matters here, and this rationale does not lean on any in-flight
+   work:** for *active* entities that sweep covers the class today and continues to,
+   whatever `scope-validate-warnings-to-active-entities` decides. For *archived* entities
+   this removal does eliminate the last CLI path to the warning — `gate validate
+   archive:<slug>` works today and is the only other printer (verified: it exits 0 and
+   prints both warnings for `archive:ac2-reanchor-live-scenario-repair`, resolving via
+   `internal/status/resolve.go:48`). That loss is acceptable on its own terms, not because
+   another task covers it: archived scope is publish-only and terminal, so no
+   tool-mediated write can ever clear an application-field extension there. The finding is
+   unactionable by construction, and an alarm that can never be acted on is not a
+   diagnostic worth a command surface. See Coordination.
 3. The `--round` read calls `gates.ValidateRoundFile`, which `gate record --round`
    already calls on publication (`internal/cli/cli.go:369`) and prints via `printRound`.
 
@@ -186,6 +196,11 @@ the `gate validate` branch (`cli.go:337`). The other caller, `SummaryFileAt`
 `SummaryFile` / `SummaryFileAt` / `SummaryFileDiagnosticsAt` trio is exercised by tests
 only.
 
+Sharper still: after this removal nothing prints the warnings slice that
+`SummaryFileDiagnosticsAt` returns, since `SummaryFileAt` discards it with `_`. The
+retained reader keeps a return value no caller can observe — independently reached by the
+`scope-validate-warnings-to-active-entities` ideation (see Coordination).
+
 This task keeps the trio as instructed and does not expand into it. Retiring it is a
 separate value-chain question: it is a general read surface rather than gate-validate
 machinery, and removing it would require re-pointing two `internal/gates` tests that
@@ -201,11 +216,29 @@ Overlap found with `scope-validate-warnings-to-active-entities` (in flight, unco
 the unknown-gate-application-field warn channel to active-scope entities — the same channel
 this task relies on as the surviving verifier for AC-4.
 
-Checked: no textual collision (that task edits `internal/status/`; this one edits
-`internal/cli/`, `internal/gates/io.go`, three test files, and three docs). The AC-4
-verifier still holds — `gateApplicationWarningFixture` writes an active-scope entity at the
-workflow root, so the new `e.scope != "active"` skip does not suppress it. No sequencing
-constraint between the two; either may land first.
+**Rationale independence (raised by that entity's ideation, 2026-08-14, and agreed).** The
+two removals were at risk of justifying each other in a loop: that task's draft cited
+`gate validate archive:<slug>` as the surviving on-demand surface for archived entities,
+while this task cited the `status --validate` sweep. Each entity was pointing at the
+surface the other removes. Verified against HEAD rather than taken on report:
+`gate validate archive:ac2-reanchor-live-scenario-repair --workflow-dir docs/dev` exits 0
+and prints both warnings today; `internal/cli/cli.go:337` is the sole non-test consumer of
+`gates.SummaryFileDiagnosticsAt`; and there is no `publish` command (`state` is
+`init|new|ready|sweep|commit`). So if both land as scoped, the application-extension
+warning becomes unreachable through any CLI for archived entities.
+
+Both entities now stand on unactionability alone for the archived case, and neither cites
+the other's surface. This task's rationale is unaffected in substance: its load-bearing
+grounds — zero usage across 424 attempts, retained-authority faults refused by every gate
+write path, and the round check duplicated by `gate record --round` — are all independent
+of that task. Only the warning-class point needed its scope stated precisely, which is now
+done in Problem item 2 and declared as a semantic change in Expected surface.
+
+No textual collision (that task edits `internal/status/`; this one edits `internal/cli/`,
+`internal/gates/io.go`, three test files, and three docs). The AC-4 verifier still holds —
+`gateApplicationWarningFixture` writes an active-scope entity at the workflow root, so the
+new `e.scope != "active"` skip does not suppress it. No sequencing constraint in either
+direction; either may land first.
 
 Also checked, no overlap: `remove-startup-capability-probe` (skills/, install docs) and
 `retire-requires-contract-sentinel`, which explicitly lists "`gate validate` demotion" as
@@ -238,8 +271,14 @@ entry, two re-pointed probe lines).
 - **Published help text (changed).** The `gate --help` exact-text contract loses one
   grammar line; `Use:` and `Short:` lose `validate` / `inspect,`.
 - **Diagnostics reachability (changed, no enforcement lost).** The unknown-application-field
-  warning class is reachable only through `status --validate` afterward. Retained-authority
-  faults keep failing every gate write path closed; only the read-only report of them goes.
+  warning class is reachable only through `status --validate` afterward. For active
+  entities that is unchanged coverage. For archived entities this removes the last CLI
+  printer: `gate validate archive:<slug>` is the only surface that reports the class for
+  archived scope today, and `gates.SummaryFileDiagnosticsAt` — the reader behind it — is
+  left with no printer for its warnings slice at all. Declared deliberately, on the ground
+  that archived scope is publish-only and terminal so the finding is unactionable.
+  Retained-authority faults keep failing every gate write path closed; only the read-only
+  report of them goes.
 - **Unchanged:** stored formats (`gates` frontmatter, room bytes, round pointers),
   authority and eligibility rules, exit codes of every surviving command, and all runtime
   or dispatch behavior.
@@ -327,3 +366,11 @@ when re-pointed at `gate consume` — end-to-end against a freshly built binary;
 reproduce their existing assertion strings byte-clean, so no coverage is lost. Flagged for
 the gate: the approved keep-boundary for `SummaryFileDiagnosticsAt` rests on a chain that
 dead-ends in tests, which I kept rather than expanded, and recommend as its own entity.
+
+Post-report coordination with `scope-validate-warnings-to-active-entities` removed a
+circular justification between the two entities — each had cited the surface the other
+removes. Verified the peer's claims against HEAD (`gate validate archive:<slug>` works and
+is the only archived-scope printer; no `publish` command exists) and rewrote this task's
+warning-class rationale to stand on unactionability of archived findings alone. The removal
+plan and estimate are unchanged; only the rationale's precision and one declared semantic
+change moved. See Coordination.
