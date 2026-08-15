@@ -69,7 +69,7 @@ Every task file has YAML frontmatter. Fields are documented below; see **Task Te
 | `source` | string | Where this task came from |
 | `started` | ISO 8601 | When active work began |
 | `completed` | ISO 8601 | When the task reached terminal status |
-| `verdict` | enum | PASSED or REJECTED - set at final stage |
+| `verdict` | enum | PASSED or REJECTED - set at final stage. Closed on write: `--set` refuses any other token (`--force` bypasses). To supersede an entity, leave `verdict` empty and `--archive` it, recording why in the body. |
 | `score` | number | Priority score, 0.0-1.0 (optional). Workflows can upgrade to a multi-dimension rubric in their README. |
 | `worktree` | string | Worktree path while a dispatched agent is active, empty otherwise |
 | `issue` | string | Optional external ticket reference, such as `ENG-123`, `kata:task-abc123`, or `owner/repo#42` |

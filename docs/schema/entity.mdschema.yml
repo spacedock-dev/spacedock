@@ -90,7 +90,8 @@
           "PASSED",
           "REJECTED"
         ],
-        "invalid_severity": "warn"
+        "invalid_severity": "warn",
+        "semantics": "the conventional list is advisory on read and closed on write: a non-conventional token already in history warns and is never rewritten, while `status --set` refuses to write one (--force bypasses). Clearing always passes — to supersede an entity, leave verdict empty and archive it, recording why in the body"
       },
       "mod-block": {
         "type": "string",

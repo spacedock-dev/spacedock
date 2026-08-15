@@ -90,11 +90,15 @@ func TestSetStoresSchemaCasedVerdict(t *testing.T) {
 }
 
 // TestNonConventionalValuePassesThroughUnchanged pins the deliberate limit on
-// canonicalisation. A conventional list is advisory (`invalid_severity: warn`),
-// so a field may legitimately carry a value outside it — canonicalisation
-// snaps values ONTO the schema's spellings, it does not case-fold everything.
-// A blanket strings.ToUpper would silently rewrite `needs-work` to `NEEDS-WORK`,
-// editing state the caller wrote on purpose.
+// canonicalisation. A conventional list is advisory ON READ
+// (`invalid_severity: warn`), so a field may legitimately carry a value outside
+// it — canonicalisation snaps values ONTO the schema's spellings, it does not
+// case-fold everything. A blanket strings.ToUpper would silently rewrite
+// `needs-work` to `NEEDS-WORK`, editing state the caller wrote on purpose.
+//
+// The list is closed ON WRITE, so an unforced `--set verdict=needs-work` is now
+// refused (conventionalViolation) — this test forces past that admission check to
+// reach the normaliser underneath, which is what it is pinning.
 func TestNonConventionalValuePassesThroughUnchanged(t *testing.T) {
 	root := stageFixture(t, "seq-workflow")
 	_, errOut, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root,

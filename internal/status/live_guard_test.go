@@ -99,7 +99,7 @@ func TestLiveRunGuardPassesCitedRuntimeAC(t *testing.T) {
 	root, entityPath := stageLiveGuardFixture(t, "require-external-proof: true\n", acBody)
 
 	_, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--set", "010-live-ac",
-		"status=done", "completed", "verdict=accepted")
+		"status=done", "completed", "verdict=passed")
 	if nCode != 0 {
 		t.Fatalf("cited runtime-observable AC must pass, got %d (%q)", nCode, nErr)
 	}
@@ -119,7 +119,7 @@ func TestLiveRunGuardNeverRefusesOfflineAC(t *testing.T) {
 	root, entityPath := stageLiveGuardFixture(t, "require-external-proof: true\n", acBody)
 
 	_, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--set", "010-live-ac",
-		"status=done", "completed", "verdict=accepted")
+		"status=done", "completed", "verdict=passed")
 	if nCode != 0 {
 		t.Fatalf("offline AC must never be refused by the live-run guard, got %d (%q)", nCode, nErr)
 	}
@@ -144,7 +144,7 @@ func TestLiveRunGuardInertWhenOptInAbsentOrFalse(t *testing.T) {
 		t.Run(strings.TrimSpace(name), func(t *testing.T) {
 			root, entityPath := stageLiveGuardFixture(t, optIn, acBody)
 			_, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--set", "010-live-ac",
-				"status=done", "completed", "verdict=accepted")
+				"status=done", "completed", "verdict=passed")
 			if nCode != 0 {
 				t.Fatalf("guard must be inert when opt-in absent/false, got %d (%q)", nCode, nErr)
 			}
@@ -167,7 +167,7 @@ func TestLiveRunGuardForceBypassWarnsLoudly(t *testing.T) {
 	root, entityPath := stageLiveGuardFixture(t, "require-external-proof: true\n", acBody)
 
 	_, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--set", "010-live-ac",
-		"status=done", "completed", "verdict=accepted", "--force")
+		"status=done", "completed", "verdict=passed", "--force")
 	if nCode != 0 {
 		t.Fatalf("--force must bypass the live-run guard, got %d (%q)", nCode, nErr)
 	}

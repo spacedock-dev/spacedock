@@ -368,6 +368,34 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 		}
 	}
 
+	// Conventional-vocabulary admission: a field declaring a schema `conventional`
+	// list is closed on write (conventionalViolation), so `--set verdict=superseded`
+	// — the exact write that produced the four archived records carrying a token the
+	// enum never admitted — refuses instead of storing it. The write path already
+	// consulted this list to fold case (canonicalConventional, inside
+	// updateFrontmatter); this is that same lookup used for admission, not a second
+	// source of truth. `verdict` is the only conventional field today, so the blast
+	// radius is exactly it, but nothing here is verdict-specific.
+	//
+	// The guard lives here rather than in updateFrontmatter because `force` is in
+	// scope here alongside the other --set guards, and because the shared write
+	// engine stays a pure normaliser for finalize and archive, which pass
+	// already-canonical values. It is placed last, immediately before the write, so
+	// every already-refused command keeps reporting its existing cause first and the
+	// refusal is byte-clean by construction. --force bypasses, the uniform escape
+	// the guards above honor.
+	if !force {
+		for _, u := range set.updates {
+			problem := conventionalViolation(u.field, u.value)
+			if problem == "" {
+				continue
+			}
+			return errExit(stderr, fmt.Sprintf(
+				"entity %s: %s. Pick one of those, clear it with `%s=`, or use --force.",
+				slug, problem, u.field))
+		}
+	}
+
 	resolvedFields, err := updateFrontmatter(entityPath, set.updates)
 	if err != nil {
 		return errExit(stderr, err.Error())
