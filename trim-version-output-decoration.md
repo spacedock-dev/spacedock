@@ -96,7 +96,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#708"
+pr: pr-merge:708
 ---
 
 Trim `spacedock --version` output to what has a reader, and give the Sandbox line a value shape that does not repeat its own label.
