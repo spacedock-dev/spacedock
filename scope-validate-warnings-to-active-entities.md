@@ -71,6 +71,17 @@ gates:
                 digest: sha256:72d2b0a83c2ea97a1046cf76fe6ff17fdd0b3de522aa6566ae897e56dee41b71
                 request-digest: sha256:e4114c1a92548d5dd4b6480a03bab228549251ad667ccbedc49fd6b17002f7da
                 room-ref: ./scope-validate-warnings-to-active-entities/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f0zn4sr7nz7xsxmyw6aw6bsm:validation:1
+                briefing: briefing:f0zn4sr7nz7xsxmyw6aw6bsm:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T16:08:52.025657Z"
+                decision: approve
+                reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Stop emitting warn-tier findings for archived entities in `status --validate`. Today 125 of 126 report lines are archived-scope warnings (121 unknown-gate-application-field, 4 verdict-enum), the report still ends VALID, and archived scope is publish-only, so no tool-mediated fix can ever silence them. The alarm fires identically forever and carries no information. The pre-commit hook echoes the full report on every state commit, so every commit dumps 51KB of noise.
