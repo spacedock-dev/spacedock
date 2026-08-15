@@ -172,17 +172,17 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 // CAS values, and durable ids belong to the recorder.
 func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
-		Use:                "gate prepare|withdraw|record|validate|consume <entity>",
-		Short:              "Prepare, withdraw, record, inspect, or consume durable gate resolutions",
+		Use:                "gate prepare|withdraw|record|consume <entity>",
+		Short:              "Prepare, withdraw, record, or consume durable gate resolutions",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate validate <entity> [--round STAGE/CYCLE] [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. In a split-root workflow, a successful close or consume\nends with a machine-parseable `sync=.../phase=...` line; branch on that final line plus\nthe exit code, never on which prose lines printed.")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. In a split-root workflow, a successful close or consume\nends with a machine-parseable `sync=.../phase=...` line; branch on that final line plus\nthe exit code, never on which prose lines printed.")
 				return nil
 			}
-			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "validate" && args[0] != "consume") {
-				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|withdraw|record|validate|consume)")
+			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "consume") {
+				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|withdraw|record|consume)")
 				return exitCodeError{2}
 			}
 			workflowDir := ""
@@ -317,32 +317,6 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 					return exitCodeError{1}
 				}
 				fmt.Fprintf(stdout, "withdrawn gate=%s attempt=%s state=%s briefing=%s\n", s.Gate, s.Attempt, s.State, s.Briefing)
-				return nil
-			}
-			if args[0] == "validate" {
-				if input.Round != "" {
-					round := input.Round
-					input.Round = ""
-					if input != (gates.RecordInput{}) {
-						fmt.Fprintln(stderr, "Error: gate validate --round accepts only --workflow-dir")
-						return exitCodeError{2}
-					}
-					summary, err := gates.ValidateRoundFile(path, round)
-					return printRound(summary, err, stdout, stderr)
-				}
-				if input != (gates.RecordInput{}) {
-					fmt.Fprintln(stderr, "Error: gate validate accepts only --workflow-dir")
-					return exitCodeError{2}
-				}
-				s, warnings, err := gates.SummaryFileDiagnosticsAt(path, definitionDir)
-				if err != nil {
-					fmt.Fprintln(stderr, "Error:", err)
-					return exitCodeError{1}
-				}
-				for _, warning := range warnings {
-					fmt.Fprintln(stderr, gates.FormatWarning(path, warning))
-				}
-				fmt.Fprintf(stdout, "gate=%s attempt=%s state=%s briefing=%s resolution=%s decision=%s\n", s.Gate, s.Attempt, s.State, s.Briefing, s.Resolution, s.Decision)
 				return nil
 			}
 			if args[0] == "consume" {
