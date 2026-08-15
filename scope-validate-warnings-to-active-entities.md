@@ -32,6 +32,19 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:f0zn4sr7nz7xsxmyw6aw6bsm:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:f0zn4sr7nz7xsxmyw6aw6bsm-ideation-1
+              briefing:
+                id: briefing:f0zn4sr7nz7xsxmyw6aw6bsm:ideation:attempt-1:revision-1
+                digest: sha256:3e809f22e80af54aa94b0e207d3fa13a7728ac23492fbf0fd8792a9b8b641faf
+                request-digest: sha256:968622d940e98e4aeab52ee72d9cae24a193e8093827257a331dde170ca53a23
+                room-ref: ./scope-validate-warnings-to-active-entities/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-15T03:23:23.90906Z"
+                reason: Entity amended after prepare (d3590a590, citation and honesty fix); withdrawing stale attempt to re-prepare against current bytes
 ---
 
 Stop emitting warn-tier findings for archived entities in `status --validate`. Today 125 of 126 report lines are archived-scope warnings (121 unknown-gate-application-field, 4 verdict-enum), the report still ends VALID, and archived scope is publish-only, so no tool-mediated fix can ever silence them. The alarm fires identically forever and carries no information. The pre-commit hook echoes the full report on every state commit, so every commit dumps 51KB of noise.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f0zn4sr7nz7xsxmyw6aw6bsm:ideation:attempt-1:revision-1",
+  "question": "Approve scope-validate-warnings-to-active-entities ideation into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:f0zn4sr7nz7xsxmyw6aw6bsm:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d3590a590ab7654d9821b01b7c6a722cbf092049/scope-validate-warnings-to-active-entities.md",
+      "rev": "sha256:59ba1ef14e08888920e729348a39dd6b6b14fc521a3cc17420714910ca963834",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: patch pre-proven by apply-measure-revert (125 to 0 archived warns, VALID both); per-emission guards protect archived structural errors; 11-line change plus two tests."
+    }
+  ]
+}
