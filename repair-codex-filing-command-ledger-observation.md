@@ -198,7 +198,7 @@ gates:
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 mod-block: merge:pr-merge
-pr: "#686"
+pr: pr-merge:686
 ---
 
 ## Problem
