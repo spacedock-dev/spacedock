@@ -287,6 +287,8 @@ Validation pilots should use these when verifying implementation work:
 
 Validators should pick the smallest test surface that proves the claim. Use Go unit tests for package behavior, golden fixtures for stable command output, and live workflow smoke tests only when the runtime integration itself is the claim.
 
+The session scratchpad is shared across all dispatched workers. Name every throwaway checkout or scratch directory with your entity slug (for example `spike-<slug>`), never a bare shared name — a path collision silently corrupts test evidence (incident recorded 2026-08-15).
+
 ## Commit Discipline
 
 - Commit state changes at dispatch and archive boundaries.
