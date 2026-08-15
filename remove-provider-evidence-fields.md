@@ -33,13 +33,24 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:7c4w88fnmnbtc0tgkrvx0vxj:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:7c4w88fnmnbtc0tgkrvx0vxj-ideation-1
+              briefing:
+                id: briefing:7c4w88fnmnbtc0tgkrvx0vxj:ideation:attempt-1:revision-1
+                digest: sha256:b496766d84d0bb0205e020157e7e84855669c88b3e411fac57b643f7ab638b90
+                request-digest: sha256:371679a1811510ae4dcd770a6ac5696aefe63569641263ed7a19cba5bea2ff50
+                room-ref: ./remove-provider-evidence-fields/review/ideation/briefing-1
 ---
 
 Remove `ProviderEvidence` from the gate model: the struct, the `provider-evidence` field, the `Validate` branches that police it on open and withdrawn attempts, and their tests. Zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field. Re-introduce the fields only together with a real provider integration: writer, retention, and verifier.
 
 ## Problem
 
-**The seed's premise above is false. The ideation spike falsified it, and the correction changes the design.** The audit recorded "no writer, no retained bytes, no verifier" and "zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field". Measured at HEAD (4d1912a69) over the whole `docs/dev/.spacedock-state` corpus — 924 markdown files, 135 carrying a `gates:` block, 437 attempts across 119 decodable documents — **six attempts in two archived entities do carry `provider-evidence`**, their retained rooms are intact on disk, and the verifier passes against them today. Only the "no writer" claim survives.
+**The seed's premise above is false. The ideation spike falsified it, and the correction changes the design.** The audit recorded "no writer, no retained bytes, no verifier" and "zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field". Measured over the whole `docs/dev/.spacedock-state` corpus at code `ef8f55c83` and state `86e7eebc2` — 925 markdown files, 135 carrying a `gates:` block, 443 attempts across 119 decodable documents — **six attempts in two archived entities do carry `provider-evidence`**, their retained rooms are intact on disk, and the verifier passes against them today. Only the "no writer" claim survives.
+
+All measurements below were produced in an isolated, slug-named spike directory and re-run end to end after a shared-scratchpad path collision was reported; the corpus counts drift by a few files as peers commit, so both SHAs are pinned. `internal/gates`, `internal/status`, and `internal/cli` are byte-identical between `4d1912a69` and `ef8f55c83`.
 
 What is actually true at HEAD:
 
@@ -54,6 +65,7 @@ The removal is still right, but for a different reason than the audit gave. The 
 
 - `spacedock status --workflow-dir docs/dev --validate` goes from `VALID` at rc=0 to **rc=1** with two `Error: invalid gates: decode canonical gates v1: ... field provider-evidence not found in type gates.Attempt` lines naming both archived entities.
 - Corpus read-ok drops 119 → 117; read-err rises 16 → 18.
+- Less obvious, and the reason a "does it still say VALID" check is not sufficient: the strip also **loses 14 warning lines**, 125 → 111. The two entities now fail the structural read before their per-attempt application-field diagnostics are emitted, so the naive strip silently reduces reporting on exactly the records it broke.
 
 That regression is permanent and no peer entity repairs it. `scope-validate-warnings-to-active-entities` filters warn-tier findings only, states that "the structural error above stays scope-inclusive", and explicitly rules that the read tolerance itself must be kept because "it is load-bearing for every gates read over the legacy corpus".
 
@@ -130,18 +142,20 @@ Observable semantics changed, declared:
 Verified by: cumulative line delta of the diff against `origin/main` is negative and at least 130 lines net. Baseline that can move the wrong way: the tolerance filter and its test are additions, so a bloated implementation fails this.
 
 **AC-2 — Stored state stays exactly as readable as it is today.**
-Verified by: a corpus decode pass over `docs/dev/.spacedock-state` reports read-ok=119 and read-err=16, matching the HEAD baseline measured in this ideation, with zero attempts decoding a provider-evidence value. A naive strip scores 117/18 and fails.
+Verified by: a corpus decode pass over `docs/dev/.spacedock-state` reports the same read-ok and read-err counts as a HEAD binary run against the same state SHA in the same session, with zero attempts decoding a provider-evidence value. Measured at state `86e7eebc2`: HEAD and the tolerant build both score read-ok=119 / read-err=16; a naive strip scores 117/18 and fails. Re-measure the HEAD side rather than hard-coding 119/16 — the corpus grows as peers commit.
 
-**AC-3 — This repo's own workflow still validates.**
-Verified by: `spacedock status --workflow-dir docs/dev --validate` exits 0 and prints `VALID`, with stdout and stderr byte-identical to the HEAD baseline.
+**AC-3 — This repo's own workflow still validates, with undiminished reporting.**
+Verified by: `spacedock status --workflow-dir docs/dev --validate` exits 0, prints `VALID`, and is byte-identical on **both** stdout and stderr to a HEAD binary run against the same state SHA. At `86e7eebc2` that baseline is `VALID` at rc=0 with 125 stderr `Warning:` lines. Comparing stdout alone is not enough: the naive strip fails this at rc=1 with 2 `Error:` lines and only 111 warnings, and a variant that restored rc=0 while still dropping warning lines would pass a stdout-only check.
 
 **AC-4 — No production code references the provider-evidence model.**
 Verified by: `grep -rn "ProviderEvidence\|providerResult\|resultAssociation\|deriveAssociation\|verifyAssociation\|verifyProviderResolution\|presentedInventory" internal cmd skills` matches nothing outside the single retired-key string literal and its comment in `io.go`, and its test.
 
-**AC-5 — The suite is no worse than the HEAD baseline.**
-Verified by: `go test ./... -timeout 30m` and `go test ./... -race -timeout 30m` show no failure that is not already present at HEAD.
+**AC-5 — The suite stays green, with one declared environment carve-out.**
+Verified by: `go test ./... -timeout 30m` and `go test ./... -race -timeout 30m` pass, except for failures also present on an unmodified HEAD run in the same environment.
 
-Baseline measured during this ideation at `4d1912a69`, so the implementer does not mistake pre-existing breakage for their own: `internal/gates` ok (151s) and `internal/status` ok (266s), but `internal/cli` and `internal/ensigncycle` both **panic at the default 600s `go test` timeout**, and `internal/cli` additionally carries one real pre-existing failure, `TestCodexResolveManifestAgainstInstalledHost`, which depends on an installed Codex host and so is environment-sensitive. Neither is caused by, nor in scope for, this entity. `-timeout 30m` is required for those two packages to finish at all.
+Baseline measured during this ideation at `ef8f55c83`, isolated, so the implementer does not mistake environment noise for their own breakage. `internal/gates` ok (68s), `internal/status` ok (128s), `internal/ensigncycle` ok (384s), `internal/cli` **one failure**: `TestCodexResolveManifestAgainstInstalledHost`, which shells out to the installed Codex host and failed here only because the sandbox denied reading `~/.codex/config.toml` (`Operation not permitted`). That is a property of this execution environment, not the repo; expect it to pass where Codex config is readable. Nothing else fails.
+
+Two practical notes. `-timeout 30m` is needed: `internal/cli` and `internal/ensigncycle` each exceed the 600s `go test` default when the machine is shared with other running agents — an earlier contended run had both panic on timeout, while the same packages finished in 314s and 384s uncontended. And run the HEAD comparison in the same conditions as the change run, or machine load alone will move the result.
 
 ## Test plan
 
@@ -153,7 +167,9 @@ Deletion, plus one new test and two existing tests that become the regression fe
 
 Corpus decode and `status --validate` comparisons (AC-2, AC-3) run as one-off evidence in the implementation report against the baselines recorded here, not as committed tests — they depend on this repo's state checkout, which no fresh clone reproduces.
 
-**Spike record.** The riskiest unverified mechanism was whether stored state survives the model strip. It was exercised before design, by overlaying stripped `model.go`/`io.go`, rebuilding `cmd/spacedock`, and running both the corpus decode and `status --validate`. Result: the naive strip breaks two archived entities and fails validation; the tolerant variant reproduces the HEAD baseline byte-for-byte and was likewise built and measured, not reasoned about. Both binaries and both outputs were compared directly.
+**Spike record.** The riskiest unverified mechanism was whether stored state survives the model strip. It was exercised before design, by overlaying stripped `model.go`/`io.go`, rebuilding `cmd/spacedock`, and running both the corpus decode and `status --validate`. Result: the naive strip breaks two archived entities and fails validation; the tolerant variant reproduces the HEAD baseline byte-for-byte and was likewise built and measured, not reasoned about. Three binaries (HEAD, strip, tolerant) were built and compared directly.
+
+The spike used `go test -overlay` and `go build -overlay` throughout, so the shared working tree was never modified — relevant because peers build from the same checkout. It was then re-run end to end in a slug-named directory after the FO reported a shared-scratchpad collision. That re-run mattered: the first pass recorded a HEAD stderr baseline of zero lines, which the isolated re-run showed to be 125 warning lines, matching the independently documented count in `scope-validate-warnings-to-active-entities`. The conclusion held, but AC-3's baseline was wrong and is now corrected. Reproduce with the commands in this section against a freshly built HEAD binary; do not trust a stale one.
 
 ## Stage Report: ideation
 
@@ -171,3 +187,24 @@ The seed's premise was false and the spike caught it before implementation. The 
 The design therefore retires the key behind the read tolerance that already exists rather than deleting it outright, which reproduces the HEAD baseline byte-for-byte. Hand-migrating the six archived records was rejected on recorded precedent (6c45fd59c, cited by `scope-validate-warnings-to-active-entities`). Both variants were built and measured, not reasoned about.
 
 Scope grew from the seed's "~3 files" to 8 files and about -190 lines, because deleting the field orphans 154 lines of association-verification helpers in operation.go that Go will happily compile as dead code unless removed deliberately. Coordination overlaps with `trim-dead-gate-model-surface` (same two files, disjoint spans), `remove-gate-validate-subcommand`, and `scope-validate-warnings-to-active-entities` (shared contract sentence) are recorded in the body.
+
+## Stage Report: ideation (cycle 2 - isolated re-verification)
+
+Re-run of every cited measurement in a slug-named directory after the FO's shared-scratchpad collision advisory. The design conclusion is unchanged; two recorded baselines were wrong and are corrected in the body.
+
+- DONE: One-off state decode pass proves zero stored records carry the fields before the model strip
+  Re-run at code `ef8f55c83` / state `86e7eebc2`: 925 md files, 135 with gates, 443 attempts. HEAD decodes 6 provider-evidence attempts; tolerant build decodes 0 at identical read-ok=119 / read-err=16; naive strip scores 117/18. Still FAILED as originally worded - the premise it asked me to prove is false - but the pass itself is now collision-free.
+- DONE: Keep-boundary confirmed: retained-authority request.json verification stays
+  Unchanged; re-confirmed by the verifier run passing on both archived entities (4 and 2 attempts) with the request.json path intact.
+- DONE: Value AC measures negative LOC and a green suite over live and archived state
+  AC-1/AC-2/AC-3 re-baselined against freshly built HEAD, strip, and tolerant binaries. AC-5 rewritten: the suite is effectively green, not broken.
+
+### Corrections
+
+1. **AC-3 baseline was wrong.** The contaminated run recorded HEAD stderr as 0 lines; isolated re-run shows **125 `Warning:` lines**, which matches the count `scope-validate-warnings-to-active-entities` documents independently. AC-3 now requires byte-identity on both streams against a freshly built HEAD binary.
+2. **AC-5 baseline was wrong.** The contaminated run showed `internal/cli` and `internal/ensigncycle` panicking at the 600s default. Uncontended, `ensigncycle` passes in 384s and the only failure is `TestCodexResolveManifestAgainstInstalledHost`, caused by this sandbox denying `~/.codex/config.toml`. The suite is green modulo that environment carve-out.
+3. **New finding.** The naive strip also drops 14 warning lines (125 to 111), because the two broken entities fail the structural read before their per-attempt diagnostics emit. A stdout-only "still says VALID" check would miss this, so AC-3 compares stderr too.
+
+### Summary
+
+Everything load-bearing reproduced: 6 archived attempts carry the field, their rooms are intact, the verifier passes against them, the naive strip takes `status --validate` to rc=1, and the tolerant variant is byte-identical to HEAD on both streams. The collision did not change any conclusion, but it did corrupt two baselines that later stages would have compared against, and both were numbers I would have had no way to catch without re-running. Spike artifacts are under `scratchpad/spike-remove-provider-evidence-fields/`; the shared working tree was never modified, since all variants ran through `go build -overlay` / `go test -overlay`.
