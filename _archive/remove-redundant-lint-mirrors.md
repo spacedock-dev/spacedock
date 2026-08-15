@@ -1,11 +1,11 @@
 ---
 id: zvk9cnew2ggpaqb3wty24xtf
 title: Remove redundant lint mirrors and the version-gate shell harness
-status: validation
+status: done
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:48Z
-completed:
-verdict:
+completed: 2026-08-15T19:56:27Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-remove-redundant-lint-mirrors
 issue:
@@ -81,9 +81,10 @@ gates:
                 reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:703
+archived: 2026-08-15T19:56:27Z
 ---
 
 Three verified-redundant test mirrors.
