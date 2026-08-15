@@ -116,6 +116,17 @@ Delivery is order-independent, and both orders were exercised in the spike:
 - **This entity lands first.** It ships all four sites; zvk9 then deletes the two
   files it edited.
 
+zvk9's whole-file delete is self-contained, which was checked rather than
+assumed: every symbol defined in `version_gate_fixture_test.go`
+(`curlInstallToken`, `gateFixtureDir`, `writeExe`, `captiveInstall`,
+`runGateFlow`, `installRunCount`, `sentinelPath`, `fixtureSessionID`) is used
+only inside that file, so no sibling in `skills/integration` loses a symbol when
+it goes. `repoRoot()` lives in `plugin_manifest_test.go` and is untouched by
+either entity. A third entity, retire-requires-contract-sentinel, makes
+comment-only edits to `plugin_manifest_test.go` and `marketplace_manifest_test.go`
+in this same package — disjoint files, no symbols added or removed, so no merge
+order conflicts.
+
 A finding that supports zvk9's premise fell out of the spike: with sites 1 and 4
 applied and sites 2-3 left alone, `go test ./skills/integration/` stayed green.
 The harness that documents itself as a "deterministic shell mirror of the FO
@@ -195,22 +206,32 @@ Deleting a bullet that a lint pins would strand the build. That was resolved by
 exercise, not by reading — in a throwaway worktree at HEAD 4d1912a69 the deletion
 was applied and the tests run.
 
-- Sites 1+4 only: `go test ./internal/contractlint/ ./skills/integration/` → both ok.
+- Sites 1+4 only: `go test ./internal/contractlint/ ./skills/integration/` → both ok, -6/+0.
 - All four sites: `gofmt -l` clean, diff -117/+1, and every package that reads a
   changed file passes — `cmd/spacedock-release`, `internal/claudeteam`,
-  `internal/contractlint`, `internal/ensigncycle` (385s run alone),
+  `internal/contractlint`, `internal/ensigncycle` (463s run alone),
   `internal/release`, `skills/integration`, plus `internal/cli`'s three
   `TestProseFunction*` tests, which are that package's shared-core readers.
+- CI's deterministic live-harness control subset
+  (`.github/workflows/runtime-live-e2e.yml:78`) → ok in 0.6s.
 
-Two full-suite failures appeared and both were shown NOT to be caused by the
-change, by re-running them in a second clean worktree at the same HEAD:
-`TestCodexResolveManifestAgainstInstalledHost` fails identically at clean HEAD
-(sandbox denies reading `~/.codex/config.toml`), and the `internal/cli` and
-`internal/ensigncycle` package timeouts are load artifacts — clean-HEAD
-`internal/cli` also takes 503s, and `internal/ensigncycle` passes in 385s when it
-is not competing with two other test runs. `internal/ensigncycle`'s two
-shared-core mentions are inert string literals inside fixture transcripts; neither
-reads the file's contents.
+Every measurement above was re-run from scratch in worktrees named
+`spike-remove-startup-capability-probe` and
+`control-remove-startup-capability-probe`. The first pass used bare names
+(`probe-spike`, `control-clean`) in the shared session scratchpad, which the FO
+flagged as a collision hazard after one contaminated a sibling's evidence. The
+re-run reproduced every number exactly, so nothing here rests on a shared path.
+
+Three test failures appeared along the way and all three were shown NOT to be
+caused by the change, by re-running them in a clean control worktree at the same
+HEAD. `TestCodexResolveManifestAgainstInstalledHost` fails identically at clean
+HEAD — the sandbox denies reading `~/.codex/config.toml`. The `internal/cli` and
+`internal/ensigncycle` package timeouts are load artifacts: clean-HEAD
+`internal/cli` also takes 503s, and `internal/ensigncycle` passes when it is not
+competing with other test runs. `internal/ensigncycle`'s two shared-core mentions
+are inert string literals inside fixture transcripts; neither reads the file's
+contents, so the package cannot be sensitive to this change. See AC-4 for why a
+bare `go test ./...` is the wrong gate here.
 
 The tokens the lints pin (`curl -fsSL …install.sh | sh`, `brew tap …`,
 `brew install …`, `uname -s`, the sandbox registry rows, the launcher-invariant
@@ -331,3 +352,34 @@ One gap is declared rather than closed: no existing check fails if the probe is
 reintroduced, since every prose lint asserts presence. AC-2 therefore adds the
 single line of new test code in this task — a contractlint assertion that the
 Startup section carries no `gate --help`.
+
+### Addendum (post-report corrections, 2026-08-15)
+
+Two corrections landed after the report above was written. Both change the
+entity; neither changes the removal scope or the verdict.
+
+1. **AC-4 was unsatisfiable and is rewritten.** It said "`go test ./...` and
+   `go test ./... -race` pass". The retire-requires-contract-sentinel ideation
+   reported that a bare `go test ./...` does not finish on this box at HEAD
+   *before any edit* — `internal/ensigncycle` hits the 10-minute timeout at
+   600.5s because its live legs execute when an ambient host credential is
+   present. I verified the explanation rather than taking it: CI's `offline` job
+   (`.github/workflows/runtime-live-e2e.yml:75`) does run a bare `go test ./...`,
+   and it is green there because that job runs without secrets, so the live legs
+   self-skip. AC-4 is now a differential — green on every package that reads a
+   changed file, plus CI's deterministic control subset, with any other failure
+   reproduced in a clean control worktree before being attributed here. Left as
+   written, it would have sent the implementer chasing a failure in a package
+   this task does not touch.
+2. **All evidence was re-run in slug-named worktrees.** The first pass used
+   `probe-spike` and `control-clean` in the shared session scratchpad; the FO
+   flagged bare names as a collision hazard after one contaminated a sibling's
+   evidence. Re-run in `spike-remove-startup-capability-probe` and
+   `control-remove-startup-capability-probe`, every number reproduced exactly:
+   -6/+0 for sites 1+4, -117/+1 and gofmt-clean for all four, the same package
+   set green (`internal/ensigncycle` 463s alone), and the codex control still
+   failing identically at clean HEAD.
+
+HEAD also advanced mid-stage from 4d1912a69 to ef8f55c83. The two new commits are
+workflow-doc changes and the four sites are byte-identical across them, so the
+scope confirmation carries forward; the body is re-anchored to ef8f55c83.
