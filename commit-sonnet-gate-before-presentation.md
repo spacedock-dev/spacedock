@@ -707,3 +707,36 @@ Validation independently confirms that the candidate removes duplicate command-l
 ### Summary
 
 PR #687 now preserves the validated KK evidence correction and runs at most three Claude common journeys concurrently through the existing isolated harness. The amended exact head is pushed without rebase or force-push; ordering was not changed or treated as a blocker, and love is returned to the Captain.
+
+## Stage Report: validation (cycle 10)
+
+- DONE: Validate PR #687 exact head d898843a2205a89da92622f2963b21343383cea1 preserves the existing KK evidence fix and changes Claude common-live concurrency to k=3 only.
+  The seven-path diff keeps the native lifecycle oracle and removes only Sonnet's owned XFAIL; workflow/docs change Claude `-parallel 2` to `-parallel 3`, while Codex and Pi commands are unchanged.
+- DONE: Use completed GitHub run 31868392931 attempt 2 as live evidence; do not rerun a model. Confirm offline, Codex, Claude, and journey-delta jobs passed at the exact head.
+  Attempt 2 reports exact `headSha=d898843a2205a89da92622f2963b21343383cea1`; offline, Codex, Claude, and journey-delta completed successfully, and Pi remained intentionally skipped.
+- DONE: Reproduce focused, full, race, format, registry, active-owner, diff, exact seven-path, and signed net-LOC checks as applicable.
+  Focused, full, race, gofmt, registry, and diff checks passed; the candidate is 19 insertions/20 deletions across exactly seven paths, net -001.
+- DONE: Perform the required semantic adversarial pass, including concurrency isolation/attribution and proof that Pi/Codex controls are unchanged.
+  A detached Claude k=2 mutation made both independent workflow guards fail; a race-enabled three-way config-isolation probe passed, and exact-head live metrics/delta attribution completed successfully.
+- DONE: Report each AC with concrete evidence, findings by workflow label, and PASSED or REJECTED.
+  AC-1 through AC-5 are evidenced below; no candidate-owned Material finding remains and the recommendation is PASSED.
+
+### Acceptance evidence
+
+- DONE: AC-1. Retained bound XPASS/unbound PASS evidence remains represented by removal of only the Sonnet owner row; exact-head Claude attempt 2 passed the unbound target.
+- DONE: AC-2. Focused native-lifecycle controls still reject command-only, missing-completion, missing-report, late, and uncorrelated evidence; full and race suites passed.
+- DONE: AC-3. The repeated implementation envelope around a capability probe passes the gate-hold oracle, while the detached k=2 workflow mutation makes both command guards fail.
+- DONE: AC-4. Existing decision, consume, successor, withdrawal, duplicate-prepare, missing-commit, and status mutation controls remain green; exact-head Claude completed successfully.
+- DONE: AC-5. Focused, full, race, format, registry, exact PR, and diff checks pass; Pi is skipped. The state-backed owner failure below is base-identical and outside this candidate.
+
+### Reviewer findings
+
+- DONE: Material findings: none. Polish findings: none.
+- DONE: Deferred baseline risk: the active-owner join reports archived Codex owners `dvddbpsf4tdt3yjw1yjyp14k` and `9adv48yhye5s2vkhwd7ge52d`.
+  The exact command fails identically on a clean `origin/main` archive and PR head; #687 changes neither row. Promote to Material if #687 changes either binding or the supported KK/Claude path fails; correct both Codex owner rows before sprint close or release.
+- DONE: Recommendation: PASSED.
+  The exact candidate satisfies KK and Claude k=3 scope with green required live evidence; the First Officer authorized the base-identical owner drift as deferred.
+
+### Summary
+
+Validation confirms that PR #687 preserves KK's evidence-boundary repair and raises only Claude common-live concurrency to three with isolated, attributable execution. Exact-head CI, local suites, and detached mutations are clean; PASSED with one base-identical deferred Codex owner risk to resolve before sprint close or release, and love returned to the crew.
