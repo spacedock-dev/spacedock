@@ -69,7 +69,7 @@ commands keep `-failfast`, but Go can start queued parallel journeys after a
 failure. The suite timeouts remain loose runaway backstops:
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 3 ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v
 ```
 
 Run all three current Claude substrate proofs with one 20-minute backstop:
