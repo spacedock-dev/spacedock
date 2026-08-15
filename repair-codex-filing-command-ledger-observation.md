@@ -1,6 +1,6 @@
 ---
 title: Repair Codex filing command-ledger observation
-status: validation
+status: ideation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
