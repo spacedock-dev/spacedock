@@ -7,7 +7,7 @@ started: 2026-08-15T02:55:26Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-retire-requires-contract-sentinel
 issue:
 gates:
     version: 1
