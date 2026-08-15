@@ -7,7 +7,7 @@ started: 2026-08-15T02:55:41Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-scope-validate-warnings-to-active-entities
 issue:
 gates:
     version: 1
