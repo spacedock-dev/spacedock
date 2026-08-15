@@ -63,6 +63,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ebgwr177kjjs6w5thhywz408:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ebgwr177kjjs6w5thhywz408-validation-1
+              briefing:
+                id: briefing:ebgwr177kjjs6w5thhywz408:validation:attempt-1:revision-1
+                digest: sha256:d2d61e1677f69f0cbba13efeb5cb510133854c472ac484c8a8fbe42c5b948c2a
+                request-digest: sha256:6350ba25b9d8c05e9fdd6eb424a2949b6a8fb5b6e9400d4f54200ba61ba26118
+                room-ref: ./trim-dead-gate-model-surface/review/validation/briefing-1
 ---
 Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69` and re-verified at `ef8f55c83`; the two commits between them touch only workflow docs, and none of this entity's target files changed.
 

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ebgwr177kjjs6w5thhywz408:validation:attempt-1:revision-1",
+  "question": "Approve trim-dead-gate-model-surface validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:ebgwr177kjjs6w5thhywz408:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/18d7c310af7db6d39c7524c1e716f62df8971c3f/trim-dead-gate-model-surface.md",
+      "rev": "sha256:481a47035ad33c9e811a99c2c4b1b106c11b08853c43a6e7ba3b156c0e3da0b0",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all six ACs by independent re-exercise with two mutation probes proving the tests can fail; the 10-vs-8 file surface ruled acceptable; one polish grep-wording note and the known 0t doc-paragraph merge sequencing."
+    }
+  ]
+}
