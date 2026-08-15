@@ -264,7 +264,7 @@ jobs:
         run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/spacedock-claude-config/${{ matrix.model }}" >> "$GITHUB_ENV"
 
       # Run all 17 exported common journeys through the Claude transport. The exact
-      # prefix selector is shared with Codex and Pi. Go runs at most two Claude
+      # prefix selector is shared with Codex and Pi. Go runs at most three Claude
       # journeys concurrently, and every journey runs even when an earlier journey
       # fails. The loose 90-minute timeout is a suite-wide runaway backstop.
       # Output discipline: gotestsum runs the suite ONCE, prints a CLEAN step log
@@ -279,7 +279,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 2 ./internal/ensigncycle/
+          SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/
 
       # Current Claude substrate proofs. Each exact test name owns one claim:
       # merged named-Agent dispatch, explicit bare dispatch, or break-glass recovery
@@ -560,7 +560,7 @@ jobs:
       - name: Run live Codex shared scenarios
         run: |
           set -o pipefail
-          SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' ./internal/ensigncycle
+          SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()

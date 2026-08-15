@@ -50,19 +50,26 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
 	wantGaps := map[string][]liveGapRow{
 		"gate-guardrail":                nil,
-		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "kky8pg7wc8xgb985epwss092"}},
+		"default-headless-gate-stop":    nil,
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
 		"rejection-flow":                {{"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
-		"filing":                        {{"xfail", "codex", "6ker7h25hj86983e5ef71ahm"}},
-		"smallest-sufficient-mechanism": {{"xfail", "codex", "bfmczd31ydpp4stqjstf6xwx"}, {"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
-		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
+		"filing":                        nil,
+		"smallest-sufficient-mechanism": {{"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
+		"keep-moving-posture":           {{"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"}, {"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
 	}
 	for id, want := range wantGaps {
 		if !reflect.DeepEqual(actual[id].gaps, want) {
 			t.Errorf("%s gaps = %#v, want %#v", id, actual[id].gaps, want)
 		}
+	}
+	proofGaps := readRuntimeProofGaps(t, repo, targets)
+	wantProofGaps := map[string][]liveGapRow{
+		"TestLiveBreakGlassShimRecovery": {{"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"}},
+	}
+	if !reflect.DeepEqual(proofGaps, wantProofGaps) {
+		t.Errorf("runtime proof gaps = %#v, want %#v", proofGaps, wantProofGaps)
 	}
 	if len(desired) != len(actual) {
 		t.Errorf("common live registry/source counts = %d/%d", len(desired), len(actual))
@@ -132,6 +139,7 @@ func TestRuntimeLiveTODOOwnersAreActive(t *testing.T) {
 	repo := repoRoot(t)
 	registryPath := filepath.Join(repo, "docs", "runtime-live-ci-registry.md")
 	actual, _ := readActualLiveJourneys(t, repo, readRegistryTargets(t, registryPath))
+	proofGaps := readRuntimeProofGaps(t, repo, readRegistryTargets(t, registryPath))
 	active := readActiveEntityIDs(t, stateDir)
 	for journeyID, journey := range actual {
 		for _, gap := range journey.gaps {
@@ -140,6 +148,62 @@ func TestRuntimeLiveTODOOwnersAreActive(t *testing.T) {
 			}
 		}
 	}
+	for proof, gaps := range proofGaps {
+		for _, gap := range gaps {
+			if !active[gap.owner] {
+				t.Errorf("runtime proof %q target %q names inactive %s owner %q", proof, gap.target, gap.kind, gap.owner)
+			}
+		}
+	}
+}
+
+func readRuntimeProofGaps(t *testing.T, repo string, targets map[string]bool) map[string][]liveGapRow {
+	t.Helper()
+	result := map[string][]liveGapRow{}
+	fset := token.NewFileSet()
+	dir := filepath.Join(repo, "internal", "ensigncycle")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), "_test.go") {
+			continue
+		}
+		path := filepath.Join(dir, entry.Name())
+		data := mustRead(t, path)
+		preamble := strings.SplitN(string(data), "package ", 2)[0]
+		if !strings.Contains(preamble, "//go:build live") {
+			continue
+		}
+		file, err := parser.ParseFile(fset, path, data, parser.ParseComments)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, declaration := range file.Decls {
+			function, ok := declaration.(*ast.FuncDecl)
+			if !ok || function.Doc == nil || strings.HasPrefix(function.Name.Name, "TestLiveCommon") || !strings.Contains(commentText(function.Doc), "spacedock:live-proof") {
+				continue
+			}
+			var gaps []liveGapRow
+			ast.Inspect(function.Body, func(node ast.Node) bool {
+				call, ok := node.(*ast.CallExpr)
+				if !ok || exprName(call.Fun) != "liveXFail" {
+					return true
+				}
+				gap, err := parseLiveGap(call, targets)
+				if err != nil {
+					t.Fatalf("%s: %v", function.Name.Name, err)
+				}
+				gaps = append(gaps, gap)
+				return true
+			})
+			if len(gaps) > 0 {
+				result[function.Name.Name] = gaps
+			}
+		}
+	}
+	return result
 }
 
 func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
@@ -226,16 +290,44 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 	for _, command := range []struct {
 		name, text, want string
 	}{
-		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 2 ./internal/ensigncycle/`},
-		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' ./internal/ensigncycle`},
+		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/`},
+		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle`},
 		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
-		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 2 ./internal/ensigncycle -v`},
-		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
+		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 3 ./internal/ensigncycle -v`},
+		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v`},
 		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
 	} {
 		if count := strings.Count(command.text, command.want); count != 1 {
 			t.Errorf("%s common-suite command count = %d, want 1", command.name, count)
 		}
+	}
+}
+
+func TestRuntimeLiveCodexParallelCapacityAndIsolation(t *testing.T) {
+	repo := repoRoot(t)
+	shared := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "shared_live_runner_test.go")))
+	if !strings.Contains(shared, `liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME"))`) {
+		t.Fatal("shared live journeys do not admit Codex to t.Parallel")
+	}
+	runner := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "codex_live_runner_test.go")))
+	if !strings.Contains(shared, `newCodexLiveRunner(t, id)`) || !strings.Contains(runner, `setupDir := codexLiveSetupArtifactDir(artifactRoot, setupID)`) || !strings.Contains(runner, `filepath.Join(artifactRoot, "_setup", setupID)`) {
+		t.Fatal("Codex setup artifacts are not isolated by journey ID")
+	}
+}
+
+func TestGateStopRunnerDoesNotShortCircuitBoundAssertion(t *testing.T) {
+	shared := string(mustRead(t, filepath.Join(repoRoot(t), "internal", "ensigncycle", "claude_live_runner_test.go")))
+	start := strings.Index(shared, "func runGateStopScenario(")
+	if start < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	end := strings.Index(shared[start:], "\nfunc nativeLifecycleStream(")
+	if end < 0 {
+		t.Fatal("runGateStopScenario source boundary not found")
+	}
+	body := shared[start : start+end]
+	if strings.Contains(body, "else if err := assert(") || !strings.Contains(body, "if err := assert(before, after, expected);") {
+		t.Fatal("runGateStopScenario must call its bound assertion independently of expectation extraction")
 	}
 }
 
