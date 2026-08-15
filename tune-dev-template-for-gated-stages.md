@@ -5,6 +5,29 @@ status: backlog
 source: Captain direction, 2026-08-13
 sprint-readiness: ready
 score: 0.8
+gates:
+    version: 1
+    records:
+        - id: gate:42chs9dh7nq22f8at4szvbxp:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:42chs9dh7nq22f8at4szvbxp-backlog-1
+              briefing:
+                id: briefing:42chs9dh7nq22f8at4szvbxp:backlog:attempt-1:revision-1
+                digest: sha256:b8e080bbf96fbf61ee83cbefef2c0f8e0d1e497f4484c9b486e0094587a4e2e3
+                request-digest: sha256:7f4b651b2b1eff1b7e4dbc257f9a1dee993d0e12c148f6d8ef4e9614fecb3705
+                room-ref: ./tune-dev-template-for-gated-stages/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:42chs9dh7nq22f8at4szvbxp:backlog:1
+                briefing: briefing:42chs9dh7nq22f8at4szvbxp:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T20:36:58.019759Z"
+                decision: approve
+                reason: 'Captain directive 2026-08-15: fold stack support for pr-mod into 42c and dispatch on top of the stack'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Tune the reusable dev task template so task authors supply the decision evidence required by each gated stage without making task files verbose.

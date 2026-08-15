@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:42chs9dh7nq22f8at4szvbxp:backlog:attempt-1:revision-1",
+  "question": "Approve 42c into ideation (captain pre-directed: fold pr-mod stack support, dispatch)?",
+  "artifacts": [
+    {
+      "id": "artifact:42chs9dh7nq22f8at4szvbxp:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bf1d0b21d284e40c04de2fcbfca60a370d78622e/tune-dev-template-for-gated-stages.md",
+      "rev": "sha256:32c56f05fc6d353759c64dabf8836981889f42dcbbf5df0aa853ccd8f590b8ec",
+      "mediaType": "text/markdown",
+      "summary": "Captain-directed 2026-08-15: template tuning plus pr-merge stacked-mode support, evidence base is this session."
+    }
+  ]
+}
