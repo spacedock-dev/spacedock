@@ -3,7 +3,7 @@ id: f0zn4sr7nz7xsxmyw6aw6bsm
 title: Scope validate warn channels to active entities
 status: ideation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
-started:
+started: 2026-08-15T02:55:41Z
 completed:
 verdict:
 score:
