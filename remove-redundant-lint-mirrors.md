@@ -83,7 +83,7 @@ gates:
                 target-stage: done
                 state: pending
 mod-block: merge:pr-merge
-pr: "#695"
+pr: "#703"
 ---
 
 Three verified-redundant test mirrors.
