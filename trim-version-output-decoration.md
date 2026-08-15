@@ -1,7 +1,7 @@
 ---
 id: x8g3dnqndfa1m85d8ga2cgem
 title: Trim version output decoration without a reader
-status: ideation
+status: implementation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:38Z
 completed:
@@ -75,7 +75,7 @@ gates:
                 reason: 'Captain approval 2026-08-15: cycle-2 design approved into implementation'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Trim `spacedock --version` output to what has a reader, and give the Sandbox line a value shape that does not repeat its own label.
