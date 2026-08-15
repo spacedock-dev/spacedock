@@ -1,10 +1,10 @@
 ---
 title: Materialize Git-root Review v1 sources for provider presentation
-status: implementation
+status: done
 source: "s4 cycle-6 staff rejection: recorder-valid git-root:// sources are not renderable by current Subspace package mode, 2026-07-25"
 started: 2026-08-15T21:25:13Z
-completed:
-verdict:
+completed: 2026-08-15T23:48:23Z
+verdict: REJECTED
 score: "1.0"
 worktree: .worktrees/spacedock-ensign-git-root-review-v1-materialization
 issue:
