@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:x8g3dnqndfa1m85d8ga2cgem:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:x8g3dnqndfa1m85d8ga2cgem-ideation-1
+              briefing:
+                id: briefing:x8g3dnqndfa1m85d8ga2cgem:ideation:attempt-1:revision-1
+                digest: sha256:0a4dcfa4226fa4c8c01cdea9b1e77a5e737cbced12103a57c2ecec585350f207
+                request-digest: sha256:bf06b0da29d4f2cb13688baa0fff04eb239cbaf21a3c339c31422c1b6da8ba48
+                room-ref: ./trim-version-output-decoration/review/ideation/briefing-1
 ---
 
 Remove three decorations from `spacedock --version` output. Each has no reader.
@@ -209,3 +218,15 @@ No new test files. The work is deletion plus retargeting existing assertions; co
 ### Summary
 
 Confirmed all three removals against HEAD by locating every consumer rather than reasoning about intent: the `OS:` line is contradicted by the FO contract's own `uname -s` order and unused by `doctor`, which computes GOOS itself; all three session-matching consumers read the env var directly; and the ambiguous arm's `pass --host` suffix is a remedy for a surface that exits 0, while the one blocked command prints a strictly better remedy. Scope grew past the seed's three items to the machinery each was the sole consumer of — `ShortID`, `shortIDLen`, the `markerTable` identity column, `Detect`'s `identity` return, and `runtimeLine` — because stopping at the printed characters would leave zero-consumer machinery behind, the exact fault this program removes; that expansion is declared for the gate to ratify, with the narrower alternative recorded. The whole cut was spiked in a throwaway detached worktree: builds clean, both output shapes exercised live, affected packages green (one pre-existing sandbox-environmental failure reproduced on unmodified HEAD), and both the exact-match guard and the new named absence checks falsified by mutation. Measured surface is 7 files and net -165 lines, replacing the seed's -NN/~3-files placeholder.
+
+### Evidence re-verification (FO shared-scratchpad advisory, 2026-08-15)
+
+The original spike worktree was entity-named, but two binaries it produced sat at bare shared-scratchpad paths (`scratchpad/sd` for the HEAD baseline, `/tmp/sd-spike` for the cut) where a sibling ensign could have overwritten them. Every number those binaries produced was re-derived from scratch in a fully slug-named worktree (`scratchpad/spike-trim-version-output-decoration`), with both binaries built inside it. All figures reproduce unchanged:
+
+- Baseline `--version`: 5 lines in-session, 2 outside. Cut: 4 and 1. (AC-1 baseline intact.)
+- Diffstat: 7 files, 91 insertions, 256 deletions, net -165. (Estimate intact.)
+- `dispatch build` under two markers still prints `ambiguous runtime host sources: multiple runtime markers are set (CODEX_THREAD_ID, CLAUDECODE); pass --host claude, codex, or pi` — byte-identical. (Keep-boundary intact.)
+- `internal/runtimehost`, `internal/dispatch`, `internal/contractlint`, `skills/integration`, and `internal/cli -run TestVersion` all pass.
+- Mutation 1 (reintroduce the `OS:` line): fails with `--version rendered an OS/arch line ("\nOS: ") — it has no reader`. Mutation 2 (reintroduce ` — pass --host` and regenerate the `want` literals in step): fails with `--version rendered a --host remedy suffix ("pass --host") — it has no reader`. Both now fail on the named check rather than the exact match, because the absence loop runs first.
+
+Baseline commit note: the body cites HEAD as 4d1912a69; HEAD has since advanced to ef8f55c83 (two workflow-doc commits). `git diff 4d1912a69..HEAD` over all seven target files is empty, so the cut and every cited number apply unchanged.
