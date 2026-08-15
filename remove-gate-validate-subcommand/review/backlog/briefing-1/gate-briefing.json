@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0tmv5bry1wbkww2758y88pay:backlog:attempt-1:revision-1",
+  "question": "Approve remove-gate-validate-subcommand into ideation for the 0.27 pre-ship cut program?",
+  "artifacts": [
+    {
+      "id": "artifact:0tmv5bry1wbkww2758y88pay:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/fe77f92eb748346abc59dc189446db4d4548d461/remove-gate-validate-subcommand.md",
+      "rev": "sha256:0069ca352207ba2902d3c6e1cd632fb834bcf8411a77b04d9035f25b4f9f4ef6",
+      "mediaType": "text/markdown",
+      "summary": "Zero live uses; every fault surfaces elsewhere; shared readers stay."
+    }
+  ]
+}

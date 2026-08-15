@@ -10,6 +10,29 @@ score:
 worktree:
 issue:
 sprint: durable-decisions
+gates:
+    version: 1
+    records:
+        - id: gate:0tmv5bry1wbkww2758y88pay:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:0tmv5bry1wbkww2758y88pay-backlog-1
+              briefing:
+                id: briefing:0tmv5bry1wbkww2758y88pay:backlog:attempt-1:revision-1
+                digest: sha256:30b8fe0e5bc71046ebb679fe9cc6bab32c2bae8fc294c99e68b2307502b675a3
+                request-digest: sha256:c67727e7678ea741b41d589a7b94161862beb12ae8bfa7c2554546a0c4c5157b
+                room-ref: ./remove-gate-validate-subcommand/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0tmv5bry1wbkww2758y88pay:backlog:1
+                briefing: briefing:0tmv5bry1wbkww2758y88pay:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:25.738011Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Remove the `gate validate` CLI subcommand. It has zero live uses across 424 recorded attempts. Fatal faults surface identically on every gate command through the shared reader. The warning class prints at state publish. The read-only digest sweep and the round check have no recorded consumer.
