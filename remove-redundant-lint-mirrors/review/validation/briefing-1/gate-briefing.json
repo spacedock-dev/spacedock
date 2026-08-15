@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zvk9cnew2ggpaqb3wty24xtf:validation:attempt-1:revision-1",
+  "question": "Approve remove-redundant-lint-mirrors validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:zvk9cnew2ggpaqb3wty24xtf:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/543aaf8d6a1ee2e06fb94bd872c7e5e99162acf7/remove-redundant-lint-mirrors.md",
+      "rev": "sha256:976722f526112899148d1763b0132e2e29540d621be333bb6cfd2f605e6710b4",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all four ACs with independently reproduced evidence and ruled the skipped race arm acceptable; adversarial pass confirmed the diff is exactly the gated scope; clean audit."
+    }
+  ]
+}

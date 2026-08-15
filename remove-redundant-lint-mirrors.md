@@ -62,6 +62,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:zvk9cnew2ggpaqb3wty24xtf:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:zvk9cnew2ggpaqb3wty24xtf-validation-1
+              briefing:
+                id: briefing:zvk9cnew2ggpaqb3wty24xtf:validation:attempt-1:revision-1
+                digest: sha256:f7e6c509e767ef2efc58c4531e928329bc07727661f433e6c6a0b6d7099cc4ea
+                request-digest: sha256:423479178d159c9ae82a80c4956cf19e8ec237c3472e367cf381280581c2bc72
+                room-ref: ./remove-redundant-lint-mirrors/review/validation/briefing-1
 ---
 
 Three verified-redundant test mirrors.
