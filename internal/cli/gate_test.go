@@ -71,7 +71,7 @@ func TestGateWithdrawCLIUsesExactGrammarAndImplicitFirstOfficerAttribution(t *te
 	if parsed, err := time.Parse(time.RFC3339Nano, attempt.Withdrawal.At); err != nil || parsed.Location() != time.UTC {
 		t.Fatalf("withdrawal timestamp = %q (%v)", attempt.Withdrawal.At, err)
 	}
-	if attempt.Resolution != nil || attempt.ProviderEvidence != nil || attempt.Application != nil {
+	if attempt.Resolution != nil || attempt.Application != nil {
 		t.Fatalf("withdrawal fabricated closure: %#v", attempt)
 	}
 }

@@ -3,6 +3,8 @@ package ensigncycle
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -48,7 +50,7 @@ func commandFilesViaNew(command, slug string) bool {
 	if !strings.Contains(command, slug) {
 		return false
 	}
-	if regexp.MustCompile(newInvocation.String() + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t]|$)`).MatchString(command) {
+	if regexp.MustCompile(newInvocation.String() + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t']|$)`).MatchString(command) {
 		return true
 	}
 	return capturedLauncherFilesViaNew(command, slug)
@@ -166,11 +168,76 @@ func assertClaudeFilingViaNew(stream, slug string) error {
 type codexCommandItem struct {
 	Type string `json:"type"`
 	Item struct {
-		Type     string `json:"type"`
-		Command  string `json:"command"`
-		Status   string `json:"status"`
-		ExitCode *int   `json:"exit_code"`
+		Type             string `json:"type"`
+		Command          string `json:"command"`
+		AggregatedOutput string `json:"aggregated_output"`
+		Status           string `json:"status"`
+		ExitCode         *int   `json:"exit_code"`
 	} `json:"item"`
+}
+
+func codexFilingCreateCount(command, slug string) int {
+	if !commandFilesViaNew(command, slug) {
+		return 0
+	}
+	create := regexp.MustCompile(`(?:\bnew\b|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t';|&]|$)`)
+	return len(create.FindAllStringIndex(command, -1))
+}
+
+// assertCodexPublicFilingTransaction grades only top-level public
+// item.completed/command_execution envelopes. Command output is data inside the
+// owning item; it is never decoded recursively as another public event.
+func assertCodexPublicFilingTransaction(jsonl, entityPath, slug string) (string, error) {
+	var filing *codexCommandItem
+	creates := 0
+	for _, line := range strings.Split(jsonl, "\n") {
+		var event codexCommandItem
+		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" || event.Item.Type != "command_execution" {
+			continue
+		}
+		if nextIDInvocation.MatchString(event.Item.Command) {
+			return "", fmt.Errorf("filing previewed --next-id instead of using the atomic new path")
+		}
+		count := codexFilingCreateCount(event.Item.Command, slug)
+		creates += count
+		if count == 1 && event.Item.Status == "completed" && event.Item.ExitCode != nil && *event.Item.ExitCode == 0 {
+			copy := event
+			filing = &copy
+		}
+	}
+	if creates != 1 || filing == nil {
+		return "", fmt.Errorf("Codex public stream has %d atomic creates for %s, want one completed exit-0 transaction", creates, slug)
+	}
+
+	path := filepath.Clean(entityPath)
+	receipt := regexp.MustCompile(`(?m)^created: `+regexp.QuoteMeta(path)+` id=([^[:space:]]+)$`).FindAllStringSubmatch(filing.Item.AggregatedOutput, -1)
+	if len(receipt) != 1 {
+		return "", fmt.Errorf("atomic create output has %d exact receipts for %s, want one", len(receipt), path)
+	}
+	if err := assertCodexFiledEntity(path, receipt[0][1]); err != nil {
+		return "", err
+	}
+	return filing.Item.Command, nil
+}
+
+func assertCodexFiledEntity(path, id string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read landed filing entity: %w", err)
+	}
+	parts := strings.SplitN(string(data), "---", 3)
+	if len(parts) != 3 || strings.TrimSpace(parts[0]) != "" {
+		return fmt.Errorf("landed filing entity has malformed frontmatter")
+	}
+	for _, field := range []string{"\ntitle: Wire The Thing\n", "\nstatus: backlog\n", "\nid: " + id + "\n"} {
+		if strings.Count("\n"+parts[1]+"\n", field) != 1 {
+			return fmt.Errorf("landed filing entity has invalid %s", strings.TrimSpace(field))
+		}
+	}
+	if body := strings.TrimSpace(parts[2]); body == "" || strings.ContainsAny(body, "\r\n") {
+		return fmt.Errorf("landed filing entity body is not one nonblank line")
+	}
+	return nil
 }
 
 func successfulCodexCommands(jsonl string) []string {
