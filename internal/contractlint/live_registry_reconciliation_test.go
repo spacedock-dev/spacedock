@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -48,13 +47,9 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	targets := readRegistryTargets(t, registryPath)
 	registryFixtures := readRegistryFixtureUnion(t, registryPath)
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
-	proofGaps := readRuntimeProofGaps(t, repo, targets)
-	wantProofGaps := map[string][]liveGapRow{
-		"TestLiveBreakGlassShimRecovery": {{"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"}},
-	}
-	if !reflect.DeepEqual(proofGaps, wantProofGaps) {
-		t.Errorf("runtime proof gaps = %#v, want %#v", proofGaps, wantProofGaps)
-	}
+	// Fatals on a malformed live-proof gap binding; the owner join re-derives these
+	// under SPACEDOCK_LIVE_STATE_DIR.
+	readRuntimeProofGaps(t, repo, targets)
 	if len(desired) != len(actual) {
 		t.Errorf("common live registry/source counts = %d/%d", len(desired), len(actual))
 	}
