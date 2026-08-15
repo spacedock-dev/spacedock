@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7c4w88fnmnbtc0tgkrvx0vxj:ideation:attempt-2:revision-1",
+  "question": "Approve remove-provider-evidence-fields ideation into implementation with the corrected retire-behind-tolerance design?",
+  "artifacts": [
+    {
+      "id": "artifact:7c4w88fnmnbtc0tgkrvx0vxj:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/6b0495bf5f3b55512554b912728e480bdcb20f81/remove-provider-evidence-fields.md",
+      "rev": "sha256:b86bf090b4ce1b024f007a38da87aeaf31c4511f45153eb00e678d2d797ef7dc",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: corrected design retires the key behind one named read tolerance, byte-identical to HEAD on both streams; contaminated baselines re-measured in isolation (125 stderr warnings, timeout attribution fixed); naive strip additionally proven to drop 14 warning lines."
+    }
+  ]
+}

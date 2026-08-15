@@ -46,6 +46,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-15T03:38:03.431911Z"
                 reason: 'Entity corrected post-prepare (b4bff335b): collision-contaminated baselines re-measured in isolation; re-preparing against corrected ACs'
+            - id: gate-attempt:7c4w88fnmnbtc0tgkrvx0vxj-ideation-2
+              briefing:
+                id: briefing:7c4w88fnmnbtc0tgkrvx0vxj:ideation:attempt-2:revision-1
+                digest: sha256:c7e23dbc596153c28aa115cd94a7975a73f68edd98babb10961599d599cd12b4
+                request-digest: sha256:f1b927d79501223f17d84d48a1512d2b4d41de7777cad1f97e19f572245c1f36
+                room-ref: ./remove-provider-evidence-fields/review/ideation/briefing-2
 ---
 
 Remove `ProviderEvidence` from the gate model: the struct, the `provider-evidence` field, the `Validate` branches that police it on open and withdrawn attempts, and their tests. Zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field. Re-introduce the fields only together with a real provider integration: writer, retention, and verifier.
