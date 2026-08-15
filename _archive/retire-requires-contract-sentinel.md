@@ -1,11 +1,11 @@
 ---
 id: 6qhgsezz7v4g4h76t0jf98b0
 title: Retire the extinct requires-contract manifest sentinel
-status: validation
+status: done
 source: "0.27 audit (2026-08-14) Priority 2; pre-ship cleanup companion to remove-startup-capability-probe"
 started: 2026-08-15T02:55:26Z
-completed:
-verdict:
+completed: 2026-08-15T19:56:12Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-retire-requires-contract-sentinel
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:701
+archived: 2026-08-15T19:56:12Z
 ---
 
 Retire the pre-0.19 `requires-contract` sentinel; its audience is extinct and production code explicitly ignores it. Pure deletion, no behavior change.
