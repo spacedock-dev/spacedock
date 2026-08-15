@@ -30,10 +30,6 @@ type Warning struct {
 	Field string `json:"field"`
 }
 
-// Diagnostic is kept as a descriptive alias for callers that prefer the
-// diagnostic vocabulary. Warning is the canonical name used by this package.
-type Diagnostic = Warning
-
 // FormatWarning renders the stable operator-facing form used by gate
 // validation. The entity path is included so a warning from a direct gate
 // command remains actionable without a surrounding status table.
@@ -61,13 +57,6 @@ func ReadDiagnostics(path string) (*Document, *yaml.Node, []Warning, error) {
 		return nil, nil, nil, err
 	}
 	return readDataDiagnostics(data)
-}
-
-// ReadWithWarnings is an explicit compatibility alias for ReadDiagnostics.
-// Keep it small so integrations that use the older diagnostic naming do not
-// need to duplicate the gate reader.
-func ReadWithWarnings(path string) (*Document, *yaml.Node, []Warning, error) {
-	return ReadDiagnostics(path)
 }
 
 func readData(data []byte) (*Document, *yaml.Node, error) {
