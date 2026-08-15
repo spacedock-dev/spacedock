@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:42chs9dh7nq22f8at4szvbxp:validation:attempt-1:revision-1",
+  "question": "Approve 42c validation as PASSED, ratifying the merged-ancestor prose amendment, and rule the deviation-class question?",
+  "artifacts": [
+    {
+      "id": "artifact:42chs9dh7nq22f8at4szvbxp:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f2233496a17976d96f3b427fac4f519c2f7f62e5/tune-dev-template-for-gated-stages.md",
+      "rev": "sha256:bb23cf17af678439a6c54abeef0b687e08c0058aaa6d33740cb4edce400bf0d2",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: all seven ACs re-exercised against ab112b6d3; the FO-authorized merged-ancestor amendment (+2 lines, ACs unnarrowed) awaits ratification; the deviation-class policy question is the captain's."
+    }
+  ]
+}

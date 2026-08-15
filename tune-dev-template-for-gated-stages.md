@@ -48,6 +48,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:42chs9dh7nq22f8at4szvbxp:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:42chs9dh7nq22f8at4szvbxp-validation-1
+              briefing:
+                id: briefing:42chs9dh7nq22f8at4szvbxp:validation:attempt-1:revision-1
+                digest: sha256:8007ccce0da037accf88b7d620de2edf8af84611a2da8ebe65453e17144dc4ef
+                request-digest: sha256:59a8744a48133f67bb0769e5e9f0edd25647144c526286a635deca1c4587a9e0
+                room-ref: ./tune-dev-template-for-gated-stages/review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-tune-dev-template-for-gated-stages
 started: 2026-08-15T21:25:11Z
 pr: "#711"
