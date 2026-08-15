@@ -1,7 +1,7 @@
 ---
 id: 7c4w88fnmnbtc0tgkrvx0vxj
 title: Remove the provider-evidence gate fields
-status: implementation
+status: validation
 source: "Captain directive, 2026-08-14: value review found zero value; no writer, no retained bytes, no verifier"
 started: 2026-08-15T02:55:32Z
 completed:
