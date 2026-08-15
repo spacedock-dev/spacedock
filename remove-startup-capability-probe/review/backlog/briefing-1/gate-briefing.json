@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dav9qnjhsbbg7k1a8x1260h6:backlog:attempt-1:revision-1",
+  "question": "Approve remove-startup-capability-probe into ideation for the 0.27 pre-ship cut program?",
+  "artifacts": [
+    {
+      "id": "artifact:dav9qnjhsbbg7k1a8x1260h6:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/be55cbc539314575b5ae93d5d59f36c95e6306fc/remove-startup-capability-probe.md",
+      "rev": "sha256:ab9b2cf3f4f07a135dacef5de3da0aa9e1b557165e5cf8125b842bc04e428157",
+      "mediaType": "text/markdown",
+      "summary": "Captain-directed probe removal; the minor gate suffices; the probe misfired live."
+    }
+  ]
+}

@@ -5,6 +5,29 @@ source: "Captain directive, 2026-08-15: pedantic compat check for unreleased 0.2
 score: 0.9
 group: tooling
 id: dav9qnjhsbbg7k1a8x1260h6
+gates:
+    version: 1
+    records:
+        - id: gate:dav9qnjhsbbg7k1a8x1260h6:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:dav9qnjhsbbg7k1a8x1260h6-backlog-1
+              briefing:
+                id: briefing:dav9qnjhsbbg7k1a8x1260h6:backlog:attempt-1:revision-1
+                digest: sha256:c5ca9ef1e81bd58a76d435a83a27ae7554485d193e7ecdfdbc432e13c7ccd1f4
+                request-digest: sha256:fdc1e0b484e075d56c870855a84cc1484e02db4e2acc1144b3db517253a58d75
+                room-ref: ./remove-startup-capability-probe/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dav9qnjhsbbg7k1a8x1260h6:backlog:1
+                briefing: briefing:dav9qnjhsbbg7k1a8x1260h6:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:13.080348Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Remove the same-minor capability probe added in commit b331baf4f ("fix: reject stale same-minor launchers", 2026-08-09). The binary version gate should rely solely on the minor version match; if a stale build lacks `gate withdraw --reason`, the CLI already returns a clear "unknown subcommand" error at the point of use.
