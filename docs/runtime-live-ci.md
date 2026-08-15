@@ -45,9 +45,12 @@ Live records use `pass`, `xfail`, `xpass`, or `fail`. After infrastructure
 succeeds, the grade runs the durable semantic assertions. One or more typed
 semantic failures produce XFAIL for an XFAIL target. The metric keeps all
 observed semantic codes. An empty semantic set is XPASS. XPASS keeps the lane
-green and emits an alert with the target and owner so the binding can be removed.
-Authentication, launch, timeout, fixture, parsing, state-read, and metric
-failures remain ordinary failures.
+green only so the complete lane can finish, and emits an alert with the target
+and owner. XPASS is not a terminal green registry state. Before archiving the
+owner, remove the source binding and matching reconciliation expectation, then
+run the unchanged candidate without the binding and require PASS. Run the
+active-owner join at that terminal gate. Authentication, launch, timeout,
+fixture, parsing, state-read, and metric failures remain ordinary failures.
 
 ### Local live execution
 

@@ -353,5 +353,10 @@ it does not use a copied gap oracle, mutation laboratory, or recorded-SHA guard.
 A change to a live journey, fixture ID, runtime proof, source binding, builder, or
 live-lane selector must run reconciliation in the same pull request.
 
+XPASS requires an amendment before its owner is archived: remove the target's
+source binding and matching reconciliation expectation, then run the unchanged
+candidate without the binding and require PASS. The desired journey remains in
+this registry.
+
 Update this registry only when desired state changes. A builder move that keeps
 its fixture ID does not require a registry change.
