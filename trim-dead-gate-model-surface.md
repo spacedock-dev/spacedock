@@ -1,7 +1,7 @@
 ---
 id: ebgwr177kjjs6w5thhywz408
 title: Trim dead gate model and projection surface
-status: backlog
+status: ideation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 sprint: durable-decisions
 started:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Remove four verified-dead pieces of the gate model surface. No consumer exists for any of them.
