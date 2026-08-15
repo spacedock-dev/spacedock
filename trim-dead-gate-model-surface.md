@@ -83,6 +83,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+pr: "#697"
 ---
 Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69` and re-verified at `ef8f55c83`; the two commits between them touch only workflow docs, and none of this entity's target files changed.
 
