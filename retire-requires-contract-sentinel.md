@@ -41,6 +41,17 @@ gates:
                 digest: sha256:b1b75c4742f4d15d4dddd66d1ca1c1c970a0d9947cbc477f543a9340638e58bf
                 request-digest: sha256:9f349e885539ce7a8a27ef58a086c51203f911d183dc931dd530aaf49aaed13b
                 room-ref: ./retire-requires-contract-sentinel/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6qhgsezz7v4g4h76t0jf98b0:ideation:1
+                briefing: briefing:6qhgsezz7v4g4h76t0jf98b0:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T03:55:08.408275Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-15 (approve all except x8): approved into implementation'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Retire the pre-0.19 `requires-contract` sentinel; its audience is extinct and production code explicitly ignores it. Pure deletion, no behavior change.
