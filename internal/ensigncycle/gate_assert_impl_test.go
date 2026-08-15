@@ -63,6 +63,18 @@ func semanticGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectati
 	return expected, nil
 }
 
+func gateStopSemanticErrors(fixture recordedGateFixture, before, after string, assert func(string, string, gateHeldExpectation) error) []error {
+	var semantic []error
+	expected, err := semanticGateHeldExpectation(fixture)
+	if err != nil {
+		semantic = append(semantic, err)
+	}
+	if err := assert(before, after, expected); err != nil {
+		semantic = append(semantic, &gradedErr{code: "gate-not-held", msg: err.Error()})
+	}
+	return semantic
+}
+
 func assertGateHeld(before, after string, expected gateHeldExpectation) error {
 	if before == after || !validatingStatus.MatchString(after) || completedSet.MatchString(after) || verdictSetFM.MatchString(after) {
 		return fmt.Errorf("gated entity is not held at its open validation boundary")
