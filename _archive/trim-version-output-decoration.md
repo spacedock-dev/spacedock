@@ -1,11 +1,11 @@
 ---
 id: x8g3dnqndfa1m85d8ga2cgem
 title: Trim version output decoration without a reader
-status: validation
+status: done
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:38Z
-completed:
-verdict:
+completed: 2026-08-15T19:56:55Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-trim-version-output-decoration
 issue:
@@ -95,8 +95,9 @@ gates:
                 reason: 'Captain approval 2026-08-15: validation PASSED; joins the stack as layer 9'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:708
+archived: 2026-08-15T19:56:55Z
 ---
 
 Trim `spacedock --version` output to what has a reader, and give the Sandbox line a value shape that does not repeat its own label.
