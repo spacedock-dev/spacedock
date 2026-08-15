@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0tmv5bry1wbkww2758y88pay:validation:attempt-1:revision-1",
+  "question": "Approve remove-gate-validate-subcommand validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:0tmv5bry1wbkww2758y88pay:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/879b2032c4ef3b6fce006f191822d8544dd96dee/remove-gate-validate-subcommand.md",
+      "rev": "sha256:3fe5714a29cbe1bc5576e24bc7f228c2f5576e6f5d42062c97b346f534313f52",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED every AC by independent re-exercise including a grammar-restoration mutation check; the one suite exception is the calibrated environmental Codex test; only polish-level naming rot noted."
+    }
+  ]
+}

@@ -53,6 +53,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:0tmv5bry1wbkww2758y88pay:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:0tmv5bry1wbkww2758y88pay-validation-1
+              briefing:
+                id: briefing:0tmv5bry1wbkww2758y88pay:validation:attempt-1:revision-1
+                digest: sha256:46e965126bca1650a31471ea5394e164141b00bcd664125dd2d194b2fa70da86
+                request-digest: sha256:7cb9fd97f694687348d02133172eb3ababbe4ff4429b9538f5d67cf6cc42e992
+                room-ref: ./remove-gate-validate-subcommand/review/validation/briefing-1
 ---
 
 Remove the `gate validate` CLI subcommand. It has zero live uses across 424 recorded attempts. Fatal faults surface identically on every gate command through the shared reader. The warning class prints at state publish. The read-only digest sweep and the round check have no recorded consumer.
