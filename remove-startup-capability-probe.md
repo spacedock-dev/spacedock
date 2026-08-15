@@ -405,3 +405,58 @@ entity; neither changes the removal scope or the verdict.
 HEAD also advanced mid-stage from 4d1912a69 to ef8f55c83. The two new commits are
 workflow-doc changes and the four sites are byte-identical across them, so the
 scope confirmation carries forward; the body is re-anchored to ef8f55c83.
+
+## Stage Report: implementation
+
+- DONE: Sites 1 and 4 ONLY: zv lands first by captain sequencing; report sites 2-3 as superseded and re-express AC-1/AC-2 per your body's contingency
+  Commit 6b7836353 deletes the two Startup bullets from `first-officer-shared-core.md` and the install.md troubleshooting paragraph; sites 2-3 are deleted whole by zvk9's b77bfc942, so this branch leaves both files untouched.
+- DONE: Add the captain-approved one-line contractlint absence assertion for gate --help
+  One `strings.Contains(body, "gate --help")` guard in `TestVersionGateDeferredTrigger` (`internal/contractlint/version_gate_smoke_test.go:63`); re-inserting the deleted "Compatible minor" bullet made it the sole failure, then the mutation was reverted with `git checkout --`.
+- DONE: AC-4 differential per the amended body; never chase the known environmental failure
+  Green at `-count=1`: `cmd/spacedock-release`, `internal/claudeteam`, `internal/contractlint`, `internal/release`, `skills/integration`, `internal/cli -run TestProseFunction`, and CI's control subset (`runtime-live-e2e.yml:78`, 2.27s); contractlint and skills/integration also green under `-race`. `internal/ensigncycle` alone hit the documented 600s timeout (600.444s) — the known environmental failure, not chased.
+
+### Summary
+
+Sites 1 and 4 only. The boot-resident core loses the "Compatible minor" probe
+bullet and the "Missing capability" abort bullet; install.md loses the paragraph
+that explained that abort message. Sites 2-3 are superseded exactly as the body
+predicted by zvk9's b77bfc942.
+
+AC-1 re-expressed for the primary case. The delta half holds alone: 3 files,
++3/-6, net -3. The grep half splits — on this branch the grep is clean over the
+surface this entity owns (`skills/first-officer`, `docs/site`), while repo-wide
+it still matches zvk9's two files. Rather than assert the combination clears, I
+merged both branches with `git merge-tree` (clean, despite both touching
+`version_gate_smoke_test.go` in different functions), ran the merged tree in a
+throwaway worktree, and observed the repo-wide grep exit 1 with no match and
+both `internal/contractlint` and `skills/integration` green. Worktree removed.
+AC-2 likewise keeps only its contractlint arm; the shell-mirror arm belongs to
+the superseded sites.
+
+Two declared deviations. Surface: estimate was 2 files, -6/+0, tolerance ±2 and
+no extra files; actual is 3 files, -6/+3. The estimate was spike-measured and
+omitted the AC-2 assertion the same body requires — the extra file and the +3 are
+entirely that assertion. This is why it had to stay one guard inside an existing
+test: a standalone test with a doc comment costs 7-8 lines and would flip AC-1's
+cumulative delta positive. Placement: it went into `TestVersionGateDeferredTrigger`,
+which already owns the "must not live inline in the boot-resident core" claim,
+and which keeps the hunk clear of the lines zvk9 edits in the same file.
+
+What each cited test would catch. The new guard is the only check in that file
+that fires on *reintroduction* — every other assertion pins a token as present,
+so nothing would have noticed the probe coming back. `TestInstallHintNoDrift`
+still resolves its curl and brew tokens from the surviving binary-absent bullet
+and install.md's tab sections; deleting either fails it, deleting the
+Troubleshooting paragraph does not. The three `TestProseFunction*` tests fail if
+a `«function»` line goes with the bullets.
+
+AC-4's one failure is the environmental timeout the body documents at 600.5s at
+clean HEAD before any edit; this run reproduced the signature at 600.444s with
+the goroutine dump parked in `os/exec.(*Cmd).Start`. Per the assignment it was
+not chased, and the structural argument was checked rather than assumed: the
+package's only two mentions of `first-officer-shared-core.md` are a path string
+in a JSONL fixture (`wrong_root_detect_test.go:154`) and a `sed -n '1,320p'`
+command string in a codex prompt fixture
+(`shared_smallest_mechanism_negative_test.go:236`). Neither asserts on the file's
+contents, and a 320-line prefix read of a ~200-line file is unchanged by deleting
+two lines, so the package has no path by which this change reaches it.
