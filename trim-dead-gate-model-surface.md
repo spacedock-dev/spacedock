@@ -10,6 +10,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:ebgwr177kjjs6w5thhywz408:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:ebgwr177kjjs6w5thhywz408-backlog-1
+              briefing:
+                id: briefing:ebgwr177kjjs6w5thhywz408:backlog:attempt-1:revision-1
+                digest: sha256:fc72271948d2273a9e0ede89b05604c4741457bd98fadaf50b9ebd1e7457b14e
+                request-digest: sha256:5f016522677589c77f88f557e4e5f1d306c9f507dbce176995941f0789e7da34
+                room-ref: ./trim-dead-gate-model-surface/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ebgwr177kjjs6w5thhywz408:backlog:1
+                briefing: briefing:ebgwr177kjjs6w5thhywz408:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:37.741016Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Remove four verified-dead pieces of the gate model surface. No consumer exists for any of them.

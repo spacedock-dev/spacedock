@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ebgwr177kjjs6w5thhywz408:backlog:attempt-1:revision-1",
+  "question": "Approve trim-dead-gate-model-surface into ideation for the 0.27 pre-ship cut program?",
+  "artifacts": [
+    {
+      "id": "artifact:ebgwr177kjjs6w5thhywz408:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/001da0a7b2a0a0045ab300aefbf7d03c20705242/trim-dead-gate-model-surface.md",
+      "rev": "sha256:84c5d82bb8e77b4202e44d5f4231c266c56a6af3e795d9e0089592abbfef2d16",
+      "mediaType": "text/markdown",
+      "summary": "Nine dead projections plus dead fields and aliases; no consumer exists."
+    }
+  ]
+}
