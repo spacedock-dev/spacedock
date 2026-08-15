@@ -19,6 +19,10 @@ gates:
                 digest: sha256:4c2c68c1961c9dd1ab3d21e5b189b7f6c4546128a403d51f53004b0f54f91b2d
                 request-digest: sha256:efc83f4ac33ab3a44f89b547f447cf1e4db2cddca95baade21ae538798d692cb
                 room-ref: ./mechanically-continue-codex-into-validation/review/backlog/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-15T02:41:11.242588Z"
+                reason: 'PR #670 removed the dispatch-ack machinery this entity specs; ACs and baseline are void at HEAD; archived by captain directive 2026-08-14'
 ---
 ## Problem
 
