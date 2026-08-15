@@ -1,7 +1,7 @@
 ---
 id: 42chs9dh7nq22f8at4szvbxp
 title: Tune the dev task template for gated stages
-status: validation
+status: implementation
 source: Captain direction, 2026-08-13
 sprint-readiness: ready
 score: 0.8
@@ -67,10 +67,10 @@ gates:
                 reason: 'Captain 2026-08-15: behavior assumed - validation PASSED approved, the merged-ancestor Stacked-mode amendment ratified, and the exercised deviation shape (worker holds, FO authorizes with distinct scope reasoning, captain ratifies at the next gate) adopted for the undiscoverable-at-ideation class'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 worktree: .worktrees/spacedock-ensign-tune-dev-template-for-gated-stages
 started: 2026-08-15T21:25:11Z
-pr: "#711"
+pr:
 ---
 
 Tune the reusable dev task template so task authors supply the decision evidence required by each gated stage without making task files verbose.
