@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:pph11xwsa2s3z73ts983wd0k:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:pph11xwsa2s3z73ts983wd0k-ideation-1
+              briefing:
+                id: briefing:pph11xwsa2s3z73ts983wd0k:ideation:attempt-1:revision-1
+                digest: sha256:d7125bc2bd6ee69f571c621e142be52a72b9fe9bf9fbf2efc919d10ea286960e
+                request-digest: sha256:e7619ef9893b8bc4fff04e40204dda701f6eb84706fbb89a6dad2d4d98c54c42
+                room-ref: ./remove-proof-gap-copied-oracle/review/ideation/briefing-1
 ---
 
 ffacf584a added `wantProofGaps`, a hand-written map of proof-gap bindings, DeepEqual-checked against `readRuntimeProofGaps` - an AST reader that derives the same data from the live test sources three lines away. The copy's only failure mode is "you forgot to update the copy": it catches no real defect and reintroduces the two-file lockstep tax for XFAILs on live-proof tests, one abstraction above the wantGaps map the workflow just removed for the same reason.

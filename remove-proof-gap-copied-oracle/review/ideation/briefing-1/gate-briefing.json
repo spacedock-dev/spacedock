@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pph11xwsa2s3z73ts983wd0k:ideation:attempt-1:revision-1",
+  "question": "Approve remove-proof-gap-copied-oracle ideation into implementation as a stack layer?",
+  "artifacts": [
+    {
+      "id": "artifact:pph11xwsa2s3z73ts983wd0k:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e1c76dc70a95d60dd62035c37d6ae038ab4b7a4b/remove-proof-gap-copied-oracle.md",
+      "rev": "sha256:c15615439dbcabc78fc524cf4d1668dbf729a3fc0882fce4fd367102a6c192ce",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: single-file -5 net; the copied map and its DeepEqual go while the derivation stays as a bare validating call - the falsifier probe proves that call is the sole CI keeper of the parseLiveGap boundary."
+    }
+  ]
+}
