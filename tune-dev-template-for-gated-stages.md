@@ -3,7 +3,7 @@ id: 42chs9dh7nq22f8at4szvbxp
 title: Tune the dev task template for gated stages
 status: backlog
 source: Captain direction, 2026-08-13
-sprint-readiness: defer
+sprint-readiness: ready
 score: 0.8
 ---
 
@@ -47,3 +47,15 @@ Verified by: a behavior exercise shows evidence changes withdraw and reprepare t
 ## Test plan
 
 Run workflow validation and a one-off gated-stage coverage comparison. Do not add a standing prose-grep test.
+
+## Captain-directed scope addition (2026-08-15)
+
+Fold stacked-PR support into the pr-merge mod (docs/dev/_mods/pr-merge.md), from the 0.27 stack experience:
+
+- The mod's back half (MERGED detection, sentinel, merge guard) worked unchanged on stacked PRs and needs no edit - encode that as an explicit statement, not an accident.
+- The front half must gain a stacked mode: the FO builds template-conformant PR bodies BEFORE `gh stack submit` (or patches them immediately after via the REST API - the GraphQL path chokes on deprecated projectCards), records the per-layer candidate SHA, and accepts a stack-sibling base as valid where the mod today assumes the trunk.
+- Body edits on existing PRs must use `gh api --method PATCH repos/{repo}/pulls/{n}` (observed working) rather than `gh pr edit` (observed failing).
+- Live-lane economics note for the mod prose: required checks fire on the bottom and top layers; the top's tree is the composition, so one live approval covers the stack.
+- Evidence base: PRs #699-#710, stack #707, and this session's ceremony record.
+
+Design constraint: the mod is blocked-product (dispatched-worker territory); the README template is FO-owned process. Ideation designs both edits; implementation is dispatched on top of the current stack (worktree based on the stack tip) and lands as the next stack layer.
