@@ -16,38 +16,52 @@ const (
 
 func TestFOWriteCoreMutationGateClassifiesTargets(t *testing.T) {
 	table := readFOWriteClassifierTable(t)
-	classifier := parseFOWriteClassifierTable(t, table)
 
-	cases := []struct {
-		path string
-		want string
-	}{
-		{".spacedock-state/task/index.md", "allowed-state"},
-		{"docs/dev/README.md", "allowed-process"},
-		{"cmd/spacedock/main.go", "blocked-product"},
-		{"internal/status/mutate.go", "blocked-product"},
-		{"internal/status/mutate_test.go", "blocked-product"},
-		{"skills/fo-write-core/SKILL.md", "blocked-product"},
-		{"agents/first-officer.md", "blocked-product"},
-		{"references/legacy.md", "blocked-product"},
-		{"plugin.json", "blocked-product"},
-		{".github/workflows/runtime-live-e2e.yml", "blocked-product"},
-		{"docs/site/reference/command-reference.md", "blocked-product"},
-		{"docs/specs/state-behavior-extension.md", "blocked-product"},
-		{"docs/roadmap/0250-fo-behavioral-discipline/index.md", "blocked-product"},
-		{"skills/integration/testdata/entity-label-drive/README.md", "blocked-product"},
-		{"docs/dev/_mods/pr-merge.md", "blocked-product"},
-	}
-	for _, tc := range cases {
-		if got := classifyFOWriteTarget(classifier, tc.path); got != tc.want {
-			t.Errorf("classify %q = %q, want %q", tc.path, got, tc.want)
+	// Two workflow dirs: a table that only works for the repo it shipped from
+	// passes docs/dev and fails ops/release.
+	for _, workflowDir := range []string{"docs/dev", "ops/release"} {
+		classifier := parseFOWriteClassifierTable(t, table, workflowDir)
+
+		cases := []struct {
+			path string
+			want string
+		}{
+			{".spacedock-state/task/index.md", "allowed-state"},
+			{workflowDir + "/_archive/shipped-task.md", "allowed-state"},
+			{workflowDir + "/README.md", "allowed-process"},
+			{"cmd/spacedock/main.go", "blocked-product"},
+			{"internal/status/mutate.go", "blocked-product"},
+			{"internal/status/mutate_test.go", "blocked-product"},
+			{"skills/fo-write-core/SKILL.md", "blocked-product"},
+			{"agents/first-officer.md", "blocked-product"},
+			{"references/legacy.md", "blocked-product"},
+			{"plugin.json", "blocked-product"},
+			{".github/workflows/runtime-live-e2e.yml", "blocked-product"},
+			{"docs/site/reference/command-reference.md", "blocked-product"},
+			{"docs/specs/state-behavior-extension.md", "blocked-product"},
+			{"docs/roadmap/0250-fo-behavioral-discipline/index.md", "blocked-product"},
+			{"skills/integration/testdata/entity-label-drive/README.md", "blocked-product"},
+			{workflowDir + "/_mods/pr-merge.md", "blocked-product"},
+		}
+		for _, tc := range cases {
+			got := classifyFOWriteTarget(classifier, tc.path)
+			if got != tc.want {
+				t.Errorf("workflow_dir=%q: classify %q = %q, want %q", workflowDir, tc.path, got, tc.want)
+				continue
+			}
+			// classifyFOWriteTarget defaults to blocked-product, so a bare
+			// blocked-product expectation is satisfied by a table that never
+			// mentions the path at all. Require an explicit pattern match.
+			if tc.want == "blocked-product" && !foWriteClassMatches(classifier, "blocked-product", tc.path) {
+				t.Errorf("workflow_dir=%q: %q is blocked only by default-deny, not an explicit blocked-product pattern", workflowDir, tc.path)
+			}
 		}
 	}
 }
 
 func TestFOWriteCoreMutationGateRequiresExactOverride(t *testing.T) {
 	table := readFOWriteClassifierTable(t)
-	classifier := parseFOWriteClassifierTable(t, table)
+	classifier := parseFOWriteClassifierTable(t, table, "docs/dev")
 
 	target := "internal/status/mutate.go"
 	if foWriteOverrideAllows(target, "you may fix the code directly") {
@@ -80,7 +94,7 @@ func readFOWriteClassifierTable(t *testing.T) string {
 	return body[start+len(foWriteClassifierStart) : end]
 }
 
-func parseFOWriteClassifierTable(t *testing.T, table string) map[string][]string {
+func parseFOWriteClassifierTable(t *testing.T, table, workflowDir string) map[string][]string {
 	t.Helper()
 	out := map[string][]string{}
 	for _, line := range strings.Split(table, "\n") {
@@ -100,7 +114,7 @@ func parseFOWriteClassifierTable(t *testing.T, table string) map[string][]string
 		for _, raw := range strings.Split(parts[2], ";") {
 			pattern := strings.Trim(strings.TrimSpace(raw), "`")
 			if pattern != "" {
-				patterns = append(patterns, pattern)
+				patterns = append(patterns, strings.ReplaceAll(pattern, "{workflow_dir}", workflowDir))
 			}
 		}
 		out[class] = patterns
@@ -115,13 +129,20 @@ func parseFOWriteClassifierTable(t *testing.T, table string) map[string][]string
 
 func classifyFOWriteTarget(classifier map[string][]string, target string) string {
 	for _, class := range []string{"blocked-product", "allowed-state", "allowed-process"} {
-		for _, pattern := range classifier[class] {
-			if pathPatternMatches(pattern, target) {
-				return class
-			}
+		if foWriteClassMatches(classifier, class, target) {
+			return class
 		}
 	}
 	return "blocked-product"
+}
+
+func foWriteClassMatches(classifier map[string][]string, class, target string) bool {
+	for _, pattern := range classifier[class] {
+		if pathPatternMatches(pattern, target) {
+			return true
+		}
+	}
+	return false
 }
 
 func pathPatternMatches(pattern, target string) bool {
