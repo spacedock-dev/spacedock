@@ -61,6 +61,17 @@ gates:
                 digest: sha256:4ce9ac4405b24316252530a17b81ffc92563982ec32b842e6a3dc3407e2bc380
                 request-digest: sha256:07833adf63c5bcaa787e1b1e3c17f9a40a49748b4fa1b6c8af0d6cc16a6d5275
                 room-ref: ./retire-test-only-gate-summary-readers/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:77k7m0dmwm10mz6zrdq86tv3:validation:1
+                briefing: briefing:77k7m0dmwm10mz6zrdq86tv3:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T23:54:37.554977Z"
+                decision: approve
+                reason: 'Captain 2026-08-15 (push them for the stack): validation PASSED approved; lands as a stack layer'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 After remove-gate-validate-subcommand lands, the `SummaryFile` / `SummaryFileAt` / `SummaryFileDiagnosticsAt` trio has no production caller, and the warnings slice `SummaryFileDiagnosticsAt` returns is observable by no caller. Retire the trio, or record the one concrete justification that keeps it. Removing it requires re-pointing two internal/gates tests.
