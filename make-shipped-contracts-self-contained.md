@@ -61,6 +61,17 @@ gates:
                 digest: sha256:f3d474cff65cd468a3cd32463f891ad56dbfcd6b3c2580640582b9e0c98e7ca8
                 request-digest: sha256:58662cbffcf0a5f82c1aa1f36325ceb53a272ae2ec9026a7610e2c37f2cc24ae
                 room-ref: ./make-shipped-contracts-self-contained/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9x6xw292fsz1b4648x9hn40y:validation:1
+                briefing: briefing:9x6xw292fsz1b4648x9hn40y:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T19:36:32.231285Z"
+                decision: approve
+                reason: Captain approved validation 2026-08-15; stacks as layer 11
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Shipped skills reference artifacts a user's machine does not have. Rewrite the seven audited instances so every shipped sentence resolves within the progressively-disclosed contract set. Base on stack layer 10 (retire-prose-grep-contract-tests); the deliverable becomes stack layer 11 - layer 10 removes the pins these rewrites would red.
