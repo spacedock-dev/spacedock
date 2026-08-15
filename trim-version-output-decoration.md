@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:x8g3dnqndfa1m85d8ga2cgem:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:x8g3dnqndfa1m85d8ga2cgem-backlog-1
+              briefing:
+                id: briefing:x8g3dnqndfa1m85d8ga2cgem:backlog:attempt-1:revision-1
+                digest: sha256:29b040ac52ea6ac3b5ec088df13bd65c14cf47c40a23c4fbd9c953003d046676
+                request-digest: sha256:f9aed9bec822660eeb6e0eaac5f049b2e1c6707f2fdcb404ba072ef674111704
+                room-ref: ./trim-version-output-decoration/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x8g3dnqndfa1m85d8ga2cgem:backlog:1
+                briefing: briefing:x8g3dnqndfa1m85d8ga2cgem:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:43.914595Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Remove three decorations from `spacedock --version` output. Each has no reader.

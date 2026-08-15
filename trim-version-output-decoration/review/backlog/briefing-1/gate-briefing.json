@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x8g3dnqndfa1m85d8ga2cgem:backlog:attempt-1:revision-1",
+  "question": "Approve trim-version-output-decoration into ideation for the 0.27 pre-ship cut program?",
+  "artifacts": [
+    {
+      "id": "artifact:x8g3dnqndfa1m85d8ga2cgem:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/494f1a300753864d413102ab9da2db0769e99c29/trim-version-output-decoration.md",
+      "rev": "sha256:e522c81037ce8886820ac92a11a59af8e076f9c587d3e967c0f9234ddf9563db",
+      "mediaType": "text/markdown",
+      "summary": "OS line, session segment, and --host suffix have no reader."
+    }
+  ]
+}
