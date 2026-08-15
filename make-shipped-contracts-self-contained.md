@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:9x6xw292fsz1b4648x9hn40y:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:9x6xw292fsz1b4648x9hn40y-backlog-1
+              briefing:
+                id: briefing:9x6xw292fsz1b4648x9hn40y:backlog:attempt-1:revision-1
+                digest: sha256:de4553c953de929a52bfb362a7d19a5ac077470125db6f1fad8ab8263e978581
+                request-digest: sha256:3d3d92fe0a1b05ad75500987f12bc7e7d65f3b1e395d76480f0691267f354cc0
+                room-ref: ./make-shipped-contracts-self-contained/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9x6xw292fsz1b4648x9hn40y:backlog:1
+                briefing: briefing:9x6xw292fsz1b4648x9hn40y:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T18:15:19.816976Z"
+                decision: approve
+                reason: 'Captain directive 2026-08-15: file, dispatch based off stack tip, PR on top of the stack'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Shipped skills reference artifacts a user's machine does not have. Rewrite the seven audited instances so every shipped sentence resolves within the progressively-disclosed contract set. Base on stack layer 10 (retire-prose-grep-contract-tests); the deliverable becomes stack layer 11 - layer 10 removes the pins these rewrites would red.

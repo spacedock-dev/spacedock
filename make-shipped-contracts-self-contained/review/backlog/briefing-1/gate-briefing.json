@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9x6xw292fsz1b4648x9hn40y:backlog:attempt-1:revision-1",
+  "question": "Approve make-shipped-contracts-self-contained into ideation (captain pre-directed: file, dispatch)?",
+  "artifacts": [
+    {
+      "id": "artifact:9x6xw292fsz1b4648x9hn40y:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6f7f633a9c3c36616de23d66798e1a7e2fefa7cd/make-shipped-contracts-self-contained.md",
+      "rev": "sha256:1c922c3b8e5fadb21a585dfebdeb45989edf6eb3738d8f668bdbf0ad1a115d80",
+      "mediaType": "text/markdown",
+      "summary": "Captain-directed cleanup from the round-2 audit; stack-layered, order-bound 10 then 11."
+    }
+  ]
+}
