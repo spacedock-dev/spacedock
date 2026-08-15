@@ -73,7 +73,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#694"
+pr: "#705"
 ---
 
 Remove the `gate validate` CLI subcommand. It has zero live uses across 424 recorded attempts. Fatal faults surface identically on every gate command through the shared reader. The warning class prints at state publish. The read-only digest sweep and the round check have no recorded consumer.
