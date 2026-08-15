@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kky8pg7wc8xgb985epwss092:validation:attempt-2:revision-1",
+  "question": "Approve validated PR #687 for terminal merge?",
+  "artifacts": [
+    {
+      "id": "artifact:kky8pg7wc8xgb985epwss092:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/3f6b2914e1d8881bb6ded89db5561184328b5e65/.kk-validation-gate.md",
+      "rev": "sha256:1bdd8647abe116305bf579ddd180e35e401e97386bc8de1e62cb728cda1f40f5",
+      "mediaType": "text/markdown",
+      "summary": "PASSED: KK repair and Claude k=3 are green at exact head; no material findings."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kky8pg7wc8xgb985epwss092:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/3f6b2914e1d8881bb6ded89db5561184328b5e65/commit-sonnet-gate-before-presentation.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9a10c59020da5904d4c896a3789135a8a5a4b925f5117f88b2adad6d82e9a57e"
+    }
+  ]
+}
