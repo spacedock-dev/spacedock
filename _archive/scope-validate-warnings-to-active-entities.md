@@ -1,11 +1,11 @@
 ---
 id: f0zn4sr7nz7xsxmyw6aw6bsm
 title: Scope validate warn channels to active entities
-status: validation
+status: done
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 started: 2026-08-15T02:55:41Z
-completed:
-verdict:
+completed: 2026-08-15T19:56:05Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-scope-validate-warnings-to-active-entities
 issue:
@@ -81,8 +81,9 @@ gates:
                 reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:700
+archived: 2026-08-15T19:56:05Z
 ---
 
 Stop emitting warn-tier findings for archived entities in `status --validate`. Today 125 of 126 report lines are archived-scope warnings (121 unknown-gate-application-field, 4 verdict-enum), the report still ends VALID, and archived scope is publish-only, so no tool-mediated fix can ever silence them. The alarm fires identically forever and carries no information. The pre-commit hook echoes the full report on every state commit, so every commit dumps 51KB of noise.
