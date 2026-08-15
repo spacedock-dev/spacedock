@@ -184,6 +184,17 @@ gates:
                 digest: sha256:3695696d1bc6f586076062e0778b28103c8a0178d2d7e363fc3e442ab811add5
                 request-digest: sha256:1ada2c76d5aacd0ad1b0349171b5ee579a15a9c3a63a22db7b18f8df0266a4fd
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:validation:5
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-5:revision-1
+                by: agent:first-officer
+                at: "2026-08-15T05:48:09.848351Z"
+                decision: approve
+                reason: 'Validation PASSED: the exact green artifact proves unbound Codex filing, AC-1 and AC-2 share explicit transaction evidence despite the combined report label, AC-3 has diff and full-suite evidence, and no finding remains.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 mod-block:
