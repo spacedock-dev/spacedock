@@ -33,18 +33,203 @@ started: 2026-08-15T02:55:22Z
 
 Remove the same-minor capability probe added in commit b331baf4f ("fix: reject stale same-minor launchers", 2026-08-09). The binary version gate should rely solely on the minor version match; if a stale build lacks `gate withdraw --reason`, the CLI already returns a clear "unknown subcommand" error at the point of use.
 
-## Scope
+## Problem
 
-Delete the capability check from these four locations:
+The probe pays a cost on every first-officer boot to prevent a failure that is
+already loud, already actionable, and can happen at most once per stale install.
 
-1. `skills/first-officer/references/first-officer-shared-core.md` — remove the "Compatible minor" probe bullet and the "Missing capability" abort bullet from the Startup section.
-2. `skills/integration/testdata/version_gate_flow.sh` — remove the `REQUIRED_CAPABILITY` variable and the entire probe block (the `helpout` / awk check and its failure branch); restore the simple `say "gate passed: spacedock $ver"; exit 0` path.
-3. `skills/integration/version_gate_fixture_test.go` — remove the `withdrawCapability` const, the `gate --help` branch from `writeGateLauncher` and `captiveInstall`, the `INVOCATION_LOG` plumbing from `captiveInstall` and `runGateFlow`, the `invocationLog` helper, and both tests: `TestGateFlowRejectsStaleSameMinorBeforeBoot` and `TestGateFlowCompatibleSameMinorProbesThenBoots`.
-4. `docs/site/get-started/install.md` — remove the paragraph about "If startup says the installed launcher is missing a required command".
+The cost is paid every boot: one extra `gate --help` subprocess, plus two bullets
+in `first-officer-shared-core.md` — the boot-resident core, the most
+context-expensive file in the skill set — plus a shell-mirror probe block, a
+93-line Go fixture driver, and a troubleshooting paragraph on the published
+install page.
+
+The value it buys is close to zero:
+
+1. The hazard window is the unreleased 0.27 dev line only. A stale *same-minor*
+   0.27.x launcher predating `gate withdraw` can exist only before 0.27 ships.
+2. When the hazard does occur, the binary already fails clearly at the point of
+   use. Verified by exercising `spacedock@next/0.27.0-pre4`:
+   `spacedock gate withdrawx foo --reason bar` → exit 2, stderr
+   `spacedock gate: unknown subcommand (want: prepare|withdraw|record|validate|consume)`.
+   A build lacking `withdraw` hits that same guard with `withdraw` absent from
+   the allowed set.
+
+So the value chain is broken at the consumer: the captain the probe protects is
+already served by the at-use error, one gate later, with a better message.
+
+## Scope, confirmed against HEAD 4d1912a69
+
+All four sites from the seed exist at HEAD and are the only tracked occurrences.
+`git grep -nE "REQUIRED_CAPABILITY|Compatible minor|withdrawCapability|Missing capability"`
+outside the state checkout returns exactly nine lines, all inside these files.
+Three corrections to the seed's site descriptions:
+
+1. `skills/first-officer/references/first-officer-shared-core.md` — remove the
+   "Compatible minor" probe bullet and the "Missing capability" abort bullet
+   (lines 12-13). Unchanged from the seed.
+2. `skills/integration/testdata/version_gate_flow.sh` — remove
+   `REQUIRED_CAPABILITY` and the probe block. The seed says "restore the simple
+   `exit 0` path"; that is right, and it is a wider revert than it sounds.
+   b331baf4f also replaced `exit 0` with
+   `"$launcher" status --boot --identify --json; exit $?`. That boot call exists
+   only to give the probe an ordering to be asserted against ("ProbesThen**Boots**"),
+   and its sole test is one of the two being deleted, so it reverts with the probe.
+3. `skills/integration/version_gate_fixture_test.go` — the seed's list
+   understates the deletion. `writeGateLauncher` becomes entirely dead, not just
+   its `gate --help` branch: its only two callers are the two tests being
+   deleted. `captiveInstall`'s `status --boot --identify --json` branch also dies
+   with the shell revert in site 2. Full removal: the `withdrawCapability` const,
+   `writeGateLauncher`, `invocationLog`, the `INVOCATION_LOG` plumbing in
+   `captiveInstall` and `runGateFlow`, the two dead `captiveInstall` branches, and
+   both tests. The second test is named
+   `TestGateFlowCompatibleSameMinorProbesThenBootsOnce` at HEAD, not
+   `...ProbesThenBoots`.
+4. `docs/site/get-started/install.md` — remove the "If startup says the installed
+   launcher is missing a required command" paragraph. Unchanged from the seed.
+
+## Coordination with remove-redundant-lint-mirrors (zvk9)
+
+zvk9 deletes `skills/integration/testdata/version_gate_flow.sh` and
+`skills/integration/version_gate_fixture_test.go` outright. Those are exactly the
+files this entity's sites 2 and 3 edit, so **zvk9 supersedes sites 2-3**. Sites 1
+and 4 are untouched by zvk9 and are this entity's durable contribution.
+
+Delivery is order-independent, and both orders were exercised in the spike:
+
+- **zvk9 lands first (expected).** This entity ships sites 1 and 4 only, and the
+  stage report records sites 2-3 as already done, naming zvk9's commit.
+- **This entity lands first.** It ships all four sites; zvk9 then deletes the two
+  files it edited.
+
+A finding that supports zvk9's premise fell out of the spike: with sites 1 and 4
+applied and sites 2-3 left alone, `go test ./skills/integration/` stayed green.
+The harness that documents itself as a "deterministic shell mirror of the FO
+version gate's Startup step 1 flow" does not notice when the prose it mirrors
+loses two of its classes. Nothing binds mirror to prose.
+
+## Keep-boundaries
+
+Neighbours that match a probe-shaped search and must survive:
+
+1. `first-officer-shared-core.md` lines 32 and 46 — "capability read" and "gate
+   capability probe" name the `spacedock:fo-gate-lifecycle` deferred-load
+   trigger. That is a different, per-gate probe. Keep.
+2. `internal/ensigncycle/recorded_gate_lifecycle_test.go:281` — asserts
+   `gate --help` is *optional* in the recorded-gate lifecycle log. Different
+   probe; the assertion also proves the two are not coupled. Keep.
+3. `skills/fo-gate-lifecycle/SKILL.md:34` — the `gate withdraw` command itself.
+   The command stays; only the boot-time probe *for* it goes.
+4. The binary gate's other classes — sandbox check, `--version` line-1 parse,
+   binary-absent, wrong-version, minor 0.27. Unchanged (AC-3).
+5. `curlInstallToken` in the fixture test — still used by two surviving tests.
+6. install.md's `=== "Binary (macOS / Linux)"` and `=== "macOS (Homebrew)"` tabs
+   — `TestInstallHintNoDrift` extracts its token-equality source from those tab
+   sections. Only the `## Troubleshooting` paragraph goes.
+7. `brew upgrade spacedock` in `internal/contract` — a different remedy surface
+   (too-old binary), explicitly excluded from the drift lint. Keep.
+
+## Doc diff
+
+`docs/site/get-started/install.md`, under `## Troubleshooting`:
+
+```diff
+ Run `spacedock doctor`.
+
+-If startup says the installed launcher is missing a required command, upgrade
+-Spacedock and relaunch. On macOS, run `brew upgrade spacedock`. On Linux, rerun
+-the checksum-verified binary installer shown above.
+-
+ ## Next
+```
+
+`## Troubleshooting` keeps `Run `spacedock doctor`.` and nothing is added: with
+the probe gone there is no startup message for the paragraph to explain.
+
+## Expected surface and tolerance
+
+- **Primary (zvk9 first):** 2 files, -6 lines, +0. Tolerance ±2 lines, no extra files.
+- **Contingent (this first):** 4 files, -117/+1. Tolerance ±10 lines, no extra files.
+
+Measured from the spike worktree, not estimated.
+
+## Semantic changes
+
+- **Runtime behavior:** the FO boot no longer runs `spacedock gate --help`. One
+  fewer subprocess per boot. A stale same-minor launcher now boots and fails at
+  the first `gate withdraw` with exit 2 and the unknown-subcommand message,
+  instead of aborting before boot. This is the intended trade.
+- **Documentation:** install.md loses one troubleshooting paragraph.
+- **Contingent only:** the shell mirror's gate-pass path stops invoking
+  `status --boot --identify --json`, and the same-minor gate-pass branch of the
+  mirror loses its only test. That branch was equally untested before b331baf4f,
+  so this restores the pre-probe coverage state rather than regressing past it —
+  and zvk9 deletes the whole mirror regardless.
+- **Command grammar, stored formats, authority:** unchanged. No CLI surface moves.
+
+## Spike determination
+
+**No spike needed.** This is pure deletion over proven mechanisms: markdown
+prose, a shell fixture, Go tests, and a docs page, all already exercised by the
+existing suite. There is no parser round-trip, runtime handoff, on-disk format,
+or unproven flag in the change.
+
+The one non-obvious risk was not the mechanism but the *blast radius* — whether
+deleting the two shared-core bullets would strand a prose lint, since
+`internal/contractlint` pins shared-core tokens and cross-checks install.md. That
+was resolved by exercise rather than by reading: in a throwaway worktree at HEAD
+4d1912a69 the deletion was applied and the lints run.
+
+- Sites 1+4 applied: `go test ./internal/contractlint/ ./skills/integration/` → both ok.
+- All four sites applied: same two packages ok, `gofmt -l` clean, diff -117/+1.
+
+The tokens the lints pin (`curl -fsSL …install.sh | sh`, `brew tap …`,
+`brew install …`, `uname -s`, the sandbox registry rows, the launcher-invariant
+sentence) all live in the surviving binary-absent bullet and the step-1 sentence,
+and `TestInstallHintNoDrift` reads install.md's tab sections, never the
+Troubleshooting paragraph. The throwaway worktree is deleted; the implementation
+reruns these as its own tests.
 
 ## Acceptance criteria
 
-- **AC-1**: `version_gate_flow.sh` passes the gate on a same-minor binary without probing `gate --help`.
-- **AC-2**: All remaining version-gate fixture tests pass (`go test ./skills/integration/ -run TestGateFlow`).
-- **AC-3**: No reference to `REQUIRED_CAPABILITY`, `Missing capability`, or the `gate withdraw` probe remains in `skills/` or `docs/site/get-started/install.md`.
-- **AC-4**: The FO skill's startup section still enforces the minor-version check (0.27) and the binary-absent / wrong-version abort classes unchanged.
+- **AC-1 (value): the change is a net deletion that leaves no boot-probe
+  reference behind.** Cumulative line delta against `origin/main` is negative,
+  and no tracked file outside `docs/dev/.spacedock-state/` matches
+  `REQUIRED_CAPABILITY|withdrawCapability|Missing capability|Compatible minor`.
+  Verified by: `git diff --shortstat origin/main...HEAD` reports more deletions
+  than insertions, and the `git grep -nE` above exits non-zero (no match). Both
+  halves can move the wrong way — a rewrite-instead-of-delete makes the delta
+  positive, and a missed site keeps the grep matching.
+- **AC-2: the first officer boots without invoking `gate --help`.** The Startup
+  binary gate reaches `«state.boot»()` from a same-minor launcher with no
+  capability probe between the version check and boot.
+  Verified by: `internal/contractlint` passes with a check asserting the Startup
+  section carries no `gate --help`; in the contingent case, additionally by the
+  shell mirror reaching `gate passed` with `gate --help` absent from the
+  invocation log.
+- **AC-3: the surviving abort classes are unchanged.** The binary gate still
+  enforces minor 0.27 and still aborts on binary-absent and wrong-version, with
+  the same OS-aware hints and sandbox handling.
+  Verified by: `go test ./internal/contractlint/` — `TestVersionGateProseOSAwareHint`,
+  `TestVersionGateDeferredTrigger`, `TestVersionGateSandboxRegistry`,
+  `TestVersionGateProseLauncherInvariantAmendment`, and `TestInstallHintNoDrift`
+  pass unchanged. Deleting a surviving bullet or an install.md tab fails these.
+- **AC-4: the suite stays green.** `go test ./...` and `go test ./... -race` pass.
+
+## Test plan
+
+Deletion plus the existing suite; the surviving contractlint prose pins are the
+regression floor. No new test fixtures.
+
+- `go test ./internal/contractlint/` — the five tests named in AC-3, plus the
+  AC-2 no-`gate --help` assertion. Cost: seconds. Already exercised in the spike.
+- `go test ./skills/integration/` — contingent case only, and only if zvk9 has
+  not yet deleted the package's version-gate files. Cost: ~15s.
+- `go test ./...` and `-race` — AC-4.
+- The AC-2 contractlint assertion is the only line of new test code. It is
+  needed because every other check in the file asserts a token is *present*; none
+  would fail if the probe were reintroduced. The simplest alternative — relying
+  on AC-1's grep — is insufficient because the grep lives in a stage report, not
+  in the suite, so it cannot stop a regression after this entity closes.
+- No live workflow test. The claim is boot prose plus deletion, not runtime
+  orchestration; the FO boot path is already covered by the contractlint pins.
