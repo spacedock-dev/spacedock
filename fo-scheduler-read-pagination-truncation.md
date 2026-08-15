@@ -3,11 +3,11 @@ id: pgdyphtaqfx1zn0h7ax31e5h
 title: FO scheduler reads must not silently truncate at the page limit
 status: implementation
 source: "trim-dispatch-core-stale-prose ideation and validation, 2026-08-15; captain 2026-08-15: necessary before 0.27"
-started:
+started: 2026-08-15T23:04:16Z
 completed:
 verdict:
 score: "0.95"
-worktree:
+worktree: .worktrees/spacedock-ensign-fo-scheduler-read-pagination-truncation
 issue:
 gates:
     version: 1
