@@ -170,6 +170,14 @@ gates:
                 digest: sha256:a07b84d651f6b8790b6af0c143ddfdc7df7f7a31c5ad6ed599180167e692ca5a
                 request-digest: sha256:4fbc2f6408e9a263b97b308ba424ca2dda7354ec46607b1d3c753df68138bd5e
                 room-ref: ./repair-codex-filing-command-ledger-observation/review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6ker7h25hj86983e5ef71ahm:validation:4
+                briefing: briefing:6ker7h25hj86983e5ef71ahm:validation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-08-15T00:40:41.000232Z"
+                decision: revise
+                reason: 'Reject frozen commit 93d8bfc23: exact no-auth -parallel 3 execution disproved slowest-first admission while the static declaration-order test passed. Return to ideation for an explicit scheduler that deterministically starts the three longest journeys first, preserves capacity three and per-journey isolation, and has a behavioral admission-order test. Candidate remains unchanged; no model run spent.'
 started: 2026-08-13T22:11:00Z
 worktree: .worktrees/spacedock-ensign-repair-codex-filing-command-ledger-observation
 mod-block:
