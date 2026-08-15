@@ -66,7 +66,7 @@ Trim `spacedock --version` output to what has a reader, and give the Sandbox lin
 1. ~~The `OS:` line.~~ **WITHDRAWN by captain revise 2026-08-15.** The line STAYS. The captain declares the bug-report consumer real — people paste `--version` output into issues — which supersedes the cycle-1 finding that its only named consumers were speculative. The machinery it solely consumes (`runtime.GOOS`/`GOARCH` and the `runtime` import in cli.go) stays with it.
 2. The session short-id segment on the Runtime line (cli.go:912-913). Session matching everywhere reads the env var, never the printed prefix. **Stands approved in direction.**
 3. The `pass --host` remedy suffix on the ambiguous arm (cli.go:893). The one ambiguity-affected command, dispatch build, prints its own complete remedy. **Stands approved in direction.**
-4. **ADDED by the same revise.** The Sandbox line must not need the word "inside". After the `Sandbox: ` label, `inside (agent-safehouse)` says "inside" twice over and `not sandboxed (…)` says "sandbox" twice. Both arms get a new value shape, and the install-gate corroboration consumer must keep working.
+4. **ADDED by the same revise.** The Sandbox line must not need the word "inside". After the `Sandbox: ` label, `inside (agent-safehouse)` says "inside" twice over and `not sandboxed (…)` says "sandbox" twice. Both arms get a new value shape, and the install-gate corroboration consumer must keep working. (The revise named two consumers to verify; one of them — the gate-flow parse — is deleted whole by `remove-redundant-lint-mirrors`, so only `fo-install-gate.md:22` survives to be verified. See the approach section.)
 5. **ADDED by the same revise.** Investigate retiring the `contract 3` sentinel against its own documented retirement condition (cli.go:855), and fold in the one-line correction to the wrong pin attribution at cli.go:853.
 
 Keep the Runtime line itself (host and markers have a recorded live read), the ambiguous reporting arm (the nested-marker leak occurs live), the `OS:` line (item 1), and the Sandbox line itself — item 4 changes its VALUE, not its existence.
@@ -95,14 +95,11 @@ Three things on `spacedock --version`, verified against HEAD by finding every co
 
 The name-alone arm is what removes the word "inside" without inventing a synonym for it, and `none` gives consumers a first token to classify on without matching a relationship word. This changes `status --boot`'s `SANDBOX:` line too — both surfaces render the same `safehouse.SessionState`, and that shared render is the reason the change is one function rather than two. The pre-launch banner's `Sandbox:` line renders `LaunchState`, a different question ("will this launch wrap?"), and is out of scope; see the flag below.
 
-**The install-gate corroboration consumer, and why it needed real work.** `skills/integration/testdata/version_gate_flow.sh:44` classified the parsed value with the glob `inside*`. The rename breaks it — but so would any shape change, and the deeper problem is that the gate runs `--version` on *whatever binary is installed*, which may predate these skills and still emit the old shape. So the parse is rewritten to classify on the NOT-sandboxed shapes of both eras and treat anything else as a sandbox name:
+**The install-gate corroboration consumer: verified, and it needs no edit.** The revise named two consumers to check. One of them is disappearing: `skills/integration/testdata/version_gate_flow.sh` and its driver `version_gate_fixture_test.go` are DELETED WHOLE by `remove-redundant-lint-mirrors` (zvk9), captain-approved, deletion commit `b77bfc942`. The other, `skills/first-officer/references/fo-install-gate.md:22`, survives and needs no edit in either value era: it anchors on the `^Sandbox: ` prefix and the env-wins rule and names no value literal — read, not assumed.
 
-    case "$sbline" in
-    "" | none* | "not sandboxed"*) …DISAGREEMENT… ;;
-    *) …agrees… ;;
-    esac
+That leaves NO consumer anywhere that classifies the Sandbox VALUE. Checked concretely rather than by generality: outside the two doomed files, every reference to the value is producer-side (`internal/status/boot.go` emits it; `safehouse/state_test.go`, `status/boot_sandbox_test.go` and `cli/version_session_test.go` pin what we emit), shape-agnostic (`internal/status/harness_test.go:60` redacts the line by regex), a frozen historical transcript (`internal/ensigncycle/testdata/*.stream.jsonl`, carrying an even older `unavailable (safehouse not on PATH)` shape — recorded inputs, not consumers), or a different surface (`frontdoor.go` `LaunchState`).
 
-This is strictly more correct than the original, which would have mis-classified a future sandbox whose name did not begin with "inside". `skills/first-officer/references/fo-install-gate.md:22` needs no edit: it names the `^Sandbox: ` prefix and the env-wins rule, never a value literal — checked, not assumed.
+**Why no dual-era parse ships.** An earlier revision of this design rewrote the gate-flow glob to span both value shapes and added two fixture arms to pin it. That work is dropped: with the shell parse deleted there is no deterministic classifier left for an era-spanning mechanism to live in, and a model reading prose does not need one. The evidence that the mechanism was never load-bearing is direct — with the reshaped `SessionState` in place and BOTH doomed files left completely untouched, `go test ./skills/integration/` passes. The harness drives hardcoded captive scripts, never the real binary, so it never observed this value in the first place. That is the same defect zvk9 removes the harness for, arriving independently.
 
 **Alternatives considered.** For the Sandbox arms, `Sandbox: no (…)` and `Sandbox: unsandboxed (…)` were rejected: both are still relationship words, so they trade "inside" for a synonym and leave the consumer matching on prose rather than on a name-or-`none` distinction. Retargeting the gate-flow glob from `inside*` to `none*` (single-era) was rejected because it silently breaks against every already-installed older binary — the case the dual-era arms now pin.
 
@@ -133,43 +130,51 @@ Homebrew casks serve exactly one version each and no pinned-old cask exists, so 
 
 The `OS:` line (captain-kept; item 1 above). Retiring the `contract 3` sentinel (investigated above; blocked). The Runtime detection redesign.
 
-`skills/integration/version_gate_fixture_test.go:327,345` keeps its old-shape captive scripts. They are fake-binary *inputs*, not assertions about this binary's output, and they are now the pre-rename half of the dual-era corroboration proof — rewriting them to the new shape would delete the coverage that matters most.
+`skills/integration/testdata/version_gate_flow.sh` and `skills/integration/version_gate_fixture_test.go` are not touched at all. zvk9 deletes both whole, so any edit here is discarded work in one landing order and a delete/modify conflict in the other.
 
 **Flagged, not fixed:** `internal/cli/frontdoor.go:209` renders the pre-launch banner's `Sandbox:` line from `LaunchState`, which keeps `inside (agent-safehouse) — launching without re-wrapping`. After this change the two surfaces disagree in style. That is a different question on a different surface and the revise named the `--version` line, so it stays out; if the captain wants the banner aligned it is a one-function follow-up. Separately, `internal/cli/dev_version_test.go:53` carries a stale COMMENT claiming line 1 reads `spacedock <version>+dev (contract 3)`; the token moved off line 1 long ago. Not an assertion, not touched.
 
 ## Coordination
 
-- `remove-startup-capability-probe` edits `skills/integration/version_gate_fixture_test.go` (its `withdrawCapability`/`INVOCATION_LOG` plumbing) and `skills/integration/testdata/version_gate_flow.sh` (its `REQUIRED_CAPABILITY` probe block). I edit different regions of both files — the corroboration `case` arm and a new subtest — so no semantic conflict, but a textual merge conflict is likely. Whichever merges second rebases. This entity no longer touches `first-officer-shared-core.md` at all, since the OS line stays, which removes the overlap that existed in cycle 1.
-- `remove-gate-validate-subcommand` edits `internal/cli/cli.go` in the `gate validate` branches — a different function from `printVersion`. Low risk.
-- `retire-requires-contract-sentinel` is still NOT an overlap despite the name: it retires the `requires-contract` plugin-manifest field, not the `contract 3` token. Worth restating now that this entity has its own contract-3 finding — the two concern different mechanisms and neither blocks the other.
+**`remove-redundant-lint-mirrors` (zvk9) — the binding one.** It DELETES `skills/integration/testdata/version_gate_flow.sh` and `skills/integration/version_gate_fixture_test.go` whole (captain-approved; deletion commit `b77bfc942`). An earlier revision of this design edited both files; those edits are dropped, so this entity now touches **zero** files that zvk9 touches. Both landing orders are therefore clean:
+
+- **zvk9 first:** nothing here references either deleted file, so this entity applies unchanged. Its `skills/integration` regression check simply has fewer tests to run.
+- **this first:** zvk9's deletion removes files this entity never modified, so it applies unchanged too. Had the dual-era edits stayed, this order would have produced a delete/modify conflict and discarded the work anyway.
+
+zvk9 also deletes three install literals from `internal/contractlint/version_gate_smoke_test.go`. This entity does not touch that file; the `uname -s` token that `TestVersionGateProseOSAwareHint` pins is explicitly retained by zvk9 and is unaffected here either way.
+
+**`remove-startup-capability-probe` (dav9).** No longer overlaps at all. Its items 2-3 rewrite the two files zvk9 deletes and this entity no longer edits; its items 1 and 4 touch `first-officer-shared-core.md` and `install.md`, and this entity stopped touching the shared core when the captain reinstated the OS line.
+
+**`remove-gate-validate-subcommand`.** Edits `internal/cli/cli.go` in the `gate validate` branches — a different function from `printVersion`. Low risk, unchanged from cycle 2.
+
+**`retire-requires-contract-sentinel`.** Still NOT an overlap despite the name: it retires the `requires-contract` plugin-manifest field, not the `contract 3` token this entity investigated. Neither blocks the other.
 
 ## Expected surface and tolerance
 
-Measured from the spike, not estimated: **net -64** (190 insertions, 254 deletions) across **11 files**.
+Measured from the repaired spike: **net -100** (149 insertions, 249 deletions) across **9 files**.
 
 | File | Net | Why |
 |---|---|---|
 | `internal/runtimehost/runtimehost_test.go` | -70 | identity + ShortID tests |
 | `internal/runtimehost/runtimehost.go` | -41 | identity column, return, ShortID |
 | `internal/cli/cli.go` | -18 | runtimeLine, suffix, comment fix |
-| `internal/cli/version_session_test.go` | -13 | retarget + new sandbox test |
+| `internal/cli/version_session_test.go` | -13 | retarget + the new Sandbox value test |
 | `docs/site/reference/command-reference.md` | -6 | examples and prose |
-| `internal/status/boot_sandbox_test.go` | 0 | 6 expected values |
+| `internal/safehouse/state.go` | +2 | new shape |
 | `internal/safehouse/state_test.go` | 0 | 4 expected values |
+| `internal/status/boot_sandbox_test.go` | 0 | 6 expected values |
 | `internal/dispatch/build.go` | 0 | Detect arity |
-| `skills/integration/testdata/version_gate_flow.sh` | +2 | dual-era case arm |
-| `internal/safehouse/state.go` | +6 | new shape + rationale |
-| `skills/integration/version_gate_fixture_test.go` | +33 | dual-era corroboration arms |
 
-Tolerance: ±40 lines, ±2 files. The net is far less negative than cycle 1's -165 because the OS-line deletion is withdrawn and the Sandbox work is a rename plus new consumer coverage rather than a removal.
+Tolerance: ±30 lines, ±1 file. Any diff touching `skills/integration/` is out of bounds by construction — those files are zvk9's to delete.
+
+History of this number, since it has moved twice: cycle 1 estimated -165 across 7 files with the OS line deleted; cycle 2 measured -64 across 11 files after the captain reinstated it and the Sandbox work added consumer coverage; this repair measures -100 across 9 files after the two doomed-file edits were dropped. Only the last is the gated figure.
 
 **Observable semantics changed.**
 
 1. `--version` Runtime line loses its `, session <8hex>` segment; the ambiguous arm loses ` — pass --host`. Line COUNTS are unchanged in both shapes (2 outside, 5 in-session) because the OS line stays — so byte size, not line count, is what moves.
 2. `Sandbox:` value shape changes on `--version` **and** `SANDBOX:` on `status --boot`. This is wider than cycle 1 declared and is the direct consequence of both surfaces sharing `SessionState`.
-3. The install-gate corroboration parse changes from single-era to dual-era classification — a behavior change in the gate flow, not just a retarget.
-4. Package-internal Go API: `runtimehost.Detect` returns 3 values instead of 4; `ShortID`/`shortIDLen` cease to exist.
-5. Unchanged: every exit code (including the ambiguous arm's 0), command grammar, stored formats, authority rules, the `OS:` line, the `contract 3` token, and the pre-launch banner.
+3. Package-internal Go API: `runtimehost.Detect` returns 3 values instead of 4; `ShortID`/`shortIDLen` cease to exist.
+4. Unchanged: every exit code (including the ambiguous arm's 0), command grammar, stored formats, authority rules, the `OS:` line, the `contract 3` token, the pre-launch banner, and — deliberately — every file under `skills/integration/`. Cycle 2 declared a fourth semantic here, a single-era-to-dual-era change in the gate-flow corroboration parse; that is withdrawn with the mechanism, and no gate-flow behavior changes.
 
 ## Acceptance criteria
 
@@ -180,8 +185,9 @@ Verified by: building both binaries and byte-counting each shape.
 **AC-2 — No trimmed decoration is reachable in any `--version` shape, and the Sandbox line names its sandbox.**
 Verified by: `TestVersionSessionRender`'s five exact-match `want` strings plus named absence checks for `, session `, `pass --host`, and `inside`; and `TestVersionSandboxLineNamesTheSandbox`, which pins the bare-name arm and both `none` arms independently of those literals. Falsifying change: reverting `SessionState` fails by name even with every `want` regenerated.
 
-**AC-3 — The install-gate corroboration classifies BOTH value-shape eras correctly.**
-This is the consumer the revise named. Verified by: `TestGateFlowSandboxEnvMarker`'s four arms — old-shape sandboxed agrees, old-shape unsandboxed disagrees, new-shape sandboxed agrees, new-shape unsandboxed disagrees. Falsifying change: restoring the single-era `inside*` glob turns the new-shape-sandboxed arm red (exercised).
+**AC-3 — The surviving install-gate consumer needs no edit, and no consumer classifies the Sandbox value.**
+This is a verification claim, not a mechanism — the revise asked whether the corroboration consumer still works, and the answer is that the one consumer surviving zvk9 anchors on the `^Sandbox: ` prefix and never on a value literal.
+Verified by: reading `fo-install-gate.md:22`; by the repo-wide sweep recorded in the approach section; and behaviorally by the fact that `go test ./skills/integration/` passes with the reshaped value and both doomed files untouched, which is what shows the harness never consumed this value. Falsifying evidence would be any surviving consumer that branches on the value — none exists; if one is found, this AC and the design both change.
 
 **AC-4 — Every keep-boundary still holds.**
 `OS: <goos>/<goarch>` is still line 2 in both shapes; the Runtime line still names host and markers; the ambiguous arm still exits 0; `dispatch build` still prints its complete three-value remedy; `contract 3` is still emitted below the Sandbox line.
@@ -199,7 +205,7 @@ Verified by: `go test ./...` and `go test ./... -race`, excepting `TestCodexReso
 One new test and one new subtest group; everything else is retargeting existing assertions. No live workflow run is needed — every claim is either output bytes from the binary or a unit/fixture-level render.
 
 - `internal/cli/version_session_test.go` — retarget five render cases (OS line retained, Sandbox reshaped), swap the absence loop's `\nOS: ` token for `inside`, add `TestVersionSandboxLineNamesTheSandbox`, drop `TestVersionRuntimeLineDistinguishesConcurrentSessions` (it exists solely to prove the session segment distinguishes sessions — the behaviour being removed). Serves AC-1, AC-2, AC-4.
-- `skills/integration/version_gate_fixture_test.go` — add the two new-shape corroboration arms beside the two existing old-shape ones. Serves AC-3; this is the only substantive insertion.
+- `skills/integration/` — NO changes. Run unmodified as a regression check: it must stay green against the reshaped value, which is both the AC-3 evidence and the proof that the harness never observed this surface. Verified in the spike.
 - `internal/safehouse/state_test.go` (4 values) and `internal/status/boot_sandbox_test.go` (6 values) — retarget to the new shape. `internal/status/harness_test.go:60` redacts the SANDBOX line by regex and needs no change. Serves AC-2 and semantic change 2.
 - `internal/runtimehost/runtimehost_test.go` — drop `TestDetectIdentity` and `TestShortID`, fix `Detect`'s arity. Marker-matrix and same-host-non-ambiguity coverage untouched.
 - Byte counts for AC-1 from both binaries in both shapes.
@@ -248,3 +254,20 @@ Baseline commit note: the body cites HEAD as 4d1912a69; HEAD has since advanced 
 ### Summary
 
 The revise inverted one of the three original cuts and added two investigations, so the shape changed substantially: net is now -64 across 11 files rather than -165 across 7, and line counts no longer move at all, which forced AC-1 from a line measure to a byte measure (in-session 130 to 103, ambiguous 148 to 123). The Sandbox rename turned out to be the load-bearing work rather than a cosmetic rename: the install-gate corroboration classified on the literal `inside*`, and because the gate runs against whatever binary is installed — possibly one older than these skills — the honest fix was a dual-era parse rather than a retarget, which is strictly more correct than what was there. On contract 3 the answer is a determination, not a deletion: the distribution channels are clean but the unpruned plugin cache is a demonstrable blocking population, so the token stays and the retirement query is scheduled for the 0.28 cut. Everything was spiked in a slug-named worktree, all six affected packages pass, and three mutations were exercised — most importantly, restoring the single-era glob turns the new-shape corroboration arm red, which is what proves AC-3 is not a tautology.
+
+## Stage Report: ideation (cycle 2, coordination repair)
+
+- DONE: Drop the two doomed-file edits from the design
+  The dual-era gate-flow case arm and both corroboration fixture arms are removed; the design now touches ZERO files that zvk9 touches, verified by `git diff --name-only` in the repaired spike.
+- DONE: Keep the fo-install-gate verification claim and the version_session_test coverage
+  `fo-install-gate.md:22` verified to anchor on the `^Sandbox: ` prefix and the env-wins rule with no value literal, so it needs no edit in either era; `TestVersionSandboxLineNamesTheSandbox` and the five render cases keep the new shape pinned producer-side.
+- DONE: Restate the estimate and AC-3
+  Estimate re-measured at net -100 across 9 files (was -64 across 11), with the tolerance restated and all three cycles' figures recorded so the gated number is unambiguous. AC-3 is now a verification claim rather than a dual-era mechanism.
+- DONE: Rewrite the Coordination section for zvk9, both landing orders
+  zvk9 named with its deletion commit; both orders shown to be clean now that the file overlap is zero, with the delete/modify conflict the dropped edits would have caused named explicitly. dav9's overlap is recorded as fully gone.
+- DONE: Named the surviving value-classifying consumer, or established there is none
+  There is none. Swept every Sandbox reference outside the two doomed files: producer-side emitters and pins, one shape-agnostic redaction regex, frozen historical transcripts carrying a third older shape, and the separate `LaunchState` surface. Not kept on generality.
+
+### Summary
+
+The FO's defect was real and I did not try to save the work. The dual-era corroboration mechanism was placed in two files that `remove-redundant-lint-mirrors` deletes whole, and with the shell parse gone there is no deterministic classifier for an era-spanning mechanism to live in — the one surviving consumer is prose that anchors on the line prefix. The strongest evidence arrived from the repaired spike rather than from reasoning: with the reshaped `SessionState` in place and both doomed files left completely untouched, `go test ./skills/integration/` passes, because the harness drives hardcoded captive scripts and never the real binary. So it never observed this value at all, and the arms I added were pinning synthetic strings — independently the same defect zvk9 deletes the harness for. Repaired scope is net -100 across 9 files, all six affected packages green, AC-1 unchanged at 130 to 103 bytes in-session and 148 to 123 ambiguous. One thing worth the captain's attention: the revise named the gate-flow parse as a consumer to verify, and that artifact is being deleted by an approved sibling, so half of directive 2's named verification target no longer exists.
