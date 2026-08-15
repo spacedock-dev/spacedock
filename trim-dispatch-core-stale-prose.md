@@ -72,7 +72,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#699"
+pr: pr-merge:699
 ---
 
 Two prose repairs in skills/first-officer/references/fo-dispatch-core.md.
