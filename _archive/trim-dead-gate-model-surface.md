@@ -1,12 +1,12 @@
 ---
 id: ebgwr177kjjs6w5thhywz408
 title: Trim dead gate model and projection surface
-status: validation
+status: done
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 sprint: durable-decisions
 started: 2026-08-15T02:55:35Z
-completed:
-verdict:
+completed: 2026-08-15T19:56:48Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-trim-dead-gate-model-surface
 issue:
@@ -82,8 +82,9 @@ gates:
                 reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:706
+archived: 2026-08-15T19:56:48Z
 ---
 Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69` and re-verified at `ef8f55c83`; the two commits between them touch only workflow docs, and none of this entity's target files changed.
 
