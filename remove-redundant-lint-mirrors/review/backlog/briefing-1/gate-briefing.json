@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zvk9cnew2ggpaqb3wty24xtf:backlog:attempt-1:revision-1",
+  "question": "Approve remove-redundant-lint-mirrors into ideation for the 0.27 pre-ship cut program?",
+  "artifacts": [
+    {
+      "id": "artifact:zvk9cnew2ggpaqb3wty24xtf:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4fce219c240b9e50e85069b1b91fd2af892c6a46/remove-redundant-lint-mirrors.md",
+      "rev": "sha256:af79597d9554301f5ee775dbdc3a935d52ca885cbb6d10815811cd0a503dfce3",
+      "mediaType": "text/markdown",
+      "summary": "Copied XFAIL oracle, duplicated install literals, drifted shell mirror."
+    }
+  ]
+}

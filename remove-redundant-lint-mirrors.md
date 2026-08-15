@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:zvk9cnew2ggpaqb3wty24xtf:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:zvk9cnew2ggpaqb3wty24xtf-backlog-1
+              briefing:
+                id: briefing:zvk9cnew2ggpaqb3wty24xtf:backlog:attempt-1:revision-1
+                digest: sha256:1a4b86e71e3145a2dbd052a2a7f4aa553d77bf031e8b36b175ffe0af187ef39e
+                request-digest: sha256:24538405c9c80a26b1009a0a8b493178dab709db0c87507ab9bdcf9f918e7df1
+                room-ref: ./remove-redundant-lint-mirrors/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zvk9cnew2ggpaqb3wty24xtf:backlog:1
+                briefing: briefing:zvk9cnew2ggpaqb3wty24xtf:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:54:02.147952Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Three verified-redundant test mirrors.
