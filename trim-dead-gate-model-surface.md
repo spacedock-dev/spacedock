@@ -1,7 +1,7 @@
 ---
 id: ebgwr177kjjs6w5thhywz408
 title: Trim dead gate model and projection surface
-status: implementation
+status: validation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
 sprint: durable-decisions
 started: 2026-08-15T02:55:35Z
