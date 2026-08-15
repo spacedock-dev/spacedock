@@ -1,7 +1,7 @@
 ---
 id: 42chs9dh7nq22f8at4szvbxp
 title: Tune the dev task template for gated stages
-status: backlog
+status: ideation
 source: Captain direction, 2026-08-13
 sprint-readiness: ready
 score: 0.8
@@ -27,7 +27,7 @@ gates:
                 reason: 'Captain directive 2026-08-15: fold stack support for pr-mod into 42c and dispatch on top of the stack'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Tune the reusable dev task template so task authors supply the decision evidence required by each gated stage without making task files verbose.
