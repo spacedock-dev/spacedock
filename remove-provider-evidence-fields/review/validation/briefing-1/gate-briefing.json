@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7c4w88fnmnbtc0tgkrvx0vxj:validation:attempt-1:revision-1",
+  "question": "Approve remove-provider-evidence-fields validation as PASSED to done?",
+  "artifacts": [
+    {
+      "id": "artifact:7c4w88fnmnbtc0tgkrvx0vxj:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/fda6289b0398df56586327fd995a644a682ea632/remove-provider-evidence-fields.md",
+      "rev": "sha256:59d5e7b1f6951e789b370677486155bc55975377f07145fba10798d31313149e",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED all five ACs from scratch with a frozen state snapshot and an independent corpus decoder; all four mutation fences fire; tolerance provably one named key; one polish-level reporting correction, no material findings."
+    }
+  ]
+}
