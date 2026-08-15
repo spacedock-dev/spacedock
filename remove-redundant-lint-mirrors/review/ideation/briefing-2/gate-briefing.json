@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zvk9cnew2ggpaqb3wty24xtf:ideation:attempt-2:revision-1",
+  "question": "Approve remove-redundant-lint-mirrors ideation into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:zvk9cnew2ggpaqb3wty24xtf:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/d47d81501fb672a3ac5e5ca44a884db9c2eaed57/remove-redundant-lint-mirrors.md",
+      "rev": "sha256:4bd99f2c2e0673c5b9f1ebaf7129151f3164c92758ef6d0957d4b76b8dab120a",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: -506 lines, 0 insertions, 4 files, re-derived clean in a slug-named worktree; one contaminated citation corrected (418 to 401), all conclusions unchanged; keep-boundary lints mutation-checked."
+    }
+  ]
+}
