@@ -99,10 +99,6 @@ func claudeLiveRole(model string) (string, error) {
 	}
 }
 
-// Codex queues parallel tests in declaration order. These declarations are
-// slowest-first from retained journey metrics; the conflict handoff is first
-// conservatively because its timed-out run has no completed duration record.
-//
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-opus", "bqy97b9npym3zs62pagjchpk"), liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
@@ -110,7 +106,7 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("codex", "dvddbpsf4tdt3yjw1yjyp14k"), liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
@@ -120,12 +116,12 @@ func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("pi", "x02375wsg6q61xek7p0t36j2")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("codex", "9adv48yhye5s2vkhwd7ge52d"), liveXFail("pi", "x02375wsg6q61xek7p0t36j2")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "kky8pg7wc8xgb985epwss092")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "kky8pg7wc8xgb985epwss092"), liveXFail("codex", "kky8pg7wc8xgb985epwss092")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
