@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ebgwr177kjjs6w5thhywz408:ideation:attempt-2:revision-1",
+  "question": "Approve trim-dead-gate-model-surface ideation into implementation, confirming the recorded override of the eligibility-cut retention sentence?",
+  "artifacts": [
+    {
+      "id": "artifact:ebgwr177kjjs6w5thhywz408:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/acba18e9bc86f1ac4cd2a097bd0fb0f3859af255/trim-dead-gate-model-surface.md",
+      "rev": "sha256:38394842e99bd4d3af96b6c60fd8d664c9f5dedd1da8c212b31fb89344e46083",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: full change spiked and re-verified from scratch at ef8f55c83 (-124 lines, 8 files); annotation-bytes risk exercised on a real archived provider Result; override recorded and re-verified."
+    }
+  ]
+}

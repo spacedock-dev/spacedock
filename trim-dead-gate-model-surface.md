@@ -46,6 +46,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-15T03:45:43.758307Z"
                 reason: Entity re-verified and amended post-prepare (b60807187); re-preparing against current bytes; all figures unchanged
+            - id: gate-attempt:ebgwr177kjjs6w5thhywz408-ideation-2
+              briefing:
+                id: briefing:ebgwr177kjjs6w5thhywz408:ideation:attempt-2:revision-1
+                digest: sha256:dba5432d8411d65efce2d20992db9eb9fd50777e8fd86443a0fc969e40678742
+                request-digest: sha256:35a3e0817a1cd3ccefebae773255ff4ad13f0d27cfdef569f5904fdda49e3590
+                room-ref: ./trim-dead-gate-model-surface/review/ideation/briefing-2
 ---
 Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69` and re-verified at `ef8f55c83`; the two commits between them touch only workflow docs, and none of this entity's target files changed.
 
