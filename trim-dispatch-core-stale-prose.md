@@ -9,6 +9,29 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:71btbxdrken4kdmfsk0vptav:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:71btbxdrken4kdmfsk0vptav-backlog-1
+              briefing:
+                id: briefing:71btbxdrken4kdmfsk0vptav:backlog:attempt-1:revision-1
+                digest: sha256:665a1ebd3a9258ea6dad9a58d7a1494000d82e6a2ed6b2d0a5f000c540943df5
+                request-digest: sha256:b7a73f6a9d9f568a7d9c13110daf4286d155d40a011052c0b330e3434fe76b82
+                room-ref: ./trim-dispatch-core-stale-prose/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:71btbxdrken4kdmfsk0vptav:backlog:1
+                briefing: briefing:71btbxdrken4kdmfsk0vptav:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T02:53:55.975611Z"
+                decision: approve
+                reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Two prose repairs in skills/first-officer/references/fo-dispatch-core.md.
