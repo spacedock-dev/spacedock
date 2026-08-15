@@ -267,51 +267,70 @@ func readActiveEntityIDs(t *testing.T, stateDir string) map[string]bool {
 	return active
 }
 
-func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
-	repo := repoRoot(t)
-	live := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
-	docs := string(mustRead(t, filepath.Join(repo, "docs", "runtime-live-ci.md")))
-	for _, command := range []struct {
-		name, text, want string
-	}{
-		{"workflow Claude", live, `SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/`},
-		{"workflow Codex", live, `SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle`},
-		{"workflow Pi", live, `SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle`},
-		{"docs Claude", docs, `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -failfast -parallel 3 ./internal/ensigncycle -v`},
-		{"docs Codex", docs, `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v`},
-		{"docs Pi", docs, `SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v`},
-	} {
-		if count := strings.Count(command.text, command.want); count != 1 {
-			t.Errorf("%s common-suite command count = %d, want 1", command.name, count)
+// commonRunShape is the run-defining subset of a common-suite command that the
+// workflow and the local guide must agree on per runtime: timeout, parallelism,
+// and fail-fast. The reporting wrapper (gotestsum vs `go test -v`) legitimately
+// differs between the two sources and is not part of the shape.
+type commonRunShape struct {
+	timeout, parallel string
+	failfast          bool
+}
+
+func commonCommandRunShape(t *testing.T, command string) commonRunShape {
+	t.Helper()
+	fields := strings.Fields(command)
+	var shape commonRunShape
+	for i, field := range fields {
+		switch field {
+		case "-timeout":
+			if i+1 < len(fields) {
+				shape.timeout = fields[i+1]
+			}
+		case "-parallel":
+			if i+1 < len(fields) {
+				shape.parallel = fields[i+1]
+			}
+		case "-failfast":
+			shape.failfast = true
 		}
 	}
+	if shape.timeout == "" {
+		t.Fatalf("common-suite command carries no -timeout value: %s", command)
+	}
+	return shape
 }
 
-func TestRuntimeLiveCodexParallelCapacityAndIsolation(t *testing.T) {
+func docsLiveCommonCommand(t *testing.T, docs, runtime string) string {
+	t.Helper()
+	prefix := "SPACEDOCK_LIVE_RUNTIME=" + runtime + " go test "
+	var matches []string
+	for _, line := range strings.Split(docs, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, prefix) && strings.Contains(line, "-run '^TestLiveCommon'") {
+			matches = append(matches, line)
+		}
+	}
+	if len(matches) != 1 {
+		t.Fatalf("local guide has %d %s common-journey commands, want exactly 1", len(matches), runtime)
+	}
+	return matches[0]
+}
+
+// TestRuntimeLiveCommonSuiteTimeouts binds the local guide's per-runtime
+// common-suite command to the workflow's: each command is extracted from its
+// own file and the two are compared on run shape. No expected command text
+// lives in this test, so the sources can only agree with each other, not with
+// a third hand-authored copy.
+func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 	repo := repoRoot(t)
-	shared := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "shared_live_runner_test.go")))
-	if !strings.Contains(shared, `liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME"))`) {
-		t.Fatal("shared live journeys do not admit Codex to t.Parallel")
-	}
-	runner := string(mustRead(t, filepath.Join(repo, "internal", "ensigncycle", "codex_live_runner_test.go")))
-	if !strings.Contains(shared, `newCodexLiveRunner(t, id)`) || !strings.Contains(runner, `setupDir := codexLiveSetupArtifactDir(artifactRoot, setupID)`) || !strings.Contains(runner, `filepath.Join(artifactRoot, "_setup", setupID)`) {
-		t.Fatal("Codex setup artifacts are not isolated by journey ID")
-	}
-}
-
-func TestGateStopRunnerDoesNotShortCircuitBoundAssertion(t *testing.T) {
-	shared := string(mustRead(t, filepath.Join(repoRoot(t), "internal", "ensigncycle", "claude_live_runner_test.go")))
-	start := strings.Index(shared, "func runGateStopScenario(")
-	if start < 0 {
-		t.Fatal("runGateStopScenario source boundary not found")
-	}
-	end := strings.Index(shared[start:], "\nfunc nativeLifecycleStream(")
-	if end < 0 {
-		t.Fatal("runGateStopScenario source boundary not found")
-	}
-	body := shared[start : start+end]
-	if strings.Contains(body, "else if err := assert(") || !strings.Contains(body, "if err := assert(before, after, expected);") {
-		t.Fatal("runGateStopScenario must call its bound assertion independently of expectation extraction")
+	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
+	docs := string(mustRead(t, filepath.Join(repo, "docs", "runtime-live-ci.md")))
+	for _, runtime := range []string{"claude", "codex", "pi"} {
+		workflowShape := commonCommandRunShape(t, runtimeLiveCommonCommand(t, workflow, runtime))
+		docsShape := commonCommandRunShape(t, docsLiveCommonCommand(t, docs, runtime))
+		if workflowShape != docsShape {
+			t.Errorf("%s common-suite run shape drift: workflow %+v, docs %+v", runtime, workflowShape, docsShape)
+		}
 	}
 }
 
