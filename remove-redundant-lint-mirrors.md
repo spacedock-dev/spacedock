@@ -71,6 +71,17 @@ gates:
                 digest: sha256:f7e6c509e767ef2efc58c4531e928329bc07727661f433e6c6a0b6d7099cc4ea
                 request-digest: sha256:423479178d159c9ae82a80c4956cf19e8ec237c3472e367cf381280581c2bc72
                 room-ref: ./remove-redundant-lint-mirrors/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zvk9cnew2ggpaqb3wty24xtf:validation:1
+                briefing: briefing:zvk9cnew2ggpaqb3wty24xtf:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T16:08:43.693618Z"
+                decision: approve
+                reason: 'Captain batch approval 2026-08-15: validation PASSED; land via releng-27 train'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Three verified-redundant test mirrors.
