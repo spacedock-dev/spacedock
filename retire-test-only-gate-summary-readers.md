@@ -1,7 +1,7 @@
 ---
 id: 77k7m0dmwm10mz6zrdq86tv3
 title: Retire or re-justify the test-only gate summary reader trio
-status: backlog
+status: ideation
 source: "Gate finding from remove-gate-validate-subcommand ideation (2026-08-15): SummaryFile/SummaryFileAt/SummaryFileDiagnosticsAt dead-end in tests after the subcommand removal; captain accepted the follow-up at the gate"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain directive 2026-08-15: dispatch all five onto the stack tip'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 After remove-gate-validate-subcommand lands, the `SummaryFile` / `SummaryFileAt` / `SummaryFileDiagnosticsAt` trio has no production caller, and the warnings slice `SummaryFileDiagnosticsAt` returns is observable by no caller. Retire the trio, or record the one concrete justification that keeps it. Removing it requires re-pointing two internal/gates tests.
