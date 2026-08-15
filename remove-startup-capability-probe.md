@@ -28,6 +28,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-15T02:55:22Z
 ---
 
 Remove the same-minor capability probe added in commit b331baf4f ("fix: reject stale same-minor launchers", 2026-08-09). The binary version gate should rely solely on the minor version match; if a stale build lacks `gate withdraw --reason`, the CLI already returns a clear "unknown subcommand" error at the point of use.
