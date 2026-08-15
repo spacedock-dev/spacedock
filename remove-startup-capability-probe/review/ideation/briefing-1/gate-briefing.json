@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dav9qnjhsbbg7k1a8x1260h6:ideation:attempt-1:revision-1",
+  "question": "Approve remove-startup-capability-probe ideation into implementation, including the one-line contractlint absence assertion?",
+  "artifacts": [
+    {
+      "id": "artifact:dav9qnjhsbbg7k1a8x1260h6:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6b0495bf5f3b55512554b912728e480bdcb20f81/remove-startup-capability-probe.md",
+      "rev": "sha256:111b34e763b391e6ae7041fe8a241d289fe75af4f116f0bacea7d27e6b4c9575",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: four sites confirmed, both zvk9 landing orders exercised green, stale-launcher premise proven by exercise (exit 2 with clear message); one line of new test code declared - a structural-absence assertion in contractlint's allowed category."
+    }
+  ]
+}

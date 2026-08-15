@@ -28,6 +28,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:dav9qnjhsbbg7k1a8x1260h6:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:dav9qnjhsbbg7k1a8x1260h6-ideation-1
+              briefing:
+                id: briefing:dav9qnjhsbbg7k1a8x1260h6:ideation:attempt-1:revision-1
+                digest: sha256:c74e56309a151da3019d51a56f33bca2bf25e4717e20519982c1d471e59d828d
+                request-digest: sha256:2dcee93188db3170f960d3c77fe661952c0bda28b1938a4d3daa5fa003fa9e0d
+                room-ref: ./remove-startup-capability-probe/review/ideation/briefing-1
 started: 2026-08-15T02:55:22Z
 ---
 
@@ -58,7 +67,12 @@ The value it buys is close to zero:
 So the value chain is broken at the consumer: the captain the probe protects is
 already served by the at-use error, one gate later, with a better message.
 
-## Scope, confirmed against HEAD 4d1912a69
+## Scope, confirmed against HEAD ef8f55c83
+
+First confirmed at 4d1912a69 and re-confirmed at ef8f55c83 after the repo
+advanced mid-stage. The two intervening commits are workflow-doc changes;
+`git diff 4d1912a69..HEAD` over the four sites is empty, so they are
+byte-identical and the confirmation below carries forward unchanged.
 
 All four sites from the seed exist at HEAD and are the only tracked occurrences.
 `git grep -nE "REQUIRED_CAPABILITY|Compatible minor|withdrawCapability|Missing capability"`
@@ -229,7 +243,26 @@ reruns these as its own tests.
   `TestVersionGateDeferredTrigger`, `TestVersionGateSandboxRegistry`,
   `TestVersionGateProseLauncherInvariantAmendment`, and `TestInstallHintNoDrift`
   pass unchanged. Deleting a surviving bullet or an install.md tab fails these.
-- **AC-4: the suite stays green.** `go test ./...` and `go test ./... -race` pass.
+- **AC-4: the change introduces no new test failure.** Every package that reads a
+  changed file is green, and any package that fails does so identically at the
+  same HEAD without the change.
+  Verified by: `go test -count=1` green on `cmd/spacedock-release`,
+  `internal/claudeteam`, `internal/contractlint`, `internal/release`,
+  `skills/integration`, and `internal/ensigncycle` (run alone, not inside
+  `./...`), plus `internal/cli -run TestProseFunction`; and CI's deterministic
+  live-harness control subset (`.github/workflows/runtime-live-e2e.yml:78`)
+  green. Any other failure must be reproduced in a clean control worktree at the
+  same HEAD before it is attributed to this change.
+
+  **Do not write this AC as "`go test ./...` passes" — it is not satisfiable on a
+  dev box.** `internal/ensigncycle` is the live-agent harness; its live legs
+  self-skip when no host credential is present, which is why CI's `offline` job
+  (`runtime-live-e2e.yml:75`) runs a bare `go test ./...` green — it runs without
+  secrets. Inside a credentialed Claude session those legs actually execute and
+  blow the default 10-minute package timeout. Confirmed independently by the
+  retire-requires-contract-sentinel ideation (600.5s timeout at HEAD before any
+  edit) and by this task's own runs. `go test ./... -list '.*'` is safe — it
+  compiles without running, so a test-inventory diff is unaffected.
 
 ## Test plan
 
@@ -240,7 +273,10 @@ regression floor. No new test fixtures.
   AC-2 no-`gate --help` assertion. Cost: seconds. Already exercised in the spike.
 - `go test ./skills/integration/` — contingent case only, and only if zvk9 has
   not yet deleted the package's version-gate files. Cost: ~15s.
-- `go test ./...` and `-race` — AC-4.
+- The AC-4 package set plus CI's deterministic control subset — not a bare
+  `go test ./...`. Run `internal/ensigncycle` on its own; inside `./...` it both
+  executes its live legs and competes for CPU, and times out for reasons that
+  have nothing to do with this change.
 - The AC-2 contractlint assertion is the only line of new test code. It is
   needed because every other check in the file asserts a token is *present*; none
   would fail if the probe were reintroduced. The simplest alternative — relying
