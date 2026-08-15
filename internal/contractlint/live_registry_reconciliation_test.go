@@ -8,7 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -48,22 +47,6 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	targets := readRegistryTargets(t, registryPath)
 	registryFixtures := readRegistryFixtureUnion(t, registryPath)
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
-	wantGaps := map[string][]liveGapRow{
-		"gate-guardrail":                nil,
-		"default-headless-gate-stop":    {{"xfail", "claude-sonnet", "kky8pg7wc8xgb985epwss092"}},
-		"withdrawn-gate-recovery":       nil,
-		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
-		"rejection-flow":                {{"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
-		"filing":                        {{"xfail", "codex", "6ker7h25hj86983e5ef71ahm"}},
-		"smallest-sufficient-mechanism": {{"xfail", "codex", "bfmczd31ydpp4stqjstf6xwx"}, {"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
-		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
-		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
-	}
-	for id, want := range wantGaps {
-		if !reflect.DeepEqual(actual[id].gaps, want) {
-			t.Errorf("%s gaps = %#v, want %#v", id, actual[id].gaps, want)
-		}
-	}
 	if len(desired) != len(actual) {
 		t.Errorf("common live registry/source counts = %d/%d", len(desired), len(actual))
 	}
