@@ -56,13 +56,20 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 		"rejection-flow":                {{"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
 		"filing":                        nil,
 		"smallest-sufficient-mechanism": {{"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
-		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
+		"keep-moving-posture":           {{"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"}, {"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
 	}
 	for id, want := range wantGaps {
 		if !reflect.DeepEqual(actual[id].gaps, want) {
 			t.Errorf("%s gaps = %#v, want %#v", id, actual[id].gaps, want)
 		}
+	}
+	proofGaps := readRuntimeProofGaps(t, repo, targets)
+	wantProofGaps := map[string][]liveGapRow{
+		"TestLiveBreakGlassShimRecovery": {{"xfail", "claude-sonnet", "060xp69y61yhrww23g3wvwqy"}},
+	}
+	if !reflect.DeepEqual(proofGaps, wantProofGaps) {
+		t.Errorf("runtime proof gaps = %#v, want %#v", proofGaps, wantProofGaps)
 	}
 	if len(desired) != len(actual) {
 		t.Errorf("common live registry/source counts = %d/%d", len(desired), len(actual))
@@ -132,6 +139,7 @@ func TestRuntimeLiveTODOOwnersAreActive(t *testing.T) {
 	repo := repoRoot(t)
 	registryPath := filepath.Join(repo, "docs", "runtime-live-ci-registry.md")
 	actual, _ := readActualLiveJourneys(t, repo, readRegistryTargets(t, registryPath))
+	proofGaps := readRuntimeProofGaps(t, repo, readRegistryTargets(t, registryPath))
 	active := readActiveEntityIDs(t, stateDir)
 	for journeyID, journey := range actual {
 		for _, gap := range journey.gaps {
@@ -140,6 +148,62 @@ func TestRuntimeLiveTODOOwnersAreActive(t *testing.T) {
 			}
 		}
 	}
+	for proof, gaps := range proofGaps {
+		for _, gap := range gaps {
+			if !active[gap.owner] {
+				t.Errorf("runtime proof %q target %q names inactive %s owner %q", proof, gap.target, gap.kind, gap.owner)
+			}
+		}
+	}
+}
+
+func readRuntimeProofGaps(t *testing.T, repo string, targets map[string]bool) map[string][]liveGapRow {
+	t.Helper()
+	result := map[string][]liveGapRow{}
+	fset := token.NewFileSet()
+	dir := filepath.Join(repo, "internal", "ensigncycle")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), "_test.go") {
+			continue
+		}
+		path := filepath.Join(dir, entry.Name())
+		data := mustRead(t, path)
+		preamble := strings.SplitN(string(data), "package ", 2)[0]
+		if !strings.Contains(preamble, "//go:build live") {
+			continue
+		}
+		file, err := parser.ParseFile(fset, path, data, parser.ParseComments)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, declaration := range file.Decls {
+			function, ok := declaration.(*ast.FuncDecl)
+			if !ok || function.Doc == nil || strings.HasPrefix(function.Name.Name, "TestLiveCommon") || !strings.Contains(commentText(function.Doc), "spacedock:live-proof") {
+				continue
+			}
+			var gaps []liveGapRow
+			ast.Inspect(function.Body, func(node ast.Node) bool {
+				call, ok := node.(*ast.CallExpr)
+				if !ok || exprName(call.Fun) != "liveXFail" {
+					return true
+				}
+				gap, err := parseLiveGap(call, targets)
+				if err != nil {
+					t.Fatalf("%s: %v", function.Name.Name, err)
+				}
+				gaps = append(gaps, gap)
+				return true
+			})
+			if len(gaps) > 0 {
+				result[function.Name.Name] = gaps
+			}
+		}
+	}
+	return result
 }
 
 func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {

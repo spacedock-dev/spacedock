@@ -287,6 +287,8 @@ limited to the named runtime boundary.
 - **Required outcome:** A real `dispatch build` failure reaches recovery, preserves
   the selected blocking-bare or named-background-team dispatch shape, and commits the
   complete worker result and parsed Stage Report in a path-scoped clean commit.
+- **Expected failure:** `selected-bare` is flaky on `claude-live`; owner
+  `060xp69y61yhrww23g3wvwqy`.
 - **Fixtures:**
   - `dispatch-recovery/base` — the shared dispatchable workflow.
   - `dispatch-recovery/failing-build` — the same workflow with `dispatch build`

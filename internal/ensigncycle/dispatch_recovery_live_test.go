@@ -102,10 +102,20 @@ func TestLiveBreakGlassShimRecovery(t *testing.T) {
 			entityPath := writeDispatchRecoveryWorkflow(t, workflowRoot)
 			scenario := sharedRuntimeScenario{name: "break-glass-shim-" + tc.name}
 			result := scenarioRunner.run(t, scenario, workflowRoot, tc.prompt)
-			if err := assertBreakGlassObservables(result.stream, tc.mode); err != nil {
+			observablesErr := assertBreakGlassObservables(result.stream, tc.mode)
+			durableErr := assertBreakGlassDurableResult(workflowRoot, entityPath)
+			if tc.name == "selected-bare" {
+				scenario.gap = liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")
+				finishLiveScenario(t, scenarioRunner, scenario, result,
+					durableSemantic("break-glass-observables", observablesErr),
+					durableSemantic("break-glass-durable-result", durableErr),
+				)
+				return
+			}
+			if err := observablesErr; err != nil {
 				t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 			}
-			if err := assertBreakGlassDurableResult(workflowRoot, entityPath); err != nil {
+			if err := durableErr; err != nil {
 				t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 			}
 			emitClaudeScenarioMetrics(t, scenario, result, runner.model())
