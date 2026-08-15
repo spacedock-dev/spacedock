@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:77k7m0dmwm10mz6zrdq86tv3:validation:attempt-1:revision-1",
+  "question": "Approve retire-test-only-gate-summary-readers validation as PASSED?",
+  "artifacts": [
+    {
+      "id": "artifact:77k7m0dmwm10mz6zrdq86tv3:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c3a625ec8dc7b2816c7cace34719fcbfd1a0a3c1/retire-test-only-gate-summary-readers.md",
+      "rev": "sha256:810300a1aba06aa67580ea496baa08f1bcbff9fd4573d1c861f5e74d8512b91a",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED by independent re-exercise."
+    }
+  ]
+}
