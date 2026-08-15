@@ -11,11 +11,11 @@ worktree:
 issue:
 ---
 
-Author a user-facing journey that shows the benefit of the 0.27 gate/resolution feature from the user's side: work is dispatched, a worker delivers, a gate briefing is prepared (`gate prepare`), the captain decides approve/revise/hold (`gate record`), feedback rounds route back to implementation, and the resolution is consumed (`gate consume`) into a durable decision record, ending in `merge guard` and done. The narrative must sell the end value — the captain keeps decision-quality control over agent work, with a durable audit trail of every decision — not the mechanism.
+Ship an executable gate/resolution journey plus the user-facing story it backs, for the 0.27 rollout. The journey exercises the full flow — `gate prepare` briefing, captain decision (`gate record` approve/revise/hold), a feedback round routed back, `gate consume` into the durable Resolution record, `merge guard` to done — and captures its artifacts. The user-facing narrative is derived from that run: every benefit claim cites a captured artifact, so a separate check can confirm the story. The end-value framing stays: the captain keeps decision-quality control over agent work, with a durable audit trail of every decision.
 
-Dogfood proof points available from the 2026-08-14 0.27 audit: 347 gate briefings prepared, 392 decisions recorded, 282 resolutions consumed, 212 feedback-cycle entries across 53 entities, 319 entities driven to done.
+Captain ruling (2026-08-14, verbatim): "DOC-ONLY TASK IS BANNED." The narrative must ride on a real, checkable change (README ideation criteria and Proof policy). This seed supersedes the original doc-only shape, which was non-qualifying.
 
-Placement candidates for ideation to decide: extend docs/site/concepts/gates-and-decisions.md, a new page under docs/site/running-workflows/, a get-started/first-workflow.md tie-in, and/or the 0.27 release notes.
+Existing machinery for ideation to build on: the live journeys under internal/ensigncycle, internal/journeymetrics, the journey-delta release tooling, and internal/ensigncycle/recorded_gate_lifecycle_test.go. Dogfood proof points from the 2026-08-14 audit remain available as material: 392 decisions recorded, 282 resolutions consumed, 212 feedback-cycle entries, 319 entities driven to done.
 
 ## Problem
 
@@ -23,7 +23,7 @@ Placement candidates for ideation to decide: extend docs/site/concepts/gates-and
 
 ## Proposed approach
 
-{How the task intends to solve the problem. Ideation fills this in — including final placement and the walkthrough scenario.}
+{Ideation fills this in: extend an existing live/fixture journey or add a scripted demo journey; where the narrative lands, following the README rule that the doc diff rides in the behavior task; and the walkthrough scenario.}
 
 ## Out of scope
 
@@ -31,15 +31,18 @@ Placement candidates for ideation to decide: extend docs/site/concepts/gates-and
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: {+NNN}, across {M} files.
+Estimate net LOC change: {+NNN}, across {M} files. Declare observable semantics touched; none expected beyond a new journey fixture/test plus its docs.
 
 ## Acceptance criteria
 
-Each AC names a property of the finished entity, not a stage action, and how it is verified.
+Each AC names a property of the finished entity, not a stage action, and how it is verified. Ideation refines; the seed anchors:
 
-**AC-1 - {Ideation refines. End value to anchor on: a reader new to gate/resolution can state its benefit after reading the journey.}**
-Verified by: {ideation names the concrete check}
+**AC-1 - An executable journey exercises prepare -> record (approve and revise paths) -> consume -> merge guard and leaves the durable decision record as resulting on-disk state.**
+Verified by: the journey test/fixture exit code plus the resulting gate record files — behavior exercised, not described.
+
+**AC-2 - The user-facing story exists and every benefit claim in it cites an artifact captured from that run.**
+Verified by: docs build green plus a one-off citation-to-artifact check recorded in the validation report (one-off evidence, never a committed prose-grep, per Proof policy).
 
 ## Test plan
 
-{What verifies the implementation; docs-only change expected — link/build checks plus prose review.}
+{Ideation details: journey fixture vs live smoke, estimated cost, and the docs check. No standalone prose-review-only verification — banned.}
