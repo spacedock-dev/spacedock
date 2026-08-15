@@ -245,3 +245,27 @@ The declared surface is +70/−44 across 8 files — measured from the spike dif
 ### Summary
 
 All seven rewrites applied under the deletion bias: five are pure fragment deletions, and only the two survivors the captain predicted needed expansion wording. The repaired write-core fixture proves the `{workflow_dir}` generalization can fail — all three probes red against the committed state with the designed messages. Total delta +21 (the fixture repair dominates); prose content is net-negative as the correction expected.
+
+## Stage Report: validation
+
+- DONE: Independently re-exercise the ACs against worktree commit b826307c4, never by reading the report: audit-pattern grep (roadmap numbers, tracker numbers, repo source paths, dev-workflow paths, dated ruling citations) over shipped skills/ and agents/ returns only the recorded keep-verdicts
+  All six patterns re-run at b826307c4: roadmap, ruling, and unshipped-doc patterns return empty; the rest return exactly the recorded keeps (`#42`/`#57` field examples, `_test.go` classifier glob, two `cmd/spacedock` build lines, commission SKILL.md:286); bare `9h`/`za` confirmed gone from survey by direct grep. Before-state re-run at a pristine fdf008939 checkout shows every removed line present there and only keeps surviving.
+- DONE: Verify the deletion bias held: five fragments deleted with surrounding sentences intact and carrying the same instruction; only the write-core generalization and sandbox rows carry expansion wording; prose delta net-negative measured separately from the fixture repair
+  Diff fdf008939..b826307c4 read in context: instances 1, 2, 5, 6, 7 are pure fragment deletions, each host sentence intact and still carrying its instruction; new wording appears only in fo-install-gate.md (sandbox rows, `agent-safehouse` pin kept) and the fo-write-core table. Prose measured separately via `git cat-file -s`: seven prose files net −182 bytes, 18/18 lines, with fo-install-gate.md the only positive file (+99); fixture repair separate at 52/31 lines.
+- DONE: The repaired fixture proves the generalization can fail: run the three probes, expect red with the designed messages; contractlint and skills/integration green plain and -race; verdict PASSED or REJECTED with per-AC citations
+  Probes run in a throwaway detached checkout at b826307c4 (implementation worktree untouched), each red with the designed message, restored after: `workflow_dir="ops/release": "ops/release/_mods/pr-merge.md" is blocked only by default-deny`; `classify "ops/release/README.md" = "blocked-product", want "allowed-process"`; `TestVersionGateSandboxRegistry` red on `agent-safehouse` change. `go test ./internal/contractlint/ ./skills/integration/` green plain and `-race`. Verdict PASSED, per-AC below.
+
+### Per-AC citations
+
+- AC-1 PASSED — six-pattern grep at b826307c4 returns only recorded keep-verdicts; the pristine-base run shows the exact non-keep lines a restored sentence would put back. Counting nuance: the AC's before-count of 20 includes SKILL.md:286's `docs/dev`, which the recorded keep-verdict retains; references actually removed number 19.
+- AC-2 PASSED — each rewritten sentence checked in diff context carries the same instruction; `TestVersionGateSandboxRegistry` and `TestFOWriteCoreMutationGateClassifiesTargets` green at b826307c4; probe 3 proves the sandbox pin still fails on divergence, and the test reads name+value rows from `internal/safehouse/state.go`, an independent source.
+- AC-3 PASSED — both re-hardcode probes red at the `ops/release` cases with the designed messages; grep confirms no non-test code parses the classifier table, so the generalization has no hidden runtime reader.
+- AC-4 PASSED — full `go test ./...` plain and `-race` at b826307c4 green except `internal/cli TestCodexResolveManifestAgainstInstalledHost`, which fails identically at pristine fdf008939 (`~/.codex/config.toml: Operation not permitted` under the sandbox) — environmental, not a regression.
+
+### Findings
+
+Material: none. Deferred risks: none (the codex failure is environmental and pre-existing, not a risk of this change). Polish, proposed disposition decline: 1) AC-1's "20 at fdf008939" arithmetic includes the SKILL.md:286 keep, so net removed is 19 — the operative verification (only keep-verdicts remain) holds; 2) the entity's Proposed approach still shows pre-correction expansion wording for instances 1, 2, 5 — the captain's deletion-bias correction and the actual deletions are recorded in the implementation report.
+
+### Summary
+
+Verdict: PASSED. Every AC re-exercised from scratch against b826307c4 — greps re-run both directions (base and tip), the deletion bias verified in the diff with the byte delta measured independently, and all three falsifying probes reproduced with the designed failure messages in a throwaway checkout. No material findings; two polish notes on report arithmetic and stale pre-correction wording in the entity body.
