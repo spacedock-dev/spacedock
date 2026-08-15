@@ -101,7 +101,7 @@ func claudeLiveRole(model string) (string, error) {
 
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("claude-opus", "bqy97b9npym3zs62pagjchpk"), liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
@@ -131,7 +131,7 @@ func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
 func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
-	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, []liveJourneyGap{liveXFail("claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4")}, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
+	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, nil, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
 }
 
 //spacedock:live-journey id=full-ensign-cycle fixture=realistic-lifecycle
