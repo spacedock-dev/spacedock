@@ -58,6 +58,9 @@ func TestVersionGateDeferredTrigger(t *testing.T) {
 	if !strings.Contains(body, "- `references/fo-install-gate.md`") {
 		t.Fatalf("deferred-load-points inventory must carry a references/fo-install-gate.md entry line")
 	}
+	if strings.Contains(body, "gate --help") {
+		t.Fatalf("boot-resident core must not carry an inline `gate --help` capability probe: the binary gate relies on the minor-version match alone, and a stale launcher fails at the first `gate withdraw`")
+	}
 	// The deferred body exists and is non-trivial.
 	gate := readSkillFile(t, installGatePath)
 	if len(gate) < 500 {
