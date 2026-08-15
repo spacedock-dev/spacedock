@@ -1,7 +1,7 @@
 ---
 id: 0tmv5bry1wbkww2758y88pay
 title: Remove the gate validate subcommand
-status: backlog
+status: ideation
 source: "Captain directive, 2026-08-14: value review found near-zero value; every fault it reports also surfaces elsewhere"
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Remove the `gate validate` CLI subcommand. It has zero live uses across 424 recorded attempts. Fatal faults surface identically on every gate command through the shared reader. The warning class prints at state publish. The read-only digest sweep and the round check have no recorded consumer.
