@@ -33,8 +33,17 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:ebgwr177kjjs6w5thhywz408:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ebgwr177kjjs6w5thhywz408-ideation-1
+              briefing:
+                id: briefing:ebgwr177kjjs6w5thhywz408:ideation:attempt-1:revision-1
+                digest: sha256:0f49d00d8e9fe41e802777816cf94fd221e4e9282708bdd5e853909b27db446b
+                request-digest: sha256:3adf5e1c8e03dad83a2c99383cc8b8afbf35d0342fcaa3c35fe9cf08a4a0caaf
+                room-ref: ./trim-dead-gate-model-surface/review/ideation/briefing-1
 ---
-Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69`.
+Remove four verified-dead pieces of the gate model surface. Verified against HEAD `4d1912a69` and re-verified at `ef8f55c83`; the two commits between them touch only workflow docs, and none of this entity's target files changed.
 
 1. The nine projected `gate-*` status columns (`internal/status/discover.go:217-228`). No skill, agent, CI lane, live doc, or live-history query names one. Keep the `gates.Read` call at `discover.go:216` — it feeds the load-bearing gate-readiness chain. Also reconcile the `docs/site/reference/frontmatter-contract.md:13` sentence that names three of the nine.
 2. `Summary.Condition` and `Summary.Eligible` (`internal/gates/model.go:95-96`). Debris from the eligibility cut (`013c8729e`). No writer, no reader.
@@ -170,6 +179,7 @@ The riskiest unverified mechanism was whether removing modeled fields from `Anno
 - **The nine-column removal breaks exactly five tests**, all in `internal/status`, all on the removed-projection assertion. Baseline on the same copy was green (`internal/gates` ok 158s, `internal/status` ok 258s). After the test dispositions above, all five pass again.
 - **A real archived provider Result decodes and verifies** under the reduced `Annotation`. The retained bytes carry `target`, `kind`, `body`, and `selectors`; `selectors` is already an unknown key today, so the removal moves the other three into a tolerance the production decoder already exercises. `decodeAuthorityJSON` uses plain `json.Unmarshal` — lenient — and the sole strict decode in the package, `KnownFields(true)` at `io.go:98`, applies to the YAML `gates` frontmatter, which models neither `Summary` nor `Annotation`.
 - **The observable change was measured, not assumed**, by building both binaries and diffing `--all-fields --json` on one fixture. This is what falsified the seed's "no observable semantics change".
+- **Every number above was independently re-derived** after an FO advisory that the session scratchpad is shared and a sibling had collided with the generically-named `scratchpad/spike` path. The spike was rebuilt from scratch at HEAD `ef8f55c83` into slug-named checkouts (`spike-trim-dead-gate-model-surface{,-base,-prodonly}`) and every load-bearing claim re-ran clean: the delta is again exactly +8 / -132 / net -124 across the same 8 files; the production-only removal again breaks exactly the same five `internal/status` tests while `internal/gates` stays green; `go build` and `go vet` are again clean; `--all-fields --json` again drops from ten `gate-*` keys to `gate-readiness` alone; the archived provider Result again decodes and verifies; and both doc-sentence commands again behave as described. Diffing the old shared-name copy against the clean rebuild showed no Go source or test difference at all — only the two workflow docs that the HEAD advance changed — so the earlier evidence was not in fact contaminated, and it now rests on a reproduction that never used a shared path name.
 - **The whole suite was run on the finished change**, not just the touched packages: `go test ./...` is green across every package except the pre-existing `TestCodexResolveManifestAgainstInstalledHost` environment failure described in AC-3, which reproduces identically on the untouched baseline copy.
 - **The reconciled doc sentence was proven true and the old one proven false** by running both commands against the patched binary: `--fields gate-readiness` prints `approved-awaiting-a…`; `--fields gate-state,gate-decision,gate-resolution` prints three empty columns.
 
