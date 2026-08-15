@@ -83,7 +83,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#702"
+pr: pr-merge:702
 ---
 
 Remove `ProviderEvidence` from the gate model: the struct, the `provider-evidence` field, the `Validate` branches that police it on open and withdrawn attempts, and their tests. Zero provider-closed attempts exist across 424 recorded attempts, so no stored record carries the field. Re-introduce the fields only together with a real provider integration: writer, retention, and verifier.
