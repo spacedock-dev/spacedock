@@ -19,6 +19,7 @@ stages:
       model: opus
     - name: implementation
       worktree: true
+      model: opus
       context-sections:
         - Review-finding disposition
     - name: validation
