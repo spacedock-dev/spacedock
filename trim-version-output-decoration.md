@@ -85,6 +85,17 @@ gates:
                 digest: sha256:e513ed6c0febd4c09bf0527229925399ce44472dd86085bb212385e56da80ddb
                 request-digest: sha256:a1614106f574b7707a8c680e17dfab003dda3b75bd355dc0ce6e65003c63ef10
                 room-ref: ./trim-version-output-decoration/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x8g3dnqndfa1m85d8ga2cgem:validation:1
+                briefing: briefing:x8g3dnqndfa1m85d8ga2cgem:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T17:41:08.564949Z"
+                decision: approve
+                reason: 'Captain approval 2026-08-15: validation PASSED; joins the stack as layer 9'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Trim `spacedock --version` output to what has a reader, and give the Sandbox line a value shape that does not repeat its own label.
