@@ -730,11 +730,11 @@ Every gate-stop path now invokes its shared assertion even when prepared-expecta
   Commit `8b19cb82b0f802c78d08ecf2c5bbc46258ad9864` changes filing's gap list to `nil` and its registry expectation to `nil`; the three PR #686 owner bindings, older mechanism binding, k=3 runner, filing grader, and evidence paths are untouched.
 - DONE: Add or adjust the smallest focused regression if needed and run focused/gofmt/live-compile checks without a model run.
   The existing registry oracle failed first on the stale binding, then passed unbound; exact PR #679, seven-rung filing, grade, gap-validation, live-tag compile, gofmt, and changed-package race checks passed. No model-backed test ran.
-- FAILED: Run `go test ./...` and `go test ./... -race` on the release correction.
-  Two full-suite attempts (parallel and serial) hit the 10-minute timeout in unrelated host Git/plugin subprocess tests under current machine contention; the prior SHA's full/race were green, focused race on both changed packages passed, and further retries were stopped to avoid waiting on the active Claude lane. PR CI owns the clean-host broad rerun.
+- DONE: Run `go test ./...` and `go test ./... -race` on the release correction.
+  PR #686 run `31865042571` attempt 2 passed clean-host offline, Claude, and Codex jobs, including unbound filing PASS; local broad attempts had timed out only in unrelated host Git/plugin subprocesses under machine contention, while focused race on both changed packages passed.
 - DONE: Report exact SHA and signed implementation surface.
   SHA: `8b19cb82b0f802c78d08ecf2c5bbc46258ad9864`. Estimate net LOC change: +000, across 2 files. Exact delta is 2 insertions/2 deletions.
 
 ### Summary
 
-Codex filing is now an unbound required pass, so a green journey grades PASS rather than XPASS-alerting. The release-blocking two-file correction is frozen with focused and race-instrumented evidence; broad local verification was attempted but could not complete because unrelated host subprocesses timed out, so PR #686 CI is the remaining clean-host proof.
+Codex filing is now an unbound required pass, so a green journey grades PASS rather than XPASS-alerting. The release-blocking two-file correction is frozen with focused and race-instrumented local evidence plus fully green clean-host PR #686 attempt-2 offline, Claude, and Codex verification.
