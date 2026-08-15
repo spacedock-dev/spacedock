@@ -3,7 +3,7 @@ id: x8g3dnqndfa1m85d8ga2cgem
 title: Trim version output decoration without a reader
 status: ideation
 source: "0.27 cut audit (2026-08-14), adversarially verified; captain directed filing"
-started:
+started: 2026-08-15T02:55:38Z
 completed:
 verdict:
 score:
