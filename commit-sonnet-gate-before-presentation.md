@@ -93,6 +93,17 @@ gates:
                 digest: sha256:2738a025bc2ce6101896948754206e3dbf37011b6e566c4fb7431903ec85f9da
                 request-digest: sha256:954a2e0bf4050ed313dda8e9062348e535bc63a63189e31ccf64d4c74662e2dd
                 room-ref: ./commit-sonnet-gate-before-presentation/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kky8pg7wc8xgb985epwss092:validation:2
+                briefing: briefing:kky8pg7wc8xgb985epwss092:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-15T07:18:36.096636Z"
+                decision: approve
+                reason: Captain delegated the conn toward the sprint goal; exact-head validation passed with no material findings.
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-10T18:44:40Z
 worktree: .worktrees/spacedock-ensign-commit-sonnet-gate-before-presentation
 mod-block:
