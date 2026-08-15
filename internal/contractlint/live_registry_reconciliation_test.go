@@ -50,13 +50,13 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 	actual, fixtureOwners := readActualLiveJourneys(t, repo, targets)
 	wantGaps := map[string][]liveGapRow{
 		"gate-guardrail":                nil,
-		"default-headless-gate-stop":    {{"xfail", "codex", "kky8pg7wc8xgb985epwss092"}},
+		"default-headless-gate-stop":    nil,
 		"withdrawn-gate-recovery":       nil,
 		"recorded-gate-lifecycle":       {{"xfail", "claude-opus", "66dpwxgvsxt7cbxhmgvt3qp4"}},
-		"rejection-flow":                {{"xfail", "codex", "dvddbpsf4tdt3yjw1yjyp14k"}, {"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
+		"rejection-flow":                {{"xfail", "pi", "p17swb3375rt525fn7f8xt7e"}},
 		"filing":                        nil,
-		"smallest-sufficient-mechanism": {{"xfail", "codex", "bfmczd31ydpp4stqjstf6xwx"}, {"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
-		"keep-moving-posture":           {{"xfail", "codex", "9adv48yhye5s2vkhwd7ge52d"}, {"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
+		"smallest-sufficient-mechanism": {{"xfail", "pi", "h30c9jrfcf21fdh2qs5z58sd"}},
+		"keep-moving-posture":           {{"xfail", "pi", "x02375wsg6q61xek7p0t36j2"}},
 		"owned-conflict-owner-handoff":  {{"xfail", "claude-opus", "bqy97b9npym3zs62pagjchpk"}, {"xfail", "pi", "fe7bfjz9sb8wyckmnnm3ncjx"}},
 	}
 	for id, want := range wantGaps {
