@@ -3,11 +3,11 @@ id: 77k7m0dmwm10mz6zrdq86tv3
 title: Retire or re-justify the test-only gate summary reader trio
 status: implementation
 source: "Gate finding from remove-gate-validate-subcommand ideation (2026-08-15): SummaryFile/SummaryFileAt/SummaryFileDiagnosticsAt dead-end in tests after the subcommand removal; captain accepted the follow-up at the gate"
-started:
+started: 2026-08-15T23:04:22Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-retire-test-only-gate-summary-readers
 issue:
 gates:
     version: 1
