@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pph11xwsa2s3z73ts983wd0k:validation:attempt-1:revision-1",
+  "question": "Approve remove-proof-gap-copied-oracle validation as PASSED?",
+  "artifacts": [
+    {
+      "id": "artifact:pph11xwsa2s3z73ts983wd0k:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6f23b915899214ef72af817fa6b3cabf4037194f/remove-proof-gap-copied-oracle.md",
+      "rev": "sha256:1af7b4223f1cbce9a48216e0f23ff9b04183887140d3eb090e085ecf5006f346",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED by independent re-exercise."
+    }
+  ]
+}
