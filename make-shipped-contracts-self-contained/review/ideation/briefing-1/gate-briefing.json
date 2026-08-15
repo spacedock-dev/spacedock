@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9x6xw292fsz1b4648x9hn40y:ideation:attempt-1:revision-1",
+  "question": "Approve make-shipped-contracts-self-contained ideation into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:9x6xw292fsz1b4648x9hn40y:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2a6186b61dd4546f0ef8e9df213ea89844a64a45/make-shipped-contracts-self-contained.md",
+      "rev": "sha256:5f8025bebf59731e245ff024d50dd347bf82426bb795d9e046f3ff467abe4170",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: all seven rewrites spiked with two audit corrections recorded; the fixture update is a real repair (naive version green with the rewrite reverted); +70/-44 declared with the cost honestly attributed to the fixture, not the prose."
+    }
+  ]
+}

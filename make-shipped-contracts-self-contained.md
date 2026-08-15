@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:9x6xw292fsz1b4648x9hn40y:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:9x6xw292fsz1b4648x9hn40y-ideation-1
+              briefing:
+                id: briefing:9x6xw292fsz1b4648x9hn40y:ideation:attempt-1:revision-1
+                digest: sha256:0886859da6795882e3972e6a871f8517108ada59ff8a4464701b17a172eb9daa
+                request-digest: sha256:e1b1e98ed917f7291bc457b090654b7d6b902fc3cde47ce06354047bee7fd872
+                room-ref: ./make-shipped-contracts-self-contained/review/ideation/briefing-1
 ---
 
 Shipped skills reference artifacts a user's machine does not have. Rewrite the seven audited instances so every shipped sentence resolves within the progressively-disclosed contract set. Base on stack layer 10 (retire-prose-grep-contract-tests); the deliverable becomes stack layer 11 - layer 10 removes the pins these rewrites would red.
