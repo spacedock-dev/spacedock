@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pgdyphtaqfx1zn0h7ax31e5h:backlog:attempt-1:revision-1",
+  "question": "Approve fo-scheduler-read-pagination-truncation into ideation (captain pre-directed: dispatch all onto stack tip)?",
+  "artifacts": [
+    {
+      "id": "artifact:pgdyphtaqfx1zn0h7ax31e5h:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2dcf44712f32ad1179baa996c14c28667b227eda/fo-scheduler-read-pagination-truncation.md",
+      "rev": "sha256:0442e382fa048fd3962241184b7e86a6a4cfa6afa296e694489a371eb23b4fd6",
+      "mediaType": "text/markdown",
+      "summary": "Captain 0.27 dispatch order 2026-08-15."
+    }
+  ]
+}
