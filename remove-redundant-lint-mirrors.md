@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:zvk9cnew2ggpaqb3wty24xtf:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:zvk9cnew2ggpaqb3wty24xtf-ideation-1
+              briefing:
+                id: briefing:zvk9cnew2ggpaqb3wty24xtf:ideation:attempt-1:revision-1
+                digest: sha256:f08a7dd457ba1d216afae6b1c415b08ccf767b59716eda86e068de6222f90ca4
+                request-digest: sha256:cf35bb141a5c8c378380bc539b47298b8f1d5e965e09f2eab0e8b55d6e8478ef
+                room-ref: ./remove-redundant-lint-mirrors/review/ideation/briefing-1
 ---
 
 Three verified-redundant test mirrors.
