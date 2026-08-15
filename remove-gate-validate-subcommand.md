@@ -33,6 +33,26 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:0tmv5bry1wbkww2758y88pay:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:0tmv5bry1wbkww2758y88pay-ideation-1
+              briefing:
+                id: briefing:0tmv5bry1wbkww2758y88pay:ideation:attempt-1:revision-1
+                digest: sha256:784c8e9beef27ebdf2ef98b3f6c467b6c171ef13573b0fb36791a5da980350b4
+                request-digest: sha256:890193901130940a42765c8b31f530a8e8c43821266cb69020d820fc4f9d60ef
+                room-ref: ./remove-gate-validate-subcommand/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:0tmv5bry1wbkww2758y88pay:ideation:1
+                briefing: briefing:0tmv5bry1wbkww2758y88pay:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-15T03:17:29.897072Z"
+                decision: approve
+                reason: Captain approved ideation 2026-08-15; implementation on opus; amendment reviewed as strict tightening
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Remove the `gate validate` CLI subcommand. It has zero live uses across 424 recorded attempts. Fatal faults surface identically on every gate command through the shared reader. The warning class prints at state publish. The read-only digest sweep and the round check have no recorded consumer.

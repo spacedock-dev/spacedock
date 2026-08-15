@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:0tmv5bry1wbkww2758y88pay:ideation:attempt-1:revision-1",
+  "question": "Approve remove-gate-validate-subcommand ideation into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:0tmv5bry1wbkww2758y88pay:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d3e2440026a7ab57b931c6a501560c10e655c58d/remove-gate-validate-subcommand.md",
+      "rev": "sha256:a7afe40037dd4553ee0d90e08cd01a07d9ee2e6c44e62c324ec2c78959acf5e8",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: scope confirmed at HEAD (-75 LOC, 8 files), riskiest re-pointing spiked green; rationale re-grounded on unactionability after cross-entity coordination."
+    }
+  ]
+}
