@@ -560,7 +560,7 @@ jobs:
       - name: Run live Codex shared scenarios
         run: |
           set -o pipefail
-          SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' ./internal/ensigncycle
+          SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()

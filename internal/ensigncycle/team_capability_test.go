@@ -3,6 +3,7 @@ package ensigncycle
 import (
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -75,6 +76,10 @@ func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) [
 	}
 }
 
+func codexLiveFrontDoorArgvForScenario(pluginDir, workflowRoot, finalPath, prompt, _ string) []string {
+	return codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt)
+}
+
 func argvHasAdjacent(args []string, left, right string) bool {
 	for i := 0; i+1 < len(args); i++ {
 		if args[i] == left && args[i+1] == right {
@@ -116,6 +121,15 @@ func TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs(t *testing.T) {
 	}
 	if !argvHasAdjacent(args, "--dangerously-bypass-approvals-and-sandbox", "--cd") {
 		t.Fatalf("Codex live argv does not preserve bypass-permission posture before workflow root: %v", args)
+	}
+}
+
+func TestCodexLiveRunnerUsesCommonPostureForFiling(t *testing.T) {
+	base := codexLiveFrontDoorArgv("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
+	for _, scenario := range []string{"filing", "shallow-boot"} {
+		if got := codexLiveFrontDoorArgvForScenario("/tmp/plugin", "/tmp/workflow", "/tmp/final-message.txt", "run the scenario", scenario); !slices.Equal(got, base) {
+			t.Fatalf("%s argv changed: got=%v want=%v", scenario, got, base)
+		}
 	}
 }
 
