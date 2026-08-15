@@ -243,23 +243,29 @@ Brief description of this task and what it aims to achieve.
 
 ## Problem
 
-{What is broken or missing, and why it matters. Ideation fills this in.}
+{What is broken or missing, why it matters, and what a fix must cover. Backlog seeds it; ideation sharpens it.}
 
 ## Proposed approach
 
-{How the task intends to solve the problem. Ideation fills this in.}
+{Ideation: the direction chosen, and the simplest alternative rejected with the reason it cannot deliver the value.}
 
 ## Out of scope
 
 {What this task deliberately does not cover, so the boundary is explicit.}
 
+## Risk evidence
+
+{Backlog: the check, artifact, or observation that decides whether design should start.}
+{Ideation: the riskiest unverified mechanism and what exercising it showed, or `no spike needed: {the proven mechanisms this relies on}`.}
+
 ## Expected surface and tolerance
 
-Estimate net LOC change: {+NNN or -NNN}, across {M} files.
+Estimate: {+NNN} net LOC across {M} files, tolerance {±NN%}.
+Semantics this may change: {command grammar, stored formats, authority, runtime behavior, or `none`}.
 
 ## Acceptance criteria
 
-Each AC names a property of the finished entity, not a stage action, and how it is verified.
+Each AC names a property of the finished entity, not a stage action, and how it is verified. At least one measures the end-value against a baseline that can move the wrong way.
 
 **AC-1 - {End-state property.}**
 Verified by: {test name / command output or exit code / file the change produces / resulting on-disk state — something outside this task body that a future reader can reproduce and that can fail; name the concrete change that would make it fail.}
@@ -267,6 +273,10 @@ Verified by: {test name / command output or exit code / file the change produces
 ## Test plan
 
 {What verifies the implementation, estimated cost/complexity, and whether fixture, CLI, or live workflow tests are needed.}
+
+### Feedback Cycles
+
+{First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
 ```
 
 ## Testing Resources
@@ -291,7 +301,7 @@ The session scratchpad is shared across all dispatched workers. Name every throw
 
 Never use `git stash` while peer workers are active: stash refs are repo-global, not worktree-scoped, and concurrent stash/pop swaps payloads between workers (incident recorded 2026-08-15). Use a scratch commit on your own branch, or `git diff > file.patch` plus `git checkout --` — both are worktree-local. On any shared path, an unexpected pre-existing directory is a stop signal, never debris to clear: a worker who `rm -rf`'d one destroyed a live peer's checkout (incident recorded 2026-08-15).
 
-After you send a stage completion signal, treat the entity body as frozen while its gate briefing is open: route further findings and corrections to the first officer instead of committing them, because every post-prepare commit invalidates the briefing's frozen digest and forces a withdraw-and-re-prepare cycle (three occurrences recorded 2026-08-15). The freeze binds worker writes only: the first officer's gate-frontmatter commits are exempt, and a revise decision that re-dispatches the entity lifts the freeze for that rework until its next completion signal.
+After you send a stage completion signal, treat the entity body as frozen while its gate briefing is open: route further findings and corrections to the first officer instead of committing them, because every post-prepare commit invalidates the briefing's frozen digest and forces a withdraw-and-re-prepare cycle (three occurrences recorded 2026-08-15). The freeze binds worker writes only: the first officer's gate-frontmatter commits are exempt, and a revise decision that re-dispatches the entity lifts the freeze for that rework until its next completion signal. When one gate draws repeated clarification, the missing decision input decides the route: if the entity's evidence changed, withdraw the gate and prepare a new snapshot; if only the presentation was thin, leave the bound snapshot alone and sharpen that stage's `Gate content` for future gates. Never alter a bound snapshot in place.
 
 ## Commit Discipline
 

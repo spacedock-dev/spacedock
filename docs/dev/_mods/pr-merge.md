@@ -68,6 +68,18 @@ For a clean result, push the approved commit with the exact-SHA refspec: `git -C
 
 Then invoke `gh pr create` against the resolved code repository with title, branch, base, and body file as separate arguments: `gh pr create --repo "$CODE_REPO" --base "$BASE" --head "$BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE"`. Supply `CODE_REPO`, `BRANCH`, and `PR_TITLE` as data values from the resolutions and workflow context above; never interpolate entity text into executable shell syntax or use `eval`. The submitted body must be the exact reviewed bytes in `PR_BODY_FILE`. Remove the temporary file after success or failure. If `gh` is not available, warn the captain and fall back to local merge.
 
+### Stacked mode
+
+When the candidate is one layer of a stack, the front half above still owns the title and body; only the base and the create path change. Resolve the layer's parent from `gh stack view --json` — `branches[]` carries `name`, `base`, `needsRebase`, and `pr.number` in stack order — and use the branch below as `$BASE` in place of `dispatch trunk`. A stack-sibling base is a valid base, not an error. Record `CANDIDATE_SHA` per layer and re-record it after any restack: when a lower layer merges, every candidate above it is replaced.
+
+Create each layer with the same `gh pr create --base "$BASE" --head "$BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE"` call the front half already prescribes, then join the layers with `gh stack link {pr} {pr} ...` in stack order, bottom to top; it reuses branches that already have open PRs. Do NOT create layers with `gh stack submit`: it exposes no title or body flag, and a non-interactive run takes auto-generated titles and opens drafts, so the captain-reviewed bytes never reach GitHub. PR #699 was created that way and still carries the branch-derived title `stack27/01 trim dispatch core stale prose`.
+
+To repair an existing PR's title or body, use `gh api --method PATCH repos/{owner}/{repo}/pulls/{N} -f title=... -f body=...`. Do not use `gh pr edit`: its GraphQL read requests the deprecated `repository.pullRequest.projectCards` field and exits 1 without writing (observed on gh 2.68.1).
+
+Required live lanes register on every layer and sit at `status=WAITING` for deployment approval. Approve the bottom layer, whose tree is the first increment against the trunk, and the top layer, whose tree is the whole stack composed; no intermediate layer carries a tree those two do not already exercise. This is the stacked realization of the workflow's diff-to-lane rule, not an exemption from it: a layer whose diff reaches a lane the top layer does not compose still needs that lane approved on its own PR.
+
+The back half needs no stacked case. `MERGED` detection, the `pr-merge:` sentinel, and `merge guard` read the PR's state and the entity's row, never its base, so a stack-sibling base flows through the startup and idle hooks unchanged. Do not add a stacked branch to them.
+
 ### PR body template
 
 Lead with motivation + end-user value; audit metadata goes at the bottom. The goal is that a reviewer or future debugger sees the "why" first and the audit link last.
