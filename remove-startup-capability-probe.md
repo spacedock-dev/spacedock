@@ -460,3 +460,43 @@ command string in a codex prompt fixture
 (`shared_smallest_mechanism_negative_test.go:236`). Neither asserts on the file's
 contents, and a 320-line prefix read of a ~200-line file is unchanged by deleting
 two lines, so the package has no path by which this change reaches it.
+
+## Stage Report: validation
+
+- DONE: Independently re-exercise the ACs against the worktree at 6b7836353 and the merge-base, never by reading the report: the two bullets and the install.md paragraph gone, the grep clean over skills/first-officer and docs/site, delta 3 files +3/-6, the reintroduction guard fires on mutation
+  Diff 4d1912a69..6b7836353 is exactly the two Startup bullets plus the install.md paragraph deleted and the 3-line guard added; owned-surface grep exits 1; shortstat 3 files +3/-6; restoring the merge-base shared-core made TestVersionGateDeferredTrigger the sole failure (--- FAIL count = 1), reverted clean.
+- DONE: Re-run the merged-tree check with zvk9's b77bfc942: merge clean, repo-wide grep exits 1, contractlint and skills/integration green plain and -race
+  git merge-tree wrote tree 69d2d9f33 conflict-free; a real merge in a slug-named throwaway auto-merged version_gate_smoke_test.go; repo-wide grep exit 1; both packages ok plain (5.0s/21.1s) and -race (27.6s/17.9s); throwaway removed.
+- DONE: Calibrate to the merge-base baseline; the internal/ensigncycle 600s timeout is documented environmental - reproduce on clean merge-base before attributing anything; verdict PASSED or REJECTED with per-AC citations
+  Worktree ensigncycle alone: FAIL 600.515s, goroutines parked in os/exec.(*Cmd).Start; the clean merge-base control (4d1912a69, slug-named throwaway) fails identically at 600.459s with the same signature — environmental, not attributed. Verdict: PASSED.
+
+### Summary
+
+PASSED, all four ACs verified by re-exercise, never from the report. AC-1: net
+deletion, 3 files +3/-6; owned-surface grep (skills/first-officer, docs/site) exits
+1 at 6b7836353, and the repo-wide grep exits 1 in the merged tree with b77bfc942 —
+the two-branch split the implementation re-expressed for the primary case. AC-2:
+contractlint green at HEAD, and the guard is falsifiable: reintroducing the
+merge-base bullets makes it the single failing test in the package; the Startup
+section goes version check then «state.boot»() with nothing between. AC-3: the five
+named contractlint tests pass unchanged. AC-4: cmd/spacedock-release,
+internal/claudeteam, internal/contractlint, internal/release, skills/integration,
+internal/cli -run TestProseFunction, and CI's deterministic control subset
+(runtime-live-e2e.yml:78) all green at -count=1; -race green on contractlint and
+skills/integration in both the worktree and the merged tree; gofmt clean.
+
+Calibration: ef8f55c83's two extra commits are workflow docs with an empty diff over
+every touched surface, so the 4d1912a69 baseline carries to it. The ensigncycle
+timeout reproduces at clean merge-base (600.459s vs 600.515s, same
+os/exec.(*Cmd).Start parked-goroutine signature), confirming the documented
+environmental cause; it is not attributed to this change.
+
+Keep-boundaries spot-checked in the merged tree: the only surviving `gate --help`
+mentions are the guard itself and the different per-gate probe assertion at
+internal/ensigncycle/recorded_gate_lifecycle_test.go:281; shared-core's
+deferred-load trigger lines, fo-gate-lifecycle's `gate withdraw` grammar, and
+install.md's `Run spacedock doctor.` line all survive.
+
+Findings: none material, none deferred, clean audit. The declared surface deviation
+(3 files +3/-6 vs estimate 2 files -6/+0 ±2) is entirely the captain-approved AC-2
+guard, declared in the implementation report; no AC narrowed.
