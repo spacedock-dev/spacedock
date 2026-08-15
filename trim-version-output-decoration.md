@@ -41,6 +41,10 @@ gates:
                 digest: sha256:0a4dcfa4226fa4c8c01cdea9b1e77a5e737cbced12103a57c2ecec585350f207
                 request-digest: sha256:bf06b0da29d4f2cb13688baa0fff04eb239cbaf21a3c339c31422c1b6da8ba48
                 room-ref: ./trim-version-output-decoration/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-15T03:39:58.026643Z"
+                reason: Entity gained evidence re-verification section post-prepare (33ccb5479); re-preparing against current bytes; all figures unchanged
 ---
 
 Remove three decorations from `spacedock --version` output. Each has no reader.
