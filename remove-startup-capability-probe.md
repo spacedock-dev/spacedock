@@ -1,6 +1,6 @@
 ---
 title: Remove boot-time gate withdraw capability probe
-status: backlog
+status: ideation
 source: "Captain directive, 2026-08-15: pedantic compat check for unreleased 0.27.x is overkill; incomplete upgrades already surface a proper error at use time"
 score: 0.9
 group: tooling
@@ -27,7 +27,7 @@ gates:
                 reason: 'Captain ruling 2026-08-14 (dispatch them): approved into ideation'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Remove the same-minor capability probe added in commit b331baf4f ("fix: reject stale same-minor launchers", 2026-08-09). The binary version gate should rely solely on the minor version match; if a stale build lacks `gate withdraw --reason`, the CLI already returns a clear "unknown subcommand" error at the point of use.
