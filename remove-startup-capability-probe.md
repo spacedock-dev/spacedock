@@ -1,6 +1,6 @@
 ---
 title: Remove boot-time gate withdraw capability probe
-status: implementation
+status: validation
 source: "Captain directive, 2026-08-15: pedantic compat check for unreleased 0.27.x is overkill; incomplete upgrades already surface a proper error at use time"
 score: 0.9
 group: tooling
