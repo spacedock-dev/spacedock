@@ -15,6 +15,14 @@ gates:
                 digest: sha256:76ec26b36edcd5ba5fd2fd3cbbe637869ee5eb8705540f8913f822ec390b7d1e
                 request-digest: sha256:c56f2bba1b5866a1faea66a0f32e016f75bb41578fb3a6e6f5b50cf0f2bd6fe7
                 room-ref: ./run-rejection-journey-in-team-mode/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zqb683j8jth0tyr2eme231e2:ideation:1
+                briefing: briefing:zqb683j8jth0tyr2eme231e2:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T17:46:40.418163Z"
+                decision: revise
+                reason: 'Captain annotation on the determined-shape table (claude headless probe row): ''is this true? this used to work'' - verify the probe-failure claim and its history before the claude branch is accepted'
 ---
 
 ## Problem
