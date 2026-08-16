@@ -1,7 +1,7 @@
 ---
 id: b8ewpvd65epkckvng0n38809
 title: Workflow Fit Gate before FO entity creation
-status: backlog
+status: ideation
 source: "Captain draft and directive, 2026-08-16: the FO tends to add stuff into existing workflows and be ceremonial about things not supposed to be there. Session evidence 2026-08-14/15: the banned doc-only journey entity, its mechanism-without-value reshape, and the release-cut task question."
 started:
 completed:
@@ -57,3 +57,8 @@ Verified by: go test ./internal/contractlint/ plain and -race.
 ## Test plan
 
 Prose amendment plus reference-closure lint; the one-off replay exercise as the value evidence.
+
+## Evidence pointers (FO, 2026-08-16)
+
+- Strongest specimen yet, from our own CI policy rather than an FO impulse: all XFAIL owner entities were tracking stubs satisfying the active-owner lint — no fix approach, one with an acceptance criterion literally about the marker naming this owner (repair-sonnet-live-flakes pre-upgrade; see state history around 0c0e18f6c and handoff _debriefs/2026-08-16-01). The lint checked liveness; nothing checked fit or substance. Captain ruling: a known failure needs a PRODUCT task owner.
+- Sibling specimen from another FO (pre5, relayed by captain 2026-08-16): the gate contract's generic cold-gate rule demands an exact-stage report even for a gated INITIAL stage, manufacturing a tautological "backlog completion report" that would restate the committed seed. The inverse direction of this entity's thesis: there the CONTRACT demands ceremony; here the FO invents it. Reconcile framing, do not absorb that fix (it is a separate contract/binary change).
