@@ -3,6 +3,18 @@ title: Auto-continue grades a human-gate bypass as green
 status: ideation
 source: "Live-harness audit finding 3 (2026-08-16); captain order: file and fast-track on the stack, local focused test first"
 id: 7xe7hxt1qce1x9b3dm0k6ymg
+gates:
+    version: 1
+    records:
+        - id: gate:7xe7hxt1qce1x9b3dm0k6ymg:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:7xe7hxt1qce1x9b3dm0k6ymg-ideation-1
+              briefing:
+                id: briefing:7xe7hxt1qce1x9b3dm0k6ymg:ideation:attempt-1:revision-1
+                digest: sha256:67b5b390d6e86a6ef0e86959b8a72b38207d0cd9a904018acadafe492a7caa36
+                request-digest: sha256:abaa582a10c85b4690c7ff1001a39e2d9bcd2f20263d6410d6186e8703a45e0e
+                room-ref: ./red-auto-continue-gate-bypass/review/ideation/briefing-1
 ---
 
 ## Problem

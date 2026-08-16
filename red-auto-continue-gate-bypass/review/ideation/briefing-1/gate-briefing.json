@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7xe7hxt1qce1x9b3dm0k6ymg:ideation:attempt-1:revision-1",
+  "question": "Approve the auto-continue tightening: done becomes red under new code human-gate-bypassed, the dispatch-evidence check becomes a required liveDriver method (no host can opt out), a real captured stream lands as offline replay control, and pi ships unconditional with no preemptive xfail?",
+  "artifacts": [
+    {
+      "id": "artifact:7xe7hxt1qce1x9b3dm0k6ymg:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/61d456909453a883a2e4130cac3cc325038c9a27/red-auto-continue-gate-bypass.md",
+      "rev": "sha256:c6a0fe4fe74607c92c48fd9fcbb5fc8c75dcdad378676ec3a18377bb94f92eef",
+      "mediaType": "text/markdown",
+      "summary": "Ideation complete: all citations verified plus two new facts (done reachable only via self-approval; dead param); replay of 10 real CI legs found zero past bypasses (hole latent); both grading directions falsified offline at zero model spend; 10 files ~175 insertions + one captured stream; live loop 3/3 per runtime budget 8."
+    }
+  ]
+}
