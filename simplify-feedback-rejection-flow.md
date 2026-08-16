@@ -549,3 +549,49 @@ The skill also grew past the +107 words the gate approved: 572 → 784 words (41
 ### Summary
 
 The five-step single-publish flow, its oracle, and the fixture prose repair are committed and the full suite is green, but the value proof is not in: AC-3's live runs are held behind hz's inline `state commit`, without which step 3 cannot complete on an inline workflow. The most consequential thing found during implementation was not in the design at all — the gated step 2 documents a `gate record` invocation that exits 2, so an FO following the skill by the book never recorded a round. That is hz's ensign's discovery, routed here as binding, and it means the five-step shape alone would not have fixed the journey. Two other clauses moved too: a usage error no longer becomes a terminal hold, and step 5's precondition was written twice — once from the entity's original verdict-gating finding, then again after that finding was retracted, which I re-verified against the parser rather than taking either version on trust. The oracle work is honestly larger than estimated, entirely in the counter and its inverted controls; I trimmed what could go without weakening falsifiability and am reporting the rest rather than trimming into the proof.
+
+### Addendum: recorder-command provenance and evidence status (FO-required)
+
+Provenance of the two defects this rewrite closes, each verified by reading the shipped
+skill text at the commit rather than by trusting the citation:
+
+- `c355fbe44` (2026-07-23) documented the recorder correctly, with the operand:
+  `${SPACEDOCK_BIN:-spacedock} gate record <entity> --round <stage>/<cycle> --briefing <path>/briefing.json --log <path>/briefing.review.jsonl`.
+- `ea6723acb` (2026-08-03) rewrote that step line to `gate record --round STAGE/CYCLE
+  --briefing PATH/briefing.json --log PATH/briefing.review.jsonl`, dropping the entity
+  operand from the contract-facing command. The FO's provenance is confirmed on this
+  point. I first read it as contradicted, because the same file still carries fixture
+  examples that DO name the entity (`gate record rejection-task …`) and a naive grep
+  returns those first; the step line at `ea6723acb:21` is the one the FO follows.
+- `d05730564` (2026-08-09) added the invoke-once / hold-on-failure language, which
+  turns the resulting usage error into a terminal hold. `d865e8b2a` (2026-08-12)
+  carried both forward to the text this entity replaced.
+- One citation correction: `00f8c203f` (2026-07-30) carries no recorder command line at
+  all in this file, so it is not a prior-correct witness. `c355fbe44` is.
+
+Discovery attribution: the root cause was found by the repair-codex-rejection-round-recording
+ensign's live-loop analysis and FO-verified against `internal/cli/cli.go:181`. This
+entity's contribution was to exercise the defect directly — the documented command
+exits 2 with `Error: unknown gate flag: validation/1` — and to close both defects in
+the rewrite.
+
+Layer relationship, stated plainly for the gate: the repair layer's inline
+`state commit` fix is **necessary but not sufficient**. A by-the-book FO never reached
+the dirty-tree trap at all, because the documented command failed first. The journey
+cannot go green on the full matrix until this rewrite lands, so this layer is
+load-bearing for the journey AC and the composed-tree loop at the stack tip is where
+the journey green gets proven.
+
+Evidence status, recorded so it is not silently reused: the live run in which the FO
+recorded both rounds and then declared the journey complete without ever invoking
+`gate prepare` was driven under bare codex defaults, not the CI PATH-shim model
+configuration. It is withdrawn as an asserted property of the journey and is NOT cited
+as oracle evidence anywhere in this report. Step 5's clause stands on the
+needs-preparation mechanism resolution and the parser reading, which predate that run.
+
+FO dispositions received on the deviations above: the handoff-channel clauses are
+authoritative (identical to the direct relay); the gate must state plainly that the
+five-step shape alone would not have fixed the journey; the step-5 retraction handling
+is correct; and the surface overrun is a KEEP ruling — the publication counter and its
+five inverted cases stay, since falsifiability outranks the line estimate, and the
++195 net rides as a declared deviation.
