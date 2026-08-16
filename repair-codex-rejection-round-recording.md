@@ -36,9 +36,18 @@ gates:
 
 Codex intermittently completes the live rejection flow without recording the rejection round: the FO-side flow reaches the feedback stage but `gate record --round` never runs, so the journey assertion finds no round record (`rejection-round-missing`). Fail-pass-fail across the last three runs proves the c6a336a33 retirement premature for this journey.
 
-Two-part deliverable:
-1. Restore the codex XFAIL binding on the `rejection-flow` journey in internal/ensigncycle/shared_live_runner_test.go, bound to THIS entity's id (the TODO-owner lint requires an active owner). This makes the lane honest immediately.
-2. Diagnose and repair the codex behavior: why the round recording step is skipped (contract prose the codex FO under-weights, ordering, or a missing completion condition), fix at the owning surface, prove with a TARGETED LOCAL live run of the rejection-flow journey (SPACEDOCK_LIVE_RUNTIME=codex, -run scoped to the one journey, repeated until the mechanism - not luck - explains the green), then retire the XFAIL again in the same branch if the fix holds.
+Single deliverable (captain correction 2026-08-16, superseding the original two-part
+framing): diagnose and repair the behavior at its owning surface, prove with a TARGETED
+LOCAL live run of the rejection-flow journey (SPACEDOCK_LIVE_RUNTIME=codex, -run scoped to
+the one journey, repeated until the mechanism - not luck - explains the green), and land
+as the stack layer whose full matrix proves the journey green with NO XFAIL binding
+present. The XFAIL restore is NOT a deliverable: binding-with-owner is the lane-honesty
+mechanism for debt that sits unfixed, and this task IS the fix, so adding and removing a
+binding within one branch is ceremony.
+
+Contingency, not deliverable: if the fix is parked or fails validation, the fallback is
+the registry policy's XFAIL bound to this entity id (hz2ankag6fk379ssabpv4ckc) on the
+`rejection-flow` journey.
 
 Captain-directed process: work on top of the current stack (branch from stack #717's tip, spacedock-ensign/rule-superseded-verdict-vocabulary at 4edc82f07); iterate with the targeted local live run; PR onto the stack as the next layer for the full-matrix run.
 
@@ -167,13 +176,19 @@ diagnosing this took three artifact downloads and a rebuilt oracle.
 *Why insufficient:* the artifacts do not contain the durable end state (it lives in a
 `t.TempDir`), so the failing sub-check is not recoverable from them at all.
 
-**4. Restore the codex XFAIL binding, then retire it only if the bar is met.**
-Add `liveXFail("codex", "hz2ankag6fk379ssabpv4ckc")` to the `rejection-flow` journey with
-the matching reconciliation expectation and registry row, as the first commit, so the
-lane is honest from the start. Remove all three in the same branch only after AC-2's
-measured bar is met — that removal is exactly the amendment the registry policy requires
-(remove binding and expectation, run the unchanged candidate without the binding,
-require PASS). If the bar is not met, the branch ships with the binding in place.
+**4. No XFAIL binding is added.** Per the captain's correction, the lane ships unbound and
+the full matrix on the stack PR is what proves the journey green. `c6a336a33` already
+removed the codex binding, the reconciliation expectation, and the registry row, so this
+requires no change at all: `shared_live_runner_test.go`,
+`live_registry_reconciliation_test.go`, and `docs/runtime-live-ci-registry.md` are all
+untouched by this entity.
+
+*Risk this accepts, stated plainly:* an unbound lane means that if the repair is
+incomplete, the codex rejection-flow failure fails the stack PR's matrix rather than
+being absorbed as an expected failure. That is the intended trade — the branch is the fix,
+so a red matrix is the correct signal. The contingency if the fix is parked or fails
+validation is the registry policy's XFAIL bound to this entity id, applied then and not
+before.
 
 ### Stack position
 
@@ -197,7 +212,7 @@ Two defects found during diagnosis, to be filed separately rather than absorbed 
 
 ## Expected surface and tolerance
 
-Seven files, roughly 110 insertions, tolerance ±40 and ±2 files. The seed estimated
+Five files, roughly 105 insertions, tolerance ±35 and ±2 files. The seed estimated
 "contract prose or the journey runner's completion conditions"; the diagnosis puts the
 owning surface in the binary instead, which is the material scope change this gate is
 being asked to approve.
@@ -208,9 +223,11 @@ being asked to approve.
 | `internal/cli/state_commit_test.go` | deterministic chain test (~60) |
 | `internal/ensigncycle/claude_live_runner_test.go` | new code + fatal detail (~6) |
 | `internal/ensigncycle/claude_runtime_helpers_test.go` | `liveGrade.details` (~6) |
-| `internal/ensigncycle/shared_live_runner_test.go` | XFAIL binding (1, added then conditionally removed) |
-| `internal/contractlint/live_registry_reconciliation_test.go` | expectation (1, same) |
-| `docs/runtime-live-ci-registry.md`, `docs/site/reference/command-reference.md` | registry row + `state commit` doc diff (~8) |
+| `docs/site/reference/command-reference.md` | `state commit` doc diff (~8) |
+
+No live-registry file is touched: `shared_live_runner_test.go`,
+`live_registry_reconciliation_test.go`, and `docs/runtime-live-ci-registry.md` stay as
+`c6a336a33` left them.
 
 **Declared semantic changes.** Command grammar: none. Stored formats: none. Authority:
 none — `state commit` gains no new write target beyond the entity paths it already
@@ -242,12 +259,16 @@ chain — after `state commit`, `git status --porcelain` for the entity path is 
 the wrong way is the porcelain byte count, which is nonzero on today's binary and must
 reach zero. Running this test against the pre-fix binary fails at the first assertion.
 
-**AC-2 — The codex rejection-flow journey reaches an open prepared gate consistently, with
-the fix rather than luck explaining it.**
-Verified by: 5 consecutive targeted local codex live runs of `TestLiveCommonRejectionFlow`
-green, each run's exec stream showing a `gate prepare` that emitted `state=open`. The
-baseline is the observed pre-fix rate of 1 pass in 3 runs at one sha; 5 consecutive greens
-at that rate is ~0.4% by chance. N=5 is the bar; fewer than 5 means the binding stays.
+**AC-2 — The codex rejection-flow journey is green on the stack PR's full matrix run with
+no XFAIL binding present for codex on this journey.**
+Verified by: the stack full run's `TestLiveCommonRejectionFlow` codex result is a PASS
+(not XFAIL, not XPASS), with `git grep liveXFail` over `shared_live_runner_test.go`
+showing no codex binding on `rejection-flow` at the commit that run tested. Before that
+run, the local repair loop must have reached 5 consecutive targeted greens, each
+confirmed by its exec stream showing a `gate prepare` that emitted `state=open` — that is
+the mechanism-named evidence, not the pass count alone. The independent baseline that can
+move the wrong way is the observed pre-fix rate of 1 pass in 3 runs at one sha; 5
+consecutive greens at that rate is ~0.4% by chance.
 
 **AC-3 — A rejection-flow failure names what actually failed.**
 Verified by: a unit test feeding an entity with no `gates:` block plus a stream that DID
@@ -256,14 +277,10 @@ record the round, asserting the emitted code is `rejection-gate-not-prepared` an
 `gradeLive` unit test asserting each graded finding's message survives into
 `liveGrade.details`, which fails if the messages are dropped as they are now.
 
-**AC-4 — The lane is honest at every commit.**
-Verified by: contractlint reconciliation and the TODO-owner join green at every commit in
-the branch; the final presence or absence of the codex binding matches AC-2's measured
-result.
-
-**AC-5 — The suite stays green and the full matrix runs on the stack PR.**
-Verified by: `go test ./...` plain and `-race`; the stack-tip full matrix after this layer
-lands.
+**AC-4 — The suite stays green.**
+Verified by: `go test ./...` plain and `-race`, plus the contractlint live-registry
+reconciliation still green with no registry change (this entity adds no binding, so the
+reconciliation expectations must be untouched and still pass).
 
 ## Test plan
 
@@ -280,8 +297,13 @@ directory.
 `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -run TestLiveCommonRejectionFlow
 ./internal/ensigncycle/` — one journey, ~6 minutes per run. Run until 5 consecutive
 greens or a failure resets the count. Each green is confirmed by reading its exec stream
-for the `state=open` prepare, not by the pass alone. The stack PR's full matrix is the
-final proof. No live test is added to the standing suite.
+for the `state=open` prepare, not by the pass alone. The loop is the gating evidence for
+proposing the layer; the stack PR's full matrix, unbound, is AC-2's terminal proof. No
+live test is added to the standing suite.
+
+If the loop cannot reach 5 consecutive greens, the layer is not proposed as a fix.
+Implementation stops and reports, and the contingency XFAIL bound to this entity id is
+applied at that point — not preemptively.
 
 **No spike needed beyond what ideation already ran:** the three mechanisms this design
 rests on were each exercised above — the round oracle against the real streams, the
@@ -293,7 +315,7 @@ path-scoped git commit seam in both the nested-repo and non-repo cases.
 - DONE: Diagnose the rejection-round-missing mechanism from BOTH failing runs' codex exec streams (gh run download 31915540750 and 31922268382 - the codex artifacts carry codex-exec jsonl); name where the round recording is skipped and why, before designing the fix
   Round recording is NOT skipped: the repo's own `codexRecordedRejectionRound` oracle, rebuilt verbatim, returns true on both failing streams. The skip is `gate prepare`, mislabeled by the codex-only `gates.Read` clause at claude_live_runner_test.go:397-403. Run 31915540750 needed attempt 1's artifact (id 9254966513) — attempt 2 passed and overwrites the default download.
 - DONE: Design the two-part deliverable: XFAIL restored bound to this entity id (hz2ankag6fk379ssabpv4ckc) for lane honesty, plus the behavioral fix at the owning surface; the repair loop uses TARGETED local codex live runs (one journey, -run scoped) - design the loop and the N-consecutive-green bar
-  Owning surface is `runStateCommit`'s inline no-op, not contract prose. N=5, justified against the measured 1-in-3 pre-fix pass rate (~0.4% by chance); binding is added first and removed only if the bar is met.
+  Partially superseded: the captain withdrew the XFAIL-restore half mid-stage (binding-with-owner covers debt that sits unfixed; this task IS the fix). Delivered half — owning surface is `runStateCommit`'s inline no-op, not contract prose; N=5, justified against the measured 1-in-3 pre-fix pass rate (~0.4% by chance). Body deliverable and AC-2 amended: AC-2 is now the journey green on the stack full run with no binding present, XFAIL kept as a one-line contingency only.
 - DONE: Design against the stack tip (spacedock-ensign/rule-superseded-verdict-vocabulary, 4edc82f07); implementation lands as the next stack layer for the full-matrix run
   That branch was restacked: tip is now 64c037b56, same subject, and 4edc82f07 is no longer an ancestor. Design and all spikes ran against the current tip's binary; recorded in the body.
 
@@ -307,4 +329,8 @@ real mechanism is a host-neutral dirty-tree dead end: `gate prepare` and the
 the only durability verb the FO contract names, is an exit-0 no-op on inline workflows.
 Claude hit the identical refusal in the same CI run and passed only because it retried
 with raw git. Fix moves to the binary; three oracle-honesty repairs ride along; two
-further defects are named for separate filing rather than absorbed.
+further defects are named for separate filing rather than absorbed. Per the captain's
+mid-stage correction the XFAIL restore was dropped as a deliverable and kept as a
+one-line contingency, which removes three files from the expected surface and makes the
+unbound stack full run AC-2's terminal proof — with the accepted risk that an incomplete
+repair reddens that matrix rather than being absorbed.
