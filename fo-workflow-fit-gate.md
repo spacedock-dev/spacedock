@@ -21,6 +21,16 @@ gates:
                 digest: sha256:f88cbbc708d776964ab97fb7a2aaa7c0c7c201f130778868b9a0411b3e02e5e8
                 request-digest: sha256:5ff8114f7ea35a9b3a5bc8575d0c90cb141325aa4aaa72e6e3af1eb7da8f9d20
                 room-ref: ./fo-workflow-fit-gate/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:b8ewpvd65epkckvng0n38809:ideation:1
+                briefing: briefing:b8ewpvd65epkckvng0n38809:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T17:53:46.471922Z"
+                decision: approve
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Amend the shipped FO write core (skills/first-officer/references/fo-write-core.md) with an admissibility gate ahead of the "FO may write new entity files" rule. Captain's draft, the seed text:
