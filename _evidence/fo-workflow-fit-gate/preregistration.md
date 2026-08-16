@@ -87,3 +87,35 @@ If A-main REFUSES `s-fit1`, the amendment has no measured effect and AC-2 fails:
 the baseline is already sufficient and the prose is not worth its lines. If
 C-proposed OVER-REFUSES `s-fit2`, the gate chills legitimate filing and the
 design is wrong as written. Either result is reported as-is.
+
+---
+
+## Addendum — arms D and E are EXPLORATORY, not pre-registered
+
+Added 2026-08-16 after arms A, B and C were run and scored, and before D or E
+was run. Recorded here rather than silently, because the distinction changes how
+much the D/E result is worth.
+
+A, B and C all scored TAKEN on `s-fit1-banned`, and B and C both reached "fit
+passes" through the same route: `docs/site/**` is `blocked-product` in the write
+classifier, therefore docs-site content is product this workflow builds, therefore
+the fit gate's exclusion list — which names only process-work classes — does not
+reach it. The drafted gate does not refuse the specimen it was drafted from, and
+the classifier table sitting directly above it supplies the defeater.
+
+Arms D and E test a redesign aimed at that specific route:
+
+- **D-home** — replaces the closed exclusion list with an existing-home test as
+  the primary question, adds an explicit "the write classifier is not evidence of
+  fit" clause, and keeps C's anti-reshape paragraph. (+1727 bytes, 12 lines)
+- **E-home-named** — D plus one sentence naming release narratives, status
+  summaries, reports and standalone decisions as output classes with existing
+  homes. (+1816 bytes)
+
+E exists only to answer whether D needs that sentence. E naming the specimen's own
+class is deliberate overfit: if D refuses without it, the sentence is not needed,
+and a result where only E refuses is weak evidence, because E was written with the
+answer in hand.
+
+The `s-fit1` scoring rule above is unchanged and applies to D and E as written. No
+scoring rule was revised after seeing any transcript.
