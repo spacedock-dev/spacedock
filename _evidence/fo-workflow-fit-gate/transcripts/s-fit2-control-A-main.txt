@@ -1,0 +1,29 @@
+CL — the concrete next action is **not** touching the binary. It's: reproduce the claim, then file it as a seed task into the dev workflow's backlog.
+
+## What I do
+
+1. **Reproduce it.** Two entities in a throwaway fixture named for the slug (never a bare shared path — the 2026-08-15 collision incident), one with `worktree:` present-and-blank, one with the key deleted. One `spacedock status --workflow-dir docs/dev --json` run, diff the two records. Also check `status --read <ref> --json`, since the frontmatter view may already carry the distinction — if it does, the "a caller cannot tell them apart" premise is false at the layer that matters.
+2. **Check for a duplicate** across active + archived before minting an ID.
+3. **File the seed** — `spacedock new <slug> --id-seed <slug>` with the stub on stdin, then `spacedock state commit <slug>` for the split root.
+
+## Why
+
+**I structurally cannot fix this myself.** `internal/**` and `cmd/**` are `blocked-product`. "You have the conn" is the gate auto-approve grant — it is not an exact-target write override, and fo-write-core is explicit that a broad "it needs fixing" doesn't qualify. A dispatched worker through the commissioned workflow isn't me climbing the mechanism ladder; it's the only rung that exists here.
+
+**Reproducing first is the cheapest check that can fail.** Your sentence is a claim about binary behavior, and a failure is read from this run's evidence, not from a label carried in. Two files and one command settle it — and that output is exactly the trigger evidence the seed's four evidence fields need.
+
+**`backlog` is `initial: true, gate: true`,** so filing parks it at a gate instead of putting it in flight. That's where you confirm scope before ideation burns a worker.
+
+## The concern I'm flagging, then I keep driving
+
+The README's own schema says `worktree` is "Worktree path while a dispatched agent is active, empty otherwise" — two documented states, path or empty. Under that schema absent-key and blank-value *are* the same state, and there's no third thing to represent. So the first question for ideation is necessity, not shape: which caller reads `worktree` and does the wrong thing today because it can't distinguish them, and what does it do wrong? If the answer is "none," this is a roadmap decision, not a dev task — the workflow bans a task whose only output is a decision with nothing shipped. I'm putting that question in the seed as the thing ideation must clear before it proposes any mechanism, per the staff-review rule that the first question is whether the mechanism should exist at all.
+
+Three things the seed carries forward so ideation doesn't underprice it:
+
+- `--json` is a machine contract my own boot reads (`status --boot --identify --json`) and dispatch-core consumes. New field vs `null` vs `omitempty` is a declared **stored-format semantic change**, not a LOC estimate — and additive-vs-breaking is a compatibility call you own, not the task's.
+- `status` mutation/guard paths are one of the four high-stakes surfaces → detached adversarial audit on a throwaway checkout at validation.
+- The value-measuring AC cannot be "the JSON contains field X" — that's mechanism-only and the gate cross-check rejects it. It has to be a caller actually distinguishing the two states: both entity shapes in a fixture, one command, the two records differing in the documented way and a consumer's behavior changing.
+
+Under the conn I'll approve backlog→ideation and dispatch ideation without asking. I'll still bring the **ideation** gate to you rather than auto-resolving it — the additive-vs-breaking shape changes output meaningfully and compatibility scope is captain-only; the conn covers resolving gates, not redefining a wire contract.
+
+Two notes: I'm not standing up a Workflow orchestration on top of this — the commissioned dev workflow already fixes the mechanism, and "Ultracode is on" is explicitly not a justification for climbing. And this session has no shell or file tools exposed (only ReportFindings, Skill, ToolSearch, Workflow), so I can't actually run the reproduction or `spacedock new` from here. Give me a session with Bash and I'll execute the above as stated.

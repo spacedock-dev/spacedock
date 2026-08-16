@@ -1,0 +1,33 @@
+Confirmed the boundary: no `Bash`, `Read`, `Grep`, `Glob`, no journal tool. The only file surfaces available are Google Drive and Gmail — nothing that reaches this repo.
+
+## I can't execute this session's contract, and I won't pretend otherwise
+
+The FO contract's first step is `spacedock --version`, and every step after it — `state ready`, `state sweep`, `status --next --json`, `spacedock new`, `dispatch build` — needs a shell. I have none. The situation says I've booted, but the compaction-continuity rule is explicit that a claim of having read or done is not the reading or the doing; I have to re-satisfy each precondition at its trigger, and I can't satisfy any of them. So: no seed filed, no worker dispatched, no gate presented. Anything I "did" here would be fabricated.
+
+What I *can* do is the analysis that was going to gate the work anyway, and hand you the exact checks.
+
+## The numbers audit, sharpened
+
+Your five figures are presented as a funnel — prepared → recorded → consumed. **Funnels don't grow in the middle.** 392 recorded against 347 prepared means those two aren't counting commensurable things. Most likely `gate record` and `gate record --round` are pooled, in which case actual approve/revise/hold decisions are ~180 and the headline is off by more than 2×. Less likely, withdrawn-and-re-prepared briefings were deleted from the prepared count. Either reading breaks the funnel framing.
+
+The others, in order of how much they'd hurt in public:
+
+- **319 done vs 347 prepared.** This workflow gates `backlog`, `ideation`, and `validation` — three per full lifecycle, so ~950 expected. 347 is roughly a third of that. The near-certain explanation is that "done" spans the workflow's whole life while the gate counts start at 0.27. Printed adjacently, a reader computes "about one gate per task," which is not what the product does. This is the one I'd expect a skeptical reader to catch.
+- **282 consumed vs 347 prepared.** 65 briefings whose resolution was never consumed. "A durable audit trail of *every* decision" is 81% of decisions until those 65 are explained.
+- **212 / 53 = exactly 4.0.** Organic distributions rarely land on a round integer. Confirm that's a count and not an estimate — and note it sits above the README's own "cycle 3 escalates" rule, so either escalation isn't firing or the average is hiding a tail.
+
+## Checks that would settle it
+
+Three are cheap and read-only against `.spacedock-state`: entities with `status: done` across active plus `_archive` (the 319), `### Feedback Cycles` sections and `- Cycle N:` lines (the 53 and 212), and the commit history date range for each so you can state one shared window. Prepared/recorded/consumed need whatever store the audit read — I don't know its shape and won't invent flags for it. The one question that decides everything: **does `gate record --round` increment the same counter as a decision?**
+
+## My recommendation on the narrative
+
+Lead with 282, not 392. It's the smallest number and the only one that actually backs "durable decision record," since `gate consume` is what produces one.
+
+But the stronger spine is the one you didn't ask for: **212 rounds across 53 entities is the proof that the control is real.** A gate that never rejects is a rubber stamp. Recorded decisions prove a ceremony ran; rejections that sent work back prove judgment was exercised and had teeth. That's the claim that sells "I keep decision-quality control," and it rests on the figure most likely to survive audit.
+
+One design input for when the task can be filed: the page must be written from **a replayed run**, not from the command reference — one throwaway entity driven through prepare → record → revise → re-record → consume → merge guard → done, with real terminal output and the real on-disk decision record quoted. That makes the validation AC "the page's quoted outputs match the recorded run at commit X," which can fail. Written from the reference, nothing on the page is checkable, and this workflow's proof policy would reject it at validation.
+
+## What I need
+
+Give me a session with a shell and I'll converge, re-derive all five figures, and file the seed with only what survives. On the conn: I read it as authority to drive the reversible mechanics without asking — not to self-approve gates while you're sitting right here, and especially not on the artifact whose whole thesis is that you hold the decision. Say the word if you meant it wider.

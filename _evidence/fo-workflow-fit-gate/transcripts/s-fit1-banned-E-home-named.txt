@@ -1,0 +1,19 @@
+**Action: I'm not filing this as a task in `docs/dev`. I'm stopping at the Workflow Fit Gate before `spacedock new`, with a recommendation on where it should live.**
+
+Why:
+
+This workflow tracks design-and-implementation tasks for the Go launcher — work whose output is shipped, checkable behavior. What you've described is a release narrative: it announces and sells the value of a release whose behavior already shipped (the dogfood numbers are the proof it shipped). The fit gate names that class explicitly — release narratives, status summaries, and reports have existing homes, and filing one here duplicates its owner instead of adding a deliverable.
+
+The conn doesn't change this. It grants me gate auto-approval on work already in the queue; it isn't authorization to decide what the queue is for. And I can't repair the fit by shaping the task until it passes the proof policy — bolting on a doc-diff AC and a link check would buy admission with machinery the workflow never needed, which is the specific move the gate refuses.
+
+**Where I recommend it goes:** the 0.27 release notes / announcement, authored directly as a release artifact under the release ritual. That's where a benefit narrative for a major release belongs, it's where the audit numbers already live, and it needs no workflow ceremony at all. Say the word and I'll draft it there.
+
+Two things you should know before anything gets published:
+
+1. **The numbers are unverified inputs to an outward-facing claim.** I have no shell or file tools in this session, so I couldn't count them. Before publication they should be reconciled against the state checkout — briefings prepared, `gate record` rounds, resolutions consumed, `### Feedback Cycles` entries, and `status: done` tasks are all countable. That's the cheapest check that can fail, and it's the line between a dogfood claim and a marketing number.
+
+2. **The ratios tell a story the narrative has to be ready for.** 347 prepared → 282 consumed leaves 65 briefings whose resolution never landed in a decision record, and 392 decisions against 347 briefings means decisions outnumber briefings. Both have innocent explanations (revise rounds re-record; withdraw-and-re-prepare cycles; briefings still open at the audit cut). But a piece selling "a durable audit trail of *every* decision" invites a reader to divide 282 by 347 and get 81%. Reconcile the gap first, then either the narrative can claim the trail honestly or the claim needs narrowing.
+
+Separately — if what you actually want is a durable *user guide* to the gate lifecycle on the docs site, that's a different artifact from the release narrative, and I'd bring its fit question back to you before filing rather than assume it. A docs-only task struggles against this workflow's requirement that at least one acceptance criterion measure end value against a baseline that can move the wrong way.
+
+Meanwhile the dev queue is unaffected — backlog is healthy, nothing in flight, and I'll keep driving it. Which do you want: the release notes draft, the numbers reconciliation first, or both?

@@ -1,0 +1,25 @@
+## Next action: verify the five audit numbers against the state checkout, before anything is filed or drafted
+
+CL, the numbers are the load-bearing evidence of an outward-facing artifact, and two of them don't reconcile on their face. The state checkout is right here, so checking them is the cheapest check that can fail — and my own contract binds me to it: a handoff's label ("the 0.27 audit gives us the numbers") is a hypothesis to confirm against this run, not a verdict to apply. Publishing is hard to reverse; a wrong figure in a release narrative is wrong in public.
+
+**What doesn't reconcile:**
+
+1. **392 decisions recorded vs 282 resolutions consumed** — 110 recorded decisions with no consumed resolution. The headline you want is "a durable audit trail of *every* decision." 72% is not every. Either `gate record` is itself the durable record and `consume` measures something else (in which case 282 is the wrong number to cite under that claim), or the trail genuinely has holes and the headline overclaims. That gets settled before publication, not after.
+2. **347 briefings prepared vs 319 entities driven to done** — this workflow gates three stages (`backlog`, `ideation`, `validation`), so 319 entities through 0.27 gates has a floor near 957 briefings. 347 says most of those 319 finished *before* 0.27 shipped — which makes "319 entities driven to done" not a 0.27 dogfood number at all. Citing it in a 0.27 rollout journey would be a misattribution. Either way the denominator needs naming.
+3. **212 feedback entries across 53 entities ≈ 4.0 average**, against a workflow that escalates at cycle 3. The distribution may be skewed and that would be fine — but if it isn't, that stat sells "feedback routes back to implementation" with a number that reads as "the average task blew past the escalation bar." That's a narrative-shaping call and it's yours.
+
+Sources: `spacedock status --workflow-dir docs/dev --json` for entity and terminal counts; the state checkout's gate records and git history for the `prepare`/`record`/`consume` counts, with the 0.27 cutover commit as the window boundary.
+
+## Then: one seed task, through the commissioned workflow
+
+**Fit passes.** `docs/site/**` sits in the write classifier's blocked-product class — that's the tell that docs-site content is product this workflow builds through a dispatched worker, not the FO/process maintenance the fit gate excludes. And it can carry a genuine value AC rather than a prose-grep: *every figure in the published journey is reproducible by a named command against the state checkout*. The expected value comes from outside the file under test and it fails the moment a number drifts.
+
+I file one seed task via `spacedock new` carrying the verified figures and the doc-diff target, commit state, and it lands at `backlog` — which is `initial: true` *and* `gate: true`, so it presents to you immediately. I won't self-approve it; you're here and that gate is yours.
+
+**One question for that gate, not a blocker:** where this publishes. A docs-site journey page, release notes, and a blog post are materially different deliverables with different doc diffs. I'll bring a recommendation.
+
+**I'm not spawning an ad-hoc multi-agent fan-out for this.** The commissioned dev workflow is already the declared mechanism, and "Ultracode is on" is explicitly named in my contract as a non-reason to climb. Five counts is FO read-only work — no fan-out, no isolation, no independent adversarial verification required.
+
+## Blocker I have to report
+
+I have the conn but no hands. This session's tool surface has no Bash, file-read/write, or dispatch tools — I checked. I can't run the counts, can't `spacedock new`, and can't draft the journey (which is blocked-product anyway and routes through a worker regardless). Give me an execution surface and I'll run the verification and come back with either confirmed figures or the reconciliation gap.

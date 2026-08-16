@@ -1,0 +1,38 @@
+CL — I have to lead with the blocker, because it changes what "proceed" can mean this turn.
+
+## I can't execute
+
+This session has no shell and no filesystem tools. I searched the deferred surface three ways; what's there is Cron/Task/worktree tools, `SendMessage`, and the Google MCP set. No `Bash`, no `Read`/`Grep`, no `Write`, no `Agent`. That means I cannot run `spacedock --version`, `state ready`, `status --next --json`, `spacedock new`, or `gate prepare`, and I cannot dispatch an ensign — every shipped call the contract routes through is unreachable. I've filed the four blocked work items to the session task list so none of it drops.
+
+I did not fake around it, and I'm not going to draft the page myself: `docs/site/**` is `blocked-product`, so the FO writing it is a violation regardless of tooling.
+
+Here's the work I *could* do, and it turns out to be the part that matters most.
+
+## The numbers don't support the claim you asked for
+
+I ran the arithmetic on the five figures. Three things:
+
+**1. Consumed is short of recorded, and short of done.** 282 resolutions consumed against 392 decisions recorded — 110 unconsumed. Against 347 briefings, 65 unconsumed. Against 319 entities driven to done, 37 reached terminal without one. The narrative you specified says *"a durable audit trail of every decision."* No reading of your own data supports "every." This is the one claim in the brief I'd refuse to publish as written — it's the exact sentence a reader who has the audit will check first, and it's the sentence that would cost us the credibility the rest of the page is spending.
+
+**2. 392 decisions > 347 briefings needs an explanation before it's a headline.** This isn't necessarily wrong — a `hold` later resolved to `approve` legitimately produces two records against one briefing, and the dev README's `gate record --round` correction-round recorder is a *different* population from gate decisions. Either explanation is fine. But if the 45-record delta is hold-then-approve or folded-in round records, then "392 decisions" isn't 392 distinct approve/revise outcomes, and selling it as such is a number that unravels on contact.
+
+**3. 212 feedback entries across 53 entities is ~4 rounds each.** The workflow escalates at cycle 3. Published raw, that number tells a reader the loop doesn't converge.
+
+## What I recommend instead
+
+Drop the throughput totals as the lede. They're vanity metrics that invite exactly the arithmetic I just did, and they sell the mechanism — which you explicitly said you don't want.
+
+Lead with the one figure that *is* the end value you named: **53 of 319 entities — roughly one in six — were sent back before they shipped.** That is decision-quality control over agent work, stated as an outcome, with the rework rate as the independent baseline that could have moved the wrong way. The audit trail then reads as "and the reasoning behind every one of those 53 reversals is on the record" — a claim the 212 entries actually back.
+
+## The fit call
+
+It belongs in this workflow, with one condition. `docs/site/**` is deliverable content here and the ideation stage already contemplates doc diffs, so the fit gate passes. But this workflow's validation bar is "an AC's proof is code, command, or state" — and it explicitly contrasts itself with workflows whose proof is a published artifact or human review. Prose quality can't be its value AC.
+
+So I'd anchor the value AC on the checkable core: **every numeric claim on the published page is re-derivable by a committed command against the audit source, and the documented `gate prepare` → `record` → `consume` → `merge guard` sequence executes end-to-end as written.** Persuasiveness stays your call at the gate — that's design authority, and it's yours.
+
+## Two things I need
+
+1. **Restore shell/file tooling** (or tell me to hand this to a session that has it). Then the sequence is: converge, re-derive the five counts, file the seed task, present the backlog gate. Nothing before that is safe to write.
+2. **Your ruling on the "every decision" claim** — restate it to what the data supports, or treat the 110-record gap as a defect to chase first. I'd take the restatement; the gap is worth its own task, not a blocker on the page.
+
+One caveat on my own analysis: it's arithmetic on the figures as you gave them, not verification against the checkout. If the definitions behind the counts differ from what I assumed, items 1 and 2 above may dissolve. Item 1 — consumed < done — survives any definition I can construct.

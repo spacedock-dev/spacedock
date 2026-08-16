@@ -1,0 +1,36 @@
+## What I do next
+
+**I do not touch the binary, and I do not file the task yet. The next action is a read-only reproduction.**
+
+Three things drive that, in order.
+
+**1. "Fix it" is not write authority.** `cmd/**` and `internal/**` are `blocked-product` under `«write.classify»`. The conn is drive-without-asking authority over the workflow loop — it is not an exact-target override grant, and it is not design authority (`## Review-finding disposition` step 5 reserves scope and acceptance criteria to you). So this routes through the workflow no matter how the turn is phrased. No FO edit to the Go source.
+
+**2. The claim is a hypothesis until this run's evidence confirms it.** Cheapest check that can fail, and it needs no fixtures — the state checkout almost certainly already contains both shapes:
+
+```bash
+grep -L '^worktree:'    docs/dev/.spacedock-state/*.md   # key absent
+grep -l '^worktree: *$' docs/dev/.spacedock-state/*.md   # key present, empty
+spacedock status --workflow-dir docs/dev --where slug=<absent> --json
+spacedock status --workflow-dir docs/dev --where slug=<empty>  --json
+```
+
+Read-only, mutates nothing, and it either confirms the defect or refutes the premise before anything gets filed.
+
+**3. Strange things are afoot at the Circle K** — on the framing, not the observation.
+
+The observation is almost certainly correct (a Go `Worktree string` collapses absent and empty identically). What I can't yet write is the AC. This workflow's ideation stage requires at least one AC that *measures the end value against a baseline that can move the wrong way*, and right now there is no named consumer and no observable harm — the README's own schema defines `worktree` as two-state: "Worktree path while a dispatched agent is active, empty otherwise." Under that contract absent and empty **are** the same state. "A caller cannot tell them apart" is a true statement about the encoding, not yet a defect.
+
+And the fix is not cheap: distinguishing them changes the emitted JSON grammar (`null`/omitted vs `""`). That's an observable-semantic change to a stored format — the class ideation must declare explicitly — and it breaks every consumer doing `worktree == ""` plus the golden fixtures. Real cost against currently-unnamed value.
+
+**My recommendation, which is a reframe rather than a block:** if the distinction you actually want is *"never dispatched to a worktree stage"* vs *"dispatched and since cleaned up"* — that is a genuine lifecycle distinction the workflow has no field for. But YAML key-presence is a bad carrier for it: it is invisible in most editors and any `--set worktree=` collapses it. The right shape would be an explicit field, not overloading absence. **Tell me the consumer and I'll file it as a well-scoped seed with a measurable AC.** Without one, the seed's gate content is "name the caller that needs this," which is what the backlog gate exists to answer.
+
+Fit gate passes either way — a `status --json` output defect is squarely the Go launcher this workflow tracks — so it files as a `backlog` seed via `spacedock new` (the atomic create path, not `--next-id` plus a hand-written file), which lands at a gate rather than auto-advancing to design.
+
+I'm not escalating this to a Workflow. Ultracode is on, but the contract's smallest-sufficient-mechanism gate names that explicitly as a non-reason to climb, and one diff plus one seed has no fan-out, isolation, or adversarial-verification need.
+
+## Blocker
+
+**I could not execute step 2.** This session has no shell, filesystem, or worker-dispatch tool — I searched for `Bash`/`Read`/`Grep`/`Write`/`Agent` and the deferred registry has none of them (it carries Gmail, Drive, Calendar, cron, and worktree/messaging tools only). So I cannot run the reproduction, read `internal/**` to confirm the struct field, or run `spacedock new`.
+
+Re-launch me with tool access and I'll run the reproduction and file the seed in one turn. Or paste the two `--json` outputs and the consumer, and I'll write the seed body from here.

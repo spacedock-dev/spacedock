@@ -1,0 +1,28 @@
+## What I do next
+
+Reproduce the claim before I file anything. Concretely, three probes, in this order:
+
+1. **Behavioral repro on a throwaway fixture** — build a scratch workflow at `/tmp/wt-absent-vs-empty/`, with two entities: one carrying `worktree:` present-and-empty, one with the key deleted outright. Then `spacedock status --workflow-dir /tmp/wt-absent-vs-empty --json` and diff the two entity objects. That is the cheapest check that can fail, it mutates nothing real, and it either confirms your mechanism or refutes it in about two minutes.
+2. **Check the second JSON path** — `status --read <ref> --json` is documented as returning "the file's frontmatter." If it already preserves absent-vs-empty while the table path flattens it, this is an inconsistency between two emitters, not one lossy field, and the scope is different.
+3. **Read the emitter** — find the struct backing the `--json` row in `internal/**` and check whether `Worktree` is a bare `string` (no `omitempty`) or a pointer. That names the exact falsifying edit for whatever AC comes out of this.
+
+**Why probe rather than file straight away:** the contract makes a reported failure a hypothesis to confirm against this run's evidence, not a verdict to apply. It matters here specifically, because the answer changes whether there is a task at all and what its acceptance criteria measure.
+
+## The blocker, stated plainly
+
+**I cannot run any of this.** This session has no shell and no file tools — I searched, and `Bash`, `Read`, `Grep`, `Write`, `Edit` are not available; `TaskCreate` is a todo list, not a runner. So I also cannot run `spacedock new` to file the seed, or `spacedock dispatch build` to dispatch a worker. Nothing has been filed, and nothing is in flight. The commands above are yours to run, or restore the tool surface and I'll run them.
+
+## Two things I would not do, regardless of the conn
+
+- **I don't write this fix.** `cmd/**` and `internal/**` are `blocked-product` in the write classifier. "You have the conn" is a drive grant; it is not an exact-target override for direct-FO editing. This routes through a dispatched worker in a worktree even with the conn.
+- **I don't climb to a Workflow for it.** Ultracode being on is explicitly named in the contract as an invalid reason to raise the mechanism. One binary probe and a seed file is the rung that reaches.
+
+## My read, and the part that's yours
+
+I expect probe 1 to confirm your description of the *behavior* and still leave open whether it's a *defect*. `docs/dev/README.md` documents `worktree` as "Worktree path while a dispatched agent is active, empty otherwise" — two states, not three. The shipped Task Template writes `worktree:` present-and-empty into every entity, so "key absent" isn't a state this workflow's own creation path produces. And the FO contract branches on set-vs-empty only ("when `worktree:` is set, write to the worktree copy; when empty, write to main"). If that holds, collapsing both to `""` is the intended normalization, and distinguishing them invents a third state the schema doesn't have.
+
+That matters because the fix is not cheap. `status --json` is machine input to the FO's own boot path (`--boot --identify --json`, `--next --json`), so re-typing the field to nullable or `omitempty` is a declared semantic change to a machine output with live consumers — a compatibility call that's yours, not mine, and one that pulls in the detached adversarial audit before merge since `status` is a high-stakes surface.
+
+**Recommendation:** if the real need is catching an entity whose frontmatter is missing a required key, the cheaper rung is a `status --validate` diagnostic — additive, breaks no consumer. If you want callers to genuinely branch on absent-vs-empty, say so and I'll seed it that way; that's the scope question I'd put to you at the backlog gate, which fires immediately since `backlog` is `gate: true, initial: true`.
+
+Tell me which, or hand me a shell and I'll run the probes first.

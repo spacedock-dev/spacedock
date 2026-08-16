@@ -1,0 +1,35 @@
+## Next action: reproduce the claim before anything is filed
+
+I'm not filing a seed task yet. The next action is a two-minute falsification of the premise, because everything downstream is shaped by whether it holds.
+
+**Why this and not `spacedock new`.** Your report is a hypothesis about this binary's behavior, and the contract's bar is that a failure is read from this run's evidence, not from a handoff's label. The backlog gate exists to "decide whether design should start" — arriving at that gate with *"the captain says the binary does X, unverified"* is the asserted-not-demonstrated failure the probe discipline names. The reproduction is the cheapest check that can fail, and I have to run it before the gate regardless. Running it before the seed exists just avoids putting a phantom in the queue if it's refuted.
+
+**The check** — a scratch fixture, not live state (two stubs differing in exactly one thing: `worktree:` present-but-empty vs. the key deleted):
+
+```bash
+# from repo root, against a throwaway fixture dir — never the live checkout
+spacedock status --workflow-dir /tmp/spike-worktree-json --json
+spacedock status --workflow-dir /tmp/spike-worktree-json --read <ref> --json
+spacedock status --workflow-dir /tmp/spike-worktree-json --validate
+```
+
+Three outcomes, three different tasks:
+1. Both emit `""` → reproduced, and I check whether `--read`/`--boot`/`--next` share the emitter (the fix's real surface, not just `--json`).
+2. Absent emits `null`/omits the field → refuted, nothing to file.
+3. `--validate` rejects the absent-key entity → the absent state isn't reachable in a valid entity, and normalization is the emitter behaving correctly. That dissolves the defect rather than fixing it.
+
+**I can't execute this here.** This session exposes no shell or file-read tool — ToolSearch returns nothing for Bash/Read/Grep. So either enable one and I'll run it, or run the three commands and paste the output. I'm flagging that rather than describing a repro as though I'd done it.
+
+## The thing I'd push back on
+
+Separate from whether it reproduces: I don't think "cannot tell the two apart" is yet established as a *defect*. `docs/dev/README.md`'s own Field Reference defines `worktree` as *"Worktree path while a dispatched agent is active, **empty otherwise**."* Under that schema, absent and empty denote the same state, and collapsing them is the emitter honoring the contract.
+
+For this to be Material rather than Needs-decision, the disposition policy wants three fields that are currently blank: the released caller and its normal workflow, the observable harm, and the value AC or boundary at risk. Concretely — which consumer reads `worktree` from JSON and would branch differently on `null` vs `""`?
+
+That isn't pedantry about paperwork. `worktree` distinguishes absent from empty in JSON is a *mechanism* AC. Ideation requires at least one AC that measures the end value against a baseline that can move the wrong way, and here that AC can only be about a caller doing something it couldn't before. If no such caller exists, the task can't clear its own ideation gate — better to learn that now than in a rejected round. It may also change the fix: if the answer is "the tracker bridge needs to distinguish never-dispatched from dispatched-and-released," the right change might be a distinct state value, not a JSON null.
+
+## What happens next
+
+Once the repro comes back positive and a consumer is named, I file the seed and present the backlog gate in the same turn — repro output and the named consumer as its evidence. I won't stop and ask permission to advance.
+
+Taking "you have the conn" as authority to drive the loop and resolve gates. It doesn't cover the design premise above — whether the schema *should* carry this distinction is yours to rule on, and I'd rather get that ruling before ideation than after.

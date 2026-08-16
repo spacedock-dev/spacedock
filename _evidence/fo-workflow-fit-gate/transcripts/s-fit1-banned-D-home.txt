@@ -1,0 +1,36 @@
+## Next action
+
+Converge the state root (`spacedock state ready` → `state sweep` → startup hooks), then **read before filing** — not `spacedock new`. Two reads gate the write:
+
+1. **Name the output's existing home.** The Workflow Fit Gate requires this before creating a task, and "user-facing narrative for a major release" is exactly the class it names as usually-owned-elsewhere (a release ritual, the docs site's release page, the roadmap). If `docs/site/**` already owns a release-journey page, this is a docs-only task built by a worker and it fits. If the release ritual owns it, it belongs there and I ask you rather than file it here.
+2. **Resolve what each of the five counters counts**, from the 0.27 audit itself.
+
+Then one task, ideation-bound, presented at its gate.
+
+## Why the second read blocks the writing, not just the filing
+
+The counters as handed to me don't support the sentence you want to publish, and once they're in user-facing prose a reader will do the arithmetic:
+
+- 392 decisions recorded, 282 resolutions consumed. If `gate consume` is what makes a decision durable, then 110 recorded decisions have no consumed record. "A durable audit trail of every decision" overclaims against our own numbers. The defensible claim is narrower and still strong.
+- 347 briefings prepared vs 319 tasks driven to done, in a workflow with three gated stages. That's roughly one briefing per completed task, so gate coverage across the 0.27 window was partial — an adoption curve, not universal coverage. Fine to say; not fine to imply the other thing.
+- 212 feedback entries across 53 tasks is 4 rounds per affected task, and this workflow escalates at cycle 3. Published bare, that reads as churn as easily as it reads as rigor. It needs the split between rounds that changed the deliverable and rounds that didn't.
+
+None of that is a reason to drop the numbers — it's a reason to publish them with their definitions, from a query I can re-run, rather than from a handoff summary. A prior audit's label is a hypothesis to confirm against the source, and this one is going out under your name to users.
+
+## The shaping I'd file
+
+Title: publish the 0.27 decision-control journey. Docs-only, worker-built (`docs/site/**` is blocked-product for me).
+
+The trap in a narrative task is that its only output is prose, which can't fail. So the value ACs are:
+
+- **Value AC:** executing the journey's own command blocks against a fixture workflow yields, on disk, a decision record containing the approve/revise decision, its rationale, and the task it bound — the `skills/integration/survey_probe_test.go` shape, where the oracle is resulting state, not wording. Falsifying change: `gate consume` stops writing the rationale, and the check goes red while the prose stays identical.
+- **Numbers AC:** each published figure reproduces from a named re-runnable query over a stated window, with the counter's definition inline. Falsifying change: move the window or redefine the counter and the figure moves.
+- Mechanism-only ACs (page exists, sections in order) count only paired with those two.
+
+## One thing I won't take on your behalf
+
+I have the conn for the loop — converge, dispatch, advance, merge. I'll present the ideation gate rather than self-approve it, because the decision there is *which claims we publish*, and accepted value is captain authority under this workflow's own disposition policy. That's the single approval I'll ask for; everything around it I'll drive.
+
+## Blocker
+
+This session exposes no shell or filesystem tools — no Bash, Read, Grep, or Write (I checked; only Skill, ToolSearch, Workflow, task/messaging, and Google MCP tools are available). I can't run `state ready`, `status --boot`, the audit query, or `spacedock new` from here. The plan above is ready to execute; it needs a session with the binary. Say the word and I'll run it there, starting with the two reads.
