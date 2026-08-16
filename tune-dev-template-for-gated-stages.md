@@ -398,3 +398,32 @@ The CI-agnostic audit was run as a check rather than an assertion: every added m
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — Captain wrong-target and CI-agnostic scope correction (shipped template + canonical mod, not the installed workflow); surface +28 net/2 files vs estimate +23 (+21.7%, in band); AC unchanged
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Cycle-2 validation, independently re-exercised against code commit e49154829 (revert cc728f119 + corrected deliverable), never from the report: diff touches ONLY skills/commission/references/templates/development.md and mods/pr-merge.md; the docs/dev diff is EMPTY; template coverage 13/13 at 53 lines against the 55 cap from the true 5/13 baseline; the three Gate content rows byte-unchanged
+  `git diff --name-only d1d8f745f..e49154829` lists exactly the two shipped paths; `git diff -- docs/dev` empty and docs/dev at cc728f119 is byte-identical to the stack tip; wording-neutral 13-row walk scripted fresh reads 5/13 before (B3 I1 I6 V1 V2) and 13/13 after; fenced body 37 -> 53 vs cap 55; the three `- **Gate content:**` rows hash identically (sha256 d7acb0e2) at unchanged line numbers 74/81/94.
+- DONE: CI-agnosticism as a check: added mod lines grep clean for lane, e2e, WAITING, environment, runtime-live, stack27, this repo's PR numbers and owner; no added sentence names this repository; the six generic mechanics survive; the live-lane ruling is correctly ABSENT (homeless by design, deferred to the local refit)
+  All 12 added mod lines grep clean for every banned token (only bare number: 422, the HTTP status); no added sentence in either file names this repository or the product; create-then-link, view --json read-back over the success banner, merged-ancestor-is-complete, base-chain-over-membership, reviewed-bytes discipline, and REST PATCH over `gh pr edit` are all present; no lane/approval/WAITING sentence exists in the added text.
+- DONE: PR #711 body byte-equal to reviewed file (sha256 d8b44634007308513ac6bff0) via the mod's own REST-PATCH path; suites green plain and -race; contractlint green; verdict PASSED or REJECTED with per-AC citations
+  Live body minus the jq-appended newline hashes d8b44634007308513ac6bff0b986dc3991e9914c208f390581e320c1f4985456; edit trail totalCount 2 = creation revision (21:45:29Z = createdAt) + exactly one rewrite (23:45:03Z), so cycle-1's "0 edits" read stands and the one rewrite is the cycle-2 PATCH; `gh pr edit` re-exercised on #711's own bytes exits 1 (projectCards) leaving totalCount 2. `go test ./...` and `-race` both exit 0, 40 ok / 0 FAIL lines, contractlint ok in both; `status --validate` VALID exit 0 (125 pre-existing archived-scope warnings, peer-owned).
+
+### Per-AC citations
+
+- AC-1 PASS: 13/13 from the true 5/13 shipped baseline at 53/55 lines; Gate rows byte-unchanged. The AC's "versus 7/13 today" described the docs/dev copy; the shipped baseline is lower, so the value property holds a fortiori.
+- AC-2 PASS: direction is requested only by the ideation-owned `## Proposed approach` prompt; the backlog-owned prompts and `### Feedback Cycles` ask scope, decision proof, and correction rounds, never a direction.
+- AC-3 PASS: `Estimate: {+NNN} net LOC across {M} files, tolerance {±NN%}.` plus separate `Semantics this may change:` line; the 53-line body piped to `status --new` in a scratch sd-b32 workflow exits 0, mints an id, preserves all eight headings and the ± byte, and validates.
+- AC-4 PASS (retargeted per captain Finding 1): exactly the two shipped paths in the diff; no entity, gate record, or `*_test.go`; filing_readme_template_test.go untouched and green.
+- AC-5 FAILED as written — flagged for Review-finding disposition, see finding below. The behavior half (digest divergence) remains proven by cycle-1's exercise on unchanged machinery; the prose half was reverted with docs/dev and has no shipped home.
+- AC-6 PASS under the correction-round reading this dispatch directs: title equals the entity title from creation; body byte-equal to the reviewed file via exactly one rewrite through `gh api PATCH` (the mod's own repair path, not `gh pr edit`); baseline #699 (now MERGED) still carries the branch-derived title.
+- AC-7 PASS: the mod diff is a single hunk inside `## Hook: merge`; startup and idle spans byte-unchanged; `gh pr edit` fail-closed re-observed live rather than trusted from cycle 1.
+
+### Reviewer findings
+
+- New finding (recommendation; no candidate change made): AC-5's deliverable half is homeless after the captain's wrong-target correction — the freeze-routing sentences were reverted with docs/dev and no shipped artifact carries a freeze rule to extend (grep over skills/ and mods/ is empty). Same class as the live-lane ruling, but the cycle-2 deviation declaration named only the live-lane ruling. Proposed: not material (field 3 is `none:` — AC-5 is not a value AC and no protected boundary is at risk); ownership the captain's local refit; disposition route for decision — captain ratifies the deferral or narrows AC-5 at this gate.
+- Deferred risk, carried from cycle 1, now attached to the shipped mod's prose: the prescribed `gh stack view --json` membership read is clone-local (works only where `.git/gh-stack` exists). Promote to material if a ceremony must run from a fresh clone for an existing stack.
+- No material findings; no polish findings.
+
+### Summary
+
+Recommend PASSED, contingent on the captain's gate-time ruling on AC-5: six of seven ACs hold re-exercised against e49154829, the deliverable is confined to the two shipped artifacts with docs/dev byte-clean, coverage is 13/13 at 53/55 from the true 5/13 baseline, the added mod prose is fully CI-agnostic with the six generic mechanics intact and the live-lane ruling correctly absent, and PR #711 carries the reviewed bytes through the mod's own REST-PATCH path. AC-5 fails as written because its only home left the approved surface with the captain's own Finding 1 — a rejection cycle cannot fix it (any fix is out of surface or captain-only), so it routes for decision alongside the already-declared live-lane deferral. One deferred risk carried forward with its promote condition.
