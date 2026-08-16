@@ -425,3 +425,60 @@ Loop state on 98d4758bc, both stopped: claude run1 GREEN, run2 RED (this finding
 run2 GREEN, consec 2, run3 killed in flight. Codex passing twice after two pre-correction REDs is
 the evidence that the placement correction itself holds. Offline on this candidate: full
 AutoContinue suite, `-count=20`, `-race` and contractlint all green.
+
+### Implementation close-out (AC-4 partial; codex met, claude blocked out of scope)
+
+**Findings 1 and 3 landed, both FO-authorized, both additive.** Final layer: `424ed85fe` (align the
+gate read to the report's entity copy), `eb4e13625` (read every copy that carries a record; the
+authorized single-path remedy was falsified by codex live and by an old-base control that ruled out
+the rebase), `671fe9746` (accuse only a resolved gate — `withdrawn` is sanctioned self-correction,
+not a bypass).
+
+**Gate-state vocabulary, enumerated from source at FO requirement.** `attemptState` has exactly four
+returns and `Summary.State` is assigned from it alone, so no caller widens the range. `invalid` is
+UNREACHABLE as a state — the decoder rejects a conflicting withdrawal+resolution before
+`CurrentSummary` sees it — so an earlier `invalid` branch was dead code and was removed. What
+replaced it: a copy with no record stays benign, but a gates block that exists and fails to decode
+now fails hard instead of being skipped into a green.
+`TestAutoContinueGateFixturesParseAsIntended` pins each fixture to the state it names and pins that
+the decoder still rejects `invalid`.
+
+**AC-4 result on `671fe9746`.**
+
+- **codex: MET.** runs 1-3 all GREEN, LOOP COMPLETE at run 3, budget 8. No leg graded on any code
+  this change introduces.
+- **claude: NOT MET.** 8 runs, 4 GREEN / 4 RED, best streak 2, budget exhausted.
+
+All four claude reds are `implementation-worker-not-dispatched` from `assertWorkerLifecycle` — the
+shared helper this entity's Out of scope section names as audit finding 10's territory and consumes
+as-is. Two distinct modes, neither a bypass and neither graded by anything this change added:
+
+- `spawns=2` (run 2): the validator recommended REJECTED, the FO routed through feedback, dispatched
+  a second validator, cycle 2 recommended PASSED, gate left open. The end state is exactly what the
+  journey requires; only `spawns != 1` failed.
+- `spawns=0` (runs 4, 5, 6): stage matching is `strings.Contains(lower(description), "validation")`
+  and the FO's real dispatch descriptions were `Validate auto-continue-task implementation`,
+  `Revise auto-continue-task implementation`, `Re-validate auto-continue-task cycle 2` — none
+  contain the noun. Three agents dispatched, zero counted.
+
+So claude's green is a coin flip on FO phrasing and cycle count, which is the concrete mechanism
+behind the finding-2 variance escalated to the captain. Not fixed here: widening the matcher or the
+spawn count changes what the harness certifies for every journey using the helper. No named risk and
+no xfail recorded, per FO instruction.
+
+This is the change working as designed. AC-3 made the dispatch-evidence check run on claude for the
+first time; the first thing it found is that the helper it calls is not robust to claude's dispatch
+phrasing. Discovery on a host never exercised before, not regression.
+
+**Content identity across the restack.** Rebased from base `58043ed97` onto `b0bb159ff` (confirmed by
+`ls-remote` at rebase time). Commit map `355124469 -> 5aeb...`/`84ea009e4 -> 424ed85fe`,
+`98d4758bc -> eb4e13625`, `2b9efb97f -> 671fe9746`. The layer's own diff is byte-identical across the
+move: `git diff {base}..HEAD | sha256` is
+`ff7e735fa35e085fae35bf43872dc5d2ccdd18f51c2a62b5e85e2934e3752493` both before and after, 10 files
++993/-85 unchanged. Post-rebase `go vet` on both tags, the AutoContinue suite, contractlint, gofmt and
+a full `go test ./...` all agree, so the loop evidence above stands on the rebased bytes. The nested
+inline state-commit fix beneath cannot interact with this journey: every fixture builds in `t.TempDir()`
+and is never nested below a git root.
+
+**Stack.** Force-pushed with a lease read from `ls-remote`. Final head `671fe9746`. PR #723 is layer 5
+of stack #720, verified by GraphQL read-back: 718, 719, 721, 722, 723, 724.
