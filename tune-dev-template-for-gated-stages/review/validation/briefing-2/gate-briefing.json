@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:42chs9dh7nq22f8at4szvbxp:validation:attempt-2:revision-1",
+  "question": "Approve 42c cycle-2 validation as PASSED?",
+  "artifacts": [
+    {
+      "id": "artifact:42chs9dh7nq22f8at4szvbxp:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/7aa9204bcd79f1e6fdbfd9ec426d6e6dd8a151cd/tune-dev-template-for-gated-stages.md",
+      "rev": "sha256:8f1e7fcdef988be193128ab07146c5ddf079e770962a0fa72cd295505e16e49e",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: cycle-2 validator verdict on the corrected shipped-artifact deliverable."
+    }
+  ]
+}
