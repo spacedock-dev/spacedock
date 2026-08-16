@@ -1,11 +1,11 @@
 ---
 id: pph11xwsa2s3z73ts983wd0k
 title: Remove the copied proof-gap oracle from the reconciliation lint
-status: validation
+status: done
 source: "Captain directive 2026-08-15 after ffacf584a reintroduced the pattern zvk9 deleted; zv ensign composition report flagged it"
 started: 2026-08-15T23:04:25Z
-completed:
-verdict:
+completed: 2026-08-16T03:34:36Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-remove-proof-gap-copied-oracle
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: 'Captain 2026-08-15 (push them for the stack): validation PASSED approved; lands as a stack layer'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:713
+archived: 2026-08-16T03:34:36Z
 ---
 
 ffacf584a added `wantProofGaps`, a hand-written map of proof-gap bindings, DeepEqual-checked against `readRuntimeProofGaps` - an AST reader that derives the same data from the live test sources three lines away. The copy's only failure mode is "you forgot to update the copy": it catches no real defect and reintroduces the two-file lockstep tax for XFAILs on live-proof tests, one abstraction above the wantGaps map the workflow just removed for the same reason.
