@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:18963egcskzxaje6b5vnas3q:backlog:attempt-1:revision-1",
+  "question": "Approve simplify-feedback-rejection-flow into ideation (captain pre-directed: dispatch 18)?",
+  "artifacts": [
+    {
+      "id": "artifact:18963egcskzxaje6b5vnas3q:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/189d8507e184a3477073644801b04bcdb02345ec/simplify-feedback-rejection-flow.md",
+      "rev": "sha256:34fc0b985a67f78f3337067ff5dad867a0281e615c2d1d6d32b2722345997af1",
+      "mediaType": "text/markdown",
+      "summary": "Captain principle: more than 4-5 steps is a footgun; both live failure mechanisms are step-count casualties."
+    }
+  ]
+}

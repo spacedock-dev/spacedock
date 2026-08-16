@@ -9,6 +9,29 @@ verdict:
 score: "0.85"
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:18963egcskzxaje6b5vnas3q:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:18963egcskzxaje6b5vnas3q-backlog-1
+              briefing:
+                id: briefing:18963egcskzxaje6b5vnas3q:backlog:attempt-1:revision-1
+                digest: sha256:db36beb0817ac7684245ed81ade8d77f4e20fb9a3e8aefb91acfa479f41497e0
+                request-digest: sha256:a8a79d493bc4736f5cae81387d4165fabc076cd3e6487a96d03ea5770a99db73
+                room-ref: ./simplify-feedback-rejection-flow/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:18963egcskzxaje6b5vnas3q:backlog:1
+                briefing: briefing:18963egcskzxaje6b5vnas3q:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T04:00:54.684905Z"
+                decision: approve
+                reason: 'Captain directive 2026-08-16: dispatch 18'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Redesign skills/feedback-rejection-flow/SKILL.md from 8 steps to at most 5, with the single-publish shape the diagnostic evidence recommends: accumulate the round, publish ONCE under one round id, and make the gate re-entry a single unbundled step. Every step becomes one action with one completion condition; no step may bundle a tail an FO can drop.
