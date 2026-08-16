@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:18963egcskzxaje6b5vnas3q:ideation:attempt-1:revision-1",
+  "question": "Approve simplify-feedback-rejection-flow ideation into implementation, ruling the surface amendment and the fixture-prose repair?",
+  "artifacts": [
+    {
+      "id": "artifact:18963egcskzxaje6b5vnas3q:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9dd5c968561527b28da964b77270dbb79e35afa0/simplify-feedback-rejection-flow.md",
+      "rev": "sha256:d52020a4fb28b46a2800e24897873d285cb4ca88dc85dc0daaa093f169554dc1",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: 5-step single-publish flow designed and grounded in reproduced mechanisms; the +107-word surface amendment is the fix itself; two rulings queued."
+    }
+  ]
+}

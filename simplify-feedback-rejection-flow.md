@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:18963egcskzxaje6b5vnas3q:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:18963egcskzxaje6b5vnas3q-ideation-1
+              briefing:
+                id: briefing:18963egcskzxaje6b5vnas3q:ideation:attempt-1:revision-1
+                digest: sha256:9441cd69c131ec2835738e9962409051be1d92fefe5582925f46dafb4f31e231
+                request-digest: sha256:ed65b1874c4c30fd003d34fb96d7811c0a85d90e09e0acb1c467bebc39b88c57
+                room-ref: ./simplify-feedback-rejection-flow/review/ideation/briefing-1
 ---
 
 Redesign skills/feedback-rejection-flow/SKILL.md from 8 steps to at most 5, with the single-publish shape the diagnostic evidence recommends: accumulate the round, publish ONCE under one round id, and make the gate re-entry a single unbundled step. Every step becomes one action with one completion condition; no step may bundle a tail an FO can drop.
