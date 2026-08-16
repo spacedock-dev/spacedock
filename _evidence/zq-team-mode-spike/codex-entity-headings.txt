@@ -1,0 +1,10 @@
+25:## Stage Report: implementation
+30:### Summary
+33:## Stage Report: validation
+38:### Summary
+44:## Stage Report: implementation (cycle 2)
+49:### Summary
+53:### Feedback Cycles
+55:- Cycle 1: REJECTED — validation reviewer; surface 1 marker vs estimate 1 (100%); AC unchanged
+56:## Stage Report: validation (cycle 2)
+61:### Summary

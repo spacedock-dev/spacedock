@@ -67,7 +67,9 @@ Host-neutral, in both branches:
 ## Spike: the riskiest unverified mechanism, run first
 
 One live run per runtime on the composed tree (571017df3) with the team-mode prompt and a persisted
-native rollout. Artifacts: `/Users/clkao/.claude/jobs/4e49247e/tmp/spike-artifacts/{codex,claude}/`.
+native rollout. Distilled, committed evidence: `_evidence/zq-team-mode-spike/` (topology traces,
+durable heading shapes, graded verdicts, and how to reproduce). The raw streams stayed in the job
+scratch dir and are not durable.
 
 - **Codex (459s, RED on `rejection-gate-not-prepared` only).** The native rollout carries the exact
   determined reuse shape: `spawn_agent` ×2 (`…_rejection_task_implementation`,

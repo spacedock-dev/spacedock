@@ -1,0 +1,5 @@
+--- FAIL: TestLiveCommonRejectionFlow (458.59s)
+    shared_live_runner_test.go:109: FAIL /rejection-flow owner= observed=[rejection-gate-not-prepared]
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	459.041s
+FAIL
