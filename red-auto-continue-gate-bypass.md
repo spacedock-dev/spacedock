@@ -25,6 +25,7 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+worktree: .worktrees/spacedock-ensign-red-auto-continue-gate-bypass
 ---
 
 ## Problem
