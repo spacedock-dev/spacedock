@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x2ezetxr82pztr4pqt1g4dhx:validation:attempt-1:revision-1",
+  "question": "Approve rule-superseded-verdict-vocabulary validation as PASSED?",
+  "artifacts": [
+    {
+      "id": "artifact:x2ezetxr82pztr4pqt1g4dhx:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3ecd31c0528b07b01de121cc3d6196d417e7036f/rule-superseded-verdict-vocabulary.md",
+      "rev": "sha256:ebd205590151a9fd919175ce212e2228cd26c4dcfdfdf16938abf5e1bee056af",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: validator PASSED including the surface-overrun ruling."
+    }
+  ]
+}
