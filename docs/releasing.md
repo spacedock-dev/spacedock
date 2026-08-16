@@ -110,6 +110,25 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    emergency cut when the live matrix is unavailable, the gate accepts the auditable
    `SPACEDOCK_E2E_GATE_WAIVER` repo variable instead.)
 
+   **Equivalent prior green.** The gate is mechanical — it matches a run to the
+   exact SHA — but the evidence question is about trees, not SHAs. Before burning a
+   fresh matrix, check what actually changed since the last greened commit:
+
+   ```bash
+   git diff --name-only <greened-sha> "$REL_SHA"
+   ```
+
+   When that diff contains only the stamp manifests (`.claude-plugin/plugin.json`,
+   `.codex-plugin/plugin.json`, an unchanged-minor shared-core stamp) and files no
+   live lane loads (this repo's own workflow docs under `docs/dev/`), the prior
+   green already proved this tree: a fresh run re-buys the same evidence plus one
+   roll of host stochasticity. In that case the cutter MAY satisfy the gate with
+   `SPACEDOCK_E2E_GATE_WAIVER` instead of a fresh dispatch, citing the equivalent
+   run id and the `git diff --name-only` output in the waiver's audit trail
+   (captain ruling, 2026-08-15: the v0.27.0-pre5 delta was three files, zero
+   live-lane bytes). Any product file in the diff — anything a lane builds, loads,
+   or drives — voids the equivalence and a fresh dispatch is required.
+
 5. Write a changelog. For a stable release, inventory everything from the prior
    stable tag through the candidate, including changes that first appeared in a
    prerelease. Inventory first; compress it into public notes second:
