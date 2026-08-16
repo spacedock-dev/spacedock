@@ -52,6 +52,7 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+pr: "#718"
 ---
 
 Redesign skills/feedback-rejection-flow/SKILL.md from 8 steps to at most 5, with the single-publish shape the diagnostic evidence recommends: accumulate the round, publish ONCE under one round id, and make the gate re-entry a single unbundled step. Every step becomes one action with one completion condition; no step may bundle a tail an FO can drop.
