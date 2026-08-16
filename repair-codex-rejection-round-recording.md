@@ -354,3 +354,53 @@ mid-stage correction the XFAIL restore was dropped as a deliverable and kept as 
 one-line contingency, which removes three files from the expected surface and makes the
 unbound stack full run AC-2's terminal proof — with the accepted risk that an incomplete
 repair reddens that matrix rather than being absorbed.
+
+## Stage Report: implementation
+
+- DONE: Execute the gated design exactly: the binary fix (state commit becomes a real commit on inline workflows), the three grading-honesty repairs, nothing absorbed from the two separately-named defects
+  `runStateCommit`'s inline branch commits the entity's commit unit through the existing path-scoped seam and never pushes; outside a Git work tree it stays an exit-0 no-op naming that reason. The prepared-gate condition gets its own `rejection-gate-not-prepared` code; `liveGrade` retains each finding's message; no XFAIL binding is added (`git grep liveXFail` shows only the pre-existing `pi` binding on `rejection-flow`). Neither named defect is touched: `journey_metrics_live_test.go` is unmodified and the assertion stays codex-only. Commits 7627cbf84, 762de7bf3.
+- DONE: The local repair loop is the gate: 5 consecutive targeted codex rejection-flow greens with the mechanism - not luck - explaining them; if the loop cannot reach 5, STOP and report with the contingency XFAIL applied, never propose the layer
+  Superseded by FO disposition, recorded here because the checklist text still reads the original bar. I stopped at max 1 consecutive green and reported rather than proposing the layer; the FO then re-scoped the bar to the in-stream mechanism chain and explicitly forbade the contingency XFAIL, because the blocker was two out-of-scope skill defects (routed to task #19), not this layer. No XFAIL was applied. Mechanism chain captured in one CI-config stream: `gate prepare` exit 1 "selected source differs from its committed Git object", then `state commit` exit 0 "Committed rejection-task in the inline workflow repository; nothing pushed", then `gate prepare` exit 0 `state=open`.
+- DONE: Base is origin/main (post-stack, post-pre6-stamp); land as a stack PR per the ratified Stacked mode for the unbound full-matrix run that is AC-2's terminal proof
+  Order reversed by captain mid-stage: this layer now sits ON TOP of the skill-rewrite layer. Rebased onto `spacedock-ensign/simplify-feedback-rejection-flow` (ba91b333f); the quoting fix was re-applied semantically to the peer's extracted `rejectionRoundEntity` and to `rejectionRoundArtifactArg`, not merged textually. PR #719, stack #720 (#718 bottom, #719 top).
+
+### Test evidence
+
+- `TestStateCommitInlineUnblocksGatePreparationChain` drives the real command surface across the whole chain on an inline fixture. Reverting `runStateCommit`'s inline branch to its no-op reds it at the `state commit` assertion — verified by running the test against pre-fix source, where it failed exactly there while its two precondition assertions passed, proving those refusals are observed rather than tautological.
+- `TestStateCommitInlineScopeAndPublishBoundary` pins that the commit is path-scoped and that nothing is pushed. Making the inline branch publish, or widening its pathspec to sweep a dirty sibling, reds it.
+- `TestRejectionUnpreparedGateReportsItsOwnCode` feeds a recorded round plus an entity with no `gates:` block and asserts the code is `rejection-gate-not-prepared` and not `rejection-round-missing`. Routing the unprepared gate back through the round oracle reds it; I confirmed the pre-fix behavior by replaying the old clause against that input, where it emitted `rejection-round-missing`.
+- `TestGradeLiveRetainsFindingMessages` asserts each finding's message survives into `liveGrade.details`, paired with its own code. Dropping the msg field or mispairing code and message reds it.
+- `TestRejectionRoundRecognizerAcceptsNestedShellQuoting` carries a live-captured command verbatim and covers a quote run on each of the four operands. Narrowing any site's quote run back to `?` reds its case; the wrong-file, wrong-entity and wrong-round controls confirm the relaxation did not widen what counts.
+- `go test ./...` plain and `-race` green on the composed tree.
+
+### Live evidence
+
+Composed-tree loop, 4 runs under CI's pinned model and reasoning effort (`--model gpt-5.6-luna`, `model_reasoning_effort=max`, via a local replica of the CI PATH shim): 2 green. `state commit` reported the inline commit in 4 of 4 runs and the pre-fix no-op string appeared in 0 of 4. The two reds were single non-overlapping codes outside this layer — one `rejection-gate-not-prepared` where the FO ended without preparing, one `implementation-worker-not-dispatched` from the worker-lifecycle selector. `rejection-round-missing` did not fire in any composed-tree run.
+
+An earlier loop measured the wrong thing: without the shim the live runner resolves a bare `codex` from PATH, a different model and effort from CI's. Those runs are retained as a labeled dataset, not counted as evidence. One of them shelled a stale pre-fix binary and passed anyway, its stream showing 4 pre-fix no-op strings and 2 raw `git add && git commit` calls — an independent live reproduction of the trap, and the reason the loop now also requires the inline-commit line rather than trusting `state=open` alone.
+
+### Declared deviations
+
+- **Surface past tolerance.** Ideation declared 5 files and ~105 insertions, tolerance ±2 files and ±35 LOC. Actual is 7 files and 512 insertions: file count at the boundary, LOC 3.7x over the ceiling. Product plus docs is 85; test code is 427. The overrun is acceptance-criteria-mandated tests the surface table allocated no lines for — AC-3's two unit tests were folded into two ~6-line rows, and AC-1's chain test was estimated at 60. Reported to the FO before the PR; no trim was requested.
+- **Scope added by FO authorization.** The recognizer quote-run fix was not in the approved design. It was found during implementation, held unchanged, proposed through the review-finding checkpoint, and applied only after distinct FO authorization.
+- **Bar re-scoped by FO.** The 5-consecutive-greens gate was replaced with the mechanism-chain proof; the contingency XFAIL was explicitly withheld.
+- **Base reversed by captain.** Landing on top of #718 rather than directly on origin/main.
+
+### Findings routed out, not absorbed
+
+- The skill documented the round recorder without its entity operand, so an FO following it verbatim got `Error: unknown gate flag: validation/1`; the same step said to invoke once and hold on failure, turning a usage error into a terminal hold. Observed in 4 of 4 runs before the skill rewrite. Provenance witness: `c355fbe44` (2026-07-23) documents the correct `gate record <entity> --round <stage>/<cycle> ...` form. Routed to task #19 and fixed there; the composed skill now names the operand and calls its omission a usage error.
+- `implementation-worker-not-dispatched` fires on this journey when the lifecycle selector matches two `Stage Report: implementation` headings, which a two-cycle rejection legitimately produces. Not investigated further; named for separate filing.
+
+### Summary
+
+The value fix landed and is proven live: an inline `state commit` now commits the
+entity, which is what lets `gate prepare` and the `needs-preparation` scheduler row
+see it, and one captured stream shows the refusal, the commit, and the successful
+retry in sequence. The two honesty repairs do their job on the composed tree — a
+run that records its round is no longer told it did not, and the one real remaining
+condition is named as an unprepared gate instead of hiding under the round code.
+The journey is not reliably green, and this layer never could have made it so: the
+dominant blocker was a skill that documented an invalid command and then forbade
+retrying it, which is why the loop bar was re-scoped and the work routed to #19
+rather than absorbed here. Two findings are named for separate filing and no XFAIL
+binding was added.
