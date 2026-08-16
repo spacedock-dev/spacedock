@@ -3,6 +3,18 @@ title: Run the rejection journey in team mode
 status: ideation
 source: "Captain ruling, 2026-08-16: do not invoke a journey in single-entity bare mode unless it is specifically testing bare-mode behavior"
 id: zqb683j8jth0tyr2eme231e2
+gates:
+    version: 1
+    records:
+        - id: gate:zqb683j8jth0tyr2eme231e2:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:zqb683j8jth0tyr2eme231e2-ideation-1
+              briefing:
+                id: briefing:zqb683j8jth0tyr2eme231e2:ideation:attempt-1:revision-1
+                digest: sha256:76ec26b36edcd5ba5fd2fd3cbbe637869ee5eb8705540f8913f822ec390b7d1e
+                request-digest: sha256:c56f2bba1b5866a1faea66a0f32e016f75bb41578fb3a6e6f5b50cf0f2bd6fe7
+                room-ref: ./run-rejection-journey-in-team-mode/review/ideation/briefing-1
 ---
 
 ## Problem

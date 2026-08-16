@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zqb683j8jth0tyr2eme231e2:ideation:attempt-1:revision-1",
+  "question": "Approve the team-mode rejection journey design: branch-keyed determined shapes (codex reuse route live; claude headless probe fails → fresh is conforming), strict per-cycle grading with topology digests, fixture heading repair, and reuse condition 5 (a review stage is always dispatched fresh — contract change reaching every workflow)?",
+  "artifacts": [
+    {
+      "id": "artifact:zqb683j8jth0tyr2eme231e2:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/131aea1936add36a2171db53751c996359c44afb/run-rejection-journey-in-team-mode.md",
+      "rev": "sha256:ffbec4342b1c6d051968c8bcc13e433ddbf31268ff2e4e71b0526c84d72701e6",
+      "mediaType": "text/markdown",
+      "summary": "Ideation complete with live spikes on both runtimes; 11 test files ~406 lines ±30%, no product Go code; one contract prose change (reuse condition 5) with declared all-workflow blast radius; AC-1: 3 consecutive conforming greens per runtime vs measured 0-conforming baseline."
+    }
+  ]
+}
