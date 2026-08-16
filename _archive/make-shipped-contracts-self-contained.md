@@ -1,11 +1,11 @@
 ---
 id: 9x6xw292fsz1b4648x9hn40y
 title: Make shipped contract content self-contained
-status: validation
+status: done
 source: "Captain review of the 0.27 stack + audit-r2 (2026-08-15); captain directive: file, dispatch off stack tip, PR as stack layer"
 started: 2026-08-15T18:35:12Z
-completed:
-verdict:
+completed: 2026-08-16T03:34:16Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-make-shipped-contracts-self-contained
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: Captain approved validation 2026-08-15; stacks as layer 11
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:710
+archived: 2026-08-16T03:34:16Z
 ---
 
 Shipped skills reference artifacts a user's machine does not have. Rewrite the seven audited instances so every shipped sentence resolves within the progressively-disclosed contract set. Base on stack layer 10 (retire-prose-grep-contract-tests); the deliverable becomes stack layer 11 - layer 10 removes the pins these rewrites would red.
