@@ -1,6 +1,6 @@
 ---
 title: Auto-continue grades a human-gate bypass as green
-status: ideation
+status: implementation
 source: "Live-harness audit finding 3 (2026-08-16); captain order: file and fast-track on the stack, local focused test first"
 id: 7xe7hxt1qce1x9b3dm0k6ymg
 gates:
@@ -24,7 +24,7 @@ gates:
                 decision: approve
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
