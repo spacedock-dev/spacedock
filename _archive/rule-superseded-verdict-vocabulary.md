@@ -1,11 +1,11 @@
 ---
 id: x2ezetxr82pztr4pqt1g4dhx
 title: Rule the superseded verdict into or out of the schema vocabulary
-status: validation
+status: done
 source: "scope-validate-warnings ideation, 2026-08-15: 4 archived entities carry verdict superseded, a token the conventional enum [PASSED REJECTED] never admitted"
 started: 2026-08-15T23:04:19Z
-completed:
-verdict:
+completed: 2026-08-16T03:34:48Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-rule-superseded-verdict-vocabulary
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: 'Captain 2026-08-16 (approve all to the stack): validation PASSED; surface overrun accepted as AC-bearing test density; lands as a stack layer'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:716
+archived: 2026-08-16T03:34:49Z
 ---
 
 Writers intentionally emit verdict: superseded for superseded entities, but the schema enum admits only PASSED and REJECTED. Archived-scope warnings are silenced now, so the bite is forward-looking: the next active entity superseded on purpose warns as invalid, and any tool trusting the enum misreads the four archived records. Decide: admit superseded (and define its semantics) or route supersede through a different field and stop the writer.
