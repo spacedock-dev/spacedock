@@ -104,7 +104,7 @@ The empty answer is unambiguous once the mechanism is exercised:
 | state | `status --next --json` | `gate prepare --artifact <entity>` |
 |---|---|---|
 | after `gate record --round`, uncommitted | `{"dispatchable":[],"ready_gates":[]}` | exit 1, `selected source differs from its committed Git object` |
-| committed | row appears once the verdict is non-rejecting | exit 0, `state=open` |
+| committed | row appears once the stage report is structurally complete | exit 0, `state=open` |
 
 An empty scheduler with no error reads as "the run is finished". Codex's *passing*
 runs escape by improvising: after `state commit` they run `git status --short`,
@@ -127,12 +127,37 @@ Two findings from the spike sharpen the picture beyond the two diagnosis account
    `state=open`. It refuses only when the selected artifact is the dirty entity.
    The unconditional half of the trap is the `status --next` drop.
 2. A clean tree is necessary but **not sufficient** for the `needs-preparation` row.
-   Measured on the same fixture, clean each time: one REJECTED validation report →
-   `ready_gates":[]`; the same report with a `### Summary` → `[]`; two reports, both
-   REJECTED → `[]`; a PASSED re-review report present → one `needs-preparation` row.
-   The **verdict** gates the row, not report completeness or count. So the gate is
-   unreachable until the re-review posts a non-rejecting verdict — the gate re-entry
-   genuinely cannot precede the re-review, and no ordering choice can avoid that.
+   The sufficient condition is a *structurally* complete stage report for the gate
+   stage: `hasCompleteStageReport` (`internal/status/entered_stage.go:36-52`) requires
+   every checklist bullet's status token to be literally `DONE` or `SKIPPED`, each
+   with evidence, plus a `### Summary`.
+
+   **Corrected — an earlier draft of this entity got this wrong.** It reported that
+   the *verdict* gates the row, from a four-way comparison that varied the bullet
+   token and the verdict together and attributed the effect to the wrong one. The
+   diagnostic agent challenged it against the parser, and the decisive isolation
+   settles it, clean tree in both cases:
+
+   | report | row |
+   |---|---|
+   | `- DONE:` bullet, "Recommendation: REJECTED" in prose | `needs-preparation` |
+   | `- FAILED:` bullet, "PASSED" in prose | none |
+
+   The scheduler reads no review semantics whatsoever. `extractChecklist` parses any
+   `- WORD:` bullet and the completeness loop then rejects any token outside
+   `{DONE, SKIPPED}`; `entered_stage_test.go`'s `"failed item"` case pins exactly this
+   with a `- FAILED:` bullet. Earlier no-row results came from `- FAILED:` bullets,
+   not from rejection.
+
+   **This inverts the consequence, and the new one is a hazard the flow must handle.**
+   A REJECTED validation report written the ordinary way — `- DONE:` bullets with the
+   verdict in prose, which is what `writeRejectionWorkflow`'s README implies, since it
+   mandates no bullet vocabulary — is structurally complete. So after step 3 commits,
+   a `needs-preparation` row can appear **while the entity still carries only the
+   rejected report**. The gate is not mechanically withheld until the re-review; the
+   FO can walk straight into preparing a gate over un-re-reviewed work. Step 5's line
+   that a `needs-preparation` row is work to perform, not a stopping condition, is
+   therefore only true *at step 5* — see the ordering note below.
 
 ## Proposed approach
 
@@ -152,6 +177,28 @@ than chosen for symmetry:
   is therefore the one action that gets its own step.
 - The gate re-entry is last, with nothing after it, because the graded end state is
   exactly "one open gate presented, then stop".
+- The re-review precedes the gate for **contract** reasons, not mechanical ones.
+  An earlier draft claimed the scheduler withheld the row until a non-rejecting
+  verdict, so the ordering was forced for free; finding 2 above retracts that. The
+  ordering stands on what the gate is *for*: it presents corrected work for a
+  decision, and `assertRejectionRoundGateBoundary` requires the prepared attempt to
+  bind `briefing:rejection-task:validation:attempt-1:revision-1` — the briefing
+  prepared over the re-review's report, not the rejected one. The conclusion did not
+  move; its justification did, and the difference matters because the mechanical
+  version implied a guard that does not exist.
+
+**Ordering note, and the one clause implementation must add.** Because a structurally
+complete *rejected* report on a clean tree already yields a `needs-preparation` row,
+step 5's "a `needs-preparation` row is work to perform, not a stopping condition"
+must not read as licence to prepare a gate the moment such a row appears. Step 5 is
+reached only after step 4's completion condition holds. Implementation should bind
+that explicitly — the cheapest form is one clause in step 5 along the lines of *this
+step is reached only from step 4's verdict; a `needs-preparation` row observed before
+that is step 3's commit landing, not a gate to prepare* — so the flow does not hand
+the captain a gate over work no reviewer has seen since the rejection. This is a
+correction to an approved design, not new scope: it stays inside
+`skills/feedback-rejection-flow/SKILL.md`, which the approved surface already owns,
+and it costs roughly one line of the +107 already granted.
 
 **Rejected: teaching the skill to distrust `state commit`.** The diagnosis proposed,
 as a skill-level mitigation, that the step tell the FO to check `git status` after
@@ -375,7 +422,10 @@ rebuilt from `writeRejectionWorkflow` against an `origin/main` binary:
   from its committed Git object; commit the exact source before preparation`.
 - `status --next --json` returns `{"dispatchable":[],"ready_gates":[]}` while dirty,
   and yields the `needs-preparation` row only once committed **and** carrying a
-  non-rejecting verdict (four-way isolation recorded under Problem).
+  structurally complete stage report — every bullet `DONE`/`SKIPPED` with evidence,
+  plus a Summary. The four-way comparison first recorded here was confounded (it moved
+  the bullet token and the verdict together); the corrected two-case isolation and the
+  parser locus are under Problem, finding 2.
 
 No further spike is needed: the mechanisms this design rests on — single-publish
 round semantics, the committed-object prepare gate, the scheduler's readiness
@@ -470,4 +520,4 @@ passing; it runs in the same matrix.
 
 ### Summary
 
-The two failure mechanisms do NOT reduce to the same cause, which is the correction the second diagnosis forced and the most consequential fact in this design: claude published its first round against a half-written log and then published again when the log was complete, so neither call carried the id and the count the oracle needs together — but it committed and re-entered the gate correctly. Codex published once, never called `gate prepare` at all, read an empty scheduler off its own uncommitted write, and reported success. The single-publish shape fixes claude outright and does nothing for codex, whose trap one publish arms as well as two. The redesign publishes once, immediately after the correction completes the round's log, then gives the commit its own unbundled step — because a missing commit is the only failure here that reports success. Two spike findings sharpen the design beyond the diagnosis: the `gate prepare` refusal is artifact-scoped rather than tree-scoped, and the `needs-preparation` row requires a non-rejecting verdict as well as a clean tree, which is what forces the gate re-entry to follow the re-review. Designing against origin/main rather than the working checkout was load-bearing rather than procedural: it removed two files from the surface and killed a check I had proposed and would otherwise have shipped as a banned prose-grep. Two items need a captain ruling: the seed's "near zero or negative" surface estimate is amended upward to +107 words (the five completion conditions are the fix, so cutting them to hit the number would remove it), and a three-line fixture-prose repair sits just outside this entity's declared out-of-scope line.
+The two failure mechanisms do NOT reduce to the same cause, which is the correction the second diagnosis forced and the most consequential fact in this design: claude published its first round against a half-written log and then published again when the log was complete, so neither call carried the id and the count the oracle needs together — but it committed and re-entered the gate correctly. Codex published once, never called `gate prepare` at all, read an empty scheduler off its own uncommitted write, and reported success. The single-publish shape fixes claude outright and does nothing for codex, whose trap one publish arms as well as two. The redesign publishes once, immediately after the correction completes the round's log, then gives the commit its own unbundled step — because a missing commit is the only failure here that reports success. Two spike findings sharpen the design beyond the diagnosis: the `gate prepare` refusal is artifact-scoped rather than tree-scoped, and the `needs-preparation` row needs a structurally complete stage report as well as a clean tree. The second of those was first recorded WRONG here — as "a non-rejecting verdict" — from a confounded comparison that moved the bullet token and the verdict together; the diagnostic agent challenged it against the parser after the gate closed, and the corrected isolation reverses its design consequence, since an ordinarily-written rejected report is structurally complete and so DOES surface a row before any re-review. The five-step ordering is unaffected but its justification is now contract-based rather than mechanical, and implementation carries one added clause so step 5 cannot fire on that early row. Designing against origin/main rather than the working checkout was load-bearing rather than procedural: it removed two files from the surface and killed a check I had proposed and would otherwise have shipped as a banned prose-grep. Two items need a captain ruling: the seed's "near zero or negative" surface estimate is amended upward to +107 words (the five completion conditions are the fix, so cutting them to hit the number would remove it), and a three-line fixture-prose repair sits just outside this entity's declared out-of-scope line.
