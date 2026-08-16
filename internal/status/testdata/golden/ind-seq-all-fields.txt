@@ -6,7 +6,7 @@ ID     SLUG                           STATUS               TITLE                
 003    003-gamma                      implementation       Gamma folder task              0.90                                               roadmap              
 002    002-beta                       ideation             Beta task                      0.50     validating                                grooming             
 004    004-delta                      ideation             Delta no score                          validating                                backlog              
-001    001-alpha                      backlog              Alpha task                     0.80     validating           ENG-101              roadmap              https://x/1
+001    001-alpha                      backlog              Alpha task                     0.80     needs-preparation    ENG-101              roadmap              https://x/1
 005    005-epsilon                    parked               Epsilon weird status           0.30                                               roadmap              
 
 ===== stderr =====

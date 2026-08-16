@@ -77,7 +77,11 @@ semantic report review. A concrete `report-incomplete:` veto stops without
 mutation; otherwise the First Officer calls `gate prepare` exactly once with its
 question, Artifact, summary, and References, commits the emitted `state=open`
 binding, performs one structured checklist/AC read, and presents it without another boot projection. Open, withdrawn, stale, closed,
-and spent attempts retain their existing lifecycle routes.
+and spent attempts retain their existing lifecycle routes. A gated stage the
+workflow marks `initial: true` has no prior stage to have written a report:
+there the committed, clean-in-HEAD seed is itself the proof, and the entity
+appears as `needs-preparation` directly. Engage prepares from the seed and skips
+the structured checklist/AC read.
 
 Approval to a terminal target is *held* at consume: `gate consume` spends
 nothing and writes no status — it leaves the application `pending` and returns

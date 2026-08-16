@@ -203,14 +203,17 @@ func CurrentStageReadiness(doc *Document, status string, stages []ReadinessStage
 }
 
 // CurrentStageReadinessWithReport extends CurrentStageReadiness with the
-// status-owned mechanical report proof. A complete report promotes only the
-// no-current-authority shape; every selected, malformed, or otherwise
-// classified authority keeps the canonical result above. Keeping this wrapper
-// beside the reducer lets status and any future machine projection share the
-// exact ordering and fail-closed behavior without adding durable gate state.
-func CurrentStageReadinessWithReport(doc *Document, status string, stages []ReadinessStage, reportComplete bool) string {
+// status-owned mechanical promotion proof. The caller owns what proves
+// promotion: a complete committed stage report at an ordinary gated stage, or
+// the committed clean seed itself at an initial one, which had no prior stage
+// to write a report. A satisfied proof promotes only the no-current-authority
+// shape; every selected, malformed, or otherwise classified authority keeps
+// the canonical result above. Keeping this wrapper beside the reducer lets
+// status and any future machine projection share the exact ordering and
+// fail-closed behavior without adding durable gate state.
+func CurrentStageReadinessWithReport(doc *Document, status string, stages []ReadinessStage, promotionProven bool) string {
 	readiness := CurrentStageReadiness(doc, status, stages)
-	if !reportComplete || readiness != "validating" {
+	if !promotionProven || readiness != "validating" {
 		return readiness
 	}
 	if doc == nil {

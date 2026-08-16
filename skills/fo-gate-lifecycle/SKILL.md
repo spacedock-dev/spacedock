@@ -12,7 +12,7 @@ Load before engaged gate action. It grants no writes; read `fo-write-core.md` be
 
 The binary owns preparation, withdrawal, recording, and one-use consume; this skill only routes their observed results.
 
-**Boot.** `status --boot --identify --json` `ready_gates` gives `definition_dir`, `entity_dir`, slug/stage/readiness. Engage slug via `status --read <slug> --json`, never search. `needs-preparation`: review report; `awaiting-captain`: open; `withdrawn-awaiting-prepare`: successor; approved: unblocked; malformed/ambiguous: fail closed.
+**Boot.** `status --boot --identify --json` `ready_gates` gives `definition_dir`, `entity_dir`, slug/stage/readiness. Engage slug via `status --read <slug> --json`, never search. `needs-preparation`: review report, or at an `initial: true` stage the committed seed itself; `awaiting-captain`: open; `withdrawn-awaiting-prepare`: successor; approved: unblocked; malformed/ambiguous: fail closed.
 
 **Prepare.** Resolve `${SPACEDOCK_BIN:-spacedock}`; keep supplied paths. Else, per distinct applicable retained absolute R=`definition_dir`/`entity_dir`, resolve intended root-relative P; state R uses the engaged task directory, never `.`. Run: `git -C "<R>" ls-tree -r --name-only HEAD -- "<P>" | awk 'tolower($0)~/\.(md|markdown)$/{print}'`. `<R>/<P>`: shell-quoted values. Read/use once; summarize. No harness logs/history/status/help probes. Supply judgment/cwd paths; no binary JSON/ids/digests/Git locators/room coords.
 
@@ -25,7 +25,9 @@ Run this sequence once and in this order:
 4. Load spacedock:present-gate and present once from that structured evidence.
 ```
 
-**Cold report candidate.** Structurally review the path-resolved entity's latest exact-stage report/checklist and commit. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and no prepare, mutation, presentation, idle, or repeat-next. Otherwise invoke prepare once; nonzero/mismatch stops with its exact error and no retry or `gate record --briefing`.
+**Initial-stage gate.** At a stage the workflow marks `initial: true`, the committed seed IS the reviewed artifact: no prior stage existed to write a report. Prepare directly from the seed with `--artifact` naming the entity; never author, request, or wait for a stage report, and never emit `report-incomplete`. Skip step 3 — both structured reads exit nonzero with no report. Present outcome, scope, exclusions, and the ideation proof the next stage owes.
+
+**Cold report candidate (non-initial stages).** Structurally review the path-resolved entity's latest exact-stage report/checklist and commit. An insufficient obligation, claim, Summary, or scope stops once with `report-incomplete: <concrete defect>` and no prepare, mutation, presentation, idle, or repeat-next. Otherwise invoke prepare once; nonzero/mismatch stops with its exact error and no retry or `gate record --briefing`.
 Require prepare to emit `room`, `briefing`, `digest`, and `state=open`; never reconstruct the room. On nonzero commit, structured-read failure, or stage mismatch, stop before presentation or any later lifecycle effect. Use checklist text/ranges and AC citations to cross-check the gate; do not full-read/grep the entity or project boot after prepare or presentation. No conn: ask and stop open. Explicit conn: immediately record and consume; never final after presentation.
 
 **Withdraw stale open authority.** If a prepared room is stale before the Captain decision, run:

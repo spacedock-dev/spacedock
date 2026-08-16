@@ -19,6 +19,19 @@ func enteredStageAwaitingCompletion(e *entity, stage Stage) bool {
 	return !hasCompleteCommittedStageReport(e.path, stage.Name)
 }
 
+// gatePreparable reports whether a gated stage's promotion proof is satisfied.
+// A non-initial gated stage owes a complete committed stage report. An INITIAL
+// gated stage had no prior stage to write one: the committed clean seed IS the
+// artifact the captain reviews, so durability alone is the proof. The exception
+// keys on stage.initial ONLY — never on "no report exists" — so no later stage
+// gains a path around its completion proof.
+func gatePreparable(path string, stage Stage) bool {
+	if stage.initial {
+		return entityPathCleanInHEAD(path)
+	}
+	return hasCompleteCommittedStageReport(path, stage.Name)
+}
+
 // hasCompleteCommittedStageReport applies the status-owned, mechanical half of
 // completion proof. The existing report selector chooses only the latest exact
 // stage token. Its checklist must be non-empty, contain no FAILED or blank
