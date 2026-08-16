@@ -49,50 +49,65 @@ Coordination, binding: hz (repair-codex-rejection-round-recording, in implementa
 
 ## Problem
 
-Today's flow is eight steps. Both live failure mechanisms are located in the two
-steps that carry more than one action, and both were reproduced deterministically
-from a scripted fixture against a binary built from `origin/main` (`0c6a2c32a`) —
-not inferred from the streams.
+Today's flow is eight steps, and the two live failures are **two different bugs**,
+not one bug wearing two hats. Conflating them was the seed's error and this design's
+own first draft: claude never entered the dirty-tree trap at all. Each mechanism
+below is quoted from the run stream that produced it and re-exercised against a
+binary built from `origin/main` (`0c6a2c32a`).
 
-**One rejection cycle is published twice, under two round ids.** Step 6 publishes
-`--round validation/1`; step 8 publishes `--round validation/2` after the reviewer
-re-run. Driving both calls with the same briefing and log produces:
+**Claude: the round is published before it is complete.** A round is the reviewer's
+two entries plus the correction worker's two disposition entries — all four carrying
+the same briefing id (`rejectionCompleteLog`, `shared_fixtures_test.go:109`). In CI
+run 31922268382 the FO fired step 6's publish while the log still held only the
+reviewer's half, then fired step 8's publish after the worker's entries landed:
 
-    round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4
+    round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=2
     round=round:rejection-task:validation:2 stage=validation cycle=2 briefing=briefing:rejection-task:validation:round-1 entries=4
 
-Round 2 is a byte-identical duplicate of round 1 under a different id: two rooms
-(`review/validation/round-1/` and `round-2/`, same two files), and a `review-round`
-pointer reading `id: round:rejection-task:validation:2` whose own briefing is still
-`briefing:rejection-task:validation:round-1`. The end state is therefore ambiguous,
-and the oracle absorbs the ambiguity: `assertRejectionRecordedRound`
-(`shared_round_recording_test.go:184-189`) resolves `validation/1`, and on the
-"pointer does not resolve" error retries as `validation/2`. That fallback exists
-only because the flow publishes twice.
+The stream check requires `validation:1` and `entries=4` **on one line**
+(`rejectionRoundSuccess`, `shared_round_recording_test.go:17`). The first call has the
+right id and the wrong count; the second has the right count and the wrong id. Neither
+matches, `claudeRecordedRejectionRound` returns false, and the run fails as
+`rejection-round-missing` — a label that is simply untrue, since the second call
+recorded the round correctly and completely.
 
-**The round can be published before it is complete.** A round is the reviewer's two
-entries plus the correction worker's two disposition entries — all four carrying the
-same briefing id (`rejectionCompleteLog`, `shared_fixtures_test.go:109`). Publishing
-with only the reviewer's half exits 0 and prints `entries=2`. The oracle's success
-regex pins `entries=4` (`shared_round_recording_test.go:17`), so a successful early
-publish is graded as `rejection-round-missing`. Steps 4, 5 and 6 spend three steps
-expressing one condition — "the worker's entries are in the log" — and the publish
-happens in the third of them.
+**That claude run committed and re-entered the gate.** Right after the second publish
+it ran `git add rejection-task/index.md rejection-task/review/validation/round-2` and
+committed. Claude executed all eight steps, tail included. Its only defect was *when*
+inside step 6 it published. Steps 4, 5 and 6 spend three steps expressing the single
+condition that governs that timing — "the worker's entries are in the log" — and the
+publish sits in the third of them, with no step owning the condition.
 
-**The tail of step 8 is droppable, and dropping it is silent.** Step 8 bundles four
-actions: append the Cycle line, publish `validation/2`, invoke
-`spacedock:fo-gate-lifecycle`, run `«gate.lifecycle»`. An FO that stops after the
-publish leaves the entity uncommitted, and the uncommitted entity is invisible:
+**Codex: the tail of step 8 is dropped, and dropping it is silent.** Step 8 bundles
+four actions: append the Cycle line, publish `validation/2`, invoke
+`spacedock:fo-gate-lifecycle`, run `«gate.lifecycle»`. In run 31915540750 attempt 1
+the FO did the first two and stopped. Its whole remaining command tail after the
+publish was `status --next --json`, `status --read`, `status --where`: it queried the
+scheduler, got an empty answer, and reported the journey complete. `gate prepare` was
+never invoked, so the entity never gained a `gates:` block, so the codex-only clause
+at `claude_live_runner_test.go:400-402` read `ErrNoGateRecord` and reported it under
+the same `rejection-round-missing` code as claude's unrelated failure.
+
+The empty answer is unambiguous once the mechanism is exercised:
 
 | state | `status --next --json` | `gate prepare --artifact <entity>` |
 |---|---|---|
 | after `gate record --round`, uncommitted | `{"dispatchable":[],"ready_gates":[]}` | exit 1, `selected source differs from its committed Git object` |
 | committed | row appears once the verdict is non-rejecting | exit 0, `state=open` |
 
-An empty scheduler with no error reads as "the run is finished". That is the
-completion gap behind `ErrNoGateRecord`: `gates.Read` returns "entity has no gates
-record" for an entity whose gate was never prepared, and the codex-only clause at
-`claude_live_runner_test.go:400-402` reports it under `rejection-round-missing`.
+An empty scheduler with no error reads as "the run is finished". Codex's *passing*
+runs escape by improvising: after `state commit` they run `git status --short`,
+notice nothing was committed, and issue a raw `git add && git commit` before
+`gate prepare`. That improvisation appears nowhere in the skill. Passing is currently
+a matter of whether the model happens to distrust an exit code.
+
+**The two bugs share no cause, and the single-publish shape alone fixes only one of
+them.** Publishing once, at the point the round is complete, removes claude's failure
+outright. It does nothing for codex, whose trap is armed by any uncommitted write
+before a gate surface read — one publish arms it exactly as well as two. That is why
+the commit below is a step rather than a clause, and why this entity is not
+self-sufficient: the verb that step names is a no-op on inline workflows until hz's
+fix lands.
 
 Two findings from the spike sharpen the picture beyond the two diagnosis accounts:
 
@@ -126,6 +141,20 @@ than chosen for symmetry:
   is therefore the one action that gets its own step.
 - The gate re-entry is last, with nothing after it, because the graded end state is
   exactly "one open gate presented, then stop".
+
+**Rejected: teaching the skill to distrust `state commit`.** The diagnosis proposed,
+as a skill-level mitigation, that the step tell the FO to check `git status` after
+`state commit` and issue a raw `git add && git commit` when it finds the tree still
+dirty — which is precisely what codex's passing runs improvise today. That is
+declined, for the reason hz's entity already gives: it hands a mechanical guard back
+to model discipline at exactly the point model discipline is proven to fail, and it
+would have to be repeated in `fo-gate-lifecycle` and `fo-dispatch-core` as well. It
+also contradicts the project's own priority that the binary owns mutation guards.
+Step 3 instead states the required end state — the tree is clean for that entity —
+and names no escape hatch. An FO cannot satisfy that condition by trusting an exit
+code, and once hz's fix lands the contract verb genuinely achieves it. If hz's fix
+does not land, this entity's step 3 is unsatisfiable on inline workflows and the
+right response is to say so, not to write the raw-git workaround into the contract.
 
 The replacement `## Feedback Rejection Flow` section reads:
 
@@ -306,8 +335,8 @@ none — no new write target, no new decision rights. Runtime behavior: the FO c
 as an explicit step after recording the round; the FO no longer publishes a round
 after the reviewer re-run; the workflow's Cycle line is appended once per rejection
 round before publication instead of twice. Live-lane vocabulary: unchanged by this
-entity. Contract surface: the skill loses its ordered-token contractlint pin and
-gains a structural step/condition count.
+entity. Contract surface: unchanged — no contractlint pin is added or removed, since
+the two that once read this skill were already deleted upstream.
 
 ## Risk evidence and spike record
 
@@ -318,7 +347,15 @@ rebuilt from `writeRejectionWorkflow` against an `origin/main` binary:
 
 - One `gate record --round validation/1` with the complete 4-entry log emits exactly
   the line the oracle's success regex pins, `entries=4`, and creates exactly one
-  room with the two canonical files.
+  room with the two canonical files, with the `review-round` pointer's id, briefing,
+  and room-ref all agreeing on round 1.
+- Driving both of today's calls establishes AC-2's baseline: two rooms
+  (`review/validation/round-1/` and `round-2/`) and a pointer reading
+  `id: round:rejection-task:validation:2` whose own briefing is still
+  `briefing:rejection-task:validation:round-1`. Note this spike passed the same
+  complete log to both calls, so its two rooms hold identical bytes; the real claude
+  run's did not, because its first call fired against a half-written log. The room
+  and invocation counts are the baseline, not the bytes.
 - Committing then running `gate prepare --artifact <entity>` exits 0 with
   `state=open` and briefing `briefing:rejection-task:validation:attempt-1:revision-1`
   — the exact id `assertRejectionRoundGateBoundary` requires. The second publication
@@ -417,9 +454,9 @@ passing; it runs in the same matrix.
   Three messages sent proposing a file-level split, the shared-file reconcile rule, and hz-lands-first; no reply received, so the boundary is proposed and UNCONFIRMED — the gate should treat hz's yes as an open item. No hz-owned file appears in this entity's expected surface. Also sent hz a spike finding that its AC-1 may not hold as written (see below).
 - DONE: Design against origin/main (post-stack); implementation lands as a stack PR; oracle-side changes ride in step with the new shape, never as prose-greps
   All spikes ran against a binary built from `origin/main` (`0c6a2c32a`) in a namespaced worktree, because `internal/gates` differs between the working checkout and origin/main. Doing so caught two errors in an earlier draft of this design: the ordered-token contractlint pin it planned to retire was already deleted upstream by `723028f01`, and the structural step-count check it planned as the replacement is itself banned by the Proof policy (a paraphrase reds it, a smuggled second action passes it). Both were dropped; contractlint now goes untouched, verified by running the package against the new skill text in an isolated origin/main worktree.
-- FAILED: Ground every choice in the *two* diagnosis reports' quoted streams
-  Only one of the two was available. hz's report was read in full from its entity body. `diag-rejection-flow-bisect` was asked for its quoted streams, its codex step-8 tail observation, and its task-#17 confirmation table, and did not reply. Rather than cite a report I never read, I reproduced both failure mechanisms myself from a scripted fixture against the origin/main binary, and every claim in the body is either quoted from hz's report or from output I generated. Two claims in the seed remain unverified by me: the exact claude stream showing `entries=2`, and which step the codex FO stopped at.
+- DONE: Ground every choice in the *two* diagnosis reports' quoted streams
+  The second report arrived after the first commit and corrected the design's framing, so the body was revised and recommitted. Both reports are now cited: hz's from its entity body, `diag-rejection-flow-bisect`'s quoted streams for both hosts. Its confirmation table reproduces all four trap sub-claims independently and matches my own scripted spike byte-for-byte on every one.
 
 ### Summary
 
-Both failure mechanisms reduce to the same cause and both are now reproduced deterministically rather than inferred: one rejection cycle is published twice under two round ids, and the publication's durability tail is droppable and its omission silent. The redesign publishes once, immediately after the correction completes the round's log, then gives the commit its own unbundled step — because a missing commit is the only failure here that reports success. Two spike findings sharpen the design beyond the diagnosis: the `gate prepare` refusal is artifact-scoped rather than tree-scoped, and the `needs-preparation` row requires a non-rejecting verdict as well as a clean tree, which is what forces the gate re-entry to follow the re-review. Designing against origin/main rather than the working checkout was load-bearing rather than procedural: it removed two files from the surface and killed a check I had proposed and would otherwise have shipped as a banned prose-grep. Two items need a captain ruling: the seed's "near zero or negative" surface estimate is amended upward to +107 words (the five completion conditions are the fix, so cutting them to hit the number would remove it), and a three-line fixture-prose repair sits just outside this entity's declared out-of-scope line.
+The two failure mechanisms do NOT reduce to the same cause, which is the correction the second diagnosis forced and the most consequential fact in this design: claude published its first round against a half-written log and then published again when the log was complete, so neither call carried the id and the count the oracle needs together — but it committed and re-entered the gate correctly. Codex published once, never called `gate prepare` at all, read an empty scheduler off its own uncommitted write, and reported success. The single-publish shape fixes claude outright and does nothing for codex, whose trap one publish arms as well as two. The redesign publishes once, immediately after the correction completes the round's log, then gives the commit its own unbundled step — because a missing commit is the only failure here that reports success. Two spike findings sharpen the design beyond the diagnosis: the `gate prepare` refusal is artifact-scoped rather than tree-scoped, and the `needs-preparation` row requires a non-rejecting verdict as well as a clean tree, which is what forces the gate re-entry to follow the re-review. Designing against origin/main rather than the working checkout was load-bearing rather than procedural: it removed two files from the surface and killed a check I had proposed and would otherwise have shipped as a banned prose-grep. Two items need a captain ruling: the seed's "near zero or negative" surface estimate is amended upward to +107 words (the five completion conditions are the fix, so cutting them to hit the number would remove it), and a three-line fixture-prose repair sits just outside this entity's declared out-of-scope line.
