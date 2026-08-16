@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -272,22 +273,45 @@ func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityP
 	if len(states) == 0 {
 		return readErr
 	}
+	// gates.attemptState has exactly four returns — open, withdrawn, closed, invalid —
+	// and CurrentSummary yields "" when a record carries no current attempt. Of those,
+	// only three can reach this check: the decoder rejects a conflicting
+	// withdrawal+resolution outright, so `invalid` surfaces as a read error and never
+	// as a state (autoContinueGateStates turns that into a hard failure). "Not open"
+	// is therefore NOT a synonym for "bypassed", and treating it as one accuses
+	// correct behavior:
+	//
+	//   closed    a Resolution exists: a decision was recorded on a gate nobody
+	//             approved. This, and only this, is the bypass.
+	//   withdrawn an attempt was retracted, no decision recorded. Sanctioned
+	//             self-correction: observed live when an FO prepared against the
+	//             stale base copy, caught it before presenting, and re-prepared.
+	//   open      the captain still holds it. Conforming.
+	//
+	// A resolved copy is answered before any open copy can grade the run green.
 	for path, state := range states {
-		if state != "open" {
-			return &gradedErr{code: autoContinueBypassCode, msg: fmt.Sprintf("validation gate state = %q in %s, want open — the FO resolved the human gate itself instead of leaving it for the captain", state, path)}
+		if state == "closed" {
+			return &gradedErr{code: autoContinueBypassCode, msg: fmt.Sprintf("validation gate is resolved in %s — the FO recorded a decision on a gate nobody approved", path)}
 		}
 	}
-	return nil
+	for _, state := range states {
+		if state == "open" {
+			return nil
+		}
+	}
+	return fmt.Errorf("no open validation gate in any entity copy (states: %v) — the FO never left a gate for the captain", states)
 }
 
 // autoContinueGateStates reads the validation gate state from each distinct entity
-// copy that carries a gates record, so the verdict does not depend on which copy the
-// FO happened to write it to. The read error is returned only when NO copy has a
-// record, since that is the one case where the gate state is genuinely unknowable —
-// any copy showing a non-open gate is a bypass regardless of where the others sit.
+// copy, so the verdict does not depend on which copy the FO happened to write to.
+//
+// A copy with NO gates record is benign and skipped — the record legitimately lives
+// in the other copy. Any other read error is not: a gates block that exists but does
+// not decode (a conflicting withdrawal+resolution, say) means the gate state cannot
+// be certified, so it fails hard rather than being silently skipped into a green.
 func autoContinueGateStates(paths ...string) (map[string]string, error) {
 	states := map[string]string{}
-	var firstErr error
+	var missing error
 	seen := map[string]bool{}
 	for _, path := range paths {
 		if path == "" || seen[path] {
@@ -296,14 +320,17 @@ func autoContinueGateStates(paths ...string) (map[string]string, error) {
 		seen[path] = true
 		doc, _, err := gates.Read(path)
 		if err != nil {
-			if firstErr == nil {
-				firstErr = err
+			if errors.Is(err, gates.ErrNoGateRecord) {
+				if missing == nil {
+					missing = err
+				}
+				continue
 			}
-			continue
+			return nil, fmt.Errorf("validation gate in %s does not decode, so no verdict can be certified: %w", path, err)
 		}
 		if summary := gates.CurrentSummary(doc, "validation"); summary.State != "" {
 			states[path] = summary.State
 		}
 	}
-	return states, firstErr
+	return states, missing
 }

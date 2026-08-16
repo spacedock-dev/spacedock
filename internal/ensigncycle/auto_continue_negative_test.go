@@ -112,6 +112,31 @@ func autoContinueGateFrontmatter(resolved bool) string {
 	return block
 }
 
+// autoContinueWithdrawalBlock is the withdrawal frontmatter for one attempt. The
+// shape is pinned by gates.Withdrawal, which carries by/at/reason and NO type field,
+// and by the decoder's requirement that withdrawals be attributed to
+// `agent:first-officer`. Both were learned by probing what gates.Read actually
+// accepts: an earlier version of this fixture failed to decode, which silently
+// dropped the copy and made the test that depended on it assert nothing.
+const autoContinueWithdrawalBlock = "              withdrawal:\n" +
+	"                by: agent:first-officer\n" +
+	"                at: \"2026-08-16T00:00:00Z\"\n" +
+	"                reason: Prepared against the stale base copy; re-preparing against the worktree.\n"
+
+// autoContinueWithdrawnGateFrontmatter returns a gate whose only attempt was
+// WITHDRAWN — retracted with no decision recorded, which is how an FO corrects an
+// attempt it filed against the wrong entity copy.
+func autoContinueWithdrawnGateFrontmatter() string {
+	return autoContinueGateFrontmatter(false) + autoContinueWithdrawalBlock
+}
+
+// autoContinueInvalidGateFrontmatter returns the malformed fourth state: an attempt
+// carrying BOTH a withdrawal and a resolution, which gates.attemptState reports as
+// `invalid`.
+func autoContinueInvalidGateFrontmatter() string {
+	return autoContinueGateFrontmatter(true) + autoContinueWithdrawalBlock
+}
+
 // autoContinueGatedEndState builds the durable end state a conforming run leaves:
 // status validation, a validation stage report, and a gate record. resolved=true
 // builds the bypass shape — the same state except the FO resolved the gate itself.
