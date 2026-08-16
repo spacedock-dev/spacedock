@@ -364,40 +364,82 @@ func assertWithdrawnGateRecovery(doc *gates.Document) error {
 	return nil
 }
 
+// codexRejectionBranch is the Codex branch key, and it is a CONSTANT by derivation
+// rather than for convenience: `«context-budget»` is ABSENT on Codex
+// (`codex-first-officer-runtime.md:28`), so reuse condition 0 is satisfied by
+// definition, and `followup_task` is the host's live reuse-advance handle, so
+// condition 1 holds for any worker the run already opened. The reuse route is
+// therefore always available and the FO always owes the reuse chain. Deriving the
+// branch from whether a run HAPPENED to call followup_task would bless FO residual
+// mode 2 — fresh-dispatching the fix target while the followup route is live — by
+// re-grading that very deviation as the fresh branch.
+const codexRejectionBranch = rejectionBranchReuse
+
+// rejectionHostRealization is the host half of the team-mode invocation. The shared
+// prompt carries the host-neutral mode requirement; this names the concrete calls
+// THIS host opens and re-routes workers with. Same split as
+// merged_team_mode_live_test.go's forceMergedTeamCue, appended by the runner the way
+// antiShutdownOverride already is.
+func rejectionHostRealization(runner liveDriver) string {
+	if _, ok := runner.(codexAsLiveDriver); ok {
+		return "On this host that means `spawn_agent` to open each worker, and `followup_task` to route follow-up work to a worker that is still live."
+	}
+	return "On this host that means an Agent with a name set and run_in_background true to open each worker, and SendMessage to route follow-up work to a worker that is still live."
+}
+
+// writeRejectionTopologyDigest persists the run's branch chain beside its other
+// artifacts. AC-1 counts a conforming green only when the focused test exits 0 AND
+// this file shows that run's chain in order, so it is written on every run, pass or
+// fail — the in-process extraction dies with the isolated CODEX_HOME that t.Cleanup
+// removes.
+func writeRejectionTopologyDigest(t *testing.T, artifactDir string, branch rejectionBranch, routes []rejectionRoute) {
+	t.Helper()
+	if artifactDir == "" {
+		t.Fatal("rejection-flow run exposed no artifact dir to persist the topology digest into")
+	}
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatalf("create rejection topology artifact dir: %v", err)
+	}
+	digest := rejectionTopologyDigest(branch, routes)
+	path := filepath.Join(artifactDir, "rejection-topology.tsv")
+	if err := os.WriteFile(path, []byte(digest), 0o644); err != nil {
+		t.Fatalf("persist rejection topology digest: %v", err)
+	}
+	t.Logf("rejection topology digest %s:\n%s", path, digest)
+}
+
 func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(string, string) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := build(t, workflowRoot)
 
-	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
+	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot)+"\n"+rejectionHostRealization(runner))
 	after := readFile(t, entityPath)
 	recordedRound := claudeRecordedRejectionRound(result.stream)
 	// The publication counter reads the same run stream, so it grades the FO
 	// behavior that was observed, not the wording of the skill that produced it.
 	publications := claudeRejectionRoundPublications(result.stream)
-	reviewerFlow := assertClaudeSingleEntityRejectionFlow(result.stream)
-	var gatePrepared error
+	// Worker topology comes from each host's NATIVE transcript: the Claude
+	// stream-json spawns/notifications, and for Codex the parent rollout, because the
+	// public `codex exec --json` stream carries only `wait` collab items and no
+	// topology at all.
+	routes, branch := claudeRejectionRoutes(result.stream)
 	if _, ok := runner.(codexAsLiveDriver); ok {
 		recordedRound = codexRecordedRejectionRound(result.stream)
 		publications = codexRejectionRoundPublications(result.stream)
-		reviewerFlow = assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after)
-		gatePrepared = assertRejectionGatePrepared(entityPath)
+		routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
 	}
-	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
-	// `spacedock claude -- -p {prompt}` with a prompt naming one entity, so the run
-	// is single-entity → bare; the contract's bare-mode feedback flow is sequential
-	// fresh dispatch, so the cycle-2 re-review is a DISTINCT freshly-dispatched
-	// validation worker (not a reuse of the bare cycle-1 reviewer, not the impl
-	// worker serving as its own validator). assertClaudeReviewerReuse encoded a
-	// team-mode keepalive a `-p` run can never satisfy (the AC-3 finding); the
-	// contract-correct single-entity assertion is used here. The team-mode
-	// reviewer-reuse question is the spun-off option-(a) task.
+	writeRejectionTopologyDigest(t, result.artifactDir, branch, routes)
+	// Every check below is host-neutral. The gate-prepared check in particular was
+	// wired Codex-only, which made FO residual mode 1 (ends without `gate prepare`)
+	// invisible on Claude and Pi even though it grades durable on-disk state.
 	finishLiveScenario(t, runner, scenario, result,
-		durableSemantic("rejection-flow-state", assert(after, result.finalMessage+"\n"+result.stream)),
+		durableSemantic("rejection-flow-state", assert(after, result.finalMessage)),
 		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", recordedRound)),
 		durableSemantic("rejection-round-publication-count", assertSingleRejectionRoundPublication(publications)),
-		durableSemantic("rejection-gate-not-prepared", gatePrepared),
-		durableSemantic("rejection-reviewer-flow", reviewerFlow))
+		durableSemantic("rejection-gate-not-prepared", assertRejectionGatePrepared(entityPath)),
+		durableSemantic("rejection-cycle-line", assertRejectionCycleLine(entityPath)),
+		durableSemantic("rejection-worker-topology", assertRejectionWorkerTopology(branch, routes)))
 }
 
 // runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture

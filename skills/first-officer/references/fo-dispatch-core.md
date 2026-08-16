@@ -51,6 +51,9 @@ Advancing a completed worker. The gate-presentation spine is in the boot-residen
 2. Next stage does NOT have `fresh: true`.
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
 4. `«reuse.model-match»` — the reused worker's stamped model matches `next_stage.effective_model`.
+5. The completed worker's stage is NOT the next stage's `feedback-to` target. A review of the
+   worker's own output is not an independent check, so a review stage is dispatched fresh; the
+   producer stays alive for the correction routing (see **If fresh dispatch** below).
 
 **If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} started`, commit: `advance: {slug} entering {next_stage}`). Build the advancement with `«dispatch.build» --advance` and send the emitted `prompt` through the runtime adapter's reuse-advance handle (its live-worker messaging call). On non-zero helper exit only, fall back to the adapter's manual advance template (the break-glass rule).
 

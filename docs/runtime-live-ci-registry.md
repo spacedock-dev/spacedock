@@ -144,6 +144,9 @@ deterministic coverage to the default suite, or delete it.
 - **Required outcome:** A rejected candidate is corrected and independently
   checked before a fresh final gate is presented. Rejected authority cannot
   satisfy the final approval.
+  The journey runs in team mode: the correction is routed to the producer and
+  the re-review to a worker that did not produce the fix, through whichever
+  route the host's reuse conditions leave available.
 - **Fixtures:**
   - `rejection/before-validation-1` — a candidate entering its first validation
     with a deliberate defect and a two-cycle correction path.

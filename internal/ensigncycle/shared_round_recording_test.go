@@ -276,6 +276,37 @@ func assertRejectionGatePrepared(entityPath string) error {
 	return nil
 }
 
+// assertRejectionCycleLine grades the one durable Cycle line this fixture determines.
+// The fixture tells the FO to copy `rejection-task/inputs/feedback-cycle.txt` verbatim
+// for the rejection round, and says a re-validation that passes "closes its cycle
+// without adding a line" — so the conforming end state is EXACTLY one entry in
+// `### Feedback Cycles`, byte-equal to that file. Grading the count and the bytes
+// together makes both directions falsifiable: an FO that never records the round
+// leaves zero entries, and one that appends a cycle-2 line anyway leaves two. The
+// audit found this line was fixture-determined but never asserted at all.
+func assertRejectionCycleLine(entityPath string) error {
+	entity, err := os.ReadFile(entityPath)
+	if err != nil {
+		return &gradedErr{code: "rejection-cycle-line", msg: fmt.Sprintf("cannot read entity for the Cycle line: %v", err)}
+	}
+	var entries []string
+	for _, line := range strings.Split(feedbackCyclesSection(string(entity)), "\n") {
+		if feedbackCycleEntry.MatchString(line) {
+			entries = append(entries, strings.TrimRight(line, " \t\r"))
+		}
+	}
+	want := strings.TrimRight(rejectionFeedbackCycle, "\n")
+	if len(entries) != 1 {
+		return &gradedErr{code: "rejection-cycle-line", msg: fmt.Sprintf(
+			"`### Feedback Cycles` holds %d `- Cycle N:` entries, want exactly 1 (the rejection round; a passing re-validation adds none): %q", len(entries), entries)}
+	}
+	if entries[0] != want {
+		return &gradedErr{code: "rejection-cycle-line", msg: fmt.Sprintf(
+			"the Cycle line is not the fixture's verbatim text\n got: %q\nwant: %q", entries[0], want)}
+	}
+	return nil
+}
+
 func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, invoked bool) error {
 	if !invoked {
 		return fmt.Errorf("resolved launcher never invoked `gate record --round validation/1`")

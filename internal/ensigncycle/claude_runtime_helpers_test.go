@@ -139,8 +139,17 @@ var claudeDispatchPointer = regexp.MustCompile(`/spacedock-dispatch/[^\s"'` + "`
 //
 // Both signals are kept: the description check preserves every spawn the matcher
 // already counted, and the pointer only adds spawns the contract itself labels.
+//
+// The description check reads the stage as a WHOLE TOKEN rather than as a bare
+// substring (audit finding 10). The two repairs pull in opposite directions and
+// both are needed: the pointer fixes the false NEGATIVE this comment describes,
+// and the token anchor fixes the false POSITIVE the substring produced, where text
+// merely CONTAINING the letters counted as a dispatch of that stage. Anchoring does
+// not narrow the case above — "Validate auto-continue-task implementation" never
+// contained the noun "validation" to begin with, so the pointer is what recognises
+// it either way.
 func claudeSpawnIsForStage(description, prompt, stage string) bool {
-	if strings.Contains(strings.ToLower(description), stage) {
+	if stageToken(description, stage) {
 		return true
 	}
 	for _, m := range claudeDispatchPointer.FindAllStringSubmatch(prompt, -1) {
@@ -168,6 +177,7 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 			Type, Name, Arguments, Author string
 			CallID                        string `json:"call_id"`
 			Output                        string `json:"output"`
+			Input                         string `json:"input"`
 			Content                       json.RawMessage
 		}
 	}
@@ -189,7 +199,7 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 			}
 		}
 		_ = json.Unmarshal([]byte(line), &pi)
-		if event.Payload.Type == "function_call" && event.Payload.Name == "spawn_agent" && strings.Contains(event.Payload.Arguments, stage) {
+		if event.Payload.Type == "function_call" && event.Payload.Name == "spawn_agent" && stageToken(event.Payload.Arguments, stage) {
 			spawns++
 			codexSpawnCall = event.Payload.CallID
 		}
@@ -203,18 +213,18 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 		if completed < 0 && event.Payload.Type == "agent_message" && event.Payload.Author == codexWorker && strings.Contains(string(event.Payload.Content), "Done:") {
 			completed = i
 		}
-		if validation < 0 && event.Payload.Type == "custom_tool_call" && strings.Contains(line, nextSignal) {
+		if validation < 0 && event.Payload.Type == "custom_tool_call" && strings.Contains(event.Payload.Input, nextSignal) {
 			validation = i
 		}
 		if pi.Message.ToolName == "subagent" && pi.Message.ToolCallID == spawnID {
 			piRunID = pi.Message.Details.RunID
 		}
 		for _, item := range pi.Message.Content {
-			if item.Type == "toolCall" && item.Name == "subagent" && strings.Contains(strings.ToLower(item.Arguments.Task), stage) {
+			if item.Type == "toolCall" && item.Name == "subagent" && stageToken(item.Arguments.Task, stage) {
 				spawns++
 				spawnID = item.ID
 			}
-			if item.Type == "toolCall" && item.Name == "bash" && strings.Contains(item.Arguments.Command, nextSignal) {
+			if validation < 0 && item.Type == "toolCall" && item.Name == "bash" && strings.Contains(item.Arguments.Command, nextSignal) {
 				validation = i
 			}
 			if piRunID != "" && pi.Message.ToolName == "subagent" && strings.Contains(item.Text, "Run: "+piRunID) && strings.Contains(item.Text, "State: complete") && strings.Contains(item.Text, "\nSession: /") {
@@ -227,7 +237,7 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 					spawns++
 					spawnID = item.ID
 				}
-				if item.Type == "tool_use" && item.Name == "Bash" && strings.Contains(item.Input.Command, nextSignal) {
+				if validation < 0 && item.Type == "tool_use" && item.Name == "Bash" && strings.Contains(item.Input.Command, nextSignal) {
 					validation = i
 				}
 			}
@@ -359,14 +369,120 @@ func TestCodexNativeLifecycleParentRolloutLookupFailsClosed(t *testing.T) {
 	}
 }
 
-func successfulStatusSet(log string, allowed ...string) (found bool) {
+// successfulStatusSet reports whether the command log records a successful
+// `status --set`. The former variadic `allowed` parameter had no caller in the tree
+// and its second return path inverted the predicate's meaning for that unused shape
+// (audit finding 10), so only the predicate every caller actually wanted remains.
+func successfulStatusSet(log string) bool {
 	for _, line := range strings.Split(log, "\n") {
-		if strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ") && (len(allowed) == 0 || found || !strings.HasSuffix(line, " "+allowed[0])) {
+		if strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ") {
 			return true
 		}
-		found = found || strings.HasPrefix(line, "exit=0\tstatus ") && strings.Contains(line, " --set ")
 	}
-	return len(allowed) > 0 && !found
+	return false
+}
+
+// stageToken reports whether text names the stage as a WHOLE token. Both hosts spell
+// a stage as its own `-`/`_`/space-separated word — `spacedock_ensign_task_validation`,
+// `Task: implementation` — so anchoring on the token keeps text that merely CONTAINS
+// the letters from counting as a dispatch of that stage, which the bare substring
+// match this replaces could not distinguish (audit finding 10).
+func stageToken(text, stage string) bool {
+	for _, field := range strings.FieldsFunc(strings.ToLower(text), func(r rune) bool {
+		return !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9')
+	}) {
+		if field == stage {
+			return true
+		}
+	}
+	return false
+}
+
+// rejectionChain is the ordered chain the branch owes, straight from the determined
+// shape: implementation dispatch → its Done → validation dispatch → its Done → the
+// rework → its Done → the re-review → its Done. The branch changes ONLY how the two
+// cycle-2 rounds are routed — reused onto the live worker, or fail-safe fresh — so no
+// run can satisfy both. Grading the ORDER rather than a spawn count is what audit
+// finding 2 requires: a run that spawns two validators up front, or never re-reviews
+// the corrected candidate, produces the same counts as a conforming one.
+func rejectionChain(branch rejectionBranch) []rejectionRoute {
+	rework := routeReuse
+	if branch == rejectionBranchFresh {
+		rework = routeSpawn
+	}
+	return []rejectionRoute{
+		{event: routeSpawn, stage: "implementation"},
+		{event: routeDone, stage: "implementation"},
+		{event: routeSpawn, stage: "validation"},
+		{event: routeDone, stage: "validation"},
+		{event: rework, stage: "implementation"},
+		{event: routeDone, stage: "implementation"},
+		{event: rework, stage: "validation"},
+		{event: routeDone, stage: "validation"},
+	}
+}
+
+// assertRejectionWorkerTopology grades one run's extracted topology against the chain
+// its branch owes, then the two identity facts the chain alone cannot carry: on the
+// reuse branch each cycle-2 round must reach the SAME handle its stage opened (that
+// is what reuse means), and on either branch the re-review must NOT reach the worker
+// that produced the fix — the registry's "independently checked" outcome, and the
+// exact violation that let two single-worker self-reviewing chains grade green.
+func assertRejectionWorkerTopology(branch rejectionBranch, routes []rejectionRoute) error {
+	want := rejectionChain(branch)
+	if len(routes) != len(want) {
+		return rejectionTopologyErr("the %s branch owes %d routing events, the run produced %d: %s",
+			branch, len(want), len(routes), rejectionTopologySummary(routes))
+	}
+	for i := range want {
+		if routes[i].event != want[i].event || routes[i].stage != want[i].stage {
+			return rejectionTopologyErr("the %s branch owes %s/%s at position %d, the run produced %s/%s: %s",
+				branch, want[i].event, want[i].stage, i, routes[i].event, routes[i].stage, rejectionTopologySummary(routes))
+		}
+	}
+	if branch == rejectionBranchReuse {
+		for _, round := range [][2]int{{0, 4}, {2, 6}} {
+			opened, reused := routes[round[0]], routes[round[1]]
+			if opened.target != reused.target {
+				return rejectionTopologyErr("the cycle-2 %s round was routed to %q, not to the live %s worker %q it must reuse",
+					reused.stage, reused.target, opened.stage, opened.target)
+			}
+		}
+	}
+	if routes[6].target == routes[4].target {
+		return rejectionTopologyErr("the cycle-2 re-review reached %q, the worker that produced the fix — reviewing its own output is not the independent check the journey requires",
+			routes[6].target)
+	}
+	return nil
+}
+
+func rejectionTopologyErr(format string, args ...any) error {
+	return &gradedErr{code: "rejection-worker-topology", msg: fmt.Sprintf(format, args...)}
+}
+
+// rejectionTopologySummary renders the observed chain compactly, so a CI red names
+// the shape it SAW and not only the shape it wanted.
+func rejectionTopologySummary(routes []rejectionRoute) string {
+	parts := make([]string, 0, len(routes))
+	for _, route := range routes {
+		parts = append(parts, route.event+"/"+route.stage)
+	}
+	return "[" + strings.Join(parts, " ") + "]"
+}
+
+// rejectionTopologyDigest is the per-run evidence AC-1 requires alongside the exit
+// code: the branch and its ordered chain, one row per routing event. In-process
+// extraction alone is not enough — t.Cleanup deletes the isolated CODEX_HOME, which
+// is why every preserved run in the shape-attribution debrief had an empty
+// `_codex-home` and its topology had to be inferred from `dispatch build` commands
+// long after the fact.
+func rejectionTopologyDigest(branch rejectionBranch, routes []rejectionRoute) string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "branch\t%s\n", branch)
+	for position, route := range routes {
+		fmt.Fprintf(&out, "%d\t%d\t%s\t%s\t%s\n", position, route.index, route.event, route.stage, route.target)
+	}
+	return out.String()
 }
 
 func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {

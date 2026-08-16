@@ -136,11 +136,11 @@ func rejectionReadme() string {
 		"- **First round (no REJECTED validation report present yet):** deliberately OMIT the fix marker. Append a `## Stage Report: implementation` section with one `- DONE:` item noting the initial implementation does not yet carry the fix marker. Do NOT write the marker line. This is the buggy round the first validation must reject.\n" +
 		"- **Rework round (a REJECTED validation report is present):** apply the fix by appending this exact standalone line to `rejection-task/index.md`:\n\n" +
 		"  `" + rejectionFixMarker + "`\n\n" +
-		"  Then append a second `## Stage Report: implementation` section with one `- DONE:` item naming the fix. Finally append these exact two complete JSONL lines to `rejection-task/inputs/briefing.review.jsonl`:\n\n" +
+		"  Then append a `## Stage Report: implementation (cycle 2)` section with one `- DONE:` item naming the fix. Finally append these exact two complete JSONL lines to `rejection-task/inputs/briefing.review.jsonl`:\n\n" +
 		"```jsonl\n" + rejectionWorkerLog + "```\n\n" +
 		"- **Outputs:** An implementation stage report; on the rework round, the exact fix marker as well.\n\n" +
 		"### validation\n\n" +
-		"Reject the implementation when the exact fix marker `" + rejectionFixMarker + "` is absent from `rejection-task/index.md`; report PASSED when it is present. Append a `## Stage Report: validation` section recording the verdict. On the first, REJECTED validation only, replace the empty `rejection-task/inputs/briefing.review.jsonl` with these exact two complete JSONL lines; do not change that log during the second validation:\n\n" +
+		"Reject the implementation when the exact fix marker `" + rejectionFixMarker + "` is absent from `rejection-task/index.md`; report PASSED when it is present. Record the verdict in a stage-report section: `## Stage Report: validation` on the first round, `## Stage Report: validation (cycle 2)` on the re-review. On the first, REJECTED validation only, replace the empty `rejection-task/inputs/briefing.review.jsonl` with these exact two complete JSONL lines; do not change that log during the second validation:\n\n" +
 		"```jsonl\n" + rejectionReviewerLog + "```\n\n" +
 		"Keep this review LIGHT — inspect only for the marker line and perform the required log write; do not read or run unrelated code.\n\n" +
 		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
@@ -167,12 +167,42 @@ func rejectionEntity() string {
 		"This task starts at backlog, before the first implementation. Normal routing must dispatch that first implementation, which deliberately omits the fix marker so validation rejects it; the rework round after that rejection applies the marker.\n"
 }
 
+// rejectionTeamModeCue is the HOST-NEUTRAL half of the team-mode invocation: it
+// names the dispatch mode and nothing about how a given host spawns a worker. Each
+// runner appends its own realization sentence (rejectionHostRealization), the same
+// split merged_team_mode_live_test.go proved for the merged lane.
+const rejectionTeamModeCue = "You MUST run this in team mode: dispatch every stage " +
+	"worker as a separate addressable worker process, and do NOT do any stage work " +
+	"inline yourself. Bare/sequential mode — doing the stage work yourself instead " +
+	"of dispatching a worker — is NOT acceptable for this run."
+
+// rejectionPrompt drives the two-cycle rejection journey in TEAM mode.
+//
+// It deliberately does NOT name an entity to process. `first-officer/SKILL.md:7`
+// enters single-entity mode as soon as a non-interactive prompt names a specific
+// entity, and `claude-fo-dispatch.md:9` makes single-entity mode use BARE dispatch
+// for all spawning — which disables the addressable-worker reuse route this journey
+// exists to grade, so the old "Process only `rejection-task`" line ran the journey
+// in the one mode that cannot exercise its own mechanism. The fixture workflow holds
+// exactly one entity, so scope stays unambiguous without naming it.
 func rejectionPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
-		"Process only `rejection-task` through the configured two-cycle rejection journey described by its workflow fixture.",
-		"Goal: stop after the first reviewer rejection is corrected and the second validation passes; leave the entity nonterminal and report both outcomes.",
+		rejectionTeamModeCue,
+		// FO adherence residual mode 1, hardening round 1. This goal line used to
+		// read "stop after … the second validation passes; leave the entity
+		// nonterminal", and a live Codex run followed it into ending the flow one
+		// step early: it recorded both rounds and reported "Completed the requested
+		// two-cycle rejection journey … Ticket remains nonterminal at `validation`"
+		// without ever running `gate prepare`. That run had loaded
+		// `feedback-rejection-flow/SKILL.md`, whose step 5 is explicit — "Done when
+		// exactly one fresh open gate has been prepared and presented, and the flow
+		// stops" — so the harness prompt was handing the FO a stop condition that
+		// CONTRADICTED the contract it was also reading, and the prompt won. Naming
+		// the prepared gate as the bounded stop removes the contradiction; it does
+		// not loosen the grade, which still requires the gate.
+		"Goal: drive the configured two-cycle rejection journey described by the workflow fixture, through the first reviewer rejection, its correction, and a second validation that passes. The bounded stop is the fresh open gate that second validation's verdict prepares: prepare and present it, then stop without resolving it and without advancing the entity to terminal. Report both validation outcomes.",
 	)
 }
 
