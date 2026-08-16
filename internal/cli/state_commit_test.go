@@ -979,15 +979,27 @@ Validation is complete and ready for its decision gate.
 // mechanically complete report. Returns the workflow dir.
 func inlineGatedWorkflow(t *testing.T) string {
 	t.Helper()
-	workflow := filepath.Join(t.TempDir(), "inline")
+	_, workflow := inlineGatedWorkflowAt(t, ".")
+	return workflow
+}
+
+// inlineGatedWorkflowAt builds the inline fixture with the workflow dir at
+// workflowRel below the repo root, and returns both. workflowRel "." puts the
+// workflow AT the repo root; a nested path like "docs/dev" is the ordinary
+// project shape, where Git reports staged names relative to the repo root rather
+// than to the workflow. Returns (repoRoot, workflowDir).
+func inlineGatedWorkflowAt(t *testing.T, workflowRel string) (string, string) {
+	t.Helper()
+	repo := filepath.Join(t.TempDir(), "repo")
+	workflow := filepath.Join(repo, filepath.FromSlash(workflowRel))
 	writeFileWithDirs(t, filepath.Join(workflow, "README.md"), inlineGatedWorkflowReadme)
 	writeFileWithDirs(t, filepath.Join(workflow, "rejection-task", "index.md"), inlineGatedEntity)
 	writeFileWithDirs(t, filepath.Join(workflow, "rejection-task", "inputs", "gate-validation", "gate-review.md"),
 		"# Rejection Task — validation review\n\nSeed review.\n")
-	testgit.InitRepo(t, workflow, "-q")
-	git(t, workflow, "add", "-A")
-	git(t, workflow, "commit", "-q", "-m", "seed inline gated workflow")
-	return workflow
+	testgit.InitRepo(t, repo, "-q")
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-q", "-m", "seed inline gated workflow")
+	return repo, workflow
 }
 
 // runInlineCmd runs an arbitrary spacedock command with the workflow dir as cwd.
@@ -1124,5 +1136,61 @@ func TestStateCommitInlineScopeAndPublishBoundary(t *testing.T) {
 	if code != 0 || result["result"] != "no-op" ||
 		!strings.Contains(result["reason"].(string), "not inside a Git work tree") {
 		t.Fatalf("non-repo workflow dir must be an honest no-op; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	}
+}
+
+// TestStateCommitInlineCommitsWhateverTheWorkflowDepth pins the inline commit
+// against BOTH repo shapes, because the seam reads staged names from Git and
+// compares them to entity paths, and those two are relative to different roots
+// unless the workflow dir happens to be the repo root.
+//
+// The nested case is the ordinary project shape and it was silently broken: `git
+// -C <workflow> diff --cached --name-only` answers with repo-root-relative names
+// (docs/dev/rejection-task/index.md) while the entity pathspec is
+// workflow-relative (rejection-task), so nothing matched, nothing was selected to
+// commit, and the verb reported "already up to date" — after its own `git add`
+// had staged the change. That is worse than the exit-0 no-op this entity set out
+// to remove: it mutates the index and still claims there was nothing to do.
+//
+// Asserting a clean porcelain rather than just a fresh commit is what makes this
+// falsifying: the pre-fix bug left the entity STAGED, which a commit-count check
+// alone would miss. Dropping `--relative` from the diff reds the nested case and
+// leaves the root case passing.
+func TestStateCommitInlineCommitsWhateverTheWorkflowDepth(t *testing.T) {
+	for name, workflowRel := range map[string]string{
+		"workflow at repo root": ".",
+		"workflow nested":       "docs/dev",
+	} {
+		t.Run(name, func(t *testing.T) {
+			repo, workflow := inlineGatedWorkflowAt(t, workflowRel)
+			entity := filepath.Join(workflow, "rejection-task", "index.md")
+			writeFile(t, entity, inlineGatedEntity+"\nrecorded round, not yet durable\n")
+
+			before := strings.TrimSpace(git(t, repo, "rev-parse", "HEAD"))
+			code, stdout, errOut := runStateCommitCmd(t, workflow, workflow, "rejection-task", "--json")
+			result := decodeOneJSON(t, stdout)
+			if code != 0 || result["result"] != "committed" {
+				t.Fatalf("inline state commit must report a commit, not a no-op; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+			}
+
+			// Empty porcelain, not just a new commit: the pre-fix bug left the
+			// entity staged, which is invisible to a HEAD-moved check alone.
+			if dirt := strings.TrimSpace(git(t, repo, "status", "--porcelain", "--untracked-files=all")); dirt != "" {
+				t.Fatalf("entity left uncommitted (staged or modified) after state commit:\n%s", dirt)
+			}
+			if after := strings.TrimSpace(git(t, repo, "rev-parse", "HEAD")); after == before {
+				t.Fatal("state commit reported a commit but HEAD did not move")
+			}
+
+			// The commit carries the entity, addressed from the repo root.
+			entityRel, err := filepath.Rel(repo, entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			files := git(t, repo, "show", "--name-only", "--format=", "HEAD")
+			if !strings.Contains(files, filepath.ToSlash(entityRel)) {
+				t.Fatalf("commit does not contain %s; it contains:\n%s", entityRel, files)
+			}
+		})
 	}
 }

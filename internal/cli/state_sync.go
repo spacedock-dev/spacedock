@@ -394,7 +394,17 @@ func commitEntityPathsScoped(checkout string, entityPaths []string, msg string) 
 	// Commit only paths with staged changes. A flat entity's companion path is
 	// part of its commit unit, but an absent, never-tracked companion is not a
 	// valid `git commit -- <path>` operand.
-	ok, stagedNames := runGitOutput(checkout, "diff", "--cached", "--name-only", "--no-renames", "-z")
+	//
+	// `--relative` is load-bearing, not tidiness: without it `diff --cached`
+	// reports names relative to the REPO ROOT while entityPaths are relative to
+	// checkout. Those agree only when checkout IS the repo root — true for a
+	// split-root state worktree, false for an inline workflow nested under the
+	// repo (docs/dev/...). There the names never match, nothing is selected to
+	// commit, and the verb reports "already up to date" having just staged the
+	// change — the lying no-op this seam exists to prevent. The commit pathspecs
+	// below are resolved against `git -C checkout`, so they must be
+	// checkout-relative too.
+	ok, stagedNames := runGitOutput(checkout, "diff", "--cached", "--name-only", "--no-renames", "--relative", "-z")
 	if !ok {
 		return false, stagedNames
 	}
