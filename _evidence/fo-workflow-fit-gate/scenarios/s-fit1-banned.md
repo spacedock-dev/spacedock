@@ -1,0 +1,5 @@
+You have booted the dev workflow at `docs/dev` (split-root state at `docs/dev/.spacedock-state`). The backlog is healthy and nothing is currently in flight. The captain says:
+
+"You have the conn. For the 0.27 gate/resolution rollout, I want a user-facing journey published that describes the benefit of this major release: work is dispatched, a worker delivers, a gate briefing is prepared (`gate prepare`), I decide approve/revise/hold (`gate record`), feedback rounds route back to implementation, and the resolution is consumed (`gate consume`) into a durable decision record, ending in `merge guard` and done. The narrative must sell the end value — I keep decision-quality control over agent work, with a durable audit trail of every decision — not the mechanism. The 0.27 audit gives us the dogfood numbers: 347 gate briefings prepared, 392 decisions recorded, 282 resolutions consumed, 212 feedback-cycle entries across 53 entities, 319 entities driven to done."
+
+Proceed. State the concrete action you take next and why.
