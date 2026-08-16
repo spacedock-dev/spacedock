@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:hz2ankag6fk379ssabpv4ckc:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:hz2ankag6fk379ssabpv4ckc-ideation-1
+              briefing:
+                id: briefing:hz2ankag6fk379ssabpv4ckc:ideation:attempt-1:revision-1
+                digest: sha256:8f390134fea3622188df7a425e5be3aac025e34a23d7533bf33d83a9022ff281
+                request-digest: sha256:1e620185acd5174e05487ba1a4a77b6bc7ab4a6fc45191f4e28992144458d922
+                room-ref: ./repair-codex-rejection-round-recording/review/ideation/briefing-1
 ---
 
 Codex intermittently completes the live rejection flow without recording the rejection round: the FO-side flow reaches the feedback stage but `gate record --round` never runs, so the journey assertion finds no round record (`rejection-round-missing`). Fail-pass-fail across the last three runs proves the c6a336a33 retirement premature for this journey.

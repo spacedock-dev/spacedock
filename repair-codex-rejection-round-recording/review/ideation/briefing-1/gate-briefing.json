@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hz2ankag6fk379ssabpv4ckc:ideation:attempt-1:revision-1",
+  "question": "Approve repair-codex-rejection-round-recording ideation into implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:hz2ankag6fk379ssabpv4ckc:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/70c008b458a9573a4ac2fac40fcf3d5626fbd7c5/repair-codex-rejection-round-recording.md",
+      "rev": "sha256:1ff2f809617fb65d85db6cda12ed840d68674e0f82275a73b63952176a5c5fcd",
+      "mediaType": "text/markdown",
+      "summary": "Recommend APPROVE: root cause named and reproduced (host-neutral dirty-tree trap; state commit no-op on inline workflows; mislabeled grading clause); fix designed with a 5-consecutive-green local bar before the unbound stack layer; XFAIL survives only as the stop-and-report contingency."
+    }
+  ]
+}
