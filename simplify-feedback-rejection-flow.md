@@ -198,20 +198,28 @@ out of the ordering instead of needing a special case.
 - `claude_live_runner_test.go`: wire that counter in as one more `durableSemantic`
   alongside the existing three. It reads the run stream, so it grades observed FO
   behavior, not skill wording.
-- `internal/contractlint/feedback_rejection_publication_smoke_test.go`: retire
-  `TestFeedbackRejectionPublishesCompleteRoundBeforeRegating`. It pins five ordered
-  substrings of the skill body ("append its authorized line", "Re-enter the normal
-  gate flow", …) and would need only rewording to pass — it proves nothing about
-  behavior and would ratify any bundling that kept the tokens in order. Its actual
-  guarantee (a complete round is published before the reviewer re-run and gate
-  preparation) is carried behaviorally by the counter above plus the existing
-  `entries=4` pin. `TestDevelopmentTemplatePublishesRejectedRoundBeforeRegating` in
-  the same file stays: its phrase remains true, since publication is still step 2 and
-  the re-run and gate are steps 4 and 5.
-- A structural check replaces it: the skill has exactly five numbered steps and
-  exactly one `**Done when**` clause per step. This counts the deliverable itself
-  rather than proxying for behavior with wording, and it is the only check that can
-  catch re-bundling.
+- **No contractlint change, and no new structural check.** Two corrections found by
+  building and testing against `origin/main` rather than the working checkout, which
+  is behind it:
+  1. `internal/contractlint/feedback_rejection_publication_smoke_test.go` no longer
+     exists. `723028f01` ("Retire banned prose-grep contract pins") already deleted
+     both of its pins as tests the Proof policy forbids. Running the contractlint
+     package against this draft in an isolated `origin/main` worktree passes with
+     `no tests to run` for that name. So nothing in contractlint constrains this
+     rewrite, and there is no retirement for this entity to perform.
+  2. The structural step / completion-condition count this design first proposed is
+     itself banned. The policy's test is whether the expected value comes from
+     outside the file under test: counting `**Done when**` does not qualify, because
+     a semantics-preserving paraphrase ("Complete when") reds it while a step that
+     quietly grows a second action keeps exactly one clause and passes it. It is
+     dropped rather than defended.
+
+  The consequence, stated plainly: after this change **no committed test guards the
+  publication ordering by reading the skill**, and that is the correct end state
+  under the policy — "A contract or skill change is PASSED only when a live drive
+  observed the behavior it claims." The guard is the stream counter above plus the
+  live journey. The one-off step count is validation evidence for the run, which the
+  policy explicitly permits for an existence fact, and is never committed as a test.
 
 **Ruling requested at the gate — one fixture-prose conflict.** The rejection
 fixture's README (`shared_fixtures_test.go:148`) says "The first rejected cycle is
@@ -258,16 +266,20 @@ for a ruling above. Widening the prepared-gate assertion beyond codex.
 
 ## Expected surface and tolerance
 
-Six files, roughly 135 insertions and 45 deletions. Tolerance ±40 lines and ±2 files.
+Four files, roughly 85 insertions and 25 deletions. Tolerance ±30 lines and ±1 file.
 
 | File | Change |
 |---|---|
 | `skills/feedback-rejection-flow/SKILL.md` | 8 steps → 5 (~+35/-20) |
 | `internal/ensigncycle/shared_round_recording_test.go` | drop the round-id fallback, add the invocation counter (~45) |
 | `internal/ensigncycle/claude_live_runner_test.go` | wire the fourth `durableSemantic` (~4) |
-| `internal/contractlint/feedback_rejection_publication_smoke_test.go` | retire the ordered-token test (~-30) |
-| `internal/contractlint/structural_checks_test.go` | step / completion-condition count (~25) |
 | `internal/ensigncycle/shared_fixtures_test.go` | fixture Cycle-line prose (~3), only if the gate rules it in scope |
+
+No contractlint file is touched, and none needs to be: the two pins that once read
+this skill were deleted upstream in `723028f01`, and the replacement structural check
+this design first proposed was dropped as banned. Verified by running the
+contractlint package against the new skill text in an isolated `origin/main`
+worktree.
 
 **Amendment to the seed estimate, stated plainly.** The seed declared "near zero or
 negative on the skill". The measured draft is the opposite: 572 → 679 words, 4158 →
@@ -317,11 +329,14 @@ exercised directly, the last against its pinning test at `gate_test.go:250-251`.
 
 **AC-1 — The shipped flow is five steps, each one action with one completion
 condition.**
-Verified by: a structural check counting numbered steps and `**Done when**` clauses
-in `skills/feedback-rejection-flow/SKILL.md` and requiring exactly five of each, one
-per step. It fails if a sixth step appears, if a step gains a second completion
-condition (a re-bundled tail), or if a step loses its only one. This asserts a
-mechanism and counts only in service of AC-2 and AC-3.
+Verified by: a one-off count of numbered steps and `**Done when**` clauses in the
+shipped skill, pasted into the validation report as run evidence — never committed as
+a test. The Proof policy permits a grep exactly here and no further: the step count is
+an existence fact about the file, which is itself the claim. It does not and cannot
+prove the *behavioral* half — that each step is genuinely one action — and no reading
+of the file can, since a second action smuggled into a step's prose keeps the count at
+five. That half is proven only by AC-2 and AC-3's live drives. This AC asserts a
+mechanism and counts only in service of those two.
 
 **AC-2 — One publication per rejection cycle: a completed cycle leaves exactly one
 round room under one round id, and the recorder was invoked exactly once.**
@@ -343,22 +358,23 @@ what makes this falsifiable: with it, a double publication still passes; without
 the run fails. Because hz's inline `state commit` fix is a precondition of step 3,
 these runs are measured on top of it.
 
-**AC-4 — The retired prose-grep leaves no coverage hole, and the suite stays green.**
-Verified by: `go test ./...` plain and `-race`; and the specific guarantee of the
-retired `TestFeedbackRejectionPublishesCompleteRoundBeforeRegating` — a complete
-round published before the reviewer re-run and gate preparation — demonstrated by
-AC-2's live counter (exactly one publication, at `validation/1`, carrying the
-complete `entries=4` summary) together with AC-1's step ordering. The falsifying
-change is a flow that publishes after the re-review: it passes the retired token
-order and fails the counter.
+**AC-4 — The suite stays green, and the escalation journey is not collateral damage.**
+Verified by: `go test ./...` plain and `-race`; and `TestLiveCommonFeedbackThreeCycleEscalation`
+still passing on both hosts, since it drives this same skill through a fixture that
+supplies no briefing or log and grades hand-written `- Cycle N: REJECTED` lines plus
+the escalation marker. It is the falsifying surface for step 2's conditional
+projection and step 4's cycle-3 branch: if the rewrite makes publication
+unconditional, or drops the third-cycle escalation, that journey reds while the
+rejection journey stays green.
 
 ## Test plan
 
-Three layers, cheapest first; no new standing harness and no new fixture directory.
+Two committed layers plus one-off run evidence; no new standing harness, no new
+fixture directory, and no new contractlint check.
 
-**Structural (instant, standing).** The step / completion-condition count in
-`internal/contractlint`. Cost: trivial. It is the only guard against silent
-re-bundling, and it replaces a strictly weaker ordered-token check.
+**Run evidence (not a test).** The step and completion-condition count, pasted into
+the validation report. Cost: one command. It settles AC-1's existence half and
+nothing more.
 
 **Offline behavioral (deterministic, standing).** Extend the existing
 `TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl` rather than
@@ -391,10 +407,10 @@ passing; it runs in the same matrix.
 - DONE: Coordination is binding: hz owns the binary state-commit fix and grading honesty and is IN IMPLEMENTATION now - message its ensign (spacedock-ensign-hz2ankag6f-implementation) to agree the oracle boundary before you finalize; do not absorb its scope; whichever lands second reconciles
   Three messages sent proposing a file-level split, the shared-file reconcile rule, and hz-lands-first; no reply received, so the boundary is proposed and UNCONFIRMED — the gate should treat hz's yes as an open item. No hz-owned file appears in this entity's expected surface. Also sent hz a spike finding that its AC-1 may not hold as written (see below).
 - DONE: Design against origin/main (post-stack); implementation lands as a stack PR; oracle-side changes ride in step with the new shape, never as prose-greps
-  All spikes ran against a binary built from `origin/main` (`0c6a2c32a`) in a namespaced worktree, because `internal/gates` differs between the working checkout and origin/main. The new oracle counts recorder invocations in the run stream; the existing ordered-token prose-grep (`TestFeedbackRejectionPublishesCompleteRoundBeforeRegating`) is retired rather than reworded, with its guarantee re-carried behaviorally.
+  All spikes ran against a binary built from `origin/main` (`0c6a2c32a`) in a namespaced worktree, because `internal/gates` differs between the working checkout and origin/main. Doing so caught two errors in an earlier draft of this design: the ordered-token contractlint pin it planned to retire was already deleted upstream by `723028f01`, and the structural step-count check it planned as the replacement is itself banned by the Proof policy (a paraphrase reds it, a smuggled second action passes it). Both were dropped; contractlint now goes untouched, verified by running the package against the new skill text in an isolated origin/main worktree.
 - FAILED: Ground every choice in the *two* diagnosis reports' quoted streams
   Only one of the two was available. hz's report was read in full from its entity body. `diag-rejection-flow-bisect` was asked for its quoted streams, its codex step-8 tail observation, and its task-#17 confirmation table, and did not reply. Rather than cite a report I never read, I reproduced both failure mechanisms myself from a scripted fixture against the origin/main binary, and every claim in the body is either quoted from hz's report or from output I generated. Two claims in the seed remain unverified by me: the exact claude stream showing `entries=2`, and which step the codex FO stopped at.
 
 ### Summary
 
-Both failure mechanisms reduce to the same cause and both are now reproduced deterministically rather than inferred: one rejection cycle is published twice under two round ids, and the publication's durability tail is droppable and its omission silent. The redesign publishes once, immediately after the correction completes the round's log, then gives the commit its own unbundled step — because a missing commit is the only failure here that reports success. Two spike findings sharpen the design beyond the diagnosis: the `gate prepare` refusal is artifact-scoped rather than tree-scoped, and the `needs-preparation` row requires a non-rejecting verdict as well as a clean tree, which is what forces the gate re-entry to follow the re-review. Two items need a captain ruling: the seed's "near zero or negative" surface estimate is amended upward to +107 words (the five completion conditions are the fix, so cutting them to hit the number would remove it), and a three-line fixture-prose repair sits just outside this entity's declared out-of-scope line.
+Both failure mechanisms reduce to the same cause and both are now reproduced deterministically rather than inferred: one rejection cycle is published twice under two round ids, and the publication's durability tail is droppable and its omission silent. The redesign publishes once, immediately after the correction completes the round's log, then gives the commit its own unbundled step — because a missing commit is the only failure here that reports success. Two spike findings sharpen the design beyond the diagnosis: the `gate prepare` refusal is artifact-scoped rather than tree-scoped, and the `needs-preparation` row requires a non-rejecting verdict as well as a clean tree, which is what forces the gate re-entry to follow the re-review. Designing against origin/main rather than the working checkout was load-bearing rather than procedural: it removed two files from the surface and killed a check I had proposed and would otherwise have shipped as a banned prose-grep. Two items need a captain ruling: the seed's "near zero or negative" surface estimate is amended upward to +107 words (the five completion conditions are the fix, so cutting them to hit the number would remove it), and a three-line fixture-prose repair sits just outside this entity's declared out-of-scope line.
