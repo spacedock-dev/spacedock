@@ -234,3 +234,11 @@ Three things for the gate. First, the recommended text departs from the captain'
 The amendment is the gated arm-E text promoted verbatim — 41→53 lines, the declared target hit exactly, with the gate seated between the mutation gate and the write-scope list and the atomic-mechanism sentence closing the `New entity files` bullet. Because the shipped baseline was byte-identical to arm A and arm E to the entity's Before/after block, the change was made by promotion rather than retyping, so AC-1's wording claim rests on two empty diffs rather than on my reading of the text. AC-5 is green plain and `-race`, plus the ensigncycle suite that also reads this file.
 
 The validation drive is pre-registered and unrun. The one judgment call worth the gate's attention is deviation 1: read-only tools would have contaminated the baseline arm, so the recipe fix is the framing block instead. `s-fit3-ownerstub` is built from the repo's real XFAIL-owner mechanism, and its scoring rule states in advance that the *stub* is the unit — a reader that refuses the stub but demands a real product repair task scores REFUSED, since that is the captain's own `0c0e18f6c` ruling and not a fit failure.
+
+### PR addendum (supersedes the "PR NOT opened" line above)
+
+The FO assigned the base: this entity lands as layer 3 on `spacedock-ensign/repair-codex-rejection-round-recording` (#719, head `571017df3`), which is what the branch already stacked on, so no rebase was needed and the PR diff carries only `c9eba5db4`.
+
+- **PR #721** — https://github.com/spacedock-dev/spacedock/pull/721, base `spacedock-ensign/repair-codex-rejection-round-recording`, one file, +13/-1.
+- **Stack #720**, size 3, stack base `main`: pos 1 #718 → `main`, pos 2 #719 → #718's branch, pos 3 #721 → #719's branch.
+- Verified by GraphQL `pullRequest.stack` read-back, not by the link command's own output and not by `gh stack view --json`. `gh stack link` reports success and exits 0 even when it fails, so its exit code proves nothing; the read-back was queried independently from all three PRs (#718, #719, #721) and all three report the same stack id, size, and order.
