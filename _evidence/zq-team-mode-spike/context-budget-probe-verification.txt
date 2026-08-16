@@ -1,0 +1,34 @@
+Context-budget probe verification (revise round, 2026-08-16)
+Binary: spacedock built from 571017df3. Same binary and same --name in every case.
+
+A. State under $HOME/.claude (the interactive layout)
+   $ HOME=<tree-A> spacedock dispatch context-budget --name spacedock-ensign-rejection-task-validation
+   {"name":"...","resident_tokens":8000,"model":"claude-sonnet-5","context_limit":1000000,
+    "usage_pct":0.8,"threshold_pct":60,"reuse_ok":true}
+   exit=0
+
+B. Identical state under $CLAUDE_CONFIG_DIR=$HOME/.claude/rejection-flow (the live-harness layout)
+   $ HOME=<tree-B> CLAUDE_CONFIG_DIR=<tree-B>/.claude/rejection-flow spacedock dispatch context-budget --name ...
+   Error: no subagent jsonl found for 'spacedock-ensign-rejection-task-validation'
+   exit=1
+
+Only the directory differs. internal/dispatch/dispatch.go:76 passes os.Getenv("HOME") and
+internal/claudeteam/contextbudget.go globs $HOME/.claude/{projects,teams} only; no product code
+reads CLAUDE_CONFIG_DIR (grep over internal/ cmd/, non-test: zero hits).
+
+C. What a headless `claude -p` actually writes (CLAUDE_CONFIG_DIR = $HOME/.claude, so B's
+   redirection is removed; one named background Agent dispatched, run to completion, exit 0)
+   Agent call:  {"subagent_type":"general-purpose","description":"probe worker",
+                 "run_in_background":true,"name":"probe-worker-x"}
+   meta.json:   {"agentType":"general-purpose","name":"probe-worker-x","model":null,"teamName":null}
+   teams dir:   (none)
+
+D. What interactive sessions write (this machine, ~/.claude, 14467 agent-*.meta.json files)
+   agentType values include 'spacedock-ensign-p14yaypeav-validation',
+   'spacedock-ensign-p14yaypeav-implementation-2', 'comm-officer' — i.e. agentType carries the
+   FO-assigned member NAME, and ~/.claude/teams/*/config.json exists.
+
+Consequence: scanSubagentMeta matches meta.agentType == name, so a headless worker is unfindable by
+name (C) even after the config-dir mismatch (B) is removed; and lookupModel then fails anyway
+because headless writes no teams/config.json (C). Three independent blockers, each sufficient on
+its own to force reuse condition 0 to its fail-safe fresh-dispatch branch.

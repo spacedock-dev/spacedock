@@ -61,7 +61,7 @@ available for a completed worker. `fo-dispatch-core.md:49` (reuse condition 0) i
 
 | | Codex | Claude (headless `-p`) |
 |---|---|---|
-| `«context-budget»` | ABSENT → condition satisfied (`codex-first-officer-runtime.md:28`) | PRESENT, and it **exits 1** headless: `no subagent jsonl found for '<name>'` |
+| `«context-budget»` | ABSENT → condition satisfied (`codex-first-officer-runtime.md:28`) | PRESENT, and it cannot succeed on headless `-p` — three independent blockers, verified below |
 | Reuse route | `followup_task` to the live task path | none survives condition 0 |
 | implementation spawns | 1 | 2 (round 1 + fresh rework) |
 | validation spawns | 1 | 2 (cycle 1 + fresh re-review) |
@@ -84,6 +84,31 @@ Host-neutral, in both branches:
 - The re-review reaches a worker whose stage is validation and NEVER the fix producer
   (`SKILL.md` step 4; registry required outcome "independently checked").
 
+## What this journey certifies, and what it does not
+
+Stated plainly, because the revise round found it rather than validation finding it later:
+
+- **Certified on Codex:** the full reuse path — the correction and the re-review both routed to the
+  live worker handles through `followup_task`.
+- **Certified on Claude:** the HEADLESS shape only — team-mode dispatch with the contract's
+  fail-safe fresh branch, because the reuse probe cannot succeed under `-p` (correction 1). This is
+  a real, contract-conforming shape and worth grading, but it is NOT the reuse path.
+- **Not certified anywhere:** Claude interactive reuse. It works — the probe returns `reuse_ok` on
+  the interactive layout — but no live lane runs interactively, so nothing here proves it.
+
+The grading is branch-keyed on the probe result rather than hard-coded to fresh dispatch, so if the
+blockers below are ever fixed, the Claude leg starts requiring the reuse chain without another
+grading change. That is the whole reason to key the branch on an observable instead of pinning the
+shape this environment happens to produce.
+
+**Spun off, not absorbed here (product code, out of this entity's declared scope).** The three
+blockers are a user-facing defect, not just harness plumbing: any operator who sets
+`CLAUDE_CONFIG_DIR` — a supported Claude Code setting — silently loses worker reuse, standing-teammate
+injection, and roster reconcile, because every `~/.claude` reader in `internal/claudeteam`
+hardcodes `$HOME/.claude`. The failure is silent by design (reuse condition 0 is fail-safe), so it
+degrades to fresh dispatch and never surfaces. Recommend a separate entity covering all three
+blockers together; this one neither fixes them nor depends on them being fixed.
+
 ## Spike: the riskiest unverified mechanism, run first
 
 One live run per runtime on the composed tree (571017df3) with the team-mode prompt and a persisted
@@ -105,11 +130,38 @@ scratch dir and are not durable.
 
 ## Corrections this design carries against its inputs
 
-1. **The reuse path is not reachable on Claude headless at all** — not because of bare mode, but
-   because `«context-budget»` is PRESENT and structurally unavailable in `-p` (no team
-   `config.json`; `claude-fo-dispatch.md:119` says the same for reconcile). Grading Claude to a
-   reuse shape would false-red a conforming run. The entity's Problem statement assumed team mode
-   restores reuse on both hosts; it restores it on Codex only.
+1. **The reuse path is not reachable on Claude headless** — but not for the reason the first
+   ideation round gave, and not because reuse is broken generally. Verified at the revise gate
+   against source and three controlled runs (`_evidence/zq-team-mode-spike/context-budget-probe-verification.txt`).
+   `internal/dispatch/dispatch.go:76` passes `os.Getenv("HOME")` into
+   `claudeteam.ContextBudget`, which globs `$HOME/.claude/{projects,teams}` and nothing else; no
+   product code reads `CLAUDE_CONFIG_DIR` at all. Three blockers stand between a headless `-p` run
+   and a successful probe, each sufficient alone and hit in this order:
+
+   1. **Config-dir blindness.** The live runner gives each scenario its own
+      `CLAUDE_CONFIG_DIR` (`filepath.Join(base, scenario.name)`, landed 2026-06-13 in #358's
+      parallel fan-out) and CI sets an archivable one
+      (`runtime-live-e2e.yml:263-264`), so Claude Code writes its state where the probe never
+      looks. Proven by an A/B on one binary and one name: identical fixture state under
+      `$HOME/.claude` returns `reuse_ok: true`, and under `$HOME/.claude/rejection-flow` returns
+      the exact `no subagent jsonl found for '<name>'` the spike hit.
+   2. **`agentType` mismatch.** `scanSubagentMeta` matches `meta.agentType == name`. A headless
+      run records `agentType` as the *subagent type* and puts the name in a separate field —
+      measured directly: a named background dispatch wrote
+      `{"agentType":"general-purpose","name":"probe-worker-x"}`. Interactive sessions record
+      `agentType` as the member NAME (14467 meta files on this machine, e.g.
+      `spacedock-ensign-p14yaypeav-validation`), which is exactly why it works there.
+   3. **No team config.** Headless writes no `~/.claude/teams/` at all, so `lookupModel` fails and
+      the probe exits 1 even once 1 and 2 are fixed. `claude-fo-dispatch.md:119` already records
+      this for reconcile.
+
+   So Claude worker reuse is real and works interactively; it has never worked in this harness or
+   in CI. The reuse assert `assertClaudeReviewerReuse` was on this journey until 2026-06-13
+   (#365, `fe4261be8`) and was removed for a DIFFERENT reason, recorded in
+   `_archive/lazy-teamcreate-shallow-boot/index.md:370`: "the Claude `-p` run can never satisfy
+   [it] — bare mode hard-fails reuse-condition-1". That reason is now obsolete — `-p` is
+   team-capable and condition 1 passes — but condition 0 blocks reuse in its place, so restoring
+   that assert today would still false-red a conforming run.
 2. **The Codex public stream is topology-blind on the current build.** Its only `collab_tool_call`
    items are `wait` (verified across 16 preserved streams and the spike). The in-tree
    `assertCodexReviewerReuse` reads `collab_tool_call` `spawn_agent`/`followup_task` from the public
@@ -338,3 +390,29 @@ unusable as written, and the fixture's duplicate-heading sentence — not model 
 made two hosts write different bytes for the same round. One change reaches outside the harness: a
 fifth reuse condition making a review stage always fresh, without which both the 4-worker shape and
 the observed self-reviewing chain remain contract-conforming.
+
+## Stage Report: ideation (cycle 2)
+
+Scoped to the gate's one annotation: "is this true? this used to work."
+
+- DONE: Verify the probe-failure claim beyond the single spike observation, from source.
+  `internal/dispatch/dispatch.go:76` passes `os.Getenv("HOME")`; `internal/claudeteam/contextbudget.go` globs `$HOME/.claude/{projects,teams}`; no non-test code in `internal/` or `cmd/` reads `CLAUDE_CONFIG_DIR`. A/B on one binary and one name: identical state under `$HOME/.claude` → `reuse_ok: true` exit 0; under `$HOME/.claude/rejection-flow` → the exact spike error, exit 1.
+- DONE: Answer the history question — did Claude worker reuse ever work, and in what mode.
+  Yes, interactively, and it still does. `agentType` carries the FO-assigned member name in real sessions (14467 meta files, e.g. `spacedock-ensign-p14yaypeav-validation`) and `~/.claude/teams/*/config.json` exists. `assertClaudeReviewerReuse` was on this journey until 2026-06-13 (#365, `fe4261be8`), removed because `-p` was BARE then — condition 1, per `_archive/lazy-teamcreate-shallow-boot/index.md:370`. That reason is obsolete; condition 0 blocks it now.
+- DONE: Determine interactive vs headless, and state the limitation in the entity.
+  Two controlled headless runs settled what `-p` writes: `{"agentType":"general-purpose","name":"probe-worker-x"}` and no `teams/` directory. So beyond the config-dir mismatch there are two further blockers — `scanSubagentMeta` matches `agentType`, not `name`, and `lookupModel` needs a team config headless has never written. New section `## What this journey certifies, and what it does not` states the limitation.
+- DONE: Update the entity body and record what changed.
+  Determined-shape table row corrected; correction 1 rewritten with the three blockers, the A/B, and the history; certification-scope section added; the three blockers spun off as a recommended separate entity rather than absorbed.
+
+### Summary
+
+The claim's CONCLUSION survives — the probe cannot succeed on headless `-p`, so the Claude branch of
+the determined shape stands — but its stated CAUSE was wrong, and the captain was right that this
+used to work. It works interactively today; it has never worked in this harness or in CI. What I
+called a headless property is three separate defects: the probe ignores `CLAUDE_CONFIG_DIR` while
+the harness and CI both redirect it, headless records `agentType` as the subagent type rather than
+the worker name, and headless writes no team config for the model lookup. None is in this entity's
+scope to fix, and the design does not depend on fixing them, because the grading branch is keyed on
+the observed probe result rather than on the shape this environment happens to produce. The one
+design change is honesty about coverage: this journey certifies the Codex reuse path and the Claude
+headless fail-safe path, and certifies Claude interactive reuse not at all.
