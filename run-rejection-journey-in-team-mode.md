@@ -39,6 +39,7 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 ---
 
 ## Problem
