@@ -72,7 +72,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#713"
+pr: pr-merge:713
 ---
 
 ffacf584a added `wantProofGaps`, a hand-written map of proof-gap bindings, DeepEqual-checked against `readRuntimeProofGaps` - an AST reader that derives the same data from the live test sources three lines away. The copy's only failure mode is "you forgot to update the copy": it catches no real defect and reintroduces the two-file lockstep tax for XFAILs on live-proof tests, one abstraction above the wantGaps map the workflow just removed for the same reason.
