@@ -104,11 +104,25 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
+// AUDIT(2026-08-16): grading contradicts the fixture — the scripted exact duplicate
+// rework heading hard-errors the section selector, so a fixture-literal run reds and
+// greens require model improvisation; and the codex branch asserts no reviewer
+// topology, so the observed greens certified a self-reviewing single-worker chain.
+// The pi XFAIL below is structural: claude-dialect graders cannot parse pi streams,
+// so it can never XPASS. Findings 1, 2, 7, 8, 11 in
+// docs/dev/.spacedock-state/_debriefs/2026-08-16-02-live-harness-audit.md and the
+// shape-attribution debrief (…-03). Repair owner: run-rejection-journey-in-team-mode
+// (zqb683j8jth0tyr2eme231e2).
+//
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
 	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
+// AUDIT(2026-08-16): finding 3 — the graded status regex accepts done, so a
+// human-gate blow-through grades green on claude/pi; the gate-open check that
+// catches it is wired codex-only.
+//
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
 func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)
@@ -124,16 +138,27 @@ func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
 	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, nil, runGateStopScenario, assertGateHeld)
 }
 
+// AUDIT(2026-08-16): finding 5 — the direct-commit marker matches ANY git commit and
+// no assertion checks the strategy doc landed. The pi XFAIL below is structural
+// (finding 11): a claude-dialect trace reads the pi stream, so it can never XPASS.
+//
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
 	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
+// AUDIT(2026-08-16): finding 9 — approval-actor alternation under a delegated conn:
+// recording person:captain for a decision no captain made in-session grades green.
+//
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
 func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
 	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, nil, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)
 }
 
+// AUDIT(2026-08-16): finding 4 — token-and-one-commit grade: a stage-skipping run
+// with a hand-written report grades green; integrationTransitionCommitted, the one
+// field that distinguishes the full loop from skip-to-end, is never used here.
+//
 //spacedock:live-journey id=full-ensign-cycle fixture=realistic-lifecycle
 func TestLiveCommonFullEnsignCycle(t *testing.T) {
 	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, nil, runFullEnsignCycleJourney, someCommitNamesOnly)
@@ -159,11 +184,17 @@ func TestLiveCommonFeedbackThreeCycleEscalation(t *testing.T) {
 	liveJourney(t, "feedback-3-cycle-escalation", "rejection/before-validation-3", writeEscalationWorkflow, nil, runClaudeFeedback3CycleEscalationScenario, assertThirdCycleEscalation)
 }
 
+// AUDIT(2026-08-16): finding 13 — the diagnosis check is attribution-blind: a final
+// message naming TestZeroDiscover while concluding the inherited label grades green.
+//
 //spacedock:live-journey id=self-evidence-merge-triage fixture=merge-triage/unapproved-live-evidence
 func TestLiveCommonSelfEvidenceMergeTriage(t *testing.T) {
 	liveJourney(t, "self-evidence-merge-triage", "merge-triage/unapproved-live-evidence", writeMergeTriageWorkflow, nil, runClaudeSelfEvidenceMergeTriageScenario, assertSelfEvidenceMergeTriage)
 }
 
+// AUDIT(2026-08-16): finding 7 — the final-response requirement is graded against
+// finalMessage+stream, where the refused command's tool-result echo satisfies it.
+//
 //spacedock:live-journey id=merge-hook-guardrail fixture=merge-hook/blocked
 func TestLiveCommonMergeHookGuardrail(t *testing.T) {
 	liveJourney(t, "merge-hook-guardrail", "merge-hook/blocked", writeMergeHookGuardWorkflow, nil, runClaudeMergeHookGuardrailScenario, assertMergeHookGuardHeld)
@@ -174,6 +205,9 @@ func TestLiveCommonFiling(t *testing.T) {
 	liveJourney(t, "filing", "filing/empty-workflow", writeFilingWorkflow, nil, runClaudeFilingScenario, assertFilingCommands)
 }
 
+// AUDIT(2026-08-16): finding 6 — grades Bash commands only; Glob/Grep broad search
+// at boot is detected only by the non-grading failure diagnostic.
+//
 //spacedock:live-journey id=zero-discovery fixture=boot/no-workflow
 func TestLiveCommonZeroDiscovery(t *testing.T) {
 	liveJourney(t, "zero-discovery", "boot/no-workflow", writeZeroDiscoveryFixture, nil, runZeroDiscoveryJourney, detectBroadSearchCommands)
