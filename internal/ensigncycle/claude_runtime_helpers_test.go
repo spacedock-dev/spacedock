@@ -389,13 +389,32 @@ func TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle(t *testing.T) {
 
 func errGraded(msg string) error { return &gradedErr{code: "gate-hold-violation", msg: msg} }
 
+// durableSemantic labels a scenario assertion's failure with the semantic code the
+// lane reports it under, preserving the assertion's own message as the finding
+// detail. An assertion that already chose its own code keeps it.
+func durableSemantic(code string, err error) error {
+	if err == nil {
+		return nil
+	}
+	if _, ok := err.(*gradedErr); ok {
+		return err
+	}
+	return &gradedErr{code: code, msg: err.Error()}
+}
+
 type gradedErr struct{ code, msg string }
 
 func (e *gradedErr) Error() string { return e.msg }
 
+// liveGrade carries the lane verdict plus, for each observed code, the graded
+// finding's own message. codes alone say which check failed; details say what it
+// saw. Without details a CI failure prints a bare code and the durable end state
+// that produced it is gone with the test's TempDir, so the failing sub-check is
+// unrecoverable from the run's artifacts.
 type liveGrade struct {
-	status string
-	codes  []string
+	status  string
+	codes   []string
+	details []string
 }
 
 func liveGradeFailsLane(status string) bool {
@@ -403,12 +422,16 @@ func liveGradeFailsLane(status string) bool {
 }
 
 func gradeLive(xfail bool, errs ...error) liveGrade {
-	seen := map[string]bool{}
+	seen := map[string]string{}
 	grade := liveGrade{}
 	infrastructureFailure := false
 	for _, err := range errs {
 		if graded, ok := err.(*gradedErr); ok {
-			seen[graded.code] = true
+			// First message per code wins; a later duplicate code must not
+			// overwrite the finding that first reported it.
+			if existing, ok := seen[graded.code]; !ok || existing == "" {
+				seen[graded.code] = graded.msg
+			}
 		} else if err != nil {
 			infrastructureFailure = true
 		}
@@ -417,6 +440,11 @@ func gradeLive(xfail bool, errs ...error) liveGrade {
 		grade.codes = append(grade.codes, code)
 	}
 	sort.Strings(grade.codes)
+	for _, code := range grade.codes {
+		if msg := seen[code]; msg != "" {
+			grade.details = append(grade.details, code+": "+msg)
+		}
+	}
 	switch {
 	case infrastructureFailure:
 		grade.status = "fail"

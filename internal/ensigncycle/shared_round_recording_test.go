@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -244,6 +245,22 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 	}
 	if attempt.Resolution != nil || attempt.Application != nil {
 		return fmt.Errorf("prepared validation gate is not open")
+	}
+	return nil
+}
+
+// assertRejectionGatePrepared grades the requirement that the FO left the cycle-2
+// validation gate PREPARED, not merely round-recorded. It is deliberately separate
+// from assertRejectionRecordedRound: that oracle's boundary check
+// (assertRejectionRoundGateBoundary, directly above) TOLERATES an entity with no
+// gates record and returns nil. Folding this condition into the round oracle's
+// result made one journey hold two contradictory positions on the same state and
+// report both under `rejection-round-missing`, so a run whose round WAS recorded
+// but whose gate was never prepared was diagnosed as a missing round. Each
+// condition now carries its own code.
+func assertRejectionGatePrepared(entityPath string) error {
+	if _, _, err := gates.Read(entityPath); err != nil {
+		return fmt.Errorf("FO never prepared the cycle-2 validation gate: %v", err)
 	}
 	return nil
 }
@@ -581,5 +598,76 @@ func TestRejectionRoundPublicationCounter(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestRejectionUnpreparedGateReportsItsOwnCode pins AC-3's separation. The input is
+// the exact durable end state both failing CI runs produced: the round IS recorded
+// (the codex stream oracle says so) and the entity status reached validation, but
+// the FO never prepared the cycle-2 gate, so the entity carries no gates record.
+// Before this split, that state graded as `rejection-round-missing` — the round
+// oracle was told a recorded round had not been recorded — and the real condition
+// was invisible. The lane must now name the unprepared gate and must NOT claim the
+// round is missing. Flipping either oracle back to the other's code fails this.
+func TestRejectionUnpreparedGateReportsItsOwnCode(t *testing.T) {
+	root := t.TempDir()
+	entityPath := writeRejectionWorkflow(t, root)
+	writeFile(t, filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"), rejectionCompleteLog())
+	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
+		Round:        "validation/1",
+		BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
+		LogPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
+		WorkflowDir:  root,
+	}); err != nil {
+		t.Fatalf("record rejection round: %v", err)
+	}
+	writeFile(t, entityPath, strings.Replace(readFile(t, entityPath), "status: backlog", "status: validation", 1))
+
+	// The stream the FO actually produced: the round-recording invocation ran and
+	// exited 0. Nothing about round recording failed in either CI run.
+	stream := codexCommandOutput(
+		"${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl",
+		"round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4",
+		0, "completed")
+	recordedRound := codexRecordedRejectionRound(stream)
+	if !recordedRound {
+		t.Fatal("fixture stream must satisfy the round oracle; otherwise this test proves nothing about the gate")
+	}
+	if _, _, err := gates.Read(entityPath); err == nil {
+		t.Fatal("fixture entity must carry no gates record; otherwise the unprepared-gate condition is absent")
+	}
+
+	grade := gradeLive(false,
+		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(root, entityPath, "validation", recordedRound)),
+		durableSemantic("rejection-gate-not-prepared", assertRejectionGatePrepared(entityPath)))
+	if !reflect.DeepEqual(grade.codes, []string{"rejection-gate-not-prepared"}) {
+		t.Fatalf("grade codes = %v, want exactly [rejection-gate-not-prepared]", grade.codes)
+	}
+	if len(grade.details) != 1 || !strings.Contains(grade.details[0], "never prepared the cycle-2 validation gate") {
+		t.Fatalf("grade details = %v, want the unprepared-gate finding's own message", grade.details)
+	}
+
+	// Control: prepare the gate and the code clears, so the code tracks the gate
+	// rather than some unrelated property of the fixture.
+	gateReviewPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "gate-review.md")
+	writeFile(t, gateReviewPath, "# Rejection Task — validation review\n\nReady for its prepared decision gate.\n")
+	gateReviewRel, err := filepath.Rel(root, gateReviewPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	git(t, root, "add", "--", gateReviewRel)
+	git(t, root, "commit", "-q", "-m", "add prepared validation review", "--", gateReviewRel)
+	if _, err := gates.Prepare(entityPath, gates.PrepareInput{
+		WorkflowDir: root,
+		Question:    "Does the second validation confirm the fix marker is present and PASS?",
+		Artifact:    gateReviewPath,
+		Summary:     "The corrected rejection-flow candidate is ready for a decision.",
+	}); err != nil {
+		t.Fatalf("prepare validation gate: %v", err)
+	}
+	if grade := gradeLive(false,
+		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(root, entityPath, "validation", recordedRound)),
+		durableSemantic("rejection-gate-not-prepared", assertRejectionGatePrepared(entityPath))); grade.status != "pass" {
+		t.Fatalf("prepared gate must grade pass; got %#v", grade)
 	}
 }

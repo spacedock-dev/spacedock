@@ -207,16 +207,6 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 	return r
 }
 
-func durableSemantic(code string, err error) error {
-	if err == nil {
-		return nil
-	}
-	if _, ok := err.(*gradedErr); ok {
-		return err
-	}
-	return &gradedErr{code: code, msg: err.Error()}
-}
-
 func finishLiveScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, result liveResult, semantic ...error) {
 	t.Helper()
 	scenario.grade = gradeLive(scenario.gap.kind == "xfail", semantic...)
@@ -228,7 +218,14 @@ func finishLiveScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeS
 		t.Logf("XPASS ALERT %s/%s owner=%s observed=%v", scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes)
 	}
 	if liveGradeFailsLane(scenario.grade.status) {
-		t.Fatalf("%s %s/%s owner=%s observed=%v\nFinal message:\n%s\nArtifacts: %s", strings.ToUpper(scenario.grade.status), scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes, result.finalMessage, result.artifactDir)
+		// The durable end state each finding graded lives in a t.TempDir that is
+		// gone by the time anyone reads CI, so the messages are the only surviving
+		// account of what the codes mean.
+		details := ""
+		if len(scenario.grade.details) > 0 {
+			details = "\nFindings:\n  " + strings.Join(scenario.grade.details, "\n  ")
+		}
+		t.Fatalf("%s %s/%s owner=%s observed=%v%s\nFinal message:\n%s\nArtifacts: %s", strings.ToUpper(scenario.grade.status), scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes, details, result.finalMessage, result.artifactDir)
 	}
 }
 
@@ -397,13 +394,12 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	// behavior that was observed, not the wording of the skill that produced it.
 	publications := claudeRejectionRoundPublications(result.stream)
 	reviewerFlow := assertClaudeSingleEntityRejectionFlow(result.stream)
+	var gatePrepared error
 	if _, ok := runner.(codexAsLiveDriver); ok {
 		recordedRound = codexRecordedRejectionRound(result.stream)
 		publications = codexRejectionRoundPublications(result.stream)
 		reviewerFlow = assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after)
-		if _, _, err := gates.Read(entityPath); err != nil {
-			recordedRound = false
-		}
+		gatePrepared = assertRejectionGatePrepared(entityPath)
 	}
 	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
 	// `spacedock claude -- -p {prompt}` with a prompt naming one entity, so the run
@@ -418,6 +414,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 		durableSemantic("rejection-flow-state", assert(after, result.finalMessage+"\n"+result.stream)),
 		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", recordedRound)),
 		durableSemantic("rejection-round-publication-count", assertSingleRejectionRoundPublication(publications)),
+		durableSemantic("rejection-gate-not-prepared", gatePrepared),
 		durableSemantic("rejection-reviewer-flow", reviewerFlow))
 }
 
