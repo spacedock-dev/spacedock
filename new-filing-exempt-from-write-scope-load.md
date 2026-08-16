@@ -20,3 +20,12 @@ Fix (single site, mirroring the already-carved engage-sweep exemption in the sam
 Consistent with `fo-write-core`'s FO Write Scope, which already lists `spacedock new` as an allowed write (`skills/fo-write-core/SKILL.md:29`); the carve-out only says the FO need not LOAD the skill to reach that yes. No change to `fo-write-core` itself — the engage-sweep precedent lives only in Deferred load points.
 
 Scope: `skills/**` is `blocked-product`, so this doc edit goes through a dispatched worker in a worktree, not a direct FO edit. Touches the same `## Deferred load points` section as `dpwp415…` (fo-deferred-load-point-hunt, at validation, PR #491) — independent change; rebase on that merge to avoid a textual conflict. Doc-only, low blast radius, no detached adversarial audit owed; validation just needs the reworded clause to parse and read cleanly.
+
+## FO note (2026-08-16, from fo-workflow-fit-gate ideation)
+
+This entity's rationale ("the classify outcome is unconditionally allowed-state, so the
+first-load is pure ceremony for the `new` trigger") is invalidated if the Workflow Fit
+Gate amendment lands: after it, fo-write-core.md carries the one question the classifier
+cannot answer, and `spacedock new` becomes the single most important trigger to load it
+at. Re-evaluate against the amended write core before any dispatch; shipping this as-is
+would silently remove the fit gate's read trigger.
