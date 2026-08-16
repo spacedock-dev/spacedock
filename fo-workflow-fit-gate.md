@@ -1,7 +1,7 @@
 ---
 id: b8ewpvd65epkckvng0n38809
 title: Workflow Fit Gate before FO entity creation
-status: implementation
+status: validation
 source: "Captain draft and directive, 2026-08-16: the FO tends to add stuff into existing workflows and be ceremonial about things not supposed to be there. Session evidence 2026-08-14/15: the banned doc-only journey entity, its mechanism-without-value reshape, and the release-cut task question."
 started:
 completed:
@@ -31,6 +31,7 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+pr: "#721"
 ---
 
 Amend the shipped FO write core (skills/first-officer/references/fo-write-core.md) with an admissibility gate ahead of the "FO may write new entity files" rule. Captain's draft, the seed text:
