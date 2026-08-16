@@ -1,6 +1,6 @@
 ---
 title: Run the rejection journey in team mode
-status: ideation
+status: implementation
 source: "Captain ruling, 2026-08-16: do not invoke a journey in single-entity bare mode unless it is specifically testing bare-mode behavior"
 id: zqb683j8jth0tyr2eme231e2
 gates:
@@ -38,7 +38,7 @@ gates:
                 decision: approve
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
