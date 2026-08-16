@@ -1,11 +1,11 @@
 ---
 id: 77k7m0dmwm10mz6zrdq86tv3
 title: Retire or re-justify the test-only gate summary reader trio
-status: validation
+status: done
 source: "Gate finding from remove-gate-validate-subcommand ideation (2026-08-15): SummaryFile/SummaryFileAt/SummaryFileDiagnosticsAt dead-end in tests after the subcommand removal; captain accepted the follow-up at the gate"
 started: 2026-08-15T23:04:22Z
-completed:
-verdict:
+completed: 2026-08-16T03:34:42Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-retire-test-only-gate-summary-readers
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: 'Captain 2026-08-15 (push them for the stack): validation PASSED approved; lands as a stack layer'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:714
+archived: 2026-08-16T03:34:42Z
 ---
 
 After remove-gate-validate-subcommand lands, the `SummaryFile` / `SummaryFileAt` / `SummaryFileDiagnosticsAt` trio has no production caller, and the warnings slice `SummaryFileDiagnosticsAt` returns is observable by no caller. Retire the trio, or record the one concrete justification that keeps it. Removing it requires re-pointing two internal/gates tests.
