@@ -7,7 +7,7 @@ started:
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-fo-workflow-fit-gate
 issue:
 gates:
     version: 1
