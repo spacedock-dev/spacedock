@@ -61,6 +61,17 @@ gates:
                 digest: sha256:0fc807705d9edbd49705b920dd987f30dbca59b0f533fd5972ade83ff1209bfb
                 request-digest: sha256:5b4a630193bd5a992262a70ab7942157629f11c3890b27bee7a5665a3ff63e7d
                 room-ref: ./rule-superseded-verdict-vocabulary/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x2ezetxr82pztr4pqt1g4dhx:validation:1
+                briefing: briefing:x2ezetxr82pztr4pqt1g4dhx:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T02:22:29.49511Z"
+                decision: approve
+                reason: 'Captain 2026-08-16 (approve all to the stack): validation PASSED; surface overrun accepted as AC-bearing test density; lands as a stack layer'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Writers intentionally emit verdict: superseded for superseded entities, but the schema enum admits only PASSED and REJECTED. Archived-scope warnings are silenced now, so the bite is forward-looking: the next active entity superseded on purpose warns as invalid, and any tool trusting the enum misreads the four archived records. Decide: admit superseded (and define its semantics) or route supersede through a different field and stop the writer.
