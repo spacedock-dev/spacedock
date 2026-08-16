@@ -15,6 +15,16 @@ gates:
                 digest: sha256:67b5b390d6e86a6ef0e86959b8a72b38207d0cd9a904018acadafe492a7caa36
                 request-digest: sha256:abaa582a10c85b4690c7ff1001a39e2d9bcd2f20263d6410d6186e8703a45e0e
                 room-ref: ./red-auto-continue-gate-bypass/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7xe7hxt1qce1x9b3dm0k6ymg:ideation:1
+                briefing: briefing:7xe7hxt1qce1x9b3dm0k6ymg:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T17:49:21.399649Z"
+                decision: approve
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
