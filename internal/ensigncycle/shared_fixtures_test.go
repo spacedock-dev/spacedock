@@ -145,7 +145,9 @@ func rejectionReadme() string {
 		"Keep this review LIGHT — inspect only for the marker line and perform the required log write; do not read or run unrelated code.\n\n" +
 		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
 		"### Feedback Cycles\n\n" +
-		"The first rejected cycle is projected by the round recorder from `rejection-task/inputs/feedback-cycle.txt`; do not hand-write Cycle 1. Record `- Cycle 2: PASSED` after the re-validation passes.\n\n" +
+		"The first officer appends one Cycle line to this section per rejection round, before that round is recorded; the round recorder never writes one.\n\n" +
+		"The line for the first rejection round is in `rejection-task/inputs/feedback-cycle.txt` — copy it verbatim.\n\n" +
+		"A re-validation that passes closes its cycle without adding a line: this section records rejection rounds only.\n\n" +
 		"### done\n\nTerminal state.\n"
 }
 

@@ -393,9 +393,13 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
 	after := readFile(t, entityPath)
 	recordedRound := claudeRecordedRejectionRound(result.stream)
+	// The publication counter reads the same run stream, so it grades the FO
+	// behavior that was observed, not the wording of the skill that produced it.
+	publications := claudeRejectionRoundPublications(result.stream)
 	reviewerFlow := assertClaudeSingleEntityRejectionFlow(result.stream)
 	if _, ok := runner.(codexAsLiveDriver); ok {
 		recordedRound = codexRecordedRejectionRound(result.stream)
+		publications = codexRejectionRoundPublications(result.stream)
 		reviewerFlow = assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after)
 		if _, _, err := gates.Read(entityPath); err != nil {
 			recordedRound = false
@@ -413,6 +417,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	finishLiveScenario(t, runner, scenario, result,
 		durableSemantic("rejection-flow-state", assert(after, result.finalMessage+"\n"+result.stream)),
 		durableSemantic("rejection-round-missing", assertRejectionRecordedRound(workflowRoot, entityPath, "validation", recordedRound)),
+		durableSemantic("rejection-round-publication-count", assertSingleRejectionRoundPublication(publications)),
 		durableSemantic("rejection-reviewer-flow", reviewerFlow))
 }
 

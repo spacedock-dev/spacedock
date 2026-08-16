@@ -15,6 +15,8 @@ import (
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
+var rejectionRoundEntity = regexp.MustCompile(`(?:^|\s)['"]?rejection-task['"]?(?:\s|$)`)
+var rejectionRoundFlag = regexp.MustCompile(`--round(?:=|\s+)['"]?([A-Za-z][A-Za-z0-9_-]*/[0-9]+)['"]?(?:\s|[;&|]|$)`)
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
 
@@ -23,18 +25,10 @@ func rejectionRoundArtifactArg(flag, filename string) *regexp.Regexp {
 		regexp.QuoteMeta(filename) + `['"]?(?:\s|[;&|]|$)`)
 }
 
-func commandRecordsRejectionRound(command string) bool {
-	command = strings.ReplaceAll(command, "\\\n", " ")
-	for _, required := range []*regexp.Regexp{
-		regexp.MustCompile(`(?:^|\s)['"]?rejection-task['"]?(?:\s|$)`),
-		regexp.MustCompile(`--round(?:=|\s+)['"]?validation/1['"]?(?:\s|$)`),
-		rejectionRoundArtifactArg("briefing", "briefing.json"),
-		rejectionRoundArtifactArg("log", "briefing.review.jsonl"),
-	} {
-		if !required.MatchString(command) {
-			return false
-		}
-	}
+// invokesRejectionRoundRecorder reports whether a command reaches `gate record`
+// through a resolved launcher — named directly, or through a variable the same
+// command captured it into.
+func invokesRejectionRoundRecorder(command string) bool {
 	if directRoundLauncher.MatchString(command) {
 		return true
 	}
@@ -63,34 +57,100 @@ func commandRecordsRejectionRound(command string) bool {
 	return false
 }
 
+// rejectionRoundPublications returns every `--round` value a round-recorder
+// command carries, pinning no round id. commandRecordsRejectionRound below pins
+// validation/1 and so cannot see a validation/2 call at all; the counter must,
+// because a second publication is the failure it exists to catch. Every value is
+// returned, not just the first, because Codex reaches the recorder by chaining
+// commands into one shell call and could chain both publications there.
+func rejectionRoundPublications(command string) []string {
+	command = strings.ReplaceAll(command, "\\\n", " ")
+	if !rejectionRoundEntity.MatchString(command) || !invokesRejectionRoundRecorder(command) {
+		return nil
+	}
+	var rounds []string
+	for _, match := range rejectionRoundFlag.FindAllStringSubmatch(command, -1) {
+		rounds = append(rounds, match[1])
+	}
+	return rounds
+}
+
+func commandRecordsRejectionRound(command string) bool {
+	command = strings.ReplaceAll(command, "\\\n", " ")
+	for _, required := range []*regexp.Regexp{
+		rejectionRoundEntity,
+		regexp.MustCompile(`--round(?:=|\s+)['"]?validation/1['"]?(?:\s|$)`),
+		rejectionRoundArtifactArg("briefing", "briefing.json"),
+		rejectionRoundArtifactArg("log", "briefing.review.jsonl"),
+	} {
+		if !required.MatchString(command) {
+			return false
+		}
+	}
+	return invokesRejectionRoundRecorder(command)
+}
+
+// assertSingleRejectionRoundPublication grades AC-2's invocation half: a rejection
+// cycle publishes its round exactly once, at validation/1. It fails on zero calls
+// and on the retired step-8 republication at validation/2 alike, so a flow that
+// still publishes twice cannot pass by having one of the two calls look right.
+func assertSingleRejectionRoundPublication(rounds []string) error {
+	if len(rounds) != 1 {
+		return fmt.Errorf("rejection cycle made %d successful `gate record --round` invocations %v, want exactly 1", len(rounds), rounds)
+	}
+	if rounds[0] != "validation/1" {
+		return fmt.Errorf("rejection cycle published round %q, want validation/1", rounds[0])
+	}
+	return nil
+}
+
 func successfulRejectionRoundResult(content json.RawMessage, isError *bool) bool {
 	var text string
 	return isError != nil && !*isError && json.Unmarshal(content, &text) == nil &&
 		rejectionRoundSuccess.MatchString(text)
 }
 
+type claudeToolBlock struct {
+	Type      string `json:"type"`
+	Name      string `json:"name"`
+	ID        string `json:"id"`
+	ToolUseID string `json:"tool_use_id"`
+	Input     struct {
+		Command string `json:"command"`
+	} `json:"input"`
+	Content json.RawMessage `json:"content"`
+	IsError *bool           `json:"is_error"`
+}
+
+func claudeToolBlocks(line string) []claudeToolBlock {
+	var entry struct {
+		Message *struct {
+			Content []claudeToolBlock `json:"content"`
+		} `json:"message"`
+	}
+	if json.Unmarshal([]byte(line), &entry) != nil || entry.Message == nil {
+		return nil
+	}
+	return entry.Message.Content
+}
+
+func codexCompletedCommands(jsonl string) []codexCommandItem {
+	var items []codexCommandItem
+	for _, line := range strings.Split(jsonl, "\n") {
+		var entry codexCommandItem
+		if json.Unmarshal([]byte(line), &entry) == nil &&
+			entry.Type == "item.completed" &&
+			entry.Item.Type == "command_execution" {
+			items = append(items, entry)
+		}
+	}
+	return items
+}
+
 func claudeRecordedRejectionRound(stream string) bool {
 	invocations := map[string]bool{}
 	for _, line := range strings.Split(stream, "\n") {
-		var entry struct {
-			Message *struct {
-				Content []struct {
-					Type      string `json:"type"`
-					Name      string `json:"name"`
-					ID        string `json:"id"`
-					ToolUseID string `json:"tool_use_id"`
-					Input     struct {
-						Command string `json:"command"`
-					} `json:"input"`
-					Content json.RawMessage `json:"content"`
-					IsError *bool           `json:"is_error"`
-				} `json:"content"`
-			} `json:"message"`
-		}
-		if json.Unmarshal([]byte(line), &entry) != nil || entry.Message == nil {
-			continue
-		}
-		for _, block := range entry.Message.Content {
+		for _, block := range claudeToolBlocks(line) {
 			if block.Type == "tool_use" && block.Name == "Bash" && block.ID != "" &&
 				commandRecordsRejectionRound(block.Input.Command) {
 				invocations[block.ID] = true
@@ -104,26 +164,52 @@ func claudeRecordedRejectionRound(stream string) bool {
 	return false
 }
 
-func codexRecordedRejectionRound(jsonl string) bool {
-	for _, line := range strings.Split(jsonl, "\n") {
-		var entry struct {
-			Type string `json:"type"`
-			Item struct {
-				Type     string `json:"type"`
-				Command  string `json:"command"`
-				ExitCode *int   `json:"exit_code"`
-			} `json:"item"`
+// claudeRejectionRoundPublications returns the round id of every round-recorder
+// call in a Claude stream whose correlated tool_result did not report an error,
+// in stream order. Success is the tool result's error flag, not the success line
+// claudeRecordedRejectionRound pins, because a republication at validation/2 is
+// still a publication and is exactly what must be counted. An absent flag counts
+// as success: the counter is only ever allowed to over-report, since a missed
+// second call would let a double-publishing flow pass.
+func claudeRejectionRoundPublications(stream string) []string {
+	pending := map[string][]string{}
+	rounds := []string{}
+	for _, line := range strings.Split(stream, "\n") {
+		for _, block := range claudeToolBlocks(line) {
+			if block.Type == "tool_use" && block.Name == "Bash" && block.ID != "" {
+				if published := rejectionRoundPublications(block.Input.Command); len(published) > 0 {
+					pending[block.ID] = published
+				}
+			}
+			if block.Type == "tool_result" && (block.IsError == nil || !*block.IsError) {
+				rounds = append(rounds, pending[block.ToolUseID]...)
+				delete(pending, block.ToolUseID)
+			}
 		}
-		if json.Unmarshal([]byte(line), &entry) == nil &&
-			entry.Type == "item.completed" &&
-			entry.Item.Type == "command_execution" &&
-			entry.Item.ExitCode != nil &&
-			*entry.Item.ExitCode == 0 &&
+	}
+	return rounds
+}
+
+func codexRecordedRejectionRound(jsonl string) bool {
+	for _, entry := range codexCompletedCommands(jsonl) {
+		if entry.Item.ExitCode != nil && *entry.Item.ExitCode == 0 &&
 			commandRecordsRejectionRound(entry.Item.Command) {
 			return true
 		}
 	}
 	return false
+}
+
+// codexRejectionRoundPublications is the Codex half of the publication counter:
+// the round id of every round-recorder call that exited 0, in stream order.
+func codexRejectionRoundPublications(jsonl string) []string {
+	rounds := []string{}
+	for _, entry := range codexCompletedCommands(jsonl) {
+		if entry.Item.ExitCode != nil && *entry.Item.ExitCode == 0 {
+			rounds = append(rounds, rejectionRoundPublications(entry.Item.Command)...)
+		}
+	}
+	return rounds
 }
 
 func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
@@ -153,7 +239,7 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 		return fmt.Errorf("selected validation gate is not bound to the expected prepared Briefing")
 	}
 	if attempt.Resolution != nil || attempt.Application != nil {
-		return fmt.Errorf("final round-2 validation gate is not open")
+		return fmt.Errorf("prepared validation gate is not open")
 	}
 	return nil
 }
@@ -181,19 +267,34 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if err := assertRejectionRoundGateBoundary(entityPath, wantStatus); err != nil {
 		return err
 	}
-	currentRound := "validation/1"
-	summary, err := gates.ValidateRoundFile(entityPath, currentRound)
-	if err != nil && strings.Contains(err.Error(), "current review-round pointer does not resolve validation/1") {
-		currentRound = "validation/2"
-		summary, err = gates.ValidateRoundFile(entityPath, currentRound)
+	// The fixture's journey is ONE rejection cycle, so its durable end state is one
+	// round room and a pointer that resolves it. The round-id fallback this replaced
+	// accepted a validation/2 pointer as well, which absorbed the second publication
+	// instead of failing on it. Pinning validation/1 is what makes a republication
+	// falsifiable here; it is a fact about this one-cycle fixture, not a claim that
+	// a workflow may hold only one room.
+	// `review/validation/` holds the gate's own `briefing-N` rooms alongside the
+	// round rooms, so only the `round-` prefix is counted here.
+	stageRooms, err := os.ReadDir(filepath.Join(filepath.Dir(entityPath), "review", "validation"))
+	if err != nil {
+		return fmt.Errorf("read retained round rooms: %w", err)
 	}
+	var roundRooms []string
+	for _, entry := range stageRooms {
+		if strings.HasPrefix(entry.Name(), "round-") {
+			roundRooms = append(roundRooms, entry.Name())
+		}
+	}
+	if len(roundRooms) != 1 || roundRooms[0] != "round-1" {
+		return fmt.Errorf("rejection cycle left round rooms %v, want exactly one round-1 room", roundRooms)
+	}
+	summary, err := gates.ValidateRoundFile(entityPath, "validation/1")
 	if err != nil {
 		return fmt.Errorf("validate retained round: %w", err)
 	}
-	wantRoundID := map[string]string{"validation/1": "round:rejection-task:validation:1", "validation/2": "round:rejection-task:validation:2"}[currentRound]
-	if summary.ID != wantRoundID ||
+	if summary.ID != "round:rejection-task:validation:1" ||
 		summary.Stage != "validation" ||
-		summary.Cycle < 1 || summary.Cycle > 2 ||
+		summary.Cycle != 1 ||
 		summary.Briefing != rejectionBriefingID ||
 		len(summary.Entries) != 4 {
 		return fmt.Errorf("retained round summary = %#v", summary)
@@ -279,17 +380,6 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
 		t.Fatalf("recorded-round oracle rejected valid final validation state without a gate: %v", err)
 	}
-	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
-		Round:        "validation/2",
-		BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
-		LogPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
-		WorkflowDir:  root,
-	}); err != nil {
-		t.Fatalf("record second validation round: %v", err)
-	}
-	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
-		t.Fatalf("recorded-round oracle rejected validation/2 pointer with retained validation/1 room: %v", err)
-	}
 	gateReviewPath := filepath.Join(root, "rejection-task", "inputs", "gate-validation", "gate-review.md")
 	writeFile(t, gateReviewPath, "# Rejection Task — validation review\n\nThe corrected candidate is ready for its prepared decision gate.\n")
 	gateReviewRel, err := filepath.Rel(root, gateReviewPath)
@@ -311,7 +401,7 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		t.Fatalf("prepared later validation gate=%#v", prepared)
 	}
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
-		t.Fatalf("recorded-round oracle rejected later open round-2 validation gate: %v", err)
+		t.Fatalf("recorded-round oracle rejected the later open validation gate: %v", err)
 	}
 	openGateEntity := readFile(t, entityPath)
 	for _, control := range []struct{ entity, want string }{
@@ -332,8 +422,26 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 		t.Fatalf("close later validation gate for counterexample: %v", err)
 	}
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
-		!strings.Contains(err.Error(), "final round-2 validation gate is not open") {
+		!strings.Contains(err.Error(), "prepared validation gate is not open") {
 		t.Fatalf("closed gate control diagnostic = %v", err)
+	}
+
+	// Republication counterexample, last because nothing undoes it: the retired
+	// step-8 `validation/2` call is what the round-id fallback used to absorb, and
+	// the oracle must now fail on it. Without this the single-publication claim is
+	// unfalsifiable — a flow that publishes twice would still pass.
+	writeFile(t, entityPath, openGateEntity)
+	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
+		Round:        "validation/2",
+		BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
+		LogPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
+		WorkflowDir:  root,
+	}); err != nil {
+		t.Fatalf("record second validation round: %v", err)
+	}
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
+		!strings.Contains(err.Error(), "want exactly one round-1 room") {
+		t.Fatalf("republication control diagnostic = %v, want the second round room rejected", err)
 	}
 }
 
@@ -387,5 +495,79 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 	noInvocation := codexCommandOutput("spacedock status rejection-task --workflow-dir .", "", 0, "completed")
 	if codexRecordedRejectionRound(noInvocation) {
 		t.Fatal("no-invocation transcript falsely satisfied the round invocation extractor")
+	}
+}
+
+// TestRejectionRoundPublicationCounter pins the counter that grades AC-2's
+// invocation half on both hosts. The claim is "exactly one publication, at
+// validation/1", so the cases that must FAIL are the ones the retired flow
+// produced: the second call at validation/2, and — on Codex, whose failure was a
+// dropped tail — no call at all. A publication chained into one shell command is
+// counted separately, because Codex reaches the recorder that way.
+func TestRejectionRoundPublicationCounter(t *testing.T) {
+	roundCommand := func(round string) string {
+		return `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round ` + round +
+			` --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl`
+	}
+	claudeCall := func(id, round string, failed bool) string {
+		return strings.Join([]string{
+			bashToolLine(id, roundCommand(round)),
+			toolResultLine(id, failed, "round="+round),
+		}, "\n")
+	}
+	for name, tc := range map[string]struct {
+		claude, codex string
+		want          string
+	}{
+		"one call at validation/1": {
+			claude: claudeCall("toolu_1", "validation/1", false),
+			codex:  codexCommandOutput(roundCommand("validation/1"), "", 0, "completed"),
+		},
+		"republished at validation/2": {
+			claude: claudeCall("toolu_1", "validation/1", false) + "\n" + claudeCall("toolu_2", "validation/2", false),
+			codex: codexCommandOutput(roundCommand("validation/1"), "", 0, "completed") + "\n" +
+				codexCommandOutput(roundCommand("validation/2"), "", 0, "completed"),
+			want: "made 2 successful",
+		},
+		"never published": {
+			claude: bashToolLine("toolu_1", "spacedock status rejection-task --workflow-dir .") + "\n" +
+				toolResultLine("toolu_1", false, "{}"),
+			codex: codexCommandOutput("spacedock status rejection-task --workflow-dir .", "", 0, "completed"),
+			want:  "made 0 successful",
+		},
+		"only publication is validation/2": {
+			claude: claudeCall("toolu_1", "validation/2", false),
+			codex:  codexCommandOutput(roundCommand("validation/2"), "", 0, "completed"),
+			want:   `published round "validation/2"`,
+		},
+		"failed call is not a publication": {
+			claude: claudeCall("toolu_1", "validation/1", true),
+			codex:  codexCommandOutput(roundCommand("validation/1"), "", 1, "failed"),
+			want:   "made 0 successful",
+		},
+		"both publications chained into one command": {
+			claude: strings.Join([]string{
+				bashToolLine("toolu_1", roundCommand("validation/1")+"; "+roundCommand("validation/2")),
+				toolResultLine("toolu_1", false, "round=validation/2"),
+			}, "\n"),
+			codex: codexCommandOutput(roundCommand("validation/1")+"; "+roundCommand("validation/2"), "", 0, "completed"),
+			want:  "made 2 successful",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			for host, got := range map[string]error{
+				"claude": assertSingleRejectionRoundPublication(claudeRejectionRoundPublications(tc.claude)),
+				"codex":  assertSingleRejectionRoundPublication(codexRejectionRoundPublications(tc.codex)),
+			} {
+				switch {
+				case tc.want == "" && got != nil:
+					t.Fatalf("%s counter rejected the single publication: %v", host, got)
+				case tc.want != "" && got == nil:
+					t.Fatalf("%s counter accepted %s", host, name)
+				case tc.want != "" && !strings.Contains(got.Error(), tc.want):
+					t.Fatalf("%s counter diagnostic = %v, want %q", host, got, tc.want)
+				}
+			}
+		})
 	}
 }
