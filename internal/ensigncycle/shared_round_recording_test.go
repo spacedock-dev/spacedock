@@ -16,7 +16,11 @@ import (
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
-var rejectionRoundEntity = regexp.MustCompile(`(?:^|\s)['"]?rejection-task['"]?(?:\s|$)`)
+
+// Quote runs here are `['"]*` for the same reason as rejectionRoundFlag below:
+// Codex reaches the launcher through nested shell quoting and can wrap any
+// argument, the entity operand included, in a multi-character run like `'"'`.
+var rejectionRoundEntity = regexp.MustCompile(`(?:^|\s)['"]*rejection-task['"]*(?:\s|$)`)
 
 // Quote runs are `['"]*`, not `['"]?`, because Codex emits multi-character runs
 // like `'"'` around arguments. Missing a round would let the counter under-report,
@@ -25,9 +29,16 @@ var rejectionRoundFlag = regexp.MustCompile(`--round(?:=|\s+)['"]*([A-Za-z][A-Za
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
 
+// rejectionRoundArtifactArg matches one `--briefing`/`--log` argument pointing at
+// the fixture's canonical artifact path. The quote runs are `*`, not `?`: codex
+// emits the launcher through nested shell quoting, so a real invocation carries
+// a RUN of quote characters against the path — `--briefing '"'rejection-task/...`
+// — and a single optional quote reported a round that WAS recorded as missing.
+// The flag name and the artifact path stay exact, so this relaxes only the
+// quoting, not which arguments count.
 func rejectionRoundArtifactArg(flag, filename string) *regexp.Regexp {
-	return regexp.MustCompile(`--` + regexp.QuoteMeta(flag) + `(?:=|\s+)['"]?(?:[^ \t\r\n'";&|]*/)?rejection-task/inputs/` +
-		regexp.QuoteMeta(filename) + `['"]?(?:\s|[;&|]|$)`)
+	return regexp.MustCompile(`--` + regexp.QuoteMeta(flag) + `(?:=|\s+)['"]*(?:[^ \t\r\n'";&|]*/)?rejection-task/inputs/` +
+		regexp.QuoteMeta(filename) + `['"]*(?:\s|[;&|]|$)`)
 }
 
 // invokesRejectionRoundRecorder reports whether a command reaches `gate record`
@@ -84,7 +95,7 @@ func commandRecordsRejectionRound(command string) bool {
 	command = strings.ReplaceAll(command, "\\\n", " ")
 	for _, required := range []*regexp.Regexp{
 		rejectionRoundEntity,
-		regexp.MustCompile(`--round(?:=|\s+)['"]?validation/1['"]?(?:\s|$)`),
+		regexp.MustCompile(`--round(?:=|\s+)['"]*validation/1['"]*(?:\s|$)`),
 		rejectionRoundArtifactArg("briefing", "briefing.json"),
 		rejectionRoundArtifactArg("log", "briefing.review.jsonl"),
 	} {
@@ -596,6 +607,51 @@ func TestRejectionRoundPublicationCounter(t *testing.T) {
 				case tc.want != "" && !strings.Contains(got.Error(), tc.want):
 					t.Fatalf("%s counter diagnostic = %v, want %q", host, got, tc.want)
 				}
+			}
+		})
+	}
+}
+
+// TestRejectionRoundRecognizerAcceptsNestedShellQuoting pins the quoting shape a
+// real codex FO emits. Captured verbatim from a live rejection-flow run: codex
+// wraps the launcher in nested shell quoting, so `--briefing` is followed by the
+// run `'"'` before the path. The recognizer previously allowed a single optional
+// quote there, so this exact command — which exited 0 and printed the complete
+// four-entry round summary — was graded `rejection-round-missing`. Narrowing the
+// quote runs back to `?` reds this test. The wrong-artifact controls confirm the
+// relaxation did not make the recognizer accept any artifact path.
+func TestRejectionRoundRecognizerAcceptsNestedShellQuoting(t *testing.T) {
+	const captured = `/bin/zsh -lc '${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing '"'rejection-task/inputs/briefing.json' --log 'rejection-task/inputs/briefing.review.jsonl' --workflow-dir '/tmp/TestLiveCommonRejectionFlow/002'"`
+	if !commandRecordsRejectionRound(captured) {
+		t.Fatal("recognizer rejected the nested-shell quoting a real codex run emits")
+	}
+	result := "round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4"
+	if !codexRecordedRejectionRound(codexCommandOutput(captured, result, 0, "completed")) {
+		t.Fatal("codex extractor missed the nested-shell-quoted round invocation")
+	}
+	// A quote run can land on any argument, so every operand the recognizer pins
+	// must tolerate one. Each case below reds if its own site narrows back to `?`.
+	for site, quoted := range map[string]string{
+		"entity":   `${SPACEDOCK_BIN:-spacedock} gate record '"'rejection-task'"' --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl`,
+		"round":    `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round '"'validation/1'"' --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl`,
+		"briefing": `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing '"'rejection-task/inputs/briefing.json'"' --log rejection-task/inputs/briefing.review.jsonl`,
+		"log":      `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing rejection-task/inputs/briefing.json --log '"'rejection-task/inputs/briefing.review.jsonl'"'`,
+	} {
+		t.Run("quote run on "+site, func(t *testing.T) {
+			if !commandRecordsRejectionRound(quoted) {
+				t.Fatalf("recognizer rejected a quote run around the %s operand", site)
+			}
+		})
+	}
+	for name, invalid := range map[string]string{
+		"wrong_briefing_file": strings.Replace(captured, "briefing.json", "other.json", 1),
+		"wrong_log_file":      strings.Replace(captured, "briefing.review.jsonl", "other.review.jsonl", 1),
+		"wrong_entity":        strings.Replace(captured, "gate record rejection-task", "gate record other-task", 1),
+		"wrong_round":         strings.Replace(captured, "--round validation/1", "--round validation/2", 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if commandRecordsRejectionRound(invalid) {
+				t.Fatal("relaxed quoting made the recognizer accept an invalid argument")
 			}
 		})
 	}
