@@ -93,52 +93,74 @@ func sha256Sum(b []byte) []byte {
 	return sum[:]
 }
 
-// TestAutoContinueGateStateFollowsTheWorktreeCopy pins the resolution the gate read
-// must share with the report read. When validation is worktree-backed the FO keeps
-// active state — the report AND the gate record — in the worktree copy, so reading
-// the gate from the base entity finds no gates record and reds a conforming run.
+// TestAutoContinueGateStateAcrossEntityCopyPlacements pins every placement of the
+// gate record observed live, because the FO does not reliably keep the gate record
+// and the validation report in the same copy of a worktree-backed entity:
 //
-// Observed live: claude run 2 of the AC-4 loop graded `validation-worker-lifecycle:
-// entity has no gates record` while the FO's own final message reported the gate
-// prepared and open awaiting the captain, with the gate room under
-// `.worktrees/spacedock-ensign-auto-continue-task/`. The change that would make this
-// fail: reading gates from entityPath instead of the worktree-resolved reportEntity.
-func TestAutoContinueGateStateFollowsTheWorktreeCopy(t *testing.T) {
+//   - base-only: no worktree in play; both live in the base entity.
+//   - worktree-both: claude run 2 of the AC-4 loop put the report AND the gate record
+//     in the worktree copy, so reading gates from the base path red a conforming run.
+//   - split: codex files the report in the worktree copy but the gate record in the
+//     base copy, so reading gates from the worktree path red a conforming run.
+//
+// Reading either path alone therefore reds a real host's conforming run — the AC-2
+// false-red class. Each placement is asserted in BOTH directions so tolerating the
+// placement cannot blind the bypass check.
+//
+// The first attempt at this guard tested only worktree-both, the placement its author
+// had hypothesised, and so confirmed the expectation instead of varying the dimension
+// that actually differs. The authorized single-path remedy shipped on that proof and
+// red codex live. The table below varies placement deliberately.
+func TestAutoContinueGateStateAcrossEntityCopyPlacements(t *testing.T) {
 	stream := readFile(t, filepath.Join("testdata", autoContinueReplayFixture))
 	const worktree = ".worktrees/spacedock-ensign-auto-continue-task"
 
-	stage := func(t *testing.T, resolved bool) (string, string) {
+	stage := func(t *testing.T, placement string, resolved bool) (string, string) {
 		t.Helper()
 		root := t.TempDir()
 		entityPath, err := writeAutoContinueWorkflowNoGit(root)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// Base copy carries the worktree pointer only; active state lives in the
-		// worktree copy, which is where the FO prepared the gate.
-		base := strings.Replace(autoContinueEntity(), "status: implementation", "status: validation", 1)
-		base = strings.Replace(base, "worktree:\n", "worktree: "+worktree+"\n", 1)
-		writeFile(t, entityPath, base)
-		writeFile(t, filepath.Join(root, worktree, filepath.Base(entityPath)), autoContinueGatedEndState(resolved))
+		gated := autoContinueGatedEndState(resolved)
+		ungated := strings.Replace(autoContinueEntity(), "status: implementation", "status: validation", 1) +
+			"\n## Stage Report: validation\n\n- DONE: Verify the implementation against AC-1\n  PASSED.\n"
+		worktreeCopy := filepath.Join(root, worktree, filepath.Base(entityPath))
+
+		switch placement {
+		case "base-only":
+			writeFile(t, entityPath, gated)
+		case "worktree-both":
+			writeFile(t, entityPath, strings.Replace(ungated, "worktree:\n", "worktree: "+worktree+"\n", 1))
+			writeFile(t, worktreeCopy, gated)
+		case "split-report-worktree-gate-base":
+			writeFile(t, entityPath, strings.Replace(gated, "worktree:\n", "worktree: "+worktree+"\n", 1))
+			writeFile(t, worktreeCopy, ungated)
+		default:
+			t.Fatalf("unknown placement %q", placement)
+		}
 		gitInit(t, root)
 		return root, entityPath
 	}
 
-	t.Run("open_gate_in_worktree_grades_green", func(t *testing.T) {
-		root, entityPath := stage(t, false)
-		if err := assertAutoContinueDispatchEvidence(t, stream, root, entityPath); err != nil {
-			t.Fatalf("a conforming worktree-backed run graded RED: %v", err)
-		}
-	})
-
-	t.Run("resolved_gate_in_worktree_still_reds", func(t *testing.T) {
-		root, entityPath := stage(t, true)
-		err := assertAutoContinueDispatchEvidence(t, stream, root, entityPath)
-		if err == nil {
-			t.Fatal("a resolved gate in the worktree copy graded GREEN — following the worktree must not blind the bypass check")
-		}
-		if code := gradedCode(err); code != autoContinueBypassCode {
-			t.Fatalf("worktree-backed bypass graded under %q, want %q", code, autoContinueBypassCode)
-		}
-	})
+	for _, placement := range []string{"base-only", "worktree-both", "split-report-worktree-gate-base"} {
+		t.Run(placement, func(t *testing.T) {
+			t.Run("open_gate_grades_green", func(t *testing.T) {
+				root, entityPath := stage(t, placement, false)
+				if err := assertAutoContinueDispatchEvidence(t, stream, root, entityPath); err != nil {
+					t.Fatalf("conforming run graded RED with the gate record placed %s: %v", placement, err)
+				}
+			})
+			t.Run("resolved_gate_still_reds", func(t *testing.T) {
+				root, entityPath := stage(t, placement, true)
+				err := assertAutoContinueDispatchEvidence(t, stream, root, entityPath)
+				if err == nil {
+					t.Fatalf("a resolved gate placed %s graded GREEN — tolerating placement must not blind the bypass check", placement)
+				}
+				if code := gradedCode(err); code != autoContinueBypassCode {
+					t.Fatalf("bypass placed %s graded under %q, want %q", placement, code, autoContinueBypassCode)
+				}
+			})
+		})
+	}
 }

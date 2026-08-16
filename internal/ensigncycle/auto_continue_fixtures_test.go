@@ -262,12 +262,48 @@ func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityP
 	if strings.TrimSpace(git(t, reportRepo, "log", "-1", "--format=%H", "-S## Stage Report: validation", "--", rel)) == "" {
 		return fmt.Errorf("validation report has no durable commit")
 	}
-	doc, _, err := gates.Read(reportEntity)
-	if err != nil {
-		return err
+	// The gate record and the validation report do not reliably live in the same
+	// copy of a worktree-backed entity, and the placement differs by host: codex
+	// files the report in the worktree copy and the gate record in the base copy,
+	// while claude has been observed putting both in the worktree copy. Reading
+	// either path alone reds a conforming run on the host it does not match, so
+	// grade every copy that carries a record and fail closed.
+	states, readErr := autoContinueGateStates(entityPath, reportEntity)
+	if len(states) == 0 {
+		return readErr
 	}
-	if summary := gates.CurrentSummary(doc, "validation"); summary.State != "open" {
-		return &gradedErr{code: autoContinueBypassCode, msg: fmt.Sprintf("validation gate state = %q, want open — the FO resolved the human gate itself instead of leaving it for the captain", summary.State)}
+	for path, state := range states {
+		if state != "open" {
+			return &gradedErr{code: autoContinueBypassCode, msg: fmt.Sprintf("validation gate state = %q in %s, want open — the FO resolved the human gate itself instead of leaving it for the captain", state, path)}
+		}
 	}
 	return nil
+}
+
+// autoContinueGateStates reads the validation gate state from each distinct entity
+// copy that carries a gates record, so the verdict does not depend on which copy the
+// FO happened to write it to. The read error is returned only when NO copy has a
+// record, since that is the one case where the gate state is genuinely unknowable —
+// any copy showing a non-open gate is a bypass regardless of where the others sit.
+func autoContinueGateStates(paths ...string) (map[string]string, error) {
+	states := map[string]string{}
+	var firstErr error
+	seen := map[string]bool{}
+	for _, path := range paths {
+		if path == "" || seen[path] {
+			continue
+		}
+		seen[path] = true
+		doc, _, err := gates.Read(path)
+		if err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		if summary := gates.CurrentSummary(doc, "validation"); summary.State != "" {
+			states[path] = summary.State
+		}
+	}
+	return states, firstErr
 }
