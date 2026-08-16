@@ -353,3 +353,46 @@ it would mask a genuine pi pass.
 ### Summary
 
 The gated design landed and its offline ACs are proven and falsifiable, but verifying them surfaced two things ideation could not have known, both because this check had never run on claude before. The first is a Material false-red: the gate read does not follow the worktree resolution the report read already does, so a correct run reds. Its remedy is one line plus a two-direction regression guard, proven in a throwaway and held for authorization rather than applied. The second is a scope question — AC-4's claude bar depends on a stub-deliverable fixture whose validator sometimes rejects, and the honest remedies belong to the captain. The candidate is unchanged at 5cdb766ec, no PR is open, no gate touched, and both live loops are stopped.
+
+### Implementation addendum (post-authorization cycle)
+
+**Correction to an ideation claim.** The Spike recorded the gate-open half as "host-neutral by
+construction ... `gates.Read(entityPath)`". That claim was only ever checked against codex,
+because the optional interface meant no other host reached the check. The first claude run
+through the now-unconditional check falsified it. Recorded here so the next reader does not
+inherit the claim.
+
+**The authorized remedy was itself falsified, by running it.** FO authorized reading gates from
+the worktree-resolved `reportEntity`. Applied as 84ea009e4; codex then went from 3/3 GREEN to
+RED twice on `entity has no gates record`. A controlled run of the same two commits cherry-picked
+onto the OLD base (571017df3) also red, which rules out the rebase and the layers below.
+
+Cause: the gate record and the validation report do not reliably live in the same copy of a
+worktree-backed entity, and the placement differs by host — codex files the report in the
+worktree copy and the gate record in the base copy; claude has been observed putting both in the
+worktree copy. The original code and the authorized fix are each half right, and each reds a
+conforming run on the host it does not match.
+
+My first proof was insufficient: the throwaway fixture encoded the placement I hypothesised
+rather than the placements observed, so it confirmed the expectation instead of testing the
+variable. The corrected remedy — read the gate state from every entity copy carrying a record and
+fail closed — is proven across all three placements in both directions, and falsified
+symmetrically: gates-from-`entityPath`-only reds the claude shape, gates-from-`reportEntity`-only
+reds the codex shape, both-copies passes all three while every resolved gate still reds under
+`human-gate-bypassed`. Held for FO authorization; NOT applied to the candidate.
+
+**Product-side observation, not acted on.** Codex's FO reported: "Gate preparation succeeded, but
+presentation stopped because both required structured reads failed ... The report exists in the
+registered worktree, but the status reader inspected the main entity copy." `spacedock status
+--read` does not follow the worktree either. Outside this entity's surface; recorded, not fixed.
+
+**Stack.** Base moved from #719 to `spacedock-ensign/prepare-initial-gated-stage-from-seed`
+(58043ed97) per FO. Rebased cleanly, PR #723 opened as layer 5, linked `718 719 721 722 723`.
+The `gh stack link` banner is not evidence, so verified by GraphQL `pullRequest.stack` read-back
+from #723, #722 and #718 independently — all three report stack #720, size 5, correct order.
+
+**Live loop accounting (AC-4 NOT met).** Pre-fix: codex 3/3 GREEN, claude 1 GREEN + 1 attributed
+FALSE red + 1 killed. Post-authorized-fix: codex 2 RED (the falsification above), claude 1 killed
+in flight. Old-base control: codex 1 RED. No streak stands on the current candidate; all pre-fix
+greens need re-earning once the remedy is settled. Ledgers with per-run stream digests under
+`/Users/clkao/.claude/jobs/4e49247e/tmp/live{,2}/`. Pi not run, no preemptive xfail.
