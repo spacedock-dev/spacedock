@@ -373,22 +373,33 @@ repair reddens that matrix rather than being absorbed.
 - `TestRejectionRoundRecognizerAcceptsNestedShellQuoting` carries a live-captured command verbatim and covers a quote run on each of the four operands. Narrowing any site's quote run back to `?` reds its case; the wrong-file, wrong-entity and wrong-round controls confirm the relaxation did not widen what counts.
 - `go test ./...` plain and `-race` green on the composed tree.
 
+A caution reached me mid-stage that AC-1's `needs-preparation` assertion might depend on the report's review verdict, was then contested, and was finally retracted by its author. Rather than pick a side of a prose dispute I read the predicate: `internal/status/entered_stage.go` gates the row on `hasCompleteStageReport(data, stage) && entityPathCleanInHEAD(path)`, where completeness means every checklist bullet's status token is `DONE` or `SKIPPED` with non-empty text and a non-blank evidence line, plus a Summary. There are no review semantics in it. The retraction was correct, AC-1 is unaffected, and this entity's fixture satisfies the predicate by construction — which its passing test demonstrates rather than assumes.
+
 ### Live evidence
 
 Composed-tree loop, 4 runs under CI's pinned model and reasoning effort (`--model gpt-5.6-luna`, `model_reasoning_effort=max`, via a local replica of the CI PATH shim): 2 green. `state commit` reported the inline commit in 4 of 4 runs and the pre-fix no-op string appeared in 0 of 4. The two reds were single non-overlapping codes outside this layer — one `rejection-gate-not-prepared` where the FO ended without preparing, one `implementation-worker-not-dispatched` from the worker-lifecycle selector. `rejection-round-missing` did not fire in any composed-tree run.
 
-An earlier loop measured the wrong thing: without the shim the live runner resolves a bare `codex` from PATH, a different model and effort from CI's. Those runs are retained as a labeled dataset, not counted as evidence. One of them shelled a stale pre-fix binary and passed anyway, its stream showing 4 pre-fix no-op strings and 2 raw `git add && git commit` calls — an independent live reproduction of the trap, and the reason the loop now also requires the inline-commit line rather than trusting `state=open` alone.
+Per the FO's revised attribution rules the two reds are signal, not noise, so both are stated rather than filtered: the never-prepares mode still occurs on the composed tree at roughly 1 in 4 even with the operand defect fixed under this layer.
+
+An earlier loop measured the wrong thing: without the shim the live runner resolves a bare `codex` from PATH, a different model and effort from CI's. Those runs are retained as a labeled dataset, not counted as evidence. One of them shelled a stale pre-fix binary and passed anyway, its stream showing 4 pre-fix no-op strings and a `git add && git commit` chained into the same shell call as `gate prepare` — an independent live reproduction of the trap, and the reason the loop now also requires the inline-commit line rather than trusting `state=open` alone.
+
+**Reusable fact for anyone running a local live loop.** The live runner resolves codex with `exec.LookPath("codex")`, and CI does not run the bare CLI: `.github/workflows/runtime-live-e2e.yml` (the codex shim step) puts a wrapper named `codex` first on PATH that injects `--model gpt-5.6-luna -c model_reasoning_effort="max"` into every `codex exec` front door. A local loop without that shim silently measures a different model at a different reasoning effort. Same trap on the binary side: `spacedockBinary` falls back to a `spacedock` on PATH when `SPACEDOCK_BIN` is unset, which is how one loop here drove a stale pre-fix build. A replica shim and the loop driver are preserved beside this entity.
+
+### Durable evidence
+
+The exec streams lived in the agent job's tmp dir, which does not survive cleanup, so the load-bearing ones are copied to `repair-codex-rejection-round-recording/evidence/` in this state checkout: the pre-fix trap reproduction, the mechanism chain, and a composed-tree green (gzipped streams), all four run ledgers, the loop driver, and the CI shim replica. `evidence/README.md` extracts each cited command sequence from those same artifacts so every claim here can be re-derived rather than taken on trust; it names every verb a command carries, because codex chains several into one shell call and a naive reading would misattribute the raw-git escape.
 
 ### Declared deviations
 
 - **Surface past tolerance.** Ideation declared 5 files and ~105 insertions, tolerance ±2 files and ±35 LOC. Actual is 7 files and 512 insertions: file count at the boundary, LOC 3.7x over the ceiling. Product plus docs is 85; test code is 427. The overrun is acceptance-criteria-mandated tests the surface table allocated no lines for — AC-3's two unit tests were folded into two ~6-line rows, and AC-1's chain test was estimated at 60. Reported to the FO before the PR; no trim was requested.
-- **Scope added by FO authorization.** The recognizer quote-run fix was not in the approved design. It was found during implementation, held unchanged, proposed through the review-finding checkpoint, and applied only after distinct FO authorization.
-- **Bar re-scoped by FO.** The 5-consecutive-greens gate was replaced with the mechanism-chain proof; the contingency XFAIL was explicitly withheld.
+- **Scope added by FO authorization.** The recognizer quote-run fix was not in the approved design. It was found during implementation, held unchanged, proposed through the review-finding checkpoint, and applied only after distinct FO authorization. Authorized scope was `['"]?` to `['"]*` in `rejectionRoundArtifactArg` and its two sibling patterns in `commandRecordsRejectionRound`, plus a regression case carrying the captured command bytes verbatim. On the composed tree one sibling had been extracted into the var `rejectionRoundEntity`, so the fix was re-applied to that var rather than merged textually; the peer had deliberately left both siblings at `['"]?` for this edit. **Correction to the authorization's framing:** it was granted on the understanding that CI-model prevalence was unmeasured. It is now measured — the three-character quote run appeared under the shimmed CI config too, in the pre-quoting-fix CI run that graded `rejection-round-missing` on a round recorded with a complete four-entry summary. The defect is in any case a static property of the recognizer and independent of which model produced the command.
+- **Bar re-scoped by FO.** The 5-consecutive-greens gate was replaced with the mechanism-chain proof; the contingency XFAIL was explicitly withheld, on the FO's ruling that a binding here would be the ceremony the captain already rejected for a journey whose remaining defects are owned by a live peer.
+- **Loop scoring re-scoped by FO.** A green counts only with the in-stream inline-commit line and zero pre-fix no-op strings — `state=open` alone is insufficient, because the pre-fix baseline reached `state=open` through the model's raw-git escape. The validator should re-run the loop under that same bar; `evidence/repair-loop.sh` encodes it.
 - **Base reversed by captain.** Landing on top of #718 rather than directly on origin/main.
 
 ### Findings routed out, not absorbed
 
-- The skill documented the round recorder without its entity operand, so an FO following it verbatim got `Error: unknown gate flag: validation/1`; the same step said to invoke once and hold on failure, turning a usage error into a terminal hold. Observed in 4 of 4 runs before the skill rewrite. Provenance witness: `c355fbe44` (2026-07-23) documents the correct `gate record <entity> --round <stage>/<cycle> ...` form. Routed to task #19 and fixed there; the composed skill now names the operand and calls its omission a usage error.
+- The skill documented the round recorder without its entity operand, so an FO following it verbatim got `Error: unknown gate flag: validation/1`; the same step said to invoke once and hold on failure, turning a usage error into a terminal hold. Observed in 4 of 4 runs before the skill rewrite, under both codex configurations — near-deterministic, not a flake. Provenance witness: `c355fbe44` (2026-07-23) documents the correct `gate record <entity> --round <stage>/<cycle> ...` form; cited alone, because the intervening commit carries no recorder command line in that file and so is not a prior-correct witness. A naive grep for `gate record` in that skill is misleading — the file's fixture examples do name the entity, and the step line an FO actually follows is the one that lost it. Routed to task #19 and fixed there; the composed skill now names the operand and calls its omission a usage error.
 - `implementation-worker-not-dispatched` fires on this journey when the lifecycle selector matches two `Stage Report: implementation` headings, which a two-cycle rejection legitimately produces. Not investigated further; named for separate filing.
 
 ### Summary
@@ -399,8 +410,12 @@ see it, and one captured stream shows the refusal, the commit, and the successfu
 retry in sequence. The two honesty repairs do their job on the composed tree — a
 run that records its round is no longer told it did not, and the one real remaining
 condition is named as an unprepared gate instead of hiding under the round code.
-The journey is not reliably green, and this layer never could have made it so: the
-dominant blocker was a skill that documented an invalid command and then forbade
-retrying it, which is why the loop bar was re-scoped and the work routed to #19
-rather than absorbed here. Two findings are named for separate filing and no XFAIL
-binding was added.
+This layer is necessary but not sufficient for the journey, and the report should
+not be read as claiming otherwise. Three independent defects sat on the path:
+the skill documented the recorder without its entity operand, the skill's
+invoke-once language turned that usage error into a terminal hold, and the
+dirty-tree dead end. The first two are #19's and are fixed under this layer; only
+the third was ever mine. Journey-level green therefore belongs to the composed
+tree at the stack tip, which is the shipping vehicle since the stack merges
+atomically — not to this layer alone. Two further findings are named for separate
+filing and no XFAIL binding was added.

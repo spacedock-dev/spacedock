@@ -1,0 +1,4 @@
+run	verdict	state_open	inline_commit	prefix_noop	consecutive	seconds
+1	PASS	yes	yes	0	1	464
+2	FAIL	no	no	0	0	350
+3	FAIL	no	yes	0	0	473
