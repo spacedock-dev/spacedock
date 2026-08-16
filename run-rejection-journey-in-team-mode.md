@@ -17,3 +17,10 @@ Invoke the rejection-flow scenario in team mode on both runtimes, so the routing
 
 - The FO never-prepares residual (separate behavior concern).
 - Product code: this is scenario invocation and harness grading only.
+
+## Evidence pointers (FO, post-filing)
+
+Two captain-ordered investigations sharpen this entity's scope; ideation must read both:
+
+- `_debriefs/2026-08-16-02-live-harness-audit.md` — full live-suite audit. Findings 1, 2, 7, 8, 10 are this journey's surface: the codex leg's two graded assertions are mutually contradictory on the fixture's own scripted end-state (exact duplicate heading mandated by the fixture, hard-errored by the section selector); the Claude leg's either/or reviewer acceptance has no ordering anchor and no implementation-producer check; two `observed` checks are tautologies; the fixture-determined Cycle 2 line is never asserted.
+- `_debriefs/2026-08-16-03-rejection-shape-attribution.md` — blind two-sided shape analysis of the five preserved runs. Key corrections to this entity's filed text: on codex the followup surface was LIVE, so the determined fix route is REUSE (spawns=1), not bare-mode fresh dispatch — the fresh-dispatch derivation governs the Claude `-p` leg only. Both codex "green" runs used a single-worker chain that re-reviewed its own fix, violating the skill's reviewer-independence ban — undetected because the codex branch swapped out the reviewer-flow assert; the one fixture-literal ensign was graded red by the duplicate-heading error. Minimal corrections identified there (prefix-count sections, fixture-side distinct cycle-2 title, reviewer-topology assert for codex) are candidate design inputs, not pre-approved decisions.
