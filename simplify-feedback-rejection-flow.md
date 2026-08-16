@@ -1,7 +1,7 @@
 ---
 id: 18963egcskzxaje6b5vnas3q
 title: Simplify the feedback-rejection flow to five steps or fewer
-status: backlog
+status: ideation
 source: "Captain principle 2026-08-16: anything more than 4 or 5 steps is a footgun. Live evidence: both rejection-flow failure mechanisms are step-count casualties - codex drops step 8's bundled tail (completion gap, ErrNoGateRecord); claude's oracle splits across the step-6/step-8 two-call publish (entries=2 vs 4, wrong round id)."
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain directive 2026-08-16: dispatch 18'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Redesign skills/feedback-rejection-flow/SKILL.md from 8 steps to at most 5, with the single-publish shape the diagnostic evidence recommends: accumulate the round, publish ONCE under one round id, and make the gate re-entry a single unbundled step. Every step becomes one action with one completion condition; no step may bundle a tail an FO can drop.
