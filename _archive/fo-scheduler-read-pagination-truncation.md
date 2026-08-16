@@ -1,11 +1,11 @@
 ---
 id: pgdyphtaqfx1zn0h7ax31e5h
 title: FO scheduler reads must not silently truncate at the page limit
-status: validation
+status: done
 source: "trim-dispatch-core-stale-prose ideation and validation, 2026-08-15; captain 2026-08-15: necessary before 0.27"
 started: 2026-08-15T23:04:16Z
-completed:
-verdict:
+completed: 2026-08-16T03:34:29Z
+verdict: PASSED
 score: "0.95"
 worktree: .worktrees/spacedock-ensign-fo-scheduler-read-pagination-truncation
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: 'Captain 2026-08-16 (approve all to the stack): validation PASSED; lands as a stack layer; captain reviews the PRs'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:712
+archived: 2026-08-16T03:34:29Z
 ---
 
 The FO event loop's `status --where` scheduler read returns paginated JSON with a default limit of 25, and the FO contract reads no pagination field. Past 25 matching entities the loop silently never sees the rest: work is dropped with no signal. Captain: needed before 0.27 stable.
