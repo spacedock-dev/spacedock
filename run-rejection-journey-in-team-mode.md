@@ -23,6 +23,12 @@ gates:
                 at: "2026-08-16T17:46:40.418163Z"
                 decision: revise
                 reason: 'Captain annotation on the determined-shape table (claude headless probe row): ''is this true? this used to work'' - verify the probe-failure claim and its history before the claude branch is accepted'
+            - id: gate-attempt:zqb683j8jth0tyr2eme231e2-ideation-2
+              briefing:
+                id: briefing:zqb683j8jth0tyr2eme231e2:ideation:attempt-2:revision-1
+                digest: sha256:2359dd68ea2549cd8c8ded29e0e9acbf91701ddc636571ff694843627d3ee5a1
+                request-digest: sha256:065aad3085105141c550bcac8c8fdd0613cff7bf97b8e197bb9137ad507e4f65
+                room-ref: ./run-rejection-journey-in-team-mode/review/ideation/briefing-2
 ---
 
 ## Problem

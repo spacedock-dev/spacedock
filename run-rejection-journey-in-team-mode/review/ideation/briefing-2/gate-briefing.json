@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zqb683j8jth0tyr2eme231e2:ideation:attempt-2:revision-1",
+  "question": "Approve the revised team-mode rejection design (cycle 2): probe claim corrected per your challenge — reuse works interactively, has never worked in this harness (three verified blockers, CLAUDE_CONFIG_DIR blindness first); certification scope now stated plainly; grading branch-keyed on the probe observable so a future blocker fix auto-requires reuse. Also: file the recommended spin-off entity for the CLAUDE_CONFIG_DIR defect?",
+  "artifacts": [
+    {
+      "id": "artifact:zqb683j8jth0tyr2eme231e2:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/afdd4eb5780f2f520bec8a2ae9dbe694729499a6/run-rejection-journey-in-team-mode.md",
+      "rev": "sha256:44d9406ce8be270d01317991baefb4f4bdaea3be8a6a54a4154530333bdef674",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 revision: captain's 'this used to work' verified TRUE - claude reuse works interactively today and never worked in harness/CI; probe is CLAUDE_CONFIG_DIR-blind (A/B proven), plus agentType mismatch and missing teams config; old reuse assert removed 2026-06-13 for a now-obsolete reason; user-facing silent-degradation defect recommended as separate entity."
+    }
+  ]
+}
