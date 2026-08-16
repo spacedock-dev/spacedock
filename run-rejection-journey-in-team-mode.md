@@ -433,3 +433,60 @@ scope to fix, and the design does not depend on fixing them, because the grading
 the observed probe result rather than on the shape this environment happens to produce. The one
 design change is honesty about coverage: this journey certifies the Codex reuse path and the Claude
 headless fail-safe path, and certifies Claude interactive reuse not at all.
+
+## Stage Report: implementation
+
+- DONE: Execute the gated design exactly — all nine mechanisms, the registry doc diff, the certification-scope section stands as shipped truth.
+  `9cb13c7c7`. Team-mode cue (host-neutral `rejectionTeamModeCue` + per-host `rejectionHostRealization`, the `merged_team_mode_live_test.go:100-107` split); reuse condition 5 verbatim as drafted; branch-keyed `assertRejectionWorkerTopology`; codex native-rollout extractor on task paths only; per-run digest; fixture `(cycle 2)` heading; host-neutral cycle-line and gate-prepared asserts; tautology removal anchored to `finalMessage`; the finding-10 repairs.
+- DONE: Grading stays branch-keyed; the three `CLAUDE_CONFIG_DIR` blockers untouched.
+  No file under `internal/claudeteam` or `internal/dispatch` is in the diff. The Claude branch key is read from the probe's own tool_result, so a blocker fix flips the leg to the reuse chain with no grading change: `TestRejectionTopologyProbeFailSafe` proves both directions today, and would fail if the branch were pinned to `fresh`.
+- DONE: Offline first — AC-2, AC-3, AC-4 by table test.
+  `TestRejectionTopologyExtractsCapturedCodexChain` asserts the 8-event determined chain comes out of REAL captured rollout bytes; it fails if the extractor stops normalizing `/root/`-rooted against bare handles, counts a refused spawn's error-string output as a dispatch, or counts a worker's non-final `agent_message` as a completion. `TestRejectionTopologyRedsNonConformingShapes` (6 cases) fails if any of the self-review chain, fresh-rework, re-review-before-rework, reviewer-collapsed-onto-producer, missing-re-review, or two-validators-up-front shapes stops producing a `rejection-worker-topology` red. `TestRejectionTopologyBranchesAreMutuallyExclusive` fails if either branch's chain also passes under the other's. `TestRejectionCycleLineAndGateShapes` fails if a second Cycle line, a missing one, a reworded one, or an unprepared gate stops redding. `TestAssertRejectionFlow` fails if the exact-duplicate-heading entity passes, or if a final message naming only one outcome passes.
+- DONE: `go test ./...` plain and `-race`; contractlint reconciliation.
+  20 packages ok plain, 20 ok under `-race`, no data races, no failures. `go test -count=1 ./internal/contractlint/` ok — the registry entry still binds the journey/fixture ids after the required-outcome edit.
+- DONE: Live loop per AC-1 — 3 consecutive conforming greens per runtime, ledger row per run.
+  Codex 3/3 runs; claude-sonnet 3 consecutive in 5 runs; both inside the 8-run budget. A conforming green required exit 0 AND a persisted digest carrying that run's branch chain in order. Every codex digest is the reuse chain, every claude digest the fail-safe fresh chain. Evidence: `_evidence/zq-team-mode-ac1/` (ledgers, 8 per-run digests, the one red's test log, the driver).
+- DONE: FO adherence residual rule — one hardening round at a quoted instruction.
+  Mode 1 (ends without `gate prepare`) recurred on the first codex run. Round 1 was spent at the instruction the stream shows the FO following: the prompt's own goal line ("stop after … the second validation passes; leave the entity nonterminal"), which contradicted `feedback-rejection-flow/SKILL.md` step 5 ("Done when exactly one fresh open gate has been prepared and presented") that the same run had loaded. The goal line now names the prepared gate as the bounded stop. Mode 1 did not recur in the 8 following runs. The grade was not loosened.
+- FAILED: Surface within 11 files / ~406 changed lines ±30%.
+  12 files (within the ±1 file tolerance) but **1115 changed lines against a 528 ceiling — +174%**; captured data 13 lines against ~120, under. Largest overruns: the topology table test 384 vs ~110, `shared_reviewer_reuse_test.go` +245 vs ~90, `shared_assertions_impl_test.go` +58 vs ~20. Cause: the estimate was made before the real rollout format was known, and three real-byte findings (a follow-up names its worker under `target` not `task_name`; a refused spawn returns a plain error string, not JSON; a running worker emits non-final `agent_message`s) each needed extractor code, a guard, and a regression case. AC coverage was not narrowed to fit — the checklist forbids loosening the grade to reach a number, so this is declared rather than trimmed. Captain-visible design-reset decision is the FO's call.
+- FAILED: Retire the `AUDIT(2026-08-16)` block above `TestLiveCommonRejectionFlow`.
+  The block does not exist in my base. It landed on `main` in `df0bd50d9`, which is not an ancestor of the composed tree `571017df3` I was given (they diverge at `0c6a2c32a`). Nothing to delete yet; it must be deleted in the same commit as the rebase the FO directs. Carried, not dropped.
+- SKIPPED: Signal the FO for the base, rebase, push, stack-link, GraphQL read-back.
+  Blocked on the FO's base assignment — the checklist routes it through "when PR-ready, signal the FO for your base". Signalling now; the branch is unpushed and unrebased.
+- DONE: File the implementation stage report, commit path-scoped, push, signal the FO, stop for validation.
+  This section; no gate preparation or resolution.
+
+### Summary
+
+The journey now runs in team mode on both runtimes and grades the ordered worker
+chain its branch owes, and AC-1 is met: 3 consecutive conforming greens on codex (3
+runs) and on claude-sonnet (5 runs), against a measured baseline of 0. The load-bearing
+correction to the design came from checking the extractor against real multi-agent
+rollout bytes before trusting it: a `followup_task` names its worker under `target`,
+not the `task_name` key the spawn uses, so the parser the design described would have
+silently dropped every follow-up and reported a conforming reuse chain as two events
+short. Two further real shapes — a refused spawn returning an error string instead of
+JSON, and non-final worker messages before FINAL_ANSWER — would each have invented or
+doubled an event.
+
+Two things need the captain rather than me. The surface is +174% over the ideation
+estimate, declared above with its cause; I did not trim AC coverage to reach the
+number. And the entity's own determined-shape chain orders `gate record --round` BEFORE
+the rework routing while citing `feedback-rejection-flow/SKILL.md` steps 1-5, but the
+skill orders the correction first — step 1 is done only when the target worker's
+entries close the review log, and step 2 only when the recorder counts every entry the
+round accumulated. Claude run 2 followed the entity's order, recorded at `entries=2`,
+and was correctly redded by the pre-existing `entries=4` recognizer. The entity text is
+wrong on that one ordering; nothing in this layer depends on it, because the topology
+grader orders only worker routing events and never places `gate record` among them. I
+left the recognizer alone rather than relax it.
+
+One deviation inside the design: item 6 names only the rework bullet, but the
+determined shape lists four distinct report sections including
+`## Stage Report: validation (cycle 2)`, so the validation bullet got the same
+cycle-aware instruction. Without it the two cycle-2 sections are not distinct and the
+duplicate-heading shape AC-2 requires to red would not. I also deleted
+`assertClaudeSingleEntityRejectionFlow` and its table test: its only production caller
+was the line this layer replaces, and it accepted both a reuse and a fresh topology —
+the multiple-path acceptance the captain ruled out.

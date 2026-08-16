@@ -1,0 +1,4 @@
+run	verdict	digest_ok	branch	chain	consecutive	seconds
+1	PASS	yes	reuse	spawn/implementation done/implementation spawn/validation done/validation reuse/implementation done/implementation reuse/validation done/validation	1	506
+2	PASS	yes	reuse	spawn/implementation done/implementation spawn/validation done/validation reuse/implementation done/implementation reuse/validation done/validation	2	468
+3	PASS	yes	reuse	spawn/implementation done/implementation spawn/validation done/validation reuse/implementation done/implementation reuse/validation done/validation	3	454

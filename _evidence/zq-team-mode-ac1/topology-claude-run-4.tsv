@@ -1,0 +1,9 @@
+branch	fresh
+0	75	spawn	implementation	spacedock-ensign-rejection-task-implementation
+1	138	done	implementation	spacedock-ensign-rejection-task-implementation
+2	166	spawn	validation	spacedock-ensign-rejection-task-validation
+3	245	done	validation	spacedock-ensign-rejection-task-validation
+4	307	spawn	implementation	spacedock-ensign-rejection-task-implementation
+5	380	done	implementation	spacedock-ensign-rejection-task-implementation
+6	432	spawn	validation	spacedock-ensign-rejection-task-validation
+7	513	done	validation	spacedock-ensign-rejection-task-validation
