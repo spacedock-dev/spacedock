@@ -24,6 +24,14 @@ Exact main `c6a336a33f866536d2b1ea9ef313bbbc6f244dd1` produced opposite outcomes
 
 Both behaviors are flaky on unchanged bytes. The live registry must retain active ownership until each journey is repaired and passes without an XFAIL binding.
 
+## Proposed approach
+
+Product repair per mechanism, both already named in the evidence (captain ruling 2026-08-16: an XFAIL owner is a product task, not a tracking stub):
+
+1. Keep-moving: the FO bypassed the formal revise/feedback route. Recover the attempt-2 stream from run 31894934349 (or produce a fresh targeted local red under the CI shim) and quote the exact decision point where the sonnet FO leaves the route. The product surface is the FO instruction text governing that route — harden it at the deviation's entry point, with falsifying evidence, the same method the rejection-flow arc used for its adherence failures.
+2. Break-glass selected-bare: the Agent call did not preserve selected bare mode. Same method: quote the deviation from the failing stream; the product surface is the dispatch adapter's bare-mode preservation instruction.
+3. Retirement per AC-3: bound failure/XPASS evidence, then unchanged-byte unbound PASS.
+
 ## Acceptance criteria
 
 - **AC-1:** Sonnet keep-moving behavior uses the formal revise/feedback route and passes repeatedly without an XFAIL binding.
