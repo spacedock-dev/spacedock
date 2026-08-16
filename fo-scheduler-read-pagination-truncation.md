@@ -72,6 +72,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+pr: "#715"
 ---
 
 The FO event loop's `status --where` scheduler read returns paginated JSON with a default limit of 25, and the FO contract reads no pagination field. Past 25 matching entities the loop silently never sees the rest: work is dropped with no signal. Captain: needed before 0.27 stable.
