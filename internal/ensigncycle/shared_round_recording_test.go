@@ -16,7 +16,11 @@ import (
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
 var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
 var rejectionRoundEntity = regexp.MustCompile(`(?:^|\s)['"]?rejection-task['"]?(?:\s|$)`)
-var rejectionRoundFlag = regexp.MustCompile(`--round(?:=|\s+)['"]?([A-Za-z][A-Za-z0-9_-]*/[0-9]+)['"]?(?:\s|[;&|]|$)`)
+
+// Quote runs are `['"]*`, not `['"]?`, because Codex emits multi-character runs
+// like `'"'` around arguments. Missing a round would let the counter under-report,
+// which is the one direction that could hide a second publication.
+var rejectionRoundFlag = regexp.MustCompile(`--round(?:=|\s+)['"]*([A-Za-z][A-Za-z0-9_-]*/[0-9]+)['"]*(?:\s|[;&|]|$)`)
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
 
@@ -544,6 +548,14 @@ func TestRejectionRoundPublicationCounter(t *testing.T) {
 			claude: claudeCall("toolu_1", "validation/1", true),
 			codex:  codexCommandOutput(roundCommand("validation/1"), "", 1, "failed"),
 			want:   "made 0 successful",
+		},
+		"codex multi-character quote run around the round": {
+			claude: strings.Join([]string{
+				bashToolLine("toolu_1", `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round '"'validation/2'"' --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl`),
+				toolResultLine("toolu_1", false, "round=validation/2"),
+			}, "\n"),
+			codex: codexCommandOutput(`${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round '"'validation/2'"' --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl`, "", 0, "completed"),
+			want:  `published round "validation/2"`,
 		},
 		"both publications chained into one command": {
 			claude: strings.Join([]string{
