@@ -320,3 +320,36 @@ having been wired for claude — so host-neutrality costs almost nothing and is 
 than hoped. The one honest gap is pi, which has no retained stream anywhere; I recommend
 shipping it unconditional without a preemptive xfail, since a gap declared without observing
 it would mask a genuine pi pass.
+
+## Stage Report: implementation
+
+- DONE: Execute the gated design exactly ... Nothing absorbed beyond the gated surface (10 files, ~175 insertions + the captured stream, tolerance +/-3 files / +/-60 insertions).
+  Commit 5cdb766ec. All four gated elements landed; 10 files (within tolerance) but ~433 code+doc insertions vs ~175 +/-60 — over tolerance, accounted in Deviations below.
+- DONE: Branch from the current stack tip: spacedock-ensign/repair-codex-rejection-round-recording at 571017df3 ... Push via the SSH remote.
+  Branch spacedock-ensign/red-auto-continue-gate-bypass branched at 571017df3; push held with the PR (see the SKIPPED item).
+- DONE: Offline proof before any live spend, per the gated ACs ...
+  AC-1 table: {claude,codex,pi} x {done end-state, resolved-gate} all RED under `human-gate-bypassed`, each host with a conforming open-gate control so the table cannot pass on an assertion that reds unconditionally. AC-2: the real captured stream and both fixture layouts GREEN. `-run AutoContinue -count=20`, `-race`, full `go test ./...`, `-race -timeout 30m`, and contractlint all clean. Falsified three ways: re-adding `done` reds all three hosts' terminal cells; reverting the durableSemantic unwrap reds the code-survival test; disabling the gate-open check reds all three resolved-gate cells.
+- FAILED: Live loop per AC-4: ... >=3 consecutive greens per runtime (claude-sonnet, codex) within budget 8 per runtime ...
+  Codex reached 3/3 consecutive GREEN, but on the pre-fix candidate, so it must be re-run once the candidate changes. Claude did not close: run 2 hit finding 1 below. Ledgers with per-run stream digests at `/Users/clkao/.claude/jobs/4e49247e/tmp/live/{claude,codex}/ledger.txt`. Pi not run and no preemptive xfail, per the entity's named-risk disposition.
+- SKIPPED: Open your PR on top of #719, then extend the stack ... verify by GraphQL `pullRequest.stack` read-back.
+  Held: opening the PR starts a reviewer run, which `## Review-finding disposition` forbids before FO authorization on an open Material finding.
+- DONE: File the implementation stage report in the entity with every declared deviation, commit path-scoped, push, signal the FO, and stop for validation. Do not prepare or resolve any gate.
+  This report. No gate prepared or resolved.
+
+### Findings held for FO authorization
+
+1. **Material, remedy proven, NOT applied.** `assertAutoContinueDispatchEvidence` resolves the report through `autoContinueWorktreeDir` but reads gates from the unresolved `entityPath`. When validation is worktree-backed and the FO keeps gate state in the worktree copy, a conforming run reds `entity has no gates record`. Observed live (claude run 2) with the FO's own final message confirming the gate prepared and open; the gate room was under `.worktrees/spacedock-ensign-auto-continue-task/`. This falsifies ideation's "host-neutral by construction ... `gates.Read(entityPath)`" claim, which survived only because the check had never run on claude. Harms `value-ac[AC-2]` (no false red on conforming behavior). Remedy proven in a throwaway: read gates from `reportEntity`, plus a two-direction regression guard (open-in-worktree GREEN, resolved-in-worktree still RED under `human-gate-bypassed`), falsified by reverting the one line.
+2. **Needs decision, not owned by this task.** AC-4's claude bar inherits the fixture's validator nondeterminism: on the fix-validation run the validator recommended REJECTED on the stub deliverable, so the FO took the `feedback-to: implementation` route and never ran `gate prepare`. Note that run would have graded GREEN on claude before this change, so the red is the feature working. Remedies (fixture deliverable, or narrowing AC-4) are captain-owned.
+
+### Deviations
+
+- **Surface over tolerance:** ~433 code+doc insertions vs ~175 +/-60; 10 files, within the +/-3 file tolerance. Roughly 56 lines are code MOVED from live-tagged files to the default tag (offset by matching deletions). The rest is work ideation did not cost: the offline gate-resolved cell needs real durable state (gates frontmatter, git repos, both layouts), and the durableSemantic defect was unknown at ideation. I cut the one test with no AC mapping and trimmed comments; further cuts would delete AC-mapped coverage.
+- **11th surface, required by AC-1:** `durableSemantic` now unwraps with `errors.As`. `livescenario.Run` wraps its Assert's error, so the bare type assertion relabelled `human-gate-bypassed` to the generic `auto-continue-state` — the exact stall/bypass ambiguity AC-1 exists to remove. Every other call site passes a bare error, so behavior there is unchanged.
+- **Assertion moved to the default build tag:** `assertAutoContinueDispatchEvidence` and the two fixture writers it needs. AC-1 requires the resolved-gate cell to be verified offline, which is impossible while the assertion is live-tagged.
+- **Declared file with nothing to change:** the expected-surface row for `shared_live_runner_test.go` ("retire the finding-3 AUDIT note") found no such note — `git log -S AUDIT` over `internal/ensigncycle/` returns nothing. No edit made.
+- **Gate-resolved case graded under `human-gate-bypassed`:** ideation named the code only for the status half; both bypass shapes are the same defect, so both carry it.
+- **One unrelated flake:** `TestCodexProcessRecognizesTerminalTurnBeforeOSExit` (250ms no-progress budget) failed once under full-repo parallel load, then passed 3/3 isolated, once per-package, and on a clean re-run of `go test ./...`. The base commit 571017df3 is green on the same package.
+
+### Summary
+
+The gated design landed and its offline ACs are proven and falsifiable, but verifying them surfaced two things ideation could not have known, both because this check had never run on claude before. The first is a Material false-red: the gate read does not follow the worktree resolution the report read already does, so a correct run reds. Its remedy is one line plus a two-direction regression guard, proven in a throwaway and held for authorization rather than applied. The second is a scope question — AC-4's claude bar depends on a stub-deliverable fixture whose validator sometimes rejects, and the honest remedies belong to the captain. The candidate is unchanged at 5cdb766ec, no PR is open, no gate touched, and both live loops are stopped.
