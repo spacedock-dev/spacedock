@@ -3,11 +3,11 @@ id: 18963egcskzxaje6b5vnas3q
 title: Simplify the feedback-rejection flow to five steps or fewer
 status: implementation
 source: "Captain principle 2026-08-16: anything more than 4 or 5 steps is a footgun. Live evidence: both rejection-flow failure mechanisms are step-count casualties - codex drops step 8's bundled tail (completion gap, ErrNoGateRecord); claude's oracle splits across the step-6/step-8 two-call publish (entries=2 vs 4, wrong round id)."
-started:
+started: 2026-08-16T04:26:21Z
 completed:
 verdict:
 score: "0.85"
-worktree:
+worktree: .worktrees/spacedock-ensign-simplify-feedback-rejection-flow
 issue:
 gates:
     version: 1
