@@ -621,7 +621,10 @@ func TestRejectionRoundPublicationCounter(t *testing.T) {
 // quote runs back to `?` reds this test. The wrong-artifact controls confirm the
 // relaxation did not make the recognizer accept any artifact path.
 func TestRejectionRoundRecognizerAcceptsNestedShellQuoting(t *testing.T) {
-	const captured = `/bin/zsh -lc '${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing '"'rejection-task/inputs/briefing.json' --log 'rejection-task/inputs/briefing.review.jsonl' --workflow-dir '/tmp/TestLiveCommonRejectionFlow/002'"`
+	// Verbatim capture, transcribed byte-for-byte from a live run's
+	// codex-exec.jsonl including its own t.TempDir path. Retyping the shape by
+	// hand risks silently normalizing the very quoting under test.
+	const captured = `/bin/zsh -lc '${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 --briefing '"'rejection-task/inputs/briefing.json' --log 'rejection-task/inputs/briefing.review.jsonl' --workflow-dir '/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLiveCommonRejectionFlow3029195893/002'"`
 	if !commandRecordsRejectionRound(captured) {
 		t.Fatal("recognizer rejected the nested-shell quoting a real codex run emits")
 	}
