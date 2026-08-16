@@ -3,6 +3,18 @@ title: Gated initial stage deadlocks — no report means not gate-ready, gated m
 status: ideation
 source: "Field report from a pre5/0.27 consumer FO, relayed by the captain 2026-08-16 with focused-test confirmation; captain order: file and dispatch"
 id: ra9qzfz94hzgsq938jz998mj
+gates:
+    version: 1
+    records:
+        - id: gate:ra9qzfz94hzgsq938jz998mj:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ra9qzfz94hzgsq938jz998mj-ideation-1
+              briefing:
+                id: briefing:ra9qzfz94hzgsq938jz998mj:ideation:attempt-1:revision-1
+                digest: sha256:2e0b2dbee158b2af2f453bb5a4d29b1885f90d259a240e26f3d5b74584acaf28
+                request-digest: sha256:4e95675088ccdd457cb555d4495b314fefc87f64c1a2f512c7af416a94129f04
+                room-ref: ./prepare-initial-gated-stage-from-seed/review/ideation/briefing-1
 ---
 
 ## Problem

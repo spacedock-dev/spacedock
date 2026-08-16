@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ra9qzfz94hzgsq938jz998mj:ideation:attempt-1:revision-1",
+  "question": "Approve the initial-gated-stage fix: one ~10-line scheduler predicate keyed on initial:true (committed clean seed = promotion proof), contract prose in BOTH shipped files, NO new vocabulary and NO seed-AC-scan (both rejected on necessity), one-off live drive as AC-5 instead of a standing journey — accepting that touching fo-dispatch-core requires all three host live lanes green to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:ra9qzfz94hzgsq938jz998mj:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/6ca1af7c80873180e5e0d3cefab3a3044801b008/prepare-initial-gated-stage-from-seed.md",
+      "rev": "sha256:a3e52ad75d772dd56e1c68c2a729eb34d2c3ab9ff802b82fa65bd16632f7090b",
+      "mediaType": "text/markdown",
+      "summary": "All nine consumer citations verified (two line drifts, zero behavioral misses); five spikes proved gate prepare already accepts a no-report initial seed and post-prepare lifecycle is whole — the deadlock is one missing promotion edge. 7 files ~+120 lines (80 test), guard preserved by reusing entityPathCleanInHEAD, digest pinning untouched. Dominant cost: all-host live lanes required by dev README line 84."
+    }
+  ]
+}
