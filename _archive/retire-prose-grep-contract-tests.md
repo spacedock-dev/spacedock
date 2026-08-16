@@ -1,11 +1,11 @@
 ---
 id: v7a6xqh2rm3asjvj8qz1y4p0
 title: Retire banned prose-grep contract tests and dedupe surviving pins
-status: validation
+status: done
 source: "Captain review of the 0.27 stack + audit-r2 (2026-08-15); captain directive: file, dispatch off stack tip, PR as stack layer"
 started: 2026-08-15T18:31:08Z
-completed:
-verdict:
+completed: 2026-08-16T03:34:08Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-retire-prose-grep-contract-tests
 issue:
@@ -71,8 +71,9 @@ gates:
                 reason: Captain approved validation 2026-08-15; stacks as layer 10
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: pr-merge:709
+archived: 2026-08-16T03:34:09Z
 ---
 
 Delete the committed prose-grep tests the Proof policy bans (paraphrase reds them, inversion passes them), dedupe the two double pins, and resolve the four gray cases. Base all work on the stack tip (branch stack27/09-trim-version-output); the deliverable becomes stack layer 10. This MUST land before make-shipped-contracts-self-contained (layer 11), whose prose rewrites would red several of these pins.
