@@ -595,3 +595,39 @@ five-step shape alone would not have fixed the journey; the step-5 retraction ha
 is correct; and the surface overrun is a KEEP ruling — the publication counter and its
 five inverted cases stay, since falsifiability outranks the line estimate, and the
 +195 net rides as a declared deviation.
+
+### Addendum 2: final surface figures, and the plainness the gate requires
+
+**Required plain statement (FO disposition, not optional).** The gated five-step shape
+alone would NOT have fixed the journey. The gated design's step 2 documented
+`gate record --round STAGE/CYCLE …` with no entity operand, which exits 2 without
+recording anything, so an FO following the shipped five-step flow verbatim would have
+failed at step 2 on every attempt — before ever reaching the commit step the shape was
+designed around. **The ENTITY operand clause is load-bearing for the journey AC**, on
+equal footing with the single-publish shape itself: neither alone carries the journey.
+The repair layer's inline `state commit` fix is likewise necessary but not sufficient,
+because a by-the-book FO never reached the dirty-tree trap it fixes.
+
+**Final surface, superseding the figures in deviation 4 above.** Those were measured at
+884b55af0; `ba91b333f` then added the quote-run tolerance and its table case. At
+`ba91b333f`, against base `origin/main` 0c6a2c32a:
+
+| file | change |
+|---|---|
+| `internal/ensigncycle/shared_round_recording_test.go` | +261 / -67 (net +194) vs a ~45 estimate |
+| `skills/feedback-rejection-flow/SKILL.md` | +16 / -10 |
+| `internal/ensigncycle/claude_live_runner_test.go` | +5 / -0 |
+| `internal/ensigncycle/shared_fixtures_test.go` | +3 / -1 |
+| **total** | **4 files, +285 / -78, net +207** vs declared ~85 / ~25 (net ~+60), tolerance ±30 |
+
+File count is exactly as declared; the line overrun is entirely the one oracle file.
+FO disposition: KEEP — the publication counter and its inverted table cases stay,
+because a counter that cannot be falsified is worse than extra test lines, and no
+further trimming is to be attempted. The ~25-line trim already applied (a per-segment
+command splitter replaced by the existing launcher matcher) is the whole of it.
+
+**Skill growth attribution.** 572 → 784 words, 28 → 34 lines, 4158 → 5419 bytes. The
+captain approved +107 words at the ideation gate, which the transcribed design hit to
+the byte (679 words). The further +105 words are wholly the three FO-authorized
+clauses — the ENTITY operand sentence, the usage-error≠hold wording, and step 5's
+precondition clause — and nothing else.
