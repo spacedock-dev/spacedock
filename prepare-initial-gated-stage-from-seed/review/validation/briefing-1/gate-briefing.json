@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ra9qzfz94hzgsq938jz998mj:validation:attempt-1:revision-1",
+  "question": "Approve prepare-initial-gated-stage-from-seed through validation? All six ACs pass with falsifying-edit proof; the live FO drive took the initial-stage path seed-to-presented-gate with zero reports and no report-incomplete; deviations verified honest (incl. your Option B cap raise recorded inline). One routed finding disclosed: the inline nested state-commit no-op owned by layer 2, material to the stack before merge.",
+  "artifacts": [
+    {
+      "id": "artifact:ra9qzfz94hzgsq938jz998mj:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1ad9ff939f28bcbccca754e86cbe390a4f761e86/prepare-initial-gated-stage-from-seed.md",
+      "rev": "sha256:edfef0be1c6b72ba6d23d1bfc1b2c86e20102fb4d9b1d0ed5f700522acfe903b",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: falsifying edits applied and failed exactly the predicted tests; goldens prove the deadlock was baked into pre-existing fixtures and the guard held on them; AC-5 live drive green vs live red baseline; stack read-back clean at layer 4; all-host live lanes remain a merge-time obligation (fo-dispatch-core touched)."
+    }
+  ]
+}

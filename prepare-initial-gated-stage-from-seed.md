@@ -25,6 +25,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ra9qzfz94hzgsq938jz998mj:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ra9qzfz94hzgsq938jz998mj-validation-1
+              briefing:
+                id: briefing:ra9qzfz94hzgsq938jz998mj:validation:attempt-1:revision-1
+                digest: sha256:458df15f95b3321f8d4d1b5fc102e680760a22711cbf18d7be9b8fe92c66ce39
+                request-digest: sha256:6fe8c3447839c7a96bd2f93defa069993a5725d37093bec2e092dced25fbbf66
+                room-ref: ./prepare-initial-gated-stage-from-seed/review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-prepare-initial-gated-stage-from-seed
 pr: "#722"
 ---
