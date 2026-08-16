@@ -13,10 +13,18 @@ The live rejection-flow journey starts the FO in single-entity `-p` bare mode. I
 
 Invoke the rejection-flow scenario in team mode on both runtimes, so the routing flow under test can actually run. Derive the team-mode determined shape from the fixture and skill (the fixture declares no context-budget probe, so reuse is the required path; the fixture mandates a second implementation report section) and align the lifecycle assertion and grading to that shape: strict, no multiple-path acceptance. A conforming two-cycle run must grade green; a fresh-dispatch-when-reuse-required run must grade red. If bare-mode rejection semantics deserve their own coverage, that is a separately named scenario decided at ideation, not this journey's default.
 
+## FO adherence residuals (folded in — captain ruling 2026-08-16)
+
+The journey's proof includes the FO actually following the determined shape, so this entity also owns the two real adherence failures the blind analysis proved (\_debriefs/2026-08-16-03), rather than a separate behavior entity:
+
+1. The FO records both validation rounds, then ends without ever invoking `gate prepare` — violating the rewritten skill's step-5 done-condition. Composed-tree loop run 1.
+2. The codex FO fresh-dispatches the fix worker while the followup surface is live and every reuse condition passes — the route the codex adapter calls the load-bearing exception to casual fresh dispatch. Composed-tree loop run 3 (spawns=2, with `--advance` used before and after in the same stream).
+
+Both were measured under the bare `-p` invocation this entity removes, so they must be re-measured under team mode: the team-mode proof loop IS the residual-rate measurement. If a mode survives there, ideation decides between targeted hardening of the skill/adapter text at the exact point the deviation enters (with falsifying evidence per mode) and holding this entity as the active owner of the residual rate until N clean cadence runs. Evidence pointers: loop run-1/run-3 streams under repair-codex-rejection-round-recording/evidence/ and the job scratch ledgers.
+
 ## Out of scope
 
-- The FO never-prepares residual (separate behavior concern).
-- Product code: this is scenario invocation and harness grading only.
+- Product code: scenario invocation, grading, and FO instruction text only.
 
 ## Evidence pointers (FO, post-filing)
 
