@@ -195,3 +195,29 @@ The guard landed as designed and the spike's prediction held exactly: 5 failures
 Every AC was proved by a demonstrated falsifying edit rather than an asserted one. Running the retargeted tests against unpatched base source reds `TestStatusPaginationDefaultBounds`, `TestStatusPaginationFilteredComposition`, and the 3 goldens, so they observe the change instead of restating it. Two wrong-guard variants were built and run to prove the boundary tests are load-bearing: `if asJSON { limit = 0 }` (ignoring explicit paging) reds `TestStatusPaginationExplicitJSONWindow`, `PageOutOfRange`, and `ArchivedComposition`, guarding AC-3; an unconditional `limit = 0` (the fix applied to the shared path) additionally reds the text halves of `DefaultBounds` and `FilteredComposition`, guarding AC-2's out-of-scope boundary.
 
 Two items for the gate. The surface deviation above is past its declared tolerance and is the ideation's under-estimate of AC-1's own assertions, not added scope. And PR #712 is ungrouped from the stack object for the reason `ab112b6d3` documents; the FO owns the `pr:` field.
+
+## Stage Report: validation
+
+- DONE: Independently re-exercise the ACs against the pg worktree commit, never by reading the report: --where and bare status JSON reads return the complete set (30-entity fixture, baseline 25); --next unchanged; text-mode cap and explicit paging preserved; the 5 retargeted tests green
+  Base (ab112b6d3) and patched (f61f48c1d) binaries built and driven against a validator-built 30-entity mod-blocked fixture: step-2 read `--where "mod-block !=" --json` 25/30 base vs 30/30 patched (row-01..row-30, limit "0", has_next "false"); bare `status --json` 25 vs 30; `--next --json` byte-identical between binaries (stages fixture and live rerun) with no `pagination` key; text mode byte-identical, 25 rows, literal footer; `--json --limit 10` -> 10 rows has_next "true", `--json --page 2` -> rows 26-30, `--page 2 --limit 10` -> rows 11-20, explicit `--limit 25` still windows; the 5 retargeted tests plus TestStatusPaginationExplicitJSONWindow green in the worktree.
+- DONE: One-off live evidence: the full workflow read returns every row (baseline was 25 of 172)
+  Live docs/dev (171 active now after peer state movement): base bare `status --json` returns 25 of 171, patched returns 171 of 171 with count == total, base's 25 rows exactly the patched first 25, ids unique; live text mode byte-identical with footer "Showing 1-25 of 171".
+- DONE: Suites green plain and -race; verdict PASSED or REJECTED with per-AC citations
+  In the worktree at f61f48c1d: `go test ./...` exit 0 and `go test ./... -race` exit 0 across 20 packages; `gofmt -l ./cmd ./internal` clean. Per-AC citations under Verdict below.
+
+### Falsifiability (independently reproduced)
+
+Transplanting the retargeted tests onto unpatched base source reds exactly the 5 predicted failures with the truncation signature (count 25, want 30). Wrong-guard `if asJSON { limit = 0 }` reds ExplicitJSONWindow, PageOutOfRange, and ArchivedComposition (AC-3 test is load-bearing); unconditional `limit = 0` reds the text halves of DefaultBounds and FilteredComposition (AC-2 boundary test is load-bearing).
+
+### Verdict: PASSED
+
+- AC-1: PASS. Fixture delivers 30/30 vs baseline 25, boundary slugs row-01..row-30, on both `--where` (with and without `--fields`) and bare `status --json`.
+- AC-2: PASS. Text mode byte-identical to base on the 30-row fixture and the live workflow; 25 rows with the literal footer `Showing 1-25 of 30 (page 1; use --page 2 or --limit 0 for all)`.
+- AC-3: PASS. Explicit `--limit`/`--page` all window, including combined `--page 2 --limit 10` and value-equal `--limit 25`; the guard keys on flag presence (parse.go:380), so an explicit operator request always wins.
+- AC-4: PASS. Full suite green plain and -race; the three golden diffs in ab112b6d3..f61f48c1d are confined to the pagination `limit` field.
+
+No material findings. Adversarial probes beyond the ACs: empty-workflow envelope differs only in the `limit` field; `--boot`/`--read`/`--validate` `--json` byte-identical between binaries; the first live `--next` diff was concurrent peer state movement, byte-identical on rerun. Deferred risks: none new. The implementation's declared surface deviation (+30 net, confined to pagination_test.go, no AC narrowed) is confirmed against the diff and stands as a gate-visible declaration, not a validation failure.
+
+### Summary
+
+Re-exercised every AC against f61f48c1d with independently built base and patched binaries and a validator-built fixture, taking no evidence from the implementation report. All four ACs hold, the falsifying edits were independently reproduced (5 base-source reds plus two wrong-guard variants caught by the boundary tests), and both suites are green with gofmt clean. Recommend PASSED; the only gate-visible item is the already-declared test-file surface overage.
