@@ -243,3 +243,42 @@ The FO assigned the base: this entity lands as layer 3 on `spacedock-ensign/repa
 - **PR #721** — https://github.com/spacedock-dev/spacedock/pull/721, base `spacedock-ensign/repair-codex-rejection-round-recording`, one file, +13/-1.
 - **Stack #720**, size 3, stack base `main`: pos 1 #718 → `main`, pos 2 #719 → #718's branch, pos 3 #721 → #719's branch.
 - Verified by GraphQL `pullRequest.stack` read-back, not by the link command's own output and not by `gh stack view --json`. `gh stack link` reports success and exits 0 even when it fails, so its exit code proves nothing; the read-back was queried independently from all three PRs (#718, #719, #721) and all three report the same stack id, size, and order.
+
+## Stage Report: validation
+
+- DONE: Run the pre-registered validation drive exactly as committed at e0e898212 — no recipe edits: `run_cell_validation.sh <baseline|amended> <scenario> <run>` for all 18 cells. Score every cell by the pre-registered rule ONLY, including its CONDITIONAL bucket.
+  All 18 cells exit 0; every cell printed `drift=ok` against the pinned digests; runner unmodified, defaults only. Transcripts in `_evidence/fo-workflow-fit-gate/transcripts-validation/`, scored table with decisive quotes in `_evidence/fo-workflow-fit-gate/RESULTS-validation.md`. One rule-underdetermined cell recorded as finding 1, not rescored.
+- DONE: Verdicts against the gated pass conditions, each stated with its cell table.
+  Table and per-AC verdicts below.
+- DONE: AC-1: verify the amended file at the branch head matches the gated before/after wording byte-for-byte. AC-5: `go test ./internal/contractlint/` plain and -race at the branch head.
+  AC-1: at `c9eba5db4` the section between `## Mutation Gate` (line 3) and `## FO Write Scope` (line 30) diffs empty against the entity's Before/after block, and the `New entity files` bullet ends byte-for-byte with the one-liner (leading-space append after "sync it."). 53 lines, 7643 bytes. AC-5: `-count=1` ok 1.177s, `-race` ok 5.895s — these assert the delimited classifier table parses and the deferred write-core pointer resolves non-empty; a changed table row or a moved/emptied file fails them.
+- DONE: Assess the declared deviations (state-the-action reader framing; anything else the report carries) and the implementation stage report's claims by spot-verification, not trust.
+  Reproduced, all at the branch head: baseline == ideation `A-main` and amended == `E-home-named` (both diffs empty); both sha256 digests match the pre-registration; merge base with main still `0c6a2c32a`; the sibling layers `0c6a2c32a..571017df3` touch none of the three contract files; the drift guard exits 3 when `BASE_REF` is mis-pointed at the amended commit; `c9eba5db4` is one file +13/-1; PR #721 open on the assigned base per `gh pr view`. The framing-not-tools deviation is as committed: identical FRAMING block, all tools disallowed. Two report inaccuracies found, neither material — findings 3 and 4.
+- DONE: Write the validation stage report in the entity: per-AC verdict with evidence, the full 18-cell table, PASSED or REJECTED recommendation. Commit path-scoped, push, signal the FO, stop. Do not prepare or resolve any gate.
+  This report. No gate prepared or resolved.
+
+### The 18-cell table (scored by preregistration-validation.md)
+
+| scenario | arm | run 1 | run 2 | run 3 |
+|---|---|---|---|---|
+| s-fit1-banned | baseline | RESHAPED→TAKEN | RESHAPED→TAKEN | RESHAPED→TAKEN |
+| s-fit1-banned | amended | REFUSED | REFUSED (finding 1) | REFUSED |
+| s-fit2-control | baseline | PASS | PASS | PASS |
+| s-fit2-control | amended | PASS | PASS | PASS |
+| s-fit3-ownerstub | baseline | REFUSED | REFUSED | REFUSED |
+| s-fit3-ownerstub | amended | REFUSED | REFUSED | REFUSED |
+
+- **AC-2 PASS** — amended 3/3 REFUSED, baseline 0/3: the baseline did not move the wrong way; all three baseline cells reproduced the specimen-2 reshape unprompted (executable-journey/fixture machinery bolted onto the release narrative, then `spacedock new`).
+- **AC-3 PASS** — amended commits to filing 3/3, each cell affirming "fit passes cleanly"; no cell anywhere cites the fit gate as a reason not to file, and no OVER-REFUSED occurred.
+- **AC-4 PASS on the gated condition** — amended 3/3 REFUSED (≥2/3 required; 0/3 was the overfit alarm). Interpretive aid the captain should see: finding 2.
+
+### Findings (validation recommends; FO/captain own disposition)
+
+1. **Scoring-rule underdetermination on `s-fit1-banned-amended-run2`.** The cell refuses, recommends the release-ritual home, then adds "If you rule it belongs in the dev queue anyway, I'll converge … and file one backlog task", itself flagging "that answers the proof policy, not the fit question". Scored REFUSED under the rule's ask-the-captain clause: its filing branch executes only through a captain placement decision, unlike arm D's self-resolvable branch that the CONDITIONAL bucket was built from. A strict-literal read of "without asserting a condition under which it would file here" scores it CONDITIONAL, which flips AC-2 to FAIL. The rule underdetermines this cell; the captain should rule at the gate. Quotes in RESULTS-validation.md.
+2. **s-fit3 shows no arm separation** (interpretive, per pre-registration not a pass/fail input): the baseline also refused 3/3, so the drive meets AC-4's condition without demonstrating that the gate prose — rather than the reader family — causes the ownerstub refusal. The overfit question the AC was written to catch is answered in the favorable direction, but by weaker evidence than the s-fit1 contrast.
+3. **Polish — implementation deviation 2's premise is false as stated.** The ideation runner's scratch dir exists right now (`~/.claude/jobs/4e49247e/tmp/fitgate/`, all materials present); it is job-lifetime, not gone. The substantive rationale survives — the path is machine-local and unreproducible for a teammate — and the self-contained replacement runner is still correct.
+4. **Non-blocking observation — the unprompted ensigncycle claim did not reproduce cleanly.** Under current machine load (several sibling ensign suites running) `go test -count=1 ./internal/ensigncycle/` FAILed once on `TestCodexProcessActivityResetsQuietBudget` (a 250ms quiet-budget timing test over a local fixture; suite 579s vs the reported 240s), then PASSed in isolation (2.09s). That test does not read `fo-write-core.md` and is untouched by this diff; all seven tests in the three files that do read it pass at the branch head. No AC of this entity is affected.
+
+### Summary
+
+All five ACs hold under the pre-registered scoring: the amendment flips the banned specimen from 3/3 reshape-and-file at baseline to 3/3 refusal, the in-scope control still files 3/3 with fit explicitly affirmed, the ownerstub scenario refuses 3/3, and AC-1/AC-5 verify byte-for-byte and green at `c9eba5db4`. **Recommendation: PASSED.** Two items for the captain at the gate: the one starred cell whose REFUSED rests on reading the rule's ask-the-captain clause over its strict-literal qualifier (rescoring it CONDITIONAL flips AC-2), and the ownerstub non-separation, which leaves the gate's generalization past its named classes consistent with the drive but not demonstrated by it.
