@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:b8ewpvd65epkckvng0n38809:ideation:attempt-1:revision-1",
+  "question": "Approve the Workflow Fit Gate amendment — noting the wording is NOT your draft: the drive showed your draft (and the shipped contract) file the banned specimen, and only the home-test + named-classes + anti-reshape wording refused. Validation = two-arm drive N=3 with a control (in-scope work still files) and a generalization scenario (owner-stub misfit).",
+  "artifacts": [
+    {
+      "id": "artifact:b8ewpvd65epkckvng0n38809:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4943d41a634640c0a08113681adcb363b8c803c1/fo-workflow-fit-gate.md",
+      "rev": "sha256:3d9c67a2465a370cf5258ea4373dafc2a355749e48b98cfad46b87f81a3fede2",
+      "mediaType": "text/markdown",
+      "summary": "Ideation complete with a pre-registered five-arm obedience spike: baseline and captain-draft arms both filed the 2026-08-14 banned specimen (reshaping exactly as the original incident did); the classifier table defeats the draft's exclusion list; arm E refused and routed to the release notes. One shipped file, 41-\u003e53 lines, no lint, no committed test per the enforcement-honesty clause."
+    }
+  ]
+}
