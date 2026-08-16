@@ -29,6 +29,16 @@ gates:
                 digest: sha256:2359dd68ea2549cd8c8ded29e0e9acbf91701ddc636571ff694843627d3ee5a1
                 request-digest: sha256:065aad3085105141c550bcac8c8fdd0613cff7bf97b8e197bb9137ad507e4f65
                 room-ref: ./run-rejection-journey-in-team-mode/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zqb683j8jth0tyr2eme231e2:ideation:2
+                briefing: briefing:zqb683j8jth0tyr2eme231e2:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-16T18:01:42.457451Z"
+                decision: approve
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
