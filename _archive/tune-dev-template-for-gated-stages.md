@@ -1,7 +1,7 @@
 ---
 id: 42chs9dh7nq22f8at4szvbxp
 title: Tune the dev task template for gated stages
-status: validation
+status: done
 source: Captain direction, 2026-08-13
 sprint-readiness: ready
 score: 0.8
@@ -84,10 +84,13 @@ gates:
                 reason: 'Captain 2026-08-16 (approve all to the stack): cycle-2 validation PASSED; AC-5 ruled satisfied-as-relocated - the behavior ships as template prompts, the installed-README exercise joins the deferred local refit'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 worktree: .worktrees/spacedock-ensign-tune-dev-template-for-gated-stages
 started: 2026-08-15T21:25:11Z
 pr: pr-merge:711
+verdict: PASSED
+completed: 2026-08-16T03:34:22Z
+archived: 2026-08-16T03:34:23Z
 ---
 
 Tune the reusable dev task template so task authors supply the decision evidence required by each gated stage without making task files verbose.
