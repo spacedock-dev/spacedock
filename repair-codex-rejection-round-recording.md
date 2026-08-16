@@ -1,7 +1,7 @@
 ---
 id: hz2ankag6fk379ssabpv4ckc
 title: Repair Codex rejection-round recording in the live rejection flow
-status: backlog
+status: ideation
 source: "Captain directive 2026-08-16 after two same-day codex failures (runs 31915540750 and 31922268382, both FAIL /rejection-flow observed=[rejection-round-missing]) on a journey whose XFAIL c6a336a33 retired on one unbound pass; old owner continue-codex-rejection-after-first-validation is archived done and fixed a different mode"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain directive 2026-08-16: file it and dispatch on top of the current stack; local live run for the targeted flake, then PR onto the stack'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Codex intermittently completes the live rejection flow without recording the rejection round: the FO-side flow reaches the feedback stage but `gate record --round` never runs, so the journey assertion finds no round record (`rejection-round-missing`). Fail-pass-fail across the last three runs proves the c6a336a33 retirement premature for this journey.
