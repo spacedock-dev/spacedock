@@ -151,6 +151,14 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		return errExit(stderr, "--id-seed and --id-actor can only be used with --next-id")
 	}
 
+	// Row capping is a human-table affordance: the 25-row default keeps the
+	// captain-facing overview readable. A machine reader has no such constraint
+	// and a partial page it never asked for is silently dropped work, so --json
+	// serves the complete set unless the caller selects a page explicitly.
+	if asJSON && !pageSet && !limitSet {
+		limit = 0
+	}
+
 	// --page/--limit apply only to the default status listing (bare status,
 	// --where, --archived, --fields/--all-fields, --json status envelope); every
 	// other read/mutation mode has its own semantics that a row slice would

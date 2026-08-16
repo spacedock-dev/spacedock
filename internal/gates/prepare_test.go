@@ -953,7 +953,7 @@ func TestPreparedAuthorityIsRecomputedDuringReadOnlyValidation(t *testing.T) {
 				t.Fatal(err)
 			}
 			tc.mutate(t, workflow, entity, artifact, result.Room)
-			if _, err := SummaryFileAt(entity, workflow); err == nil {
+			if _, err := EligibilityFileAt(entity, workflow); err == nil {
 				t.Fatal("read-only validation accepted drifted prepared authority")
 			}
 		})

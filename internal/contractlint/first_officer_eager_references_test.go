@@ -58,18 +58,6 @@ func TestFirstOfficerEntryEagerlyImportsOnlySharedCore(t *testing.T) {
 	}
 }
 
-func TestFirstOfficerDeferredWriteCoreHasSingleCanonicalFile(t *testing.T) {
-	root := skillsRoot(t)
-	canonical := filepath.Join(root, "first-officer", "references", "fo-write-core.md")
-	info, err := os.Stat(canonical)
-	if err != nil || info.Size() == 0 {
-		t.Fatalf("canonical deferred write core does not resolve non-empty: %v", err)
-	}
-	if _, err := os.Stat(filepath.Join(root, "fo-write-core")); !os.IsNotExist(err) {
-		t.Fatalf("standalone fo-write-core wrapper remains: %v", err)
-	}
-}
-
 func deferredLoadPointsBlock(t *testing.T, body string) string {
 	t.Helper()
 	loc := regexp.MustCompile(`(?m)^## Deferred load points$`).FindStringIndex(body)

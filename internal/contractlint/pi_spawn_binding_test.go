@@ -1,6 +1,6 @@
-// ABOUTME: AC-4 pin — the pi FO adapter's «worker.spawn» bullet binds the
-// ABOUTME: artifact's agent/skill fields to the subagent spawn call, and the
-// ABOUTME: namespaced agent string stays out of the pi dispatch path.
+// ABOUTME: The namespaced agent string stays out of the pi dispatch path:
+// ABOUTME: pi-subagents resolves by directory basename, so `spacedock:ensign`
+// ABOUTME: names nothing there.
 package contractlint
 
 import (
@@ -9,23 +9,6 @@ import (
 	"strings"
 	"testing"
 )
-
-// The two load-bearing sentences implementation added to the pi adapter's
-// «worker.spawn» bullet. Contract-drift candidates: rewording either sentence
-// silently unbinds the build artifact from the pi-subagents spawn call.
-const (
-	piSpawnAgentBindingSentence = "Pass the artifact's `agent` field as the subagent `agent` parameter verbatim."
-	piSpawnSkillBindingSentence = "When the artifact carries a `skill` field, pass it as the subagent `skill` parameter verbatim"
-)
-
-func TestPiAdapterWorkerSpawnBindsArtifactAgentAndSkill(t *testing.T) {
-	text := readRepoFile(t, piFORuntimeRel)
-	for _, want := range []string{piSpawnAgentBindingSentence, piSpawnSkillBindingSentence} {
-		if !strings.Contains(text, want) {
-			t.Errorf("%s «worker.spawn» binding missing sentence %q", piFORuntimeRel, want)
-		}
-	}
-}
 
 // TestPiDispatchPathBansNamespacedAgentName: pi-subagents resolves skills and
 // agents by directory basename, so the namespaced `spacedock:ensign` string

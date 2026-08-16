@@ -2,7 +2,10 @@
 // ABOUTME: spelling in frontmatter, and case-insensitive on every read back.
 package status
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // canonicalConventional maps value to the conventional spelling it matches
 // case-insensitively, and returns it UNCHANGED otherwise. The allowed set is
@@ -27,6 +30,41 @@ func canonicalConventional(field, value string) string {
 		}
 	}
 	return value
+}
+
+// conventionalViolation reports why value is inadmissible for field on WRITE, or
+// "" when the write may proceed. It states the other half of the conventional
+// contract: a conventional list is advisory ON READ — fieldViolation warns and
+// never errors, so history keeps whatever token it carries and no archived record
+// is ever edited to silence a diagnostic — and CLOSED ON WRITE, so a NEW write
+// must pick a token from the list.
+//
+// The allowed set comes from the same schema lookup canonicalConventional folds
+// case against, so the schema stays the single source of truth for what is
+// canonicalised, what is accepted on read, and what is admitted on write. The
+// problem string matches fieldViolation's wording, so the write refusal and the
+// read warning name the same thing the same way.
+//
+// An empty value always passes. Clearing is the supported way to say "no verdict"
+// and it is how an entity is superseded — clear `verdict`, then `--archive`,
+// recording why in the body. Refusing the clear would close the one exit the
+// ruling depends on.
+func conventionalViolation(field, value string) string {
+	spec, ok := loadEntitySchema().fields[field]
+	if !ok || len(spec.Conventional) == 0 {
+		return ""
+	}
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	for _, allowed := range spec.Conventional {
+		if strings.EqualFold(trimmed, allowed) {
+			return ""
+		}
+	}
+	return fmt.Sprintf("field '%s' value %q is not one of [%s]",
+		field, trimmed, strings.Join(spec.Conventional, " "))
 }
 
 // storedVerdict maps a CLI verdict (`--verdict passed|rejected`, lowercase, as

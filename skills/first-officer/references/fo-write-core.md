@@ -8,8 +8,8 @@ Before any FO-authored file write, classify every target path with `«write.clas
 | class | patterns | rule |
 | --- | --- | --- |
 | allowed-state | `.spacedock-state/**`; `{workflow_dir}/_archive/**` | Entity frontmatter via `${SPACEDOCK_BIN:-spacedock} status --set`, `spacedock new`, archive moves, state-transition commits, and `### Feedback Cycles` under the existing state/worktree rules. |
-| allowed-process | `docs/dev/README.md`; `{workflow_dir}/README.md` | The FO may edit the workflow README it operates because that file defines process, not the product being built. |
-| blocked-product | `cmd/**`; `internal/**`; `**/*_test.go`; `skills/**`; `agents/**`; `references/**`; `plugin.json`; `.github/**`; `docs/site/**`; `docs/specs/**`; `docs/roadmap/**`; `fixtures/**`; `docs/dev/_mods/**` | Code, tests, product docs, fixtures, release/CI files, shipped skill/agent/reference scaffolding, plugin manifests, mods, and deliverable content go through a dispatched worker. |
+| allowed-process | `{workflow_dir}/README.md` | The FO may edit the workflow README it operates because that file defines process, not the product being built. |
+| blocked-product | `cmd/**`; `internal/**`; `**/*_test.go`; `skills/**`; `agents/**`; `references/**`; `plugin.json`; `.github/**`; `docs/site/**`; `docs/specs/**`; `docs/roadmap/**`; `fixtures/**`; `{workflow_dir}/_mods/**` | Code, tests, product docs, fixtures, release/CI files, shipped skill/agent/reference scaffolding, plugin manifests, mods, and deliverable content go through a dispatched worker. |
 | override | exact-target-grant | A blocked-product target is writable only when the captain explicitly grants direct-FO editing for this exact task and target path or exact path class. |
 <!-- FO-WRITE-CLASSIFIER:END -->
 

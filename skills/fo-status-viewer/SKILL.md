@@ -32,6 +32,7 @@ The `--set` flag updates entity frontmatter fields:
 - `--set {slug} field=value` sets a field
 - `--set {slug} field=` clears a field
 - `--set {slug} started` or `completed` auto-fills a UTC ISO 8601 timestamp (skipped if already set)
+- a field with a schema `conventional` list (today: `verdict`, `[PASSED REJECTED]`) is closed on write — any other token is refused byte-clean; `--force` bypasses. Clearing always passes. To supersede an entity, clear `verdict` and `--archive` it.
 
 ### Captain-Facing State Display
 

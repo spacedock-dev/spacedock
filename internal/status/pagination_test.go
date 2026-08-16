@@ -165,9 +165,12 @@ type paginatedStatusEnvelope struct {
 }
 
 // TestStatusPaginationDefaultBounds proves the default (no --page/--limit)
-// listing bounds a 30-row fixture to the first 25, in both text (with the
-// footer) and JSON (with the pagination object), naming the exact row set
-// that would fail if pagination were skipped or applied before sorting.
+// listing splits by output mode over a 30-row fixture: the captain-facing text
+// table still bounds to the first 25 with its footer, while --json delivers
+// every row, because row capping is a readability affordance a machine reader
+// does not need and a partial page it never asked for is dropped work. Both
+// halves name the exact row set, so they fail if pagination is skipped or
+// applied before sorting in text mode, or if the cap survives in JSON.
 func TestStatusPaginationDefaultBounds(t *testing.T) {
 	def := buildPaginationFixture(t, 30)
 	env := pinnedEnv(t)
@@ -194,15 +197,15 @@ func TestStatusPaginationDefaultBounds(t *testing.T) {
 	if err := json.Unmarshal([]byte(jsonOut), &env1); err != nil {
 		t.Fatalf("parse --json: %v\n%s", err, jsonOut)
 	}
-	if len(env1.Entities) != 25 {
-		t.Fatalf("--json entities count = %d, want 25", len(env1.Entities))
+	if len(env1.Entities) != 30 {
+		t.Fatalf("--json entities count = %d, want all 30 (the 25-row cap is text-mode only)", len(env1.Entities))
 	}
-	if env1.Entities[0]["slug"] != "row-01" || env1.Entities[24]["slug"] != "row-25" {
-		t.Fatalf("--json entity slugs at page boundaries = %q..%q, want row-01..row-25",
-			env1.Entities[0]["slug"], env1.Entities[24]["slug"])
+	if env1.Entities[0]["slug"] != "row-01" || env1.Entities[29]["slug"] != "row-30" {
+		t.Fatalf("--json entity slugs at set boundaries = %q..%q, want row-01..row-30",
+			env1.Entities[0]["slug"], env1.Entities[29]["slug"])
 	}
 	wantPagination := map[string]string{
-		"page": "1", "limit": "25", "total": "30", "start": "1", "end": "25", "has_next": "true",
+		"page": "1", "limit": "0", "total": "30", "start": "1", "end": "30", "has_next": "false",
 	}
 	for k, v := range wantPagination {
 		if env1.Pagination[k] != v {
@@ -286,7 +289,9 @@ func buildFilterArchivePaginationFixture(t *testing.T) string {
 // pagination against the FILTERED row count (30 ideation rows), not the
 // 35-row active-scope or 40-row all-scope total: page 1 of --where
 // status=ideation shows ideation-01..25 with a footer naming 30, and page 2
-// shows the remaining ideation-26..30 with no footer.
+// shows the remaining ideation-26..30 with no footer. Its --json half is the
+// FO scheduler read: --where ... --json delivers all 30 matching rows, so a
+// loop that routes one dispatch per row cannot silently drop rows 26+.
 func TestStatusPaginationFilteredComposition(t *testing.T) {
 	def := buildFilterArchivePaginationFixture(t)
 	env := pinnedEnv(t)
@@ -326,12 +331,19 @@ func TestStatusPaginationFilteredComposition(t *testing.T) {
 	if err := json.Unmarshal([]byte(jsonOut), &envJ); err != nil {
 		t.Fatalf("parse --json: %v\n%s", err, jsonOut)
 	}
+	if len(envJ.Entities) != 30 {
+		t.Fatalf("--where status=ideation --json entities count = %d, want all 30 matching rows (a scheduler loop drops rows it never receives)", len(envJ.Entities))
+	}
+	if envJ.Entities[0]["slug"] != "ideation-01" || envJ.Entities[29]["slug"] != "ideation-30" {
+		t.Fatalf("--where status=ideation --json slugs at set boundaries = %q..%q, want ideation-01..ideation-30",
+			envJ.Entities[0]["slug"], envJ.Entities[29]["slug"])
+	}
 	wantPagination := map[string]string{
-		"page": "1", "limit": "25", "total": "30", "start": "1", "end": "25", "has_next": "true",
+		"page": "1", "limit": "0", "total": "30", "start": "1", "end": "30", "has_next": "false",
 	}
 	for k, v := range wantPagination {
 		if envJ.Pagination[k] != v {
-			t.Fatalf("--where status=ideation --json pagination[%q] = %q, want %q (filtered total 30)\n%s", k, envJ.Pagination[k], v, jsonOut)
+			t.Fatalf("--where status=ideation --json pagination[%q] = %q, want %q (filtered total 30, unpaginated)\n%s", k, envJ.Pagination[k], v, jsonOut)
 		}
 	}
 }
@@ -412,5 +424,50 @@ func TestStatusPaginationLimitZero(t *testing.T) {
 	}
 	if env1.Pagination["limit"] != "0" || env1.Pagination["has_next"] != "false" || env1.Pagination["total"] != "30" {
 		t.Fatalf("--limit 0 --json pagination = %v, want limit=0 has_next=false total=30", env1.Pagination)
+	}
+}
+
+// TestStatusPaginationExplicitJSONWindow proves an operator who asks for a
+// window in JSON still gets one: --json serves the complete set only when the
+// caller selects no page, so --limit 10 yields the first 10 rows with
+// has_next=true and --page 2 yields the trailing rows-26..30 window. It fails
+// if the unpaginated-JSON guard overrides an explicit --page/--limit.
+func TestStatusPaginationExplicitJSONWindow(t *testing.T) {
+	def := buildPaginationFixture(t, 30)
+	env := pinnedEnv(t)
+
+	for _, tc := range []struct {
+		name       string
+		args       []string
+		wantSlugs  []string
+		wantPaging map[string]string
+	}{
+		{"limit 10", []string{"--limit", "10"}, rowSlugs("row", 1, 10),
+			map[string]string{"page": "1", "limit": "10", "total": "30", "start": "1", "end": "10", "has_next": "true"}},
+		{"page 2", []string{"--page", "2"}, rowSlugs("row", 26, 30),
+			map[string]string{"page": "2", "limit": "25", "total": "30", "start": "26", "end": "30", "has_next": "false"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			out, stderr, code := runNative(t, def, env, append([]string{"--workflow-dir", def, "--json"}, tc.args...)...)
+			if code != 0 {
+				t.Fatalf("--json %v exit=%d stderr=%q", tc.args, code, stderr)
+			}
+			var envJ paginatedStatusEnvelope
+			if err := json.Unmarshal([]byte(out), &envJ); err != nil {
+				t.Fatalf("parse --json %v: %v\n%s", tc.args, err, out)
+			}
+			var got []string
+			for _, e := range envJ.Entities {
+				got = append(got, e["slug"])
+			}
+			if !equalStrings(got, tc.wantSlugs) {
+				t.Fatalf("--json %v rows = %v, want %v (an explicit window must win over the unpaginated-JSON default)", tc.args, got, tc.wantSlugs)
+			}
+			for k, v := range tc.wantPaging {
+				if envJ.Pagination[k] != v {
+					t.Fatalf("--json %v pagination[%q] = %q, want %q", tc.args, k, envJ.Pagination[k], v)
+				}
+			}
+		})
 	}
 }

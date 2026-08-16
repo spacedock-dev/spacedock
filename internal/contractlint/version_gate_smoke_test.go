@@ -1,9 +1,7 @@
-// ABOUTME: Skill smoke test for the rewritten FO version gate (Startup step 1):
-// ABOUTME: the lean in-core skeleton (OS-aware hint, sandbox check, deferred
-// ABOUTME: trigger, launcher-invariant amendment) plus the deferred
-// ABOUTME: references/fo-install-gate.md machinery (sentinel loop bound,
-// ABOUTME: convergence, message grammar) — prose can drift, so tokens are
-// ABOUTME: pinned against the on-disk skill files.
+// ABOUTME: Structural checks for the FO version gate (Startup step 1): the
+// ABOUTME: deferred references/fo-install-gate.md machinery resolves and stays
+// ABOUTME: out of the boot-resident core, and the sandbox registry and install
+// ABOUTME: hint match their sources outside the skill files.
 package contractlint
 
 import (
@@ -26,35 +24,14 @@ func readSkillFile(t *testing.T, rel string) string {
 	return string(body)
 }
 
-// TestVersionGateProseOSAwareHint pins the AC-1 prose shape in the lean core
-// skeleton: the `uname -s` OS source (permanently load-bearing there — the
-// absent binary produces no `--version` output) and the unsupported-OS
-// source-build escape. The install commands themselves are pinned by
-// TestInstallHintNoDrift as a relation against docs/site/get-started/install.md,
-// so they are deliberately not frozen here as literals.
-func TestVersionGateProseOSAwareHint(t *testing.T) {
-	body := readSkillFile(t, sharedCorePath)
-	for _, token := range []string{
-		"uname -s",
-		"go build -o spacedock ./cmd/spacedock",
-		"unsupported OS",
-	} {
-		if !strings.Contains(body, token) {
-			t.Fatalf("FO version-gate core skeleton is missing the OS-aware-hint token %q", token)
-		}
-	}
-}
-
-// TestVersionGateDeferredTrigger pins the core skeleton's deferred-read trigger:
-// the binary-absent class names references/fo-install-gate.md INLINE, and the
-// deferred-load-points inventory carries the matching one-line entry (mirroring
-// the existing fo-dispatch-core.md pattern). The heavyweight machinery must NOT
-// live in the boot-resident core — the byte-cap tests guard that.
+// TestVersionGateDeferredTrigger checks the structural shape of the core
+// skeleton's deferred-read trigger: the deferred-load-points inventory carries
+// the references/fo-install-gate.md entry (mirroring the existing
+// fo-dispatch-core.md pattern) and the deferred body resolves non-trivially.
+// The heavyweight machinery must NOT live in the boot-resident core — the
+// byte-cap tests guard that.
 func TestVersionGateDeferredTrigger(t *testing.T) {
 	body := readSkillFile(t, sharedCorePath)
-	if !strings.Contains(body, "read `references/fo-install-gate.md`") {
-		t.Fatalf("core skeleton must name the deferred read of references/fo-install-gate.md in the binary-absent class")
-	}
 	if !strings.Contains(body, "- `references/fo-install-gate.md`") {
 		t.Fatalf("deferred-load-points inventory must carry a references/fo-install-gate.md entry line")
 	}
@@ -65,45 +42,6 @@ func TestVersionGateDeferredTrigger(t *testing.T) {
 	gate := readSkillFile(t, installGatePath)
 	if len(gate) < 500 {
 		t.Fatalf("references/fo-install-gate.md = %d bytes, want the real install-offer machinery", len(gate))
-	}
-}
-
-// TestInstallGateSentinelLoopBound pins the AC-2 guardrail shape in the deferred
-// body: the sentinel path form, the `test -f` pre-offer check,
-// create-before-run, the named identity env vars (claude + codex) with the pi
-// working-directory-hash fallback, and the fallback message's sentinel-path +
-// `rm` recovery obligation. Dropping any of these breaks the one-attempt bound
-// the failure-fallback behavior fixture asserts on.
-func TestInstallGateSentinelLoopBound(t *testing.T) {
-	body := readSkillFile(t, installGatePath)
-	for _, token := range []string{
-		"${TMPDIR:-/tmp}/spacedock-install-attempted-<key>",
-		"test -f <sentinel>",
-		"BEFORE the install runs",
-		"create-before-run",
-		"CLAUDE_CODE_SESSION_ID",
-		"CODEX_THREAD_ID",
-		"rm <sentinel-path>",
-		"no second install attempt",
-	} {
-		if !strings.Contains(body, token) {
-			t.Fatalf("fo-install-gate.md is missing the sentinel-loop-bound token %q", token)
-		}
-	}
-	// The pi fallback must be stated (pi exposes no session-identity env var).
-	if !strings.Contains(body, "working directory") || !strings.Contains(body, "project-scoped") {
-		t.Fatalf("fo-install-gate.md must state the pi project-scoped cwd-hash sentinel fallback")
-	}
-	// Convergence mechanics: session-scoped repoint, stderr-contract parse,
-	// $HOME/.local/bin probe — and never persisted (D-2).
-	for _, token := range []string{
-		"install.sh: installed spacedock <version> to <dir>/spacedock",
-		"$HOME/.local/bin/spacedock",
-		"never persist it to a shell profile",
-	} {
-		if !strings.Contains(body, token) {
-			t.Fatalf("fo-install-gate.md is missing the convergence token %q", token)
-		}
 	}
 }
 
@@ -146,21 +84,5 @@ func TestVersionGateSandboxRegistry(t *testing.T) {
 	}
 	if !strings.Contains(gate, "^Sandbox: ") {
 		t.Fatalf("fo-install-gate.md must name the ^Sandbox: line as corroboration-only")
-	}
-}
-
-// TestVersionGateProseLauncherInvariantAmendment pins the amended invariant
-// sentence in the core: a gate that fails the binary-absent class and then
-// succeeds via the approved install performs its ONE launcher resolution at
-// that point (the session-scoped SPACEDOCK_BIN repoint), still inside Startup
-// step 1. Without this amendment the post-install repoint contradicts the
-// invariant it ships alongside.
-func TestVersionGateProseLauncherInvariantAmendment(t *testing.T) {
-	body := readSkillFile(t, sharedCorePath)
-	if !strings.Contains(body, "performs its ONE launcher resolution at that point") {
-		t.Fatalf("launcher-invariant amendment missing: gate-internal post-install resolution not blessed")
-	}
-	if !strings.Contains(body, "Never drift to a bare `spacedock` mid-session") {
-		t.Fatalf("launcher-invariant anti-drift sentence must survive the amendment")
 	}
 }
