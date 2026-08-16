@@ -9,6 +9,29 @@ verdict:
 score: "0.90"
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:hz2ankag6fk379ssabpv4ckc:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:hz2ankag6fk379ssabpv4ckc-backlog-1
+              briefing:
+                id: briefing:hz2ankag6fk379ssabpv4ckc:backlog:attempt-1:revision-1
+                digest: sha256:1a03a0685d3c3ef04d8aa2aae0f3435c94e2d1bbac51d81ffed388bbedbd63cb
+                request-digest: sha256:8b3615051af7a7b0d18b2bf2f35a0ec367018010efe709fad15b61515ab89bf6
+                room-ref: ./repair-codex-rejection-round-recording/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:hz2ankag6fk379ssabpv4ckc:backlog:1
+                briefing: briefing:hz2ankag6fk379ssabpv4ckc:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T03:15:18.533316Z"
+                decision: approve
+                reason: 'Captain directive 2026-08-16: file it and dispatch on top of the current stack; local live run for the targeted flake, then PR onto the stack'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Codex intermittently completes the live rejection flow without recording the rejection round: the FO-side flow reaches the feedback stage but `gate record --round` never runs, so the journey assertion finds no round record (`rejection-round-missing`). Fail-pass-fail across the last three runs proves the c6a336a33 retirement premature for this journey.

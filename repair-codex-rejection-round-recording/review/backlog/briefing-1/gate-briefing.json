@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hz2ankag6fk379ssabpv4ckc:backlog:attempt-1:revision-1",
+  "question": "Approve repair-codex-rejection-round-recording into ideation (captain pre-directed: file and dispatch on the stack)?",
+  "artifacts": [
+    {
+      "id": "artifact:hz2ankag6fk379ssabpv4ckc:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/49bd87c1d6d420d82ffc95005aad271aa359ac9a/repair-codex-rejection-round-recording.md",
+      "rev": "sha256:9a29ac8cb989974acd11616c719321eda2b5484f6565ec3e781b9ab1e258ef80",
+      "mediaType": "text/markdown",
+      "summary": "Captain-directed 2026-08-16: two same-day failures, no active owner, premature XFAIL retirement."
+    }
+  ]
+}
