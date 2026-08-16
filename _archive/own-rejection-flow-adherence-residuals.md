@@ -5,6 +5,13 @@ source: "Blind shape-attribution analysis 2026-08-16 (_debriefs/2026-08-16-03-re
 id: 4rgdwbg3bj9jnyrk4nptjk6r
 ---
 
+## Superseded at filing
+
+Captain ruling (2026-08-16): this and run-rejection-journey-in-team-mode
+(zqb683j8jth0tyr2eme231e2) are the same thing — the residuals were observed under the
+bare invocation that entity removes, so behavior must be re-measured inside its
+team-mode proof loop. Content folded there verbatim; archived unstarted.
+
 ## Problem
 
 With all three stack fixes in place (inline state commit, rewritten skill, recognizer quoting), two real FO adherence failures remain on the composed tree, proven from preserved run streams:
