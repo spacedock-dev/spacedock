@@ -40,6 +40,16 @@ gates:
                 digest: sha256:f37d7e259f399bd314307df56638a23b87bafa12d9b330e973911ee95d34707a
                 request-digest: sha256:3e8981348aa9a7c0aa8507fbe15e9dd64fde64a34d8e6e93b67780d770daca2a
                 room-ref: ./fo-workflow-fit-gate/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:b8ewpvd65epkckvng0n38809:validation:1
+                briefing: briefing:b8ewpvd65epkckvng0n38809:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T19:24:02.367736Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 pr: "#721"
 ---
 
