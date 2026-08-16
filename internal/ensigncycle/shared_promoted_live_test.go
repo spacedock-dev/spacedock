@@ -123,7 +123,7 @@ func initializeAutoContinueFixtureGit(t *testing.T, workflowRoot, stateRoot stri
 func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() []autoContinueFixtureVariant, assert func(string, string, string) error) {
 	t.Helper()
 	for _, fixture := range build() {
-		var workflowRoot, stateRoot, entityPath string
+		var stateRoot, entityPath string
 		var splitRoot bool
 		sc := livescenario.Scenario{
 			Name: scenario.name, Runbook: autoContinuePrompt(),
@@ -135,7 +135,7 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 					splitRoot = stateRoot != dir
 					initializeAutoContinueFixtureGit(t, dir, stateRoot)
 				}
-				workflowRoot, entityPath = dir, entity
+				entityPath = entity
 				return entity, err
 			},
 			Assert: func(before, after livescenario.EntityState, observed string) error {
@@ -150,11 +150,8 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 		if err := livescenario.Run(context.Background(), t.TempDir(), sc, adapter); err != nil {
 			semantic = append(semantic, durableSemantic("auto-continue-state", err))
 		}
-		if verifier, ok := driver.(interface {
-			verifyAutoContinueDispatch(*testing.T, liveResult, string, string, string) error
-		}); ok {
-			semantic = append(semantic, durableSemantic("validation-worker-lifecycle", verifier.verifyAutoContinueDispatch(t, result, workflowRoot, stateRoot, entityPath)))
-		}
+		semantic = append(semantic, durableSemantic("validation-worker-lifecycle",
+			assertAutoContinueDispatchEvidence(t, driver.lifecycleStream(t, result), stateRoot, entityPath)))
 		finishLiveScenario(t, driver, fixtureScenario, result, semantic...)
 	}
 }
@@ -176,14 +173,6 @@ func resolveAutoContinueEndState(stateRoot string, splitRoot bool, after string)
 	return after
 }
 
-func autoContinueWorktreeDir(body string) string {
-	value := filepath.Clean(durableField(body, "worktree"))
-	if value == "." || value == ".." || filepath.IsAbs(value) || strings.HasPrefix(value, ".."+string(filepath.Separator)) {
-		return ""
-	}
-	return value
-}
-
 func runACValueReanchorJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func() livescenario.Scenario, assert func(livescenario.Scenario, livescenario.EntityState, livescenario.EntityState, string) error) {
 	t.Helper()
 	spec := build()
@@ -203,22 +192,4 @@ func authorACReanchorScenario() livescenario.Scenario {
 
 func assertACReanchorScenario(spec livescenario.Scenario, before, after livescenario.EntityState, observed string) error {
 	return spec.Assert(before, after, observed)
-}
-
-func writePiAutoContinueWorkflowNoGit(root string) (stateRoot, entityPath string, err error) {
-	stateRoot = filepath.Join(root, ".spacedock-state")
-	readme := strings.NewReplacer("---\nentity-type:", "---\ncommissioned-by: spacedock@1\nentity-type:", "id-style: slug\nstages:", "id-style: slug\nstate: .spacedock-state\nstages:").Replace(autoContinueReadme())
-	readme = strings.ReplaceAll(readme, "      worktree: true\n", "")
-	readme = strings.Replace(readme, "# Auto-Continue Fixture", "# Pi Auto-Continue Fixture", 1)
-	if err := os.WriteFile(filepath.Join(root, "README.md"), []byte(readme), 0o644); err != nil {
-		return "", "", err
-	}
-	entityPath = filepath.Join(stateRoot, "auto-continue-task", "index.md")
-	if err := os.MkdirAll(filepath.Dir(entityPath), 0o755); err != nil {
-		return "", "", err
-	}
-	if err := os.WriteFile(entityPath, []byte(autoContinueEntity()), 0o644); err != nil {
-		return "", "", err
-	}
-	return stateRoot, entityPath, nil
 }

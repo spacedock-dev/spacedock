@@ -82,12 +82,21 @@ func withPATHPrefix(env []string, dir string) []string {
 // facts the per-scenario orchestration needs beyond the headless launch.
 // withStubPATH returns a driver copy whose launched FO subprocess resolves a stub
 // binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED).
+//
+// lifecycleStream returns the stream in which THIS host records worker spawns and
+// completions, which is not always the public one: Codex reports its sub-agent
+// lifecycle only in the CODEX_HOME rollout. It is a required method rather than an
+// optional interface a driver may assert into because omission was the defect — an
+// optional interface is satisfiable by forgetting it, so a host that skipped it
+// graded green with the dispatch-evidence check silently not running. A missing
+// method is now a build error.
 type liveDriver interface {
 	run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) liveResult
 	emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult)
 	gradeShallowBootObservation(t *testing.T, result liveResult)
 	prepareRecordedGate(t *testing.T) (liveDriver, func(liveResult))
 	smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace
+	lifecycleStream(t *testing.T, result liveResult) string
 	model() string
 	home() string
 	withStubPATH(dir string) liveDriver
@@ -171,6 +180,12 @@ func (r claudeLiveRunner) smallestMechanismTrace(result liveResult, edits, commi
 	return smallestMechanismTraceForDialect("claude", result.stream, edits, commissioned)
 }
 func (r claudeLiveRunner) home() string { return r.homeDir }
+
+// Claude records the Agent spawn and its task_notification completion in the public
+// stream-json transcript, so the public stream IS the lifecycle stream.
+func (r claudeLiveRunner) lifecycleStream(_ *testing.T, result liveResult) string {
+	return result.stream
+}
 func (r claudeLiveRunner) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
 	emitClaudeScenarioMetrics(t, scenario, result, r.modelName)
 }
@@ -274,39 +289,6 @@ func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) s
 	}
 	return stream
 }
-func assertAutoContinueDispatchEvidence(t *testing.T, stream, workflowRoot, stateRoot, entityPath string) error {
-	t.Helper()
-	reportEntity := entityPath
-	if body, err := os.ReadFile(entityPath); err == nil {
-		if worktree := autoContinueWorktreeDir(string(body)); worktree != "" {
-			reportEntity = filepath.Join(stateRoot, worktree, filepath.Base(entityPath))
-		}
-	}
-	if canonical, err := filepath.EvalSymlinks(reportEntity); err == nil {
-		reportEntity = canonical
-	}
-	report, err := os.ReadFile(reportEntity)
-	if err != nil {
-		return err
-	}
-	if err := assertWorkerLifecycle(stream, string(report), "validation", "gate prepare"); err != nil {
-		return err
-	}
-	reportRepo := strings.TrimSpace(git(t, filepath.Dir(reportEntity), "rev-parse", "--show-toplevel"))
-	rel, _ := filepath.Rel(reportRepo, reportEntity)
-	if strings.TrimSpace(git(t, reportRepo, "log", "-1", "--format=%H", "-S## Stage Report: validation", "--", rel)) == "" {
-		return fmt.Errorf("validation report has no durable commit")
-	}
-	doc, _, err := gates.Read(entityPath)
-	if err != nil {
-		return err
-	}
-	if summary := gates.CurrentSummary(doc, "validation"); summary.State != "open" {
-		return fmt.Errorf("validation gate state = %q, want open", summary.State)
-	}
-	return nil
-}
-
 func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) recordedGateFixture, assert func(*gates.Document) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()

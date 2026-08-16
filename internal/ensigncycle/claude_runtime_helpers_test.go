@@ -2,6 +2,7 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -392,12 +393,18 @@ func errGraded(msg string) error { return &gradedErr{code: "gate-hold-violation"
 // durableSemantic labels a scenario assertion's failure with the semantic code the
 // lane reports it under, preserving the assertion's own message as the finding
 // detail. An assertion that already chose its own code keeps it.
+//
+// The unwrap is load-bearing, not defensive: livescenario.Run returns its Assert's
+// error wrapped (`scenario %q graded FAIL: %w`), so a bare type assertion would
+// relabel every coded finding that reaches the lane through a scenario runner —
+// silently collapsing a specific grade back into the generic one it chose against.
 func durableSemantic(code string, err error) error {
 	if err == nil {
 		return nil
 	}
-	if _, ok := err.(*gradedErr); ok {
-		return err
+	var graded *gradedErr
+	if errors.As(err, &graded) {
+		return graded
 	}
 	return &gradedErr{code: code, msg: err.Error()}
 }
