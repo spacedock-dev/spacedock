@@ -15,6 +15,16 @@ gates:
                 digest: sha256:2e0b2dbee158b2af2f453bb5a4d29b1885f90d259a240e26f3d5b74584acaf28
                 request-digest: sha256:4e95675088ccdd457cb555d4495b314fefc87f64c1a2f512c7af416a94129f04
                 room-ref: ./prepare-initial-gated-stage-from-seed/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ra9qzfz94hzgsq938jz998mj:ideation:1
+                briefing: briefing:ra9qzfz94hzgsq938jz998mj:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-16T17:50:45.210274Z"
+                decision: approve
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
