@@ -88,9 +88,27 @@ available for a completed worker. `fo-dispatch-core.md:49` (reuse condition 0) i
 Host-neutral, in both branches:
 
 - Ordered chain: impl dispatch → impl `Done:` → `status=validation` → validation dispatch →
-  REJECTED report → `- Cycle 1:` line → `gate record --round validation/1` → `state commit` →
-  rework routing → fix `Done:` → `status=validation` → re-review routing → PASSED report →
-  `gate prepare` → stop nonterminal. (`feedback-rejection-flow/SKILL.md` steps 1-5.)
+  REJECTED report → rework routing → fix `Done:` (the worker's own entries close the round's
+  review log) → `- Cycle 1:` line → `gate record --round validation/1` (reporting all four
+  accumulated entries) → `state commit` → `status=validation` → re-review routing → PASSED
+  report → `gate prepare` → stop nonterminal. (`feedback-rejection-flow/SKILL.md` steps 1-5.)
+
+  **Corrected at implementation (FO-authorized, implementation-discovered truth).** This chain
+  previously placed `gate record --round validation/1` and the Cycle line BEFORE the rework
+  routing, which inverts the skill it cites. `SKILL.md` step 1 (deliver the correction) is
+  "**Done when** the correction is complete in durable workflow state: the target worker's own
+  entries closing this round's review log"; only then does step 2 (record this round, once)
+  append the Cycle line and invoke the recorder, "**Done when** the recorder exits successfully
+  reporting the complete round summary, counting every entry this round accumulated". So the
+  correction lands first and the single recording counts all four entries — the reviewer's two
+  plus the rework worker's two. Recording before the rework reaches only `entries=2`, an
+  incomplete round the skill tells the FO to hold on rather than claim. Claude AC-1 loop run 2
+  followed the old, wrong order here, recorded at `entries=2`, and was correctly graded red by
+  the pre-existing `entries=4` recognizer (`rejectionRoundSuccess`), which was left untouched:
+  relaxing it to accept the incomplete round would have loosened the grade to match a defective
+  chain. Nothing in the implementation depended on the wrong ordering — the branch-keyed
+  topology grader orders only worker routing events (`spawn`/`reuse`/`done`) and never places
+  `gate record` among them.
 - Four durable report sections: `## Stage Report: implementation`, `## Stage Report: validation`,
   `## Stage Report: implementation (cycle 2)`, `## Stage Report: validation (cycle 2)` — the
   `(cycle N)` form is the ensign contract's own rule (`ensign-shared-core.md:93`).
@@ -490,3 +508,23 @@ duplicate-heading shape AC-2 requires to red would not. I also deleted
 `assertClaudeSingleEntityRejectionFlow` and its table test: its only production caller
 was the line this layer replaces, and it accepted both a reuse and a fresh topology —
 the multiple-path acceptance the captain ruled out.
+
+### Amendment: FO dispositions on the three carried items
+
+Recorded after the implementation report was filed; no candidate code changed.
+
+- DONE: Correct the determined-shape chain to the skill's actual order (FO-authorized,
+  implementation-discovered-truth class; captain ratifies at the gate).
+  `## Determined shape` now orders the correction and its review-log closure BEFORE the single
+  round recording, quoting both `SKILL.md` done-conditions, and records that Claude run 2
+  followed the old order, recorded at `entries=2`, and was correctly redded by the untouched
+  `entries=4` recognizer. This was the FAILED-adjacent finding raised in the summary above; it
+  is now closed in the entity text rather than left as a note against it.
+- SKIPPED: Retire the `AUDIT(2026-08-16)` block — FO ruled LEAVE UNTOUCHED.
+  Superseding the rejection-flow block belongs to the stack-merge conflict resolution on
+  `shared_live_runner_test.go`, which the FO owns at the merge window (stack's version wins, the
+  rejection-flow block drops as superseded by this layer, the other journeys' blocks are
+  preserved). Reclassifies the FAILED item above: not my lineage, not mine to delete.
+- SKIPPED: Bring the surface back inside the declared ceiling — FO ruled it rides to the gate as
+  declared, with the no-loosening rule outranking the estimate. Unchanged at 12 files / 1115
+  changed lines; the captain rules at the gate.
