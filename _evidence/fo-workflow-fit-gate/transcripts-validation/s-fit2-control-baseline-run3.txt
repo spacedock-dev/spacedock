@@ -1,0 +1,29 @@
+## The next action
+
+**Reproduce the claim before anything else — read-only, no state touched.** Concretely:
+
+1. `grep -L '^worktree:' docs/dev/.spacedock-state/*.md` (plus the folder-form `*/index.md`) — does an entity with the key *actually absent* exist in the live state at all?
+2. `spacedock status --workflow-dir docs/dev --json` — read the emitted `worktree` value for a known present-but-empty entity and, if step 1 found one, for the absent-key entity. Compare the bytes.
+3. If step 1 finds none, build the pair in a throwaway fixture workflow dir under a scratch path (no product path, no `.spacedock-state` write) — one entity with `worktree:` blank, one with the key deleted — and run the binary against it.
+
+## Why this and not "file it and dispatch"
+
+- **This run's evidence, not the handoff's label.** Your description is a hypothesis about binary behavior until I've watched it happen. I hold my own triage to the bar I impose on workers: a failure is read from the failing output in front of me. If the marshaller already distinguishes them and the confusion is downstream, the whole task reshapes.
+- **Cheapest check that can fail.** Two commands falsify or confirm it. No worker, no worktree, no PR. Ultracode being on is not a reason to climb a rung, and the commissioned dev workflow already fixes the mechanism for the fix itself — a Workflow fan-out here would be a second dispatcher.
+- **Step 1 is not busywork — it decides materiality.** If no entity in the supported workflow ever omits the key (the template ships `worktree:`), the trigger is hypothetical and this is a *deferred risk* with a promote-to-material condition, not a material defect. That distinction changes the priority and the acceptance criteria, and it's cheaper to settle now than at the validation gate.
+- **The observation is the seed evidence anyway.** Ideation would have to spike this exact path first; doing it now means the task arrives at its gate with the riskiest claim demonstrated rather than asserted.
+
+## Immediate follow-through
+
+Converge before I write anything: `spacedock state ready`, then `spacedock state sweep`, then startup hooks — the split-root state checkout gets pulled before I file, not after. Check the backlog for an existing entity covering this. Then read `fo-write-core.md` in its own event (first FO-authored mutation), and file the seed with `spacedock new worktree-json-absent-vs-empty --id-seed "worktree-json-absent-vs-empty"`, piping a stub whose body carries the observed JSON bytes, the in/out-of-scope boundary, and the proof later stages must produce — then `spacedock state commit`. It lands at the `backlog` gate.
+
+I cannot fix this directly regardless of what the reproduction shows: `cmd/**` and `internal/**` are blocked-product. "You have the conn" is an authority grant, not an exact-target write override — it lets me resolve gates and keep driving, not edit the binary.
+
+## One concern I'm carrying into the gate, not blocking on
+
+Two things the design has to answer, and I'd rather have your read before the ideation gate fixes the baseline:
+
+- **The workflow's own schema says `worktree` is "path while active, **empty otherwise**."** Under that contract, absent and empty are arguably the same state by design, and "a caller can't tell them apart" is the schema working. So: which caller does what differently once they're distinguishable? That answer is the end value, and this workflow requires at least one AC that *measures* it — "the JSON emits `null`" is mechanism-only and doesn't count on its own.
+- **`status --json` is a consumed envelope on a high-stakes surface.** My own boot and dispatch reads parse it, and it sits on the status mutation/guard path. Changing empty-string to `null`/omitted is a declared observable-semantics change with real blast radius, and it triggers the detached adversarial audit before merge. Worth sizing in ideation rather than discovering at validation.
+
+Neither blocks the reproduction or the filing — I'm doing both now.

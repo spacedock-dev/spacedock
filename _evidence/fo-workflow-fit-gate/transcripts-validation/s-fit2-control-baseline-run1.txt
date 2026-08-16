@@ -1,0 +1,36 @@
+## Next action
+
+Reproduce the claim before filing anything. Concretely, in one turn:
+
+1. Build a throwaway fixture workflow at `/tmp/spike-status-json-worktree-absent-vs-empty/wf/` — copy `docs/dev/README.md` as its `README.md`, strip the `state:` line so entities sit beside it, and set `id-style: slug` so nothing needs minting. Scratch path carries the task slug, per the 2026-08-15 collision incident.
+2. Drop two entity files that differ in exactly one line: `wt-empty.md` with `worktree:` present and blank, `wt-absent.md` with the `worktree` line deleted. Everything else byte-identical.
+3. Run `spacedock status --workflow-dir /tmp/spike-.../wf --json`, plus `--read wt-empty --json` and `--read wt-absent --json` (the other JSON surface the contract actually consumes), and diff the two entity objects byte-for-byte.
+4. Then round-trip it: `status --set` / `--stamp` against `wt-absent` and re-read, to see whether the absent key is even reachable in practice or whether the first write materializes it.
+
+Nothing gets created inside `.spacedock-state`; the scratch dir is outside the repo and outside the write classifier.
+
+## Why this first
+
+The captain's sentence is a claim about binary behavior, and the contract is explicit that a handoff's label is a hypothesis to confirm against this run, not a verdict to apply. This is the cheapest check that can fail: two files, one diff, and it either reproduces or it doesn't.
+
+It also decides the *shape* of what I file. Three outcomes route differently:
+
+- **Both objects identical with `"worktree": ""`** — the captain's read is confirmed, and I have the exact bytes for the problem statement plus the seed for the implementation's first test.
+- **The absent case omits the key or emits `null`** — the defect isn't where it was reported. Either a different surface has it, or the collapse happens in the parser (absent normalized to `""` at load) rather than in the marshaller, which is a materially different fix. I report the refutation rather than filing a phantom.
+- **`--set`/`--stamp` materializes `worktree:` on first write** — then the absent state is unreachable for any entity this workflow has ever dispatched, which bears directly on whether a real caller can hit it at all.
+
+Step 4 also stays cheap on purpose. This is a two-command check; spawning a fan-out for it would be climbing a rung the contract explicitly warns against — "Ultracode is on" is named as a non-reason.
+
+## Then
+
+Assuming it reproduces, I file one task with `spacedock new status-json-worktree-absent-vs-empty --id-seed "status-json-worktree-absent-vs-empty"`, stub piped on stdin, followed by `«state.commit»(slug)` for the split root. The captain has already answered the backlog gate's question — should design start — so I advance to `ideation` and dispatch rather than presenting a gate to re-ask something already answered.
+
+I do **not** touch `internal/**` or `cmd/**` myself. That's `blocked-product`; "it needs fixing" is a directive, not the exact-target grant an override requires. The fix goes through a dispatched worker in a worktree.
+
+## What goes in the seed, and one piece of pushback
+
+Two things ideation has to answer, written into the seed so the gate can judge them:
+
+**The wire-format fork.** Every option changes a machine-consumed surface, so this is a semantic change the ideation estimate must declare, not just a LOC count: omit the key (`omitempty`) breaks consumers expecting it; emit `null` for absent breaks anyone comparing against `""` in a way that's subtle rather than loud; add a sibling boolean is additive and breaks nobody. That fork is the ideation gate's real decision. Related: if the JSON shape moves, the path→lane mapping likely pulls in the host adapters and the FO contract's own reads, so the required-CI set isn't just the deterministic lanes — and `status` output is close enough to the high-stakes surfaces that I'd expect validation to carry the detached adversarial audit.
+
+**Strange things are afoot at the Circle K on the value AC.** I can't yet name the caller that needs the distinction. This README defines `worktree` as "worktree path while a dispatched agent is active, empty otherwise" — absent and empty mean the same thing to every consumer I know of, and stage-worktree stickiness means the key is blank only before the first worktree dispatch. If ideation can't produce a caller whose behavior changes, the value-measuring AC has nothing independent to measure and the task is a mechanism with no end — which the AC cross-check is built to reject at the gate. That's not a reason to refuse the work; it's the first question the ideation worker gets, and I'll drive it either way.

@@ -1,0 +1,33 @@
+## What I do next
+
+I stop at the Workflow Fit Gate. No `spacedock new`, no `status --set`, no dispatch. My next action is to put one placement question to you with one recommendation attached — because the deliverable you described does not belong in the `docs/dev` queue, and the conn doesn't change that.
+
+## Why
+
+**The fit gate names this exact output.** From `fo-write-core.md`: *"If a documented process already owns this output — a release ritual, a debrief... the work belongs there... **Release narratives**, status summaries, reports, and standalone decisions have such homes."* A user-facing journey selling the benefit of a major release is a release narrative. `docs/dev` tracks "design and implementation tasks from initial concepts through validated, shippable behavior" — the 0.27 gate/resolution surface is already shipped and audited. There is no behavior left for this task to produce or validate.
+
+**Write authorization is not workflow-fit authorization**, and the conn is neither. "You have the conn" grants me gate resolution and dispatch authority over work that belongs here. It does not admit work that doesn't.
+
+**The proof policy draws the same line, independently.** The validation stage says a dev-workflow AC's proof is code, command, or state — and that *"a non-development workflow's AC proof may legitimately be a published artifact, a metric, or a human review."* Your deliverable's natural proof is a published artifact and your judgment of whether it sells. The README assigns that proof form to a workflow that isn't this one.
+
+And I'm not going to reshape it until it fits. The gate is explicit that a fit failure isn't repaired by bolting on a shippable mechanism. The available bolt-ons here are all things I'd reject at a gate anyway: a grep over the published page for the five verbs (banned prose-grep — the expected value is text we wrote), a link-check CI lane (new standing enforcement, the last resort, and never folded into another task), or a script asserting the page's numbers match the audit (a mechanism the workflow never needed, invented to buy admission).
+
+## What I recommend
+
+Ship it as the 0.27 release narrative under the release ritual, not as a task in this queue. Concretely: I draft the journey in conversation now — it's prose, it's reversible, it costs one turn — you edit and approve the text, and it lands in whatever owns the published surface (`docs/site/**` release/announcement content is blocked-product, so a worker or your own hand puts the approved bytes there; I don't write that path directly without your exact-target grant).
+
+If you'd rather it be dispatched and tracked, tell me which workflow owns it. If the answer is "we don't have one," that's a commissioning conversation, not a `spacedock new` in `docs/dev`.
+
+## Two things I'd fix before any of it is published
+
+The audit figures don't yet support the claim you want them to carry, and this is outward-facing — once published it's indexed.
+
+1. **347 prepared, 392 recorded, 282 consumed.** More decisions than briefings and 65 briefings never consumed. The likely innocent reading is that `gate record --round` rounds are counted alongside terminal decisions, and that prepared-but-unconsumed covers in-flight plus the withdraw-and-re-prepare cycles this workflow has on the record. That's a hypothesis to confirm against the audit source, not something to paste into a public page. A page claiming "a durable audit trail of **every** decision" while its own numbers show a 65-briefing gap hands a skeptical reader the counterexample.
+
+2. **The headline claim is undermeasured.** "I keep decision-quality control over agent work" is proven by the approve/revise/hold split and by what the 212 feedback-cycle entries changed — not by throughput counts. Counts prove the machinery ran. I'd pull the disposition breakdown from the audit before drafting, because that's the number that actually sells your thesis.
+
+## One adjacent thing that *is* dev-shaped
+
+If the 0.27 command surface — `gate prepare`, `gate record`, `gate consume`, `merge guard` — shipped without its reference documentation, that gap is a legitimate `docs/dev` task: it attaches to shipped behavior, and its AC can be exercised rather than asserted (the documented invocation runs and produces the documented output). That's a different deliverable from the journey narrative, and I'd check whether the gap is real before filing anything.
+
+Say the word on placement and I'll have the draft in front of you this turn.

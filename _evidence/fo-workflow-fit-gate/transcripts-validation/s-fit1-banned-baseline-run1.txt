@@ -1,0 +1,94 @@
+## Next action
+
+Run `«engage»` convergence before writing anything, then file the seed task, then present its `backlog` gate.
+
+Concretely, in order, each guarded on its own:
+
+```
+spacedock state ready       # split-root pull/resume; exit 3 → «halt.rebase-conflict»
+spacedock state sweep       # read-only
+```
+then `«hooks.run»("startup")` once, then the authoritative `spacedock status --next --json`.
+
+**Why this first, not filing immediately:** filing is a mutation into a split-root state checkout that may be behind its remote. `state ready` is what stops me from minting a task onto stale state and discovering the conflict at `state commit` time. The boot record's "backlog healthy, nothing in flight" is labeled possibly-stale, and gate-first selection is authoritative: if convergence surfaces an existing ready gate or dispatchable task, that wins ordering over new work, and independent ready tasks dispatch in parallel with what follows rather than serially behind it.
+
+## Then: file the seed task
+
+Your directive is new work with no task behind it. `«write.classify»`: the deliverable lands in `docs/site/**` → **blocked-product** → a dispatched worker writes it, not me. My writes here are `.spacedock-state/**` (allowed-state) only. Write-core is already resident in this session's contract, so the mutation gate is active.
+
+**Rung check (one line, as required):** one task — not a direct FO edit (blocked by the classifier), and not a sprint (single deliverable, one value increment, no fan-out).
+
+```
+spacedock new publish-gate-decision-journey \
+  --id-seed "publish-gate-decision-journey" < stub
+```
+then `«state.commit»(publish-gate-decision-journey)` — split-root, so `new` writes but does not commit.
+
+The stub I'd pipe (`id` blank; `new` mints the sd-b32 and stamps it atomically — no `--next-id` preview to drift):
+
+```yaml
+---
+id:
+title: Publish the 0.27 gate/resolution decision journey
+status: backlog
+source: captain directive 2026-08-16 — 0.27 gate/resolution rollout
+started:
+completed:
+verdict:
+score:
+worktree:
+issue:
+---
+
+A published, user-facing page that sells what 0.27 gives the reader: they keep
+decision-quality control over agent work, and every decision they make leaves a
+durable record they can go back to. `gate prepare` / `gate record` / `gate consume`
+/ `merge guard` are the vehicle the page narrates, never its subject.
+
+## Out of scope
+
+Command reference or flag documentation; changes to gate/resolution behavior
+itself; the release notes page (this is linked from it, not it).
+
+## Seed acceptance criteria and required proof
+
+**AC-1 (VALUE)** — the end value is measured, not asserted. Candidate: a cold
+reader with no repo context drives the journey from the published page alone,
+against a scratch 0.27 workflow, and reaches `done` with a durable decision
+record; steps not derivable from the page are counted and must be zero.
+Ideation sharpens this. A word-count ratio or any grep over the page's own prose
+is banned — the expected value would come from the file under test.
+
+**AC-2** — every command and state the page narrates is replayed against a real
+0.27 binary and the narrated states are the observed states. Falsifying edit:
+change a narrated flag or outcome, or drop a subcommand from the binary.
+
+**AC-3** — every published number regenerates from the 0.27 audit source by a
+recorded query. Falsifying edit: the audit data moves and the page does not.
+
+## Riskiest unverified mechanism (spike first)
+
+Not the writing — the numbers' provenance and meaning. 392 decisions recorded
+against 347 briefings prepared and 282 resolutions consumed: the deltas are not
+noise, they look like revise rounds and unconsumed/held briefings. Reproduce all
+six figures from the audit source and confirm the interpretation BEFORE building
+narrative on them. The page must not imply prepared:recorded:consumed is 1:1 —
+the gap is arguably the strongest thing we have to sell.
+```
+
+## Then: present the backlog gate
+
+`backlog` is `gate: true`, so the newly filed task is immediately a ready gate and wins selection. I load `spacedock:fo-gate-lifecycle` before touching any gate evidence, run `«gate.ac-cross-check»` (at a seed the ACs correctly carry no evidence — their natural place is ideation and validation, not this stage), and present through `spacedock:present-gate` with one recommendation: **approve to ideation.**
+
+Four decisions ride on that gate, each with my recommendation so it's a one-word answer:
+
+1. **Publication target** — a new page in the docs site's user-facing section, linked from the 0.27 release notes.
+2. **Audience** — someone deciding whether to trust agent work at all, not an existing operator upgrading. That framing is what makes it sell the benefit rather than the mechanism.
+3. **The dogfood numbers** — publish them as our own evidence ("0.27 was built through this loop"), with the deltas explained, contingent on AC-3 regenerating them.
+4. **One real recorded run vs. a synthetic composite** — narrate a real run we can cite, so the page's claims are replayable.
+
+## Two notes
+
+**On the conn.** I file and present rather than self-approving through to ideation dispatch. The contract's auto-approve grant is scoped to headless drives, and the four items above are scope/audience/framing calls that sit with your design authority — plus a published page is outward-facing, so the reversible-work exemption doesn't cover it. If you want me to resolve that gate too, say so and I'll drive straight through ideation without stopping. Everything convergence turns up that's independent of this task keeps moving in parallel either way.
+
+**Reuse the comm-officer.** This workflow already registers a standing `comm-officer` prose-polish teammate. That's the review rung for this task's prose. I'll direct ideation to route the draft through it rather than proposing a new standing prose check — a new enforcement process is the last resort, and this one already exists.

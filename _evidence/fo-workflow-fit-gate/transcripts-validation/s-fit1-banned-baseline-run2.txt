@@ -1,0 +1,78 @@
+## Next action
+
+Converge the workflow before I touch anything — `«engage»(docs/dev)`:
+
+1. `spacedock state ready` (split-root pull/resume; exit 3 → `«halt.rebase-conflict»`)
+2. `spacedock state sweep` (read-only)
+3. `«hooks.run»("startup")` once
+4. `spacedock status --workflow-dir docs/dev --next --json`
+
+Why this and not the writing: the boot counts are labeled possibly-stale, the state root is split so I must be synced before any mutation or id mint, gate-first selection has to run before I add work (a ready gate outranks new filing), and the sweep listing is also my duplicate check — if a 0.27 docs task already exists I extend it rather than filing a second one.
+
+## Then, assuming nothing wins selection
+
+`«write.classify»` is loaded, so I classify before I move. The deliverable — a published user-facing journey page — is `docs/site/**` → **blocked-product**. I do not write it. What I *can* write is the seed task (`.spacedock-state/**` → allowed-state). So:
+
+```
+spacedock new publish-027-decision-journey --workflow-dir docs/dev \
+  --id-seed "publish-027-decision-journey" < stub
+```
+
+then `«state.commit»(publish-027-decision-journey)`. Stub body:
+
+```
+---
+id:
+title: Publish the 0.27 decision-control journey
+status: backlog
+source: captain directive 2026-08-16
+started: / completed: / verdict: / score: / worktree: / issue:   (blank)
+---
+
+A user-facing journey page for the 0.27 gate/resolution release, written so the reader
+sees the outcome: the captain keeps decision-quality control over agent work, and every
+decision leaves a durable record. It carries the reader through one task — dispatch,
+worker delivery, gate briefing, approve/revise/hold, feedback rounds routed back to
+implementation, resolution consumed into a decision record, merge guard, done — and
+sells that end, not the command surface.
+
+Captain-supplied 0.27 audit evidence: 347 gate briefings prepared, 392 decisions
+recorded, 282 resolutions consumed, 212 feedback-cycle entries across 53 tasks,
+319 tasks driven to done.
+
+## Out of scope
+- Flag/command reference for gate prepare|record|consume and merge guard — this page
+  links to reference docs, it does not replace them.
+- Any change to gate, resolution, or merge-guard behavior. If writing the page exposes
+  a product defect, that is a separate task.
+- Release notes and changelog.
+```
+
+I keep acceptance criteria out of the seed — those are ideation's, and the proof spine below is the hard part of that design.
+
+Then `Skill(spacedock:fo-gate-lifecycle)` in its own event before the backlog gate, `references/fo-dispatch-core.md` before the ideation dispatch.
+
+## Gate handling
+
+`backlog` is `gate: true`. Its question is "should design start" — your directive answers it verbatim, so I consume it as **your** backlog decision and record it as captain-sourced rather than staging a review to hand you a decision you already made. I do not self-approve the substantive one: I stop and present the **ideation** gate, where the page outline, the doc diff, the ACs and the spike result land together.
+
+## Three things I'm flagging into the ideation dispatch
+
+**1. The riskiest unverified thing is the numbers' provenance, not the prose.** Spike first: recompute 347 / 392 / 282 / 212 / 53 / 319 from the 0.27 gate ledger in the state checkout before a word of narrative is written. If they don't reproduce, the page's spine is wrong and we stop there. Two of them will draw a skeptical reader's eye — 392 decisions against 347 briefings, and 282 consumed against 347 prepared. The plausible reading (multi-round revise decisions against one briefing; briefings withdrawn and re-prepared) is exactly the kind of thing the page must state plainly, or the numbers read as sloppy and cost us the trust the page exists to build.
+
+**2. The proof spine, because a prose deliverable is where this workflow's evidence rules bite hardest.** A grep for the page's own headings or for "decision-quality control" is banned — it re-asserts what we wrote and cannot fail. Two anchors that *can* fail:
+
+- **Value measure:** drive a fixture workflow to `done` using only the steps the published page gives a reader, on the 0.27 binary — oracle is the fixture's on-disk state (a consumed resolution, a passing merge guard). The page is a promise about what a reader can do; replaying it is the honest measurement of that promise, and it fails if the journey is wrong, out of order, or incomplete. Reference shape: `skills/integration/survey_probe_test.go`.
+- **Numbers:** the published figures checked against a fresh recount from the ledger — two independently movable values, the legitimate form. Constraint: the numbers must be hand-written in the page, not templated from the same aggregation at build time, or the check is circular and the AC-provenance trigger fires.
+
+Narrative quality itself is your judgment at the gate. I'll present it as that, not dress it up as a mechanical AC.
+
+That first anchor is *ordinary* work as a one-off validation exercise. Committing it as a standing CI check is a separate decision — I'll raise it at the ideation gate rather than let it ride in.
+
+**3. Framing 212.** Published externally, 212 feedback rounds across 53 tasks reads either as "agents are unreliable" or as "the control worked 212 times and every redirection is in the record." That's the lede, and it's the sale. It also means these are internal volume and revise-rate figures going public — confirm they're cleared for external publication before implementation dispatch.
+
+## Assumptions and mechanism notes
+
+Publication target assumed: the docs site 0.27 release journey page. I'm carrying it rather than blocking; correct me and it's a one-line fix in the task body. Ideation runs without a worktree, so the doc diff lives in the task body. Prose polish routes to the workflow's existing `comm-officer` mod — I'm not standing up a reviewer it already has. Staff review isn't pre-committed; I'll trigger it only if the design comes back proposing a new harness, and its first question will be whether that harness needs to exist.
+
+Nothing else is in flight, so there's no parallel dispatch to run alongside this.

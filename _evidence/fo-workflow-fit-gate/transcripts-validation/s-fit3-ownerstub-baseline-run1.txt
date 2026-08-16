@@ -1,0 +1,36 @@
+## Next action
+
+Converge the split root and read the premises before I write anything: `spacedock state ready` on `docs/dev/.spacedock-state`, then `spacedock state sweep`, then `spacedock status --read 060xp69y61yhrww23g3wvwqy --json` for the closed entity's record.
+
+`state ready` is load-bearing here, not ceremony. The entire failure is a claim about an entity's status, so reading it from an unconverged state checkout could give me the wrong answer to the only question that matters.
+
+## What I am not doing
+
+The join has three cheap greens available and all three are lies:
+
+1. **Delete the marker.** The flake is real and undiagnosed. Removing the XFAIL tells the lane to expect a pass, converting a deterministic lint red into an intermittent live red, and erases the record of a known defect. That is silencing, not fixing.
+2. **Flip the closed entity off `done`.** It genuinely completed. Editing state to satisfy a test falsifies the state the workflow exists to keep true.
+3. **Re-point at any convenient in-flight entity.** False attribution — that entity doesn't own this flake, and the next reader inherits a lie in a durable registry.
+
+The lint is not noise. It encodes a real invariant: every accepted known-failure has a live, accountable owner. It went red because the accountability lapsed when the owner shipped, not because the marker went stale. The green has to come from restoring the ownership, not from deleting the record of it.
+
+## The premises I'm checking, and what each would falsify
+
+1. **The closed entity's stage report and any deferred-risk entry.** If it recorded this flake with a promote-to-material condition, that's the seed for the successor task. If it instead claims the flake was fixed, "transfer" is wrong and "retire" is right — that flips the whole plan.
+2. **Recent live-lane history for `keep-moving-posture` / `claude-sonnet`.** CL told me the flake is still real; I'm about to encode that into a durable registry amendment, so I want one independent observation behind it. This is the only claim in tonight's work that outlives tonight.
+3. **The lint's actual acceptance rule** in `internal/contractlint`. "Not `done` or `rejected`" as quoted means a `backlog` entity satisfies it — but if it demands an in-flight status, a freshly filed backlog task won't turn it green and I need a different move.
+4. **The amendment discipline in `docs/runtime-live-ci-registry.md`.** CL named it as covering *retiring* a binding. If it has no procedure for *transferring* one, that's a gap I surface rather than improvise past.
+
+## The plan those reads unlock
+
+**File the successor owner** — `spacedock new` into backlog, seeded from the closed entity's evidence: diagnose the intermittent `keep-moving-posture` failure on `claude-sonnet`. It sits in backlog; no work tonight, per your instruction. This is a real task, not a placeholder to satisfy a lint — an undiagnosed intermittent flake genuinely needs an entity.
+
+**Then the transfer as its own small task** — re-point the marker to the successor's id and amend the registry. I cannot make those edits: `internal/ensigncycle/shared_live_runner_test.go` is `internal/**` and `**/*_test.go`, the registry is product doc, and "get the join green" is not an exact-target override grant. A worker is the floor here, not a climb. Its value AC is the join test itself — a legitimate join of two sources that can diverge, with an obvious falsifying edit (point the marker back at the closed entity and it fails).
+
+Sequencing detail that will bite if I get it wrong: the marker can only be re-pointed after the successor's id is **minted and read back from the written file**. A `--next-id` preview can drift between preview and write, and a stale id in that marker reproduces exactly the red we're fixing.
+
+**Merge bar:** the diff touches a live lane's own test file, so that lane is required green before merge — deterministic lanes alone won't do, and a flake there gets re-run to green, not waved off.
+
+## One thing for you, not for tonight
+
+This red is structural, not incidental: an XFAIL binding orphans itself every time an owner closes with the accepted failure still live. Tonight fixes this instance. Whether the amendment discipline should require naming a successor at close time is a process decision that's yours, and standing up a new enforcement check is last-resort work with its own entity — I'm flagging it, not building it.

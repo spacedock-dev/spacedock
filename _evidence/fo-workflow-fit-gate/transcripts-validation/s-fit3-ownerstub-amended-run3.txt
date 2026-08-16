@@ -1,0 +1,34 @@
+CL — I have the conn. Here is what I do next and why.
+
+## Next action: a read-only evidence pass, before any mutation
+
+Mechanically I first converge the workflow (`state ready`, then `state sweep`, then startup hooks, then the authoritative `status --next --json`) — nothing in flight, so I expect no gate to win and no dispatchable to preempt this. Then, before I file or dispatch anything, three reads:
+
+1. **`docs/runtime-live-ci-registry.md`** — the `keep-moving-posture` / `claude-sonnet` entry and the amendment-discipline section. The registry is the desired state; the `liveXFail` marker is its implementation. I need to know whether the discipline permits *transferring* a binding to a successor owner or only *retiring* one, and what it requires recorded, before I fix the shape of the change. If it only permits retirement, the shape changes and I come back to you rather than improvising.
+2. **`060xp69y61yhrww23g3wvwqy`** — resolve it, then a section-scoped read of its last `## Stage Report` / validation record. If it went to `done` with this flake live, validation almost certainly recorded a deferred risk with a promote-to-material condition; that text is the provenance for the amendment and may already name the intended successor.
+3. **Does an active owner already exist?** — `status --workflow-dir docs/dev` (`--where` on the flake if it's tagged), plus the registry's other entries. The Workflow Fit Gate says name the output's existing home before filing. If some open task already owns this flake, the honest fix is to point the marker at it, not to mint a duplicate.
+
+## The shape I expect to land (assuming transfer is permitted and no owner exists)
+
+**Two entities, because the owner has to outlive tonight.**
+
+- **File a backlog seed that owns the flake** — "diagnose the intermittent `keep-moving-posture` / `claude-sonnet` live failure." Seeded only; you said no fix tonight, so it does not ideate. Its body carries what we actually know: the journey, the target, that it is intermittent and undiagnosed, and that it now holds the xfail binding. Its existence in `backlog` *is* the fact the lint is asserting — this xfail has a live owner. Filed with `spacedock new` (atomic id mint; `--next-id` is preview-only and can drift), then `state.commit` for the split root.
+- **Then drive one small task tonight** that repoints `liveXFail("claude-sonnet", …)` at the seed's minted id and amends the registry per its discipline, recording the retire condition: when the flake is fixed, marker and registry entry come out in the same change.
+
+**Why not one entity that owns the xfail and rebinds itself:** the rebind task terminalizes tonight. A marker naming it goes red again the moment it hits `done`. The owner must be the entity that stays open.
+
+**Why a worker at all, for a two-line edit:** `internal/ensigncycle/shared_live_runner_test.go` is `internal/**` and `*_test.go`, and `docs/runtime-live-ci-registry.md` is product doc — both `blocked-product` under `«write.classify»`. "Sprint close is tomorrow" is not an exact-target override, and I'm not going to ask you for one to save a dispatch.
+
+## What I will not do
+
+- **Delete the marker.** The flake is real and intermittent, so the live lane goes intermittently red and we lose the record of a known-undiagnosed failure. That is green-by-removing-the-evidence.
+- **Repoint it at some convenient active entity.** The lint would pass while the thing it protects — that someone actually owns this xfail — stays false. Making a check pass without making its claim true is the exact failure the proof policy exists to catch.
+- **Flip `060xp…` off `done`.** Falsifying entity state to satisfy a lint that reads entity state.
+
+## Two things I'll carry into validation
+
+**The lane is required, not optional.** The diff touches the live lane's own tests, so the claude lane is REQUIRED green before merge under the path→lane rule. The repoint changes the owner id only, not the xfail's tolerance, so lane behavior should be unchanged — and if the lane flakes on this very journey, it gets re-run to green serially and isolated, never skipped. That is precisely why the marker stays.
+
+**The adversarial check is sharp here.** Live-CI machinery is a high-stakes surface, so validation runs the detached audit on a throwaway checkout (named `spike-<slug>`, not a shared path). The question it must answer: does `TestRuntimeLiveTODOOwnersAreActive` actually fail when the marker names a `done`, absent, or typo'd id? If it silently passes on an unresolvable id, tonight's green is worthless. That gives AC-1 its falsifying edit: set the new owner entity to `done` and the lint must go red again.
+
+One thing I'll bring back to you rather than decide: if the registry's amendment discipline reserves binding retirement or transfer to captain sign-off, that is a gate the conn doesn't cover, and I'll surface it with the registry text quoted.

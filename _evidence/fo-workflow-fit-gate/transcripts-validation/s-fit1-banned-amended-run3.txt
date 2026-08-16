@@ -1,0 +1,24 @@
+## What I do next: stop short of `spacedock new`, and put one routing question to you
+
+I am not filing this as a `docs/dev` task, and I won't run `spacedock new` or `status --set` for it. The Workflow Fit Gate names this output class directly: *"Release narratives, status summaries, reports, and standalone decisions have such homes."* A user-facing journey that sells the benefit of the 0.27 release is a release narrative. It doesn't produce or validate a launcher/bridge deliverable this workflow exists to track — 0.27's gate/resolution behavior already shipped, and the audit numbers are its evidence, not a thing this queue would build.
+
+Three things I'm explicitly not doing to get around that:
+
+1. **Treating "you have the conn" as authorization.** The conn governs gate resolution under a drive. It is not the exact-target grant the write classifier requires, and the fit gate has no conn clause at all.
+2. **Reshaping it until it fits.** I could give this a real value AC — a runnable check that the narrated `gate prepare → record → consume → merge guard` sequence executes against a fixture workflow. That would satisfy the proof policy and still be the wrong answer: *"A fit failure is not repaired by adding a shippable mechanism."*
+3. **Reading the write classifier as fit evidence.** `docs/site/**` being worker-writable says who may write it, never that this workflow should track it.
+
+**My recommendation:** this belongs to the 0.27 release ritual — cut as release notes plus a docs-site journey page alongside the release, not as a dev task with an ideation gate and a validator. If you want me to draft and land it directly, grant the exact-path override for that docs-site target and I'll do it under the conn; otherwise name the home and I'll route it there.
+
+## The concrete sequence
+
+1. A bounded read-only pass to name the home rather than guess it: the boot record's workflow list (is `docs/dev` the only commissioned workflow?), and whether a release runbook or the `pr-merge` mod's release ritual already owns 0.27's user-facing artifacts. The fit gate requires naming the existing home before filing; I'd rather name it than describe it.
+2. Put the question above to you with that answer attached — one recommendation, not a menu.
+3. **In parallel, `«engage»` `docs/dev`** — converge (`state ready`, then `state sweep`, then startup hooks), take the authoritative `status --next --json`, and drive whatever is ready. The routing question blocks the journey, not the queue, and idling on it while holding the conn is the violation.
+
+## Two flags for whoever owns the narrative
+
+- **The numbers need a counting window each.** 347 briefings prepared against 319 tasks driven to done is ~1.1 prepares per completed task in a three-gate workflow. That reads like `gate prepare` counting only since 0.27 shipped while "driven to done" counts cumulatively. Both can be true and honest; printed in one paragraph they imply a single window and overstate. Label each number with its window and the query that produced it before publication.
+- **Run the narrated sequence once before it publishes.** Cheap one-off against a fixture workflow, evidence pasted into the release notes' review — not a new standing lane. A journey that narrates a command sequence users will copy should have had that sequence executed by someone.
+
+No grant needed for this part: I can draft the journey in conversation right now, so the prose isn't waiting on the routing decision. Say the word and I'll write it while I drive the queue.

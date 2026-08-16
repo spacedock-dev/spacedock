@@ -1,0 +1,29 @@
+## Next action
+
+**Converge the workflow before touching it: `«engage»(docs/dev)` — `spacedock state ready`, then the separate read-only `spacedock state sweep`, then `«hooks.run»("startup")` once, then the authoritative `spacedock status --next --json`.**
+
+Why this and not filing the task immediately: all I hold is the `«state.boot»()` record, whose counts are local reads labeled possibly stale. This is a split-root state checkout, so `state ready` is a real pull/resume that can exit 3 into `«halt.rebase-conflict»`. "Backlog is healthy, nothing in flight" is the boot record's claim, not a converged fact — and convergence is also where an existing task for this same defect, or a gate already waiting, would surface. Filing or dispatching into an unconverged workflow is the mistake I'd have to undo.
+
+## Rest of the turn, assuming clean convergence and no gate wins
+
+1. Load `spacedock:fo-status-viewer` (first ad-hoc status query) and check for a duplicate before minting a new task.
+2. **Cheapest check that can fail, before I write anything:** read the `status --json` emission site in `internal/**`. Reads aren't gated, it costs one file, and it can falsify — if that field is already a pointer or carries `omitempty`, or `--json` already omits it, CL's report is stale and the task changes shape. The same read tells me how many in-repo consumers of `worktree` exist, which sizes the ideation estimate.
+3. File the seed: `spacedock new status-json-worktree-absent-vs-empty --id-seed … --id-actor …` piping a complete stub (`id-style: sd-b32`; `--next-id` is preview-only, `new` is the atomic path), then `«state.commit»(slug)` because split-root `new` doesn't commit. `fo-write-core.md` is already loaded; `«write.classify»` puts `.spacedock-state/**` in `allowed-state`.
+4. Load `spacedock:fo-gate-lifecycle` and present the backlog gate in this same turn. I don't stop to ask permission to file — the gate presentation is the stop.
+
+## What I don't do
+
+I don't edit `internal/**` or `cmd/**`. `«write.classify»` classes those `blocked-product`, and "it needs fixing" is not an exact-target override grant — the fix routes through a dispatched worker at implementation. I don't skip backlog, and I don't climb to a worker, worktree, or fan-out for a seed file plus one read-only source check.
+
+## The dissent I carry into that gate
+
+The mechanism claim is almost certainly correct and I'll confirm it. The *defect* claim is the part I'd push back on, and the backlog gate is where it belongs:
+
+- `docs/dev/README.md` defines `worktree` as "worktree path while a dispatched agent is active, empty otherwise" — absent and empty are the *same* state by design, and the FO contract's only consumer rule is binary ("when `worktree:` is empty, write to main").
+- Nothing in the report names a caller whose behavior changes with the distinction. Without one, this is a real observation with a hypothetical trigger — deferred risk, not material.
+- Making `--json` distinguish them makes machine output depend on incidental frontmatter formatting (whether a template line was deleted) and turns a binary into a tri-state every consumer must handle, including `«state.boot»()` and the golden status fixtures.
+- Cheaper routes to the same end: normalize on write so absent can't occur in a commissioned workflow and document the equivalence; or, if key-presence genuinely matters to someone, expose it on the `--validate` surface instead of reshaping `--json`.
+
+**Recommendation at the gate:** approve backlog → ideation, with scope framed as *name the consumer and the value AC first* — ideation's necessity question decides distinguish-in-JSON versus normalize-and-document, rather than assuming the remedy. The body must declare the observable-semantics change (machine output format) in its expected surface, and I'd flag that the status path plus golden fixtures likely trip the detached adversarial audit, to settle at the ideation gate.
+
+On the conn: it authorizes me to drive, and I will. It doesn't authorize me to ratify my own disagreement on CL's behalf at a gate whose content is a scope question the disposition policy reserves to the captain. If CL reaffirms "just make `--json` distinguish them," that's the call — I dispatch ideation on that framing the moment it's said, without re-litigating.

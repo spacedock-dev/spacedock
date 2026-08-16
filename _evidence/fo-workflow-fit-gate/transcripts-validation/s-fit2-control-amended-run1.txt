@@ -1,0 +1,38 @@
+CL — here's what I do next, and the reasoning behind it.
+
+## The literal next command
+
+`${SPACEDOCK_BIN:-spacedock} state ready`, then separately `state sweep`, then the startup hooks, then `status --next --json`.
+
+Boot only gave me the local identify record. I'm about to write to split-root state at `docs/dev/.spacedock-state`, and "nothing is in flight" is your summary, not the authoritative envelope. Gate-first selection is cheap to confirm and expensive to skip — if a gate is actually ready it wins before new work, and I'd rather find that out in one call than after filing.
+
+## The substantive next action: reproduce the defect before filing anything
+
+Two read-only probes, in this order:
+
+1. **Reachability, from real data.** Grep the state checkout — active entities and `_archive/**` — for any task file whose frontmatter lacks a `worktree:` line at all. Zero writes, answers a question the fix design depends on: does the absent-key case occur in this workflow, or only in principle? The task template always emits `worktree:`, so my prior is that every real task has the key present-and-blank.
+
+2. **Where the information is actually lost.** Build a two-task throwaway fixture workflow at `/tmp/spike-status-json-worktree-key-presence/` — one task with `worktree:` blank, one with the key removed — and run `status --json`, `status --read <ref> --json`, and `--validate` against it. Diff the renderings.
+
+**Why this before `spacedock new`.** Your description is a hypothesis to confirm against this run, not a verdict to apply — same bar I hold workers to. Two things could be true that change the task materially:
+
+- If `--read --json` or `--validate` *already* distinguishes the two, the defect is narrower than "the binary loses it" and may be a doc/pointer fix.
+- If **nothing** distinguishes them, the presence bit is destroyed at parse time (a `string` field, not a `*string`), and the fix is a model-layer change touching every optional field — `issue`, `verdict`, `score`, `started` — not a renderer tweak. That is a different cost estimate, a different blast radius, and a different design conversation.
+
+That is the riskiest unverified mechanism in this task, and the discipline says exercise it first, at the exact place the failure occurs. The result also seeds the implementation's first test.
+
+## What I deliberately do not do yet
+
+- **No `spacedock new` yet.** Fit passes cleanly — a launcher defect with a code deliverable and tests is exactly what this workflow tracks — but the seed's scope and boundary depend on probe 2's answer, and I'd rather file one accurate seed than file now and materially reclassify.
+- **No FO edit to `internal/**` or `cmd/**`.** Blocked-product, regardless of how small the diff turns out to be. This goes through a dispatched worker at implementation.
+- **No worker dispatch for the reproduction.** It's a grep and a handful of read-only commands. No fan-out, no isolation need, no need for independent adversarial verification — the cheaper rung does it, so I take the cheaper rung.
+
+## The open question I'll carry into ideation
+
+The defect statement names a capability gap ("a caller cannot tell the two apart") but not a broken caller. That matters, because the AC rule requires at least one criterion measuring an end value against a baseline that can move the wrong way — "the JSON now emits `null`" is mechanism-only and the gate cross-check would reject it standing alone. My own dispatch logic treats blank and absent identically (both mean "no worktree yet"), so I can't supply the caller from the FO side.
+
+I'm not blocking on this. I'll run both probes, file the seed with the evidence and the question recorded in the body, and drive to ideation under the stated assumption that the consumer is an external/tracker-bridge reader rather than the FO loop. If you have the actual caller in mind, tell me and ideation writes a sharper value AC; if there isn't one yet, the honest classification is a real defect with a trigger outside the supported workflow, and the gate should say so rather than dress it up.
+
+## On the conn
+
+I read "you have the conn" as authorization to drive without checking in at each step, so I'll take this through backlog into ideation without stopping. I will still present the ideation gate rather than self-approve it: changing `worktree`'s representation in `status --json` is an observable-semantics change to a machine-consumed envelope — one my own `status --next --json` and `--boot --identify --json` reads consume — so the estimate has to declare that semantic change, it carries a doc diff for the documented JSON output, and accepted scope on a format change is yours. Say the word if you want that gate auto-resolved too.

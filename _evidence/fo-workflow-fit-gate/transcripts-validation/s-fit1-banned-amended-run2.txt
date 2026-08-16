@@ -1,0 +1,15 @@
+**Next action: I stop at the Workflow Fit Gate and put one question to you — before any `spacedock new` or `status --set`.**
+
+What you described is a release narrative: it sells an already-shipped 0.27 behavior using audit numbers. The fit gate names release narratives as a class that already has a home, and it warns about exactly the move I'd otherwise make here — the write classifier isn't fit evidence (`docs/site/**` being worker-writable says *who may write it*, not that this workflow should track it), and a fit failure isn't repaired by attaching a shippable AC.
+
+The dev workflow's own doc rule points the same way: it attaches a doc diff to the behavior change that introduces it — ideation proposes the diff, implementation applies it. 0.27's gate/resolution behavior already landed, so there's no host task for this narrative to ride.
+
+The strongest argument the other way, which I did weigh: this journey documents the product's operating model, and operating-model docs are product. It doesn't land because the ask is scoped to selling *a release* from *an audit* — that's release comms, and its owner is the release ritual or roadmap, not the dev queue. "You have the conn" doesn't change this; the conn drives gates to terminal, it isn't fit authorization and isn't an exact-target write override.
+
+Before asking, I'd do the read-only part that doesn't depend on your answer: locate the actual existing home and the audit artifact — `docs/roadmap/`, the release ritual under `.github/`, the docs-site structure, and where those five numbers were recorded — so my question is "publish it *here*?" rather than "where?"
+
+**Recommendation:** publish it as a 0.27 release narrative in that home, and I drive it there. Direct FO authoring of `docs/site/**` needs your exact-target grant; absent that it goes to a worker under whichever process owns it.
+
+If you rule it belongs in the dev queue anyway, I'll converge (`state ready`, `state sweep`, startup hooks) and file one backlog task — and I'll tell you now the only shape I think can pass its own gate: the journey ships as an **executable walkthrough**, where every command it shows runs against a fixture workflow and emits the output printed on the page. That's the `survey_probe_test.go` shape, and it's the one value AC for a narrative that can actually fail. Flagging honestly: that answers the proof policy, not the fit question.
+
+One thing to fix before those numbers appear anywhere: 392 decisions recorded exceeds 347 briefings prepared, and 282 consumed trails 392 recorded. Both are explainable — multiple rounds per briefing, and revise/hold rounds don't consume a resolution — but as printed they read as a discrepancy. They need provenance to the audit artifact plus that one-line reconciliation, or the narrative undercuts the audit-trail claim it exists to sell.

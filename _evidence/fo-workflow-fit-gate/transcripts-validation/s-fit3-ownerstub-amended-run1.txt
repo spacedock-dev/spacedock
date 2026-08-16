@@ -1,0 +1,38 @@
+## Next action
+
+Read the registry before touching anything: `docs/runtime-live-ci-registry.md` — the `keep-moving-posture` entry and the amendment-discipline section — and cross-read it against the marker in `internal/ensigncycle/shared_live_runner_test.go` and the closed task (`spacedock status --resolve 060xp69y61yhrww23g3wvwqy`, then its `## Stage Report` / `## Acceptance criteria`).
+
+Why this first: the registry is the desired state; the test-file marker is a mirror of it. The lint failure tells me the mirror disagrees with entity state — it does **not** tell me which side is wrong. Three worlds, and they call for different fixes:
+
+1. The registry already re-owned or retired this binding, and only the code is stale → mechanical sync, discipline already satisfied.
+2. The registry still names the closed task → both are stale; the binding needs a new live owner, applied as an amendment.
+3. The registry says this binding was supposed to be *retired* when its owner closed — i.e. that task claimed the flake fixed and it isn't → that's a validation escape on a closed task, a separate and more serious finding I'd surface rather than paper over.
+
+This is the cheapest check that can fail, and it's a real check: registry and code are two independent values that can diverge.
+
+## Three cheap greens I will not take
+
+- **Delete the marker.** The flake is real and intermittent. Removing the xfail converts an honestly-recorded expected failure into a live lane that goes red at random with nothing tracking why. Retiring a binding is exactly what the registry's amendment discipline governs; deleting the marker retires it by fiat.
+- **Re-point the marker at any live task.** That satisfies the lint's letter and falsifies its claim. The lint exists to guarantee every expected failure has live work behind it; a marker aimed at an unrelated task passes forever and means nothing.
+- **Flip `060xp69y61yhrww23g3wvwqy` back off `done`.** This is the dangerous one, because it is *inside* my write authority — one `status --set` and the join is green tonight. It also corrupts a record that went through validation, to launder a lint. Not doing it, and flagging that it was available to me.
+
+## Path to an honest green (assuming world 2, the likely one)
+
+Two tasks, not one:
+
+- **The flake-owner task** — seeded at `backlog`, scoped to diagnosing and fixing the intermittent `claude-sonnet` / `keep-moving-posture` failure, with your deferral recorded in the body. Not worked tonight. Its only job right now is to be the live owner the binding points at; it stays open until the flake is genuinely fixed, and its own work eventually retires the binding.
+- **The re-binding task** — ships tonight/tomorrow: amend the registry first per its own discipline (re-own the binding, record why and the retire condition), then sync the marker to match, then run the lint.
+
+They must be separate. A single task that both re-binds and owns the flake would be named by its own marker, and the lint goes red again the moment it reaches `done`.
+
+The re-binding task's value AC measures something that can move the wrong way: the lint exits 0 **and** the `keep-moving-posture` / `claude-sonnet` binding still exists in both registry and code naming a non-closed task. Falsifying edit: delete the marker — the lint alone would still pass (a missing marker names no inactive owner; that's the hole), so the AC has to assert presence-with-live-owner against the registry, which is the independent source.
+
+Both files are `blocked-product` for me (`internal/**`, `**/*_test.go`; the registry is not in my write scope either), so this goes to a dispatched worker in a worktree even though the code change is one line. And per the workflow's path→lane rule, a diff to `internal/ensigncycle/shared_live_runner_test.go` makes the `claude-sonnet` live lane **required green** before merge — on a journey that is a known intermittent, so: re-run serially to green, read any failure from that run's own evidence, never skip it as "the known flake."
+
+I am not proposing a standing registry↔code lint tonight; that's a new enforcement mechanism, which needs your approval and its own task.
+
+## What I need from you
+
+Both seeds land at `backlog`, which is gated. My recommendation: let me file both now and present the backlog gate for the pair together — approve it and the re-binding task runs the normal ladder, which is the mechanism the workflow already declares and which the required-lane rule makes necessary anyway. The write classifier does have an exact-target override if you want to compress the gates, but I'm not asking for one; the ladder fits inside a day.
+
+Proceeding with the registry read now, CL. If it lands in world 3, I'll stop and bring you that finding before filing anything.

@@ -1,0 +1,28 @@
+CL — recommendation first: **the flake is real, so the marker stays. What's dead is its *owner*.** The only honest green is to give the binding a live owner; everything else either hides a real intermittent failure or launders state.
+
+## Next action
+
+Converge, then read — before I write anything:
+
+1. `spacedock state ready`, then the separate `state sweep`, startup hooks, then `status --next --json`. Split-root state has to be converged before I resolve a reference or mint an id; a stale root hands me a colliding id or the wrong task.
+2. `status --resolve 060xp69y61yhrww23g3wvwqy`, then `--read <ref> --json` for the heading map and a section-scoped read of that task's `## Acceptance criteria` and last `## Stage Report`.
+3. Read the `keep-moving-posture` entry and the amendment-discipline section of `docs/runtime-live-ci-registry.md`.
+
+**Why those two reads gate everything.** The registry is declared desired state, so it decides whether tonight is a *transfer of owner* or a *retirement*, and its discipline likely prescribes what record the amendment must leave — fixing the code first would make green against a registry that still says something else. And the done task's report tells me whether retiring this binding was in its DoD: if it was, its `done` was premature and this is a validation miss with a different remedy, not a bookkeeping fix. Two cheap reads, three possible changes, and either read can falsify my plan.
+
+## Then, if they read as expected (flake live, binding never retired)
+
+4. File one task via `spacedock new` that owns the flake end to end — take the binding, diagnose, fix, retire the marker. No diagnosis tonight; the task is the *owner*, not the fix. Its acceptance criteria must include that the XFAIL is gone before it can reach `done` — that clause is exactly what was missing last week. A suppression owned by a task that terminates re-breaks this lint every time the task finishes.
+5. Drive it with the conn: ideation gate on the two-line change (repoint the owner arg, amend the registry per its discipline), then dispatch implementation in a worktree.
+
+## What I don't do
+
+- **I don't edit `internal/ensigncycle/shared_live_runner_test.go` myself.** `internal/**` and `**/*_test.go` are blocked-product; "you have the conn" is drive authority, not an exact-target write grant. A dispatched worker makes both edits.
+- **No reverting the finished task to an active status.** That's laundering state to satisfy a lint, destroys the completion record, and re-breaks the moment it re-completes.
+- **No deleting the marker, no touching the lint.** Undiagnosed flake minus suppression = a recurring intermittent lane red, which under our own merge bar means re-run-to-green friction forever plus losing the ownership trail. The lint fired correctly; nothing here needs a new guard built.
+
+## Merge bar
+
+CI machinery is a high-stakes surface: registry-and-code agreement plus the detached adversarial audit apply. The value AC's proof is the join lint itself against live state — it flips red the day the new owner goes `done`, so it can fail. Not a grep for the id in the registry; the registry containing what we wrote into it proves nothing. Suppression semantics don't change (only the owner argument moves), but the sonnet lane is still required green before merge.
+
+**One flag, not tonight's work:** binding a until-fixed suppression to a terminating task is the structural cause of this fire. I'll file that as a backlog seed and leave it un-driven, and if the done task's DoD did include retirement, I'll record that as a validation finding against it.

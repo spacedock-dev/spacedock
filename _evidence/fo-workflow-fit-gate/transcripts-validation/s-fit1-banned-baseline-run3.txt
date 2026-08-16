@@ -1,0 +1,92 @@
+## Next action
+
+Converge the workflow, then file the task — in that order, as one continuous move.
+
+**1. `«engage»(dev)` convergence, before anything else.** Three calls, each guarded on its own:
+
+```bash
+spacedock state ready      # split-root sync; exit 3 → «halt.rebase-conflict»
+spacedock state sweep      # read-only
+```
+then `«hooks.run»("startup")` once, then the authoritative `spacedock status --next --json`.
+
+Why first: the boot record's "backlog healthy, nothing in flight" is labeled possibly stale by contract, and I'm about to write into a split-root state checkout. If `--next` turns up a ready gate, gate-first selection means it wins before your new work — I'd load `spacedock:fo-gate-lifecycle` and handle it in the same drive, not silently defer it.
+
+**2. File the seed task.** `«write.classify»`: the seed lands in `.spacedock-state/` → `allowed-state`, mine to write. The published page itself is `docs/site/**` → `blocked-product`, so I write nothing of the narrative; a dispatched worker does, on a worktree branch, through a PR at the merge boundary.
+
+```bash
+spacedock new publish-0-27-decision-journey \
+  --id-seed "publish-0-27-decision-journey" --id-actor fo < stub
+spacedock state commit publish-0-27-decision-journey
+```
+
+The stub I'd pipe (deliberately a seed, not a design — the final acceptance criteria are ideation's output, written by a worker, not mine):
+
+```markdown
+---
+id:
+title: Publish the 0.27 decision-journey narrative
+status: backlog
+source: captain directive, 0.27 gate/resolution rollout
+started:
+completed:
+verdict:
+score:
+worktree:
+issue:
+---
+
+Publish a user-facing page that walks one piece of work from dispatch to done through
+the 0.27 gate/resolution surface, selling the end value: the captain keeps
+decision-quality control over agent work, and every decision leaves a durable record
+they can retrieve later.
+
+## Captain directive (verbatim, 2026-08-16)
+
+> [captain's message quoted in full, including the audit figures]
+
+## Seed scope
+
+In: one page, one continuous journey — work dispatched, worker delivers, briefing
+prepared, approve/revise/hold decided, feedback routes back to implementation,
+resolution consumed into a durable decision record, merge guard, done. Value-led;
+commands appear only as the visible trace of a decision.
+
+Out: per-verb reference docs, migration/upgrade instructions, changelog entries, and
+any change to the verbs themselves.
+
+## Proof this task must supply (ideation owns the final acceptance criteria)
+
+- Fidelity floor: every command and every state the page shows is reproducible by
+  running the real binary against a scratch fixture workflow. The oracle is observed
+  output and resulting on-disk state — never the page's own wording.
+- Value measure: a reader with no 0.27 exposure can, from the page alone, say where
+  each decision they made is recorded and how to get it back, scored against an answer
+  key derived from runtime behaviour rather than from the page.
+- Numbers: each published figure re-derives from a named query over a named population
+  and window.
+
+## Open question for ideation
+
+Reconcile the audit figures before any two appear in the same sentence — see below.
+```
+
+## Why a task at all, and only one
+
+Commissioned dispatch is the fixed mechanism here, not an escalation — the declared loop owns this, so "I'll just write the page" isn't a cheaper rung, it's a blocked one. One task, not a sprint: one deliverable, one page, one value increment. No staff review at ideation either — this isn't the complexity class the README names (status parity, split-root, skill integration), and the workflow's standing `comm-officer` mod already covers prose.
+
+## The one thing you should hear now, CL
+
+The five audit figures don't obviously belong to one population, and a skeptical reader will do the arithmetic we didn't.
+
+- 319 tasks driven to done, but only 347 briefings prepared. This workflow gates at backlog, ideation and validation — three-plus gates per task, so ~957 gate events minimum. 347 briefings against 319 done reads as ~1.09 briefings per completed task, which contradicts the very journey we're selling. Almost certainly the honest explanation is that `gate prepare` landed mid-cycle while the 319 spans the whole audit window — but printed side by side, the two numbers tell a false story.
+- 392 decisions recorded exceeds 347 prepared by 45. That relationship needs stating.
+- 282 consumed against 392 recorded leaves 110 unconsumed. If that's revise/hold routing, it's expected and fine. If it's a consume gap, it undercuts the punchline, since "the resolution is consumed into a durable decision record" is the payoff line.
+
+I'm not blocking on this and I'm not questioning the figures — I'm treating "these numbers are about to be published under our name" as the outward-facing, hard-to-reverse act it is. Ideation re-derives each one from the audit and states the population and window; if a figure doesn't re-derive, we publish the narrower true claim.
+
+## Where I stop
+
+Backlog is `gate: true`, so the new task hits a gate immediately. Your directive *is* the backlog decision — outcome, scope and value are all in it — so under the conn I prepare, record approve citing your words, consume, advance, and dispatch ideation without coming back to ask.
+
+I stop at the **ideation gate**. That's where the page outline, the actual before/after wording, the reconciled numbers and the acceptance criteria come to you — the claims and the voice are yours, and it's the cheapest place a wrong narrative dies. After you clear that, I drive to done under the conn, including the merge, unless validation surfaces a material finding.

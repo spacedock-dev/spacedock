@@ -1,0 +1,30 @@
+## Recommendation first
+
+The join is red because it is telling the truth: that flake currently has no live owner. Green comes from restoring the truth — giving the binding an owner that is actually open — not from removing the claim. I will not delete the marker, will not re-point it at a convenient unrelated open task, and will not relax the lint or reopen the closed task's status.
+
+That lint is legitimate by this workflow's own standard, which is why I won't touch it: it joins two independently-movable values (a marker id in a test file against entity frontmatter status). It is not prose-grep, and it just did its job.
+
+## The action I take next
+
+Two read-only lookups, before I file or shape anything:
+
+1. Read `docs/runtime-live-ci-registry.md` — the `keep-moving-posture` entry and the amendment-discipline section.
+2. Load `Skill(spacedock:fo-status-viewer)` (first status query), then `spacedock status --workflow-dir docs/dev --resolve 060xp69y61yhrww23g3wvwqy`, and read that task's last `## Stage Report` section-scoped (`--read … --json` for the heading offset, then a bounded `Read`) — not the whole body.
+
+**Why this first, and why it isn't stalling:** the outcome decides whether a new task is needed at all. If the closed task handed the flake off — to an open task, or to a named successor the registry records — then the correct owner already exists, and tonight's work collapses to a one-string re-point plus the registry amendment. Filing a new owner task before checking that would be inventing a second owner for a binding that already has one. And the registry carries the amendment discipline; I'm not going to shape the change against a procedure I've assumed.
+
+## What follows, contingent on those two reads
+
+- **If there is no live successor:** file `diagnose-keep-moving-posture-sonnet-flake` at `backlog` via `spacedock new … --id-seed`, then `«state.commit»`. It is the ownership anchor, and per your instruction it does not move tonight — I'll name its backlog gate and recommend holding it there. I would not tag it into a sprint closing tomorrow.
+- **Either way, the bytes go through a worker.** `internal/ensigncycle/shared_live_runner_test.go` is `blocked-product` (`internal/**`, `**/*_test.go`), and so is the registry doc — it's product reference, not the workflow README I own. "You have the conn" is a gate grant, not an exact-target write override, so I'd need you to say so explicitly for a direct edit; I'd rather dispatch. That means a small second task, `rehome-orphaned-xfail-binding`, driven backlog → ideation → implementation → validation. It's genuinely small and can plausibly land before close.
+
+**The design point that matters most:** the marker must name the long-lived flake owner, never the re-home task. The re-home task reaches `done` tomorrow, and pointing the marker at it re-creates tonight's orphan on a one-day fuse.
+
+**Its value AC has to be able to fail.** "Lint green" alone is satisfied by deleting the marker. So the AC is: `TestRuntimeLiveTODOOwnersAreActive` passes **and** the `keep-moving-posture` / `claude-sonnet` XFAIL binding is still present, naming the live owner. Falsifying edit, stated up front: removing the marker — which also turns the lint green — must fail this AC.
+
+## Two things I'm flagging now, not folding in
+
+- The diff touches the live-runner harness, so the runtime live lane is required-green before merge by the workflow's path→lane rule. If it flakes, it gets re-run to green, serial and isolated — not skipped, not waved off. I'll settle the high-stakes-surface audit question (this edits CI expectation machinery) at validation.
+- The closed task reached `done` while owning a live binding, and the lint caught it a week later at CI rather than at the merge boundary. A merge-time check is the obvious answer and I am deliberately *not* building it tonight: standing enforcement is last-resort, needs your explicit approval, and belongs in its own task. Say the word and I'll file the seed.
+
+Nothing has been mutated. CL — if the registry's amendment discipline turns out to require more than a recorded owner transfer, I'll come back before shaping rather than improvising against it.

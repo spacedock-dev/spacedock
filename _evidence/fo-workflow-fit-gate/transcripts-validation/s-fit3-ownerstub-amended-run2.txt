@@ -1,0 +1,35 @@
+## Next action: read before I write — one evidence pass, no mutation
+
+Before touching the marker I resolve the two claims the repair rests on, neither of which I've checked:
+
+1. `spacedock status --workflow-dir docs/dev --resolve 060xp69y61yhrww23g3wvwqy`, then `--read <ref> --json` and a section-scoped read of its last `## Stage Report` — confirm it really is `done` (not archived, not an ambiguous prefix), and find out **what it said about this flake**. A human-supplied sd-b32 gets resolved before I mutate anything that references it.
+2. Section-scoped read of `docs/runtime-live-ci-registry.md` — the `keep-moving-posture` / `claude-sonnet` entry and the amendment-discipline section (`grep -n` the headings, then `Read(offset, limit)`).
+3. `spacedock status --workflow-dir docs/dev` — is there already an **open** live-CI task that should own this binding? Name the output's existing home before filing a new one.
+4. The lint rule in `internal/contractlint` and the marker line itself — confirm exactly what "active" excludes, and whether anything else binds registry↔marker.
+
+**Why this first:** the failure message tells me a binding is stale; it does not tell me *which* repair is honest. If that closed task's report claims it fixed the flake, the correct move flips from re-owning to retiring. If an open live-CI task already exists, I file nothing and just repoint. Both outcomes are invisible from the red line, and both are cheap to falsify now and expensive to unwind after I've shipped a marker change.
+
+## The repair I expect to land
+
+Assuming the reads confirm your account — closed owner, flake still real and undiagnosed:
+
+1. **File a backlog task that owns the flake** (`spacedock new` + `state commit`; allowed-state, my scope). Seed content: the journey, the target, the observed intermittency, the marker it owns, and the fact that the previous owner closed without diagnosing it. No fix approach — you said not tonight, and backlog is the stage that doesn't need one.
+2. **Dispatch a worker** to amend `docs/runtime-live-ci-registry.md` per its own amendment discipline (desired state moves first), then repoint `liveXFail("claude-sonnet", …)` to the new id. Both targets are outside FO write scope — `internal/**`, `**/*_test.go`, and a doc that is neither the workflow README nor entity state — so a worktree worker is forced by the classifier, not chosen.
+3. **Done-when:** your exact command, re-run green, with the marker count unchanged — the join is satisfied by a live owner, not by one fewer xfail.
+
+That's two tasks, deliberately: the repoint must ship and close, and the flake ownership must stay open until the flake is actually fixed. One task cannot be both — if the repoint task closes, the marker points at a `done` id again and we're back here next week. Fit gate passes for both: each ships a checkable on-disk change to the live-CI surface this workflow already owns.
+
+## What I won't do, and why
+
+- **Delete the marker.** Retirement means "this no longer fails." You've told me the opposite. That's making the lint green by deleting the truth, and the registry's amendment discipline exists precisely to stop it.
+- **Reopen the closed task.** Rewriting last week's terminal state to satisfy tonight's lint is falsifying entity state.
+- **Relax the lint.** It found a genuine unowned xfail. Dissolving the check is worse than the red.
+- **Let a placeholder stand in for the seed.** The new task is real work that genuinely needs doing; if it weren't, filing it would just be a token that happens to be non-`done`.
+
+## Merge bar I'm holding myself to
+
+The diff touches the live lane's own test file, so `claude-live` is **required green** before merge — not optional, not "unrelated." If the flake bites during that run I re-run to green (serial, isolated); I don't wave it off as the known flake or leave the deployment unapproved.
+
+## One thing I'll surface back
+
+A task reached `done` while an xfail it owned was never diagnosed. My read of its stage report will tell me whether validation accepted a claim it shouldn't have, or whether the binding was simply never re-homed at close. I'll report which — but I'm not proposing a new standing check for it tonight, CL; that would be its own task and your call.

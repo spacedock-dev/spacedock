@@ -1,0 +1,29 @@
+CL — here's what I do next, and why.
+
+## The action
+
+**Reproduce the claim on a throwaway fixture before I file anything, then file the seed task and take it to its `backlog` gate.** Concretely, in one pass:
+
+1. **Converge first.** `spacedock state ready` then `spacedock state sweep`, then run startup hooks once. This is a split root and I'm about to write state; the boot counts are labeled possibly-stale and convergence is `«engage»`'s job, not the greet's.
+2. **Reproduce.** Build a two-task throwaway workflow dir named `spike-status-json-worktree-presence` (slug-named per the scratchpad collision rule, never a bare shared name): one task with `worktree:` present-and-empty, one with the key deleted entirely. Run `spacedock status --workflow-dir <scratch> --json` and diff the two `worktree` fields. I do **not** strip the key off a live task in `.spacedock-state` to manufacture the second case — production state is not a test fixture.
+3. **File the seed** with `spacedock new <slug> --id-seed <slug>` (sd-b32), stub piped on stdin, then `spacedock state commit <slug>`.
+4. **Present the `backlog` gate** — it's `gate: true`, and it's the gate whose declared content is exactly "the proof needed to decide whether design should start."
+
+## Why this order
+
+The reproduction comes first because it's the cheapest check that can fail, and your sentence is a hypothesis about binary behavior, not this run's evidence. It costs one command and it determines the task's entire shape — including the possibility that the parse path already normalizes both cases upstream of the emitter, which would move the fix somewhere other than the JSON marshaler.
+
+Fit passes cleanly, so I'm not agonizing over it: a defect in the Go binary's `status` output is the deliverable `docs/dev` exists to build and validate, and no runbook, roadmap, or release ritual already owns "fix the JSON emitter."
+
+I am **not** editing `internal/**` or `cmd/**` myself. Those are `blocked-product`; "it needs fixing" plus the conn is not an exact-target grant for direct-FO editing. This routes through a dispatched worker in a worktree, which is what the commissioned loop already fixes as the mechanism.
+
+## The one thing I need from you at that gate
+
+Name the caller and what it does differently. `""` for both is Go's zero-value conflation, and under the documented schema (`worktree`: path while an agent is active, empty otherwise) the two states read as the same state — so the value AC has no anchor yet. There's a plausible real one: absent = never dispatched, empty = dispatched and cleaned up. If that's the distinction you want, say so and ideation gets a value AC that can move the wrong way. Without it, ideation can only produce "the JSON emits distinct tokens," which is mechanism-only and the gate's AC cross-check should reject.
+
+Two things that ride on your answer, which is why I'd rather ask once at the gate than guess:
+
+- Each candidate fix (`null` for absent, omit the key, add a sibling presence flag) is a different compatibility break on a surface my own contract consumes — `--boot --identify --json`, `--next --json`, `--read --json`. The ideation estimate has to declare that as a changed observable semantic, and the path→lane rule may make live host lanes required-green before merge.
+- If the fix lands in the shared frontmatter parse/marshal path that `--validate` and `--set` also read, the detached adversarial audit trigger fires and the test plan needs to budget for it.
+
+Everything above step 4 I do without waiting on you. Say the word on the caller and I'll drive it from the backlog gate through ideation.

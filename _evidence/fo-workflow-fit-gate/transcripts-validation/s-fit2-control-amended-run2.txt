@@ -1,0 +1,20 @@
+## Next action: converge, then reproduce — before anything is filed
+
+Literal calls, in order, all read-only:
+
+1. `spacedock state ready` → `spacedock state sweep` → startup hooks → `status --next --json`. Split-root state has to be pulled before I trust "nothing in flight" or mint an id. "Nothing is currently in flight" is a handoff label; the sweep is this-run evidence.
+2. The two-case reproduction: `spacedock status --workflow-dir docs/dev --json`, run against one task whose frontmatter carries `worktree:` with an empty value and one with the key absent, capturing the exact emitted bytes for each.
+
+**Why reproduce before filing.** CL, your sentence is a hypothesis about this binary. The contract holds my triage to the bar I impose on workers: a failure is read from this run's evidence, and I take the cheapest check that can fail. One command either confirms both cases emit `"worktree": ""` or refutes it. If no task in the state checkout has the key absent (the template always writes it), that absence is itself evidence, and I build a throwaway fixture named `spike-status-json-worktree` per the scratchpad naming rule.
+
+**What I don't do:** touch `internal/**` or `cmd/**`. Those are blocked-product under `«write.classify»`; "you have the conn" is a gate-resolution grant, not an exact-target override for direct FO editing. The fix routes through a dispatched worker here. Fit passes cleanly — a Go binary defect plus tests is exactly this workflow's deliverable, and no roadmap/debrief/runbook owns it instead.
+
+**What I flag now, so it doesn't die at the ideation gate.** The mechanism claim is almost certainly right: a Go string field takes `""` from both an absent YAML key and an explicit null, so both marshal identically. The *defect* claim is the unestablished half. This workflow's own schema defines `worktree` as "worktree path while a dispatched agent is active, empty otherwise" — under that definition absent and empty are the same state, and the emitter may be normalizing correctly rather than losing information. So the same read-only pass runs a second check: census every reader of `worktree` off `--json` — the dispatch contract's reuse decision, `_mods/`, Go callers, shipped skills, scripts — and find one whose behavior actually diverges between the two spellings.
+
+That census isn't diligence theater; it's the AC. The README demands at least one AC measuring end value against an independent baseline that can move the wrong way. "`--json` now emits `null` for an absent key" is a mechanism AC and gets rejected at the gate on its own. A named consumer that currently makes a wrong decision is the baseline that makes the value AC writable. Cheaper to find now than for a pilot to hit it at the gate.
+
+**Then, holding the conn:** file one backlog task via `spacedock new … --id-seed`, seeded with both reproduction outputs, the census, and an explicit semantic declaration that this changes the `status --json` output schema; `«state.commit»`; load `fo-gate-lifecycle` for the backlog gate; load `fo-dispatch-core` before the ideation dispatch; drive rather than stopping at each gate. Because this lands on the status path — one of the four high-stakes surfaces — validation carries the detached adversarial audit on a throwaway checkout.
+
+**The one branch I bring back rather than auto-approve:** if the census finds no diverging consumer, "defect" becomes "normalization working as designed," and whether we spend a task changing an output schema for no observed caller is accepted-value — captain authority, not mine under the conn. If it finds one, no question: I file, dispatch ideation, keep moving. I'd also want your steer at ideation on the emitted shape (omit key / `null` / separate boolean), since each breaks consumers differently.
+
+No workflow fan-out for this — the commissioned dev loop already fixes the mechanism, and Ultracode being on doesn't raise the rung.
