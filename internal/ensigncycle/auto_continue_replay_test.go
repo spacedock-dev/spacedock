@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -90,4 +91,54 @@ func TestAutoContinueReplayFixtureIsTheCapturedArtifact(t *testing.T) {
 func sha256Sum(b []byte) []byte {
 	sum := sha256.Sum256(b)
 	return sum[:]
+}
+
+// TestAutoContinueGateStateFollowsTheWorktreeCopy pins the resolution the gate read
+// must share with the report read. When validation is worktree-backed the FO keeps
+// active state — the report AND the gate record — in the worktree copy, so reading
+// the gate from the base entity finds no gates record and reds a conforming run.
+//
+// Observed live: claude run 2 of the AC-4 loop graded `validation-worker-lifecycle:
+// entity has no gates record` while the FO's own final message reported the gate
+// prepared and open awaiting the captain, with the gate room under
+// `.worktrees/spacedock-ensign-auto-continue-task/`. The change that would make this
+// fail: reading gates from entityPath instead of the worktree-resolved reportEntity.
+func TestAutoContinueGateStateFollowsTheWorktreeCopy(t *testing.T) {
+	stream := readFile(t, filepath.Join("testdata", autoContinueReplayFixture))
+	const worktree = ".worktrees/spacedock-ensign-auto-continue-task"
+
+	stage := func(t *testing.T, resolved bool) (string, string) {
+		t.Helper()
+		root := t.TempDir()
+		entityPath, err := writeAutoContinueWorkflowNoGit(root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Base copy carries the worktree pointer only; active state lives in the
+		// worktree copy, which is where the FO prepared the gate.
+		base := strings.Replace(autoContinueEntity(), "status: implementation", "status: validation", 1)
+		base = strings.Replace(base, "worktree:\n", "worktree: "+worktree+"\n", 1)
+		writeFile(t, entityPath, base)
+		writeFile(t, filepath.Join(root, worktree, filepath.Base(entityPath)), autoContinueGatedEndState(resolved))
+		gitInit(t, root)
+		return root, entityPath
+	}
+
+	t.Run("open_gate_in_worktree_grades_green", func(t *testing.T) {
+		root, entityPath := stage(t, false)
+		if err := assertAutoContinueDispatchEvidence(t, stream, root, entityPath); err != nil {
+			t.Fatalf("a conforming worktree-backed run graded RED: %v", err)
+		}
+	})
+
+	t.Run("resolved_gate_in_worktree_still_reds", func(t *testing.T) {
+		root, entityPath := stage(t, true)
+		err := assertAutoContinueDispatchEvidence(t, stream, root, entityPath)
+		if err == nil {
+			t.Fatal("a resolved gate in the worktree copy graded GREEN — following the worktree must not blind the bypass check")
+		}
+		if code := gradedCode(err); code != autoContinueBypassCode {
+			t.Fatalf("worktree-backed bypass graded under %q, want %q", code, autoContinueBypassCode)
+		}
+	})
 }

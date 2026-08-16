@@ -262,7 +262,7 @@ func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityP
 	if strings.TrimSpace(git(t, reportRepo, "log", "-1", "--format=%H", "-S## Stage Report: validation", "--", rel)) == "" {
 		return fmt.Errorf("validation report has no durable commit")
 	}
-	doc, _, err := gates.Read(entityPath)
+	doc, _, err := gates.Read(reportEntity)
 	if err != nil {
 		return err
 	}
