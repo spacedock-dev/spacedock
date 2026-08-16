@@ -631,3 +631,33 @@ captain approved +107 words at the ideation gate, which the transcribed design h
 the byte (679 words). The further +105 words are wholly the three FO-authorized
 clauses — the ENTITY operand sentence, the usage-error≠hold wording, and step 5's
 precondition clause — and nothing else.
+
+### Addendum 3: stack PR opened as the first layer
+
+Captain order 2026-08-16 reversed the layer order: this entity opens the stack's FIRST
+PR and the repair layer rebases onto it, so this branch was NOT rebased onto anything.
+It remains based on `origin/main` 0c6a2c32a, which is correct as-is.
+
+- **PR: #718** — https://github.com/spacedock-dev/spacedock/pull/718
+- Branch `spacedock-ensign/simplify-feedback-rejection-flow` -> base `main`, state OPEN,
+  mergeable, not a draft. Carries exactly the three commits 884b55af0, 0e8dd3c49,
+  ba91b333f. Read back with `gh pr view 718 --json`, not trusted from the create banner.
+- Pushed over the SSH remote `git@github.com:spacedock-dev/spacedock.git`.
+
+**Stack reference: none yet, and that is the correct state.** `gh stack link 718` fails
+with `requires at least 2 arg(s), only received 1` — a stack cannot exist with a single
+member, so `gh stack view` reports this branch is not part of a stack. The stack forms
+when the repair layer's PR exists; the command to run then, bottom-to-top, is
+`gh stack link 718 {repair-PR}`, which makes #718 the bottom and sets the repair PR's
+base to this branch. Worth noting for whoever runs it: the failure above still exited 0
+through a pipeline, which is the same print-success-on-failure hazard already recorded
+for this command — read the stack back with `gh stack view --json` either way.
+
+The PR body carries the layer-status plainness required for the gate: this layer is
+necessary but not sufficient, it fixes the documented-command and hold-on-usage-error
+defects that stopped a by-the-book FO before the dirty-tree trap, and full-matrix
+journey green is expected only at the stack tip once the repair layer lands on top. No
+live loop was run from this layer; that proof moves to the composed tree at the tip.
+
+`pr:` frontmatter is deliberately NOT set here — entity frontmatter is the first
+officer's write scope, not an ensign's. The FO sets `pr=#718` per the pr-merge mod.
