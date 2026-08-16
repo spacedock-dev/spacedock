@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:b8ewpvd65epkckvng0n38809:validation:attempt-1:revision-1",
+  "question": "Approve fo-workflow-fit-gate through validation? All five ACs hold under pre-registered scoring (banned specimen: baseline 3/3 reshape-and-file vs amended 3/3 refuse; control files 3/3; ownerstub refuses 3/3). Two rulings embedded: (1) the starred cell - REFUSED via the rule's ask-the-captain clause, but strict-literal scoring makes it CONDITIONAL and flips AC-2; (2) ownerstub showed no arm separation, so generalization past named classes is consistent-but-not-demonstrated.",
+  "artifacts": [
+    {
+      "id": "artifact:b8ewpvd65epkckvng0n38809:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/75309cdedaa5e656a11316a7dd399e7a0a421fe4/fo-workflow-fit-gate.md",
+      "rev": "sha256:ad177f3b9150866ed66d534d1222e54a62ae9e4723fd2c10f6080f5ad486b994",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED recommendation: 18/18 cells drift=ok on pinned digests, AC-1 byte-for-byte at c9eba5db4, AC-5 green both lanes, deviations spot-verified not trusted, two report inaccuracies found non-material. PR #721 = stack layer 3."
+    }
+  ]
+}
