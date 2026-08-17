@@ -94,7 +94,7 @@ gates:
                 target-stage: done
                 state: pending
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
-pr: "#724"
+pr: local-merge:61dd8e435
 ---
 
 ## Problem
