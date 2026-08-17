@@ -50,7 +50,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#721"
+pr: local-merge:61dd8e435
 ---
 
 Amend the shipped FO write core (skills/first-officer/references/fo-write-core.md) with an admissibility gate ahead of the "FO may write new entity files" rule. Captain's draft, the seed text:
