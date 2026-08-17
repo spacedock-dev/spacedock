@@ -48,6 +48,14 @@ gates:
                 digest: sha256:7bb7c613a706aa23cf182ffe91a2eea5836a76282781a64cc5cd4e373d264b1a
                 request-digest: sha256:6162d7e29a40e917e55f2a187b0e11a41f0d2ae31c5de00097abb970c2ad6edd
                 room-ref: ./run-rejection-journey-in-team-mode/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zqb683j8jth0tyr2eme231e2:validation:1
+                briefing: briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-17T02:57:06.229627Z"
+                decision: revise
+                reason: 'Captain approve-all: ratifies the staged revise round (attempt-N generalization of the main-side pins; ac-reanchor fixture identity; heading ruling = STRICT + pin the level in fixture instructions). Re-validate and re-gate after the fixes land and the tip is green.'
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: "#724"
 ---
