@@ -612,3 +612,43 @@ entity's determined shape yet grades red on three attempt-1 pins. If the captain
 transient premature prepare itself grades red (tolerance, theirs alone), finding 5 becomes a true
 red caught for the wrong reason with the wrong message, and this recommendation reverts to PASSED
 with findings 5/6 reclassified as caught FO deviations plus a diagnostics polish item.
+
+### Amendment 2: FO-directed correction — product-bug hypothesis tested and refuted (validation)
+
+The FO routed two re-attributed items to replace retracted finding 3, and asked for a root cause
+on item 2 (a product verb possibly eating committed body bytes) plus a per-AC re-verification.
+
+**Full byte citation for the retraction.** Stream indices: 464 Cycle-line Edit (byte-exact) →
+472 `gate record --round validation/1` SUCCESS `entries=4` → 475 `state commit` → 532 second
+Edit KEEPS the line and appends the cycle-2 validation report after it → 536-540 `git add` +
+commit → 560 heading listing shows the line durable in the entity → 589 sanctioned withdraw →
+593 `state commit` → 595 re-prepare attempt-2 (open) → 598 `state commit`. Every write committed.
+
+**Item 2 root-caused: NO product verb eats body bytes; the hypothesis is refuted.** Offline
+reproduction with the tip-built binary on a faithful fixture replica, running the FO's exact
+sequence — `gate prepare` (attempt-1), append `## Feedback Cycles` + the byte-exact line,
+`gate record --round validation/1` (reproduced `entries=4`), append the cycle-2 report,
+`gate withdraw`, `state commit`, `gate prepare` (attempt-2, open) — leaves the entity body
+IDENTICAL through every verb (diff-verified after each), with the H2 section and line intact at
+the end and the frontmatter carrying exactly the run's recovered two-attempt state. The graded 0
+has one cause: `feedbackCyclesSection` anchors on the literal `### Feedback Cycles`
+(shared_assertions_impl_test.go:56); the FO wrote `## Feedback Cycles` (H2), so the finder
+returns empty. Not a wrong-rev read (the assert reads the working file at test end), not
+serialization loss. Finding 6 stands as the complete explanation; no Material product finding.
+
+**Item 1 attribution, held to the bytes.** The attempt-cardinality red is main-side:
+`assertRejectionRoundGateBoundary` pins `len(Attempts)==1`, the attempt-1 ID, and the attempt-1
+briefing (shared_round_recording_test.go:246-255), introduced by c0e3a14e3 — on origin/main, not
+in this stack — and it ran host-neutrally on this lane before this layer. The Material-candidate
+classification and the fix shape stand as filed in finding 5 (select the OPEN attempt; withdrawn
+attempts are not violations; bind the open attempt's briefing); only the "this layer's assert"
+attribution is corrected.
+
+**Per-AC re-verification: no verdict flips.** AC-1 PASSED unchanged. AC-2 PASSED as written —
+all six shapes still red with named codes; the tip run is the CONVERSE direction (a conforming
+run redding), which no AC-2 case covers and which finding 5 carries. AC-3 PASSED on its fixtures;
+its generalized promise ("a conforming run grades green") has the one observed live
+counterexample, produced by the main-side boundary assert — this layer's branch-keyed topology
+grading graded the same run GREEN on a conforming digest. AC-4 PASSED unchanged. The REJECTED
+recommendation stands on finding 5 (Material, narrow fix named), with finding 6 the strict-grade
+residual mode and the captain owning both tolerance rulings.
