@@ -1,6 +1,6 @@
 ---
 title: Gated initial stage deadlocks — no report means not gate-ready, gated means not dispatchable
-status: validation
+status: done
 source: "Field report from a pre5/0.27 consumer FO, relayed by the captain 2026-08-16 with focused-test confirmation; captain order: file and dispatch"
 id: ra9qzfz94hzgsq938jz998mj
 gates:
@@ -57,9 +57,12 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 worktree: .worktrees/spacedock-ensign-prepare-initial-gated-stage-from-seed
 pr: local-merge:61dd8e435
+verdict: PASSED
+completed: 2026-08-17T14:55:29Z
+archived: 2026-08-17T14:55:29Z
 ---
 
 ## Problem
