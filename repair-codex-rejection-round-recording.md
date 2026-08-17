@@ -71,7 +71,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
-pr: "#719"
+pr: local-merge:61dd8e435
 ---
 
 Codex intermittently completes the live rejection flow without recording the rejection round: the FO-side flow reaches the feedback stage but `gate record --round` never runs, so the journey assertion finds no round record (`rejection-round-missing`). Fail-pass-fail across the last three runs proves the c6a336a33 retirement premature for this journey.
