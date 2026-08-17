@@ -62,6 +62,10 @@ gates:
                 digest: sha256:a7292647a7de59f5a99c409d0a078082c43216783c451504ef17ef2c14f6989f
                 request-digest: sha256:163c2003918aff544b0826828a02ad546da5ff6eb239e916c7e848502b9fde08
                 room-ref: ./run-rejection-journey-in-team-mode/review/validation/briefing-2
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-17T14:34:29.903771Z"
+                reason: captain ordered a digestible presentation artifact; re-preparing on a review digest
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: "#724"
 ---
