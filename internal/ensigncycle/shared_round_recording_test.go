@@ -29,6 +29,15 @@ var rejectionRoundFlag = regexp.MustCompile(`--round(?:=|\s+)['"]*([A-Za-z][A-Za
 
 const rejectionPreparedBriefingID = "briefing:rejection-task:validation:attempt-1:revision-1"
 
+// rejectionOpenAttemptID and rejectionOpenBriefingID match the prepared attempt and
+// its Briefing at ANY attempt number. The happy path prepares attempt-1, but a
+// sanctioned withdraw-and-re-prepare leaves the open gate at attempt-2, so the
+// literal 1 encoded the happy path rather than the contract.
+var (
+	rejectionOpenAttemptID  = regexp.MustCompile(`^gate-attempt:rejection-task-validation-(\d+)$`)
+	rejectionOpenBriefingID = regexp.MustCompile(`^briefing:rejection-task:validation:attempt-(\d+):revision-1$`)
+)
+
 // rejectionRoundArtifactArg matches one `--briefing`/`--log` argument pointing at
 // the fixture's canonical artifact path. The quote runs are `*`, not `?`: codex
 // emits the launcher through nested shell quoting, so a real invocation carries
@@ -242,20 +251,40 @@ func assertRejectionRoundGateBoundary(entityPath, wantStatus string) error {
 	if len(doc.Records) != 1 || doc.Records[0].Stage != "validation" {
 		return fmt.Errorf("final gate selection does not identify exactly one rejection-task validation gate")
 	}
-	record := doc.Records[0]
-	if record.Stage != "validation" || len(record.Attempts) != 1 {
-		return fmt.Errorf("selected validation gate does not contain exactly one attempt")
+	// Select the ONE open attempt; withdrawn siblings are tolerated. A withdraw
+	// followed by a re-prepare is the sanctioned recovery (the withdrawn-gate-recovery
+	// journey in this same suite), and the end state it leaves — one open gate, the
+	// stale attempt withdrawn and never presented — satisfies both this journey's
+	// determined shape and the registry's required outcome. Counting attempts instead
+	// accused a run that had recovered exactly as prescribed. A resolved or applied
+	// attempt is neither open nor withdrawn and still fails: the journey must stop at
+	// a gate nobody has decided.
+	var open []gates.Attempt
+	for _, candidate := range doc.Records[0].Attempts {
+		switch {
+		case candidate.Withdrawal != nil:
+			continue
+		case candidate.Resolution != nil || candidate.Application != nil:
+			return fmt.Errorf("prepared validation gate is not open")
+		}
+		open = append(open, candidate)
 	}
-	attempt := record.Attempts[0]
+	if len(open) != 1 {
+		return fmt.Errorf("selected validation gate holds %d open attempts, want exactly one (withdrawn attempts tolerated)", len(open))
+	}
+	attempt := open[0]
 	if attempt.Briefing.ID == rejectionBriefingID {
 		return fmt.Errorf("validation/1 advisory round was retained as a gate attempt")
 	}
-	if attempt.ID != "gate-attempt:rejection-task-validation-1" ||
-		attempt.Briefing.ID != rejectionPreparedBriefingID {
+	// Both ids generalize from attempt-1 to attempt-N, and their N must AGREE. The
+	// binding — this briefing belongs to THIS open attempt, not to a withdrawn
+	// sibling — is what the pin was ever for; the literal 1 was an accident of the
+	// happy path, and keeping it moved the CI red to a different line rather than
+	// removing it.
+	attemptNumber := rejectionOpenAttemptID.FindStringSubmatch(attempt.ID)
+	briefingNumber := rejectionOpenBriefingID.FindStringSubmatch(attempt.Briefing.ID)
+	if attemptNumber == nil || briefingNumber == nil || attemptNumber[1] != briefingNumber[1] {
 		return fmt.Errorf("selected validation gate is not bound to the expected prepared Briefing")
-	}
-	if attempt.Resolution != nil || attempt.Application != nil {
-		return fmt.Errorf("prepared validation gate is not open")
 	}
 	return nil
 }
@@ -478,7 +507,39 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 			t.Fatalf("gate control diagnostic = %v, want %q", err, control.want)
 		}
 	}
+	// The sanctioned withdraw-and-re-prepare recovery, driven through the real gate
+	// verbs rather than hand-edited YAML so the shape is the one the launcher
+	// actually writes. This is the tip-CI claude run's shape: a premature attempt-1
+	// withdrawn with a reason, then attempt-2 prepared and left open, with the round
+	// already recorded. It must grade GREEN — the stale authority was withdrawn and
+	// never presented, which is exactly what the registry's required outcome asks
+	// for. Pinning attempt-1 red it.
 	writeFile(t, entityPath, openGateEntity)
+	if _, err := gates.Withdraw(entityPath, gates.WithdrawInput{
+		WorkflowDir: root,
+		Reason:      "prepared before the reviewer re-ran; withdrawing the stale attempt",
+	}); err != nil {
+		t.Fatalf("withdraw the stale validation attempt: %v", err)
+	}
+	reprepared, err := gates.Prepare(entityPath, gates.PrepareInput{
+		WorkflowDir: root,
+		Question:    "Does the second validation confirm the fix marker is present and PASS?",
+		Artifact:    gateReviewPath,
+		Summary:     "The corrected rejection-flow candidate is ready for a decision.",
+	})
+	if err != nil {
+		t.Fatalf("re-prepare the validation gate after withdrawal: %v", err)
+	}
+	if !strings.HasSuffix(reprepared.Briefing, "attempt-2:revision-1") || reprepared.State != "open" {
+		t.Fatalf("re-prepared gate = %#v, want an open attempt-2 briefing", reprepared)
+	}
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err != nil {
+		t.Fatalf("recorded-round oracle red the sanctioned withdraw-and-re-prepare recovery: %v", err)
+	}
+	recoveredEntity := readFile(t, entityPath)
+	// A withdrawn sibling is tolerated, but a DECIDED attempt is not: the journey
+	// stops at a gate nobody has resolved. Closing the re-prepared attempt-2 must
+	// still red, or tolerating withdrawal would have blessed every non-open state.
 	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
 		Decision: "hold", Actor: "person:captain", Reason: "exercise closed-gate counterexample", WorkflowDir: root,
 	}); err != nil {
@@ -487,6 +548,18 @@ func TestRejectionFlowRoundRecordingDurableOracleAndNoInvocationControl(t *testi
 	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
 		!strings.Contains(err.Error(), "prepared validation gate is not open") {
 		t.Fatalf("closed gate control diagnostic = %v", err)
+	}
+	// And an entity left with NO open attempt at all — every attempt withdrawn, none
+	// re-prepared — must red too, so "tolerated" never becomes "unnecessary".
+	writeFile(t, entityPath, recoveredEntity)
+	if _, err := gates.Withdraw(entityPath, gates.WithdrawInput{
+		WorkflowDir: root, Reason: "withdraw the replacement too, leaving nothing open",
+	}); err != nil {
+		t.Fatalf("withdraw the re-prepared attempt: %v", err)
+	}
+	if err := assertRejectionRecordedRound(root, entityPath, "validation", true); err == nil ||
+		!strings.Contains(err.Error(), "holds 0 open attempts") {
+		t.Fatalf("no-open-attempt control diagnostic = %v", err)
 	}
 
 	// Republication counterexample, last because nothing undoes it: the retired

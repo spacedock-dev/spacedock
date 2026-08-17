@@ -375,6 +375,22 @@ func TestRejectionCycleLineAndGateShapes(t *testing.T) {
 		})
 	}
 
+	// Heading-level drift, an OBSERVED FO deviation rather than a hypothetical: a
+	// tip-CI run wrote the byte-exact Cycle line under `## Feedback Cycles` (H2)
+	// while the workflow declares the projection under `### Feedback Cycles` (H3),
+	// and the grade honestly counted zero. Captain ruled STRICT: the declared
+	// grammar is the contract, so this still reds and the fixture instruction now
+	// names the level instead. Accepting the line by name would be a loosening.
+	driftedHeading := filepath.Join(t.TempDir(), "rejection-task.md")
+	writeFile(t, driftedHeading, "---\nstatus: validation\n---\n# Rejection Task\n\n## Feedback Cycles\n\n"+rejectionFeedbackCycle)
+	err := assertRejectionCycleLine(driftedHeading)
+	if err == nil {
+		t.Fatal("a byte-exact Cycle line under an H2 heading graded green — the declared projection is H3")
+	}
+	if graded, ok := err.(*gradedErr); !ok || graded.code != "rejection-cycle-line" {
+		t.Fatalf("heading-drift red = %#v, want a graded rejection-cycle-line", err)
+	}
+
 	// An entity the FO left without ever preparing the cycle-2 gate carries no gates
 	// record, which is exactly FO residual mode 1's durable signature.
 	unprepared := entityWith(t, rejectionFeedbackCycle)

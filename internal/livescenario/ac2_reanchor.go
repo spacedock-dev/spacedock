@@ -79,8 +79,20 @@ func writeACReanchorFixture(dir string) (string, error) {
 	}
 	commands := [][]string{
 		{"init", "-q"},
+		// Persist the identity in the repo's own config instead of passing `-c` on the
+		// commit. `-c` scopes to the single invocation carrying it, so it dressed this
+		// fixture's own commit and left the repo identity-less for every OTHER process
+		// — including the live FO's spacedock, which then cannot commit here on a CI
+		// runner with no global identity. That failing commit used to be a silent
+		// no-op, so nothing surfaced until the honest state commit landed beneath this
+		// layer. The values match testgit.InitRepo, which every other fixture
+		// initializes through; this scenario hand-rolls its own git sequence and was
+		// the sole gap. The commit below deliberately no longer carries `-c`, so the
+		// fixture fails loudly at construction if this config ever stops taking.
+		{"config", "user.name", "Spacedock Test"},
+		{"config", "user.email", "spacedock@example.invalid"},
 		{"add", "--", "README.md", "ac2-design-proof-review.md", "ac2-design-proof-reference.md", "ac2-design-proof.md"},
-		{"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init"},
+		{"commit", "-q", "-m", "init"},
 	}
 	for _, args := range commands {
 		cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
