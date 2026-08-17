@@ -562,3 +562,53 @@ Recorded after the implementation report was filed; no candidate code changed.
 ### Summary
 
 Recommend PASSED. All four ACs have valid, reproduced evidence; the nine gated mechanisms are on the tip bytes; and the strict grading proved itself in both directions — offline against every non-conforming shape in hand, and live in tip CI, where codex ran the reuse chain green and claude was red-flagged with named codes for a real FO round-recording omission. No material finding against the candidate: findings 1-2 are test-strength deferred risks with recorded promote conditions, finding 3 is residual-rate data the entity's own decision rule routes, and the captain rules at the gate on the declared +174% overrun and ratifies the FO-authorized ordering correction.
+
+### Amendment: tip CI claude-live red re-attributed (validation, post-report)
+
+Routed by the FO after my report; verified independently from the run's own artifacts
+(stream + digest + final entity reads), not from the graded messages or the message thread.
+
+**Retraction.** My finding 3 ("FO round-recording omission") is WRONG and withdrawn. The run's
+bytes show: correction landed first, Cycle line appended byte-identical to the fixture's
+`feedback-cycle.txt` (stream line 464), `gate record --round validation/1` succeeded with
+`entries=4` (line 473), the re-review was a fresh validation worker (conforming 8-event fresh
+digest), all four distinct report sections present, and the FO stopped at one presented open
+gate. I graded the FO from the assert messages alone — the exact trap this checklist's
+source-of-truth clause names.
+
+**Finding 5 — material (proposed): the composed grading reds the sanctioned withdraw→re-prepare
+recovery.** Sequence verified: premature `gate prepare` attempt-1 right after the round-1
+REJECTED report (line 301, before the rejection skill loaded — the step-5-before-step-4 trap),
+then the full correct flow, then `gate withdraw` of the stale attempt-1 with a reasoned message
+(line 589; launcher reports `readiness: withdrawn-awaiting-prepare` — a modeled state), then
+`gate prepare` attempt-2, state=open (line 596). End state satisfies this entity's own determined
+shape ("nonterminal at exactly one prepared open validation gate") and the registry's required
+outcome (rejected authority withdrawn, never presented). The red comes from main-side
+`assertRejectionRoundGateBoundary` (c0e3a14e3, on origin/main, untouched by this layer), which
+pins THREE things the recovery cannot satisfy: `len(Attempts) == 1`, attempt ID
+`gate-attempt:rejection-task-validation-1`, and briefing `…attempt-1:revision-1`. Expected shape
+per the sanctioned-recovery vocabulary (`withdrawn-gate-recovery` journey in this same suite;
+layer 5's accuse-only-a-resolved-gate rule): exactly one OPEN attempt, withdrawn siblings
+tolerated, briefing bound to the open attempt. Classification proposal: outcome defect in the
+composed journey grading, Material via contract[docs/runtime-live-ci-registry.md § rejection-flow
+required outcome] with the observed tip-CI trigger; narrow fix as stated; ownership (main-side
+bytes vs this entity's grading scope) and the tolerance question (may a transient, self-recovered
+premature prepare grade red at all?) are FO/captain dispositions. New FO residual mode to record:
+premature round-1 prepare, self-recovered via withdraw, never presented.
+
+**Finding 6 — the cycle-line red's actual cause (this layer's assert, working as declared).** The
+FO wrote the byte-exact Cycle line under `## Feedback Cycles` (H2); the workflow README declares
+the projection under `### Feedback Cycles` (H3), which is what `feedbackCyclesSection` keys on.
+Recommend keeping the strict grade (the declared grammar is the contract; no loosening) and
+treating heading-level drift as a residual mode hardened at the quoted declaration; polish: when
+the count is 0 but the line exists under a level-mismatched heading, the diagnostic should say so
+instead of implying the round was never recorded. Level tolerance would be a captain-owned
+loosening.
+
+**Amended recommendation: REJECTED (was PASSED).** Every written AC keeps its verdict and the
+nine gated mechanisms stand verified; the rejection is the stage definition's over-specification
+clause applied to the composed grading — the tip run satisfies the registry outcome and the
+entity's determined shape yet grades red on three attempt-1 pins. If the captain rules that a
+transient premature prepare itself grades red (tolerance, theirs alone), finding 5 becomes a true
+red caught for the wrong reason with the wrong message, and this recommendation reverts to PASSED
+with findings 5/6 reclassified as caught FO deviations plus a diagnostics polish item.
