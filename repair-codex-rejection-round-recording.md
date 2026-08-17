@@ -52,6 +52,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:hz2ankag6fk379ssabpv4ckc:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:hz2ankag6fk379ssabpv4ckc-validation-1
+              briefing:
+                id: briefing:hz2ankag6fk379ssabpv4ckc:validation:attempt-1:revision-1
+                digest: sha256:3f8b45b6c85479d02f167cdfde464fb564d71f68d351bfcfe4e1f52caac3325a
+                request-digest: sha256:7c707d260e92d367d81caba9225e00d358d5a5401466cd7bac538a5542ed9611
+                room-ref: ./repair-codex-rejection-round-recording/review/validation/briefing-1
 pr: "#719"
 ---
 

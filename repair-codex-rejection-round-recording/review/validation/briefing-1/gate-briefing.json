@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:hz2ankag6fk379ssabpv4ckc:validation:attempt-1:revision-1",
+  "question": "Approve repair-codex-rejection-round-recording through validation, ratifying its declared deviations (nested --relative repair, surface overrun keep-all-guards, FO bar re-scopes with XFAIL withheld, quoting fix with measured CI prevalence)? All four ACs verified at tip: codex journey REAL PASS on the unbound matrix with the repaired chain visible in that run's stream; every falsifying edit reds exactly as claimed.",
+  "artifacts": [
+    {
+      "id": "artifact:hz2ankag6fk379ssabpv4ckc:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e6041aa193eab95dbb855850f05fa5fced770ccb/repair-codex-rejection-round-recording.md",
+      "rev": "sha256:81d5bb3a806c7cd5d96edf7e2a0aa8a5ba7c61e26df1829af2de4fe6d114a4f2",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED. AC-1 predicate from source at tip (initial-stage split confirmed compatible); AC-2 codex rejection journey passed in tip run 31986034831 with 0 pre-fix strings and the full repair chain in-stream; AC-3 honest labels falsified every direction; nested fix red/green both repo shapes. Stack-level reds routed: claude lane = FO-discipline/grading codes owned by the team-mode layer; codex red = ac-reanchor fixture gap."
+    }
+  ]
+}
