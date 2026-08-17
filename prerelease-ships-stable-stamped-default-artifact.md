@@ -43,27 +43,23 @@ Rejected directions:
 
 Nothing consumes a prerelease's `_stable` tarball (the stable cask skips prerelease upload, install.sh cannot reach it, and the auto-pre0 catch-up run builds its own artifacts). It continues to exist only because the cask pipe requires its build; the suffix marks it honestly.
 
-**Verification moves to the artifact** (AC-2), three layers:
+**Verification is descoped by captain ruling (ideation gate rejection, 2026-08-17).** Cycle 1 proposed three artifact-verification layers here — a `verify-stamp` build hook, a `verify-channel-stamps` dist sweep wired into two CI lanes, and a template-execution extension of the config guard: about 477 lines of verification for a five-line defect. CL rejected the kind, not just the size. The evidence is this incident itself: `internal/release/channel_agreement_guard_test.go` passed, the release pipeline was green, and a real user still downloaded a stable-stamped binary from a prerelease page and lost a day to it. A green suite coexisted with the defect; more tests of the same kind do not correct that. All three layers are cut and NOT replaced with smaller tests of the same kind. What survives as the guard is the one thing a human reads during actual usage — the `Channel:` line below — plus a hand-exercised check of the first real `-pre` cut (see Test plan).
 
-1. **Pre-publish, in-pipeline:** each `builds[].hooks.post` runs `go run ./cmd/spacedock-release verify-stamp {{ .Path }} <main|next>`. The checker reads the binary with `debug/buildinfo` (the `go version -m` surface) and exits non-zero unless the recorded `-ldflags` carry `cli.devBranch=<expected>`. A failing hook aborts `goreleaser release` at the build stage, before anything uploads (spiked — see Spike record 5).
-2. **Whole-set sweep:** `spacedock-release verify-channel-stamps <dist>` maps every `*.tar.gz` name to its advertised channel (`_edge` → next, else → main), extracts the binary, and asserts the buildinfo stamp matches; for the native-OS binary it additionally EXECUTES `spacedock --version` and asserts the new `Channel:` line agrees — execution catches the silent-no-op class (an `-X` flag whose target symbol was renamed still appears in recorded ldflags but changes nothing; the config comments already document that hazard). It also enforces AC-1 on artifacts: a real-prerelease dist containing any unsuffixed archive fails. Fail-closed on zero archives. Wired into install-e2e.yml after its existing snapshot step (every PR, pre-merge) and into release.yml right after goreleaser (the real cut; post-publish but loud within minutes — OSS goreleaser has no pre-publish seam for whole-set checks; layer 1 covers pre-publish).
-3. **Config guard:** extend `internal/release/channel_agreement_guard_test.go` to EXECUTE the stable archive's name-suffix template under three contexts (real prerelease → `_stable`; snapshot → unsuffixed; stable → unsuffixed), and pin the edge archive's unconditional `_edge` suffix plus the archive-ids ↔ name-template binding. Executing the template, not string-matching it, keeps the test on behavior.
-
-**Legibility (AC-3):** `--version` gains one line in BOTH output shapes, directly after `OS:`:
+**Legibility (AC-2):** `--version` gains one line in BOTH output shapes, directly after `OS:`:
 
 ```
 Channel: stable (spacedock@spacedock)
 Channel: edge (spacedock@spacedock-edge)
 ```
 
-The channel word maps from the effective devBranch exactly as `channelMarketplace` does (main → stable, anything else → edge); the parenthetical is `channelPluginID(devBranch)` — the id the frontdoor re-ensures, so the incident's symptom (the `spacedock@spacedock` reinstall loop) and its cause read off one line. It reports the EFFECTIVE value: `printVersion` already receives `getenv`, so a `SPACEDOCK_DEV_BRANCH` override renders what the binary will actually do. Line 1 stays the bare version token; consumers audited: the FO version gate parses line 1 only, fo-install-gate greps `^Sandbox: ` (prefix-anchored), and the frozen `contract 3` token is position-independent below line 1.
+The channel word maps from the effective devBranch exactly as `channelMarketplace` does (main → stable, anything else → edge); the parenthetical is `channelPluginID(devBranch)` — the id the frontdoor re-ensures, so the incident's symptom (the `spacedock@spacedock` reinstall loop) and its cause read off one line. This line is NOT a test: it prints on every run, so a human reads it during actual usage, and its absence is why this defect cost an investigation instead of one command. It reports the EFFECTIVE value: the `--version` path calls `applyDevBranchOverride(env)` before `printVersion` — the same helper every install path already calls, so `SPACEDOCK_DEV_BRANCH` override semantics (including explicit-empty) are exact and the line renders what the binary will actually do; `printVersion` then reads the package `devBranch` var directly, a two-way branch mirroring `channelMarketplace` plus `channelPluginID(devBranch)`. Line 1 stays the bare version token; consumers audited: the FO version gate parses line 1 only, fo-install-gate greps `^Sandbox: ` (prefix-anchored), and the frozen `contract 3` token is position-independent below line 1.
 
-Mechanism → value audit (simplest alternative for each):
+Mechanism → value audit (the design has exactly two mechanisms; simplest alternative for each):
 
 - Conditional `_stable` suffix (serves AC-1). Alternative: skip the stable build — blocked by the cask pipe (spiked). Alternative: docs-only warning — leaves the trap in place.
-- `verify-stamp` build hook (serves AC-2). Alternative: sweep only — on the real cut the sweep runs post-publish; the hook is the only OSS pre-publish enforcement point.
-- `verify-channel-stamps` sweep (serves AC-2 and AC-1-on-artifacts). Alternative: hooks only — a hook sees one binary and never the archive name, so a crossed `archives.ids` mapping (the stable archive packaging the edge build) is invisible to it.
-- `Channel:` line (serves AC-3; doubles as layer 2's execution oracle). Alternative: keep `go version -m` as the channel oracle — precisely the out-of-band-only state that made the incident an investigation.
+- `Channel:` line (serves AC-2). Alternative: keep `go version -m` as the channel oracle — precisely the out-of-band-only state that made the incident an investigation instead of one command.
+
+No further spike is needed: the kept mechanisms rest on the already-spiked conditional suffix (Spike record 2-3) and a print statement over existing fixture-tested surfaces (`printVersion`, `applyDevBranchOverride`, `channelPluginID`).
 
 ## Spike record
 
@@ -72,8 +68,10 @@ Spiked 2026-08-17 with goreleaser 2.16.0: full `goreleaser release` runs in a sc
 1. `builds[].skip` accepts a template (schema: string|bool) and fires on a `-pre` tag (`skip is set id=spacedock-stable`), and the archive/checksum pipes tolerate the resulting empty stable set — but the stable cask pipe errors `no linux/macos archives found matching goos=[darwin linux] goarch=[amd64 arm64] ids=[spacedock-stable]` before `skip_upload: auto` is consulted, and casks have no `disable` field. The build-skip direction is dead on OSS goreleaser.
 2. The conditional name suffix works end to end: the `-pre` tag produced only `_stable` + `_edge` archives (checksums.txt matching), both casks generated, and the stable cask publish skipped itself with `prerelease detected with 'auto' upload`. The stable tag produced today's unsuffixed + `_edge` names with cask URLs referencing the unsuffixed asset — the tap contract is byte-stable.
 3. The `not .IsSnapshot` guard is load-bearing: without it a snapshot names the stable asset `..._stable.tar.gz` (snapshot versions carry a semver prerelease part) and install-e2e's end-anchored install.sh glob finds nothing.
-4. `go version -m` / `debug/buildinfo` reads `-X ...cli.devBranch=...` from cross-compiled tarball binaries on a foreign OS (linux ELF read on darwin) — the AC-2 read mechanism, identical to the incident's own forensic read.
+4. `go version -m` / `debug/buildinfo` reads `-X ...cli.devBranch=...` from cross-compiled tarball binaries on a foreign OS (linux ELF read on darwin) — the read mechanism the cut verification layers used, identical to the incident's own forensic read.
 5. `builds[].hooks.post` runs once per built artifact with `{{ .Path }}` resolved; a hook asserting the wrong stamp fails the whole release at the build stage (`post hook failed: exit status 1`) — the pre-publish abort direction proven, not assumed.
+
+Items 4-5 established mechanisms for the verification layers cut at the ideation gate (captain ruling recorded in Proposed approach). The facts stand on record; nothing in the kept design consumes them.
 
 ## Migration for already-installed prerelease binaries
 
@@ -90,51 +88,45 @@ The duplicate edge routes in the marketplace (`spacedock-edge@spacedock` and `sp
 
 Whether `channelEntry`'s constant entry name (internal/cli/host_exec.go:223) makes an *edge* binary reinstall over a route-A install: plausible from reading, unverified, and not the cause of this report. Do not fold it in without first confirming the frontdoor's actual presence-check behavior.
 
+The marketplace and re-pull work is task `2d`: `installArgvSequence`, the marketplace manifests, and `bump-calendar` are untouched here.
+
 ## Expected surface and tolerance
 
-Estimate net LOC change: +560 across 11 files (supersedes the +140/5-file seed guess, which did not count the verifier's unit tests, the version-fixture literal updates, or the two workflow wirings):
+Estimate net LOC change: about +48/−8 across 5 files, most of it documentation (supersedes cycle 1's +560/11-file declaration, rejected at the gate; the captain-directed target is about 55 lines):
 
-- `.goreleaser.yaml` +20 (name_template conditional, two post hooks, comments)
-- `cmd/spacedock-release/verify_stamp.go` +170 (new: both subcommands)
-- `cmd/spacedock-release/verify_stamp_test.go` +180 (new)
-- `cmd/spacedock-release/main.go` +10 (routing)
-- `internal/cli/cli.go` +15 (Channel line in printVersion)
-- `internal/cli/version_session_test.go` +40 net (literal updates plus channel/override cases)
-- `internal/release/channel_agreement_guard_test.go` +90 (template-execution + ids-binding guards)
-- `.github/workflows/install-e2e.yml` +12 (sweep step)
-- `.github/workflows/release.yml` +15 (sweep step)
-- `docs/releasing.md` +25/−5
-- `docs/site/reference/command-reference.md` +10/−4
+- `.goreleaser.yaml` +5 (stable archive name_template conditional plus comment) — the defect fix
+- `internal/cli/cli.go` +15 (`applyDevBranchOverride(env)` on the `--version` path; Channel line in `printVersion`; comments)
+- `internal/cli/version_session_test.go` +6 net (six exact-match `want` literals gain the Channel line; the two-lines/three-lines shape comments reworded in place) — forced maintenance, not new test surface
+- `docs/releasing.md` +18/−3 (naming sentence in "What the Tag Push Does"; migration bullet in "Notes")
+- `docs/site/reference/command-reference.md` +4/−2 (`--version` intro and three-line example)
 
-Tolerance: ±2 files, +150/−200 LOC. Beyond that, back to the gate.
+The dispatch's "about 4 files" folds to 5 in practice because the migration note and the `--version` reference live in separate doc files; the line total holds. Tolerance: ±1 file, +25 LOC. Hard ceiling per captain direction: if the implementation passes 80 inserted lines, stop and bring it back to the gate with the reason stated.
 
 ## Declared semantic changes
 
-- **Command grammar:** `--version` gains a third line `Channel: <stable|edge> (<plugin-id>)` in BOTH shapes; the outside-session shape goes two lines → three. Known consumers audited (FO version gate: line 1 only; fo-install-gate: `^Sandbox: ` prefix grep; `contract 3`: position-independent). New `spacedock-release verify-stamp` / `verify-channel-stamps` subcommands (release tooling, not the user CLI).
+- **Command grammar:** `--version` gains a third line `Channel: <stable|edge> (<plugin-id>)` in BOTH shapes; the outside-session shape goes two lines → three. Known consumers audited (FO version gate: line 1 only; fo-install-gate: `^Sandbox: ` prefix grep; `contract 3`: position-independent). No new subcommands.
 - **Published-release surface:** on `-pre` tags only, the stable tarball's asset name gains `_stable`; checksums.txt keys follow. Stable-tag and snapshot asset names stay byte-identical to today.
 - **Stored formats:** none. **Authority:** none. **Runtime install behavior:** none — frontdoor, marketplace mapping, install.sh, and tap flow untouched.
 
 ## Acceptance criteria
 
-Each AC names a property of the finished entity, not a stage action, and how it is verified.
+Each AC names a property of the finished entity, not a stage action, and how it is verified. Verification is deliberately thin by captain ruling: the incident proved that a green suite of artifact-agreement tests coexists with users receiving the wrong binary, so the evidence of record for this task is the first real `-pre` cut, exercised by hand and recorded in the entity body at validation.
 
-**AC-1 - A prerelease release offers no default-named asset: every asset a `-pre` release publishes names its channel, so reaching for "the" asset is impossible and the edge asset is the only undecorated-looking choice a `-pre` page offers.**
-This is the measuring AC: the unsuffixed-archive count over a real-prerelease artifact set must be ZERO — a count over the actually-built dist that moves the wrong way the moment the template regresses. Verified by: (config) a guard test that EXECUTES the stable archive's name-suffix template under three contexts — real prerelease → `_stable`, snapshot → unsuffixed, stable → unsuffixed — and pins the edge archive's unconditional `_edge` suffix plus the archive-ids ↔ name-template binding; (artifact) `verify-channel-stamps` fails any real-prerelease dist containing an unsuffixed archive — enforced on every PR (install-e2e) and on the real cut (release.yml); (live) the first `-pre` cut after landing lists only `_stable` + `_edge` assets on its release page. Fails if `.goreleaser.yaml` gives `spacedock-stable` the bare `{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}` name while prerelease publishing is enabled.
+**AC-1 - A prerelease release offers no default-named asset: every asset a `-pre` release publishes names its channel, so reaching for "the" asset is impossible.**
+This is the measuring AC: the unsuffixed-archive count over the first post-landing `-pre` release's published asset list must be ZERO — a count over the real published surface that moves the wrong way the moment the template regresses. Verified by hand at validation: read that release's page; only `_stable` and `_edge` assets exist. Fails if `.goreleaser.yaml` gives `spacedock-stable` the bare `{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}` name while prerelease publishing is enabled.
 
-**AC-2 - The channel guard proves the stamp on a built ARTIFACT, not only in config text.**
-Verified by: `spacedock-release verify-channel-stamps <dist>` — run over the real goreleaser snapshot in install-e2e (every PR) and over `dist/` in release.yml (every cut) — extracts each archive's binary and reads its embedded ldflags via `debug/buildinfo` (the `go version -m` surface), asserting `cli.devBranch` equals the channel the asset name advertises; the native-OS binary is additionally EXECUTED and its `--version` `Channel:` line must agree, which catches the silent-no-op `-X` class that recorded ldflags cannot. `verify-stamp` in `builds[].hooks.post` enforces the same read pre-publish inside the goreleaser pipeline. Unit tests drive both verifiers against really-built binaries stamped each way; the mismatch direction must exit non-zero. Fails if a stable-stamped binary is produced under an edge asset name or vice versa — the exact condition config-parsing cannot detect, and the reason the existing guard passed through this incident.
-
-**AC-3 - A running binary reports the channel it drives, so a recurrence is detectable in-band.**
-Verified by: fixture tests over `--version` output asserting the channel line tracks the effective devBranch — devBranch=main renders `Channel: stable (spacedock@spacedock)`, devBranch=next renders `Channel: edge (spacedock@spacedock-edge)`, and a `SPACEDOCK_DEV_BRANCH` override is reflected. Fails if the line is dropped, hardcoded to one channel, or diverges from the plugin id the frontdoor actually ensures. This AC serves AC-1's end value: the release being correct is the goal, and this is what lets an operator confirm it rather than trust it — it is also the execution oracle AC-2's sweep uses.
+**AC-2 - A running binary reports the channel it drives, in-band, so identifying a wrong-channel binary is one command instead of an investigation.**
+Verified by: (fixture, forced maintenance) the six exact-match literals in `version_session_test.go` now include the Channel line, so dropping the line, moving it off position 3, or breaking the edge rendering turns `go test ./...` red; (live, at validation) download the `_edge` asset from the AC-1 cut, run `spacedock --version`, and the Channel line reads `edge (spacedock@spacedock-edge)`. The line renders the EFFECTIVE devBranch (override applied via the same helper the install paths use), so it reports what the binary will actually do. Fails if the line is dropped or diverges from the plugin id the frontdoor ensures. This AC serves AC-1's end value: the release being correct is the goal; this is what lets an operator confirm it rather than trust it.
 
 ## Test plan
 
-- **Unit (`go test ./...`, no goreleaser dependency):** `verify_stamp_test.go` builds `./cmd/spacedock` via `go build -ldflags "-X ...devBranch=<main|next>"` into `t.TempDir` (build cache keeps repeat cost low), then drives `verify-stamp` in both directions and `verify-channel-stamps` over synthesized dist dirs: a matched dir passes; a crossed name/stamp dir fails; an empty dir fails; a real-prerelease dir containing an unsuffixed asset fails. Each test's red condition is the named regression, not a tautology over its own fixtures.
-- **Config guard (unit):** template execution over the three naming contexts; the edge suffix and ids binding pinned — the AC-1 config half.
-- **Fixture/CLI:** `version_session_test.go` literal updates plus the two channel cases and the override case — the AC-3 half.
-- **CI:** install-e2e's existing snapshot leg gains the sweep step, proving name↔stamp on real cross-compiled artifacts for both OSes on every PR; its existing install.sh legs keep proving the unsuffixed snapshot contract (the `not .IsSnapshot` guard's consumer).
-- **Live:** the first `-pre` cut after landing is the end-value measurement — release page lists only `_stable`+`_edge`, release.yml's sweep step green over the published dist, and `spacedock --version` from the downloaded `_edge` tarball prints `Channel: edge (spacedock@spacedock-edge)`. Rides an already-planned prerelease cut; no dedicated live workflow.
-- Estimated cost: moderate — the expensive goreleaser runs ride existing CI legs; new code is one verifier file plus test updates.
+Deliberately thin, by captain ruling at the cycle-1 gate: the artifact verifier, both CI lane wirings, and the config-guard template extension are cut and NOT replaced with smaller tests of the same kind. The evidence against that kind is this incident itself — `channel_agreement_guard_test.go` passed, the release pipeline was green, and a user still downloaded a stable-stamped binary from a prerelease page.
+
+- **Fixture (forced maintenance):** the six exact-match `want` literals in `version_session_test.go` gain the Channel line after `OS:`; `go test ./...` green. These pin the line's presence, its position, and the edge rendering of the unstamped test default (`devBranch=next` → `Channel: edge (spacedock@spacedock-edge)`). The stable-side rendering (main → `stable (spacedock@spacedock)`) is a two-way branch mirroring `channelMarketplace`, reviewed at the gate and confirmed live the first time `--version` runs on any stable binary; no dedicated fixture is added for it, per the no-new-test-surface ruling. Stated residual: a hardcoded-to-edge regression would pass the fixtures — accepted, because the artifact-verification kind that would catch it is what the captain cut.
+- **Live (the proof of record, recorded in the entity body at validation):** the first `-pre` cut after this lands, exercised by hand:
+  1. Read the release page. Only `_stable` and `_edge` assets exist (AC-1's zero count).
+  2. Download the `_edge` asset and run `spacedock --version`. The Channel line reads edge (AC-2).
+- Estimated cost: near zero — no new test files, no CI changes; the live proof rides an already-planned prerelease cut.
 
 ## Documentation diff
 
@@ -158,9 +150,7 @@ install.sh and the tap need NO change: install.sh resolves `/releases/latest` (n
   stable tarball is unsuffixed on a stable tag but ends `_stable` on a `-pre`
   tag, so a prerelease never offers a default-named asset. Nothing consumes a
   prerelease's `_stable` tarball — it exists only because the cask pipe cannot
-  tolerate a skipped build — and every binary's embedded stamp is verified
-  against its asset name before publish (`spacedock-release verify-stamp` in
-  the build hooks) and after (`verify-channel-stamps` over `dist/`);
+  tolerate a skipped build;
 ```
 
 **docs/releasing.md, "Notes" — add bullet:**
@@ -218,3 +208,16 @@ reinstall from the `_edge` tarball or
 ### Summary
 
 Chose the prerelease naming shape by spiking the riskiest mechanisms first with goreleaser 2.16.0 in a scratch clone: the build-skip direction is dead on OSS goreleaser (stable cask pipe errors on zero artifacts before `skip_upload: auto`; no cask `disable` field), while the conditional `_stable` name suffix passed end to end on `-pre`, stable, and snapshot runs — including proof that the `not .IsSnapshot` guard is load-bearing for install-e2e. Verification moves onto artifacts in three layers (pre-publish build hooks, a whole-set dist sweep wired into install-e2e and release.yml, and a template-executing config guard), with `--version` gaining a `Channel:` line that doubles as the sweep's execution oracle. Expected surface recalibrated from the seed's +140/5-file guess to +560/11-file with tolerance; semantic changes declared (version-output grammar, prerelease asset names; no runtime install behavior change).
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Cut the verifier tool, both CI lane wirings, and the config-guard extension. Do not replace them with a smaller test of the same kind — the captain's objection is to the kind, not the size.
+  All references to `verify-stamp`/`verify-channel-stamps`, the install-e2e/release.yml wirings, and the guard-test template extension removed from approach, ACs, test plan, surface, semantics, and the releasing.md doc diff; no replacement test added, and the ruling plus its evidence (a green `channel_agreement_guard_test.go` through the incident) is recorded in the body so the kind stays cut.
+- DONE: Keep only the asset-name conditional, the Channel line in --version, and the migration doc note. Add no new mechanism.
+  Mechanism audit now lists exactly two mechanisms (suffix → AC-1, Channel line → AC-2); the Channel line spec gained one concrete detail — `applyDevBranchOverride(env)` on the `--version` path reuses the existing install-path helper, so effective-value semantics (including explicit-empty override) are exact with zero new helpers; Migration section and remaining doc diffs kept, trimmed of the verifier sentence.
+- DONE: Pin the proof to a hand-exercised prerelease cut recorded at validation, and re-declare the surface at about 55 lines.
+  Proof of record is now the first post-landing `-pre` cut checked by hand (release page shows only `_stable`+`_edge`; downloaded `_edge` binary prints `Channel: edge`), recorded in the entity body at validation; surface re-declared at ~+48/−8 across 5 files (5 not 4: the migration note and the `--version` reference live in separate doc files), tolerance +25 LOC with the captain's 80-line hard ceiling named.
+
+### Summary
+
+Descoped the design per captain rejection: the three artifact-verification layers (~477 lines) are cut without replacement, with the ruling and its incident evidence recorded in the body — the surviving guard is the human-read `Channel:` line plus a hand-exercised check of the first real `-pre` cut. Spike facts stand untouched (items 4-5 annotated as supporting cut layers); ACs reduced to the measuring zero-unsuffixed-assets count and in-band channel legibility; the fixture change is literal maintenance only, with the hardcoded-to-edge residual stated for the gate rather than hidden. Body-only ideation change on this entity (46 insertions / 43 deletions including this report); no code touched.
