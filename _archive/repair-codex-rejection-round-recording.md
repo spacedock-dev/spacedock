@@ -1,11 +1,11 @@
 ---
 id: hz2ankag6fk379ssabpv4ckc
 title: Repair Codex rejection-round recording in the live rejection flow
-status: validation
+status: done
 source: "Captain directive 2026-08-16 after two same-day codex failures (runs 31915540750 and 31922268382, both FAIL /rejection-flow observed=[rejection-round-missing]) on a journey whose XFAIL c6a336a33 retired on one unbound pass; old owner continue-codex-rejection-after-first-validation is archived done and fixed a different mode"
 started: 2026-08-16T03:40:08Z
-completed:
-verdict:
+completed: 2026-08-17T14:55:16Z
+verdict: PASSED
 score: "0.90"
 worktree: .worktrees/spacedock-ensign-repair-codex-rejection-round-recording
 issue:
@@ -70,8 +70,9 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 pr: local-merge:61dd8e435
+archived: 2026-08-17T14:55:16Z
 ---
 
 Codex intermittently completes the live rejection flow without recording the rejection round: the FO-side flow reaches the feedback stage but `gate record --round` never runs, so the journey assertion finds no round record (`rejection-round-missing`). Fail-pass-fail across the last three runs proves the c6a336a33 retirement premature for this journey.
