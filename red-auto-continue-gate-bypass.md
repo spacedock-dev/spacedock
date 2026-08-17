@@ -528,3 +528,27 @@ a code this change introduces. Ledgers with per-run per-variant stream digests a
 did not recur, so no instruction quote was needed. Pi not run, no preemptive xfail.
 
 Claude went from 4 GREEN / 4 RED with no streak past 1, to 3/3 clean — the two modes are closed.
+
+## Stage Report: validation
+
+- DONE: Source of truth is the entity's stage report and its addenda; the shipping evidence is live5/ on 134e494a8. Validate on the tip 52b94f9aa; this layer is #723.
+  Validated on 52b94f9aa in a detached throwaway checkout (never the implementation worktree); the branch head is 134e494a8, one layer below the tip, and the tip layer's `stageToken` hardening of the shared matcher is included in everything below.
+- DONE: Verify the gated ACs plus the three authorized finding fixes on the tip bytes.
+  AC-1 PASSED: TestAutoContinueBypassRedsOnEveryHost — all six {claude,codex,pi} x {done, resolved-gate} cells red under `human-gate-bypassed` beside a conforming open-gate control per host; deleting pi's `lifecycleStream` fails `go vet -tags live` with "does not implement liveDriver (missing method lifecycleStream)".
+  AC-2 PASSED: replay fixture digest re-verified (465e849a…, 430087 bytes) and green through both the lifecycle parse and the full dispatch-evidence check on both layouts; the placement table passes green/red in both directions across all three observed placements; the vocabulary table never accuses `withdrawn` (withdrawn_beside_open GREEN; withdrawn_only red without the bypass code).
+  AC-3 PASSED: `verifyAutoContinueDispatch` absent repo-wide; `lifecycleStream` is a required `liveDriver` method with exactly the three host implementors; runAutoContinueJourney calls assertAutoContinueDispatchEvidence unconditionally, no type assertion.
+  AC-4 PASSED: live5 ledgers 3/3 GREEN per runtime, `codes=[]` every row, LOOP COMPLETE at run 3 of budget 8; ledger stream digests re-verified against the retained stream bytes (claude run1 single/split match); the loop started nine seconds after 134e494a8's commit, consistent with re-earning from zero on the shipping bytes.
+- DONE: Spot-verify by the falsifying edits the report claims.
+  All five behave exactly as claimed on the tip bytes: re-adding `done` reds all three hosts' terminal cells plus the negative and code-survival tests; reverting the errors.As unwrap reds exactly TestAutoContinueBypassCodeSurvivesTheScenarioRunner; gates-from-entityPath-only reds exactly the worktree-both (claude) placement in both directions; gates-from-reportEntity-only reds exactly the split (codex) placement; dropping the pointer anchor uncounts both real validators; ignoring the stage suffix counts the reviser and the backlog pointer.
+- DONE: Verify the fixture-parse guard (TestAutoContinueGateFixturesParseAsIntended) and the line-type-filtered regression stream's identical-verdict provenance.
+  The guard passes and pins `invalid` as a decoder rejection. The filtered run-4 fixture (870418e9…, 149187 bytes) is a strict byte-subset (122/122 lines) of the retained full capture whose sha256 matches the recorded 2895ae23…; re-ran assertWorkerLifecycle on full vs filtered for stages validation AND implementation — identical verdicts (spawns=2 both), only line indices shift.
+- DONE: Assess the declared deviations for the gate.
+  856 code+doc insertions confirmed exact by numstat (plus 402 fixture lines; 9 code/doc files + 2 fixture files). The growth is the three authorized fix arcs and their falsification tables; the AC bar was not narrowed — the fixture verdict pin is the captain-approved fixture change and its sentence is verified present in autoContinueReadme. The `status --read` product observation is recorded-not-acted, outside this surface. No design reset warranted: the mechanism held, and the overage bought the placement/vocabulary coverage that caught two real defects.
+- DONE: Reference tip CI run 31986034831's auto-continue lanes when concluded; no new live loops.
+  The run concluded failure overall, but all four auto-continue legs passed (journey-metrics outcome.status=passed: claude single/split-root, codex single/split-root); the two live reds are other lanes — codex ac-reanchor, claude rejection-flow (the tip layer's own surface). The offline job succeeded. Validation ran no live loops.
+- DONE: Validation stage report: per-AC verdict, PASSED or REJECTED recommendation, path-scoped commit, push, signal FO, stop. No gate.
+  This report; recommendation below.
+
+### Summary
+
+PASSED. All four gated ACs verified on the tip bytes with reproduced evidence, all five claimed falsifications behave exactly as reported, gofmt clean, the registry entry matches the gated doc diff, and tip CI's auto-continue lanes are green on both runtimes. Offline on the tip: full `go test ./...` green in every package, with one caveat — the ensigncycle package alone runs ~5-8.5 min (solo `ok` 508.95s; `-race` solo `ok` 319.4s), so two concurrent instances blow the 600s default timeout, which my first full+race parallel attempt did; contention, not a hang. Deferred risks, none material: pi's stream dialect remains unexercised (pre-existing named risk, no xfail per the entity's disposition); the shared helper's spawns!=1 ordering semantics remain audit finding 10's territory; ensigncycle's headroom under Go's default 10m test timeout is thin and will flake local full-suite runs under load (promote if it times out without external contention).
