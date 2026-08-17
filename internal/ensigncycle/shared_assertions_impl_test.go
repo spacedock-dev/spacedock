@@ -46,7 +46,6 @@ var feedbackCycleEntry = regexp.MustCompile(`(?im)^- Cycle \d+:`)
 // start, so counting matches counts the implementation rounds that left a durable
 // report rather than any prose that merely names the stage.
 var implementationReport = regexp.MustCompile(`(?m)^## Stage Report: implementation`)
-var validationReport = regexp.MustCompile(`(?m)^## Stage Report: validation`)
 
 // feedbackCyclesSection returns the body of the entity's `### Feedback Cycles`
 // section — from its heading to the next heading (any `##`/`###`/etc.) or EOF.
@@ -70,32 +69,83 @@ func feedbackCyclesSection(entity string) string {
 // bound the `### Feedback Cycles` section at the following heading.
 var nextHeading = regexp.MustCompile(`(?m)^#{1,6} `)
 
-// assertRejectionFlow is host-neutral: it consumes the post-run entity-state
-// string and an observed-output string, so it accepts either host's transcript. It
-// grades the full TWO-cycle trajectory the Go port simplified away: the first
-// REJECTED validation routes back to implementation, the rework applies the exact
-// fix marker and leaves a second implementation report, and a second validation
-// round re-checks it. The durable 2-cycle end-state is two implementation reports,
-// the fix marker, and two durable validation reports; the observed
-// output surfaces both the rejection and the implementation follow-up. The
-// reviewer-reuse signal (Claude SendMessage / Codex send_input) is host-specific
-// and graded by the host runner, not this shared assertion.
-func assertRejectionFlow(entity, observed string) error {
+// anyHeadingLine matches a whole markdown heading line, so a diagnostic can name
+// the heading some content actually sits under.
+var anyHeadingLine = regexp.MustCompile(`(?m)^#{1,6} .*$`)
+
+// headingAbove returns the nearest heading line at or before offset — the heading
+// the content at that offset belongs to — or "" when nothing precedes it.
+func headingAbove(body string, offset int) string {
+	heading := ""
+	for _, at := range anyHeadingLine.FindAllStringIndex(body[:offset], -1) {
+		heading = strings.TrimSpace(body[at[0]:at[1]])
+	}
+	return heading
+}
+
+// rejectionReportSections is the exact set of durable stage-report headings the
+// determined shape scripts — four DISTINCT sections, the cycle-2 pair in the ensign
+// contract's `(cycle N)` form (`ensign-shared-core.md:93`). Requiring each exactly
+// once is stricter than counting two per stage: an entity carrying an exact duplicate
+// `## Stage Report: implementation` heading reaches the same per-stage count but is
+// the shape the fixture used to instruct and the section selector hard-errors on, and
+// it is the reason the two hosts wrote different bytes for the same round.
+var rejectionReportSections = []string{
+	"## Stage Report: implementation",
+	"## Stage Report: validation",
+	"## Stage Report: implementation (cycle 2)",
+	"## Stage Report: validation (cycle 2)",
+}
+
+// countHeadingLines counts lines that are EXACTLY the heading, so
+// `## Stage Report: implementation` does not also count its `(cycle 2)` sibling.
+func countHeadingLines(entity, heading string) (n int) {
+	for _, line := range strings.Split(entity, "\n") {
+		if strings.TrimRight(line, " \t\r") == heading {
+			n++
+		}
+	}
+	return n
+}
+
+// rejectionPassReported matches the FO reporting that the second validation PASSED.
+// Paired with the rejection token it holds the fixture prompt's "report both
+// outcomes" to its word: a final message that names only the rejection, or only the
+// pass, has not reported both.
+var rejectionPassReported = regexp.MustCompile(`(?i)\bpass(ed|es|ing)?\b`)
+
+// assertRejectionFlow is host-neutral: post-run entity state plus the FO's OWN final
+// message. It grades the full TWO-cycle trajectory: the first REJECTED validation
+// routes back to implementation, the rework applies the exact fix marker and leaves a
+// cycle-2 implementation report, and a second validation round re-checks it. The
+// conforming durable end state is EXACTLY two implementation reports and exactly two
+// validation reports (the fixture scripts four sections and no more), plus the fix
+// marker.
+//
+// The reported-outcome half is graded against the final message ALONE. It used to
+// read `finalMessage + "\n" + stream`, which made both checks tautologies: any run's
+// transcript contains the word "reject" (the fixture body carries it) and the word
+// "implementation" (every dispatch command names the stage), so neither could fail on
+// a real run. The final message is the FO's own authored report, so requiring BOTH
+// outcomes there grades what the prompt actually asked for. The `"implementation"`
+// token is gone — it graded nothing.
+//
+// The worker-topology signal is host-specific and graded by the host runner's
+// branch-keyed chain, not by this shared assertion.
+func assertRejectionFlow(entity, finalMessage string) error {
 	if !strings.Contains(entity, rejectionFixMarker) {
 		return fmt.Errorf("rejection follow-up did not apply the exact fix marker")
 	}
-	if reports := len(implementationReport.FindAllString(entity, -1)); reports < 2 {
-		return fmt.Errorf("rejection trajectory left %d implementation reports, want at least 2 (original + cycle-2 rework)", reports)
+	for _, heading := range rejectionReportSections {
+		if sections := countHeadingLines(entity, heading); sections != 1 {
+			return fmt.Errorf("entity carries %d %q sections, want exactly 1", sections, heading)
+		}
 	}
-	if reports := len(validationReport.FindAllString(entity, -1)); reports < 2 {
-		return fmt.Errorf("rejection trajectory left %d validation reports, want at least 2 (rejection + re-validation)", reports)
+	if !strings.Contains(strings.ToLower(finalMessage), "reject") {
+		return fmt.Errorf("the FO's final message did not report the rejection outcome")
 	}
-	lowerObserved := strings.ToLower(observed)
-	if !strings.Contains(lowerObserved, "reject") {
-		return fmt.Errorf("FO output/log did not surface the rejection")
-	}
-	if !strings.Contains(lowerObserved, "implementation") {
-		return fmt.Errorf("FO output/log did not surface the implementation follow-up")
+	if !rejectionPassReported.MatchString(finalMessage) {
+		return fmt.Errorf("the FO's final message did not report the second validation passing")
 	}
 	return nil
 }

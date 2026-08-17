@@ -114,7 +114,11 @@ command; `gate record --briefing` is not a recovery route.
 ### `state commit`
 
 `spacedock state commit <slug>` commits and synchronizes one active or clean
-archived entity from a split-root state checkout. The operand is one canonical top-level entity slug,
+archived entity. In a split-root workflow it commits and pushes in the state
+checkout. In an inline workflow it commits the same entity paths in the
+workflow's own repository and pushes nothing; if the workflow directory is not
+inside a git work tree, it reports that and does nothing.
+The operand is one canonical top-level entity slug,
 not a nested path. A flat entity commits exactly `<slug>.md` plus its `<slug>/`
 companion directory when present or tracked; a folder-form entity
 commits every changed, new, or deleted non-ignored path below `<slug>/`, including
@@ -126,7 +130,10 @@ to active entities and has no effect for an archived slug.
 The gate `record`/`consume` verbs (their close/consume forms — chat-decision and
 standalone `consume`; NOT the `--round` advisory-publication
 form, which is out of mechanism 1's scope and still needs an explicit `state
-commit` afterward, same as before) and `dispatch build --stamp` run this same
+commit` afterward, same as before. In an inline workflow that `state commit` is
+what makes the entity's recorded round visible to `gate prepare` and to the
+`needs-preparation` scheduler row; both read committed bytes only) and
+`dispatch build --stamp` run this same
 commit+publish sequence themselves whenever they write in a split-root workflow
 (their own `sync=.../phase=...` line, or `--stamp`'s stderr/exit, is the
 result) — do not re-run `state commit` after them. Recovering a `sync=failed`

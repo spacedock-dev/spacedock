@@ -4,12 +4,14 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
+	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
 
 // twoHostStateWorkflow builds a bare origin carrying a commissioned split-root
@@ -928,6 +930,266 @@ func TestStateCommitRefusesDirtyArchivedEntityBeforePublication(t *testing.T) {
 			}
 			if code, stdout, errOut := runStateCommitCmd(t, host, workflow, slug, "--json"); code != 0 || decodeOneJSON(t, stdout)["result"] != "no-op" {
 				t.Fatalf("published folder archive should no-op: exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+			}
+		})
+	}
+}
+
+// inlineGatedWorkflowReadme is an INLINE workflow (no `state:` key — entities live
+// beside the README) whose validation stage is gated, the shape the live
+// rejection-flow journey runs against.
+const inlineGatedWorkflowReadme = `---
+commissioned-by: spacedock@1
+entity-type: task
+id-style: slug
+stages:
+  states:
+    - name: backlog
+      initial: true
+    - name: implementation
+    - name: validation
+      gate: true
+      feedback-to: implementation
+    - name: done
+      terminal: true
+---
+
+# Inline Gated Workflow
+`
+
+const inlineGatedEntity = `---
+id: rejection-task
+status: validation
+score: "0.90"
+---
+# Rejection Task
+
+## Stage Report: validation
+
+- DONE: Verify the corrected candidate carries the fix marker.
+  Cycle 2 re-review confirms the marker is present.
+
+### Summary
+
+Validation is complete and ready for its decision gate.
+`
+
+// inlineGatedWorkflow builds a committed inline workflow inside its own Git work
+// tree, carrying one folder-form entity parked at a gated validation stage with a
+// mechanically complete report. Returns the workflow dir.
+func inlineGatedWorkflow(t *testing.T) string {
+	t.Helper()
+	_, workflow := inlineGatedWorkflowAt(t, ".")
+	return workflow
+}
+
+// inlineGatedWorkflowAt builds the inline fixture with the workflow dir at
+// workflowRel below the repo root, and returns both. workflowRel "." puts the
+// workflow AT the repo root; a nested path like "docs/dev" is the ordinary
+// project shape, where Git reports staged names relative to the repo root rather
+// than to the workflow. Returns (repoRoot, workflowDir).
+func inlineGatedWorkflowAt(t *testing.T, workflowRel string) (string, string) {
+	t.Helper()
+	repo := filepath.Join(t.TempDir(), "repo")
+	workflow := filepath.Join(repo, filepath.FromSlash(workflowRel))
+	writeFileWithDirs(t, filepath.Join(workflow, "README.md"), inlineGatedWorkflowReadme)
+	writeFileWithDirs(t, filepath.Join(workflow, "rejection-task", "index.md"), inlineGatedEntity)
+	writeFileWithDirs(t, filepath.Join(workflow, "rejection-task", "inputs", "gate-validation", "gate-review.md"),
+		"# Rejection Task — validation review\n\nSeed review.\n")
+	testgit.InitRepo(t, repo, "-q")
+	git(t, repo, "add", "-A")
+	git(t, repo, "commit", "-q", "-m", "seed inline gated workflow")
+	return repo, workflow
+}
+
+// runInlineCmd runs an arbitrary spacedock command with the workflow dir as cwd.
+func runInlineCmd(t *testing.T, workflow string, args ...string) (code int, stdout, stderr string) {
+	t.Helper()
+	var out, errBuf strings.Builder
+	code = run(context.Background(), args, os.Environ(), workflow, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+	return code, out.String(), errBuf.String()
+}
+
+// inlineReadyGates returns the `status --next --json` ready_gates rows.
+func inlineReadyGates(t *testing.T, workflow string) []map[string]string {
+	t.Helper()
+	code, stdout, errOut := runInlineCmd(t, workflow, "status", "--workflow-dir", workflow, "--next", "--json")
+	if code != 0 {
+		t.Fatalf("status --next exit=%d stderr=%q", code, errOut)
+	}
+	var next struct {
+		ReadyGates []map[string]string `json:"ready_gates"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &next); err != nil {
+		t.Fatalf("parse status --next: %v\n%s", err, stdout)
+	}
+	return next.ReadyGates
+}
+
+func runInlineGatePrepare(t *testing.T, workflow, review string) (code int, stdout, stderr string) {
+	t.Helper()
+	return runInlineCmd(t, workflow, "gate", "prepare", "rejection-task", "--workflow-dir", workflow,
+		"--question", "Does the second validation confirm the fix marker?",
+		"--artifact", review,
+		"--summary", "The corrected candidate is ready for a decision.")
+}
+
+// TestStateCommitInlineUnblocksGatePreparationChain pins the whole causal chain the
+// live rejection flow walks after the neutral round recorder writes: an inline
+// workflow's entity and its fresh gate-review artifact are uncommitted, which makes
+// `status --next` drop the candidate row (dirty bytes are never mechanical proof —
+// TestGateReadinessRejectsDirtyAndMalformedColdReports pins that deliberately) and
+// makes `gate prepare` refuse the artifact. `state commit` is the only durability
+// verb the First Officer contract names, so if it no-ops here the run is stranded
+// with no verb that can clear either refusal. The pre-condition assertions are the
+// falsifying baseline: they are the exact refusals observed in CI, and they must
+// hold BEFORE the verb runs and be gone after it.
+func TestStateCommitInlineUnblocksGatePreparationChain(t *testing.T) {
+	workflow := inlineGatedWorkflow(t)
+	entity := filepath.Join(workflow, "rejection-task", "index.md")
+	review := filepath.Join(workflow, "rejection-task", "inputs", "gate-validation", "gate-review.md")
+	entityDirt := func() string {
+		return strings.TrimSpace(git(t, workflow, "status", "--porcelain", "--untracked-files=all", "--", "rejection-task"))
+	}
+
+	// The durable state the round recorder plus the FO's fresh gate review leave:
+	// entity edited, review artifact rewritten, nothing committed.
+	writeFile(t, entity, inlineGatedEntity+"\n### Feedback Cycles\n\n- Cycle 1: REJECTED — validation reviewer; surface 1 marker vs estimate 1 (100%); AC unchanged\n")
+	writeFile(t, review, "# Rejection Task — validation review (cycle 2)\n\nThe corrected candidate carries the fix marker.\n")
+
+	if entityDirt() == "" {
+		t.Fatal("fixture must start dirty; the whole chain is about clearing that dirt")
+	}
+	if ready := inlineReadyGates(t, workflow); len(ready) != 0 {
+		t.Fatalf("baseline broken: a dirty entity must not be offered as a gate candidate; got %v", ready)
+	}
+	if code, _, errOut := runInlineGatePrepare(t, workflow, review); code == 0 ||
+		!strings.Contains(errOut, "commit the exact source before preparation") {
+		t.Fatalf("baseline broken: gate prepare must refuse an uncommitted artifact; exit=%d stderr=%q", code, errOut)
+	}
+
+	code, stdout, errOut := runStateCommitCmd(t, workflow, workflow, "rejection-task", "--json")
+	if code != 0 || decodeOneJSON(t, stdout)["result"] != "committed" {
+		t.Fatalf("inline state commit must commit; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	}
+
+	if dirt := entityDirt(); dirt != "" {
+		t.Fatalf("inline state commit left the entity dirty:\n%s", dirt)
+	}
+	ready := inlineReadyGates(t, workflow)
+	if len(ready) != 1 || ready[0]["slug"] != "rejection-task" || ready[0]["readiness"] != "needs-preparation" {
+		t.Fatalf("ready_gates=%v, want exactly one needs-preparation row for rejection-task", ready)
+	}
+	if code, stdout, errOut := runInlineGatePrepare(t, workflow, review); code != 0 || !strings.Contains(stdout, "state=open") {
+		t.Fatalf("gate prepare must succeed on the committed artifact; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	}
+}
+
+// TestStateCommitInlineScopeAndPublishBoundary pins the two boundaries the inline
+// commit must not cross: it stages only the named entity's commit unit, and it
+// never pushes — an inline workflow repo is the caller's own code repo, so a push
+// would move a branch the caller never asked this verb to touch. A workflow dir
+// outside a Git work tree stays an exit-0 no-op that names the reason instead of
+// reporting a commit that did not happen.
+func TestStateCommitInlineScopeAndPublishBoundary(t *testing.T) {
+	workflow := inlineGatedWorkflow(t)
+	// Give the inline repo an origin, so "never pushes" is observable rather than
+	// vacuous: the bare ref must not move across a successful commit.
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	git(t, t.TempDir(), "init", "-q", "--bare", bare)
+	git(t, workflow, "remote", "add", "origin", bare)
+	git(t, workflow, "push", "-q", "origin", "HEAD:refs/heads/main")
+	originBefore := strings.TrimSpace(git(t, bare, "rev-parse", "refs/heads/main"))
+
+	writeFileWithDirs(t, filepath.Join(workflow, "sibling-task", "index.md"),
+		"---\nid: sibling-task\nstatus: backlog\n---\n# Sibling\n")
+	git(t, workflow, "add", "-A")
+	git(t, workflow, "commit", "-q", "-m", "seed sibling")
+
+	writeFile(t, filepath.Join(workflow, "rejection-task", "index.md"), inlineGatedEntity+"\ntarget dirt\n")
+	writeFile(t, filepath.Join(workflow, "sibling-task", "index.md"),
+		"---\nid: sibling-task\nstatus: backlog\n---\n# Sibling\n\nsibling dirt\n")
+
+	if code, stdout, errOut := runStateCommitCmd(t, workflow, workflow, "rejection-task", "--json"); code != 0 ||
+		decodeOneJSON(t, stdout)["result"] != "committed" {
+		t.Fatalf("inline state commit exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	}
+	if dirt := strings.TrimSpace(git(t, workflow, "status", "--porcelain", "--", "sibling-task")); dirt == "" {
+		t.Fatal("inline state commit swept up a dirty sibling entity; the commit must be path-scoped")
+	}
+	if got := strings.TrimSpace(git(t, bare, "rev-parse", "refs/heads/main")); got != originBefore {
+		t.Fatalf("inline state commit pushed the caller's own repo: origin main before=%s after=%s", originBefore, got)
+	}
+
+	// A second run has nothing left to stage: a no-op, not a claimed commit.
+	if code, stdout, errOut := runStateCommitCmd(t, workflow, workflow, "rejection-task", "--json"); code != 0 ||
+		decodeOneJSON(t, stdout)["result"] != "no-op" {
+		t.Fatalf("clean inline entity should no-op; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	}
+
+	// Outside a Git work tree the verb has nothing to commit to, and says so.
+	plain := filepath.Join(t.TempDir(), "plain")
+	writeFileWithDirs(t, filepath.Join(plain, "README.md"), inlineGatedWorkflowReadme)
+	writeFileWithDirs(t, filepath.Join(plain, "rejection-task", "index.md"), inlineGatedEntity)
+	code, stdout, errOut := runStateCommitCmd(t, plain, plain, "rejection-task", "--json")
+	result := decodeOneJSON(t, stdout)
+	if code != 0 || result["result"] != "no-op" ||
+		!strings.Contains(result["reason"].(string), "not inside a Git work tree") {
+		t.Fatalf("non-repo workflow dir must be an honest no-op; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+	}
+}
+
+// TestStateCommitInlineCommitsWhateverTheWorkflowDepth pins the inline commit
+// against BOTH repo shapes, because the seam reads staged names from Git and
+// compares them to entity paths, and those two are relative to different roots
+// unless the workflow dir happens to be the repo root.
+//
+// The nested case is the ordinary project shape and it was silently broken: `git
+// -C <workflow> diff --cached --name-only` answers with repo-root-relative names
+// (docs/dev/rejection-task/index.md) while the entity pathspec is
+// workflow-relative (rejection-task), so nothing matched, nothing was selected to
+// commit, and the verb reported "already up to date" — after its own `git add`
+// had staged the change. That is worse than the exit-0 no-op this entity set out
+// to remove: it mutates the index and still claims there was nothing to do.
+//
+// Asserting a clean porcelain rather than just a fresh commit is what makes this
+// falsifying: the pre-fix bug left the entity STAGED, which a commit-count check
+// alone would miss. Dropping `--relative` from the diff reds the nested case and
+// leaves the root case passing.
+func TestStateCommitInlineCommitsWhateverTheWorkflowDepth(t *testing.T) {
+	for name, workflowRel := range map[string]string{
+		"workflow at repo root": ".",
+		"workflow nested":       "docs/dev",
+	} {
+		t.Run(name, func(t *testing.T) {
+			repo, workflow := inlineGatedWorkflowAt(t, workflowRel)
+			entity := filepath.Join(workflow, "rejection-task", "index.md")
+			writeFile(t, entity, inlineGatedEntity+"\nrecorded round, not yet durable\n")
+
+			before := strings.TrimSpace(git(t, repo, "rev-parse", "HEAD"))
+			code, stdout, errOut := runStateCommitCmd(t, workflow, workflow, "rejection-task", "--json")
+			result := decodeOneJSON(t, stdout)
+			if code != 0 || result["result"] != "committed" {
+				t.Fatalf("inline state commit must report a commit, not a no-op; exit=%d stdout=%q stderr=%q", code, stdout, errOut)
+			}
+
+			// Empty porcelain, not just a new commit: the pre-fix bug left the
+			// entity staged, which is invisible to a HEAD-moved check alone.
+			if dirt := strings.TrimSpace(git(t, repo, "status", "--porcelain", "--untracked-files=all")); dirt != "" {
+				t.Fatalf("entity left uncommitted (staged or modified) after state commit:\n%s", dirt)
+			}
+			if after := strings.TrimSpace(git(t, repo, "rev-parse", "HEAD")); after == before {
+				t.Fatal("state commit reported a commit but HEAD did not move")
+			}
+
+			// The commit carries the entity, addressed from the repo root.
+			entityRel, err := filepath.Rel(repo, entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			files := git(t, repo, "show", "--name-only", "--format=", "HEAD")
+			if !strings.Contains(files, filepath.ToSlash(entityRel)) {
+				t.Fatalf("commit does not contain %s; it contains:\n%s", entityRel, files)
 			}
 		})
 	}

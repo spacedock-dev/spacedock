@@ -121,64 +121,6 @@ func TestAssertClaudeReviewerReuse(t *testing.T) {
 // (context-dependent reuse — codex-first-officer-runtime.md `## Reuse And Feedback
 // Routing`); assertCodexReviewerReuse stays correct for the Codex `-p` run. The
 // Claude/Codex single-entity behaviors legitimately differ.
-func TestClaudeSingleEntityRejectionFlow(t *testing.T) {
-	// CONTRACT-CORRECT (bare mode): two distinct fresh validation spawns (cycle-1 +
-	// cycle-2), the bare-mode-sequential end-state — PASS.
-	bareCycle1Validation := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BV1","input":{"description":"Rejection Task: validation","subagent_type":"spacedock:ensign","name":"spacedock-ensign-rejection-task-validation"}}]}}`
-	bareCycle2Validation := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BV2","input":{"description":"Rejection Task: validation (cycle 2 fresh)","subagent_type":"spacedock:ensign","name":"spacedock-ensign-rejection-task-validation-cycle2"}}]}}`
-	twoFreshSpawns := bareCycle1Validation + "\n" + bareCycle2Validation
-
-	// VIOLATION: the cycle-2 re-review collapsed onto the implementation worker via a
-	// SendMessage instructing it to validate its own rework — the impl-as-validator
-	// shape. Must FAIL.
-	implRework := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BI","input":{"description":"Rejection Task: implementation rework","subagent_type":"spacedock:ensign","name":"spacedock-ensign-rejection-task-implementation"}}]}}`
-	implAsValidator := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"spacedock-ensign-rejection-task-implementation","message":"now validate your own rework"}}]}}`
-	implReusedThroughValidation := bareCycle1Validation + "\n" + implRework + "\n" + implAsValidator
-
-	// VIOLATION: only one validation spawn, no second re-review at all. Must FAIL on
-	// the no-reuse check.
-	onlyCycle1 := bareCycle1Validation
-
-	// CONTRACT-CORRECT (team mode supersede-teardown): two fresh validation spawns
-	// PLUS a shutdown_request to the superseded cycle-1 implementation worker. The
-	// shutdown is the contract-mandated supersede teardown, not a re-review routing —
-	// it must NOT trip the no-reuse check. This is the original opus CI false-positive
-	// shape (run 27861449587 att1). Must PASS.
-	implShutdownObject := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"spacedock-ensign-rejection-task-implementation","message":{"type":"shutdown_request","reason":"superseded by fresh implementation-rework dispatch"}}}]}}`
-	teamSupersedeTeardown := bareCycle1Validation + "\n" + implRework + "\n" + implShutdownObject + "\n" + bareCycle2Validation
-
-	// CONTRACT-CORRECT (team mode reviewer reuse): one validation spawn, then the
-	// cycle-2 re-review reuses the kept-alive `…-validation` reviewer via SendMessage
-	// to its correlated handle, with a shutdown_request reaping the superseded cycle-1
-	// impl worker. This is the local opus team-mode reuse shape. Must PASS.
-	reviewerReuseMessage := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"spacedock-ensign-rejection-task-validation","message":"Advancing to next stage: validation (cycle 2 re-review). Re-review the updated entity state."}}]}}`
-	teamReviewerReuse := bareCycle1Validation + "\n" + implRework + "\n" + implShutdownObject + "\n" + reviewerReuseMessage
-
-	cases := []struct {
-		name    string
-		stream  string
-		wantErr bool
-	}{
-		{"contract-correct two fresh validation spawns (bare-mode sequential)", twoFreshSpawns, false},
-		{"impl reused through validation (impl-as-validator) must RED", implReusedThroughValidation, true},
-		{"only the cycle-1 validation spawn (no re-review) must RED", onlyCycle1, true},
-		{"empty stream must RED", "", true},
-		{"team-mode supersede shutdown_request to impl handle must PASS", teamSupersedeTeardown, false},
-		{"team-mode reviewer reuse (1 spawn + reuse message) must PASS", teamReviewerReuse, false},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := assertClaudeSingleEntityRejectionFlow(tc.stream)
-			if tc.wantErr && err == nil {
-				t.Fatalf("expected error for %q, got nil", tc.name)
-			}
-			if !tc.wantErr && err != nil {
-				t.Fatalf("expected pass for %q, got: %v", tc.name, err)
-			}
-		})
-	}
-}
-
 func TestAssertCodexReviewerReuse(t *testing.T) {
 	// The Codex collab_tool_call shape. A spawn_agent dispatching the validation
 	// stage binds the reviewer's thread id (vThread); a later followup_task

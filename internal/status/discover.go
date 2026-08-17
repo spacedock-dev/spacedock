@@ -251,7 +251,7 @@ func materializeGateReadiness(entities []*entity, stages []Stage) {
 		// current authority may be promoted by that proof; all existing authority
 		// states remain owned by the canonical reducer above.
 		if readiness == "validating" && !entity.gateInvalid {
-			if stage, ok := stageByName[status]; ok && stage.gate && hasCompleteCommittedStageReport(entity.path, status) {
+			if stage, ok := stageByName[status]; ok && stage.gate && gatePreparable(entity.path, stage) {
 				readiness = gates.CurrentStageReadinessWithReport(entity.gateDoc, status, taxonomy, true)
 			}
 		}

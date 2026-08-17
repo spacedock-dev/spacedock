@@ -44,7 +44,9 @@ func emitSync(stdout io.Writer, jsonOut bool, res syncResult, code int) int {
 	return code
 }
 
-// runStateCommit implements `spacedock state commit <slug>`. Active scope commits
+// runStateCommit implements `spacedock state commit <slug>`. An inline workflow
+// commits in the workflow's own repository and pushes nothing (commitInlineEntity);
+// the rest of this function is the split-root path. Active scope commits
 // path-scoped; clean archived scope publishes existing history. Both use the
 // shared push → on-reject pull --rebase → re-push sequence. A same-entity rebase
 // conflict HALTS: the rebase is aborted (clean tree restored), no force-push is
@@ -62,10 +64,7 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 		return code
 	}
 	if mode == status.StateInline {
-		return emitSync(stdout, jsonOut, syncResult{
-			Command: "state commit", Slug: slug, Result: "no-op",
-			Reason: "Inline workflow — entities live beside the README; nothing to commit to a state checkout.",
-		}, 0)
+		return commitInlineEntity(stdout, stderr, jsonOut, workflowDir, slug, msg)
 	}
 
 	if outcome := statesync.Preflight(checkout, branch); outcome.Result == statesync.ResultHalted {
@@ -168,6 +167,78 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 		fmt.Fprintln(stderr, "spacedock state commit: unexpected state publication result")
 		return 1
 	}
+}
+
+// commitInlineEntity is `state commit`'s inline half. An inline workflow keeps
+// its entities beside the README, so the workflow dir IS the entity root and the
+// same path-scoped commit-unit seam split-root uses applies to the workflow's own
+// repository. It never publishes: an inline workflow repo is the caller's code
+// repo, and this verb has no authority to push it. That durability matters
+// because `gate prepare` and `status --next`'s `needs-preparation` row both read
+// committed bytes only — an uncommitted entity is invisible to the first and
+// refused by the second, so a no-op here strands the caller with no verb that can
+// clear the condition. A workflow dir outside a Git work tree stays an exit-0
+// no-op, but names that as the reason instead of claiming a commit happened.
+func commitInlineEntity(stdout, stderr io.Writer, jsonOut bool, workflowDir, slug, msg string) int {
+	if !insideGitWorkTree(workflowDir) {
+		return emitSync(stdout, jsonOut, syncResult{
+			Command: "state commit", Slug: slug, Result: "no-op",
+			Reason: fmt.Sprintf("Inline workflow at %s is not inside a Git work tree — %s has nothing to commit to.", workflowDir, slug),
+		}, 0)
+	}
+	target, found, resolveErr := resolveEntityCommitTarget(workflowDir, slug)
+	if resolveErr != nil {
+		fmt.Fprintf(stderr, "spacedock state commit: %v\n", resolveErr)
+		return 1
+	}
+	if !found {
+		fmt.Fprintf(stderr, "spacedock state commit: no entity %q under %s (looked in active and _archive scope)\n", slug, workflowDir)
+		return 1
+	}
+	// Archived scope is publish-only in split-root, and inline has nothing to
+	// publish to — so the dirt refusal still applies (it protects the archive
+	// move from a half-staged commit), and clean archived state is a no-op.
+	if target.scope == entityScopeArchived {
+		clean, detail, checkErr := archivedTargetClean(workflowDir, target.pathspecs)
+		if checkErr != nil {
+			fmt.Fprintf(stderr, "spacedock state commit: could not inspect archived entity %q: %v\n", slug, checkErr)
+			return 1
+		}
+		if !clean {
+			fmt.Fprintf(stderr, "spacedock state commit: archived entity %q is dirty; archived scope is publish-only and will not stage or commit it:\n%s\n", slug, detail)
+			return 1
+		}
+		return emitSync(stdout, jsonOut, syncResult{
+			Command: "state commit", Slug: slug, Result: "no-op",
+			Reason: fmt.Sprintf("Archived state for %s is already committed; an inline workflow publishes nothing.", slug),
+		}, 0)
+	}
+	if msg == "" {
+		msg = fmt.Sprintf("state: update %s", slug)
+	}
+	ok, out := commitEntityPathsScoped(workflowDir, target.entityPaths, msg)
+	if !ok {
+		fmt.Fprintf(stderr, "spacedock state commit: git commit failed:\n%s\n", out)
+		return 1
+	}
+	if out == "" {
+		return emitSync(stdout, jsonOut, syncResult{
+			Command: "state commit", Slug: slug, Result: "no-op",
+			Reason: fmt.Sprintf("Nothing to commit for %s — inline workflow already up to date.", slug),
+		}, 0)
+	}
+	return emitSync(stdout, jsonOut, syncResult{
+		Command: "state commit", Slug: slug, Result: "committed",
+		Reason: fmt.Sprintf("Committed %s in the inline workflow repository; nothing pushed.", slug),
+	}, 0)
+}
+
+// insideGitWorkTree reports whether dir sits inside a Git work tree. A bare repo
+// or a plain directory answers no, which keeps the inline commit an honest no-op
+// rather than a git failure the caller cannot act on.
+func insideGitWorkTree(dir string) bool {
+	ok, out := runGitOutput(dir, "rev-parse", "--is-inside-work-tree")
+	return ok && strings.TrimSpace(out) == "true"
 }
 
 // runStateReady implements `spacedock state ready`. It is the boot gate: an inline
@@ -323,7 +394,17 @@ func commitEntityPathsScoped(checkout string, entityPaths []string, msg string) 
 	// Commit only paths with staged changes. A flat entity's companion path is
 	// part of its commit unit, but an absent, never-tracked companion is not a
 	// valid `git commit -- <path>` operand.
-	ok, stagedNames := runGitOutput(checkout, "diff", "--cached", "--name-only", "--no-renames", "-z")
+	//
+	// `--relative` is load-bearing, not tidiness: without it `diff --cached`
+	// reports names relative to the REPO ROOT while entityPaths are relative to
+	// checkout. Those agree only when checkout IS the repo root — true for a
+	// split-root state worktree, false for an inline workflow nested under the
+	// repo (docs/dev/...). There the names never match, nothing is selected to
+	// commit, and the verb reports "already up to date" having just staged the
+	// change — the lying no-op this seam exists to prevent. The commit pathspecs
+	// below are resolved against `git -C checkout`, so they must be
+	// checkout-relative too.
+	ok, stagedNames := runGitOutput(checkout, "diff", "--cached", "--name-only", "--no-renames", "--relative", "-z")
 	if !ok {
 		return false, stagedNames
 	}

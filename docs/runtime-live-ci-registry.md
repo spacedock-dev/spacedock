@@ -144,6 +144,9 @@ deterministic coverage to the default suite, or delete it.
 - **Required outcome:** A rejected candidate is corrected and independently
   checked before a fresh final gate is presented. Rejected authority cannot
   satisfy the final approval.
+  The journey runs in team mode: the correction is routed to the producer and
+  the re-review to a worker that did not produce the fix, through whichever
+  route the host's reuse conditions leave available.
 - **Fixtures:**
   - `rejection/before-validation-1` — a candidate entering its first validation
     with a deliberate defect and a two-cycle correction path.
@@ -196,15 +199,21 @@ deterministic coverage to the default suite, or delete it.
 
 - **Entry point:** `TestLiveCommonAutoContinueAfterImplementation`
 - **Required outcome:** After observing a completed implementation report, the
-  first officer advances to validation and dispatches a fresh validator instead
-  of stopping.
+  first officer advances to validation, dispatches a fresh validator, and
+  presents the validation gate, leaving it open. The fixture's validation stage
+  is `gate: true` and the runbook grants no conn, so a run that reaches `done`
+  resolved a human gate nobody approved: that is a failure, not a success.
 - **Fixtures:**
   - `auto-continue/single-root` — a single-root workflow parked at completed
     implementation with worktree-backed validation.
   - `auto-continue/split-root` — the same invariant in a separate state checkout
     with non-worktree validation.
-- **Evidence:** Every fixture variant must pass the shared `assertAutoContinue`
-  durable-state assertion.
+- **Evidence:** Every fixture variant, on every runtime, must pass the shared
+  `assertAutoContinue` durable-state assertion — end state `status: validation`
+  only, with `done` red under code `human-gate-bypassed` — and the unconditional
+  dispatch-evidence check: an open validation gate, a committed
+  `## Stage Report: validation`, and one fresh validator dispatched and completed
+  before `gate prepare`.
 
 ### `self-evidence-merge-triage`
 

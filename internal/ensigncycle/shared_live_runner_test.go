@@ -104,25 +104,14 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
-// AUDIT(2026-08-16): grading contradicts the fixture — the scripted exact duplicate
-// rework heading hard-errors the section selector, so a fixture-literal run reds and
-// greens require model improvisation; and the codex branch asserts no reviewer
-// topology, so the observed greens certified a self-reviewing single-worker chain.
 // The pi XFAIL below is structural: claude-dialect graders cannot parse pi streams,
-// so it can never XPASS. Findings 1, 2, 7, 8, 11 in
-// docs/dev/.spacedock-state/_debriefs/2026-08-16-02-live-harness-audit.md and the
-// shape-attribution debrief (…-03). Repair owner: run-rejection-journey-in-team-mode
-// (zqb683j8jth0tyr2eme231e2).
+// so it can never XPASS (audit finding 11; re-anchor once pi-dialect extractors land).
 //
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
 	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
-// AUDIT(2026-08-16): finding 3 — the graded status regex accepts done, so a
-// human-gate blow-through grades green on claude/pi; the gate-open check that
-// catches it is wired codex-only.
-//
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
 func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)

@@ -53,8 +53,12 @@ func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScena
 	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})
 }
 func (d codexAsLiveDriver) gradeShallowBootObservation(*testing.T, liveResult) {}
-func (d codexAsLiveDriver) verifyAutoContinueDispatch(t *testing.T, result liveResult, workflowRoot, stateRoot, entityPath string) error {
-	return assertAutoContinueDispatchEvidence(t, nativeLifecycleStream(t, d, result), workflowRoot, stateRoot, entityPath)
+
+// Codex's public stream carries no sub-agent lifecycle; the spawn_agent call and
+// its completion live in the CODEX_HOME rollout, so the lifecycle stream is the
+// native one resolved from the public stream's thread id.
+func (d codexAsLiveDriver) lifecycleStream(t *testing.T, result liveResult) string {
+	return nativeLifecycleStream(t, d, result)
 }
 func (d codexAsLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liveResult)) {
 	return d, noLiveGrade

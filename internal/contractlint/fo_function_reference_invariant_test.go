@@ -21,10 +21,25 @@ import (
 // before the cap was raised at all. What remained had nowhere left to go
 // without deleting the pointer itself or cutting unrelated content, so the
 // captain raised both caps by the measured remainder plus headroom.
+//
+// Captain-approved cap raise (2026-08-16, "ok B then", entity
+// prepare-initial-gated-stage-from-seed, id ra9qzfz94hzgsq938jz998mj):
+// fo-gate-lifecycle/SKILL.md 7000 -> 7700. The gated initial-stage fix adds an
+// initial-stage exception to the gate lifecycle, and the file was already
+// saturated at 6993 bytes — seven bytes of headroom. Unlike the 2026-08-02
+// raise above, minimize-first could not avoid this one, which is the evidence
+// docs/roadmap/durable-decisions/staff-review-sprint-close.md requires: the
+// absolute floor, keeping only the readiness-table and heading-scope edits and
+// dropping the initial-stage paragraph entirely, still measures 7072; a pointer
+// restructure lands at 7219-7340, saving only 193 bytes over the approved
+// wording (7533) while relocating prose the gate approved in place. Since every
+// option needed a raise, the captain chose the one that keeps the approved
+// wording where it was approved and raised the cap by the measured remainder
+// plus headroom.
 func TestFOInstructionComponentCaps(t *testing.T) {
 	for rel, cap := range map[string]int{
 		"skills/first-officer/references/first-officer-shared-core.md": 26900,
-		"skills/fo-gate-lifecycle/SKILL.md":                            7000,
+		"skills/fo-gate-lifecycle/SKILL.md":                            7700,
 	} {
 		if got := len([]byte(readRepoFile(t, filepath.FromSlash(rel)))); got > cap {
 			t.Errorf("%s = %d bytes, component cap %d", rel, got, cap)

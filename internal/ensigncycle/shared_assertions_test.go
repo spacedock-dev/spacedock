@@ -11,35 +11,47 @@ func TestAssertRejectionFlow(t *testing.T) {
 	entity := "---\nstatus: validation\n---\n" +
 		rejectionFixMarker + "\n\n" +
 		"## Stage Report: implementation\n\n- DONE: Initial implementation\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n" +
-		"## Stage Report: implementation\n\n- DONE: Applied rejection fix\n\n## Stage Report: validation\n\n- PASSED: Marker present\n\n" +
-		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n- Cycle 2: PASSED\n"
-	observed := "validation was REJECTED; routed follow-up to implementation"
+		"## Stage Report: implementation (cycle 2)\n\n- DONE: Applied rejection fix\n\n## Stage Report: validation (cycle 2)\n\n- PASSED: Marker present\n\n" +
+		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n"
+	// The FO's own final message, which the fixture prompt tells it to make report
+	// BOTH outcomes. It is graded alone: folding the run stream in here is what made
+	// these checks tautologies, since every stream contains the word "reject".
+	finalMessage := "rejection-task: the first validation REJECTED the candidate; after the correction the second validation PASSED. Left nonterminal at the prepared gate."
 
-	if err := assertRejectionFlow(entity, observed); err != nil {
+	if err := assertRejectionFlow(entity, finalMessage); err != nil {
 		t.Fatalf("expected rejection flow to pass: %v", err)
 	}
-	if err := assertRejectionFlow("## Stage Report: implementation\n", observed); err == nil {
+	if err := assertRejectionFlow("## Stage Report: implementation\n", finalMessage); err == nil {
 		t.Fatal("expected missing fix marker to fail")
 	}
-	// A single-cycle end-state: fix applied, two implementation reports, but only one
-	// validation report — the FO never drove the second validation round.
+	// A single-cycle end-state: fix applied, but the FO never drove the second
+	// validation round, so the cycle-2 sections are absent.
 	singleCycle := "---\nstatus: implementation\n---\n" + rejectionFixMarker + "\n\n" +
 		"## Stage Report: implementation\n\n- DONE: Initial\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n" +
-		"## Stage Report: implementation\n\n- DONE: Fix\n\n" +
+		"## Stage Report: implementation (cycle 2)\n\n- DONE: Fix\n\n" +
 		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n"
-	if err := assertRejectionFlow(singleCycle, observed); err == nil {
-		t.Fatal("expected a single-cycle end-state (one validation report) to fail")
+	if err := assertRejectionFlow(singleCycle, finalMessage); err == nil {
+		t.Fatal("expected a single-cycle end-state (no cycle-2 validation report) to fail")
 	}
-	// Two cycles recorded but only one implementation report — the rework never left
-	// a second report.
+	// The rework left no cycle-2 implementation report at all.
 	oneReport := "---\nstatus: validation\n---\n" + rejectionFixMarker + "\n\n" +
-		"## Stage Report: implementation\n\n- DONE: Only one report\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n## Stage Report: validation\n\n- PASSED: Marker present\n\n" +
-		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n- Cycle 2: PASSED\n"
-	if err := assertRejectionFlow(oneReport, observed); err == nil {
-		t.Fatal("expected a single implementation report to fail")
+		"## Stage Report: implementation\n\n- DONE: Only one report\n\n## Stage Report: validation\n\n- REJECTED: Missing marker\n\n## Stage Report: validation (cycle 2)\n\n- PASSED: Marker present\n\n" +
+		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n"
+	if err := assertRejectionFlow(oneReport, finalMessage); err == nil {
+		t.Fatal("expected a missing cycle-2 implementation report to fail")
+	}
+	// The fixture-literal duplicate heading: the per-stage COUNT is still two, so the
+	// check this replaced passed it, but the four scripted sections are not distinct
+	// and the section selector hard-errors on the pair.
+	duplicateHeading := strings.Replace(entity, "## Stage Report: implementation (cycle 2)", "## Stage Report: implementation", 1)
+	if err := assertRejectionFlow(duplicateHeading, finalMessage); err == nil {
+		t.Fatal("expected an exact duplicate implementation heading to fail")
 	}
 	if err := assertRejectionFlow(entity, "all quiet"); err == nil {
-		t.Fatal("expected missing rejection output to fail")
+		t.Fatal("expected a final message reporting neither outcome to fail")
+	}
+	if err := assertRejectionFlow(entity, "the first validation REJECTED the candidate"); err == nil {
+		t.Fatal("expected a final message reporting only the rejection to fail")
 	}
 }
 

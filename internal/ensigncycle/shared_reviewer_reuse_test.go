@@ -191,28 +191,6 @@ func assertClaudeReviewerReuse(stream string) error {
 	}
 }
 
-// assertClaudeSingleEntityRejectionFlow is the single-entity (`-p`) Claude
-// producer-signal assertion for the rejection-flow scenario. The Claude runner
-// launches `spacedock claude -- -p {prompt}` with a prompt naming one entity. The
-// `-p` FO drives EITHER bare OR team mode (it opts into the background inter-agent
-// communication when SendMessage is exposed), so the contract admits two valid end-states: bare
-// fresh-dispatches a distinct reviewer per cycle (reviewerFresh); team keeps the
-// cycle-1 reviewer alive and reuses it (reviewerReuse). The invariant across both is
-// that the cycle-2 re-review reaches a VALIDATION worker and NEVER collapses onto the
-// implementation worker (reviewerNoReuse) — a shutdown_request to the superseded
-// fix worker is exempt teardown, not a re-review routing.
-func assertClaudeSingleEntityRejectionFlow(stream string) error {
-	result, detail := claudeReviewerIdentity(stream)
-	switch result {
-	case reviewerReuse, reviewerFresh:
-		return nil
-	case reviewerNoReuse:
-		return fmt.Errorf("the single-entity cycle-2 re-review did not reach a validation worker (fresh or reused): %s", detail)
-	default:
-		return fmt.Errorf("%w: %s", errReviewerIdentityUnsupported, detail)
-	}
-}
-
 // isShutdownRequest reports whether a SendMessage `message` payload is a
 // cooperative teardown (`{"type":"shutdown_request",...}`), sent either as a JSON
 // object or as a JSON string carrying that type. The supersede-shutdown contract
@@ -365,6 +343,251 @@ func assertCodexReviewerReuse(jsonl string) error {
 
 func codexReviewerReuseTool(tool string) bool {
 	return tool == "followup_task" || tool == "send_input"
+}
+
+// ---------------------------------------------------------------------------
+// Rejection-flow worker topology (native transcripts)
+// ---------------------------------------------------------------------------
+
+// rejectionRoute is one ordered routing observation in a rejection-flow run: the FO
+// OPENED a worker for a stage, ROUTED follow-up work to a worker it had already
+// opened, or a dispatched worker reported DONE. Identity is the host's own
+// structured handle — a Codex task path, a Claude teammate name — and never prompt
+// content: a Codex `spawn_agent`'s arguments are an encrypted blob EXCEPT the
+// plaintext task path, so the path is the only identity the rollout exposes at all.
+type rejectionRoute struct {
+	index  int
+	event  string
+	stage  string
+	target string
+}
+
+const (
+	routeSpawn = "spawn"
+	routeReuse = "reuse"
+	routeDone  = "done"
+)
+
+// rejectionBranch is the contract-observable that decides which ordered chain a run
+// owes. It is NOT a choice between two acceptable behaviors: on any given run exactly
+// one branch is conforming, fixed by whether the reuse route survives reuse
+// condition 0 (`fo-dispatch-core.md:49`, fail-safe — "if it reports the worker over
+// budget, or the probe is unavailable, dispatch fresh").
+type rejectionBranch string
+
+const (
+	rejectionBranchReuse rejectionBranch = "reuse"
+	rejectionBranchFresh rejectionBranch = "fresh"
+)
+
+// rejectionStageOfHandle reads the stage out of a worker handle. Both hosts derive
+// the handle from (slug, stage) — `spacedock_ensign_rejection_task_validation`,
+// `spacedock-ensign-rejection-task-validation` — so the trailing stage token is a
+// structural property of the handle, not prose the model chose.
+func rejectionStageOfHandle(handle string) string {
+	switch {
+	case strings.HasSuffix(handle, "validation"):
+		return "validation"
+	case strings.HasSuffix(handle, "implementation"):
+		return "implementation"
+	}
+	return ""
+}
+
+// codexRejectionRoutes extracts the ordered worker topology from a Codex NATIVE
+// rollout. The public `codex exec --json` stream cannot serve: its only
+// `collab_tool_call` items are `wait` (verified across the preserved streams and
+// both spike runs), so it carries no topology at all. The rollout does, as three
+// correlated payloads: a `spawn_agent` `function_call`, the `function_call_output`
+// that returns the spawned worker's task path, and later `followup_task` calls that
+// name a task path directly. Worker completion is the `agent_message` whose author
+// is that task path and whose content carries the ensign's `Done:` signal.
+func codexRejectionRoutes(rollout string) []rejectionRoute {
+	var routes []rejectionRoute
+	pendingSpawn := map[string]bool{} // call_id of a spawn_agent awaiting its output
+	// awaiting holds the task paths currently owed a completion. A dispatch (spawn or
+	// follow-up) opens the debt and the round's FIRST `Done:` closes it, so a worker
+	// that narrates "Done:" more than once in one round still contributes one event —
+	// the same first-transition ordering semantic the shared lifecycle helper uses.
+	awaiting := map[string]bool{}
+	for i, line := range strings.Split(rollout, "\n") {
+		var event struct {
+			Payload struct {
+				Type      string          `json:"type"`
+				Name      string          `json:"name"`
+				CallID    string          `json:"call_id"`
+				Arguments string          `json:"arguments"`
+				Output    string          `json:"output"`
+				Author    string          `json:"author"`
+				Content   json.RawMessage `json:"content"`
+			} `json:"payload"`
+		}
+		if json.Unmarshal([]byte(line), &event) != nil {
+			continue
+		}
+		p := event.Payload
+		switch {
+		case p.Type == "function_call" && p.Name == "spawn_agent":
+			pendingSpawn[p.CallID] = true
+		case p.Type == "function_call_output" && pendingSpawn[p.CallID]:
+			delete(pendingSpawn, p.CallID)
+			if handle := codexHandleFromJSON(p.Output); handle != "" {
+				awaiting[handle] = true
+				routes = append(routes, rejectionRoute{index: i, event: routeSpawn, stage: rejectionStageOfHandle(handle), target: handle})
+			}
+		case p.Type == "function_call" && p.Name == "followup_task":
+			if handle := codexHandleFromJSON(p.Arguments); handle != "" {
+				awaiting[handle] = true
+				routes = append(routes, rejectionRoute{index: i, event: routeReuse, stage: rejectionStageOfHandle(handle), target: handle})
+			}
+		// A worker's completion is its FINAL_ANSWER carrying the ensign `Done:`
+		// signal. Requiring both markers skips the intermediate `Message Type:
+		// MESSAGE` traffic a live worker also emits, which a bare `Done:` search
+		// would miscount as a second completion for the same round.
+		case p.Type == "agent_message" && awaiting[codexBareHandle(p.Author)] &&
+			strings.Contains(string(p.Content), "FINAL_ANSWER") && strings.Contains(string(p.Content), "Done:"):
+			handle := codexBareHandle(p.Author)
+			delete(awaiting, handle)
+			routes = append(routes, rejectionRoute{index: i, event: routeDone, stage: rejectionStageOfHandle(handle), target: handle})
+		}
+	}
+	return routes
+}
+
+// codexHandleFromJSON reads a worker identity out of a rollout JSON payload, and
+// returns "" when the payload names no worker. Both facts below are read off real
+// multi-agent rollout bytes rather than assumed, and both matter:
+//
+//   - a spawn's `function_call_output` returns `{"task_name":"/root/NAME",…}`, while a
+//     `followup_task`'s arguments carry the identity under a DIFFERENT key, `target`,
+//     alongside an encrypted `message`. Reading only `task_name` silently drops every
+//     follow-up and makes a conforming reuse chain look two events short.
+//   - a REFUSED spawn returns a plain error string ("agent path `/root/NAME` already
+//     exists"), not JSON. That spawn opened no worker, so it must contribute no
+//     routing event; treating the error text as a handle invents one.
+//
+// Reading `task_name`/`target` and never `message` is also what keeps identity on
+// task paths rather than prompt content — not a stylistic choice here, since the
+// prompt is an encrypted blob.
+func codexHandleFromJSON(raw string) string {
+	var doc struct {
+		TaskName string `json:"task_name"`
+		Target   string `json:"target"`
+	}
+	if json.Unmarshal([]byte(raw), &doc) != nil {
+		return ""
+	}
+	if doc.TaskName != "" {
+		return codexBareHandle(doc.TaskName)
+	}
+	return codexBareHandle(doc.Target)
+}
+
+// codexBareHandle strips the `/root/` rooting the rollout applies inconsistently —
+// spawn outputs and `agent_message.author` are rooted, a `followup_task` target may
+// be either — so correlating a reuse back to its spawn compares like with like.
+func codexBareHandle(handle string) string {
+	if cut := strings.LastIndex(handle, "/"); cut >= 0 {
+		return handle[cut+1:]
+	}
+	return handle
+}
+
+// claudeRejectionRoutes extracts the ordered worker topology AND the run's branch
+// key from a Claude stream-json transcript. The branch key is the `dispatch
+// context-budget` probe result read off the probe's own tool_result: the command
+// prints `reuse_ok` on success and, on the fail-safe path, exits non-zero with no
+// `reuse_ok` on stdout at all (internal/dispatch contextbudget parity contract). A
+// run where no probe ever reported `reuse_ok` owes the fail-safe FRESH chain; one
+// where a probe did owes the REUSE chain.
+func claudeRejectionRoutes(stream string) ([]rejectionRoute, rejectionBranch) {
+	var routes []rejectionRoute
+	// A reused worker is the SAME background task, so its completion notification
+	// carries the tool_use id of the Agent call that opened it. Completions are
+	// therefore tracked as a debt against that id, which a dispatch (spawn or reuse
+	// advance) arms and the round's notification clears — one completion per round,
+	// and a reused worker can report twice without a second spawn.
+	openedBy := map[string]string{}       // teammate name -> the tool_use id that opened it
+	awaitingStage := map[string]string{}  // armed tool_use id -> stage awaited
+	awaitingTarget := map[string]string{} // armed tool_use id -> teammate name
+	probeIDs := map[string]bool{}         // Bash tool_use id of a context-budget probe
+	live := map[string]bool{}             // teammate names this run has opened
+	branch := rejectionBranchFresh
+	for i, line := range strings.Split(stream, "\n") {
+		var event struct {
+			Type      string `json:"type"`
+			Subtype   string `json:"subtype"`
+			Status    string `json:"status"`
+			ToolUseID string `json:"tool_use_id"`
+			Message   *struct {
+				Content []struct {
+					Type      string `json:"type"`
+					Name      string `json:"name"`
+					ID        string `json:"id"`
+					ToolUseID string `json:"tool_use_id"`
+					Input     struct {
+						Description string          `json:"description"`
+						Name        string          `json:"name"`
+						Command     string          `json:"command"`
+						To          string          `json:"to"`
+						Message     json.RawMessage `json:"message"`
+					} `json:"input"`
+					Content json.RawMessage `json:"content"`
+				} `json:"content"`
+			} `json:"message"`
+		}
+		if json.Unmarshal([]byte(line), &event) != nil {
+			continue
+		}
+		if event.Type == "system" && event.Subtype == "task_notification" && event.Status == "completed" {
+			if stage, ok := awaitingStage[event.ToolUseID]; ok {
+				routes = append(routes, rejectionRoute{index: i, event: routeDone, stage: stage, target: awaitingTarget[event.ToolUseID]})
+				delete(awaitingStage, event.ToolUseID)
+			}
+		}
+		if event.Message == nil {
+			continue
+		}
+		for _, block := range event.Message.Content {
+			switch {
+			case block.Type == "tool_use" && (block.Name == "Agent" || block.Name == "Task"):
+				stage := rejectionStageOfHandle(block.Input.Name)
+				if stage == "" {
+					stage = rejectionStageOfDescription(block.Input.Description)
+				}
+				openedBy[block.Input.Name] = block.ID
+				awaitingStage[block.ID], awaitingTarget[block.ID] = stage, block.Input.Name
+				live[block.Input.Name] = true
+				routes = append(routes, rejectionRoute{index: i, event: routeSpawn, stage: stage, target: block.Input.Name})
+			case block.Type == "tool_use" && block.Name == "Bash" && strings.Contains(block.Input.Command, "dispatch context-budget"):
+				probeIDs[block.ID] = true
+			// A shutdown_request is the contract's supersede teardown, not a reuse
+			// advance, so it never counts as routing follow-up work.
+			case block.Type == "tool_use" && block.Name == "SendMessage" && live[block.Input.To] && !isShutdownRequest(block.Input.Message):
+				stage := rejectionStageOfHandle(block.Input.To)
+				if id := openedBy[block.Input.To]; id != "" {
+					awaitingStage[id], awaitingTarget[id] = stage, block.Input.To
+				}
+				routes = append(routes, rejectionRoute{index: i, event: routeReuse, stage: stage, target: block.Input.To})
+			case block.Type == "tool_result" && probeIDs[block.ToolUseID] && strings.Contains(string(block.Content), "reuse_ok"):
+				branch = rejectionBranchReuse
+			}
+		}
+	}
+	return routes, branch
+}
+
+// rejectionStageOfDescription is the fallback stage read for a Claude spawn whose
+// `name` is absent (a bare `Task`); the dispatch description names the stage.
+func rejectionStageOfDescription(description string) string {
+	lower := strings.ToLower(description)
+	switch {
+	case strings.Contains(lower, "validation"):
+		return "validation"
+	case strings.Contains(lower, "implementation"):
+		return "implementation"
+	}
+	return ""
 }
 
 // codexDispatchesValidation reports whether a spawn_agent prompt dispatched the

@@ -67,3 +67,45 @@ func TestFilingSemanticFailureUsesTargetXFail(t *testing.T) {
 		})
 	}
 }
+
+// TestGradeLiveRetainsFindingMessages pins AC-3's second half. Every graded
+// finding constructs a message explaining what it saw, and until now gradeLive
+// discarded all of them — a CI failure printed a bare code list, and the durable
+// end state that produced it lives in a t.TempDir that is gone by the time anyone
+// reads the run. Each observed code must carry its own message through, paired
+// with that code and ordered with it. Dropping the msg field, or pairing a message
+// with the wrong code, fails this.
+func TestGradeLiveRetainsFindingMessages(t *testing.T) {
+	grade := gradeLive(false,
+		&gradedErr{code: "rejection-round-missing", msg: "resolved launcher never invoked `gate record --round validation/1`"},
+		&gradedErr{code: "rejection-gate-not-prepared", msg: "FO never prepared the cycle-2 validation gate: entity has no gates record"},
+	)
+	want := []string{
+		"rejection-gate-not-prepared: FO never prepared the cycle-2 validation gate: entity has no gates record",
+		"rejection-round-missing: resolved launcher never invoked `gate record --round validation/1`",
+	}
+	if !reflect.DeepEqual(grade.details, want) {
+		t.Fatalf("details = %#v, want %#v", grade.details, want)
+	}
+	if !reflect.DeepEqual(grade.codes, []string{"rejection-gate-not-prepared", "rejection-round-missing"}) {
+		t.Fatalf("codes = %v, want the details' codes in the same order", grade.codes)
+	}
+
+	// A repeated code keeps the finding that first reported it; a messageless
+	// finding contributes a code but no empty detail line.
+	repeated := gradeLive(false,
+		&gradedErr{code: "gate-not-held", msg: "first observation"},
+		&gradedErr{code: "gate-not-held", msg: "second observation"},
+		&gradedErr{code: "worker-order"},
+	)
+	if !reflect.DeepEqual(repeated.details, []string{"gate-not-held: first observation"}) {
+		t.Fatalf("repeated/messageless details = %#v", repeated.details)
+	}
+
+	// durableSemantic is the wrapper every scenario assertion goes through; the
+	// assertion's own error text must be what survives.
+	wrapped := gradeLive(false, durableSemantic("rejection-flow-state", fmt.Errorf("fix marker absent from the corrected candidate")))
+	if !reflect.DeepEqual(wrapped.details, []string{"rejection-flow-state: fix marker absent from the corrected candidate"}) {
+		t.Fatalf("durableSemantic details = %#v", wrapped.details)
+	}
+}

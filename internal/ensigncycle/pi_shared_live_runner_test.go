@@ -36,6 +36,12 @@ func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
 
 func (d piSharedLiveDriver) model() string { return d.modelName }
 func (d piSharedLiveDriver) home() string  { return d.piHome }
+
+// Pi records subagent toolCalls and their completion in the session transcript that
+// run() folds into result.stream, so the public stream is the lifecycle stream.
+func (d piSharedLiveDriver) lifecycleStream(_ *testing.T, result liveResult) string {
+	return result.stream
+}
 func (d piSharedLiveDriver) smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace {
 	return claudeMechanismTrace(result.stream, edits, commissioned)
 }
