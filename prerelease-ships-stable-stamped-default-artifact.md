@@ -1,7 +1,7 @@
 ---
 id: c9qz40bza726q58m3s8hsdq5
 title: Prerelease releases ship a stable-stamped binary under the default asset name
-status: implementation
+status: validation
 source: "Live cross-host report, CL 2026-08-17. A Linux box (linux/amd64) running `spacedock 0.27.0-pre7` reinstalled the Claude plugin as `spacedock@spacedock` on every launch, overwriting a hand-installed edge plugin. `go version -m $(command -v spacedock)` on that binary returned `devBranch=main`; the darwin/arm64 edge-cask binary at the identical version returned `devBranch=next`. Same tag, same `--version` output, opposite channel."
 started: 2026-08-17T19:38:45Z
 completed:
