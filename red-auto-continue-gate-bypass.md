@@ -25,6 +25,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:7xe7hxt1qce1x9b3dm0k6ymg:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:7xe7hxt1qce1x9b3dm0k6ymg-validation-1
+              briefing:
+                id: briefing:7xe7hxt1qce1x9b3dm0k6ymg:validation:attempt-1:revision-1
+                digest: sha256:369de6d81b320199e2f24ffde2f8f9221e3cb68cd97ddafb31eca050c211e102
+                request-digest: sha256:9c925b108c438255e0f5d3f236f2f6bcd7c547b5e2e77d45d998744b5a423359
+                room-ref: ./red-auto-continue-gate-bypass/review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-red-auto-continue-gate-bypass
 ---
 
