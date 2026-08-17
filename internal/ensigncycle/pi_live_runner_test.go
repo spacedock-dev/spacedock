@@ -56,10 +56,7 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 		t.Fatal(err)
 	}
 	env = piLiveEnvForAuth(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot, os.Getenv("OPENAI_API_KEY"), decision.mode)
-	model = decision.model
-	if override := os.Getenv("SPACEDOCK_PI_LIVE_CHILD_MODEL"); override != "" {
-		model = override
-	}
+	model = piLiveChildModel(decision)
 	return workflowRoot, stateRoot, entityPath, artifactDir, env, model
 }
 
@@ -279,6 +276,19 @@ func piSubagentsPackageRoot(t *testing.T) string {
 		t.Fatalf("pi-subagents package extension not found at %s: %v; set PI_SUBAGENTS_PACKAGE_ROOT", p, err)
 	}
 	return p
+}
+
+// piLiveChildModel resolves the model the Pi live child runs on. An operator
+// sets SPACEDOCK_PI_LIVE_CHILD_MODEL (provider/model:thinking) to re-run
+// journeys against a non-default model; the operator-mirrored auth.json and
+// models.json from seedPiLiveAuth make custom providers resolve. Unset, the
+// auth decision's model is used, so the CI pi-live lane keeps its
+// openai-codex default.
+func piLiveChildModel(decision piLiveAuthDecision) string {
+	if override := strings.TrimSpace(os.Getenv("SPACEDOCK_PI_LIVE_CHILD_MODEL")); override != "" {
+		return override
+	}
+	return decision.model
 }
 
 // piLiveRunTimeout returns the per-run cap for a Pi live journey. It reads

@@ -28,7 +28,7 @@ func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
 	writeFile(t, filepath.Join(piHome, "settings.json"), fmt.Sprintf("{\"packages\":[%q]}\n", "file:"+repo))
 	return piSharedLiveDriver{
 		t:      t,
-		binary: binary, pluginDir: repo, modelName: decision.model, piHome: piHome,
+		binary: binary, pluginDir: repo, modelName: piLiveChildModel(decision), piHome: piHome,
 		artifactRoot: piLiveArtifactDir(t, "pi-common"),
 		env:          piLiveEnvForAuth(piHome, t.TempDir(), t.TempDir(), filepath.Dir(binary), piSubagentsPackageRoot(t), os.Getenv("OPENAI_API_KEY"), decision.mode),
 	}
