@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:18963egcskzxaje6b5vnas3q:validation:attempt-1:revision-1",
+  "question": "Approve simplify-feedback-rejection-flow through validation? All four ACs pass on the tip with declared falsifications reproduced verbatim; the skill is the gated design plus exactly the three authorized clauses; journey evidence stands on committed conforming-green ledgers; the tip CI red runs on codes outside this layer (routed finding for the stack, owned by the team-mode layer).",
+  "artifacts": [
+    {
+      "id": "artifact:18963egcskzxaje6b5vnas3q:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/26f4fd2a3b8c5fdf33b5895d556b994225f0491f/simplify-feedback-rejection-flow.md",
+      "rev": "sha256:305790236abcb53b1d3465d547fa46b7788cdd72aef0f2772805b0e66fffdaf0",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: five steps verified, publication counter falsified six ways, +105 words to the word, oracle KEEP-ruling figures exact; live corroboration - this layer's oracles graded green inside the red CI run; two routed findings (claude attempt-cardinality red = zq surface; codex reanchor = unowned fixture identity gap)."
+    }
+  ]
+}

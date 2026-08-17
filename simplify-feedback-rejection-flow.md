@@ -52,6 +52,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:18963egcskzxaje6b5vnas3q:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:18963egcskzxaje6b5vnas3q-validation-1
+              briefing:
+                id: briefing:18963egcskzxaje6b5vnas3q:validation:attempt-1:revision-1
+                digest: sha256:93cdb73ed599f9bc19492ddbb251e05804fc978ee3bce2ff5df2a981b0f8fa35
+                request-digest: sha256:0ae7d44d9a5ee2f7373139e07e7180bb8ccf2dfc8682da3cf5cc7949c8354b9b
+                room-ref: ./simplify-feedback-rejection-flow/review/validation/briefing-1
 pr: "#718"
 ---
 
