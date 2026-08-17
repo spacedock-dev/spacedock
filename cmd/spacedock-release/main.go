@@ -33,10 +33,14 @@ import (
 // (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`.
 // edge-advance-decision prints `advance` or `skip` (exit 0 either way) deciding
 // whether a tag advances the edge line: it computes the tag's target edge
-// version and skips unless that is strictly greater than `next`'s current
-// manifest, so the whole edge-advance job no-ops on an old-line/patch tag.
-// edge-pre0-version prints the auto-cut edge prerelease version (X.(Y+1).0-pre0)
-// the stable path tags on the greened release commit. journey-delta
+// version and skips unless that is strictly greater than the highest known
+// release version (fed from a manifest release.yml synthesizes via
+// highest-known-edge-version), so the auto-pre0 cut no-ops on an old-line/patch
+// tag. highest-known-edge-version prints the greatest version among its <tag>
+// arguments (prereleases included), or nothing when none parses — the git-tag
+// scan that replaced reading `next`'s manifest. edge-pre0-version prints the
+// auto-cut edge prerelease version (X.(Y+1).0-pre0) the stable path tags on the
+// greened release commit. journey-delta
 // renders and posts the per-PR journey-cost delta against the previously
 // published release ledger's latest-by-captured_at baseline per scenario/model,
 // updating a single sticky PR comment found by its HTML marker. The AC-4
@@ -67,6 +71,8 @@ func main() {
 		os.Exit(devPreversion(os.Args[2:]))
 	case "edge-advance-decision":
 		os.Exit(edgeAdvanceDecision(os.Args[2:]))
+	case "highest-known-edge-version":
+		os.Exit(highestKnownEdgeVersion(os.Args[2:]))
 	case "edge-pre0-version":
 		os.Exit(edgePre0Version(os.Args[2:]))
 	case "journey-costs":
@@ -355,7 +361,8 @@ func usage() {
 Usage:
   spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release dev-preversion <stable-version>
-  spacedock-release edge-advance-decision <tag> <next-plugin.json>
+  spacedock-release edge-advance-decision <tag> <known-version-plugin.json>
+  spacedock-release highest-known-edge-version [<tag> ...]
   spacedock-release edge-pre0-version <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>

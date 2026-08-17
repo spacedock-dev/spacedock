@@ -64,6 +64,39 @@ func TestEdgeAdvanceDecisionCommandRejectsBadArgs(t *testing.T) {
 	}
 }
 
+// TestHighestKnownEdgeVersionCommandPrintsHighest — the subcommand release.yml's
+// decision step shells out to: given a candidate tag list, prints the greatest
+// (prereleases included, per release.HighestKnownEdgeVersion's doc), always
+// exit 0.
+func TestHighestKnownEdgeVersionCommandPrintsHighest(t *testing.T) {
+	out, code := captureStdout(t, func() int {
+		return highestKnownEdgeVersion([]string{"v0.26.0", "v0.27.0-pre7", "v0.25.1"})
+	})
+	if code != 0 {
+		t.Fatalf("highest-known-edge-version exit = %d, want 0", code)
+	}
+	if got := strings.TrimSpace(out); got != "0.27.0-pre7" {
+		t.Fatalf("highest-known-edge-version stdout = %q, want 0.27.0-pre7", got)
+	}
+}
+
+// TestHighestKnownEdgeVersionCommandPrintsNothingWhenNoneParses covers the
+// round-3 fail-closed contract: an empty argument list, and a list of only
+// malformed entries, must both print NOTHING (empty stdout) with exit 0 — not
+// an error — so release.yml's shell `[ -z "$HIGHEST_KNOWN" ]` check can route
+// to "skip the auto-pre0 cut" without the job itself failing.
+func TestHighestKnownEdgeVersionCommandPrintsNothingWhenNoneParses(t *testing.T) {
+	for _, args := range [][]string{nil, {}, {"not-a-version", "garbage"}} {
+		out, code := captureStdout(t, func() int { return highestKnownEdgeVersion(args) })
+		if code != 0 {
+			t.Fatalf("highest-known-edge-version(%v) exit = %d, want 0", args, code)
+		}
+		if strings.TrimSpace(out) != "" {
+			t.Fatalf("highest-known-edge-version(%v) stdout = %q, want empty", args, out)
+		}
+	}
+}
+
 // TestEdgePre0VersionCommandPrintsComputedVersion — the subcommand prints exactly
 // X.(Y+1).0-pre0, so release.yml's always-cut-pre0 step forms `vX.(Y+1).0-pre0`
 // as the annotated auto-tag, whose minor matches the required minor next's skills

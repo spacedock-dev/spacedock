@@ -327,17 +327,32 @@ jobs:
         if: "!contains(github.ref, '-')"
         run: |
           set -euo pipefail
-          HIGHEST_OTHER="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | grep -v "^$GITHUB_REF_NAME\$" | sort -V | tail -1 | sed 's/^v//')"
-          if [ -z "$HIGHEST_OTHER" ]; then
-            HIGHEST_OTHER="0.0.0"
-          fi
-          KNOWN_MANIFEST="$(mktemp)"
-          printf '{"version":"%s"}' "$HIGHEST_OTHER" > "$KNOWN_MANIFEST"
-          if [ "$(go run ./cmd/spacedock-release edge-advance-decision "$GITHUB_REF_NAME" "$KNOWN_MANIFEST")" = "advance" ]; then
-            echo "advance=true" >> "$GITHUB_OUTPUT"
-          else
+          # Candidate pool: every OTHER tag in the repo, prereleases INCLUDED —
+          # not filtered to bare stable. The retired next-manifest read this
+          # replaces also carried prerelease versions (next tracked whatever
+          # -preN last reconciled), so excluding prereleases here would find a
+          # lower "known" version than the mechanism it replaces and let an
+          # old-line patch wrongly out-rank an already-cut newer-line
+          # prerelease. highest-known-edge-version does the actual filtering/
+          # parsing (git's own tag glob can't distinguish X.Y.Z from
+          # X.Y.Z-preN reliably) and prints nothing when no candidate parses.
+          CANDIDATES="$(git tag --list 'v*' | grep -v "^$GITHUB_REF_NAME\$" || true)"
+          HIGHEST_KNOWN="$(go run ./cmd/spacedock-release highest-known-edge-version $CANDIDATES)"
+          if [ -z "$HIGHEST_KNOWN" ]; then
+            # Fail CLOSED: no comparable known release tag means "skip", never
+            # "anything advances". A missed pre0 is recoverable by hand; a
+            # wrongly-cut lower one publishes a regression.
             echo "advance=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::auto-pre0 SKIPPED for $GITHUB_REF_NAME: an old-line/patch tag (highest known stable tag: v$HIGHEST_OTHER)"
+            echo "::notice::auto-pre0 SKIPPED for $GITHUB_REF_NAME: no comparable known release tag found (fail-closed)"
+          else
+            KNOWN_MANIFEST="$(mktemp)"
+            printf '{"version":"%s"}' "$HIGHEST_KNOWN" > "$KNOWN_MANIFEST"
+            if [ "$(go run ./cmd/spacedock-release edge-advance-decision "$GITHUB_REF_NAME" "$KNOWN_MANIFEST")" = "advance" ]; then
+              echo "advance=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "advance=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::auto-pre0 SKIPPED for $GITHUB_REF_NAME: an old-line/patch tag (highest known release tag: v$HIGHEST_KNOWN)"
+            fi
           fi
 
       # Always-cut-pre0 (latest-line stable tag only, same advance gate): auto-cut

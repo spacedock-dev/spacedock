@@ -102,6 +102,91 @@ func TestEdgeAdvanceDecision(t *testing.T) {
 	}
 }
 
+// TestHighestKnownEdgeVersionIncludesPrereleases is the round-3 replacement
+// design's load-bearing case (team-lead's worked example): a candidate pool
+// mixing a bare stable tag and a newer PRERELEASE tag must find the
+// prerelease — filtering to stable-only would find the wrong, lower "known"
+// version and let an old-line patch wrongly out-rank it. Also proves the "v"
+// prefix is optional and stripped consistently.
+func TestHighestKnownEdgeVersionIncludesPrereleases(t *testing.T) {
+	got, ok := HighestKnownEdgeVersion([]string{"v0.26.0", "v0.27.0-pre7", "v0.25.1"})
+	if !ok {
+		t.Fatal("HighestKnownEdgeVersion reported ok=false on a valid candidate list")
+	}
+	if got != "0.27.0-pre7" {
+		t.Fatalf("HighestKnownEdgeVersion = %q, want 0.27.0-pre7 (the prerelease must win over the bare stable v0.26.0)", got)
+	}
+
+	// pre9 vs pre10 must order numerically, not lexically — the exact distinction
+	// ComparePreVersion exists for; a naive string-max would get this backwards.
+	got, ok = HighestKnownEdgeVersion([]string{"v0.27.0-pre2", "v0.27.0-pre10", "v0.27.0-pre9"})
+	if !ok || got != "0.27.0-pre10" {
+		t.Fatalf("HighestKnownEdgeVersion(pre2,pre10,pre9) = (%q,%v), want (0.27.0-pre10,true)", got, ok)
+	}
+}
+
+// TestHighestKnownEdgeVersionSkipsMalformed proves a candidate list mixing
+// garbage/non-release entries (the shape a broader `git tag --list 'v*'` scan
+// can produce — non-semver tags, empty strings) with valid ones still finds the
+// correct highest, ignoring what doesn't parse rather than erroring the whole
+// scan.
+func TestHighestKnownEdgeVersionSkipsMalformed(t *testing.T) {
+	got, ok := HighestKnownEdgeVersion([]string{"not-a-version", "", "v0.26.0", "vSomeOtherTag", "v0.25.1"})
+	if !ok {
+		t.Fatal("HighestKnownEdgeVersion reported ok=false with a valid candidate present")
+	}
+	if got != "0.26.0" {
+		t.Fatalf("HighestKnownEdgeVersion = %q, want 0.26.0 (malformed entries must be skipped, not fatal)", got)
+	}
+}
+
+// TestHighestKnownEdgeVersionFailsClosedWhenNothingParses is the round-3 new
+// failure mode team-lead flagged: an empty candidate list, and a list of only
+// malformed/non-release entries, must both report ok=false — the caller (the
+// release.yml decision step) is responsible for treating that as "skip the
+// auto-pre0 cut", never as "nothing to compare against, so anything advances".
+// A missed pre0 is recoverable by hand; a wrongly-cut lower one is not.
+func TestHighestKnownEdgeVersionFailsClosedWhenNothingParses(t *testing.T) {
+	if _, ok := HighestKnownEdgeVersion(nil); ok {
+		t.Fatal("HighestKnownEdgeVersion(nil) reported ok=true; want false (fail-closed)")
+	}
+	if _, ok := HighestKnownEdgeVersion([]string{}); ok {
+		t.Fatal("HighestKnownEdgeVersion([]) reported ok=true; want false (fail-closed)")
+	}
+	if _, ok := HighestKnownEdgeVersion([]string{"not-a-version", "", "garbage-tag"}); ok {
+		t.Fatal("HighestKnownEdgeVersion(all-malformed) reported ok=true; want false (fail-closed)")
+	}
+}
+
+// TestOldLinePatchSkipsAgainstHighestKnownEdgeVersion is the ported successor
+// to the retired TestEdgeAdvancePatchDoesNotRegressNext (deleted with
+// edge_advance_noregress_test.go — the reconcile fixture it drove no longer
+// exists). What that test proved and this one re-proves against the NEW
+// mechanism: an old-line patch tag, cut after a newer prerelease line already
+// exists, must SKIP — so the auto-pre0 step never fires and no colliding,
+// lower pre0 tag is cut. This wires the two round-3 pieces end to end: a git-tag
+// candidate pool (as release.yml's decision step would scan) feeds
+// HighestKnownEdgeVersion, whose result feeds EdgeAdvanceDecision.
+func TestOldLinePatchSkipsAgainstHighestKnownEdgeVersion(t *testing.T) {
+	// Mirrors the deleted fixture's scenario: the 0.27 line is already ahead
+	// (via a prerelease tag, not a next-branch manifest) when an old-line 0.25
+	// patch is cut.
+	candidates := []string{"v0.24.0", "v0.25.0", "v0.26.0", "v0.27.0-pre1", "v0.27.0-pre7"}
+	patchTag := "v0.25.1"
+
+	known, ok := HighestKnownEdgeVersion(candidates)
+	if !ok || known != "0.27.0-pre7" {
+		t.Fatalf("HighestKnownEdgeVersion(%v) = (%q,%v), want (0.27.0-pre7,true)", candidates, known, ok)
+	}
+	advance, target, err := EdgeAdvanceDecision(patchTag, known)
+	if err != nil {
+		t.Fatalf("EdgeAdvanceDecision(%q, %q) errored: %v", patchTag, known, err)
+	}
+	if advance {
+		t.Fatalf("EdgeAdvanceDecision(%q, %q) advance = true, want false (old-line patch, target %q must not out-rank known %q — a colliding lower pre0 would be cut)", patchTag, known, target, known)
+	}
+}
+
 // TestAutoPre0MinorEqualsRequiredMinor is AC-1's version-algebra proof: for a
 // latest-line stable cut vX.Y.0, the required binary minor stamped into next's
 // prose (dev-preversion → X.(Y+1)) and the auto-cut pre0 tag's own minor
