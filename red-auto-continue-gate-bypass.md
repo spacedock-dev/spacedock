@@ -482,3 +482,49 @@ and is never nested below a git root.
 
 **Stack.** Force-pushed with a lease read from `ls-remote`. Final head `671fe9746`. PR #723 is layer 5
 of stack #720, verified by GraphQL read-back: 718, 719, 721, 722, 723, 724.
+
+### AC-4 MET on both runtimes — captain-approved fixes (final)
+
+Captain approved both fixes behind the two claude failure modes; landed additively as
+`134e494a8`.
+
+**Fixture verdict pin.** The validation stage asked a live model to judge a stub deliverable
+against no stated criterion, so the verdict was a coin flip and a REJECTED sent a conforming run
+down the feedback route. One sentence now ties AC-1 to the presence of the implementation report.
+Rejection handling stays the rejection journey's subject.
+
+**Dispatch-pointer spawn anchor.** Descriptions are free text the FO composes; the live run
+dispatched `Validate auto-continue-task implementation` and `Re-validate auto-continue-task
+cycle 2`, neither containing the noun, so three agents counted as zero. `spacedock dispatch build`
+generates the pointer filename, so its trailing `-{stage}.md` is contract-fixed. The description
+check is kept, so nothing already counted stops counting; the pointer only adds spawns the
+contract labels, and it excludes the reviser (`-implementation.md`). Falsified both ways: drop the
+pointer and the validators go uncounted; ignore the stage suffix and the reviser counts.
+
+The FO's hypothesised `name`-field anchor does not exist — read-only inspection showed every Agent
+block carries only description/prompt/run_in_background/subagent_type, with `subagent_type` a
+constant `spacedock:ensign`. The prompt's dispatch pointer is the contract-determined signal that
+was actually available.
+
+**Regression fixture.** The real run-4 split-root stream, in the entity's pre-approved line-type
+filtered form: 975079 bytes / 718 lines down to 149187 / 122, sha256
+`870418e9dca8b163eda734e840079037b1999dd507a10debc0453e85f67d02f2`. Capture-time identical-verdict
+proof: `assertWorkerLifecycle` returns the same verdict on filtered and full for BOTH stage
+`validation` and stage `implementation`; only the line indices shift, which filtering necessarily
+changes. No-regression evidence for the anchor is the 14-leg sweep — every leg passing under
+description-only matching counted exactly 1 under both signals.
+
+**AC-4 RESULT on `134e494a8`: MET on both runtimes, no reds at all.**
+
+| runtime | runs | result |
+| --- | --- | --- |
+| claude-sonnet | 1, 2, 3 all GREEN | LOOP COMPLETE at run 3, budget 8 |
+| codex | 1, 2, 3 all GREEN | LOOP COMPLETE at run 3, budget 8 |
+
+Both re-earned from a zero streak on the shipping bytes; codex's earlier 3/3 was discarded because
+it predated the fixture pin. Every leg carries `codes=[]`, so no run counted green while grading on
+a code this change introduces. Ledgers with per-run per-variant stream digests at
+`/Users/clkao/.claude/jobs/4e49247e/tmp/live5/{claude,codex}/ledger.txt`. The never-prepares mode
+did not recur, so no instruction quote was needed. Pi not run, no preemptive xfail.
+
+Claude went from 4 GREEN / 4 RED with no streak past 1, to 3/3 clean — the two modes are closed.
