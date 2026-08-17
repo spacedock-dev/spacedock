@@ -82,6 +82,17 @@ gates:
                 digest: sha256:72f426577a01fdc7498fea14d10d653dfd6999d0bda82c5729e8d3b19c5e3366
                 request-digest: sha256:86d82fd32a640aa0a96d69036edaf7491b0f6f04c539661b40efbb3e82abe3ef
                 room-ref: ./run-rejection-journey-in-team-mode/review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zqb683j8jth0tyr2eme231e2:validation:4
+                briefing: briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-4:revision-1
+                by: person:captain
+                at: "2026-08-17T14:38:47.751276Z"
+                decision: approve
+                reason: Binding review resolution:binding-1786977496490995000 at 2026-08-17T14:38:16Z on briefing attempt-4 (digest artifact sha256:243591f7...)
+              application:
+                target-stage: done
+                state: pending
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: "#724"
 ---
