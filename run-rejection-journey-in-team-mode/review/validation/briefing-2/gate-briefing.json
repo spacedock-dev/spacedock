@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-2:revision-1",
+  "question": "Resolve the team-mode layer's validation, attempt 2: the validator re-verified the delta 52b94f9aa..9b1c86a60 and flipped REJECTED to PASSED. Finding 5's fix matches the filed shape exactly (open-attempt selection, withdrawn attempts tolerated, decided-attempt and zero-open controls; the validator's falsifying probe reds the old attempt-1 pin). Finding 6 closed per your STRICT ruling (H2 byte-exact negative case, honest drift diagnostic, fixture pins the level). The ac-reanchor identity fix carries a read-back guard the old -c form cannot pass. Your fold-and-rerun order landed as the Cycle-line target pin (9b1c86a60), proven live by the first fully green codex lane, 17/17 on the tip itself. Approve to ratify the revise round's landings and route this final stack layer to approved-awaiting-merge; reject to return findings to implementation.",
+  "artifacts": [
+    {
+      "id": "artifact:zqb683j8jth0tyr2eme231e2:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/0b5ae96a80b9f79e115056be3374b8e8b99cbe4d/run-rejection-journey-in-team-mode.md",
+      "rev": "sha256:0ddde1001e072be006949941c3bf53ed0cb68948fca5d102042864c89901b11e",
+      "mediaType": "text/markdown",
+      "summary": "Validator delta re-verification (Amendment 4): recommendation PASSED with falsifying probes per finding. Codex 17/17 on tip 9b1c86a60; claude 17/17 on parent 43f7537b0 (delta = the 2-line fixture prose pin); the tip claude rejection red is the early-record adherence mode, verified from run artifacts as model-timing not branch defect, owner entity filed (own-claude-early-rejection-round-record). Composite green accepted by captain ruling 2026-08-17."
+    }
+  ]
+}
