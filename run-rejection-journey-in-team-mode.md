@@ -72,6 +72,10 @@ gates:
                 digest: sha256:b5add941660bf7208c1e84225ac594982d94b15bb33d5ba2d9cfd59248939af2
                 request-digest: sha256:278b594899fd9661b34b48ec8ff054d93c87475a208078132efd171dc8bbe23c
                 room-ref: ./run-rejection-journey-in-team-mode/review/validation/briefing-3
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-17T14:36:13.183662Z"
+                reason: presentation reshaped to captain-cares digest
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: "#724"
 ---
