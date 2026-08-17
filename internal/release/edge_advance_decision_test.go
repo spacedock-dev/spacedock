@@ -140,6 +140,25 @@ func TestHighestKnownEdgeVersionSkipsMalformed(t *testing.T) {
 	}
 }
 
+// TestHighestKnownEdgeVersionRanksReleaseAboveItsOwnPrerelease locks the exact
+// case a naive `sort -V`-based max-selection gets backwards: `sort -V` (GNU and
+// BSD alike) ranks a prerelease ABOVE its own release — `printf
+// 'v0.27.0\nv0.27.0-pre7\nv0.26.0\n' | sort -V` puts `v0.27.0-pre7` last (the
+// "highest") — but semver (and ComparePreVersion, which this function reuses
+// for its fold instead of shell sort) says `0.27.0 > 0.27.0-pre7`: a release
+// outranks its own prerelease. Selecting the max with anything other than
+// ComparePreVersion's own ordering would silently disagree with the
+// EdgeAdvanceDecision call this value feeds next.
+func TestHighestKnownEdgeVersionRanksReleaseAboveItsOwnPrerelease(t *testing.T) {
+	got, ok := HighestKnownEdgeVersion([]string{"v0.27.0", "v0.27.0-pre7", "v0.26.0"})
+	if !ok {
+		t.Fatal("HighestKnownEdgeVersion reported ok=false on a valid candidate list")
+	}
+	if got != "0.27.0" {
+		t.Fatalf("HighestKnownEdgeVersion = %q, want 0.27.0 (a release must rank above its own -preN; a sort -V-based selection would wrongly return 0.27.0-pre7)", got)
+	}
+}
+
 // TestHighestKnownEdgeVersionFailsClosedWhenNothingParses is the round-3 new
 // failure mode team-lead flagged: an empty candidate list, and a list of only
 // malformed/non-release entries, must both report ok=false — the caller (the
