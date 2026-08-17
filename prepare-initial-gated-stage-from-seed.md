@@ -59,7 +59,7 @@ gates:
                 target-stage: done
                 state: pending
 worktree: .worktrees/spacedock-ensign-prepare-initial-gated-stage-from-seed
-pr: "#722"
+pr: local-merge:61dd8e435
 ---
 
 ## Problem
