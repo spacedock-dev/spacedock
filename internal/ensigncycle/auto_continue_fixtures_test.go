@@ -109,6 +109,9 @@ func autoContinueReadme() string {
 		"### validation\n\n" +
 		"Verify the implementation against the acceptance criteria. Append a `## Stage Report: validation` " +
 		"section to the entity with one `- DONE:` item and a PASSED or REJECTED recommendation.\n\n" +
+		"AC-1 is satisfied when the implementation stage report is present in the entity and records its " +
+		"deliverable as committed; recommend PASSED in that case and REJECTED only when it is absent or " +
+		"records no deliverable.\n\n" +
 		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
 		"### done\n\nTerminal state.\n"
 }
