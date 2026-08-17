@@ -1,6 +1,6 @@
 ---
 id: 2dfpswjwbxez1km6439wfrsn
-title: Collapse the duplicate marketplace routes so the channel lives in the entry name
+title: Make channel install non-destructive and give edge installs a working re-pull key
 status: ideation
 source: "Captain directive, CL 2026-08-17: \"we should simplify the marketplace, there should just be one way\", then the chosen shape: \"i think spacedock-edge@marketplace is better, because we now have other things like subspace in the same marketplace.\" Raised from the live cross-host channel investigation; verified against the published marketplace on both refs and against a route-A install cached on the captain's workstation."
 started: 2026-08-17T19:38:45Z
