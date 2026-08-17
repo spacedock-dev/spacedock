@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ra9qzfz94hzgsq938jz998mj:validation:attempt-2:revision-1",
+  "question": "Release the hold and approve layer 4 through validation? Hold condition satisfied: layer 2's nested state-commit fix landed and the full restack completed; its validator had PASSED all six ACs including the live seed-to-gate drive.",
+  "artifacts": [
+    {
+      "id": "artifact:ra9qzfz94hzgsq938jz998mj:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/e9ffbe1076c2cfcadd01c0a21845165bb089ab79/prepare-initial-gated-stage-from-seed.md",
+      "rev": "sha256:bd89a94004d28a90d4e0d2c6bf620b95ac0d69c8ceedd6549cde21e4cb8ea4f2",
+      "mediaType": "text/markdown",
+      "summary": "Re-presentation after captain hold: nested fix landed (3826cdd63), restack done, validation PASSED stands. Captain approve-all 2026-08-17."
+    }
+  ]
+}

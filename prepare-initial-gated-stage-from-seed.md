@@ -42,6 +42,22 @@ gates:
                 at: "2026-08-16T19:24:06.789311Z"
                 decision: hold
                 reason: 'Captain hold at validation gate, no annotation; FO reading: pending the routed layer-2 nested state-commit fix landing and the coordinated restack'
+            - id: gate-attempt:ra9qzfz94hzgsq938jz998mj-validation-2
+              briefing:
+                id: briefing:ra9qzfz94hzgsq938jz998mj:validation:attempt-2:revision-1
+                digest: sha256:7f09b3b703cf14975ffd08256ef9bcb8fa1ee981f72921afbfe7b26b1ed9bc20
+                request-digest: sha256:9417f1fab6b96f2b18b6dfdaef3c84b586631c68feea17de313e7a9127142d69
+                room-ref: ./prepare-initial-gated-stage-from-seed/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ra9qzfz94hzgsq938jz998mj:validation:2
+                briefing: briefing:ra9qzfz94hzgsq938jz998mj:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-17T02:57:33.350866Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 worktree: .worktrees/spacedock-ensign-prepare-initial-gated-stage-from-seed
 pr: "#722"
 ---
