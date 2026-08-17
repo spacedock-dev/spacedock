@@ -662,3 +662,38 @@ live loop was run from this layer; that proof moves to the composed tree at the 
 
 `pr:` frontmatter is deliberately NOT set here — entity frontmatter is the first
 officer's write scope, not an ensign's. The FO sets `pr=#718` per the pr-merge mod.
+
+## Stage Report: validation
+
+- DONE: Validate on the stack tip 52b94f9aa; entity stage report and amendments as source of truth
+  Throwaway detached checkout of 52b94f9aa; ba91b333f verified as its ancestor; PR #718 OPEN on base main with exactly 884b55af0, 0e8dd3c49, ba91b333f (`gh pr view --json`).
+- DONE: Verify the gated skill rewrite on the tip's bytes; byte-compare against the approved design's wording where the entity pins it
+  No commit above ba91b333f touches the skill; tip `wc` = 34 lines / 784 words / 5419 bytes exactly as Addendum 2; 5 numbered steps, 5 `**Done when**`. Word-diff of the entity's gated blockquote vs the tip section: byte-identical except exactly the three FO-authorized insertions (ENTITY operand + sentence, usage-error≠hold wording, step-5 clause binding step 5 to step 4's verdict). Operand defect re-exercised on a tip-built binary: operand-less `gate record --round …` exits 2 `unknown gate flag: validation/1`.
+- DONE: Verify the oracle reshape claims by falsifying edits where the report declares them; verify the three clauses account for exactly +105 words over the approved +107
+  On tip bytes: neutralizing the counter's count guard reds the 4 count-guarded inverted cases; neutralizing its round-id guard reds the other 2 — all 6 inverted cases load-bearing; restored → green. Re-introducing the validation/2 fallback reds the durable test with `republication control diagnostic = <nil>`, verbatim as the implementation report declared. Words: file 679→784, section 542→647, both +105; baseline 572→679 = +107; the word-diff contains nothing but the three clauses.
+- DONE: Provenance: c355fbe44 alone as the prior-correct witness; entity records it and the naive-grep caveat
+  c355fbe44 carries `gate record <entity> --round …`; ea6723acb:21 drops the operand; 00f8c203f carries zero recorder lines. Entity records all three plus the caveat. Polish: the caveat's "the same file" is imprecise — the operand-carrying examples live in `shared_round_recording_test.go` at that commit, not SKILL.md; the provenance conclusion is unaffected.
+- DONE: Composed journey evidence: cite ledgers and tip CI; verify ledger artifacts exist where claimed; no live re-runs
+  No live loop run. Ledgers committed (state 08242fe75) at `_evidence/zq-team-mode-ac1/`: codex 3/3 consecutive conforming greens, claude 3 consecutive (runs 3-5; run-2 red log retained), on composed tree 571017df3, which contains this layer. Tip CI 31986034831 (sha 52b94f9aa) concluded RED after dispatch: offline success; codex-live 1/17 failed = ACValueReanchor only (rejection and escalation green); claude-live 1/17 failed = RejectionFlow, observed=[rejection-cycle-line rejection-round-missing] — finding 1 below.
+- DONE: Assess every declared deviation against the captain rulings recorded in the entity
+  Layer diff verified: 4 files +285/-78, oracle file +261/-67, exactly Addendum 2's KEEP-ruling figures; no further trim attempted. Deviations 1-3 are the three verified clauses; the falsification above is the falsifiability the KEEP ruling protects.
+- DONE: Validation stage report with per-AC verdicts, recommendation, path-scoped commit, push, FO signal; no gate preparation or resolution
+  This report; no gate action taken.
+
+### Per-AC verdicts
+
+- AC-1 PASS — tip counts: `grep -cE '^[0-9]+\. \*\*'` = 5, `grep -c '\*\*Done when\*\*'` = 5; the behavioral half rides AC-2/AC-3 as designed.
+- AC-2 PASS — durable fixture drive green on tip and falsified both directions; counter green (7 cases × 2 hosts, 6 inverted) and wired as a durableSemantic on both hosts. Live corroboration: the red claude CI run's observed codes exclude rejection-round-publication-count — one conforming publication at validation/1 even in a failing run.
+- AC-3 PASS on the designated evidence — no validation/2 retry anywhere in the tip oracle (grep absent; republication control enforces); both-host journey greens are the committed conforming-green ledgers. Tip CI attempt: codex rejection journey green; claude rejection red, mechanism outside this layer's surface (finding 1).
+- AC-4 PASS — `go test ./...` plain and `-race` green on tip, all packages ok (cli/ensigncycle need >600s on a loaded machine, so the 10m default trips environmentally: plain re-run 627s/709s ok, race `-timeout 30m` exit 0; CI offline job green on the same sha corroborates). Escalation journey passed live on both hosts in the tip CI run.
+
+### Findings (recommendations for Review-finding disposition; candidate untouched)
+
+1. Tip CI claude-live rejection red: the FO prepared a premature round-1 gate then withdrew it (selected gate holds ≠1 attempt) and left 0 durable Cycle lines while its final message claims one. This layer's own oracles graded green in that run; the codes are gate-attempt cardinality and the cycle line — the sonnet FO-adherence residual class the captain's 2026-08-16 ruling folded into run-rejection-journey-in-team-mode (whose ledger red is the same class, different sub-mechanism: unrecognized recorder invocation). Proposed: material for the stack-tip merge (required lane red), ownership zq/live-ci flake binding, route for decision at the gate.
+2. Tip CI codex-live red: TestLiveCommonACValueReanchor only; no file overlap with this layer; cited for the stack picture, ownership with the reanchor-grading layer.
+3. Polish: the Addendum's "the same file still carries fixture examples" location imprecision (see provenance item).
+4. Deferred risk: the publication counter's entity recognizer requires a whitespace-delimited bare `rejection-task`; a path-qualified operand would under-count and false-red (safe direction — never a false pass). Unobserved across 8 ledger runs and 2 CI attempts. Promote if a live red reports "made 0 successful" while the stream carries a path-qualified publication.
+
+### Summary
+
+Recommend PASSED. Every mechanism claim was re-verified on the stack tip's bytes and falsified where the implementation declared falsification: the shipped skill is the gated design plus exactly the three FO-authorized clauses (+105 words to the word), the publication counter's six inverted cases all red when their guards are removed, and re-introducing the retired fallback reproduces the declared `<nil>` control failure verbatim. The journey-level evidence stands on the committed conforming-green ledgers on the composed tree; the tip CI attempt concluded red after dispatch on two codes outside this layer's surface — routed as finding 1 for the gate, since a red required lane is the stack's merge problem even though this layer's oracles graded green inside that very run.
