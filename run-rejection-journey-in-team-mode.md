@@ -76,6 +76,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-17T14:36:13.183662Z"
                 reason: presentation reshaped to captain-cares digest
+            - id: gate-attempt:zqb683j8jth0tyr2eme231e2-validation-4
+              briefing:
+                id: briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-4:revision-1
+                digest: sha256:72f426577a01fdc7498fea14d10d653dfd6999d0bda82c5729e8d3b19c5e3366
+                request-digest: sha256:86d82fd32a640aa0a96d69036edaf7491b0f6f04c539661b40efbb3e82abe3ef
+                room-ref: ./run-rejection-journey-in-team-mode/review/validation/briefing-4
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: "#724"
 ---

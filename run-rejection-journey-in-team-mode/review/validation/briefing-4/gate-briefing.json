@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-4:revision-1",
+  "question": "Last gate of the stack. Validator PASSED with falsifying probes; codex 17/17 on the tip, claude 17/17 on the parent; residual flake modes all owner-filed. Approve = atomic merge + pre7. Revise/hold = name it.",
+  "artifacts": [
+    {
+      "id": "artifact:zqb683j8jth0tyr2eme231e2:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/dac59a3f90710f7e6ecc7f963caf6f7d51c149ec/_reviews/zq-validation-gate-review.md",
+      "rev": "sha256:243591f70ff2db7ff635057268918b50a5f1869b034849c84d46accd691e8e16",
+      "mediaType": "text/markdown",
+      "summary": "Digest review: rejection journey proven live on both runtimes; three owned residual modes, none in this branch; approve fires merge and pre7."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zqb683j8jth0tyr2eme231e2:validation:attempt-4:revision-1:item-2",
+      "uri": "git-root://state/dac59a3f90710f7e6ecc7f963caf6f7d51c149ec/run-rejection-journey-in-team-mode.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0d7ee0a5d86a4ed703acb4c773cfd0e5690675aa6023ca67737616d601d54ea5"
+    }
+  ]
+}
