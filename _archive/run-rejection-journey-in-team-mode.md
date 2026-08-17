@@ -1,6 +1,6 @@
 ---
 title: Run the rejection journey in team mode
-status: validation
+status: done
 source: "Captain ruling, 2026-08-16: do not invoke a journey in single-entity bare mode unless it is specifically testing bare-mode behavior"
 id: zqb683j8jth0tyr2eme231e2
 gates:
@@ -92,9 +92,12 @@ gates:
                 reason: Binding review resolution:binding-1786977496490995000 at 2026-08-17T14:38:16Z on briefing attempt-4 (digest artifact sha256:243591f7...)
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: local-merge:61dd8e435
+verdict: PASSED
+completed: 2026-08-17T14:55:42Z
+archived: 2026-08-17T14:55:42Z
 ---
 
 ## Problem
