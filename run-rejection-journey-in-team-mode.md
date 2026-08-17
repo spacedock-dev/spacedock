@@ -669,3 +669,36 @@ counterexample, produced by the main-side boundary assert — this layer's branc
 grading graded the same run GREEN on a conforming digest. AC-4 PASSED unchanged. The REJECTED
 recommendation stands on finding 5 (Material, narrow fix named), with finding 6 the strict-grade
 residual mode and the captain owning both tolerance rulings.
+
+### Amendment 3: tip CI attempt-2 codex red — Cycle-line target pinned in the fixture (FO-recorded revise item)
+
+**Attribution (run 31991864922 attempt-2, codex lane, from stream bytes not doc text).** The
+codex FO drove the repaired journey correctly: team-mode reuse topology exact (spawn
+implementation → spawn validation → reuse implementation → reuse validation), `gate record
+--round validation/1` exit 0 with entries=4, single publication, gate prepared and left open.
+The one miss: it appended the authorized Cycle line to the workflow README.md (a file_change on
+README.md plus `git commit -m 'feedback: rejection-task record cycle 1'`) instead of the
+entity's `### Feedback Cycles` section. That single write produced BOTH observed codes:
+`rejection-cycle-line` (entity holds 0 entries) and `rejection-round-missing` (README.md moved
+off its pinned bytes — the round oracle's boundary check reports under that code; the
+label-honesty nit is on the captain's filing list).
+
+**Root cause: fixture underdetermination.** The rejection README said "appends one Cycle line
+to this section" and never named the file; read from the README, "this section" resolves to the
+README's own section. The sibling escalation fixture names its target file explicitly. On the
+revised text codex resolved it entity-side once (attempt 1, green) and README-side once
+(attempt 2, red) — a nondeterministic reading of an unpinned input, the audit's disease.
+
+**Captain ruling 2026-08-17: "fold and rerun".** The pin folds into this entity's open revise
+window; ratification rides validation gate attempt-2.
+
+**Correction landed: 9b1c86a60** (parent 43f7537b0; one file, 2 lines in `rejectionReadme()`):
+the first sentence names the `### Feedback Cycles` section in `rejection-task/index.md`; the
+next paragraph reads "that section's exact heading"; the H3 strict/pin grammar is byte-identical.
+The original implementer was no longer addressable, so the correction ran the contract's
+fresh-dispatch path. Worker proof: `go test ./...` and `go test ./... -race` green from the
+worktree, `gofmt` clean, and a worktree-wide grep shows no surviving copy of the
+self-referential text. FO read back the pushed diff against the authorized shape — exact.
+Declared limit (worker-flagged, FO-concurred): offline runs cannot reproduce the codex FO's
+Cycle-line placement; only a live codex rejection-flow run proves the pin changes behavior —
+that proof is the new tip CI run's codex lane.
