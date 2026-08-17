@@ -390,6 +390,18 @@ func TestRejectionCycleLineAndGateShapes(t *testing.T) {
 	if graded, ok := err.(*gradedErr); !ok || graded.code != "rejection-cycle-line" {
 		t.Fatalf("heading-drift red = %#v, want a graded rejection-cycle-line", err)
 	}
+	// The grade stays strict, but the DIAGNOSTIC must say what happened. A bare
+	// "holds 0 entries" reads as "the FO never recorded the round", which is exactly
+	// the wrong thing to tell the next reader about an FO that wrote the line
+	// byte-exact one heading level off.
+	for _, phrase := range []string{"byte-exact", "the round WAS recorded", "## Feedback Cycles"} {
+		if !strings.Contains(err.Error(), phrase) {
+			t.Errorf("heading-drift diagnostic = %q, want it to name %q", err.Error(), phrase)
+		}
+	}
+	if strings.Contains(err.Error(), "holds 0 `- Cycle N:` entries") {
+		t.Errorf("heading-drift diagnostic fell back to the bare count, implying the round was never recorded: %q", err.Error())
+	}
 
 	// An entity the FO left without ever preparing the cycle-2 gate carries no gates
 	// record, which is exactly FO residual mode 1's durable signature.

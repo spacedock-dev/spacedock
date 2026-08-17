@@ -69,6 +69,20 @@ func feedbackCyclesSection(entity string) string {
 // bound the `### Feedback Cycles` section at the following heading.
 var nextHeading = regexp.MustCompile(`(?m)^#{1,6} `)
 
+// anyHeadingLine matches a whole markdown heading line, so a diagnostic can name
+// the heading some content actually sits under.
+var anyHeadingLine = regexp.MustCompile(`(?m)^#{1,6} .*$`)
+
+// headingAbove returns the nearest heading line at or before offset — the heading
+// the content at that offset belongs to — or "" when nothing precedes it.
+func headingAbove(body string, offset int) string {
+	heading := ""
+	for _, at := range anyHeadingLine.FindAllStringIndex(body[:offset], -1) {
+		heading = strings.TrimSpace(body[at[0]:at[1]])
+	}
+	return heading
+}
+
 // rejectionReportSections is the exact set of durable stage-report headings the
 // determined shape scripts — four DISTINCT sections, the cycle-2 pair in the ensign
 // contract's `(cycle N)` form (`ensign-shared-core.md:93`). Requiring each exactly

@@ -325,6 +325,19 @@ func assertRejectionCycleLine(entityPath string) error {
 		}
 	}
 	want := strings.TrimRight(rejectionFeedbackCycle, "\n")
+	// Honest label for the heading-drift case. The count alone reads as "the FO
+	// never recorded the round", which is what a real tip-CI red implied about an FO
+	// that HAD written the line byte-exact — under `## Feedback Cycles` instead of
+	// the declared `### Feedback Cycles`. The grade does not soften (the declared
+	// grammar is the contract), but the diagnostic must say what actually happened
+	// or the next reader debugs the wrong thing.
+	if len(entries) == 0 {
+		if at := strings.Index(string(entity), want); at >= 0 {
+			return &gradedErr{code: "rejection-cycle-line", msg: fmt.Sprintf(
+				"the Cycle line is byte-exact but sits outside the declared `### Feedback Cycles` section, under %q — the round WAS recorded; the projection is declared at that exact heading level and a line under another level is not in it",
+				headingAbove(string(entity), at))}
+		}
+	}
 	if len(entries) != 1 {
 		return &gradedErr{code: "rejection-cycle-line", msg: fmt.Sprintf(
 			"`### Feedback Cycles` holds %d `- Cycle N:` entries, want exactly 1 (the rejection round; a passing re-validation adds none): %q", len(entries), entries)}
