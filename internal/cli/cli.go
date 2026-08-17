@@ -119,6 +119,11 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		CompletionOptions:  cobra.CompletionOptions{DisableDefaultCmd: true},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if versionFlag {
+				// The Channel line must report what the binary will ACTUALLY do, so
+				// an explicit SPACEDOCK_DEV_BRANCH override (including empty) applies
+				// before printVersion reads the package devBranch var — the same
+				// helper every install path already calls.
+				applyDevBranchOverride(env)
 				printVersion(stdout, envGetenv(env), exec.LookPath)
 				return nil
 			}
@@ -846,10 +851,13 @@ const frozenContractToken = "contract 3"
 // auto version-flag is deliberately NOT used). Line 2 is always
 // `OS: <goos>/<goarch>` — in BOTH output shapes — so user issue reports carry
 // the platform and later gate-logic versions can read the OS from `--version`
-// once a compatible binary exists. The frozen contract token moved BELOW line 1
-// — the integer-era prose says "run --version and parse contract <N>" and never
-// pins it to line 1 — and prints inside a session only, since every integer-era
-// reader is itself a session.
+// once a compatible binary exists. Line 3 is always `Channel: <stable|edge>
+// (<plugin-id>)` — in BOTH output shapes — reporting the EFFECTIVE devBranch: the
+// `--version` path applies applyDevBranchOverride(env) before this call, so a
+// SPACEDOCK_DEV_BRANCH override renders what the binary will really do. The
+// frozen contract token moved BELOW line 1 — the integer-era prose says "run
+// --version and parse contract <N>" and never pins it to line 1 — and prints
+// inside a session only, since every integer-era reader is itself a session.
 //
 // Ambiguous markers are REPORTED, never guessed at, and never fail: refusing here
 // would break the version gate and therefore every boot, including the nested-
@@ -857,11 +865,20 @@ const frozenContractToken = "contract 3"
 func printVersion(w io.Writer, getenv func(string) string, lookPath func(string) (string, error)) {
 	fmt.Fprintf(w, "spacedock %s\n", displayVersion())
 	fmt.Fprintf(w, "OS: %s/%s\n", runtime.GOOS, runtime.GOARCH)
+	// The channel word mirrors channelMarketplace's own two-way branch (main →
+	// stable, anything else → edge); the parenthetical is the plugin id the
+	// frontdoor re-ensures on every launch, so the incident's symptom (the
+	// spacedock@spacedock reinstall loop) and its cause read off one line.
+	channelWord := "edge"
+	if devBranch == "main" {
+		channelWord = "stable"
+	}
+	fmt.Fprintf(w, "Channel: %s (%s)\n", channelWord, channelPluginID(devBranch))
 
 	host, markers, ambiguous := runtimehost.Detect(getenv)
 	if !ambiguous && host == "" {
-		// Outside every runtime — a human at a terminal. Two lines: the version
-		// line plus the OS line, nothing else.
+		// Outside every runtime — a human at a terminal. Three lines: the version
+		// line, the OS line, and the Channel line, nothing else.
 		return
 	}
 

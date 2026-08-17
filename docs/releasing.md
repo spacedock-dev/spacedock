@@ -10,7 +10,12 @@ marketplace source.
 
 - cross-builds darwin and linux (arm64 + amd64) tarballs plus `checksums.txt`,
   stamping `git describe --tags` into `internal/cli.Version`, for BOTH channels —
-  a stable build (`cli.devBranch=main`) and an edge build (`cli.devBranch=next`);
+  a stable build (`cli.devBranch=main`) and an edge build (`cli.devBranch=next`).
+  The asset name carries the channel: the edge tarball always ends `_edge`; the
+  stable tarball is unsuffixed on a stable tag but ends `_stable` on a `-pre`
+  tag, so a prerelease never offers a default-named asset. Nothing consumes a
+  prerelease's `_stable` tarball — it exists only because the cask pipe cannot
+  tolerate a skipped build;
 - publishes the GitHub Release with those assets;
 - bumps BOTH `spacedock-dev/homebrew-tap` casks (`spacedock` stable +
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
@@ -268,3 +273,11 @@ a dev-only path.
   marketplace-repo task and is NOT part of this flow.
 - This flow is the v1 adaptation of the original `scripts/release.sh` from the
   upstream spacedock plugin repo.
+- Prerelease releases cut before the `_stable` suffix landed shipped the
+  stable-stamped binary under the unsuffixed default asset name. An operator
+  who installed one holds a stable-channel binary at a prerelease version: it
+  re-ensures the `spacedock@spacedock` plugin on every launch. Detection:
+  `spacedock --version` prints a `Channel:` line on new binaries; on older
+  ones `go version -m $(command -v spacedock)` shows `cli.devBranch=main`.
+  Remedy: reinstall from the release's `_edge` tarball or
+  `brew install spacedock-dev/tap/spacedock@next`.

@@ -74,7 +74,14 @@ archives:
       - spacedock-stable
     formats:
       - tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    # On a `-pre` tag (Prerelease true, IsSnapshot false — a --snapshot build also
+    # carries a semver prerelease part but is not a real release) the stable
+    # archive gains a `_stable` suffix, so a prerelease never publishes an
+    # unsuffixed asset: reaching for "the" default-looking asset is impossible,
+    # closing the trap where that asset silently held the stable-stamped binary.
+    # A stable tag and a snapshot keep today's name byte-identical (spiked:
+    # goreleaser 2.16.0, scratch clone, both channel builds end to end).
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if and .Prerelease (not .IsSnapshot) }}_stable{{ end }}"
     wrap_in_directory: false
   - id: spacedock-edge
     ids:
