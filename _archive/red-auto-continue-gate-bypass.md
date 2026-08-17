@@ -1,6 +1,6 @@
 ---
 title: Auto-continue grades a human-gate bypass as green
-status: validation
+status: done
 source: "Live-harness audit finding 3 (2026-08-16); captain order: file and fast-track on the stack, local focused test first"
 id: 7xe7hxt1qce1x9b3dm0k6ymg
 gates:
@@ -43,10 +43,13 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 worktree: .worktrees/spacedock-ensign-red-auto-continue-gate-bypass
-mod-block: merge:pr-merge
+mod-block:
 pr: local-merge:61dd8e435
+verdict: PASSED
+completed: 2026-08-17T14:55:35Z
+archived: 2026-08-17T14:55:36Z
 ---
 
 ## Problem
