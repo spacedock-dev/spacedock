@@ -66,6 +66,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-17T14:34:29.903771Z"
                 reason: captain ordered a digestible presentation artifact; re-preparing on a review digest
+            - id: gate-attempt:zqb683j8jth0tyr2eme231e2-validation-3
+              briefing:
+                id: briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-3:revision-1
+                digest: sha256:b5add941660bf7208c1e84225ac594982d94b15bb33d5ba2d9cfd59248939af2
+                request-digest: sha256:278b594899fd9661b34b48ec8ff054d93c87475a208078132efd171dc8bbe23c
+                room-ref: ./run-rejection-journey-in-team-mode/review/validation/briefing-3
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: "#724"
 ---

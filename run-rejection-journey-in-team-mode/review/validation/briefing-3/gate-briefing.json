@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-3:revision-1",
+  "question": "Resolve the team-mode layer's validation (attempt 3, digest presentation): the validator re-verified the delta 52b94f9aa..9b1c86a60 and flipped REJECTED to PASSED with a falsifying probe per finding. Approve to ratify the landed revise round (withdraw-recovery attempt-N generalization, ac-reanchor identity guard, heading STRICT+PIN, Cycle-line target pin) and route this final stack layer to approved-awaiting-merge; reject to return findings to implementation.",
+  "artifacts": [
+    {
+      "id": "artifact:zqb683j8jth0tyr2eme231e2:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/55e2e27deda936706930a095df964b090e83f862/_reviews/zq-validation-gate-review.md",
+      "rev": "sha256:e715302efda8859188a97435c210c6455c10f047d581381ed1d2fd7cd7badabb",
+      "mediaType": "text/markdown",
+      "summary": "Digest gate review: validator PASSED on delta re-verification (Amendment 4); codex 17/17 on tip 9b1c86a60 (first ever), claude 17/17 on parent (delta = 2-line fixture prose); tip claude reds are owned residual modes, filed. Full entity pinned as reference."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zqb683j8jth0tyr2eme231e2:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/55e2e27deda936706930a095df964b090e83f862/run-rejection-journey-in-team-mode.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:1501aacdc963eebe18938ba5c546ec64bcdf45c51751041b2144e67f1fc79648"
+    }
+  ]
+}
