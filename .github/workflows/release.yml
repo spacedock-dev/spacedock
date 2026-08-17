@@ -239,12 +239,11 @@ jobs:
       # a `push: tags: ['v*']` cut, which carries no channel signal and has no edge
       # `v*`-tag scheme — so exactly ONE thing reaches this step: a STABLE release.
       # The stable channel's plugin lives on `main` (the stable binary stamps
-      # devBranch=main), so the displayed version must be stamped+pushed to `main`,
-      # not the edge `next` branch. This is a single-target stamp, not a
-      # per-channel branch; the edge channel's version-display rides the unchanged
-      # next-publish.yml, with no involvement here. The marketplace-entry calendar
-      # key is a DIFFERENT file (marketplace.json) and is left untouched here; it is
-      # the moving-branch re-pull key (AC-2d), pj's surface.
+      # devBranch=main), so the displayed version must be stamped+pushed to `main`.
+      # This is a single-target stamp: the edge marketplace entry now resolves
+      # `main` directly too (see docs/releasing.md "Advancing the Edge Line"), so
+      # this same stamp is what an edge install displays as well, until a later
+      # prerelease tag advances `main` further.
       - name: Stamp plugin manifests to the release version
         # A hyphenated tag is a pre-release (v0.23.0-pre); it ships binary +
         # content as a GitHub pre-release but must stay OUT of the stable channel,
@@ -285,13 +284,15 @@ jobs:
           # homebrew-tap push).
           git push origin "$RELEASE_COMMIT:refs/heads/stable"
 
-  # Advances `next` — the branch `spacedock-edge` resolves — on EVERY tag, not
-  # just stable. A SIBLING of goreleaser (`needs: goreleaser`, mirroring the
-  # journey-ledger job's isolation): a rare conflict here must not block or unwind
-  # a release that already published. See docs/releasing.md "Advancing the Edge
-  # Line". The reconcile is a merge favoring the release, never a reset or force —
-  # the pre-merge `next` tip stays a first-parent ancestor of the pushed commit,
-  # so `git push edge-advance:next` is a plain fast-forward.
+  # Auto-cuts the vX.(Y+1).0-pre0 edge prerelease on a latest-line stable tag. A
+  # SIBLING of goreleaser (`needs: goreleaser`, mirroring the journey-ledger job's
+  # isolation): a rare conflict here must not block or unwind a release that
+  # already published. See docs/releasing.md "Advancing the Edge Line". `next` is
+  # no longer reconciled or advanced here: the edge marketplace entry now resolves
+  # `main` directly (the channel lives in the marketplace NAME, and prereleases
+  # are tagged on `main` itself), so `next`'s content is not a re-pull source for
+  # any installer and a content-reconcile job would just be dead weight with a
+  # clobber risk. `next` remains for dev source builds only (see docs/releasing.md).
   edge-advance:
     needs: goreleaser
     runs-on: ubuntu-latest
@@ -299,8 +300,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          # Full history + tags so `git rev-list -1 "$GITHUB_REF_NAME"` resolves
-          # the tagged commit the reconcile merges into `next`.
+          # Full history + tags: the decision step below scans all stable tags,
+          # and the pre0 step resolves the tagged commit via git rev-list.
           fetch-depth: 0
           fetch-tags: true
 
@@ -309,82 +310,35 @@ jobs:
         with:
           go-version: "1.22"
 
-      # Decide whether this tag advances the edge line AT ALL, gating the whole
-      # job. edge-advance-decision computes the tag's target edge version
-      # (dev-preversion for a stable tag; the tag's own version for a -pre tag)
-      # and prints `advance` only when that is STRICTLY greater than origin/next's
-      # current manifest version. An old-line / patch tag prints `skip`, and EVERY
-      # downstream step gates on this output, so the whole job no-ops: no
-      # `-X theirs` clobber of next's newer content, no manifest/gate-line rewind,
-      # no marketplace calendar re-pull, and no colliding pre0 auto-tag.
-      - name: Decide whether this tag advances the edge line
+      # Decide whether THIS stable tag is the latest known release line, gating
+      # the auto-pre0 cut below (the only remaining consumer — nothing reconciles
+      # `next` anymore). Without this check, an old-line patch tag (e.g. v0.25.3
+      # cut after v0.26.0 already shipped) would auto-cut a WRONG, lower
+      # vX.(Y_old+1).0-pre0 tag, whose release run would bump the spacedock@next
+      # cask DOWN to an older minor — a real regression, independent of `next`
+      # ever existing. HIGHEST_OTHER is the highest EXISTING bare stable tag
+      # besides this one (`git tag --list 'v[0-9]*.[0-9]*.[0-9]*'` — the glob
+      # excludes `-preN` tags, so no prerelease-ordering ambiguity is in play);
+      # edge-advance-decision reuses the same target-edge-version/ComparePreVersion
+      # ordering that used to compare against next's manifest, fed a synthesized
+      # manifest built from git tag history instead of a branch fetch.
+      - name: Decide whether this stable tag is the latest known release line
         id: decision
+        if: "!contains(github.ref, '-')"
         run: |
           set -euo pipefail
-          git fetch origin next
-          NEXT_PLUGIN="$(mktemp)"
-          git show origin/next:.claude-plugin/plugin.json > "$NEXT_PLUGIN"
-          if [ "$(go run ./cmd/spacedock-release edge-advance-decision "$GITHUB_REF_NAME" "$NEXT_PLUGIN")" = "advance" ]; then
+          HIGHEST_OTHER="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' | grep -v "^$GITHUB_REF_NAME\$" | sort -V | tail -1 | sed 's/^v//')"
+          if [ -z "$HIGHEST_OTHER" ]; then
+            HIGHEST_OTHER="0.0.0"
+          fi
+          KNOWN_MANIFEST="$(mktemp)"
+          printf '{"version":"%s"}' "$HIGHEST_OTHER" > "$KNOWN_MANIFEST"
+          if [ "$(go run ./cmd/spacedock-release edge-advance-decision "$GITHUB_REF_NAME" "$KNOWN_MANIFEST")" = "advance" ]; then
             echo "advance=true" >> "$GITHUB_OUTPUT"
           else
             echo "advance=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::edge-advance SKIPPED for $GITHUB_REF_NAME: its target edge version is not strictly greater than next's current manifest version (an old-line/patch tag); next's tip is left untouched"
+            echo "::notice::auto-pre0 SKIPPED for $GITHUB_REF_NAME: an old-line/patch tag (highest known stable tag: v$HIGHEST_OTHER)"
           fi
-
-      # Prerelease (`-pre`) tag: reconcile `next` to the tagged commit's content,
-      # favoring the release over whatever `next` drifted to. The manifests inherit
-      # the tag's version; the calendar bump below makes installers re-pull.
-      - name: Reconcile the edge line to the prerelease commit
-        if: "contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
-        run: |
-          set -euo pipefail
-          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
-          git fetch origin next
-          git switch -c edge-advance origin/next
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
-            -m "next: reconcile edge line to $GITHUB_REF_NAME"
-
-      # Stable (`vX.Y.Z`) tag: reconcile the same way, then stamp the manifests
-      # PAST the release to the post-release dev pre-version (X.(Y+1).0-pre1), so
-      # the edge line never masquerades as the stable version it just shipped.
-      - name: Reconcile the edge line past the stable release
-        if: "!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
-        run: |
-          set -euo pipefail
-          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
-          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
-          DEV_VERSION="$(go run ./cmd/spacedock-release dev-preversion "$RELEASE_VERSION")"
-          git fetch origin next
-          git switch -c edge-advance origin/next
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
-            -m "next: reconcile edge line to $GITHUB_REF_NAME"
-          FO_PROSE=skills/first-officer/references/first-officer-shared-core.md
-          go run ./cmd/spacedock-release stamp-version "$DEV_VERSION" \
-            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
-          git commit -m "next: bump dev pre-version to $DEV_VERSION" \
-            -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
-
-      # On an advancing tag both reconcile paths end here: bump the marketplace
-      # calendar key (the moving-branch re-pull key `claude plugin update` /
-      # `codex` read) and fast-forward `next`. Exactly one reconcile step above
-      # ran, so `edge-advance` already carries the merge (plus, on a stable tag,
-      # the dev-preversion stamp). Gated on the same advance decision: an old-line
-      # / patch tag skips this bump too, so the calendar key — the thing every edge
-      # installer polls — is left untouched and no re-pull is triggered (AC-2d).
-      - name: Bump the marketplace calendar key and push the edge line
-        if: "steps.decision.outputs.advance == 'true'"
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          go run ./cmd/spacedock-release bump-calendar .claude-plugin/marketplace.json
-          git commit -m "next: bump marketplace calendar version" \
-            -- .claude-plugin/marketplace.json
-          git push origin edge-advance:next
 
       # Always-cut-pre0 (latest-line stable tag only, same advance gate): auto-cut
       # an ANNOTATED vX.(Y+1).0-pre0 tag ON THE GREENED RELEASE COMMIT (the SHA
@@ -403,9 +357,10 @@ jobs:
       # triggering. The step then verifies a release.yml run was created for the
       # pre0 tag and fails edge-advance loudly if none appears, so a suppressed
       # credential can never leave the edge binary silently behind. Recursion
-      # terminates at one level — the pre0 tag routes to the prerelease path, whose
-      # edge-advance-decision skips (pre0 < next's pre1), so it neither re-tags nor
-      # rewinds `next`.
+      # terminates at one level: the pre0 tag itself is a prerelease (hyphenated),
+      # so its OWN release.yml run skips both the decision step and this step —
+      # both carry `!contains(github.ref, '-')` — and neither attempts to cut
+      # another pre0.
       - name: Auto-cut the edge prerelease tag on the greened release commit
         if: "!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
         env:
@@ -420,7 +375,7 @@ jobs:
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
           PRE0_VERSION="$(go run ./cmd/spacedock-release edge-pre0-version "$RELEASE_VERSION")"
           PRE0_TAG="v$PRE0_VERSION"
-          PRE0_BODY="Edge prerelease auto-cut with stable $GITHUB_REF_NAME: publishes the ${PRE0_VERSION%.*}-line edge binary so spacedock@next realigns with next's post-release skills. No standalone changes."
+          PRE0_BODY="Edge prerelease auto-cut with stable $GITHUB_REF_NAME: publishes the ${PRE0_VERSION%.*}-line edge binary so spacedock@next catches up to the new release line. No standalone changes."
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "$PRE0_TAG" "$RELEASE_COMMIT" -m "$PRE0_BODY"

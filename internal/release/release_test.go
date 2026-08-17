@@ -1,5 +1,5 @@
-// ABOUTME: Release-pipeline version steps — AC-4 plugin.json stamp + AC-2d
-// ABOUTME: marketplace-entry calendar bump, as pure functions a CI step invokes.
+// ABOUTME: Release-pipeline version steps — AC-4 plugin.json stamp, as pure
+// ABOUTME: functions a CI step invokes.
 package release
 
 import (
@@ -7,7 +7,6 @@ import (
 	"errors"
 	"strings"
 	"testing"
-	"time"
 )
 
 // TestStampVersionRewritesPluginVersion locks AC-4: StampVersion rewrites the
@@ -102,99 +101,6 @@ func TestStampVersionRewritesOnlyFirstVersionKey(t *testing.T) {
 	}
 	if m.Metadata.Version != "schema-7" {
 		t.Errorf("nested metadata.version was clobbered: %q, want schema-7 (replace-first must leave it untouched)", m.Metadata.Version)
-	}
-}
-
-// TestBumpCalendarVersionStrictlyIncreases locks AC-2d: invoking the bump
-// function twice over the SAME marketplace.json produces a strictly increasing
-// entry version (the `plugin update` re-pull key actually moves), not two
-// hand-written literals. The second call (same day) must increment the per-day
-// sequence so the value is monotonic even within a single publish day.
-func TestBumpCalendarVersionStrictlyIncreases(t *testing.T) {
-	src := `{
-  "name": "spacedock",
-  "plugins": [
-    {
-      "name": "spacedock",
-      "source": { "source": "url", "url": "https://example/spacedock.git", "ref": "next" },
-      "version": "0.0.2026053101",
-      "category": "workflow"
-    }
-  ]
-}
-`
-	now := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
-
-	first, err := BumpCalendarVersion([]byte(src), now)
-	if err != nil {
-		t.Fatalf("first bump: %v", err)
-	}
-	second, err := BumpCalendarVersion(first, now)
-	if err != nil {
-		t.Fatalf("second bump: %v", err)
-	}
-
-	v1 := entryVersion(t, first)
-	v2 := entryVersion(t, second)
-	if !(v2 > v1) {
-		t.Errorf("calendar version did not strictly increase: %q then %q", v1, v2)
-	}
-	// The bump is calendar-keyed: same day -> shared date prefix, incremented seq.
-	if !strings.HasPrefix(v1, "0.0.20260601") {
-		t.Errorf("first bump = %q, want 0.0.20260601NN prefix", v1)
-	}
-	if !strings.HasPrefix(v2, "0.0.20260601") {
-		t.Errorf("second bump = %q, want 0.0.20260601NN prefix", v2)
-	}
-}
-
-// TestBumpCalendarVersionRewritesOnlyFirstVersionKey locks the replace-first
-// contract for the calendar bump: a marketplace.json whose plugin entry carries a
-// trailing second `version` key (e.g. a nested source/metadata block) must have
-// ONLY the entry's first `version` advanced — the trailing key stays intact. A
-// blanket ReplaceAll would over-rewrite it.
-func TestBumpCalendarVersionRewritesOnlyFirstVersionKey(t *testing.T) {
-	src := `{
-  "name": "spacedock",
-  "plugins": [
-    {
-      "name": "spacedock",
-      "version": "0.0.2026053101",
-      "schema": { "version": "marketplace-2" }
-    }
-  ]
-}
-`
-	now := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
-	out, err := BumpCalendarVersion([]byte(src), now)
-	if err != nil {
-		t.Fatalf("bump: %v", err)
-	}
-	if v := entryVersion(t, out); v != "0.0.2026060101" {
-		t.Errorf("entry calendar version = %q, want 0.0.2026060101", v)
-	}
-	if !strings.Contains(string(out), `"version": "marketplace-2"`) {
-		t.Errorf("nested schema.version was clobbered; replace-first must leave it untouched:\n%s", out)
-	}
-}
-
-// TestBumpCalendarVersionNewDayResetsSequence locks the cross-day behavior: a
-// bump on a later date produces a strictly greater value than a prior-day bump
-// even though the new day's sequence restarts at 01 — the date component
-// dominates the ordering.
-func TestBumpCalendarVersionNewDayResetsSequence(t *testing.T) {
-	src := `{"name":"spacedock","plugins":[{"name":"spacedock","version":"0.0.2026053199"}]}`
-	day2 := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
-	out, err := BumpCalendarVersion([]byte(src), day2)
-	if err != nil {
-		t.Fatalf("bump: %v", err)
-	}
-	v := entryVersion(t, out)
-	if v != "0.0.2026060101" {
-		t.Errorf("new-day bump = %q, want 0.0.2026060101 (seq resets to 01 on a new date)", v)
-	}
-	if !(v > "0.0.2026053199") {
-		t.Errorf("new-day bump %q did not exceed prior-day max 0.0.2026053199", v)
 	}
 }
 
@@ -385,21 +291,4 @@ func TestDevPreVersion(t *testing.T) {
 			t.Errorf("DevPreVersion(%q) = %q, want an error on a hyphenated/malformed input", in, got)
 		}
 	}
-}
-
-// entryVersion extracts plugins[0].version from a marketplace.json blob.
-func entryVersion(t *testing.T, blob []byte) string {
-	t.Helper()
-	var m struct {
-		Plugins []struct {
-			Version string `json:"version"`
-		} `json:"plugins"`
-	}
-	if err := json.Unmarshal(blob, &m); err != nil {
-		t.Fatalf("parse marketplace blob: %v\n%s", err, blob)
-	}
-	if len(m.Plugins) == 0 {
-		t.Fatalf("no plugins entry in blob:\n%s", blob)
-	}
-	return m.Plugins[0].Version
 }

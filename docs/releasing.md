@@ -1,7 +1,10 @@
 # Releasing Spacedock
 
 Stable releases are cut from `main`. `next` remains a dev-only branch for source
-builds and pre-stable publishing tests. Do not present `next` as the stable
+builds (`go install …@next`, `--plugin-dir`) — it is NOT a re-pull source for any
+installer. The edge marketplace entry tracks `main` directly, the same branch
+prereleases are tagged on, so `main`'s tip already carries the latest edge
+content once a `-pre` tag lands on it. Do not present `next` as the edge
 marketplace source.
 
 ## What the Tag Push Does
@@ -16,15 +19,15 @@ marketplace source.
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
 - stamps the plugin manifests' `version` on `main`, then advances the stable
   channel ref (see below).
-- advances the `next` edge line to match the release — reconciled on a
-  prerelease tag, reconciled plus bumped to the post-release dev pre-version on
-  a stable tag (see "Advancing the Edge Line" below).
+- on a latest-line stable tag, auto-cuts a `vX.(Y+1).0-pre0` prerelease tag so
+  the edge binary catches up to the new release line within minutes (see
+  "Advancing the Edge Line" below).
 
 The marketplace manifest no longer lives in the plugin branch. It is the
 standalone `spacedock-dev/marketplace` repo, where each channel is a branch with
 its own root `marketplace.json`: the repo root (a marketplace named `spacedock`,
 the stable entry pinned to `source.ref=stable`) and the `edge` branch (a
-marketplace named `spacedock-edge`, entry tracking `next`). The channel lives in
+marketplace named `spacedock-edge`, entry tracking `main`). The channel lives in
 the marketplace NAME, so a binary adds the channel's branch source —
 `spacedock-dev/marketplace` for stable, `spacedock-dev/marketplace@edge` for edge —
 and the marketplace it registers carries the matching name.
@@ -179,78 +182,61 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    git branch -d release/X.Y.Z
    ```
 
-## Advancing the Edge Line (`next`)
+## Advancing the Edge Line
 
-Every tag push also advances `next` — the branch the `spacedock-edge`
-marketplace resolves — in a job that `needs: goreleaser` (a sibling job, so a
-rare conflict here cannot unwind or block the release that already published):
+The edge marketplace entry resolves `main` directly — the same branch stable
+AND prerelease tags are both cut from — so `main`'s tip already carries the
+latest edge content once a tag lands on it: `claude plugin update` / `codex`
+re-pull on a manifest-version difference at that source ref (no separate
+tracking branch, no calendar-key re-pull mechanism to maintain). The only thing
+a tag push still automates for the edge line is auto-cutting the NEXT
+prerelease after a latest-line stable release, in a job that `needs: goreleaser`
+(a sibling job, so a rare conflict here cannot unwind or block the release that
+already published):
 
-- **Prerelease (`-pre`) tag:** `next` is reconciled to the tagged commit's
-  content — `git merge -X theirs "$RELEASE_COMMIT"`, favoring the release over
-  whatever `next` had drifted to — then the marketplace calendar key is bumped
-  (`spacedock-release bump-calendar`) so `claude plugin update` / `codex`
-  re-pull. This is the automated form of the manual reconcile the 0.24.0-pre1
-  cut required (`next` had drifted 40 commits behind `main`, hard-blocking
-  `spacedock codex` on a binary/plugin version-compat check).
-- **Stable (`vX.Y.Z`) tag, latest line:** `next` is reconciled the same way,
-  stamped PAST the release to `X.(Y+1).0-pre1`
-  (`spacedock-release dev-preversion X.Y.Z`) so the edge line never masquerades
-  as the stable version it just shipped, and the calendar key is bumped — then an
-  ANNOTATED `vX.(Y+1).0-pre0` tag is auto-created **on the greened release commit**
-  and pushed over SSH with a dedicated write **deploy key**
-  (`EDGE_RELEASE_DEPLOY_KEY`), scoped to this repo. That prerelease tag's own
-  release run reuses the greened commit's e2e-gate pass, builds+publishes the
-  `X.(Y+1)`-minor edge binary, and bumps the `spacedock@next` cask — so the edge
-  binary's minor catches up to the skills' gate line within minutes instead of
-  waiting for the next hand-cut prerelease. The auto-tag MUST be annotated with a
-  non-empty body (the release-notes extraction step rejects a lightweight tag).
-  The push MUST use a trigger-capable credential: a `GITHUB_TOKEN` push — and, as
-  observed on the v0.25.0 and v0.26.0 cuts, the cross-repo tap PAT — does NOT
-  create the pre0 `release.yml` run, so the step pushes with the deploy key and
-  then **verifies a run was created for the pre0 tag, failing `edge-advance`
-  loudly if none appears** rather than leaving the edge binary silently behind.
-  Expect two GitHub releases per stable cut.
-- **Old-line / patch (`vX.Y.1`, or any tag whose target edge version is not
-  strictly greater than `next`'s current manifest version):** the whole
-  `edge-advance` job SKIPS (`spacedock-release edge-advance-decision` prints
-  `skip`, logged as a `::notice::`; every downstream step is gated on the
-  decision). `next`'s tip — content, manifests, gate line, and the marketplace
-  calendar key — is left untouched, so no edge installer re-pulls. The patch
-  updates only the stable cask; its fix reaches edge through the normal
-  `main`→`next` flow, never through a `-X theirs` reconcile that would clobber
-  `next`'s newer `(Y+1)`-line content or rewind its manifest/gate line. The
-  auto-pre0 step is stable-latest-line-only and decision-gated, so a patch never
-  attempts a colliding pre0 tag.
+- **Stable (`vX.Y.Z`) tag, latest line:** an ANNOTATED `vX.(Y+1).0-pre0` tag is
+  auto-created **on the greened release commit** and pushed over SSH with a
+  dedicated write **deploy key** (`EDGE_RELEASE_DEPLOY_KEY`), scoped to this
+  repo. That prerelease tag's own release run reuses the greened commit's
+  e2e-gate pass, builds+publishes the `X.(Y+1)`-minor edge binary, and bumps the
+  `spacedock@next` cask — so the edge binary's minor catches up to the skills'
+  gate line within minutes instead of waiting for the next hand-cut prerelease.
+  The auto-tag MUST be annotated with a non-empty body (the release-notes
+  extraction step rejects a lightweight tag). The push MUST use a
+  trigger-capable credential: a `GITHUB_TOKEN` push — and, as observed on the
+  v0.25.0 and v0.26.0 cuts, the cross-repo tap PAT — does NOT create the pre0
+  `release.yml` run, so the step pushes with the deploy key and then **verifies
+  a run was created for the pre0 tag, failing `edge-advance` loudly if none
+  appears** rather than leaving the edge binary silently behind. Expect two
+  GitHub releases per stable cut.
+- **Old-line / patch (`vX.Y.1`, cut after a newer `X.(Y').Z` line already
+  shipped):** the decision step compares this tag's own version against the
+  highest OTHER existing bare stable tag in the repo and prints `skip`, logged
+  as a `::notice::`; the auto-pre0 step is gated on that decision, so it does
+  NOT run. Without this check, the patch would auto-cut a WRONG, lower
+  `vX.(Y+1).0-pre0` tag whose release run would bump the `spacedock@next` cask
+  DOWN to an older minor.
 
-The `vX.(Y+1).0-pre0` release run does not recurse: its `-pre0` tag routes to the
-prerelease path, whose `edge-advance-decision` skips (`pre0 < next`'s `pre1`), and
-the auto-pre0 step runs only on the stable path — so it neither re-tags nor
-rewinds `next`. goreleaser stamps the edge binary from the highest tag pointing at
-the commit (`git tag --points-at HEAD --sort -version:refname`), which is the
-`-pre0` tag, so the `X.(Y+1)` binary version is correct without an override; a
+The `vX.(Y+1).0-pre0` release run does not recurse: its `-pre0` tag is itself a
+prerelease (hyphenated), so both the decision step and the auto-pre0 step —
+which carry `!contains(github.ref, '-')` — skip on that tag's own run. goreleaser
+stamps the edge binary from the highest tag pointing at the commit (`git tag
+--points-at HEAD --sort -version:refname`), which is the `-pre0` tag, so the
+`X.(Y+1)` binary version is correct without an override; a
 `GORELEASER_CURRENT_TAG` pin is set on the goreleaser step as belt-and-suspenders.
-
-The reconcile is a merge, never a reset or force-push: the previous `next` tip
-is always a first-parent ancestor of the new commit, so `git push origin
-<sha>:next` is a plain fast-forward. A real conflict (two sides changing the
-same file in incompatible, non-superseded ways) fails the step loudly instead
-of guessing — the same manual reconciliation this replaces remains the escape
-hatch.
 
 ## Dev-Only `next` Publishing
 
 Keep `next` for development. Source builds may use
-`go install github.com/spacedock-dev/spacedock/cmd/spacedock@next`, local
-checkouts may use `--plugin-dir`, and the deliberate `next-publish` workflow may
-bump the marketplace calendar key for dev testers. A `go install …@vX.Y.Z`
-proxy build carries no ldflags, so it self-reports `X.Y.Z+dev` (the tagged
-manifest at the module-proxy commit equals the tag) — gates correctly under
-minor-version coupling; the `+dev` suffix on an otherwise-tagged build is a
-cosmetic oddity, not a compatibility issue.
-
-Every release tag now advances `next` and bumps its calendar key automatically
-(see "Advancing the Edge Line" above); `next-publish` stays for an out-of-band
-re-pull between releases (e.g. a `next`-only fix that isn't worth a full cut).
+`go install github.com/spacedock-dev/spacedock/cmd/spacedock@next`, and local
+checkouts may use `--plugin-dir`. `next` is not consulted by any installer
+(the edge marketplace entry resolves `main` directly — see "Advancing the Edge
+Line" above), so there is no re-pull mechanism to run for it; `next` is a
+source-build convenience branch only. A `go install …@vX.Y.Z` proxy build
+carries no ldflags, so it self-reports `X.Y.Z+dev` (the tagged manifest at the
+module-proxy commit equals the tag) — gates correctly under minor-version
+coupling; the `+dev` suffix on an otherwise-tagged build is a cosmetic oddity,
+not a compatibility issue.
 
 Do not send stable users to `next`. If a command or manifest uses `@next`, it is
 a dev-only path.
@@ -262,9 +248,11 @@ a dev-only path.
 - macOS binaries are adhoc-signed, not yet notarized; the Homebrew cask's
   postflight strips the `com.apple.quarantine` xattr as the interim Gatekeeper
   fix until Developer-ID notarization lands.
-- The `spacedock-dev/marketplace` repo's `next` entry carries a dead `version`
-  field and a tag-vs-branch channel structure that want cleanup. That repo is
-  standalone and unreachable from here, so the cleanup is deferred to a
-  marketplace-repo task and is NOT part of this flow.
+- The `spacedock-dev/marketplace` repo's `edge` entry's `version` field is
+  display metadata only — inert on both current hosts (`claude plugin update`
+  keys on the plugin MANIFEST version at the source ref; codex re-clones on add
+  and displays the manifest version), and a tag-vs-branch channel structure
+  cleanup want. That repo is standalone and unreachable from here, so the
+  cleanup is deferred to a marketplace-repo task and is NOT part of this flow.
 - This flow is the v1 adaptation of the original `scripts/release.sh` from the
   upstream spacedock plugin repo.

@@ -1,5 +1,5 @@
 // ABOUTME: Release-pipeline CLI: `stamp-version` writes the release version into
-// ABOUTME: the plugin.json manifests; `bump-calendar` advances the marketplace key.
+// ABOUTME: the plugin.json manifests for a release.
 package main
 
 import (
@@ -20,7 +20,6 @@ import (
 // Usage:
 //
 //	spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
-//	spacedock-release bump-calendar <marketplace.json>
 //	spacedock-release dev-preversion <stable-version>
 //	spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
 //	spacedock-release e2e-gate <release-commit-sha>
@@ -29,9 +28,8 @@ import (
 // plugin.json gets its top-level `version` field rewritten (AC-4); a `.md`
 // argument is the FO shared-core prose, whose single release-stamped "required
 // binary minor" literal is rewritten to the release's major.minor (D5) —
-// erroring unless the literal appears exactly once. bump-calendar advances the
-// marketplace plugin entry's calendar key to today's `0.0.YYYYMMDDNN` (AC-2d).
-// All rewrite in place. dev-preversion prints the post-release dev pre-version
+// erroring unless the literal appears exactly once. All rewrite in place.
+// dev-preversion prints the post-release dev pre-version
 // (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`.
 // edge-advance-decision prints `advance` or `skip` (exit 0 either way) deciding
 // whether a tag advances the edge line: it computes the tag's target edge
@@ -65,8 +63,6 @@ func main() {
 	switch os.Args[1] {
 	case "stamp-version":
 		os.Exit(stampVersion(os.Args[2:]))
-	case "bump-calendar":
-		os.Exit(bumpCalendar(os.Args[2:]))
 	case "dev-preversion":
 		os.Exit(devPreversion(os.Args[2:]))
 	case "edge-advance-decision":
@@ -186,30 +182,6 @@ func stampVersion(args []string) int {
 		}
 		fmt.Printf("stamped %s version=%s\n", path, version)
 	}
-	return 0
-}
-
-func bumpCalendar(args []string) int {
-	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, "spacedock-release bump-calendar: need exactly one <marketplace.json>")
-		return 2
-	}
-	path := args[0]
-	data, err := os.ReadFile(path)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "read %s: %v\n", path, err)
-		return 1
-	}
-	out, err := release.BumpCalendarVersion(data, time.Now())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "bump %s: %v\n", path, err)
-		return 1
-	}
-	if err := os.WriteFile(path, out, 0o644); err != nil {
-		fmt.Fprintf(os.Stderr, "write %s: %v\n", path, err)
-		return 1
-	}
-	fmt.Printf("bumped %s\n", path)
 	return 0
 }
 
@@ -382,7 +354,6 @@ func usage() {
 
 Usage:
   spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
-  spacedock-release bump-calendar <marketplace.json>
   spacedock-release dev-preversion <stable-version>
   spacedock-release edge-advance-decision <tag> <next-plugin.json>
   spacedock-release edge-pre0-version <stable-version>

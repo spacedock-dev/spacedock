@@ -1,5 +1,8 @@
-// ABOUTME: Structure guards for the edge-advance line-ordering decision gate (AC-2)
-// ABOUTME: and the always-cut-pre0 auto-tag (AC-4), each with adversarial twins.
+// ABOUTME: Structure guards for the edge-advance job's always-cut-pre0 auto-tag
+// ABOUTME: (AC-4), with adversarial twins. The next-reconcile it used to share a
+// ABOUTME: decision gate with is retired (the edge marketplace entry now tracks
+// ABOUTME: main directly; see the entity's design-change note) — pending the
+// ABOUTME: pre0 step's replacement "latest line" gate, its wiring guard is TODO.
 package release
 
 import (
@@ -8,25 +11,31 @@ import (
 	"testing"
 )
 
-// ifHasDecisionGate reports whether an `if:` guard conjoins the edge-advance
-// decision output (`steps.decision.outputs.advance == 'true'`), the gate every
-// mutating step in the job must carry so an old-line/patch tag skips the whole
-// job.
-func ifHasDecisionGate(ifCond string) bool {
-	return strings.Contains(strings.ReplaceAll(ifCond, " ", ""), "steps.decision.outputs.advance=='true'")
-}
-
-// edgeAdvanceDecisionStep returns the step that runs the edge-advance-decision
-// subcommand (the job's first, gating step), or nil when none does.
-func edgeAdvanceDecisionStep(job workflowJob) *workflowStep {
-	for i := range job.steps {
-		for _, command := range executableShellCommands(job.steps[i].run) {
-			if strings.Contains(command, "edge-advance-decision") {
-				return &job.steps[i]
-			}
+// edgeAdvanceJob returns the parsed edge-advance job, or nil when the workflow
+// has none — the single lookup every edge-advance guard shares.
+func edgeAdvanceJob(workflow string) *workflowJob {
+	for _, job := range parseWorkflowJobs(workflow) {
+		if job.name == "edge-advance" {
+			j := job
+			return &j
 		}
 	}
 	return nil
+}
+
+// ifSelectsStable reports whether an `if:` guard fires on a stable tag and not a
+// prerelease — the negated `!contains(github.ref, '-')` form, optionally
+// conjoined with a further gate.
+func ifSelectsStable(ifCond string) bool {
+	c := strings.ReplaceAll(ifCond, " ", "")
+	return c == "!contains(github.ref,'-')" || strings.HasPrefix(c, "!contains(github.ref,'-')&&")
+}
+
+// ifHasDecisionGate reports whether an `if:` guard conjoins the edge-advance
+// decision output (`steps.decision.outputs.advance == 'true'`) — the gate the
+// auto-pre0 step must carry so an old-line/patch stable tag skips the cut.
+func ifHasDecisionGate(ifCond string) bool {
+	return strings.Contains(strings.ReplaceAll(ifCond, " ", ""), "steps.decision.outputs.advance=='true'")
 }
 
 // edgeAdvanceAutoPre0Step returns the always-cut-pre0 step (the one running
@@ -42,117 +51,15 @@ func edgeAdvanceAutoPre0Step(job workflowJob) *workflowStep {
 	return nil
 }
 
-// assertEdgeAdvanceDecisionGating (AC-2) binds the line-ordering guard's job-level
-// wiring: a `decision` step runs edge-advance-decision and writes BOTH
-// advance=true and advance=false to $GITHUB_OUTPUT, and EVERY mutating step —
-// both reconcile steps, the calendar-bump+push step, and the auto-pre0 step —
-// gates on `steps.decision.outputs.advance == 'true'`. The calendar-bump gate is
-// the one ASK 2 added: previously unconditional, an old-line patch would
-// otherwise still churn every edge installer's re-pull (AC-2d / AC-3d).
-func assertEdgeAdvanceDecisionGating(workflow string) error {
-	job := edgeAdvanceJob(workflow)
-	if job == nil {
-		return fmt.Errorf("release.yml has no edge-advance job")
-	}
-	decision := edgeAdvanceDecisionStep(*job)
-	if decision == nil {
-		return fmt.Errorf("edge-advance has no step running edge-advance-decision")
-	}
-	if decision.id != "decision" {
-		return fmt.Errorf("edge-advance decision step has id %q, want \"decision\" (else steps.decision.outputs.advance does not resolve)", decision.id)
-	}
-	emitsTrue, emitsFalse := false, false
-	for _, command := range executableShellCommands(decision.run) {
-		if strings.Contains(command, "advance=true") && strings.Contains(command, `"$GITHUB_OUTPUT"`) {
-			emitsTrue = true
-		}
-		if strings.Contains(command, "advance=false") && strings.Contains(command, `"$GITHUB_OUTPUT"`) {
-			emitsFalse = true
-		}
-	}
-	if !emitsTrue || !emitsFalse {
-		return fmt.Errorf("edge-advance decision step does not write both advance=true and advance=false to $GITHUB_OUTPUT (true=%v false=%v)", emitsTrue, emitsFalse)
-	}
-	for _, step := range edgeAdvanceReconcileSteps(*job) {
-		if !ifHasDecisionGate(step.ifCond) {
-			return fmt.Errorf("edge-advance reconcile step %q does not gate on the decision output; if: %q", step.name, step.ifCond)
-		}
-	}
-	bump := edgeAdvanceBumpCalendarStep(*job)
-	if bump == nil {
-		return fmt.Errorf("edge-advance has no bump-calendar step")
-	}
-	if !ifHasDecisionGate(bump.ifCond) {
-		return fmt.Errorf("edge-advance bump-calendar step is not decision-gated; if: %q — an old-line patch would still churn every edge installer's re-pull", bump.ifCond)
-	}
-	pre0 := edgeAdvanceAutoPre0Step(*job)
-	if pre0 == nil {
-		return fmt.Errorf("edge-advance has no auto-cut pre0 step")
-	}
-	if !ifHasDecisionGate(pre0.ifCond) {
-		return fmt.Errorf("edge-advance auto-pre0 step is not decision-gated; if: %q", pre0.ifCond)
-	}
-	return nil
-}
-
-// TestReleaseWorkflowEdgeAdvanceDecisionGates locks AC-2 against the on-disk
-// release.yml: the whole job gates on the line-ordering decision. The adversarial
-// twins ungate the calendar-bump step, ungate the stable reconcile step, and
-// break the decision step's advance=false emission; each must red, so the green
-// is not vacuous.
-func TestReleaseWorkflowEdgeAdvanceDecisionGates(t *testing.T) {
-	workflow := readWorkflow(t, "release.yml")
-	if err := assertEdgeAdvanceDecisionGating(workflow); err != nil {
-		t.Fatalf("real release.yml edge-advance decision gating failed: %v", err)
-	}
-
-	// Ungate the calendar bump — an old-line patch would churn every edge
-	// installer's re-pull (the AC-2d / AC-3d regression ASK 2 closed).
-	ungatedBump := strings.Replace(workflow,
-		"      - name: Bump the marketplace calendar key and push the edge line\n        if: \"steps.decision.outputs.advance == 'true'\"\n",
-		"      - name: Bump the marketplace calendar key and push the edge line\n",
-		1)
-	if ungatedBump == workflow {
-		t.Fatal("fixture workflow missing the decision-gated bump-calendar step to ungate")
-	}
-	if err := assertEdgeAdvanceDecisionGating(ungatedBump); err == nil {
-		t.Fatal("decision-gating guard accepted an ungated calendar-bump step")
-	}
-
-	// Ungate the stable reconcile step — an old-line patch would `-X theirs`
-	// clobber next's newer content.
-	ungatedReconcile := strings.Replace(workflow,
-		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'\"\n",
-		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-')\"\n",
-		1)
-	if ungatedReconcile == workflow {
-		t.Fatal("fixture workflow missing the decision-gated stable reconcile step to ungate")
-	}
-	if err := assertEdgeAdvanceDecisionGating(ungatedReconcile); err == nil {
-		t.Fatal("decision-gating guard accepted an ungated stable reconcile step")
-	}
-
-	// Break the decision step's advance=false emission — downstream gates would
-	// never see a skip signal.
-	brokenDecision := strings.Replace(workflow,
-		"            echo \"advance=false\" >> \"$GITHUB_OUTPUT\"\n",
-		"            echo \"skipped the edge line\"\n",
-		1)
-	if brokenDecision == workflow {
-		t.Fatal("fixture workflow missing the decision step advance=false emission to break")
-	}
-	if err := assertEdgeAdvanceDecisionGating(brokenDecision); err == nil {
-		t.Fatal("decision-gating guard accepted a decision step that never emits advance=false")
-	}
-}
-
 // assertAlwaysCutPre0 (AC-4) binds the always-cut-pre0 auto-tag's wiring: the
-// step runs ONLY on the stable path (a `-pre` tag must not recurse), is
-// decision-gated, tags the GREENED release commit (`RELEASE_COMMIT` from
-// `git rev-list -1 "$GITHUB_REF_NAME"`, not next's tip — so the pre0 run reuses
-// the existing green e2e run), creates an ANNOTATED tag with a non-empty body (a
-// lightweight/empty-body tag reds the release-notes extraction step before the
-// binary builds), pushes it with a trigger-capable credential — the
+// step runs ONLY on the stable path (a `-pre` tag must not recurse), is gated on
+// the decision step's "is this the latest known release line" output (an
+// old-line patch tag would otherwise auto-cut a wrong, lower pre0 and bump the
+// spacedock@next cask DOWN a minor), tags the GREENED release commit
+// (`RELEASE_COMMIT` from `git rev-list -1 "$GITHUB_REF_NAME"` — so the pre0 run
+// reuses the existing green e2e run), creates an ANNOTATED tag with a non-empty
+// body (a lightweight/empty-body tag reds the release-notes extraction step
+// before the binary builds), pushes it with a trigger-capable credential — the
 // EDGE_RELEASE_DEPLOY_KEY SSH deploy key, NOT the workflow-suppressed default
 // GITHUB_TOKEN (which lands the ref but fires no run) — and then verifies a
 // release.yml run was created for the pre0 tag, failing loudly if none appears.
