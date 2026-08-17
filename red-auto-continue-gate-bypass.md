@@ -45,6 +45,8 @@ gates:
                 target-stage: done
                 state: pending
 worktree: .worktrees/spacedock-ensign-red-auto-continue-gate-bypass
+mod-block: merge:pr-merge
+pr: local-merge:61dd8e435
 ---
 
 ## Problem
