@@ -13,6 +13,14 @@ import (
 // liveCadenceWorkflow reads only the job-level env of the live jobs — the
 // surface the retired/unavailable-secret bans below inspect.
 type liveCadenceWorkflow struct {
+	On struct {
+		WorkflowDispatch struct {
+			Inputs map[string]struct {
+				Default  string   `yaml:"default"`
+				Options  []string `yaml:"options"`
+			} `yaml:"inputs"`
+		} `yaml:"workflow_dispatch"`
+	} `yaml:"on"`
 	Jobs map[string]struct {
 		Env map[string]string `yaml:"env"`
 	} `yaml:"jobs"`
@@ -45,6 +53,13 @@ func assertLiveSecretsBansHold(workflow string) error {
 	}
 	if _, present := pi.Env["SPACEDOCK_PI_LIVE_CHILD_MODEL"]; present {
 		return fmt.Errorf("Pi lane must derive its provider model from auth mode")
+	}
+	parallel, ok := parsed.On.WorkflowDispatch.Inputs["live_parallel"]
+	if !ok || parallel.Default != "4" {
+		return fmt.Errorf("workflow_dispatch live_parallel input = %#v, want a string input defaulting to \"4\"", parallel)
+	}
+	if pi.Env["SPACEDOCK_PI_LIVE_PARALLEL"] != `${{ inputs.live_parallel }}` {
+		return fmt.Errorf("Pi lane SPACEDOCK_PI_LIVE_PARALLEL = %q, want the live_parallel input", pi.Env["SPACEDOCK_PI_LIVE_PARALLEL"])
 	}
 	return nil
 }
@@ -85,6 +100,9 @@ func TestRuntimeLiveWorkflowNamedEvidenceMutationControls(t *testing.T) {
 	mutations := map[string]func(string) string{
 		"legacy PTY flag": func(s string) string {
 			return strings.Replace(s, "DISABLE_AUTOUPDATER: \"1\"", "DISABLE_AUTOUPDATER: \"1\"\n      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: \"1\"", 1)
+		},
+		"Pi parallel override lost": func(s string) string {
+			return strings.Replace(s, `-parallel "$PI_LIVE_PARALLEL" `, "", 1)
 		},
 		"offline live tag": func(s string) string {
 			return strings.Replace(s, "go test ./internal/ensigncycle -count=1 -run", "go test -tags live ./internal/ensigncycle -count=1 -run", 1)
@@ -128,6 +146,9 @@ func assertNamedLiveEvidence(workflow string) error {
 	}
 	for _, step := range parseWorkflowSteps(workflow) {
 		got := selectedTests(step.run)
+		if step.name == "Run live Pi common journeys" && !strings.Contains(step.run, `-parallel "$PI_LIVE_PARALLEL"`) {
+			return fmt.Errorf("Pi common journeys step lost the explicit -parallel override")
+		}
 		if len(got) > 0 && !owned[step.name] {
 			return fmt.Errorf("step %q selects unowned tests %v", step.name, got)
 		}

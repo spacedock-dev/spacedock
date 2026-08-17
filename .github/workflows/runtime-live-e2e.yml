@@ -28,6 +28,11 @@ on:
           - sonnet
           - opus-pre-release
           - pi
+      live_parallel:
+        description: "go test -parallel for the Pi common journeys (positive integer; default 4, the standard runner core count)."
+        required: false
+        type: string
+        default: "4"
       claude_version:
         description: "Pin Claude Code to a specific version (e.g. 2.1.107, stable, latest). Empty = installer default."
         required: false
@@ -587,6 +592,7 @@ jobs:
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
       SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi
       PI_OFFLINE: "1"
+      SPACEDOCK_PI_LIVE_PARALLEL: ${{ inputs.live_parallel }}
     steps:
       - name: Check required secret
         run: |
@@ -775,7 +781,18 @@ jobs:
       - name: Run live Pi common journeys
         run: |
           set -o pipefail
-          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle
+          PI_LIVE_PARALLEL="${SPACEDOCK_PI_LIVE_PARALLEL:-4}"
+          case "$PI_LIVE_PARALLEL" in
+            ''|*[!0-9]*)
+              echo "live_parallel must be a positive integer (got \"$PI_LIVE_PARALLEL\")" >&2
+              exit 1
+              ;;
+          esac
+          if [ "$PI_LIVE_PARALLEL" -lt 1 ]; then
+            echo "live_parallel must be at least 1 (got \"$PI_LIVE_PARALLEL\")" >&2
+            exit 1
+          fi
+          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle
 
       - name: Run live Pi front-door smoke
         if: ${{ !cancelled() }}
