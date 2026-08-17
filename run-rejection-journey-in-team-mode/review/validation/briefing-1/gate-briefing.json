@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-1:revision-1",
+  "question": "Resolve the team-mode layer's validation: validator recommends REJECTED pending two tolerance rulings that are yours. (1) Accept sanctioned withdraw-and-re-prepare recovery? The staged fix generalizes a pre-existing main-side check's three attempt-1 pins to select the open attempt - approve-revise ratifies it. (2) Heading strictness: the FO wrote '## Feedback Cycles' where the workflow declares '###' - loosen the checker to match by name, or keep strict and pin the heading level in the fixture instructions (FO recommends strict+pin)?",
+  "artifacts": [
+    {
+      "id": "artifact:zqb683j8jth0tyr2eme231e2:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f19043eaf78cdd11a3ba6795a52dcc813167e2fd/run-rejection-journey-in-team-mode.md",
+      "rev": "sha256:4e749474d076ece6ec862fd45dd1e64c6d518db1885c5756ed48abedb9914f10",
+      "mediaType": "text/markdown",
+      "summary": "Corrected validation: FO's run was conforming end-to-end (round recorded entries=4, byte-exact Cycle line, all writes committed, sanctioned withdraw) - proven by replaying the exact verb sequence on a tip binary; entity body byte-identical through every verb, product-bug hypothesis refuted. Reds: pre-existing main-side attempt-1 pins (Material, narrow fix staged in this layer's revise) and the H2/H3 heading. Layer's own topology grading graded that red run GREEN. Revise round staged: assert generalization + ac-reanchor fixture identity + heading disposition per ruling 2."
+    }
+  ]
+}

@@ -39,6 +39,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:zqb683j8jth0tyr2eme231e2:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:zqb683j8jth0tyr2eme231e2-validation-1
+              briefing:
+                id: briefing:zqb683j8jth0tyr2eme231e2:validation:attempt-1:revision-1
+                digest: sha256:7bb7c613a706aa23cf182ffe91a2eea5836a76282781a64cc5cd4e373d264b1a
+                request-digest: sha256:6162d7e29a40e917e55f2a187b0e11a41f0d2ae31c5de00097abb970c2ad6edd
+                room-ref: ./run-rejection-journey-in-team-mode/review/validation/briefing-1
 worktree: .worktrees/spacedock-ensign-run-rejection-journey-in-team-mode
 pr: "#724"
 ---
