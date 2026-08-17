@@ -2,7 +2,7 @@
 title: "Supported sandboxes"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-17 14:52:49"
+last_updated: "2026-08-17 14:56:14"
 ---
 
 # Supported sandboxes
