@@ -9,6 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-prerelease-ships-stable-stamped-default-artifact
 issue:
+mod-block: merge:pr-merge
+pr: "#726"
 ---
 
 A prerelease tag publishes both channel builds and gives the stable-stamped one the unsuffixed asset name, so installing edge from a `-pre` release silently yields a stable binary — and nothing in the binary's own output reveals which one you got.
