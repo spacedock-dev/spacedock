@@ -702,3 +702,47 @@ self-referential text. FO read back the pushed diff against the authorized shape
 Declared limit (worker-flagged, FO-concurred): offline runs cannot reproduce the codex FO's
 Cycle-line placement; only a live codex rejection-flow run proves the pin changes behavior —
 that proof is the new tip CI run's codex lane.
+
+### Amendment 4: delta re-verification 52b94f9aa..9b1c86a60 — REJECTED lifted, recommendation PASSED (validation)
+
+Re-verified under the captain's revise ratification condition, on the FO's delta window. Three
+commits: 3f6f3e935 (withdraw tolerance + ac-reanchor identity), 43f7537b0 (heading-drift
+diagnostic), 9b1c86a60 (fixture Cycle-line target pin).
+
+- Finding 5 SATISFIED. `assertRejectionRoundGateBoundary` now selects the ONE open attempt,
+  tolerates withdrawn siblings, still reds a resolved/applied attempt, reds zero open attempts,
+  and binds attempt-N to briefing attempt-N with N-agreement — exactly the fix shape filed. The
+  regression drives REAL gate verbs (withdraw → re-prepare to an open attempt-2) and the oracle
+  grades the recovered state green; falsifying probe verified on a throwaway checkout — restoring
+  the literal attempt-1 pin reds the recovery regression. Live proof both directions: claude lane
+  17/17 on 43f7537b0 (run 31991864922, the lane my finding 5 red came from), codex 17/17 on
+  9b1c86a60 (run 31996696789 — first fully green codex lane, rejection-flow included).
+- Finding 6 SATISFIED as ruled. Captain ruled STRICT: the H2 byte-exact line still reds
+  (negative case added, byte-exact under `## Feedback Cycles`), the diagnostic now names the
+  drift ("byte-exact … the round WAS recorded") instead of the misleading bare count — probe
+  verified: removing the diagnostic branch reds the phrase assertions. The fixture pins the
+  target file and the exact H3 level (9b1c86a60), the quoted-instruction hardening the residual
+  rule requires; Amendment 3 attributes the codex attempt-2 red to that underdetermination and
+  the pinned tip's green codex lane proves the pin live.
+- ac-reanchor identity fix VERIFIED: repo-local `git config` identity replaces the per-invocation
+  `-c` flags, with a read-back guard the old form cannot pass
+  (TestACReanchorFixtureRepoCommitsFromAnyProcess); ac-value-reanchor is green inside the 17/17
+  codex lane on the tip.
+- Claude rejection red on 9b1c86a60 VERIFIED as adherence variance, not a branch defect: the
+  run's own stream shows `gate record --round validation/1` at index 288 returning `entries=2`
+  (289) BEFORE the rework spawn at 310 — the early-record mode already documented in this
+  entity's corrected determined shape and redded by the deliberately-strict `entries=4`
+  recognizer. The auto-continue red is a true positive outside this surface. Both have filed
+  owners: own-claude-early-rejection-round-record.md (zf7rymtke3b6xp7r0337hjj4, which also
+  carries the "never invoked" label-honesty defect this red's message exhibits) and
+  own-sonnet-gate-conn-bypass.md (rcpa3nnkmgy9tm9hand0jkf6). Note the FO's window message had
+  those two ids swapped; the files are authoritative.
+- Checks run at 9b1c86a60: focused rejection + recovery + identity tests green; focused `-race`
+  on both changed packages green; gofmt clean; offline CI green on both delta runs.
+
+**Recommendation: PASSED** (replaces Amendment 1's REJECTED). Finding 5's material defect is
+fixed and regression-pinned, finding 6 is closed by captain ruling with the diagnostic and pin
+landed, findings 1-2 remain deferred risks as filed, finding 4 (mode-numbering collision)
+remains polish. Composite green context: each lane is 17/17 on a delta commit containing all
+assert fixes; the two tip reds are owned adherence-variance entities, not this branch. The
+captain ratifies at gate attempt-2 with the +174% overrun and ordering correction still riding.
