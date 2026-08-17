@@ -13,21 +13,31 @@ import (
 	"testing"
 )
 
-// codexPluginDirHost inspects the local marketplace's plugin symlink at Install
-// time — the moment the real codex host reads it — to confirm the checkout is wired
-// into the marketplace the install consumes. The channel-NAME property (that an edge
+// codexPluginDirHost inspects the local marketplace's staged plugin dir at Install
+// time — the moment the real codex host reads it — to confirm the checkout's plugin
+// surface was staged (copied, not symlinked — see WriteCodexLocalMarketplace) into
+// the marketplace the install consumes. The channel-NAME property (that an edge
 // build names the marketplace `spacedock-edge` so it resolves) is proven
 // behaviorally against real codex in AC-2, not by re-reading the JSON here.
 type codexPluginDirHost struct {
 	fakeHost
-	installedSymlinkDest string
-	inspectErr           error
+	installedIsRealDir  bool
+	installedManifest   []byte
+	installedPluginPath string
+	inspectErr          error
 }
 
 func (h *codexPluginDirHost) Install(host, source, branch string) (string, error) {
-	if dest, err := os.Readlink(filepath.Join(source, "plugins", "spacedock")); err == nil {
-		h.installedSymlinkDest = dest
+	pluginPath := filepath.Join(source, "plugins", "spacedock")
+	h.installedPluginPath = pluginPath
+	if info, err := os.Lstat(pluginPath); err == nil {
+		h.installedIsRealDir = info.IsDir() && info.Mode()&os.ModeSymlink == 0
 	} else {
+		h.inspectErr = err
+	}
+	if data, err := os.ReadFile(filepath.Join(pluginPath, ".codex-plugin", "plugin.json")); err == nil {
+		h.installedManifest = data
+	} else if h.inspectErr == nil {
 		h.inspectErr = err
 	}
 	return h.fakeHost.Install(host, source, branch)
@@ -53,14 +63,21 @@ func TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag(t *testing.T) {
 	if host.inspectErr != nil {
 		t.Fatalf("marketplace inspection at Install time failed: %v", host.inspectErr)
 	}
-	// (a) Install called exactly once, for codex, with a plugins/spacedock symlink
-	// resolving to the checkout. (The marketplace-name-is-the-channel property is
-	// AC-2's behavioral proof against real codex.)
+	// (a) Install called exactly once, for codex, with a plugins/spacedock staged
+	// copy carrying the checkout's manifest. (The marketplace-name-is-the-channel
+	// property is AC-2's behavioral proof against real codex.)
 	if len(host.installCmds) != 3 || host.installCmds[0] != "codex" || host.installCmds[2] != devBranch {
 		t.Fatalf("install seam = %v, want exactly one {codex, <marketplace>, %q} call", host.installCmds, devBranch)
 	}
-	if host.installedSymlinkDest != checkout {
-		t.Fatalf("plugins/spacedock symlink = %q, want the checkout %q", host.installedSymlinkDest, checkout)
+	if !host.installedIsRealDir {
+		t.Fatalf("plugins/spacedock must be a real staged directory, not a symlink to the checkout")
+	}
+	wantManifest, err := os.ReadFile(filepath.Join(checkout, ".codex-plugin", "plugin.json"))
+	if err != nil {
+		t.Fatalf("read checkout manifest: %v", err)
+	}
+	if !bytes.Equal(host.installedManifest, wantManifest) {
+		t.Fatalf("staged plugin manifest = %q, want the checkout's manifest %q", host.installedManifest, wantManifest)
 	}
 	// (b) No --plugin-dir anywhere in the launched codex argv.
 	if host.launchedArg == nil {
@@ -208,8 +225,15 @@ func TestInstallCodexPluginDirInstallsViaSharedHelper(t *testing.T) {
 	if len(host.installCmds) != 3 || host.installCmds[0] != "codex" {
 		t.Fatalf("install seam = %v, want exactly one codex install", host.installCmds)
 	}
-	if host.installedSymlinkDest != checkout {
-		t.Fatalf("plugins/spacedock symlink = %q, want the checkout %q", host.installedSymlinkDest, checkout)
+	if !host.installedIsRealDir {
+		t.Fatalf("plugins/spacedock must be a real staged directory, not a symlink to the checkout")
+	}
+	wantManifest, err := os.ReadFile(filepath.Join(checkout, ".codex-plugin", "plugin.json"))
+	if err != nil {
+		t.Fatalf("read checkout manifest: %v", err)
+	}
+	if !bytes.Equal(host.installedManifest, wantManifest) {
+		t.Fatalf("staged plugin manifest = %q, want the checkout's manifest %q", host.installedManifest, wantManifest)
 	}
 	if !strings.Contains(stderr.String(), "version-masquerade advisory") {
 		t.Fatalf("install --host codex --plugin-dir missing the advisory: %q", stderr.String())

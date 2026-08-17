@@ -14,6 +14,18 @@ func TestWriteCodexLocalMarketplacePointsAtCurrentCheckout(t *testing.T) {
 	repo := t.TempDir()
 	marketplace := t.TempDir()
 
+	// Build a minimal checkout carrying both the plugin surface (staged) and
+	// checkout-only cruft (excluded) — proves the copy is filtered, not a symlink
+	// to the whole checkout.
+	mustMkdirAll(t, filepath.Join(repo, ".codex-plugin"))
+	mustWriteFile(t, filepath.Join(repo, ".codex-plugin", "plugin.json"), `{"name":"spacedock","version":"0.0.0","skills":"./skills/"}`)
+	mustMkdirAll(t, filepath.Join(repo, "skills", "demo"))
+	mustWriteFile(t, filepath.Join(repo, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo\n---\ndemo\n")
+	mustMkdirAll(t, filepath.Join(repo, ".git"))
+	mustWriteFile(t, filepath.Join(repo, ".git", "HEAD"), "ref: refs/heads/main\n")
+	mustMkdirAll(t, filepath.Join(repo, ".worktrees", "other"))
+	mustWriteFile(t, filepath.Join(repo, ".worktrees", "other", "marker"), "not plugin surface\n")
+
 	install, err := cli.WriteCodexLocalMarketplace(marketplace, repo, "spacedock")
 	if err != nil {
 		t.Fatalf("WriteCodexLocalMarketplace errored: %v", err)
@@ -25,12 +37,31 @@ func TestWriteCodexLocalMarketplacePointsAtCurrentCheckout(t *testing.T) {
 	if install.PluginPath != filepath.Join(marketplace, "plugins", "spacedock") {
 		t.Fatalf("PluginPath = %q, want plugins/spacedock under marketplace", install.PluginPath)
 	}
-	target, err := os.Readlink(install.PluginPath)
+	info, err := os.Lstat(install.PluginPath)
 	if err != nil {
-		t.Fatalf("plugins/spacedock must be a symlink to the current checkout: %v", err)
+		t.Fatalf("stat plugins/spacedock: %v", err)
 	}
-	if target != repo {
-		t.Fatalf("plugins/spacedock symlink target = %q, want %q", target, repo)
+	if info.Mode()&os.ModeSymlink != 0 {
+		t.Fatalf("plugins/spacedock must be a real staged directory, not a symlink to the checkout")
+	}
+	if !info.IsDir() {
+		t.Fatalf("plugins/spacedock must be a directory")
+	}
+	staged, err := os.ReadFile(filepath.Join(install.PluginPath, ".codex-plugin", "plugin.json"))
+	if err != nil {
+		t.Fatalf("staged plugin manifest missing: %v", err)
+	}
+	if !strings.Contains(string(staged), `"name":"spacedock"`) {
+		t.Fatalf("staged plugin manifest content wrong:\n%s", staged)
+	}
+	if _, err := os.Stat(filepath.Join(install.PluginPath, "skills", "demo", "SKILL.md")); err != nil {
+		t.Fatalf("staged plugin dir missing skills/demo/SKILL.md: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(install.PluginPath, ".git")); !os.IsNotExist(err) {
+		t.Fatalf("staged plugin dir must exclude .git; stat err = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(install.PluginPath, ".worktrees")); !os.IsNotExist(err) {
+		t.Fatalf("staged plugin dir must exclude .worktrees; stat err = %v", err)
 	}
 
 	data, err := os.ReadFile(install.ManifestPath)
@@ -69,5 +100,19 @@ func TestWriteCodexLocalMarketplacePointsAtCurrentCheckout(t *testing.T) {
 	}
 	if plugin.Source.Path != "./plugins/spacedock" {
 		t.Fatalf("plugin path = %q, want ./plugins/spacedock", plugin.Source.Path)
+	}
+}
+
+func mustMkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatalf("mkdir %s: %v", path, err)
+	}
+}
+
+func mustWriteFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
 	}
 }

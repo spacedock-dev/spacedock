@@ -86,12 +86,18 @@ func TestCodexPluginInstallIsHostNative(t *testing.T) {
 
 // TestCodexInitRefreshAdvancesBehindPlugin is the AC-2 live proof for the wired
 // codex arm: seed an older plugin (0.0.1) via the production Install seam, then
-// run that same seam against a newer (0.0.2) local marketplace — the path
-// runInit's codex arm now drives on a present plugin. The resolved cache
-// manifest must advance to 0.0.2, read from the on-disk manifest (not the
+// run that same seam again — against the SAME marketplace path, now rewritten to
+// 0.0.2 — the path runInit's codex arm now drives on a present plugin. The
+// marketplace path must stay the same source string across both calls: real
+// codex measurably refuses `plugin marketplace add` when a marketplace name is
+// already registered from a DIFFERENT source (probe 3), so this mirrors how a
+// real git-tracked marketplace source behaves (a stable source URL; new content
+// arrives via a git pull at that same URL, never a new URL) rather than exercising
+// the source-migration case this task explicitly does not cover. The resolved
+// cache manifest must advance to 0.0.2, read from the on-disk manifest (not the
 // install command's claim). This pins the spike's finding as a regression test
 // on the production refresh path. Skips when `codex` is not on PATH; hermetic
-// via CODEX_HOME isolation + local-path marketplaces (empty branch → no --ref →
+// via CODEX_HOME isolation + a local-path marketplace (empty branch → no --ref →
 // offline).
 func TestCodexInitRefreshAdvancesBehindPlugin(t *testing.T) {
 	if _, err := exec.LookPath("codex"); err != nil {
@@ -104,15 +110,15 @@ func TestCodexInitRefreshAdvancesBehindPlugin(t *testing.T) {
 	defer func() { devBranch = saved }()
 
 	tmp := t.TempDir()
-	behind := buildCodexMarketplaceAtVersion(t, filepath.Join(tmp, "behind"), "0.0.1")
-	newer := buildCodexMarketplaceAtVersion(t, filepath.Join(tmp, "newer"), "0.0.2")
+	marketplaceRoot := filepath.Join(tmp, "marketplace-root")
 	codexHomeDir := filepath.Join(tmp, "codexhome")
 	mustMkdir(t, codexHomeDir)
 	t.Setenv("CODEX_HOME", codexHomeDir)
 
 	// Seed the behind install (0.0.1) through the production seam. devBranch=main
 	// selects the stable `spacedock` entry the fixture defines.
-	if out, err := (execHost{}).Install("codex", behind, "main"); err != nil {
+	marketplace := buildCodexMarketplaceAtVersion(t, marketplaceRoot, "0.0.1")
+	if out, err := (execHost{}).Install("codex", marketplace, "main"); err != nil {
 		t.Fatalf("seed Install(codex, 0.0.1) failed: %v\nout=%q", err, out)
 	}
 	if got := resolvedCodexManifestVersion(t); got != "0.0.1" {
@@ -120,8 +126,11 @@ func TestCodexInitRefreshAdvancesBehindPlugin(t *testing.T) {
 	}
 
 	// Refresh-on-present (0.0.2) — the wired runInit codex arm calls exactly this
-	// Install seam when a plugin is already resolved.
-	if out, err := (execHost{}).Install("codex", newer, "main"); err != nil {
+	// Install seam when a plugin is already resolved. Same marketplaceRoot, content
+	// rewritten in place: the source string `marketplace` is byte-identical to the
+	// seed call.
+	marketplace = buildCodexMarketplaceAtVersion(t, marketplaceRoot, "0.0.2")
+	if out, err := (execHost{}).Install("codex", marketplace, "main"); err != nil {
 		t.Fatalf("refresh Install(codex, 0.0.2) failed: %v\nout=%q", err, out)
 	}
 	if got := resolvedCodexManifestVersion(t); got != "0.0.2" {

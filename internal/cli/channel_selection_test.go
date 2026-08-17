@@ -44,7 +44,8 @@ func TestChannelMarketplaceFromDevBranch(t *testing.T) {
 // / `spacedock@spacedock-edge` edge) and the marketplace add carries the BARE
 // marketplace-repo source — no `@<branch>` shorthand. The plugin id suffix is the
 // marketplace NAME (the channel); the entry before the `@` is always `spacedock`.
-// The marketplace-remove cleanup targets the channel's marketplace name.
+// The marketplace-update refresh targets the channel's marketplace name; no step
+// spells `marketplace remove`.
 func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
 		channel         string
@@ -59,8 +60,9 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
 				{argv: []string{"plugin", "uninstall", tc.wantID}, tolerateExit: true},
-				{argv: []string{"plugin", "marketplace", "remove", tc.wantMarketplace}, tolerateExit: true},
+				{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
+				{argv: []string{"plugin", "marketplace", "update", tc.wantMarketplace}, tolerateExit: true},
 				{argv: []string{"plugin", "install", tc.wantID}},
 			}
 			got := installArgvSequence("spacedock-dev/marketplace", tc.devBranch)
@@ -69,7 +71,7 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 			}
 			// No @<branch> shorthand leaked onto the marketplace add.
 			for _, step := range got {
-				if len(step.argv) >= 3 && step.argv[1] == "marketplace" && step.argv[2] == "add" {
+				if len(step.argv) >= 4 && step.argv[1] == "marketplace" && step.argv[2] == "add" {
 					if strings.Contains(step.argv[3], "@") {
 						t.Errorf("%s channel marketplace add %q carries an @ shorthand; the tag pin lives in the manifest", tc.channel, step.argv[3])
 					}
@@ -80,28 +82,30 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 }
 
 // TestCodexChannelInstallArgvSequence is AC-3's codex half: the codex install argv
-// removes both Spacedock channel providers before it adds the BARE marketplace-repo
-// source (no `--ref`, since the channel is the marketplace name, not a branch ref)
-// and adds the channel-correct id. Removing both channels keeps Codex's global
-// `spacedock:*` skill namespace authoritative for the selected install.
+// removes the sibling channel's plugin, then its own, before it adds the BARE
+// marketplace-repo source (no `--ref`, since the channel is the marketplace name,
+// not a branch ref) and adds the channel-correct id. Removing both channels' PLUGIN
+// content (never their marketplace records — no step spells `marketplace remove`)
+// keeps Codex's global `spacedock:*` skill namespace authoritative for the selected
+// install.
 func TestCodexChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
 		channel         string
 		devBranch       string
 		wantID          string
+		wantOtherID     string
 		wantMarketplace string
 	}{
-		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantMarketplace: "spacedock"},
-		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantMarketplace: "spacedock-edge"},
+		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantOtherID: "spacedock@spacedock-edge", wantMarketplace: "spacedock"},
+		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantOtherID: "spacedock@spacedock", wantMarketplace: "spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
-				{argv: []string{"plugin", "remove", "spacedock@spacedock"}, tolerateExit: true},
-				{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
-				{argv: []string{"plugin", "remove", "spacedock@spacedock-edge"}, tolerateExit: true},
-				{argv: []string{"plugin", "marketplace", "remove", "spacedock-edge"}, tolerateExit: true},
+				{argv: []string{"plugin", "remove", tc.wantOtherID}, tolerateExit: true},
+				{argv: []string{"plugin", "remove", tc.wantID}, tolerateExit: true},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
+				{argv: []string{"plugin", "marketplace", "upgrade", tc.wantMarketplace}, tolerateExit: true},
 				{argv: []string{"plugin", "add", tc.wantID}},
 			}
 			got := codexInstallArgvSequence("spacedock-dev/marketplace", tc.devBranch)
@@ -117,6 +121,36 @@ func TestCodexChannelInstallArgvSequence(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestInstallSequencesNeverSpellMarketplaceRemove is the regression lock this
+// entity exists to add: `plugin marketplace remove` measurably CASCADE-UNINSTALLS
+// every plugin installed from the removed marketplace on both hosts (probe 1) —
+// on stable that marketplace also hosts unrelated co-installed plugins (subspace,
+// cargento). Neither installArgvSequence (claude) nor codexInstallArgvSequence
+// (codex) may ever issue a step whose argv is `plugin marketplace remove ...`, on
+// either channel. A later edit that reintroduces the remove step (e.g. as a
+// "simpler" re-pin) fails here before it fails live.
+func TestInstallSequencesNeverSpellMarketplaceRemove(t *testing.T) {
+	for _, devBranch := range []string{"main", "next"} {
+		for _, step := range installArgvSequence("spacedock-dev/marketplace", devBranch) {
+			if isMarketplaceRemoveStep(step.argv) {
+				t.Errorf("installArgvSequence(devBranch=%q) spells marketplace remove: %v", devBranch, step.argv)
+			}
+		}
+		for _, step := range codexInstallArgvSequence("spacedock-dev/marketplace", devBranch) {
+			if isMarketplaceRemoveStep(step.argv) {
+				t.Errorf("codexInstallArgvSequence(devBranch=%q) spells marketplace remove: %v", devBranch, step.argv)
+			}
+		}
+	}
+}
+
+// isMarketplaceRemoveStep reports whether argv is exactly `plugin marketplace
+// remove <name>` — the cascade-uninstall step neither install sequence may ever
+// issue again (see TestInstallSequencesNeverSpellMarketplaceRemove).
+func isMarketplaceRemoveStep(argv []string) bool {
+	return len(argv) >= 3 && argv[0] == "plugin" && argv[1] == "marketplace" && argv[2] == "remove"
 }
 
 // TestClaudeNoPluginAutoInstallSelectsChannelEntry is AC-3's end-to-end seam: the

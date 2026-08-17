@@ -98,8 +98,12 @@ func TestAdjacentPluginAutomaticallySelectedForCodex(t *testing.T) {
 	if host.inspectErr != nil {
 		t.Fatalf("marketplace inspection failed: %v", host.inspectErr)
 	}
-	if host.installedSymlinkDest != root {
-		t.Fatalf("installed checkout = %q, want adjacent root %q", host.installedSymlinkDest, root)
+	wantManifest, err := os.ReadFile(filepath.Join(root, ".codex-plugin", "plugin.json"))
+	if err != nil {
+		t.Fatalf("read adjacent root manifest: %v", err)
+	}
+	if !bytes.Equal(host.installedManifest, wantManifest) {
+		t.Fatalf("staged plugin manifest = %q, want the adjacent root's manifest %q", host.installedManifest, wantManifest)
 	}
 	if host.launchedArg == nil {
 		t.Fatal("Codex launch seam was not reached")
@@ -218,6 +222,13 @@ func TestExplicitCodexPluginDirPrecedesAdjacentPlugin(t *testing.T) {
 	adjacent, executable := localPluginCheckout(t, "codex")
 	explicit, _ := localPluginCheckout(t, "codex")
 	withExecutablePath(t, executable, nil)
+	// localPluginCheckout produces byte-identical manifests for both roots, so a
+	// staged-manifest comparison can't tell which checkout won without a marker.
+	// The marker is an extra JSON field alongside the real (gate-compatible)
+	// version — a .json write/read stays outside the instruction-file boundary
+	// guard's tracked skill/agent surface.
+	mustWrite(t, filepath.Join(adjacent, ".codex-plugin", "plugin.json"), `{"name":"spacedock","version":"`+displayVersion()+`","skills":"./skills/","marker":"adjacent"}`)
+	mustWrite(t, filepath.Join(explicit, ".codex-plugin", "plugin.json"), `{"name":"spacedock","version":"`+displayVersion()+`","skills":"./skills/","marker":"explicit"}`)
 	host := &codexPluginDirHost{fakeHost: fakeHost{manifest: filepath.Join(explicit, ".codex-plugin", "plugin.json")}}
 	var stdout, stderr bytes.Buffer
 
@@ -226,8 +237,8 @@ func TestExplicitCodexPluginDirPrecedesAdjacentPlugin(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if host.installedSymlinkDest != explicit {
-		t.Fatalf("installed checkout = %q, want explicit %q (adjacent was %q)", host.installedSymlinkDest, explicit, adjacent)
+	if !strings.Contains(string(host.installedManifest), `"marker":"explicit"`) {
+		t.Fatalf("staged manifest = %q, want the explicit checkout's marker (explicit must win over adjacent %q)", host.installedManifest, adjacent)
 	}
 }
 

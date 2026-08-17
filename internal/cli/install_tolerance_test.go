@@ -10,26 +10,27 @@ import (
 	"testing"
 )
 
-// TestInstallToleratesRemoveStepFailure locks AC-2: the fresh-box path where
-// `claude plugin marketplace remove spacedock` exits 1 ("not found") and every
-// other subcommand exits 0. execHost.Install MUST return a nil error and the
-// combined output MUST contain all four steps' stub markers. Without the
-// per-step tolerance flag this test would fail at the remove step.
-func TestInstallToleratesRemoveStepFailure(t *testing.T) {
+// TestInstallToleratesMarketplaceUpdateStepFailure locks AC-2: the
+// already-current path where `claude plugin marketplace update spacedock-edge`
+// exits 1 and every other subcommand exits 0. execHost.Install MUST return a nil
+// error and the combined output MUST contain all five steps' stub markers.
+// Without the per-step tolerance flag this test would fail at the update step.
+func TestInstallToleratesMarketplaceUpdateStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
 	}
-	dir := writeClaudeStub(t, "plugin marketplace remove")
+	dir := writeClaudeStub(t, "plugin marketplace update")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
 	if err != nil {
-		t.Fatalf("Install returned error on tolerated remove failure: %v\nout=%q", err, out)
+		t.Fatalf("Install returned error on tolerated update failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin marketplace remove spacedock-edge:exit=1",
+		"stub:plugin marketplace update spacedock-edge:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
 		"stub:plugin uninstall spacedock@spacedock-edge:exit=0",
+		"stub:plugin uninstall spacedock-edge@spacedock:exit=0",
 		"stub:plugin install spacedock@spacedock-edge:exit=0",
 	} {
 		if !strings.Contains(out, want) {
@@ -43,13 +44,13 @@ func TestInstallToleratesRemoveStepFailure(t *testing.T) {
 // (the empirically observed "Plugin not found in installed plugins" shape against
 // claude 2.1.160 on a box where the plugin is not installed) and every other
 // subcommand exits 0, execHost.Install MUST return a nil error and the combined
-// output MUST contain all four steps' stub markers. Without the per-step tolerance
+// output MUST contain all five steps' stub markers. Without the per-step tolerance
 // flag on the uninstall step this test would fail at step 0.
 func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
 	}
-	dir := writeClaudeStub(t, "plugin uninstall")
+	dir := writeClaudeStub(t, "plugin uninstall spacedock@spacedock-edge")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
@@ -58,8 +59,39 @@ func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	}
 	for _, want := range []string{
 		"stub:plugin uninstall spacedock@spacedock-edge:exit=1",
-		"stub:plugin marketplace remove spacedock-edge:exit=0",
+		"stub:plugin uninstall spacedock-edge@spacedock:exit=0",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
+		"stub:plugin marketplace update spacedock-edge:exit=0",
+		"stub:plugin install spacedock@spacedock-edge:exit=0",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("combined output missing %q\nout=%q", want, out)
+		}
+	}
+}
+
+// TestInstallToleratesRouteAMigrationStepFailure locks the round-1 migration
+// step's tolerance: when `claude plugin uninstall spacedock-edge@spacedock`
+// (the retired route-A id) exits 1 and every other subcommand exits 0,
+// execHost.Install MUST return a nil error and the combined output MUST contain
+// all five steps' stub markers. Without the per-step tolerance flag on this step
+// a captain who never held the retired route would fail every install.
+func TestInstallToleratesRouteAMigrationStepFailure(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("stub script uses /bin/sh; not portable to Windows")
+	}
+	dir := writeClaudeStub(t, "plugin uninstall spacedock-edge@spacedock")
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
+	if err != nil {
+		t.Fatalf("Install returned error on tolerated route-A migration failure: %v\nout=%q", err, out)
+	}
+	for _, want := range []string{
+		"stub:plugin uninstall spacedock@spacedock-edge:exit=0",
+		"stub:plugin uninstall spacedock-edge@spacedock:exit=1",
+		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
+		"stub:plugin marketplace update spacedock-edge:exit=0",
 		"stub:plugin install spacedock@spacedock-edge:exit=0",
 	} {
 		if !strings.Contains(out, want) {
