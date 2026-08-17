@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-08-16 16:43:40",
+        "dateModified": "2026-08-17 14:52:49",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1456,7 +1456,11 @@ read, including the post-idle read. Preparation uses the existing <code>gate pre
 command; <code>gate record --briefing</code> is not a recovery route.</p>
 <h3 id="state-commit"><code>state commit</code><a class="headerlink" href="#state-commit" title="Permanent link">&para;</a></h3>
 <p><code>spacedock state commit &lt;slug&gt;</code> commits and synchronizes one active or clean
-archived entity from a split-root state checkout. The operand is one canonical top-level entity slug,
+archived entity. In a split-root workflow it commits and pushes in the state
+checkout. In an inline workflow it commits the same entity paths in the
+workflow's own repository and pushes nothing; if the workflow directory is not
+inside a git work tree, it reports that and does nothing.
+The operand is one canonical top-level entity slug,
 not a nested path. A flat entity commits exactly <code>&lt;slug&gt;.md</code> plus its <code>&lt;slug&gt;/</code>
 companion directory when present or tracked; a folder-form entity
 commits every changed, new, or deleted non-ignored path below <code>&lt;slug&gt;/</code>, including
@@ -1467,7 +1471,10 @@ to active entities and has no effect for an archived slug.</p>
 <p>The gate <code>record</code>/<code>consume</code> verbs (their close/consume forms — chat-decision and
 standalone <code>consume</code>; NOT the <code>--round</code> advisory-publication
 form, which is out of mechanism 1's scope and still needs an explicit <code>state
-commit</code> afterward, same as before) and <code>dispatch build --stamp</code> run this same
+commit</code> afterward, same as before. In an inline workflow that <code>state commit</code> is
+what makes the entity's recorded round visible to <code>gate prepare</code> and to the
+<code>needs-preparation</code> scheduler row; both read committed bytes only) and
+<code>dispatch build --stamp</code> run this same
 commit+publish sequence themselves whenever they write in a split-root workflow
 (their own <code>sync=.../phase=...</code> line, or <code>--stamp</code>'s stderr/exit, is the
 result) — do not re-run <code>state commit</code> after them. Recovering a <code>sync=failed</code>
@@ -1496,7 +1503,7 @@ locally but could not push, regardless of which command wrote it.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 16, 2026 16:43:40 UTC">2026-08-16 16:43:40</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 17, 2026 14:52:49 UTC">2026-08-17 14:52:49</span>
   </span>
 
     

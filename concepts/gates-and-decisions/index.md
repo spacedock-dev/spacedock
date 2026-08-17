@@ -2,7 +2,7 @@
 title: "Gates & decisions"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-16 16:43:40"
+last_updated: "2026-08-17 14:52:49"
 ---
 
 # Gates & decisions
@@ -57,7 +57,7 @@ Only approve creates an application. Revise and hold are complete when their Res
 
 Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record. Your call translates into the existing `approve`, `revise`, and `hold` record; automatic bounce applies only when a reviewer recommends `REJECTED` at a configured feedback gate.
 
-After completion verification, a gate with no current-stage authority remains `validating` until the mechanical report checks pass. It then appears as `needs-preparation` on boot and every machine scheduler read. Engage performs semantic report review. A concrete `report-incomplete:` veto stops without mutation; otherwise the First Officer calls `gate prepare` exactly once with its question, Artifact, summary, and References, commits the emitted `state=open` binding, performs one structured checklist/AC read, and presents it without another boot projection. Open, withdrawn, stale, closed, and spent attempts retain their existing lifecycle routes.
+After completion verification, a gate with no current-stage authority remains `validating` until the mechanical report checks pass. It then appears as `needs-preparation` on boot and every machine scheduler read. Engage performs semantic report review. A concrete `report-incomplete:` veto stops without mutation; otherwise the First Officer calls `gate prepare` exactly once with its question, Artifact, summary, and References, commits the emitted `state=open` binding, performs one structured checklist/AC read, and presents it without another boot projection. Open, withdrawn, stale, closed, and spent attempts retain their existing lifecycle routes. A gated stage the workflow marks `initial: true` has no prior stage to have written a report: there the committed, clean-in-HEAD seed is itself the proof, and the entity appears as `needs-preparation` directly. Engage prepares from the seed and skips the structured checklist/AC read.
 
 Approval to a terminal target is *held* at consume: `gate consume` spends nothing and writes no status — it leaves the application `pending` and returns the `approved-awaiting-merge` route, and `merge guard` is the sole terminal consumer. `merge guard` spends only with delivery proof: the `mod-block` is cleared in its own step first, then `application.state: consumed`, the terminal status, `verdict`, and `completed` move in one locked write, and the `pr` merge sentinel is retained through archive as durable delivery proof. A failed delivery that needs rework returns through the record stage's declared `feedback-to` as `superseded` (`merge guard --rework`); retryable delivery trouble leaves the approval pending and is safe to retry.
 
