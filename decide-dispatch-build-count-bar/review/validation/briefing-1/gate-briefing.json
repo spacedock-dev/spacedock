@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6htv3p97aq8sexrkjhrcdwt1:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED for the widened dispatch build-count bar, and finalize 6ht?",
+  "artifacts": [
+    {
+      "id": "artifact:6htv3p97aq8sexrkjhrcdwt1:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e1ed14eccd3af1676a2e4c20cc604448553f2f4b/decide-dispatch-build-count-bar.md",
+      "rev": "sha256:b9d6d92b8f1933de11c4f89d95d44942dc56a38de9106a9b6a375983d773b930",
+      "mediaType": "text/markdown",
+      "summary": "Validation ran a 12-shape adversarial matrix through the real observation and assertion path in a throwaway checkout. The widened bar keeps teeth: byte-identical rebuild (waste), three successes (flailing), two different failures then a success, success then a failed differing rebuild, and a build that never finished all stay RED, alongside the five pre-existing scripted controls. Falsifiability reproduced independently — reverting the rule to strict 1/1 fails both real-occurrence rows and the replay control. The +94-vs-+30 overrun was traced line by line to approved design bullets and verbatim test-plan items, one file, zero production code. Two deferred risks: cosmetic argv differences (flag reorder, doubled space, repeated boolean flag) and a rebuild naming a different --stage pass the correction test, which is raw-string inequality. Neither has an observed or reachable trigger; both carry promote conditions."
+    }
+  ]
+}
