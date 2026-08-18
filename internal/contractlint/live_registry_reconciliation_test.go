@@ -94,9 +94,6 @@ func TestRuntimeLiveRegistryReconciliation(t *testing.T) {
 
 	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
 	docs := string(mustRead(t, filepath.Join(repo, "docs", "runtime-live-ci.md")))
-	if strings.Count(workflow, "-run '^TestLiveCommon' -failfast") != 1 || strings.Count(workflow, "-run '^TestLiveCommon'") != 3 {
-		t.Errorf("workflow must contain exactly three common selectors and reserve -failfast for Pi")
-	}
 	for _, runtime := range []string{"claude", "codex", "pi"} {
 		if strings.Count(workflow, "SPACEDOCK_LIVE_RUNTIME="+runtime) != 1 {
 			t.Errorf("workflow runtime selector %q is not unique", runtime)

@@ -202,17 +202,6 @@ func (n *needsList) UnmarshalYAML(value *yaml.Node) error {
 	}
 }
 
-func workflowHasExecutableCommandContaining(workflow, want string) bool {
-	for _, step := range parseWorkflowSteps(workflow) {
-		for _, command := range executableShellCommands(step.run) {
-			if strings.Contains(command, want) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 func executableShellCommands(script string) []string {
 	var commands []string
 	var continued strings.Builder
