@@ -117,16 +117,18 @@ One more captured nuance: PreCompact fired at a `/compact` the host then refused
 
 ## Design (settled): boot receipt + fail-closed guard, no hook
 
-The seed said "bind exactly one `«state.boot»()` to the compaction boundary." Ideation refines where the binding lives: refusal-side, not callback-side. The first workflow effect after the boundary cannot proceed until a fresh boot runs — enforced by the binary, the one component that knew the truth in the incident.
+The seed said "bind exactly one `«state.boot»()` to the compaction boundary." Ideation refines where the binding lives: refusal-side, not callback-side. The first authority-bearing workflow effect after the boundary cannot proceed until a fresh boot runs — enforced by the binary, the one component that knew the truth in the incident.
 
-**Boot receipt.** `spacedock status --boot --identify --json` (the shipped `«state.boot»()`) additionally writes a session boot receipt to `.spacedock/boot/{session_id}.json`: `{session_id, transcript_path, booted_at, binary_version}`. Written only when session identity is resolvable (env `CLAUDE_CODE_SESSION_ID` present); silent no-op otherwise. The receipt is host scratch, not workflow state — the state checkout is untouched, and boot's "mutates nothing" contract still holds for workflow/entity state (contract wording gains a clarifying line; doc diff below).
+**Boot receipt.** `spacedock status --boot --identify --json` (the shipped `«state.boot»()`) additionally writes a session boot receipt: one line, `{booted_at} {transcript_path}`, at `.spacedock/boot/{session_id}`. No JSON, no schema — the reader is ReadFile + Fields + time.Parse. Written only when session identity is resolvable (env `CLAUDE_CODE_SESSION_ID` present); silent no-op otherwise. The receipt is host scratch, not workflow state — the state checkout is untouched, and boot's "mutates nothing" contract still holds for workflow/entity state (contract wording gains a clarifying line; doc diff below).
 
-**Guard.** FO-held mutating verbs — `gate prepare|record|consume|withdraw`, `merge guard`, `dispatch build`, `new`, `status --set` — run a shared preflight:
+**Guard.** The three authority verbs — `gate record`, `gate consume`, `merge guard` — run a shared preflight:
 
 - No receipt for the current session id → refuse.
 - Latest `compact_boundary` timestamp in the receipt's recorded transcript > `booted_at` → refuse.
 - Refusal: distinct exit code (4 proposed; `state commit` owns 3 — implementation confirms 4 is unclaimed) and one stderr paragraph naming the condition and the exact remedy: re-run `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` and consume the fresh record. Re-running boot rewrites the receipt and clears the guard.
-- `state commit` is NOT guarded: ensigns run it, and a subagent's environment carries the root session's id, so an FO compaction mid-flight would wrongly block every ensign commit.
+- `state commit` is NOT guarded: ensigns run it, and a subagent's environment carries the root session's id, so an FO compaction mid-flight would wrongly block every ensign commit. The same reasoning caps the set — the guard must never widen onto ensign-run verbs.
+
+**Why exactly these three.** They are where captain authority or terminal irreversibility lands in durable state: a resolution recorded, a resolution applied, a merge finalized. A stale `gate prepare`, `new`, `status --set`, or `dispatch build` produces recoverable, git-visible, additive state and burns at most one worker cycle — and every such path still ends at a guarded verb before authority lands, so guarding them would add call sites without adding protection the choke points already give. In the incident replay, the wall fires at `gate record` — the moment the captain's chat approval needs stamping — before any resolution is recorded on stale bindings.
 
 **Fail direction and degradation.** Identity unresolvable (no env — captains in plain terminals, Codex, Pi today) → guard silently no-ops: exactly today's behavior. Transcript missing/unreadable or format drift → fail open with one stderr warning line; malformed transcript lines are skipped. The guard fails CLOSED only on the one condition captured evidence supports. Declared limitation: a host transcript-format change fails open until the pinned fixture is refreshed.
 
@@ -134,37 +136,38 @@ The seed said "bind exactly one `«state.boot»()` to the compaction boundary." 
 
 **Why not the hook (necessity, not preference).** The guard alone delivers the value sentence — the FO *cannot* act on workflow state it has not re-read — for every workflow effect that flows through the binary. A hook adds a host-specific moving part that delivers at most "reminded", requires registration to survive plugin and host changes, produced nothing observable at the incident boundary, and (PreCompact) false-positives on refused compactions. The detector the guard needs is already durable state. Codex and Pi get the same guard architecture with detectors absent today (guard no-ops there); #595 owns the Codex boundary. The existing `codex_session_start_compact.sh` registration is left as-is — removing or fixing it is a separate decision.
 
-**Residual risk (declared).** Actions that never touch the binary — the incident's hand-opened `gh` PRs — are not intercepted. The window is bounded: the FO's first `dispatch build`, gate verb, status mutation, or merge hits the wall, forces the re-boot, and the re-read mods map is what tells the FO that PRs route through `pr-merge`. Closing the `gh` path itself is out of scope (and impossible binary-side).
+**Residual risk (declared).** Actions that never touch the binary — the incident's hand-opened `gh` PRs — are not intercepted, and unguarded spacedock verbs can spend recoverable work on stale bindings. The window is bounded: the FO's first `gate record`, `gate consume`, or `merge guard` hits the wall before authority lands, forces the re-boot, and the re-read mods map is what tells the FO that PRs route through `pr-merge`. Closing the `gh` path itself is out of scope (and impossible binary-side).
 
 **No further spike needed:** the design rests on three mechanisms, all exercised — the boundary record's existence and parse (captured incident + spike records, parsed during ideation), env session identity (echoed live post-compaction inside the spike session), and receipt-file round-trip (ordinary file I/O). The captured records seed the implementation's transcript fixture.
 
 ## Acceptance criteria
 
-1. **(Value measure)** In the incident-replay fixture — a booted receipt, then a transcript whose tail is the captured-format `compact_boundary` record newer than `booted_at` — the count of guarded verbs that succeed before re-boot is **0 of N** (N = the guarded set above; each exits non-zero with the boot-stale stderr). Baseline on the current binary: N of N succeed — the number that moves the wrong way today. Test: CLI behavior fixture driving the real binary against a temp `$HOME`/projects layout and env.
-2. After `status --boot` re-runs in the same fixture, every previously refused verb succeeds unchanged; and in sessions with no boundary (or no resolvable identity), behavior is bit-identical to today — existing golden fixtures pass unmodified. Test: fixture continuation plus full `go test ./...`.
-3. The verdict derives from durable state only: deleting the receipt or appending the boundary record flips refusal/pass with no conversational input of any kind. Test: unit verdict matrix (no receipt / fresh / stale / missing transcript / no env / malformed lines) plus fixture file-toggling. (Mechanism AC serving AC 1.)
+1. **(Value measure)** In the incident-replay test — a booted receipt, then a transcript whose tail is the captured-format `compact_boundary` record newer than `booted_at` — the count of guarded verbs that succeed before re-boot is **0 of 3** (`gate record`, `gate consume`, `merge guard`; each exits non-zero with the boot-stale stderr). Baseline on the current binary: 3 of 3 succeed — the number that moves the wrong way today. Test: the three verbs driven through the existing CLI test harness against a temp receipt/transcript layout and env.
+2. After `status --boot` re-runs in the same scenario, every previously refused verb succeeds unchanged; and in sessions with no boundary (or no resolvable identity), behavior is bit-identical to today — existing golden fixtures pass unmodified. Test: same harness continuation plus full `go test ./...`.
+3. The verdict derives from durable state only: deleting the receipt or appending the boundary record flips refusal/pass with no conversational input of any kind. Test: table-driven verdict matrix (no receipt / fresh / stale / missing transcript / no env / malformed lines). (Mechanism AC serving AC 1.)
 4. The doc diff below is applied at implementation. Test: the contract lines appear in the built plugin skill and `docs/runtime-support.md` renders the new section.
 
 ## Test plan
 
-- Go unit, `internal/bootguard` (new package): receipt round-trip; transcript scan over a fixture seeded with the captured incident and spike records plus malformed and irrelevant lines; the verdict matrix. Cheap; no live host.
-- CLI behavior fixture: the AC-1/AC-2 journey (refuse-all → boot → pass-all) with golden stderr for the refusal text.
-- No live workflow smoke test: the only runtime claim — the boundary is observable durable state — is what ideation's live captures already prove; every implementation claim is binary behavior, fixture-provable.
+- One table-driven unit test for the verdict: ~7 rows covering the AC-3 matrix. The captured incident and spike `compact_boundary` records live as string constants in the test — no fixture files.
+- Refusal wiring in the existing CLI test harness: each of the three verbs exits 4 on a stale receipt and passes after re-boot — the test that fails if the preflight is never called, killing the tautology risk.
+- One case in the existing `status` tests: `status --boot` writes the receipt.
+- No live workflow smoke test: the only runtime claim — the boundary is observable durable state — is what ideation's live captures already prove; every implementation claim is binary behavior, table-provable.
 
 ## Expected surface
 
-Estimate net LOC change: **+540**, across **12 files** (insertions ≈ +560, deletions ≈ −20). Tolerance: 2x net (workflow default). Breakout, per the 2026-08-18 calibration (6ht/j7j/vka all landed product near estimate and tests at ~2x instinct — the test budget below is twice first instinct, stated explicitly):
+Estimate net LOC change: **+245**, across **8 files** (insertions ≈ +255, deletions ≈ −10). Tolerance: 2x net (workflow default). The prior +540 carried a since-withdrawn instruction to double the test instinct; this figure is the honest proof cost, not trimmed coverage — every AC keeps a test that can fail.
 
-- Product ≈ +145: `internal/bootguard/` (receipt, scan, verdict, identity resolution) ~90; receipt write in the `status --boot` path ~15; preflight wiring at guarded-verb entry points ~30; refusal text ~10.
-- Tests ≈ +340 (first instinct ~170, doubled): unit verdict matrix, transcript fixture, CLI behavior fixture, goldens.
-- Docs/contract ≈ +55: `docs/runtime-support.md` section, `skills/first-officer/references/first-officer-shared-core.md` boot-section lines, exit-code note.
+- Product ≈ +95: receipt write ~20; transcript scan + verdict ~45; preflight at the three call sites ~12; identity resolution + refusal text ~18. One small file (in `internal/status`, or its own package only if imports demand).
+- Tests ≈ +120: verdict table ~60 (captured records inline as constants); three-verb refusal/pass wiring in the existing CLI harness ~50; boot-writes-receipt case ~10.
+- Docs/contract ≈ +30: `docs/runtime-support.md` subsection ~12; `first-officer-shared-core.md` receipt line ~5; exit-code note and gitignore line ~13.
 
-Files (~12): bootguard.go, bootguard_test.go, transcript fixture(s), status-boot wiring, ~4 CLI entry-point wirings, runtime-support.md, first-officer-shared-core.md, behavior-fixture files.
+Files (~8): bootguard.go, bootguard_test.go, status-boot wiring, gate-verb wiring, merge-guard wiring, existing CLI test file, runtime-support.md, first-officer-shared-core.md.
 
 ## Semantics that may change (declared)
 
-- Runtime behavior / authority: guarded verbs gain refusal authority (exit 4 + stderr) when the running session's boot is stale or absent — including for a human driving spacedock inside any Claude session who has not run boot (the refusal names the one command to run).
-- Stored format: new project-local receipt `.spacedock/boot/{session_id}.json` (host scratch; gitignored if the repo tracks an ignore file).
+- Runtime behavior / authority: `gate record`, `gate consume`, and `merge guard` gain refusal authority (exit 4 + stderr) when the running session's boot is stale or absent — including for a human driving spacedock inside any Claude session who has not run boot (the refusal names the one command to run).
+- Stored format: new project-local one-line receipt `.spacedock/boot/{session_id}` (host scratch; gitignored if the repo tracks an ignore file).
 - `status --boot` gains a write side effect (the receipt); workflow and entity state remain read-only.
 - Command grammar: unchanged — no new flags, verbs, or hook registrations.
 
@@ -173,7 +176,7 @@ Files (~12): bootguard.go, bootguard_test.go, transcript fixture(s), status-boot
 `skills/first-officer/references/first-officer-shared-core.md`, `«state.boot»()` section — after the `- **effect:** …` line, add:
 
 ```
-- **receipt:** the shipped command also writes a session boot receipt (`.spacedock/boot/{session_id}.json`, host scratch — workflow state stays read-only). FO-held mutating verbs refuse with exit 4 (BOOT_STALE) when the running session has no receipt or compacted after it booted; the remedy the stderr names is exactly this call — re-run it and consume the fresh record.
+- **receipt:** the shipped command also writes a one-line session boot receipt (`.spacedock/boot/{session_id}`, host scratch — workflow state stays read-only). `gate record`, `gate consume`, and `merge guard` refuse with exit 4 (BOOT_STALE) when the running session has no receipt or compacted after it booted; the remedy the stderr names is exactly this call — re-run it and consume the fresh record.
 ```
 
 `docs/runtime-support.md`, new subsection after "Runtime layers":
@@ -183,13 +186,13 @@ Files (~12): bootguard.go, bootguard_test.go, transcript fixture(s), status-boot
 
 A compaction-resumed session keeps its session id and transcript; the host
 records the boundary durably (a `compact_boundary` record in the session
-transcript). `status --boot` writes a per-session receipt; gate, merge-guard,
-dispatch-build, new, and status-mutation verbs refuse (exit 4) when the
-receipt is missing or older than the latest boundary, until boot re-runs.
-Detection resolves per host: Claude Code via `CLAUDE_CODE_SESSION_ID` plus the
-project transcript path; hosts without a resolvable identity degrade to a
-silent no-op (Codex: #595). The guard fails open on unreadable transcripts and
-never needs a hook.
+transcript). `status --boot` writes a one-line per-session receipt; the
+authority verbs — `gate record`, `gate consume`, `merge guard` — refuse
+(exit 4) when the receipt is missing or older than the latest boundary, until
+boot re-runs. Detection resolves per host: Claude Code via
+`CLAUDE_CODE_SESSION_ID` plus the recorded transcript path; hosts without a
+resolvable identity degrade to a silent no-op (Codex: #595). The guard fails
+open on unreadable transcripts and never needs a hook.
 ```
 
 ## Stage Report: ideation
@@ -204,3 +207,16 @@ never needs a hook.
 ### Summary
 
 Ran a live capture spike (tmux-driven Claude 2.1.226 session with PreCompact/SessionStart capture hooks) and proved the compaction boundary three ways: hook events fire, the transcript records a durable timestamped `compact_boundary`, and session identity survives the boundary — which kills the naive session-id tell and the seed's hook assumption in one stroke. Settled the design as a binary-side fail-closed guard: `status --boot` writes a per-session receipt, and FO-held mutating verbs refuse until the receipt postdates the latest boundary, with no hook, no escape hatch, and honest fail-open degradation on non-Claude hosts. Declared surface +540 net across ~12 files with the test budget explicitly doubled per today's calibration.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Prove the Claude compaction boundary exists with a CAPTURED EVENT, not documentation — this repo's own hook-events.jsonl holds exactly one PreToolUse record and no compaction evidence, so nothing local proves it today. If no usable boundary exists, record it as unsupported rather than shipping a prose rule dressed as a mechanism.
+  Unchanged from cycle 1; the gate accepted the capture — verbatim records in `force-boot-at-compaction-boundary/ideation-spike-evidence.md`.
+- DONE: Decide between the host-hook mechanism and the host-independent fail-closed tell (the FO must hold a boot record whose identity matches the current session, else it refuses gate and merge actions until it re-boots) on necessity, not preference — the second needs no host callback and would cover Codex and Pi too.
+  Unchanged from cycle 1; the gate accepted the receipt-plus-guard mechanism. Cycle 2 narrows its surface only: the guard covers the three authority verbs (`gate record`, `gate consume`, `merge guard`), with the justification recorded in the body's "Why exactly these three".
+- DONE: Declare net LOC change and file count with a REALISTIC test budget. Today three consecutive entities blew their estimate and every single overrun was under-budgeted test-side work; product code landed near its number each time. Budget test code at roughly twice your first instinct and say so explicitly.
+  Revised to net +245 across ~8 files (≈ +255/−10; product +95 / tests +120 / docs +30), tolerance 2x net. The gate withdrew the doubling instruction after the captain rejected +540, so the test figure is the honest proof cost — a verdict table with inline captured-record constants, three-verb refusal wiring in the existing CLI harness, one boot-writes-receipt case — not a multiplied one, and no AC lost its falsifying test.
+
+### Summary
+
+Surface-only revision per the gate: same spike evidence, same mechanism. The guard set narrowed from eight mutating verbs to the three where captain authority or terminal irreversibility lands (`gate record`, `gate consume`, `merge guard`) with the cap rationale recorded; the receipt shrank from a JSON format to one parsed line at `.spacedock/boot/{session_id}`; fixture files became string constants in a table-driven test. Estimate moved from +540/12 files to +245/8 files with the withdrawn doubling called out, and the body, ACs, test plan, and doc diff were updated together to match.
