@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: overlay-contribution
+group: state-placement
 ---
 
 `spacedock state new` and `state init` assume the split-root state branch lives in the code repository and is reachable through that repository's `origin`. That assumption blocks the overlay-contribution shape, where a contributor overlays an untracked workflow directory inside a clone of a repository they do not own and keeps entity state in a separate private repository.
