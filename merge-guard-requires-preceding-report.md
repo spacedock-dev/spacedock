@@ -161,6 +161,10 @@ Surface is 203% of the approved estimate, past this entity's own declared ±40% 
 - FO recommendation (as presented): RECONFIRM. The approved design is unchanged and validated — AC-1 verified against both observed shapes, and the coalescing question that could have invalidated the whole approach was settled negatively with evidence (no sanctioned FO fold writes terminal state, so no correct ceremony refuses). The defect is a narrow, contained bug inside one unexported helper, and the fix preserves both ACs.
 - Recorded against reconfirm: the ideation's spike evidence did not reproduce against the shipped code. Confidence in "proven green against six real archived histories" was misplaced, so the correction round must re-run that evidence against the shipped read rather than re-citing the spike.
 
+**CYCLE 3 AUTHORIZED — Captain CL, 2026-08-18, in chat ("1 approve") against the presented options (1 authorize round 3 / 2 re-scope / 3 park).** The workflow escalates a third correction round to the human instead of dispatching it; the captain authorized it with the surface at 259% of the approved estimate in front of him. Scope of round 3 is the remedy validation already named — retarget on `C`-lines as well as `R`-lines, and skip a commit with no blob rather than hard-erroring — inside the same function the reconfirm already covered. No re-scope, no AC change, no new mechanism.
+
+- Recorded against cycle 3: twice now, the implementer's own regression test constructed the defect's shape in a way that avoids the defect (cycle 2's flat→folder test deletes the flat file, which is exactly what makes git record a rename instead of a copy). Round 3 must prove its fix against the real live entity that has failed both cycles, not only against authored fixtures.
+
 ## Stage Report: implementation
 
 - DONE: AC-1 - a passed finalize refuses when no committed stage report precedes the first terminal transition — both observed shapes refuse with nothing mutated and no archive.
