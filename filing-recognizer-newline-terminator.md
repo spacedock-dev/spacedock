@@ -9,6 +9,18 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:ca9gqaz4n97gsv2nd9p80xbf:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ca9gqaz4n97gsv2nd9p80xbf-ideation-1
+              briefing:
+                id: briefing:ca9gqaz4n97gsv2nd9p80xbf:ideation:attempt-1:revision-1
+                digest: sha256:dc31438f394cc960e2f834884ec29dec12f4d71805437a7e6cf1aef0338c8eee
+                request-digest: sha256:014e43209381e1604ed3925ab97a94aff26cd2b5cbd2fa2b7d6af2ddaa8e2620
+                room-ref: ./filing-recognizer-newline-terminator/review/ideation/briefing-1
 ---
 
 The filing grader fails a compliant agent. A create followed by a newline counts as zero creates, so any run that verifies its own filing goes red.

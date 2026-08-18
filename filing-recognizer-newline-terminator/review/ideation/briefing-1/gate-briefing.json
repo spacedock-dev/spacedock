@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ca9gqaz4n97gsv2nd9p80xbf:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: widen both filing-recognizer terminator classes to accept a newline, pinned by an exact-bytes fixture from run 32105482382?",
+  "artifacts": [
+    {
+      "id": "artifact:ca9gqaz4n97gsv2nd9p80xbf:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/711dafa2567ea6e2ee44e1eab277ee95e555c497/filing-recognizer-newline-terminator.md",
+      "rev": "sha256:00c8fcae46b807e05623b54f02b4a1b860a083285c0662a02139542727d0667b",
+      "mediaType": "text/markdown",
+      "summary": "Spike refuted the seed's single-class premise: commandFilesViaNew (shared_filing_test.go:53) gates codexFilingCreateCount (:183), so both classes must gain a newline terminator or the run still counts 0. Fix is a two-character recognizer diff plus an exact-bytes fixture with one positive and one malformed-verb negative row. All 42 existing filing negatives stay red. Net +12 across 2 files, no product semantics change."
+    }
+  ]
+}
