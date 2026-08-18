@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: overlay-contribution
+group: merge-hooks
 ---
 
 `merge guard` arms exactly one merge mod while the FO contract runs all of them, so a workflow with two registered merge hooks gets one `mod-block` naming one mod and two hooks executing.
