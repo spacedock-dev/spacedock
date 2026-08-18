@@ -239,9 +239,13 @@ Scope expanded from the route collapse to the whole install/re-pull value chain,
 
 ### Feedback Cycles
 
-- Cycle 1: REJECTED — validation; surface 29 files / 3056 gross vs estimate 14 files / 560 gross (546%); AC unchanged in scope-per-AC, but the SET grew 4 → 8 under captain scope expansion — not narrowed.
+- Cycle 1: REJECTED — validation; surface 29 files / net −362 vs estimate 14 files / net ~+100 (files 207% of declared, ceiling 17); AC unchanged in scope-per-AC, but the SET grew 4 → 8 under captain scope expansion — not narrowed.
 
-**Design-reset decision at cycle 1: RECONFIRM.** The declared tolerance (±35% gross, ±3 files) is breached, so the flow requires a recorded decision before any further round. Recorded reasoning:
+**Correction to this entry (FO, same cycle).** The first version of this line reported "3056 gross vs 560 declared (546%)" and treated that as the breach. That was measured against the wrong metric. `docs/dev/README.md`'s Task Template specifies "Estimate net LOC change: {+NNN or -NNN}, across {M} files" — NET, not gross. This entity had declared its own `±35% gross` tolerance, deviating from the template, and the FO measured against that deviation without checking it against the workflow convention. Captain caught it. Under the stated convention the volume did not overrun at all: the estimate predicted net ~+100 and the change delivered net **−362**, the opposite direction. Gross counts deletion as growth, which inverts the signal for a change whose purpose was removal.
+
+**What IS breached: the file count.** 29 files against a declared 14 with ±3 tolerance, so 12 past the ceiling. That is a real boundary breach and it is what this decision responds to.
+
+**Design-reset decision at cycle 1: RECONFIRM.** Recorded reasoning:
 
 - The deviation is captain-directed, not drift. Three explicit expansions after the ideation gate approved the baseline: "i'd very much like everything being in one task end to end", the `next`-branch retirement ("do it. simple is better"), and option (c) for the codex plugin-dir marketplace name. Each was approved with the alternative named.
 - The gross metric misreads this change. Net is **−362**: the codebase shrank. 1709 of the 3056 gross lines are deletions the captain asked for, including ~970 lines of reconcile tests whose mechanism no longer exists. A tolerance expressed in gross lines penalises deletion exactly when deletion is the goal.
