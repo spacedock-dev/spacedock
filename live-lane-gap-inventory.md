@@ -1,11 +1,11 @@
 ---
 id: 1496q9vd177hxtdeafcp7hvj
 title: Inventory the live-lane failures and say which are tracked, which are flakes, and what to do
-status: ideation
+status: done
 source: "Captain CL, 2026-08-18, after a night of live-lane reds during the 0.27.0-pre8 cut: \"have another ensign inventory of recent live gap and if they are tracked as known flakes, and propose recommendations\". Ten distinct live failures were observed across four runs on three hosts; a prerelease gate was waived without being able to read them."
 started: 2026-08-18T15:20:42Z
-completed:
-verdict:
+completed: 2026-08-18T18:41:01Z
+verdict: withdrawn
 score:
 worktree:
 issue:
