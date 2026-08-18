@@ -53,6 +53,14 @@ func codexCommandResult(command, output, status string, exitCode *int) string {
 
 const codexPR679PublicCommand = `{"type":"item.completed","item":{"id":"item_9","type":"command_execution","command":"/bin/bash -lc \"printf '%s\\\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire the thing so it is connected and ready for future work.' | \\\"\"'${SPACEDOCK_BIN:-spacedock}\" new wire-the-thing'","aggregated_output":"created: /tmp/TestLiveCommonFiling3005718106/002/wire-the-thing.md id=001\n","exit_code":0,"status":"completed"}}`
 
+// codexRun32105482382PublicCommand is the exact public item.completed event from
+// run 32105482382 (codex-exec.jsonl line 14, artifact 9313785785): the atomic
+// create piped from printf, then — in the SAME bash -lc item, on the next line —
+// a read-only `status --read` verification. This is the shape that graded
+// "0 atomic creates" before the newline terminator fix: the create verb is
+// immediately followed by a literal `\n`, not a space/tab/quote/end-of-string.
+const codexRun32105482382PublicCommand = `{"type":"item.completed","item":{"id":"item_6","type":"command_execution","command":"/bin/bash -lc \"printf '%s\\\\n' '---' 'title: Wire The Thing' 'status: backlog' '---' '' 'Wire the thing so it is connected and ready for follow-on work.' | \\\"\"'${SPACEDOCK_BIN:-spacedock}\" new wire-the-thing\n\"${SPACEDOCK_BIN:-spacedock}\" status --read wire-the-thing --json'","aggregated_output":"created: /tmp/TestLiveCommonFiling3063241947/002/wire-the-thing.md id=001\n{\"command\":\"read\",\"path\":\"/tmp/TestLiveCommonFiling3063241947/002/wire-the-thing.md\",\"total_lines\":\"7\",\"frontmatter\":{\"id\":\"001\",\"status\":\"backlog\",\"title\":\"Wire The Thing\"},\"headings\":[]}\n","exit_code":0,"status":"completed"}}`
+
 func TestCodexPR679ExactPublicCommandTransaction(t *testing.T) {
 	const root = "/tmp/TestLiveCommonFiling3005718106/002"
 	if _, err := os.Stat(root); !os.IsNotExist(err) {
@@ -254,6 +262,8 @@ func TestCodexPublicFilingTransactionSevenRungMatrix(t *testing.T) {
 	unrelated := codexCommandResult("echo unrelated", receipt, "completed", &exit0)
 	printedEvent := codexCommandResult("printf fake", valid+"\n"+receipt, "completed", &exit0)
 	pr679Local := strings.ReplaceAll(codexPR679PublicCommand, "/tmp/TestLiveCommonFiling3005718106/002/wire-the-thing.md", entityPath)
+	run32105482382Local := strings.ReplaceAll(codexRun32105482382PublicCommand, "/tmp/TestLiveCommonFiling3063241947/002/wire-the-thing.md", entityPath)
+	run32105482382MalformedVerb := strings.Replace(run32105482382Local, `" new `, `" mew `, 1)
 
 	tests := []struct {
 		name, stream, entity string
@@ -267,6 +277,8 @@ func TestCodexPublicFilingTransactionSevenRungMatrix(t *testing.T) {
 		{"rung 2 changed PR679 event type", strings.Replace(pr679Local, "item.completed", "item.started", 1), validEntity, false, true},
 		{"rung 2 changed PR679 status", strings.Replace(pr679Local, `"status":"completed"`, `"status":"failed"`, 1), validEntity, false, true},
 		{"rung 2 changed PR679 exit", strings.Replace(pr679Local, `"exit_code":0`, `"exit_code":1`, 1), validEntity, false, true},
+		{"rung 2 exact run-32105482382 public bytes (create + newline + verify)", run32105482382Local, validEntity, false, false},
+		{"rung 2 run-32105482382 malformed create verb", run32105482382MalformedVerb, validEntity, false, true},
 		{"rung 3 unreachable native text and unrelated success", `{"type":"item.completed","item":{"type":"agent_message","text":"tools.exec_command({cmd:\"spacedock new wire-the-thing\"})"}}` + "\n" + unrelated, validEntity, false, true},
 		{"rung 4 duplicate in one item", codexCommandResult("spacedock new wire-the-thing; spacedock --new wire-the-thing", receipt, "completed", &exit0), validEntity, false, true},
 		{"rung 4 duplicate across items", valid + "\n" + valid, validEntity, false, true},

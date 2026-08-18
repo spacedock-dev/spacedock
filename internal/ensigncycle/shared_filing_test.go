@@ -50,7 +50,7 @@ func commandFilesViaNew(command, slug string) bool {
 	if !strings.Contains(command, slug) {
 		return false
 	}
-	if regexp.MustCompile(newInvocation.String() + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t']|$)`).MatchString(command) {
+	if regexp.MustCompile(newInvocation.String() + `[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t'\n]|$)`).MatchString(command) {
 		return true
 	}
 	return capturedLauncherFilesViaNew(command, slug)
@@ -180,7 +180,7 @@ func codexFilingCreateCount(command, slug string) int {
 	if !commandFilesViaNew(command, slug) {
 		return 0
 	}
-	create := regexp.MustCompile(`(?:\bnew\b|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t';|&]|$)`)
+	create := regexp.MustCompile(`(?:\bnew\b|--new)[ \t]+` + regexp.QuoteMeta(slug) + `(?:[ \t';|&\n]|$)`)
 	return len(create.FindAllStringIndex(command, -1))
 }
 
