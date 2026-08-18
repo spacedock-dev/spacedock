@@ -57,6 +57,12 @@ func (f *fakeHost) Install(host, source, branch string) (string, error) {
 	return f.installOut, nil
 }
 
+func (f *fakeHost) InstallCodexLocalPluginDir(source string) (string, error) {
+	f.installCmds = append(f.installCmds, "codex", source)
+	f.installed = true
+	return f.installOut, nil
+}
+
 // testBinaryVersion is the deterministic binary version a handful of gating
 // tests pin via withVersion when they need an exact, self-chosen relationship to
 // a fixture (e.g. the upgrade-hint patch-skew cases). It shares its minor (19)

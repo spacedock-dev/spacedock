@@ -1,5 +1,5 @@
 // ABOUTME: Release-pipeline version steps — stamp plugin.json `version` to the
-// ABOUTME: release (AC-4) and bump the marketplace entry calendar key (AC-2d).
+// ABOUTME: release (AC-4).
 package release
 
 import (
@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"time"
 )
 
 // versionRe matches a `"version": "..."` member of a JSON object. Both stamp
@@ -81,37 +80,4 @@ func StampVersion(manifest []byte, version string) ([]byte, error) {
 		return manifest, nil
 	}
 	return replaceFirstVersion(manifest, version), nil
-}
-
-// BumpCalendarVersion advances the marketplace plugin entry's calendar version
-// to `0.0.YYYYMMDDNN` for the date in now. NN is a per-day sequence: when the
-// existing entry version already carries today's date, NN increments; otherwise
-// it restarts at 01. The date component dominates the ordering, so the value is
-// strictly monotonic across both same-day re-bumps and day boundaries — exactly
-// the `claude plugin update` re-pull key the moving `next` branch needs.
-func BumpCalendarVersion(marketplace []byte, now time.Time) ([]byte, error) {
-	date := now.UTC().Format("20060102")
-	prefix := "0.0." + date
-
-	var doc struct {
-		Plugins []struct {
-			Version string `json:"version"`
-		} `json:"plugins"`
-	}
-	if err := json.Unmarshal(marketplace, &doc); err != nil {
-		return nil, fmt.Errorf("parse marketplace: %w", err)
-	}
-	if len(doc.Plugins) == 0 {
-		return nil, fmt.Errorf("marketplace has no plugin entry to bump")
-	}
-
-	seq := 1
-	if cur := doc.Plugins[0].Version; len(cur) > len(prefix) && cur[:len(prefix)] == prefix {
-		if n, err := strconv.Atoi(cur[len(prefix):]); err == nil {
-			seq = n + 1
-		}
-	}
-	next := fmt.Sprintf("%s%02d", prefix, seq)
-
-	return replaceFirstVersion(marketplace, next), nil
 }

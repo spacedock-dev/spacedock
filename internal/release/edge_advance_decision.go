@@ -126,35 +126,119 @@ func sign(n int) int {
 	}
 }
 
-// EdgeAdvanceDecision decides whether the edge-advance job should ADVANCE `next`
-// (reconcile + stamp + calendar bump + auto-cut pre0) or SKIP the whole job for
-// the given tag, given `next`'s current manifest version. It computes the tag's
-// TARGET EDGE VERSION — the version `next` would carry after this tag's
-// reconcile: dev-preversion(tag) for a bare stable vX.Y.Z (`next` is stamped
-// PAST the release), or the tag's own version for a `-pre` tag (`next` inherits
-// it through the `-X theirs` reconcile) — and returns advance iff that target is
-// STRICTLY GREATER than nextVersion. A patch cut from an older line yields a
-// target at or below `next`'s current line, so it skips, leaving `next`'s tip
-// untouched: no `-X theirs` clobber, no manifest/gate-line rewind, no colliding
-// pre0 tag, no calendar re-pull. The boundary is strict `>`, not `>=`: a patch
-// whose target exactly equals `next` (dev-preversion(vX.Y.1) == next) must skip.
-func EdgeAdvanceDecision(tag, nextVersion string) (advance bool, targetEdge string, err error) {
+// EdgeAdvanceDecision decides whether a tag ADVANCES the edge line (currently:
+// the auto-pre0 cut) or SKIPS, given knownVersion — the highest version already
+// known to have been released (originally `next`'s current manifest version,
+// pre-round-3; now the caller feeds HighestKnownEdgeVersion's result over git
+// tag history — see docs/releasing.md "Advancing the Edge Line"). The function
+// itself is agnostic to where knownVersion comes from; only the caller changed.
+// It computes the tag's TARGET EDGE VERSION: dev-preversion(tag) for a bare
+// stable vX.Y.Z (the edge line would be stamped PAST the release), or the tag's
+// own version for a `-pre` tag — and returns advance iff that target is
+// STRICTLY GREATER than knownVersion. A patch cut from an older line yields a
+// target at or below the known line, so it skips. The boundary is strict `>`,
+// not `>=`: a patch whose target exactly equals knownVersion must skip.
+func EdgeAdvanceDecision(tag, knownVersion string) (advance bool, targetEdge string, err error) {
 	version := strings.TrimPrefix(tag, "v")
 	if strings.Contains(version, "-") {
-		// A prerelease tag: `next` would inherit the tag's own version.
+		// A prerelease tag: the edge line would inherit the tag's own version.
 		targetEdge = version
 	} else {
-		// A bare stable tag: `next` is stamped PAST it to the dev pre-version.
+		// A bare stable tag: the edge line is stamped PAST it to the dev pre-version.
 		targetEdge, err = DevPreVersion(version)
 		if err != nil {
 			return false, "", err
 		}
 	}
-	cmp, err := ComparePreVersion(targetEdge, nextVersion)
+	cmp, err := ComparePreVersion(targetEdge, knownVersion)
 	if err != nil {
 		return false, "", err
 	}
 	return cmp > 0, targetEdge, nil
+}
+
+// HighestKnownEdgeVersion returns the greatest version among candidates — the
+// git-tag-sourced replacement for the retired `next`-manifest read
+// EdgeAdvanceDecision's second argument used to come from (see
+// docs/releasing.md "Advancing the Edge Line"). Each candidate is a release tag
+// name (`v` prefix optional): "X.Y.Z" or "X.Y.Z-preN". PRERELEASE tags are
+// INCLUDED in the comparison, not filtered to bare stable ones — the retired
+// `next`-manifest read carried prerelease versions too (`next` tracked whatever
+// `-preN` last reconciled), so including them here preserves the same
+// protection: an old-line stable patch must still lose to an already-cut
+// newer-line prerelease, not just to a newer bare stable. Worked example:
+// cutting v0.25.3 while v0.27.0-pre7 already exists must find 0.27.0-pre7 as
+// the known version (target 0.26.0-pre0 loses to it and skips) — filtering to
+// stable-only would find only 0.26.0, a much closer and wrong call. A candidate
+// that fails to parse (a malformed tag name, or any non-release ref shape the
+// caller's own git-tag filter let through) is skipped, not an error — the
+// caller controls the candidate list's shape, so a stray non-matching value
+// here is defensive, not expected. ok is false when NO candidate parses (an
+// empty list, or a list of only unparseable entries) — the caller MUST
+// fail-closed (skip the auto-pre0 cut) on ok=false rather than treat "nothing
+// to compare against" as "anything advances": a missed pre0 is recoverable by
+// hand, a wrongly-cut lower one publishes a regression.
+func HighestKnownEdgeVersion(candidates []string) (version string, ok bool) {
+	for _, c := range candidates {
+		v := strings.TrimPrefix(strings.TrimSpace(c), "v")
+		if v == "" {
+			continue
+		}
+		if _, _, err := parsePreVersion(v); err != nil {
+			continue
+		}
+		if !ok {
+			version, ok = v, true
+			continue
+		}
+		if cmp, err := ComparePreVersion(v, version); err == nil && cmp > 0 {
+			version = v
+		}
+	}
+	return version, ok
+}
+
+// HighestBareStableVersion returns the greatest BARE (no-prerelease) version
+// among candidates, ignoring prerelease tags entirely. ok is false when no
+// candidate is a bare stable.
+//
+// This restores a sentinel HighestKnownEdgeVersion's raw tag scan cannot
+// supply on its own: the retired `next`-manifest read was stamped by the
+// stable release path to DevPreVersion(latest bare stable) — one notch ABOVE
+// whatever pre0 that stable cut, in turn, auto-cut — on EVERY latest-line
+// stable release, independent of whether that line's own pre0/preN tags exist
+// yet. A caller feeding HighestKnownEdgeVersion the dev-preversion of this
+// function's result, alongside the raw tag list, reconstructs that same notch.
+// Without it, a stable cut on an OLDER line than the highest bare stable, made
+// while the newer line has EXACTLY a pre0 tag and nothing higher, computes a
+// target (dev-preversion of the older line, always "-pre1") that ranks ABOVE
+// the newer line's known "-pre0" by construction — an old-line patch wrongly
+// advances and the auto-cut step then dies re-cutting the existing pre0 tag
+// (the exact collision replayed by
+// TestHighestKnownEdgeVersionCommandRestoresNextNotchAgainstRealV0251Collision
+// against this repo's real v0.25.1/v0.26.0-pre0 tags). Once ANY later
+// prerelease exists for that newer line (pre1 or above), the raw tag scan
+// alone already outranks any older-line patch's "-pre1" target, and this
+// notch changes nothing — it only matters in the exact one-tag-behind window.
+func HighestBareStableVersion(candidates []string) (version string, ok bool) {
+	for _, c := range candidates {
+		v := strings.TrimPrefix(strings.TrimSpace(c), "v")
+		if v == "" {
+			continue
+		}
+		_, pre, err := parsePreVersion(v)
+		if err != nil || pre != "" {
+			continue
+		}
+		if !ok {
+			version, ok = v, true
+			continue
+		}
+		if cmp, err := ComparePreVersion(v, version); err == nil && cmp > 0 {
+			version = v
+		}
+	}
+	return version, ok
 }
 
 // Pre0EdgeVersion computes the auto-cut edge prerelease version for a latest-line

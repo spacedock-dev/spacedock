@@ -1,5 +1,5 @@
 // ABOUTME: Release-pipeline CLI: `stamp-version` writes the release version into
-// ABOUTME: the plugin.json manifests; `bump-calendar` advances the marketplace key.
+// ABOUTME: the plugin.json manifests for a release.
 package main
 
 import (
@@ -20,7 +20,6 @@ import (
 // Usage:
 //
 //	spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
-//	spacedock-release bump-calendar <marketplace.json>
 //	spacedock-release dev-preversion <stable-version>
 //	spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
 //	spacedock-release e2e-gate <release-commit-sha>
@@ -29,16 +28,19 @@ import (
 // plugin.json gets its top-level `version` field rewritten (AC-4); a `.md`
 // argument is the FO shared-core prose, whose single release-stamped "required
 // binary minor" literal is rewritten to the release's major.minor (D5) —
-// erroring unless the literal appears exactly once. bump-calendar advances the
-// marketplace plugin entry's calendar key to today's `0.0.YYYYMMDDNN` (AC-2d).
-// All rewrite in place. dev-preversion prints the post-release dev pre-version
+// erroring unless the literal appears exactly once. All rewrite in place.
+// dev-preversion prints the post-release dev pre-version
 // (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`.
 // edge-advance-decision prints `advance` or `skip` (exit 0 either way) deciding
 // whether a tag advances the edge line: it computes the tag's target edge
-// version and skips unless that is strictly greater than `next`'s current
-// manifest, so the whole edge-advance job no-ops on an old-line/patch tag.
-// edge-pre0-version prints the auto-cut edge prerelease version (X.(Y+1).0-pre0)
-// the stable path tags on the greened release commit. journey-delta
+// version and skips unless that is strictly greater than the highest known
+// release version (fed from a manifest release.yml synthesizes via
+// highest-known-edge-version), so the auto-pre0 cut no-ops on an old-line/patch
+// tag. highest-known-edge-version prints the greatest version among its <tag>
+// arguments (prereleases included), or nothing when none parses — the git-tag
+// scan that replaced reading `next`'s manifest. edge-pre0-version prints the
+// auto-cut edge prerelease version (X.(Y+1).0-pre0) the stable path tags on the
+// greened release commit. journey-delta
 // renders and posts the per-PR journey-cost delta against the previously
 // published release ledger's latest-by-captured_at baseline per scenario/model,
 // updating a single sticky PR comment found by its HTML marker. The AC-4
@@ -65,12 +67,12 @@ func main() {
 	switch os.Args[1] {
 	case "stamp-version":
 		os.Exit(stampVersion(os.Args[2:]))
-	case "bump-calendar":
-		os.Exit(bumpCalendar(os.Args[2:]))
 	case "dev-preversion":
 		os.Exit(devPreversion(os.Args[2:]))
 	case "edge-advance-decision":
 		os.Exit(edgeAdvanceDecision(os.Args[2:]))
+	case "highest-known-edge-version":
+		os.Exit(highestKnownEdgeVersion(os.Args[2:]))
 	case "edge-pre0-version":
 		os.Exit(edgePre0Version(os.Args[2:]))
 	case "journey-costs":
@@ -186,30 +188,6 @@ func stampVersion(args []string) int {
 		}
 		fmt.Printf("stamped %s version=%s\n", path, version)
 	}
-	return 0
-}
-
-func bumpCalendar(args []string) int {
-	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, "spacedock-release bump-calendar: need exactly one <marketplace.json>")
-		return 2
-	}
-	path := args[0]
-	data, err := os.ReadFile(path)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "read %s: %v\n", path, err)
-		return 1
-	}
-	out, err := release.BumpCalendarVersion(data, time.Now())
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "bump %s: %v\n", path, err)
-		return 1
-	}
-	if err := os.WriteFile(path, out, 0o644); err != nil {
-		fmt.Fprintf(os.Stderr, "write %s: %v\n", path, err)
-		return 1
-	}
-	fmt.Printf("bumped %s\n", path)
 	return 0
 }
 
@@ -382,9 +360,9 @@ func usage() {
 
 Usage:
   spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
-  spacedock-release bump-calendar <marketplace.json>
   spacedock-release dev-preversion <stable-version>
-  spacedock-release edge-advance-decision <tag> <next-plugin.json>
+  spacedock-release edge-advance-decision <tag> <known-version-plugin.json>
+  spacedock-release highest-known-edge-version [<tag> ...]
   spacedock-release edge-pre0-version <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>

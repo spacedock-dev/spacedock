@@ -44,6 +44,11 @@ type hostOps interface {
 	// source, returning combined output. devBranch selects the marketplace channel
 	// entry the install targets (see channelEntry).
 	Install(host, source, devBranch string) (string, error)
+	// InstallCodexLocalPluginDir issues the codex `--plugin-dir` dev-install
+	// sequence (codexPluginDirInstallArgvSequence) against source — the
+	// dedicated `spacedock-local` marketplace, distinct from either real
+	// channel's marketplace name — returning combined output.
+	InstallCodexLocalPluginDir(source string) (string, error)
 }
 
 // devBranch is the binary's channel stamp: it selects which marketplace entry the

@@ -22,7 +22,7 @@ Add focused tests for each stage before implementing that stage.
 
 ## Releasing
 
-Cut stable releases from `main` via an annotated `vX.Y.Z` tag — see `docs/releasing.md`. `next` is the dev/edge line (source builds, `--plugin-dir`, and `next-publish` calendar bumps), not a stable-release source — do not cut a stable `vX.Y.Z` tag from it.
+Cut stable releases from `main` via an annotated `vX.Y.Z` tag — see `docs/releasing.md`. `next` is a dev-only source-build convenience branch (`go install …@next`, `--plugin-dir`) — the edge marketplace entry resolves `main` directly, so `next` is not a re-pull source for any installer. Do not cut a stable `vX.Y.Z` tag from it.
 
 ## Project Shape
 
