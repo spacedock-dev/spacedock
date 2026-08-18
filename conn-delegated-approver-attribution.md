@@ -21,6 +21,17 @@ gates:
                 digest: sha256:87d88b38b198c15d5db6997931b838df928f67735f4324d72b36ddc34a9cf626
                 request-digest: sha256:c6590c5b4c1a0ee28506433b1aa291cc6cfe6e9167f0979d6ab94a336d39a672
                 room-ref: ./conn-delegated-approver-attribution/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:j7jhntfa2ve8g6jwhatktrrv:ideation:1
+                briefing: briefing:j7jhntfa2ve8g6jwhatktrrv:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-18T19:32:07.591936Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve those 4, and have them be on a pr stack.'' Accepts the retarget onto recorded-gate-lifecycle and the disjoint-shape citation design, including the grader inversion the captain called for: record the approver as FO under the conn and cite where the conn was given.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 When the FO resolves a gate under a delegated conn, the durable record should name the FO as approver and cite where the conn was granted. Today it can name the captain for a decision the captain never made in-session, and nothing in the record or the grader catches it.
