@@ -237,6 +237,19 @@ The gating spike falsified the captain's entry-name shape before any design work
 
 Scope expanded from the route collapse to the whole install/re-pull value chain, and measurement reshaped every half of it. New discovery: the edge line has been STALLED since 2026-08-10 — a manual bare `0.27.0` stamp rode the pre4 tag into `next` through the manifest-tag gate's `-pre` carve-out, and every later `-pre` tag's edge-advance decision provably skips; this, not just the dead calendar file, is why edge installs froze. The design: non-destructive sequences on both hosts (no `marketplace remove` ever — its cascade-uninstall of co-hosted plugins was measured), a non-blocking edge contract sync at the front door (with a bare-version carve-out that heals the poisoned installs), filtered plugin-dir staging (40.3s → <2s target, the confirmed slowness), a bare-version guard in edge-advance, and retirement of the calendar machinery the measurements proved inert. The gate should still surface the round-1 directive reversal, plus one mid-session observation: the captain's real claude edge install moved to bare `0.27.0` at 2026-08-17T20:35Z by another actor (this worker's isolation proven via marker test).
 
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation; surface 29 files / 3056 gross vs estimate 14 files / 560 gross (546%); AC unchanged in scope-per-AC, but the SET grew 4 → 8 under captain scope expansion — not narrowed.
+
+**Design-reset decision at cycle 1: RECONFIRM.** The declared tolerance (±35% gross, ±3 files) is breached, so the flow requires a recorded decision before any further round. Recorded reasoning:
+
+- The deviation is captain-directed, not drift. Three explicit expansions after the ideation gate approved the baseline: "i'd very much like everything being in one task end to end", the `next`-branch retirement ("do it. simple is better"), and option (c) for the codex plugin-dir marketplace name. Each was approved with the alternative named.
+- The gross metric misreads this change. Net is **−362**: the codebase shrank. 1709 of the 3056 gross lines are deletions the captain asked for, including ~970 lines of reconcile tests whose mechanism no longer exists. A tolerance expressed in gross lines penalises deletion exactly when deletion is the goal.
+- The two measured end values HOLD under independent re-measurement (AC-5 cascade fix falsifiable on a real host; AC-7 30.83s → 0.12s timed by the validator on the same checkout). The rejection is confined to AC-8's pre0 guard, and both fixes are narrow and on one surface. The validator states explicitly that this is not a mechanism failure and not a scope reset.
+- Re-scope, park, and escalate were considered and rejected: re-scoping would split work the captain explicitly asked to keep whole; parking leaves `release.yml` reading a branch that no longer exists; escalation is unnecessary because the captain authorised each expansion in-session.
+
+Carried obligation for the next round: re-declare the expected surface against what the entity now actually contains, so cycle 2 measures against a baseline that reflects the reconfirmed scope rather than the pre-expansion one.
+
 ## Stage Report: implementation
 
 - DONE: Hold the rule that no install step spells `marketplace remove` on either host, and pin that absence in the sequence fixtures so a later edit cannot reintroduce the cascade.
