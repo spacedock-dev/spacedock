@@ -9,6 +9,18 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:4ctz4sfybfk0mfsbnrjcc7bv:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:4ctz4sfybfk0mfsbnrjcc7bv-backlog-1
+              briefing:
+                id: briefing:4ctz4sfybfk0mfsbnrjcc7bv:backlog:attempt-1:revision-1
+                digest: sha256:8c097b36dc8addb17335f90ea018c35bb0f1b083f31bce9d390c80df9e543608
+                request-digest: sha256:79ea2c142d7fb3cbbd6ec4afb6b981efee79195296b7750c8b3b4166550a49f9
+                room-ref: ./force-boot-at-compaction-boundary/review/backlog/briefing-1
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:backlog:attempt-1:revision-1",
+  "question": "Approve the compaction-boot seed into ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/28c8da3d8cc964f8be68cee6c8bf6b12c15bc6d3/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:09623827bbf008d6aab3f9e25eaf99b140ce3d5c18889aebcdd99bf9160ba533",
+      "mediaType": "text/markdown",
+      "summary": "A compacted FO session resumes on stale bindings — it inherits the prior session's narrative, not its binary, contract version, mods, live workers, or durable state. Six failures in one session trace to never running Startup. Proposes binding exactly one state.boot() to the compaction boundary, not a context-reinjection bundle. Ideation must first prove Claude exposes a usable boundary with a captured event."
+    }
+  ]
+}
