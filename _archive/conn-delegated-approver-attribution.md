@@ -1,11 +1,11 @@
 ---
 id: j7jhntfa2ve8g6jwhatktrrv
 title: Under a delegated conn, record the FO as approver and cite the grant
-status: validation
+status: done
 source: "Captain CL, 2026-08-18, reframing the live-lane inventory: the auto-continue journey tests the conn and the FO behaved correctly under it; the defect is the approver label, not the approval. Corroborated by the in-tree audit note at internal/ensigncycle/shared_live_runner_test.go:139 — 'finding 9 — approval-actor alternation under a delegated conn: recording person:captain for a decision no captain made in-session grades green.'"
 started: 2026-08-18T18:41:26Z
-completed:
-verdict:
+completed: 2026-08-18T23:09:31Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-conn-delegated-approver-attribution
 issue:
@@ -51,9 +51,10 @@ gates:
                 reason: 'Captain approved in chat: ''approve all PR and trigger ci on tip.'' Validation PASSED, no material finding: the replacement is not circular — the grader authenticates the FO''s quote against harness-authored runbook bytes, an invented quote and a self-granted-authority append both red, and a valid FO-attributed cited record still reds on the no-conn fixture, proving the citation confers no authority.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:733
+archived: 2026-08-18T23:09:31Z
 ---
 
 When the FO resolves a gate under a delegated conn, the durable record should name the FO as approver and cite where the conn was granted. Today it can name the captain for a decision the captain never made in-session, and nothing in the record or the grader catches it.
