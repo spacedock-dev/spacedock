@@ -1,7 +1,7 @@
 ---
 id: 4ctz4sfybfk0mfsbnrjcc7bv
 title: Force one boot at the compaction boundary — a compacted FO resumes on stale bindings
-status: backlog
+status: ideation
 source: "Captain CL, 2026-08-18, in chat: 'file the compaction improvement, detail the problem diagnosis and proposed solution.' Raised after the FO opened three PRs by hand without reading the pr-merge mod, and diagnosed the root cause as never having run Startup in a compaction-resumed session."
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain approved in chat: ''ok dispatch 4c and nr.'' Accepts the seed into ideation; the captain independently identified this as the highest-value item on the board because it makes every future session more reliable rather than fixing one test.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
