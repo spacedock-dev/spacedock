@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vkatjs25g9a9gmk3jtvx5ce0:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: merge guard refuses a passed finalize unless a committed stage-report commit strictly precedes the first terminal-state commit in the entity's own history?",
+  "artifacts": [
+    {
+      "id": "artifact:vkatjs25g9a9gmk3jtvx5ce0:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d675e7a7b02a6fc22f4d0bd22f7a491b8f649012/merge-guard-requires-preceding-report.md",
+      "rev": "sha256:ba33fccb7fcf1f3758ab90f313fc71888b698fe063b864bfff7f8986e7e8e305",
+      "mediaType": "text/markdown",
+      "summary": "Ideation settled the open sub-shape from both failing runs' retained streams: both end batched in durable history, reached two ways — run 32092321763's workers hand-flipped status=done and committed flip plus report together; run 32105482382's worker never committed and the guard's archive commit swept the dirty report in. One ceremony-time ordering check covers both. Design walks the entity's own git history with the package's existing helpers, refusing exit 1 with nothing mutated, before the mod-block clear. Exemptions: rejected verdict, --rework, non-git root. Spiked red and green against four replayed shapes and six real archived histories (all pass). Net +260 across up to 12 files, mostly fixture fallout. Note: issue #689 lands in the same finalize()."
+    }
+  ]
+}
