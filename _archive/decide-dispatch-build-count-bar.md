@@ -1,11 +1,11 @@
 ---
 id: 6htv3p97aq8sexrkjhrcdwt1
 title: Decide whether one dispatch build per stage is the right bar for a live agent
-status: validation
+status: done
 source: "Captain CL, 2026-08-18, from the live-lane inventory reframe. The recorded-gate-lifecycle journey red in run 32105482382 on 'successor dispatch build attempts/successes = 2/2, want 1/1' — two SUCCESSFUL builds, not an error-then-retry. codex-live-dispatch-build-checklist-race already carries the open question and is codex-scoped; this occurrence is claude."
 started: 2026-08-18T18:41:27Z
-completed:
-verdict:
+completed: 2026-08-18T23:09:25Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-decide-dispatch-build-count-bar
 issue:
@@ -51,9 +51,10 @@ gates:
                 reason: 'Captain approved in chat: ''approve all PR and trigger ci on tip.'' Validation PASSED with two deferred risks, no material finding: 12-shape matrix confirms the widened bar still reds flailing, waste and final failure; falsifiability reproduced under a strict-1/1 revert; +94-vs-+30 overrun traced line by line to approved design and test-plan items, one file, zero production code.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:732
+archived: 2026-08-18T23:09:25Z
 ---
 
 A journey grades an FO red for building a dispatch envelope twice. Ideation's decision: 1/1 does not stand — the retained streams show the second successful build differed from the first (a corrected rebuild), so the bar widens to tolerate exactly one corrective rebuild while identical rebuilds, three-plus attempts, and final failures stay red.
