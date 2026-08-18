@@ -24,12 +24,13 @@ func envPassSafehouse(t *testing.T, dir string) string {
 	body := `#!/bin/sh
 # Capture the inherited value before scrubbing (the host env safehouse sees).
 saved_bin="${SPACEDOCK_BIN-}"
-saved_zellij="${ZELLIJ-}"
 saved_zellij_pane_id="${ZELLIJ_PANE_ID-}"
 saved_zellij_session_name="${ZELLIJ_SESSION_NAME-}"
+saved_tmux="${TMUX-}"
+saved_tmux_pane="${TMUX_PANE-}"
 saved_extra_target="${EXTRA_TARGET-}"
 pass="${SAFEHOUSE_ENV_PASS-}"
-unset SPACEDOCK_BIN ZELLIJ ZELLIJ_PANE_ID ZELLIJ_SESSION_NAME EXTRA_TARGET
+unset SPACEDOCK_BIN ZELLIJ_PANE_ID ZELLIJ_SESSION_NAME TMUX TMUX_PANE EXTRA_TARGET
 append_pass() {
   if [ -n "$pass" ]; then pass="$pass,$1"; else pass="$1"; fi
 }
@@ -43,9 +44,10 @@ done
 if [ "$1" = "--" ]; then shift; fi
 # Honor each named pass-through: forward values from the saved host env.
 case ",$pass," in *,SPACEDOCK_BIN,*) export SPACEDOCK_BIN="$saved_bin" ;; esac
-case ",$pass," in *,ZELLIJ,*) export ZELLIJ="$saved_zellij" ;; esac
 case ",$pass," in *,ZELLIJ_PANE_ID,*) export ZELLIJ_PANE_ID="$saved_zellij_pane_id" ;; esac
 case ",$pass," in *,ZELLIJ_SESSION_NAME,*) export ZELLIJ_SESSION_NAME="$saved_zellij_session_name" ;; esac
+case ",$pass," in *,TMUX,*) export TMUX="$saved_tmux" ;; esac
+case ",$pass," in *,TMUX_PANE,*) export TMUX_PANE="$saved_tmux_pane" ;; esac
 case ",$pass," in *,EXTRA_TARGET,*) export EXTRA_TARGET="$saved_extra_target" ;; esac
 exec "$@"
 `
@@ -134,42 +136,56 @@ func TestSafehouseEnvPassForwardsSpacedockBin(t *testing.T) {
 	})
 }
 
-func TestSafehouseEnvPassForwardsZellijTargetingMetadata(t *testing.T) {
+// TestSafehouseEnvPassForwardsTerminalTargetingMetadata proves the presence
+// filter through a scrubbing wrapper for two host families: a tmux-pair
+// parent's child sees the pair's values and no Zellij names, and the
+// Zellij-pair case still forwards — each with the other family's names never
+// presented as empty (they're never named in --env-pass to begin with).
+func TestSafehouseEnvPassForwardsTerminalTargetingMetadata(t *testing.T) {
 	dir := t.TempDir()
 	safehousePath := envPassSafehouse(t, dir)
-	probe := zellijTargetingProbe(t, dir)
+	probe := terminalTargetingProbe(t, dir)
 
-	parent := []string{
-		"PATH=/usr/bin:/bin",
-		"ZELLIJ=0",
-		"ZELLIJ_PANE_ID=51",
-		"ZELLIJ_SESSION_NAME=excellent-pheasant",
-	}
+	t.Run("tmux pair forwards exact inherited values; Zellij names stay unset", func(t *testing.T) {
+		setTmuxTargetingEnv(t)
+		parent := []string{
+			"PATH=/usr/bin:/bin",
+			"TMUX=/tmp/tmux-501/default,12345,0",
+			"TMUX_PANE=%3",
+		}
+		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
+		out := runWrapped(t, safehousePath, argv[1:], parent)
+		want := "TMUX=/tmp/tmux-501/default,12345,0\nTMUX_PANE=%3\nZELLIJ_PANE_ID=<unset>\nZELLIJ_SESSION_NAME=<unset>"
+		if out != want {
+			t.Fatalf("terminal metadata = %q, want %q", out, want)
+		}
+	})
 
-	t.Run("wrapper-owned targeting allowlist forwards exact inherited values", func(t *testing.T) {
+	t.Run("Zellij pair still forwards; tmux names stay unset", func(t *testing.T) {
 		setZellijTargetingEnv(t)
+		parent := []string{
+			"PATH=/usr/bin:/bin",
+			"ZELLIJ_PANE_ID=51",
+			"ZELLIJ_SESSION_NAME=excellent-pheasant",
+		}
 		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
 		out := runWrapped(t, safehousePath, argv[1:], parent)
-		want := "ZELLIJ=0\nZELLIJ_PANE_ID=51\nZELLIJ_SESSION_NAME=excellent-pheasant"
+		want := "TMUX=<unset>\nTMUX_PANE=<unset>\nZELLIJ_PANE_ID=51\nZELLIJ_SESSION_NAME=excellent-pheasant"
 		if out != want {
-			t.Fatalf("Zellij metadata = %q, want %q", out, want)
+			t.Fatalf("terminal metadata = %q, want %q", out, want)
 		}
 	})
 
-	t.Run("without Zellij names the scrubbed child cannot see targeting metadata", func(t *testing.T) {
-		clearZellijTargetingEnv(t)
-		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
-		out := runWrapped(t, safehousePath, argv[1:], parent)
-		want := "ZELLIJ=<unset>\nZELLIJ_PANE_ID=<unset>\nZELLIJ_SESSION_NAME=<unset>"
-		if out != want {
-			t.Fatalf("Zellij metadata = %q, want %q", out, want)
-		}
-	})
-
-	t.Run("native global allowlist composes with the built-in trio", func(t *testing.T) {
+	t.Run("native global allowlist composes with the built-in allowance", func(t *testing.T) {
 		setZellijTargetingEnv(t)
 		probe := extraTargetProbe(t, dir)
-		env := append(append([]string{}, parent...), "SAFEHOUSE_ENV_PASS=EXTRA_TARGET", "EXTRA_TARGET=operator-choice")
+		env := []string{
+			"PATH=/usr/bin:/bin",
+			"ZELLIJ_PANE_ID=51",
+			"ZELLIJ_SESSION_NAME=excellent-pheasant",
+			"SAFEHOUSE_ENV_PASS=EXTRA_TARGET",
+			"EXTRA_TARGET=operator-choice",
+		}
 		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
 		out := runWrapped(t, safehousePath, argv[1:], env)
 		if out != "EXTRA_TARGET=operator-choice" {
@@ -180,15 +196,21 @@ func TestSafehouseEnvPassForwardsZellijTargetingMetadata(t *testing.T) {
 
 func setZellijTargetingEnv(t *testing.T) {
 	t.Helper()
-	clearZellijTargetingEnv(t)
-	t.Setenv("ZELLIJ", "0")
+	clearTerminalTargetingEnv(t)
 	t.Setenv("ZELLIJ_PANE_ID", "51")
 	t.Setenv("ZELLIJ_SESSION_NAME", "excellent-pheasant")
 }
 
-func clearZellijTargetingEnv(t *testing.T) {
+func setTmuxTargetingEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{"ZELLIJ", "ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME"} {
+	clearTerminalTargetingEnv(t)
+	t.Setenv("TMUX", "/tmp/tmux-501/default,12345,0")
+	t.Setenv("TMUX_PANE", "%3")
+}
+
+func clearTerminalTargetingEnv(t *testing.T) {
+	t.Helper()
+	for _, key := range []string{"ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME", "TMUX", "TMUX_PANE"} {
 		value, present := os.LookupEnv(key)
 		if err := os.Unsetenv(key); err != nil {
 			t.Fatal(err)
@@ -203,11 +225,12 @@ func clearZellijTargetingEnv(t *testing.T) {
 	}
 }
 
-func zellijTargetingProbe(t *testing.T, dir string) string {
+func terminalTargetingProbe(t *testing.T, dir string) string {
 	t.Helper()
-	path := filepath.Join(dir, "zellij-probe")
+	path := filepath.Join(dir, "terminal-probe")
 	body := `#!/bin/sh
-printf 'ZELLIJ=%s\n' "${ZELLIJ-<unset>}"
+printf 'TMUX=%s\n' "${TMUX-<unset>}"
+printf 'TMUX_PANE=%s\n' "${TMUX_PANE-<unset>}"
 printf 'ZELLIJ_PANE_ID=%s\n' "${ZELLIJ_PANE_ID-<unset>}"
 printf 'ZELLIJ_SESSION_NAME=%s\n' "${ZELLIJ_SESSION_NAME-<unset>}"
 `

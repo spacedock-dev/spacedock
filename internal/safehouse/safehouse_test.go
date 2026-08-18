@@ -97,22 +97,100 @@ func TestWrapWithExtra(t *testing.T) {
 	}
 }
 
+// TestWrapAddsTerminalTargetingEnvArgument reshapes the allowance test to the
+// tmux pair: bare ZELLIJ is gone from the gate, and the built-in allowance now
+// covers every host the consumer probes, not just Zellij.
 func TestWrapAddsTerminalTargetingEnvArgument(t *testing.T) {
 	clearTerminalTargetingEnv(t)
-	t.Setenv("ZELLIJ", "0")
-	t.Setenv("ZELLIJ_PANE_ID", "51")
-	t.Setenv("ZELLIJ_SESSION_NAME", "excellent-pheasant")
+	t.Setenv("TMUX", "/tmp/tmux-501/default,12345,0")
+	t.Setenv("TMUX_PANE", "%3")
 
 	got := Wrap([]string{"claude"}, []string{"--env-pass", "SPACEDOCK_BIN"})
-	want := []string{"safehouse", "--trust-workdir-config", "--env-pass=ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME", "--env-pass", "SPACEDOCK_BIN", "--", "claude"}
+	want := []string{"safehouse", "--trust-workdir-config", "--env-pass=TMUX,TMUX_PANE", "--env-pass", "SPACEDOCK_BIN", "--", "claude"}
 	if !equalArgv(got, want) {
 		t.Fatalf("Wrap = %v, want %v", got, want)
 	}
 }
 
+// TestTerminalEnvPassArgsComposer is the AC-2 oracle: the argv composer names
+// a variable only when it is present in the (stubbed) parent, in probe order,
+// and an empty parent yields no allowance at all — never a fixed list, never
+// gated on a different variable than the one being passed.
+func TestTerminalEnvPassArgsComposer(t *testing.T) {
+	cases := []struct {
+		name   string
+		lookup func(string) (string, bool)
+		want   []string
+	}{
+		{
+			name:   "empty parent yields no allowance",
+			lookup: mapLookup(nil),
+			want:   nil,
+		},
+		{
+			name: "tmux pair only",
+			lookup: mapLookup(map[string]string{
+				"TMUX":      "/tmp/tmux-501/default,12345,0",
+				"TMUX_PANE": "%3",
+			}),
+			want: []string{"--env-pass=TMUX,TMUX_PANE"},
+		},
+		{
+			name: "all nine set, emitted in probe order",
+			lookup: mapLookup(map[string]string{
+				"ZELLIJ_SESSION_NAME": "excellent-pheasant",
+				"ZELLIJ_PANE_ID":      "51",
+				"TMUX":                "/tmp/tmux-501/default,12345,0",
+				"TMUX_PANE":           "%3",
+				"HERDR_ENV":           "1",
+				"HERDR_PANE_ID":       "7",
+				"CMUX_WORKSPACE_ID":   "ws-1",
+				"CMUX_SURFACE_ID":     "sf-1",
+				"TERM_PROGRAM":        "ghostty",
+			}),
+			want: []string{"--env-pass=ZELLIJ_SESSION_NAME,ZELLIJ_PANE_ID,TMUX,TMUX_PANE,HERDR_ENV,HERDR_PANE_ID,CMUX_WORKSPACE_ID,CMUX_SURFACE_ID,TERM_PROGRAM"},
+		},
+		{
+			name: "set-but-empty name is still named",
+			lookup: mapLookup(map[string]string{
+				"TMUX": "",
+			}),
+			want: []string{"--env-pass=TMUX"},
+		},
+		{
+			name: "a name outside the list is never named",
+			lookup: mapLookup(map[string]string{
+				"NOT_A_TERMINAL_SIGNAL": "1",
+			}),
+			want: nil,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := terminalEnvPassArgs(tc.lookup)
+			if !equalArgv(got, tc.want) {
+				t.Fatalf("terminalEnvPassArgs() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// mapLookup adapts a plain map to the (string) (string, bool) lookup shape
+// terminalEnvPassArgs takes, so the composer's table test is deterministic
+// under any developer terminal — it never touches real process env.
+func mapLookup(m map[string]string) func(string) (string, bool) {
+	return func(name string) (string, bool) {
+		v, ok := m[name]
+		return v, ok
+	}
+}
+
+// clearTerminalTargetingEnv unsets all nine signals terminalHostEnvVars
+// probes, so tests that exercise Wrap's built-in allowance start from a clean
+// baseline regardless of the developer's own terminal host.
 func clearTerminalTargetingEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{"ZELLIJ", "ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME"} {
+	for _, key := range terminalHostEnvVars {
 		value, present := os.LookupEnv(key)
 		if err := os.Unsetenv(key); err != nil {
 			t.Fatal(err)
