@@ -71,7 +71,7 @@
         "headline": "Gates \u0026 decisions",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/concepts/gates-and-decisions/",
-        "dateModified": "2026-08-18 18:53:14",
+        "dateModified": "2026-08-18 23:08:54",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1371,9 +1371,10 @@ Decision ask: approve to close, revise to bounce back, or hold at review.</code>
 <p>Material findings are the ones that should move your vote; polish never blocks. The decision ask tells you concretely what each call does. Every acceptance criterion is cross-checked before the review reaches you; delegated authority does not hide the review.</p>
 <p>The first officer may act only after an explicit grant in the active conversation,
 including a grant given later in that conversation. Durable gate state records the
-first officer as the decision renderer and its evidence reason; it does not quote or
-authenticate the grant's wording or scope. Keep any required chat provenance in the
-host's own audit system.</p>
+first officer as the decision renderer, its evidence reason, and a citation of the
+grant it acted under — the grant's wording and where it was given. The record
+attributes; it does not authenticate the grant. Captain decisions carry no citation,
+so the two shapes stay distinguishable.</p>
 <h2 id="how-the-review-reaches-you">How the review reaches you<a class="headerlink" href="#how-the-review-reaches-you" title="Permanent link">&para;</a></h2>
 <p>Stable v1 gate reviews may appear in chat or Subspace. Before presenting one, the first officer commits
 newly authored selected sources and calls <code>gate prepare</code> with its question, primary
@@ -1480,7 +1481,7 @@ closed. A consumed application that targets a terminal stage also fails closed.<
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 18, 2026 18:53:14 UTC">2026-08-18 18:53:14</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 18, 2026 23:08:54 UTC">2026-08-18 23:08:54</span>
   </span>
 
     
