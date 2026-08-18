@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ca9gqaz4n97gsv2nd9p80xbf:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ca9gqaz4n97gsv2nd9p80xbf-validation-1
+              briefing:
+                id: briefing:ca9gqaz4n97gsv2nd9p80xbf:validation:attempt-1:revision-1
+                digest: sha256:1d2ab3adb11ead300603be9a068067168e296e0751563b6ff3afbdbac000f254
+                request-digest: sha256:9f392cf299238332b7d5b2b6f5a891be7d95ef14474f5b791ca2fcf6d79d7edb
+                room-ref: ./filing-recognizer-newline-terminator/review/validation/briefing-1
 ---
 
 The filing grader fails a compliant agent. A create followed by a newline counts as zero creates, so any run that verifies its own filing goes red.

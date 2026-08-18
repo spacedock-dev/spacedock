@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ca9gqaz4n97gsv2nd9p80xbf:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED for the filing-recognizer newline widening, and finalize ca9?",
+  "artifacts": [
+    {
+      "id": "artifact:ca9gqaz4n97gsv2nd9p80xbf:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c10d322c42d8e3614c9ba85be2bd28e792fad15c/filing-recognizer-newline-terminator.md",
+      "rev": "sha256:d51cda8a7a712448a7c82dc7e08378a82ee1a617e0f14f4b4d7f068df912bce1",
+      "mediaType": "text/markdown",
+      "summary": "Validation reproduced AC-1's disproof independently against a self-fetched artifact (byte-identical to the fixture) and ran a 27-shape adversarial matrix against the widening. The attacked risk did not land: no adjacent shape counts as an atomic create that did not already count under a space, tab, quote, or end-of-string terminator, proven by a same-run control on unpatched main. The change additionally closes a hole where two creates on two lines counted 1. One deferred risk runs the opposite direction — a real create plus a second newline-terminated mention now counts 2 and grades a false RED — unobserved across all 191 retained codex-exec.jsonl files, failing no value AC. Surface net +12 across 2 files, exactly the estimate."
+    }
+  ]
+}
