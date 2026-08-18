@@ -7,7 +7,7 @@ started: 2026-08-18T18:41:26Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-conn-delegated-approver-attribution
 issue:
 gates:
     version: 1
