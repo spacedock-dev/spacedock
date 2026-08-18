@@ -9,6 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-safehouse-terminal-env-passthrough
 issue:
+mod-block: merge:pr-merge
+pr: "#730"
 ---
 
 A sandboxed session can detect Zellij and nothing else. Five other terminal hosts lose their identity at the sandbox boundary, and the allowance lists variable names whether or not they exist.
