@@ -171,6 +171,10 @@ Same file, delegated paragraph, before: "New delegated chat resolutions use `by:
 
 Settled the load-bearing factual question against the seeded premise: the auto-continue prompt grants no conn, so the observed runs stay with own-sonnet-gate-conn-bypass, and this task lands on recorded-gate-lifecycle where the conn is real and finding 9 shows misattribution grading green. Designed the smallest disjoint-shape mechanism: a required, strict `conn:` citation on FO-actor resolutions, refused on captain resolutions, with the grader pinned to the FO actor and authenticating the quote against its own runbook. Declared surface net +150 across 11 files (product core ≈ +40/3), with concrete doc diffs and no spike needed on named proven mechanisms.
 
+### Feedback Cycles
+
+- Cycle 1: FO SCOPE CORRECTION (not a review rejection) — first-officer; surface 14 files/net +261 vs estimate 11 files±2/net +150±40 (174%); AC unchanged. Cause: the FO's dispatch scope-notes assigned `docs/site/reference/command-reference.md` to the sibling `merge-guard-requires-preceding-report` entity and fenced this entity out of three doc diffs its own approved ideation specified, plus the stale finding-9 audit note. The worker correctly stopped and flagged rather than editing outside its stated ownership. The FO granted the missing scope and routed it to the same live worker; cycle 2 applied exactly the four named items (4 files, net +1) with no collateral edits. The same scope-notes error also gave `internal/ensigncycle/recorded_gate_lifecycle_test.go` to both this entity and `decide-dispatch-build-count-bar`, which the FO resolves at restack.
+
 ## Stage Report: implementation
 
 - DONE: AC-1: durable state distinguishes a captain decision from an FO decision under a grant — the conn citation is present and its quote appears verbatim in the granting runbook.
