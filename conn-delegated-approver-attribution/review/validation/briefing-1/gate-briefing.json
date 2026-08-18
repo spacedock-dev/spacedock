@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:j7jhntfa2ve8g6jwhatktrrv:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED for the conn-citation attribution change, and finalize j7j?",
+  "artifacts": [
+    {
+      "id": "artifact:j7jhntfa2ve8g6jwhatktrrv:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/615046833620456b7618a3f31ebdcacccc85ae00/conn-delegated-approver-attribution.md",
+      "rev": "sha256:5cb6ab7cb41691f403c7cfabf71829b681bc473d17fc2d3b01ab5c401d4c2c8c",
+      "mediaType": "text/markdown",
+      "summary": "Validation answered the circularity question against the real binary, not a fixture: an invented quote carrying the granted phrase reds, and so does the real grant with appended self-granted authority. The expectation comes from harness-authored runbook bytes, never the FO's own command log, so the FO cannot green by writing its own citation. recordedGateExpectedActor is deleted tree-wide. The no-conn boundary is non-vacuous — the injected record parses as a genuinely valid FO-attributed cited resolution through gates.Read and still reds under human-gate-bypassed, proving a citation confers no authority. AC-3 asserts exit==2 exactly plus byte-identical entity and no lock residue; deleting the CLI guard drops the exit to 1 and the matrix catches it. Surface is 14 files / net +261 against 11±2 / +150±40, past both tolerances: product core landed at +72 against the seeded +70, docs came in UNDER declared, and the entire +88 overage is the grader and CLI test code AC-3 itself demands. No file outside the approved design. Three deferred/polish findings, no material finding."
+    }
+  ]
+}

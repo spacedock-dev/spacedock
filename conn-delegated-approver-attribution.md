@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:j7jhntfa2ve8g6jwhatktrrv:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:j7jhntfa2ve8g6jwhatktrrv-validation-1
+              briefing:
+                id: briefing:j7jhntfa2ve8g6jwhatktrrv:validation:attempt-1:revision-1
+                digest: sha256:5030c3af572ed0ca63bc4f5103204502a6d592c67ac50cca4dfa280e54c94b12
+                request-digest: sha256:887ae9d557ae2190c137c8a30bdea9355ca9bb03cae9a75ceb1b11379ac496db
+                room-ref: ./conn-delegated-approver-attribution/review/validation/briefing-1
 ---
 
 When the FO resolves a gate under a delegated conn, the durable record should name the FO as approver and cite where the conn was granted. Today it can name the captain for a decision the captain never made in-session, and nothing in the record or the grader catches it.
