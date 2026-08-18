@@ -17,15 +17,15 @@ Re-running a stable release's `edge-advance` job after its pre0 tag already reac
 
 `release.yml`'s `edge-advance` job auto-cuts a `vX.(Y+1).0-pre0` tag after a stable release. The decision that gates it now compares the tag against the highest known version derived from git tag history.
 
-That scan **excludes the ref being decided**. On a re-run, the pre0 tag the previous attempt already pushed is therefore invisible to the comparison, the decision advances a second time, and `git tag -a` dies:
+That scan **excludes the ref being decided**. On a re-run the pre0 tag the previous attempt pushed IS in the candidate pool — but the decided tag's own target out-ranks it **by construction** (`0.27.0-pre1 > 0.27.0-pre0`, live-confirmed by the ideation spike below), so the decision advances a second time and `git tag -a` dies:
 
 ```
 fatal: tag 'v0.27.0-pre0' already exists
 ```
 
-rc=128, red under `set -euo pipefail`.
+rc=128, red under `set -euo pipefail`. The collision is deterministic on a faithful re-run: the target is always exactly one prerelease notch above the pre0 the first attempt minted, and no other candidate can outrank it unless a newer stable shipped between attempts.
 
-This is a regression against the mechanism it replaced. Fed the same moment, the retired `next`-manifest read decided `skip`, because its stable path stamped `next` to `X.(Y+1).0-pre1` — one notch above the pre0 it had just cut. The retired step's own comment named "no colliding pre0 auto-tag" as something it prevented. Nothing supplies that notch on a re-run now.
+This is a regression against the mechanism it replaced. Fed the same moment, the retired `next`-manifest read decided `skip`, because its stable path stamped `next` to `X.(Y+1).0-pre1` — one notch above the pre0 it had just cut. The retired step's own comment named "no colliding pre0 auto-tag" as something it prevented. Nothing supplies that self-notch on a re-run now — and nothing can: feeding the decided ref's own notch back into the scan would make the target compare equal to it on EVERY run (strict `>` fails), deadlocking the first cut too. The re-run case is structurally unreachable from the decision's version-ordering inputs; it needs the one input the decision does not consume — whether the concrete pre0 ref already exists.
 
 The trigger is real rather than theoretical. The pre0 step's verify-or-fail poll exits 1 **after** the tag is pushed, so re-running is the natural response to that failure — and three `release.yml` runs in this repository already carry `run_attempt > 1` (v0.23.0, v0.19.5, v0.19.4).
 
@@ -33,7 +33,51 @@ It was classified as a deferred risk rather than material because no value AC fa
 
 ## Proposed approach
 
-{Ideation confirms. The fix the implementer weighed and set aside is roughly two lines: skip when the pre0 tag the run would form already exists, `git rev-parse -q --verify "refs/tags/v$PRE0_VERSION"`. Confirm that this composes with the existing notch rather than replacing it — the notch handles the old-line patch case, this handles the re-run case, and they are different inputs.}
+Guard **only the mint**, inside the auto-cut step, leaving push and verify-or-fail live. In `release.yml`'s "Auto-cut the edge prerelease tag on the greened release commit" step, replace the single `git tag -a` line:
+
+```
+-          git tag -a "$PRE0_TAG" "$RELEASE_COMMIT" -m "$PRE0_BODY"
++          # Idempotent under re-run: a prior attempt may have pushed the pre0
++          # tag and then failed in the verify poll below. Never re-mint (or
++          # move) an existing tag; push and verify-or-fail still run.
++          git rev-parse -q --verify "refs/tags/$PRE0_TAG" >/dev/null \
++            || git tag -a "$PRE0_TAG" "$RELEASE_COMMIT" -m "$PRE0_BODY"
+```
+
+Two code lines (guard + the existing mint as its `||` arm); the rest is comment. Everything downstream is already idempotent and stays load-bearing: `git push` of a tag origin already carries at the same SHA is a no-op success (`Everything up-to-date`, live-confirmed below), and the verify-or-fail poll re-checks that a release.yml run exists for the pre0 tag — so a re-run turns green when the run fired, and still fails loudly when the credential is genuinely workflow-suppressed.
+
+**Placement decision — why guard the mint, not the step or the decision.** The sketch the `2d` implementer weighed ("skip when the tag exists") admits three placements:
+
+1. Early-exit the whole step when the tag exists — REJECTED: it silently disables verify-or-fail on exactly the path where it matters. The recorded trigger is the poll exiting 1 after the push; the re-run scenario therefore includes the sub-case where the credential is genuinely suppressed and no pre0 run exists. An early exit turns that into a green job with the edge binary silently left behind — the exact silent loss the poll's own comment says must never happen.
+2. Fold tag-existence into the decision step (`advance=false`) — REJECTED for the same reason (decision=false skips the whole cut step, poll included), and it would mix "was this already done" into a step whose single meaning is version-line ordering.
+3. Guard the mint only — CHOSEN: the one non-idempotent command becomes idempotent; every other command in the step already tolerates a re-run.
+
+**Composition with the notch (checklist item 1).** The two guards consume different inputs and neither can absorb the other:
+
+- The notch (`HighestBareStableVersion` → dev-preversion folded into `highest-known-edge-version`) answers *"does this tag's version rank entitle it to cut at all?"* from tag-history ordering. It cannot answer the re-run case: the missing input is the decided ref's own self-notch, and supplying that would deadlock every first run (target == self-notch, strict `>` fails — see Problem).
+- The tag-exists guard answers *"does the concrete ref this run would mint already exist?"* from ref existence. It cannot answer the old-line case in general: a patch whose wrong pre0 target does not exist yet (the notch's equality-skip case, e.g. `v0.25.1` cut before any `v0.26.0-pre0` was ever auto-cut) sails past a ref-existence check and only the notch stops it.
+- The fix touches neither the decision step nor any Go code, so the notch's entire validated suite (unit cases, the 16-evaluation history replay, the real-`v0.25.1` collision replay, the decision-step shell tests) passes byte-unchanged — verified live: the extracted decision step still prints `advance=false` for `v0.25.1` against the one-tag-behind fixture (notch reason: highest known `0.27.0-pre1`).
+
+**Ordering dependency.** The failure exists only in the post-#727 `release.yml` (main still carries the retired `next`-manifest read, which decides `skip` at this moment). Implementation lands stacked on `spacedock-ensign/collapse-duplicate-edge-marketplace-routes` (PR #727) or on main after #727 merges — never on pre-#727 main.
+
+**Shared dependency, already recorded.** The guard reads tags the checkout fetched (`fetch-depth: 0`, `fetch-tags: true`) — the same dependency the decision step already has. Stripping those checkout flags is one of the two out-of-scope silent-disable edits below; this task does not change that exposure.
+
+## Spike record (riskiest mechanism exercised first)
+
+The riskiest unverified mechanism was the whole-step claim: that the REAL extracted step script — not a re-derivation — fails exactly as recorded and turns green under the two-line guard with push and poll still executing. Exercised live against the post-#727 worktree (`ae8c3a874`), extracting both steps' `run:` blocks from `release.yml` and running them under bash with `GIT_DIR`/`GIT_WORK_TREE` pointed at constructed tag-state repos (the `2d` correction round's own harness pattern, `runDecisionStepScript` in `internal/release/edge_advance_decision_shell_test.go`):
+
+1. Re-run state (`v0.25.1`, `v0.26.0`, `v0.27.0-pre0`; deciding `v0.26.0`): decision step printed `advance=true` (`target 0.27.0-pre1 vs highest known 0.27.0-pre0`); auto-cut step died `fatal: tag 'v0.27.0-pre0' already exists`, **rc=128** — the recorded failure, reproduced from the real step bytes.
+2. Same state, guarded script, with a bare "origin" carrying the pre0 tag, `HOME` sandboxed, `gh`/`ssh-keyscan` PATH shims, and a `url.insteadOf` rewrite of the SSH push URL to the local bare repo: **rc=0**, push printed `Everything up-to-date`, the verify poll executed (its `::notice::` fired via the shim), and the pre0 tag's target SHA was byte-identical before and after.
+3. First-run state (no pre0 anywhere), guarded script: still mints — annotated (`cat-file -t` = `tag`) and pushed to the bare origin. The guard does not break the primary path.
+4. One-tag-behind old-line state (`v0.25.0`, `v0.26.0`, `v0.26.0-pre0`; deciding `v0.25.1`): decision step printed `advance=false` — the notch, untouched.
+
+Push idempotence, the guard's `rev-parse` form, the shim seams, and the `insteadOf` push redirection are all now proven mechanisms; the implementation's first test is the spike's runs 1–3 made durable.
+
+## Documentation diff
+
+`docs/releasing.md`, "Stable (`vX.Y.Z`) tag, latest line" bullet — after "…failing `edge-advance` loudly if none appears** rather than leaving the edge binary silently behind.", insert:
+
+> Re-running the job after such a failure is safe: an existing pre0 tag is never re-minted or moved (the step checks `refs/tags/` before tagging), the push of an already-landed tag is a no-op, and the run-verification poll executes again — so the re-run turns green once the pre0 run exists, and still fails loudly if the credential remains suppressed.
 
 ## Out of scope
 
@@ -43,14 +87,48 @@ The two silent-disable mutations recorded alongside this risk: hardcoding the de
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +25 across 2 files (`.github/workflows/release.yml` and one test file). Tolerance: net +25 ± 20, files 2 ± 1. Report insertions and deletions separately; do not declare a gross tolerance. Semantics changed: the auto-pre0 step becomes a no-op when its target tag exists, instead of failing the job.
+Estimate net LOC change: **+115 across 3 files**. Insertions ≈ 116, deletions ≈ 1. Tolerance: net +115 ± 35, files 3 ± 1. Do not declare a gross tolerance.
+
+- `.github/workflows/release.yml`: +5 / −1 (two code lines — the guard and the mint as its `||` arm — plus comment).
+- `internal/release/edge_advance_decision_shell_test.go` (extended): ≈ +105 / −0 — the auto-cut step runner (fixture repo + bare origin + `insteadOf` push redirect + `gh`/`ssh-keyscan` shims + sandboxed `HOME`) and two tests.
+- `docs/releasing.md`: +5 / −0 (the re-run sentence above).
+
+**Surface revision vs the seeded estimate — declared, not absorbed (checklist item 3).** The seed said +25 ± 20 across 2 files. The workflow change itself is on target: two code lines. The growth is entirely the proof, and it is mandated: the proof standard for this task forbids grep-the-workflow tests and requires exercising the actual step script under bash against constructed tag state. The auto-cut step's later phases (SSH push, `gh` poll) force test doubles the decision-step harness never needed; ~100 lines is the honest floor for that harness plus two behavioral tests, even reusing `readWorkflow`/`edgeAdvanceJob`/`edgeAdvanceAutoPre0Step`/`tagFixtureRepo`. The cheaper alternatives were weighed and rejected: slicing the script to stop before the push re-derives the step (the discipline this suite just adopted is real-bytes-only), and moving the guard into a Go helper to unit-test it adds a command surface whose only purpose is testability while leaving the actual workflow line unexercised. The gate approves or bounces this figure as the baseline.
+
+Semantics changed: the auto-pre0 step becomes idempotent under re-run — when its target tag already exists it skips the mint (never moves the tag), still pushes (no-op), and still runs verify-or-fail; the job's exit in that state changes from rc=128 to rc=0 when the pre0 run exists, and stays a loud failure when it does not. No command grammar, stored format, or authority changes.
 
 ## Acceptance criteria
 
 Each AC names a property of the finished entity, not a stage action, and how it is verified.
 
 **AC-1 - Re-running a stable release's edge-advance job after its pre0 tag exists leaves the job green and the tag untouched.**
-This is the measuring AC: the re-run's exit status must be 0 where it is currently 128, and the tag's target commit must be unchanged. Verified by replaying the recorded reproduction — the same tag state that produced `fatal: tag 'v0.27.0-pre0' already exists` must now decide skip. Fails if the job still dies, or if it "succeeds" by moving or force-replacing an existing tag.
+This is the measuring AC: the re-run's exit status must be 0 where it is currently 128, and the tag's target commit must be unchanged. Verified by replaying the recorded reproduction through the REAL extracted step script — the same tag state that produced `fatal: tag 'v0.27.0-pre0' already exists` rc=128 (spike run 1) must exit 0, with the pre0 tag's SHA byte-identical before and after. The never-moved half is made falsifiable by a fixture whose existing pre0 deliberately targets a different commit than the release commit, so a `-f` re-tag mutant moves a SHA the test pins. Fails if the job still dies, or if it "succeeds" by moving or force-replacing an existing tag.
 
 **AC-2 - The old-line patch protection still holds.**
-Verified by re-running the real `v0.25.1` replay, which must still decide skip for its own reason (the notch), independently of the new tag-exists check. Fails if the new condition masks or replaces the notch rather than composing with it — the regression that would trade one guard for another.
+Verified by the untouched existing suite re-running green with zero edits: the `EdgeAdvanceDecision` unit cases, the 16-evaluation release-history replay, `TestHighestKnownEdgeVersionCommandRestoresNextNotchAgainstRealV0251Collision`, and both decision-step shell tests. The fix touches neither the decision step nor any Go code, so a masking regression can only appear as an edit those tests would sit on. Fails if the new condition masks or replaces the notch rather than composing with it — the regression that would trade one guard for another.
+
+**AC-3 - A re-run that skips the mint still proves the pre0 release run exists.**
+The verify-or-fail guarantee survives the fix: on the skip-mint path the run-verification poll still executes, so a workflow-suppressed credential still fails the job loudly instead of going green with the edge binary left behind. Verified in the AC-1 test by asserting the poll ran (the `gh` shim records its invocation; the poll's `::notice::` appears in the step output). Fails under the early-exit form of the fix — the sketched "skip when the tag exists" — which would green the exact sub-case verify-or-fail exists to make loud.
+
+## Test plan
+
+Extend `internal/release/edge_advance_decision_shell_test.go` (same package; reuses `readWorkflow`, `edgeAdvanceJob`, `edgeAdvanceAutoPre0Step`, `tagFixtureRepo`, and the `GIT_DIR`/`GIT_WORK_TREE` redirection pattern of `runDecisionStepScript`). New runner `runAutoPre0StepScript`: fixture repo plus a bare "origin" clone carrying the fixture's tags, `url.insteadOf` rewriting the step's SSH push URL to that bare repo, `HOME` set to a temp dir, and PATH shims for `gh` (prints a run count of 1 and records the call) and `ssh-keyscan` (no-op) — the seams the spike proved. No network, no sleeps (the poll exits on its first iteration via the shim), cost well under a second per test beyond the `go run` cache warm.
+
+1. `TestAutoPre0StepScriptRerunIsIdempotent` (AC-1, AC-3): runs the real auto-cut script twice against one first-run fixture — the first pass must mint an annotated tag and land it on the bare origin; the second pass (the re-run) must exit 0, leave the tag SHA unchanged, and have invoked the poll shim. Also asserts the real decision step prints `advance=true` on the re-run state, so the test cannot go vacuously green by the cut step never being reached. Fails if: the guard is removed (rc=128 on pass two), the mint breaks (pass one), the poll is bypassed (shim never invoked), or the fix migrates into the decision (advance flips to false).
+2. `TestAutoPre0StepScriptNeverMovesDivergentPre0` (AC-1's never-moved half): fixture where the existing pre0 targets an older commit than the release commit; the run must exit 0 and leave the divergent SHA in place. Fails if the guard becomes a `git tag -f` re-point.
+3. AC-2 needs no new test: the entire decision-level suite runs unchanged; its continued green under this diff is the composition proof.
+
+No new Go mechanism, command, or flag: every mechanism in this plan (extraction, redirection, shims, bare-origin push target) serves AC-1/AC-3 directly, and each simpler alternative — grep tests (banned for this task), script slicing (re-derivation), a Go-side guard (new surface to make a one-line git builtin testable) — was named and rejected above.
+
+## Stage Report: ideation
+
+- DONE: Confirm the tag-exists check COMPOSES with the notch rather than replacing it — they answer different inputs, and a fix that masks the notch trades one guard for another.
+  Composition proven structurally (the re-run needs the self-notch the decision can never consume without deadlocking first runs; the equality-skip old-line case has no existing ref for a tag-exists check to see) and live (spike run 4: extracted decision step still prints `advance=false` for `v0.25.1` on the one-tag-behind fixture). The fix touches neither the decision step nor Go code; AC-2 pins the untouched suite.
+- DONE: Reproduce the recorded failure before designing: the same tag state that produced `fatal: tag 'v0.27.0-pre0' already exists` rc=128 must be the thing your fix turns green.
+  Spike run 1 reproduced `fatal: tag 'v0.27.0-pre0' already exists` rc=128 from the REAL extracted auto-cut step (post-#727 worktree `ae8c3a874`) against tags {v0.25.1, v0.26.0, v0.27.0-pre0}; spike run 2 turned that exact state green (rc=0, tag SHA unchanged, push no-op, verify poll executed) under the two-line guard.
+- DONE: Keep this at roughly two lines of workflow change plus its proof; if the design grows past the declared surface, stop and say why rather than absorbing it.
+  The workflow change is two code lines. The proof grew past the seeded +25 ± 20 to ≈ +105 test lines because the mandated proof standard (run the real step script, no grep tests) requires push/poll test doubles; the revised surface (net +115 ± 35, 3 files) is declared with its why in "Expected surface and tolerance" for the gate to approve or bounce, not absorbed silently.
+
+### Summary
+
+Confirmed the `2d` implementer's sketched fix with one load-bearing correction: guard ONLY the `git tag -a` mint, not the whole step — the early-exit form would silently disable verify-or-fail on the one path where a suppressed credential must still fail loudly (now AC-3). Reproduced the recorded rc=128 collision from the real extracted step bytes, proved the guard turns the same state green with push and poll still live, and proved composition with the notch in both directions. Flagged the ordering dependency: the fix targets post-#727 `release.yml` and must stack on PR #727.
