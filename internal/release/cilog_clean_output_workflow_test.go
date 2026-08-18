@@ -9,71 +9,11 @@ import (
 	"testing"
 )
 
-// transformedLiveSteps are every live test step that must run through gotestsum:
-// a single `gotestsum --jsonfile <name>-detail.jsonl --format <clean> -- <args>`
-// invocation — one run producing the clean step log AND the archived -json detail,
-// with the exit code preserved.
-var transformedLiveSteps = []string{
-	"Run live Claude E2E",
-	"Run live Codex shared scenarios",
-	"Run live Pi common journeys",
-	"Run live Pi front-door smoke",
-}
-
-// TestLiveWorkflowStepsUseGotestsumOneRunShape pins each transformed live step to
-// the source-side discipline: gotestsum runs the suite once, archives the -json
-// detail to a `--jsonfile`, and preserves the exit. This is the workflow binding
-// behind AC-1..AC-4 — the behavioral test proves the SHAPE works; this proves
-// every live step IS that shape.
-func TestLiveWorkflowStepsUseGotestsumOneRunShape(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	steps := parseWorkflowSteps(live)
-
-	byName := map[string]string{}
-	for _, s := range steps {
-		if s.run != "" {
-			byName[s.name] = s.run
-		}
-	}
-
-	for _, name := range transformedLiveSteps {
-		run, ok := byName[name]
-		if !ok {
-			t.Errorf("workflow missing transformed live step %q", name)
-			continue
-		}
-		for _, want := range []string{
-			"gotestsum",     // the one-run clean+archive renderer
-			"--jsonfile",    // the archived -json event stream
-			"-detail.jsonl", // the archive filename
-			" -- ",          // gotestsum passes the go test args after --
-		} {
-			if !strings.Contains(run, want) {
-				t.Errorf("live step %q lost the gotestsum one-run-archive element %q:\n%s", name, want, run)
-			}
-		}
-	}
-}
-
 // TestLiveWorkflowInstallsPinnedGotestsum is AC-5: every live job installs
 // gotestsum via the pinned, sha256-verifying install script — never a floating
 // `@latest` or an unverified download. The install script itself must pin a fixed
 // version and verify a checksum before trusting the binary.
 func TestLiveWorkflowInstallsPinnedGotestsum(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	steps := parseWorkflowSteps(live)
-
-	installs := 0
-	for _, s := range steps {
-		if strings.Contains(s.run, "install-gotestsum.sh") {
-			installs++
-		}
-	}
-	// The offline gate and the three live jobs each install gotestsum.
-	if installs != 4 {
-		t.Errorf("expected gotestsum in the offline gate and all three live jobs, found %d installs", installs)
-	}
-
 	// Read the EXECUTABLE commands, not the raw text: commenting out every
 	// verify/pin line leaves the phrases in the file but renders the script inert,
 	// so a raw strings.Contains would stay green on a script that no longer

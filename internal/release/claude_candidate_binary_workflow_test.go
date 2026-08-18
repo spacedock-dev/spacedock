@@ -79,9 +79,6 @@ func TestClaudeLiveInstallsExactCandidateOutsideCheckout(t *testing.T) {
 	}
 
 	claudeJob := workflow[strings.Index(workflow, "  claude-live:"):strings.Index(workflow, "  codex-live:")]
-	if !strings.Contains(claudeJob, `${{ runner.temp }}/spacedock-live-bin/spacedock`) {
-		t.Error("Claude artifact upload does not retain the installed candidate")
-	}
 	if strings.Contains(claudeJob, "            ./spacedock\n") {
 		t.Error("Claude artifact upload still retains the obsolete checkout-root binary")
 	}

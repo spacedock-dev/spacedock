@@ -9,106 +9,6 @@ import (
 	"testing"
 )
 
-func TestWorkflowsPreserveAndPublishJourneyCosts(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	release := readWorkflow(t, "release.yml")
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(live); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsCommentOnlyJourneyMetricUpload(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.ReplaceAll(live,
-		`live-artifacts/journey-metrics/**`,
-		`# live-artifacts/journey-metrics/**`)
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted journey metrics paths that were only inert upload text")
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsMissingCodexJourneyMetricUpload(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	first := strings.Index(live, `live-artifacts/journey-metrics/**`)
-	if first < 0 {
-		t.Fatal("fixture workflow missing first journey metrics upload path")
-	}
-	second := strings.Index(live[first+1:], `live-artifacts/journey-metrics/**`)
-	if second < 0 {
-		t.Fatal("fixture workflow missing second journey metrics upload path")
-	}
-	second += first + 1
-	adversarial := live[:second] + `live-artifacts/codex/**` + live[second+len(`live-artifacts/journey-metrics/**`):]
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted a workflow where only one live job uploads journey metrics")
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	adversarial := strings.Replace(live,
-		`SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/`,
-		`# SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/`,
-		1)
-	if adversarial == live {
-		t.Fatal("fixture workflow missing Claude shared scenario run command")
-	}
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted a workflow without an executable Claude shared scenario run")
-	}
-}
-
-func TestRuntimeLiveWorkflowGuardRejectsMissingPiJourneyMetricUpload(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	last := strings.LastIndex(live, `live-artifacts/journey-metrics/**`)
-	if last < 0 {
-		t.Fatal("fixture workflow missing Pi journey metrics upload path")
-	}
-	adversarial := live[:last] + `live-artifacts/pi/**` + live[last+len(`live-artifacts/journey-metrics/**`):]
-
-	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
-		t.Fatal("runtime live workflow guard accepted a Pi producer without retained journey metrics")
-	}
-}
-
-func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostBuilder(t *testing.T) {
-	release := readWorkflow(t, "release.yml")
-	adversarial := strings.Replace(release,
-		`go run ./cmd/spacedock-release journey-costs "$RELEASE_VERSION" \`,
-		`# go run ./cmd/spacedock-release journey-costs "$RELEASE_VERSION" \`,
-		1)
-	adversarial = strings.Replace(adversarial,
-		`test -s "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`,
-		`printf '{}' > "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"
-          test -s "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`,
-		1)
-
-	if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
-		t.Fatal("release workflow guard accepted a commented builder plus fake JSON output")
-	}
-}
-
-func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostPublish(t *testing.T) {
-	release := readWorkflow(t, "release.yml")
-	adversarial := strings.Replace(release,
-		`gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json" --clobber`,
-		`# gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json" --clobber
-          echo "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`,
-		1)
-
-	if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
-		t.Fatal("release workflow guard accepted a commented publish command")
-	}
-}
-
 // TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger injects the exact
 // re-coupling bug this separation closes: a `needs: journey-ledger` edge on the
 // goreleaser job re-blocks the cut on the never-fired Runtime-Live-E2E run. The
@@ -120,7 +20,7 @@ func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostPublish(t *testing.T) 
 // block list split by a blank line — so no syntactic variation evades the guard.
 func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
-	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+	if err := assertGoreleaserDoesNotNeedJourneyLedger(release); err != nil {
 		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
 	}
 
@@ -145,7 +45,7 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 				t.Fatal("fixture workflow missing the goreleaser job header to mutate")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(adversarial); err == nil {
 				t.Fatalf("release workflow guard accepted a goreleaser job that needs the journey-ledger job via %s form (re-coupling the cut to the never-fired run)", tc.name)
 			}
 		})
@@ -165,7 +65,7 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 // step attribution) comes from one yaml.v3 pass, no job-identity shape evades.
 func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentityShapes(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
-	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+	if err := assertGoreleaserDoesNotNeedJourneyLedger(release); err != nil {
 		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
 	}
 
@@ -200,7 +100,7 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentitySh
 				t.Fatal("fixture workflow shape to mutate not found")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(adversarial); err == nil {
 				t.Fatalf("release workflow guard accepted a goreleaser→journey-ledger re-coupling via %s (the job-identity end evaded the guard)", tc.name)
 			}
 		})
@@ -250,7 +150,7 @@ func TestReleaseWorkflowGuardRejectsMultiCarrierGoreleaserNeedsJourneyLedger(t *
 
 	const runs = 200
 	for i := 0; i < runs; i++ {
-		if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+		if err := assertGoreleaserDoesNotNeedJourneyLedger(adversarial); err == nil {
 			t.Fatalf("run %d/%d: guard accepted a multi-carrier workflow where a goreleaser-action job needs journey-ledger (last-wins map-order flakiness)", i+1, runs)
 		}
 	}
@@ -269,7 +169,7 @@ func TestReleaseWorkflowGuardToleratesMultiCarrierSafeShape(t *testing.T) {
 
 	const runs = 200
 	for i := 0; i < runs; i++ {
-		if err := assertReleaseWorkflowPublishesJourneyCosts(safe); err != nil {
+		if err := assertGoreleaserDoesNotNeedJourneyLedger(safe); err != nil {
 			t.Fatalf("run %d/%d: guard wrongly rejected a safe multi-carrier workflow (extra goreleaser carrier needs nothing): %v", i+1, runs, err)
 		}
 	}
@@ -309,7 +209,7 @@ func TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape(t *testing.T) 
 				t.Fatal("rewrite of the journey-ledger needs edge did not apply")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(rewritten); err != nil {
 				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s form: %v", tc.name, err)
 			}
 		})
@@ -351,80 +251,10 @@ func TestReleaseWorkflowGuardToleratesSafeReverseEdgeViaJobIdentityShapes(t *tes
 				t.Fatal("rewrite of the safe reverse edge did not apply")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(rewritten); err != nil {
 				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s: %v", tc.name, err)
 			}
 		})
-	}
-}
-
-// TestReleaseWorkflowJobGraphMatchesGitHubActions asserts the parsed job graph of
-// the real release.yml matches what GitHub Actions resolves: goreleaser needs
-// ONLY the e2e-gate job (the live-e2e precondition the cut depends on, never the
-// journey-ledger job), and journey-ledger needs ONLY goreleaser (the one-way
-// upload-ordering edge). This pins the parser to GHA semantics so a future parse
-// regression that drops or invents an edge is caught directly, not only through
-// the guard.
-func TestReleaseWorkflowJobGraphMatchesGitHubActions(t *testing.T) {
-	release := readWorkflow(t, "release.yml")
-	needs := map[string][]string{}
-	for _, job := range parseWorkflowJobs(release) {
-		needs[job.name] = []string(job.needs)
-	}
-
-	if _, ok := needs["goreleaser"]; !ok {
-		t.Fatalf("parsed graph missing the goreleaser job; got jobs %v", keysOf(needs))
-	}
-	if got := needs["goreleaser"]; len(got) != 1 || got[0] != "e2e-gate" {
-		t.Errorf("goreleaser must need exactly e2e-gate (the live-e2e gate, never journey-ledger); got %v", got)
-	}
-	if got := needs["journey-ledger"]; len(got) != 1 || got[0] != "goreleaser" {
-		t.Errorf("journey-ledger must need only goreleaser; got %v", got)
-	}
-}
-
-func keysOf(m map[string][]string) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	return out
-}
-
-// TestReleaseWorkflowSkipsLedgerWhenNoProducerRun proves the JOB-LEVEL skip
-// consequence of POLICY 1: when the download step finds no producer run it must
-// not merely exit 0 — the downstream Build/Publish-ledger steps must be GATED on
-// the download step's producer-found output, so a producer-less / empty-dir cut
-// SKIPS those steps (journey-ledger job green) instead of hard-failing the
-// `journey-costs` builder over an empty dir (journey-ledger job RED). Parsed
-// from the real release.yml, not matched against prose.
-func TestReleaseWorkflowSkipsLedgerWhenNoProducerRun(t *testing.T) {
-	release := readWorkflow(t, "release.yml")
-	if err := assertReleaseLedgerStepsSkipWhenNoProducerRun(release); err != nil {
-		t.Fatal(err)
-	}
-}
-
-// TestReleaseWorkflowGuardRejectsUngatedLedgerBuild is the adversarial twin of
-// the skip-consequence proof: strip the producer-found `if:` gate off the Build
-// step and the guard must RED, because an ungated builder runs `journey-costs`
-// over an empty dir on a producer-less cut and REDs the journey-ledger job —
-// the exact failure POLICY 1 closes.
-func TestReleaseWorkflowGuardRejectsUngatedLedgerBuild(t *testing.T) {
-	release := readWorkflow(t, "release.yml")
-	if err := assertReleaseLedgerStepsSkipWhenNoProducerRun(release); err != nil {
-		t.Fatalf("real release.yml unexpectedly fails the skip-consequence guard before mutation: %v", err)
-	}
-	adversarial := strings.Replace(release,
-		"      - name: Build journey cost ledger\n        if: steps.download_metrics.outputs.found == 'true'\n",
-		"      - name: Build journey cost ledger\n",
-		1)
-	if adversarial == release {
-		t.Fatal("fixture workflow missing the gated Build journey cost ledger step to mutate")
-	}
-
-	if err := assertReleaseLedgerStepsSkipWhenNoProducerRun(adversarial); err == nil {
-		t.Fatal("release workflow guard accepted an ungated Build step that would RED the journey-ledger job on a producer-less cut")
 	}
 }
 

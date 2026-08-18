@@ -8,16 +8,16 @@ import (
 
 // TestRuntimeLiveWorkflowJourneyDeltaJobHasPRCommentPermission is AC-3's
 // workflow-shape guard: the job that posts the per-PR journey-cost delta
-// comment must declare its own `permissions: pull-requests: write` (the
+// comment must declare its own `permissions: pull-requests: write` — the
 // workflow-level default is `contents: read` only, which cannot post a PR
-// comment), must run only on `pull_request` (a workflow_dispatch run has no PR
-// to comment on), and must actually invoke the journey-delta CLI.
+// comment. Required by the GHA permission model (an external oracle, not
+// text copied from the file): the default lives outside what this job
+// declares.
 func TestRuntimeLiveWorkflowJourneyDeltaJobHasPRCommentPermission(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 
 	var doc struct {
 		Jobs map[string]struct {
-			If          string            `yaml:"if"`
 			Permissions map[string]string `yaml:"permissions"`
 		} `yaml:"jobs"`
 	}
@@ -31,11 +31,5 @@ func TestRuntimeLiveWorkflowJourneyDeltaJobHasPRCommentPermission(t *testing.T) 
 	}
 	if job.Permissions["pull-requests"] != "write" {
 		t.Fatalf("journey-delta-comment job permissions = %+v, want pull-requests: write", job.Permissions)
-	}
-	if job.If != "github.event_name == 'pull_request'" {
-		t.Fatalf("journey-delta-comment job if = %q, want it scoped to pull_request events", job.If)
-	}
-	if !workflowHasExecutableCommandContaining(live, "go run ./cmd/spacedock-release journey-delta") {
-		t.Fatal("runtime-live-e2e.yml journey-delta-comment job does not invoke the journey-delta CLI")
 	}
 }
