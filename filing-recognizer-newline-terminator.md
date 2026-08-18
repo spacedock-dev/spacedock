@@ -1,7 +1,7 @@
 ---
 id: ca9gqaz4n97gsv2nd9p80xbf
 title: The codex filing recognizer misses a create terminated by a newline
-status: implementation
+status: validation
 source: "Captain CL, 2026-08-18, from the live-lane inventory. Root-caused with a runnable repro: codexFilingCreateCount's terminator class (?:[ \\t';|&]|$) in shared_filing_test.go omits \\n, so a valid create followed by a verification line on the next line counts zero. Red in run 32105482382 codex-live as observed=[filing-command-not-observed]."
 started: 2026-08-18T18:41:27Z
 completed:
