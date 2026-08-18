@@ -1,9 +1,9 @@
 ---
 id: 0mdhjk9jdf10h1qnhvx5tvn8
 title: Remove the tautological workflow-file tests
-status: backlog
+status: ideation
 source: "Captain directive, CL 2026-08-17, after measuring the edge-advance case: \"the goal of the task is removal of those tautological tests\". Evidence from this session: 1307 lines guarding a 173-line file were green across three consecutive releases while the mechanism they covered failed silently, and validation later found two material defects in that same area."
-started:
+started: 2026-08-18T00:32:37Z
 completed:
 verdict:
 score:
