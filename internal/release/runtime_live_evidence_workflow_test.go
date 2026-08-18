@@ -74,6 +74,12 @@ func TestRuntimeLiveWorkflowRunsDeterministicControlsOffline(t *testing.T) {
 	}
 }
 
+func TestRuntimeLiveWorkflowSecretBansHoldOnRealFile(t *testing.T) {
+	if err := assertLiveSecretsBansHold(readWorkflow(t, "runtime-live-e2e.yml")); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeLiveWorkflowNamedEvidenceMutationControls(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	mutations := map[string]func(string) string{
