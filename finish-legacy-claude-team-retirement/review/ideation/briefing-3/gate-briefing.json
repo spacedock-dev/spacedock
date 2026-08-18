@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nr75fq7ha3nmvsegbd22cgqa:ideation:attempt-3:revision-1",
+  "question": "Approve the revised ideation: retire the legacy TeamCreate surface and bind the template slot, no xfail?",
+  "artifacts": [
+    {
+      "id": "artifact:nr75fq7ha3nmvsegbd22cgqa:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/ccc1309938688cc8f32ab41bc1b9b5066f334806/finish-legacy-claude-team-retirement.md",
+      "rev": "sha256:55498c1582e852c546f0e88255d04f854f8f1da775b288482ec73d6ab9362a18",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 dropped the xfail per the gate and answered the variance puzzle with direct stream evidence. Pulled both transcripts — red 32189720211 and green main 32040773989: the green call emitted all six template fields; the red emitted five, dropping ONLY subagent_type while resolving {worker_key} to spacedock-ensign in the same call. So the FO possessed the value and dropped the unbound parameter. Not environment (identical bytes across CI-main pass, CI-tip fail, and two local passes) and not missing knowledge (the value was in context three ways). Across both calls: 11/11 explicit fields correct, 1/2 on the sole unbound slot — the split lands exactly on the bound/unbound line. Binding removes the choice point. Stated with its honest bound: sampling can still defy an explicit literal, and a post-binding red would be fresh evidence filed then. Bonus finding: both live FOs, told only 'team mode', reached for the advertised --team-name with fabricated names, so removing the flag closes an observed mis-dispatch path rather than a theoretical one. Surface net -500 across ~47 files (down from 49; the live test and registry are no longer touched)."
+    }
+  ]
+}
