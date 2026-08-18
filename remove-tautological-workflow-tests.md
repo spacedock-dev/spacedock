@@ -165,3 +165,17 @@ Audited the full workflow-file test surface with the discriminating question, as
 ### Summary
 
 Landed all 7 deletion steps from the ideation-approved plan, each its own commit, `go test ./...` green after every one. Final `go test ./...` and `go test ./... -race` both green. Surface: net -871 across 9 files vs. declared -890 ± 150 / 9 ± 2 — on target. `go test ./internal/release/ ./internal/contractlint/ -list` confirms every deleted mirror test function is gone and every kept S1-S4 test survives. The goreleaser↛journey-ledger ban armor is untouched per the captain's ruling. One judgment call is flagged above for the reviewer: closing a pre-existing AC-2(b) discriminator gap on 3 kept bans in runtime_live_evidence_workflow_test.go with 3 new mutation-control cases (not new coverage — proving bans this task chose to keep actually red).
+
+### Addendum: per-ban discriminator rationale (team-lead ruling, option (a) confirmed)
+
+Team-lead independently grepped and confirmed the same fact, ruled option (a), and asked for the per-ban rationale and an explicit audit-gap note. Recording both:
+
+- job-level CODEX_HOME ban: earns its discriminator. Encodes a real GHA semantics fact — `runner.temp` is unavailable in job-level `env:`, only at step level — a platform constraint invisible in a diff, not a spelling convention. Covered by the "job-level CODEX_HOME reintroduced" case.
+- retired PI_OPENAI_CODEX_AUTH_JSON ban: earns its discriminator. Bans a specific retired secret name; the retirement decision isn't visible in the file to a future editor. Covered by "retired PI_OPENAI_CODEX_AUTH_JSON reintroduced".
+- retired SPACEDOCK_PI_LIVE_CHILD_MODEL ban: earns its discriminator, same reasoning (retired override invisible in the file). Covered by "retired SPACEDOCK_PI_LIVE_CHILD_MODEL reintroduced".
+
+All three: each discriminator cost one map entry plus one anchor string (~3 lines), well under the cost of an unproven ban per team-lead's stated tradeoff, so delete-the-ban was not the better answer for any of the three.
+
+Audit-gap note for the validator: the ideation Audit record classified these three as S4 keepers and cited AC-2(b) coverage without checking whether a discriminator already existed for them — it didn't (grepped independently by both me and team-lead). This is a gap in the ideation record, not scope creep introduced at implementation; the fix stays inside "prove the ban this task already chose to keep," not new coverage.
+
+Surface: the discriminator addition is already counted in the net -871 / 9-file figure reported above (commit ff0d850ad, part of runtime_live_evidence_workflow_test.go's +42/-149).
