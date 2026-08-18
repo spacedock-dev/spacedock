@@ -1,7 +1,7 @@
 ---
 id: vkatjs25g9a9gmk3jtvx5ce0
 title: merge guard refuses a terminal transition with no preceding worker report
-status: validation
+status: implementation
 source: "Captain CL, 2026-08-18, from the live-lane inventory reframe. Failing assertion: internal/ensigncycle/shared_keep_moving_durable_test.go:103, 'first terminal transition must follow worker report', red in two consecutive claude-live runs (32092321763 attempt 2 and 32105482382) while the FO's own final messages claimed the reports had completed."
 started: 2026-08-18T18:41:27Z
 completed:
@@ -201,3 +201,18 @@ Throwaway clone of `1b14c09bc`; `go test ./...` green except `TestCodexResolveMa
 Ran the false-positive matrix the assignment asked for on a detached throwaway clone. Nine adjacent shapes behave correctly, but three do not, all from one root cause: `entityBlobHistory` follows renames in the log and then reads every blob at the current path, so a renamed, converted, or unarchived entity dies on `git show` and can never be finalized. The trigger is sanctioned and observed — `gate record --round` requires folder form, and this repo really did convert two live entities and then merge them both. Settled the coalescing question negatively with evidence: no sanctioned FO fold writes terminal state, so no correct ceremony refuses. Overrun and test-plan coverage check out: the surface is 42% past tolerance but entirely within the approved design, and all 7 items are real tests with real falsifying changes.
 
 **Recommendation: REJECTED** — one material finding (the rename-crossing history read), with a narrow, AC-preserving fix inside `entityBlobHistory`. Two deferred risks recorded with their promote-to-material conditions.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Fix the material finding — `entityBlobHistory` read every historical commit at today's live path instead of the path each commit actually had.
+  `entityPathsAtCommits` (commit `27c69c0ba`) replays git's own `--follow` rename-retargeting by parsing `--name-status` R-lines, so each `git show` reads the commit's real path. No new mechanism, no AC change — only `entityBlobHistory`'s internals changed.
+- DONE: Re-run the ideation spike against the shipped read (not just re-cite it) and report each of the six named entities by name.
+  All six now PASS on the fixed code: `pre0-cut-idempotent-on-rerun`, `remove-tautological-workflow-tests`, `collapse-duplicate-edge-marketplace-routes`, `prerelease-ships-stable-stamped-default-artifact`, `run-rejection-journey-in-team-mode`, `red-auto-continue-gate-bypass` (all `_archive/{slug}.md`, terminal stage `done`). Confirmed the same six all hard-error with "exit status 128" on the pre-fix code (`1b14c09bc`), matching validation's finding exactly — verified via a throwaway test run against this machine's real state checkout both before and after the fix, not committed (machine-path-dependent).
+- DONE: Add regression coverage for the three rename shapes so this false positive cannot come back.
+  `TestMergeGuardFinalizesAfterSlugRename`, `TestMergeGuardFinalizesAfterFlatToFolderConversion`, `TestMergeGuardFinalizesAfterUnarchive` — each report-then-rename-then-finalize, and each verified red (exact `failed to read git history` / exit 128 symptom) against `1b14c09bc` before the fix, green after.
+- DONE: Report cycle-2 surface separately from the cumulative total.
+  Cycle-2: +158/-11, net +147, across the same 2 files already touched (`merge.go`, `merge_guard_report_order_test.go`) — no new files. Cumulative vs `main`: +681/-7, net +674, across 8 files (`git diff --numstat "$(git merge-base main HEAD)"..HEAD`) — still past the approved +260 ±40% tolerance; unchanged file count (8, within "up to 12").
+
+### Summary
+
+Fixed the one material finding narrowly inside `entityBlobHistory`/the new `entityPathsAtCommits` helper: each commit is now read at the path it actually had, resolved by replaying git's own `--follow` rename chain from `--name-status` output, rather than assuming today's path throughout. Re-ran the ideation's six-entity spike against the shipped read as required — confirmed it hard-errors pre-fix and passes post-fix for every named entity, so the fix is evidenced against production history, not just synthetic fixtures. Added one regression test per rename shape (slug rename, flat→folder, unarchive), each proven red-then-green against the actual defect commit. AC-1 and AC-2 untouched; design not reopened. Cycle-2 surface (+147 net, 2 files) stayed tight; cumulative overrun is unchanged in kind from cycle 1 and reported for the gate's Cycle line.
