@@ -1,7 +1,7 @@
 ---
 id: vkatjs25g9a9gmk3jtvx5ce0
 title: merge guard refuses a terminal transition with no preceding worker report
-status: ideation
+status: implementation
 source: "Captain CL, 2026-08-18, from the live-lane inventory reframe. Failing assertion: internal/ensigncycle/shared_keep_moving_durable_test.go:103, 'first terminal transition must follow worker report', red in two consecutive claude-live runs (32092321763 attempt 2 and 32105482382) while the FO's own final messages claimed the reports had completed."
 started: 2026-08-18T18:41:27Z
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain approved in chat: ''approve those 4, and have them be on a pr stack.'' Accepts the ceremony-time ordering refusal, its exemptions, and the +260 surface. Tip of the stack; CI approved on the tip.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 The terminal ceremony checks that the merge hook ran. It does not check that the work it is finalizing was ever reported. Make it refuse when no report commit precedes the terminal transition.
