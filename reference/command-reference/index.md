@@ -2,20 +2,21 @@
 title: "Command reference"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-17 14:56:14"
+last_updated: "2026-08-18 00:23:42"
 ---
 
 # Command reference
 
-The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version and the host OS/arch, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, the host OS/arch, and release channel, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
 
 ## --version
 
-`spacedock --version` reports the binary version and the host OS/arch, and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints two lines:
+`spacedock --version` reports the binary version, the host OS/arch, and the release channel the binary drives (`stable` installs `spacedock@spacedock`; `edge` installs `spacedock@spacedock-edge`), and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints three lines:
 
 ```
 spacedock 0.26.0
 OS: darwin/arm64
+Channel: stable (spacedock@spacedock)
 ```
 
 Inside a session it also names the host OS/arch, the runtime it detected, the marker that proved it, and whether this process is running inside a sandbox:
@@ -23,6 +24,7 @@ Inside a session it also names the host OS/arch, the runtime it detected, the ma
 ```
 spacedock 0.26.0
 OS: darwin/arm64
+Channel: stable (spacedock@spacedock)
 Runtime: claude (CLAUDECODE)
 Sandbox: agent-safehouse
 contract 3
@@ -42,7 +44,7 @@ Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)
 
 Nothing on this surface fails, so it names no remedy. The one command the ambiguity does block is `spacedock dispatch build`, which refuses and prints the remedy with all three valid values.
 
-Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the two lines shown above (the version line plus the `OS:` line).
+Being outside every runtime is a normal state, not a fault — it means a human at a terminal. There is no `Runtime:` line at all in that case, because there is no session to report: the output is the three lines shown above (the version line, the `OS:` line, and the `Channel:` line).
 
 The `Sandbox:` line answers one question — is this process sandboxed? Sandboxed, the value is the sandbox's name and nothing else; otherwise it is `none`, followed by whether safehouse is available to sandbox future launches:
 
