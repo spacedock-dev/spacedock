@@ -1,16 +1,17 @@
 ---
 id: 0mdhjk9jdf10h1qnhvx5tvn8
 title: Remove the tautological workflow-file tests
-status: validation
+status: done
 source: "Captain directive, CL 2026-08-17, after measuring the edge-advance case: \"the goal of the task is removal of those tautological tests\". Evidence from this session: 1307 lines guarding a 173-line file were green across three consecutive releases while the mechanism they covered failed silently, and validation later found two material defects in that same area."
 started: 2026-08-18T00:32:37Z
-completed:
-verdict:
+completed: 2026-08-18T06:02:31Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-remove-tautological-workflow-tests
 issue:
-mod-block: merge:pr-merge
-pr: "#728"
+mod-block:
+pr: pr-merge:728
+archived: 2026-08-18T06:02:31Z
 ---
 
 Delete the tests that assert a workflow file contains the text someone wrote into it. The goal is removal, not replacement.
