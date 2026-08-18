@@ -45,6 +45,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-18T23:31:25.020665Z"
                 reason: 'Artifact changed after prepare: the ensign committed 49adbafaf pinning the edit surface and the claudeteam keep/retire split, invalidating the frozen briefing digest. Withdrawing and re-preparing on the corrected artifact per the entity-freeze rule.'
+            - id: gate-attempt:nr75fq7ha3nmvsegbd22cgqa-ideation-2
+              briefing:
+                id: briefing:nr75fq7ha3nmvsegbd22cgqa:ideation:attempt-2:revision-1
+                digest: sha256:006b5d54dc9623be3672fda8624db8a4631c040f542be3639f80f8e3fbff9967
+                request-digest: sha256:24ae4c0040055876cc553f2028b24112d18d7669d3e163e045f70cf75058cac1
+                room-ref: ./finish-legacy-claude-team-retirement/review/ideation/briefing-2
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
