@@ -41,6 +41,10 @@ gates:
                 digest: sha256:90c45d49442a8feffd99c50c7ae65b82211af4952c428df049dd718916edf4c1
                 request-digest: sha256:e1e8c27fc3163e5742b36b5d0e8d6898b3955cec4fb43a2dd3f1e2ac27749f7d
                 room-ref: ./finish-legacy-claude-team-retirement/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-18T23:31:25.020665Z"
+                reason: 'Artifact changed after prepare: the ensign committed 49adbafaf pinning the edit surface and the claudeteam keep/retire split, invalidating the frozen briefing digest. Withdrawing and re-preparing on the corrected artifact per the entity-freeze rule.'
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
