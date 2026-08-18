@@ -61,15 +61,41 @@ func TranslateFlags(deprefixed []string) (extra []string, err error) {
 	return extra, nil
 }
 
+// terminalHostEnvVars are the nine signals subspace's r skill probes across
+// its six terminal hosts, in the probe's own resolution order.
+// Source of truth: spacedock-subspace plugins/subspace/skills/r/SKILL.md,
+// "Select one terminal" — duplicated by decision (see safehouse-terminal-env-passthrough.md).
+var terminalHostEnvVars = []string{
+	"ZELLIJ_SESSION_NAME", "ZELLIJ_PANE_ID",
+	"TMUX", "TMUX_PANE",
+	"HERDR_ENV", "HERDR_PANE_ID",
+	"CMUX_WORKSPACE_ID", "CMUX_SURFACE_ID",
+	"TERM_PROGRAM",
+}
+
 // terminalTargetingEnvArgs returns Safehouse's built-in terminal/session
 // metadata allowance. Safehouse itself composes repeated --env-pass flags and
 // SAFEHOUSE_ENV_PASS, so this wrapper adds its default without parsing caller
 // arguments or owning an operator configuration surface.
 func terminalTargetingEnvArgs() []string {
-	if _, present := os.LookupEnv("ZELLIJ"); !present {
+	return terminalEnvPassArgs(os.LookupEnv)
+}
+
+// terminalEnvPassArgs is the presence-filter composer: it names a variable in
+// the returned --env-pass allowance only when lookup reports it set in the
+// parent, in terminalHostEnvVars' probe order. An empty parent (nothing set)
+// yields no allowance at all, never an empty flag.
+func terminalEnvPassArgs(lookup func(string) (string, bool)) []string {
+	var present []string
+	for _, name := range terminalHostEnvVars {
+		if _, ok := lookup(name); ok {
+			present = append(present, name)
+		}
+	}
+	if len(present) == 0 {
 		return nil
 	}
-	return []string{"--env-pass=ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME"}
+	return []string{"--env-pass=" + strings.Join(present, ",")}
 }
 
 // Wrap returns the inner argv wrapped as

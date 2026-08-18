@@ -40,8 +40,16 @@ func TestMain(m *testing.M) {
 	default:
 		// Most historical front-door tests assert the non-targeting argv contract.
 		// Keep that baseline independent of the developer's terminal; dedicated
-		// wrapper fixtures set targeting metadata explicitly.
-		for _, key := range []string{"ZELLIJ", "ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME"} {
+		// wrapper fixtures set targeting metadata explicitly. All nine names the
+		// terminal-host allowance probes, so the suite passes identically under
+		// tmux, Zellij, Herdr, CMUX, or a bare terminal (TERM_PROGRAM included).
+		for _, key := range []string{
+			"ZELLIJ_SESSION_NAME", "ZELLIJ_PANE_ID",
+			"TMUX", "TMUX_PANE",
+			"HERDR_ENV", "HERDR_PANE_ID",
+			"CMUX_WORKSPACE_ID", "CMUX_SURFACE_ID",
+			"TERM_PROGRAM",
+		} {
 			if err := os.Unsetenv(key); err != nil {
 				fmt.Fprintln(os.Stderr, "test setup: unset", key+":", err)
 				os.Exit(1)
