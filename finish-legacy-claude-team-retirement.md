@@ -1,7 +1,7 @@
 ---
 id: nr75fq7ha3nmvsegbd22cgqa
 title: Finish the legacy Claude TeamCreate retirement — the contract retired it, the binary and a live proof did not
-status: backlog
+status: ideation
 source: "Captain CL, 2026-08-18, in chat ('file a proper legacy claude team retirement task'), after TestLiveBreakGlassShimRecovery/selected-team failed the claude-live lane on the ca9/6ht/j7j stack by demanding a team_name the shipped contract tells the FO to omit."
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain approved in chat: ''ok dispatch 4c and nr.'' The captain raised the retirement question himself after the break-glass red, and asked for this filing; approving it into ideation closes a nondeterministic merge blocker.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
