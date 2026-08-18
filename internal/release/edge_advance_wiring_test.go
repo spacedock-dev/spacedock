@@ -86,8 +86,13 @@ func assertAlwaysCutPre0(workflow string) error {
 	verifiesRun, failsOnMiss := false, false
 	for _, command := range executableShellCommands(pre0.run) {
 		switch {
-		case strings.HasPrefix(command, "git tag "):
-			tagCmd = command
+		case strings.Contains(command, "git tag "):
+			// The mint may be guarded by a "cmd || git tag …" existence check
+			// on the same logical line (idempotent-under-rerun); take the
+			// suffix from "git tag " on so tagCmdIsAnnotatedWithBody and
+			// tagCmdTarget still see a normalized `git tag …` command, not
+			// the guard's own leading command and args.
+			tagCmd = command[strings.Index(command, "git tag "):]
 		case strings.Contains(command, "git push"):
 			pushCmd = command
 		case command == `RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"`:

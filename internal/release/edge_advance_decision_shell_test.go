@@ -5,6 +5,7 @@
 package release
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -144,5 +145,101 @@ func TestDecisionStepScriptFailsClosedOnEmptyCandidatePool(t *testing.T) {
 	}
 	if strings.Contains(output, "advance=true") {
 		t.Fatalf("decision step wrote both advance=true and advance=false: %q", output)
+	}
+}
+
+// runAutoPre0StepScript runs the real always-cut-pre0 step script with
+// EDGE_RELEASE_DEPLOY_KEY stripped, so it dies unbound before ssh-keyscan;
+// HOME is sandboxed since `mkdir -p ~/.ssh` runs just before that death.
+func runAutoPre0StepScript(t *testing.T, refName, fixtureRepo, home string) (exitCode int, output string) {
+	t.Helper()
+	job := edgeAdvanceJob(readWorkflow(t, "release.yml"))
+	if job == nil {
+		t.Fatal("release.yml has no edge-advance job")
+	}
+	step := edgeAdvanceAutoPre0Step(*job)
+	if step == nil {
+		t.Fatal("edge-advance has no auto-cut pre0 step")
+	}
+	repoRoot, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var env []string
+	for _, kv := range os.Environ() {
+		if !strings.HasPrefix(kv, "EDGE_RELEASE_DEPLOY_KEY=") {
+			env = append(env, kv)
+		}
+	}
+	env = append(env,
+		"GIT_DIR="+filepath.Join(fixtureRepo, ".git"),
+		"GIT_WORK_TREE="+fixtureRepo,
+		"GITHUB_REF_NAME="+refName,
+		"HOME="+home,
+	)
+	cmd := exec.Command("bash", "-c", step.run)
+	cmd.Dir, cmd.Env = repoRoot, env
+	out, err := cmd.CombinedOutput()
+	code := 0
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		code = exitErr.ExitCode()
+	} else if err != nil {
+		t.Fatalf("real release.yml auto-pre0 step script: %v\n%s", err, out)
+	}
+	return code, string(out)
+}
+
+// TestAutoPre0StepScriptRerunNeverRemintsExistingTag runs the real script
+// twice (v0.25.1, v0.26.0 at C1): guarded + past-mint dies unbound (exit 1);
+// unguarded + tag-exists dies AT the mint (exit 128, "already exists") —
+// AC-1's discrimination, verified live in the cycle-3 spike.
+func TestAutoPre0StepScriptRerunNeverRemintsExistingTag(t *testing.T) {
+	fixture := tagFixtureRepo(t, []string{"v0.25.1", "v0.26.0"})
+	home := t.TempDir()
+	git := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = fixture
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	const wantMarker = "EDGE_RELEASE_DEPLOY_KEY: unbound variable"
+
+	// Shared by both passes: past the mint (exit 1, unbound marker), pre0 SHA
+	// exactly at wantSHA — passes differ only in where the guard leaves it.
+	runAndAssertSHA := func(pass, wantSHA string) string {
+		t.Helper()
+		code, out := runAutoPre0StepScript(t, "v0.26.0", fixture, home)
+		if code != 1 || !strings.Contains(out, wantMarker) {
+			t.Fatalf("%s: exit=%d, want 1 with %q\n%s", pass, code, wantMarker, out)
+		}
+		if got := git("rev-list", "-1", "v0.27.0-pre0"); got != wantSHA {
+			t.Fatalf("%s: v0.27.0-pre0 targets %s, want %s", pass, got, wantSHA)
+		}
+		return out
+	}
+
+	// Mint pass: no pre0 exists yet — pins the guard doesn't wrongly skip a
+	// first run, a lost `||` mint arm, and that the mint is annotated.
+	c1 := git("rev-parse", "v0.26.0")
+	runAndAssertSHA("mint pass", c1)
+	if typ := git("cat-file", "-t", "v0.27.0-pre0"); typ != "tag" {
+		t.Fatalf("mint pass: v0.27.0-pre0 cat-file -t = %q, want an annotated tag", typ)
+	}
+
+	// Repoint pre0 to a divergent C2: a `git tag -a -f` re-mint mutant also
+	// reaches exit 1, so only the SHA assert above/below catches it.
+	git("commit", "--allow-empty", "-q", "-m", "C2")
+	c2 := git("rev-parse", "HEAD")
+	git("tag", "-f", "-a", "v0.27.0-pre0", c2, "-m", "divergent")
+
+	// Tag-exists pass (the red/green core, AC-1): must get PAST the mint, not
+	// hit it — an unguarded script instead dies AT the mint (exit 128).
+	if out := runAndAssertSHA("tag-exists pass", c2); strings.Contains(out, "already exists") {
+		t.Fatalf("tag-exists pass: hit the mint instead of skipping it: %s", out)
 	}
 }

@@ -212,8 +212,12 @@ already published):
   v0.25.0 and v0.26.0 cuts, the cross-repo tap PAT — does NOT create the pre0
   `release.yml` run, so the step pushes with the deploy key and then **verifies
   a run was created for the pre0 tag, failing `edge-advance` loudly if none
-  appears** rather than leaving the edge binary silently behind. Expect two
-  GitHub releases per stable cut.
+  appears** rather than leaving the edge binary silently behind. Re-running the
+  job after such a failure is safe: an existing pre0 tag is never re-minted or
+  moved (the step checks `refs/tags/` before tagging), the push of an
+  already-landed tag is a no-op, and the run-verification poll executes again —
+  so the re-run turns green once the pre0 run exists, and still fails loudly if
+  the credential remains suppressed. Expect two GitHub releases per stable cut.
 - **Old-line / patch (`vX.Y.1`, cut after a newer `X.(Y').Z` line already
   shipped):** the decision step compares this tag's own version against the
   highest OTHER existing bare stable tag in the repo and prints `skip`, logged
