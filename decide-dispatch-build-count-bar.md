@@ -1,7 +1,7 @@
 ---
 id: 6htv3p97aq8sexrkjhrcdwt1
 title: Decide whether one dispatch build per stage is the right bar for a live agent
-status: ideation
+status: implementation
 source: "Captain CL, 2026-08-18, from the live-lane inventory reframe. The recorded-gate-lifecycle journey red in run 32105482382 on 'successor dispatch build attempts/successes = 2/2, want 1/1' — two SUCCESSFUL builds, not an error-then-retry. codex-live-dispatch-build-checklist-race already carries the open question and is codex-scoped; this occurrence is claude."
 started: 2026-08-18T18:41:27Z
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain approved in chat: ''approve those 4, and have them be on a pr stack.'' Accepts the decision that 1/1 does not stand and the bar widens to one corrective rebuild, with identical rebuilds and three-plus attempts staying red.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A journey grades an FO red for building a dispatch envelope twice. Ideation's decision: 1/1 does not stand — the retained streams show the second successful build differed from the first (a corrected rebuild), so the bar widens to tolerate exactly one corrective rebuild while identical rebuilds, three-plus attempts, and final failures stay red.
