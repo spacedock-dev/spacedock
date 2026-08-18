@@ -146,6 +146,17 @@ Verified by replaying this session's real terminalization shape — worker repor
 
 Read both failing runs' retained streams and settled the open sub-shape question: both are the batched shape in durable history, reached two different ways (worker hand-flip + batch commit; worker signal-without-commit + guard sweep), so one ceremony-time ordering check covers both. Designed the refusal into `finalize()` (`--verdict passed` only, before any mutation), spiked the history-walk rule red-and-green against replayed failing shapes and six real archived histories, and recorded the `--follow --reverse` git quirk, the rejected/`--rework`/non-git exemptions, a revised surface estimate (+260 net, up to 12 files with fixture fallout), the concrete command-reference doc diff, and two follow-up candidates (hand terminal `--set` on gate-less entities; worker-side frontmatter discipline).
 
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation false-positive matrix; surface 8 files/net +527 vs estimate ≤12 files/net +260±40% (203%, 42% past the +371 ceiling); AC unchanged. Material finding: `entityBlobHistory` follows renames in the log but then reads every blob at the entity's CURRENT path, so any history crossing a rename — slug rename, flat→folder conversion, unarchive — exits 1 on `git show` and can never be finalized. Trigger is sanctioned and observed: `gate record --round` requires folder form, and this repo really did convert and merge two live entities. Separately: the ideation Spike record's six real archived histories, cited as PASS, all hard-error under the shipped read, so that spike exercised a different rule than the one that landed.
+
+### Design-reset decision (surface past declared tolerance)
+
+Surface is 203% of the approved estimate, past this entity's own declared ±40% tolerance, so the workflow requires a recorded design-reset decision before any further correction round. No re-dispatch has been made pending the captain's call.
+
+- FO recommendation: RECONFIRM. The approved design is unchanged and validated — AC-1 verified against both observed shapes, and the coalescing question that could have invalidated the whole approach was settled negatively with evidence (no sanctioned FO fold writes terminal state, so no correct ceremony refuses). The defect is a narrow, contained bug inside one unexported helper, and the fix preserves both ACs.
+- Recorded against reconfirm: the ideation's spike evidence did not reproduce against the shipped code. Confidence in "proven green against six real archived histories" was misplaced, so the correction round must re-run that evidence against the shipped read rather than re-citing the spike.
+
 ## Stage Report: implementation
 
 - DONE: AC-1 - a passed finalize refuses when no committed stage report precedes the first terminal transition — both observed shapes refuse with nothing mutated and no archive.
