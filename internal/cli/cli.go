@@ -183,7 +183,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
-				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. In a split-root workflow, a successful close or consume\nends with a machine-parseable `sync=.../phase=...` line; branch on that final line plus\nthe exit code, never on which prose lines printed.")
+				fmt.Fprintln(stdout, "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--conn-quote TEXT --conn-source TEXT] [--consume] [--workflow-dir DIR]\n       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n       spacedock gate consume <entity> [--workflow-dir DIR]\n\nOn an approval whose target stage is terminal, consume spends nothing: it leaves the\napplication pending and reports route=approved-awaiting-merge. The terminal merge\nceremony (`spacedock merge guard <slug> --verdict passed|rejected`) is the sole terminal\nconsumer; `merge guard --rework` sends a failed delivery back through the declared\nfeedback-to (pending -> superseded, delivery state cleared).\n\n`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\nin one call. `--consume` requires --decision approve and is rejected as a usage error\nwith --decision revise|hold. A delegated `--actor agent:first-officer` decision requires\n`--conn-quote` (the grant verbatim) and `--conn-source` (where it was given); those flags\nare refused with `--actor person:captain` or with `--round`. In a split-root workflow, a\nsuccessful close or consume ends with a machine-parseable `sync=.../phase=...` line;\nbranch on that final line plus the exit code, never on which prose lines printed.")
 				return nil
 			}
 			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "consume") {
@@ -216,6 +216,10 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				case "--reason":
 					input.Reason = args[i+1]
 					reasonCount++
+				case "--conn-quote":
+					input.ConnQuote = args[i+1]
+				case "--conn-source":
+					input.ConnSource = args[i+1]
 				case "--round":
 					input.Round = args[i+1]
 				case "--log":
@@ -339,6 +343,14 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				}
 				return nil
 			}
+			// --conn-quote/--conn-source cite the grant behind a chat close; --round
+			// and --briefing are advisory correction-round publication, not a chat
+			// close, so a citation there is unrepresentable. Refuse before either
+			// branch mutates anything.
+			if (input.ConnQuote != "" || input.ConnSource != "") && (input.Round != "" || input.BriefingPath != "") {
+				fmt.Fprintln(stderr, "Error: --conn-quote and --conn-source are not valid with --round or --briefing")
+				return exitCodeError{2}
+			}
 			if input.Round != "" {
 				input.WorkflowDir = definitionDir
 				if err := gates.RecordSemantic(path, input); err != nil {
@@ -358,6 +370,19 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			}
 			if input.Actor == "" {
 				fmt.Fprintln(stderr, "Error: --decision requires --actor ID")
+				return exitCodeError{2}
+			}
+			// The two record shapes are disjoint by grammar: a delegated FO chat
+			// decision always cites the grant it acted under; a captain decision
+			// cites no grant. Refuse the incoherent shapes before any mutation —
+			// the citation attributes, it never authorizes, so a warned-but-written
+			// record would reproduce the exact ambiguity this grammar removes.
+			if input.Actor == "agent:first-officer" && (strings.TrimSpace(input.ConnQuote) == "" || strings.TrimSpace(input.ConnSource) == "") {
+				fmt.Fprintln(stderr, "Error: delegated First Officer decision requires --conn-quote and --conn-source")
+				return exitCodeError{2}
+			}
+			if input.Actor == "person:captain" && (input.ConnQuote != "" || input.ConnSource != "") {
+				fmt.Fprintln(stderr, "Error: --conn-quote and --conn-source are refused on a person:captain decision")
 				return exitCodeError{2}
 			}
 			// --consume never softens a non-approve chat decision. This is a usage

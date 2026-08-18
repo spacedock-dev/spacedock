@@ -23,10 +23,11 @@ import (
 )
 
 type RecordInput struct {
-	BriefingPath        string
-	LogPath, Round      string
-	Actor, Decision     string
-	Reason, WorkflowDir string
+	BriefingPath          string
+	LogPath, Round        string
+	Actor, Decision       string
+	Reason, WorkflowDir   string
+	ConnQuote, ConnSource string
 }
 
 type WithdrawInput struct {
@@ -97,7 +98,7 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 		if input.BriefingPath == "" || input.LogPath == "" {
 			return Summary{}, fmt.Errorf("gate record --round requires --briefing and --log")
 		}
-		if input.Actor != "" || input.Decision != "" || input.Reason != "" {
+		if input.Actor != "" || input.Decision != "" || input.Reason != "" || input.ConnQuote != "" || input.ConnSource != "" {
 			return Summary{}, fmt.Errorf("gate record --round is incompatible with gate-closing flags")
 		}
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
@@ -221,6 +222,19 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 	if input.Actor == "agent:first-officer" && strings.TrimSpace(input.Reason) == "" {
 		return fmt.Errorf("delegated First Officer decision requires --reason")
 	}
+	// The two record shapes are disjoint by grammar: an FO-rendered chat
+	// decision (any of approve/revise/hold) always cites the grant it acted
+	// under; a captain decision cites no grant at all, since the captain needs
+	// no delegated authority to answer its own gate. The citation attributes;
+	// it never authorizes — auto-continue's boundary negative pins that a
+	// citation on a no-conn journey still reds.
+	hasConnQuote, hasConnSource := strings.TrimSpace(input.ConnQuote) != "", strings.TrimSpace(input.ConnSource) != ""
+	if input.Actor == "agent:first-officer" && (!hasConnQuote || !hasConnSource) {
+		return fmt.Errorf("delegated First Officer decision requires --conn-quote and --conn-source")
+	}
+	if input.Actor == "person:captain" && (hasConnQuote || hasConnSource) {
+		return fmt.Errorf("--conn-quote and --conn-source are refused on a person:captain decision")
+	}
 	doc, oldNode, record, attempt, err := currentStageAttempt(entityPath, input.WorkflowDir)
 	if err != nil {
 		return err
@@ -246,6 +260,9 @@ func recordChatLocked(entityPath string, input RecordInput) error {
 		At:       time.Now().UTC().Format(time.RFC3339Nano),
 		Decision: input.Decision,
 		Reason:   input.Reason,
+	}
+	if input.Actor == "agent:first-officer" {
+		resolution.Conn = &Conn{Quote: input.ConnQuote, Source: input.ConnSource}
 	}
 	if err := closeAttempt(entityPath, input.WorkflowDir, doc, oldNode, record, attempt, resolution); err != nil {
 		return err

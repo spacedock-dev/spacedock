@@ -107,7 +107,7 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 	// prose-oracle ban. Grammar additions/removals must change this fixture openly.
 	wantHelp := "Usage: spacedock gate prepare <entity> --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]\n" +
 		"       spacedock gate withdraw <entity> --reason TEXT [--workflow-dir DIR]\n" +
-		"       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]\n" +
+		"       spacedock gate record <entity> --decision approve|revise|hold --actor ID [--reason TEXT] [--conn-quote TEXT --conn-source TEXT] [--consume] [--workflow-dir DIR]\n" +
 		"       spacedock gate record <entity> --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]\n" +
 		"       spacedock gate consume <entity> [--workflow-dir DIR]\n\n" +
 		"On an approval whose target stage is terminal, consume spends nothing: it leaves the\n" +
@@ -117,9 +117,11 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 		"feedback-to (pending -> superseded, delivery state cleared).\n\n" +
 		"`gate record --consume` is the captain-approve fast path: close, sync, consume, sync\n" +
 		"in one call. `--consume` requires --decision approve and is rejected as a usage error\n" +
-		"with --decision revise|hold. In a split-root workflow, a successful close or consume\n" +
-		"ends with a machine-parseable `sync=.../phase=...` line; branch on that final line plus\n" +
-		"the exit code, never on which prose lines printed.\n"
+		"with --decision revise|hold. A delegated `--actor agent:first-officer` decision requires\n" +
+		"`--conn-quote` (the grant verbatim) and `--conn-source` (where it was given); those flags\n" +
+		"are refused with `--actor person:captain` or with `--round`. In a split-root workflow, a\n" +
+		"successful close or consume ends with a machine-parseable `sync=.../phase=...` line;\n" +
+		"branch on that final line plus the exit code, never on which prose lines printed.\n"
 	if out.String() != wantHelp {
 		t.Fatalf("gate help differs from the published contract:\n--- got ---\n%s--- want ---\n%s", out.String(), wantHelp)
 	}
@@ -306,6 +308,89 @@ func TestGateRoundRejectsConsumeFlagWithoutMutation(t *testing.T) {
 	if !bytes.Equal(before, after) {
 		t.Fatal("--consume + --round usage-error rejection changed the entity")
 	}
+}
+
+// TestGateRecordConnCitationGrammarMatrix pins AC-3: the two record shapes
+// (a captain decision citing no grant, a delegated FO decision citing one) are
+// disjoint by grammar. Every incoherent combination refuses at exit 2 with a
+// byte-identical entity and no lock residue, before any mutation is attempted.
+func TestGateRecordConnCitationGrammarMatrix(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"fo-missing-both", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence"}, "--conn-quote and --conn-source"},
+		{"fo-missing-quote", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence", "--conn-source", "launch runbook"}, "--conn-quote and --conn-source"},
+		{"fo-missing-source", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence", "--conn-quote", "you have the conn"}, "--conn-quote and --conn-source"},
+		{"fo-blank-quote", []string{"--decision", "approve", "--actor", "agent:first-officer", "--reason", "evidence", "--conn-quote", " ", "--conn-source", "launch runbook"}, "--conn-quote and --conn-source"},
+		{"captain-with-quote", []string{"--decision", "approve", "--actor", "person:captain", "--conn-quote", "you have the conn"}, "refused on a person:captain decision"},
+		{"captain-with-source", []string{"--decision", "approve", "--actor", "person:captain", "--conn-source", "launch runbook"}, "refused on a person:captain decision"},
+		{"captain-with-both", []string{"--decision", "approve", "--actor", "person:captain", "--conn-quote", "you have the conn", "--conn-source", "launch runbook"}, "refused on a person:captain decision"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root, entity := semanticDecisionFixture(t)
+			before, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var out, errOut bytes.Buffer
+			args := append([]string{"gate", "record", "task", "--workflow-dir", root}, tc.args...)
+			code := run(context.Background(), args, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+			if code != 2 || out.Len() != 0 || !strings.Contains(errOut.String(), tc.want) {
+				t.Fatalf("%s exit=%d stdout=%q stderr=%q, want exit=2 empty stdout stderr containing %q", tc.name, code, out.String(), errOut.String(), tc.want)
+			}
+			after, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(before, after) {
+				t.Fatalf("%s changed the entity", tc.name)
+			}
+			if _, err := os.Stat(entity + ".gates.lock"); !os.IsNotExist(err) {
+				t.Fatalf("%s left lock residue: %v", tc.name, err)
+			}
+		})
+	}
+
+	t.Run("round-with-conn-flags", func(t *testing.T) {
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, "README.md"), "---\nid-style: slug\nstages:\n  states:\n    - name: implementation\n      initial: true\n---\n# Workflow\n")
+		entityDir := filepath.Join(root, "task")
+		if err := os.MkdirAll(entityDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		entity := filepath.Join(entityDir, "index.md")
+		writeFile(t, entity, "---\nid: task\nstatus: implementation\ntitle: Task\n---\n# Task\n")
+		copyGateTestdata(t, filepath.Join(entityDir, "candidate.patch"), filepath.Join("advisory-round", "candidate.patch"))
+		inputs := filepath.Join(entityDir, "inputs")
+		if err := os.MkdirAll(inputs, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		briefing := filepath.Join(inputs, "briefing.json")
+		log := filepath.Join(inputs, "briefing.review.jsonl")
+		copyGateTestdata(t, briefing, filepath.Join("advisory-round", "briefing.json"))
+		copyGateTestdata(t, log, filepath.Join("advisory-round", "briefing.review.jsonl"))
+		before, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out, errOut bytes.Buffer
+		code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root,
+			"--round", "implementation/1", "--briefing", briefing, "--log", log,
+			"--conn-quote", "you have the conn", "--conn-source", "launch runbook"},
+			nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+		if code != 2 || out.Len() != 0 || !strings.Contains(errOut.String(), "--conn-quote and --conn-source are not valid with --round or --briefing") {
+			t.Fatalf("--round + conn flags exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+		}
+		after, err := os.ReadFile(entity)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(before, after) {
+			t.Fatal("--round + conn flags usage-error rejection changed the entity")
+		}
+	})
 }
 
 func TestRemovedGateVerbsAreAbsentAndSideEffectFree(t *testing.T) {
@@ -632,7 +717,7 @@ func unboundGateRoomFixture(t *testing.T) (root, entity, room string) {
 func TestGateRecordChatDecisionAndRejectsProvenanceAndOperationInterfaces(t *testing.T) {
 	root, entity := semanticDecisionFixture(t)
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--decision", "approve", "--actor", "agent:first-officer", "--reason", "All retained ACs reproduced"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code := run(context.Background(), []string{"gate", "record", "task", "--workflow-dir", root, "--decision", "approve", "--actor", "agent:first-officer", "--reason", "All retained ACs reproduced", "--conn-quote", "you have the conn toward the sprint goal", "--conn-source", "launch runbook for this headless session"}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("record decision exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
 	}
@@ -640,7 +725,7 @@ func TestGateRecordChatDecisionAndRejectsProvenanceAndOperationInterfaces(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"by: agent:first-officer", "decision: approve", "reason: All retained ACs reproduced"} {
+	for _, want := range []string{"by: agent:first-officer", "decision: approve", "reason: All retained ACs reproduced", "quote: you have the conn toward the sprint goal", "source: launch runbook for this headless session"} {
 		if !strings.Contains(string(body), want) {
 			t.Fatalf("chat Resolution missing %q:\n%s", want, body)
 		}
