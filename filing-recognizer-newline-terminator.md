@@ -7,7 +7,7 @@ started: 2026-08-18T18:41:27Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-filing-recognizer-newline-terminator
 issue:
 gates:
     version: 1
