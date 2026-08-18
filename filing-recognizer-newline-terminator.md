@@ -41,6 +41,17 @@ gates:
                 digest: sha256:1d2ab3adb11ead300603be9a068067168e296e0751563b6ff3afbdbac000f254
                 request-digest: sha256:9f392cf299238332b7d5b2b6f5a891be7d95ef14474f5b791ca2fcf6d79d7edb
                 room-ref: ./filing-recognizer-newline-terminator/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ca9gqaz4n97gsv2nd9p80xbf:validation:1
+                briefing: briefing:ca9gqaz4n97gsv2nd9p80xbf:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-18T21:54:16.967412Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve all PR and trigger ci on tip.'' Validation PASSED with one deferred risk, no material finding: AC-1 disproof reproduced against a self-fetched artifact, 27-shape adversarial matrix found no new permissiveness class, surface exactly on estimate at net +12/2 files.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 The filing grader fails a compliant agent. A create followed by a newline counts as zero creates, so any run that verifies its own filing goes red.
