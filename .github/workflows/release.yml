@@ -397,7 +397,11 @@ jobs:
           PRE0_BODY="Edge prerelease auto-cut with stable $GITHUB_REF_NAME: publishes the ${PRE0_VERSION%.*}-line edge binary so spacedock@next catches up to the new release line. No standalone changes."
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "$PRE0_TAG" "$RELEASE_COMMIT" -m "$PRE0_BODY"
+          # Idempotent under re-run: a prior attempt may have pushed the pre0
+          # tag and then failed in the verify poll below. Never re-mint (or
+          # move) an existing tag; push and verify-or-fail still run.
+          git rev-parse -q --verify "refs/tags/$PRE0_TAG" >/dev/null \
+            || git tag -a "$PRE0_TAG" "$RELEASE_COMMIT" -m "$PRE0_BODY"
           # Push over SSH with the write deploy key — the one credential GitHub
           # never suppresses for triggering, so the pre0 release.yml run fires.
           mkdir -p ~/.ssh
