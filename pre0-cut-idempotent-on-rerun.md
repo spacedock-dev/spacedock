@@ -87,13 +87,23 @@ The two silent-disable mutations recorded alongside this risk: hardcoding the de
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: **+115 across 3 files**. Insertions ≈ 116, deletions ≈ 1. Tolerance: net +115 ± 35, files 3 ± 1. Do not declare a gross tolerance.
+Estimate net LOC change: **+90 across 3 files**. Insertions ≈ 91, deletions ≈ 1. Tolerance: net +90 ± 25, files 3 ± 1. Do not declare a gross tolerance.
 
 - `.github/workflows/release.yml`: +5 / −1 (two code lines — the guard and the mint as its `||` arm — plus comment).
-- `internal/release/edge_advance_decision_shell_test.go` (extended): ≈ +105 / −0 — the auto-cut step runner (fixture repo + bare origin + `insteadOf` push redirect + `gh`/`ssh-keyscan` shims + sandboxed `HOME`) and two tests.
+- `internal/release/edge_advance_decision_shell_test.go` (extended): ≈ +80 / −0 — one runner, one test (three sequential runs of the real script), the four test doubles the script's own tail forces.
 - `docs/releasing.md`: +5 / −0 (the re-run sentence above).
 
-**Surface revision vs the seeded estimate — declared, not absorbed (checklist item 3).** The seed said +25 ± 20 across 2 files. The workflow change itself is on target: two code lines. The growth is entirely the proof, and it is mandated: the proof standard for this task forbids grep-the-workflow tests and requires exercising the actual step script under bash against constructed tag state. The auto-cut step's later phases (SSH push, `gh` poll) force test doubles the decision-step harness never needed; ~100 lines is the honest floor for that harness plus two behavioral tests, even reusing `readWorkflow`/`edgeAdvanceJob`/`edgeAdvanceAutoPre0Step`/`tagFixtureRepo`. The cheaper alternatives were weighed and rejected: slicing the script to stop before the push re-derives the step (the discipline this suite just adopted is real-bytes-only), and moving the guard into a Go helper to unit-test it adds a command surface whose only purpose is testability while leaving the actual workflow line unexercised. The gate approves or bounces this figure as the baseline.
+**The proof at its floor (captain ruling "reduce tests", gate cycle 1).** The smallest proof that still goes RED when the guard is removed is one run of the real extracted step script against a tag state where the pre0 exists: rc must be 0, and without the guard it is 128. That single run costs ≈ +70 and its parts are irreducible under this task's proof standard:
+
+- ≈ 30: the Go runner around `bash -c step.run` — extraction reuses the existing `readWorkflow`/`edgeAdvanceJob`/`edgeAdvanceAutoPre0Step` helpers; the lines are env plumbing and exit-code capture. (Generalizing the existing `runDecisionStepScript` instead was weighed: it saves ~8 lines but edits a function `2d`'s in-flight branch owns — not worth the merge friction.)
+- ≈ 20: four test doubles, each forced by a named line of the script's own tail, which runs after the guarded mint under `set -euo pipefail`: sandboxed `HOME` (the step writes `~/.ssh`), an `ssh-keyscan` shim (a real network call that dies on an offline runner), a `gh` shim printing a run count (without it the verify poll loops to its 120s timeout and exits 1 — the shim also records its invocation, which is AC-3's observable), and a bare-origin clone plus `url.insteadOf` (the step pushes to a hardcoded SSH URL).
+- ≈ 20: fixture tags and the rc/SHA/poll assertions.
+
+Below this floor there are only the two rejected shapes: slicing the script to stop before the push (re-derivation — the real-bytes discipline `2d` just adopted forbids it) or grepping release.yml for the rev-parse line (banned; the class a sibling task is deleting ~900 lines of).
+
+Three increments are kept above the floor, each priced with the mutant that escapes without it (itemized in the test plan): the first-run mint pass (+6 marginal), the divergent-tag never-move pass (+9), and the decision-still-advances pin (+4). Cut from the cycle-1 plan: the second test function and its own fixture, the separate first-run test, and a duplicated fixture wrapper — test-side ≈ 105 → ≈ 80.
+
+The seed said +25 ± 20 across 2 files; the workflow change is on target at two code lines, and the remainder is the priced floor above, declared for the gate rather than absorbed.
 
 Semantics changed: the auto-pre0 step becomes idempotent under re-run — when its target tag already exists it skips the mint (never moves the tag), still pushes (no-op), and still runs verify-or-fail; the job's exit in that state changes from rc=128 to rc=0 when the pre0 run exists, and stays a loud failure when it does not. No command grammar, stored format, or authority changes.
 
@@ -112,11 +122,17 @@ The verify-or-fail guarantee survives the fix: on the skip-mint path the run-ver
 
 ## Test plan
 
-Extend `internal/release/edge_advance_decision_shell_test.go` (same package; reuses `readWorkflow`, `edgeAdvanceJob`, `edgeAdvanceAutoPre0Step`, `tagFixtureRepo`, and the `GIT_DIR`/`GIT_WORK_TREE` redirection pattern of `runDecisionStepScript`). New runner `runAutoPre0StepScript`: fixture repo plus a bare "origin" clone carrying the fixture's tags, `url.insteadOf` rewriting the step's SSH push URL to that bare repo, `HOME` set to a temp dir, and PATH shims for `gh` (prints a run count of 1 and records the call) and `ssh-keyscan` (no-op) — the seams the spike proved. No network, no sleeps (the poll exits on its first iteration via the shim), cost well under a second per test beyond the `go run` cache warm.
+Extend `internal/release/edge_advance_decision_shell_test.go` (same package; reuses `readWorkflow`, `edgeAdvanceJob`, `edgeAdvanceAutoPre0Step`, `tagFixtureRepo`, and the `GIT_DIR`/`GIT_WORK_TREE` redirection pattern of `runDecisionStepScript`). One new runner, `runAutoPre0StepScript`, with the four doubles priced in the surface section. No network, no sleeps (the poll exits on its first iteration via the shim); cost well under a second beyond the `go run` cache warm.
 
-1. `TestAutoPre0StepScriptRerunIsIdempotent` (AC-1, AC-3): runs the real auto-cut script twice against one first-run fixture — the first pass must mint an annotated tag and land it on the bare origin; the second pass (the re-run) must exit 0, leave the tag SHA unchanged, and have invoked the poll shim. Also asserts the real decision step prints `advance=true` on the re-run state, so the test cannot go vacuously green by the cut step never being reached. Fails if: the guard is removed (rc=128 on pass two), the mint breaks (pass one), the poll is bypassed (shim never invoked), or the fix migrates into the decision (advance flips to false).
-2. `TestAutoPre0StepScriptNeverMovesDivergentPre0` (AC-1's never-moved half): fixture where the existing pre0 targets an older commit than the release commit; the run must exit 0 and leave the divergent SHA in place. Fails if the guard becomes a `git tag -f` re-point.
-3. AC-2 needs no new test: the entire decision-level suite runs unchanged; its continued green under this diff is the composition proof.
+**One test, `TestAutoPre0StepScriptRerunIsIdempotent`** — three sequential runs of the real script against one fixture (`v0.25.1`, `v0.26.0`, bare origin), each pass named with what it buys:
+
+1. First-run pass: no pre0 exists; the script must exit 0 and mint an annotated tag onto the bare origin. Buys: a broken mint (the `||` arm lost or degenerated) is caught in CI instead of at the next real stable cut. Marginal cost ≈ +6 over hand-planting the tag, and it makes pass 2's state the faithful recorded one — minted by the step itself.
+2. Faithful re-run pass (AC-1, AC-3, **the red/green core**): same script, same fixture, tag now exists. Must exit 0 where the unguarded script exits 128 (`fatal: tag 'v0.27.0-pre0' already exists` — the recorded failure), leave the tag SHA unchanged, and have invoked the `gh` poll shim (AC-3: verify-or-fail still runs on the skip-mint path). This pass alone is the proof floor: delete the guard from release.yml and it goes red.
+3. Divergent-tag pass (AC-1's never-moved half): repoint the pre0 (local and origin) to a fresh empty commit, run again; must exit 0 and leave the divergent SHA in place. Buys: the only detection of the `git tag -f` idempotency hack AC-1 forbids — a faithful re-run cannot catch it because a re-mint targets the same SHA. ≈ +9. (Mechanic proven live in the cycle-2 spike run: divergent SHA survived, rc=0.)
+
+Plus a 4-line pin: the real decision step still prints `advance=true` on pass 2's state (via the existing `runDecisionStepScript`). Buys: catches the guard migrating into the decision step — the rejected placement — which would keep all three passes green while silently disabling verify-or-fail on re-runs.
+
+AC-2 needs no new test: the entire decision-level suite runs unchanged; its continued green under this diff is the composition proof.
 
 No new Go mechanism, command, or flag: every mechanism in this plan (extraction, redirection, shims, bare-origin push target) serves AC-1/AC-3 directly, and each simpler alternative — grep tests (banned for this task), script slicing (re-derivation), a Go-side guard (new surface to make a one-line git builtin testable) — was named and rejected above.
 
@@ -132,3 +148,16 @@ No new Go mechanism, command, or flag: every mechanism in this plan (extraction,
 ### Summary
 
 Confirmed the `2d` implementer's sketched fix with one load-bearing correction: guard ONLY the `git tag -a` mint, not the whole step — the early-exit form would silently disable verify-or-fail on the one path where a suppressed credential must still fail loudly (now AC-3). Reproduced the recorded rc=128 collision from the real extracted step bytes, proved the guard turns the same state green with push and poll still live, and proved composition with the notch in both directions. Flagged the ordering dependency: the fix targets post-#727 `release.yml` and must stack on PR #727.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Confirm the tag-exists check COMPOSES with the notch rather than replacing it — they answer different inputs, and a fix that masks the notch trades one guard for another.
+  Unchanged from cycle 1; the captain's ruling kept the composition argument and placement analysis. No body edits to those sections.
+- DONE: Reproduce the recorded failure before designing: the same tag state that produced `fatal: tag 'v0.27.0-pre0' already exists` rc=128 must be the thing your fix turns green.
+  Unchanged from cycle 1 (spike runs 1–2 stand). One new cycle-2 spike run proved the folded never-move pass's mechanic: a pre0 repointed to a divergent commit survives the guarded script untouched at rc=0.
+- DONE: Keep this at roughly two lines of workflow change plus its proof; if the design grows past the declared surface, stop and say why rather than absorbing it.
+  Captain ruled "reduce tests" at the gate: proof cut from two tests ≈ +105 to one test ≈ +80, declared surface net +115 → **net +90 ± 25, 3 files** (insertions ≈ 91, deletions ≈ 1). The floor is itemized in the surface section — a single red/green run costs ≈ +70 (runner ≈ 30, four doubles forced by the script's own tail ≈ 20, fixture+asserts ≈ 20) — and each of the three increments above it is priced with the mutant that escapes without it (broken mint +6, `tag -f` re-point +9, guard-migrates-into-decision +4). No grep test; the red/green core still runs the real step bytes.
+
+### Summary
+
+Correction round per captain ruling "83t - reduce tests". Fix, placement, and composition untouched. Test plan collapsed to one test with three sequential runs of the real script (mint, faithful re-run red/green core, divergent never-move) plus a 4-line decision pin, reusing the existing extraction helpers and `tagFixtureRepo`; the cycle-1 second test and duplicate fixture scaffolding are cut. Surface re-declared at net +90 ± 25 across 3 files with the cheapest-proof-that-can-fail floor argued line-item by line-item.
