@@ -9,6 +9,18 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:nr75fq7ha3nmvsegbd22cgqa:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:nr75fq7ha3nmvsegbd22cgqa-backlog-1
+              briefing:
+                id: briefing:nr75fq7ha3nmvsegbd22cgqa:backlog:attempt-1:revision-1
+                digest: sha256:0bb3e4f258b019130d5c0bd47aad6f12bf8064cf9b30f3e9080524bf89a00f14
+                request-digest: sha256:0fd53f31d5636406dca65acd9596814d0da6fb9c15c45a6fb2e57882b3c8827d
+                room-ref: ./finish-legacy-claude-team-retirement/review/backlog/briefing-1
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.

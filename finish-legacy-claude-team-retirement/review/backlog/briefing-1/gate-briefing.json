@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nr75fq7ha3nmvsegbd22cgqa:backlog:attempt-1:revision-1",
+  "question": "Approve the legacy-TeamCreate retirement seed into ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:nr75fq7ha3nmvsegbd22cgqa:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/118b2db62a33b077f4fd72a1c424d49ae52b223f/finish-legacy-claude-team-retirement.md",
+      "rev": "sha256:1d02b8ee8316b91c6945597ebe711c486ec8ee25031070b7692acabe091adbe4",
+      "mediaType": "text/markdown",
+      "summary": "#549 retired the legacy TeamCreate path and deleted its skill, but the binary still ships --team-name/TeamName/teamNamePattern and TestLiveBreakGlassShimRecovery/selected-team fails an FO for emitting the shape claude-fo-dispatch.md tells it to emit. It reddened claude-live on the merged stack while passing locally on the same commit. Third live test in one day to punish a compliant agent."
+    }
+  ]
+}
