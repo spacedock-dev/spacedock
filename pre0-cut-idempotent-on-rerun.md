@@ -9,6 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-pre0-cut-idempotent-on-rerun
 issue:
+mod-block: merge:pr-merge
+pr: "#729"
 ---
 
 Re-running a stable release's `edge-advance` job after its pre0 tag already reached origin makes the job die on the tag it created. The retired mechanism prevented this; its replacement does not.
