@@ -179,3 +179,62 @@ All three: each discriminator cost one map entry plus one anchor string (~3 line
 Audit-gap note for the validator: the ideation Audit record classified these three as S4 keepers and cited AC-2(b) coverage without checking whether a discriminator already existed for them — it didn't (grepped independently by both me and team-lead). This is a gap in the ideation record, not scope creep introduced at implementation; the fix stays inside "prove the ban this task already chose to keep," not new coverage.
 
 Surface: the discriminator addition is already counted in the net -871 / 9-file figure reported above (commit ff0d850ad, part of runtime_live_evidence_workflow_test.go's +42/-149).
+
+## Review-finding disposition
+
+Entered by validation, 2026-08-18. Reviewer observation authority only — classification is proposed, not authorized.
+
+### Finding 1 (proposed Material, outcome defect) — the three kept secret bans no longer guard the real workflow
+
+`assertLiveSecretsBansHold` (runtime_live_evidence_workflow_test.go:27) is invoked from exactly one place: the escape condition of the mutation-control loop at line 102, against a *mutated copy*. No test passes the real `readWorkflow(t, "runtime-live-e2e.yml")` to it. On main the same three bans lived inside `assertOneClaudeCadence`, which `TestRuntimeLiveWorkflowHasOneExplicitClaudeCadence` ran against the real file (`t.Fatal(err)`); that test was deleted as a cadence mirror and the bans went with its call site.
+
+Proof (injection into the real `.github/workflows/runtime-live-e2e.yml`, run on throwaway checkouts of `main` and of HEAD):
+
+| Injected surface | main | candidate |
+|---|---|---|
+| `CODEX_HOME: ${{ runner.temp }}/codex-home` in `codex-live` job env | RED | **GREEN** |
+| `PI_OPENAI_CODEX_AUTH_JSON` in `pi-live` job env | RED | **GREEN** |
+| `SPACEDOCK_PI_LIVE_CHILD_MODEL` in `pi-live` job env | RED | **GREEN** |
+
+The disclosed mid-stage deviation is itself sound — neutering `assertLiveSecretsBansHold` to `return nil` REDs exactly the 3 new subtests and leaves the other 2 green, so the discriminators are real. But a discriminator proves the *predicate*; it does not connect the predicate to the real file. The predicate works and is never applied.
+
+Four evidence fields: (1) any maintainer editing `runtime-live-e2e.yml` on the normal PR path; (2) a re-added job-level `CODEX_HOME` resolves empty because `runner.temp` is unavailable in job-level `env:` — the GHA-semantics defect the ban encodes — and the two retired Pi secrets can return, with nothing red offline; (3) `value-ac[AC-3]` "No behavior lost with the deletions", and `value-ac[AC-2]` arm (b), which requires the surviving check to assert the ABSENCE of the banned surface — it currently asserts nothing about the real file; (4) the 3-for-3 main-vs-candidate differential above.
+
+Narrow fix, inside the approved surface: call `assertLiveSecretsBansHold` from a real-file test alongside the two at lines 65-75. No new mechanism, no scope change.
+
+### Finding 2 (proposed Material, evidence defect) — the AC-3 ledger is incomplete and row 4 misstates
+
+AC-3 promises "a named record of anything deleted that was guarding a live behavior, with the captain's decision on each." Four such losses are absent from `## Gaps recorded for the captain`. Each was confirmed by injecting the regression into the real file and observing `internal/release` + `internal/contractlint` (and `internal/ensigncycle` for the first three) stay green:
+
+1. `journey-delta-comment`'s `if: github.event_name == 'pull_request'` gating — replaced with `if: always()`, nothing reds. The job would run on `workflow_dispatch` where there is no PR to comment on.
+2. The journey-delta CLI invocation `go run ./cmd/spacedock-release journey-delta` — replaced with `echo`, nothing reds.
+3. The Claude artifact upload path `${{ runner.temp }}/spacedock-live-bin/spacedock` — repointed to a nonexistent path, nothing reds; the candidate binary silently stops being uploaded.
+4. The gotestsum `--jsonfile <name>-detail.jsonl` archive — dropping `--jsonfile` from a live step leaves the suite green. This is the archive `skills/first-officer/references/first-officer-shared-core.md:73` directs the FO to fetch for root cause, and the four `upload-artifact` paths name the `-detail.jsonl` files. (Abandoning gotestsum *entirely* is still caught, by `TestRuntimeLiveCommonSuiteTimeouts`' workflow-vs-docs run-shape agreement; dropping only the archive is not.)
+
+Ledger row 4 additionally states "the kept bans cover the retired surfaces only." Per Finding 1 they cover nothing on the real file; the row needs correcting, not just extending.
+
+Narrow fix: four ledger rows plus a row-4 correction. No code change.
+
+### Finding 3 (proposed Polish) — AC-1's literal count is 2, not 0
+
+Applying AC-1's own wording ("presence, ordering, or exact-equality checks whose expected value is text the implementer wrote into the file under test") to every survivor myself, two clauses count:
+
+- `journey_delta_workflow_test.go:32` — `job.Permissions["pull-requests"] != "write"`. Exact equality; `write` is text in the file; it cannot red with the file untouched and carries no injection discriminator, so it satisfies neither AC-2 arm strictly.
+- `live_registry_reconciliation_test.go:338` — pi "must retain `-failfast`". Presence of authored text. Pre-existing and untouched by this task; its claude/codex half is a genuine prohibition.
+
+Under the ideation Audit record's approved S1-S4 taxonomy both are classified keepers (S2 GHA-permission-model oracle; spend policy), so the count is 0 under the interpretation the gate approved and 2 under AC-1's letter. Naming it so the captain owns the reading; no harm either way, ~4 lines.
+
+Cleared boundary cases I checked and rejected as findings: `cilog_clean_output_workflow_test.go`'s positive install-script clauses evaluate `executableShellCommands`, so commenting out the `shasum -a 256 -c` line REDs the test with the text still present in the file — not a mirror; `channel_agreement_guard_test.go`'s `stableChannelBranch` const is a channel-policy oracle paired with a real cross-artifact comparison; `claude_version_float_guard_test.go`'s `${CLAUDE_VERSION:-latest}` clause is the positive face of a ban with a proven-RED discriminator.
+
+## Stage Report: validation
+
+- DONE: Re-apply the discriminating question yourself to every SURVIVING file, not to the audit's record of them — AC-1's zero count is the measuring criterion and it must be counted, not accepted.
+  Swept `./internal` + `./cmd` for every test reading `.github/workflows/*.yml` and confirmed the 16-file audit set is complete (all other `workflows` matches are Spacedock workflow entities, a homonym). Read each survivor's assertions and counted: 2 positive-presence clauses survive under AC-1's letter, 0 under the approved S1-S4 taxonomy — Finding 3.
+- DONE: Prove AC-2 both ways on real code: mutate an independent source for an oracle keeper and watch it red with its workflow untouched, and neuter a kept ban to confirm its discriminator fires. The three secret-ban discriminators were added mid-stage as a disclosed deviation — verify them rather than trusting the disclosure.
+  Arm (a) reproduced independently: bumping `node24MinMajor["actions/checkout"]` 5→6 REDs `TestNode24ActionsPinnedAtMinimum` at 12 pin sites across 5 workflow files with `runtime-live-e2e.yml` md5-identical before and after. Arm (b): neutering `assertLiveSecretsBansHold` to `return nil` REDs exactly the 3 new subtests and leaves `legacy PTY flag` and `offline live tag` green — the disclosed discriminators are real, not vacuous. Extended arm (b) to all 11 kept bans by injecting each banned surface into the real file: 8 RED, 3 GREEN — Finding 1.
+- FAILED: Check the AC-3 ledger against the 925 deleted lines: name anything removed that was guarding a live behavior and is not already recorded, since cycle 1 of a sibling task found exactly that failure when a deletion silently dropped a never-force-push guard.
+  Exactly that failure recurred. Enumerated all 19 deleted test functions and 17 deleted helpers against the ledger's 4 rows; injection-tested each candidate loss on a throwaway checkout. Found the three orphaned secret bans (Finding 1, unrecorded and explicitly promised as kept) plus 4 unrecorded live-behavior losses and a misstatement in row 4 (Finding 2).
+
+### Summary
+
+Verified surface and hygiene clean: 54 insertions / 925 deletions / 9 files (net -871, inside the declared -890 ± 150 / 9 ± 2), `go test ./...` and `go test ./... -race` both exit 0, `gofmt -l ./cmd ./internal` empty, all 19 deleted test functions absent from `go test -list` and every named keeper present. The deletion judgment is sound: I re-derived it rather than accepting the audit, and 8 of 11 kept bans red on real-file injection. Recommendation is **REJECTED** on two material findings, both narrow fixes inside the approved surface and neither a mechanism failure: the three secret bans kept by step 4 are no longer applied to the real workflow (proven 3-for-3 against main, one-line fix), and the AC-3 ledger omits 4 live-behavior losses while row 4 asserts the bans still cover the retired surfaces. Deferred risks: none. Polish: AC-1's literal count is 2 rather than 0, a reading the captain owns.
