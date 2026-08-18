@@ -75,14 +75,28 @@ func edgePre0Version(args []string) int {
 // highestKnownEdgeVersion prints the greatest version among its <tag> arguments
 // (release.yml feeds it a `git tag --list 'v*'` scan, minus the tag being
 // decided — see release.HighestKnownEdgeVersion's doc for why prereleases are
-// INCLUDED and malformed entries are tolerated). Prints NOTHING (empty stdout)
-// with exit 0 when no argument parses as a release tag — the empty-list and
-// all-malformed cases are normal, not errors, so a `set -e` caller does not
-// abort the job; release.yml's decision step checks for an empty result and
-// fails CLOSED (skips the auto-pre0 cut) rather than treating "nothing to
-// compare against" as "anything advances".
+// INCLUDED and malformed entries are tolerated), ALSO comparing against the
+// dev-preversion of the highest bare stable tag in that same argument list —
+// the "next"-manifest notch release.HighestBareStableVersion's doc explains
+// (restores what the retired stamp always sat one notch above, so an old-line
+// patch cut while the newer line has only a pre0 tag correctly skips instead
+// of out-ranking it and re-cutting a colliding pre0). Prints NOTHING (empty
+// stdout) with exit 0 when no argument parses as a release tag — the
+// empty-list and all-malformed cases are normal, not errors, so a `set -e`
+// caller does not abort the job; release.yml's decision step checks for an
+// empty result and fails CLOSED (skips the auto-pre0 cut) rather than
+// treating "nothing to compare against" as "anything advances".
 func highestKnownEdgeVersion(args []string) int {
 	version, ok := release.HighestKnownEdgeVersion(args)
+	if bare, bareOK := release.HighestBareStableVersion(args); bareOK {
+		if notch, err := release.DevPreVersion(bare); err == nil {
+			if !ok {
+				version, ok = notch, true
+			} else if cmp, cerr := release.ComparePreVersion(notch, version); cerr == nil && cmp > 0 {
+				version = notch
+			}
+		}
+	}
 	if ok {
 		fmt.Println(version)
 	}

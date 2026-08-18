@@ -316,12 +316,16 @@ jobs:
       # cut after v0.26.0 already shipped) would auto-cut a WRONG, lower
       # vX.(Y_old+1).0-pre0 tag, whose release run would bump the spacedock@next
       # cask DOWN to an older minor — a real regression, independent of `next`
-      # ever existing. HIGHEST_OTHER is the highest EXISTING bare stable tag
-      # besides this one (`git tag --list 'v[0-9]*.[0-9]*.[0-9]*'` — the glob
-      # excludes `-preN` tags, so no prerelease-ordering ambiguity is in play);
-      # edge-advance-decision reuses the same target-edge-version/ComparePreVersion
-      # ordering that used to compare against next's manifest, fed a synthesized
-      # manifest built from git tag history instead of a branch fetch.
+      # ever existing. CANDIDATES below is every OTHER tag in the repo
+      # (`git tag --list 'v*'`, prereleases INCLUDED — see the inline comment
+      # ahead of it for why); highest-known-edge-version folds that pool down to
+      # the "known" version, ALSO restoring the retired next-manifest's one-notch
+      # sentinel (dev-preversion of the highest bare stable), so an old-line
+      # patch cut while the newer line has only a pre0 tag correctly skips
+      # instead of re-cutting it. edge-advance-decision reuses the same
+      # target-edge-version/ComparePreVersion ordering that used to compare
+      # against next's manifest, fed a synthesized manifest built from that
+      # git-tag fold instead of a branch fetch.
       - name: Decide whether this stable tag is the latest known release line
         id: decision
         if: "!contains(github.ref, '-')"

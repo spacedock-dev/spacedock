@@ -206,6 +206,53 @@ func TestOldLinePatchSkipsAgainstHighestKnownEdgeVersion(t *testing.T) {
 	}
 }
 
+// TestHighestBareStableVersion locks the helper the CLI's
+// highest-known-edge-version command uses to restore the retired
+// next-manifest's "one notch above the latest bare stable" sentinel: it
+// ignores prereleases entirely (unlike HighestKnownEdgeVersion, which
+// includes them) and reports ok=false when the candidate list has no bare
+// stable at all.
+func TestHighestBareStableVersion(t *testing.T) {
+	got, ok := HighestBareStableVersion([]string{"v0.26.0-pre7", "v0.25.0", "v0.24.0"})
+	if !ok || got != "0.25.0" {
+		t.Fatalf("HighestBareStableVersion(mixed) = (%q,%v), want (0.25.0,true) — prereleases must be ignored even when numerically higher", got, ok)
+	}
+	if _, ok := HighestBareStableVersion([]string{"v0.27.0-pre1", "v0.27.0-pre2", "not-a-version"}); ok {
+		t.Fatal("HighestBareStableVersion([]-only-prereleases-and-garbage) reported ok=true; want false (no bare stable present)")
+	}
+	if _, ok := HighestBareStableVersion(nil); ok {
+		t.Fatal("HighestBareStableVersion(nil) reported ok=true; want false")
+	}
+}
+
+// TestOldLinePatchAdvancesWronglyWithoutTheNextNotch is the negative control
+// for Finding 1's fix: it proves HighestKnownEdgeVersion ALONE (no notch)
+// mis-decides the exact adjacent-line collision the validator replayed —
+// cutting an old-line patch while the newer line has EXACTLY a pre0 tag and
+// nothing higher wrongly computes "advance", because the patch's target
+// (always dev-preversion's "-pre1") outranks the newer line's bare "-pre0" by
+// construction. See TestHighestKnownEdgeVersionCommandRestoresNextNotchAgainstRealV0251Collision
+// (cmd/spacedock-release) for the fixed, end-to-end behavior against this
+// repo's real v0.25.1 tags.
+func TestOldLinePatchAdvancesWronglyWithoutTheNextNotch(t *testing.T) {
+	// Mirrors the collision shape: the 0.25 line's own last stable (0.25.0) is
+	// the highest bare stable, and 0.26 (the next line up) has only a pre0.
+	candidates := []string{"v0.24.0", "v0.25.0", "v0.26.0-pre0"}
+	patchTag := "v0.25.1"
+
+	known, ok := HighestKnownEdgeVersion(candidates)
+	if !ok || known != "0.26.0-pre0" {
+		t.Fatalf("HighestKnownEdgeVersion(%v) = (%q,%v), want (0.26.0-pre0,true)", candidates, known, ok)
+	}
+	advance, target, err := EdgeAdvanceDecision(patchTag, known)
+	if err != nil {
+		t.Fatalf("EdgeAdvanceDecision(%q, %q) errored: %v", patchTag, known, err)
+	}
+	if !advance {
+		t.Fatalf("EdgeAdvanceDecision(%q, %q) advance = false, want true (this pins the BUG the notch fixes: target %q wrongly outranks the bare pre0 %q without it — if this now fails, HighestKnownEdgeVersion itself changed and the CLI-level notch fix may be redundant, not wrong)", patchTag, known, target, known)
+	}
+}
+
 // TestAutoPre0MinorEqualsRequiredMinor is AC-1's version-algebra proof: for a
 // latest-line stable cut vX.Y.0, the required binary minor stamped into next's
 // prose (dev-preversion → X.(Y+1)) and the auto-cut pre0 tag's own minor

@@ -1,8 +1,10 @@
 // ABOUTME: Structure guards for the edge-advance job's always-cut-pre0 auto-tag
 // ABOUTME: (AC-4), with adversarial twins. The next-reconcile it used to share a
 // ABOUTME: decision gate with is retired (the edge marketplace entry now tracks
-// ABOUTME: main directly; see the entity's design-change note) — pending the
-// ABOUTME: pre0 step's replacement "latest line" gate, its wiring guard is TODO.
+// ABOUTME: main directly; see the entity's design-change note); the pre0 step's
+// ABOUTME: replacement "latest line" gate is proven here via ifHasDecisionGate,
+// ABOUTME: and the decision step's OWN candidate-pool/fail-closed behavior is
+// ABOUTME: proven by real shell execution in edge_advance_decision_shell_test.go.
 package release
 
 import (

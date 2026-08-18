@@ -97,6 +97,50 @@ func TestHighestKnownEdgeVersionCommandPrintsNothingWhenNoneParses(t *testing.T)
 	}
 }
 
+// TestHighestKnownEdgeVersionCommandRestoresNextNotchAgainstRealV0251Collision
+// replays this repository's REAL v0.25.1 cut (2026-07-20) — the case Finding 1
+// of the validation-cycle-1 review named by tag creation date: v0.26.0-pre0 was
+// auto-cut 2026-07-15 (three minutes after v0.25.0, the latest-line stable that
+// triggered it) and stayed the newest 0.26-line tag until v0.26.0 itself landed
+// the next day after v0.25.1. Candidates below are every real tag that existed
+// at v0.25.1's cut, taken verbatim from `git tag --list --format='%(refname:short)
+// %(creatordate:iso-strict)'`. Before the notch fix, highest-known-edge-version
+// printed the raw scan's max (0.26.0-pre0) and edge-advance-decision then said
+// "advance" for v0.25.1 — because DevPreVersion(0.25.1) is ALWAYS "0.26.0-pre1"
+// (a patch's own line doesn't affect the next-line target), which outranks a
+// bare "-pre0" by construction; the auto-cut step would then die re-cutting the
+// already-existing v0.26.0-pre0 tag. With the notch (dev-preversion of the
+// highest bare stable, 0.25.0 -> "0.26.0-pre1"), the known version is pulled up
+// to equal the patch's own target, and the strict `>` boundary skips — exactly
+// what the retired next-manifest-based mechanism did (next was stamped to
+// 0.26.0-pre1 by the same 0.25.0 cut that auto-cut the pre0 tag).
+func TestHighestKnownEdgeVersionCommandRestoresNextNotchAgainstRealV0251Collision(t *testing.T) {
+	candidates := []string{
+		"v0.24.0-pre1", "v0.24.0-pre2", "v0.24.0",
+		"v0.25.0-pre1", "v0.25.0-pre2", "v0.25.0",
+		"v0.26.0-pre0",
+	}
+	const patchTag = "v0.25.1"
+
+	knownOut, code := captureStdout(t, func() int { return highestKnownEdgeVersion(candidates) })
+	if code != 0 {
+		t.Fatalf("highest-known-edge-version exit = %d, want 0", code)
+	}
+	known := strings.TrimSpace(knownOut)
+	if known != "0.26.0-pre1" {
+		t.Fatalf("highest-known-edge-version(%v) = %q, want 0.26.0-pre1 (the restored notch — dev-preversion of the highest bare stable, 0.25.0); the raw scan alone would wrongly stop at 0.26.0-pre0", candidates, known)
+	}
+
+	plugin := writeNextPlugin(t, known)
+	verdictOut, code := captureStdout(t, func() int { return edgeAdvanceDecision([]string{patchTag, plugin}) })
+	if code != 0 {
+		t.Fatalf("edge-advance-decision exit = %d, want 0", code)
+	}
+	if verdict := strings.TrimSpace(verdictOut); verdict != "skip" {
+		t.Fatalf("edge-advance-decision(%q, known=%q) = %q, want skip — an old-line patch must not out-rank a newer line that already has a pre0 tag, or the auto-cut step dies re-cutting v0.26.0-pre0", patchTag, known, verdict)
+	}
+}
+
 // TestEdgePre0VersionCommandPrintsComputedVersion — the subcommand prints exactly
 // X.(Y+1).0-pre0, so release.yml's always-cut-pre0 step forms `vX.(Y+1).0-pre0`
 // as the annotated auto-tag, whose minor matches the required minor next's skills

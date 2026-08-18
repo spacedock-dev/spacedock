@@ -198,6 +198,49 @@ func HighestKnownEdgeVersion(candidates []string) (version string, ok bool) {
 	return version, ok
 }
 
+// HighestBareStableVersion returns the greatest BARE (no-prerelease) version
+// among candidates, ignoring prerelease tags entirely. ok is false when no
+// candidate is a bare stable.
+//
+// This restores a sentinel HighestKnownEdgeVersion's raw tag scan cannot
+// supply on its own: the retired `next`-manifest read was stamped by the
+// stable release path to DevPreVersion(latest bare stable) — one notch ABOVE
+// whatever pre0 that stable cut, in turn, auto-cut — on EVERY latest-line
+// stable release, independent of whether that line's own pre0/preN tags exist
+// yet. A caller feeding HighestKnownEdgeVersion the dev-preversion of this
+// function's result, alongside the raw tag list, reconstructs that same notch.
+// Without it, a stable cut on an OLDER line than the highest bare stable, made
+// while the newer line has EXACTLY a pre0 tag and nothing higher, computes a
+// target (dev-preversion of the older line, always "-pre1") that ranks ABOVE
+// the newer line's known "-pre0" by construction — an old-line patch wrongly
+// advances and the auto-cut step then dies re-cutting the existing pre0 tag
+// (the exact collision replayed by
+// TestHighestKnownEdgeVersionCommandRestoresNextNotchAgainstRealV0251Collision
+// against this repo's real v0.25.1/v0.26.0-pre0 tags). Once ANY later
+// prerelease exists for that newer line (pre1 or above), the raw tag scan
+// alone already outranks any older-line patch's "-pre1" target, and this
+// notch changes nothing — it only matters in the exact one-tag-behind window.
+func HighestBareStableVersion(candidates []string) (version string, ok bool) {
+	for _, c := range candidates {
+		v := strings.TrimPrefix(strings.TrimSpace(c), "v")
+		if v == "" {
+			continue
+		}
+		_, pre, err := parsePreVersion(v)
+		if err != nil || pre != "" {
+			continue
+		}
+		if !ok {
+			version, ok = v, true
+			continue
+		}
+		if cmp, err := ComparePreVersion(v, version); err == nil && cmp > 0 {
+			version = v
+		}
+	}
+	return version, ok
+}
+
 // Pre0EdgeVersion computes the auto-cut edge prerelease version for a latest-line
 // stable cut — X.(Y+1).0-pre0 — derived from the SAME dev-preversion the stable
 // path stamps into `next` (X.(Y+1).0-pre1), swapping only the trailing label. So
