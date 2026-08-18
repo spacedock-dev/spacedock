@@ -74,7 +74,21 @@ type Resolution struct {
 	At       string   `yaml:"at" json:"at"`
 	Decision string   `yaml:"decision" json:"decision"`
 	Reason   string   `yaml:"reason,omitempty" json:"reason,omitempty"`
+	Conn     *Conn    `yaml:"conn,omitempty" json:"conn,omitempty"`
 	Includes []string `yaml:"includes,omitempty" json:"includes,omitempty"`
+}
+
+// Conn cites the delegated authority a First Officer resolution acted under:
+// the grant quoted verbatim from the conversation and where it was given. It
+// attributes an FO-rendered decision back to its authority; it never
+// authenticates the grant itself (the binary checks form and disjointness
+// only) and it confers no authorization on its own — auto-continue's boundary
+// negative proves a citation on a no-conn journey still reds. Present only on
+// agent:first-officer resolutions; a person:captain decision cites no grant,
+// so the two record shapes stay disjoint.
+type Conn struct {
+	Quote  string `yaml:"quote" json:"quote"`
+	Source string `yaml:"source" json:"source"`
 }
 
 type Summary struct {
@@ -341,6 +355,22 @@ func validateResolution(r *Resolution, briefingID string) error {
 		}
 	default:
 		return fmt.Errorf("resolution decision must be approve, revise, or hold")
+	}
+	if r.Conn != nil {
+		// Write-side requires the citation only on new agent:first-officer chat
+		// closes (recordChatLocked); this read-side check is the disjointness
+		// half — a conn citation is only ever valid attribution evidence on an
+		// FO-rendered decision. A hand-forged captain-plus-citation record fails
+		// here, and every durable read (including the graders) inherits the
+		// refusal. Historical FO resolutions written before this field existed
+		// carry no conn: block at all and are unaffected — this only rejects a
+		// conn: block that is PRESENT on the wrong actor.
+		if r.By != "agent:first-officer" {
+			return fmt.Errorf("conn citation is only valid on an agent:first-officer resolution, not %s", r.By)
+		}
+		if strings.TrimSpace(r.Conn.Quote) == "" || strings.TrimSpace(r.Conn.Source) == "" {
+			return fmt.Errorf("conn citation requires a nonblank quote and source")
+		}
 	}
 	return nil
 }

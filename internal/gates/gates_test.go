@@ -373,6 +373,11 @@ func TestPortableResolutionValidation(t *testing.T) {
 		{"reasonless revise", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "revise"}, "reason"},
 		{"included rationale", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "hold", Includes: []string{"annotation:a"}}, ""},
 		{"unknown decision", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "later"}, "decision"},
+		{"FO with valid conn citation", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "agent:first-officer", At: "now", Decision: "approve", Reason: "evidence", Conn: &Conn{Quote: "you have the conn", Source: "runbook"}}, ""},
+		{"FO without conn citation (historical shape)", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "agent:first-officer", At: "now", Decision: "approve", Reason: "evidence"}, ""},
+		{"FO with blank conn quote", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "agent:first-officer", At: "now", Decision: "approve", Reason: "evidence", Conn: &Conn{Quote: "  ", Source: "runbook"}}, "conn"},
+		{"FO with blank conn source", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "agent:first-officer", At: "now", Decision: "approve", Reason: "evidence", Conn: &Conn{Quote: "you have the conn", Source: " "}}, "conn"},
+		{"captain with conn citation", Resolution{Type: "Resolution", ID: "r", Briefing: "p", By: "person:captain", At: "now", Decision: "approve", Conn: &Conn{Quote: "you have the conn", Source: "runbook"}}, "conn"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -384,6 +389,53 @@ func TestPortableResolutionValidation(t *testing.T) {
 				t.Fatalf("err=%v, want %q", err, tc.wantErr)
 			}
 		})
+	}
+}
+
+// TestConnCitationRoundTripsAndReadRefusesAForgedShape is AC-3's read-side
+// half: a full gates.Read round-trip of a cited agent:first-officer
+// resolution, a historical FO resolution written before this field existed
+// (no conn: block at all — the requirement is write-side, on new records
+// only), and a forged record wearing a citation on the wrong actor.
+func TestConnCitationRoundTripsAndReadRefusesAForgedShape(t *testing.T) {
+	citedFrontmatter := "status: ideation\n" + canonicalOpenGates() +
+		"          resolution:\n" +
+		"            type: Resolution\n" +
+		"            id: resolution:a-1\n" +
+		"            briefing: briefing:a-1\n" +
+		"            by: agent:first-officer\n" +
+		"            at: 2026-07-22T00:00:00Z\n" +
+		"            decision: approve\n" +
+		"            reason: accepts-direction evidence\n" +
+		"            conn:\n" +
+		"              quote: you have the conn toward the sprint goal\n" +
+		"              source: launch runbook for this headless session\n"
+	path := writeEntity(t, citedFrontmatter)
+	doc, _, err := Read(path)
+	if err != nil {
+		t.Fatalf("cited FO resolution failed to read: %v", err)
+	}
+	resolution := doc.Records[0].Attempts[0].Resolution
+	if resolution.Conn == nil || resolution.Conn.Quote != "you have the conn toward the sprint goal" || resolution.Conn.Source != "launch runbook for this headless session" {
+		t.Fatalf("conn citation did not round-trip: %#v", resolution.Conn)
+	}
+
+	historical := writeEntity(t, "status: ideation\n"+canonicalOpenGates()+
+		"          resolution:\n"+
+		"            type: Resolution\n"+
+		"            id: resolution:a-1\n"+
+		"            briefing: briefing:a-1\n"+
+		"            by: agent:first-officer\n"+
+		"            at: 2026-07-22T00:00:00Z\n"+
+		"            decision: approve\n"+
+		"            reason: accepts-direction evidence\n")
+	if _, _, err := Read(historical); err != nil {
+		t.Fatalf("historical FO resolution without conn: must still read: %v", err)
+	}
+
+	forged := writeEntity(t, strings.Replace(citedFrontmatter, "by: agent:first-officer", "by: person:captain", 1))
+	if _, _, err := Read(forged); err == nil || !strings.Contains(err.Error(), "conn") {
+		t.Fatalf("forged captain+conn record read err=%v, want a conn refusal", err)
 	}
 }
 

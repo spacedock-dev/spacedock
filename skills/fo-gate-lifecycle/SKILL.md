@@ -48,11 +48,11 @@ ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve --actor person
 ${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor person:captain [--reason REASON] --workflow-dir WORKFLOW_DIR
 
 # FO decision under explicit Captain conn
-${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --workflow-dir WORKFLOW_DIR
+${SPACEDOCK_BIN:-spacedock} gate record ENTITY --decision approve|revise|hold --actor agent:first-officer --reason EVIDENCE_JUDGMENT --conn-quote GRANT --conn-source SOURCE --workflow-dir WORKFLOW_DIR
 
 ```
 
-No Captain grant: bind/present and leave open; a later grant permits delegation. An existing conn requires present once, immediate record, then the route below. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain. Recorder retains no grant. `revise`/`hold` need reasons.
+No Captain grant: bind/present and leave open; a later grant permits delegation. An existing conn requires present once, immediate record, then the route below. Record an FO-rendered decision as `agent:first-officer` with a nonblank reason, never `person:captain`; reserve it for the Captain. Cite the grant: quote it verbatim and name where it was given; the recorder refuses an FO decision without both. `revise`/`hold` need reasons.
 
 Map Captain calls before recording: `approve` maps to `approve` with an accepts-direction evidence reason; `redo with feedback` maps to `revise` with an accepts-direction reason; `reject` with `feedback-to` maps to `revise` with a rejects-direction reason; `reject` without `feedback-to` maps to `hold` with a pause reason; `hold` maps to `hold` with a pause reason; `not yet` maps to `hold` with a pause reason naming what remains. Routed redo/reject reasons include concrete asks and invoke `«feedback.route»` after the close commit; hold decisions commit and stop at the gate.
 

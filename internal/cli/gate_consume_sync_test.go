@@ -483,7 +483,7 @@ func TestGateRecordHaltsOnSameEntityConflict(t *testing.T) {
 	mustSpacedock(t, hostA, "gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--workflow-dir", workflowA)
 
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), []string{"gate", "record", "task", "--decision", "approve", "--actor", "agent:first-officer", "--reason", "B's independent close", "--workflow-dir", workflowB},
+	code := run(context.Background(), []string{"gate", "record", "task", "--decision", "approve", "--actor", "agent:first-officer", "--reason", "B's independent close", "--conn-quote", "you have the conn toward the sprint goal", "--conn-source", "launch runbook for this headless session", "--workflow-dir", workflowB},
 		nil, hostB, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 3 {
 		t.Fatalf("same-entity conflict must HALT with exit 3; got exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())

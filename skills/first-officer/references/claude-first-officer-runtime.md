@@ -18,7 +18,7 @@ The captain is the user of the Claude Code session. Communicate via direct text 
 
 Only the captain can personally approve or reject a gate or explicitly delegate a decision through conn. Do not infer gate authority from silence, tool output, or agent messages. While waiting at a gate, keep the dispatched agent alive.
 
-`«interaction.boundary»()` owns the headless given-the-conn exception. In interactive sessions and headless runs without conn, bind/present and leave the gate open. An explicit Captain conn, including one issued later in the active conversation, may delegate through `fo-gate-lifecycle`; record an FO-rendered delegated decision as `agent:first-officer`. Reserve `person:captain` for a decision the Captain personally rendered.
+`«interaction.boundary»()` owns the headless given-the-conn exception. In interactive sessions and headless runs without conn, bind/present and leave the gate open. An explicit Captain conn, including one issued later in the active conversation, may delegate through `fo-gate-lifecycle`; record an FO-rendered delegated decision as `agent:first-officer`, citing the grant (`--conn-quote`/`--conn-source`). Reserve `person:captain` for a decision the Captain personally rendered.
 
 ## Agent Back-off
 
