@@ -51,6 +51,14 @@ gates:
                 digest: sha256:006b5d54dc9623be3672fda8624db8a4631c040f542be3639f80f8e3fbff9967
                 request-digest: sha256:24ae4c0040055876cc553f2028b24112d18d7669d3e163e045f70cf75058cac1
                 room-ref: ./finish-legacy-claude-team-retirement/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nr75fq7ha3nmvsegbd22cgqa:ideation:2
+                briefing: briefing:nr75fq7ha3nmvsegbd22cgqa:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-18T23:40:22.69892Z"
+                decision: revise
+                reason: 'Captain rejected in chat: ''i don''t understand why nr would keep the xfail.'' The retirement scope, the keep-list, and the root-cause diagnosis are all accepted and stay. Decision 2 is not: it recommends binding the {dispatch_agent_id} slot AND registering selected-team as liveXFail, which cancel out — an xfail declares an expected failure with an owner, and there is nothing to own once the cause is fixed. Decision 3''s own finding (''the instability is one unbound template field'') removes the only justification for hedging. Drop the xfail; ship the binding alone. If it reds again after the fix, it earns a registration then, on fresh evidence.'
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
