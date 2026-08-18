@@ -21,6 +21,17 @@ gates:
                 digest: sha256:ebc208b306ea71dbb15d03c4380e1f6a66f3038164fb205f07b050ba6d685973
                 request-digest: sha256:a0482d868df68d3814925440b283f74fadb4cac34afc4aa798046bf3d9967268
                 room-ref: ./merge-guard-requires-preceding-report/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vkatjs25g9a9gmk3jtvx5ce0:ideation:1
+                briefing: briefing:vkatjs25g9a9gmk3jtvx5ce0:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-18T19:32:26.228606Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve those 4, and have them be on a pr stack.'' Accepts the ceremony-time ordering refusal, its exemptions, and the +260 surface. Tip of the stack; CI approved on the tip.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 The terminal ceremony checks that the merge hook ran. It does not check that the work it is finalizing was ever reported. Make it refuse when no report commit precedes the terminal transition.
