@@ -148,6 +148,14 @@ Deleting the mirrors removes the only OFFLINE checks of these wirings. In each c
 
 Audited the full workflow-file test surface with the discriminating question, assertion-level where files are mixed. Verdicts: 2 whole-file deletions (e2egate/manifest-tag wiring mirrors — the edge-advance shape exactly), 5 mixed files where positive mirrors go and executing/oracle/agreement/ban assertions stay, and 9 keepers. Key decisions for the gate: AC-2 refined with a prohibition-tripwire arm (the seed's literal phrasing would delete the very survivors it names as the trap — each ban instead proves itself by injection discriminator); the goreleaser↛journey-ledger ban system (~300 lines) is the largest kept judgment block, recommendation keep, alternative stated. Falsifiability of the proof: the node24 experiment reds if the oracle no longer diverges independently; the AC-3 gap ledger names all four places where deletion removes the only offline wiring check, each a captain decision. Baseline `go test ./internal/release/ ./internal/contractlint/` green before and after the reverted experiment; no repo code changed by this stage.
 
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation; surface 9 files / net −871 vs estimate 9 files / net −890 (98%, inside the declared ±150 / ±2); AC unchanged.
+
+Surface is INSIDE tolerance, so no design-reset decision is required and none is recorded. The rejection is on two narrow findings, neither a mechanism failure.
+
+**FO note on finding 1, for the record.** The three secret bans that are defined but never applied to the real workflow were introduced by the step-4 discriminator work, which the FO explicitly ruled in (option (a), "add the injection discriminator, and the ban survives PROVEN"). That ruling asked for proof the ban fires on injection and did not ask that the ban also run against the live file — so the gap follows from the ruling's wording as much as from the implementation. Recorded so the correction round is not read as worker error.
+
 ## Stage Report: implementation
 
 - DONE: Land the seven deletion steps in order, running the suite after each so a bad step is isolated to its own commit rather than buried in a 900-line diff.
