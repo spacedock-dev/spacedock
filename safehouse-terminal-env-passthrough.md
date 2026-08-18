@@ -55,7 +55,74 @@ Note that the probe treats an empty value as absent. So a name passed for an uns
 
 ## Proposed approach
 
-{Ideation fills this in. Two changes: widen the set to the consumer's nine signals, and build `--env-pass` from the variables that are actually present rather than from a fixed list gated on one sentinel. Decide where the list should live — duplicating a sibling repository's probe invites drift, so name how the two stay agreed, or why duplication is acceptable here.}
+Replace the sentinel-gated fixed list with a presence filter over the consumer's nine-signal set, emitted in the probe's own order:
+
+```go
+// The nine signals subspace's r skill probes across its six terminal hosts.
+// Source of truth: spacedock-subspace plugins/subspace/skills/r/SKILL.md,
+// "Select one terminal" — duplicated by decision (see the task body's drift note).
+var terminalHostEnvVars = []string{
+	"ZELLIJ_SESSION_NAME", "ZELLIJ_PANE_ID",
+	"TMUX", "TMUX_PANE",
+	"HERDR_ENV", "HERDR_PANE_ID",
+	"CMUX_WORKSPACE_ID", "CMUX_SURFACE_ID",
+	"TERM_PROGRAM",
+}
+
+func terminalTargetingEnvArgs() []string {
+	return terminalEnvPassArgs(os.LookupEnv)
+}
+
+func terminalEnvPassArgs(lookup func(string) (string, bool)) []string {
+	var present []string
+	for _, name := range terminalHostEnvVars {
+		if _, ok := lookup(name); ok {
+			present = append(present, name)
+		}
+	}
+	if len(present) == 0 {
+		return nil
+	}
+	return []string{"--env-pass=" + strings.Join(present, ",")}
+}
+```
+
+`Wrap` is unchanged. One comma-joined `--env-pass=` flag in probe order — the shipped flag shape, proven live by the working Zellij path.
+
+### Decisions
+
+Each names the AC it serves, the alternative considered, and why the alternative loses.
+
+1. **Bare `ZELLIJ` leaves the allowance.** The consumer probes `ZELLIJ_SESSION_NAME`/`ZELLIJ_PANE_ID`, never `ZELLIJ`; grep over the whole subspace repo finds no live code consuming the bare name. The captain's direction is "take the env set from subspace's own probe". Keeping it "for compatibility" would preserve a name with no known consumer and make the list something other than the probe's. Declared as a semantic change below.
+2. **`TERM_PROGRAM` stays in the list, value-agnostic** (serves AC-1's Ghostty and Apple Terminal legs). Live observation: safehouse's own defaults already forward `TERM`, `TERM_PROGRAM`, `TERM_PROGRAM_VERSION` (all present inside this sandboxed session), so this entry is redundant today — it makes the consumer's contract explicit rather than an accident of the sandbox's default allowance. Alternative — gate on value ∈ {`ghostty`, `Apple_Terminal`}: embeds subspace's resolution semantics into safehouse and adds a second drift axis (values as well as names) for no gain; naming a variable the sandbox already passes is a no-op, and faithful passthrough matches what an unsandboxed launch shows.
+3. **"Set in the parent" means `os.LookupEnv` presence; a set-but-empty variable is named.** The child then mirrors the parent exactly, and the probe maps empty→absent identically on both sides. The harm AC-2 guards against — presenting an empty variable where the parent had nothing — arises only for unset names, which the presence filter excludes. Alternative — filter empties too: makes the child's env disagree with the parent's in a second way, for a case (set-but-empty identifier) no host produces.
+4. **The composer takes a lookup func;** `terminalTargetingEnvArgs` binds `os.LookupEnv` (serves AC-2's stubbed-environment unit test). The composer is pure, so its table test is deterministic under any developer terminal. Alternative — `t.Setenv` plus an unset-all-nine helper: works, but every allowance test then depends on scrubbing ambient terminal vars (`TERM_PROGRAM` is set in effectively every real dev session; `TMUX` under tmux), and one missed name makes the suite terminal-dependent. Wrap-level tests still use the clear-nine helper; the composer's tests don't have to.
+
+### How the list stays agreed with subspace
+
+Duplicate the nine names and accept the drift.
+
+- Every sharing mechanism crosses a repository boundary and costs more than the nine names it protects: a shared Go module adds version skew and release coupling; parsing the installed subspace `SKILL.md` at runtime makes the launcher depend on an optionally-installed plugin file (safehouse wraps hosts that don't carry subspace at all); generated sync needs cross-repo CI plumbing.
+- The set changes only when subspace adds or removes a terminal host — rare, deliberate events. The `r` skill itself pins "exactly nine LF-terminated lines" with fixed names.
+- Drift degrades gracefully, never corrupts. With per-variable passthrough, a host missing from a stale copy loses ALL its signals, the probe's complete-family rule sees no family, and resolution falls through — exactly today's shipped behavior for five of six hosts. If subspace instead adds a signal to an existing family, the probe stops on the partial family with the missing signal named — a visible, diagnosable stop, not a wrong pane.
+- Free mitigations: the `safehouse.go` comment names the source-of-truth path and section; the unit test pins the nine names, so any deliberate change is one visible edit per repo; a new host arrives through the runtime-support first-contact discipline, which is when the list gets revisited.
+
+## Risk evidence (live, gathered during ideation)
+
+**No spike needed** beyond the live evidence below: the change rides two mechanisms, both proven live with the real binary — (a) safehouse forwards a comma-joined `--env-pass=` allowance through its scrub (the shipped Zellij trio resolves panes inside safehouse today), and (b) `--env-pass` is name-agnostic (`SPACEDOCK_BIN` crosses this very session's boundary via its own `--env-pass` flag; observed set inside). The composer itself is plain argv assembly under unit test.
+
+Live probe comparison, run 2026-08-18 with the consumer's exact nine-signal probe (SKILL.md "Select one terminal"):
+
+| Signal | tmux parent, unwrapped | inside safehouse under tmux (current code) |
+|---|---|---|
+| `TMUX` | present | absent |
+| `TMUX_PANE` | present | absent |
+| `TERM_PROGRAM` | other (`tmux`) | other (`tmux`) |
+| other six | absent | absent |
+
+Unwrapped leg: the probe in a fresh private tmux server (`tmux -L sd-spike-89b`, tmux 3.7b). Wrapped leg: this agent session itself, which runs inside the captain's safehouse-wrapped tmux session. The tmux family is invisible inside — the probe resolves no terminal — while `TERM_PROGRAM` crosses via safehouse's default `TERM*` allowance. This is AC-1's failing baseline, per signal.
+
+**Operational constraint on the closing proof:** no stage running inside a wrapped session can execute the real safehouse (`~/.local/bin/safehouse` → Operation not permitted inside the sandbox; the parent env is unreadable, `ps` blocked). AC-1's fixed-side inside/outside comparison therefore runs outside the sandbox — a captain-pasted one-liner at the validation gate; exact protocol in the Test plan.
 
 ## Out of scope
 
@@ -63,14 +130,44 @@ Changing `launchEnv` or the frontdoor. Owning an operator configuration surface 
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +40 across 2 files. Report insertions and deletions separately. Do not declare a gross tolerance. Semantics changed: the `--env-pass` argv safehouse composes.
+Estimate net LOC change: +45, across 4 files (1 production, 3 test). Insertions ≈ +78 and deletions ≈ −33, reported separately; no gross tolerance declared.
+
+- `internal/safehouse/safehouse.go`: ≈ +22/−6 — the nine-name list and the presence-filter composer.
+- `internal/safehouse/safehouse_test.go`: ≈ +35/−13 — composer table test; allowance test reshaped to the tmux pair; clear-helper widened to the nine names.
+- `internal/cli/safehouse_env_smoke_test.go`: ≈ +18/−13 — fake safehouse scrubs/forwards tmux names too; expectations follow the new allowance (`ZELLIJ` no longer named).
+- `internal/cli/host_launch_test.go`: ≈ +3/−1 — `TestMain`'s baseline unset list widened to the nine names.
+
+Semantics changed: the `--env-pass` argv safehouse composes. Names appear per parent presence; bare `ZELLIJ` is no longer named; the nameable set widens from three to the consumer's nine (adds `TMUX`, `TMUX_PANE`, `HERDR_ENV`, `HERDR_PANE_ID`, `CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, `TERM_PROGRAM`). Runtime behavior: sandboxed children regain terminal-host identity for the four multiplexer families. No command grammar, stored-format, or authority changes. No doc diff: no file under `docs/` outside the state checkout describes the terminal-env allowance (grep for env-pass/ZELLIJ/TERM_PROGRAM over `docs/`).
 
 ## Acceptance criteria
 
 Each AC names a property of the finished entity, not a stage action, and how it is verified.
 
 **AC-1 - A terminal host's identifying variables survive the sandbox boundary for every host the consumer probes.**
-This is the measuring AC: the count of probed signals that reach the child, out of the nine, must equal the count set in the parent. Verified by running the consumer's own probe script inside a safehouse-wrapped session under at least tmux and Zellij, and comparing present/absent for each signal against the same probe run outside the sandbox. Fails on the current code, where a tmux parent yields `TMUX=absent` in the child.
+This is the measuring AC: the count of probed signals that reach the child, out of the nine, must equal the count set in the parent. Verified by running the consumer's own probe script inside a safehouse-wrapped session under at least tmux and Zellij, and comparing present/absent for each signal against the same probe run outside the sandbox. Fails on the current code, where a tmux parent yields `TMUX=absent` in the child — the failing tmux baseline is recorded in Risk evidence. The fixed-side run must execute outside a wrapped session (a wrapped stage cannot exec safehouse — see the operational constraint); the Test plan's live protocol is the captain-pasted comparison at the validation gate.
 
 **AC-2 - No variable name appears in `--env-pass` unless that variable is set in the parent.**
 Verified by a unit test over the argv composer with a stubbed environment: a parent holding only `TMUX` and `TMUX_PANE` produces an allowance naming those two and nothing else; an empty parent produces no allowance at all. Fails if the composer emits a fixed list, or emits names gated on a different variable than the one being passed.
+
+## Test plan
+
+Layered so the cheap tests prove composition and the one live run proves the boundary. Cost is small: the unit and smoke layers reuse existing patterns in `internal/safehouse` and `internal/cli`; no new fixture files.
+
+1. **Unit, composer (AC-2; `internal/safehouse`).** Table test over `terminalEnvPassArgs` with a map-backed lookup: empty parent → `nil` (no flag at all); `TMUX`+`TMUX_PANE` only → `--env-pass=TMUX,TMUX_PANE`; all nine set → all nine in probe order; a set-but-empty name → named; a name outside the list → never named. Fails if the composer emits a fixed list, gates on a sentinel, or emits unset names.
+2. **Unit, wiring (`internal/safehouse`).** The existing Wrap allowance test reshaped: clear the nine, set the tmux pair, expect exactly `--env-pass=TMUX,TMUX_PANE` between `--trust-workdir-config` and the extra args. Fails if `Wrap` stops consulting the composer or the flag moves in the argv.
+3. **Integration smoke (`internal/cli`, existing fake-safehouse pattern).** The fake scrubs the tmux pair too and honors `--env-pass`; a tmux-pair parent's child sees the pair's values and no `ZELLIJ_*`; the Zellij-pair case still forwards. Proves argv → forwarded-child-env through a scrubbing wrapper, including that names the parent lacks are never presented as empty.
+4. **Live closing proof (AC-1; captain at the validation gate, outside any wrapped session; tmux and Zellij at minimum).** Outside leg: the SKILL.md nine-line probe run bare in the terminal. Inside leg: `safehouse --trust-workdir-config --env-pass=TMUX,TMUX_PANE,TERM_PROGRAM -- /bin/sh -c '<same probe>'` — hand-composed, but byte-identical to the argv the composer's unit test pins for that parent (under Zellij, the allowance the table pins for a Zellij parent). Unit + live together close composer → argv → child-env. Expected: per-signal present/absent identical inside and outside; current code fails the tmux leg (baseline in Risk evidence). The original observation's `env | grep TMUX` is the quick sanity mirror.
+5. **Test hygiene, terminal-independent suite.** `internal/cli`'s `TestMain` and the safehouse clear-helper unset all nine names, so `go test ./...` passes identically under tmux, Zellij, or a bare terminal. Today's suite clears only the Zellij trio; under tmux the widened allowance would otherwise leak ambient `TMUX`/`TERM_PROGRAM` into argv baselines.
+
+## Stage Report: ideation
+
+- DONE: Build the allowance from the variables actually set in the parent, so an unset name never reaches --env-pass and an empty parent yields no allowance at all.
+  Designed as the presence-filter composer in Proposed approach (`terminalEnvPassArgs` over the nine-name list; empty parent → nil); pinned by AC-2 and Test plan items 1-2.
+- DONE: Cover the six hosts subspace probes, and decide how this list stays agreed with subspace's rather than drifting — state the answer even if it is "duplicate and accept the drift, here is why".
+  All nine signals of the six hosts, in probe order; decision recorded: duplicate and accept the drift — sharing mechanisms cost more than nine near-static names, drift degrades to today's behavior or a diagnosable probe stop, mitigated by a source-of-truth comment and the name-pinning unit test.
+- DONE: Prove it by running subspace's own probe inside and outside a safehouse-wrapped session under tmux, and comparing present/absent per signal.
+  Ran the consumer's exact probe both legs live: unwrapped tmux parent shows TMUX/TMUX_PANE present; inside this safehouse-wrapped tmux session both are absent (per-signal table in Risk evidence). This proves the fault; the fixed-side leg is structurally impossible in-session (the sandbox denies exec of safehouse), so it is specified as the captain-pasted validation-gate protocol in Test plan item 4.
+
+### Summary
+
+Filled the gated design: a per-variable presence filter over subspace's own nine-signal set replaces the ZELLIJ-sentinel fixed trio, with four recorded decisions (drop bare ZELLIJ; keep TERM_PROGRAM value-agnostic; presence means LookupEnv including set-but-empty; lookup-func composer for deterministic tests). Live evidence gathered during ideation: the nine-signal probe comparison proving the tmux fault, safehouse's default TERM* forwarding, and SPACEDOCK_BIN crossing via --env-pass (proving the flag is name-agnostic) — hence "no spike needed" rests on live-proven mechanisms. Surface refined from the seed's +40/2 files to net +45 (≈+78/−33) across 4 files, ~20 of them production lines; the extra files are test hygiene keeping the suite terminal-independent.
