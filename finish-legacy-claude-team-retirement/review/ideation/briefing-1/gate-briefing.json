@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nr75fq7ha3nmvsegbd22cgqa:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: retire the legacy TeamCreate surface, keep and xfail-bind selected-team, and ship the unbound template-slot fix as the root cause?",
+  "artifacts": [
+    {
+      "id": "artifact:nr75fq7ha3nmvsegbd22cgqa:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a5c20dd0a5f6ec54a2b18a7e1c7be9f839ad1402/finish-legacy-claude-team-retirement.md",
+      "rev": "sha256:7f6a36a1a3525ffe4d39f6dc3d80d81132e2a47b4b66ee7abb552f77de315994",
+      "mediaType": "text/markdown",
+      "summary": "Ideation refuted the filing's central premise. The live proof does NOT demand a team_name — its oracle requires team_name ABSENT (dispatch_recovery_assert_test.go:181). The CI red's only failing predicate was subagent_type=\"\", traced to an unbound {dispatch_agent_id} slot in the break-glass manual template: a real product gap, not a stale test. Retirement settled as fact — no supported host can consume the legacy envelope since TeamCreate is absent from the merged CI floor (#390, build.go:338) — so the binary, help text, and commission surfaces are leftovers. Recommends KEEP selected-team, register it under the existing sonnet-flake owner, and ship the slot binding. reconcile --team-name classified keep: auto-team identity, not the legacy envelope. Surface: net -500 across ~48 files (+120/-620), product -180 / tests -320 / docs 0, tolerance net [-250,-750], files ≤60."
+    }
+  ]
+}
