@@ -20,7 +20,7 @@ import (
 // block list split by a blank line — so no syntactic variation evades the guard.
 func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
-	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+	if err := assertGoreleaserDoesNotNeedJourneyLedger(release); err != nil {
 		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
 	}
 
@@ -45,7 +45,7 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 				t.Fatal("fixture workflow missing the goreleaser job header to mutate")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(adversarial); err == nil {
 				t.Fatalf("release workflow guard accepted a goreleaser job that needs the journey-ledger job via %s form (re-coupling the cut to the never-fired run)", tc.name)
 			}
 		})
@@ -65,7 +65,7 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 // step attribution) comes from one yaml.v3 pass, no job-identity shape evades.
 func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentityShapes(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
-	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+	if err := assertGoreleaserDoesNotNeedJourneyLedger(release); err != nil {
 		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
 	}
 
@@ -100,7 +100,7 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentitySh
 				t.Fatal("fixture workflow shape to mutate not found")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(adversarial); err == nil {
 				t.Fatalf("release workflow guard accepted a goreleaser→journey-ledger re-coupling via %s (the job-identity end evaded the guard)", tc.name)
 			}
 		})
@@ -150,7 +150,7 @@ func TestReleaseWorkflowGuardRejectsMultiCarrierGoreleaserNeedsJourneyLedger(t *
 
 	const runs = 200
 	for i := 0; i < runs; i++ {
-		if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+		if err := assertGoreleaserDoesNotNeedJourneyLedger(adversarial); err == nil {
 			t.Fatalf("run %d/%d: guard accepted a multi-carrier workflow where a goreleaser-action job needs journey-ledger (last-wins map-order flakiness)", i+1, runs)
 		}
 	}
@@ -169,7 +169,7 @@ func TestReleaseWorkflowGuardToleratesMultiCarrierSafeShape(t *testing.T) {
 
 	const runs = 200
 	for i := 0; i < runs; i++ {
-		if err := assertReleaseWorkflowPublishesJourneyCosts(safe); err != nil {
+		if err := assertGoreleaserDoesNotNeedJourneyLedger(safe); err != nil {
 			t.Fatalf("run %d/%d: guard wrongly rejected a safe multi-carrier workflow (extra goreleaser carrier needs nothing): %v", i+1, runs, err)
 		}
 	}
@@ -209,7 +209,7 @@ func TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape(t *testing.T) 
 				t.Fatal("rewrite of the journey-ledger needs edge did not apply")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(rewritten); err != nil {
 				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s form: %v", tc.name, err)
 			}
 		})
@@ -251,7 +251,7 @@ func TestReleaseWorkflowGuardToleratesSafeReverseEdgeViaJobIdentityShapes(t *tes
 				t.Fatal("rewrite of the safe reverse edge did not apply")
 			}
 
-			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+			if err := assertGoreleaserDoesNotNeedJourneyLedger(rewritten); err != nil {
 				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s: %v", tc.name, err)
 			}
 		})

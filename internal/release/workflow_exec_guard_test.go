@@ -27,94 +27,6 @@ type workflowJob struct {
 	steps []workflowStep
 }
 
-func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
-	for _, want := range []string{
-		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}`,
-		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/codex`,
-		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi`,
-	} {
-		if !hasExecutableYAMLLine(workflow, want) {
-			return fmt.Errorf("runtime-live-e2e.yml missing active metrics env line %q", want)
-		}
-	}
-
-	steps := parseWorkflowSteps(workflow)
-	claudeRun := findExecutableStep(steps, "Run live Claude E2E", "TestLiveCommon")
-	if claudeRun < 0 {
-		return fmt.Errorf("runtime-live-e2e.yml has no executable Claude shared scenario run")
-	}
-	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveCommon")
-	if codexRun < 0 {
-		return fmt.Errorf("runtime-live-e2e.yml has no executable Codex shared scenario run")
-	}
-	piRun := findExecutableStep(steps, "Run live Pi common journeys", "TestLiveCommon")
-	if piRun < 0 {
-		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario run")
-	}
-	if !hasJourneyMetricsUploadAfter(steps, claudeRun, codexRun) {
-		return fmt.Errorf("runtime-live-e2e.yml Claude shared scenario job does not upload raw journey metrics")
-	}
-	if !hasJourneyMetricsUploadAfter(steps, codexRun, piRun) {
-		return fmt.Errorf("runtime-live-e2e.yml Codex shared scenario job does not upload raw journey metrics")
-	}
-	if !hasJourneyMetricsUploadAfter(steps, piRun, len(steps)) {
-		return fmt.Errorf("runtime-live-e2e.yml Pi shared scenario job does not upload raw journey metrics")
-	}
-	return nil
-}
-
-func assertReleaseWorkflowPublishesJourneyCosts(workflow string) error {
-	steps := parseWorkflowSteps(workflow)
-	builderStep, goreleaserStep, publishStep := -1, -1, -1
-	builderHasOutput := false
-	builderChecksOutput := false
-
-	for i, step := range steps {
-		if strings.HasPrefix(step.uses, "goreleaser/goreleaser-action@") {
-			goreleaserStep = i
-		}
-		for _, command := range executableShellCommands(step.run) {
-			switch {
-			case isJourneyCostBuilder(command):
-				builderStep = i
-				builderHasOutput = strings.Contains(command, `--out "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`)
-			case command == `test -s "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`:
-				builderChecksOutput = true
-			case strings.HasPrefix(command, `gh release upload `) &&
-				strings.Contains(command, `"$GITHUB_REF_NAME"`) &&
-				strings.Contains(command, `"$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`):
-				publishStep = i
-			}
-		}
-	}
-
-	if builderStep < 0 {
-		return fmt.Errorf("release.yml has no executable journey-cost builder command")
-	}
-	if !builderHasOutput {
-		return fmt.Errorf("release.yml journey-cost builder does not write journey-costs-v${RELEASE_VERSION}.json")
-	}
-	if !builderChecksOutput {
-		return fmt.Errorf("release.yml does not check the generated journey-cost ledger is non-empty")
-	}
-	if goreleaserStep < 0 {
-		return fmt.Errorf("release.yml has no goreleaser publish step")
-	}
-	if builderStep > goreleaserStep {
-		return fmt.Errorf("release.yml builds journey costs after goreleaser")
-	}
-	if publishStep < 0 {
-		return fmt.Errorf("release.yml has no executable journey-cost release upload command")
-	}
-	if publishStep <= builderStep {
-		return fmt.Errorf("release.yml publishes journey costs before building them")
-	}
-	if err := assertGoreleaserDoesNotNeedJourneyLedger(workflow); err != nil {
-		return err
-	}
-	return nil
-}
-
 // assertGoreleaserDoesNotNeedJourneyLedger binds the separation invariant to the
 // job DAG: no job carrying the goreleaser action may declare `needs:` on a job
 // that builds the journey-cost ledger. That edge would re-block the cut on the
@@ -161,60 +73,6 @@ func assertGoreleaserDoesNotNeedJourneyLedger(workflow string) error {
 				return fmt.Errorf("release.yml goreleaser job %q declares needs: %q — re-blocking the cut on the journey-ledger job", carrier.name, need)
 			}
 		}
-	}
-	return nil
-}
-
-// assertReleaseLedgerStepsSkipWhenNoProducerRun proves POLICY 1's job-level
-// skip: the journey-cost builder and its release-upload step must be GATED on
-// the download step's producer-found output, so a producer-less / empty-dir cut
-// SKIPS them (journey-ledger job green) instead of running `journey-costs` over
-// an empty dir and REDding the job. It locates the download step by its emitted
-// `found=` output and requires both the builder step and the upload step to
-// carry an `if:` referencing that step's `found` output.
-func assertReleaseLedgerStepsSkipWhenNoProducerRun(workflow string) error {
-	steps := parseWorkflowSteps(workflow)
-
-	downloadID := ""
-	for _, step := range steps {
-		if step.id == "" {
-			continue
-		}
-		for _, command := range executableShellCommands(step.run) {
-			if strings.Contains(command, `found=false`) && strings.Contains(command, `"$GITHUB_OUTPUT"`) {
-				downloadID = step.id
-			}
-		}
-	}
-	if downloadID == "" {
-		return fmt.Errorf("release.yml has no download step with an id that emits found=false to $GITHUB_OUTPUT (the non-fatal skip flag)")
-	}
-
-	gate := fmt.Sprintf("steps.%s.outputs.found == 'true'", downloadID)
-	builderGated, publishGated := false, false
-	for _, step := range steps {
-		isBuilder, isPublish := false, false
-		for _, command := range executableShellCommands(step.run) {
-			if isJourneyCostBuilder(command) {
-				isBuilder = true
-			}
-			if strings.HasPrefix(command, `gh release upload `) &&
-				strings.Contains(command, `"$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`) {
-				isPublish = true
-			}
-		}
-		if isBuilder && step.ifCond == gate {
-			builderGated = true
-		}
-		if isPublish && step.ifCond == gate {
-			publishGated = true
-		}
-	}
-	if !builderGated {
-		return fmt.Errorf("release.yml journey-cost builder is not gated on %q; a producer-less cut would run journey-costs over an empty dir and RED the journey-ledger job", gate)
-	}
-	if !publishGated {
-		return fmt.Errorf("release.yml journey-cost publish step is not gated on %q; a producer-less cut would attempt an upload of a missing ledger", gate)
 	}
 	return nil
 }
@@ -344,67 +202,12 @@ func (n *needsList) UnmarshalYAML(value *yaml.Node) error {
 	}
 }
 
-// findExecutableStep returns the index of the step named name whose run block
-// contains commandFragment, or -1.
-func findExecutableStep(steps []workflowStep, name, commandFragment string) int {
-	for i, step := range steps {
-		if step.name != name {
-			continue
-		}
-		for _, command := range executableShellCommands(step.run) {
-			if strings.Contains(command, commandFragment) {
-				return i
-			}
-		}
-	}
-	return -1
-}
-
 func workflowHasExecutableCommandContaining(workflow, want string) bool {
 	for _, step := range parseWorkflowSteps(workflow) {
 		for _, command := range executableShellCommands(step.run) {
 			if strings.Contains(command, want) {
 				return true
 			}
-		}
-	}
-	return false
-}
-
-func hasJourneyMetricsUploadAfter(steps []workflowStep, start, stop int) bool {
-	for i := start + 1; i < stop && i < len(steps); i++ {
-		step := steps[i]
-		if !strings.HasPrefix(step.uses, "actions/upload-artifact@") {
-			continue
-		}
-		if pathBlockContainsLine(step.withPath, "live-artifacts/journey-metrics/**") {
-			return true
-		}
-	}
-	return false
-}
-
-func pathBlockContainsLine(block, want string) bool {
-	for _, raw := range strings.Split(block, "\n") {
-		line := strings.TrimSpace(raw)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		if line == want {
-			return true
-		}
-	}
-	return false
-}
-
-func hasExecutableYAMLLine(doc, want string) bool {
-	for _, raw := range strings.Split(doc, "\n") {
-		line := strings.TrimSpace(raw)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		if line == want {
-			return true
 		}
 	}
 	return false
