@@ -9,6 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-collapse-duplicate-edge-marketplace-routes
 issue:
+mod-block: merge:pr-merge
+pr: "#727"
 ---
 
 One task, end to end: channel installs stop destroying shared marketplace state, edge installs re-pull to a contract that matches their binary, dev codex launches stop paying a measured 40-second copy tax, and the stalled edge release line advances again. Round 1's route collapse stands unchanged underneath: one published id per channel, channel in the marketplace NAME, zero id changes in the binary.
