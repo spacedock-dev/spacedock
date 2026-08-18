@@ -41,6 +41,17 @@ gates:
                 digest: sha256:2c2f2daaee0b592d2c39d7c32539423f13f6669115aa7b7b4ee3e41261d695e7
                 request-digest: sha256:409a41753ab8c84933c943f5854d8960f1eb06249c2c5dfbf63d8d06c755b6d3
                 room-ref: ./decide-dispatch-build-count-bar/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6htv3p97aq8sexrkjhrcdwt1:validation:1
+                briefing: briefing:6htv3p97aq8sexrkjhrcdwt1:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-18T21:55:08.075992Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve all PR and trigger ci on tip.'' Validation PASSED with two deferred risks, no material finding: 12-shape matrix confirms the widened bar still reds flailing, waste and final failure; falsifiability reproduced under a strict-1/1 revert; +94-vs-+30 overrun traced line by line to approved design and test-plan items, one file, zero production code.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 A journey grades an FO red for building a dispatch envelope twice. Ideation's decision: 1/1 does not stand — the retained streams show the second successful build differed from the first (a corrected rebuild), so the bar widens to tolerate exactly one corrective rebuild while identical rebuilds, three-plus attempts, and final failures stay red.
