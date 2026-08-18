@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6htv3p97aq8sexrkjhrcdwt1:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: widen the dispatch build-count bar to tolerate exactly one corrective rebuild?",
+  "artifacts": [
+    {
+      "id": "artifact:6htv3p97aq8sexrkjhrcdwt1:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0a00e334c845e3566bb62962b3dcfe635bacc8ad/decide-dispatch-build-count-bar.md",
+      "rev": "sha256:a0352c80a8075e5bb3157f83f85f04f5753932038377ec2048110bf9401e815f",
+      "mediaType": "text/markdown",
+      "summary": "Retained streams answered the decisive question: the claude 2/2 was a corrected rebuild (--stamp then --bare-mode, one durable stamp), the codex 2/1 an error-then-retry. Both are benign self-correction, so the exact 1/1 count reddens good conduct. Decision: tolerate one corrective rebuild; identical rebuilds, three-plus attempts, and final failures stay red. Spiked 7/7 correct against real command.log bytes plus six controls. Net +30 across 1 file."
+    }
+  ]
+}

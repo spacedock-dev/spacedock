@@ -9,6 +9,18 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:6htv3p97aq8sexrkjhrcdwt1:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:6htv3p97aq8sexrkjhrcdwt1-ideation-1
+              briefing:
+                id: briefing:6htv3p97aq8sexrkjhrcdwt1:ideation:attempt-1:revision-1
+                digest: sha256:915fe5c741a3e479b5062e7db78257c983a18bde293e13c406e6848eda0a2dcb
+                request-digest: sha256:7e287fe25f888e8a8b50294bf23107dbdffa759fa2e4cd1756594805576628d7
+                room-ref: ./decide-dispatch-build-count-bar/review/ideation/briefing-1
 ---
 
 A journey grades an FO red for building a dispatch envelope twice. Ideation's decision: 1/1 does not stand — the retained streams show the second successful build differed from the first (a corrected rebuild), so the bar widens to tolerate exactly one corrective rebuild while identical rebuilds, three-plus attempts, and final failures stay red.
