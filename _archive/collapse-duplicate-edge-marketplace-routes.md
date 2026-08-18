@@ -1,16 +1,17 @@
 ---
 id: 2dfpswjwbxez1km6439wfrsn
 title: Make channel install non-destructive and give edge installs a working re-pull key
-status: validation
+status: done
 source: "Captain directive, CL 2026-08-17: \"we should simplify the marketplace, there should just be one way\", then the chosen shape: \"i think spacedock-edge@marketplace is better, because we now have other things like subspace in the same marketplace.\" Raised from the live cross-host channel investigation; verified against the published marketplace on both refs and against a route-A install cached on the captain's workstation."
 started: 2026-08-17T19:38:45Z
-completed:
-verdict:
+completed: 2026-08-18T04:17:58Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-collapse-duplicate-edge-marketplace-routes
 issue:
-mod-block: merge:pr-merge
-pr: "#727"
+mod-block:
+pr: pr-merge:727
+archived: 2026-08-18T04:17:58Z
 ---
 
 One task, end to end: channel installs stop destroying shared marketplace state, edge installs re-pull to a contract that matches their binary, dev codex launches stop paying a measured 40-second copy tax, and the stalled edge release line advances again. Round 1's route collapse stands unchanged underneath: one published id per channel, channel in the marketplace NAME, zero id changes in the binary.
