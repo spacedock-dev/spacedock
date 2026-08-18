@@ -1,11 +1,11 @@
 ---
 id: ca9gqaz4n97gsv2nd9p80xbf
 title: The codex filing recognizer misses a create terminated by a newline
-status: validation
+status: done
 source: "Captain CL, 2026-08-18, from the live-lane inventory. Root-caused with a runnable repro: codexFilingCreateCount's terminator class (?:[ \\t';|&]|$) in shared_filing_test.go omits \\n, so a valid create followed by a verification line on the next line counts zero. Red in run 32105482382 codex-live as observed=[filing-command-not-observed]."
 started: 2026-08-18T18:41:27Z
-completed:
-verdict:
+completed: 2026-08-18T23:09:20Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-filing-recognizer-newline-terminator
 issue:
@@ -51,9 +51,10 @@ gates:
                 reason: 'Captain approved in chat: ''approve all PR and trigger ci on tip.'' Validation PASSED with one deferred risk, no material finding: AC-1 disproof reproduced against a self-fetched artifact, 27-shape adversarial matrix found no new permissiveness class, surface exactly on estimate at net +12/2 files.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:731
+archived: 2026-08-18T23:09:20Z
 ---
 
 The filing grader fails a compliant agent. A create followed by a newline counts as zero creates, so any run that verifies its own filing goes red.
