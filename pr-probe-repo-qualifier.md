@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: overlay-contribution
+group: pr-tracking
 ---
 
 Spacedock's PR-state probes pass an entity's `pr` field to `gh pr view` without `--repo`, so a qualified `owner/repo#N` reference errors and a bare `#N` reference silently resolves against whatever repository the launch directory happens to point at.
