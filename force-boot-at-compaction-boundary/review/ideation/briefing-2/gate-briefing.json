@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-2:revision-1",
+  "question": "Approve the re-scoped ideation: boot receipt plus fail-closed guard on the three authority verbs, at net +245?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/c5dd6d84140c03c07502b9eef3a51b1bdb19a2b1/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:186cd19a179bd150af0c4e2955760d1959b0bb6d6b7758dd0ec75ef07c93a488",
+      "mediaType": "text/markdown",
+      "summary": "Surface-only revision; spike and mechanism unchanged from the accepted cycle 1. Cut +540/12 files to +245/8 files three ways: the guard set narrowed from eight mutating verbs to the three carrying captain authority or terminal irreversibility (gate record, gate consume, merge guard) with the cap rationale recorded; the receipt shrank from a JSON format to one parsed line at .spacedock/boot/{session_id}; fixture files became inline string constants in a table-driven test. No AC lost its falsifier. AC-1 is a measuring AC — 0 of 3 guarded verbs succeed before re-boot against a baseline of 3 of 3 on today's binary. AC-3 pins the verdict to durable state only: deleting the receipt or appending the boundary record flips it with no conversational input. The test plan names the tautology-killer (refusal wiring fails if the preflight is never called) and justifies excluding a live smoke test — the sole runtime claim was already proven by ideation's live captures; every implementation claim is binary behavior. Breakout: product +95, tests +120, docs +30; tolerance 2x net."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/c5dd6d84140c03c07502b9eef3a51b1bdb19a2b1/force-boot-at-compaction-boundary/ideation-spike-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:962b316c9121c585b2190fafe89a182267f30550b7bb12e8f27f5a57619a7a92"
+    }
+  ]
+}

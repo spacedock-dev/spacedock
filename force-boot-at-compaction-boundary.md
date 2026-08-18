@@ -49,6 +49,12 @@ gates:
                 at: "2026-08-18T23:39:29.002381Z"
                 decision: revise
                 reason: 'Captain rejected in chat: ''no we don''t need 500 lines for that.'' The diagnosis and the boundary spike are accepted and stay — the mechanism is right. The surface is not: +540 net for writing a receipt at boot and comparing it to a timestamp is disproportionate, and the +340 test budget is the bulk of it. The FO''s own dispatch scope note told this ideation to double its test estimate; that instruction was wrong and is withdrawn.'
+            - id: gate-attempt:4ctz4sfybfk0mfsbnrjcc7bv-ideation-2
+              briefing:
+                id: briefing:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-2:revision-1
+                digest: sha256:1e46104a9835ed01a56040f2ec0ed3ae0b469f46b9bda575dae416e723cf3a0d
+                request-digest: sha256:316d8d7742e343d86924271460519f09bc0888e43be2fe0869a9ee98aa969cc3
+                room-ref: ./force-boot-at-compaction-boundary/review/ideation/briefing-2
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
