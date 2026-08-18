@@ -1,7 +1,7 @@
 ---
 id: j7jhntfa2ve8g6jwhatktrrv
 title: Under a delegated conn, record the FO as approver and cite the grant
-status: implementation
+status: validation
 source: "Captain CL, 2026-08-18, reframing the live-lane inventory: the auto-continue journey tests the conn and the FO behaved correctly under it; the defect is the approver label, not the approval. Corroborated by the in-tree audit note at internal/ensigncycle/shared_live_runner_test.go:139 — 'finding 9 — approval-actor alternation under a delegated conn: recording person:captain for a decision no captain made in-session grades green.'"
 started: 2026-08-18T18:41:26Z
 completed:
