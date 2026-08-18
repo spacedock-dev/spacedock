@@ -152,9 +152,11 @@ Read both failing runs' retained streams and settled the open sub-shape question
 
 ### Design-reset decision (surface past declared tolerance)
 
-Surface is 203% of the approved estimate, past this entity's own declared ±40% tolerance, so the workflow requires a recorded design-reset decision before any further correction round. No re-dispatch has been made pending the captain's call.
+Surface is 203% of the approved estimate, past this entity's own declared ±40% tolerance, so the workflow requires a recorded design-reset decision before any further correction round.
 
-- FO recommendation: RECONFIRM. The approved design is unchanged and validated — AC-1 verified against both observed shapes, and the coalescing question that could have invalidated the whole approach was settled negatively with evidence (no sanctioned FO fold writes terminal state, so no correct ceremony refuses). The defect is a narrow, contained bug inside one unexported helper, and the fix preserves both ACs.
+**DECISION: RECONFIRM — Captain CL, 2026-08-18, in chat ("reconfirm and file").** The approved design stands; cycle 2 corrects the rename-crossing read inside `entityBlobHistory` and re-establishes the spike evidence against the shipped code. No re-scope, no AC change, no new mechanism.
+
+- FO recommendation (as presented): RECONFIRM. The approved design is unchanged and validated — AC-1 verified against both observed shapes, and the coalescing question that could have invalidated the whole approach was settled negatively with evidence (no sanctioned FO fold writes terminal state, so no correct ceremony refuses). The defect is a narrow, contained bug inside one unexported helper, and the fix preserves both ACs.
 - Recorded against reconfirm: the ideation's spike evidence did not reproduce against the shipped code. Confidence in "proven green against six real archived histories" was misplaced, so the correction round must re-run that evidence against the shipped read rather than re-citing the spike.
 
 ## Stage Report: implementation
