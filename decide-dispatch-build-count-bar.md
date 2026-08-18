@@ -7,7 +7,7 @@ started: 2026-08-18T18:41:27Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-decide-dispatch-build-count-bar
 issue:
 gates:
     version: 1
