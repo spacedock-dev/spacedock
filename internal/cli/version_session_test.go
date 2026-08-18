@@ -38,10 +38,12 @@ var claudeSession = map[string]string{
 // expected outputs are in-test literals, independent of the production strings.
 //
 // The organising rule under test: inside a session, report the session; outside
-// one, report the version. Both shapes start with the same TWO lines — the
-// version line and the `OS: <goos>/<goarch>` line — so the outside case is two
-// lines (no Runtime line, no Sandbox line, and no contract token), while every
-// in-session case adds exactly three lines below them.
+// one, report the version. Both shapes start with the same THREE lines — the
+// version line, the `OS: <goos>/<goarch>` line, and the `Channel:` line — so the
+// outside case is three lines (no Runtime line, no Sandbox line, and no contract
+// token), while every in-session case adds exactly three lines below them.
+// devBranch is untouched by this file (package default "next"), so every
+// Channel line here renders the edge rendering: `edge (spacedock@spacedock-edge)`.
 func TestVersionSessionRender(t *testing.T) {
 	version := displayVersion()
 	osToken := runtime.GOOS + "/" + runtime.GOARCH
@@ -63,16 +65,18 @@ func TestVersionSessionRender(t *testing.T) {
 			lookPath: lookMissing,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
 				"Runtime: claude (CLAUDECODE)\n" +
 				"Sandbox: agent-safehouse\n" +
 				"contract 3\n",
 		},
 		{
-			name:     "outside-every-runtime-is-two-lines",
+			name:     "outside-every-runtime-is-three-lines",
 			vars:     map[string]string{},
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
-				"OS: " + osToken + "\n",
+				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n",
 		},
 		{
 			// The same host with no session variable set at all. Its Runtime line
@@ -83,6 +87,7 @@ func TestVersionSessionRender(t *testing.T) {
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
 				"Runtime: claude (CLAUDECODE)\n" +
 				"Sandbox: none (safehouse available)\n" +
 				"contract 3\n",
@@ -98,6 +103,7 @@ func TestVersionSessionRender(t *testing.T) {
 			lookPath: lookMissing,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
 				"Runtime: pi (PI_CODING_AGENT, PI_CODING_AGENT_DIR)\n" +
 				"Sandbox: none (safehouse not installed)\n" +
 				"contract 3\n",
@@ -111,6 +117,7 @@ func TestVersionSessionRender(t *testing.T) {
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
 				"Runtime: codex (CODEX_THREAD_ID)\n" +
 				"Sandbox: none (safehouse available)\n" +
 				"contract 3\n",
@@ -129,6 +136,7 @@ func TestVersionSessionRender(t *testing.T) {
 			lookPath: lookFound,
 			want: "spacedock " + version + "\n" +
 				"OS: " + osToken + "\n" +
+				"Channel: edge (spacedock@spacedock-edge)\n" +
 				"Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)\n" +
 				"Sandbox: none (safehouse available)\n" +
 				"contract 3\n",
