@@ -69,11 +69,39 @@ const (
 	recordedGateDirective  = "you have the conn toward the sprint goal; authorized to approve gates, PR, relevant CI lanes, and merge; use your judgement."
 )
 
+// recordedGateBuildAttempt records one successor dispatch build invocation:
+// the argv it ran and whether it exited 0.
+type recordedGateBuildAttempt struct {
+	command string
+	ok      bool
+}
+
 type recordedGateDispatchProof struct {
-	builds, successfulBuilds int
-	durableEffects           int
-	ordered                  bool
-	committed                bool
+	attempts       []recordedGateBuildAttempt
+	durableEffects int
+	ordered        bool
+	committed      bool
+}
+
+// recordedGateBuildAttemptsAcceptable replaces the strict 1/1 build-count
+// bar, which misgraded two live occurrences red: claude run 32105482382
+// (--stamp then reconsidered --bare-mode — command differed) and codex run
+// 30754109029 (identical command, exit 1 then 0). Both are benign
+// self-corrections, so the bar tolerates exactly one corrective rebuild: the
+// last attempt succeeded and it corrects the one before it, either because
+// that one failed or because its command differed. An identical successful
+// rebuild (waste), three-plus attempts (flailing), and a final failed
+// attempt still grade red. See decide-dispatch-build-count-bar for the
+// decision record.
+func recordedGateBuildAttemptsAcceptable(attempts []recordedGateBuildAttempt) bool {
+	switch len(attempts) {
+	case 1:
+		return attempts[0].ok
+	case 2:
+		return attempts[1].ok && (!attempts[0].ok || attempts[0].command != attempts[1].command)
+	default:
+		return false
+	}
 }
 
 type recordedGateObservation struct {
@@ -116,8 +144,14 @@ func assertRecordedGateLifecycle(o recordedGateObservation) error {
 		return fmt.Errorf("gate lifecycle recorded event trace %v, want %v (classic) or %v (mechanism-2 --consume fast path)",
 			o.events, recordedGateRequiredEvents, recordedGateCollapsedEventTrace)
 	}
-	if o.dispatch.builds != 1 || o.dispatch.successfulBuilds != 1 {
-		return fmt.Errorf("successor dispatch build attempts/successes = %d/%d, want 1/1", o.dispatch.builds, o.dispatch.successfulBuilds)
+	if !recordedGateBuildAttemptsAcceptable(o.dispatch.attempts) {
+		ok := 0
+		for _, a := range o.dispatch.attempts {
+			if a.ok {
+				ok++
+			}
+		}
+		return fmt.Errorf("successor dispatch build attempts = %d (%d ok), want one build or one corrective rebuild", len(o.dispatch.attempts), ok)
 	}
 	if o.dispatch.durableEffects != 1 {
 		return fmt.Errorf("new durable successor effects = %d, want 1", o.dispatch.durableEffects)
@@ -268,7 +302,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		t.Fatalf("dispatch oracle refused complete lifecycle: %v", err)
 	}
 	zero := recordedGateLiveObservation(t, fixture, before, commandLog)
-	requireRecordedGate(t, zero.dispatch.builds == 1 && zero.dispatch.durableEffects == 0 && assertRecordedGateLifecycle(zero) != nil, "zero-effect executed build qualified")
+	requireRecordedGate(t, len(zero.dispatch.attempts) == 1 && zero.dispatch.durableEffects == 0 && assertRecordedGateLifecycle(zero) != nil, "zero-effect executed build qualified")
 	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"\n\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.\n  The one-use application was already consumed before dispatch.\n\n### Summary\n\nThe entered handoff completed after the consumed approval.\n")
 	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record successor effect")
 	assertRecordedGateDispatchRow(t, binary, fixture, "handoff", "done")
@@ -297,10 +331,30 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 		writeFile(t, commandLog, log)
 		requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog)) != nil, "%s control qualified", name)
 	}
+	buildLine := func(prefix string) string {
+		for _, line := range strings.Split(validLog, "\n") {
+			if strings.HasPrefix(line, prefix) && !strings.Contains(line, " --help") {
+				return line
+			}
+		}
+		t.Fatalf("valid log missing a %q dispatch build line", prefix)
+		return ""
+	}
+	validBuildBegin, validBuildExit := buildLine("begin\tdispatch build "), buildLine("exit=0\tdispatch build ")
+	// Positive control: a corrected rebuild (claude run 32105482382's shape) —
+	// the second attempt succeeds with a changed command — must qualify.
+	correctedRebuild := validLog + "\n" + strings.Replace(validBuildBegin, "--bare-mode", "--bare-mode --stamp", 1) + "\n" + strings.Replace(validBuildExit, "--bare-mode", "--bare-mode --stamp", 1)
+	writeFile(t, commandLog, correctedRebuild)
+	requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog)) == nil, "corrected-rebuild control failed to qualify")
+	// Positive control: an error-then-retry (codex run 30754109029's shape) —
+	// the first attempt fails, the identical second succeeds — must qualify.
+	errorThenRetry := strings.Replace(validLog, "exit=0\tdispatch build ", "exit=1\tdispatch build ", 1) + "\n" + validBuildBegin + "\n" + validBuildExit
+	writeFile(t, commandLog, errorThenRetry)
+	requireRecordedGate(t, assertRecordedGateLifecycle(recordedGateLiveObservation(t, fixture, before, commandLog)) == nil, "error-then-retry control failed to qualify")
 	writeFile(t, commandLog, validLog)
 	mustRecordedGate(t, binary, fixture.root, "dispatch", "build", "--workflow-dir", fixture.root, "--entity-path", fixture.entity, "--stage", "handoff", "--checklist-file", filepath.Join(fixture.root, "handoff.checklist"), "--host", "claude", "--bare-mode")
 	two := recordedGateLiveObservation(t, fixture, before, commandLog)
-	requireRecordedGate(t, two.dispatch.builds == 2 && assertRecordedGateLifecycle(two) != nil, "two-build control qualified")
+	requireRecordedGate(t, len(two.dispatch.attempts) == 2 && assertRecordedGateLifecycle(two) != nil, "two-build control qualified")
 	writeFile(t, commandLog, validLog)
 	writeFile(t, fixture.entity, readFile(t, fixture.entity)+"\n"+recordedGateDispatchMarker+"-SECOND\n")
 	gitCommitPathScoped(t, fixture.stateRoot, "recorded-gate-task/index.md", "record duplicate effect")
@@ -726,7 +780,7 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 			"id: resolution:spacedock:recorded-gate-task:validation:1\nbriefing: " + recordedGateBriefingID + "\n" +
 			"by: agent:first-officer\n                decision: approve\n                reason: " + recordedGateReason + "\n" +
 			"target-stage: handoff\n                state: consumed\n## Stage Report: handoff\n\n- DONE: Successor dispatch followed decision: approve.",
-		dispatch:     recordedGateDispatchProof{builds: 1, successfulBuilds: 1, durableEffects: 1, ordered: true, committed: true},
+		dispatch:     recordedGateDispatchProof{attempts: []recordedGateBuildAttempt{{command: "dispatch build --bare-mode", ok: true}}, durableEffects: 1, ordered: true, committed: true},
 		expectedNext: "handoff", expectedActor: "agent:first-officer",
 	}
 	if err := assertRecordedGateLifecycle(valid); err != nil {
@@ -757,6 +811,46 @@ func TestRecordedGateLifecycleProvenanceMutants(t *testing.T) {
 			mutate(&mutant)
 			if err := assertRecordedGateLifecycle(mutant); err == nil {
 				t.Fatal("mutant graded PASS")
+			}
+		})
+	}
+}
+
+// TestRecordedGateBuildCountBar replays the corrected-rebuild bar's spike
+// table from decide-dispatch-build-count-bar's ideation: the two live
+// occurrences that motivated widening the bar past 1/1, plus the control
+// shapes the bar must still redden. 7/7 as spiked.
+func TestRecordedGateBuildCountBar(t *testing.T) {
+	for name, tc := range map[string]struct {
+		attempts []recordedGateBuildAttempt
+		want     bool
+	}{
+		"single-clean-build": {[]recordedGateBuildAttempt{{"dispatch build --workflow-dir /wf --stage handoff --bare-mode", true}}, true},
+		"zero-build":         {nil, false},
+		"failed-build":       {[]recordedGateBuildAttempt{{"dispatch build --workflow-dir /wf --stage handoff --bare-mode", false}}, false},
+		"identical-two-build-waste": {[]recordedGateBuildAttempt{
+			{"dispatch build --workflow-dir /wf --stage handoff --host claude --bare-mode", true},
+			{"dispatch build --workflow-dir /wf --stage handoff --host claude --bare-mode", true},
+		}, false},
+		"three-build-flailing": {[]recordedGateBuildAttempt{
+			{"dispatch build --workflow-dir /wf --stage handoff --bare-mode", true},
+			{"dispatch build --workflow-dir /wf --stage handoff --bare-mode", true},
+			{"dispatch build --workflow-dir /wf --stage handoff --bare-mode", true},
+		}, false},
+		// claude run 32105482382: --stamp then reconsidered --bare-mode — commands differ, a corrected rebuild.
+		"claude-32105482382-corrected-rebuild": {[]recordedGateBuildAttempt{
+			{"dispatch build --workflow-dir /wf --entity-path recorded-gate-task/index.md --stage handoff --checklist-file handoff.checklist --host claude --stamp", true},
+			{"dispatch build --workflow-dir /wf --entity-path recorded-gate-task/index.md --stage handoff --checklist-file handoff.checklist --host claude --bare-mode", true},
+		}, true},
+		// codex run 30754109029: identical --bare-mode --stamp command twice, exit 1 then exit 0.
+		"codex-30754109029-error-then-retry": {[]recordedGateBuildAttempt{
+			{"dispatch build --workflow-dir /wf --entity-path recorded-gate-task/index.md --stage handoff --checklist-file handoff.checklist --host codex --bare-mode --stamp", false},
+			{"dispatch build --workflow-dir /wf --entity-path recorded-gate-task/index.md --stage handoff --checklist-file handoff.checklist --host codex --bare-mode --stamp", true},
+		}, true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := recordedGateBuildAttemptsAcceptable(tc.attempts); got != tc.want {
+				t.Fatalf("recordedGateBuildAttemptsAcceptable(%v) = %v, want %v", tc.attempts, got, tc.want)
 			}
 		})
 	}
@@ -1064,12 +1158,13 @@ func TestRecordedGateLifecycleMissingEventControls(t *testing.T) {
 func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, before, commandLog string) recordedGateObservation {
 	t.Helper()
 	log := readFile(t, commandLog)
-	builds, successfulBuilds, consumed, ordered := 0, 0, false, true
+	consumed, ordered := false, true
 	prepareAt := recordedGatePhaseAt(log, "exit=0\tgate prepare ")
 	bindCommitAt := recordedGatePhaseAt(log, "exit=0\tstate commit recorded-gate-task")
 	decisionAt := recordedGatePhaseAt(log, "exit=0\tgate record ")
 	ordered = prepareAt >= 0 && bindCommitAt > prepareAt && decisionAt > bindCommitAt
-	dispatchHead, buildCommand := "", ""
+	var attempts []recordedGateBuildAttempt
+	dispatchHead := ""
 	for _, line := range strings.Split(log, "\n") {
 		// A separate "gate consume" line is the classic form; mechanism 2's
 		// --consume fast path sequences the consume attempt into the same
@@ -1079,12 +1174,11 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 			consumed = true
 		}
 		if strings.HasPrefix(line, "begin\tdispatch build ") && !strings.Contains(line, " --help") {
-			builds++
-			buildCommand = strings.TrimPrefix(line, "begin\t")
+			attempts = append(attempts, recordedGateBuildAttempt{command: strings.TrimPrefix(line, "begin\t")})
 			ordered = ordered && consumed
 		}
-		if strings.HasPrefix(line, "exit=0\tdispatch build ") && strings.TrimPrefix(line, "exit=0\t") == buildCommand {
-			successfulBuilds++
+		if n := len(attempts); n > 0 && strings.HasPrefix(line, "exit=0\tdispatch build ") && strings.TrimPrefix(line, "exit=0\t") == attempts[n-1].command {
+			attempts[n-1].ok = true
 		}
 		if strings.HasPrefix(line, "dispatch-head\t") {
 			dispatchHead = strings.TrimPrefix(line, "dispatch-head\t")
@@ -1114,7 +1208,7 @@ func recordedGateLiveObservation(t *testing.T, fixture recordedGateFixture, befo
 	return recordedGateObservation{
 		events: recordedGateEventsFromCommandLog(log), before: before, after: after,
 		dispatch: recordedGateDispatchProof{
-			builds: builds, successfulBuilds: successfulBuilds, durableEffects: effects, ordered: ordered,
+			attempts: attempts, durableEffects: effects, ordered: ordered,
 			committed: recordedGateCommittedBeforeDispatch(t, fixture, closeCommit, consumedCommit, dispatchHead, strings.Join(commits, " ")),
 		},
 		expectedNext:  "handoff",
