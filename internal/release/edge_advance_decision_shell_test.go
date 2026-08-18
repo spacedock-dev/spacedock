@@ -148,16 +148,12 @@ func TestDecisionStepScriptFailsClosedOnEmptyCandidatePool(t *testing.T) {
 	}
 }
 
-// runAutoPre0StepScript executes the ACTUAL always-cut-pre0 step's run script
-// from the on-disk release.yml against a fixture repo, with
-// EDGE_RELEASE_DEPLOY_KEY stripped so the tail dies at its first credential
-// line under set -u — before ssh-keyscan, so no shim or network is needed.
-// HOME is sandboxed because that death happens after `mkdir -p ~/.ssh`.
-// Returns the exit code and combined stdout/stderr.
+// runAutoPre0StepScript runs the real always-cut-pre0 step script with
+// EDGE_RELEASE_DEPLOY_KEY stripped, so it dies unbound before ssh-keyscan;
+// HOME is sandboxed since `mkdir -p ~/.ssh` runs just before that death.
 func runAutoPre0StepScript(t *testing.T, refName, fixtureRepo, home string) (exitCode int, output string) {
 	t.Helper()
-	workflow := readWorkflow(t, "release.yml")
-	job := edgeAdvanceJob(workflow)
+	job := edgeAdvanceJob(readWorkflow(t, "release.yml"))
 	if job == nil {
 		t.Fatal("release.yml has no edge-advance job")
 	}
@@ -182,26 +178,22 @@ func runAutoPre0StepScript(t *testing.T, refName, fixtureRepo, home string) (exi
 		"HOME="+home,
 	)
 	cmd := exec.Command("bash", "-c", step.run)
-	cmd.Dir = repoRoot
-	cmd.Env = env
+	cmd.Dir, cmd.Env = repoRoot, env
 	out, err := cmd.CombinedOutput()
-	var exitErr *exec.ExitError
-	if err != nil && !errors.As(err, &exitErr) {
-		t.Fatalf("real release.yml auto-pre0 step script: %v\n%s", err, out)
-	}
 	code := 0
-	if exitErr != nil {
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
 		code = exitErr.ExitCode()
+	} else if err != nil {
+		t.Fatalf("real release.yml auto-pre0 step script: %v\n%s", err, out)
 	}
 	return code, string(out)
 }
 
-// TestAutoPre0StepScriptRerunNeverRemintsExistingTag runs the REAL
-// always-cut-pre0 script twice against one fixture (v0.25.1, v0.26.0 at C1),
-// proving AC-1's exit 1-vs-128 discrimination (verified live in the cycle-3
-// spike): a guarded run that gets past the mint dies at the unbound-credential
-// line (exit 1); an unguarded mint on an existing tag dies AT the mint (exit
-// 128, "already exists") — the two failure modes never share a code.
+// TestAutoPre0StepScriptRerunNeverRemintsExistingTag runs the real script
+// twice (v0.25.1, v0.26.0 at C1): guarded + past-mint dies unbound (exit 1);
+// unguarded + tag-exists dies AT the mint (exit 128, "already exists") —
+// AC-1's discrimination, verified live in the cycle-3 spike.
 func TestAutoPre0StepScriptRerunNeverRemintsExistingTag(t *testing.T) {
 	fixture := tagFixtureRepo(t, []string{"v0.25.1", "v0.26.0"})
 	home := t.TempDir()
@@ -215,40 +207,39 @@ func TestAutoPre0StepScriptRerunNeverRemintsExistingTag(t *testing.T) {
 		}
 		return strings.TrimSpace(string(out))
 	}
-	c1 := git("rev-parse", "v0.26.0")
 	const wantMarker = "EDGE_RELEASE_DEPLOY_KEY: unbound variable"
 
-	// Mint pass: no pre0 exists yet. Pins that the guard doesn't wrongly skip
-	// on a first run, and catches a broken/lost `||` mint arm.
-	code, out := runAutoPre0StepScript(t, "v0.26.0", fixture, home)
-	if code != 1 || !strings.Contains(out, wantMarker) {
-		t.Fatalf("mint pass: exit=%d, want 1 with %q\n%s", code, wantMarker, out)
+	// Shared by both passes: past the mint (exit 1, unbound marker), pre0 SHA
+	// exactly at wantSHA — passes differ only in where the guard leaves it.
+	runAndAssertSHA := func(pass, wantSHA string) string {
+		t.Helper()
+		code, out := runAutoPre0StepScript(t, "v0.26.0", fixture, home)
+		if code != 1 || !strings.Contains(out, wantMarker) {
+			t.Fatalf("%s: exit=%d, want 1 with %q\n%s", pass, code, wantMarker, out)
+		}
+		if got := git("rev-list", "-1", "v0.27.0-pre0"); got != wantSHA {
+			t.Fatalf("%s: v0.27.0-pre0 targets %s, want %s", pass, got, wantSHA)
+		}
+		return out
 	}
+
+	// Mint pass: no pre0 exists yet — pins the guard doesn't wrongly skip a
+	// first run, a lost `||` mint arm, and that the mint is annotated.
+	c1 := git("rev-parse", "v0.26.0")
+	runAndAssertSHA("mint pass", c1)
 	if typ := git("cat-file", "-t", "v0.27.0-pre0"); typ != "tag" {
 		t.Fatalf("mint pass: v0.27.0-pre0 cat-file -t = %q, want an annotated tag", typ)
 	}
-	if got := git("rev-list", "-1", "v0.27.0-pre0"); got != c1 {
-		t.Fatalf("mint pass: v0.27.0-pre0 targets %s, want release commit %s", got, c1)
-	}
 
-	// Repoint pre0 to a divergent C2 before the re-run: a `git tag -a -f`
-	// re-mint mutant would also reach exit 1 here, so only the SHA assert
-	// below — not the exit code/marker — catches it.
+	// Repoint pre0 to a divergent C2: a `git tag -a -f` re-mint mutant also
+	// reaches exit 1, so only the SHA assert above/below catches it.
 	git("commit", "--allow-empty", "-q", "-m", "C2")
 	c2 := git("rev-parse", "HEAD")
 	git("tag", "-f", "-a", "v0.27.0-pre0", c2, "-m", "divergent")
 
-	// Tag-exists pass (the red/green core, AC-1): must get past the mint —
-	// same marker, never "already exists" — pre0 SHA still C2. An unguarded
-	// script instead dies AT the mint: exit 128, "already exists".
-	code, out = runAutoPre0StepScript(t, "v0.26.0", fixture, home)
-	if code != 1 || !strings.Contains(out, wantMarker) {
-		t.Fatalf("tag-exists pass: exit=%d, want 1 with %q (unguarded reds this at exit 128 \"already exists\")\n%s", code, wantMarker, out)
-	}
-	if strings.Contains(out, "already exists") {
+	// Tag-exists pass (the red/green core, AC-1): must get PAST the mint, not
+	// hit it — an unguarded script instead dies AT the mint (exit 128).
+	if out := runAndAssertSHA("tag-exists pass", c2); strings.Contains(out, "already exists") {
 		t.Fatalf("tag-exists pass: hit the mint instead of skipping it: %s", out)
-	}
-	if got := git("rev-list", "-1", "v0.27.0-pre0"); got != c2 {
-		t.Fatalf("tag-exists pass: v0.27.0-pre0 moved to %s, want it to stay at divergent C2 %s", got, c2)
 	}
 }
