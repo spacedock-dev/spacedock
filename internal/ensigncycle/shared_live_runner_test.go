@@ -136,9 +136,6 @@ func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
 	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
-// AUDIT(2026-08-16): finding 9 — approval-actor alternation under a delegated conn:
-// recording person:captain for a decision no captain made in-session grades green.
-//
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
 func TestLiveCommonRecordedGateLifecycle(t *testing.T) {
 	liveJourney(t, "recorded-gate-lifecycle", "recorded-gate/prepared", writeCommonPreparedRecordedGateFixture, nil, runClaudeRecordedGateLifecycleScenario, assertRecordedGateLifecycle)

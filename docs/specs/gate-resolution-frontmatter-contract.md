@@ -253,7 +253,7 @@ withdrawn attempts can carry neither Resolution, provider evidence, nor applicat
 ```text
 spacedock gate prepare ENTITY --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...] [--workflow-dir DIR]
 spacedock gate withdraw ENTITY --reason TEXT [--workflow-dir DIR]
-spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--consume] [--workflow-dir DIR]
+spacedock gate record ENTITY --decision approve|revise|hold --actor ID [--reason TEXT] [--conn-quote TEXT --conn-source TEXT] [--consume] [--workflow-dir DIR]
 spacedock gate record ENTITY --round STAGE/CYCLE --briefing PATH/briefing.json --log PATH/briefing.review.jsonl [--workflow-dir DIR]
 spacedock gate consume ENTITY [--workflow-dir DIR]
 ```
@@ -263,9 +263,12 @@ and compare-and-swap state; callers cannot submit an operation envelope or candi
 identities.
 
 New delegated chat resolutions use `by: agent:first-officer`, require a nonblank
-evidence reason, and reject `adoption-note` as an unknown prototype field. The recorder
+evidence reason, and require a conn citation (`conn: {quote, source}`) naming the
+grant verbatim and where it was given; they reject `adoption-note` as an unknown
+prototype field. A citation is refused on `person:captain` resolutions. The recorder
 constructs the portable Resolution under the asserted identity that rendered the
-decision; it does not authenticate chat or apply the result.
+decision; it records the cited grant without authenticating chat, and does not
+apply the result.
 
 ## Explicitly outside v1
 

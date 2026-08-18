@@ -28,9 +28,10 @@ Material findings are the ones that should move your vote; polish never blocks. 
 
 The first officer may act only after an explicit grant in the active conversation,
 including a grant given later in that conversation. Durable gate state records the
-first officer as the decision renderer and its evidence reason; it does not quote or
-authenticate the grant's wording or scope. Keep any required chat provenance in the
-host's own audit system.
+first officer as the decision renderer, its evidence reason, and a citation of the
+grant it acted under — the grant's wording and where it was given. The record
+attributes; it does not authenticate the grant. Captain decisions carry no citation,
+so the two shapes stay distinguishable.
 
 ## How the review reaches you
 
