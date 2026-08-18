@@ -21,6 +21,17 @@ gates:
                 digest: sha256:915fe5c741a3e479b5062e7db78257c983a18bde293e13c406e6848eda0a2dcb
                 request-digest: sha256:7e287fe25f888e8a8b50294bf23107dbdffa759fa2e4cd1756594805576628d7
                 room-ref: ./decide-dispatch-build-count-bar/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6htv3p97aq8sexrkjhrcdwt1:ideation:1
+                briefing: briefing:6htv3p97aq8sexrkjhrcdwt1:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-18T19:31:48.647812Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve those 4, and have them be on a pr stack.'' Accepts the decision that 1/1 does not stand and the bar widens to one corrective rebuild, with identical rebuilds and three-plus attempts staying red.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 A journey grades an FO red for building a dispatch envelope twice. Ideation's decision: 1/1 does not stand — the retained streams show the second successful build differed from the first (a corrected rebuild), so the bar widens to tolerate exactly one corrective rebuild while identical rebuilds, three-plus attempts, and final failures stay red.
