@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: overlay-contribution
+group: shape-and-scaffolding
 ---
 
 A contributor who wants to send pull requests to a repository they do not own can already run a full Spacedock workflow against it, by overlaying an untracked workflow directory inside their fork clone. The mechanism works and was proven end to end. Nothing names the shape, nothing creates it, and two spacedock-authored strings still reach the upstream maintainer. This task makes the shape first-class.
