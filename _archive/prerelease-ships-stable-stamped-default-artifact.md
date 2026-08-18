@@ -1,16 +1,17 @@
 ---
 id: c9qz40bza726q58m3s8hsdq5
 title: Prerelease releases ship a stable-stamped binary under the default asset name
-status: validation
+status: done
 source: "Live cross-host report, CL 2026-08-17. A Linux box (linux/amd64) running `spacedock 0.27.0-pre7` reinstalled the Claude plugin as `spacedock@spacedock` on every launch, overwriting a hand-installed edge plugin. `go version -m $(command -v spacedock)` on that binary returned `devBranch=main`; the darwin/arm64 edge-cask binary at the identical version returned `devBranch=next`. Same tag, same `--version` output, opposite channel."
 started: 2026-08-17T19:38:45Z
-completed:
-verdict:
+completed: 2026-08-18T00:23:55Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-prerelease-ships-stable-stamped-default-artifact
 issue:
-mod-block: merge:pr-merge
-pr: "#726"
+mod-block:
+pr: pr-merge:726
+archived: 2026-08-18T00:23:55Z
 ---
 
 A prerelease tag publishes both channel builds and gives the stable-stamped one the unsuffixed asset name, so installing edge from a `-pre` release silently yields a stable binary — and nothing in the binary's own output reveals which one you got.
