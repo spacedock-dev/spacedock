@@ -68,21 +68,32 @@ func (execHost) resolveClaudeManifest(host string) (string, error) {
 	return "", nil
 }
 
-// resolveCodexManifest confirms the channel's plugin id (`spacedock@spacedock`
-// stable / `spacedock@spacedock-edge` edge — the binary's devBranch selects it) is
-// installed via the text `codex plugin list` and resolves the manifest under the
-// Codex plugin cache. Codex's listing carries no install path (its `--json` form
-// has one only for the marketplace root, not the cached plugin), so the
-// deterministic cache layout is the resolver. Codex installs land at
+// resolveCodexManifest confirms an installed spacedock plugin id via the text
+// `codex plugin list` and resolves the manifest under the Codex plugin cache.
+// TWO ids are checked, in this order: `codexLocalPluginID`
+// (`spacedock@spacedock-local`, the --plugin-dir dev install, devBranch-
+// independent by design — see installCodexLocalPluginDir) first, then the
+// channel's own id (`spacedock@spacedock` stable / `spacedock@spacedock-edge`
+// edge — the binary's devBranch selects it). Without checking the local id, a
+// --plugin-dir install would resolve to NoPluginFound here (the gate reads only
+// the channel id), and resolveHealableGate would then try to auto-install the
+// real channel plugin on top of a working dev install. Codex's listing carries
+// no install path (its `--json` form has one only for the marketplace root, not
+// the cached plugin), so the deterministic cache layout is the resolver. Codex
+// installs land at
 // <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json.
-// Returns "" (no error) when the plugin is not installed or no cached manifest
-// exists for it yet.
+// Returns "" (no error) when neither id is installed or no cached manifest
+// exists for the installed one yet.
 func (execHost) resolveCodexManifest() (string, error) {
 	out, err := exec.Command("codex", "plugin", "list").CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("codex plugin list: %w (%s)", err, strings.TrimSpace(string(out)))
 	}
-	if !codexEntryInstalled(string(out), channelPluginID(devBranch)) {
+	listing := string(out)
+	if codexEntryInstalled(listing, codexLocalPluginID) {
+		return codexLocalCacheManifest()
+	}
+	if !codexEntryInstalled(listing, channelPluginID(devBranch)) {
 		return "", nil
 	}
 	return codexCacheManifest()
@@ -96,7 +107,22 @@ func (execHost) resolveCodexManifest() (string, error) {
 // when no cached manifest exists yet (absent cache root, no version dir, or the
 // manifest file is missing).
 func codexCacheManifest() (string, error) {
-	cacheRoot := filepath.Join(codexHome(), "plugins", "cache", channelMarketplace(devBranch), channelEntry(devBranch))
+	return codexCacheManifestAt(channelMarketplace(devBranch), channelEntry(devBranch))
+}
+
+// codexLocalCacheManifest is codexCacheManifest's --plugin-dir counterpart: the
+// dedicated local marketplace name (devBranch-independent), entry always
+// `spacedock`.
+func codexLocalCacheManifest() (string, error) {
+	return codexCacheManifestAt(codexLocalMarketplaceName, "spacedock")
+}
+
+// codexCacheManifestAt resolves the cached manifest under
+// <CODEX_HOME>/plugins/cache/<marketplace>/<entry>/, picking the semver-greatest
+// version dir. Returns "" (no error) when no cached manifest exists yet (absent
+// cache root, no version dir, or the manifest file is missing).
+func codexCacheManifestAt(marketplace, entry string) (string, error) {
+	cacheRoot := filepath.Join(codexHome(), "plugins", "cache", marketplace, entry)
 	versionDir, err := latestVersionDir(cacheRoot)
 	if err != nil || versionDir == "" {
 		return "", nil
@@ -247,6 +273,24 @@ func channelPluginID(devBranch string) string {
 	return channelEntry(devBranch) + "@" + channelMarketplace(devBranch)
 }
 
+// codexLocalMarketplaceName is the FIXED marketplace name a codex `--plugin-dir`
+// dev install registers under — distinct from either real channel's marketplace
+// name (`spacedock` / `spacedock-edge`) and independent of the binary's
+// devBranch. A dedicated name removes, by construction, the collision a shared
+// channel name used to create: codex refuses `plugin marketplace add` when a
+// name is already registered from a DIFFERENT source (measured live: exit 1,
+// "already added from a different source; remove it before adding this
+// source"), which a real channel install (git source) and a local dev install
+// (a staged local path) would otherwise both trip over the SAME channel name.
+// Captain-ruled fix, option (c) — see the entity's "Design change" note.
+const codexLocalMarketplaceName = "spacedock-local"
+
+// codexLocalPluginID is the plugin id a codex `--plugin-dir` dev install always
+// answers to, on every channel — the entry stays `spacedock` (equal to the
+// manifest name, same as every channel); only the marketplace name is
+// dedicated.
+const codexLocalPluginID = "spacedock@" + codexLocalMarketplaceName
+
 // otherChannelMarketplace returns the marketplace NAME of the Spacedock channel
 // devBranch does NOT select — the sibling channel a codex install must also stay
 // clear of (Codex's skill namespace is global, so both channels cannot resolve
@@ -374,30 +418,60 @@ func installArgvSequence(source, devBranch string) []installStep {
 // ever spells `plugin marketplace remove` either (codex cascades the same
 // dependent-uninstall harm as claude on that command, probe 1 — measured against
 // the captain's real codex config, which has `subspace@spacedock` installed
-// alongside Spacedock). Codex's global skill namespace still means the two
-// Spacedock channels must be exclusive, so exclusivity is now carried entirely by
+// alongside Spacedock). Codex's global skill namespace still means every
+// Spacedock provider must be exclusive, so exclusivity is carried entirely by
 // `plugin remove` (content-level, not marketplace-level): remove the sibling
-// channel's plugin first (tolerated — channel exclusivity), then the selected
-// channel's own plugin (tolerated — cache hygiene: without this, stale version
-// dirs accumulate under the cache and latestVersionDir's fallback can misorder
-// them). The marketplace add carries the source channelMarketplaceSource resolved
-// (no `--ref` flag — any channel ref is part of the source string): the bare repo
-// for stable (root marketplace.json named `spacedock`), `<repo>@edge` for edge
-// (the `edge` branch whose root marketplace.json is named `spacedock-edge`, so the
-// add registers `spacedock-edge` and the channel id `spacedock@spacedock-edge`
-// resolves) — fail-fast, the real-failure backstop. `plugin marketplace upgrade`
-// re-pins the snapshot non-destructively (probe 4; tolerated — a local-path
-// source errors harmlessly at exit 0, still tolerated for forward safety). The
-// entry is always `spacedock`; the version pin lives in the marketplace manifest.
-// `plugin add` unconditionally re-clones content (probe 8) and stays fail-fast.
+// channel's plugin (tolerated — channel exclusivity), the selected channel's own
+// plugin (tolerated — cache hygiene: without this, stale version dirs accumulate
+// under the cache and latestVersionDir's fallback can misorder them), AND the
+// dedicated `--plugin-dir` dev id (tolerated — the round-trip case: a captain who
+// used `--plugin-dir` and now runs a normal channel install must not end up with
+// both `spacedock@spacedock-local` and the channel id installed at once, or
+// $spacedock:* resolves ambiguously; see codexPluginDirInstallArgvSequence for
+// the reverse direction). The marketplace add carries the source
+// channelMarketplaceSource resolved (no `--ref` flag — any channel ref is part of
+// the source string): the bare repo for stable (root marketplace.json named
+// `spacedock`), `<repo>@edge` for edge (the `edge` branch whose root
+// marketplace.json is named `spacedock-edge`, so the add registers
+// `spacedock-edge` and the channel id `spacedock@spacedock-edge` resolves) —
+// fail-fast, the real-failure backstop. `plugin marketplace upgrade` re-pins the
+// snapshot non-destructively (probe 4; tolerated — a local-path source errors
+// harmlessly at exit 0, still tolerated for forward safety). The entry is always
+// `spacedock`; the version pin lives in the marketplace manifest. `plugin add`
+// unconditionally re-clones content (probe 8) and stays fail-fast.
 func codexInstallArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	return []installStep{
 		{argv: []string{"plugin", "remove", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", id}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", codexLocalPluginID}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
+	}
+}
+
+// codexPluginDirInstallArgvSequence is the `--plugin-dir` dev-install analog of
+// codexInstallArgvSequence, targeting the dedicated codexLocalMarketplaceName
+// instead of a real channel. Because the local marketplace's name never
+// collides with either real channel's name (unlike the pre-fix shape, which
+// borrowed channelMarketplace(devBranch)), no step here — or in
+// codexInstallArgvSequence above — ever needs a conditional `marketplace
+// remove`: a real channel install and a local dev install can never contend for
+// the same marketplace registration, so the "no install step ever removes a
+// marketplace" rule holds with NO exception. Plugin-level exclusivity still
+// applies (codex's skill namespace is global): remove BOTH real channel ids
+// (tolerated) plus any prior local install (tolerated — cache hygiene, same
+// reasoning as codexInstallArgvSequence's own-channel remove) before
+// add/upgrade/install under the local name.
+func codexPluginDirInstallArgvSequence(source string) []installStep {
+	return []installStep{
+		{argv: []string{"plugin", "remove", "spacedock@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", "spacedock@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", codexLocalPluginID}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "add", source}},
+		{argv: []string{"plugin", "marketplace", "upgrade", codexLocalMarketplaceName}, tolerateExit: true},
+		{argv: []string{"plugin", "add", codexLocalPluginID}},
 	}
 }
 
@@ -420,6 +494,22 @@ func (execHost) Install(host, source, devBranch string) (string, error) {
 	default:
 		return "", fmt.Errorf("programmatic install is supported for claude and codex, not %q", host)
 	}
+	return runInstallSteps(host, steps)
+}
+
+// InstallCodexLocalPluginDir shells the codex `--plugin-dir` dev-install
+// sequence (codexPluginDirInstallArgvSequence) against source — the persistent
+// local marketplace WriteCodexLocalMarketplace builds — returning combined
+// output.
+func (execHost) InstallCodexLocalPluginDir(source string) (string, error) {
+	return runInstallSteps("codex", codexPluginDirInstallArgvSequence(source))
+}
+
+// runInstallSteps shells argv steps against host in order, tolerating a
+// tolerateExit step's non-zero exit (appended to combined output, loop
+// continues) and returning a wrapped error on a fail-fast step's non-zero exit.
+// Shared by Install and InstallCodexLocalPluginDir so the loop is written once.
+func runInstallSteps(host string, steps []installStep) (string, error) {
 	var sb strings.Builder
 	for _, step := range steps {
 		cmd := exec.Command(host, step.argv...)

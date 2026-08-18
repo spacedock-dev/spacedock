@@ -333,9 +333,11 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 	if host != "pi" {
 		if pluginDir != "" {
 			// codex's `--plugin-dir` builds a local marketplace from the checkout and
-			// installs it under the binary's own channel, through the same shared helper
-			// `spacedock codex --plugin-dir` calls. claude has no such install path — its
-			// --plugin-dir is an ephemeral launch override, not an install.
+			// installs it under the dedicated `spacedock-local` marketplace name (never
+			// the binary's own channel — see codexLocalMarketplaceName), through the
+			// same shared helper `spacedock codex --plugin-dir` calls. claude has no
+			// such install path — its --plugin-dir is an ephemeral launch override, not
+			// an install.
 			if host == "codex" {
 				if err := installCodexLocalPluginDir(hostOps, pluginDir, stderr); err != nil {
 					fmt.Fprintf(stderr, "spacedock install: %v\n", err)

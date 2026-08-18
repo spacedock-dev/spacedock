@@ -27,7 +27,24 @@ type codexPluginDirHost struct {
 	inspectErr          error
 }
 
+// Install is overridden too (some callers still exercise the channel path
+// through a codexPluginDirHost), but the --plugin-dir install seam is
+// InstallCodexLocalPluginDir below — that is what installCodexLocalPluginDir
+// actually calls since the spacedock-local marketplace name change.
 func (h *codexPluginDirHost) Install(host, source, branch string) (string, error) {
+	h.inspect(source)
+	return h.fakeHost.Install(host, source, branch)
+}
+
+func (h *codexPluginDirHost) InstallCodexLocalPluginDir(source string) (string, error) {
+	h.inspect(source)
+	return h.fakeHost.InstallCodexLocalPluginDir(source)
+}
+
+// inspect reads the local marketplace's staged plugin dir at Install time — the
+// moment the real codex host reads it — recording whether it is a real
+// directory (not a symlink) and its manifest content.
+func (h *codexPluginDirHost) inspect(source string) {
 	pluginPath := filepath.Join(source, "plugins", "spacedock")
 	h.installedPluginPath = pluginPath
 	if info, err := os.Lstat(pluginPath); err == nil {
@@ -40,7 +57,6 @@ func (h *codexPluginDirHost) Install(host, source, branch string) (string, error
 	} else if h.inspectErr == nil {
 		h.inspectErr = err
 	}
-	return h.fakeHost.Install(host, source, branch)
 }
 
 // TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag is AC-1: `spacedock codex
@@ -63,11 +79,12 @@ func TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag(t *testing.T) {
 	if host.inspectErr != nil {
 		t.Fatalf("marketplace inspection at Install time failed: %v", host.inspectErr)
 	}
-	// (a) Install called exactly once, for codex, with a plugins/spacedock staged
-	// copy carrying the checkout's manifest. (The marketplace-name-is-the-channel
-	// property is AC-2's behavioral proof against real codex.)
-	if len(host.installCmds) != 3 || host.installCmds[0] != "codex" || host.installCmds[2] != devBranch {
-		t.Fatalf("install seam = %v, want exactly one {codex, <marketplace>, %q} call", host.installCmds, devBranch)
+	// (a) InstallCodexLocalPluginDir called exactly once, for codex, with a
+	// plugins/spacedock staged copy carrying the checkout's manifest. (The
+	// dedicated-marketplace-name property is AC-2's behavioral proof against
+	// real codex.)
+	if len(host.installCmds) != 2 || host.installCmds[0] != "codex" {
+		t.Fatalf("install seam = %v, want exactly one {codex, <marketplace>} call", host.installCmds)
 	}
 	if !host.installedIsRealDir {
 		t.Fatalf("plugins/spacedock must be a real staged directory, not a symlink to the checkout")
@@ -180,7 +197,7 @@ func TestCodexPluginDirAdvisoryPresenceAndAbsence(t *testing.T) {
 		if !strings.Contains(stderr.String(), advisory) {
 			t.Fatalf("stderr missing the version-masquerade advisory: %q", stderr.String())
 		}
-		if !strings.Contains(stderr.String(), "as "+channelPluginID(devBranch)) {
+		if !strings.Contains(stderr.String(), "as "+codexLocalPluginID) {
 			t.Fatalf("advisory must name the selected codex plugin id: %q", stderr.String())
 		}
 		if !strings.Contains(stderr.String(), "Removed other Spacedock Codex channels") {
@@ -222,7 +239,7 @@ func TestInstallCodexPluginDirInstallsViaSharedHelper(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if len(host.installCmds) != 3 || host.installCmds[0] != "codex" {
+	if len(host.installCmds) != 2 || host.installCmds[0] != "codex" {
 		t.Fatalf("install seam = %v, want exactly one codex install", host.installCmds)
 	}
 	if !host.installedIsRealDir {
@@ -238,7 +255,7 @@ func TestInstallCodexPluginDirInstallsViaSharedHelper(t *testing.T) {
 	if !strings.Contains(stderr.String(), "version-masquerade advisory") {
 		t.Fatalf("install --host codex --plugin-dir missing the advisory: %q", stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "as "+channelPluginID(devBranch)) {
+	if !strings.Contains(stderr.String(), "as "+codexLocalPluginID) {
 		t.Fatalf("install --host codex --plugin-dir must name the selected plugin id: %q", stderr.String())
 	}
 	if !strings.Contains(stderr.String(), "Removed other Spacedock Codex channels") {
@@ -307,14 +324,19 @@ func TestInstallCodexLocalPluginDirLeavesOnePromptInputProvider(t *testing.T) {
 	}
 }
 
-// TestInstallCodexLocalPluginDirResolvesOnEdgeChannel is AC-2: a --plugin-dir codex
-// install names its marketplace via channelMarketplace(devBranch), so an
-// edge-devBranch build's install resolves through the real ResolveManifest — where
-// the OLD hardcoded `spacedock` name silently did not (Spike E baseline: empty
-// resolve). Pins devBranch="next" (edge), points CODEX_HOME at a fresh temp dir,
-// installs a throwaway checkout fixture through the real helper, then asserts
-// ResolveManifest("codex") is non-empty. Skips when codex is absent (no auth
-// required — Spike C).
+// TestInstallCodexLocalPluginDirResolvesOnEdgeChannel is AC-2, round-3 shape: a
+// --plugin-dir codex install names its marketplace via the FIXED
+// codexLocalMarketplaceName ("spacedock-local"), devBranch-INDEPENDENT — so an
+// edge-devBranch build's install still resolves through the real
+// ResolveManifest, which must check the local id (codexLocalPluginID)
+// regardless of devBranch (team-lead's "teach the gate the second id" point).
+// Without that check, ResolveManifest would only look for
+// channelPluginID(devBranch) and never find the local install — the same
+// empty-resolve failure mode the original (pre-round-3) Spike E baseline hit
+// for a different reason (a hardcoded `spacedock` name). Pins devBranch="next"
+// (edge), points CODEX_HOME at a fresh temp dir, installs a throwaway checkout
+// fixture through the real helper, then asserts ResolveManifest("codex") is
+// non-empty. Skips when codex is absent (no auth required — Spike C).
 func TestInstallCodexLocalPluginDirResolvesOnEdgeChannel(t *testing.T) {
 	if _, err := exec.LookPath("codex"); err != nil {
 		t.Skip("codex not on PATH; edge-channel resolve test requires the host CLI")

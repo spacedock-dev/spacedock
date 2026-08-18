@@ -11,11 +11,13 @@ import (
 
 // TestCodexInstallIssuesSequenceInOrder locks AC-1a: a stub codex that exits 0 on
 // every step -> Install("codex", "spacedock-dev/marketplace", "next") returns nil
-// and the combined output carries all five step markers. The sibling channel's
-// plugin is removed before the selected channel's own, and no step ever spells
-// `marketplace remove` — codex cannot keep a stale sibling `spacedock:*` provider
-// enabled beside the selected install, but the marketplace record it lives under
-// is never touched. The stub's echoed argv is the independent source of truth.
+// and the combined output carries all six step markers. The sibling channel's
+// plugin is removed, then the selected channel's own, then any prior
+// --plugin-dir dev install (spacedock@spacedock-local — the round-3 round-trip
+// fix), and no step ever spells `marketplace remove` — codex cannot keep a
+// stale sibling `spacedock:*` provider enabled beside the selected install, but
+// the marketplace record it lives under is never touched. The stub's echoed
+// argv is the independent source of truth.
 func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -30,6 +32,7 @@ func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 	wantOrder := []string{
 		"stub:plugin remove spacedock@spacedock:exit=0",
 		"stub:plugin remove spacedock@spacedock-edge:exit=0",
+		"stub:plugin remove spacedock@spacedock-local:exit=0",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
 		"stub:plugin marketplace upgrade spacedock-edge:exit=0",
 		"stub:plugin add spacedock@spacedock-edge:exit=0",

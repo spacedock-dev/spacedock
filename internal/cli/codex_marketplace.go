@@ -40,14 +40,18 @@ type CodexMarketplaceInstall struct {
 // that exposes repoRoot as the `spacedock` plugin via a `plugins/spacedock`
 // FILTERED COPY (codexPluginDirIncludes — not a symlink to the whole checkout) and
 // a `.agents/plugins/marketplace.json` (`source: local`). marketplaceName is the
-// marketplace's own `name` — the channel marketplace the binary resolves
-// (`spacedock` stable / `spacedock-edge` edge), so an edge binary's install resolves
-// through the channel id rather than silently landing on the wrong channel. The
-// plugin ENTRY stays `spacedock` (equal to the plugin's manifest name) on every
-// channel; only the marketplace name carries the channel. Each call re-stages the
-// plugin dir from scratch (cheap: <1 MB), so a later launch always serves the
-// checkout's current content — freshness must flow through this staged copy
-// because codex's `plugin add` reads it, not the checkout in place.
+// marketplace's own `name`; the production caller (installCodexLocalPluginDir)
+// always passes codexLocalMarketplaceName ("spacedock-local") — a name DEDICATED
+// to `--plugin-dir` dev installs, distinct from either real channel's marketplace
+// name (`spacedock` stable / `spacedock-edge` edge), so a dev install can never
+// collide with a real channel install's marketplace registration (round-3
+// captain-ruled fix, option (c)). The function stays generic/parameterized for
+// testability — a test may still exercise it with a channel name directly. The
+// plugin ENTRY stays `spacedock` (equal to the plugin's manifest name) regardless
+// of the marketplace name. Each call re-stages the plugin dir from scratch (cheap:
+// <1 MB), so a later launch always serves the checkout's current content —
+// freshness must flow through this staged copy because codex's `plugin add` reads
+// it, not the checkout in place.
 func WriteCodexLocalMarketplace(marketplaceRoot, repoRoot, marketplaceName string) (CodexMarketplaceInstall, error) {
 	marketplaceRoot, err := filepath.Abs(marketplaceRoot)
 	if err != nil {
@@ -214,32 +218,36 @@ func copyFile(destPath, srcPath string, perm os.FileMode) error {
 }
 
 // installCodexLocalPluginDir builds a local marketplace from checkout (via
-// WriteCodexLocalMarketplace, named for the binary's own channel) and installs it
-// through the same Install() sequence a normal `spacedock codex` install uses, so
-// the resulting plugin id and cache layout are indistinguishable from a marketplace
-// install on the same channel. The marketplace root is persistent under the Codex
-// home (one stable dir per channel, re-pointed on each call): codex records the
-// marketplace source by path and re-loads it on every later `codex plugin` command,
-// so a throwaway dir removed after install would hard-fail every subsequent codex
-// invocation. It prints the version-masquerade advisory on every call: a
-// `--plugin-dir` install reports the checkout's checked-in .codex-plugin/plugin.json
-// version, not necessarily its current HEAD (the full stamping fix is deferred).
+// WriteCodexLocalMarketplace, named codexLocalMarketplaceName — a dedicated
+// name, not the binary's own channel — so a --plugin-dir dev install can never
+// collide with a real channel install's marketplace registration; see
+// codexLocalMarketplaceName's doc) and installs it through
+// InstallCodexLocalPluginDir, codexPluginDirInstallArgvSequence's dedicated
+// sequence (not the channel Install() path). The marketplace root is
+// persistent under the Codex home (one stable dir, ALWAYS the same regardless
+// of devBranch — one marketplace name means one registration, so no per-channel
+// subdirectory is needed): codex records the marketplace source by path and
+// re-loads it on every later `codex plugin` command, so a throwaway dir removed
+// after install would hard-fail every subsequent codex invocation. It prints
+// the version-masquerade advisory on every call: a `--plugin-dir` install
+// reports the checkout's checked-in .codex-plugin/plugin.json version, not
+// necessarily its current HEAD (the full stamping fix is deferred).
 func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) error {
 	// Preflight the checkout before creating the persistent marketplace directory,
 	// re-staging its plugin dir, or asking Codex to remove/install any channel.
 	if err := validateLocalSpacedockPlugin(checkout, "codex"); err != nil {
 		return err
 	}
-	marketplaceRoot := filepath.Join(codexHome(), "spacedock-plugin-dir", channelMarketplace(devBranch))
+	marketplaceRoot := filepath.Join(codexHome(), "spacedock-plugin-dir")
 	if err := os.MkdirAll(marketplaceRoot, 0o755); err != nil {
 		return fmt.Errorf("create local marketplace dir: %w", err)
 	}
 
-	install, err := WriteCodexLocalMarketplace(marketplaceRoot, checkout, channelMarketplace(devBranch))
+	install, err := WriteCodexLocalMarketplace(marketplaceRoot, checkout, codexLocalMarketplaceName)
 	if err != nil {
 		return fmt.Errorf("build local marketplace: %w", err)
 	}
-	if _, err := ops.Install("codex", install.MarketplaceRoot, devBranch); err != nil {
+	if _, err := ops.InstallCodexLocalPluginDir(install.MarketplaceRoot); err != nil {
 		return fmt.Errorf("install from local marketplace: %w", err)
 	}
 	fmt.Fprintf(stderr,
@@ -247,6 +255,6 @@ func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) 
 			"Removed other Spacedock Codex channels so $spacedock:* resolves from this install.\n"+
 			"version-masquerade advisory: the reported version reflects the checkout's "+
 			"checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.\n",
-		checkout, channelPluginID(devBranch))
+		checkout, codexLocalPluginID)
 	return nil
 }
