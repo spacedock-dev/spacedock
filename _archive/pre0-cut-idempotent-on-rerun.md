@@ -1,16 +1,17 @@
 ---
 id: 83tx3a7zwnvz92d7kq0cwf2a
 title: Make the auto-pre0 cut idempotent under a workflow re-run
-status: validation
+status: done
 source: "Validation of `collapse-duplicate-edge-marketplace-routes`, cycle 2, 2026-08-18. Recorded there as a deferred risk with a captain-decision note; the captain elected to file it rather than spend a third feedback cycle. Reproduced verbatim by that validator: `fatal: tag 'v0.27.0-pre0' already exists`, rc=128, red under `set -euo pipefail`."
 started: 2026-08-18T02:36:44Z
-completed:
-verdict:
+completed: 2026-08-18T06:02:34Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-pre0-cut-idempotent-on-rerun
 issue:
-mod-block: merge:pr-merge
-pr: "#729"
+mod-block:
+pr: pr-merge:729
+archived: 2026-08-18T06:02:34Z
 ---
 
 Re-running a stable release's `edge-advance` job after its pre0 tag already reached origin makes the job die on the tag it created. The retired mechanism prevented this; its replacement does not.
