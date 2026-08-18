@@ -9,6 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-remove-tautological-workflow-tests
 issue:
+mod-block: merge:pr-merge
+pr: "#728"
 ---
 
 Delete the tests that assert a workflow file contains the text someone wrote into it. The goal is removal, not replacement.
