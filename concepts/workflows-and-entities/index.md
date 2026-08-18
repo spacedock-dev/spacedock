@@ -2,7 +2,7 @@
 title: "Workflows & entities"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-18 06:05:39"
+last_updated: "2026-08-18 18:53:14"
 ---
 
 # Workflows & entities
