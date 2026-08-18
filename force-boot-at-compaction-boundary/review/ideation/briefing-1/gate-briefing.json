@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: a binary-side fail-closed boot receipt checked against the durable compact_boundary record, with no hook?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/69e0d6ac5023e1903b2d4562da5a9d2066b78dd3/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:c44fa4f15c87e355a084cfe015f73724e6dd4c446b119c9340f3c098531fb920",
+      "mediaType": "text/markdown",
+      "summary": "Ran a live capture spike on Claude Code 2.1.226 and disproved BOTH options the seed proposed. The hook is rejected on necessity: PreCompact fired on a /compact the host then REFUSED ('Not enough messages to compact'), so it false-positives, and it produced nothing at the incident boundary. The naive session-identity tell is disproven by capture: session_id is identical across PreCompact, SessionStart(source:compact), and the boundary — identity survives compaction. What does work is a durable timestamped compact_boundary transcript record, captured for the spike session AND for this session's own incident boundary (fedfe9c3, 18:59:30Z, 801920 to 19650 tokens). Design: status --boot writes a per-session receipt; FO-held mutating verbs refuse until the receipt postdates the latest boundary. No hook, no escape hatch, honest fail-open degradation on non-Claude hosts. Surface net +540 across ~12 files (+560/-20), tolerance 2x net; product +145, tests +340 (first instinct ~170, explicitly doubled per today's calibration), docs +55."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/69e0d6ac5023e1903b2d4562da5a9d2066b78dd3/force-boot-at-compaction-boundary/ideation-spike-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:962b316c9121c585b2190fafe89a182267f30550b7bb12e8f27f5a57619a7a92"
+    }
+  ]
+}
