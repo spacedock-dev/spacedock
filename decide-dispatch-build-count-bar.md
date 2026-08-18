@@ -1,7 +1,7 @@
 ---
 id: 6htv3p97aq8sexrkjhrcdwt1
 title: Decide whether one dispatch build per stage is the right bar for a live agent
-status: implementation
+status: validation
 source: "Captain CL, 2026-08-18, from the live-lane inventory reframe. The recorded-gate-lifecycle journey red in run 32105482382 on 'successor dispatch build attempts/successes = 2/2, want 1/1' — two SUCCESSFUL builds, not an error-then-retry. codex-live-dispatch-build-checklist-race already carries the open question and is codex-scoped; this occurrence is claude."
 started: 2026-08-18T18:41:27Z
 completed:
