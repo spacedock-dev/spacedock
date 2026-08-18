@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:j7jhntfa2ve8g6jwhatktrrv:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: require a strict conn citation on FO-actor gate resolutions, refuse it on captain resolutions, and pin the recorded-gate-lifecycle grader to the FO actor?",
+  "artifacts": [
+    {
+      "id": "artifact:j7jhntfa2ve8g6jwhatktrrv:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a5a8a986c93c2f5ee21d3a168ea87de1e2c76244/conn-delegated-approver-attribution.md",
+      "rev": "sha256:a24b2dd2c70f3252392d8f6a35e120a53faf211f1f7abe18bedb498a920b4c0f",
+      "mediaType": "text/markdown",
+      "summary": "Ideation settled the load-bearing question against its own seed: the auto-continue prompt grants NO conn, so those runs stay with own-sonnet-gate-conn-bypass and this task lands on recorded-gate-lifecycle, where the conn is granted verbatim and finding 9 shows misattribution grading green. Design: strict conn {quote, source} on the Resolution, required on FO-actor decisions and refused on captain decisions (exit 2, no mutation); grader stops deriving the expected actor from the FO's own command and authenticates the quote against the runbook it authored; misattribution reds under conn-approval-misattributed. Auto-continue keeps its RED and gains a boundary negative proving the citation confers no authority. Net +150 across 11 files."
+    }
+  ]
+}
