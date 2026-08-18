@@ -114,13 +114,26 @@ Every mode predicate passed. The FO under break-glass hand-fills the manual `Age
 
 Retired. What supports it: the shipped contract mandates omission (`claude-fo-dispatch.md:7`); #549 (`ecffcedef`) deleted the mode's skill and `contractlint` keeps it deleted; and the legacy envelope (team_name present, run_in_background absent) requires `TeamCreate`, which no supported host exposes — the CI floor is the merged host (unpin #390, "claude ≥2.1.178, TeamCreate gone" per `build.go:338` and `merged_team_mode_test.go`), and the current Agent tool marks `team_name` "Deprecated; ignored". No host in the support matrix can consume what `--team-name` emits. What still says otherwise — `dispatch build --help` advertising the mode, the "sunsetting" advisory, `spawn-standing`'s required TeamCreate name, and commission Step 3 — is the surface this task removes.
 
-### Decision 2: `selected-team` — keep the proof, register the sonnet flake; do NOT delete
+Live evidence that the surviving flag actively misroutes (found in cycle 2's stream pulls): in BOTH break-glass transcripts — red 32189720211 and green main 32040773989 — the sonnet FO, told only "run in team mode", passed `--team-name` to `dispatch build` with a fabricated name (`team-lead`, `team1`) before the shim failed it. Had the build succeeded, it would have emitted the LEGACY envelope (team_name present, `run_in_background` ABSENT) plus a stderr advisory, and the contract's verbatim mapping (`claude-fo-dispatch.md:26`) would have produced a blocking call with a host-ignored field instead of the named background teammate the run mandated. The advertised flag is an attractive nuisance on the exact word "team"; removal is not just cleanup, it closes a live mis-dispatch path.
 
-The test is not a proof of the legacy mode (its oracle asserts team_name absence), so "delete with the mode" is a category error. Recommendation: register it under `repair-sonnet-live-flakes` (owner `060xp69y61yhrww23g3wvwqy`) beside its sibling — `liveXFail("claude-sonnet", …)` routed through `finishLiveScenario`, plus the registry Expected-failure line in `docs/runtime-live-ci-registry.md` — AND fix the identified root cause: bind the template's `{dispatch_agent_id}` slot (stage `agent:` field; default `spacedock:ensign` when the README declares none). The oracle's bytes stay unchanged; its RED controls keep failing wrong topologies. No live proof is deleted, so no deletion approval is needed; the recommendation to the captain is explicitly keep-and-bind.
+### Decision 2 (revised per gate): `selected-team` — keep the proof byte-unchanged, bind the slot, NO xfail
+
+The test is not a proof of the legacy mode (its oracle asserts team_name absence), so "delete with the mode" is a category error. It becomes: exactly what it is. No deletion, no re-anchor, no owner registration — the test stays hard-gating with its oracle bytes unchanged, and the fix is the root cause: bind the template's `{dispatch_agent_id}` slot. The cycle-1 recommendation to ALSO register it under `repair-sonnet-live-flakes` was rejected at the gate as self-cancelling — an xfail declares an expected failure someone owns fixing, and binding the slot in the same change leaves nothing to expect or own. If it reds again after the binding, that red is fresh evidence of a different cause and earns a registration then.
+
+Concrete binding, at the deviation's entry point: in `skills/fo-dispatch-recovery/SKILL.md`, both template arms' `subagent_type="{dispatch_agent_id}"` line gains an inline comment in the template's existing comment style (the `name=` line already carries one): `// the stage's agent: field from the workflow README; spacedock:ensign when the README names none (the build helper's default, build.go rule 6)`. The value sits AT the fill point, where the omission happened.
 
 ### Decision 3: break-glass shape choice is stable; the instability is one unbound template field
 
-Across all observed runs — CI red 32189720211, two same-commit local passes (captain-reported), main green in CI and locally — the FO's MODE choice never wavered: single Agent() call, named background shape, no team_name, durable result committed, in the red run too. The nondeterminism is sonnet's template fidelity on exactly the one slot the template leaves unbound. That is an identified product gap, not an unknown instability; registering the xfail while shipping the slot binding does not hide it — the owner's unbind protocol (its AC-3) requires bound-failure/XPASS then unchanged-byte PASS evidence to remove the marker. Prior-era failures (PR #680 run 31640122346: two-call cardinality, missing bare marker) were fixed by the `bbe3d7a05`/`43fd2e79d`/`e481864e4` oracle rewrite and are not this failure.
+Across all observed runs — CI red 32189720211, two same-commit local passes (captain-reported), main green in CI and locally — the FO's MODE choice never wavered: single Agent() call, named background shape, no team_name, durable result committed, in the red run too. The nondeterminism is sonnet's template fidelity on exactly the one slot the template leaves unbound. Prior-era failures (PR #680 run 31640122346: two-call cardinality, missing bare marker) were fixed by the `bbe3d7a05`/`43fd2e79d`/`e481864e4` oracle rewrite and are not this failure.
+
+**The variance, explained from both streams.** Cycle 1 left open why an unbound slot passes on main yet failed on the stack tip. Both transcripts are now in evidence — red run 32189720211 and green main run 32040773989 (both claude-sonnet-5, identical plugin bytes; each stream quotes the same recovery-skill section before the call):
+
+- Green emitted the full six-parameter call, `subagent_type: "spacedock:ensign"` included.
+- Red emitted five of six: the `subagent_type` line is absent from the call entirely — not mis-valued, dropped. Yet the SAME red call resolves `{worker_key}` to `spacedock-ensign` in the name, and its transcribed prompt carries the literal `Skill(skill="spacedock:ensign")`. The red FO demonstrably possessed the ensign identity in-context and still dropped the one parameter whose slot is an undefined token.
+
+So what varies is not environment (CI passed on main, failed on the stack tip, passed twice locally on the tip — same bytes every time) and not the FO's knowledge (both FOs had the value three ways: the template prompt's own `Skill(skill="spacedock:ensign")` literal, the worker-key rule derived from the agent id, and the plugin's registered agent-type listing on the Agent tool). What varies is per-sample handling of an underdetermined instruction: transcribing a template into a tool call, the model reaches a placeholder with no binding rule, and "resolve it from context" vs "drop the parameter" are both plausible continuations — sampling picks one per run. The split in the evidence lands exactly on the bound/unbound line: across both calls, 11 of 11 explicitly-valued template fields were emitted correctly; the sole unbound slot went 1 for 2.
+
+Why the binding removes this variance: it deletes the choice point. With the value stated at the fill point, emitting `subagent_type` is the same copy operation the FO performed correctly on every explicit field in both runs, not an inference. Stated plainly rather than overclaimed: sampling can still violate an explicit instruction — the claim is that the identified degree of freedom (an unbound slot forcing a resolve-or-drop choice) is removed, not that sonnet becomes infallible. A post-binding red would be a different defect on fresh evidence, handled then.
 
 ### Decision 4: survivor sweep (what #549 left behind)
 
@@ -138,23 +151,23 @@ Across all observed runs — CI red 32189720211, two same-commit local passes (c
 
 ### Proposed approach
 
-1. Land the lane unblock first: `selected-team` xfail registration (live test arm + registry line) and the `{dispatch_agent_id}` slot binding in the break-glass template.
+1. Land the root-cause fix first: the `{dispatch_agent_id}` slot binding in both break-glass template arms (inline comment at the fill point, Decision 2). No xfail, no live-test or registry change — `selected-team` stays hard-gating and byte-unchanged.
 2. Retire the binary surface: remove `--team-name`/`TeamName`/`teamNamePattern`/legacy envelope/team-prefix filename/advisory from `dispatch build`; remove `spawn-standing` (singular) and the `--team` legacy branch of `spawn-standing-all` (+ orphaned `MemberExists`); keep `reconcile --team-name`.
 3. Re-anchor the test fleet: delete the two legacy-only test files; drop `team_name` from base stdins; regenerate goldens (crossproduct `+team` rows become the merged shape — names kept, "team" now denotes the auto-team); drop `--team-name` from `gate_ceremony_count_test.go`; port mode-neutral validation cases from the legacy standing test into the merged one.
 4. Extend the retirement invariant: `contractlint` also asserts no shipped skill text instructs `TeamCreate`; a focused CLI test asserts `dispatch build --team-name` now exits 2 (unknown flag).
 5. Rewrite commission Step 3 from the TeamCreate probe to the shipped boot probe (SendMessage availability per `claude-fo-dispatch.md:7`).
 
-New-mechanism justification: contractlint-over-skills serves AC-4 (the exact regression — a skill re-teaching TeamCreate — already survived #549's sweep in commission; review alone missed it). The owner-bound xfail serves AC-5 (alternatives: deleting the test loses the break-glass team proof; fix-and-hope leaves the nondeterministic merge blocker). The slot binding serves AC-6 (alternative: loosen the oracle by dropping `subagent_type` — that stops grading a field the template mandates and hides the defect instead of fixing it).
+New-mechanism justification: contractlint-over-skills serves AC-4 (the exact regression — a skill re-teaching TeamCreate — already survived #549's sweep in commission; review alone missed it). The slot binding serves AC-5 (alternatives: loosening the oracle by dropping `subagent_type` stops grading a field the template mandates and hides the defect instead of fixing it; an owner-bound xfail was rejected at the gate as self-cancelling alongside the fix).
 
 ### Expected surface
 
-Estimate net LOC change: -500, across ~49 files. Insertions ≈ +120, deletions ≈ +620. Breakout: product (6 Go files + 6 shipped skill files + live-test arm + registry) net ≈ -180 (ins +50 / del +230); tests + fixtures (~27 test files incl. `skills/integration/dispatch_test.go`, ~10 goldens) net ≈ -320 (ins +70 / del +390 — test-side additions already budgeted at ~2x first instinct per today's calibration); docs net ≈ ±0 (registry line + help-text diff counted in product). Tolerance: net within [-250, -750]; files ≤ 60. Declared in net — this task's purpose is removal; gross would count the deletions as growth. Historical trees (`_archive`, `_evidence`, `_reviews`, `_debriefs`, `docs/roadmap`) are excluded from the surface by classification, not by accident.
+Estimate net LOC change: -500, across ~47 files. Insertions ≈ +115, deletions ≈ +615. Breakout: product (6 Go files + 6 shipped skill files) net ≈ -180 (ins +45 / del +225); tests + fixtures (~27 test files incl. `skills/integration/dispatch_test.go`, ~10 goldens) net ≈ -320 (ins +70 / del +390 — test-side additions already budgeted at ~2x first instinct per today's calibration); docs net ≈ ±0 (help-text diff counted in product). Tolerance: net within [-250, -750]; files ≤ 60. Declared in net — this task's purpose is removal; gross would count the deletions as growth. Historical trees (`_archive`, `_evidence`, `_reviews`, `_debriefs`, `docs/roadmap`) are excluded from the surface by classification, not by accident. Revision delta from the cycle-1 estimate: -2 files (`dispatch_recovery_live_test.go` and `runtime-live-ci-registry.md` are no longer touched — the xfail was dropped); net unchanged within noise.
 
 ### Declared semantics
 
 - Command grammar: `dispatch build --team-name` becomes an unknown-flag usage error (exit 2). `dispatch spawn-standing` (singular) becomes an unknown subcommand. `spawn-standing-all` loses `--team`. A stdin `team_name` key degrades to the ignore-unknown-keys path (spiked, see below) — same input with and without it emits identical envelopes.
 - Stored formats: the build envelope can no longer carry `team_name`; dispatch file names lose the `{team}-` prefix shape (merged session-token prefix unchanged).
-- Runtime behavior: none on supported hosts (the removed shapes are unreachable via the shipped contract); the claude-live lane's `selected-team` grade changes from hard-fail to owner-bound xfail/XPASS.
+- Runtime behavior: none on supported hosts (the removed shapes are unreachable via the shipped contract); `selected-team`'s grading is unchanged (hard-gating), and the break-glass template text gains the slot binding.
 - Authority: none.
 
 ### Acceptance criteria
@@ -163,12 +176,11 @@ Estimate net LOC change: -500, across ~49 files. Insertions ≈ +120, deletions 
 - **AC-2:** The binary refuses the retired selector: `--team-name` exits 2 with a usage error, and a stdin `team_name` key changes nothing (byte-identical envelope with and without it). Tested by a focused CLI test (exit code + stderr) and an envelope byte-equality pair.
 - **AC-3:** No shipped dispatch path emits the legacy envelope: every non-bare host=claude row of the parity crossproduct and merged-mode suites emits `name` + `run_in_background:true` and never `team_name` (regenerated goldens are the byte-compare proof; re-introducing an emission fails them).
 - **AC-4:** The shipped instruction surface contains no TeamCreate imperative: commission's pilot-run probe instructs the SendMessage-availability probe, and the extended `contractlint` invariant fails on any shipped skill text instructing `TeamCreate` (paired with AC-1/AC-3 as their instruction-side enforcement).
-- **AC-5:** `selected-team` is owner-bound exactly like its sibling — `liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")` through `finishLiveScenario`, registry Expected-failure line present, `live_registry_reconciliation` green — with the oracle bytes unchanged and its RED controls (two-call, team_name-present, bare/team cross) still failing. An unchanged-bytes sonnet rerun cannot red the lane on this flake; a real topology regression still fails.
-- **AC-6:** The break-glass template's `{dispatch_agent_id}` slot is bound (stage `agent:` field; default `spacedock:ensign` when the README declares none), removing the unbound slot run 32189720211 red on. Ships with AC-5; live unbind evidence accrues under the owner's protocol — no live run required to land.
+- **AC-5:** The break-glass template's `{dispatch_agent_id}` slot is bound in both arms (inline comment at the fill point: stage `agent:` field; `spacedock:ensign` when the README names none), removing the resolve-or-drop choice point run 32189720211 red on — while `selected-team` remains hard-gating and byte-unchanged: no `liveXFail`, no registry Expected-failure line, oracle and its RED controls (two-call, team_name-present, bare/team cross) untouched and still failing wrong topologies. Tested by: the RED-control unit suite unchanged-green, `live_registry_reconciliation` green with no selected-team gap row, and the template diff shipping in the same change. No live run required to land; a post-binding live red would be fresh evidence of a different cause and earns its own filing then.
 
 ### Test plan
 
-Offline only; no live run needed to land. Focused Go CLI tests (flag refusal, stdin byte-equality), regenerated goldens (crossproduct, nonascii-title, namecap, ceremony fixtures), contractlint extension, existing oracle RED-control unit tests untouched, `live_registry_reconciliation` for the xfail join. Full `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`. Cost: mechanical-wide, logic-shallow; the risk is missed-survivor, mitigated by the grep-complete sweep above.
+Offline only; no live run needed to land. Focused Go CLI tests (flag refusal, stdin byte-equality), regenerated goldens (crossproduct, nonascii-title, namecap, ceremony fixtures), contractlint extension, existing oracle RED-control unit tests untouched, `live_registry_reconciliation` staying green with no selected-team gap row. Full `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`. Cost: mechanical-wide, logic-shallow; the risk is missed-survivor, mitigated by the grep-complete sweep above.
 
 ### Spike record
 
@@ -182,18 +194,15 @@ Riskiest unverified mechanism — "an unknown stdin key is ignored by `dispatch 
     -  --bare-mode                   Emit the bare sequential shape (no name, no team_name, no run_in_background); unsupported on host=codex.
     +  --bare-mode                   Emit the bare sequential shape (no name, no run_in_background); unsupported on host=codex.
 
-with `--team-name` also dropped from the flag summary line and the optional input-JSON key list (`team_name` removed). `docs/runtime-live-ci-registry.md` `claude-dispatch-build-break-glass`:
-
-    +- **Expected failure:** `selected-team` is flaky on `claude-live` (break-glass
-    +  template fidelity: unbound `subagent_type` slot); owner `060xp69y61yhrww23g3wvwqy`.
+with `--team-name` also dropped from the flag summary line and the optional input-JSON key list (`team_name` removed). `docs/runtime-live-ci-registry.md` is NOT touched (revised: no Expected-failure line — `selected-team` stays hard-gating).
 
 ### Open questions for the gate
 
-1. `selected-team`: recommendation is keep-and-bind, not delete — confirm (deleting a live proof would need explicit approval; none is requested).
-2. Registering a third flake under `060xp69y61yhrww23g3wvwqy` extends that owner's de-facto scope; its entity body is out of scope here — captain may want a one-line scope ack on it.
-3. `spawn-standing` (singular) + `spawn-standing-all --team` retirement widens beyond the literal `--team-name` sweep (contract-orphaned standing legacy, per the #549 TeamDelete precedent) — default IN, trim if the gate says so.
-4. The AC-6 template slot binding is a break-glass instruction change; judged within "what settling item 3 requires" (it is the identified root cause) — flag if the gate reads the carve-out narrower.
-5. `align-claude-break-glass-agent-proof` (`s2a…`) looks superseded by the current oracle — recommend closing it.
+1. `spawn-standing` (singular) + `spawn-standing-all --team` retirement widens beyond the literal `--team-name` sweep (contract-orphaned standing legacy, per the #549 TeamDelete precedent) — default IN, trim if the gate says so.
+2. The AC-5 template slot binding is a break-glass instruction change; judged within "what settling item 3 requires" (it is the identified root cause) — flag if the gate reads the carve-out narrower.
+3. `align-claude-break-glass-agent-proof` (`s2a…`) looks superseded by the current oracle — recommend closing it.
+
+(Resolved at the cycle-1 gate: `selected-team` is kept, not deleted; the xfail half was rejected — bind the slot only, no registration.)
 
 ## Stage Report: ideation
 
@@ -209,3 +218,16 @@ with `--team-name` also dropped from the flag summary line and the optional inpu
 ### Summary
 
 Corrected the filing's central premise: the live proof does not demand a team_name — the CI red's only failing predicate was an empty subagent_type, traced to an unbound {dispatch_agent_id} slot in the break-glass manual template. Settled retirement as fact (no supported host can consume the legacy envelope), scoped the binary/tests/skills removal with a keep-list (reconcile --team-name, historical-transcript tolerances), and spiked the one unverified mechanism (unknown stdin keys are ignored, exercised against the pre8 binary). Recommendation to the gate: keep selected-team, xfail-bind it under the existing sonnet-flake owner, and ship the slot binding as the root-cause fix.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Revise Decision 2 to bind-the-slot-only — no xfail registration.
+  Decision 2 rewritten (test stays hard-gating, byte-unchanged; binding is an inline comment at the fill point in both template arms); AC-5 merged accordingly, registry/live-test edits removed from approach, doc diff, semantics, and estimate (-2 files, now ~47).
+- DONE: Explain the variance the cycle-1 body left open — why an unbound slot passes on main yet failed on the stack tip.
+  Pulled both transcripts (red 32189720211, green main 32040773989): green emitted all six template fields; red emitted five, dropping only subagent_type while resolving {worker_key} to spacedock-ensign in the same call — the FO possessed the value and dropped the unbound parameter. Variance is per-sample resolve-or-drop handling of an undefined placeholder, not environment (same bytes across CI-main pass / CI-tip fail / local passes) and not missing knowledge (the value was in-context three ways). Across both calls: 11/11 explicit fields correct, 1/2 on the sole unbound slot — the split lands exactly on the bound/unbound line. Binding removes the choice point, turning the fill into the copy operation both runs performed correctly on every explicit field; stated with its honest bound (sampling can still defy an explicit literal — a post-binding red is fresh evidence, filed then).
+- DONE: Report any delta from net -500 / ~49 files.
+  Net -500 unchanged within noise; ~47 files (dispatch_recovery_live_test.go and runtime-live-ci-registry.md no longer touched).
+
+### Summary
+
+Dropped the xfail per the gate and answered the variance puzzle with direct stream evidence from the red and a green main run: the nondeterminism is the model's per-sample handling of the one template slot with no binding rule — it either resolves it from ambient context or drops the parameter — and binding the slot at the fill point deletes that choice. Bonus finding folded into Decision 1: both live FOs, told only "team mode", reached for the advertised --team-name with fabricated names, so the flag's removal closes an observed mis-dispatch path, not a theoretical one.
