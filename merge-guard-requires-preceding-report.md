@@ -1,7 +1,7 @@
 ---
 id: vkatjs25g9a9gmk3jtvx5ce0
 title: merge guard refuses a terminal transition with no preceding worker report
-status: validation
+status: implementation
 source: "Captain CL, 2026-08-18, from the live-lane inventory reframe. Failing assertion: internal/ensigncycle/shared_keep_moving_durable_test.go:103, 'first terminal transition must follow worker report', red in two consecutive claude-live runs (32092321763 attempt 2 and 32105482382) while the FO's own final messages claimed the reports had completed."
 started: 2026-08-18T18:41:27Z
 completed:
@@ -251,3 +251,18 @@ Throwaway clone of `27c69c0ba`, never the implementation worktree. `go test ./..
 Cycle 2 does most of what it claims. My three probe shapes proceed, the six-entity spike claim reproduces against the shipped read for the first time, both really-merged entities resolve cleanly, the new regression tests are genuinely red-then-green, and nothing I cleared in cycle 1 regressed — the batched-report-and-flip refusal survives even on renamed histories. But the replay retargets only on `R`-lines, and git's `--follow` also retargets on `C`-lines; the single live entity that exposed my original finding still hard-errors, one commit deeper than before. The cycle-2 flat→folder test misses it because it deletes the flat file in the conversion commit, which is precisely what turns the copy into a rename.
 
 **Recommendation: REJECTED** — the material finding is narrowed, not closed. The remedy is the same function and the same class of change the captain already authorized: retarget on `C` as well as `R`, and skip a commit with no blob rather than hard-erroring. One deferred risk (the `D`-line delete-and-recreate), pre-existing from cycle 1 and not triggered by any live entity today.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Retarget `entityPathsAtCommits` on `C`-lines as well as `R`-lines.
+  `internal/status/merge.go` (commit `68558ef7b`): the retarget condition now matches `strings.HasPrefix(fields[0], "R") || strings.HasPrefix(fields[0], "C")`. Built the failing shape first, by hand, before writing any test: a throwaway clone with a flat file left in place alongside a new folder index produced `C100\t010-task.md\t010-task/index.md` from real `git log --follow --name-status`, confirmed by eye — the same shape `git ls-tree 828b1b7e6` shows for the real entity.
+- DONE: Skip a commit with no blob at the resolved path instead of hard-erroring.
+  `entityBlobHistory` now `continue`s past a `git show` failure instead of returning an error; `blobs` is built by append, not a fixed-size indexed slice. No dedicated test added for the deferred D-line shape itself (out of this round's scope per the correction), but the change is generic — any unreadable commit is skipped, not just a `D`-line one.
+- DONE: Build the failing shape from real git output before writing assertions, then prove the fix against the real live entity that failed both cycles, not only fixtures.
+  Fixture: `TestMergeGuardFinalizesAfterFlatToFolderCopy` leaves the flat file in place across the conversion commit (cycle 2's sibling test `os.Remove`d it, which is exactly what produced an R-line instead) and asserts on the raw `--name-status` output that a `C`-line, not an `R`-line, was actually recorded, before finalizing. Verified red on `27c69c0ba` (`failed to read git history`, exit 128), green after. Real entity: `entityBlobHistory("stakes-declaration-read-through/index.md")` against this machine's actual state checkout — `ERROR show 92f163a7a...: exit status 128` on `27c69c0ba` (the exact commit validation cited), `RESOLVED 11 blobs` on the fix. Run via a throwaway, uncommitted test both before and after (machine-path-dependent, not shipped, deleted before this commit).
+- DONE: Report cycle-3 surface separately from the cumulative total.
+  Cycle-3: +83/-13, net +70, across the same 2 files already touched (`merge.go`, `merge_guard_report_order_test.go`) — no new files. Cumulative vs `main`: +751/-7, net +744, across 8 files (`git diff --numstat "$(git merge-base main HEAD)"..HEAD`) — 286% of the approved +260, captain-authorized in advance.
+
+### Summary
+
+Fixed the remaining material finding narrowly, exactly the two items authorized: `entityPathsAtCommits` now retargets on copy (`C`) lines the same way it already did for rename (`R`) lines, and `entityBlobHistory` skips a commit with no blob instead of hard-erroring the whole read. Followed the corrected process this time — confirmed the real `C100` line by hand against a throwaway clone before writing the regression test, and the new test asserts on that raw git output so it cannot silently regress to testing an R-line shape again. Proved the fix against the actual live entity that failed both prior cycles (`stakes-declaration-read-through`) in this machine's real state checkout, not only against authored fixtures — hard-errors at the exact commit validation cited on the pre-fix code, resolves cleanly on the fix. Design untouched; AC-1/AC-2 not reopened by this change itself. Cycle-3 surface (+70 net, 2 files, no new files) stayed tight; cumulative overrun was disclosed to and authorized by the captain before this round started.
