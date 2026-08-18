@@ -1,16 +1,17 @@
 ---
 id: 89bdt7vhk362yw630kt9s12k
 title: Safehouse passes terminal-host env for Zellij only, and passes names that do not exist
-status: validation
+status: done
 source: "Captain CL, 2026-08-18, from a live observation: `env | grep TMUX` returned nothing inside a safehouse-wrapped session. Traced to `internal/safehouse/safehouse.go:68-73`. Captain's direction: take the env set from subspace's own probe, and add a name to `--env-pass` only when that variable exists."
 started: 2026-08-18T14:57:04Z
-completed:
-verdict:
+completed: 2026-08-18T18:53:19Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-safehouse-terminal-env-passthrough
 issue:
-mod-block: merge:pr-merge
-pr: "#730"
+mod-block:
+pr: pr-merge:730
+archived: 2026-08-18T18:53:19Z
 ---
 
 A sandboxed session can detect Zellij and nothing else. Five other terminal hosts lose their identity at the sandbox boundary, and the allowance lists variable names whether or not they exist.
