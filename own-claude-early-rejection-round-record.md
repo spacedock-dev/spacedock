@@ -63,6 +63,17 @@ gates:
                 digest: sha256:e959bc47e87f862029273c0adb1d78d33bd8bf4d9dd6e52a77f098b904d9bb5e
                 request-digest: sha256:2a4a6012a3d7fd202f4d88a032f7ebf0f87be2d820e1b85a7ff5ca850619eb39
                 room-ref: ./own-claude-early-rejection-round-record/review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zf7rymtke3b6xp7r0337hjj4:ideation:3
+                briefing: briefing:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-19T22:57:04.279812Z"
+                decision: approve
+                reason: 'Captain approves onto the #736 stack: the entries=4 pin is a grader defect reddening correct conduct, and the remedy must land with something that turns the lane green.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-19T18:17:24Z
 ---
 
