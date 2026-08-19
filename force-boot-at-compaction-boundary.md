@@ -1,7 +1,7 @@
 ---
 id: 4ctz4sfybfk0mfsbnrjcc7bv
 title: Force one boot at the compaction boundary — a compacted FO resumes on stale bindings
-status: ideation
+status: implementation
 source: "Captain CL, 2026-08-18, in chat: 'file the compaction improvement, detail the problem diagnosis and proposed solution.' Raised after the FO opened three PRs by hand without reading the pr-merge mod, and diagnosed the root cause as never having run Startup in a compaction-resumed session."
 started: 2026-08-18T23:15:43Z
 completed:
@@ -65,7 +65,7 @@ gates:
                 reason: 'Captain approved in chat: ''approve both.'' Accepts the re-scoped design at net +245 across 8 files — boot receipt plus fail-closed guard on gate record, gate consume, and merge guard, no hook. The boundary was proven by live capture including this session''s own compact_boundary record, and both seeded mechanisms were disproven by that capture rather than by argument.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
