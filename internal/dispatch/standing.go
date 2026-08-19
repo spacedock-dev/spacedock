@@ -56,9 +56,7 @@ func runShowStanding(workflowDir string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "error: workflow directory not found: %s\n", workflowDir)
 		return 1
 	}
-	// A truthy sentinel team name: the filesystem scan is team-agnostic, and the
-	// bare-mode short-circuit lives in build upstream of this call.
-	teammates := EnumerateDeclaredStandingTeammates(workflowDir, "_show_standing_")
+	teammates := EnumerateDeclaredStandingTeammates(workflowDir)
 	rendered := claudeteam.RenderStandingTeammatesSection(teammates)
 	if rendered != "" {
 		fmt.Fprintln(stdout, rendered)

@@ -88,6 +88,12 @@ func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, a
 		}
 		return runShowStanding(workflowDir, stdout, stderr)
 	case "spawn-standing-all":
+		for _, a := range args[1:] {
+			if a == "--team" || strings.HasPrefix(a, "--team=") {
+				fmt.Fprintln(stderr, "error: unknown flag --team: legacy TeamCreate-registry dedup is retired; omit --team, the merged background shape is the only shape spawn-standing-all emits")
+				return 2
+			}
+		}
 		flags := parseFlags(args[1:], map[string]bool{"--workflow-dir": true})
 		wd, okWD := flags["--workflow-dir"]
 		if !okWD {

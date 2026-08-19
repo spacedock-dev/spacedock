@@ -133,9 +133,35 @@ func TestSpawnStandingAllMergedEmptyWhenNoneDeclared(t *testing.T) {
 	}
 }
 
+// TestSpawnStandingAllTeamFlagRefused asserts spawn-standing-all refuses a
+// legacy --team flag (exit 2) rather than silently ignoring it, matching
+// dispatch build's --team-name refusal — both retired inputs get the same
+// loud treatment instead of one being quiet.
+func TestSpawnStandingAllTeamFlagRefused(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	wd := t.TempDir()
+	writeMods(t, wd, map[string]string{
+		"comm-officer.md": standingMod("comm-officer", "sonnet", "prose polisher", ""),
+	})
+
+	for _, args := range [][]string{
+		{"spawn-standing-all", "--workflow-dir", wd, "--team", "fixture-team"},
+		{"spawn-standing-all", "--workflow-dir", wd, "--team=fixture-team"},
+	} {
+		res := runNative("", args...)
+		if res.exit != 2 {
+			t.Errorf("--team exit=%d, want 2 (usage error)\nargs=%v\nstderr=%q", res.exit, args, res.stderr)
+		}
+		if !strings.Contains(res.stderr, "--team") {
+			t.Errorf("stderr does not name the refused flag: %q", res.stderr)
+		}
+	}
+}
+
 // TestSpawnStandingAllMergedFailsLoudOnBrokenMod guards that the merged path
 // keeps the same loud validation the legacy path has: a standing mod missing its
-// ## Agent Prompt exits 1 naming the offending mod, with or without --team.
+// ## Agent Prompt exits 1 naming the offending mod.
 func TestSpawnStandingAllMergedFailsLoudOnBrokenMod(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
