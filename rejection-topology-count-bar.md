@@ -1,7 +1,7 @@
 ---
 id: 12zytd0ksb47r3g61qw1s5nc
 title: The rejection topology bar counts routing events instead of judging conduct
-status: ideation
+status: implementation
 source: "Captain CL, 2026-08-19, after PR #736's live lane reddened on both hosts and neither red was attributable to the diff. Failing assertion: codex-live rejection-flow, observed=[rejection-worker-topology], 'the reuse branch owes 8 routing events, the run produced 10'. Retained evidence preserved at /tmp/9g-evidence (run 32270990171) and readable in each host's rejection-topology.tsv."
 started: 2026-08-19T18:17:48Z
 completed:
@@ -65,7 +65,7 @@ gates:
                 reason: 'Captain approves onto the #736 stack: replace the exact 8-event count with a round-parsing grammar so the bar stops reddening correct topologies.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
