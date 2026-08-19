@@ -170,6 +170,16 @@ One more captured nuance: PreCompact fired at a `/compact` the host then refused
 
 ## Design (settled): boot receipt + fail-closed guard, no hook
 
+**SUPERSEDED by cycle 4 (captain rejection, see Feedback Cycles below) — kept
+verbatim for provenance, not current truth.** The mechanism below shipped,
+passed validation twice, and was rejected anyway: not a defect, a wrong
+design choice. Two of the three grounds this section gives for rejecting a
+hook do not survive inspection (see the Feedback Cycles entry); the current
+design is "## Design (cycle 4, settled): SessionStart(compact) reminder
+hook, no guard" further down, and the Acceptance criteria / Test plan /
+Expected surface / Semantics / Doc diff sections below now describe that
+design, not this one.
+
 The seed said "bind exactly one `«state.boot»()` to the compaction boundary." Ideation refines where the binding lives: refusal-side, not callback-side. The first authority-bearing workflow effect after the boundary cannot proceed until a fresh boot runs — enforced by the binary, the one component that knew the truth in the incident.
 
 **Boot receipt.** `spacedock status --boot --identify --json` (the shipped `«state.boot»()`) additionally writes a session boot receipt: one line, `{booted_at} {transcript_path}`, at `.spacedock/boot/{session_id}`. No JSON, no schema — the reader is ReadFile + Fields + time.Parse. Written only when session identity is resolvable (env `CLAUDE_CODE_SESSION_ID` present); silent no-op otherwise. The receipt is host scratch, not workflow state — the state checkout is untouched, and boot's "mutates nothing" contract still holds for workflow/entity state (contract wording gains a clarifying line; doc diff below).
@@ -193,60 +203,60 @@ The seed said "bind exactly one `«state.boot»()` to the compaction boundary." 
 
 **No further spike needed:** the design rests on three mechanisms, all exercised — the boundary record's existence and parse (captured incident + spike records, parsed during ideation), env session identity (echoed live post-compaction inside the spike session), and receipt-file round-trip (ordinary file I/O). The captured records seed the implementation's transcript fixture.
 
+## Design (cycle 4, settled): SessionStart(compact) reminder hook, no guard
+
+**WHERE.** Ship in the plugin's existing hook substrate, not a new one. `hooks.json` already declares a `SessionStart`/`^compact$` matcher (added for `codex_session_start_compact.sh`), and `.claude-plugin/plugin.json` already carried `"hooks": "./hooks.json"` once — for the now-fully-removed dispatch-ack hooks (`042f926db` added it, `6b2ae9787` removed it during pre4 live-release triage, `e2f4e90e6` deleted the ack machinery itself). Re-adding the field retraces a path already proven live for Claude Code; it is not a new mechanism. `hooks/compact_boot_reminder.sh` is added as a second command under the existing matcher; `codex_session_start_compact.sh` is untouched. No new install path, no `spacedock doctor` surface, no mod — the smallest mechanism that reaches the value, because the substrate already exists and was already live before this entity.
+
+**WHAT.** The instruction is the live spike this session already installed at `.claude/hooks/compact-boot-reminder.sh`, carried over with one tightening — the boot command reads `${SPACEDOCK_BIN:-spacedock}` per the shared launcher convention. It names the boundary, names the one command to re-run (`status --boot --identify --json`, read whole), and names four specific things to distrust — presented gates, live workers, the binary path, the contract version — rather than the existing Codex-side hook's generic "reread the contract," which the ideation-spike-evidence negative findings show never observably fired anywhere.
+
+**HOW PROVEN — three tiers, stated separately rather than dressed as one proof.**
+1. *Mechanical (tested this cycle).* The script emits the exact reminder bytes on `source=compact` and stays silent (exit 0, empty stdout) on every other source and on empty/malformed/non-string-source stdin. `hooks.json` names the matcher and script path; `.claude-plugin/plugin.json` activates `hooks.json`. All four properties are falsifiable — each was broken by hand and watched fail, then restored and watched pass (implementation stage report cites the evidence).
+2. *Platform capability (relied on, not re-spiked this cycle).* That a `SessionStart` hook's stdout becomes `additionalContext` for the resumed turn is Claude Code's documented, general-purpose hook contract — not a compaction-specific claim this entity invented. A dedicated live capture of exactly this was proposed and never run by the still-`backlog` `claude-post-compaction-contract-reload` entity. Re-spiking a platform-documented capability here would be the second coordination layer the stage definition warns against.
+3. *Obedience (not provable by any test).* Whether the FO actually re-runs Startup having read the injected text cannot be asserted by a fixture — it is the same class of claim the FO's other advisory conventions (deferred-load contracts) already carry unverified. Honest proposal: the next live compaction inside a real workflow session is the journey proof, the same way the incident itself was the negative proof.
+
+**NON-CLAUDE HOSTS.** Nothing changes for Codex. Its `codex_session_start_compact.sh` registration predates this entity and stays exactly as ideation deferred it — "removing or fixing it is a separate decision." Issue #595 records that Codex exposes no proven compaction callback today; this entity does not attempt one. If Codex's hook surface is ever proven live, the same `hooks.json` substrate this cycle re-activates for Claude is already available to it — but that call belongs to #595, not here.
+
 ## Acceptance criteria
 
-1. **(Value measure)** In the incident-replay test — a booted receipt, then a transcript whose tail is the captured-format `compact_boundary` record newer than `booted_at` — the count of guarded verbs that succeed before re-boot is **0 of 3** (`gate record`, `gate consume`, `merge guard`; each exits non-zero with the boot-stale stderr). Baseline on the current binary: 3 of 3 succeed — the number that moves the wrong way today. Test: the three verbs driven through the existing CLI test harness against a temp receipt/transcript layout and env.
-2. After `status --boot` re-runs in the same scenario, every previously refused verb succeeds unchanged; and in sessions with no boundary (or no resolvable identity), behavior is bit-identical to today — existing golden fixtures pass unmodified. Test: same harness continuation plus full `go test ./...`.
-3. The verdict derives from durable state only: deleting the receipt or appending the boundary record flips refusal/pass with no conversational input of any kind. Test: table-driven verdict matrix (no receipt / fresh / stale / missing transcript / no env / malformed lines). (Mechanism AC serving AC 1.)
-4. The doc diff below is applied at implementation. Test: the contract lines appear in the built plugin skill and `docs/runtime-support.md` renders the new section.
+**Supersedes the cycle-1..3 receipt+guard ACs above** (preserved in those
+cycles' stage reports for provenance). The mechanism changed from a binary
+refusal to a host reminder, so "guarded verb," "exit 4," and "receipt" no
+longer describe the shipped artifact.
+
+1. **(Mechanism)** The hook script emits the exact declared reminder text when given `SessionStart` JSON with `source=compact` on stdin, and emits nothing (exit 0) for every other `source` value and for empty or malformed stdin. Test: table-driven subprocess test invoking the real committed script.
+2. **(Installed)** `.claude-plugin/plugin.json` activates `hooks.json`, and `hooks.json` registers the script under `SessionStart`/`^compact$` naming the exact `${PLUGIN_ROOT}` path. Test: parse both files and assert the fields; each assertion proven load-bearing by removing it by hand and watching the test fail.
+3. **(Scope)** The pre-existing `codex_session_start_compact.sh` entry is unmodified and stays registered. Test: `TestDispatchAckMachineryIsAbsent`'s existing SessionStart-presence check, plus the file's unchanged bytes.
+4. **(Declared, not tested)** Whether the reminder changes FO behavior at a real compaction boundary is not asserted by any test in this entity — see the Design section's "How proven" tier 3. This AC exists so validation does not go looking for a test that cannot honestly exist.
 
 ## Test plan
 
-- One table-driven unit test for the verdict: ~7 rows covering the AC-3 matrix. The captured incident and spike `compact_boundary` records live as string constants in the test — no fixture files.
-- Refusal wiring in the existing CLI test harness: each of the three verbs exits 4 on a stale receipt and passes after re-boot — the test that fails if the preflight is never called, killing the tautology risk.
-- One case in the existing `status` tests: `status --boot` writes the receipt.
-- No live workflow smoke test: the only runtime claim — the boundary is observable durable state — is what ideation's live captures already prove; every implementation claim is binary behavior, table-provable.
+- `TestCompactBootReminderHookFiresOnlyOnCompact` (table-driven, real script via subprocess): compact → exact bytes; startup/resume/clear → silent; empty stdin → silent; malformed JSON → silent; non-string `source` → silent.
+- `TestCompactBootReminderHookIsWired`: parses `hooks.json` and `.claude-plugin/plugin.json` for the declared fields.
+- `TestDispatchAckMachineryIsAbsent` (existing, updated): now expects `.claude-plugin/plugin.json` to activate hooks again (it previously asserted the opposite, back when the only Claude-side hook candidate was the removed dispatch-ack machinery); still asserts `PreToolUse`/`SubagentStart` and every dispatch-ack string marker stay absent.
+- No live-journey test. AC-4 says why: obedience is not a property a fixture can hold.
 
 ## Expected surface
 
-Estimate net LOC change: **+245**, across **8 files** (insertions ≈ +255, deletions ≈ −10). Tolerance: 2x net (workflow default). The prior +540 carried a since-withdrawn instruction to double the test instinct; this figure is the honest proof cost, not trimmed coverage — every AC keeps a test that can fail.
+Re-estimated from scratch per instruction — the prior +245 (approved) and +968 (actual, abandoned) both belong to the rejected receipt+guard mechanism and do not apply here. Decide-and-build happened in one pass, so this is the actual, not a blind prediction: `git diff --numstat` against `f64c733ef` is net **+230** across **6 files** (+231/−1).
 
-- Product ≈ +95: receipt write ~20; transcript scan + verdict ~45; preflight at the three call sites ~12; identity resolution + refusal text ~18. One small file (in `internal/status`, or its own package only if imports demand).
-- Tests ≈ +120: verdict table ~60 (captured records inline as constants); three-verb refusal/pass wiring in the existing CLI harness ~50; boot-writes-receipt case ~10.
-- Docs/contract ≈ +30: `docs/runtime-support.md` subsection ~12; `first-officer-shared-core.md` receipt line ~5; exit-code note and gitignore line ~13.
+- Product +36: `hooks/compact_boot_reminder.sh` (+31, mostly comment), `hooks.json` (+4), `.claude-plugin/plugin.json` (+1).
+- Tests +173: `internal/contractlint/compact_boot_reminder_hook_test.go` (+167, new — subprocess table plus JSON-shape wiring check), `internal/contractlint/dispatch_ack_removal_test.go` (net +6 — one flipped bool plus its rationale comment).
+- Docs +21: `docs/runtime-support.md` new subsection.
 
-Files (~8): bootguard.go, bootguard_test.go, status-boot wiring, gate-verb wiring, merge-guard wiring, existing CLI test file, runtime-support.md, first-officer-shared-core.md.
+Tolerance: none needed this cycle (estimate = actual); 1.5x net for any correction round validation requests.
+
+Files (6): hooks/compact_boot_reminder.sh, hooks.json, .claude-plugin/plugin.json, internal/contractlint/compact_boot_reminder_hook_test.go, internal/contractlint/dispatch_ack_removal_test.go, docs/runtime-support.md.
 
 ## Semantics that may change (declared)
 
-- Runtime behavior / authority: `gate record`, `gate consume`, and `merge guard` gain refusal authority (exit 4 + stderr) when the running session's boot is stale or absent — including for a human driving spacedock inside any Claude session who has not run boot (the refusal names the one command to run).
-- Stored format: new project-local one-line receipt `.spacedock/boot/{session_id}` (host scratch; gitignored if the repo tracks an ignore file).
-- `status --boot` gains a write side effect (the receipt); workflow and entity state remain read-only.
-- Command grammar: unchanged — no new flags, verbs, or hook registrations.
+- Runtime behavior: Claude Code sessions launched through the plugin now receive a `SessionStart` hook injection at `source=compact` for the first time — previously zero Claude-side hooks fired (the only prior `hooks.json` entry was Codex-only, per `TestDispatchAckMachineryIsAbsent`'s prior `wantHooks:false` expectation for `.claude-plugin/plugin.json`). No workflow state, mutation, or exit-code behavior changes; this is text injected into model context, nothing durable.
+- Plugin manifest: `.claude-plugin/plugin.json` gains a `hooks` field (previously present for the now-removed dispatch-ack hooks, absent since `6b2ae9787`).
+- Stored format: none — no file is written by this mechanism.
+- Command grammar: unchanged — no new flags, verbs, or exit codes.
 
-## Doc diff (proposed, applied at implementation)
+## Doc diff (applied at implementation)
 
-`skills/first-officer/references/first-officer-shared-core.md`, `«state.boot»()` section — after the `- **effect:** …` line, add:
-
-```
-- **receipt:** the shipped command also writes a one-line session boot receipt (`.spacedock/boot/{session_id}`, host scratch — workflow state stays read-only). `gate record`, `gate consume`, and `merge guard` refuse with exit 4 (BOOT_STALE) when the running session has no receipt or compacted after it booted; the remedy the stderr names is exactly this call — re-run it and consume the fresh record.
-```
-
-`docs/runtime-support.md`, new subsection after "Runtime layers":
-
-```
-## Boot guard at the compaction boundary
-
-A compaction-resumed session keeps its session id and transcript; the host
-records the boundary durably (a `compact_boundary` record in the session
-transcript). `status --boot` writes a one-line per-session receipt; the
-authority verbs — `gate record`, `gate consume`, `merge guard` — refuse
-(exit 4) when the receipt is missing or older than the latest boundary, until
-boot re-runs. Detection resolves per host: Claude Code via
-`CLAUDE_CODE_SESSION_ID` plus the recorded transcript path; hosts without a
-resolvable identity degrade to a silent no-op (Codex: #595). The guard fails
-open on unreadable transcripts and never needs a hook.
-```
+Applied directly rather than staged for later, since the change is small. `docs/runtime-support.md` gained a "Compaction boundary reminder (Claude Code)" subsection after "Launcher binary propagation through wrappers" (see that file for the exact text). No change to `skills/first-officer/references/first-officer-shared-core.md` — the hook changes no FO-contract obligation, only host-side context injection, so there is nothing for the shared core to declare, and the file stays well under its 26,900-byte contractlint cap.
 
 ## Stage Report: ideation
 
@@ -395,3 +405,20 @@ Finished the inherited cycle-3 work rather than redoing it: verified the predece
 ### Summary
 
 Deferred risk 2 is genuinely eliminated, not narrowed, and I proved it three ways rather than reading the diff — identical receipt paths from main checkout, linked worktree and subdirectory, the premise checked against git itself, one receipt observed at the binary level serving all three cwds, and the shipped test carrying its own anti-tautology assertion. Everything from cycles 1 and 2 survives the move: 24-row matrix all correct, 0/2000 spurious refusals under concurrency, both call sites re-proven falsifiable, no version skew, and the repo now genuinely untouched — `git status` clean, no `.spacedock/`, `.gitignore` back to its original bytes. I ran the wiring tests rather than trusting the report that they were repaired; they pass, and they now plant at the real production path. On the wrong-PASS question the dispatch weighted highest: the forgery and symlink-follow are real mechanisms that I reproduced with the binary, but on a normally-provisioned host a second uid cannot reach the path — `/tmp` is sticky and the receipt dir is owned 0755 by the first booter, so the attack needs a hostile local uid winning a creation race, and the identical exposure is already accepted for `/tmp/spacedock-dispatch`. That is a deferred risk with a named promote condition, plus two one-line hardenings (`O_NOFOLLOW`, `0o700`) I recommend without blocking. Cycle-3 surface is confined to the move: net +154 across 6 files, ~32 lines of product code. Full suite and `-race` green except the pre-existing `TestCodexResolveManifestAgainstInstalledHost`, confirmed in cycle 1 to fail identically on the merge-base. No material finding remains. **Recommend PASSED**, with three deferred risks and their promote conditions listed above.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: WHERE the shipped hook lives, and why it is the smallest mechanism that reaches the value.
+  `hooks/compact_boot_reminder.sh`, registered as a second command under `hooks.json`'s existing `SessionStart`/`^compact$` matcher, activated via `.claude-plugin/plugin.json`'s `hooks` field. Not a new mechanism: that field carried the same value from `042f926db` to `6b2ae9787` for the now-fully-removed dispatch-ack hooks, so this retraces a path already proven live for Claude Code rather than opening one. `codex_session_start_compact.sh` is untouched.
+- DONE: WHAT the instruction says, short enough to read and specific about what to distrust.
+  Carried over near-verbatim from the live spike this session already installed (`.claude/hooks/compact-boot-reminder.sh`), tightened to use `${SPACEDOCK_BIN:-spacedock}`. Names the boundary, the one command to re-run, and four concrete things to distrust (presented gates, live workers, binary path, contract version) — see the entity's "Design (cycle 4, settled)" section for the full text and rationale.
+- DONE: HOW it is proven — the hard part, answered in three separated tiers rather than one dressed-up proof.
+  Mechanical tier tested and falsified by hand: `TestCompactBootReminderHookFiresOnlyOnCompact` (internal/contractlint) drives the real committed script as a subprocess across 7 cases (compact → exact bytes; startup/resume/clear/empty/malformed/non-string-source → silent); `TestCompactBootReminderHookIsWired` parses `hooks.json` and `.claude-plugin/plugin.json` for the declared fields. I broke each of the three wiring/content properties by hand (unset `.claude-plugin/plugin.json`'s `hooks` field, removed the `hooks.json` entry, disabled the script's own `source=compact` filter) and watched the corresponding test fail for the right reason each time, then restored byte-identically (`git diff` empty) and watched it pass again. Platform-capability tier (stdout → model context) and obedience tier (does the FO act on it) are explicitly declared NOT tested, with the reasoning recorded in the Design section rather than papered over.
+- DONE: NON-CLAUDE HOSTS — what happens for Codex.
+  Nothing changes. `codex_session_start_compact.sh` and its `hooks.json` entry are byte-unchanged (verified: `git diff` on that file is empty). Issue #595 owns Codex's compaction-recovery design; this entity does not touch that boundary, matching the ideation's own out-of-scope line.
+- DONE: Re-estimate surface from scratch; declare net, product/tests/docs, and tolerance.
+  `git diff --numstat` against `f64c733ef` (the worktree's reset point) is net **+230** across **6 files** (+231/−1) — product +36 (hook script +31, `hooks.json` +4, plugin manifest +1), tests +173 (`compact_boot_reminder_hook_test.go` +167 new, `dispatch_ack_removal_test.go` net +6), docs +21 (`docs/runtime-support.md`). Far smaller than either figure that belonged to the abandoned mechanism (+245 approved, +968 actual), as expected. Decide-and-build happened in one pass, so this is the actual rather than a separately-tracked estimate; declared tolerance for any correction round is 1.5x net.
+
+### Summary
+
+Built the SHIPPED form of the mechanism the captain asked for directly: a `SessionStart(compact)` reminder hook wired through the plugin's existing (previously Codex-only) `hooks.json` substrate, re-activating a `.claude-plugin/plugin.json` field this repo has carried live before for an unrelated feature. Settled all four open questions from the dispatch and recorded the reasoning in a new "Design (cycle 4, settled)" section, leaving the rejected receipt+guard design in place above it marked superseded rather than deleted. Proof is split honestly into three tiers: the mechanical tier (script content, silence on non-compact input, wiring into both manifest and hooks.json) is fully tested and each assertion proven falsifiable by hand; the platform-capability tier (hook stdout reaching model context) is relied on as Claude Code's documented general hook contract rather than re-spiked, since a dedicated live capture of exactly that claim was already proposed and left undone by the separate `claude-post-compaction-contract-reload` backlog entity, and redoing it here would be the second coordination layer the stage definition warns against; the obedience tier (does the FO act on the reminder) is declared untestable by any fixture and left as a live-journey observation, which is what AC-4 exists to say plainly rather than paper over. `codex_session_start_compact.sh` is untouched (`git diff` empty on that file) — Codex nothing-changes per #595's ownership. `go test ./...` and `-race` are green except the same pre-existing, unrelated `TestCodexResolveManifestAgainstInstalledHost` (confirmed identical on the merge-base by stashing this cycle's changes and rerunning). `gofmt -l ./cmd ./internal` is clean. Net surface is +230 across 6 files — far smaller than both prior figures, as the dispatch expected once the mechanism stopped being a binary guard.
