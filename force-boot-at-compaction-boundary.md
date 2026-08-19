@@ -66,6 +66,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:4ctz4sfybfk0mfsbnrjcc7bv:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:4ctz4sfybfk0mfsbnrjcc7bv-validation-1
+              briefing:
+                id: briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-1:revision-1
+                digest: sha256:30cd6d3c4717dc4c01fc8ea797260b65d38ba3b62489566f388c6a66d4a414e8
+                request-digest: sha256:a5a07722e92d3524e4c168265785b558cac5b501d7c57e018738ec2944c06eb8
+                room-ref: ./force-boot-at-compaction-boundary/review/validation/briefing-1
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.

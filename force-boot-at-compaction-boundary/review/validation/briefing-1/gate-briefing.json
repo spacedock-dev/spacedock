@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED for the boot receipt guard, and finalize 4c?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e7dd5f37ab6f140b8d16a90ac2cbb9cd3b33727d/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:0aa92e8d9cef7fe389c8fb9ba9aeab78d888f9327f90c6461a533bc225f4b6ac",
+      "mediaType": "text/markdown",
+      "summary": "PASSED. The material finding is fixed and validation proved it rather than accepting the account: its own matrix, extended to 30 assertions, shows the three spuriously-refusing shapes now failing open with a warning naming the receipt path; none of the 11 already-fail-open rows flipped; the true positive still refuses; detection is undiminished. It attacked the widened fail-open as instructed and found no read error that should refuse and now escapes — empty, whitespace-only and garbage receipts reach the parse path, a dangling symlink still refuses. All four fixes independently falsifiable: reverting each single line turned exactly its own regression test red. Version skew is a non-issue both directions because Go's time.Parse accepts an optional fractional second regardless of layout, proven directly and end-to-end with a pre-fix receipt. Cycle-2 surface confined: net +172 across exactly 4 files, only 25 lines of product code. One correction validation volunteered against itself: its cycle-1 finding bundled a read-only-project-root shape with the two genuine AC-2 violations, and that shape belongs to AC-1's approved never-booted detection instead — recorded as a deferred risk, not a blocker. Three deferred risks carry promote conditions: cwd/workflow git-root divergence, receipt-line whitespace (all failure modes fail open), and the read-only root. Cumulative surface net +814 across 14 files against the approved +245 — 332%, disclosed at every round and never trimmed by cutting coverage."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/e7dd5f37ab6f140b8d16a90ac2cbb9cd3b33727d/force-boot-at-compaction-boundary/ideation-spike-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:962b316c9121c585b2190fafe89a182267f30550b7bb12e8f27f5a57619a7a92"
+    }
+  ]
+}
