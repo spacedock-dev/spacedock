@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-2:revision-1",
+  "question": "Accept validation PASSED for the relocated boot receipt, and finalize 4c — or take the two one-line hardenings first?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/0738cf0b3a84f921f7522424e935381c97164747/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:9c201f4f4e133c464733c4ed435c0ebb691f39798cfb48d129f34fff615de90e",
+      "mediaType": "text/markdown",
+      "summary": "PASSED, no material finding. Your objection is discharged: git status is clean, no .spacedock/ exists, and .gitignore is back to its original bytes. Deferred risk 2 is genuinely eliminated, proved three ways — identical receipt paths from main checkout, linked worktree and subdirectory; the premise checked against git itself; one receipt observed at binary level serving all three cwds; and the shipped test asserts the fixture reproduces the OLD divergence before proving it collapses, so it cannot pass trivially. The validator also ran the wiring tests rather than trusting my claim they were repaired. On the wrong-PASS question: forgery and symlink-follow are REAL and it reproduced both with the binary — overwriting the receipt with a future timestamp flips a provably compacted session to pass, and writeBootReceipt followed a planted symlink and silently overwrote the victim file. Unreachable by a second uid on a normal host (/tmp is sticky, the receipt dir is 0755 owned by the first booter), and the identical exposure is already accepted for /tmp/spacedock-dispatch. Deferred with a promote condition: multi-user or shared-CI host. TWO ONE-LINE HARDENINGS recommended without blocking: O_NOFOLLOW on the write kills the symlink-follow outright, and 0o700 on the directory stops receipts being world-readable. NEW deferred risk from cycle 3's own fix: when git rev-parse --git-common-dir fails, repoIdentityToken falls back to the directory's own realpath, which is per-directory again — so with git off PATH the worktree divergence returns silently. Also measured: the guard now spawns git on every guarded verb, 12.75 ms/op, ~99.5% of the verdict cost. Cycle-3 surface confined: net +154 across 6 files, ~32 lines of product code. Cumulative net +968 across 13 files against the approved +245."
+    }
+  ]
+}

@@ -83,6 +83,12 @@ gates:
                 at: "2026-08-19T05:18:43.346432Z"
                 decision: revise
                 reason: 'Captain rejected in chat: ''is the external file .spacedock/boot justified? i don''t like the smell of it.'' The mechanism, the spike, and the fail-open correction are all accepted. Rejected on the receipt LOCATION only: it writes inside the repository at {gitRoot}/.spacedock/boot/{session_id}, which required a new .gitignore entry, breaks on a read-only repository, and is the sole cause of the git-root divergence deferred risk. Host scratch belongs in host scratch. An existing per-session convention already lives outside the repo at /tmp/spacedock-dispatch/{session_id}-*. Moving the receipt there deletes the .gitignore change, the read-only-root failure, and the divergence risk outright.'
+            - id: gate-attempt:4ctz4sfybfk0mfsbnrjcc7bv-validation-2
+              briefing:
+                id: briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-2:revision-1
+                digest: sha256:4abd5053924ffe3812cc2eb8ea328641f1cbf61bcc88c495d9ad66799c0baad4
+                request-digest: sha256:8a8d76144a982ce8e0ceed48fd5891c4d2d0f0528ac08a6ee4f60e92da31956c
+                room-ref: ./force-boot-at-compaction-boundary/review/validation/briefing-2
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
