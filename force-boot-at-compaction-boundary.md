@@ -89,6 +89,17 @@ gates:
                 digest: sha256:4abd5053924ffe3812cc2eb8ea328641f1cbf61bcc88c495d9ad66799c0baad4
                 request-digest: sha256:8a8d76144a982ce8e0ceed48fd5891c4d2d0f0528ac08a6ee4f60e92da31956c
                 room-ref: ./force-boot-at-compaction-boundary/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:4ctz4sfybfk0mfsbnrjcc7bv:validation:2
+                briefing: briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-19T15:34:51.413058Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve push and i''ll look from the PR.'' Validation PASSED with no material finding: the receipt is out of the repository, deferred risk 2 proved eliminated three ways, the 24-row matrix and concurrency hammer are clean, and the wiring tests were run rather than trusted. The two one-line hardenings (O_NOFOLLOW, 0o700) and the git-fallback divergence stay deferred with promote conditions; the captain will review at the PR.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
