@@ -1,7 +1,7 @@
 ---
 id: nr75fq7ha3nmvsegbd22cgqa
 title: Finish the legacy Claude TeamCreate retirement — the contract retired it, the binary and a live proof did not
-status: validation
+status: implementation
 source: "Captain CL, 2026-08-18, in chat ('file a proper legacy claude team retirement task'), after TestLiveBreakGlassShimRecovery/selected-team failed the claude-live lane on the ca9/6ht/j7j stack by demanding a team_name the shipped contract tells the FO to omit."
 started: 2026-08-18T23:15:53Z
 completed:
