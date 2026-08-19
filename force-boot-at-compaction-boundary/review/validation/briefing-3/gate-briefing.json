@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-3:revision-1",
+  "question": "Accept validation PASSED for the plugin-shipped SessionStart(compact) reminder, and finalize 4c?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/912718d1b5529984de56709fc8936ce153f7f1e1/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:52100838a47a5f0c7f743b33ea5119d9b9bc73af7d55cc821a1115f7b01affc2",
+      "mediaType": "text/markdown",
+      "summary": "PASSED, no material finding. Validation executed everything rather than reading it, which is the lesson this entity already paid for. The token fix is confirmed: it staged a disposable plugin copy, pulled the live template out of hooks.json, and ran it under hermetic Claude-shaped and Codex-shaped environments — both resolve and emit, both-set resolves by precedence, neither-set fails loudly with rc=127, and the PRE-FIX template fails under Claude with exactly the error string the spike recorded while still working under Codex. So the bug was Claude-only and the fix is strictly additive for Codex. The new regression test genuinely executes the template rather than string-comparing it, proven falsifiable by reverting the token and watching only the Claude subtest red. The gate matrix holds across 13 hermetic rows, and the naive sed extraction is unspoofable by any JSON-valid payload. Codex packaging verified by RUNNING the real staging, not reading the includes list. Five load-bearing assertions broken by hand, each reding only its own test. The sentinel proof stands on its negative control — broken hook returns NONE, fixed hook returns the exact 16-hex token — with guessing, inference, repo leakage and operator-channel routes each closed, including confirming the token appears nowhere in the committed tree. Surface is net +378 across 7 paths for a ~24-line shipped mechanism; the test file is 75% of it. Three deferred risks with promote conditions: an unverified Codex SessionStart source field, auto-compact inferred rather than observed (and it is the more dangerous case, since it fires silently at threshold), and first-run trust not ruled out. This wires DELIVERY, not obedience; the entity says so itself and does not overreach."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://state/912718d1b5529984de56709fc8936ce153f7f1e1/force-boot-at-compaction-boundary/ideation-spike-evidence.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e9d9e22633854b24746f0fa75b9514aa4d51da5e9089a257faf452650812ece7"
+    }
+  ]
+}

@@ -100,6 +100,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:4ctz4sfybfk0mfsbnrjcc7bv-validation-3
+              briefing:
+                id: briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-3:revision-1
+                digest: sha256:432028b918d23bbeaf235fb0d60764e2dc664b53b662b1a2488dbcc0a091745f
+                request-digest: sha256:96908e5232cbe61fb063d75ddc69d226160f28b1f6d4d1b327412c3fbfaf7300
+                room-ref: ./force-boot-at-compaction-boundary/review/validation/briefing-3
 mod-block:
 pr:
 ---
