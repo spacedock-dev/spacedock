@@ -93,6 +93,12 @@ gates:
                 at: "2026-08-19T05:06:33.291198Z"
                 decision: revise
                 reason: 'Captain rejected in chat: ''ok send it back.'' The retirement itself is accepted and validated — keep-list verified by blob hash, every removed symbol''s callers read, all four ACs falsifiable. Rejected on AC-5''s mechanism only: the fix leaves {dispatch_agent_id} as a placeholder and attaches a resolution rule in a comment. The observed failure was a DROPPED parameter, and a comment cannot stop a drop. Put spacedock:ensign literally in the value and move the override into the comment, so the common case is the pure copy the FO performed 11/11 times.'
+            - id: gate-attempt:nr75fq7ha3nmvsegbd22cgqa-validation-2
+              briefing:
+                id: briefing:nr75fq7ha3nmvsegbd22cgqa:validation:attempt-2:revision-1
+                digest: sha256:7f75a366baee9c28486b7849e3bbf757d15717350bae9c172d4b5bacacc49b28
+                request-digest: sha256:aa090be10f9f1ac2a186ddcdf3fdcee304376cbd679dc973f5d676afaa9070a4
+                room-ref: ./finish-legacy-claude-team-retirement/review/validation/briefing-2
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nr75fq7ha3nmvsegbd22cgqa:validation:attempt-2:revision-1",
+  "question": "Accept validation PASSED for the literal fix, and finalize nr?",
+  "artifacts": [
+    {
+      "id": "artifact:nr75fq7ha3nmvsegbd22cgqa:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/8104d583f75937c867ae6b047433146bd0f4d5ae/finish-legacy-claude-team-retirement.md",
+      "rev": "sha256:af9f6c5f83b3a9bc9a5bd75b89a1c4781308f1f035d8a4909f0110937c985be4",
+      "mediaType": "text/markdown",
+      "summary": "PASSED, no material finding. The literal does what you asked: subagent_type is a value copy, structurally identical to rule 6, confirmed by RUNNING the binary across absent, named, and empty agent: READMEs rather than reading code — the empty case is refused upstream, so the comment's wording has no reachable gap. Two things the validator found that the implementation did not claim. First, the fix is stronger than reported: fo-dispatch-core.md:16 says dispatch_agent_id defaults to 'ensign' while :93 says 'spacedock:ensign', so an FO resolving the slot from the wrong line would have filled a value the oracle REJECTS; the literal removes the template's dependence on a self-contradicting token. Second, it corrected the maintenance question I posed: this cycle added ZERO copies, because cycle 1's comment already carried the literal — the real cost is a dropped 'build.go rule 6' cross-reference, one parenthetical. Both polish fixes hold: --team refuses exit 2 on all four argv forms and is not over-broad, no live caller ever passed it, and the parameter removal was provably dead after cycle 1, with show-standing byte-identical on non-empty output. Delta exactly 5 files, +39/-12. Cumulative 78 files, net -724, INSIDE the declared [-250,-750] band; the file count against the \u003c=60 cap was already accepted. One honest reservation recorded as deferred risk, not rejection: {worker_key} is now the template's weakest slot for the same reason subagent_type was, and the team-mode oracle reds selected-team on that same class. It went 2/2 in observed runs, so it is not the observed defect."
+    }
+  ]
+}
