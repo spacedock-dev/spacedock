@@ -5,7 +5,10 @@ package status
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,10 +58,13 @@ func bootReceiptPath(gitRoot, sessionID string) string {
 // resolves the session's transcript file (nil on a non-Claude host — internal/status
 // carries no ~/.claude read itself; see claudeteam.TranscriptProbe); an unresolved
 // transcript still writes a timestamp-only line, and the guard fails open on it
-// (see bootGuardVerdict). Errors are swallowed: losing the receipt degrades to
-// the guard's own fail-open path rather than failing the read `--boot` command
-// that carries it.
-func writeBootReceipt(e env, gitRoot string, transcriptProbe claudeteam.TranscriptProbe, now time.Time) {
+// (see bootGuardVerdict).
+//
+// A failed write is surfaced to stderr, not swallowed: `--boot` still exits 0
+// (the read it primarily promises still succeeded), but a silently-lost receipt
+// would make the guard's own remedy ("one cheap idempotent boot") permanently
+// unable to clear — the operator needs to see WHY re-running boot never helps.
+func writeBootReceipt(e env, gitRoot string, transcriptProbe claudeteam.TranscriptProbe, stderr io.Writer, now time.Time) {
 	sessionID := resolveBootSessionID(e)
 	if sessionID == "" {
 		return
@@ -67,7 +73,7 @@ func writeBootReceipt(e env, gitRoot string, transcriptProbe claudeteam.Transcri
 	if home == "" {
 		home = os.Getenv("HOME")
 	}
-	line := now.UTC().Format(time.RFC3339)
+	line := now.UTC().Format(time.RFC3339Nano)
 	if transcriptProbe != nil {
 		if transcript := transcriptProbe(home, sessionID); transcript != "" {
 			line += " " + transcript
@@ -75,9 +81,13 @@ func writeBootReceipt(e env, gitRoot string, transcriptProbe claudeteam.Transcri
 	}
 	dir := filepath.Join(gitRoot, ".spacedock", "boot")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
+		fmt.Fprintf(stderr, "spacedock: warning — could not create %s for the session boot receipt (%v); gate record, gate consume, and merge guard will refuse until this is fixed.\n", dir, err)
 		return
 	}
-	_ = os.WriteFile(bootReceiptPath(gitRoot, sessionID), []byte(line+"\n"), 0o644)
+	receiptPath := bootReceiptPath(gitRoot, sessionID)
+	if err := os.WriteFile(receiptPath, []byte(line+"\n"), 0o644); err != nil {
+		fmt.Fprintf(stderr, "spacedock: warning — could not write boot receipt at %s (%v); gate record, gate consume, and merge guard will refuse until this is fixed.\n", receiptPath, err)
+	}
 }
 
 // latestCompactBoundary scans a Claude Code session transcript (JSONL) for the
@@ -124,32 +134,46 @@ func latestCompactBoundary(path string) (latest time.Time, found bool) {
 // the two conditions it can prove from durable state: no receipt file at all
 // for this session (never booted), or a compact_boundary record newer than the
 // receipt's booted_at (compacted since the last boot).
-func bootGuardVerdict(e env, gitRoot string) (stale bool, reason string) {
+//
+// An unreadable receipt (permission denied, a read-only mount, the path
+// existing as a directory) is NOT the same as a missing one: os.ErrNotExist is
+// the only read error that refuses. Every other read error proves LESS than a
+// missing file — a malformed record two lines below already fails open, so an
+// unreadable one failing CLOSED would be backwards — and is reported to stderr
+// as a warning rather than silently downgraded, since it is exactly the
+// unrecoverable-loop shape (status --boot exits 0, the write keeps failing, the
+// guard keeps refusing) this fix exists to close.
+func bootGuardVerdict(e env, gitRoot string, stderr io.Writer) (stale bool, reason string) {
 	sessionID := resolveBootSessionID(e)
 	if sessionID == "" {
 		return false, ""
 	}
-	raw, err := os.ReadFile(bootReceiptPath(gitRoot, sessionID))
+	receiptPath := bootReceiptPath(gitRoot, sessionID)
+	raw, err := os.ReadFile(receiptPath)
 	if err != nil {
-		return true, "no boot receipt for this session (never booted, or booted in a different session)"
+		if errors.Is(err, fs.ErrNotExist) {
+			return true, fmt.Sprintf("no boot receipt for this session (never booted, or booted in a different session) — expected at %s", receiptPath)
+		}
+		fmt.Fprintf(stderr, "spacedock: warning — boot receipt at %s is unreadable (%v); failing open until this is fixed (re-running boot will not clear it).\n", receiptPath, err)
+		return false, ""
 	}
-	fields := strings.Fields(string(raw))
-	if len(fields) == 0 {
+	// SplitN, not Fields: a project path containing a space would otherwise
+	// split into extra fields and silently disable the transcript half of the
+	// receipt (Fields treats any run of whitespace as a separator).
+	parts := strings.SplitN(strings.TrimRight(string(raw), "\n"), " ", 2)
+	bootedAt, err := time.Parse(time.RFC3339Nano, parts[0])
+	if err != nil {
 		return false, "" // malformed record: fail open
 	}
-	bootedAt, err := time.Parse(time.RFC3339, fields[0])
-	if err != nil {
-		return false, "" // malformed record: fail open
-	}
-	if len(fields) < 2 {
+	if len(parts) < 2 || parts[1] == "" {
 		return false, "" // no transcript recorded: cannot prove staleness, fail open
 	}
-	latest, found := latestCompactBoundary(fields[1])
+	latest, found := latestCompactBoundary(parts[1])
 	if !found {
 		return false, "" // transcript missing/unreadable/no boundary recorded: fail open
 	}
 	if latest.After(bootedAt) {
-		return true, "this session compacted after its last boot"
+		return true, fmt.Sprintf("this session compacted after its last boot (receipt at %s)", receiptPath)
 	}
 	return false, ""
 }
@@ -157,11 +181,13 @@ func bootGuardVerdict(e env, gitRoot string) (stale bool, reason string) {
 // BootGuardRefuse is the shared preflight `gate record`, `gate consume`, and
 // `merge guard` each run before any mutation. It returns "" when the running
 // session's boot is fresh, or when identity/transcript/receipt cannot prove
-// staleness (fail open — see bootGuardVerdict); otherwise it returns one
-// stderr paragraph naming the condition and the exact remedy. Callers gate on a
-// non-empty return and exit BootStaleExitCode without mutating anything.
-func BootGuardRefuse(rawEnv []string, dir string) string {
-	stale, reason := bootGuardVerdict(envFromSlice(rawEnv), FindGitRoot(dir))
+// staleness (fail open — see bootGuardVerdict, which may still print a
+// non-fatal stderr warning on that path); otherwise it returns one stderr
+// paragraph naming the condition, the receipt path, and the exact remedy.
+// Callers gate on a non-empty return and exit BootStaleExitCode without
+// mutating anything.
+func BootGuardRefuse(rawEnv []string, dir string, stderr io.Writer) string {
+	stale, reason := bootGuardVerdict(envFromSlice(rawEnv), FindGitRoot(dir), stderr)
 	if !stale {
 		return ""
 	}

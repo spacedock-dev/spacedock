@@ -197,7 +197,7 @@ func newGateCommand(env []string, dir string, stdout, stderr io.Writer) *cobra.C
 			// and stay outside the guard's scope (see the entity's "why exactly these
 			// three").
 			if args[0] == "record" || args[0] == "consume" {
-				if msg := status.BootGuardRefuse(env, dir); msg != "" {
+				if msg := status.BootGuardRefuse(env, dir, stderr); msg != "" {
 					fmt.Fprintln(stderr, msg)
 					return exitCodeError{status.BootStaleExitCode}
 				}
@@ -699,7 +699,7 @@ func newMergeCommand(ctx context.Context, env []string, dir string, stdout, stde
 				// Boot guard (force-boot-at-compaction-boundary): the third
 				// authority verb — a merge finalizes here — refuses before any
 				// mutation when this session's boot cannot be proven fresh.
-				if msg := status.BootGuardRefuse(env, dir); msg != "" {
+				if msg := status.BootGuardRefuse(env, dir, stderr); msg != "" {
 					fmt.Fprintln(stderr, msg)
 					return exitCodeError{status.BootStaleExitCode}
 				}

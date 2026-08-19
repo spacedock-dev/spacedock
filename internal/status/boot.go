@@ -271,7 +271,7 @@ func gatherBoot(probe claudeteam.TeamStateProbe, transcriptProbe claudeteam.Tran
 	// compaction boundary"): a session boot receipt, host scratch only. This is
 	// the mechanism the shipped `«state.boot»()` gains — workflow/entity state
 	// stays read-only, unaffected by this call either way.
-	writeBootReceipt(e, gitRoot, transcriptProbe, time.Now())
+	writeBootReceipt(e, gitRoot, transcriptProbe, stderr, time.Now())
 	return d, nil
 }
 
