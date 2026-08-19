@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nr75fq7ha3nmvsegbd22cgqa:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED for the TeamCreate retirement, with the 77-vs-60 file-count breach as a scope note rather than a rejection?",
+  "artifacts": [
+    {
+      "id": "artifact:nr75fq7ha3nmvsegbd22cgqa:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/cb54378560cfac51e7f686b91b5b33c81d5dc286/finish-legacy-claude-team-retirement.md",
+      "rev": "sha256:4b4b8249012efbf6110ef406ce57c70148853291172af9589da776b6e322377a",
+      "mediaType": "text/markdown",
+      "summary": "PASSED, no material finding. Validation verified the keep-list by BLOB HASH against f64c733ef rather than by reading the implementation's account — all 12 paths identical, zero historical-tree edits. It verified the one non-obvious deletion (build.go's show-standing injection) differentially against main: a merged build is byte-identical base-to-HEAD, while a BASE build with team_name emitted the extra fetch command, so the deletion fired only in the legacy branch. Every removed symbol's former callers were READ, not grepped, and each proven dead. Every AC carries a named falsifying change that was actually run — including AC-4's contractlint invariant, which flags main's own commission text, so it catches the real historical regression rather than its own wording. The false-green hunt came back clean by mutation. TWO THINGS FOR THE CAPTAIN: (1) the file count is 77 against a declared cap of 60, all of it 24 test files that each had to drop an inert team_name key plus 36 goldens confined to retired-shape lines; validation found nothing trimmable and no AC declares the cap. LOC landed one line past the tolerance floor, the correct direction for a removal. (2) The AC-5 root-cause fix is PROSE and validation assessed it as prose: the comment supplies a resolution rule where none existed, but it does not remove the choice point — a comment cannot prevent a dropped parameter, and a strictly stronger form was available (put spacedock:ensign literally in the value, override in the comment). Recorded as a deferred risk, promoted by a post-binding selected-team red. Also corrected the FO's own record: the TestMain fix was logged as a pre-existing bug fixed in passing; main is green with the var exported, so this change made the path reachable and then fixed it."
+    }
+  ]
+}

@@ -76,6 +76,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:nr75fq7ha3nmvsegbd22cgqa:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:nr75fq7ha3nmvsegbd22cgqa-validation-1
+              briefing:
+                id: briefing:nr75fq7ha3nmvsegbd22cgqa:validation:attempt-1:revision-1
+                digest: sha256:e52a98712637bd00d187e1f3d0713be2d6422d2e9daf92ca6529986919f1a2f9
+                request-digest: sha256:f023742af404c81f0ddae1edb1d5cea40599cd2e8a03631aa72b3ecf96782dee
+                room-ref: ./finish-legacy-claude-team-retirement/review/validation/briefing-1
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
