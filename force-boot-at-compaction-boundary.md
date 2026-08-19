@@ -106,6 +106,17 @@ gates:
                 digest: sha256:432028b918d23bbeaf235fb0d60764e2dc664b53b662b1a2488dbcc0a091745f
                 request-digest: sha256:96908e5232cbe61fb063d75ddc69d226160f28b1f6d4d1b327412c3fbfaf7300
                 room-ref: ./force-boot-at-compaction-boundary/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:4ctz4sfybfk0mfsbnrjcc7bv:validation:3
+                briefing: briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-19T19:14:15.37857Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve 4c and tell me how i best test it.'' Validation PASSED with no material finding: the token fix executed under four env shapes with the pre-fix failure reproduced exactly, 13 hermetic gate rows, Codex packaging verified by running the real staging, five assertions broken by hand, and the sentinel proof judged sound with its alternative routes closed.'
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 pr:
 ---
