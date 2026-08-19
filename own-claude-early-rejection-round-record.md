@@ -3,6 +3,18 @@ title: Early rejection-round record grades as never-recorded
 status: backlog
 source: "Run 31996696789 claude lane, rejection-flow: round recorded at stream line 287 with entries=2, rework spawned line 309; captain approved filing owners for tolerated residual modes at the 0.27 composite-green ruling, 2026-08-17"
 id: zf7rymtke3b6xp7r0337hjj4
+gates:
+    version: 1
+    records:
+        - id: gate:zf7rymtke3b6xp7r0337hjj4:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:zf7rymtke3b6xp7r0337hjj4-backlog-1
+              briefing:
+                id: briefing:zf7rymtke3b6xp7r0337hjj4:backlog:attempt-1:revision-1
+                digest: sha256:67e727f265794634086d12c6cd19fc36f1ced497cb6cf325905a606cf4aa0ebc
+                request-digest: sha256:a95473793cb5a3ac73d64382a04502e43a92229e3c2112dc29b626c91951f847
+                room-ref: ./own-claude-early-rejection-round-record/review/backlog/briefing-1
 ---
 
 ## Problem

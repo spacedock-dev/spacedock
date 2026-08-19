@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zf7rymtke3b6xp7r0337hjj4:backlog:attempt-1:revision-1",
+  "question": "Approve the early-rejection-round label split into ideation, with the review's two remedy gaps folded in?",
+  "artifacts": [
+    {
+      "id": "artifact:zf7rymtke3b6xp7r0337hjj4:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2f3faca9896ebca5fa140355f8c4c601ebbb88fe/own-claude-early-rejection-round-record.md",
+      "rev": "sha256:ae39246e838eed9b0b5ef340b5554291fba53fbdf2a0d3105944abd9f30bd27d",
+      "mediaType": "text/markdown",
+      "summary": "Diagnosis confirmed against the live stream: one --round call, entries=2, is_error=false, rework spawn later — the record preceded the correction, and rejectionRoundSuccess pins entries=4, so a successful call reports as never invoked. An adversarial fable review confirmed the chain and settled the FO's open question: an honest label does NOT soften the defect, because the conduct is genuinely wrong (the round room is immutable, so the record is permanently truncated to 2 of 4) and the red stays red under the remedy. It also found the remedy as filed ships HALF-DONE — the entries=4 pin lives in a second place at :400-405 under the same lying code with a raw %#v message, and the proposed stream-replay proof would green that half-fix. Plus the byte-check block covers four files, not just README; candidate.txt shares the lying label."
+    }
+  ]
+}
