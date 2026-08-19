@@ -1,7 +1,7 @@
 ---
 id: nr75fq7ha3nmvsegbd22cgqa
 title: Finish the legacy Claude TeamCreate retirement — the contract retired it, the binary and a live proof did not
-status: ideation
+status: implementation
 source: "Captain CL, 2026-08-18, in chat ('file a proper legacy claude team retirement task'), after TestLiveBreakGlassShimRecovery/selected-team failed the claude-live lane on the ca9/6ht/j7j stack by demanding a team_name the shipped contract tells the FO to omit."
 started: 2026-08-18T23:15:53Z
 completed:
@@ -75,7 +75,7 @@ gates:
                 reason: 'Captain approved in chat: ''approve both.'' Accepts retiring the legacy TeamCreate surface and binding the {dispatch_agent_id} slot with no xfail, at net -500 across ~47 files. The variance was explained from both transcripts: the FO resolved {worker_key} and dropped subagent_type in the same call, so binding removes a real choice point. Both live FOs also fabricated team names off the advertised flag, making its removal an observed fix.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
