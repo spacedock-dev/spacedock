@@ -90,7 +90,6 @@ func buildNameCapStdin(t *testing.T, root, idStyle, slug, id string) (workflowDi
 		"workflow_dir":   wd,
 		"stage":          "backlog",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 }

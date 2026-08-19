@@ -1,6 +1,0 @@
-===== exit =====
-1
-===== stdout =====
-
-===== stderr =====
-error: mod file <ROOT>/_mods/trailer.md: found trailing top-level heading '## Trailing Section' after '## Agent Prompt' — move the section above '## Agent Prompt' or remove it. Everything after '## Agent Prompt' is treated as the prompt body.

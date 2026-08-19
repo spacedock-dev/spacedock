@@ -13,14 +13,14 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 )
 
-// TestRuntimeCoupledSubcommandsRouteNative asserts the four runtime-coupled
+// TestRuntimeCoupledSubcommandsRouteNative asserts the runtime-coupled
 // subcommands are no longer rejected as deferred (the prerequisite seam returned
 // exit 2 for them). Each now routes to a native handler: a recognized subcommand
 // invoked with its required flag missing returns the native usage error (exit 2
 // naming the subcommand), NOT the old "deferred to the claude-runtime-segregation
 // surface" diagnostic. Re-adding a deferral would change this exit/message shape.
 func TestRuntimeCoupledSubcommandsRouteNative(t *testing.T) {
-	for _, sc := range []string{"context-budget", "list-standing", "show-standing", "spawn-standing", "spawn-standing-all"} {
+	for _, sc := range []string{"context-budget", "list-standing", "show-standing", "spawn-standing-all"} {
 		var out, errBuf bytes.Buffer
 		code := Run(claudeteam.Probe, []string{sc}, strings.NewReader(""), &out, &errBuf)
 		if code != 2 {
@@ -35,9 +35,15 @@ func TestRuntimeCoupledSubcommandsRouteNative(t *testing.T) {
 	}
 }
 
-// TestBuildInlinesStandingRoutingUnderMods asserts the builder snapshots standing
-// routing for a legacy team while retaining an empty bootstrap-fetch schema field.
-func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
+// TestBuildOmitsStandingFetchLineEvenUnderMods asserts dispatch build's fetch
+// commands stay just show-stage-def even when the workflow declares a standing
+// mod. The auto-injected show-standing fetch line only ever fired on the retired
+// legacy team_name path (merged and bare dispatches always omitted it, per
+// build.go's documented behavior); the pre-retirement sibling of this test,
+// TestBuildEmitsStandingFetchLineUnderMods, drove that path with a team_name.
+// The standing-teammate flow stays reachable directly via show-standing /
+// spawn-standing-all.
+func TestBuildOmitsStandingFetchLineEvenUnderMods(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
@@ -56,7 +62,6 @@ func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "backlog",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 		"host":           "claude",
 	}, nil)
@@ -72,21 +77,14 @@ func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &env); err != nil {
 		t.Fatalf("build output not JSON: %v\n%s", err, out.String())
 	}
-	if len(env.FetchCommands) != 2 {
-		t.Fatalf("expected two fetch commands; got %v", env.FetchCommands)
-	}
-	wantStage := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage backlog"
-	if env.FetchCommands[0] != wantStage {
-		t.Errorf("first fetch command = %q, want %q", env.FetchCommands[0], wantStage)
-	}
-	wantStanding := testWorkflowLauncher + " dispatch show-standing --workflow-dir " + shlexQuote(root)
-	if env.FetchCommands[1] != wantStanding {
-		t.Errorf("second fetch command = %q, want %q", env.FetchCommands[1], wantStanding)
+	want := testWorkflowLauncher + " dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage backlog"
+	if len(env.FetchCommands) != 1 || env.FetchCommands[0] != want {
+		t.Fatalf("expected exactly one full-path show-stage-def command even with a standing mod declared; got %v", env.FetchCommands)
 	}
 }
 
-// TestBuildOmitsStandingRoutingWithoutMods asserts the inlined section remains
-// conditional rather than appearing for a workflow with no standing mods.
+// TestBuildOmitsStandingFetchLineWithoutMods asserts the same one-fetch-command
+// shape holds for a workflow with no standing mods at all.
 func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root := t.TempDir()
@@ -101,7 +99,6 @@ func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "backlog",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 		"host":           "claude",
 	}, nil)

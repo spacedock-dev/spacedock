@@ -132,7 +132,7 @@ func runBeforeCeremonyCommands(t *testing.T, hostClone, workflowDir, entityPath,
 	mustSpacedock(t, hostClone, "state", "commit", slug, "--workflow-dir", workflowDir)                                                              // 7. state commit
 	git(t, filepath.Join(workflowDir, ".spacedock-state"), "status", "--porcelain")                                                                  // 8. git status
 	git(t, hostClone, "worktree", "add", "-b", gateCeremonyWorkerKey+"/"+slug, filepath.Join(hostClone, worktreeRel))                                // 9. git worktree add
-	return mustSpacedock(t, hostClone, "dispatch", "build", "--host", "claude", "--team-name", "fixture-team",                                       // 10. dispatch build
+	return mustSpacedock(t, hostClone, "dispatch", "build", "--host", "claude",                                                                      // 10. dispatch build
 		"--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", checklistFile)
 }
 
@@ -143,7 +143,7 @@ func runAfterCeremonyCommands(t *testing.T, hostClone, workflowDir, entityPath, 
 	slug := status.EntitySlug(entityPath)
 
 	mustSpacedock(t, hostClone, "gate", "record", slug, "--decision", "approve", "--actor", "person:captain", "--consume", "--workflow-dir", workflowDir) // 1. gate record --consume
-	return mustSpacedock(t, hostClone, "dispatch", "build", "--stamp", "--host", "claude", "--team-name", "fixture-team",                                 // 2. dispatch build --stamp
+	return mustSpacedock(t, hostClone, "dispatch", "build", "--stamp", "--host", "claude",                                                                // 2. dispatch build --stamp
 		"--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", checklistFile)
 }
 
@@ -262,7 +262,7 @@ func TestGateJourneyUsesStatusAndActingCommandsWithoutEligibilityPreflight(t *te
 		t.Fatalf("status did not project the gate's next action: %s", statusOut)
 	}
 	run("gate", "record", "task", "--decision", "approve", "--actor", "person:captain", "--consume", "--workflow-dir", workflowDir)
-	envelope := run("dispatch", "build", "--stamp", "--host", "claude", "--team-name", "fixture-team",
+	envelope := run("dispatch", "build", "--stamp", "--host", "claude",
 		"--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", checklistFile)
 	assertGateCeremonyEndState(t, "status-to-acting-command", hostClone, workflowDir, entityPath, envelope)
 

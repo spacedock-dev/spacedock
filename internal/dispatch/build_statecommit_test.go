@@ -57,7 +57,6 @@ func TestStateCommitPathAbsoluteFromRelativeWorkflowDir(t *testing.T) {
 		"workflow_dir":   workflowRel,
 		"stage":          "implementation",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 
@@ -129,7 +128,6 @@ func TestEntityPathAbsoluteFromRelativeInput(t *testing.T) {
 		"workflow_dir":   workflowDir,
 		"stage":          "implementation",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 
@@ -151,70 +149,11 @@ func TestEntityPathAbsoluteFromRelativeInput(t *testing.T) {
 	}
 }
 
-// TestDispatchFilePathCollisionFreeAcrossTeams pins AC-1(1b): two `dispatch build`
-// invocations that share an entity slug+stage but run under DIFFERENT team names
-// must write to DISTINCT dispatch_file_path locations, and the first file's
-// content must survive the second build (no clobber/alias). The dispatch file was
-// written to a global /tmp path keyed only on {worker_key}-{slug}-{stage}, which
-// is identical across runs of one fixture — so back-to-back runs (or two
-// concurrent FOs) collided on one file and an ensign could Read a STALE prior
-// dispatch's entity pointer (the live cycle's residual flake; a real-world hazard
-// for concurrent FOs too). Each real FO TeamCreate yields a unique team name
-// (`{project}-{dir}-{YYYYMMDD-HHMM}-{shortuuid}`), so keying the filename on the
-// team name disambiguates every run while staying deterministic for a fixed
-// fixture team.
-func TestDispatchFilePathCollisionFreeAcrossTeams(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-
-	// build runs one dispatch for the given team name against an isolated workflow
-	// tree (its own root) for the SAME slug+stage, returning the emitted
-	// dispatch_file_path and the on-disk body.
-	build := func(teamName string) (string, string) {
-		root := t.TempDir()
-		workflowDir := filepath.Join(root, "wf")
-		writeFile(t, filepath.Join(workflowDir, "README.md"), readmeWorktree(false))
-		entityPath := filepath.Join(workflowDir, "make-it-work.md")
-		writeFile(t, entityPath, entityFM("Make It Work", "backlog", ""))
-		gitInit(t, root)
-
-		stdin := mergeStdin(map[string]any{
-			"schema_version": 2,
-			"entity_path":    entityPath,
-			"workflow_dir":   workflowDir,
-			"stage":          "backlog",
-			"checklist":      []string{"- a", "- b"},
-			"team_name":      teamName,
-			"bare_mode":      false,
-		}, nil)
-
-		native := runNative(stdin, "build", "--workflow-dir", workflowDir)
-		path := dispatchFilePathFromStdout(t, native.stdout)
-		body, err := os.ReadFile(path)
-		if err != nil {
-			t.Fatalf("dispatch file unreadable at %q: %v", path, err)
-		}
-		return path, string(body)
-	}
-
-	path1, body1 := build("proj-wf-20260604-1200-aaaa1111")
-	path2, _ := build("proj-wf-20260604-1201-bbbb2222")
-
-	// Two distinct teams on the same slug+stage must NOT share a dispatch file.
-	if path1 == path2 {
-		t.Errorf("dispatch_file_path collides across two teams for the same slug+stage: %q", path1)
-	}
-
-	// The first file must still hold its OWN body — the second build must not have
-	// clobbered it (the stale-pointer race the live ensign loses).
-	after1, err := os.ReadFile(path1)
-	if err != nil {
-		t.Fatalf("first dispatch file vanished after the second build: %v", err)
-	}
-	if string(after1) != body1 {
-		t.Errorf("first dispatch file body was clobbered by the second build\npath: %s", path1)
-	}
-}
+// The legacy-era sibling of this file, TestDispatchFilePathCollisionFreeAcrossTeams,
+// pinned dispatch-file collision-avoidance keyed on a TeamCreate-issued team name.
+// That mechanism retired with legacy team mode; the merged floor's equivalent
+// disambiguator ($CLAUDE_CODE_SESSION_ID) is covered by
+// TestBuildMergedModeDispatchFileDisambiguator in build_merged_mode_test.go.
 
 // extractTokenAfter returns the whitespace-delimited token immediately following
 // marker in body, failing the test if the marker is absent.
@@ -278,7 +217,6 @@ func TestSingleRootNoStateCommitGuidance(t *testing.T) {
 				"workflow_dir":   workflowDir,
 				"stage":          tc.stage,
 				"checklist":      []string{"- a", "- b"},
-				"team_name":      "fixture-team",
 				"bare_mode":      false,
 			}, nil)
 
@@ -354,7 +292,6 @@ func TestStateCommitGuidanceResolvesPaths(t *testing.T) {
 				"workflow_dir":   workflowDir,
 				"stage":          tc.stage,
 				"checklist":      []string{"- a", "- b"},
-				"team_name":      "fixture-team",
 				"bare_mode":      false,
 			}, nil)
 

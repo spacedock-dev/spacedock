@@ -133,7 +133,6 @@ func newCodexBootstrapFixture(t *testing.T) codexBootstrapFixture {
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      []string{"- run the Codex bootstrap probe"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 		"host":           "codex",
 	}, nil)

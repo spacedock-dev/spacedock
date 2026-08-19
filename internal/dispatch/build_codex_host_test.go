@@ -28,7 +28,6 @@ func TestBuildCodexHostPromptShape(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 		"host":           "codex",
 	}, nil)
@@ -136,7 +135,6 @@ func TestBuildCodexHostIgnoresModelWithNote(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "stagemodel",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 		"host":           "codex",
 	}, nil)

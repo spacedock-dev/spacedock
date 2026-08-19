@@ -1,6 +1,0 @@
-===== exit =====
-1
-===== stdout =====
-
-===== stderr =====
-error: mod <ROOT>/_mods/nomodel.md has no 'model' in '## Hook: startup' — must be one of: sonnet, opus, haiku, fable

@@ -64,7 +64,7 @@ Require exit 0, bound attempt/Briefing, `state=closed`, and decision; record val
 ${SPACEDOCK_BIN:-spacedock} gate consume ENTITY --workflow-dir WORKFLOW_DIR
 ```
 
-Consume rechecks currency, successor, blockers, and one-use state under lock. Nonterminal: require exit 0, `consumed=true`, expected successor; it writes successor/consumed state, commits, and syncs. Then call `dispatch build --stamp` exactly once in the bound adapter shape (Codex named: no `--bare-mode`/`--team-name`); never probe another shape. Require status and nonempty `started` in its commit. Terminal: require `consumed=false`, `route=approved-awaiting-merge`; drive `«merge.guard»(slug)` with no dispatch. Never use `status --set` to advance a gate.
+Consume rechecks currency, successor, blockers, and one-use state under lock. Nonterminal: require exit 0, `consumed=true`, expected successor; it writes successor/consumed state, commits, and syncs. Then call `dispatch build --stamp` exactly once in the bound adapter shape (Codex named: no `--bare-mode`); never probe another shape. Require status and nonempty `started` in its commit. Terminal: require `consumed=false`, `route=approved-awaiting-merge`; drive `«merge.guard»(slug)` with no dispatch. Never use `status --set` to advance a gate.
 
 - `revise`: never consume after close commit; invoke `«feedback.route»`.
 - `hold`: after close commit, remain at the gate and surface the reason.

@@ -8,13 +8,12 @@
   "fetch_commands": [
     "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage defaultsmodel"
   ],
-  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-defaultsmodel.md",
-  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-defaultsmodel.md and treat its content as your assignment.",
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-defaultsmodel.md",
+  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-thing-defaultsmodel.md and treat its content as your assignment.",
   "model": "fable",
   "name": "spacedock-ensign-thing-defaultsmodel",
-  "team_name": "fixture-team"
+  "run_in_background": true
 }
 
 ===== stderr =====
 [build] effective_model=fable (from defaults) → Agent model=fable
-WARN: --team-name selects the legacy TeamCreate-registry dispatch shape (team_name present, run_in_background absent). On host=claude, auto-team is the default — omit --team-name to emit the auto-team shape (name + run_in_background, no team_name). If you mean the legacy team-registry path, this warning can be ignored.

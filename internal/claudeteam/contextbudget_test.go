@@ -260,24 +260,6 @@ func runBudgetJSON(t *testing.T, home, name string) map[string]any {
 	return m
 }
 
-// TestMemberExistsTeamScoped asserts MemberExists is team-scoped: a member in one
-// team's config is found there and not via a sibling team's config.
-func TestMemberExistsTeamScoped(t *testing.T) {
-	home := t.TempDir()
-	writeTeamConfig(t, home, "team-a", map[string]string{"comm-officer": "sonnet"})
-	writeTeamConfig(t, home, "team-b", map[string]string{"team-lead": "opus"})
-
-	if !MemberExists(home, "team-a", "comm-officer") {
-		t.Errorf("MemberExists should find comm-officer in team-a")
-	}
-	if MemberExists(home, "team-b", "comm-officer") {
-		t.Errorf("MemberExists must not find comm-officer in team-b (team-scoped)")
-	}
-	if MemberExists(home, "team-missing", "anyone") {
-		t.Errorf("MemberExists must return false for a missing team config")
-	}
-}
-
 // writeBudgetFixture writes a minimal ~/.claude tree: a team config listing the
 // member with model, and a one-line transcript whose resident equals tokens.
 func writeBudgetFixture(t *testing.T, home, name, model string, tokens int) {
@@ -299,13 +281,6 @@ func writeBudgetFixture(t *testing.T, home, name, model string, tokens int) {
 	writeTestFile(t, filepath.Join(subagents, "agent-"+name+".meta.json"),
 		`{"agentType": "`+name+`"}`)
 	writeTestFile(t, filepath.Join(subagents, "agent-"+name+".jsonl"), string(line)+"\n")
-}
-
-// writeTeamConfig writes a team config.json (no leadSessionId) listing the given
-// name->model members.
-func writeTeamConfig(t *testing.T, home, team string, members map[string]string) {
-	t.Helper()
-	writeTeamConfigWithSession(t, home, team, "", members)
 }
 
 // writeTeamConfigWithSession writes a team config.json with an optional

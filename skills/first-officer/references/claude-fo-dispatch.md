@@ -23,7 +23,6 @@ On a zero-exit `spacedock dispatch build` (`host` derived from `CLAUDECODE`; pas
 Agent(
     subagent_type=output.subagent_type,
     name=output.name,                           // the lead→worker channel; omit if bare mode (field absent)
-    team_name=output.team_name,                 // absent in the normal shape; map it verbatim if the build emits it
     run_in_background=output.run_in_background,  // the worker→lead channel; omit when field absent
     description=output.description,             // REQUIRED — Agent tool rejects missing description
     model=output.model,                         // omit when output.model is null

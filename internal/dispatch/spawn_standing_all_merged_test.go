@@ -152,3 +152,102 @@ func TestSpawnStandingAllMergedFailsLoudOnBrokenMod(t *testing.T) {
 		t.Errorf("stderr does not name the offending mod and missing section: %q", res.stderr)
 	}
 }
+
+// TestSpawnStandingAllMergedFableModel is AC-7 ported to the merged path (the
+// legacy-era TestSpawnStandingParityFableModel drove the retired `spawn-standing`
+// singular subcommand): a standing mod declaring `model: fable` in its
+// ## Hook: startup spawns successfully through spawn-standing-all's shared
+// buildSpawnSpec validation.
+func TestSpawnStandingAllMergedFableModel(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	wd := t.TempDir()
+	writeMods(t, wd, map[string]string{
+		"fable-officer.md": standingMod("fable-officer", "fable", "fable ensign", ""),
+	})
+
+	res := runNative("", "spawn-standing-all", "--workflow-dir", wd)
+	if res.exit != 0 {
+		t.Fatalf("spawn-standing-all exit=%d stderr=%q", res.exit, res.stderr)
+	}
+	if !strings.Contains(res.stdout, `"model": "fable"`) {
+		t.Errorf("spec array missing model=fable:\n%s", res.stdout)
+	}
+}
+
+// TestSpawnStandingAllMergedNonASCIIPrompt is the A-2 non-ASCII parity case
+// ported to the merged path (the legacy-era TestSpawnStandingParitySpecNonASCIIPrompt
+// drove the retired `spawn-standing` singular subcommand): the FO forwards
+// spec.prompt VERBATIM, so a non-ASCII Agent Prompt (em-dash U+2014 here) must
+// serialize through the shared ensure_ascii escaping spawn-standing-all's array
+// emission uses.
+func TestSpawnStandingAllMergedNonASCIIPrompt(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	wd := t.TempDir()
+	mod := "---\nstanding: true\nname: comm-officer\n---\n" +
+		"## Hook: startup\n" +
+		"- subagent_type: general-purpose\n" +
+		"- name: comm-officer\n" +
+		"- model: sonnet\n" +
+		"## Agent Prompt\nYou are comm-officer — the prose polisher.\n"
+	writeMods(t, wd, map[string]string{"comm-officer.md": mod})
+
+	res := runNative("", "spawn-standing-all", "--workflow-dir", wd)
+	if res.exit != 0 {
+		t.Fatalf("spawn-standing-all exit=%d stderr=%q", res.exit, res.stderr)
+	}
+	assertEmDashEscaped(t, res.stdout)
+}
+
+// TestSpawnStandingAllMergedLoudFailures ports the mode-neutral validation cases
+// from the retired `spawn-standing` singular subcommand's parity fixture
+// (missing model, bad model enum, and a trailing heading after ## Agent Prompt)
+// onto spawn-standing-all: each still exits 1 with a stderr line naming the
+// offending mod through the shared buildSpawnSpec validation.
+func TestSpawnStandingAllMergedLoudFailures(t *testing.T) {
+	cases := []struct {
+		name       string
+		modName    string
+		mod        string
+		wantStderr []string
+	}{
+		{
+			name:       "missing-model",
+			modName:    "nomodel.md",
+			mod:        "---\nstanding: true\nname: nomodel\n---\n## Hook: startup\n- subagent_type: general-purpose\n- name: nomodel\n## Agent Prompt\nx\n",
+			wantStderr: []string{"nomodel.md", "no 'model'"},
+		},
+		{
+			name:       "bad-model-enum",
+			modName:    "badmodel.md",
+			mod:        "---\nstanding: true\nname: badmodel\n---\n## Hook: startup\n- subagent_type: general-purpose\n- name: badmodel\n- model: gpt-4\n## Agent Prompt\nx\n",
+			wantStderr: []string{"badmodel.md", "invalid model 'gpt-4'"},
+		},
+		{
+			name:       "trailing-heading",
+			modName:    "trailer.md",
+			mod:        "---\nstanding: true\nname: trailer\n---\n## Hook: startup\n- subagent_type: general-purpose\n- name: trailer\n- model: opus\n## Agent Prompt\nbody\n## Trailing Section\noops\n",
+			wantStderr: []string{"trailer.md", "trailing top-level heading"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			wd := t.TempDir()
+			writeMods(t, wd, map[string]string{tc.modName: tc.mod})
+
+			res := runNative("", "spawn-standing-all", "--workflow-dir", wd)
+			if res.exit != 1 {
+				t.Fatalf("expected exit 1 for %q; got %d stdout=%q", tc.name, res.exit, res.stdout)
+			}
+			for _, want := range tc.wantStderr {
+				if !strings.Contains(res.stderr, want) {
+					t.Errorf("%s: stderr %q missing %q", tc.name, res.stderr, want)
+				}
+			}
+		})
+	}
+}

@@ -7,8 +7,8 @@
   "fetch_commands": [
     "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
   ],
-  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md",
-  "prompt": "Advancing to next stage: validation.\n\nRead /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md and treat its content as your next-stage assignment.",
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-validation-advance.md",
+  "prompt": "Advancing to next stage: validation.\n\nRead /tmp/spacedock-dispatch/spacedock-ensign-thing-validation-advance.md and treat its content as your next-stage assignment.",
   "model": null
 }
 

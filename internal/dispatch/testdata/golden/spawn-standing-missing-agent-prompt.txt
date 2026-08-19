@@ -1,6 +1,0 @@
-===== exit =====
-1
-===== stdout =====
-
-===== stderr =====
-error: mod <ROOT>/_mods/noprompt.md has no '## Agent Prompt' section — required for standing-teammate spawn

@@ -88,7 +88,6 @@ func TestBuildStageDisciplineRidesExactFetchCommand(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "ideation",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 

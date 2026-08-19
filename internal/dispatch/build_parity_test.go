@@ -140,7 +140,6 @@ func TestBuildParityCrossProduct(t *testing.T) {
 				"workflow_dir":   workflowDir,
 				"stage":          tc.stage,
 				"checklist":      []string{"- a", "- b"},
-				"team_name":      "fixture-team",
 				"bare_mode":      false,
 			}, tc.stdinExtra)
 
@@ -176,7 +175,6 @@ func TestBuildParityNonASCIITitle(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "backlog",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 

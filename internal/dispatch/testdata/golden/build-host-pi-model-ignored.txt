@@ -8,11 +8,10 @@
   "fetch_commands": [
     "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage stagemodel"
   ],
-  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-pi-team-spacedock-ensign-thing-stagemodel.md",
-  "prompt": "Read /tmp/spacedock-dispatch/fixture-pi-team-spacedock-ensign-thing-stagemodel.md and treat its content as your assignment.",
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-stagemodel.md",
+  "prompt": "Read /tmp/spacedock-dispatch/spacedock-ensign-thing-stagemodel.md and treat its content as your assignment.",
   "model": null,
   "name": "spacedock-ensign-thing-stagemodel",
-  "team_name": "fixture-pi-team",
   "agent": "worker",
   "skill": "ensign"
 }

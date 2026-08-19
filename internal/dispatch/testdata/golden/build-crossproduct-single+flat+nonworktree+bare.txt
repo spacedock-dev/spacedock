@@ -8,8 +8,8 @@
   "fetch_commands": [
     "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage backlog"
   ],
-  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-backlog.md",
-  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-backlog.md and treat its content as your assignment.",
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-backlog.md",
+  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-thing-backlog.md and treat its content as your assignment.",
   "model": null
 }
 

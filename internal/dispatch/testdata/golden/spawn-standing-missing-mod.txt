@@ -1,6 +1,0 @@
-===== exit =====
-1
-===== stdout =====
-
-===== stderr =====
-error: mod file not found: <ROOT>/_mods/ghost.md

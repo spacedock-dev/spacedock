@@ -667,15 +667,15 @@ Do not spawn a subagent. Instead, the commission skill itself takes on the first
 
 Execute the first-officer startup procedure directly. You are now the first officer for the remainder of this session.
 
-### Step 3 — Team Probe
+### Step 3 — Boot Probe
 
 Before any dispatch:
 
-1. Run `ToolSearch(query="select:TeamCreate", max_results=1)`.
-2. If the result contains a TeamCreate definition, run `TeamCreate(...)` per the Claude Code runtime adapter's Team Creation section, and record the returned `team_name`. Forward that `team_name` into every subsequent dispatch input JSON.
-3. If ToolSearch returns no match, enter bare mode explicitly (`team_name: null, bare_mode: true` on dispatch inputs) and report the mode to {captain}.
+1. Probe for team-mode support: `ToolSearch(query="select:SendMessage", max_results=1)` (or check enabled-tools directly).
+2. If `SendMessage` is available, team mode is enabled — no setup call is needed. `spacedock dispatch build` emits the named-background-teammate shape (`name` present, `run_in_background` true, no `team_name`) on its own; map its output to `Agent()` verbatim per the Claude runtime adapter's Spawn Call section.
+3. If `SendMessage` is unavailable, dispatch in bare mode explicitly (`bare_mode: true` on dispatch inputs, or `--bare-mode`) and report the mode to {captain}.
 
-This step is mandatory. Skipping it and defaulting to bare is the failure mode — a commissioned FO that silently omits TeamCreate loses access to team-mode primitives (spawn-standing, concurrent dispatch, SendMessage coordination).
+This step is mandatory. Skipping it and guessing the mode is the failure mode — a commissioned FO that silently assumes bare loses access to team-mode primitives (spawn-standing-all, concurrent dispatch, SendMessage coordination).
 
 ### Step 4 — Monitor and Report
 

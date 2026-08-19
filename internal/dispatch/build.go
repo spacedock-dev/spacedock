@@ -23,9 +23,9 @@ const (
 	nameMaxLen      = 200
 	modelEnumList   = "must be one of: sonnet, opus, haiku, fable"
 	dispatchFileDir = "/tmp/spacedock-dispatch"
-	// dispatchFileNameMaxLen caps the dispatch filename stem (team_name +
-	// derived name) so the on-disk file with its .md suffix stays under the
-	// common 255-byte filesystem name limit.
+	// dispatchFileNameMaxLen caps the dispatch filename stem (the merged-mode
+	// session token + derived name) so the on-disk file with its .md suffix
+	// stays under the common 255-byte filesystem name limit.
 	dispatchFileNameMaxLen = 251
 	// nameAgentMaxLen is the Agent-tool name ceiling (^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$
 	// — 64 chars). A derived name longer than this is rejected by Agent() with
@@ -49,13 +49,6 @@ var buildRequiredFields = []string{"schema_version", "entity_path", "workflow_di
 // namePattern is the dispatch-name regex derived worker names must match.
 var namePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$`)
 
-// teamNamePattern is the path-safety regex for a team_name prepended to the
-// dispatch filename. It enforces namePattern's kebab character class and
-// no-leading/trailing-hyphen rule, but also admits a single character — a
-// degenerate yet path-safe name namePattern's two-anchor shape rejects. Derived
-// names are always multi-char, so namePattern never needed the single-char case.
-var teamNamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
-
 // modelEnum is the Agent-schema model enum declared values are validated
 // against — shared by dispatch build (host=claude) and spawn-standing, the
 // two sites that render Claude Agent envelopes.
@@ -73,14 +66,14 @@ const (
 
 // buildOutput is the stdout JSON envelope. Field order is the emission order
 // (insertion order in the oracle): schema_version, subagent_type, description,
-// fetch_commands, dispatch_file_path, prompt, model, then name / team_name /
+// fetch_commands, dispatch_file_path, prompt, model, then name /
 // run_in_background, then the pi-only agent / skill pair. Model is a *string so an unresolved model serializes as the
-// JSON literal null; Name / TeamName / RunInBackground are *T with omitempty so
+// JSON literal null; Name / RunInBackground are *T with omitempty so
 // bare-mode dispatches omit the keys entirely (absent, not null). RunInBackground
-// is set only on the merged Claude shape (.178+: named background teammate, no
-// team_name) — it carries the worker→lead inter-agent communication half of the dispatch (the
-// `name` carries the lead→worker half), so a legacy team-name or bare dispatch
-// omits it. Agent/Skill are the pi-only spawn binding: set only for
+// is set only on the merged Claude shape (.178+: named background teammate) —
+// it carries the worker→lead inter-agent communication half of the dispatch (the
+// `name` carries the lead→worker half), so a bare dispatch omits it. Agent/Skill
+// are the pi-only spawn binding: set only for
 // "host": "pi" fresh dispatches — the artifact itself names the pi-subagents
 // agent (piSpawnAgent, or the stage's agent: override) and basename skill
 // (piSpawnSkill; omitted on an override) so «worker.spawn» needs no local
@@ -95,7 +88,6 @@ type buildOutput struct {
 	Prompt          string   `json:"prompt"`
 	Model           *string  `json:"model"`
 	Name            *string  `json:"name,omitempty"`
-	TeamName        *string  `json:"team_name,omitempty"`
 	RunInBackground *bool    `json:"run_in_background,omitempty"`
 	Agent           *string  `json:"agent,omitempty"`
 	Skill           *string  `json:"skill,omitempty"`
@@ -103,7 +95,7 @@ type buildOutput struct {
 
 // buildAdvanceOutput is the stdout JSON envelope for `--advance` mode: a pointer
 // message for the reuse-advance handle, not a spawn envelope. It carries no
-// subagent_type/name/team_name/run_in_background — nothing is spawned, so those
+// subagent_type/name/run_in_background — nothing is spawned, so those
 // spawn-only fields are absent from the type entirely (not merely omitempty).
 // model stays so the FO's reuse-condition-4 comparator can read
 // next_stage.effective_model from this output instead of a separate README read.
@@ -207,9 +199,6 @@ func fieldsFromBuildFlags(opts buildOptions, stderr io.Writer) (map[string]json.
 		"bare_mode":      rawJSON(opts.BareMode),
 		"advance":        rawJSON(opts.Advance),
 	}
-	if opts.TeamName != "" {
-		fields["team_name"] = rawJSON(opts.TeamName)
-	}
 	if opts.ScopeNotesFile != "" {
 		scopeNotes, err := os.ReadFile(opts.ScopeNotesFile)
 		if err != nil {
@@ -311,7 +300,6 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		workflowDir = jsonString(fields["workflow_dir"])
 	}
 	stage := jsonString(fields["stage"])
-	teamName := optString(fields, "team_name")
 	feedbackContext := optString(fields, "feedback_context")
 	scopeNotes := optString(fields, "scope_notes")
 	host, err := resolveBuildHost(opts.Host, optString(fields, "host"), os.Getenv)
@@ -334,16 +322,15 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		return buildError(stderr, 2, "--advance is incompatible with bare_mode (a reuse advance presupposes an addressable worker; bare mode has none)")
 	}
 
-	// Merged mode is the Claude .178+ team shape: a non-bare claude dispatch with
-	// no team_name. On .178+ TeamCreate/TeamDelete are gone, so team membership is
+	// Merged mode is the Claude .178+ team shape: every non-bare claude dispatch.
+	// TeamCreate/TeamDelete are gone on supported hosts, so team membership is
 	// established by a named background teammate (Agent(name=…, run_in_background=
-	// true)) with no team registry name. It is distinct from legacy team mode
-	// (team_name present, requires TeamCreate) and from bare mode (no name at all,
-	// sequential). The merged shape emits a name (the lead→worker SendMessage and
-	// reuse-advance handle), run_in_background (the worker→lead inter-agent communication), and
-	// no team_name. Claude-only: codex/pi have their own non-team named-dispatch
-	// shapes handled by their host branches.
-	mergedMode := !bareMode && host == "claude" && teamName == ""
+	// true)) with no team registry name. It is distinct from bare mode (no name
+	// at all, sequential). The merged shape emits a name (the lead→worker
+	// SendMessage and reuse-advance handle) and run_in_background (the
+	// worker→lead inter-agent communication). Claude-only: codex/pi have their
+	// own non-team named-dispatch shapes handled by their host branches.
+	mergedMode := !bareMode && host == "claude"
 
 	// FO bootstrap discipline: a bare_mode dispatch with no recent TeamCreate
 	// evidence on disk gets an advisory stderr warning (exit stays 0). The evidence
@@ -540,12 +527,10 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 			"dispatching to feedback target stage '%s' but feedback_context is missing", stage)
 	}
 
-	// Rule 8 (retired for the merged floor): a non-bare Claude dispatch with no
-	// team_name is the merged .178+ team shape (mergedMode above), not an error.
-	// On .178+ TeamCreate is gone, so there is no team_name to require; membership
-	// comes from a named background teammate. The pre-.178 legacy path still keys
-	// on team_name being present, so the two non-bare Claude shapes — merged
-	// (team_name absent) and legacy (team_name present) — are both valid here.
+	// Rule 8 (retired for the merged floor): a non-bare Claude dispatch is
+	// always the merged .178+ team shape (mergedMode above), not an error.
+	// TeamCreate is gone on supported hosts, so membership comes from a named
+	// background teammate, not a team registry name.
 
 	// Rule 6: subagent_type from the stage agent field.
 	subagentType := "spacedock:ensign"
@@ -688,13 +673,11 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		"### Completion checklist\n\n%s\n\n### Summary\n{brief description of what was accomplished}\n",
 		checklistText))
 
-	// 9. Standing-teammate loading uses the same already-resolved executable.
-	// Bare, merged/no-team, and empty-standing assignments still omit the command.
-	if len(EnumerateDeclaredStandingTeammates(workflowDir, teamName)) > 0 {
-		fetchCommands = append(fetchCommands,
-			fmt.Sprintf("%s dispatch show-standing --workflow-dir %s",
-				shlexQuote(workflowLauncher), shlexQuote(workflowDir)))
-	}
+	// 9 (retired): standing-teammate auto-injection via a legacy team_name only
+	// ever fired in the deleted legacy branch — merged and bare dispatches always
+	// omitted the command (documented behavior, unchanged by this removal). The
+	// standing-teammate flow stays reachable directly via show-standing /
+	// spawn-standing-all.
 
 	fetchLines := []string{"### Fetch commands", ""}
 	for _, command := range fetchCommands {
@@ -702,13 +685,11 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	}
 	parts = append(parts, strings.Join(fetchLines, "\n"))
 
-	// 10. Completion signal (Claude legacy team mode, Claude merged mode, or
-	// Codex named dispatch). The merged shape (mergedMode: claude, no team_name)
-	// gets the same Claude SendMessage(to="team-lead") block as legacy team mode —
-	// the worker→lead completion target is pinned to the single name "team-lead"
+	// 10. Completion signal (Claude merged mode or Codex named dispatch). The
+	// worker→lead completion target is pinned to the single name "team-lead"
 	// (AC-6), matching the ensign runtime's completion contract. Bare mode (no
 	// name) still omits it; its dispatch blocks and returns inline.
-	if !bareMode && (teamName != "" || mergedMode || host == "codex") {
+	if !bareMode && (mergedMode || host == "codex") {
 		entityFileRef := entityPath
 		if worktreePath != "" && !splitRoot {
 			entityFileRef = worktreeEntityPath
@@ -725,34 +706,15 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	// dispatch dir; emit a tiny prompt the ensign Reads on first action. A bare
 	// {derivedName}.md is identical across every dispatch of one slug+stage, so two
 	// concurrent FOs — or back-to-back runs of one fixture — alias the same file
-	// and an ensign can Read a STALE prior dispatch's entity pointer. In legacy
-	// team mode each real FO TeamCreate yields a unique team name (`{project}-
-	// {dir}-{YYYYMMDD-HHMM}-{shortuuid}`), so keying the file on the team name
-	// disambiguates every team-mode dispatch. On the merged floor there is no team
-	// name, so the per-session auto-team id ($CLAUDE_CODE_SESSION_ID) is the
-	// disambiguator instead — two concurrent merged FOs run distinct sessions, so
-	// it separates their dispatch files exactly as the team name did. Dispatches
-	// with neither (bare, or a merged dispatch with no session id in env) keep the
-	// plain derived name. derivedName stays the readable team-member name; only the
-	// on-disk path is keyed.
+	// and an ensign can Read a STALE prior dispatch's entity pointer. On the
+	// merged floor there is no team registry name, so the per-session auto-team
+	// id ($CLAUDE_CODE_SESSION_ID) is the disambiguator instead — two concurrent
+	// merged FOs run distinct sessions, so it separates their dispatch files.
+	// Dispatches with neither (bare, or a merged dispatch with no session id in
+	// env) keep the plain derived name. derivedName stays the readable
+	// team-member name; only the on-disk path is keyed.
 	dispatchFileName := derivedName
-	if teamName != "" {
-		// team_name is prepended to a filesystem path, so it gets the same
-		// path-safety the derived name already gets (kebab-only char class,
-		// capped). Team names are harness-generated and kebab-safe today; this is
-		// defense-in-depth against an odd or path-bearing name building an
-		// unsanitized /tmp path.
-		if len(teamName) > nameMaxLen {
-			return buildError(stderr, 1, "team name '%s' exceeds %d characters", teamName, nameMaxLen)
-		}
-		if !teamNamePattern.MatchString(teamName) {
-			return buildError(stderr, 1,
-				"team name '%s' contains invalid characters: must match %s "+
-					"(kebab-case lowercase letters, digits, and hyphens only)",
-				teamName, teamNamePattern.String())
-		}
-		dispatchFileName = teamName + "-" + derivedName
-	} else if mergedMode {
+	if mergedMode {
 		if sessionToken := pathSafeSessionToken(os.Getenv("CLAUDE_CODE_SESSION_ID")); sessionToken != "" {
 			dispatchFileName = sessionToken + "-" + derivedName
 		}
@@ -787,21 +749,9 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		prompt = dispatchPointerPrompt(host, dispatchFilePath)
 	}
 
-	// Foot-gun guard: a non-bare claude dispatch that passes team_name selects the
-	// legacy TeamCreate-registry envelope just assembled above (team_name present,
-	// run_in_background absent) rather than the auto-team default — the teamName != ""
-	// complement of mergedMode, the same three signals, no new detection and no
-	// probe. The advisory fires here, after every error guard, so it warns only when
-	// the legacy envelope is actually being emitted; a build that errors out (no
-	// envelope) stays advisory-free. Stderr-only: the envelope above is untouched.
-	// The text lives in the Claude seam beside BareModeAdvisory.
-	if !bareMode && host == "claude" && teamName != "" {
-		claudeteam.LegacyTeamNameAdvisory(stderr)
-	}
-
 	if advance {
 		// Nothing is spawned, so the envelope carries no subagent_type/name/
-		// team_name/run_in_background — only the pointer message and the fields
+		// run_in_background — only the pointer message and the fields
 		// the FO's reuse-condition-4 comparator still needs (model).
 		outAdvance := buildAdvanceOutput{
 			SchemaVersion: schemaVersion,
@@ -825,9 +775,6 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	}
 	if !bareMode {
 		out.Name = &derivedName
-		if teamName != "" {
-			out.TeamName = &teamName
-		}
 	}
 	if mergedMode {
 		// The merged dispatch is Agent(name=…, run_in_background=true): the named
@@ -1119,9 +1066,6 @@ func emitBuildSchema(stdout io.Writer) int {
 			"checklist": map[string]any{
 				"type":  "array",
 				"items": map[string]any{"type": "string"},
-			},
-			"team_name": map[string]any{
-				"type": []string{"string", "null"},
 			},
 			"feedback_context": map[string]any{
 				"type": []string{"string", "null"},

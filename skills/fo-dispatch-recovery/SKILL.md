@@ -15,7 +15,7 @@ The resident trigger line already covers the first action (report the helper fai
 For selected bare mode, use this blocking call. Omit `name`, `team_name`, and `run_in_background` entirely; Claude's observable tool stream may preserve that omission or normalize it to `run_in_background=false`, and both mean blocking bare dispatch. Never pass or accept `run_in_background=true`. Omit the completion-message block because the blocking return is the completion signal:
 ```
 Agent(
-    subagent_type="{dispatch_agent_id}",
+    subagent_type="{dispatch_agent_id}",  // the stage's agent: field from the workflow README; spacedock:ensign when the README names none (the build helper's default, build.go rule 6)
     description="{entity title}: {stage}",
     model="{effective_model}",
     prompt="## First action\n\nBefore anything else, invoke your operating contract:\n\n    Skill(skill=\"spacedock:ensign\")\n\nThis loads the shared ensign discipline (stage-report format, background-task polling, worktree ownership, completion signal protocol). Do not paraphrase; call the tool.\n\nYou are working on: {entity title}\n\nStage: {stage}\n\n### Stage definition:\n\n{copy stage subsection from README verbatim}\n\nRead the entity file at {entity_file_path}.\n\n### Completion checklist\n\n{numbered checklist}\n\n### Summary\n{brief description of what was accomplished}\n\n### Stage report\n\nAppend a Stage Report section at the end of the entity file (per the shared-core Stage Report Protocol). Use the title `Stage Report: {stage}`. Account for every checklist item above with a `- DONE:` / `- SKIPPED:` / `- FAILED:` entry. Use the checklist item text verbatim when possible."
@@ -25,7 +25,7 @@ Agent(
 For selected team mode, use this named background call. Omit `team_name`; retain the completion message to the single `team-lead` target:
 ```
 Agent(
-    subagent_type="{dispatch_agent_id}",
+    subagent_type="{dispatch_agent_id}",  // the stage's agent: field from the workflow README; spacedock:ensign when the README names none (the build helper's default, build.go rule 6)
     description="{entity title}: {stage}",
     name="{worker_key}-{slug}-{stage}",  // if this exceeds 64 chars, cap it the way `spacedock dispatch build` does: keep the {worker_key} prefix and -{stage} suffix and, on id-style: sd-b32, replace the slug with a fixed-length prefix of the entity id (id-less slug workflows truncate the slug head instead)
     run_in_background=true,
