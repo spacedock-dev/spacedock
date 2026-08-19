@@ -76,3 +76,98 @@ resolve the running session's transcript with no hook callback.
   the prose-injection hook has ever fired live.
 - This repo's `hook-events.jsonl` holds exactly one PreToolUse record and no
   compaction evidence, as the dispatch stated.
+
+## 6. Cycle-4 plugin-wired model-delivery spike (2026-08-19)
+
+Provenance: run during implementation cycle 4, after the FO/captain required
+proof that the SHIPPED, plugin-wired hook — not the reverted session-local
+spike — actually reaches the resumed model's context. Host: Claude Code
+v2.1.226, macOS. Method: `tmux`-driven scratch sessions (`claude --plugin-dir
+<disposable copy of the exact committed worktree tree, via git archive>
+--model haiku`), launched from a fresh scratch cwd never previously used by
+Claude Code. A sentinel token (`SPIKE-SENTINEL-133D580A5296E412`) was
+appended to a disposable copy of `hooks/session_start_compact_reminder.sh`'s
+`additionalContext` value; the committed worktree files were never edited for
+this spike. Conversation was grown to ~130k tokens over several turns
+(context window is large enough that this reads as 13-14% used), then
+`/compact` was issued.
+
+**Result 1 — the committed mechanism was BROKEN, caught by this spike before it caught a real user.** First run, `hooks.json` unmodified from the just-consolidated commit (`${PLUGIN_ROOT}/hooks/session_start_compact_reminder.sh`):
+
+```
+❯ /compact
+  ⎿  Compacted (ctrl+o to see full summary)
+  ⎿  SessionStart:compact hook error
+  ⎿  Failed with non-blocking status code: /bin/sh: /hooks/session_start_compact_reminder.sh: No such file or directory
+```
+
+Asked next, with no tool calls, to reproduce the sentinel or reply NONE: the
+session replied `NONE`. Root cause, found with a diagnostic hook (a second,
+unconditional SessionStart entry that dumps `env` to a file, referenced by a
+literal absolute path so the diagnosis does not depend on the token under
+test): Claude Code sets `CLAUDE_PLUGIN_ROOT` for a `--plugin-dir`-loaded
+("inline") plugin's hook subprocess. It does **not** set a variable literally
+named `PLUGIN_ROOT`. `${PLUGIN_ROOT}` is Codex's token
+(`e143969b8`, verified live on codex-cli 0.144.6) — it has **never** been a
+Claude Code token. Verbatim from the diagnostic dump:
+
+```
+PLUGIN_ROOT=[<unset>]
+CLAUDE_PLUGIN_ROOT=[/private/tmp/.../compaction-spike-v2/plugin-under-test]
+CLAUDE_PROJECT_DIR=[/private/tmp/.../compaction-spike-v2/workdir]
+```
+
+Under `/bin/sh`, an unset `${PLUGIN_ROOT}` expands to empty, so
+`${PLUGIN_ROOT}/hooks/session_start_compact_reminder.sh` became
+`/hooks/session_start_compact_reminder.sh` — exactly the error string above.
+This bug predates this entity (inherited from the pre-existing
+`codex_session_start_compact.sh` entry) but was inert until this cycle
+activated `hooks.json` for Claude for the first time; nothing before this
+cycle could have exercised it on this host.
+
+**Result 2 — fixed with `${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}`, then delivery to MODEL CONTEXT confirmed positively, not assumed.** Verified the nested POSIX parameter-expansion fallback resolves correctly for both hosts by hand (`sh -c` with each variable set alone). Applied to the disposable copy only, then re-ran the full cycle: grew a fresh session to ~130k tokens, hit "Not enough messages to compact" once (same false-positive-adjacent PreCompact behavior as section 2), grew further, then:
+
+```
+❯ /compact
+  ⎿  Compacted (ctrl+o to see full summary)
+```
+
+No hook error. Invocation log confirms the script ran: `invoked
+source=compact spacedock_bin_set=yes`. Next turn, no tool calls:
+
+```
+❯ Without using any tools, reply with ONLY the exact sentinel token if you
+  have one in your current context from a system message or hook injection,
+  or reply NONE if you have nothing.
+
+⏺ SPIKE-SENTINEL-133D580A5296E412
+```
+
+Exact match. This is the AC-1-shaped proof the sibling entity
+(`claude-post-compaction-contract-reload`) asked for and never ran: hook
+stdout, injected via `hookSpecificOutput.additionalContext`, reaches the
+resumed model's own context after a real compaction, through the actual
+plugin-manifest-and-hooks.json path this entity ships — not a session-local
+hand-installed hook, not an assumption from documentation.
+
+**Trust/approval question.** No approval dialog, prompt, or interstitial
+appeared when the plugin was loaded via `--plugin-dir` or when its
+`SessionStart` hook was registered, in either run. `/plugin` → Installed
+showed `spacedock @ inline · ✔ enabled` with `Hooks: SessionStart` listed,
+immediately, with no accept step observed. Caveat, stated plainly: this ran
+under the operator's ordinary (non-isolated) `HOME`, and the plugin detail
+view showed "Last used: 2 days ago" — meaning this exact `--plugin-dir` path
+was not genuinely novel to this machine, so a true first-ever-encounter
+prompt (if Claude Code has one, gated on total novelty rather than per-launch)
+was not conclusively ruled out. Within what this spike tested — a
+`--plugin-dir` load of a plugin whose containing repo path Claude Code has
+seen before — hooks ran with no separate approval step beyond ordinary
+workspace trust.
+
+**Auto-compact coverage: not reached, declared infeasible within this spike's budget rather than skipped silently.** Attempted to force it cheaply by having the session read a 920KB synthetic file; context usage moved from 13% to only 14%, and the model preferred `grep`/shell tools over loading the full file into context on its own, defeating a quick forced fill. The context window is evidently large enough (consistent with this fleet's "[1m context]" model family) that reaching a ~90%+ auto-compact threshold organically would need many more expensive turns than this spike's reasoned budget allows. Mechanism-level reasoning for why this gap is lower-risk than it looks: `SessionStart`'s `source` field is `"compact"` regardless of whether the preceding `PreCompact` fired with `trigger:"manual"` or `trigger:"auto"` (per section 2's captured events, the trigger distinction lives only on `PreCompact`, which this hook does not read). The hook's own logic has no branch on trigger type, so there is no code path that behaves differently for auto-compact than the one just proven for manual compact — but this is a design-level inference, not a second empirical observation, and is named as exactly that.
+
+Cleanup: all tmux scratch sessions killed, the disposable plugin copy and its
+sentinel/instrumentation are scratch-only and were never committed; the real
+worktree's `hooks/session_start_compact_reminder.sh` and `hooks.json` were
+untouched by the spike itself. The token fix this spike required is applied
+separately, in the entity's implementation stage report.
