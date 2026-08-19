@@ -238,6 +238,10 @@ Ran a live capture spike (tmux-driven Claude 2.1.226 session with PreCompact/Ses
 
 Surface-only revision per the gate: same spike evidence, same mechanism. The guard set narrowed from eight mutating verbs to the three where captain authority or terminal irreversibility lands (`gate record`, `gate consume`, `merge guard`) with the cap rationale recorded; the receipt shrank from a JSON format to one parsed line at `.spacedock/boot/{session_id}`; fixture files became string constants in a table-driven test. Estimate moved from +540/12 files to +245/8 files with the withdrawn doubling called out, and the body, ACs, test plan, and doc diff were updated together to match.
 
+### Feedback Cycles
+
+- Cycle 1: SURFACE OVERRUN DISCLOSED (no rejection) — implementation self-report; surface 14 files/net +642 vs estimate 8 files/net +245 (262%, past the 2x ceiling of +490); AC unchanged. Two causes, both named as unanticipated at ideation rather than scope creep: (1) `internal/status` is under a repo-enforced host-neutrality lint forbidding any `.claude` string literal, so the transcript-path glob relocated into `claudeteam`'s new TranscriptProbe seam and threads through gatherBoot/printBoot/runRead/dispatch/NativeRunner; (2) three existing tests forward the live process's real CLAUDE_CODE_SESSION_ID into fixtures carrying no boot receipt — harmless before this guard, a spurious red after. FO note: cause 2 is a pre-existing test-hermeticity bug this entity fixed in passing; cause 1 is a new cross-package seam. Both are validation's job to confirm as necessary rather than convenient, since a new seam and an unrelated bug fix are exactly what a surface overrun can hide.
+
 ## Stage Report: implementation
 
 - DONE: AC-1 measuring: in the incident-replay scenario, 0 of 3 guarded verbs succeed before re-boot, each exiting non-zero with the boot-stale message — against a baseline of 3 of 3 on today's binary.
