@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:12zytd0ksb47r3g61qw1s5nc:ideation:attempt-2:revision-1",
+  "question": "Approve the round-parsing grammar with AC-6's live-journey criterion, at net +105 across 2 files?",
+  "artifacts": [
+    {
+      "id": "artifact:12zytd0ksb47r3g61qw1s5nc:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/0702f0cc1e56a83469546a7e9743e0fdf6e0beda/rejection-topology-count-bar.md",
+      "rev": "sha256:0d74fb94dbfeb6e38ef3b39699119601f67d3283fb46754b2cf4546efe9f17e2",
+      "mediaType": "text/markdown",
+      "summary": "AC-6 added: the targeted local live rejection-flow run on the claude lane is now an acceptance criterion, run at implementation or validation against the built change. It states the reasoning plainly — offline replay proves the grader changed, only the journey proves the journey passes, and those are two different claims. AC-6 adds NO code surface: the runner, artifact retention and digest persistence all exist, so it adds a run obligation rather than a mechanism, and the estimate is unchanged at net +105 across 2 files. It also states the cross-entity tip reading precisely: expected is NO rejection-worker-topology code on EITHER lane, with the claude lane red under zf7's rejection-round-incomplete — that entity's honest outcome, not this one's. It names the codex reuse branch as the thing the tip corroborates because it cannot run locally in this sandbox. New-mechanism accounting is explicit: the only new mechanism is the round parser. It records the alternative it rejected — enumerate the three conforming chains per branch and flat-match — and why: identity pairs shift per template (the position-fragility this entity exists to remove), a red would report 'matched none of three chains' instead of the violated invariant, and the budget would live implicitly in the enumeration. The 9g partial-supersession correction stands: superseded for shape attribution, not for conduct forensics, since only the TSV digest survives and the raw rollout that could establish intent still dies with the isolated CODEX_HOME."
+    }
+  ]
+}

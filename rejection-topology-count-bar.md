@@ -49,6 +49,12 @@ gates:
                 at: "2026-08-19T19:24:29.390013Z"
                 decision: revise
                 reason: 'Captain rejected in chat: ''it''s not about asking permission. it''s about not having that in the fricking AC.'' Same structural defect as zf7: no acceptance criterion requires a targeted live run of the journey this grader governs. Its ACs verify against retained chains and a mutant corpus — which proves the grammar changed, not that the journey passes. Add an AC whose verification IS a targeted local live run of rejection-flow, naming the journey and the expected observed codes. The grammar design itself is accepted and stands.'
+            - id: gate-attempt:12zytd0ksb47r3g61qw1s5nc-ideation-2
+              briefing:
+                id: briefing:12zytd0ksb47r3g61qw1s5nc:ideation:attempt-2:revision-1
+                digest: sha256:93e8fd75396dcf75abbb55c4678358f529f19f2c9d20fe20980a54314d07d155
+                request-digest: sha256:bc0c1b70b4e3d6d889cd50718e44f73d3c018adbafc9010dfa25e15903442a77
+                room-ref: ./rejection-topology-count-bar/review/ideation/briefing-2
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
