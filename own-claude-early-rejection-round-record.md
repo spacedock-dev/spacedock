@@ -89,6 +89,8 @@ It also settled the question the FO could not: is an honest label a way to make 
 
 ## Ideation design (2026-08-19, ideation ensign)
 
+**Cycle-2 supersession note.** The gate REVISED this design: the analysis below stands (executed-verified chain, both pins, the dead-code finding, the honest codes as a component), but shipping only the relabel was rejected — captain: "if it stays red it has no value. combine it with something that turns it green." The Acceptance criteria, Test plan, Expected surface, and the "Red stays red" tip guidance below are superseded by "Ideation design, cycle 2" further down. In particular the cycle-1 tip guidance (expect an honest claude red) is now WRONG — see cycle 2's tip reading.
+
 Validated the adversarial review's conclusions by execution and source, not by re-reading: the reviewer's harness at `/tmp/9g-evidence/matcher-exec` re-run this session (all four recognizer matchers true on the live command bytes; `rejectionRoundSuccess` false on the real `entries=2` result, true on the one-token `entries=4` mutant), and the live stream re-extracted first-hand (`rejection-flow/claude-stream.jsonl`: one `--round` tool_use at line 285, result `is_error=false entries=2` at 286, rework spawn at 307). The chain holds; both remedy gaps are real. One reachability correction to gap 2, found in source and recorded below. Line references cite `main` @ 61dd8e435; the grader files are byte-identical on PR #736's branch (verified by diff), so they hold at the implementation base.
 
 ### The contract, named first
@@ -144,13 +146,76 @@ Estimate net LOC change: +80, across 1 file (`internal/ensigncycle/shared_round_
 
 No spike needed: the design rests on (1) recorder acceptance of a 2-entry reviewer-only log — proven live, run 32270990171 stream lines 285-286, re-verified first-hand this session; (2) `gradedErr` code pass-through under `durableSemantic` — proven by `TestFilingSemanticFailureUsesTargetXFail` and the shipped `assertRejectionCycleLine` precedent; (3) the recognizer chain on the real bytes — proven by executing `/tmp/9g-evidence/matcher-exec` this session; (4) `verifyRoundArtifacts` digest-checking the workspace candidate — source-verified (`round.go:182-210`), and the design is robust to either resolution (Test plan 3b pins the honest code regardless of which site would have red).
 
+## Ideation design, cycle 2 (2026-08-19): the precondition that turns the lane green
+
+Captain's direction: the honest codes ship as a component, combined with a precondition on the round recorder so the early record becomes impossible rather than better-labelled. Record-after-correction was prose (`feedback-rejection-flow`, ignored twice live); this release's evidence is 4:0 that a binary refusal holds where prose loses. The five questions from the gate, each settled:
+
+### 1. The predicate: what makes a round closed
+
+Derived from the recorder's own model, not from the observed 2-entry log. `parseReviewLog` already computes the round's verdict: `reviewLog.Reviewer` is the FIRST Resolution in the log (`internal/gates/review.go:82-84`), entries are ordered (`includes` may only reference earlier identities), and a log with no Resolution is already refused (`:90-92`). The model's own decision dichotomy (`internal/gates/model.go:350-357`): `approve` stands alone; `revise` and `hold` demand rationale — verdicts that demand a response.
+
+**A round log is CLOSED iff its final entry is a Resolution, and either that Resolution is not the verdict (`Reviewer`), or the verdict's decision is `approve`.** Refused, therefore, when the log ends with an Annotation (a dangling finding or disposition with no closing resolution) or ends exactly at a non-approve verdict (a demanded response that was never logged). No entry count, no actor identity, no fixture ID, no `includes`-graph semantics — the exact over-fit this family kept producing is structurally absent.
+
+Shapes checked against the predicate: the live 2-entry reviewer log → refused (the defect); the complete 4-entry rejection log → accepted; the no-findings single-`approve`-Resolution round → accepted (an existing TESTED recorder shape, `round_test.go:189-206`, which a naive "two resolutions" rule would have broken); the default advisory testdata log, a decline-triage close ("0 material fixed; 2 declined") → accepted, so answering ≠ fixing; a hold-verdict tail → refused by the model's dichotomy (zero observed occurrences; recorded as model-derived, not observation-fitted).
+
+### 2. Where it lives
+
+`recordRoundLockedWith`, immediately after `loadValidateRound` (`internal/gates/round.go:92-95`), before pointer construction and `publishRound` — the same preflight-refusal band as the artifact/room checks, inheriting the byte-clean refusal contract the suite already pins (`TestRoundNoFindingsAndPreflightRefusals` asserts refusals leave the tree digest unchanged). Explicitly NOT in `loadValidateRound` itself: that helper is shared with `ValidateRoundFile` (`:126`), and read-time closure enforcement would make legacy early-recorded rooms unreadable — the durable oracle would red them under "validate retained round:" → `rejection-round-missing`, resurrecting the lying label for historical state. Record-time admission control; read-time stays permissive; the cycle-1 durable count check (`rejection-round-incomplete`) remains as the read-side honest backstop for legacy or bypassed state.
+
+CLI: zero changes. The round branch already routes the error to stderr with exit 1 (`internal/cli/cli.go:356-359`). The refusal message must name what the tail is, that nothing was written, and the recovery in contract order — e.g. "round validation/1 is not closed: the review log ends at the reviewer's revise resolution; route the correction, append its triage entries (disposition annotations and a closing resolution), then record the round". Stable test token: "not closed".
+
+### 3. Refusal, not record-and-mark-open
+
+Record-open loses on the room's own model, not on taste: `publishRound` writes an immutable room exactly once, and the durable oracle plus the single-publication counter pin exactly one `round-1` room and one successful publication. An "open" record needs a second finalize write — either room immutability breaks or a new amend verb and lifecycle appear — and if the finalize never comes, the truncated record still lands durably: the defect tolerated with a marker, which the gate ruled out ("impossible rather than tolerated"). Refusal's cost is one exit-1 mid-cycle, and that cost is the mechanism working: the message carries the recovery, and the FO retries after routing the correction — the same move as j7j's gate attribution. Third alternative (a skill-prose precondition the FO checks itself) is the mechanism that already failed twice.
+
+### 4. What stays red — falsifying cases
+
+- Genuinely absent record — FO never invokes, or treats the refusal as a terminal hold and stops: no room, no pointer → `rejection-round-missing`, now honest (the round truly is missing).
+- Durably incomplete room that exists anyway — legacy pre-precondition state, or a bypassed recorder: durable count check → `rejection-round-incomplete` (cycle-1 component, kept as backstop).
+- Mutated `README.md`/`candidate.txt` → `rejection-workflow-file-mutated`; room-file tamper stays under the round oracle (cycle-1 split, unchanged).
+- Open-log record attempts — reviewer-only tail, dangling annotation, hold tail: refused at record time, byte-clean (gates unit tests).
+- Conforming or refusal-recovered run: GREEN. A failed attempt is not a publication (`claudeRejectionRoundPublications` counts only non-error results; codex counts exit-0 only), so refuse-then-recover still grades exactly one publication.
+
+### 5. The tip reading FLIPS — correcting my cycle-1 guidance
+
+Cycle 1 told the implementation to read claude-live RED under `rejection-round-incomplete` as success. That guidance is superseded and wrong under this design. With the precondition shipped the FO cannot produce the truncated room: an early attempt exits 1 with the recovery, so the run either records after the correction (GREEN) or never records (`rejection-round-missing`, honest red). **Expected claude tip result: GREEN.** Codex: green if `12z`'s tolerance lands, unchanged by this entity. Honest caveats: a green now also measures the FO following the refusal's recovery — a run that converts exit 1 into a terminal hold reds honestly as round-missing, a model-adherence residual the metrics instrument tracks; and `rejection-round-incomplete` should never appear in a post-fix live lane — if it does, the precondition was bypassed, which is itself a finding. The lane color is the journey's evidence; the fixture tests below are this fix's proof.
+
+## Acceptance criteria (cycle 2 — replaces cycle 1's list)
+
+- **AC-1 (measures the end-value).** `gate record --round` with an open log — the exact reviewer-only shape run 32270990171 recorded — exits non-zero, writes nothing (tree digest unchanged), and its error names the recovery; the same inputs with the correction's entries appended then record successfully. Independent baseline that can move the wrong way: today's recorder exits 0 on those bytes and durably truncates the room (proven live); wrong-way movements are acceptance (defect returns) or over-refusal (the closed log, the no-findings `approve` round, or the decline-triage close refused). Test: gates refusal + recovery + acceptance cases.
+- **AC-2.** A durably incomplete round room grades status `fail` with codes exactly `[rejection-round-incomplete]`, detail naming got/want and the retained entry IDs. Baseline: the current grader yields `[rejection-round-missing]` / "resolved launcher never invoked" on the same state. Test: ensigncycle durable fixture (built by room-log overwrite — see Test plan 3).
+- **AC-3 (means, paired with AC-2).** `claudeRecordedRejectionRound` recognizes the live run's command/result byte shape (`entries=2`) as a successful invocation; missing/failed results and wrong round/entity/artifact controls stay refused. Test: extractor case + existing controls; matcher-exec harness re-run flips false→true.
+- **AC-4.** Mutating `README.md` or `candidate.txt` after a complete record grades `rejection-workflow-file-mutated`, not any `rejection-round-*` code; room-file tamper stays under the round oracle. Test: the three split-boundary cases (cycle-1 design, with the reordering ahead of `ValidateRoundFile`).
+- **AC-5.** Conforming shapes stay accepted and the controls stay red: complete 4-entry record grades pass; no-findings `approve` round and decline-triage close still record; the no-invocation control still reds. Test: existing suites green unmodified plus the acceptance cases in AC-1.
+
+## Test plan (cycle 2 — replaces cycle 1's)
+
+1. **Gates refusal band** (extends `TestRoundNoFindingsAndPreflightRefusals`'s table): reviewer-only log → error contains "not closed", tree byte-clean; dangling-annotation tail → refused; hold-verdict tail → refused. Falsifying edit: deleting the precondition records a 2-entry room and reds the table.
+2. **Gates recovery**: after the refusal, append the closing entries to the same log and re-record → success (proves the refusal leaves a recordable state).
+3. **Durable honest code** (ensigncycle): the 2-entry room can no longer be built through `RecordSemantic` — that refusal is itself asserted by (1) — so build the legacy/bypass state by recording the COMPLETE log then overwriting the room's `briefing.review.jsonl` with the reviewer-only bytes; assert grade status `fail`, codes exactly `[rejection-round-incomplete]`. The count check at `:400-405` fires before the room byte block, so the state is unambiguous. A stream-only fix leaves this under `rejection-round-missing` → red.
+4. **Stream + split cases**: cycle-1 items unchanged — `entries=2` extractor case, README/candidate/room-tamper boundary cases with the reorder falsifier.
+5. `go test ./...` and `-race`; the tip run on the stack reads GREEN as the journey-level result per the corrected reading above.
+
+Cost: unit/fixture only, no live spend. Live adherence to the refusal's recovery is the one thing offline tests cannot prove; the tip run measures it, declared as residual.
+
+## Expected surface (cycle 2 — replaces cycle 1's)
+
+Estimate net LOC change: +150, across 3 files (~170 insertions, ~20 deletions). Breakdown — product: +20 (`internal/gates/round.go`: predicate function, call site, refusal message); tests: +130 (`internal/gates/round_test.go` ~+45: three refusal cases, recovery, acceptance controls; `internal/ensigncycle/shared_round_recording_test.go` ~+85: cycle-1 grading half with the durable fixture built per Test plan 3); docs: 0. Tolerance: ±60 net. Hard boundaries: product change confined to the round-record admission path in `internal/gates` — no CLI grammar, no new flags or verbs, no gate-ceremony or chat-decision path changes, no read-time (`ValidateRoundFile`) enforcement; no fixture-text changes; no skill prose changes (the refusal message is the binding surface).
+
+Semantics declared: (1) runtime behavior — `gate record --round` now refuses an open round log (exit 1, zero writes) where it previously recorded it; command grammar, stored formats, and authority unchanged; recorder output format unchanged. (2) CI lane diagnostic codes change per cycle 1. (3) The early-record conduct's lane outcome changes from red to refused-then-recovered green — the defect becomes impossible, not tolerated.
+
+## Spike determination (cycle 2)
+
+No spike needed. Cycle-1's four proven mechanisms stand. The new mechanism rests on: `parseReviewLog`'s existing `Reviewer` = first-Resolution model and ordering guarantees (source-verified, `review.go:82-92`); the preflight-refusal band's byte-clean contract (tested, `round_test.go:255-262`); and the CLI's existing error plumbing (`cli.go:356-359`). Every existing round test exercises the same admission path the moment the check lands, so regressions surface immediately offline. The one unverifiable-offline element — the live FO following the refusal's recovery — is not spikeable (it is model adherence, not mechanism) and is declared as the residual the tip run measures.
+
 ## Out of scope
 
-- The round recorder binary (neutral; its output already carries the true entry count).
 - Rejection-flow fixture text (the Cycle-line target pin shipped with the 0.27 stack).
 - The codex-side `rejection-worker-topology` count bar (`12z`'s entity, same stack).
 - The identity half of the durable composite (`:400-403`) and its `%#v` message — never fired live.
-- A dedicated code for round-room tampering (considered, declined above: zero occurrences).
+- A dedicated code for round-room tampering (considered, declined in cycle 1: zero occurrences).
+- The recorder's OUTPUT format (`round=… entries=N`) — unchanged; only admission of open logs changes. (Cycle 1 declared the whole recorder out of scope as "neutral"; the captain's direction supersedes that line — admission control is now the core of this entity.)
+- New CLI flags/verbs, read-time closure enforcement, and any skill-prose additions (prose is the mechanism that already failed).
 
 ## Stage Report: ideation
 
@@ -166,3 +231,18 @@ No spike needed: the design rests on (1) recorder acceptance of a 2-entry review
 ### Summary
 
 Validated the adversarial review by execution (re-ran /tmp/9g-evidence/matcher-exec; re-extracted the live stream first-hand: one --round call, is_error=false, entries=2, rework spawned after) and confirmed both remedy gaps, adding one new finding: the candidate.txt byte check is unreachable behind ValidateRoundFile's artifact-digest check, so the file split requires reordering, which the design and its falsifying fixture case now pin. Produced the gated design: contract-first remedy across both pins, honest codes `rejection-round-incomplete` and `rejection-workflow-file-mutated`, four ACs with a measuring AC-1 against the current grader as baseline, surface +80 net across 1 test file (±40), no product/doc changes, no spike needed (four proven mechanisms named).
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Settle the remedy across BOTH entries=4 pins, not one: the stream regex at shared_round_recording_test.go:18 and the durable summary check at :400-405. A fix to only the first re-reds the same run under the same lying code with a raw %#v message.
+  Cycle-1 settlement stands and now ships as the honest-code COMPONENT of a combined fix; the durable count check is additionally re-purposed as the read-side backstop for legacy/bypassed state the new precondition cannot reach.
+- DONE: Decide the split criterion for the four-file byte-exact block at :425-442 (briefing.json, briefing.review.jsonl, candidate.txt, README.md). The review proposes "is this file part of the round record" rather than "is it README". Confirm or refute with reasoning.
+  Unchanged from cycle 1: confirmed with the reachability correction (non-record checks must precede ValidateRoundFile), one code `rejection-workflow-file-mutated`.
+- DONE: Design the proof so it cannot green a half-fix: a stream replay alone exercises only the stream path. Name the durable fixture that proves the count grade moved to the honest code.
+  Revised: the precondition refuses recording a 2-entry log, so the durable fixture is now built by recording the COMPLETE log and overwriting the room's briefing.review.jsonl with the reviewer-only bytes (Test plan 3); the refusal of the direct construction is itself asserted (Test plan 1). Stream-only fix still reds Test plan 3.
+- DONE: Confirm the red STAYS red. The conduct is genuinely wrong — the round room is immutable, so an early record permanently truncates the durable record. State how the composite stays red and what changes is only the diagnostic.
+  Answered under the revised target: the early record is now REFUSED before any write, so it can no longer truncate anything; red is preserved for every genuinely bad END STATE (absent record → rejection-round-missing; legacy/bypassed incomplete room → rejection-round-incomplete; mutated workflow file → rejection-workflow-file-mutated), and the expected claude tip flips to GREEN — cycle 1's expect-honest-red guidance is explicitly superseded (design section 5).
+
+### Summary
+
+Redesigned per the gate's rejection: the relabel alone shipped no value, so the honest codes now combine with a record-time precondition on the round recorder — a round log is closed iff its final entry is a Resolution and it is either past the verdict or an approve verdict — derived from parseReviewLog's own Reviewer model and the model's approve/revise-hold dichotomy, count-free and actor-free. Settled all five gate questions: predicate, placement (recordRoundLockedWith's preflight band, record-time only so legacy rooms stay readable), refusal over record-and-mark-open (room immutability and single-publication invariants; prose already failed twice), the falsifying red cases, and the flipped tip reading (claude expected GREEN; my cycle-1 guidance corrected). Surface re-estimated honestly: +150 net across 3 files, product +20 in internal/gates/round.go, tolerance ±60.
