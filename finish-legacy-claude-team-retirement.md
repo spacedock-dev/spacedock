@@ -65,6 +65,17 @@ gates:
                 digest: sha256:2ba2b9e1dbbdee644a7d3a483a1c373fc6014f021039b7f18ab5e387aa118210
                 request-digest: sha256:6262224a6da38b2486831f500144c5c63570614b39bf17cf4a85251bd441acd7
                 room-ref: ./finish-legacy-claude-team-retirement/review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nr75fq7ha3nmvsegbd22cgqa:ideation:3
+                briefing: briefing:nr75fq7ha3nmvsegbd22cgqa:ideation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-19T03:24:46.596981Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve both.'' Accepts retiring the legacy TeamCreate surface and binding the {dispatch_agent_id} slot with no xfail, at net -500 across ~47 files. The variance was explained from both transcripts: the FO resolved {worker_key} and dropped subagent_type in the same call, so binding removes a real choice point. Both live FOs also fabricated team names off the advertised flag, making its removal an observed fix.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
