@@ -99,6 +99,17 @@ gates:
                 digest: sha256:7f75a366baee9c28486b7849e3bbf757d15717350bae9c172d4b5bacacc49b28
                 request-digest: sha256:aa090be10f9f1ac2a186ddcdf3fdcee304376cbd679dc973f5d676afaa9070a4
                 room-ref: ./finish-legacy-claude-team-retirement/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nr75fq7ha3nmvsegbd22cgqa:validation:2
+                briefing: briefing:nr75fq7ha3nmvsegbd22cgqa:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-19T15:34:47.592951Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve push and i''ll look from the PR.'' Validation PASSED with no material finding: the literal was confirmed against the running binary across absent, named and empty agent: READMEs; the fix proved stronger than claimed by removing the template''s dependence on a self-contradicting token; both polish fixes verified with falsifying changes run. Cumulative net -724 inside the declared band.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
