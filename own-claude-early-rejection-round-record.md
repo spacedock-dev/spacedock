@@ -26,6 +26,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:zf7rymtke3b6xp7r0337hjj4:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:zf7rymtke3b6xp7r0337hjj4-ideation-1
+              briefing:
+                id: briefing:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-1:revision-1
+                digest: sha256:15c8b8b36c905b9847acda9746a90e5f6f0daed1bcb2ef1d8422c2007251c533
+                request-digest: sha256:b65bdb1451c568bcb9ce669a3b6c41dd19dc40174eeef327e263651f24e782b0
+                room-ref: ./own-claude-early-rejection-round-record/review/ideation/briefing-1
 started: 2026-08-19T18:17:24Z
 ---
 

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: split the count grade onto an honest code across BOTH entries=4 pins, at net +80 in one test file?",
+  "artifacts": [
+    {
+      "id": "artifact:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bc6089b71abf4ce78c89688d6e1da6df469b2c65/own-claude-early-rejection-round-record.md",
+      "rev": "sha256:17cc7cb52935df25c55720fc6853bdb65b09de49b455874a1ecb13bfcd46e701",
+      "mediaType": "text/markdown",
+      "summary": "Ideation validated the adversarial review BY EXECUTION — re-ran the matcher harness and re-extracted the live stream first-hand — and confirmed both remedy gaps rather than taking them on report. It then added a finding the review missed: the candidate.txt byte check at :431 is DEAD CODE, unreachable behind verifyRoundArtifacts' digest check inside ValidateRoundFile (round.go:182-210), so the file split requires reordering the two non-record checks BEFORE that call. Its design and falsifying fixture now pin that. Remedy across both pins: pin 1 genericizes to entries=\\d+ (host-parity — codex has no stream count pin); pin 2 splits the count onto rejection-round-incomplete via in-function gradedErr with the identity composite untouched. Two honest codes, rejection-round-incomplete and rejection-workflow-file-mutated. The proof cannot green a half-fix: test plan 2 records validation/1 from the existing 2-entry log constant and asserts codes are exactly [rejection-round-incomplete] — a stream-only fix leaves the durable site under the old code and reds that test. AC-1 pins status AND codes, so both softening and the kept lie fail it. Red stays red: gradeLive fails the lane on any non-empty code set. No spike needed, four proven mechanisms named. Surface net +80 in ONE test file, tolerance ±40, hard boundary of no product code and nothing outside internal/ensigncycle."
+    }
+  ]
+}
