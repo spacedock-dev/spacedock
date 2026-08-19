@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-2:revision-1",
+  "question": "Approve the combined remedy: a record-time precondition on the round recorder plus the honest codes, at net +150 across 3 files?",
+  "artifacts": [
+    {
+      "id": "artifact:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/a82fd1099f5d9de9a46713ddaed88c3e6f5e8442/own-claude-early-rejection-round-record.md",
+      "rev": "sha256:46abe2d8e05da038e3b31557b6eb90f077a16e8d4ad6a1ccce49427f4033c482",
+      "mediaType": "text/markdown",
+      "summary": "Redesigned per your rejection. The relabel now ships as a COMPONENT; the fix that delivers value is a record-time precondition on the round recorder — a round log is closed iff its final entry is a Resolution and it is either past the verdict or an approve verdict. Derived from parseReviewLog's own Reviewer model and the approve/revise-hold dichotomy: count-free and actor-free, so it does not repeat this family's defect of pinning an observed shape. Placed in recordRoundLockedWith's preflight band, record-time only, so legacy rooms stay readable. Refusal chosen over record-and-mark-open on room immutability and the single-publication invariant, with prose having already failed twice. Falsifying reds preserved: absent record, legacy incomplete room, mutated workflow file, each under its own honest code. Surface +150 net across 3 files with product +20 in internal/gates/round.go, tolerance ±60. FO CAVEAT ON ITS CENTRAL CLAIM: the report states the claude tip 'flips to GREEN'. That overclaims. The mechanism makes the observed failure IMPOSSIBLE and green REACHABLE; it does not make green certain, because the FO must still act on the refusal by routing the correction and returning to record. That is the same delivery-versus-obedience gap 4c states honestly about itself. Recommend approving the mechanism with the claim corrected to 'makes green reachable', and treating the tip run as the test of whether the FO takes the recovery."
+    }
+  ]
+}

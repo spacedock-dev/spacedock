@@ -43,6 +43,12 @@ gates:
                 at: "2026-08-19T19:11:26.744371Z"
                 decision: revise
                 reason: 'Captain rejected in chat: ''if it stays red it has no value. combine it with something that turns it green.'' The label analysis is accepted and stays — including the dead-code finding on the candidate.txt byte check. But a remedy whose entire outcome is a truer sentence on a still-red lane ships nothing: the lane keeps blocking, the FO keeps recording early, and the workflow''s own bar rejects a task whose only output is a decision. Combine the honest codes with the mechanism that makes the early record impossible, so a conforming run goes GREEN.'
+            - id: gate-attempt:zf7rymtke3b6xp7r0337hjj4-ideation-2
+              briefing:
+                id: briefing:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-2:revision-1
+                digest: sha256:e7cf066ba0ad99ab0eb95501de1dbe11e8c29e2c0d124c5dba64e260414c0a90
+                request-digest: sha256:0611668a809bd7fa50da6c63ed0b908c6091ae4ffe767b927a8caa5c1b989877
+                room-ref: ./own-claude-early-rejection-round-record/review/ideation/briefing-2
 started: 2026-08-19T18:17:24Z
 ---
 
