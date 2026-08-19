@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-3:revision-1",
+  "question": "Approve the combined remedy with AC-6's live-journey criterion, at net +150 across 3 files?",
+  "artifacts": [
+    {
+      "id": "artifact:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/5c12cd0a86574b305f46d2059e9f80be1b07781f/own-claude-early-rejection-round-record.md",
+      "rev": "sha256:a2941e83f11bf4a9ec747798ed35f8db6a74ef93a5bda327f5e16f77aef68b87",
+      "mediaType": "text/markdown",
+      "summary": "AC-6 added as demanded: the targeted live rejection-flow run is now an acceptance criterion, not a deferrable test-plan line, with the command, SPACEDOCK_BIN and artifact-dir requirements, and expected observed CODES rather than 'passes'. A conforming run carries NO rejection-round code at all. Unavailability is named rather than silent — a 429 or connection drop is a provider error, a stale SPACEDOCK_BIN is a setup failure, neither satisfies nor fails the AC; the blocker and what stays unproven go in the stage report, and silence is a gate rejection. The codex lane is explicitly scoped out and the reason named (its isolated CODEX_HOME cannot be created in this sandbox) rather than skipped. IT ALSO CORRECTED THE FO: my dispatch glossed rejection-round-incomplete as 'the refusal fired and the FO did not take the recovery'. That is wrong under this design — if the refusal fires and the FO does not recover, no room exists and it grades rejection-round-MISSING. rejection-round-incomplete means a truncated room landed DESPITE the precondition, which indicts this entity's own change rather than the model. The two codes accuse different parties and I had them swapped. Surface unchanged at net +150 across 3 files, product +20 in internal/gates/round.go, tolerance ±60 — so the AC cost nothing, as required. The mechanism, predicate, placement and refusal-over-mark-open decision are unchanged from the accepted cycle 2."
+    }
+  ]
+}

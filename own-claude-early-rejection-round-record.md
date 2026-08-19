@@ -57,6 +57,12 @@ gates:
                 at: "2026-08-19T19:23:50.729175Z"
                 decision: revise
                 reason: 'Captain rejected in chat: ''it''s not about asking permission. it''s about not having that in the fricking AC.'' The live run is in the test plan as a residual, not in an acceptance criterion. A test-plan line can be deferred; an AC cannot, because validation must reproduce every AC''s cited evidence and the gate cross-checks it. Add an AC whose verification IS a targeted local live run of rejection-flow, naming the journey and the expected observed codes. The workflow README now requires this of any task changing a live grader.'
+            - id: gate-attempt:zf7rymtke3b6xp7r0337hjj4-ideation-3
+              briefing:
+                id: briefing:zf7rymtke3b6xp7r0337hjj4:ideation:attempt-3:revision-1
+                digest: sha256:e959bc47e87f862029273c0adb1d78d33bd8bf4d9dd6e52a77f098b904d9bb5e
+                request-digest: sha256:2a4a6012a3d7fd202f4d88a032f7ebf0f87be2d820e1b85a7ff5ca850619eb39
+                room-ref: ./own-claude-early-rejection-round-record/review/ideation/briefing-3
 started: 2026-08-19T18:17:24Z
 ---
 
