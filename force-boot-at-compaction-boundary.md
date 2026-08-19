@@ -7,7 +7,7 @@ started: 2026-08-18T23:15:43Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-force-boot-at-compaction-boundary
 issue:
 gates:
     version: 1
