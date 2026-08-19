@@ -94,3 +94,89 @@ Framing correction: this is not count-versus-order. The grader already grades or
 ## Value
 
 A live lane is worth its cost only when a red means something. Four graders in one release have reddened correct behavior, and each one teaches every reader to discount the next red. This is the one still shipping.
+
+## Ideation (2026-08-19)
+
+### What the 8 encodes, and what justified it
+
+`rejectionChain` (claude_runtime_helpers_test.go:408) hardcodes four rounds × two events. Two clauses are folded into that 8, and they have different standing:
+
+- **The chain and its order** — candidate, review, routed rework, re-review, ending in a reviewer verdict — IS the contract: `feedback-rejection-flow/SKILL.md` steps 1 and 4, plus reviewer independence ("never to validate its own fix work") and bounded cycles ("On cycle 3 run no reviewer: escalate to the human instead of a fourth round").
+- **Exactly one round per segment** is nowhere in the contract. It came from the one captured rollout the grader was written against (commit 52b94f9aa, 2026-08-16: `testdata/rejection_topology/codex-reuse-chain.jsonl`) plus one synthetic fresh chain. A single live observation justified it; the next live run (32270990171) falsified it — 10 events, order held, identity held, every durable oracle green.
+
+Same finding shape as `6ht`'s 1/1 (`recordedGateBuildAttemptsAcceptable`, recorded_gate_lifecycle_test.go:98): the exact count encoded a happy-path assumption no run had ever been asked to justify, and the first benign deviation reddened compliant conduct.
+
+### Decision: an ordering rule over parsed rounds — review validated, not re-derived
+
+The adversarial review's three decisive claims were checked against the evidence, not accepted on authority:
+
+1. **Shape and identity held** — retained TSV rows 0–9: the required chain with one validation round repeated in place; every validation round reached the validator handle; the re-review handle differs from the fix producer's.
+2. **Outcome was clean** — codex-exec.jsonl lines 62–63: `gate record` exit 0 with `entries=4` INCLUDING the `fixed-marker` annotation and the post-fix resolution, i.e. the round was recorded after the correction; single publication; `rejection-worker-topology` was the lane's only red.
+3. **#732 transfers as pattern, not mechanism** — verified in code: `recordedGateBuildAttemptsAcceptable` case 2 accepts a second attempt only when the first failed or the command differed, so its literal transfer reds this run's identical successful re-review. The pattern (replace a count with a rule naming acceptable shapes) transfers; the mechanism does not, because a dispatch build is semantics-free while a review round is a semantic act whose harmlessness the durable oracles independently vouched for.
+
+No refutation. Two refinements to the review's text:
+
+1. Its falsifying control "three-plus validation rounds" needs a precise boundary: three validation rounds TOTAL is the retained codex run and must green; what reds is exceeding the one-repeat budget — and any single segment reaching three rounds necessarily does (three in a segment plus the other segment's required one is four total, two repeats).
+2. Its self-review control needs a fresh-branch variant: on the reuse branch a retargeted re-review usually trips handle-consistency first, so the independent-review check must be proven on the collapsed shape (all validation rounds targeting the producer, internally consistent) and on the fresh branch, where handle comparison is otherwise meaningless.
+
+A widened count was considered and rejected for the reasons the review names: it re-encodes today's two observed shapes as the contract, is position-fragile (the identity pairs {0,4}/{2,6} shift per shape), and cannot say which extra pair is acceptable or where.
+
+### The grammar (normative)
+
+Parse the event list into rounds, then grade the grammar. Fail closed: any unpairable event is a graded red naming its position.
+
+- **Round:** a dispatch event (`spawn`/`reuse`) immediately followed by a `done` of the same stage and target.
+- **Sequence:** `implementation, validation+, implementation (the rework), validation+` — exactly one rework; the journey ends in a completed validation round.
+- **Repetition budget:** at most ONE repeated validation round total, `(vPre−1)+(vPost−1) ≤ 1`. The diagnostic declares it as a budget citing this entity, so a future legitimate second repeat produces a red naming the knob instead of masquerading as a contract violation.
+- **Routing rule (both branches, no special-casing):** a stage's FIRST round is a spawn; every subsequent round of that stage follows the branch key — reuse: a followup reaching the same handle the stage's first round opened; fresh: a fresh spawn. Codex (reuse, 10 events) and Claude (fresh, 8 events) both green under this one rule; each branch's chain still reds under the other, and all four probe fail-safe cases keep their verdicts. A pre-rework confirm re-run routed to a live worker WITHOUT a passing probe still reds on the fresh branch — that is the contract's fail-safe, not a false red.
+- **Independent review:** no validation round's target may equal any implementation round's target.
+
+Every diagnostic names the violated invariant. In particular the "no re-review after rework" shape stops redding via the bare length message ("owes 8 routing events") and reds as the missing re-review it is.
+
+### Spike (riskiest mechanism, exercised)
+
+Throwaway Go program implementing exactly the grammar above, run against the retained run-32270990171 TSVs and a mutant corpus: **20/20**. Greens: retained codex chain (10), retained claude chain (8), captured fixture chain (8), post-rework repeat. Reds, each under an invariant-naming diagnostic: no validator; no rework; rework never re-reviewed; re-review before rework (unpairable); self-review via retarget; reviewer-collapsed (internally consistent reuse, all reviews reach the producer); fresh-branch self-review; single-worker chain; second rework; two repeats in one segment; two repeats split across segments; both cross-branch chains; both probe fail-safe violations; two-validators-up-front (unpairable). The corpus seeds the implementation's table test.
+
+### Acceptance criteria
+
+1. **(Value, measured against a baseline that can move the wrong way)** Replayed through the grader, the retained run-32270990171 chains grade GREEN on both branches — 2/2, from today's 1/2 — while the falsifying-control corpus (at minimum the seven checklist shapes, both self-review variants, both cross-branch chains, both probe fail-safe violations) stays at 100% RED under code `rejection-worker-topology`. A single control greening is the widened-bar failure and fails the table test.
+   *Test:* offline table test; the 10-event chain enters as the captured fixture chain with the repeat pair inserted at the observed position, cited to the retained TSV.
+2. The conforming set is exactly the grammar above, and every red names its violated invariant: the missing-re-review shape's diagnostic names the missing re-review and no diagnostic path emits a bare owed-event-count message.
+   *Test:* per-case diagnostic substring assertions; the missing-re-review case asserts presence of the re-review phrasing and absence of "owes 8".
+3. One branch-parameterized routing rule replaces the per-position chains: mutual exclusivity and all four probe fail-safe verdicts hold unchanged.
+   *Test:* `TestRejectionTopologyBranchesAreMutuallyExclusive` and `TestRejectionTopologyProbeFailSafe` pass with assertions unmodified.
+4. Independent review holds at round level on both branches, including the reviewer-collapsed shape and the fresh-branch variant.
+   *Test:* `reviewerCollapsedRoutes` kept; new fresh-branch self-review case.
+5. **(Scope fence)** Extraction and the digest are untouched: `TestRejectionTopologyExtractsCapturedCodexChain`'s extraction assertions and the `rejectionTopologyDigest` TSV format are byte-identical; the diff touches grading and its proof only.
+   *Test:* extraction test unmodified; digest function untouched in the diff.
+
+### Test plan
+
+All proof is offline: `go test ./internal/ensigncycle -run RejectionTopology` (plus `-race`), grading stated route sequences — no new fixtures, no new mechanisms, no live runs owed by this entity. The tip-CI run over the #736 stack is corroboration, not the proof: expected reading is codex-live topology GREEN (if that run's FO stays within one repeat), claude-live topology GREEN with the lane RED under `zf7`'s `rejection-round-incomplete`. A codex topology red under the new bar would name its invariant and be investigable on the digest alone — the success criterion is that the message is honest, not that the lane is green.
+
+New-mechanism accounting: the only new mechanism is the round parser, serving AC-1/AC-2. Simplest alternative considered: enumerate the three conforming chains per branch — (1,1), (2,1), (1,2) validation-round distributions — and flat-match each. Rejected: the identity pairs shift per template (the position-fragility this entity exists to remove), a red reports "matched none of three chains" instead of the violated invariant, and the budget lives implicitly in the enumeration. No other unverified mechanism: extraction, branch keying, and digest persistence are proven and untouched ("no spike needed" beyond the grammar spike recorded above).
+
+### Expected surface
+
+Net **+105 LOC** (~+180 insertions, ~−75 deletions) across **2 files**; tolerance ±50 net, +1 file. Breakout — product: 0 (the oracle is test-harness code); grader (`internal/ensigncycle/claude_runtime_helpers_test.go`: `rejectionChain` + `assertRejectionWorkerTopology` replaced by parser + grammar): ~+45 net; proof (`internal/ensigncycle/shared_rejection_topology_table_test.go`: new green/red cases, updated diagnostic substrings): ~+60 net; docs: 0 — no doc describes this oracle (grep over `docs/` confirms), so no doc diff is owed. Declared semantic changes: the grading semantics of the `rejection-worker-topology` oracle (conforming set widens by exactly the one-repeat budget; every diagnostic reworded to name its invariant). No command grammar, stored-format (TSV digest unchanged), authority, or product runtime changes.
+
+### 9g: partial supersession, not retirement
+
+This entity's original item-4 claim was overstated, as the adversarial review found. Only the topology TSV digest survives CI; the raw parent rollout — the only artifact that could establish the extra round's INTENT (confirm-the-rejection vs briefly-misroute-then-correct) — still dies with the isolated `CODEX_HOME` under `t.Cleanup`. Recommendation: **rescope `9g`, do not retire it.** Superseded: shape attribution (its "the red cannot be diagnosed" premise — this ideation diagnosed the red from the retained digest alone). Not superseded: conduct forensics — persisting the parent rollout (or its followup-payload slice) into run artifacts remains 9g's live scope. Killing 9g on this entity's original premise would repeat, against 9g, the unexamined-premise failure this entity exists to correct.
+
+## Stage Report: ideation
+
+- DONE: Settle the remedy as an ordering rule over parsed rounds, or refute the review's case for it with evidence. Do NOT ship a widened count: it re-encodes today's observed shapes as the contract and cannot say which extra pair is acceptable or where.
+  Settled FOR the ordering rule after verifying the review's shape/identity claims against the retained TSVs, its outcome claim against codex-exec.jsonl:62-63 (entries=4 incl. fixed-marker, exit 0), and its #732 caveat against `recordedGateBuildAttemptsAcceptable` in code; widened count rejected with reasons recorded.
+- DONE: Derive what the 8 encodes and whether any run ever justified it, exactly as decide-dispatch-build-count-bar did for its 1/1.
+  8 = contract chain (justified by `feedback-rejection-flow/SKILL.md` steps 1/4) × an exactly-one-round-per-segment clause justified only by the single captured rollout (commit 52b94f9aa) and falsified by the next live run.
+- DONE: Prove the new bar still reds every bad shape: no validator, no rework, rework never re-reviewed, re-review before rework, self-review (re-review reaching the fix producer), an extra implementation round, three-plus validation rounds. A bar that reds nothing is worse than the false red it replaces.
+  Spike exercised the grammar over the retained live chains plus a 16-red mutant corpus: 20/20, every red under an invariant-naming diagnostic; boundary made precise (three rounds total with one repeat greens — the retained run; any segment at three necessarily exceeds the budget and reds).
+- DONE: State the routing rule that generalizes both branches without special-casing — codex took reuse with 10 events, claude took fresh with 8, and both must grade correctly under one rule.
+  A stage's first round is a spawn; every subsequent round of that stage follows the branch key (reuse: followup to the handle the stage opened; fresh: fresh spawn) — spike shows both retained chains green under it and all cross-branch/probe-fail-safe verdicts unchanged.
+- DONE: Correct the entity's 9g claim in your report: only the TSV digest survives; the raw rollout that could establish intent still dies with the isolated CODEX_HOME. Recommend partial supersession, not retirement.
+  Recorded in "9g: partial supersession, not retirement": superseded for shape attribution, not for conduct forensics; recommend rescoping 9g to rollout persistence for intent.
+
+### Summary
+
+Settled the remedy as a round-parsing grammar — `impl, val+, rework, val+`, one-repeat budget, branch-keyed routing rule, round-level independent-review check — validating the adversarial review's conclusions against the retained evidence rather than re-deriving or accepting them. The riskiest mechanism was spiked against both hosts' retained run-32270990171 chains and a falsifying corpus (20/20); the corpus seeds the implementation's table test. Surface declared at net +105 LOC (±50) across 2 test-harness files, no product or doc changes; tip-CI reading recorded as honesty-of-message, not lane color.
