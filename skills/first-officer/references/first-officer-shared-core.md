@@ -116,6 +116,7 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 ## «state.boot»(): read all local startup identify in one call
 
 - **effect:** run `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` once for project root, workflow discovery, stage taxonomy, and local boot sections. Consume JSON, not the human table. These are local reads only: no `gh`, `state ready`, sweep, mod-file open, team creation, or mutation. PR_STATE is a local `pr:` mirror labeled not-gh-checked until «engage».
+- **receipt:** the shipped command also writes a one-line session boot receipt (`.spacedock/boot/{session_id}`, host scratch — workflow state stays read-only). `gate record`, `gate consume`, and `merge guard` refuse with exit 4 (BOOT_STALE) when the running session has no receipt or compacted after it booted; the remedy the stderr names is exactly this call — re-run it and consume the fresh record.
 - **zero discovery:** report no managed workflow and STOP; do not broad-search the filesystem (`find`, `grep -r`, `ls -R`, or recursive Glob/Grep over the project root). The boot detector enforces this.
 - **one or many:** return a list (including length one), NAME each workflow in the greet, and leave convergence to «engage».
 - **done-when:** the self-describing boot record is in hand, its counts labeled possibly stale, and the greet has mutated nothing.

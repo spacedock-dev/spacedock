@@ -185,8 +185,10 @@ type bootData struct {
 
 // gatherBoot runs every boot probe once and returns the result. NEXT_ID is
 // minted here (timestamp-dependent for sd-b32); on a minting error it returns
-// the error after the caller has emitted the stderr diagnostic.
-func gatherBoot(probe claudeteam.TeamStateProbe, entities []*entity, stages []Stage, definitionDir, entityDir, gitRoot, idStyle string, e env, stderr io.Writer, identify bool) (*bootData, error) {
+// the error after the caller has emitted the stderr diagnostic. transcriptProbe
+// is the boot guard's receipt-write seam (nil on a non-Claude host); it carries
+// no ~/.claude read itself — see claudeteam.TranscriptProbe.
+func gatherBoot(probe claudeteam.TeamStateProbe, transcriptProbe claudeteam.TranscriptProbe, entities []*entity, stages []Stage, definitionDir, entityDir, gitRoot, idStyle string, e env, stderr io.Writer, identify bool) (*bootData, error) {
 	d := &bootData{idStyle: idStyle, hooks: scanMods(definitionDir), identify: identify}
 
 	if idStyle == "slug" {
@@ -264,12 +266,18 @@ func gatherBoot(probe claudeteam.TeamStateProbe, entities []*entity, stages []St
 	available := lookupExecutable("safehouse", e.get("PATH")) != ""
 	insideName, inside := safehouse.Inside(e.get)
 	d.sandbox = safehouse.SessionState(insideName, inside, available)
+
+	// Boot's own side effect (see docs/runtime-support.md, "Boot guard at the
+	// compaction boundary"): a session boot receipt, host scratch only. This is
+	// the mechanism the shipped `«state.boot»()` gains — workflow/entity state
+	// stays read-only, unaffected by this call either way.
+	writeBootReceipt(e, gitRoot, transcriptProbe, time.Now())
 	return d, nil
 }
 
 // printBoot writes all boot sections in order. Matches print_boot.
-func printBoot(probe claudeteam.TeamStateProbe, w io.Writer, entities []*entity, stages []Stage, definitionDir, entityDir, gitRoot, idStyle string, e env, stderr io.Writer, identify bool) error {
-	d, err := gatherBoot(probe, entities, stages, definitionDir, entityDir, gitRoot, idStyle, e, stderr, identify)
+func printBoot(probe claudeteam.TeamStateProbe, transcriptProbe claudeteam.TranscriptProbe, w io.Writer, entities []*entity, stages []Stage, definitionDir, entityDir, gitRoot, idStyle string, e env, stderr io.Writer, identify bool) error {
+	d, err := gatherBoot(probe, transcriptProbe, entities, stages, definitionDir, entityDir, gitRoot, idStyle, e, stderr, identify)
 	if err != nil {
 		return err
 	}

@@ -57,7 +57,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 	// the ~/.claude read; status/dispatch take it as an opaque value. A non-Claude
 	// runtime entry point wires nil (host-neutral present:false / no bare-mode advisory).
 	return run(context.Background(), args, os.Environ(), cwd(), os.Stdin, stdout, stderr,
-		&status.NativeRunner{TeamStateProbe: claudeteam.Probe}, claudeteam.Probe)
+		&status.NativeRunner{TeamStateProbe: claudeteam.Probe, TranscriptProbe: claudeteam.TranscriptPath}, claudeteam.Probe)
 }
 
 // run is the injectable core. It depends only on the status.Runner interface,
@@ -168,14 +168,14 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newMergeCommand(ctx, env, dir, stdout, stderr),
 		newCompletionCommand(stdout, stderr),
 		newDispatchCommand(dispatchProbe, env, stdin, stdout, stderr),
-		newGateCommand(dir, stdout, stderr),
+		newGateCommand(env, dir, stdout, stderr),
 	)
 	return root
 }
 
 // newGateCommand exposes only semantic decision sources; lifecycle mechanics,
 // CAS values, and durable ids belong to the recorder.
-func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
+func newGateCommand(env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
 		Use:                "gate prepare|withdraw|record|consume <entity>",
 		Short:              "Prepare, withdraw, record, or consume durable gate resolutions",
@@ -189,6 +189,18 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			if len(args) < 2 || (args[0] != "prepare" && args[0] != "withdraw" && args[0] != "record" && args[0] != "consume") {
 				fmt.Fprintln(stderr, "spacedock gate: unknown subcommand (want: prepare|withdraw|record|consume)")
 				return exitCodeError{2}
+			}
+			// Boot guard (force-boot-at-compaction-boundary): record/consume are two
+			// of the three authority verbs — a resolution lands or spends here — so
+			// both refuse before any flag parsing or mutation when this session's
+			// boot cannot be proven fresh. prepare/withdraw are unauthenticated setup
+			// and stay outside the guard's scope (see the entity's "why exactly these
+			// three").
+			if args[0] == "record" || args[0] == "consume" {
+				if msg := status.BootGuardRefuse(env, dir); msg != "" {
+					fmt.Fprintln(stderr, msg)
+					return exitCodeError{status.BootStaleExitCode}
+				}
 			}
 			workflowDir := ""
 			input := gates.RecordInput{}
@@ -684,6 +696,13 @@ func newMergeCommand(ctx context.Context, env []string, dir string, stdout, stde
 			}
 			switch args[0] {
 			case "guard":
+				// Boot guard (force-boot-at-compaction-boundary): the third
+				// authority verb — a merge finalizes here — refuses before any
+				// mutation when this session's boot cannot be proven fresh.
+				if msg := status.BootGuardRefuse(env, dir); msg != "" {
+					fmt.Fprintln(stderr, msg)
+					return exitCodeError{status.BootStaleExitCode}
+				}
 				if code := status.MergeGuard(args[1:], dir, stdout, stderr); code != 0 {
 					return exitCodeError{code}
 				}

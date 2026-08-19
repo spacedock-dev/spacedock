@@ -61,10 +61,14 @@ func stageMergeFixture(t *testing.T, fixture string) string {
 	return dst
 }
 
+// runMergeCLI's env is hermeticEnv(), not os.Environ() (gate_ceremony_count_test.go):
+// this suite's fixtures carry no boot receipt, and an ambient
+// CLAUDE_CODE_SESSION_ID (this suite dogfoods spacedock and can run inside a
+// live Claude Code session) would make the boot guard spuriously refuse.
 func runMergeCLI(t *testing.T, dir string, args ...string) (stdout, stderr string, code int) {
 	t.Helper()
 	var out, errBuf bytes.Buffer
-	code = run(context.Background(), args, os.Environ(), dir, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+	code = run(context.Background(), args, hermeticEnv(), dir, nil, &out, &errBuf, &status.NativeRunner{}, nil)
 	return out.String(), errBuf.String(), code
 }
 

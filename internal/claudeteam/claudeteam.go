@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -63,6 +64,31 @@ func Probe(home string, now time.Time) (present bool, hint string, recent bool) 
 		return true, "recent team directory: " + newest, true
 	}
 	return false, "", false
+}
+
+// TranscriptProbe resolves session id's transcript file path under this host's
+// session-transcript store, or "" when unresolvable. Used by the boot guard's
+// receipt write (force-boot-at-compaction-boundary): internal/status takes this
+// as a value (nil on a non-Claude host) so its source carries no ~/.claude read,
+// mirroring TeamStateProbe.
+type TranscriptProbe func(home, sessionID string) string
+
+// TranscriptPath is the concrete Claude implementation: Claude Code names every
+// session transcript `{session_id}.jsonl` under a per-project directory whose
+// own name is a host-internal encoding of the launch cwd (captured live:
+// force-boot-at-compaction-boundary/ideation-spike-evidence.md §1-3); rather
+// than reconstruct that encoding, this globs on the leaf filename alone, which
+// is unique to the session by construction.
+func TranscriptPath(home, sessionID string) string {
+	if home == "" || sessionID == "" {
+		return ""
+	}
+	matches, err := filepath.Glob(filepath.Join(home, ".claude", "projects", "*", sessionID+".jsonl"))
+	if err != nil || len(matches) == 0 {
+		return ""
+	}
+	sort.Strings(matches)
+	return matches[len(matches)-1]
 }
 
 // BareModeAdvisory writes the bare-mode dispatch warning to w. It names a

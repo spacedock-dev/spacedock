@@ -15,11 +15,14 @@ import (
 )
 
 // NativeRunner is the native-Go status runner and the sole implementer of the
-// Runner interface. TeamStateProbe is the host-supplied boot TEAM_STATE probe: the Claude front
-// door wires claudeteam.Probe; a non-Claude host leaves it nil (host-neutral
-// present:false). It is the only host-coupled input the runner takes.
+// Runner interface. TeamStateProbe is the host-supplied boot TEAM_STATE probe, and
+// TranscriptProbe is the boot guard's receipt-write probe (force-boot-at-compaction-boundary):
+// the Claude front door wires claudeteam.Probe / claudeteam.TranscriptPath; a
+// non-Claude host leaves both nil (host-neutral present:false / no receipt
+// transcript). These are the only host-coupled inputs the runner takes.
 type NativeRunner struct {
-	TeamStateProbe claudeteam.TeamStateProbe
+	TeamStateProbe  claudeteam.TeamStateProbe
+	TranscriptProbe claudeteam.TranscriptProbe
 }
 
 var _ Runner = (*NativeRunner)(nil)
@@ -30,7 +33,7 @@ var _ Runner = (*NativeRunner)(nil)
 // runner can always run; failures are reported as exit code 1.
 func (r *NativeRunner) Run(ctx context.Context, req Request) (int, error) {
 	e := envFromSlice(req.Env)
-	code := dispatch(r.TeamStateProbe, req.Args, req.Dir, e, req.Stdin, req.Stdout, req.Stderr)
+	code := dispatch(r.TeamStateProbe, r.TranscriptProbe, req.Args, req.Dir, e, req.Stdin, req.Stdout, req.Stderr)
 	return code, nil
 }
 
@@ -41,10 +44,11 @@ func errExit(stderr io.Writer, msg string) int {
 	return 1
 }
 
-// dispatch is the argv-driven entry point mirroring the oracle's main(). probe is
-// the host-supplied boot TEAM_STATE probe, threaded to runRead (nil on a
-// non-Claude host).
-func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env, stdin io.Reader, stdout, stderr io.Writer) int {
+// dispatch is the argv-driven entry point mirroring the oracle's main(). probe
+// is the host-supplied boot TEAM_STATE probe and transcriptProbe is the boot
+// guard's receipt-write probe, both threaded to runRead (nil on a non-Claude
+// host).
+func dispatch(probe claudeteam.TeamStateProbe, transcriptProbe claudeteam.TranscriptProbe, args []string, dir string, e env, stdin io.Reader, stdout, stderr io.Writer) int {
 	// --discover (incompatible with all other flags).
 	if contains(args, "--discover") {
 		return runDiscover(args, dir, stderr, stdout)
@@ -477,7 +481,7 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	}
 
 	// Read paths (table / next / boot / validate).
-	return runRead(probe, roots, args, e, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, identify, explicitFields, allFieldsFlag, asJSON, quiet, archiveSlug != "", setResult != nil, resolveRef != "", page, limit, stdout, stderr)
+	return runRead(probe, transcriptProbe, roots, args, e, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, identify, explicitFields, allFieldsFlag, asJSON, quiet, archiveSlug != "", setResult != nil, resolveRef != "", page, limit, stdout, stderr)
 }
 
 // failOnValidationErrors prints validation errors to stderr and returns 1 when

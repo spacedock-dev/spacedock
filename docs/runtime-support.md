@@ -86,6 +86,18 @@ Add support in small layers. Each layer should have its own proof.
    - Prefer a temp workflow fixture, isolated host config/session dirs, and copied credentials over global host state.
    - Assert process exit, entity content, git log, and clean state. Do not pass by transcript phrasing.
 
+## Boot guard at the compaction boundary
+
+A compaction-resumed session keeps its session id and transcript; the host
+records the boundary durably (a `compact_boundary` record in the session
+transcript). `status --boot` writes a one-line per-session receipt; the
+authority verbs — `gate record`, `gate consume`, `merge guard` — refuse
+(exit 4) when the receipt is missing or older than the latest boundary, until
+boot re-runs. Detection resolves per host: Claude Code via
+`CLAUDE_CODE_SESSION_ID` plus the recorded transcript path; hosts without a
+resolvable identity degrade to a silent no-op (Codex: #595). The guard fails
+open on unreadable transcripts and never needs a hook.
+
 ## Launcher binary propagation through wrappers
 
 `spacedock claude` and `spacedock codex` attach `SPACEDOCK_BIN` to the host process they spawn, including the outer `safehouse -- ...` process when safehouse wrapping is active. Spacedock does not modify safehouse internals or assume a private passthrough mechanism; if a wrapper or runtime strips `SPACEDOCK_BIN` before the agent session observes it, the skill contract's `${SPACEDOCK_BIN:-spacedock}` convention degrades to the existing `$PATH` lookup.

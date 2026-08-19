@@ -100,13 +100,32 @@ func gateCeremonyFixture(t *testing.T) (mainRoot, workflowDir, entityPath, check
 	return mainRoot, workflowDir, entityPath, checklistFile
 }
 
+// hermeticEnv strips CLAUDE_CODE_SESSION_ID from os.Environ() before handing
+// it to the compiled command surface. This suite's fixtures are fresh tempdirs
+// with no boot receipt, and this suite dogfoods spacedock — it can itself run
+// inside a live Claude Code session — so an ambient session id would make the
+// force-boot-at-compaction-boundary guard spuriously refuse every gate/merge
+// call below (internal/status/bootguard.go). Shared by mustSpacedock here and
+// runMergeCLI in merge_test.go.
+func hermeticEnv() []string {
+	env := os.Environ()
+	out := make([]string, 0, len(env))
+	for _, kv := range env {
+		if strings.HasPrefix(kv, "CLAUDE_CODE_SESSION_ID=") {
+			continue
+		}
+		out = append(out, kv)
+	}
+	return out
+}
+
 // mustSpacedock runs one spacedock command through the compiled command
 // surface, asserting exit 0 — the AC-1 harness's (a) predicate, checked at
 // every one of the ten (or two) commands, not just the last.
 func mustSpacedock(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	var out, errOut bytes.Buffer
-	code := run(context.Background(), args, os.Environ(), dir, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	code := run(context.Background(), args, hermeticEnv(), dir, nil, &out, &errOut, &status.NativeRunner{}, nil)
 	if code != 0 {
 		t.Fatalf("spacedock %v exit=%d stdout=%q stderr=%q", args, code, out.String(), errOut.String())
 	}

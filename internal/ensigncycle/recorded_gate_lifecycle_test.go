@@ -1398,9 +1398,29 @@ func buildRecordedGateBinary(t *testing.T) string {
 	return binary
 }
 
+// recordedGateHermeticEnv strips CLAUDE_CODE_SESSION_ID from os.Environ()
+// before handing it to the fresh-built spacedock subprocess. This fixture's
+// workflow carries no boot receipt, and this suite dogfoods spacedock — it can
+// itself run inside a live Claude Code session — so an ambient session id
+// would make the force-boot-at-compaction-boundary guard
+// (internal/status/bootguard.go) spuriously refuse every `gate record` call
+// below.
+func recordedGateHermeticEnv() []string {
+	env := os.Environ()
+	out := make([]string, 0, len(env))
+	for _, kv := range env {
+		if strings.HasPrefix(kv, "CLAUDE_CODE_SESSION_ID=") {
+			continue
+		}
+		out = append(out, kv)
+	}
+	return out
+}
+
 func runRecordedGateCommand(binary, cwd, event string, args ...string) recordedGateCommand {
 	cmd := exec.Command(binary, args...)
 	cmd.Dir = cwd
+	cmd.Env = recordedGateHermeticEnv()
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

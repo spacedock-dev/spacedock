@@ -23,3 +23,8 @@ dist/
 .safehouse
 .claude/
 /spacedock
+
+# Session boot receipts (spacedock status --boot, the boot guard at the
+# compaction boundary) — host scratch, never workflow state; recreated per
+# session, never committed.
+/.spacedock/
