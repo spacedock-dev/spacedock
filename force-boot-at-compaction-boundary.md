@@ -1,7 +1,7 @@
 ---
 id: 4ctz4sfybfk0mfsbnrjcc7bv
 title: Force one boot at the compaction boundary — a compacted FO resumes on stale bindings
-status: validation
+status: implementation
 source: "Captain CL, 2026-08-18, in chat: 'file the compaction improvement, detail the problem diagnosis and proposed solution.' Raised after the FO opened three PRs by hand without reading the pr-merge mod, and diagnosed the root cause as never having run Startup in a compaction-resumed session."
 started: 2026-08-18T23:15:43Z
 completed:
