@@ -92,26 +92,44 @@ Add support in small layers. Each layer should have its own proof.
 
 The launcher stays resident as the host's parent: it spawns the host as a child, inherits the terminal, forwards externally-targeted signals (`SIGTERM`/`SIGHUP`) while letting terminal signals (Ctrl-C, resize) reach the host through the shared foreground process group, and exits with the host's exit code — rather than replacing itself with the host. This keeps the `spacedock <host> …` command legible in process listings and session managers (for example zellij's restart view) and lets the launcher supervise companion processes alongside the session in future. (Unix launch lane; `spacedock <host>` is not a supported launch path on Windows.)
 
-## Compaction boundary reminder (Claude Code)
+## Compaction boundary reminder (Claude Code and Codex)
 
 A compaction-resumed session keeps its transcript and session id but has run
 none of Startup — it never re-read the boot record, so a stale summary of
 mods, gate readiness, worker roster, or binary version stands unchallenged.
-`hooks/compact_boot_reminder.sh` is registered in the plugin's `hooks.json`
-under `SessionStart`/`^compact$` and wired live via `.claude-plugin/plugin.json`'s
-`hooks` field. It reads the hook JSON on stdin, acts only on `source=compact`
-— not `PreCompact`, which also fires on a compaction the host then refuses —
-and prints a short instruction to re-run Startup and distrust the summary's
-gates/workers/binary claims; Claude Code injects that stdout as context for
-the resumed turn.
+`hooks/session_start_compact_reminder.sh` is registered once in the plugin's
+shared `hooks.json` under `SessionStart`/`^compact$`, and both
+`.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` activate that
+same `hooks.json` — one script, one entry, both hosts. It reads the hook JSON
+on stdin and acts only on `source=compact` — not `PreCompact`, which also
+fires on a compaction the host then refuses — printing a short instruction to
+re-run Startup and distrust the summary's gates/workers/binary claims as a
+`hookSpecificOutput.additionalContext` payload, which Claude Code injects as
+context for the resumed turn.
 
-This is advisory only: a hook can inject text but cannot force the next tool
-call, so the mechanism proves the reminder reaches the model's context, not
-that the First Officer acts on it. Absence degrades silently — an untrusted,
-disabled, or missing hook leaves compaction behaving exactly as it does today.
-Codex has no proven equivalent boundary; the plugin's separate
-`codex_session_start_compact.sh` registration predates and is untouched by
-this mechanism, and issue #595 owns Codex's compaction-recovery design.
+The script also gates on `SPACEDOCK_BIN` being set: that variable means a
+launcher-marked session, not merely a plugin install. A user who has the
+plugin installed but is not running a Spacedock-launched host should not
+receive First Officer instructions after every compaction, so an unset
+`SPACEDOCK_BIN` is a silent no-op regardless of `source`.
+
+This wires DELIVERY, not OBEDIENCE. A hook can inject text but cannot force
+the next tool call, so the mechanism proves the reminder reaches the model's
+context (or, on Codex, the UI — see below), not that the First Officer acts
+on it; that is observable only in a live journey. Absence degrades silently
+— an untrusted, disabled, or missing hook leaves compaction behaving exactly
+as it does today.
+
+Codex has no proven compaction callback into the model's context; a live
+probe found a Codex `systemMessage` reaches only the operator-facing UI, not
+the model (recorded in the still-`backlog`
+`claude-post-compaction-contract-reload` entity). This script's
+`hookSpecificOutput.additionalContext` output shape was kept unchanged from
+the pre-existing Codex-only script it replaces (verified live on codex-cli
+0.144.6 for command resolution via `${PLUGIN_ROOT}`) to avoid introducing an
+unverified new format for that host; only the reminder text and the shared
+registration changed. Issue #595 owns any further Codex compaction-recovery
+design.
 
 ## Acceptance checklist
 
