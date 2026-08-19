@@ -92,70 +92,13 @@ Add support in small layers. Each layer should have its own proof.
 
 The launcher stays resident as the host's parent: it spawns the host as a child, inherits the terminal, forwards externally-targeted signals (`SIGTERM`/`SIGHUP`) while letting terminal signals (Ctrl-C, resize) reach the host through the shared foreground process group, and exits with the host's exit code — rather than replacing itself with the host. This keeps the `spacedock <host> …` command legible in process listings and session managers (for example zellij's restart view) and lets the launcher supervise companion processes alongside the session in future. (Unix launch lane; `spacedock <host>` is not a supported launch path on Windows.)
 
-## Compaction boundary reminder (Claude Code and Codex)
+## Compaction-boundary reminder hook
 
-A compaction-resumed session keeps its transcript and session id but has run
-none of Startup — it never re-read the boot record, so a stale summary of
-mods, gate readiness, worker roster, or binary version stands unchallenged.
-`hooks/session_start_compact_reminder.sh` is registered once in the plugin's
-shared `hooks.json` under `SessionStart`/`^compact$`, and both
-`.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` activate that
-same `hooks.json` — one script, one entry, both hosts. It reads the hook JSON
-on stdin and acts only on `source=compact` — not `PreCompact`, which also
-fires on a compaction the host then refuses — printing a short instruction to
-re-run Startup and distrust the summary's gates/workers/binary claims as a
-`hookSpecificOutput.additionalContext` payload, which Claude Code injects as
-context for the resumed turn.
-
-The script also gates on `SPACEDOCK_BIN` being set: that variable means a
-launcher-marked session, not merely a plugin install. A user who has the
-plugin installed but is not running a Spacedock-launched host should not
-receive First Officer instructions after every compaction, so an unset
-`SPACEDOCK_BIN` is a silent no-op regardless of `source`.
-
-The command resolves the plugin's own directory as
-`${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}`, not the bare `${PLUGIN_ROOT}` the
-pre-existing Codex script used. A live spike caught this as a genuine bug
-before it shipped: Claude Code sets `CLAUDE_PLUGIN_ROOT` for a hook
-subprocess and never a bare `PLUGIN_ROOT` (that token is Codex's,
-`e143969b8`), so the unpatched command resolved to
-`/hooks/session_start_compact_reminder.sh` under Claude Code — an
-unconditional, silent, non-blocking hook error — while working correctly for
-Codex. The fallback form resolves correctly for both hosts, verified by
-running the exact template through `/bin/sh` under each host's real
-environment shape (`internal/contractlint`'s
-`TestSessionStartCompactReminderPluginRootFallbackResolves`).
-
-This wires DELIVERY, empirically confirmed, not assumed from platform docs —
-and it does not, and cannot, prove OBEDIENCE. A dedicated live spike (tmux,
-`claude --plugin-dir` pointed at the exact committed plugin tree, a sentinel
-token in the hook's `additionalContext`, a real `/compact`) confirmed the
-sentinel is reproduced verbatim by the resumed model on the very next turn
-with no tool calls — proof the reminder reaches Claude's model context
-through this shipped mechanism, not merely that Claude Code's hook contract
-documents it should. See
-`docs/dev/.spacedock-state/force-boot-at-compaction-boundary/ideation-spike-evidence.md`
-section 6 for the full transcript, including the broken-then-fixed run.
-Manual `/compact` is covered; auto-compact was not independently reached
-within the spike's budget (declared, not silently skipped — same file).
-Whether the First Officer *acts* on a delivered reminder remains observable
-only in a live workflow journey. Absence degrades silently — an untrusted,
-disabled, or missing hook leaves compaction behaving exactly as it does
-today. The spike also found no separate approval/trust dialog gates a
-`--plugin-dir`-loaded plugin's hooks beyond ordinary workspace trust, though
-the operator's already-familiar `HOME` in that run could not conclusively
-rule out a true first-ever-encounter prompt.
-
-Codex has no proven compaction callback into the model's context; a live
-probe found a Codex `systemMessage` reaches only the operator-facing UI, not
-the model (recorded in the still-`backlog`
-`claude-post-compaction-contract-reload` entity). This script's
-`hookSpecificOutput.additionalContext` output shape was kept unchanged from
-the pre-existing Codex-only script it replaces (verified live on codex-cli
-0.144.6 for command resolution) to avoid introducing an unverified new
-format for that host; only the reminder text, the shared registration, and
-the plugin-root fallback changed. Issue #595 owns any further Codex
-compaction-recovery design.
+The plugin ships a `SessionStart(compact)` reminder hook via the shared
+`hooks.json`; a new host that activates `hooks.json` inherits it
+automatically. The host must supply its own plugin-root environment variable
+in the command template, or the hook resolves to a broken path and errors
+non-blockingly.
 
 ## Acceptance checklist
 

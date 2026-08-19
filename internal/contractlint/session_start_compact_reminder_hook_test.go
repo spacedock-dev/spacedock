@@ -12,15 +12,20 @@ import (
 
 // TestSessionStartCompactReminderHookGate exercises the shipped SessionStart
 // hook script directly — the only properties a test can prove mechanically:
-// it emits the exact reminder JSON only when SPACEDOCK_BIN is set (a
+// it emits a reminder payload only when SPACEDOCK_BIN is set (a
 // launcher-marked session — the plugin being merely installed must not hand
 // out First Officer instructions after every compaction) AND the hook JSON
 // on stdin names source=compact, and it stays silent (exit 0, no stdout) on
-// every other combination, including malformed/empty input. It does NOT and
-// cannot prove that Claude Code or Codex injects this stdout into the
-// resumed model's context, or that the FO obeys the reminder once injected —
-// see docs/dev/.spacedock-state/force-boot-at-compaction-boundary.md's
-// "How proven" section for why those are out of reach of a unit test.
+// every other combination, including malformed/empty input. The emitted
+// payload is checked by property (valid JSON, SessionStart event name,
+// non-empty context naming the boot command) rather than by byte-comparing
+// the wording, so a rewording of the reminder text does not red this test —
+// see the entity's cycle-5 correction for why a byte-copy of the payload is
+// a tautological assertion. This test does NOT and cannot prove that Claude
+// Code or Codex injects this stdout into the resumed model's context, or
+// that the FO obeys the reminder once injected — see
+// docs/dev/.spacedock-state/force-boot-at-compaction-boundary.md's "How
+// proven" section for why those are out of reach of a unit test.
 //
 // Each subprocess runs with an explicit, minimal environment rather than the
 // test process's inherited one: the ambient shell in this repo commonly
@@ -37,10 +42,6 @@ func TestSessionStartCompactReminderHookGate(t *testing.T) {
 	if info.Mode()&0o111 == 0 {
 		t.Errorf("%s is not executable (mode %v); the plugin invokes it directly", script, info.Mode())
 	}
-
-	const wantReminder = `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"COMPACTION BOUNDARY — your bindings are stale, not just your narrative.\n\nBefore any gate, merge, or state mutation, re-run the Startup procedure: resolve the binary, then ` +
-		"`${SPACEDOCK_BIN:-spacedock} status --boot --identify --json`" +
-		`, and READ the whole boot record — not only the keys you came looking for. It carries the registered mods, ready-gate readiness, the binary version gate, PR state, and live team state. Any of those may contradict what your summary says.\n\nSpecifically distrust: which gates you believe are presented (check readiness, not memory), which workers you believe are alive, the SPACEDOCK_BIN path, and which contract version is installed."}}` + "\n"
 
 	cases := []struct {
 		name           string
@@ -118,12 +119,29 @@ func TestSessionStartCompactReminderHookGate(t *testing.T) {
 			if err := cmd.Run(); err != nil {
 				t.Fatalf("hook exited non-zero: %v (stderr: %s)", err, stderr.String())
 			}
-			want := ""
-			if tc.wantReminded {
-				want = wantReminder
+			if !tc.wantReminded {
+				if got := stdout.String(); got != "" {
+					t.Errorf("stdout = %q, want empty (gate closed)", got)
+				}
+				return
 			}
-			if got := stdout.String(); got != want {
-				t.Errorf("stdout = %q, want %q", got, want)
+			var payload struct {
+				HookSpecificOutput struct {
+					HookEventName     string `json:"hookEventName"`
+					AdditionalContext string `json:"additionalContext"`
+				} `json:"hookSpecificOutput"`
+			}
+			if err := json.Unmarshal(stdout.Bytes(), &payload); err != nil {
+				t.Fatalf("stdout did not parse as JSON: %v (stdout: %s)", err, stdout.String())
+			}
+			if payload.HookSpecificOutput.HookEventName != "SessionStart" {
+				t.Errorf("hookEventName = %q, want %q", payload.HookSpecificOutput.HookEventName, "SessionStart")
+			}
+			if payload.HookSpecificOutput.AdditionalContext == "" {
+				t.Error("additionalContext is empty")
+			}
+			if !strings.Contains(payload.HookSpecificOutput.AdditionalContext, "status --boot") {
+				t.Errorf("additionalContext does not name the boot command (status --boot): %q", payload.HookSpecificOutput.AdditionalContext)
 			}
 		})
 	}
