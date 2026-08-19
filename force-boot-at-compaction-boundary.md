@@ -55,6 +55,17 @@ gates:
                 digest: sha256:1e46104a9835ed01a56040f2ec0ed3ae0b469f46b9bda575dae416e723cf3a0d
                 request-digest: sha256:316d8d7742e343d86924271460519f09bc0888e43be2fe0869a9ee98aa969cc3
                 room-ref: ./force-boot-at-compaction-boundary/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:4ctz4sfybfk0mfsbnrjcc7bv:ideation:2
+                briefing: briefing:4ctz4sfybfk0mfsbnrjcc7bv:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-19T03:24:40.790964Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve both.'' Accepts the re-scoped design at net +245 across 8 files — boot receipt plus fail-closed guard on gate record, gate consume, and merge guard, no hook. The boundary was proven by live capture including this session''s own compact_boundary record, and both seeded mechanisms were disproven by that capture rather than by argument.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
