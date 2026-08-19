@@ -75,6 +75,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-19T18:17:24Z
+worktree: .worktrees/spacedock-ensign-own-claude-early-rejection-round-record
 ---
 
 ## Problem
