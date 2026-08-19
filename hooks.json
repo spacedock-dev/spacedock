@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "${PLUGIN_ROOT}/hooks/codex_session_start_compact.sh"
+          },
+          {
+            "type": "command",
+            "command": "${PLUGIN_ROOT}/hooks/compact_boot_reminder.sh"
           }
         ]
       }

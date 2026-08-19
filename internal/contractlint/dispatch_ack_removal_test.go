@@ -30,11 +30,17 @@ func TestDispatchAckMachineryIsAbsent(t *testing.T) {
 		}
 	}
 
+	// .claude-plugin/plugin.json wants hooks again as of
+	// force-boot-at-compaction-boundary: a SessionStart(compact) reminder
+	// hook, unrelated to the removed PreToolUse/SubagentStart dispatch-ack
+	// machinery this test otherwise guards against. The event-name check
+	// above and the forbidden-marker scan below still catch a regression of
+	// the actual removed machinery.
 	for _, manifest := range []struct {
 		path      string
 		wantHooks bool
 	}{
-		{path: filepath.Join(".claude-plugin", "plugin.json")},
+		{path: filepath.Join(".claude-plugin", "plugin.json"), wantHooks: true},
 		{path: filepath.Join(".codex-plugin", "plugin.json"), wantHooks: true},
 	} {
 		data, err := os.ReadFile(filepath.Join(repo, manifest.path))
