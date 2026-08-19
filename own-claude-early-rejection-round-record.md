@@ -9,6 +9,26 @@ id: zf7rymtke3b6xp7r0337hjj4
 
 Two coupled defects around one residual mode. The mode: the live claude FO invoked `gate record --round validation/1` immediately after the rejection — before routing the correction — so the immutable round room durably holds the reviewer's 2 entries instead of the complete 4 the contract's record-after-correction order produces. The red is correct in substance. The label is not: `claudeRecordedRejectionRound` accepts only a success line pinned to `entries=4` (`rejectionRoundSuccess`, shared_round_recording_test.go), so a successful early record is reported as "resolved launcher never invoked `gate record --round validation/1`" — the lying-label class this release spent itself killing. A second label defect in the same oracle: the workflow-README immutability boundary condition reports under `rejection-round-missing` ("README.md changed from its exact expected bytes", observed run 31991864922 attempt 2), which reads as a recording failure when the round WAS recorded.
 
+## Recurrence confirmed (2026-08-19, FO)
+
+The mode recurred in PR #736's live lane, run 32270990171, claude-live. Same shape, and the retained stream settles it beyond the earlier inference:
+
+    tool_use:    ${SPACEDOCK_BIN:-spacedock} gate record rejection-task --round validation/1 \
+                   --briefing .../briefing.json --log .../briefing.review.jsonl --workflow-dir ...
+    tool_result: is_error = false
+                 round=round:rejection-task:validation:1 stage=validation cycle=1
+                 briefing=briefing:rejection-task:validation:round-1 entries=2
+                 entry=annotation:rejection-task:missing-marker  type=Annotation
+                 entry=resolution:rejection-task:reviewer        type=Resolution decision=revise
+
+`entries=2`, exactly as this entity predicted: the reviewer's two entries, recorded before the correction was routed. `rejectionRoundSuccess` pins `entries=4`, so the oracle graded it "resolved launcher never invoked" — a successful, exit-0, correctly-formed invocation reported as absent.
+
+One diagnosis to strike from the record, so it does not mislead the next reader: the FO initially attributed this red to `invokesRejectionRoundRecorder` failing to parse the contract-mandated `${SPACEDOCK_BIN:-spacedock}` form. That is WRONG. `directRoundLauncher` (`shared_round_recording_test.go:17`) accepts the default-expansion form explicitly via `(?::-[^}]*)?`, and it is checked first. The launcher parses fine; the entry count is the whole cause. The FO read the fallback branch's inner regex and never tested the branch that returns before it.
+
+Evidence preserved at `/tmp/9g-evidence` (both hosts' full artifacts, 30 MB) independent of CI artifact expiry.
+
+Sibling reds in the same journey, same release: `rejection-topology-count-bar` (`12z`, filed today) covers the codex-side `rejection-worker-topology` exact-count bar. Both are the same family as the merged `filing-recognizer-newline-terminator` (#731) and `decide-dispatch-build-count-bar` (#732) — a pattern written against one observed shape, then treated as the definition of correct conduct.
+
 ## Proposed approach
 
 Split honesty from strictness in the oracle. Match the recorder's success line generically (`entries=(\d+)`) and grade the count as its own condition with an honest code (`rejection-round-incomplete`, naming got-vs-want and that the record preceded the correction); keep `rejection-round-missing` for genuinely absent invocations. Move the README-immutability condition to its own code (`rejection-workflow-doc-mutated`). Both proven by falsifying edits: replay the run-31996696789 stream bytes through the recognizer (early record must grade incomplete, not missing) and a README-mutated fixture (must grade doc-mutated, not round-missing). Skill-side, the record-after-correction order is already explicit in step 6; the owner tracks the mode's recurrence rate with the metrics instrument rather than adding prose the model already had.
