@@ -160,7 +160,7 @@ func TestSessionStartCompactReminderHookIsWired(t *testing.T) {
 		t.Fatalf("parse hooks.json: %v", err)
 	}
 
-	const wantCommand = "${PLUGIN_ROOT}/hooks/session_start_compact_reminder.sh"
+	const wantCommand = "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/hooks/session_start_compact_reminder.sh"
 	var matched []struct {
 		Type    string
 		Command string
@@ -204,5 +204,85 @@ func TestSessionStartCompactReminderHookIsWired(t *testing.T) {
 		if hooksPath != "./hooks.json" {
 			t.Errorf("%s hooks = %q, want %q", manifest, hooksPath, "./hooks.json")
 		}
+	}
+}
+
+// TestSessionStartCompactReminderPluginRootFallbackResolves proves the
+// hooks.json command's variable expansion, not just its literal string, by
+// actually running it through /bin/sh — the same interpreter Claude Code and
+// Codex invoke it with. This is the regression test for a real bug this
+// entity's own live spike caught: Claude Code sets CLAUDE_PLUGIN_ROOT for a
+// hook subprocess, never a bare PLUGIN_ROOT (that is Codex's token,
+// e143969b8). Before the fix, hooks.json referenced only ${PLUGIN_ROOT},
+// which is unset under Claude Code and expands to empty under /bin/sh —
+// producing the broken path /hooks/session_start_compact_reminder.sh
+// (verified live: "SessionStart:compact hook error ... No such file or
+// directory", recorded verbatim in ideation-spike-evidence.md section 6). A
+// JSON string-equality check would not have caught this: the literal
+// ${PLUGIN_ROOT} template is syntactically well-formed JSON and a
+// syntactically valid shell command; only executing it under each host's
+// actual environment shape reveals the resolved path is wrong.
+func TestSessionStartCompactReminderPluginRootFallbackResolves(t *testing.T) {
+	repo := repoRoot(t)
+
+	data, err := os.ReadFile(filepath.Join(repo, "hooks.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Hooks struct {
+			SessionStart []struct {
+				Matcher string `json:"matcher"`
+				Hooks   []struct {
+					Command string `json:"command"`
+				} `json:"hooks"`
+			} `json:"SessionStart"`
+		} `json:"hooks"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		t.Fatalf("parse hooks.json: %v", err)
+	}
+	var command string
+	for _, entry := range doc.Hooks.SessionStart {
+		if entry.Matcher != "^compact$" {
+			continue
+		}
+		for _, h := range entry.Hooks {
+			command = h.Command
+		}
+	}
+	if command == "" {
+		t.Fatal("could not find the SessionStart/^compact$ command in hooks.json")
+	}
+
+	cases := []struct {
+		name string
+		env  []string
+		want string
+	}{
+		{
+			name: "Claude Code sets CLAUDE_PLUGIN_ROOT",
+			env:  []string{"CLAUDE_PLUGIN_ROOT=/claude/plugin/root"},
+			want: "/claude/plugin/root/hooks/session_start_compact_reminder.sh",
+		},
+		{
+			name: "Codex sets PLUGIN_ROOT (no CLAUDE_PLUGIN_ROOT)",
+			env:  []string{"PLUGIN_ROOT=/codex/plugin/root"},
+			want: "/codex/plugin/root/hooks/session_start_compact_reminder.sh",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := exec.Command("/bin/sh", "-c", "echo "+command)
+			cmd.Env = append([]string{"PATH=" + os.Getenv("PATH")}, tc.env...)
+			out, err := cmd.Output()
+			if err != nil {
+				t.Fatalf("sh -c echo failed: %v", err)
+			}
+			if got := strings.TrimSpace(string(out)); got != tc.want {
+				t.Errorf("resolved path = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
