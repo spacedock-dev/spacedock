@@ -55,6 +55,17 @@ gates:
                 digest: sha256:93e8fd75396dcf75abbb55c4678358f529f19f2c9d20fe20980a54314d07d155
                 request-digest: sha256:bc0c1b70b4e3d6d889cd50718e44f73d3c018adbafc9010dfa25e15903442a77
                 room-ref: ./rejection-topology-count-bar/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:12zytd0ksb47r3g61qw1s5nc:ideation:2
+                briefing: briefing:12zytd0ksb47r3g61qw1s5nc:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-19T22:57:16.085558Z"
+                decision: approve
+                reason: 'Captain approves onto the #736 stack: replace the exact 8-event count with a round-parsing grammar so the bar stops reddening correct topologies.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
