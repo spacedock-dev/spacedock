@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:12zytd0ksb47r3g61qw1s5nc:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation direction: replace the exact 8-event count with a round-parsing grammar, at net +105 across 2 files?",
+  "artifacts": [
+    {
+      "id": "artifact:12zytd0ksb47r3g61qw1s5nc:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4572ea69d00842ddb1ef539ef378da392680e70e/rejection-topology-count-bar.md",
+      "rev": "sha256:78628d656892ca77535a6ceb4efec187b97b2c35e159ea1dc218c721867d56de",
+      "mediaType": "text/markdown",
+      "summary": "Ideation derived what the 8 encodes rather than assuming: the contract chain justified by feedback-rejection-flow/SKILL.md steps 1 and 4, times an exactly-one-round-per-segment clause justified ONLY by a single captured rollout (commit 52b94f9aa) — and falsified by the very next live run. That is the same finding decide-dispatch-build-count-bar made about its 1/1. Remedy settled as a round-parsing grammar (impl, val+, rework, val+) with a one-repeat budget and a branch-keyed routing rule: a stage's first round is a spawn, every subsequent round follows the branch key. That generalizes codex-reuse-10 and claude-fresh-8 under one rule with no special-casing. Spiked against both hosts' retained chains plus a 16-red mutant corpus, 20/20, every red naming its invariant; the corpus seeds the implementation's table test. It validated the adversarial review's claims against the evidence rather than accepting them — checking shape and identity against the TSVs, the outcome claim against codex-exec.jsonl:62-63, and the #732 caveat against the actual code. It also corrected this entity's own overstatement: 9g is superseded for shape attribution only, NOT for conduct forensics, since the raw rollout that could establish intent still dies with the isolated CODEX_HOME. Recommends rescoping 9g rather than retiring it. Surface net +105 across 2 test-harness files, tolerance ±50, no product or doc changes."
+    }
+  ]
+}
