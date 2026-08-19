@@ -15,6 +15,17 @@ gates:
                 digest: sha256:67e727f265794634086d12c6cd19fc36f1ced497cb6cf325905a606cf4aa0ebc
                 request-digest: sha256:a95473793cb5a3ac73d64382a04502e43a92229e3c2112dc29b626c91951f847
                 room-ref: ./own-claude-early-rejection-round-record/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zf7rymtke3b6xp7r0337hjj4:backlog:1
+                briefing: briefing:zf7rymtke3b6xp7r0337hjj4:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-19T18:16:02.74664Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''if the fable opinion lands reasonable, dispatch those two on to the stack of 736 so we can run tip CI lane to verify.'' The fable review landed and confirmed the diagnosis while finding two real remedy gaps, both now recorded.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
