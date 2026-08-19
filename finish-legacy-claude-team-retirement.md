@@ -7,7 +7,7 @@ started: 2026-08-18T23:15:53Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-finish-legacy-claude-team-retirement
 issue:
 gates:
     version: 1
