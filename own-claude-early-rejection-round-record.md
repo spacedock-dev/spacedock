@@ -33,6 +33,19 @@ Sibling reds in the same journey, same release: `rejection-topology-count-bar` (
 
 Split honesty from strictness in the oracle. Match the recorder's success line generically (`entries=(\d+)`) and grade the count as its own condition with an honest code (`rejection-round-incomplete`, naming got-vs-want and that the record preceded the correction); keep `rejection-round-missing` for genuinely absent invocations. Move the README-immutability condition to its own code (`rejection-workflow-doc-mutated`). Both proven by falsifying edits: replay the run-31996696789 stream bytes through the recognizer (early record must grade incomplete, not missing) and a README-mutated fixture (must grade doc-mutated, not round-missing). Skill-side, the record-after-correction order is already explicit in step 6; the owner tracks the mode's recurrence rate with the metrics instrument rather than adding prose the model already had.
 
+## Adversarial review of this remedy (2026-08-19, fable ensign, read-only)
+
+Diagnosis CONFIRMED against the live stream: one `--round` call at line 286, result at 287 carrying `entries=2`, `is_error=false`; the rework spawn is at index 307, so the record demonstrably preceded the correction. Every link holds.
+
+It also settled the question the FO could not: is an honest label a way to make a real defect easier to ignore? No. The conduct IS wrong — the round room is immutable, so an early record permanently truncates the durable record to 2 of 4 entries. Under this remedy the red STAYS red; only its name changes. The opposite risk is already proven: the lying label sent the FO chasing a launcher-regex ghost. And it matches the codebase's own pattern (`assertRejectionCycleLine`'s heading-drift diagnostic, `TestRejectionUnpreparedGateReportsItsOwnCode`): the grade does not soften, the diagnostic must say what happened.
+
+**But the remedy as written SHIPS HALF-DONE. Two gaps, both verified by the FO:**
+
+1. **The `entries=4` pin lives in TWO places, not one.** The stream regex at `shared_round_recording_test.go:18`, and a durable summary check at `:400-405` — `len(summary.Entries) != 4`, message `"retained round summary = %#v"`, still under `rejection-round-missing`. Genericize only the stream regex and the same run reds at :404 under the same lying code with a WORSE message: a raw struct dump. The count grade must move to the DURABLE site under the honest code. And this remedy's proposed proof — replay the stream bytes through the recognizer — exercises only the stream path, so it would GREEN the half-fix. A durable fixture is required: record a 2-entry log, assert the code is `rejection-round-incomplete`.
+2. **The byte-exact block at `:425-442` covers FOUR files**, not one: `briefing.json`, `briefing.review.jsonl`, `candidate.txt`, `README.md` — all reporting "changed from its exact expected bytes" under `rejection-round-missing`. This remedy splits only README. `candidate.txt` carries the identical lying label. The split criterion should be **"is this file part of the round record"** — the two room files keep the round code, everything else does not — rather than "is it README".
+
+**Related conduct hotspot, named by the review and owned by neither entity.** Both hosts deviated at the SAME point in the flow: the gap between rejection and routed correction. Claude recorded the round early; codex inserted an extra review round. If recurrence continues, the fix is mechanical rather than prose — for example a precondition the FO can check before `gate record --round` (the log tail contains a correction entry). This entity's "metrics over prose" call stands for now, at two occurrences.
+
 ## Out of scope
 
 - The round recorder binary (neutral; its output already carries the true entry count).
