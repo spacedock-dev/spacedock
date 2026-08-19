@@ -44,19 +44,25 @@ func bootGuardWriteTranscript(t *testing.T, dir string, lines ...string) string 
 	return path
 }
 
-func bootGuardWriteReceipt(t *testing.T, gitRoot, bootedAt, transcript string) {
+// bootGuardWriteReceipt writes a receipt at the REAL production path
+// (bootReceiptPath, host scratch under bootReceiptDir — no longer inside
+// repoDir) for repoDir's resolved repo identity, and registers cleanup so the
+// shared host directory does not accumulate test residue. repoDir need not be
+// a real git repo: repoIdentityToken falls back to its own absolute path.
+func bootGuardWriteReceipt(t *testing.T, repoDir, bootedAt, transcript string) {
 	t.Helper()
-	dir := filepath.Join(gitRoot, ".spacedock", "boot")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(bootReceiptDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	line := bootedAt
 	if transcript != "" {
 		line += " " + transcript
 	}
-	if err := os.WriteFile(filepath.Join(dir, bootGuardTestSessionID), []byte(line+"\n"), 0o644); err != nil {
+	path := bootReceiptPath(repoDir, bootGuardTestSessionID)
+	if err := os.WriteFile(path, []byte(line+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = os.Remove(path) })
 }
 
 // TestBootGuardVerdictMatrix is AC-3's table: the verdict derives from durable
@@ -130,13 +136,14 @@ func TestBootGuardVerdictMatrix(t *testing.T) {
 			name:      "malformed receipt record: fails open, not closed",
 			sessionID: bootGuardTestSessionID,
 			setup: func(t *testing.T, gitRoot string) {
-				dir := filepath.Join(gitRoot, ".spacedock", "boot")
-				if err := os.MkdirAll(dir, 0o755); err != nil {
+				if err := os.MkdirAll(bootReceiptDir, 0o755); err != nil {
 					t.Fatal(err)
 				}
-				if err := os.WriteFile(filepath.Join(dir, bootGuardTestSessionID), []byte("not-a-timestamp garbage\n"), 0o644); err != nil {
+				path := bootReceiptPath(gitRoot, bootGuardTestSessionID)
+				if err := os.WriteFile(path, []byte("not-a-timestamp garbage\n"), 0o644); err != nil {
 					t.Fatal(err)
 				}
+				t.Cleanup(func() { _ = os.Remove(path) })
 			},
 			wantStale: false,
 		},
@@ -215,13 +222,11 @@ func TestBootReceiptSubSecondPrecisionSurvivesRoundTrip(t *testing.T) {
 }
 
 // TestBootGuardRefuseMessageNamesRemedy pins the exported entry point end to
-// end: rawEnv/dir resolution through FindGitRoot, and the refusal text naming
-// the exact recovery a stuck FO reads — re-run boot.
+// end: rawEnv/dir resolution (no git repo needed — repoIdentityToken falls
+// back to dir's own absolute path), and the refusal text naming the exact
+// recovery a stuck FO reads — re-run boot.
 func TestBootGuardRefuseMessageNamesRemedy(t *testing.T) {
 	gitRoot := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(gitRoot, ".git"), 0o755); err != nil {
-		t.Fatal(err)
-	}
 	var stderr strings.Builder
 	msg := BootGuardRefuse([]string{"CLAUDE_CODE_SESSION_ID=" + bootGuardTestSessionID}, gitRoot, &stderr)
 	if !strings.Contains(msg, "no boot receipt") || !strings.Contains(msg, "status --boot --identify --json") {
@@ -246,29 +251,28 @@ func skipIfRoot(t *testing.T) {
 }
 
 // TestBootGuardVerdictFailsOpenNotClosedOnUnreadableReceipt reproduces two of
-// the three shapes validation found: an unreadable receipt directory (mode
-// 000) and a receipt path that exists as a directory instead of a file. Both
-// are read errors OTHER than fs.ErrNotExist, so both must fail OPEN with a
-// stderr warning — the fix for the prior os.ReadFile handling that refused on
-// EVERY error, which made an unwritable .spacedock/boot refuse permanently
-// while `status --boot` exited 0 and said nothing.
+// validation's three shapes, adapted to the host-scratch scheme (cycle 3): a
+// receipt FILE that is itself unreadable (mode 000 — the file, not a parent
+// directory, since receipts are now flat files directly under the SHARED
+// bootReceiptDir and a test must never chmod that shared directory itself),
+// and a receipt path that exists as a directory instead of a file. Both are
+// read errors OTHER than fs.ErrNotExist, so both must fail OPEN with a stderr
+// warning.
 func TestBootGuardVerdictFailsOpenNotClosedOnUnreadableReceipt(t *testing.T) {
-	t.Run("receipt directory mode 000", func(t *testing.T) {
+	t.Run("receipt file mode 000", func(t *testing.T) {
 		skipIfRoot(t)
 		gitRoot := t.TempDir()
-		dir := filepath.Join(gitRoot, ".spacedock", "boot")
-		if err := os.MkdirAll(dir, 0o755); err != nil {
+		bootGuardWriteReceipt(t, gitRoot, incidentBoundaryTimestamp.Format(time.RFC3339Nano), "")
+		path := bootReceiptPath(gitRoot, bootGuardTestSessionID)
+		if err := os.Chmod(path, 0o000); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.Chmod(dir, 0o000); err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() { _ = os.Chmod(dir, 0o755) }) // let t.TempDir()'s own cleanup remove it
+		t.Cleanup(func() { _ = os.Chmod(path, 0o644) }) // let bootGuardWriteReceipt's own cleanup remove it
 		e := env{"CLAUDE_CODE_SESSION_ID": bootGuardTestSessionID}
 		var stderr strings.Builder
 		stale, reason := bootGuardVerdict(e, gitRoot, &stderr)
 		if stale {
-			t.Fatalf("stale = true (reason %q), want fail-open on an unreadable (not missing) receipt dir", reason)
+			t.Fatalf("stale = true (reason %q), want fail-open on an unreadable (not missing) receipt file", reason)
 		}
 		if !strings.Contains(stderr.String(), "unreadable") {
 			t.Fatalf("stderr = %q, want a warning naming the unreadable receipt", stderr.String())
@@ -277,10 +281,11 @@ func TestBootGuardVerdictFailsOpenNotClosedOnUnreadableReceipt(t *testing.T) {
 
 	t.Run("receipt path exists as a directory", func(t *testing.T) {
 		gitRoot := t.TempDir()
-		receiptAsDir := filepath.Join(gitRoot, ".spacedock", "boot", bootGuardTestSessionID)
+		receiptAsDir := bootReceiptPath(gitRoot, bootGuardTestSessionID)
 		if err := os.MkdirAll(receiptAsDir, 0o755); err != nil {
 			t.Fatal(err)
 		}
+		t.Cleanup(func() { _ = os.RemoveAll(receiptAsDir) })
 		e := env{"CLAUDE_CODE_SESSION_ID": bootGuardTestSessionID}
 		var stderr strings.Builder
 		stale, reason := bootGuardVerdict(e, gitRoot, &stderr)
@@ -293,14 +298,37 @@ func TestBootGuardVerdictFailsOpenNotClosedOnUnreadableReceipt(t *testing.T) {
 	})
 }
 
-// TestBootWriteSurfacesFailureOnReadOnlyProjectRoot reproduces validation's
-// third shape: a read-only project root (the read-only-mount / full-disk /
-// root-owned case), where the receipt can never be created. `status --boot`
-// must say so on stderr rather than exiting 0 silently — the write's only
-// failure signal before this fix — and the subsequent guard refusal names the
-// same expected receipt path, so an operator sees one consistent diagnosis
-// instead of a re-run loop with no explanation.
-func TestBootWriteSurfacesFailureOnReadOnlyProjectRoot(t *testing.T) {
+// TestBootWriteSurfacesFailureWhenReceiptPathIsBlocked keeps the write-failure
+// warning covered (cycle 2's finding item 3) under the new host-scratch
+// scheme: the receipt path itself pre-exists as a directory, so os.WriteFile
+// fails with EISDIR. status --boot must say so, not exit 0 silently.
+func TestBootWriteSurfacesFailureWhenReceiptPathIsBlocked(t *testing.T) {
+	gitRoot := t.TempDir()
+	blockedPath := bootReceiptPath(gitRoot, bootGuardTestSessionID)
+	if err := os.MkdirAll(blockedPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(blockedPath) })
+
+	e := env{"CLAUDE_CODE_SESSION_ID": bootGuardTestSessionID}
+	var writeStderr strings.Builder
+	writeBootReceipt(e, gitRoot, nil, &writeStderr, time.Now())
+	if !strings.Contains(writeStderr.String(), "could not write") {
+		t.Fatalf("write stderr = %q, want a warning naming the failed write", writeStderr.String())
+	}
+}
+
+// TestReadOnlyProjectRootNoLongerBlocksBootReceipt is cycle 3's required
+// consequence: with the receipt moved to host scratch, a read-only project
+// root (the read-only-mount / full-disk / root-owned case — validation's
+// cycle-1 third reproduction shape) no longer touches the write path AT ALL,
+// so it can no longer break it. Before this cycle, chmod 555 on gitRoot made
+// writeBootReceipt fail (it tried to create gitRoot/.spacedock/boot); now
+// repoDir is consulted only to derive the repo identity token (a read-only
+// git rev-parse, never a write), so the write succeeds cleanly and the
+// subsequent guard verdict is a real comparison, not a fail-open masking a
+// lost receipt.
+func TestReadOnlyProjectRootNoLongerBlocksBootReceipt(t *testing.T) {
 	skipIfRoot(t)
 	gitRoot := t.TempDir()
 	if err := os.Chmod(gitRoot, 0o555); err != nil {
@@ -311,22 +339,24 @@ func TestBootWriteSurfacesFailureOnReadOnlyProjectRoot(t *testing.T) {
 	e := env{"CLAUDE_CODE_SESSION_ID": bootGuardTestSessionID}
 	var writeStderr strings.Builder
 	writeBootReceipt(e, gitRoot, nil, &writeStderr, time.Now())
-	if !strings.Contains(writeStderr.String(), "could not create") {
-		t.Fatalf("write stderr = %q, want a warning naming the failed create", writeStderr.String())
+	if writeStderr.Len() != 0 {
+		t.Fatalf("writeBootReceipt stderr = %q, want a clean write — a read-only project root must not reach any write path", writeStderr.String())
 	}
+	t.Cleanup(func() { _ = os.Remove(bootReceiptPath(gitRoot, bootGuardTestSessionID)) })
 
 	var readStderr strings.Builder
 	stale, reason := bootGuardVerdict(e, gitRoot, &readStderr)
-	if !stale || !strings.Contains(reason, "no boot receipt") || !strings.Contains(reason, bootReceiptPath(gitRoot, bootGuardTestSessionID)) {
-		t.Fatalf("verdict after a failed write: stale=%v reason=%q, want a refusal naming the never-created receipt path", stale, reason)
+	if stale {
+		t.Fatalf("stale = true (reason %q, stderr %q), want fresh: the receipt was written successfully to host scratch", reason, readStderr.String())
 	}
 }
 
 // TestBootWritesSessionReceipt proves --boot's declared side effect: a
-// resolvable Claude session identity gets a one-line receipt at
-// .spacedock/boot/{session_id} carrying `{booted_at} {transcript_path}` — the
-// exact shape bootGuardVerdict reads back. This exercises the real
-// claudeteam.TranscriptPath probe against genuine file I/O, not a stub.
+// resolvable Claude session identity gets a one-line receipt at host scratch
+// (bootReceiptPath, under bootReceiptDir — never inside root) carrying
+// `{booted_at} {transcript_path}` — the exact shape bootGuardVerdict reads
+// back. This exercises the real claudeteam.TranscriptPath probe against
+// genuine file I/O, not a stub.
 func TestBootWritesSessionReceipt(t *testing.T) {
 	root := t.TempDir()
 	testgit.InitRepo(t, root)
@@ -352,8 +382,13 @@ func TestBootWritesSessionReceipt(t *testing.T) {
 	if err != nil || code != 0 {
 		t.Fatalf("--boot exit=%d err=%v stderr=%q", code, err, stderr.String())
 	}
+	t.Cleanup(func() { _ = os.Remove(bootReceiptPath(root, sessionID)) })
 
-	raw, rerr := os.ReadFile(filepath.Join(root, ".spacedock", "boot", sessionID))
+	if _, err := os.Stat(filepath.Join(root, ".spacedock")); !os.IsNotExist(err) {
+		t.Fatalf("--boot wrote inside the repository at %s/.spacedock — the receipt must live in host scratch only", root)
+	}
+
+	raw, rerr := os.ReadFile(bootReceiptPath(root, sessionID))
 	if rerr != nil {
 		t.Fatalf("read receipt: %v", rerr)
 	}
@@ -367,5 +402,57 @@ func TestBootWritesSessionReceipt(t *testing.T) {
 	}
 	if fields[1] != transcriptPath {
 		t.Fatalf("receipt transcript = %q, want %q", fields[1], transcriptPath)
+	}
+}
+
+// TestBootGuardWorktreeDivergenceEliminated is cycle 3's required proof: the
+// exact worktree case validation used for the deferred risk this cycle
+// closes rather than narrows. Boot writes at FindGitRoot(roots.definitionDir)
+// (the main checkout's own docs/dev); a guarded verb then runs with cwd in a
+// LINKED WORKTREE of the same repo — genuinely a different git root by
+// FindGitRoot's own reckoning (a worktree's .git is a file naming a private
+// worktrees/ gitdir, not the shared common dir). Before cycle 3 this receipt
+// write and this guard read resolved DIFFERENT gitRoot values and the guard
+// refused "no boot receipt" no matter how many times boot re-ran. Now both
+// resolve through the shared git COMMON dir instead (verified live: `git
+// rev-parse --git-common-dir` gives the identical absolute path from the main
+// checkout and from any linked worktree), so the repo identity token matches
+// and the guard finds the SAME receipt.
+func TestBootGuardWorktreeDivergenceEliminated(t *testing.T) {
+	coderoot := t.TempDir()
+	testgit.InitRepo(t, coderoot)
+	defDir := filepath.Join(coderoot, "docs", "dev")
+	writeFile(t, filepath.Join(defDir, "README.md"), "---\ncommissioned-by: spacedock@1\nid-style: slug\nstages:\n  states:\n    - name: build\n      initial: true\n---\n# Worktree Divergence Fixture\n")
+	gitC(t, coderoot, "add", "docs/dev/README.md")
+	gitC(t, coderoot, "commit", "-q", "-m", "seed")
+
+	wtDir := filepath.Join(coderoot, ".worktrees", "agent-x")
+	gitC(t, coderoot, "worktree", "add", "--detach", wtDir)
+
+	// Confirm the fixture actually reproduces divergent git roots by the OLD
+	// FindGitRoot metric — otherwise this test would pass trivially and prove
+	// nothing.
+	if FindGitRoot(defDir) == FindGitRoot(wtDir) {
+		t.Fatalf("fixture does not reproduce worktree divergence: FindGitRoot(defDir)=%q == FindGitRoot(wtDir)=%q", FindGitRoot(defDir), FindGitRoot(wtDir))
+	}
+
+	sessionEnv := []string{"CLAUDE_CODE_SESSION_ID=" + bootGuardTestSessionID}
+
+	// Boot from the main checkout, --workflow-dir docs/dev (the FO's own cwd).
+	var bootOut, bootErr strings.Builder
+	code, err := (&NativeRunner{}).Run(context.Background(), Request{
+		Args: []string{"--workflow-dir", defDir, "--boot"}, Dir: coderoot, Env: sessionEnv,
+		Stdout: &bootOut, Stderr: &bootErr,
+	})
+	if err != nil || code != 0 {
+		t.Fatalf("--boot from main checkout: exit=%d err=%v stderr=%q", code, err, bootErr.String())
+	}
+	t.Cleanup(func() { _ = os.Remove(bootReceiptPath(defDir, bootGuardTestSessionID)) })
+
+	// The guarded verb then runs with cwd in the LINKED WORKTREE — exactly the
+	// deferred risk's repro shape.
+	var guardStderr strings.Builder
+	if msg := BootGuardRefuse(sessionEnv, wtDir, &guardStderr); msg != "" {
+		t.Fatalf("guard from linked worktree wrongly refused: %q (stderr %q) — worktree git-root divergence was not eliminated", msg, guardStderr.String())
 	}
 }

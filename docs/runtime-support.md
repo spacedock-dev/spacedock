@@ -90,13 +90,17 @@ Add support in small layers. Each layer should have its own proof.
 
 A compaction-resumed session keeps its session id and transcript; the host
 records the boundary durably (a `compact_boundary` record in the session
-transcript). `status --boot` writes a one-line per-session receipt; the
-authority verbs — `gate record`, `gate consume`, `merge guard` — refuse
-(exit 4) when the receipt is missing or older than the latest boundary, until
-boot re-runs. Detection resolves per host: Claude Code via
-`CLAUDE_CODE_SESSION_ID` plus the recorded transcript path; hosts without a
-resolvable identity degrade to a silent no-op (Codex: #595). The guard fails
-open on unreadable transcripts and never needs a hook.
+transcript). `status --boot` writes a one-line per-session receipt to host
+scratch (`/tmp/spacedock-boot/`, never inside the repository — keyed on both
+the session id and a hash of the repo's shared git common dir, so one session
+driving more than one repo cannot cross-report, and a worktree's own git root
+never enters the comparison); the authority verbs — `gate record`, `gate
+consume`, `merge guard` — refuse (exit 4) when the receipt is missing or
+older than the latest boundary, until boot re-runs. Detection resolves per
+host: Claude Code via `CLAUDE_CODE_SESSION_ID` plus the recorded transcript
+path; hosts without a resolvable identity degrade to a silent no-op (Codex:
+#595). The guard fails open on an unreadable receipt or transcript and never
+needs a hook.
 
 ## Launcher binary propagation through wrappers
 

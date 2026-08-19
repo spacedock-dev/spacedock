@@ -20,22 +20,26 @@ import (
 // rather than by ambient accident.
 const bootGuardWiringSessionID = "wiring-proof-session"
 
-// writeFreshBootReceipt drops a timestamp-only receipt at gitRoot (no
-// transcript field — bootGuardVerdict then cannot prove staleness and passes,
-// exactly AC-2's "after status --boot re-runs ... succeeds unchanged"). The
-// exact receipt format is internal/status/bootguard.go's contract; this test
-// writes it directly rather than shelling to `status --boot` so the wiring
-// proof does not also depend on transcript-glob resolution.
+// writeFreshBootReceipt drops a timestamp-only receipt (no transcript field —
+// bootGuardVerdict then cannot prove staleness and passes, exactly AC-2's
+// "after status --boot re-runs ... succeeds unchanged") at the real
+// production path for gitRoot: host scratch, keyed by session id and
+// gitRoot's repo identity token (status.BootReceiptPath — cycle 3 moved the
+// receipt out of the repository). The exact receipt format is
+// internal/status/bootguard.go's contract; this test writes it directly
+// rather than shelling to `status --boot` so the wiring proof does not also
+// depend on transcript-glob resolution.
 func writeFreshBootReceipt(t *testing.T, gitRoot string) {
 	t.Helper()
-	dir := filepath.Join(gitRoot, ".spacedock", "boot")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(status.BootReceiptPath(gitRoot, bootGuardWiringSessionID)), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	line := time.Now().UTC().Format(time.RFC3339) + "\n"
-	if err := os.WriteFile(filepath.Join(dir, bootGuardWiringSessionID), []byte(line), 0o644); err != nil {
+	path := status.BootReceiptPath(gitRoot, bootGuardWiringSessionID)
+	if err := os.WriteFile(path, []byte(line), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = os.Remove(path) })
 }
 
 // runGuardedVerb runs one guarded command under the pinned session env,
