@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:12zytd0ksb47r3g61qw1s5nc:backlog:attempt-1:revision-1",
+  "question": "Approve the topology count-bar entity into ideation, with the review's ordering-rule remedy folded in?",
+  "artifacts": [
+    {
+      "id": "artifact:12zytd0ksb47r3g61qw1s5nc:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/35acc4414349039e28dc50e7221e891a47bfed5e/rejection-topology-count-bar.md",
+      "rev": "sha256:649108dd2ede9aeec8b0f6ba3a175a06290479f8b7ece3a23dba3848424a25f7",
+      "mediaType": "text/markdown",
+      "summary": "An exact 8-event bar reddened a codex FO that ran one extra review round. An adversarial fable review confirmed the diagnosis and supplied the argument the entity asserted without one: order held, identity held (all three validation routes reach the same handle; the re-review target differs from the fix producer), and every OTHER oracle on the lane was green — round recorded after the correction with entries=4, single publication, gate prepared, all byte-exact files intact. The extra round left zero durable footprint. The review also settled the remedy as an ORDERING RULE, not a widened count, and warned that #732's precedent transfers as a pattern rather than a mechanism: applied literally it would red this run as waste, because a dispatch build is semantics-free while a review round is a semantic act with legitimate re-run reasons. It corrected the entity's claim that 9g is superseded — only the TSV digest survives; the raw rollout that could establish intent still dies with the isolated CODEX_HOME, so 9g stands for conduct forensics."
+    }
+  ]
+}

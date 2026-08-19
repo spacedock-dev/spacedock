@@ -9,6 +9,18 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:12zytd0ksb47r3g61qw1s5nc:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:12zytd0ksb47r3g61qw1s5nc-backlog-1
+              briefing:
+                id: briefing:12zytd0ksb47r3g61qw1s5nc:backlog:attempt-1:revision-1
+                digest: sha256:8740c7ebfa0bb6cf4a9c93a05bc7cb8b5afa7b1a10fce93e97a58dd1b0cf159d
+                request-digest: sha256:8857c6c8494c10a0e340a88a64471a79e9cbcd5bdda52eee180209f04d9998d9
+                room-ref: ./rejection-topology-count-bar/review/backlog/briefing-1
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
