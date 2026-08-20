@@ -75,6 +75,17 @@ gates:
                 digest: sha256:b55953e69b3b4706f163d8f85aac9f68f128e0e7b409a6a6d83d1f68fd3ba28e
                 request-digest: sha256:4f75ec56794b9aa8c3671a97541036b7760c94bfaf04631a535142414fdc9d2f
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gf0jvhj4y8vjhd6ww62vsb2q:validation:1
+                briefing: briefing:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-20T22:33:47.323393Z"
+                decision: approve
+                reason: 'Captain: ''push it and approve CI for the stack tip''. Validation PASSED with no material finding: all five ACs reproduced on a throwaway clone, every live number re-derived independently, and the armed-gate concern resolved — the three live prepares ran in clones and never touched live state. Two polish findings, both of the same class: an assertion that cannot fail, and a claim about an assertion that is not true. Surface 292 net against the ratified 283 plus-or-minus 40.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
