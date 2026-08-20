@@ -1,6 +1,6 @@
 ---
 title: Early rejection-round record grades as never-recorded
-status: implementation
+status: validation
 source: "Run 31996696789 claude lane, rejection-flow: round recorded at stream line 287 with entries=2, rework spawned line 309; captain approved filing owners for tolerated residual modes at the 0.27 composite-green ruling, 2026-08-17"
 id: zf7rymtke3b6xp7r0337hjj4
 gates:
