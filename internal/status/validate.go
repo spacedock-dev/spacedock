@@ -245,13 +245,6 @@ func gateValidationDiagnostics(entities []*entity, workflowDir string) (errs, wa
 			problem := fmt.Sprintf("unknown gate application field '%s' at %s", warning.Field, warning.Path)
 			warns = append(warns, entityEvidenceLine("Warning", e, workflowDir, problem, e.displayID))
 		}
-		// A flat entity that already holds prepared rooms is grandfathered by
-		// gate prepare: its refs are ./<slug>/review/... and correct while it
-		// stays flat. Moving it to folder form without rewriting them in the
-		// same commit makes every retained room unreadable, and nothing else
-		// reports that — so the warning carries the whole remedy, not just the
-		// finding. Warn tier, and only on explicit --validate: an error here
-		// would exit 1 on the plain status read path.
 		// A retained room that no longer resolves is the #739 end state: the gate
 		// commands fail on it mid-ceremony while every read surface still reports
 		// the entity as healthy. Reporting it here is what makes a hand
@@ -261,6 +254,13 @@ func gateValidationDiagnostics(entities []*entity, workflowDir string) (errs, wa
 			warns = append(warns, entityEvidenceLine("Warning", e, workflowDir,
 				"retained gate room does not resolve: "+ref, e.displayID))
 		}
+		// A flat entity that already holds prepared rooms is grandfathered by
+		// gate prepare: its refs are ./<slug>/review/... and correct while it
+		// stays flat. Moving it to folder form without rewriting them in the
+		// same commit makes every retained room unreadable, and nothing else
+		// reports that — so the warning carries the whole remedy, not just the
+		// finding. Warn tier, and only on explicit --validate: an error here
+		// would exit 1 on the plain status read path.
 		if filepath.Base(e.path) != "index.md" {
 			if _, err := os.Stat(filepath.Join(filepath.Dir(e.path), e.slug, "review")); err == nil {
 				warns = append(warns, entityEvidenceLine("Warning", e, workflowDir, fmt.Sprintf(

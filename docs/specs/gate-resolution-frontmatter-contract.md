@@ -125,14 +125,23 @@ the gate, attempt, Briefing, Captain authority, digests, and room. It writes onl
 `gate-briefing.json` and `request.json` at preparation time. It copies no selected
 source, writes no association, and creates no provider subtree.
 
-Folder and flat entities share the same companion-room layout:
+The room layout is the same for both entity forms:
 
 ```text
 <state-root>/<slug>/review/<stage>/briefing-<attempt>/
 ```
 
-For folder form, the entity is `<slug>/index.md`; for flat form it is `<slug>.md` and
-`<slug>/` is its artifact companion. State commit and archive operations treat the flat
+but `room-ref` is written relative to the entity file's own directory, so folder form
+binds `./review/...` while flat form binds `./<slug>/review/...`. Only the folder-form
+ref is invariant under a later move of the entity. Preparation therefore refuses to
+create the first room beside a flat `<slug>.md`: for folder form the entity is
+`<slug>/index.md`, and for flat form `<slug>/` would be a companion whose refs break on
+conversion. Flat entities that already hold rooms are grandfathered, and their
+slug-prefixed refs stay correct while they stay flat; converting one requires
+`git mv <slug>.md <slug>/index.md` and rewriting every `room-ref: ./<slug>/` to
+`room-ref: ./` in the same commit, and `status --validate` reports both the
+grandfathered shape and any ref that stops resolving. State commit and archive
+operations continue to treat the flat
 Markdown plus companion directory as one literal path-scoped unit, including tracked
 deletions and rollback, without sweeping siblings.
 
