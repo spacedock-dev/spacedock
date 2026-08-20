@@ -1,7 +1,7 @@
 ---
 id: gf0jvhj4y8vjhd6ww62vsb2q
 title: Gate rooms make a flat entity a hybrid, and converting it breaks every later gate
-status: ideation
+status: implementation
 source: "Issue #739 (captain, 2026-08-20): gate prepare fails after a flat-to-folder conversion because a retained room-ref resolves relative to the new entity folder and duplicates the slug."
 started:
 completed:
@@ -65,7 +65,7 @@ gates:
                 reason: 'Captain: ''approve both''. Grandfathering approved, converter dropped on the field evidence that the repository which hit #739 converted by hand without difficulty. Approval ratifies +283 net against the 100 ceiling: production is +66, the numbers are measured on a green tree, and the two available cuts to ~150 both delete the checks on this design''s most likely later mistakes.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
