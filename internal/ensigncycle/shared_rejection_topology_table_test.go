@@ -113,10 +113,56 @@ func freshChainRoutes() []rejectionRoute {
 	}
 }
 
+// TestRejectionTopologyGreensRetainedRepeatChains is AC-1's value half. Run
+// 32270990171 graded 1/2: its Claude lane's fresh chain passed and its Codex lane's
+// reuse chain reddened with "owes 8 routing events, the run produced 10" while order
+// held, identity held, and every other durable oracle on that lane was green. Both
+// retained chains grade GREEN here, which is the 2/2.
+func TestRejectionTopologyGreensRetainedRepeatChains(t *testing.T) {
+	captured := codexCapturedRoutes(t)
+	// The repeat pair that run actually produced, at the position its retained digest
+	// records it: rows 4/5 of
+	// live-artifacts/codex/codex-shared-scenarios/rejection-flow/rejection-topology.tsv,
+	// `reuse validation` then `done validation` on the handle the validation stage
+	// opened. freshChainRoutes is that same run's Claude lane, handle names included.
+	reviewer := rejectionRoute{event: routeReuse, stage: "validation", target: captured[2].target}
+	for _, tc := range []struct {
+		name   string
+		branch rejectionBranch
+		routes []rejectionRoute
+	}{
+		{"retained codex reuse chain, the repeat before the rework (10 events)", rejectionBranchReuse, insertRound(captured, 4, reviewer)},
+		{"retained claude fresh chain (8 events)", rejectionBranchFresh, freshChainRoutes()},
+		// The budget is a TOTAL, so the same one round spent after the rework greens
+		// too. A bar that tolerated only the position already observed would be the
+		// position-fragile bar this entity exists to remove.
+		{"the same one round spent after the rework", rejectionBranchReuse, insertRound(captured, len(captured), reviewer)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := assertRejectionWorkerTopology(tc.branch, tc.routes); err != nil {
+				t.Fatalf("conforming chain graded red: %v\n%s", err, rejectionTopologySummary(tc.routes))
+			}
+		})
+	}
+}
+
+// insertRound splices a whole ROUND — a dispatch and the completion that closes it —
+// into a flat chain at `at`. A repeat has to enter as a pair: a dispatch without its
+// own completion is a different (unpairable) shape.
+func insertRound(routes []rejectionRoute, at int, dispatch rejectionRoute) []rejectionRoute {
+	out := append([]rejectionRoute(nil), routes[:at]...)
+	out = append(out, dispatch, rejectionRoute{event: routeDone, stage: dispatch.stage, target: dispatch.target})
+	return append(out, routes[at:]...)
+}
+
 // TestRejectionTopologyRedsNonConformingShapes is AC-2: every non-conforming shape in
-// hand reds, under the named code. Each case is stated as the route sequence it is,
-// mutated from the branch's conforming chain so exactly one property differs.
+// hand reds under the named code, and every red names the invariant it violated. A
+// single case greening here is the widened-bar failure this entity was warned about —
+// a permissive bar does not get investigated the way a false red does.
 func TestRejectionTopologyRedsNonConformingShapes(t *testing.T) {
+	captured := codexCapturedRoutes(t)
+	reviewer := rejectionRoute{event: routeReuse, stage: "validation", target: captured[2].target}
+	retained := insertRound(captured, 4, reviewer)
 	for _, tc := range []struct {
 		name   string
 		branch rejectionBranch
@@ -130,21 +176,33 @@ func TestRejectionTopologyRedsNonConformingShapes(t *testing.T) {
 			name:   "single-worker self-reviewing chain (preserved loop greens)",
 			branch: rejectionBranchReuse,
 			routes: selfReviewChainRoutes(),
-			want:   "owes spawn/validation at position 2",
+			want:   "the candidate was never reviewed",
+		},
+		{
+			name:   "the candidate ran and nothing else did",
+			branch: rejectionBranchReuse,
+			routes: captured[:2],
+			want:   "no validation round at all",
+		},
+		{
+			name:   "the review rejected and the rework was never routed",
+			branch: rejectionBranchReuse,
+			routes: captured[:4],
+			want:   "never routed as a rework",
 		},
 		{
 			// FO residual mode 2: the fix target is fresh-dispatched while the
 			// followup route to the live producer is available.
 			name:   "fresh rework while the followup route is live",
 			branch: rejectionBranchReuse,
-			routes: mutateRoute(codexCapturedRoutes(t), 4, func(r *rejectionRoute) { r.event = routeSpawn }),
-			want:   "owes reuse/implementation at position 4",
+			routes: mutateRoute(captured, 4, func(r *rejectionRoute) { r.event = routeSpawn }),
+			want:   "re-opened the implementation stage with a spawn",
 		},
 		{
 			name:   "re-review runs before the rework",
 			branch: rejectionBranchReuse,
-			routes: swapRoutes(codexCapturedRoutes(t), 4, 6),
-			want:   "owes reuse/implementation at position 4",
+			routes: swapRoutes(captured, 4, 6),
+			want:   "position 4 is not closed by its own completion",
 		},
 		{
 			// The routing reaches a validation-stage round, but the handle it reaches
@@ -153,19 +211,58 @@ func TestRejectionTopologyRedsNonConformingShapes(t *testing.T) {
 			name:   "cycle-2 re-review routed to the fix producer",
 			branch: rejectionBranchReuse,
 			routes: reviewerCollapsedRoutes(t),
-			want:   "the worker that produced the fix",
+			want:   "reviewing its own output is not the independent check",
+		},
+		{
+			// On the reuse branch a retargeted review usually trips handle
+			// consistency first, so independence also has to be proven where handle
+			// comparison is the ONLY check left.
+			name:   "fresh-branch chain whose reviews run on the producer",
+			branch: rejectionBranchFresh,
+			routes: freshSelfReviewRoutes(),
+			want:   "reviewing its own output is not the independent check",
 		},
 		{
 			name:   "no re-review after the rework",
 			branch: rejectionBranchReuse,
-			routes: codexCapturedRoutes(t)[:6],
-			want:   "owes 8 routing events, the run produced 6",
+			routes: captured[:6],
+			want:   "was never re-reviewed",
 		},
 		{
 			name:   "two validators spawned up front instead of one per round",
 			branch: rejectionBranchFresh,
 			routes: mutateRoute(freshChainRoutes(), 1, func(r *rejectionRoute) { r.event, r.stage = routeSpawn, "validation" }),
-			want:   "owes done/implementation at position 1",
+			want:   "position 0 is not closed by its own completion",
+		},
+		{
+			name:   "two repeated reviews in the same segment",
+			branch: rejectionBranchReuse,
+			routes: insertRound(retained, 4, reviewer),
+			want:   "repeated 2 validation rounds (3 before the rework",
+		},
+		{
+			// Split one per segment. The budget is a total, so this reds exactly as
+			// two in one segment do.
+			name:   "one repeated review on each side of the rework",
+			branch: rejectionBranchReuse,
+			routes: insertRound(retained, len(retained), reviewer),
+			want:   "repeated 2 validation rounds (2 before the rework",
+		},
+		{
+			// In a one-cycle journey a second rework means the first fix did not
+			// hold, which is the flailing the bar exists to keep red.
+			name:   "a second rework after the re-review",
+			branch: rejectionBranchReuse,
+			routes: insertRound(captured, len(captured), rejectionRoute{event: routeReuse, stage: "implementation", target: captured[0].target}),
+			want:   "opens a second rework",
+		},
+		{
+			// Widening the conforming set must not collapse the two branches: the
+			// 10-event reuse chain must not ALSO pass as the fail-safe fresh shape.
+			name:   "the retained reuse chain graded on the fresh branch",
+			branch: rejectionBranchFresh,
+			routes: retained,
+			want:   "took the fail-safe FRESH branch",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -183,8 +280,31 @@ func TestRejectionTopologyRedsNonConformingShapes(t *testing.T) {
 			if !strings.Contains(graded.Error(), tc.want) {
 				t.Errorf("detail = %q, want it to name %q", graded.Error(), tc.want)
 			}
+			// AC-2's other half, asserted on EVERY red rather than one of them: no
+			// diagnostic path may fall back to an owed-event count. That message is
+			// what made the retained live red unreadable — it named a number instead
+			// of a violated invariant, so no reader could tell a benign extra round
+			// from a broken journey without re-deriving the chain by hand.
+			for _, banned := range []string{"routing events", "owes 8"} {
+				if strings.Contains(graded.Error(), banned) {
+					t.Errorf("detail = %q fell back to the bare-count vocabulary %q", graded.Error(), banned)
+				}
+			}
 		})
 	}
+}
+
+// freshSelfReviewRoutes is the fresh branch's collapsed shape: four fresh spawns whose
+// validation rounds re-open the IMPLEMENTATION worker's name. Its routing is
+// internally conforming — every round after a stage's first is a fresh spawn — so only
+// the round-level independence check can catch it.
+func freshSelfReviewRoutes() []rejectionRoute {
+	routes := freshChainRoutes()
+	producer := routes[0].target
+	for i := range routes {
+		routes[i].target = producer
+	}
+	return routes
 }
 
 // selfReviewChainRoutes is the shape the two preserved composed-tree greens actually
@@ -204,20 +324,29 @@ func selfReviewChainRoutes() []rejectionRoute {
 }
 
 // reviewerCollapsedRoutes keeps the conforming chain's every event and stage, and
-// changes only WHICH handle the cycle-2 re-review reached: the fix producer's. It is
-// the case the ordered chain alone cannot catch.
+// changes only WHICH handle the validation rounds reached: the fix producer's. Both
+// events of each retargeted ROUND move together, because a dispatch to one worker
+// closed by another worker's completion is a different (unpairable) defect and no
+// extractor can emit it — the collapse this case is about is internally consistent,
+// which is exactly why only a round-level identity check catches it.
 func reviewerCollapsedRoutes(t *testing.T) []rejectionRoute {
 	t.Helper()
 	routes := codexCapturedRoutes(t)
 	producer := routes[4].target
-	return mutateRoute(mutateRoute(routes, 6, func(r *rejectionRoute) { r.target = producer }),
-		2, func(r *rejectionRoute) { r.target = producer })
+	retarget := func(r *rejectionRoute) { r.target = producer }
+	return mutateRound(mutateRound(routes, 6, retarget), 2, retarget)
 }
 
 func mutateRoute(routes []rejectionRoute, at int, mutate func(*rejectionRoute)) []rejectionRoute {
 	out := append([]rejectionRoute(nil), routes...)
 	mutate(&out[at])
 	return out
+}
+
+// mutateRound applies a mutation to a round's dispatch AND to the completion that
+// closes it, the pair being the unit the grammar reads.
+func mutateRound(routes []rejectionRoute, at int, mutate func(*rejectionRoute)) []rejectionRoute {
+	return mutateRoute(mutateRoute(routes, at, mutate), at+1, mutate)
 }
 
 func swapRoutes(routes []rejectionRoute, a, b int) []rejectionRoute {
