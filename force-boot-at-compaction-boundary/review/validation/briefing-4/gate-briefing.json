@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-4:revision-1",
+  "question": "Approve cycle 6 to terminal: the one-line reminder-payload correction is verified and the PR is updated in place?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/e3f343aa47a3c665afa4e386a98a570c6ffba97b/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:138d95139dd9cf2f2b799acb47b291c4a3e6504883f8f9c93bec99c796fb9c35",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 6 corrects the injected reminder text only (1 insertion, 1 deletion, 1 file; commit b461c703d). The payload now instructs re-binding at triggers and resuming the loop, matching the shared core's Compaction continuity clause, and never names the Startup procedure — the cycle-5 defect that would have demoted an engaged FO to a cold greet. Validation graded the rendered payload by executing the shipped script, confirmed the mechanism byte-identical to a30b963eb by blob hash, and reproduced all four ACs with their falsifiers. Recommend PASSED; the content-AC gap is surfaced for a separate decision."
+    }
+  ]
+}
