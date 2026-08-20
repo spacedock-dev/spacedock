@@ -75,6 +75,17 @@ gates:
                 digest: sha256:00c97f8084e975badc13cb71ae1a1d51950f17fe86d1b63ca83c511d119e3c50
                 request-digest: sha256:d0ea2a75218518ffc999df9beecf9290c0a0efa966ed08a69d2864d81b2cd966
                 room-ref: ./rejection-topology-count-bar/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:12zytd0ksb47r3g61qw1s5nc:validation:1
+                briefing: briefing:12zytd0ksb47r3g61qw1s5nc:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-20T03:42:46.61285Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve stack on PR''. Validation PASSED: all six ACs independently reproduced — the AC-1 baseline re-measured against the pre-change grader, both AC-6 lanes re-graded from retained digest bytes — and a seven-mutation battery showed every grammar clause load-bearing. Approval ratifies the disclosed surface overrun, which validation established is larger than the report framed: net code alone is +163 against a +155 ceiling. No condition forcing a return to ideation is present.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
