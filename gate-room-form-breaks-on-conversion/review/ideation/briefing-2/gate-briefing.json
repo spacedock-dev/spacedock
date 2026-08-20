@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gf0jvhj4y8vjhd6ww62vsb2q:ideation:attempt-2:revision-1",
+  "question": "Approve to implementation, ratifying +283 net against the 100 ceiling?",
+  "artifacts": [
+    {
+      "id": "artifact:gf0jvhj4y8vjhd6ww62vsb2q:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/d98277fbbbe5c987a882234a0d7991b42dd1f4ae/gate-room-form-breaks-on-conversion/index.md",
+      "rev": "sha256:1ffc36f04e0b0e8652e1ae8ffa41c8049504ad6f7a302f55be4c6846c930a81e",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 drops the converter on the captain's field evidence and grandfathers the closed set of 9 hybrids: refuse minting a new hybrid at gate prepare, and surface both the population and any unresolved retained ref through status --validate. Numbers are measured on a green tree, not projected: production +66, forced fixture churn +16, proving tests +201, total +283 across 11 files. It answers the ceiling with a plain no and declines the two cuts that would reach ~150, because both delete the checks on the mistakes this design is most likely to make later. Recommend approve, ratifying the deviation."
+    }
+  ]
+}

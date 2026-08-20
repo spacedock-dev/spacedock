@@ -49,6 +49,12 @@ gates:
                 at: "2026-08-20T18:16:57.802436Z"
                 decision: revise
                 reason: 'Captain: send it back. The repository and first officer that actually hit issue #739 converted and repaired the entity by hand with no difficulty, which contradicts the premise the converter rests on. Reprice with grandfathering as the primary option: refuse minting a NEW hybrid, leave the existing closed set alone, and make it visible with the validator warning. The 9 hybrids resolve correctly today and break only on conversion, so not converting them is a real option the design never weighed. Target under 100 net LOC.'
+            - id: gate-attempt:gf0jvhj4y8vjhd6ww62vsb2q-ideation-2
+              briefing:
+                id: briefing:gf0jvhj4y8vjhd6ww62vsb2q:ideation:attempt-2:revision-1
+                digest: sha256:12f0bae5b1bd133d005061d80d50dbd6de7ba4a2156afc5a9836ae1cd89837e8
+                request-digest: sha256:2528069ebf817b30c260f8544deffc9fc1584a9d1f8bac7748f4b8d211a89c68
+                room-ref: ./review/ideation/briefing-2
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
