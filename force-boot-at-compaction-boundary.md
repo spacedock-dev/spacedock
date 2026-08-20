@@ -140,6 +140,17 @@ gates:
                 digest: sha256:89b7537bd6f777586c5f416d6b612273464470bdb824b3b93c97e68c3c1766d1
                 request-digest: sha256:193c8eb473e511716629e8b3fefc1c8ef38091f9ff6e19575171563985a0820f
                 room-ref: ./force-boot-at-compaction-boundary/review/validation/briefing-5
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:4ctz4sfybfk0mfsbnrjcc7bv:validation:5
+                briefing: briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-5:revision-1
+                by: person:captain
+                at: "2026-08-20T19:27:24.731851Z"
+                decision: approve
+                reason: 'Captain: ''approve both''. Cycle 8 makes the matcher a value under test and widens it to compact and clear. Four mutants fail where two were invisible. Validation proved delivery at source=clear with a live instrumented run, closing the inference gap the widening opened, and closed cycle 7''s AC-1 finding. Net 241 against a 245 estimate. Carried, not blocking: the union assertion is under-constrained against a new source value, the payload is actionable after a clear by one sentence rather than by design, and no AC pins the payload''s instruction content.'
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 pr:
 ---
