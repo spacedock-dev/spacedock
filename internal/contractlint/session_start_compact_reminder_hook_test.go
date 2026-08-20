@@ -114,12 +114,12 @@ func TestSessionStartCompactReminderPluginRootFallbackResolves(t *testing.T) {
 }
 
 // TestSessionStartCompactReminderHookGate exercises the script's own
-// open/closed behavior, distinct from the parity invariant above: an unset
-// SPACEDOCK_BIN and a non-compact source both stay silent (external
-// properties), and the open row's payload is checked by property — valid
-// JSON, SessionStart event name, names the boot command — not by
-// byte-comparing the wording. Stdin malformation and field-typing
-// permutations are dropped: they test sed and test(1), not this invariant.
+// open/closed behavior, distinct from the parity invariant above: the script
+// gates on SPACEDOCK_BIN alone, and an open row's payload is checked by
+// property — valid JSON, SessionStart event name, names the boot command —
+// not by byte-comparing the wording. Source filtering belongs to the host
+// ^compact$ matcher pinned above; when the script re-implemented it with a
+// greedy sed, a nested "source" object silently suppressed the reminder.
 func TestSessionStartCompactReminderHookGate(t *testing.T) {
 	repo := repoRoot(t)
 	script := filepath.Join(repo, "hooks", "session_start_compact_reminder.sh")
@@ -140,7 +140,7 @@ func TestSessionStartCompactReminderHookGate(t *testing.T) {
 	}{
 		{"launcher-marked + source=compact emits the reminder", true, `{"session_id":"s1","hook_event_name":"SessionStart","source":"compact"}`, true},
 		{"no SPACEDOCK_BIN -> silent even on source=compact", false, `{"session_id":"s1","hook_event_name":"SessionStart","source":"compact"}`, false},
-		{"launcher-marked + source=startup -> silent", true, `{"session_id":"s1","hook_event_name":"SessionStart","source":"startup"}`, false},
+		{"launcher-marked emits whatever the payload says: a nested \"source\" no longer suppresses it", true, `{"session_id":"s1","hook_event_name":"SessionStart","source":"compact","extra":{"source":"startup"}}`, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
