@@ -3,11 +3,11 @@ id: gf0jvhj4y8vjhd6ww62vsb2q
 title: Gate rooms make a flat entity a hybrid, and converting it breaks every later gate
 status: implementation
 source: "Issue #739 (captain, 2026-08-20): gate prepare fails after a flat-to-folder conversion because a retained room-ref resolves relative to the new entity folder and duplicates the slug."
-started:
+started: 2026-08-20T19:59:06Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-gate-room-form-breaks-on-conversion
 issue: "#739"
 gates:
     version: 1
