@@ -55,6 +55,17 @@ gates:
                 digest: sha256:12f0bae5b1bd133d005061d80d50dbd6de7ba4a2156afc5a9836ae1cd89837e8
                 request-digest: sha256:2528069ebf817b30c260f8544deffc9fc1584a9d1f8bac7748f4b8d211a89c68
                 room-ref: ./review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gf0jvhj4y8vjhd6ww62vsb2q:ideation:2
+                briefing: briefing:gf0jvhj4y8vjhd6ww62vsb2q:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-20T19:27:53.006647Z"
+                decision: approve
+                reason: 'Captain: ''approve both''. Grandfathering approved, converter dropped on the field evidence that the repository which hit #739 converted by hand without difficulty. Approval ratifies +283 net against the 100 ceiling: production is +66, the numbers are measured on a green tree, and the two available cuts to ~150 both delete the checks on this design''s most likely later mistakes.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
