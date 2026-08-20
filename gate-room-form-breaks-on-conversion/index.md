@@ -9,6 +9,18 @@ verdict:
 score:
 worktree:
 issue: "#739"
+gates:
+    version: 1
+    records:
+        - id: gate:gf0jvhj4y8vjhd6ww62vsb2q:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:gf0jvhj4y8vjhd6ww62vsb2q-backlog-1
+              briefing:
+                id: briefing:gf0jvhj4y8vjhd6ww62vsb2q:backlog:attempt-1:revision-1
+                digest: sha256:2539b1d74e3671d51fc174a7b96ef4a4368e4ad0807828c8a567b02bb113ec08
+                request-digest: sha256:6ba250fdd78031eabba8a169306935a272bb9c6d734c72192e859adfd856c308
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.

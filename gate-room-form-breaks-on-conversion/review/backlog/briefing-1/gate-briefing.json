@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gf0jvhj4y8vjhd6ww62vsb2q:backlog:attempt-1:revision-1",
+  "question": "Approve to ideation: shape the fix for gate rooms making a flat entity a hybrid?",
+  "artifacts": [
+    {
+      "id": "artifact:gf0jvhj4y8vjhd6ww62vsb2q:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/cd2b0f6bd3af021cb1587e7325c0c85178cd9771/gate-room-form-breaks-on-conversion/index.md",
+      "rev": "sha256:de158581244bd7735a429c9f20d30a5a7c3b681c39a59092a61aa1bb599d1990",
+      "mediaType": "text/markdown",
+      "summary": "A retained room-ref is written relative to the entity file's directory, so converting flat to folder resolves every ref to \u003cslug\u003e/\u003cslug\u003e/review/... and one consumed historical attempt makes all later gates unpreparable (io.go:207). The deeper fault is the form: gate prepare on a flat entity creates a \u003cslug\u003e/ directory beside \u003cslug\u003e.md, and all 10 flat gated entities here are already that hybrid. gate record --round already refuses non-folder form for this exact reason (operation.go:108), and the validator already rejects both-forms slugs but not flat-plus-rooms. Ideation weighs enforce-and-migrate at prepare against tolerant read-side resolution."
+    }
+  ]
+}
