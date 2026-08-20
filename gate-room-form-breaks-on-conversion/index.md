@@ -314,3 +314,53 @@ Population confirmed unchanged in kind but grown by one since the spike: the 9 h
 Inherited the prior worker's uncommitted tree, verified every hunk against the five ACs before committing it, and found one real defect — reversed comment paragraphs in `gateValidationDiagnostics` — which is fixed. The named risk did not materialize: all three flat-with-rooms entities at validation gates prepare at exit 0 under the guard, proven against clones of both real repos with history so the retained rooms' `git-root` selected sources still resolve, with every pre-existing retained file byte-identical afterward.
 
 Two things a reviewer should weigh. The strongest new evidence is the read-only live diff against the unmodified `main` binary: this change adds exactly 9 `--validate` lines and removes none, which is AC-3's "and nothing else" measured rather than asserted. Separately, the first non-race full run showed 3 timing failures in `internal/ensigncycle` (Codex 250ms no-progress budget) that are not attributable — the package is green in isolation with this change present (291s alone against 522s under full-suite load) and green under the `-race` full suite, so the failures need CPU contention, not this diff. `internal/ensigncycle` does import both changed packages, so this was established behaviorally rather than by import graph.
+
+## Stage Report: validation
+
+- DONE: Reproduce each AC's cited evidence, re-running the named falsifiers on a throwaway checkout and confirming each reds exactly its claimed cases
+  All five ACs reproduced on a throwaway clone at `2fcaa35e5`, diffed against the stack parent `8f29ad577` (stricter isolation than "unmodified main" — it excludes #743/#738). Eleven mutations run; ten red exactly their claimed case, one does not (finding 1).
+- DONE: Independently confirm the three live entities still prepare and that the nine hybrids' retained files were untouched, from this run's evidence
+  Reproduced from room contents in a fresh clone of both repos at live state HEAD `3a5081022`: all three prepare at exit 0 binding `validation/briefing-6`, `briefing-1`, `briefing-2` — the exact attempts live state would next mint — each with a slug-prefixed `./<slug>/review/validation/briefing-N` ref. Of 66 pre-existing retained files across the 9 hybrids, path-keyed sha256 gives **0 changed, 0 vanished, 6 added** (only the three new rooms' `gate-briefing.json` + `request.json`).
+- DONE: Judge the crash-inheritance chain: the diff was applied from a spike whose measuring session died, verified by a successor — decide whether any hunk still lacks an owner who checked it against its AC
+  Twelve of 13 hunks have an owner who checked them against an AC by exercise. One did not and now does: `internal/gates/operation.go`'s `--round` remedy text is covered by no AC and asserted by no test (finding 2). I exercised it directly against both binaries.
+
+### Falsifier mutation matrix
+
+Each row mutates source in the throwaway checkout and re-runs the named test.
+
+- **AC-1** guard deleted -> `new-companion-refused` FAILS. Guard moved below every mutation (before the final return) -> FAILS. Guard moved directly after `lockEntity` -> **still PASSES** (finding 1).
+- **AC-2** grandfathering early-return deleted -> `existing-rooms-grandfathered` FAILS. `relativeRoomRef` "corrected" to strip the slug prefix -> FAILS while `new-companion-refused` stays green, so the branches are independent.
+- **AC-3** literal `git mv` token removed -> remedy test FAILS; the `room-ref` rewrite clause removed -> FAILS; finding made to fire on folder form -> FAILS. Note the flat-form check alone is not falsifiable: the stat path `<dir>/<slug>/review` is itself form-dependent, so deleting the `index.md` condition changes no behavior. A genuine folder-form firing required editing both.
+- **AC-4** hybrid finding relocated into `findEntityFormConflicts` (the placement cycle 1 measured as exiting 1) -> `TestHybridFindingLeavesPlainStatusReadPathUnaffected` FAILS. Claimed falsifier accurate.
+- **AC-5** `unresolvedRoomRefs` forced to nil -> FAILS; forced to report every ref -> FAILS. Falsifiable in both the under- and over-reporting directions.
+
+### Live evidence (read-only against the live workflow)
+
+- **AC-3** `--validate` stderr diffed between the two binaries: exactly **9 lines added, 0 removed**, 9 distinct slugs, all 9 carrying both remedy halves; stdout byte-identical; both exit 0.
+- **AC-4** plain `status`: both binaries exit 0 with **0 bytes of stderr** and byte-identical stdout.
+- **AC-5** live baseline **0 unresolved refs**. Population recounted independently: 122 flat, 68 folder, 10 flat carry `gates:`, 9 are hybrids holding **34** refs — confirming the implementation's corrected 34 against the spike's 33.
+- **AC-1** live: stripping `merge-guard-requires-preceding-report`'s companion in the clone makes prepare exit 1 with the folder-form message, mints no companion, leaves the tree entry-list identical, and leaves **no `.gates.lock` residue**.
+- Placement read directly: everything above `prepare.go:95` is pure input validation, and the guard precedes `lockEntity` — itself the first byte-writing call (`<entity>.gates.lock`).
+
+### Reviewer findings
+
+1. **Polish (evidence defect) — AC-1's cited falsifier overstates by one clause.** AC-1 claims the test "Fails if the guard is removed, or if it is placed after any mutation **or after the entity lock**." The final clause is false: moving the guard directly below `lockEntity` leaves both branches green. It is also harmless — `lockEntity` creates `<entity>.gates.lock` and the deferred `unlock()` removes it, so a refusal there still leaves the tree entry- and digest-identical, which is what AC-1's value claim actually asserts. The mutation that would violate that claim (guard below room publication) does red the test. No value AC fails. Promote to material only if `lockEntity` ever leaves durable residue on its error path.
+2. **Polish — one hunk carried no AC and no assertion.** `internal/gates/operation.go`'s new `gate record --round` remedy text is asserted by no test; the only `requires folder-form entity` assertion in the tree is `prepare_test.go:1132`, which asserts the *prepare* message. Its prior owner-check was "the suite is green", which cannot fail for an unasserted string. Exercised live: base prints the bare refusal, the guard binary appends the two-part remedy, using the same literal `<slug>` placeholder style as the pre-existing half of that message. Correct as written; no user-visible loss.
+
+### Checks run
+
+`go test ./... -race` on the throwaway checkout: **19 packages green**, including `internal/ensigncycle` (290s, the package the implementation flagged for non-race timing flakes). The only failure is `TestCodexResolveManifestAgainstInstalledHost` in `internal/cli`, which I confirmed fails identically at base commit `8f29ad577` without the change — machine-local, not attributable. **Zero data races.** `gofmt -l ./cmd ./internal` clean. Surface re-measured at 13 files, +312/-20, **net +292** against the declared +283 +/-40 and 13 +/-2 — within tolerance.
+
+Fixture churn reviewed for strength loss rather than just greenness: `grandfatherFlatRooms` adds a tracked `<slug>/review/.gitkeep`, and the two assertions that previously read "no `<slug>/` companion exists" now read "no `<slug>/review/<stage>` room exists" — the necessary narrowing once the fixture must hold a companion. `TestPrepareRejectsSymlinkedFlatCompanionWithoutChangingBytes` is not short-circuited by the guard: it creates `external/review` so the guard grandfathers, and still asserts the error contains `symlink`.
+
+### Recommendation
+
+**PASSED.** All five ACs carry valid, independently reproduced evidence and no material finding remains. The two polish findings above are non-blocking and neither consumes a feedback cycle.
+
+### Summary
+
+Reproduced all five ACs on a throwaway clone rather than reading them off the report, and re-derived every live number independently: 9 hybrids, 34 refs, 0 unresolved, exactly 9 added `--validate` lines, plain `status` byte-identical. AC-2's byte-identity claim was re-verified from room contents — 66 retained files, 0 changed, 0 vanished, 6 added — after reproducing all three live prepares at their exact claimed attempt numbers.
+
+The dispatch's armed-gate-state concern is resolved: those prepares never touched live state. Live `define-fo` still tops out at `validation/briefing-5`, `preserve-pi` at `validation/briefing-1` (superseded), `merge-guard` holds no validation room, and the state checkout is clean. The implementation ran them in clones, and the attempt numbers it reported are exactly what live state would next mint — which corroborates that those clones were faithful rather than contradicting the report.
+
+On the crash-inheritance chain the concern was justified but narrow. Ten of eleven claimed falsifiers red exactly their stated case under mutation, so the AC-to-test bindings are real rather than asserted. Only two hunks rested on "tests pass" alone: the `--round` message, which no test asserts and which I exercised directly, and AC-1's lock-placement clause, which no test can red and which needs none.
