@@ -159,8 +159,8 @@ func TestGatePrepareCLIRejectsSummaryCardinalityAndEncodingBeforeMutation(t *tes
 			if !bytes.Equal(before, after) {
 				t.Fatal("rejected summary changed entity")
 			}
-			if _, err := os.Stat(filepath.Join(state, "task")); !os.IsNotExist(err) {
-				t.Fatalf("rejected summary created companion room: %v", err)
+			if _, err := os.Stat(filepath.Join(state, "task", "review", "validation")); !os.IsNotExist(err) {
+				t.Fatalf("rejected summary created a room: %v", err)
 			}
 		})
 	}
@@ -186,6 +186,7 @@ func gatePrepareCLIFixture(t *testing.T) (workflow, state, artifact string) {
 		t.Fatal(err)
 	}
 	testgit.InitRepo(t, state, "-q")
+	grandfatherFlatRooms(t, state, "task")
 	writeFile(t, filepath.Join(state, "task.md"), "---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	git(t, state, "add", ".")
 	git(t, state, "commit", "-q", "-m", "state fixture")
@@ -421,6 +422,7 @@ func TestRemovedGateVerbsAreAbsentAndSideEffectFree(t *testing.T) {
 func TestGateRecordRejectsNonRoundBriefing(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), "---\ncommissioned-by: spacedock@1\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n---\n# Workflow\n")
+	grandfatherFlatRooms(t, root, "task")
 	writeFile(t, filepath.Join(root, "task.md"), "---\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	var out, errOut bytes.Buffer
 	code := run(context.Background(), []string{"gate", "record", "task", "--briefing", "briefing.json", "--workflow-dir", root}, nil, root, nil, &out, &errOut, &status.NativeRunner{}, nil)

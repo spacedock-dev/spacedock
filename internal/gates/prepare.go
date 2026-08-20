@@ -92,6 +92,9 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, fmt.Errorf("resolve entity: %w", err)
 	}
+	if err := refuseNewFlatCompanion(entityPath); err != nil {
+		return PrepareResult{}, err
+	}
 	unlock, err := lockEntity(entityPath)
 	if err != nil {
 		return PrepareResult{}, err
@@ -651,6 +654,24 @@ func validatePreparedStage(workflowDir, stage string) error {
 		return fmt.Errorf("workflow stage %s is not an actionable gate", stage)
 	}
 	return nil
+}
+
+// refuseNewFlatCompanion refuses to create the first prepared room beside a flat
+// entity. A room lands at <state>/<slug>/review/..., so preparing beside
+// <slug>.md puts a <slug>/ companion next to it and writes refs relative to the
+// state root as ./<slug>/review/... — refs that break the moment the entity
+// becomes <slug>/index.md. An entity that already holds rooms is grandfathered:
+// its refs are correct for its current form, and refusing here would strand a
+// working gate rather than protect anything.
+func refuseNewFlatCompanion(entityPath string) error {
+	if filepath.Base(entityPath) == "index.md" {
+		return nil
+	}
+	slug := entitySlug(entityPath)
+	if _, err := os.Stat(filepath.Join(filepath.Dir(entityPath), slug, "review")); err == nil {
+		return nil
+	}
+	return fmt.Errorf("gate prepare requires folder-form entity %s/index.md because review artifacts accumulate beside the entity; file it as %s/index.md, or move it with `git mv %s.md %s/index.md`", slug, slug, slug, slug)
 }
 
 func preparedRoomPath(entityPath, stage string, attempt int) (string, error) {

@@ -774,6 +774,9 @@ func TestPrepareRejectsSymlinkedFlatCompanionWithoutChangingBytes(t *testing.T) 
 		t.Fatal(err)
 	}
 	companion := filepath.Join(state, "task")
+	if err := os.RemoveAll(companion); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.Symlink(external, companion); err != nil {
 		t.Fatal(err)
 	}
@@ -833,8 +836,8 @@ func TestPrepareRejectsUnsafeOrUndefinedStatusBeforePublishing(t *testing.T) {
 			}); err == nil || !strings.Contains(err.Error(), "workflow stage") {
 				t.Fatalf("status %q error=%v", status, err)
 			}
-			if _, err := os.Stat(filepath.Join(state, "task")); !os.IsNotExist(err) {
-				t.Fatalf("status %q published a flat companion: %v", status, err)
+			if _, err := os.Stat(filepath.Join(state, "task", "review", "validation")); !os.IsNotExist(err) {
+				t.Fatalf("status %q published a room: %v", status, err)
 			}
 			if _, err := os.Stat(filepath.Join(filepath.Dir(state), "outside")); !os.IsNotExist(err) {
 				t.Fatalf("status %q escaped the state root: %v", status, err)
@@ -858,9 +861,9 @@ func TestPrepareRollsBackPublishedRoomAfterBindingWriteFailure(t *testing.T) {
 	t.Cleanup(func() { prepareWriteBinding = original })
 
 	for _, preexistingHome := range []bool{false, true} {
-		t.Run(map[bool]string{false: "new-home", true: "preexisting-home"}[preexistingHome], func(t *testing.T) {
-			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
-			home := filepath.Join(state, "task")
+		t.Run(map[bool]string{false: "new-review-root", true: "preexisting-review-root"}[preexistingHome], func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+			home := filepath.Join(state, "task", "review")
 			if preexistingHome {
 				if err := os.Mkdir(home, 0o755); err != nil {
 					t.Fatal(err)
@@ -878,15 +881,15 @@ func TestPrepareRollsBackPublishedRoomAfterBindingWriteFailure(t *testing.T) {
 			}); !os.IsPermission(err) {
 				t.Fatalf("post-publication error=%v, want permission failure", err)
 			}
-			if _, err := os.Stat(filepath.Join(home, "review")); !os.IsNotExist(err) {
+			if _, err := os.Stat(filepath.Join(home, "validation")); !os.IsNotExist(err) {
 				t.Fatalf("rollback retained review parents: %v", err)
 			}
 			_, homeErr := os.Stat(home)
 			if preexistingHome && homeErr != nil {
-				t.Fatalf("rollback removed pre-existing home: %v", homeErr)
+				t.Fatalf("rollback removed pre-existing review root: %v", homeErr)
 			}
 			if !preexistingHome && !os.IsNotExist(homeErr) {
-				t.Fatalf("rollback retained newly created home: %v", homeErr)
+				t.Fatalf("rollback retained newly created review root: %v", homeErr)
 			}
 			after, err := os.ReadFile(entity)
 			if err != nil {
@@ -1027,7 +1030,12 @@ func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifac
 	case "folder":
 		entity = filepath.Join(state, "task", "index.md")
 	case "flat":
+		// Grandfathered: gate prepare refuses to create the FIRST room beside a
+		// flat entity, so a flat fixture that prepares must already hold one.
 		entity = filepath.Join(state, "task.md")
+		if err := os.MkdirAll(filepath.Join(state, "task", "review"), 0o755); err != nil {
+			t.Fatal(err)
+		}
 	default:
 		t.Fatalf("unknown form %s", form)
 	}
@@ -1064,4 +1072,72 @@ func prepareGitOutput(t *testing.T, dir string, args ...string) string {
 		t.Fatalf("git %s: %v", strings.Join(args, " "), err)
 	}
 	return string(out)
+}
+
+// TestPrepareRefusesNewFlatCompanionAndGrandfathersExistingRooms is the whole
+// defect: a room beside a flat entity writes a ./<slug>/review/... ref that
+// breaks if the entity ever becomes <slug>/index.md. Minting a new one is
+// refused; an entity that already holds rooms keeps working, because its refs
+// are correct for the form it is in.
+func TestPrepareRefusesNewFlatCompanionAndGrandfathersExistingRooms(t *testing.T) {
+	for _, grandfathered := range []bool{false, true} {
+		name := map[bool]string{false: "new-companion-refused", true: "existing-rooms-grandfathered"}[grandfathered]
+		t.Run(name, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
+			// Re-shape the folder fixture as a flat entity, with or without the
+			// companion that marks it as already holding rooms.
+			flat := filepath.Join(state, "task.md")
+			body, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(flat, body, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.RemoveAll(filepath.Join(state, "task")); err != nil {
+				t.Fatal(err)
+			}
+			if grandfathered {
+				if err := os.MkdirAll(filepath.Join(state, "task", "review"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			prepareGitRun(t, state, "add", "-A")
+			prepareGitRun(t, state, "commit", "-q", "-m", "flat entity")
+			before := prepareTreeSnapshot(t, state)
+
+			result, err := Prepare(flat, PrepareInput{
+				WorkflowDir: workflow, Question: "Review?", Artifact: artifact, Summary: "summary",
+			})
+			if grandfathered {
+				if err != nil {
+					t.Fatalf("grandfathered flat entity refused: %v", err)
+				}
+				wantRoom := filepath.Join(state, "task", "review", "validation", "briefing-1")
+				if result.Room != wantRoom {
+					t.Fatalf("room=%q want %q", result.Room, wantRoom)
+				}
+				doc, _, err := Read(flat)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// The grandfathered ref is still slug-prefixed. That is correct
+				// for flat form and is exactly what a later conversion must
+				// rewrite; the validator warning carries that instruction.
+				if got := doc.Records[0].Attempts[0].Briefing.RoomRef; got != "./task/review/validation/briefing-1" {
+					t.Fatalf("grandfathered room-ref=%q", got)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), "requires folder-form entity task/index.md") {
+				t.Fatalf("new flat companion error=%v", err)
+			}
+			if got := prepareTreeSnapshot(t, state); got != before {
+				t.Fatal("refusal changed the state tree")
+			}
+			if _, statErr := os.Stat(filepath.Join(state, "task")); !os.IsNotExist(statErr) {
+				t.Fatalf("refusal minted a companion: %v", statErr)
+			}
+		})
+	}
 }

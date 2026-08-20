@@ -56,6 +56,7 @@ func terminalCLIWorkflow(t *testing.T, opts terminalWorkflowOpts) (root, entity 
 		writeFileWithDirs(t, filepath.Join(root, "_mods", opts.hook+".md"), "---\nname: "+opts.hook+"\ndescription: stub merge hook.\n---\n\n# "+opts.hook+"\n\n## Hook: merge\n\n(stub — registration only)\n")
 	}
 	writeFile(t, filepath.Join(root, "gate-review.md"), "# Review\n")
+	grandfatherFlatRooms(t, root, "task")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	testgit.InitRepo(t, root, "-q")
@@ -140,6 +141,7 @@ func consumedNonterminalWorkflow(t *testing.T) (root, entity string) {
 		"    - name: implementation\n"+
 		"    - name: done\n      terminal: true\n---\n# Workflow\n")
 	writeFile(t, filepath.Join(root, "gate-review.md"), "# Review\n")
+	grandfatherFlatRooms(t, root, "task")
 	entity = filepath.Join(root, "task.md")
 	writeFile(t, entity, "---\nid: task\nstatus: review\ntitle: Task\n---\n# Task\n")
 	testgit.InitRepo(t, root, "-q")

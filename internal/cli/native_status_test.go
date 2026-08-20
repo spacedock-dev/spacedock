@@ -73,6 +73,15 @@ func TestRunDefaultsToNativeRunner(t *testing.T) {
 	}
 }
 
+// grandfatherFlatRooms gives a flat fixture entity the prepared-room companion
+// that gate prepare now requires. The guard refuses to create the FIRST room
+// beside a flat entity and grandfathers one that already holds rooms; the
+// placeholder is a tracked file so the companion survives a clone.
+func grandfatherFlatRooms(t *testing.T, dir, slug string) {
+	t.Helper()
+	writeFileWithDirs(t, filepath.Join(dir, slug, "review", ".gitkeep"), "")
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
