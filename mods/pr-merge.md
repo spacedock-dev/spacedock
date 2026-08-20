@@ -74,6 +74,8 @@ Then invoke `gh pr create` against the resolved code repository with title, bran
 
 Read this section only when the candidate is one layer of a stack.
 
+**A stack exists so one expensive check run at the tip proves every layer beneath it.** The tip's tree contains all of them, so a green tip is evidence for the whole stack, and a middle layer's own lanes prove one layer in isolation at the same cost. Approve checks at the tip. When a middle layer needs its own run for any reason, ask the captain and name what that run can falsify that the tip cannot.
+
 Run `gh skill preview github/gh-stack gh-stack` and follow it for every `gh stack` mechanic. This ceremony overrides it three times:
 
 - Do NOT use `gh stack submit`. It auto-generates the title, so the approved bytes never reach GitHub. Create each layer with the `gh pr create` call above, then join them with `gh stack link`.
@@ -111,6 +113,8 @@ Branch a layer only from a parent that already holds committed work. Do not buil
 The rule against force operations above governs a two-writer content conflict on the candidate, and it still holds. This push rewrites one layer branch the ceremony owns, after a clean rebase.
 
 **After a link, confirm each PR's base with `gh pr view {N} --repo "$CODE_REPO" --json baseRefName`.** `gh stack link` reports success when GitHub refused the change, and it rewrites bases to fit its own chain. Stack membership is display only.
+
+**Read check results only after they appear.** A new PR reports no checks for a short time after a create or a push, and an empty list does not prove the repository runs none. Wait 30 seconds and query again. After three empty results, report and stop. Do NOT start a second run to compensate: a duplicate spends the same resources twice and does not attach to the PR.
 
 **A top layer is complete** when its base is the trunk and `git -C {worktree} log --oneline "$TRUNK_SHA..$LAYER_HEAD"` lists only its own commits. A squash-merged parent passes the ancestry condition while the layer still carries the parent's original commits.
 
