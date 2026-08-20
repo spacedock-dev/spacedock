@@ -1,11 +1,11 @@
 ---
 id: 12zytd0ksb47r3g61qw1s5nc
 title: The rejection topology bar counts routing events instead of judging conduct
-status: validation
+status: done
 source: "Captain CL, 2026-08-19, after PR #736's live lane reddened on both hosts and neither red was attributable to the diff. Failing assertion: codex-live rejection-flow, observed=[rejection-worker-topology], 'the reuse branch owes 8 routing events, the run produced 10'. Retained evidence preserved at /tmp/9g-evidence (run 32270990171) and readable in each host's rejection-topology.tsv."
 started: 2026-08-19T18:17:48Z
-completed:
-verdict:
+completed: 2026-08-20T16:47:29Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-rejection-topology-count-bar
 issue:
@@ -85,9 +85,10 @@ gates:
                 reason: 'Captain approved in chat: ''approve stack on PR''. Validation PASSED: all six ACs independently reproduced — the AC-1 baseline re-measured against the pre-change grader, both AC-6 lanes re-graded from retained digest bytes — and a seven-mutation battery showed every grammar clause load-bearing. Approval ratifies the disclosed surface overrun, which validation established is larger than the report framed: net code alone is +163 against a +155 ceiling. No condition forcing a return to ideation is present.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:741
+archived: 2026-08-20T16:47:29Z
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
