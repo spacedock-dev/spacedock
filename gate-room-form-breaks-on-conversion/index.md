@@ -66,6 +66,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:gf0jvhj4y8vjhd6ww62vsb2q:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:gf0jvhj4y8vjhd6ww62vsb2q-validation-1
+              briefing:
+                id: briefing:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-1:revision-1
+                digest: sha256:b55953e69b3b4706f163d8f85aac9f68f128e0e7b409a6a6d83d1f68fd3ba28e
+                request-digest: sha256:4f75ec56794b9aa8c3671a97541036b7760c94bfaf04631a535142414fdc9d2f
+                room-ref: ./review/validation/briefing-1
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.

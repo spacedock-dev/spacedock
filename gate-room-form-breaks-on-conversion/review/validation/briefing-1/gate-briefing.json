@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-1:revision-1",
+  "question": "Approve to terminal: refuse minting a new hybrid, grandfather the nine?",
+  "artifacts": [
+    {
+      "id": "artifact:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/49ee4b62a37111487a66829d2f016e6fc2333935/gate-room-form-breaks-on-conversion/index.md",
+      "rev": "sha256:206967172c563f166580a9e6f93574d47b46b21ce1cfaea3c175f57c7947bab4",
+      "mediaType": "text/markdown",
+      "summary": "gate prepare now refuses to create a room beside a flat entity while the nine existing hybrids still prepare unchanged, and status --validate surfaces both the hybrid population and any retained ref that no longer resolves as warn-tier findings that leave plain status at exit 0. Validation reproduced all five ACs on a throwaway clone and re-derived every live number independently: 9 hybrids, 34 refs, 0 unresolved, exactly 9 added --validate lines, 66 retained files unchanged after reproducing all three live prepares in clones. Surface 13 files, +312/-20, net 292 against the ratified 283 plus-or-minus 40. Two polish findings, no material finding."
+    }
+  ]
+}
