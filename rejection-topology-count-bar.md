@@ -87,7 +87,7 @@ gates:
                 target-stage: done
                 state: pending
 mod-block: merge:pr-merge
-pr: "#741"
+pr: pr-merge:741
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
