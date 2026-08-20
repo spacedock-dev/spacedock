@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:12zytd0ksb47r3g61qw1s5nc:validation:attempt-1:revision-1",
+  "question": "Approve to terminal, ratifying the disclosed surface overrun past declared tolerance?",
+  "artifacts": [
+    {
+      "id": "artifact:12zytd0ksb47r3g61qw1s5nc:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9f7097f1359510096a787d791ba3af5ca08e17a8/rejection-topology-count-bar.md",
+      "rev": "sha256:ad95e806919e1e43685be62a28d9b554f651202213667c4a45958fd63e8db992",
+      "mediaType": "text/markdown",
+      "summary": "The grammar replaces the hardcoded four-rounds-by-two-events chain with round parsing, a one-repeat budget, branch-keyed routing and round-level reviewer independence; every red names its violated invariant instead of a bare count. Validation reproduced all six ACs independently — re-measuring the AC-1 baseline against the pre-change grader and re-grading both AC-6 lanes from retained digest bytes — and ran a seven-mutation battery showing every clause load-bearing. It partially refuted the worker's own overrun account: net code alone is +163, past the declared +155 ceiling, so the overrun is real growth rather than a comment artifact. No condition forcing a return to ideation is present. Recommend PASSED with captain ratification of the tolerance deviation."
+    }
+  ]
+}

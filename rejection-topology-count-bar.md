@@ -66,6 +66,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:12zytd0ksb47r3g61qw1s5nc:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:12zytd0ksb47r3g61qw1s5nc-validation-1
+              briefing:
+                id: briefing:12zytd0ksb47r3g61qw1s5nc:validation:attempt-1:revision-1
+                digest: sha256:00c97f8084e975badc13cb71ae1a1d51950f17fe86d1b63ca83c511d119e3c50
+                request-digest: sha256:d0ea2a75218518ffc999df9beecf9290c0a0efa966ed08a69d2864d81b2cd966
+                room-ref: ./rejection-topology-count-bar/review/validation/briefing-1
 ---
 
 `rejection-worker-topology` grades the rejection journey by counting routing events against an exact number. On the reuse branch that number is 8. A First Officer that ran one extra review round produced 10 and graded RED.
