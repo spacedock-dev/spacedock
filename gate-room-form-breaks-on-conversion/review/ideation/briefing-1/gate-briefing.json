@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gf0jvhj4y8vjhd6ww62vsb2q:ideation:attempt-1:revision-1",
+  "question": "Reprice against grandfathering: is the migration command needed at all?",
+  "artifacts": [
+    {
+      "id": "artifact:gf0jvhj4y8vjhd6ww62vsb2q:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/465742fa1547cd1d14b0c302c7f6cb7ff1872f98/gate-room-form-breaks-on-conversion/index.md",
+      "rev": "sha256:48508bf7111efc0d683c2db66212d71fe95e961f984fe1acb3e95dde7511d497",
+      "mediaType": "text/markdown",
+      "summary": "Ideation returned +595 net across 22 files, of which 492 (83%) is a new spacedock convert command and its tests. The defect itself closes in +5 (the Prepare guard) plus +22 (the validator warning). The design rejected doing nothing on the grounds that a hand git mv destroys 33 retained refs and the rewrite half is forgettable. The captain reports the opposite from the field: the repository and first officer that actually hit issue #739 converted and repaired it by hand without difficulty. Reprice with grandfathering as the primary option."
+    }
+  ]
+}

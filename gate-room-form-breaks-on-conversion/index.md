@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:gf0jvhj4y8vjhd6ww62vsb2q:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:gf0jvhj4y8vjhd6ww62vsb2q-ideation-1
+              briefing:
+                id: briefing:gf0jvhj4y8vjhd6ww62vsb2q:ideation:attempt-1:revision-1
+                digest: sha256:5d1488086867e2d3e03308bdf01c5b01bee2b84dbefbba97689a5dc5857b8df8
+                request-digest: sha256:b0078af8601623d5a540a5af924d0b26b18eb6c1419be1df54e43dea8caf9780
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
