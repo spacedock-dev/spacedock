@@ -227,13 +227,25 @@ Stated plainly, because the answer to "is it survivable" depends on it being sta
 
 That is the one thing the second finding exists for, and with it the residual is survivable: the population is closed at 9, every one works today, conversion is never required, and if someone converts anyway the mistake surfaces as a validate-time line instead of a blocked ceremony.
 
+## Cycle 2 narrowing: the workflow declares the form
+
+Cycle 1 shipped the refusal unconditional, and it refused the shipped default. `--folder` is opt-in on `spacedock new`, so a flat entity holding no rooms is what filing mints, and both live lanes reddened when the fixture workflow's first gate met the guard. The captain's rule: refuse only where the WORKFLOW declares the form.
+
+A workflow declares it as `entity-form: folder` in README frontmatter — the sibling of `entity-type`, `entity-label`, and `id-style`. Preparation only READS the key. `qpa` (`workflow-declared-entity-form`) owns the commission-time parameter and the `spacedock new` default; nothing here writes the key, and no workflow in this repo declares it yet.
+
+- Workflow declares folder form, entity is flat and holds no rooms → refuse, with the two-part remedy.
+- Workflow declares nothing → allow either shape, no refusal. This is every workflow today, including every live fixture.
+- An unreadable or unparseable README is not a declaration. `validatePreparedStage` reads the same file a few lines later and owns that error, so the guard introduces no new failure mode.
+
+**Grandfathering is kept, and the reason changed.** Under the unconditional guard it protected the 9 hybrids from a rule they never opted into. Under the declaration it protects them from a rule a workflow opts into later — which is the concrete next step here, since `docs/dev` is both the most likely first workflow to declare `entity-form: folder` and the one holding all 9 hybrids, 3 of them at active validation gates. Without the branch, adding one README line arms a gate failure that fires at each hybrid's next gate: green now, blocked later, which is exactly #739's shape and the thing this task exists to remove. The branch costs four production lines and one test case now that the declaration removed all its fixture churn. `status --validate` still names every hybrid with the full conversion remedy, so the declaration is not silent about them — it just does not block them.
+
 ## Acceptance criteria
 
-**AC-1 (value — prevention).** The number of new hybrids `spacedock` can create is zero: on a flat entity with no `<slug>/review/`, `gate prepare` exits nonzero, the state tree is entry- and digest-identical before and after, and no `<slug>/` directory appears.
-*Test:* `TestPrepareRefusesNewFlatCompanionAndGrandfathersExistingRooms/new-companion-refused` asserts the refusal text, `prepareTreeSnapshot` equality, and the companion's absence. Fails if the guard is removed, or if it is placed after any mutation or after the entity lock.
+**AC-1 (value — prevention, where the workflow asked for it).** `spacedock` mints no new hybrid in a workflow that declares folder form, and refuses nothing in a workflow that does not. Where the README declares `entity-form: folder` and the entity is flat with no `<slug>/review/`, `gate prepare` exits nonzero, the state tree is entry- and digest-identical before and after, and no `<slug>/` directory appears. Where the README declares no form, the same flat entity prepares and binds its room.
+*Test:* `TestPrepareRefusesFlatEntityOnlyWhereTheWorkflowDeclaresFolderForm`, branches `declared-folder-form-refuses-flat` and `undeclared-workflow-prepares-flat`. Falsified in both directions: deleting the guard reds the refusal branch, and deleting the declaration check reds the undeclared branch. Also reds if the key spelling or the declared value changes, since either makes a declaring workflow read as undeclared.
 
-**AC-2 (value — no collateral).** Every grandfathered entity keeps working unchanged: a flat entity that already holds `<slug>/review/` prepares its next gate and binds a `./<slug>/review/<stage>/briefing-N` ref.
-*Test:* the same test's `existing-rooms-grandfathered` branch asserts the room path and the exact slug-prefixed ref. Fails if the guard refuses grandfathered entities — which would strand the three hybrids sitting at validation gates — and fails if anyone "corrects" the ref shape, which would silently invalidate 33 retained refs.
+**AC-2 (value — no collateral).** Every grandfathered entity keeps working unchanged, including after its workflow declares folder form: a flat entity that already holds `<slug>/review/` prepares its next gate and binds a `./<slug>/review/<stage>/briefing-N` ref.
+*Test:* the same test's `declared-folder-form-grandfathers-rooms` branch asserts the room path and the exact slug-prefixed ref. Fails if the guard refuses grandfathered entities — which is what would strand the three hybrids sitting at validation gates the day `docs/dev` declares a form — and fails if anyone "corrects" the ref shape, which would silently invalidate 34 retained refs.
 
 **AC-3 (value — visibility).** Every grandfathered hybrid is reported, and nothing else is: one warning per flat-entity-with-rooms, zero for folder-form entities. Against the live checkout that is 9 warnings naming the 9 slugs and 0 findings across 68 folder entities, exit 0.
 *Test:* fixture test over 2 hybrids and 1 clean folder entity asserting the count, both remedy tokens (the `git mv` and the ref rewrite), and no finding for the folder entity; plus the read-only live run recorded above. Fails if the finding drops either half of the remedy, or fires on folder form.
@@ -251,6 +263,8 @@ Written and green. `go test ./...` passes on the whole change; the only failure 
 - `internal/gates/prepare_test.go` — `TestPrepareRefusesNewFlatCompanionAndGrandfathersExistingRooms`, two branches, covering AC-1 and AC-2.
 - `internal/status/hybrid_flat_rooms_warn_test.go` — three tests covering AC-3, AC-4, AC-5 over one 3-entity fixture.
 - 34 pre-existing tests repaired: 31 by the fixture-grandfathering helper, 3 by the targeted edits described above.
+
+**Cycle 2 supersedes the first and third bullets.** The guard test is `TestPrepareRefusesFlatEntityOnlyWhereTheWorkflowDeclaresFolderForm`, three branches, covering AC-1 and AC-2. No pre-existing test needs repair: gating the refusal on the declaration means a fixture workflow that declares nothing is never refused, so all 34 repairs reverted to their stronger pre-change assertions. The `--validate` bullet is unchanged. Cycle 2 also adds what cycle 1 lacked: a targeted live journey run locally against the built change, since `gate prepare` is on every live journey's path.
 
 ## Documentation changes
 
@@ -273,6 +287,8 @@ Same file, in the `spacedock status` row's `--validate` description, add: `--val
 > ```
 >
 > but `room-ref` is written relative to the entity file's own directory, so folder form binds `./review/…` while flat form binds `./<slug>/review/…`. Only the folder-form ref is invariant under a later move of the entity. Preparation therefore refuses to create the first room beside a flat `<slug>.md`: for folder form the entity is `<slug>/index.md`, and for flat form `<slug>/` would be a companion whose refs break on conversion. Flat entities that already hold rooms are grandfathered, and their slug-prefixed refs stay correct while they stay flat; converting one requires `git mv <slug>.md <slug>/index.md` and rewriting every `room-ref: ./<slug>/` to `room-ref: ./` in the same commit, and `status --validate` reports both the grandfathered shape and any ref that stops resolving. State commit and archive operations continue to treat a flat Markdown file plus its `<slug>/` companion directory as one literal path-scoped unit.
+
+**Cycle 2 amends both replacements**, since the refusal is now conditional. The `gate prepare` row keeps "for folder or flat form" and adds the condition after it: where the workflow README declares `entity-form: folder`, a flat entity holding no rooms is refused instead, a workflow declaring no form accepts either shape, and a flat entity already holding rooms is grandfathered under the declaration. The contract's paragraph gains the same condition — a workflow states its form with `entity-form: folder` and preparation refuses only where that declaration is present — with the grandfathering, conversion remedy, and state-commit sentences unchanged. One doc is added: `docs/site/concepts/workflows-and-entities.md`, whose "Each work item is one file" paragraph is where a reader looks for how a workflow states its entity form. The `--validate` addition is unchanged.
 
 ### Feedback Cycles
 
