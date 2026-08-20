@@ -97,7 +97,7 @@ gates:
 started: 2026-08-19T18:17:24Z
 worktree: .worktrees/spacedock-ensign-own-claude-early-rejection-round-record
 mod-block: merge:pr-merge
-pr: "#740"
+pr: pr-merge:740
 ---
 
 ## Problem
