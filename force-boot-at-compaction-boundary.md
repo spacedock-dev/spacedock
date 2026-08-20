@@ -123,6 +123,17 @@ gates:
                 digest: sha256:47c6298a525aa1b0574cdb3bfb753eaf19677923d7b351bb4ab40421e28329c9
                 request-digest: sha256:33fc0e004aecf1a7b4c212f0f8f275db589b807e57b44dbceab0c21d99d7ceba
                 room-ref: ./force-boot-at-compaction-boundary/review/validation/briefing-4
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:4ctz4sfybfk0mfsbnrjcc7bv:validation:4
+                briefing: briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-4:revision-1
+                by: person:captain
+                at: "2026-08-20T01:17:34.925316Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve 4c to update pr''. Validation PASSED with no material finding: the rendered payload was graded by executing the shipped script (mid-loop, re-satisfy-at-trigger verbatim from the shared core, resume the loop, zero occurrences of ''startup''), the mechanism is byte-identical to a30b963eb by blob hash across hooks.json, both manifests, the fallback template and all three tests, and all four ACs reproduced with their falsifiers breaking exactly the claimed cases. The content-AC gap — no AC pins the payload''s instruction text, proven by the rejected cycle-5 payload passing the suite green — is recorded for a separate scope decision and not held against this merge.'
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 pr:
 ---
