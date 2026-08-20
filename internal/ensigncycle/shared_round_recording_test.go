@@ -15,7 +15,15 @@ import (
 )
 
 var directRoundLauncher = regexp.MustCompile(`(?:^|[\s;&|])['"]*(?:spacedock|\$(?:\{SPACEDOCK_BIN(?::-[^}]*)?\}|SPACEDOCK_BIN)|/[^ \t\r\n'";&|]+/spacedock)['"]*\s+gate\s+record(?:\s|$)`)
-var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=4$`)
+
+// rejectionRoundSuccess pins every token of the recorder's success line EXCEPT the
+// entry count. The stream oracle's question is whether a successful, well-formed
+// `validation/1` record happened — not whether the room it retained is complete,
+// which is durable state graded at the durable site below under its own code.
+// Pinning `entries=4` here reported the live early record (exit 0, `entries=2`,
+// correctly formed) as "resolved launcher never invoked", and matches Codex's half
+// (codexRecordedRejectionRound), which pins no count at all.
+var rejectionRoundSuccess = regexp.MustCompile(`(?m)^round=round:rejection-task:validation:1 stage=validation cycle=1 briefing=briefing:rejection-task:validation:round-1 entries=\d+$`)
 
 // Quote runs here are `['"]*` for the same reason as rejectionRoundFlag below:
 // Codex reaches the launcher through nested shell quoting and can wrap any
@@ -349,6 +357,29 @@ func assertRejectionCycleLine(entityPath string) error {
 	return nil
 }
 
+// rejectionRoundWantEntries is the complete round log this one-cycle fixture
+// determines: the reviewer's finding and verdict, then the ensign's disposition and
+// closing resolution.
+const rejectionRoundWantEntries = 4
+
+// rejectionIncompleteRound is the honest diagnostic for a truncated round room. The
+// retained ids are self-evidencing — the reader sees exactly the reviewer pair and
+// no worker entries — where the %#v dump this replaced said nothing. The causal
+// clause is added only when entries are MISSING; an over-long room is unobserved and
+// gets the counts and ids without a story about why.
+func rejectionIncompleteRound(summary gates.RoundSummary) string {
+	var ids []string
+	for _, entry := range summary.Entries {
+		ids = append(ids, entry.ID)
+	}
+	msg := fmt.Sprintf("retained round %s holds %d log entries, want %d; retained %v",
+		summary.ID, len(summary.Entries), rejectionRoundWantEntries, ids)
+	if len(summary.Entries) < rejectionRoundWantEntries {
+		msg += " — the round WAS recorded, from a log that had not been answered yet, and the room is immutable, so the truncation is durable; this state predates or bypassed the recorder's closed-log precondition"
+	}
+	return msg
+}
+
 func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, invoked bool) error {
 	if !invoked {
 		return fmt.Errorf("resolved launcher never invoked `gate record --round validation/1`")
@@ -393,6 +424,26 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if len(roundRooms) != 1 || roundRooms[0] != "round-1" {
 		return fmt.Errorf("rejection cycle left round rooms %v, want exactly one round-1 room", roundRooms)
 	}
+	// The two files the flow does NOT own — the reviewed artifact and workflow policy
+	// — carry their own code: their mutation is not a round-recording failure. The
+	// check must run BEFORE ValidateRoundFile, whose verifyRoundArtifacts digest-checks
+	// the workspace candidate against the Briefing's pinned rev; ordered after it, a
+	// mutated candidate reds as an artifact-digest mismatch under the round oracle's
+	// code and this check is unreachable dead code.
+	for _, check := range []struct{ path, want string }{
+		{filepath.Join(filepath.Dir(entityPath), "candidate.txt"), rejectionCandidate},
+		{filepath.Join(workflowRoot, "README.md"), rejectionReadme()},
+	} {
+		got, readErr := os.ReadFile(check.path)
+		if readErr != nil {
+			return readErr
+		}
+		if !bytes.Equal(got, []byte(check.want)) {
+			return &gradedErr{code: "rejection-workflow-file-mutated", msg: fmt.Sprintf(
+				"%s changed from its exact expected bytes — the flow owns rejection-task/index.md and the round room, and this file is neither, so nothing about round recording failed here",
+				check.path)}
+		}
+	}
 	summary, err := gates.ValidateRoundFile(entityPath, "validation/1")
 	if err != nil {
 		return fmt.Errorf("validate retained round: %w", err)
@@ -400,9 +451,16 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 	if summary.ID != "round:rejection-task:validation:1" ||
 		summary.Stage != "validation" ||
 		summary.Cycle != 1 ||
-		summary.Briefing != rejectionBriefingID ||
-		len(summary.Entries) != 4 {
+		summary.Briefing != rejectionBriefingID {
 		return fmt.Errorf("retained round summary = %#v", summary)
+	}
+	// Completeness is its own condition with its own code. Folded into the identity
+	// composite above it reported a truncated room — a round that WAS recorded — as
+	// `rejection-round-missing` / "resolved launcher never invoked", with a raw
+	// struct dump for a message. The recorder now refuses an open log, so this is
+	// the read-side backstop for state that predates or bypassed that precondition.
+	if len(summary.Entries) != rejectionRoundWantEntries {
+		return &gradedErr{code: "rejection-round-incomplete", msg: rejectionIncompleteRound(summary)}
 	}
 	for _, entry := range summary.Entries {
 		if entry.Type == "Resolution" && !entry.Advisory {
@@ -422,14 +480,14 @@ func assertRejectionRecordedRound(workflowRoot, entityPath, wantStatus string, i
 		!entries[1].Type().IsRegular() {
 		return fmt.Errorf("round room entries = %#v, want exactly two regular canonical files", entries)
 	}
+	// The round record itself: these two files ARE the durable round, so their byte
+	// drift stays under the round oracle's code.
 	checks := []struct {
 		path string
 		want string
 	}{
 		{filepath.Join(room, "briefing.json"), rejectionBriefing()},
 		{filepath.Join(room, "briefing.review.jsonl"), rejectionCompleteLog()},
-		{filepath.Join(filepath.Dir(entityPath), "candidate.txt"), rejectionCandidate},
-		{filepath.Join(workflowRoot, "README.md"), rejectionReadme()},
 	}
 	for _, check := range checks {
 		got, readErr := os.ReadFile(check.path)
@@ -623,6 +681,22 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 		}, "\n")) {
 		t.Fatal("Claude extractor accepted a missing or failed correlated result")
 	}
+	// The live early-record byte shape (run 32270990171): the same successful,
+	// well-formed invocation, whose result reports the 2 entries the room retained.
+	// Re-pinning `entries=4` reds this and restores the "never invoked" lie. The
+	// control below proves genericizing the COUNT loosened nothing else on the line.
+	if !claudeRecordedRejectionRound(strings.Join([]string{
+		bashToolLine("toolu_round", command),
+		toolResultLine("toolu_round", false, strings.Replace(result, "entries=4", "entries=2", 1)),
+	}, "\n")) {
+		t.Fatal("Claude extractor graded the live early-record result as never invoked")
+	}
+	if claudeRecordedRejectionRound(strings.Join([]string{
+		bashToolLine("toolu_round", command),
+		toolResultLine("toolu_round", false, strings.Replace(result, "cycle=1", "cycle=2", 1)),
+	}, "\n")) {
+		t.Fatal("Claude extractor accepted a success line for a different round")
+	}
 	captured := "B=${SPACEDOCK_BIN:-spacedock}\n$B gate record rejection-task --workflow-dir . --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl"
 	if !codexRecordedRejectionRound(codexCommandOutput(captured, result, 0, "completed")) {
 		t.Fatal("Codex extractor missed captured resolved launcher round invocation")
@@ -777,6 +851,106 @@ func TestRejectionRoundRecognizerAcceptsNestedShellQuoting(t *testing.T) {
 	}
 }
 
+// recordCompleteRejectionRound writes the rejection fixture and records
+// `validation/1` from the complete four-entry log — the conforming end state the
+// truncation and file-mutation cases below then perturb one file at a time.
+func recordCompleteRejectionRound(t *testing.T, root string) (string, string) {
+	t.Helper()
+	entityPath := writeRejectionWorkflow(t, root)
+	writeFile(t, filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"), rejectionCompleteLog())
+	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
+		Round:        "validation/1",
+		BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
+		LogPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
+		WorkflowDir:  root,
+	}); err != nil {
+		t.Fatalf("record the complete rejection round: %v", err)
+	}
+	return entityPath, filepath.Join(root, "rejection-task", "review", "validation", "round-1")
+}
+
+// TestRejectionTruncatedRoundRoomReportsItsOwnCode pins the honest code for the
+// durable end state run 32270990171 produced: the round WAS recorded — exit 0,
+// `entries=2`, a correctly formed launcher call — but from the reviewer's log alone,
+// so the immutable room holds 2 of 4 entries. The grader called that "resolved
+// launcher never invoked", which sent the reader hunting a launcher-regex ghost.
+// A stream-only fix leaves the durable site under `rejection-round-missing` and
+// reds this test, so it cannot green a half-fix.
+func TestRejectionTruncatedRoundRoomReportsItsOwnCode(t *testing.T) {
+	root := t.TempDir()
+	entityPath, room := recordCompleteRejectionRound(t, root)
+	// The recorder now REFUSES an unanswered log (internal/gates owns that half), so
+	// the truncated room can only arrive as legacy state or a bypass: build it by
+	// overwriting the retained log with the bytes an early record would have kept.
+	writeFile(t, filepath.Join(room, "briefing.review.jsonl"), rejectionReviewerLog)
+	grade := gradeLive(false, durableSemantic("rejection-round-missing",
+		assertRejectionRecordedRound(root, entityPath, "backlog", true)))
+	if grade.status != "fail" || !reflect.DeepEqual(grade.codes, []string{"rejection-round-incomplete"}) {
+		t.Fatalf("grade = %#v, want status fail with codes exactly [rejection-round-incomplete]", grade)
+	}
+	for _, want := range []string{"holds 2 log entries, want 4", "resolution:rejection-task:reviewer", "immutable"} {
+		if len(grade.details) != 1 || !strings.Contains(grade.details[0], want) {
+			t.Fatalf("grade details = %v, want the finding to name %q", grade.details, want)
+		}
+	}
+	// Control: restore the complete log and the code clears, so it tracks the
+	// truncation and not some other property of the rebuilt room.
+	writeFile(t, filepath.Join(room, "briefing.review.jsonl"), rejectionCompleteLog())
+	if grade := gradeLive(false, durableSemantic("rejection-round-missing",
+		assertRejectionRecordedRound(root, entityPath, "backlog", true))); grade.status != "pass" {
+		t.Fatalf("complete round room must grade pass; got %#v", grade)
+	}
+}
+
+// TestRejectionNonRecordFileMutationReportsItsOwnCode pins the split criterion: is
+// this file part of the round record? The two room files are; `README.md` (workflow
+// policy) and `candidate.txt` (the reviewed artifact) are not, and their mutation is
+// not a recording failure. The candidate case is also the ordering falsifier —
+// moving the non-record checks back after ValidateRoundFile makes it red as an
+// artifact-digest mismatch under `rejection-round-missing` instead.
+func TestRejectionNonRecordFileMutationReportsItsOwnCode(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mutate       func(t *testing.T, root, room string)
+		code, detail string
+	}{
+		"workflow policy README": {
+			mutate: func(t *testing.T, root, room string) {
+				writeFile(t, filepath.Join(root, "README.md"), rejectionReadme()+"\nlocal policy edit\n")
+			},
+			code:   "rejection-workflow-file-mutated",
+			detail: "README.md changed from its exact expected bytes",
+		},
+		"reviewed candidate artifact": {
+			mutate: func(t *testing.T, root, room string) {
+				writeFile(t, filepath.Join(root, "rejection-task", "candidate.txt"), "tampered candidate\n")
+			},
+			code:   "rejection-workflow-file-mutated",
+			detail: "candidate.txt changed from its exact expected bytes",
+		},
+		"round room log is part of the record": {
+			mutate: func(t *testing.T, root, room string) {
+				writeFile(t, filepath.Join(room, "briefing.review.jsonl"), "not a review log\n")
+			},
+			code:   "rejection-round-missing",
+			detail: "validate retained round",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			entityPath, room := recordCompleteRejectionRound(t, root)
+			tc.mutate(t, root, room)
+			grade := gradeLive(false, durableSemantic("rejection-round-missing",
+				assertRejectionRecordedRound(root, entityPath, "backlog", true)))
+			if !reflect.DeepEqual(grade.codes, []string{tc.code}) {
+				t.Fatalf("grade codes = %v, want exactly [%s]", grade.codes, tc.code)
+			}
+			if len(grade.details) != 1 || !strings.Contains(grade.details[0], tc.detail) {
+				t.Fatalf("grade details = %v, want %q", grade.details, tc.detail)
+			}
+		})
+	}
+}
+
 // TestRejectionUnpreparedGateReportsItsOwnCode pins AC-3's separation. The input is
 // the exact durable end state both failing CI runs produced: the round IS recorded
 // (the codex stream oracle says so) and the entity status reached validation, but
@@ -787,16 +961,7 @@ func TestRejectionRoundRecognizerAcceptsNestedShellQuoting(t *testing.T) {
 // round is missing. Flipping either oracle back to the other's code fails this.
 func TestRejectionUnpreparedGateReportsItsOwnCode(t *testing.T) {
 	root := t.TempDir()
-	entityPath := writeRejectionWorkflow(t, root)
-	writeFile(t, filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"), rejectionCompleteLog())
-	if err := gates.RecordSemantic(entityPath, gates.RecordInput{
-		Round:        "validation/1",
-		BriefingPath: filepath.Join(root, "rejection-task", "inputs", "briefing.json"),
-		LogPath:      filepath.Join(root, "rejection-task", "inputs", "briefing.review.jsonl"),
-		WorkflowDir:  root,
-	}); err != nil {
-		t.Fatalf("record rejection round: %v", err)
-	}
+	entityPath, _ := recordCompleteRejectionRound(t, root)
 	writeFile(t, entityPath, strings.Replace(readFile(t, entityPath), "status: backlog", "status: validation", 1))
 
 	// The stream the FO actually produced: the round-recording invocation ran and

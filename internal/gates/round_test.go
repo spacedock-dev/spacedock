@@ -186,6 +186,9 @@ func TestRoundRequiresFolderFormWithoutCrossEntityCollision(t *testing.T) {
 }
 
 func TestRoundNoFindingsAndPreflightRefusals(t *testing.T) {
+	// This case is also the closure predicate's over-refusal control: a lone
+	// `approve` Resolution IS the whole round, so refusing it would break a shape
+	// the recorder has always accepted.
 	t.Run("no findings is structurally valid and has no projection", func(t *testing.T) {
 		_, entity, briefing, log, _ := advisoryRoundFixture(t)
 		noFindings := `{"type":"Resolution","id":"resolution:roborev-clear","briefing":"briefing:3j:implementation:round-1","by":"reviewer:foreign","at":"2026-07-20T01:00:00Z","decision":"approve"}` + "\n"
@@ -248,6 +251,20 @@ func TestRoundNoFindingsAndPreflightRefusals(t *testing.T) {
 				t.Fatal(err)
 			}
 		}, "URI"},
+		// The three open-log shapes. Each `want` pins the tail the refusal names,
+		// not just that it refused, so a message that says "not closed" without
+		// saying what it saw fails here. Deleting the predicate records the
+		// truncated room and reds all three.
+		{"log ends at the reviewer's revise verdict", func(root, entity, briefing, log string) {
+			writeRoundLog(t, log, roundLogPrefix(t, log, 3))
+		}, "ends at the reviewer's revise Resolution resolution:roborev-3j-round-1"},
+		{"log ends at a dangling disposition annotation", func(root, entity, briefing, log string) {
+			writeRoundLog(t, log, roundLogPrefix(t, log, 4))
+		}, "ends at Annotation annotation:decline-duplicate-member with no closing Resolution"},
+		{"log ends at a hold verdict", func(root, entity, briefing, log string) {
+			writeRoundLog(t, log, bytes.Replace(roundLogPrefix(t, log, 3),
+				[]byte(`"decision":"revise"`), []byte(`"decision":"hold"`), 1))
+		}, "ends at the reviewer's hold Resolution resolution:roborev-3j-round-1"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root, entity, briefing, log, _ := advisoryRoundFixture(t)
@@ -262,6 +279,32 @@ func TestRoundNoFindingsAndPreflightRefusals(t *testing.T) {
 			}
 		})
 	}
+
+	// The refusal is only useful if the state it leaves is still recordable: the FO
+	// takes the recovery its message names — route the correction, append that
+	// round's entries — and records the SAME round successfully. Without this the
+	// precondition could be satisfied by a dead end.
+	t.Run("open-log refusal leaves a recordable round", func(t *testing.T) {
+		root, entity, briefing, log, _ := advisoryRoundFixture(t)
+		complete := mustReadBytes(t, log)
+		writeRoundLog(t, log, roundLogPrefix(t, log, 3))
+		before := treeDigest(t, root)
+		err := RecordSemantic(entity, inputForRound(briefing, log))
+		if err == nil || !strings.Contains(err.Error(), "not closed") {
+			t.Fatalf("open-log refusal error = %v, want the stable \"not closed\" token", err)
+		}
+		if got := treeDigest(t, root); got != before {
+			t.Fatal("open-log refusal changed fixture bytes")
+		}
+		writeRoundLog(t, log, complete)
+		if err := RecordSemantic(entity, inputForRound(briefing, log)); err != nil {
+			t.Fatalf("record after the recovery the refusal names: %v", err)
+		}
+		summary, err := ValidateRoundFile(entity, "implementation/1")
+		if err != nil || len(summary.Entries) != 5 {
+			t.Fatalf("recovered round summary = %#v err = %v", summary, err)
+		}
+	})
 
 	t.Run("stage taxonomy permits historical backfill", func(t *testing.T) {
 		root, entity, briefing, log, _ := advisoryRoundFixture(t)
@@ -500,6 +543,26 @@ func advisoryRoundFixtureAt(t *testing.T, root string) (string, string, string, 
 		t.Fatal(err)
 	}
 	return root, entity, briefing, log, feedback
+}
+
+// roundLogPrefix returns the first `lines` complete JSONL lines of a review log,
+// which is how the open-log shapes are built: the fixture's five-entry log
+// truncated at the reviewer's verdict (3) or at the ensign's dangling disposition
+// annotation (4).
+func roundLogPrefix(t *testing.T, log string, lines int) []byte {
+	t.Helper()
+	all := bytes.SplitAfter(mustReadBytes(t, log), []byte{'\n'})
+	if len(all) <= lines {
+		t.Fatalf("review log has %d lines, want at least %d", len(all)-1, lines)
+	}
+	return bytes.Join(all[:lines], nil)
+}
+
+func writeRoundLog(t *testing.T, log string, body []byte) {
+	t.Helper()
+	if err := os.WriteFile(log, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func copyRoundFixture(t *testing.T, destination, name string) {
