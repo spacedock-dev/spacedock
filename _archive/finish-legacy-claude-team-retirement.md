@@ -1,11 +1,11 @@
 ---
 id: nr75fq7ha3nmvsegbd22cgqa
 title: Finish the legacy Claude TeamCreate retirement — the contract retired it, the binary and a live proof did not
-status: validation
+status: done
 source: "Captain CL, 2026-08-18, in chat ('file a proper legacy claude team retirement task'), after TestLiveBreakGlassShimRecovery/selected-team failed the claude-live lane on the ca9/6ht/j7j stack by demanding a team_name the shipped contract tells the FO to omit."
 started: 2026-08-18T23:15:53Z
-completed:
-verdict:
+completed: 2026-08-20T16:47:20Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-finish-legacy-claude-team-retirement
 issue:
@@ -109,9 +109,10 @@ gates:
                 reason: 'Captain approved in chat: ''approve push and i''ll look from the PR.'' Validation PASSED with no material finding: the literal was confirmed against the running binary across absent, named and empty agent: READMEs; the fix proved stronger than claimed by removing the template''s dependence on a self-contradicting token; both polish fixes verified with falsifying changes run. Cumulative net -724 inside the declared band.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:736
+archived: 2026-08-20T16:47:20Z
 ---
 
 `ecffcedef` (#549) retired the legacy TeamCreate dispatch path and deleted `skills/using-legacy-claude-team/`. The retirement stopped at the skill boundary. The binary still carries the flag and the field, and a live proof still fails a First Officer for obeying the current contract.
