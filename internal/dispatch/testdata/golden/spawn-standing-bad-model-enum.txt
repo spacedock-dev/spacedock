@@ -1,6 +1,0 @@
-===== exit =====
-1
-===== stdout =====
-
-===== stderr =====
-error: invalid model 'gpt-4' in '## Hook: startup' of <ROOT>/_mods/badmodel.md — must be one of: sonnet, opus, haiku, fable

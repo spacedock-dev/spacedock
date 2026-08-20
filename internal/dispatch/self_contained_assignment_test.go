@@ -128,7 +128,7 @@ func selfContainedBuild(t *testing.T, root, host string, advance bool, stage, co
 	fields := map[string]any{
 		"schema_version": 2, "entity_path": filepath.Join(root, "thing.md"),
 		"workflow_dir": root, "stage": "implementation", "checklist": checklist,
-		"team_name": "fixture-team", "host": host, "advance": advance,
+		"host": host, "advance": advance,
 	}
 	for key, value := range extra {
 		fields[key] = value
@@ -203,42 +203,10 @@ func TestBuildHostModeMatrixKeepsPointerTransportAndExactFetchShape(t *testing.T
 	}
 }
 
-func TestBuildMaxLegalDispatchFilenamesRemainExact(t *testing.T) {
-	root := t.TempDir()
-	entityPath := filepath.Join(root, strings.Repeat("x", 33)+".md")
-	writeFile(t, entityPath, entityFM("Thing", "implementation", ""))
-	gitInit(t, root)
-	seed, _ := selfContainedBuild(t, root, "claude", false, "work", "authority", []string{"- exact"}, map[string]any{"entity_path": entityPath})
-	if seed.Name == nil {
-		t.Fatal("fresh output omitted worker name")
-	}
-	for _, tc := range []struct {
-		advance bool
-		base    int
-		suffix  string
-	}{{false, 251, ""}, {true, 243, "-advance"}} {
-		prefix := strings.Repeat("a", tc.base-len(*seed.Name)-2)
-		var paths []string
-		for _, final := range []string{"b", "c"} {
-			team := prefix + final
-			got, _ := selfContainedBuild(t, root, "claude", tc.advance, "work", "authority", []string{"- exact"},
-				map[string]any{"entity_path": entityPath, "team_name": team})
-			want := team + "-" + *seed.Name + tc.suffix
-			if strings.TrimSuffix(filepath.Base(got.DispatchFile), ".md") != want || len(want) != dispatchFileNameMaxLen {
-				t.Fatalf("dispatch stem changed or shortened: got=%q want=%q", filepath.Base(got.DispatchFile), want)
-			}
-			if len(got.Prompt) <= 300 {
-				t.Fatalf("max-legal pointer prompt length=%d, want >300", len(got.Prompt))
-			}
-			paths = append(paths, got.DispatchFile)
-		}
-		if paths[0] == paths[1] {
-			t.Fatalf("distinct max-legal names collided: %s", paths[0])
-		}
-		for _, path := range paths {
-			if _, err := os.Stat(path); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-}
+// The legacy-era sibling of this file, TestBuildMaxLegalDispatchFilenamesRemainExact,
+// hit the dispatchFileNameMaxLen boundary via an unbounded team_name prefix. That
+// input retired with legacy team mode: the merged floor's session-token prefix is
+// capped well under the boundary (sessionTokenMaxLen), so the boundary is no
+// longer reachable through any supported input. Session-prefix + -advance suffix
+// ordering and no-collision coverage live in TestBuildAdvanceFilenameSuffix and
+// TestBuildMergedModeDispatchFileDisambiguator.

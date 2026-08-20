@@ -31,7 +31,6 @@ func TestBuildPiHostPromptShape(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-pi-team",
 		"bare_mode":      false,
 		"host":           "pi",
 	}, nil)
@@ -92,7 +91,6 @@ func TestBuildPiHostIgnoresModelWithNote(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "stagemodel",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-pi-team",
 		"bare_mode":      false,
 		"host":           "pi",
 	}, nil)
@@ -401,7 +399,6 @@ func TestBuildPiHostPreservesSplitRootEntityPath(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      []string{"- preserve split-root entity path"},
-		"team_name":      "fixture-pi-team",
 		"bare_mode":      false,
 		"host":           "pi",
 	}, nil)
@@ -444,7 +441,6 @@ func TestBuildPiHostEmitsSpawnAgentAndSkill(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-pi-team",
 		"bare_mode":      false,
 		"host":           "pi",
 	}, nil)
@@ -499,7 +495,6 @@ func TestBuildPiHostAgentOverrideOmitsSkill(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-pi-team",
 		"bare_mode":      false,
 		"host":           "pi",
 	}, nil)
@@ -569,7 +564,6 @@ func TestBuildClaudeHostGoldenByteIdentical(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "backlog",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      true,
 	}, nil)
 

@@ -147,7 +147,6 @@ func TestBuildModelPrecedence(t *testing.T) {
 				"workflow_dir":   root,
 				"stage":          tc.stage,
 				"checklist":      []string{"- a"},
-				"team_name":      "fixture-team",
 				"bare_mode":      false,
 			}, nil)
 
@@ -197,7 +196,6 @@ func TestBuildNoHTMLEscape(t *testing.T) {
 		"workflow_dir":       root,
 		"stage":              "validation",
 		"checklist":          []string{"- a < b", "- c > d & e"},
-		"team_name":          "fixture-team",
 		"bare_mode":          false,
 		"is_feedback_reflow": true,
 		"feedback_context":   "compare a < b && c > d in <Tag> & raw &amp; ampersand",
@@ -241,7 +239,6 @@ func TestBuildSpaceBearingPath(t *testing.T) {
 		"workflow_dir":   workflowDir,
 		"stage":          "backlog",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 

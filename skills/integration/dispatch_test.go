@@ -205,7 +205,6 @@ Body.
 		"workflow_dir":   stateDir,
 		"stage":          "implementation",
 		"checklist":      []string{"- do the work"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	})
 
@@ -280,7 +279,6 @@ Body.
 		"workflow_dir":   root,
 		"stage":          "backlog",
 		"checklist":      []string{"- do the work"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	})
 

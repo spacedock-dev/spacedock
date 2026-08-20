@@ -36,7 +36,6 @@ func TestBuildAbsoluteWorktreeParity(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 
@@ -115,7 +114,7 @@ func TestBuildSchemaVersionNumericParity(t *testing.T) {
 			gitInit(t, root)
 
 			stdin := fmt.Sprintf(
-				`{"schema_version":%s,"entity_path":%q,"workflow_dir":%q,"stage":"backlog","checklist":["- a"],"team_name":"t"}`,
+				`{"schema_version":%s,"entity_path":%q,"workflow_dir":%q,"stage":"backlog","checklist":["- a"]}`,
 				tc.sv, entityPath, root)
 
 			native := runNative(stdin, "build", "--workflow-dir", root)

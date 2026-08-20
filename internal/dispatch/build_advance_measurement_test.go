@@ -65,7 +65,6 @@ func buildAdvancePromptFixture(t *testing.T, stageBody string, checklist []strin
 		"workflow_dir":   root,
 		"stage":          "implementation",
 		"checklist":      checklist,
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 		"advance":        true,
 	}, nil)

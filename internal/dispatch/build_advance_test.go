@@ -69,7 +69,6 @@ func TestBuildAdvanceGoldens(t *testing.T) {
 				"workflow_dir":   workflowDir,
 				"stage":          tc.stage,
 				"checklist":      []string{"- a", "- b"},
-				"team_name":      "fixture-team",
 				"bare_mode":      false,
 				"advance":        true,
 			}
@@ -97,11 +96,12 @@ func TestBuildAdvanceGoldens(t *testing.T) {
 }
 
 // TestBuildAdvanceFilenameSuffix asserts the dispatch filename carries the
-// -advance suffix after any team/session disambiguator prefix, so an advance
-// file can never alias a fresh-dispatch file for the same slug+stage.
+// -advance suffix after the merged-mode session disambiguator prefix, so an
+// advance file can never alias a fresh-dispatch file for the same slug+stage.
 func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
+	t.Setenv("CLAUDE_CODE_SESSION_ID", "sessionaaa")
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
 	worktreeRel := ".worktrees/spacedock-ensign-thing"
@@ -118,7 +118,6 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "validation",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 		"advance":        true,
 	}, nil)
@@ -129,11 +128,11 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 	}
 	path := dispatchFilePathFromStdout(t, native.stdout)
 	base := filepath.Base(path)
-	if base != "fixture-team-spacedock-ensign-thing-validation-advance.md" {
+	if base != "sessionaaa-spacedock-ensign-thing-validation-advance.md" {
 		t.Fatalf("unexpected advance dispatch filename: %s", base)
 	}
 
-	// A fresh (non-advance) dispatch for the identical team/slug/stage must
+	// A fresh (non-advance) dispatch for the identical session/slug/stage must
 	// write to the bare filename — no collision with the advance file.
 	freshStdin := mergeStdin(map[string]any{
 		"schema_version": 2,
@@ -141,7 +140,6 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "validation",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 	freshNative := runNative(freshStdin, "build", "--workflow-dir", root)
@@ -152,7 +150,7 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 	if freshPath == path {
 		t.Fatalf("fresh dispatch file collided with advance dispatch file: %s", freshPath)
 	}
-	if filepath.Base(freshPath) != "fixture-team-spacedock-ensign-thing-validation.md" {
+	if filepath.Base(freshPath) != "sessionaaa-spacedock-ensign-thing-validation.md" {
 		t.Fatalf("unexpected fresh dispatch filename: %s", filepath.Base(freshPath))
 	}
 }

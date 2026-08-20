@@ -1,6 +1,0 @@
-===== exit =====
-1
-===== stdout =====
-
-===== stderr =====
-error: mod <ROOT>/_mods/nope.md is missing 'standing: true' in frontmatter — not a standing-teammate mod

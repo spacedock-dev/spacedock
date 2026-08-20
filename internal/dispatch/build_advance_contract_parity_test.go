@@ -57,7 +57,6 @@ func TestBuildAdvanceContentContractParity(t *testing.T) {
 				"workflow_dir":   root,
 				"stage":          tc.stage,
 				"checklist":      checklist,
-				"team_name":      "fixture-team",
 				"bare_mode":      false,
 				"advance":        true,
 			}

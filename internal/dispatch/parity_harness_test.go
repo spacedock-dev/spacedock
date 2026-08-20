@@ -16,6 +16,19 @@ import (
 
 const testWorkflowLauncher = "/opt/spacedock/bin/spacedock"
 
+// TestMain clears CLAUDE_CODE_SESSION_ID for the whole package before any test
+// runs. Merged-mode dispatch (build.go) keys the dispatch filename on this var
+// when set, so a developer shell that happens to export it (e.g. a real Claude
+// Code session) would otherwise leak its live session id into every golden-
+// comparison fixture that exercises a non-bare host=claude dispatch — flaky
+// everywhere except that one shell. Individual tests that need a deterministic
+// non-empty session id (e.g. the disambiguator tests) still set their own via
+// t.Setenv, which scopes and restores per-test over this package-wide clear.
+func TestMain(m *testing.M) {
+	os.Unsetenv("CLAUDE_CODE_SESSION_ID")
+	os.Exit(m.Run())
+}
+
 // runResult is one run's three channels.
 type runResult struct {
 	stdout string

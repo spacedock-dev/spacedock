@@ -398,62 +398,180 @@ func stageToken(text, stage string) bool {
 	return false
 }
 
-// rejectionChain is the ordered chain the branch owes, straight from the determined
-// shape: implementation dispatch → its Done → validation dispatch → its Done → the
-// rework → its Done → the re-review → its Done. The branch changes ONLY how the two
-// cycle-2 rounds are routed — reused onto the live worker, or fail-safe fresh — so no
-// run can satisfy both. Grading the ORDER rather than a spawn count is what audit
-// finding 2 requires: a run that spawns two validators up front, or never re-reviews
-// the corrected candidate, produces the same counts as a conforming one.
-func rejectionChain(branch rejectionBranch) []rejectionRoute {
-	rework := routeReuse
-	if branch == rejectionBranchFresh {
-		rework = routeSpawn
-	}
-	return []rejectionRoute{
-		{event: routeSpawn, stage: "implementation"},
-		{event: routeDone, stage: "implementation"},
-		{event: routeSpawn, stage: "validation"},
-		{event: routeDone, stage: "validation"},
-		{event: rework, stage: "implementation"},
-		{event: routeDone, stage: "implementation"},
-		{event: rework, stage: "validation"},
-		{event: routeDone, stage: "validation"},
-	}
+// rejectionRound is one review round: a dispatch (`spawn` or `reuse`) and the
+// completion that closes it. Rounds, not flat events, are the unit the journey's
+// contract is written in — candidate, review, routed rework, re-review
+// (`feedback-rejection-flow/SKILL.md` steps 1 and 4) — and parsing them is what lets
+// this bar say WHICH extra round is acceptable and where. Exactly one round per
+// segment was never in that contract: it came from the single captured rollout the
+// exact-count chain was written against, and run 32270990171 falsified it with order
+// held, identity held, and every other durable oracle on that lane green.
+type rejectionRound struct {
+	dispatch string // routeSpawn or routeReuse — how this round opened
+	stage    string
+	target   string
+	at       int // the dispatch's position in the flat chain, i.e. its digest row
 }
 
-// assertRejectionWorkerTopology grades one run's extracted topology against the chain
-// its branch owes, then the two identity facts the chain alone cannot carry: on the
-// reuse branch each cycle-2 round must reach the SAME handle its stage opened (that
-// is what reuse means), and on either branch the re-review must NOT reach the worker
-// that produced the fix — the registry's "independently checked" outcome, and the
-// exact violation that let two single-worker self-reviewing chains grade green.
+// rejectionSegments locates the one rework round and counts the validation rounds
+// either side of it.
+type rejectionSegments struct{ rework, preRev, postRev int }
+
+// rejectionRepeatBudget is a BUDGET, and the diagnostic that cites it says so.
+// Re-running a reviewer before routing a correction is defensible conduct — the
+// retained live run did it and left zero durable footprint — while unbounded
+// repetition is the churn this bar exists to catch. Naming the number as a budget
+// means a future run that legitimately needs a second repeat reds with a message
+// pointing at this knob, not one claiming it broke the journey's contract.
+const rejectionRepeatBudget = 1
+
+// assertRejectionWorkerTopology grades a run's extracted topology as a grammar over
+// parsed rounds. Every red names the invariant it violated and carries the chain it
+// SAW; a red that only reports an event count teaches the next reader to discount it.
 func assertRejectionWorkerTopology(branch rejectionBranch, routes []rejectionRoute) error {
-	want := rejectionChain(branch)
-	if len(routes) != len(want) {
-		return rejectionTopologyErr("the %s branch owes %d routing events, the run produced %d: %s",
-			branch, len(want), len(routes), rejectionTopologySummary(routes))
+	rounds, err := parseRejectionRounds(routes)
+	if err == nil {
+		err = gradeRejectionRounds(branch, rounds)
 	}
-	for i := range want {
-		if routes[i].event != want[i].event || routes[i].stage != want[i].stage {
-			return rejectionTopologyErr("the %s branch owes %s/%s at position %d, the run produced %s/%s: %s",
-				branch, want[i].event, want[i].stage, i, routes[i].event, routes[i].stage, rejectionTopologySummary(routes))
+	if err != nil {
+		return rejectionTopologyErr("%v: %s", err, rejectionTopologySummary(routes))
+	}
+	return nil
+}
+
+// gradeRejectionRounds grades the parsed rounds in the order that makes a red most
+// readable: the sequence the contract owes, then the repeat budget, then the branch's
+// routing rule, then reviewer independence.
+func gradeRejectionRounds(branch rejectionBranch, rounds []rejectionRound) error {
+	seg, err := rejectionRoundSequence(rounds)
+	if err != nil {
+		return err
+	}
+	if repeats := seg.preRev + seg.postRev - 2; repeats > rejectionRepeatBudget {
+		return fmt.Errorf("the journey repeated %d validation rounds (%d before the rework at %s, %d after); the one-repeat budget allows %d, and widening it is a decision to record rather than a contract violation to report",
+			repeats, seg.preRev, rejectionRoundAt(rounds, seg.rework), seg.postRev, rejectionRepeatBudget)
+	}
+	if err := rejectionRoundRouting(branch, rounds); err != nil {
+		return err
+	}
+	return rejectionIndependentReview(rounds)
+}
+
+// parseRejectionRounds folds the flat chain into rounds and FAILS CLOSED: a dispatch
+// that no completion of its own stage and target closes reds naming its position,
+// never a silently dropped event. Pairing is where "the re-review ran before the
+// rework" and "two validators spawned up front" surface.
+func parseRejectionRounds(routes []rejectionRoute) ([]rejectionRound, error) {
+	if len(routes) == 0 {
+		return nil, fmt.Errorf("the run routed no workers at all — the journey owes a candidate, a review, a routed rework and a re-review")
+	}
+	var rounds []rejectionRound
+	for i := 0; i < len(routes); i += 2 {
+		open := routes[i]
+		switch {
+		case open.event == routeDone:
+			return nil, fmt.Errorf("position %d completes %s where a round must OPEN with a dispatch, so the chain does not fold into rounds", i, open.stage)
+		case open.stage != "implementation" && open.stage != "validation":
+			return nil, fmt.Errorf("the dispatch at position %d names no journey stage (target %q) — a round is an implementation or a validation round", i, open.target)
+		case i+1 == len(routes):
+			return nil, fmt.Errorf("the %s/%s dispatch at position %d is never completed, so the run ends mid-round", open.event, open.stage, i)
+		}
+		if done := routes[i+1]; done.event != routeDone || done.stage != open.stage || done.target != open.target {
+			return nil, fmt.Errorf("the %s/%s dispatch at position %d is not closed by its own completion — position %d is %s/%s on %q",
+				open.event, open.stage, i, i+1, done.event, done.stage, done.target)
+		}
+		rounds = append(rounds, rejectionRound{dispatch: open.event, stage: open.stage, target: open.target, at: i})
+	}
+	return rounds, nil
+}
+
+// rejectionRoundSequence grades the sequence the contract owes — implementation,
+// validation+, the rework, validation+, ending in a completed validation round — and
+// names the clause each red violated. This is where "no re-review after the rework"
+// stops redding as a wrong event count and reds as the missing re-review it is.
+func rejectionRoundSequence(rounds []rejectionRound) (rejectionSegments, error) {
+	var seg rejectionSegments
+	if rounds[0].stage != "implementation" {
+		return seg, fmt.Errorf("the journey opens with a %s round at %s — it must open with the implementation candidate", rounds[0].stage, rejectionRoundAt(rounds, 0))
+	}
+	next := 1
+	for next < len(rounds) && rounds[next].stage == "validation" {
+		next++
+	}
+	seg.preRev = next - 1
+	switch {
+	case len(rounds) == 1:
+		return seg, fmt.Errorf("the candidate was never reviewed: the journey holds one implementation round and no validation round at all")
+	case seg.preRev == 0:
+		return seg, fmt.Errorf("the candidate was never reviewed: %s is another implementation round, and a validation round is owed between the candidate and any rework", rejectionRoundAt(rounds, 1))
+	case next == len(rounds):
+		return seg, fmt.Errorf("the rejection was never routed as a rework: the journey ends after %d validation round(s) with no second implementation round", seg.preRev)
+	}
+	seg.rework = next
+	for next++; next < len(rounds) && rounds[next].stage == "validation"; next++ {
+	}
+	seg.postRev = next - seg.rework - 1
+	switch {
+	case seg.postRev == 0:
+		return seg, fmt.Errorf("the rework at %s was never re-reviewed: the journey must end in a completed validation round", rejectionRoundAt(rounds, seg.rework))
+	case next < len(rounds):
+		return seg, fmt.Errorf("%s opens a second rework: this one-cycle journey routes exactly one, so a second one means the first fix did not hold", rejectionRoundAt(rounds, next))
+	}
+	return seg, nil
+}
+
+// rejectionRoundRouting is the ONE branch-parameterized rule that replaces the two
+// per-position chains: a stage's first round is a spawn, and every later round of
+// that stage follows the branch key — reuse routes a followup to the handle the stage
+// opened, fresh owes a fresh spawn. Codex (reuse, 10 events) and Claude (fresh, 8)
+// both green under it, each branch's chain still reds under the other, and an FO that
+// reuses a worker whose budget probe never reported reuse_ok still reds — the
+// contract's fail-safe working, not a false red.
+func rejectionRoundRouting(branch rejectionBranch, rounds []rejectionRound) error {
+	opened := map[string]string{}
+	for i, round := range rounds {
+		handle, seen := opened[round.stage]
+		switch {
+		case !seen && round.dispatch != routeSpawn:
+			return fmt.Errorf("%s opens the %s stage with a %s of %q — a stage's first round is always a spawn", rejectionRoundAt(rounds, i), round.stage, round.dispatch, round.target)
+		case !seen:
+			opened[round.stage] = round.target
+		case branch == rejectionBranchReuse && round.dispatch != routeReuse:
+			return fmt.Errorf("%s re-opened the %s stage with a %s, but this run's reuse route was live, so every round after the stage's first owes a followup to %q", rejectionRoundAt(rounds, i), round.stage, round.dispatch, handle)
+		case branch == rejectionBranchReuse && round.target != handle:
+			return fmt.Errorf("%s routed the %s followup to %q, not to the live %s worker %q the stage opened", rejectionRoundAt(rounds, i), round.stage, round.target, round.stage, handle)
+		case branch != rejectionBranchReuse && round.dispatch != routeSpawn:
+			return fmt.Errorf("%s routed the %s followup to the live worker %q, but this run took the fail-safe FRESH branch, which owes a fresh spawn for every round after the stage's first", rejectionRoundAt(rounds, i), round.stage, round.target)
 		}
 	}
-	if branch == rejectionBranchReuse {
-		for _, round := range [][2]int{{0, 4}, {2, 6}} {
-			opened, reused := routes[round[0]], routes[round[1]]
-			if opened.target != reused.target {
-				return rejectionTopologyErr("the cycle-2 %s round was routed to %q, not to the live %s worker %q it must reuse",
-					reused.stage, reused.target, opened.stage, opened.target)
+	return nil
+}
+
+// rejectionIndependentReview is the identity fact no sequence can carry, lifted to
+// round level so it holds on both branches: no validation round may run on a worker
+// any implementation round ran on. That covers the retargeted re-review, the
+// reviewer-collapsed chain whose reuse handles are internally consistent, and the
+// single-worker chain that let two self-reviewing runs grade green.
+func rejectionIndependentReview(rounds []rejectionRound) error {
+	for i, review := range rounds {
+		if review.stage != "validation" {
+			continue
+		}
+		for j, work := range rounds {
+			if work.stage == "implementation" && work.target == review.target {
+				return fmt.Errorf("the review at %s reached %q, the same worker the implementation round at %s ran on — reviewing its own output is not the independent check the journey requires",
+					rejectionRoundAt(rounds, i), review.target, rejectionRoundAt(rounds, j))
 			}
 		}
 	}
-	if routes[6].target == routes[4].target {
-		return rejectionTopologyErr("the cycle-2 re-review reached %q, the worker that produced the fix — reviewing its own output is not the independent check the journey requires",
-			routes[6].target)
-	}
 	return nil
+}
+
+// rejectionRoundAt cites a round by its ordinal AND by the flat position its dispatch
+// occupies, which is that round's row number in the run's retained
+// `rejection-topology.tsv` — what makes a live red investigable on the digest alone.
+func rejectionRoundAt(rounds []rejectionRound, i int) string {
+	return fmt.Sprintf("round %d (position %d)", i+1, rounds[i].at)
 }
 
 func rejectionTopologyErr(format string, args ...any) error {

@@ -7,13 +7,12 @@
   "fetch_commands": [
     "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT>/state-checkout --stage validation"
   ],
-  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md",
-  "prompt": "Advancing to next stage: validation.\n\nRead /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md and treat its content as your next-stage assignment.",
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-validation-advance.md",
+  "prompt": "Advancing to next stage: validation.\n\nRead /tmp/spacedock-dispatch/spacedock-ensign-thing-validation-advance.md and treat its content as your next-stage assignment.",
   "model": null
 }
 
 ===== stderr =====
-WARN: --team-name selects the legacy TeamCreate-registry dispatch shape (team_name present, run_in_background absent). On host=claude, auto-team is the default — omit --team-name to emit the auto-team shape (name + run_in_background, no team_name). If you mean the legacy team-registry path, this warning can be ignored.
 
 ===== body =====
 ## Advancing to next stage: validation

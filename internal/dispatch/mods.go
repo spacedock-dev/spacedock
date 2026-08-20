@@ -90,12 +90,9 @@ func (e *modHeadingError) Error() string {
 // a workflow: every {workflow_dir}/_mods/*.md with standing: true in frontmatter,
 // in sorted path order. The name comes from ## Hook: startup (authoritative,
 // matching spawn-standing) falling back to frontmatter name; a mod with no
-// resolvable name is skipped. Returns an empty slice for bare mode (empty
-// teamName), no _mods dir, or no standing mods. Mirrors the Python helper.
-func EnumerateDeclaredStandingTeammates(workflowDir, teamName string) []claudeteam.StandingTeammate {
-	if teamName == "" {
-		return nil
-	}
+// resolvable name is skipped. Returns an empty slice for no _mods dir or no
+// standing mods. Mirrors the Python helper.
+func EnumerateDeclaredStandingTeammates(workflowDir string) []claudeteam.StandingTeammate {
 	modsDir := filepath.Join(workflowDir, "_mods")
 	if !isDir(modsDir) {
 		return nil

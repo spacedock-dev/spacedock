@@ -1,5 +1,5 @@
 // ABOUTME: merged-mode dispatch — Claude .178+ emits name present + team_name
-// ABOUTME: absent + run_in_background, past the legacy team_name-required guard.
+// ABOUTME: absent + run_in_background; the only shape a non-bare claude build emits.
 package dispatch
 
 import (
@@ -96,11 +96,11 @@ func TestBuildMergedModeCompletionSignal(t *testing.T) {
 	}
 }
 
-// TestBuildLegacyModeUnchanged is AC-2's fixture: a legacy team-name dispatch
-// (host=claude, not bare, team_name present) still emits name + team_name as
-// today and does NOT gain run_in_background — the merged background-channel
-// encoding is merged-only, so the legacy team path stays byte-shape-identical.
-func TestBuildLegacyModeUnchanged(t *testing.T) {
+// TestBuildStdinTeamNameIgnored is AC-2's fixture: a stdin team_name key is an
+// unrecognized field on the retired legacy path — the build emits the SAME
+// merged shape (name present, team_name absent, run_in_background true) with or
+// without it, byte-identical to TestBuildMergedModeEmission's assertions.
+func TestBuildStdinTeamNameIgnored(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
@@ -118,17 +118,20 @@ func TestBuildLegacyModeUnchanged(t *testing.T) {
 
 	native := runNative(stdin, "build", "--workflow-dir", wd)
 	if native.exit != 0 {
-		t.Fatalf("legacy build exit=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
+		t.Fatalf("build exit=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 	}
 	var out mergedBuildOutput
 	if err := json.Unmarshal([]byte(native.stdout), &out); err != nil {
 		t.Fatalf("stdout is not build JSON: %v\n%s", err, native.stdout)
 	}
-	if out.Name == nil || out.TeamName == nil || *out.TeamName != "fixture-team" {
-		t.Errorf("legacy build must keep name present + team_name=%q; got name=%v team_name=%v", "fixture-team", out.Name, out.TeamName)
+	if out.Name == nil || *out.Name == "" {
+		t.Errorf("build must emit a non-empty name regardless of the ignored team_name key; got %v", out.Name)
 	}
-	if out.RunInBackground != nil {
-		t.Errorf("legacy team-name build must NOT emit run_in_background (merged-only encoding); got %v", *out.RunInBackground)
+	if out.TeamName != nil {
+		t.Errorf("a stdin team_name key must not resurrect the retired field; got %q", *out.TeamName)
+	}
+	if out.RunInBackground == nil || !*out.RunInBackground {
+		t.Errorf("build must still emit run_in_background=true with team_name present in stdin; got %v", out.RunInBackground)
 	}
 }
 

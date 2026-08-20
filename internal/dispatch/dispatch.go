@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 )
@@ -18,7 +19,7 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 
 // RunWithLauncher routes a `spacedock dispatch <subcommand> [flags]` invocation. build and
 // show-stage-def are the host-neutral surface (assembled here); context-budget,
-// list-standing, show-standing, and spawn-standing are the Claude-coupled surface
+// list-standing, show-standing, and spawn-standing-all are the Claude-coupled surface
 // (their ~/.claude and standing-mod reads live in internal/claudeteam). An unknown
 // subcommand fails with exit 2 and a usage diagnostic on stderr. probe is the
 // host-supplied team-state probe gating the bare-mode advisory (nil on a non-Claude
@@ -86,28 +87,20 @@ func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, a
 			return code
 		}
 		return runShowStanding(workflowDir, stdout, stderr)
-	case "spawn-standing":
-		flags := parseFlags(args[1:], map[string]bool{"--mod": true, "--team": true})
-		mod, okMod := flags["--mod"]
-		team, okTeam := flags["--team"]
-		if !okMod || !okTeam {
-			fmt.Fprintln(stderr, "error: dispatch spawn-standing requires --mod and --team")
-			return 2
-		}
-		return runSpawnStanding(os.Getenv("HOME"), mod, team, stdout, stderr)
 	case "spawn-standing-all":
-		flags := parseFlags(args[1:], map[string]bool{"--workflow-dir": true, "--team": true})
+		for _, a := range args[1:] {
+			if a == "--team" || strings.HasPrefix(a, "--team=") {
+				fmt.Fprintln(stderr, "error: unknown flag --team: legacy TeamCreate-registry dedup is retired; omit --team, the merged background shape is the only shape spawn-standing-all emits")
+				return 2
+			}
+		}
+		flags := parseFlags(args[1:], map[string]bool{"--workflow-dir": true})
 		wd, okWD := flags["--workflow-dir"]
 		if !okWD {
 			fmt.Fprintln(stderr, "error: dispatch spawn-standing-all requires --workflow-dir")
 			return 2
 		}
-		// --team is the mode discriminator, mirroring build.go's team_name: a
-		// legacy host passes the TeamCreate name; a merged .178+ host omits it
-		// (no TeamCreate name to pass) and each spec is emitted in the merged
-		// background shape (name present, team_name absent, run_in_background true).
-		team := flags["--team"]
-		return runSpawnStandingAll(os.Getenv("HOME"), wd, team, stdout, stderr)
+		return runSpawnStandingAll(wd, stdout, stderr)
 	case "reconcile":
 		return runReconcile(args[1:], stdout, stderr)
 	default:
@@ -125,7 +118,6 @@ type buildOptions struct {
 	ChecklistFile       string
 	ScopeNotesFile      string
 	FeedbackContextFile string
-	TeamName            string
 	BareMode            bool
 	FeedbackReflow      bool
 	Advance             bool
@@ -149,11 +141,14 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 		"--checklist-file":        &opts.ChecklistFile,
 		"--scope-notes-file":      &opts.ScopeNotesFile,
 		"--feedback-context-file": &opts.FeedbackContextFile,
-		"--team-name":             &opts.TeamName,
 		"--validate-only":         &opts.ValidateOnly,
 	}
 	for i := 0; i < len(args); i++ {
 		a := args[i]
+		if a == "--team-name" || strings.HasPrefix(a, "--team-name=") {
+			fmt.Fprintln(stderr, "error: unknown flag --team-name: legacy TeamCreate-registry dispatch mode is retired; omit --team-name, auto-team is the only claude shape")
+			return opts, 2
+		}
 		if eq := indexByte(a, '='); eq > 0 {
 			name := a[:eq]
 			if dst, ok := valueFlags[name]; ok {
@@ -199,7 +194,7 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 func isBuildRequestFlag(name string) bool {
 	switch name {
 	case "--entity-path", "--stage", "--checklist-file", "--scope-notes-file",
-		"--feedback-context-file", "--team-name":
+		"--feedback-context-file":
 		return true
 	default:
 		return false
@@ -317,7 +312,7 @@ Input mode selection:
   is IGNORED (flag/file mode); otherwise the request is read as a JSON object on
   stdin (stdin JSON mode). Request flags:
     --entity-path  --stage  --checklist-file  --scope-notes-file
-    --feedback-context-file  --team-name  --bare-mode  --feedback-reflow  --advance  --stamp
+    --feedback-context-file  --bare-mode  --feedback-reflow  --advance  --stamp
   Flag/file mode requires --entity-path, --stage, and --checklist-file; any
   request flag with one of the three missing fails:
     error: flag/file input requires --entity-path, --stage, and --checklist-file
@@ -334,8 +329,7 @@ Flags:
   --checklist-file FILE         File of checklist lines, one per line (flag/file mode).
   --scope-notes-file FILE       Optional scope-notes file (flag/file mode).
   --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow (flag/file mode).
-  --team-name NAME              Select the legacy TeamCreate-registry dispatch shape. On host=claude, auto-team is the default — omit this unless you mean legacy team mode.
-  --bare-mode                   Emit the bare sequential shape (no name, no team_name, no run_in_background); unsupported on host=codex.
+  --bare-mode                   Emit the bare sequential shape (no name, no run_in_background); unsupported on host=codex.
   --feedback-reflow             Route a rejection back to its feedback-to target stage; requires --feedback-context-file.
   --advance                     Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
   --stamp                       Fold the ordinary post-gate dispatch steps (started/worktree frontmatter stamps, state commit+sync, worktree creation) into this build, before assembling the envelope. Refuses (no mutation) unless the entity's status already equals --stage. Incompatible with --advance.
@@ -348,7 +342,7 @@ Stdin JSON request fields (stdin JSON mode):
   workflow_dir    Workflow directory for the dispatch request.
   stage           Stage name to dispatch.
   checklist       Array of checklist strings for the dispatched worker.
-  (optional: team_name, scope_notes, feedback_context, bare_mode, is_feedback_reflow, advance, host)
+  (optional: scope_notes, feedback_context, bare_mode, is_feedback_reflow, advance, host)
 
 Examples:
   stdin JSON mode:

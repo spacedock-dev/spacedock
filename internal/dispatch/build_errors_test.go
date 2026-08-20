@@ -71,37 +71,37 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 		{"missing-required-field", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			// schema_version present, entity_path omitted.
-			return wd, `{"schema_version":2,"workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 		}},
 		{"present-but-null-field", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":null,"checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":null,"checklist":["- a"]}`
 		}},
 		{"unsupported-schema-version", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":1,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":1,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 		}},
 		{"worktree-absolute-entity-path", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			bad := filepath.Join(wd, ".worktrees", "x", "thing.md")
-			return wd, `{"schema_version":2,"entity_path":"` + bad + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + bad + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 		}},
 		{"checklist-empty", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":[],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":[]}`
 		}},
 		{"checklist-not-a-list", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":"not a list","team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":"not a list"}`
 		}},
 		{"entity-not-readable", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			missing := filepath.Join(wd, "nope.md")
-			return wd, `{"schema_version":2,"entity_path":"` + missing + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + missing + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 		}},
 		{"readme-not-found", func(t *testing.T, root string) (string, string) {
 			// workflow_dir has no README; entity lives in root (readable).
@@ -112,7 +112,7 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(root, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "backlog", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 		}},
 		{"no-stages-block", func(t *testing.T, root string) (string, string) {
 			wd := root
@@ -120,12 +120,12 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "backlog", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 		}},
 		{"stage-not-in-workflow", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			ep := writeFlatEntity(t, wd, "nonesuch", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"nonesuch","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"nonesuch","checklist":["- a"]}`
 		}},
 		{"invalid-stage-model", func(t *testing.T, root string) (string, string) {
 			wd := root
@@ -133,7 +133,7 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "badmodel", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"badmodel","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"badmodel","checklist":["- a"]}`
 		}},
 		{"invalid-defaults-model", func(t *testing.T, root string) (string, string) {
 			wd := root
@@ -141,19 +141,19 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "ok", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"ok","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"ok","checklist":["- a"]}`
 		}},
 		{"worktree-path-missing", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			// Entity stamps a worktree path that does not exist on disk.
 			ep := writeFlatEntity(t, wd, "implementation", ".worktrees/does-not-exist")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"implementation","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"implementation","checklist":["- a"]}`
 		}},
 		{"worktree-stage-no-worktree", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
 			// implementation is a worktree stage but the entity has no worktree.
 			ep := writeFlatEntity(t, wd, "implementation", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"implementation","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"implementation","checklist":["- a"]}`
 		}},
 		{"feedback-context-missing", func(t *testing.T, root string) (string, string) {
 			wd := writeGood(t, root)
@@ -162,7 +162,7 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 				t.Fatal(err)
 			}
 			ep := writeFlatEntity(t, wd, "validation", wtRel)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"validation","checklist":["- a"],"team_name":"t","is_feedback_reflow":true}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"validation","checklist":["- a"],"is_feedback_reflow":true}`
 		}},
 		{"invalid-stage-name", func(t *testing.T, root string) (string, string) {
 			// A stage name with an uppercase letter fails the kebab-case regex
@@ -172,7 +172,7 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "BadStage", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"BadStage","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"BadStage","checklist":["- a"]}`
 		}},
 		{"malformed-heading", func(t *testing.T, root string) (string, string) {
 			wd := root
@@ -181,7 +181,7 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "ideation", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"ideation","checklist":["- a"],"team_name":"t"}`
+			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"ideation","checklist":["- a"]}`
 		}},
 	}
 
@@ -225,13 +225,13 @@ func TestBuildStrEErrors(t *testing.T) {
 		root := t.TempDir()
 		wd := writeGood(t, root)
 		ep := writeFlatEntity(t, wd, "backlog", "")
-		stdin := `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
+		stdin := `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 
 		// Force the write to fail: make the dispatch-file path a directory so
 		// open()/WriteFile cannot write a regular file there. Clear any leftover
-		// regular file other fixtures wrote at this same path first. The path is
-		// keyed on the team name ("t" here) to match the collision-free derivation.
-		derived := "t-spacedock-ensign-thing-backlog"
+		// regular file other fixtures wrote at this same path first. No team_name
+		// or session id in this stdin, so the path is the bare derived name.
+		derived := "spacedock-ensign-thing-backlog"
 		target := filepath.Join(dispatchFileDir, derived+".md")
 		if err := os.RemoveAll(target); err != nil {
 			t.Fatal(err)

@@ -87,7 +87,6 @@ func buildCappedName(t *testing.T, stateRoot, workflowDir, slug, id string) stri
 		"workflow_dir":   workflowDir,
 		"stage":          "backlog",
 		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 	native := runNative(stdin, "build", "--workflow-dir", workflowDir)

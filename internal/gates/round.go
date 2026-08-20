@@ -93,6 +93,10 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 	if err != nil {
 		return err
 	}
+	if !roundLogClosed(inputRound.Review) {
+		return fmt.Errorf("round %s is not closed: %s. Nothing was recorded; the room is immutable, so an open log would truncate the record permanently. Route the correction, append that round's entries to the review log (its disposition Annotations and a closing Resolution), then record the round",
+			input.Round, roundOpenTail(inputRound.Review))
+	}
 	pointer := RoundPointer{ID: fmt.Sprintf("round:%s:%s:%d", location.entityID, location.stage, location.cycle), Stage: location.stage, Cycle: location.cycle,
 		Briefing: Briefing{ID: inputRound.Manifest.ID, Digest: inputRound.Digest,
 			RoomRef: fmt.Sprintf("./review/%s/round-%d", location.stage, location.cycle)}}
@@ -111,6 +115,37 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 			return next, err
 		}, replace)
 	})
+}
+
+// roundLogClosed reports whether a review log has been ANSWERED, which is what
+// makes its round admissible to the immutable room. The verdict is the log's first
+// Resolution (parseReviewLog's Reviewer), entries are ordered, and validateResolution's
+// dichotomy splits verdicts into `approve`, which demands nothing further, and
+// `revise`/`hold`, which demand a response. So the log is closed when its LAST entry
+// is a Resolution that either sits past the verdict — that Resolution IS the
+// response — or is an `approve` verdict; open when it ends at an Annotation (a
+// dangling finding nobody closed) or exactly at a non-approve verdict (a demanded
+// response never logged). No entry count, actor, or `includes` graph enters this.
+//
+// Record-time only: ValidateRoundFile shares loadValidateRound but not this check,
+// so rooms recorded before the precondition stay readable and their truncation is
+// graded at read time instead.
+func roundLogClosed(review reviewLog) bool {
+	if len(review.Entries) == 0 {
+		return false
+	}
+	last := review.Entries[len(review.Entries)-1].Resolution
+	return last != nil && (last != review.Reviewer || last.Decision == "approve")
+}
+
+// roundOpenTail names which open shape the log ended in, so the refusal tells the
+// reader what to append rather than only that something is missing.
+func roundOpenTail(review reviewLog) string {
+	last := review.Entries[len(review.Entries)-1]
+	if last.Resolution == nil {
+		return fmt.Sprintf("it ends at Annotation %s with no closing Resolution", last.ID)
+	}
+	return fmt.Sprintf("it ends at the reviewer's %s Resolution %s", last.Resolution.Decision, last.ID)
 }
 func ValidateRoundFile(entityPath, spec string) (RoundSummary, error) {
 	location, err := resolveRound(entityPath, spec)

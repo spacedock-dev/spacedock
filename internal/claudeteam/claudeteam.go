@@ -77,20 +77,3 @@ func BareModeAdvisory(w io.Writer) {
 			"If you intend teams mode, ensure SendMessage is available (ToolSearch select:SendMessage) and dispatch a named background Agent — no TeamCreate. "+
 			"If bare is intentional, this warning can be ignored.")
 }
-
-// LegacyTeamNameAdvisory writes the --team-name-on-claude warning to w. It names
-// Claude-only concepts (the auto-team default, the legacy TeamCreate registry), so
-// the text lives in the Claude seam beside BareModeAdvisory. The generic build path
-// calls it when a non-bare claude dispatch passes a team_name — the teamName != ""
-// complement of merged mode — where auto-team is the default and the explicit
-// --team-name selects the sunsetting legacy shape. Unlike BareModeAdvisory it needs
-// no probe: the trigger is wholly in the CLI args. Stderr-only; the dispatch
-// envelope is untouched.
-func LegacyTeamNameAdvisory(w io.Writer) {
-	fmt.Fprintln(w,
-		"WARN: --team-name selects the legacy TeamCreate-registry dispatch shape "+
-			"(team_name present, run_in_background absent). On host=claude, auto-team "+
-			"is the default — omit --team-name to emit the auto-team shape (name + "+
-			"run_in_background, no team_name). If you mean the legacy team-registry "+
-			"path, this warning can be ignored.")
-}

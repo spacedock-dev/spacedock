@@ -27,7 +27,6 @@ func TestBuildFlagFileInputModePreservesLiteralChecklist(t *testing.T) {
 		"--stage", "backlog",
 		"--checklist-file", checklistPath,
 		"--scope-notes-file", scopePath,
-		"--team-name", "fixture-team",
 	)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
@@ -66,28 +65,6 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 			if strings.Contains(body, banned) {
 				t.Fatalf("derived Codex dispatch body contains %q:\n%s", banned, body)
 			}
-		}
-	})
-
-	t.Run("codex-without-team-name", func(t *testing.T) {
-		t.Setenv("CODEX_THREAD_ID", "codex-thread")
-		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
-
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, map[string]any{"team_name": nil}), "build", "--workflow-dir", root)
-		if native.exit != 0 {
-			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
-		}
-		out := decodeBuildOutput(t, native.stdout)
-		if out.Name == "" {
-			t.Fatalf("Codex dispatch should still emit a task name:\n%s", native.stdout)
-		}
-		if out.TeamName != nil {
-			t.Fatalf("Codex dispatch should omit team_name when none was supplied:\n%s", native.stdout)
-		}
-		body := readDispatchBody(t, out.DispatchFilePath)
-		if !strings.Contains(body, "Codex final-status notification") {
-			t.Fatalf("Codex dispatch without team_name missing completion signal:\n%s", body)
 		}
 	})
 
@@ -378,23 +355,20 @@ func buildHostStdin(t *testing.T, root string, extra map[string]any) string {
 		"workflow_dir":   root,
 		"stage":          "backlog",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, extra)
 }
 
 func decodeBuildOutput(t *testing.T, stdout string) struct {
-	DispatchFilePath string  `json:"dispatch_file_path"`
-	Prompt           string  `json:"prompt"`
-	Name             string  `json:"name"`
-	TeamName         *string `json:"team_name"`
+	DispatchFilePath string `json:"dispatch_file_path"`
+	Prompt           string `json:"prompt"`
+	Name             string `json:"name"`
 } {
 	t.Helper()
 	var out struct {
-		DispatchFilePath string  `json:"dispatch_file_path"`
-		Prompt           string  `json:"prompt"`
-		Name             string  `json:"name"`
-		TeamName         *string `json:"team_name"`
+		DispatchFilePath string `json:"dispatch_file_path"`
+		Prompt           string `json:"prompt"`
+		Name             string `json:"name"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &out); err != nil {
 		t.Fatalf("stdout is not build JSON: %v\n%s", err, stdout)

@@ -1,5 +1,5 @@
-// ABOUTME: standing-subcommand three-channel parity — list/show/spawn-standing and
-// ABOUTME: the build _mods fetch-line branch, native vs vendored Python over fixtures.
+// ABOUTME: standing-subcommand three-channel parity — list-standing/show-standing,
+// ABOUTME: native vs vendored Python over fixtures.
 package dispatch
 
 import (
@@ -95,87 +95,6 @@ func TestShowStandingParityEmpty(t *testing.T) {
 	assertGolden(t, "show-standing-empty", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
-// TestSpawnStandingParitySpecEmit drives the spec-emit path: the named member is
-// NOT in the (empty) team config, so both sides emit the Agent() spec JSON.
-func TestSpawnStandingParitySpecEmit(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	wd := t.TempDir()
-	modPath := filepath.Join(wd, "_mods", "comm-officer.md")
-	writeFile(t, modPath, standingMod("comm-officer", "sonnet", "prose polisher", ""))
-	// A team config that does NOT list comm-officer, so member_exists is false.
-	claudeFixture{
-		team:    "fixture-team",
-		session: "s",
-		members: []fixtureMember{{name: "team-lead", model: "opus"}},
-		jsonls:  map[string]string{},
-	}.write(t, home)
-
-	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-	assertGolden(t, "spawn-standing-spec", goldenEnvelope{res: normRun(native, wd, home)})
-}
-
-// TestSpawnStandingParityFableModel is AC-7: a standing mod declaring
-// `model: fable` in its ## Hook: startup spawns successfully (spec-emit path),
-// the same enum fable joined for spawn-standing's shared validation.
-func TestSpawnStandingParityFableModel(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	wd := t.TempDir()
-	modPath := filepath.Join(wd, "_mods", "fable-officer.md")
-	writeFile(t, modPath, standingMod("fable-officer", "fable", "fable ensign", ""))
-	// A team config that does NOT list fable-officer, so member_exists is false.
-	claudeFixture{
-		team:    "fixture-team",
-		session: "s",
-		members: []fixtureMember{{name: "team-lead", model: "opus"}},
-		jsonls:  map[string]string{},
-	}.write(t, home)
-
-	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-	assertGolden(t, "spawn-standing-fable", goldenEnvelope{res: normRun(native, wd, home)})
-	if native.exit != 0 {
-		t.Fatalf("spawn-standing exit=%d stderr=%q", native.exit, native.stderr)
-	}
-	if !strings.Contains(native.stdout, `"model": "fable"`) {
-		t.Errorf("spec JSON missing model=fable:\n%s", native.stdout)
-	}
-}
-
-// TestSpawnStandingParitySpecNonASCIIPrompt is the A-2 non-ASCII parity case for
-// the spawn-standing spec-emit path. The FO forwards spec.prompt VERBATIM, so a
-// non-ASCII Agent Prompt (em-dash U+2014 here) must serialize byte-identically
-// to the oracle: Python json.dumps escapes it to \u2014, where Go's encoder
-// emitted it raw before the EmitPythonJSON ensure_ascii fix. Driving the
-// spec-emit path with such a prompt asserts native == Python bytes including the
-// escaped prompt, and the escape guard makes the parity assertion load-bearing.
-func TestSpawnStandingParitySpecNonASCIIPrompt(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	wd := t.TempDir()
-	modPath := filepath.Join(wd, "_mods", "comm-officer.md")
-	// An Agent Prompt with an em-dash, so spec.prompt carries a non-ASCII rune.
-	mod := "---\nstanding: true\nname: comm-officer\n---\n" +
-		"## Hook: startup\n" +
-		"- subagent_type: general-purpose\n" +
-		"- name: comm-officer\n" +
-		"- model: sonnet\n" +
-		"## Agent Prompt\nYou are comm-officer — the prose polisher.\n"
-	writeFile(t, modPath, mod)
-	// A team config that does NOT list comm-officer, so member_exists is false and
-	// both sides take the spec-emit branch.
-	claudeFixture{
-		team:    "fixture-team",
-		session: "s",
-		members: []fixtureMember{{name: "team-lead", model: "opus"}},
-		jsonls:  map[string]string{},
-	}.write(t, home)
-
-	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-	assertGolden(t, "spawn-standing-spec-nonascii", goldenEnvelope{res: normRun(native, wd, home)})
-	assertEmDashEscaped(t, native.stdout)
-}
-
 // assertEmDashEscaped asserts stdout carries the literal \u2014 escape and no raw
 // UTF-8 em-dash, so the ensure_ascii fix is demonstrably what makes the byte
 // parity hold (a guard against the harness comparing raw == raw if reverted).
@@ -189,89 +108,12 @@ func assertEmDashEscaped(t *testing.T, stdout string) {
 	}
 }
 
-// TestSpawnStandingParityAlreadyAlive drives the already-alive path: the team
-// config already lists the declared member, so both sides emit the compact
-// already-alive JSON (exit 0).
-func TestSpawnStandingParityAlreadyAlive(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	wd := t.TempDir()
-	modPath := filepath.Join(wd, "_mods", "comm-officer.md")
-	writeFile(t, modPath, standingMod("comm-officer", "sonnet", "prose polisher", ""))
-	claudeFixture{
-		team:    "fixture-team",
-		session: "s",
-		members: []fixtureMember{{name: "comm-officer", model: "sonnet"}},
-		jsonls:  map[string]string{},
-	}.write(t, home)
-
-	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-	assertGolden(t, "spawn-standing-alive", goldenEnvelope{res: normRun(native, wd, home)})
-}
-
-// TestSpawnStandingParityLoudFailures drives the loud-failure paths byte-compared
-// native vs oracle: missing mod, missing standing:true, missing ## Agent Prompt,
-// missing model, and a bad model enum value. Each must exit 1 with the same
-// stderr.
-func TestSpawnStandingParityLoudFailures(t *testing.T) {
-	cases := []struct {
-		name    string
-		mod     string // mod body; "" means do not create the file
-		modName string
-	}{
-		{
-			name:    "missing-mod",
-			mod:     "",
-			modName: "ghost.md",
-		},
-		{
-			name:    "not-standing",
-			mod:     "---\nstanding: false\nname: nope\n---\n## Hook: startup\n- model: opus\n## Agent Prompt\nx\n",
-			modName: "nope.md",
-		},
-		{
-			name:    "missing-agent-prompt",
-			mod:     "---\nstanding: true\nname: noprompt\n---\n## Hook: startup\n- subagent_type: general-purpose\n- name: noprompt\n- model: opus\n",
-			modName: "noprompt.md",
-		},
-		{
-			name:    "missing-model",
-			mod:     "---\nstanding: true\nname: nomodel\n---\n## Hook: startup\n- subagent_type: general-purpose\n- name: nomodel\n## Agent Prompt\nx\n",
-			modName: "nomodel.md",
-		},
-		{
-			name:    "bad-model-enum",
-			mod:     "---\nstanding: true\nname: badmodel\n---\n## Hook: startup\n- subagent_type: general-purpose\n- name: badmodel\n- model: gpt-4\n## Agent Prompt\nx\n",
-			modName: "badmodel.md",
-		},
-		{
-			name:    "trailing-heading",
-			mod:     "---\nstanding: true\nname: trailer\n---\n## Hook: startup\n- subagent_type: general-purpose\n- name: trailer\n- model: opus\n## Agent Prompt\nbody\n## Trailing Section\noops\n",
-			modName: "trailer.md",
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			home := t.TempDir()
-			t.Setenv("HOME", home)
-			wd := t.TempDir()
-			modPath := filepath.Join(wd, "_mods", tc.modName)
-			if tc.mod != "" {
-				writeFile(t, modPath, tc.mod)
-			}
-			native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-			assertGolden(t, "spawn-standing-"+tc.name, goldenEnvelope{res: normRun(native, wd, home)})
-			if native.exit == 0 {
-				t.Fatalf("loud-failure case %q exited 0 (fixture is wrong)", tc.name)
-			}
-		})
-	}
-}
-
-// TestBuildModsParity extends the build parity to the _mods/show-standing branch:
-// a workflow declaring a standing teammate emits the show-standing fetch line iff
-// the oracle does, byte-identical after the claude-team→spacedock dispatch rewrite.
+// TestBuildModsParity guards that a workflow declaring a standing teammate does
+// NOT get an auto-injected show-standing fetch line from `dispatch build` — that
+// auto-injection only ever fired on the retired legacy team_name path (merged and
+// bare dispatches always omitted it, per build.go's documented behavior). The
+// standing-teammate flow stays reachable directly via show-standing /
+// spawn-standing-all, covered by the tests above and in spawn_standing_all_*_test.go.
 func TestBuildModsParity(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -290,7 +132,6 @@ func TestBuildModsParity(t *testing.T) {
 		"workflow_dir":   root,
 		"stage":          "backlog",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 

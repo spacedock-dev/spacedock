@@ -42,7 +42,6 @@ func buildSplitRootDispatchBody(t *testing.T, withOrigin bool) string {
 		"workflow_dir":   workflowDir,
 		"stage":          "implementation",
 		"checklist":      []string{"- a", "- b"},
-		"team_name":      "fixture-team",
 		"bare_mode":      false,
 	}, nil)
 
