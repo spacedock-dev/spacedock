@@ -6,14 +6,22 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
 
-// sessionStartCompactCommand reads hooks.json and returns the sole command
-// registered under SessionStart/^compact$, failing the test if there isn't
-// exactly one. Shared by the two parity tests below.
-func sessionStartCompactCommand(t *testing.T, repo string) string {
+type sessionStartEntry struct {
+	Matcher string `json:"matcher"`
+	Hooks   []struct {
+		Command string `json:"command"`
+	} `json:"hooks"`
+}
+
+// sessionStartEntries returns EVERY SessionStart entry in hooks.json. Nothing
+// filters on the matcher: keying the lookup off the matcher we expect makes it
+// a lookup key rather than a value under test, and hides an added sibling entry.
+func sessionStartEntries(t *testing.T, repo string) []sessionStartEntry {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join(repo, "hooks.json"))
 	if err != nil {
@@ -21,37 +29,63 @@ func sessionStartCompactCommand(t *testing.T, repo string) string {
 	}
 	var doc struct {
 		Hooks struct {
-			SessionStart []struct {
-				Matcher string `json:"matcher"`
-				Hooks   []struct {
-					Command string `json:"command"`
-				} `json:"hooks"`
-			} `json:"SessionStart"`
+			SessionStart []sessionStartEntry `json:"SessionStart"`
 		} `json:"hooks"`
 	}
 	if err := json.Unmarshal(data, &doc); err != nil {
 		t.Fatalf("parse hooks.json: %v", err)
 	}
+	return doc.Hooks.SessionStart
+}
+
+// sessionStartCompactCommand returns the sole command registered under
+// SessionStart across all entries, failing the test if there isn't exactly
+// one. Shared by the two parity tests below.
+func sessionStartCompactCommand(t *testing.T, repo string) string {
+	t.Helper()
 	var matched []string
-	for _, entry := range doc.Hooks.SessionStart {
-		if entry.Matcher != "^compact$" {
-			continue
-		}
+	for _, entry := range sessionStartEntries(t, repo) {
 		for _, h := range entry.Hooks {
 			matched = append(matched, h.Command)
 		}
 	}
 	if len(matched) != 1 {
-		t.Fatalf("hooks.json SessionStart/^compact$ has %d command(s), want exactly 1 (got %v)", len(matched), matched)
+		t.Fatalf("hooks.json SessionStart has %d command(s), want exactly 1 (got %v)", len(matched), matched)
 	}
 	return matched[0]
 }
 
+// sessionStartSources reports which of the host's SessionStart source values
+// the declared matchers accept — the matcher exercised as a regexp, not
+// string-compared. Every matcher compiles or the test fails.
+func sessionStartSources(t *testing.T, repo string) string {
+	t.Helper()
+	var matchers []*regexp.Regexp
+	for _, entry := range sessionStartEntries(t, repo) {
+		re, err := regexp.Compile(entry.Matcher)
+		if err != nil {
+			t.Fatalf("SessionStart matcher %q does not compile: %v", entry.Matcher, err)
+		}
+		matchers = append(matchers, re)
+	}
+	var accepted []string
+	for _, src := range []string{"startup", "resume", "clear", "compact", "fork"} {
+		for _, re := range matchers {
+			if re.MatchString(src) {
+				accepted = append(accepted, src)
+				break
+			}
+		}
+	}
+	return strings.Join(accepted, ",")
+}
+
 // TestSessionStartCompactReminderHookIsWired (static) and
 // TestSessionStartCompactReminderPluginRootFallbackResolves (dynamic)
-// together prove this entity's invariant, HOST SIGNATURE PARITY: one
-// script, one SessionStart/^compact$ entry, both manifests activating the
-// same hooks.json, resolving identically under either host's plugin-root var.
+// together prove this entity's invariant, HOST SIGNATURE PARITY: one script,
+// one SessionStart entry accepting exactly the two context-loss sources, both
+// manifests activating the same hooks.json, resolving identically under
+// either host's plugin-root var.
 func TestSessionStartCompactReminderHookIsWired(t *testing.T) {
 	repo := repoRoot(t)
 
@@ -61,7 +95,14 @@ func TestSessionStartCompactReminderHookIsWired(t *testing.T) {
 
 	const wantCommand = "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/hooks/session_start_compact_reminder.sh"
 	if got := sessionStartCompactCommand(t, repo); got != wantCommand {
-		t.Errorf("hooks.json SessionStart/^compact$ command = %q, want %q", got, wantCommand)
+		t.Errorf("hooks.json SessionStart command = %q, want %q", got, wantCommand)
+	}
+
+	// The matcher is behavior, not a label: it must accept exactly the two
+	// context-loss sources. Covers a widened matcher (`.*` takes all five), a
+	// wrong matcher, and an added permissive sibling entry, in one assertion.
+	if got, want := sessionStartSources(t, repo), "clear,compact"; got != want {
+		t.Errorf("SessionStart matchers accept [%s], want exactly [%s]", got, want)
 	}
 
 	for _, manifest := range []string{

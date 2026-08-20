@@ -92,9 +92,9 @@ Add support in small layers. Each layer should have its own proof.
 
 The launcher stays resident as the host's parent: it spawns the host as a child, inherits the terminal, forwards externally-targeted signals (`SIGTERM`/`SIGHUP`) while letting terminal signals (Ctrl-C, resize) reach the host through the shared foreground process group, and exits with the host's exit code — rather than replacing itself with the host. This keeps the `spacedock <host> …` command legible in process listings and session managers (for example zellij's restart view) and lets the launcher supervise companion processes alongside the session in future. (Unix launch lane; `spacedock <host>` is not a supported launch path on Windows.)
 
-## Compaction-boundary reminder hook
+## Context-boundary reminder hook
 
-The plugin ships a `SessionStart(compact)` reminder hook via the shared
+The plugin ships a `SessionStart(compact|clear)` reminder hook via the shared
 `hooks.json`; a new host that activates `hooks.json` inherits it
 automatically. The host must supply its own plugin-root environment variable
 in the command template, or the hook resolves to a broken path and errors
