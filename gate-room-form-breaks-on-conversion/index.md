@@ -1,7 +1,7 @@
 ---
 id: gf0jvhj4y8vjhd6ww62vsb2q
 title: Gate rooms make a flat entity a hybrid, and converting it breaks every later gate
-status: validation
+status: implementation
 source: "Issue #739 (captain, 2026-08-20): gate prepare fails after a flat-to-folder conversion because a retained room-ref resolves relative to the new entity folder and duplicates the slug."
 started: 2026-08-20T19:59:06Z
 completed:
@@ -85,9 +85,9 @@ gates:
                 reason: 'Captain: ''push it and approve CI for the stack tip''. Validation PASSED with no material finding: all five ACs reproduced on a throwaway clone, every live number re-derived independently, and the armed-gate concern resolved — the three live prepares ran in clones and never touched live state. Two polish findings, both of the same class: an assertion that cannot fail, and a claim about an assertion that is not true. Surface 292 net against the ratified 283 plus-or-minus 40.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
-pr: "#745"
+                state: superseded
+mod-block:
+pr:
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
@@ -277,6 +277,10 @@ Same file, in the `spacedock status` row's `--validate` description, add: `--val
 ### Feedback Cycles
 
 - Cycle 1: REVISED — captain at the ideation gate; surface estimate 22 files/net +595 vs the captain's 100-net ceiling (595%); AC unchanged. The defect closes in +5 (the `Prepare` guard) plus +22 (the validator warning). The other +492, 83% of the estimate, is a new `spacedock convert` command and its tests. The design rejected doing nothing because a hand `git mv` destroys 33 retained refs and the rewrite half is forgettable — measured, and true as far as it goes. The captain reports the field outcome that contradicts its conclusion: the repository and first officer that actually hit issue #739 converted and repaired the entity by hand without difficulty. So the measurement argues the migration must be SAFE IF PERFORMED, not that it must be performed or shipped as a permanent verb. Reprice with grandfathering as the primary option: the 9 hybrids resolve correctly today and break only on conversion, so refusing to mint a NEW hybrid while leaving the existing closed set alone breaks no gate and needs no migration. FO note: the FO dispatched this without capping the surface, and the scope note recorded the captain's enforcement steer without the ceiling. That is on the FO, not the worker — the estimate is an honest reading of the design it was asked to shape.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — captain, after the stack-tip CI run graded the delivered guard (narrow rule change, not a design reset); surface 13 files/net +292 vs estimate +283 ±40 (103%); AC narrowed: AC-1's refusal condition is rewritten. Material: the guard refuses `gate prepare` on ANY flat entity that holds no rooms, which is the shipped default shape — `--folder` is opt-in and no workflow declares a form — so it refuses the product's own default, not merely a fixture convenience. Both live lanes reddened at tip run 32425117427: the journey's own words are "Gate preparation blocked: the workflow requires folder-form `auto-continue-task/index.md`, but the task is stored as `auto-continue-task.md`". Reproduced locally against the built guard binary on a fresh flat entity before reading the CI log. Captain's rule: LOOSEN — refuse only when the WORKFLOW declares folder form. A workflow that declares nothing allows either shape, so enforcement arrives with the declaration rather than ahead of it, and `qpa` (`workflow-declared-entity-form`) owns the commission-time parameter and the `spacedock new` default. FO note, the cause of the miss: the ideation declared "no live workflow test needed" and the FO approved that twice, for a change to a command every live journey drives. The workflow README's live-run rule enumerates grader, fixture, runner, and contract text, and this change was none of those — it was product code the journeys exercise. The FO read the enumeration instead of its intent. That is on the FO, not the worker, and it is the second occurrence of this class this session.
 
 ## Stage Report: ideation
 
