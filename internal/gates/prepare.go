@@ -92,7 +92,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, fmt.Errorf("resolve entity: %w", err)
 	}
-	if err := refuseNewFlatCompanion(entityPath); err != nil {
+	if err := refuseNewFlatCompanion(entityPath, input.WorkflowDir); err != nil {
 		return PrepareResult{}, err
 	}
 	unlock, err := lockEntity(entityPath)
@@ -657,21 +657,53 @@ func validatePreparedStage(workflowDir, stage string) error {
 }
 
 // refuseNewFlatCompanion refuses to create the first prepared room beside a flat
-// entity. A room lands at <state>/<slug>/review/..., so preparing beside
-// <slug>.md puts a <slug>/ companion next to it and writes refs relative to the
-// state root as ./<slug>/review/... — refs that break the moment the entity
-// becomes <slug>/index.md. An entity that already holds rooms is grandfathered:
-// its refs are correct for its current form, and refusing here would strand a
-// working gate rather than protect anything.
-func refuseNewFlatCompanion(entityPath string) error {
+// entity, but only where the workflow declares folder form. A room lands at
+// <state>/<slug>/review/..., so preparing beside <slug>.md puts a <slug>/
+// companion next to it and writes refs relative to the state root as
+// ./<slug>/review/... — refs that break the moment the entity becomes
+// <slug>/index.md. Only a workflow that declares `entity-form: folder` has
+// promised that its entities are folder form, so only there is a flat entity a
+// mistake worth blocking a gate over. A workflow that declares nothing accepts
+// either shape: that is every workflow today, and flat is still what filing
+// mints by default.
+//
+// An entity that already holds rooms is grandfathered even under the
+// declaration. Its refs are correct for the form it is in, so refusing would
+// block the next gate on an entity that works — the green-then-blocked sequence
+// this guard exists to prevent — rather than protect anything. A declaration
+// added to a workflow that already holds hybrids therefore stops new ones
+// without stranding the old; `status --validate` reports those with the
+// conversion remedy.
+func refuseNewFlatCompanion(entityPath, workflowDir string) error {
 	if filepath.Base(entityPath) == "index.md" {
+		return nil
+	}
+	if !workflowDeclaresFolderForm(workflowDir) {
 		return nil
 	}
 	slug := entitySlug(entityPath)
 	if _, err := os.Stat(filepath.Join(filepath.Dir(entityPath), slug, "review")); err == nil {
 		return nil
 	}
-	return fmt.Errorf("gate prepare requires folder-form entity %s/index.md because review artifacts accumulate beside the entity; file it as %s/index.md, or move it with `git mv %s.md %s/index.md`", slug, slug, slug, slug)
+	return fmt.Errorf("gate prepare requires folder-form entity %s/index.md because this workflow declares `entity-form: folder` and review artifacts accumulate beside the entity; file it as %s/index.md, or move it with `git mv %s.md %s/index.md`", slug, slug, slug, slug)
+}
+
+// workflowDeclaresFolderForm reports whether the workflow README declares
+// `entity-form: folder`. Preparation only reads the key; commissioning and the
+// filing-time default own writing it. An unreadable or unparseable README is
+// not a declaration — validatePreparedStage reads the same file below and owns
+// the error message for a workflow that cannot be read at all.
+func workflowDeclaresFolderForm(workflowDir string) bool {
+	readme, err := os.ReadFile(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return false
+	}
+	workflow, _, _, err := frontmatterNode(readme)
+	if err != nil {
+		return false
+	}
+	form := mappingValue(workflow, "entity-form")
+	return form != nil && strings.TrimSpace(form.Value) == "folder"
 }
 
 func preparedRoomPath(entityPath, stage string, attempt int) (string, error) {

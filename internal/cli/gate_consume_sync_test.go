@@ -94,7 +94,6 @@ func gatedTerminalSplitRootFixture(t *testing.T) (hostClone, workflowDir string)
 		t.Fatal(err)
 	}
 	testgit.InitRepo(t, statePath, "-q")
-	grandfatherFlatRooms(t, statePath, "task")
 	writeFile(t, filepath.Join(statePath, "task.md"), "---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n")
 	git(t, statePath, "add", ".")
 	git(t, statePath, "commit", "-q", "-m", "state fixture")
@@ -431,7 +430,6 @@ func commissionGatedSplitWorkflow(t *testing.T, hostClone string) (workflowDir, 
 			t.Fatal(err)
 		}
 	}
-	grandfatherFlatRooms(t, tmpWT, "task")
 	writeFile(t, filepath.Join(tmpWT, "task.md"), "---\nid: task\nstatus: ideation\ntitle: Task\nstarted:\nworktree:\n---\n# Task\n")
 	git(t, tmpWT, "add", "-A")
 	git(t, tmpWT, "commit", "-q", "-m", "seed state")

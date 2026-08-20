@@ -82,7 +82,6 @@ func gateCeremonyFixture(t *testing.T) (mainRoot, workflowDir, entityPath, check
 		t.Fatal(err)
 	}
 	testgit.InitRepo(t, statePath, "-q")
-	grandfatherFlatRooms(t, statePath, "task")
 	writeFile(t, filepath.Join(statePath, "task.md"), "---\nid: task\nstatus: ideation\ntitle: Task\nstarted:\nworktree:\n---\n# Task\n")
 	git(t, statePath, "add", ".")
 	git(t, statePath, "commit", "-q", "-m", "state fixture")

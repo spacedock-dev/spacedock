@@ -82,12 +82,12 @@ func readyGateReadinessBySlug(t *testing.T, def string) map[string]string {
 // demands a report makes the closing Stage Report count nonzero.
 func TestInitialGatedSeedReachesCaptainWithNoStageReport(t *testing.T) {
 	def, state := buildSplitRoot(t, initialGateReadme, map[string]string{
-		"seed/index.md": "---\nid: seed\nstatus: backlog\ntitle: Seed\n---\n# Seed\n\n## Problem\n\nA committed seed carrying no report.\n",
+		"seed.md": "---\nid: seed\nstatus: backlog\ntitle: Seed\n---\n# Seed\n\n## Problem\n\nA committed seed carrying no report.\n",
 	})
-	entity := filepath.Join(state, "seed", "index.md")
+	entity := filepath.Join(state, "seed.md")
 	testgit.InitRepo(t, state, "-q")
-	gitC(t, state, "add", "--", "seed/index.md")
-	gitC(t, state, "commit", "-q", "-m", "commit the seed", "--", "seed/index.md")
+	gitC(t, state, "add", "--", "seed.md")
+	gitC(t, state, "commit", "-q", "-m", "commit the seed", "--", "seed.md")
 	// Preparation classifies the selected source against BOTH workflow roots, so
 	// the definition checkout the state dir is nested in must be a repo too.
 	testgit.InitRepo(t, def, "-q")

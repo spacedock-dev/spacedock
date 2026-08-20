@@ -133,10 +133,12 @@ The room layout is the same for both entity forms:
 
 but `room-ref` is written relative to the entity file's own directory, so folder form
 binds `./review/...` while flat form binds `./<slug>/review/...`. Only the folder-form
-ref is invariant under a later move of the entity. Preparation therefore refuses to
-create the first room beside a flat `<slug>.md`: for folder form the entity is
-`<slug>/index.md`, and for flat form `<slug>/` would be a companion whose refs break on
-conversion. Flat entities that already hold rooms are grandfathered, and their
+ref is invariant under a later move of the entity. A workflow states which form it
+keeps with `entity-form: folder` in its README frontmatter, and where that declaration
+is present preparation refuses to create the first room beside a flat `<slug>.md`,
+whose `<slug>/` companion would hold refs that break on conversion. A workflow that
+declares no form accepts either shape and preparation refuses neither. Flat entities
+that already hold rooms are grandfathered under the declaration, and their
 slug-prefixed refs stay correct while they stay flat; converting one requires
 `git mv <slug>.md <slug>/index.md` and rewriting every `room-ref: ./<slug>/` to
 `room-ref: ./` in the same commit, and `status --validate` reports both the
