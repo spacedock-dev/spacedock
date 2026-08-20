@@ -74,6 +74,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:zf7rymtke3b6xp7r0337hjj4:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:zf7rymtke3b6xp7r0337hjj4-validation-1
+              briefing:
+                id: briefing:zf7rymtke3b6xp7r0337hjj4:validation:attempt-1:revision-1
+                digest: sha256:0223067b399fd9aee7563e779f4c65af7937f00b5dc6eca63ddd0360e0c67111
+                request-digest: sha256:0cd33ac89cba346eba57cd7c9da30dc40cd683c36e7a742f61e14fdfbb5472db
+                room-ref: ./own-claude-early-rejection-round-record/review/validation/briefing-1
 started: 2026-08-19T18:17:24Z
 worktree: .worktrees/spacedock-ensign-own-claude-early-rejection-round-record
 ---

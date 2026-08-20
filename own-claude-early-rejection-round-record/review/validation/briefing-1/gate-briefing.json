@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zf7rymtke3b6xp7r0337hjj4:validation:attempt-1:revision-1",
+  "question": "Approve to terminal, ratifying the disclosed 53-line tolerance breach?",
+  "artifacts": [
+    {
+      "id": "artifact:zf7rymtke3b6xp7r0337hjj4:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/27a52cda9b4d28acf2a27baad333058080b57f11/own-claude-early-rejection-round-record.md",
+      "rev": "sha256:7d07fbdfb0364bf01fe019db77ec00fa8d7991c05bebf1b933ae43556b9d0e2a",
+      "mediaType": "text/markdown",
+      "summary": "gate record --round now refuses a round log that has not been answered, so the early record that durably truncated the room to 2 of 4 entries becomes impossible; the read-side codes rejection-round-incomplete and rejection-workflow-file-mutated remain as honest backstops for legacy state. Validation executed all four named falsifiers on a throwaway checkout, each redding exactly its claimed cases and nothing else, hand-counted round.go's +35 as 18 code lines, and confirmed ValidateRoundFile untouched. It closed the race gap outright rather than deferring it: full tree-wide go test ./... -race, 19 packages ok, zero data races. AC-6 passed on attempt 4 with three earlier attempts disclosed and retained on disk. Recommend PASSED with captain ratification of the 53-line tolerance breach."
+    }
+  ]
+}
