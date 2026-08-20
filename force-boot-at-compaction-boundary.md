@@ -151,8 +151,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
-mod-block:
-pr:
+mod-block: merge:pr-merge
+pr: "#738"
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
