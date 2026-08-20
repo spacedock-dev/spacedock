@@ -102,13 +102,13 @@ Branch a layer only from a parent that already holds committed work. Do not buil
 
 **Rebase a layer** when the parent moves, not only when it merges. This procedure rewrites a layer already on the remote. A layer not yet pushed rebases locally and reaches the remote through the approval step above.
 
-1. `OLD_HEAD=$(git -C {worktree} rev-parse "$BRANCH")` — the local head, never `origin/$BRANCH`. A lease built from a fetched remote ref authorizes destroying a peer's commit.
-2. `OLD_PARENT=$(git -C {worktree} rev-parse "origin/$PARENT_BRANCH")`, then `git -C {worktree} fetch origin`.
+1. `OLD_PARENT=$(git -C {worktree} rev-parse "origin/$PARENT_BRANCH")` — the parent commit the layer sits on. Read it before the fetch, because the fetch moves that ref and step 3 needs the old value.
+2. `git -C {worktree} fetch origin`.
 3. `git -C {worktree} rebase --onto "origin/$PARENT_BRANCH" "$OLD_PARENT" "$BRANCH"`. Plain `git rebase "$PARENT_BRANCH"` replays from the old merge base and leaves the layer parallel. On conflict: `rebase --abort`, then surface the exact paths and the moved base. Resolve nothing and force nothing. Hand the abort to the workflow's conflict-owner handoff, which routes one reconciliation assignment to the worker recorded for that layer's registered branch and worktree. Restacking an unmerged stack is routine, so this is a per-entity hold, not a delivery failure: keep the entity at its stage with its pending approval and `mod-block`, mutate no refs while routing, and do not take `--rework`. Other entities continue. Re-run this procedure against the owner's new head. A cold or unowned checkout has no recorded owner, so report it and stop.
 4. `NEW_HEAD=$(git -C {worktree} rev-parse HEAD)`. Re-test the three conditions.
 5. Replace `CANDIDATE_SHA` with `$NEW_HEAD`. The rebase abandoned the approved commit that the PR body and the merge report cite.
 6. Run the tests of this layer and every layer below it.
-7. `git -C {worktree} push --force-with-lease="${BRANCH}:${OLD_HEAD}" --force-if-includes origin "${NEW_HEAD}:refs/heads/${BRANCH}"`. Brace every variable in the refspec.
+7. `git -C {worktree} push --force-with-lease --force-if-includes origin "${NEW_HEAD}:refs/heads/${BRANCH}"`. Brace every variable in the refspec. Pass no value to the lease. A bare lease expects the remote-tracking ref, and `--force-if-includes` refuses the push unless your local branch actually incorporates what the last fetch brought — together they reject a peer's commit without naming a value. Naming `$OLD_HEAD` also rejects your own push whenever your local branch is ahead of the remote, which is the ordinary state after a local commit.
 
 The rule against force operations above governs a two-writer content conflict on the candidate, and it still holds. This push rewrites one layer branch the ceremony owns, after a clean rebase.
 
