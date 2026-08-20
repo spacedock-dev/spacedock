@@ -1,6 +1,6 @@
 ---
 title: Early rejection-round record grades as never-recorded
-status: validation
+status: done
 source: "Run 31996696789 claude lane, rejection-flow: round recorded at stream line 287 with entries=2, rework spawned line 309; captain approved filing owners for tolerated residual modes at the 0.27 composite-green ruling, 2026-08-17"
 id: zf7rymtke3b6xp7r0337hjj4
 gates:
@@ -93,11 +93,14 @@ gates:
                 reason: 'Captain approved in chat: ''approve stack on PR''. Validation PASSED with no material finding: all four named falsifiers executed on a throwaway checkout, each redding exactly its claimed cases; round.go''s +35 hand-counted as 18 code lines with ValidateRoundFile untouched; the race gap CLOSED by a full tree-wide race pass (19 packages, zero data races) rather than deferred to CI. Approval ratifies the disclosed 53-line tolerance breach, confined to test volume with no new mechanism or file.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-19T18:17:24Z
 worktree: .worktrees/spacedock-ensign-own-claude-early-rejection-round-record
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:740
+verdict: PASSED
+completed: 2026-08-20T16:47:25Z
+archived: 2026-08-20T16:47:25Z
 ---
 
 ## Problem
