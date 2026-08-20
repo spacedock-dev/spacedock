@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-5:revision-1",
+  "question": "Approve cycle 8 to terminal: matcher exercised, widened to compact and clear, delivery on clear proven live?",
+  "artifacts": [
+    {
+      "id": "artifact:4ctz4sfybfk0mfsbnrjcc7bv:validation:attempt-5:revision-1:item-1",
+      "uri": "git-root://state/6eb316f3d2352f47f8d2393abd9526ce30396f92/force-boot-at-compaction-boundary.md",
+      "rev": "sha256:49913e41887e47c3ba3707008b51f3dc66b51fdc845768f87d25da2e91f1b225",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 8 makes the declared matcher a value under test instead of a lookup key, and widens it to ^(compact|clear)$. Four mutants each fail where two were previously invisible: a second permissive entry, a non-compiling matcher, a narrowed matcher, a widened matcher. Validation confirmed delivery at source=clear with a live instrumented run rather than inference, closing the widening's own gap, and closed cycle 7's material AC-1 finding. Entity surface is 7 files, +248/-7, net 241 against a 245 estimate. Recommend PASSED with three items carried: the union assertion is under-constrained against a new source value, the payload is actionable after a clear by one sentence rather than by design, and no AC pins the payload's instruction content."
+    }
+  ]
+}
