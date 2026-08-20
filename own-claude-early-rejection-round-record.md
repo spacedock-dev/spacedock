@@ -83,6 +83,17 @@ gates:
                 digest: sha256:0223067b399fd9aee7563e779f4c65af7937f00b5dc6eca63ddd0360e0c67111
                 request-digest: sha256:0cd33ac89cba346eba57cd7c9da30dc40cd683c36e7a742f61e14fdfbb5472db
                 room-ref: ./own-claude-early-rejection-round-record/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zf7rymtke3b6xp7r0337hjj4:validation:1
+                briefing: briefing:zf7rymtke3b6xp7r0337hjj4:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-20T03:42:38.805982Z"
+                decision: approve
+                reason: 'Captain approved in chat: ''approve stack on PR''. Validation PASSED with no material finding: all four named falsifiers executed on a throwaway checkout, each redding exactly its claimed cases; round.go''s +35 hand-counted as 18 code lines with ValidateRoundFile untouched; the race gap CLOSED by a full tree-wide race pass (19 packages, zero data races) rather than deferred to CI. Approval ratifies the disclosed 53-line tolerance breach, confined to test volume with no new mechanism or file.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-19T18:17:24Z
 worktree: .worktrees/spacedock-ensign-own-claude-early-rejection-round-record
 ---
