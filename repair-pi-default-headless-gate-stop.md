@@ -30,6 +30,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:ntarrp8jp5h34g6528d66kbe:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ntarrp8jp5h34g6528d66kbe-ideation-1
+              briefing:
+                id: briefing:ntarrp8jp5h34g6528d66kbe:ideation:attempt-1:revision-1
+                digest: sha256:9d23d441eb23900e0a6eaed9ed67c63fbedfb221f38db101e602e00606520a63
+                request-digest: sha256:46903799c3d969fe071f385a0df43419260b9c9311afd6857dc39033cafcd642
+                room-ref: ./repair-pi-default-headless-gate-stop/review/ideation/briefing-1
 started: 2026-08-21T16:13:06Z
 ---
 

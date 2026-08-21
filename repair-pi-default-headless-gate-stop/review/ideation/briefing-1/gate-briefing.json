@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntarrp8jp5h34g6528d66kbe:ideation:attempt-1:revision-1",
+  "question": "Is the design ready to implement? ntarr: combined fix for the Pi implementation-worker-not-dispatched conduct class across default-headless-gate-stop + auto-continue-after-implementation — async-yield boundary root cause in the Pi FO runtime adapter. With conn, approve to enter implementation in a worktree stacked on 750.",
+  "artifacts": [
+    {
+      "id": "artifact:ntarrp8jp5h34g6528d66kbe:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8abf86de7ad65692b4bad9b57b3bcfc24ee8226d/repair-pi-default-headless-gate-stop.md",
+      "rev": "sha256:0dd9debe66b5aa6c5234ac6fdd0b81c7c225fa2863cafb35f31ee17260075b40",
+      "mediaType": "text/markdown",
+      "summary": "Ideation for ntarr: async-yield boundary in the Pi FO runtime adapter is the shared root cause for both Pi journeys failing with implementation-worker-not-dispatched. Value-AC: both journeys pass on Pi; mechanism-AC: dispatch-seam fix exercised by focused tests + live targets. Stacks on 750."
+    }
+  ]
+}
