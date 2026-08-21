@@ -71,10 +71,27 @@ prompt="Use \$spacedock:present-gate. The explicit workflow directory is $fixtur
 	"$SPACEDOCK_BIN" codex --plugin-dir "$repo" --skip-compat-check "$prompt" -- exec --json --dangerously-bypass-approvals-and-sandbox --cd "$fixture" --output-last-message "$fixture/final.txt"
 ) >"$fixture/stream.jsonl"
 
-# The three required fields must be present and answered.
+# The three required fields must be present. Presence is form, not substance;
+# the substantive guards are below.
 for required in "Decision request" "Recommend" "Derived from" "remit"; do
 	grep -Fqi "$required" "$fixture/final.txt" || { echo "missing decision-request field: $required" >&2; cat "$fixture/final.txt" >&2; exit 1; }
 done
+
+# `Derived from` present is not `Derived from` answered. Asked "how could this
+# pass while the behavior is wrong", the answer was: an FO that writes
+# "Derived from: the worker's report" satisfies the presence check while doing
+# the exact thing this template exists to stop. The template says the evidence
+# is cited by path, line, or command, so require a citation the reader can open.
+derived=$(sed -n '/[Dd]erived from/,/^$/p' "$fixture/final.txt")
+echo "$derived" | grep -Eq '\.md|\.go|\.sh|:[0-9]+|spacedock [a-z]' || {
+	echo "Derived from cites no reproducible source:" >&2
+	echo "$derived" >&2; exit 1; }
+
+# And it must not name the worker's own summary as the derivation.
+if echo "$derived" | grep -Eqi "the (worker|ensign)'?s? (report|summary|options|list)( says| states)?[.,;]?$"; then
+	echo "Derived from names the worker's summary as the derivation:" >&2
+	echo "$derived" >&2; exit 1
+fi
 
 # Exactly one recommendation. A menu handed back to the captain fails.
 count=$(grep -ci '^recommend' "$fixture/final.txt" || true)
