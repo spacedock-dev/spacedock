@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5xwwj9c2w50921t16s840p49:ideation:attempt-1:revision-1",
+  "question": "Is the design ready to implement? Issue #746: gate the explicit pi-subagents --extension/--skill in internal/cli/pi.go on the package NOT being registered (extend the existing piSpacedockPackageStatus settings.json scan to also set subagentsRegistered), preserving the dev-override. Value AC-1 (no duplicate load when registered) + mechanism AC-2 (flag-selection behavior test), ~+30 net LOC across internal/cli/pi.go + test, no observable semantic change beyond dropping the duplicate load. Stacked on rebased PR 725. Approve to enter implementation in a worktree off the rebased 725 branch.",
+  "artifacts": [
+    {
+      "id": "artifact:5xwwj9c2w50921t16s840p49:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d89797e4b01143c2b14e2cfd17163d91386f165f/pi-subagents-duplicate-extension-load.md",
+      "rev": "sha256:56dff63ae06c4eb9229fe69073ae18a740f0b7fa8a75a7b167ee6907be8234ee",
+      "mediaType": "text/markdown",
+      "summary": "Ideation for issue #746: extend piSpacedockPackageStatus to detect pi-subagents registration in the existing settings.json scan (zero new I/O), gate the explicit --extension/--skill in runPi on !subagentsRegistered, preserve the field through the dev-override fallback. Spike confirmed live (settings.json lists npm:pi-subagents; index.ts re-exports src/extension/index.ts). 2 ACs (value+mechanism) with falsifying-change evidence. Expected surface +25-35 net LOC, 2 files, no semantic change beyond dropping the duplicate load. Alternative (point flag at \u003cpkg\u003e/index.ts) rejected as more fragile."
+    }
+  ]
+}

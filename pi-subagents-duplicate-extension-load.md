@@ -32,6 +32,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:5xwwj9c2w50921t16s840p49:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:5xwwj9c2w50921t16s840p49-ideation-1
+              briefing:
+                id: briefing:5xwwj9c2w50921t16s840p49:ideation:attempt-1:revision-1
+                digest: sha256:c494b592f1886d0129e9a936d85d8967af96e2d2dee430d8bcedf74e6d5df6dd
+                request-digest: sha256:da422f3439503f899ce0ed59b841e30c6fbb0a044c5a19bd9caffdb55996b256
+                room-ref: ./pi-subagents-duplicate-extension-load/review/ideation/briefing-1
 ---
 
 `spacedock pi` loads the `pi-subagents` extension twice under two different specifiers when the package is also registered in `~/.pi/agent/settings.json` `packages` — the exact setup `spacedock pi --check` recommends. Package discovery loads `<pkg>/index.ts` (re-exporting `./src/extension/index.ts`), and `spacedock pi` additionally passes `--extension <pkg>/src/extension/index.ts --skill <pkg>/skills/pi-subagents` (internal/cli/pi.go, argv built at the `--extension`/`--skill` block; extensionPath is `filepath.Join(pkg, "src", "extension", "index.ts")`). Pi keys extension identity by resolved specifier, not module identity, so the second registration of `subagent`/`subagent_wait` collides and startup fails with `Tool "subagent" conflicts with ...`. Plain `pi` works; `spacedock pi -- --ne` works only by silencing all discovered extensions (lossy — also drops pi-intercom and host extensions).
