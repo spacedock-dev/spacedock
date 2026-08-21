@@ -1,7 +1,7 @@
 ---
 id: p17swb3375rt525fn7f8xt7e
 title: Finish the Pi rejection-flow journey
-status: backlog
+status: ideation
 source: "Deferred Pi follow-up from the test-behavior-completeness priority recarve, 2026-08-10"
 started:
 completed:
@@ -35,7 +35,7 @@ gates:
                 reason: Captain conn granted for pi-related fixes including gates (2026-08-21 chat). Seed clearly scopes the deferred Pi rejection-flow XFAIL (registered owner); AC-1 is the focused live Pi target completing normally. Advance to ideation.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.
