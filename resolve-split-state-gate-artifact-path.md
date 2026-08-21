@@ -36,6 +36,17 @@ gates:
                 digest: sha256:165bae69f49b3d30abc783ba45eee060bef63700ad2d7ef02d05d8c6e4ce5506
                 request-digest: sha256:0668bee18a33b76e4753899717fa3e6df696e3114bd1ff08248836b70d00555f
                 room-ref: ./resolve-split-state-gate-artifact-path/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mvmpzgqxyb32t3b3vdw0x0h1:ideation:1
+                briefing: briefing:mvmpzgqxyb32t3b3vdw0x0h1:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T08:49:16.597398723Z"
+                decision: approve
+                reason: 'Captain approved both ideation gates. mvmpzg: one canonical resolver-owned gate-artifact path contract for split-root — root cause for the 3 required Pi journeys + Codex lane. Advance to implementation, worktree stacked on 747.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-21T08:15:56Z
 ---
 
