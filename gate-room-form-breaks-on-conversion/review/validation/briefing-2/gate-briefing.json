@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-2:revision-1",
+  "question": "Approve cycle 2 to terminal on the captain's grant, without additional validation?",
+  "artifacts": [
+    {
+      "id": "artifact:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/06927dd3b6d55c4f7e9122944df48f6a4e64028f/gate-room-form-breaks-on-conversion/index.md",
+      "rev": "sha256:ab283da1e004f0b232e2ea56e381c682fc692b018c680e7fcf7e35e5b5f6922d",
+      "mediaType": "text/markdown",
+      "summary": "Cycle 2 loosens the guard: gate prepare refuses a flat entity ONLY where the workflow declares entity-form: folder, so an undeclared workflow allows either shape. That clears the cycle-1 red which blocked every live fixture. The worker ran the targeted live journey locally against its build — TestLiveCommonAutoContinueAfterImplementation, claude/sonnet, PASS 393s — and codex-live then passed at the stack tip on the journeys the cycle-1 guard had broken. Both status --validate findings retained. Surface 8 files, +331/-7. No validator ran on cycle 2: the captain approved on the worker's evidence and directed no additional validation."
+    }
+  ]
+}

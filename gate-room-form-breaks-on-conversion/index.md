@@ -86,6 +86,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:gf0jvhj4y8vjhd6ww62vsb2q-validation-2
+              briefing:
+                id: briefing:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-2:revision-1
+                digest: sha256:29062052eb6ce6fafaf3d3a6c20c08704948adfaac0e277cf01b943986e523f4
+                request-digest: sha256:db416ecc52df34fd79722a100986a14c55f1e185dae6239b9bd8ed4bb1a0a1c0
+                room-ref: ./review/validation/briefing-2
 mod-block:
 pr:
 ---
