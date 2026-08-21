@@ -13,6 +13,18 @@ issue:
 pr:
 mod-block:
 sprint: pi-live-completeness
+gates:
+    version: 1
+    records:
+        - id: gate:p17swb3375rt525fn7f8xt7e:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:p17swb3375rt525fn7f8xt7e-backlog-1
+              briefing:
+                id: briefing:p17swb3375rt525fn7f8xt7e:backlog:attempt-1:revision-1
+                digest: sha256:04983d0e5394ec4c8457116492684ab31a3f0807fcc738d92de84662b147d4b9
+                request-digest: sha256:923662fa5e0b785a0b9c57ef58cbaa884166aa1ff9756dbb3fee1e7f28eaf6b6
+                room-ref: ./finish-pi-rejection-flow/review/backlog/briefing-1
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:p17swb3375rt525fn7f8xt7e:backlog:attempt-1:revision-1",
+  "question": "Is the seed clear enough to start design? p17 owns the deferred Pi rejection-flow XFAIL (registered liveXFail pi owner p17): the Pi target reaches the second validation gate but times out before recording/completing the expected stop. AC-1: the focused live Pi target completes normally with two-validation state + one fresh unresolved gate. Ready to enter ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:p17swb3375rt525fn7f8xt7e:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f33b67d07cadf8f342559402ce564d9d4a9d35ae/finish-pi-rejection-flow.md",
+      "rev": "sha256:262d7ab6cd531ad736ad19a3011c3f8332b7b978e4e8773e701b5f8c51203e81",
+      "mediaType": "text/markdown",
+      "summary": "Owner of the registered Pi rejection-flow XFAIL. Seed: Pi reaches the second validation gate but times out before recording the expected stop; AC-1 is the focused live Pi target completing normally with two-validation state + one fresh unresolved gate. Out of scope: Sonnet/Codex, XFAIL policy, new gate commands/CI lanes. Stacks on 747."
+    }
+  ]
+}
