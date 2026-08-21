@@ -27,6 +27,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-21T08:15:56Z
 ---
 
 Make a split-root First Officer pass the exact committed artifact path that gate preparation can resolve.
