@@ -1,7 +1,7 @@
 ---
 id: p17swb3375rt525fn7f8xt7e
 title: Finish the Pi rejection-flow journey
-status: implementation
+status: validation
 source: "Deferred Pi follow-up from the test-behavior-completeness priority recarve, 2026-08-10"
 started: 2026-08-21T08:17:02Z
 completed:
