@@ -138,3 +138,22 @@ Verified by: a `runPi` behavior test in `internal/cli/pi_frontdoor_test.go` driv
 ### Summary
 
 Fleshed out the ideation into a gate-ready design: extend the existing `piSpacedockPackageStatus` settings.json scan to also detect pi-subagents registration (zero additional I/O), gate the explicit `--extension`/`--skill` in `runPi` on `!subagentsRegistered`, and preserve the field through the dev-override fallback. The spike confirmed both detection paths (settings.json packages list `npm:pi-subagents`; extensionPath resolves inside the npm store) and the collision mechanism (index.ts re-exporting src/extension/index.ts → two specifiers). Two ACs: value (AC-1, no duplicate load when registered) and mechanism (AC-2, flag-selection path behavior test). Expected surface is internal/cli/pi.go + test, ~+30 net LOC, no observable semantic change beyond dropping the duplicate load. The simplest alternative (point the flag at `<pkg>/index.ts`) is named and rejected as more fragile (depends on pi-subagents' internal layout).
+
+## Stage Report: implementation
+
+- DONE: Implemented the deliverable — extended `piSpacedockPackageStatus` (internal/cli/pi.go) to set `subagentsRegistered` on `piPackageStatus` when a package named `pi-subagents` is found in the settings.json packages scan (same pass, no early return, no new I/O), gated the explicit pi-subagents `--extension`/`--skill` in `runPi` on `!subagentsRegistered`, and preserved `subagentsRegistered` through the dev-override fallback in `checkPiRuntime`. The dev-override Spacedock extension block (cfg.repoRoot != "") is unchanged.
+  Changes:
+  - `piPackageStatus` struct: added `subagentsRegistered bool` field.
+  - `piSpacedockPackageStatus`: replaced the early-return-on-spacedock loop with a full scan that sets `registered`/`ensignDiscoverable`/`firstOfficerDiscoverable` for the first "spacedock" entry and sets `subagentsRegistered` for any "pi-subagents" entry — both in one pass, no early return.
+  - `runPi`: replaced the unconditional `argv := []string{"pi", "--extension", ..., "--skill", ...}` with `argv := []string{"pi"}` + conditional `append` when `!check.packageStatus.subagentsRegistered`.
+  - `checkPiRuntime` dev-override fallback: the overwritten `piPackageStatus` now carries `subagentsRegistered: res.packageStatus.subagentsRegistered` so the field survives the dev-override path.
+- DONE: Behavior test `TestRunPi_RegisteredSubagentsDedupesExtensionLoad` (internal/cli/pi_frontdoor_test.go) driving `runPi` against registered (`subagentsRegistered: true` → 0 pi-subagents `--extension`/`--skill` flags; dev-override Spacedock extension still appended), unregistered (`false` → 1 of each; dev-override Spacedock extension still appended), and registered-without-dev-override (0 of each) configs.
+- DONE: `piSpacedockPackageStatus` unit test `TestPiSpacedockPackageStatus_SubagentsRegistered` asserting `subagentsRegistered` is set from a settings.json listing `npm:pi-subagents` and unset otherwise (with and without the Spacedock package co-registered).
+- DONE: Existing tests keep `subagentsRegistered` false (zero value) and pass unchanged — `healthyPiPackageStatus()` does not set the field, so all existing runPi/pi tests assert the explicit flags ARE present.
+- DONE: Verified `go test ./internal/cli/ -count=1` — all pi tests pass; the only failures are pre-existing/environmental (`TestVersionAmbiguousMarkersExitZero`, `TestCodexChannelInstallLeavesCoHostedPluginInstalled`, `TestCodexModeSwitchRoundTripPreservesExclusivity`, `TestCodexPluginInstallIsHostNative`), confirmed pre-existing by running them against the stashed base. `go test ./... -race` is green for all non-pre-existing suites.
+- DONE: Committed on the worktree branch `spacedock-ensign/pi-subagents-duplicate-extension-load` (off the rebased PR 725).
+
+### Summary
+
+Implemented the pi-subagents duplicate-extension-load fix: gate the explicit `--extension`/`--skill` flags on the package NOT being registered in settings.json `packages`, so pi's own discovery is the sole load path when the package is installed (one specifier, no `Tool "subagent" conflicts`). Detection reuses the existing `piSpacedockPackageStatus` settings.json scan (zero additional I/O), and the dev-override Spacedock extension block is unchanged. Net +213/-17 across 2 files; 2 new tests (behavior + unit) + 3 sub-tests each.
+
