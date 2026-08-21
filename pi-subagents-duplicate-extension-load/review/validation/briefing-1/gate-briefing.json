@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5xwwj9c2w50921t16s840p49:validation:attempt-1:revision-1",
+  "question": "Is the fix validated and ready to deliver? Issue #746: validation independently verified AC-1 (registered -\u003e 0 pi-subagents flags, no collision; unregistered -\u003e 1 of each) and AC-2 (flag-selection path + dev-override block unaffected) via behavior+unit tests with a falsifying-change exercise (always-drop fails unregistered, always-keep fails registered). 4 pre-existing failures confirmed identical on the rebased-725 base. Recommends PASSED. Approve to deliver — the merge ceremony opens a stacked PR on the rebased PR 725.",
+  "artifacts": [
+    {
+      "id": "artifact:5xwwj9c2w50921t16s840p49:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bb6ebbadc4b077460ba64d4a082c67176663694f/pi-subagents-duplicate-extension-load.md",
+      "rev": "sha256:622aaf9e38c071d53608d495af83433ae4d265212730237575c9c2fd613bd42b",
+      "mediaType": "text/markdown",
+      "summary": "Validation of issue #746 fix: PASSED. AC-1 (value: registered -\u003e 0 pi-subagents --extension/--skill, no Tool conflicts; unregistered -\u003e 1 of each) and AC-2 (mechanism: flag-selection path exercised, dev-override Spacedock block unaffected) independently verified via TestRunPi_RegisteredSubagentsDedupesExtensionLoad + TestPiSpacedockPackageStatus_SubagentsRegistered (6/6 sub-tests). Falsifying change applied both ways (always-drop fails unregistered, always-keep fails registered). 4 pre-existing/environmental failures identical on rebased-725 base. gofmt clean; diff 2 files +213/-17. Stacked on rebased PR 725."
+    }
+  ]
+}
