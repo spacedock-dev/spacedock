@@ -92,6 +92,17 @@ gates:
                 digest: sha256:29062052eb6ce6fafaf3d3a6c20c08704948adfaac0e277cf01b943986e523f4
                 request-digest: sha256:db416ecc52df34fd79722a100986a14c55f1e185dae6239b9bd8ed4bb1a0a1c0
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gf0jvhj4y8vjhd6ww62vsb2q:validation:2
+                briefing: briefing:gf0jvhj4y8vjhd6ww62vsb2q:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-21T06:24:19.577237Z"
+                decision: approve
+                reason: 'Captain: ''consider it approved'' and ''no additional validation''. Cycle 2 loosens the guard to fire only where a workflow declares entity-form: folder, clearing the cycle-1 red that blocked every live fixture. Evidence is the worker''s own targeted live run (TestLiveCommonAutoContinueAfterImplementation, claude/sonnet, PASS 393s) plus codex-live passing at the stack tip on the journeys cycle 1 had broken. No validator ran on cycle 2 by captain direction.'
+              application:
+                target-stage: done
+                state: pending
 mod-block:
 pr:
 ---
