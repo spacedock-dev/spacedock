@@ -2,7 +2,7 @@
 title: "spacedock pi dedupes the pi-subagents extension when it is installed as a package"
 status: ideation
 source: "GitHub issue spacedock-dev/spacedock#746 — spacedock pi fails at startup when pi-subagents is installed as a package: duplicate extension load ('Tool \"subagent\" conflicts with ...')"
-started:
+started: 2026-08-21T03:45:47Z
 completed:
 verdict:
 score: 0.8
