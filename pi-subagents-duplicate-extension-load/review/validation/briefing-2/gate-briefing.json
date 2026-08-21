@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5xwwj9c2w50921t16s840p49:validation:attempt-2:revision-1",
+  "question": "Is the fix validated and ready to deliver? Issue #746: validation re-verified on the captain-trimmed test set — AC-1 (registered -\u003e pi discovery sole load path, no collision; unregistered -\u003e explicit flags kept) proven by the production gate logic + detection unit test (the fake-argv behavior test was removed as wrong-layer); AC-2 (detection bool) proven by TestPiSpacedockPackageStatus_SubagentsRegistered with a falsifying change. 4 pre-existing failures identical on rebased-725 base. Diff +85/-17. Recommends PASSED. Approve to deliver — merge ceremony opens a stacked PR on the rebased PR 725.",
+  "artifacts": [
+    {
+      "id": "artifact:5xwwj9c2w50921t16s840p49:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/73d29e16b4d0f9766c25fff6579df00b71606088/pi-subagents-duplicate-extension-load.md",
+      "rev": "sha256:41bf61081701351e8ceb6f0e56e9f15e69e7189a15d6f1cb532544c7348771d9",
+      "mediaType": "text/markdown",
+      "summary": "Validation of issue #746 fix on trimmed test set: PASSED. AC-1 (value: registered -\u003e pi discovery sole load path, no Tool conflicts; unregistered -\u003e explicit flags kept) proven by the production gate + detection unit test, not a fake-argv behavior test. AC-2 (detection) proven by TestPiSpacedockPackageStatus_SubagentsRegistered (3/3 sub-tests); falsifying change (name==pi-subagents-BROKEN) fails 2/3, proving the assertion is match-driven. 4 pre-existing/environmental failures identical on rebased-725 base. gofmt + go build clean; diff +85/-17 across 2 files. Stacked on rebased PR 725."
+    }
+  ]
+}
