@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-1:revision-1",
+  "question": "Validated and ready to deliver? mvmpzg: one canonical resolver-owned gate-artifact path contract — ACs satisfied with falsifiable evidence (split-root reaches open, single-root unchanged, absolute passthrough, wrong-root fails). Stacked on 747. Conn-held approval.",
+  "artifacts": [
+    {
+      "id": "artifact:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7a8e1dcf72b66717bedf01d74d6ea2d3b9cecc50/resolve-split-state-gate-artifact-path.md",
+      "rev": "sha256:7e9f51607f7fd404b90c47fef4a809c03bee71b0b559e3be4306ba3904f8eed5",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: one canonical resolver-owned gate-artifact path contract. AC-1 (split-root accepts committed artifact, value), AC-2 (one canonical path contract, mechanism), AC-3 (wrong-root fails, falsifying) all satisfied with falsifiable evidence. gofmt/vet clean; gates+cli green; 4 pre-existing failures unrelated. Stacked on 747."
+    }
+  ]
+}
