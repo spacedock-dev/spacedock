@@ -1,11 +1,11 @@
 ---
 id: nxnbzzw9z60tx4bp3daeypkc
 title: Make stacked-PR delivery a supported path in the pr-merge mod
-status: validation
+status: done
 source: "Captain, 2026-08-20, after a stacked delivery of three entities exposed a parallel layer, a hazardous trunk push, a contradicted conflict rule, and a mod whose installed copy lacked the whole section."
 started: 2026-08-20T17:16:44Z
-completed:
-verdict:
+completed: 2026-08-21T06:28:13Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-support-stacked-pr-delivery
 issue:
@@ -32,7 +32,8 @@ gates:
                 reason: 'Captain: ''consider it approved'' and ''no additional validation''. The stacked-mode section was delivered under the captain''s direct-edit grant, reviewed twice by independent adversarial passes, and exercised three times on this live stack — that use found and fixed two defects in the text itself. No validator ran and the entity carries no prior gate record; the captain approves to terminal on that basis.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-21T06:28:13Z
 ---
 
 Make a stacked delivery safe to drive from the `pr-merge` mod alone, and stop the mod from carrying tool knowledge that the official `gh stack` skill owns.
