@@ -16,6 +16,17 @@ gates:
                 digest: sha256:449b528bc4625bcc07c6f1463e438d550123d3e19fd4ba1c0821e80c28d13d7a
                 request-digest: sha256:d855623326f6ca92f7fffb5b906151ab29b31b736198878fa45a77ae514fe3a6
                 room-ref: ./resolve-split-state-gate-artifact-path/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mvmpzgqxyb32t3b3vdw0x0h1:backlog:1
+                briefing: briefing:mvmpzgqxyb32t3b3vdw0x0h1:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T08:15:28.894915131Z"
+                decision: approve
+                reason: Captain granted conn for pi-related fixes including gates (2026-08-21 chat). Seed clearly identifies the root cause (split-state gate-artifact path resolving against the wrong root) blocking 3 required Pi journeys + Codex lane; one-canonical-path approach is sound. Advance to ideation.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make a split-root First Officer pass the exact committed artifact path that gate preparation can resolve.
