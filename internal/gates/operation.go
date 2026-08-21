@@ -105,7 +105,7 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 			return Summary{}, fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
 		}
 		if filepath.Base(entityPath) != "index.md" {
-			return Summary{}, fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity")
+			return Summary{}, fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity; convert with `git mv <slug>.md <slug>/index.md` AND rewrite every `room-ref: ./<slug>/` to `room-ref: ./` in the same commit")
 		}
 		unlock, err := lockEntity(entityPath)
 		if err != nil {

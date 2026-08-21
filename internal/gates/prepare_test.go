@@ -1065,3 +1065,93 @@ func prepareGitOutput(t *testing.T, dir string, args ...string) string {
 	}
 	return string(out)
 }
+
+// declareFolderForm adds the workflow declaration the prepare guard reads.
+// Commissioning and the filing-time default own writing this key; preparation
+// only reads it, so the fixture writes it by hand.
+func declareFolderForm(t *testing.T, workflow string) {
+	t.Helper()
+	readme := filepath.Join(workflow, "README.md")
+	body, err := os.ReadFile(readme)
+	if err != nil {
+		t.Fatal(err)
+	}
+	declared := bytes.Replace(body, []byte("id-style: slug\n"), []byte("id-style: slug\nentity-form: folder\n"), 1)
+	if bytes.Equal(declared, body) {
+		t.Fatal("fixture README lost the id-style anchor this helper writes beside")
+	}
+	if err := os.WriteFile(readme, declared, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	mainRoot := filepath.Dir(filepath.Dir(workflow))
+	prepareGitRun(t, mainRoot, "add", "-A")
+	prepareGitRun(t, mainRoot, "commit", "-q", "-m", "declare folder form")
+}
+
+// TestPrepareRefusesFlatEntityOnlyWhereTheWorkflowDeclaresFolderForm covers the
+// defect and its bound. A room beside a flat entity writes a
+// ./<slug>/review/... ref that breaks if the entity ever becomes
+// <slug>/index.md, so a workflow that has declared folder form refuses to mint
+// one. A workflow that declares nothing has promised no such thing and keeps
+// preparing on the flat entity that filing still mints by default — the shape
+// every live workflow is in. An entity already holding rooms is grandfathered
+// under the declaration, because its refs are right for the form it is in.
+func TestPrepareRefusesFlatEntityOnlyWhereTheWorkflowDeclaresFolderForm(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		declared bool
+		rooms    bool
+	}{
+		{name: "undeclared-workflow-prepares-flat", declared: false, rooms: false},
+		{name: "declared-folder-form-refuses-flat", declared: true, rooms: false},
+		{name: "declared-folder-form-grandfathers-rooms", declared: true, rooms: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+			if tc.declared {
+				declareFolderForm(t, workflow)
+			}
+			if tc.rooms {
+				if err := os.MkdirAll(filepath.Join(state, "task", "review"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
+			before := prepareTreeSnapshot(t, state)
+
+			result, err := Prepare(entity, PrepareInput{
+				WorkflowDir: workflow, Question: "Review?", Artifact: artifact, Summary: "summary",
+			})
+
+			if tc.declared && !tc.rooms {
+				if err == nil || !strings.Contains(err.Error(), "requires folder-form entity task/index.md") ||
+					!strings.Contains(err.Error(), "declares `entity-form: folder`") {
+					t.Fatalf("declared-form refusal error=%v", err)
+				}
+				if got := prepareTreeSnapshot(t, state); got != before {
+					t.Fatal("refusal changed the state tree")
+				}
+				if _, statErr := os.Stat(filepath.Join(state, "task")); !os.IsNotExist(statErr) {
+					t.Fatalf("refusal minted a companion: %v", statErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("prepare refused a shape it may not refuse: %v", err)
+			}
+			wantRoom := filepath.Join(state, "task", "review", "validation", "briefing-1")
+			if result.Room != wantRoom {
+				t.Fatalf("room=%q want %q", result.Room, wantRoom)
+			}
+			doc, _, err := Read(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Flat form binds a slug-prefixed ref. It is correct while the entity
+			// stays flat and is exactly what a later conversion must rewrite; the
+			// validator warning carries that instruction.
+			if got := doc.Records[0].Attempts[0].Briefing.RoomRef; got != "./task/review/validation/briefing-1" {
+				t.Fatalf("flat room-ref=%q", got)
+			}
+		})
+	}
+}

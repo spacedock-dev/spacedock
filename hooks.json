@@ -2,11 +2,11 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "^compact$",
+        "matcher": "^(compact|clear)$",
         "hooks": [
           {
             "type": "command",
-            "command": "${PLUGIN_ROOT}/hooks/codex_session_start_compact.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT}}/hooks/session_start_compact_reminder.sh"
           }
         ]
       }
