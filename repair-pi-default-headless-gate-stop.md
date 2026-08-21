@@ -418,3 +418,22 @@ Validated the implementation against all five acceptance criteria. AC-2 (no XFai
   - `TestLiveCommonAutoContinueAfterImplementation` — **FAIL** (855s), `observed=[implementation-worker-not-dispatched]`
 - **AC-1 is NOT met.** The adapter-text binding (`pi-first-officer-runtime.md` async-completion-gate subsection) did not change live FO behavior: the FO still presents the validation gate without dispatching/completing the implementation worker. The offline tests prove `assertWorkerLifecycle` grades correctly, but the live FO does not follow the text — a contract clarification a model reads is not a mechanism the FO can be made to follow. The validator's deferral (AC-1 live targets await live-authorized phase) is resolved by this run: the fix is insufficient.
 - Recommendation revised: **REJECTED** on the current implementation. The root cause is not the adapter text's ordering clause; the live FO skips the dispatch for a reason the text binding does not address (likely the gate-first selection in the event loop, or an async-yield boundary that presents the gate before the worker-completion poll runs — not a missing instruction the model can choose to obey). Rework needed: a mechanism-level fix (e.g., the event loop dispatches the worker before presenting any gate, or the completion-signal gate blocks gate presentation structurally), not an adapter-text instruction.
+
+
+## Live-root-cause finding (FO-run, second rework)
+
+The async-completion-gate extension mechanism (`5a951edb2` and `15199e0f8`, both reverted) was the WRONG fix. The live FO transcript for TestLiveCommonDefaultHeadlessGateStop (artifact /tmp/ntarr-live-debug/...) shows:
+
+- The FO dispatched the implementation worker via `subagent(... async:true)` and observed completion via **`subagent_wait`** (the blocking wait tool) — ZERO `subagent({action:"status",id})` polls in the transcript (grep confirms 0 `action":"status"`).
+- `assertWorkerLifecycle` (claude_runtime_helpers_test.go:230) credits completion ONLY via a `subagent` tool result containing `Run: <id>
+State: complete
+Session: /` — it does NOT recognize `subagent_wait`'s completion.
+- So `completed=-1` → `implementation-worker-not-dispatched` even though the worker WAS dispatched and completion WAS observed (via `subagent_wait`).
+
+REAL ROOT CAUSE: the Pi adapter text (`pi-first-officer-runtime.md` L9) says "poll `subagent({action:"status", id})`" but the shared core's `«async-dispatch»` actually uses `subagent_wait` (blocking). The adapter and the assert disagree on the completion mechanism. The FO does the right thing (wait for completion); the assert reads a signal that never appears because the FO uses a different (also-valid) completion tool.
+
+FIX OPTIONS:
+(a) Make the Pi adapter use `subagent({action:"status",id})` polls instead of `subagent_wait` — aligns FO behavior with what the assert reads. No assert change. Smaller, but changes FO dispatch mechanics.
+(b) Make `assertWorkerLifecycle` credit `subagent_wait` completion as `completed` — recognizes the actual completion signal the contract's `«async-dispatch»` uses. Not a loosening (the ordering completed<validation still holds); it's recognizing the real signal.
+
+Both `5a951edb2` (FO manual) and `15199e0f8` (worker) reverted from the branch; tip is back at 750 (15eb465e7). Awaiting captain call on (a) vs (b) before the third implementation pass.
