@@ -8,7 +8,7 @@ completed:
 verdict:
 score: 0.8
 group: pi-live-followup
-worktree:
+worktree: .worktrees/spacedock-ensign-finish-pi-rejection-flow
 issue:
 pr:
 mod-block:
