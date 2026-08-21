@@ -48,6 +48,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-08-21T08:15:56Z
+worktree: .worktrees/spacedock-ensign-resolve-split-state-gate-artifact-path
 ---
 
 Make a split-root First Officer pass the exact committed artifact path that gate preparation can resolve.
