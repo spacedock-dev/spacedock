@@ -86,6 +86,8 @@ gates:
                 state: pending
 started: 2026-08-21T16:13:06Z
 worktree: .worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
+mod-block: merge:pr-merge
+pr: "#753"
 ---
 
 ## Problem
