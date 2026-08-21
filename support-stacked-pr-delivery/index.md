@@ -1,7 +1,7 @@
 ---
 id: nxnbzzw9z60tx4bp3daeypkc
 title: Make stacked-PR delivery a supported path in the pr-merge mod
-status: implementation
+status: validation
 source: "Captain, 2026-08-20, after a stacked delivery of three entities exposed a parallel layer, a hazardous trunk push, a contradicted conflict rule, and a mod whose installed copy lacked the whole section."
 started: 2026-08-20T17:16:44Z
 completed:
