@@ -1047,3 +1047,61 @@ func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 		}
 	}
 }
+
+// writePiSettingsJSON writes a settings.json with the given package source
+// entries under <agentDir>/settings.json and creates the resolved package
+// directory trees (package.json with name + pi.skills) for each npm: entry.
+func writePiSettingsJSON(t *testing.T, agentDir, home string, packages []string) {
+	t.Helper()
+	for _, src := range packages {
+		if !strings.HasPrefix(src, "npm:") {
+			continue
+		}
+		name := parseNpmPackageName(strings.TrimPrefix(src, "npm:"))
+		root := filepath.Join(agentDir, "npm", "node_modules", name)
+		skills := []string{"skills"}
+		var piSkills string
+		for _, s := range skills {
+			if piSkills != "" {
+				piSkills += ","
+			}
+			piSkills += "\"" + s + "\""
+		}
+		pkgJSON := "{\"name\":\"" + name + "\",\"pi\":{\"skills\":[" + piSkills + "]}}"
+		writeFileWithDirs(t, filepath.Join(root, "package.json"), pkgJSON)
+		writeFileWithDirs(t, filepath.Join(root, "skills", "ensign", "SKILL.md"), "---\nname: ensign\n---\n")
+		writeFileWithDirs(t, filepath.Join(root, "skills", "first-officer", "SKILL.md"), "---\nname: first-officer\n---\n")
+	}
+	var entries string
+	for i, src := range packages {
+		if i > 0 {
+			entries += ","
+		}
+		entries += "\"" + src + "\""
+	}
+	settings := "{\"packages\":[" + entries + "]}"
+	writeFileWithDirs(t, filepath.Join(agentDir, "settings.json"), settings)
+}
+
+// TestPiSpacedockPackageStatus_SubagentsRegistered pins the new detection: the
+// settings.json scan sets subagentsRegistered iff npm:pi-subagents is in packages.
+func TestPiSpacedockPackageStatus_SubagentsRegistered(t *testing.T) {
+	home := t.TempDir()
+	for _, tc := range []struct {
+		name     string
+		packages []string
+		want     bool
+	}{
+		{"with pi-subagents", []string{"npm:spacedock", "npm:pi-subagents"}, true},
+		{"without pi-subagents", []string{"npm:spacedock"}, false},
+		{"pi-subagents only", []string{"npm:pi-subagents"}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			agentDir := filepath.Join(home, ".pi", "agent-"+strings.ReplaceAll(tc.name, " ", "-"))
+			writePiSettingsJSON(t, agentDir, home, tc.packages)
+			if got := piSpacedockPackageStatus(agentDir, home).subagentsRegistered; got != tc.want {
+				t.Fatalf("subagentsRegistered = %v, want %v (packages=%v)", got, tc.want, tc.packages)
+			}
+		})
+	}
+}
