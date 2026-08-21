@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mvmpzgqxyb32t3b3vdw0x0h1:ideation:attempt-1:revision-1",
+  "question": "Is the design ready to implement? mvmpzg: one canonical resolver-owned artifact path for gate prepare in split-root, fixing the 3 required Pi journeys (GateGuardrail, DefaultHeadlessGateStop, AutoContinueAfterImplementation) + Codex lane. With conn, approve to enter implementation in a worktree off 747.",
+  "artifacts": [
+    {
+      "id": "artifact:mvmpzgqxyb32t3b3vdw0x0h1:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0e3d9ccd73d1bc15d76c6fb867522b62bb64f1c1/resolve-split-state-gate-artifact-path.md",
+      "rev": "sha256:4da4b748e74bc3cf0a074854503caa8089ef33f8a14ba3ae916a78b7687b39d0",
+      "mediaType": "text/markdown",
+      "summary": "Ideation for mvmpzg: one canonical resolver-owned gate-artifact path contract for split-root, replacing model-selected path reconstruction. Value-AC: the 3 required Pi journeys + Codex reach an open prepared gate; mechanism-AC: focused path-resolution tests. Stacks on 747."
+    }
+  ]
+}
