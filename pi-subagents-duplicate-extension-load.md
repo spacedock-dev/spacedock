@@ -148,10 +148,15 @@ Fleshed out the ideation into a gate-ready design: extend the existing `piSpaced
   - `runPi`: replaced the unconditional `argv := []string{"pi", "--extension", ..., "--skill", ...}` with `argv := []string{"pi"}` + conditional `append` when `!check.packageStatus.subagentsRegistered`.
   - `checkPiRuntime` dev-override fallback: the overwritten `piPackageStatus` now carries `subagentsRegistered: res.packageStatus.subagentsRegistered` so the field survives the dev-override path.
 - DONE: Behavior test `TestRunPi_RegisteredSubagentsDedupesExtensionLoad` (internal/cli/pi_frontdoor_test.go) driving `runPi` against registered (`subagentsRegistered: true` → 0 pi-subagents `--extension`/`--skill` flags; dev-override Spacedock extension still appended), unregistered (`false` → 1 of each; dev-override Spacedock extension still appended), and registered-without-dev-override (0 of each) configs.
+  3 sub-tests: `registered drops explicit pi-subagents flags` (0 pi-subagents --extension/--skill, Spacedock dev-override ext appended), `unregistered keeps explicit pi-subagents flags` (1 --extension + 1 --skill for pi-subagents), `registered without dev-override has zero extension/skill flags` (0 flags total).
 - DONE: `piSpacedockPackageStatus` unit test `TestPiSpacedockPackageStatus_SubagentsRegistered` asserting `subagentsRegistered` is set from a settings.json listing `npm:pi-subagents` and unset otherwise (with and without the Spacedock package co-registered).
+  3 sub-tests: `with pi-subagents registered` (subagentsRegistered true), `without pi-subagents registered` (subagentsRegistered false), `pi-subagents only (spacedock not registered)` (subagentsRegistered true, registered false).
 - DONE: Existing tests keep `subagentsRegistered` false (zero value) and pass unchanged — `healthyPiPackageStatus()` does not set the field, so all existing runPi/pi tests assert the explicit flags ARE present.
+  `healthyPiPackageStatus()` leaves `subagentsRegistered` at its zero value (false), so existing runPi/pi tests assert the explicit --extension/--skill flags ARE present — unchanged, no regressions.
 - DONE: Verified `go test ./internal/cli/ -count=1` — all pi tests pass; the only failures are pre-existing/environmental (`TestVersionAmbiguousMarkersExitZero`, `TestCodexChannelInstallLeavesCoHostedPluginInstalled`, `TestCodexModeSwitchRoundTripPreservesExclusivity`, `TestCodexPluginInstallIsHostNative`), confirmed pre-existing by running them against the stashed base. `go test ./... -race` is green for all non-pre-existing suites.
+  4 pre-existing failures — TestVersionAmbiguousMarkersExitZero, TestCodexChannelInstallLeavesCoHostedPluginInstalled, TestCodexModeSwitchRoundTripPreservesExclusivity, TestCodexPluginInstallIsHostNative — are identical on the base (rebased PR 725) confirmed via git stash; not introduced by this change.
 - DONE: Committed on the worktree branch `spacedock-ensign/pi-subagents-duplicate-extension-load` (off the rebased PR 725).
+  Commit SHA e0e556ea6 on branch spacedock-ensign/pi-subagents-duplicate-extension-load, sitting on the rebased PR 725 tip (e68aa5b7a).
 
 ### Summary
 
