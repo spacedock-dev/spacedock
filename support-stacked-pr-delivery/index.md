@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-support-stacked-pr-delivery
 issue:
-pr: "#743"
+pr: pr-merge:743
 gates:
     version: 1
     records:
