@@ -231,6 +231,17 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 				completed = i
 			}
 		}
+		// subagent_wait (pi-subagents 0.53.0+) is the blocking completion wait the
+		// FO uses after an async dispatch. Credit a wait result that names the
+		// spawned run id and reports the run done as the completion signal, with
+		// the same completed<validation ordering the State: complete branch enforces.
+		if piRunID != "" && completed < 0 && pi.Message.ToolName == "subagent_wait" {
+			for _, item := range pi.Message.Content {
+				if strings.Contains(item.Text, "for run \""+piRunID+"\"") && strings.Contains(item.Text, "done") && strings.Contains(item.Text, "complete") {
+					completed = i
+				}
+			}
+		}
 		if event.Message != nil {
 			for _, item := range event.Message.Content {
 				if item.Type == "tool_use" && item.Name == "Agent" && claudeSpawnIsForStage(item.Input.Description, item.Input.Prompt, stage) {

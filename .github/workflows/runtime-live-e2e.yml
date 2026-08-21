@@ -624,8 +624,8 @@ jobs:
           # fall back to legacy-node20 pi-coding-agent while pi-subagents floats new.
           PI_CODING_AGENT_VERSION="0.80.10"
           PI_CODING_AGENT_INTEGRITY="sha512-aL4apbupCHiVLSXASXvRzH4Q2vmtfrDa+0s909CJuVu/GgGylbDzr7oyF1mPmip5E+VxYYxKWmph4hV04wUcQg=="
-          PI_SUBAGENTS_VERSION="0.35.1"
-          PI_SUBAGENTS_INTEGRITY="sha512-nIH6liO541FZ1RoeEu58Ligd59tiNw0/ODPgHh7uvx9Dk4UpWH08F84/l1+hXCzUgC85OCmyVtngWkZjcK94Cg=="
+          PI_SUBAGENTS_VERSION="0.53.0"
+          PI_SUBAGENTS_INTEGRITY="sha512-YwwvGGb9zKBWnqyYqO0+0Hzw8qTosMfkKMqSXbiJKEVljmJcjAeuxYKeoLEyrA3nIgAxbDlCXyx0gnbu/91WFQ=="
           PI_INTERCOM_VERSION="0.6.0"
           PI_INTERCOM_INTEGRITY="sha512-OFPh/DXfPhUUSDLTRJiFPEvw00fOA/spjsxUcXiuCHvb2ZkRL02G8Q91mTd+3d42A9AK8BSmbD0+8imFPuHGoQ=="
 
