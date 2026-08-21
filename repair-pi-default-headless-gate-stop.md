@@ -42,12 +42,22 @@ the preceding-stage worker, then present the first human gate and stop open.
 On Pi, the FO reaches the `validation` gate, presents a `Recorded Gate Task —
 validation` review recommending approve, and stops — without ever dispatching the
 implementation worker. The durable assertion fails with
-`observed=[implementation-worker-not-dispatched]`.
+`observed=[implementation-worker-not-dispatched]` (baseline: `spawns=1/2
+completed=-1` — the FO spawns but never observes completion before presenting the
+gate).
+
+The same conduct class breaks `auto-continue-after-implementation`: after a
+completed implementation report, the FO must advance to `validation`, dispatch a
+FRESH validation worker, await its completion, then prepare and present the gate.
+On Pi the FO reaches `gate prepare` without dispatching the validation worker —
+`assertAutoContinueDispatchEvidence` calls `assertWorkerLifecycle(…, "validation",
+"gate prepare")` and fails with the same `implementation-worker-not-dispatched`
+code. Both journeys share one root cause in the gate-presentation/dispatch seam.
 
 This is an ordinary lane FAIL on Pi: `default-headless-gate-stop` is XFAIL-bound
 only for `claude-sonnet` (owner `kk`, `commit-sonnet-gate-before-presentation`).
-There is no `liveXFail("pi",…)` or `liveTODO("pi",…)` binding, so on Pi the
-journey is expected to PASS. The CI `pi-live` lane is correctly red on an
+There is no `liveXFail("pi",…)` or `liveTODO("pi",…)` binding on either journey,
+so on Pi both are expected to PASS. The CI `pi-live` lane is correctly red on an
 unowned, real Pi conduct gap.
 
 ## Visible value
@@ -84,39 +94,204 @@ not a model-quality issue.
 - Sonnet, Codex, or any other runtime's behavior on this journey.
 - A new runtime, fixture, result format, or CI lane.
 
+## Proposed approach
+
+**Root cause — the async-yield boundary in the Pi FO runtime adapter.** The
+shared core (`«engage»`) is host-neutral: after `status --next --json`, a ready
+gate wins before dispatchable work; `«gate.lifecycle»` loads only for a ready gate;
+otherwise the dispatch owner dispatches the worker and the FO awaits
+`«completion-signal»` before advancing or entering any gate. Claude and Codex
+realize this discipline on their async surfaces — Claude via Agent Back-off (the
+FO's turn does not proceed past the spawned Agent until it returns), Codex via
+explicit `wait_agent` "wait notes" that require polling to the final-status
+notification before any `status --next` or gate action.
+
+The Pi adapter (`pi-first-officer-runtime.md`) binds `«async-dispatch»` as ASYNC:
+`subagent(... async: true)` returns a run id; the adapter says "poll
+`subagent({action:"status", id})`" but gives NO explicit ordering constraint — it
+does not say the poll must reach `State: complete` (and the entity-file stage report
+must pass the completion gate) BEFORE the FO re-enters `status --next`, runs any gate
+action, or advances status. The "Idle wait binding" section then says: "Only an
+active unresolved worker with no dispatchable, gate, mod/PR, or other state work
+qualifies for asynchronous status polling" — which a Pi FO can read as "if a gate
+appears, handle the gate instead of polling," inverting the required ordering.
+
+The divergence: the Pi FO dispatches the preceding-stage worker async, then
+re-enters the loop without confirming completion. If the entity has been advanced
+to the gate stage (by the worker's own completion commit, or prematurely by the
+FO), the FO sees a ready gate and enters `«gate.lifecycle»` — presenting the gate
+without ever observing the worker's `«completion-signal»`. The baseline data
+(`spawns=1/2 completed=-1`) confirms the spawn happens but the completion is never
+observed before the gate.
+
+**Fix — add an explicit async-completion-gate binding to the Pi FO runtime
+adapter.** After `subagent(... async: true)`, the FO MUST poll
+`subagent({action:"status", id})` to `State: complete` and verify the entity-file
+stage report BEFORE any `status --next`, gate action (`gate prepare`), or status
+advancement. This is the Pi-specific realization of the shared core's "Do not
+advance to validation until `«completion-signal»` arrives" — it makes the existing
+discipline observable on Pi's async surface. The shared core, gate grammar, stored
+format, authority source, and CI lane are unchanged; only the Pi adapter gains a
+Pi-specific binding. No Sonnet or Codex behavior changes (their adapters already
+bind the equivalent constraint on their own surfaces).
+
+**Value-AC and simplest alternative.** The value-AC (below, AC-1) measures that
+both Pi journeys pass — the worker is dispatched and completes before the gate is
+presented. The simplest alternative is to increase spawn-count tolerance in
+`assertWorkerLifecycle` (accept `completed=-1` or `spawns=2`). It is insufficient:
+the assertion already correctly encodes the contract (one spawn, observed
+completion, completion before gate); loosening it masks the conduct gap — the FO
+would still present the gate without completing the worker, and the user-facing
+value (the worker runs before the gate stops the run) is not delivered. The fix
+must change the FO behavior, not the assertion.
+
 ## Acceptance criteria
 
-**AC-1 (VALUE) — The exact Pi default-headless-gate-stop target passes.**
+**AC-1 (VALUE) — Both Pi gate-stop journeys pass: the preceding worker is
+dispatched and completes before the gate is presented.**
 
-Verified by: the focused live Pi `TestLiveCommonDefaultHeadlessGateStop` target
-exits successfully — the FO dispatches and completes the preceding-stage
-implementation worker, then presents the first human gate and stops open. The
-durable assertion `assertGateHeld` passes with no `implementation-worker-not-dispatched`
-code. Baseline: the current two-model-reproduced FAIL.
+Verified by: the focused live Pi `TestLiveCommonDefaultHeadlessGateStop` AND
+`TestLiveCommonAutoContinueAfterImplementation` targets exit successfully. In
+`default-headless-gate-stop`, the FO dispatches and completes the implementation
+worker, then presents the validation gate and stops open. In
+`auto-continue-after-implementation`, the FO advances to validation, dispatches a
+FRESH validation worker, awaits its completion, then prepares and presents the
+gate. `assertGateHeld` and `assertAutoContinue` pass with no
+`implementation-worker-not-dispatched` code. Baseline: the current
+two-model-reproduced FAIL on `default-headless-gate-stop`
+(`spawns=1/2 completed=-1`); `auto-continue-after-implementation` has no Pi passing
+evidence for the same root cause. Both can move the wrong way (a regression that
+re-introduces the skip re-fails both).
 
 **AC-2 — The Pi binding stays honest.**
 
-Verified by: no `liveXFail("pi",…)` is added to mask the gap; the journey reaches
-PASS by the FO dispatching the worker before stopping, not by weakening the
-assertion. (If a temporary `liveTODO("pi",…)` is needed to keep the lane green
-during repair, it names this active task as owner and is removed on PASS.)
+Verified by: no `liveXFail("pi",…)` is added to mask the gap on either journey;
+the journeys reach PASS by the FO dispatching the worker before stopping, not by
+weakening the assertion. (If a temporary `liveTODO("pi",…)` is needed to keep the
+lane green during repair, it names this active task as owner and is removed on
+PASS.)
 
 **AC-3 — Other runtimes and the shared assert are preserved.**
 
 Verified by: the `claude-sonnet` XFAIL binding and `assertGateHeld` are
-unchanged; Sonnet and Codex behavior on this journey is unaffected.
+unchanged; `assertWorkerLifecycle` is not loosened (no spawn-count or
+completion tolerance increase); Sonnet and Codex behavior on both journeys is
+unaffected (only `pi-first-officer-runtime.md` gains a Pi-specific binding).
 
-**AC-4 — Offline and required-lane checks pass.**
+**AC-4 (MECHANISM) — The Pi adapter binds the async-completion-gate; focused
+offline tests exercise it.**
+
+Verified by: `pi-first-officer-runtime.md` gains an explicit binding that after
+`subagent(... async: true)` the FO polls `subagent({action:"status", id})` to
+`State: complete` and verifies the entity-file stage report BEFORE any
+`status --next`, gate action, or status advancement. Focused offline tests feed
+canned Pi transcripts through `assertWorkerLifecycle` — one where the completion
+poll precedes `gate prepare` (grades PASS) and one where the FO proceeds to `gate
+prepare` without the completion poll (grades FAIL with
+`implementation-worker-not-dispatched`). The failing-mutant test must RED to prove
+the assertion is not a tautology. This AC serves AC-1's value.
+
+**AC-5 — Offline and required-lane checks pass.**
 
 Verified by: `gofmt`, `go vet -tags live ./internal/ensigncycle`,
 `go build -tags live ./internal/ensigncycle`, `go test ./...`, and
-`go test ./... -race` pass; the Pi live lane passes the focused target.
+`go test ./... -race` pass; the Pi live lane passes both focused targets.
 
 ## Test plan
 
-Use focused offline gate and terminalization controls first. Use one exact Pi
-`default-headless-gate-stop` target sequence only when Pi work is authorized.
-Preserve all Sonnet and Codex behavior and the shared assert.
+Use focused offline gate and terminalization controls first. Use the exact Pi
+`default-headless-gate-stop` and `auto-continue-after-implementation` target
+sequences only when Pi work is authorized. Preserve all Sonnet and Codex behavior
+and the shared assert.
+
+1. **Focused offline tests (canned Pi transcripts).** Add offline tests under
+   `internal/ensigncycle/` (default build tag, no live credentials) that feed
+   canned Pi session transcripts through `assertWorkerLifecycle`:
+   - A conforming transcript: `subagent` spawn for the preceding stage, then a
+     `subagent({action:"status", id})` poll returning `State: complete`, THEN
+     `gate prepare` (or `status=validation` for default-headless-gate-stop).
+     Grades PASS.
+   - A non-conforming transcript (the baseline bug): `subagent` spawn then `gate
+     prepare` with NO intervening completion poll. Grades FAIL with
+     `implementation-worker-not-dispatched`. This mutant must RED to prove the
+     assertion is falsifiable.
+   These tests exercise the dispatch-seam mechanism (AC-4) without model spend.
+   Cost: low (fixture transcripts, no live run). Fixture/CLI, not live.
+
+2. **Pi adapter text change.** Add the async-completion-gate binding to
+   `skills/first-officer/references/pi-first-officer-runtime.md` in the
+   `«async-dispatch»` and/or "Idle wait binding" sections. The binding is the
+   Pi-specific realization of the shared core's existing `«completion-signal»`
+   discipline — no shared-core change.
+
+3. **Live Pi targets (when authorized).** Run the focused
+   `TestLiveCommonDefaultHeadlessGateStop` and
+   `TestLiveCommonAutoContinueAfterImplementation` targets on Pi. Both must PASS
+   — the worker dispatched and completed before the gate was presented. Cost:
+   high (live model runs, ~5-10 min each). Live workflow tests.
+
+4. **Regression guard.** `go test ./...` and `go test ./... -race` confirm the
+   offline tests and all existing tests pass; `go vet -tags live` and `go build
+   -tags live` confirm the live-tagged test files compile.
+
+## Expected surface
+
+**Net LOC: +60 to +90, across 2-3 files.**
+
+- `skills/first-officer/references/pi-first-officer-runtime.md` — add the
+  async-completion-gate binding to `«async-dispatch»` / "Idle wait binding"
+  (+10-15 lines net; insertions only, no deletions).
+- `internal/ensigncycle/pi_async_completion_test.go` (new, default build tag) —
+  focused offline tests feeding canned Pi transcripts through
+  `assertWorkerLifecycle` (+40-60 lines).
+- Optional: `internal/ensigncycle/testdata/pi-gate-stop-*.jsonl` (canned Pi
+  transcripts for the offline tests) if the transcripts are too long to inline.
+
+**Tolerance:** net +50 to +120 lines; if the canned transcripts push gross
+higher, report insertions and deletions separately. The net figure is small
+because the fix is a binding addition + focused tests, not a rewrite.
+
+**Observable-semantics declaration:** No change to gate grammar, stored format,
+authority source, or CI lane (per the seed Out of scope). No Sonnet or Codex
+behavior change (the shared core and their adapters are unchanged; only the Pi
+adapter gains a Pi-specific binding). The Pi FO's observable behavior changes:
+after an async dispatch, the FO polls the worker to completion before
+re-entering `status --next` or any gate action — the worker now completes before
+the gate is presented. `assertGateHeld` and `assertWorkerLifecycle` are unchanged
+in their contract (no loosening).
+
+## Riskiest-mechanism spike
+
+**Spike target: the async-yield boundary — where exactly the Pi FO skips the
+dispatch.**
+
+The riskiest unverified mechanism is whether adding the async-completion-gate
+binding to the Pi adapter text causes the Pi FO to poll to completion before
+proceeding (the fix is instruction text driving AI behavior, not a code-level
+enforcement). The spike exercises this first against the
+`default-headless-gate-stop` fixture.
+
+**Code-level analysis (ideation, no live Pi credentials authorized):** The
+divergence is identified in the Pi adapter text. `«async-dispatch»` says "poll
+`subagent({action:"status", id})`" with no ordering constraint; the "Idle wait
+binding" says "Only an active unresolved worker with no dispatchable, gate,
+mod/PR, or other state work qualifies for asynchronous status polling" — which
+permits the FO to handle a gate instead of polling the active worker. Claude
+and Codex do not have this gap: Claude's Agent Back-off blocks the FO's turn
+until the Agent returns; Codex's "wait notes" explicitly require polling to the
+final-status notification before any `status --next` or gate action. The Pi
+adapter lacks the equivalent explicit constraint.
+
+**No spike needed for the proven mechanism:** the shared core's
+`«completion-signal»` discipline ("Do not advance to validation until
+`«completion-signal»` arrives and the entity-file stage report passes the
+completion gate") is already proven by Claude and Codex passing both journeys.
+The Pi fix adds only the Pi-specific realization of that discipline on Pi's
+async surface. The implementation stage exercises the binding first against
+the `default-headless-gate-stop` fixture (focused offline test + live target
+when authorized); if the live target still presents the gate without polling,
+the binding text is strengthened iteratively (the fallback is NOT to loosen the
+assert).
 
 ## Notes
 
@@ -127,3 +302,22 @@ Preserve all Sonnet and Codex behavior and the shared assert.
 - Filed because the 2026-08-13-02 Pi debrief recorded the CI failure but filed
   nothing ("None newly filed in this session. The live journey failures overlap
   parallel repair work."). This entity gives the gap an owner.
+
+## Stage Report: ideation
+
+- DONE: Concrete approach diagnosing the shared root cause in the gate-presentation/dispatch seam
+  Added "Proposed approach" section: root cause is the async-yield boundary in pi-first-officer-runtime.md — the «async-dispatch» binding says "poll" with no ordering constraint, and the "Idle wait binding" permits gate-over-poll; Claude (Agent Back-off) and Codex (wait notes) bind the equivalent constraint the Pi adapter lacks.
+- DONE: Name the value-AC (both Pi journeys pass) and the simplest alternative (increase spawn-count tolerance in assertWorkerLifecycle) and why it is insufficient (masks the conduct gap rather than fixing the dispatch)
+  Recorded in "Proposed approach" + AC-1 (value, both journeys) + AC-3 (assert not loosened). Simplest alternative named and rejected: loosening the assert masks the gap; the fix must change FO behavior.
+- DONE: At least one value-measuring AC (both TestLiveCommonDefaultHeadlessGateStop and TestLiveCommonAutoContinueAfterImplementation pass on Pi, measured against the FAIL baseline)
+  AC-1 measures both journeys against the two-model-reproduced FAIL baseline (spawns=1/2 completed=-1); both can move the wrong way.
+- DONE: Pair the value AC with a mechanism AC for the dispatch-seam fix exercised by focused tests + the live targets
+  AC-4 (mechanism): Pi adapter binds async-completion-gate; focused offline tests feed canned Pi transcripts through assertWorkerLifecycle (conforming PASS, non-conforming RED). Serves AC-1.
+- DONE: Expected surface and tolerance (net LOC change and files, with observable-semantics declaration)
+  "Expected surface" section: net +60-90 across 2-3 files (pi-first-officer-runtime.md + new pi_async_completion_test.go + optional testdata). Tolerance +50-120. Observable-semantics: no gate grammar/format/authority/CI-lane change; no Sonnet/Codex change; Pi FO polls to completion before gate.
+- DONE: Record the riskiest-mechanism spike (where exactly the Pi FO skips the dispatch), exercised first against the default-headless-gate-stop fixture, or "no spike needed: {proven mechanisms}"
+  "Riskiest-mechanism spike" section: spike target = async-yield boundary; code-level analysis identifies the divergence in the Pi adapter text; "no spike needed for the proven mechanism" — shared core's «completion-signal» discipline is proven by Claude/Codex; Pi fix adds only the Pi-specific realization. Implementation exercises the binding first against the default-headless-gate-stop fixture.
+
+### Summary
+
+Diagnosed the shared root cause across both Pi journeys as the async-yield boundary in the Pi FO runtime adapter: «async-dispatch» binds async polling without an explicit "poll to completion before any status-next/gate/status-advancement" ordering constraint, and the "Idle wait binding" can be read to prioritize gate handling over worker polling — the constraint Claude (Agent Back-off) and Codex (wait notes) already bind. The proposed fix adds that Pi-specific binding to pi-first-officer-runtime.md plus focused offline tests feeding canned Pi transcripts through assertWorkerLifecycle; the simplest alternative (loosen the assert) is rejected as masking the conduct gap. No live Pi run was authorized in ideation; the spike is code-level analysis with the implementation stage exercising the binding first against the default-headless-gate-stop fixture.
