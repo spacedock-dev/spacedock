@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mvmpzgqxyb32t3b3vdw0x0h1:backlog:attempt-1:revision-1",
+  "question": "Is the seed clear enough to start design? Root cause: split-root FO passes a gate-artifact path that resolves against the wrong root, failing gate prepare with '--artifact must name a .md file' — this blocks the 3 required Pi journeys (GateGuardrail, DefaultHeadlessGateStop, AutoContinueAfterImplementation) and the Codex lane. Approach: one canonical resolver-owned artifact path, not model-selected reconstruction. Ready to enter ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:mvmpzgqxyb32t3b3vdw0x0h1:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f28fbdd75e8920cb2e7b115afb19a7ea1f96d5d9/resolve-split-state-gate-artifact-path.md",
+      "rev": "sha256:aece23ec27a9231ca89e7ed402fb305d5b31b7b105554386f169ab161aa89f84",
+      "mediaType": "text/markdown",
+      "summary": "Root-cause owner for the 3 required Pi common-journey failures (--artifact must name a .md file from internal/gates/prepare.go:70). Seed: split-root FO selects wrong path base for the committed gate-artifact; fix with one canonical resolver-owned path contract, no test-only machinery. ACs cover split-root + single-root resolution; proof is the local gate-guardrail live target. Stacks on 747."
+    }
+  ]
+}
