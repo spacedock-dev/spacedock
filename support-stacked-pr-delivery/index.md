@@ -22,6 +22,17 @@ gates:
                 digest: sha256:b54eb6d43c28e2fab650dadd054a2b400a4a21ddb11fd8ae7cc1538db8fdaf92
                 request-digest: sha256:e631207440679311e683de63c97a2f953a4efd206ff689940ca721fdfef4465f
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:nxnbzzw9z60tx4bp3daeypkc:validation:1
+                briefing: briefing:nxnbzzw9z60tx4bp3daeypkc:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T06:27:28.362696Z"
+                decision: approve
+                reason: 'Captain: ''consider it approved'' and ''no additional validation''. The stacked-mode section was delivered under the captain''s direct-edit grant, reviewed twice by independent adversarial passes, and exercised three times on this live stack — that use found and fixed two defects in the text itself. No validator ran and the entity carries no prior gate record; the captain approves to terminal on that basis.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make a stacked delivery safe to drive from the `pr-merge` mod alone, and stop the mod from carrying tool knowledge that the official `gh stack` skill owns.
