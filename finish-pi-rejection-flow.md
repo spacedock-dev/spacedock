@@ -1,7 +1,7 @@
 ---
 id: p17swb3375rt525fn7f8xt7e
 title: Finish the Pi rejection-flow journey
-status: ideation
+status: implementation
 source: "Deferred Pi follow-up from the test-behavior-completeness priority recarve, 2026-08-10"
 started: 2026-08-21T08:17:02Z
 completed:
@@ -55,7 +55,7 @@ gates:
                 reason: 'Captain approved both ideation gates. p17: minimal product repair for Pi rejection-flow timeout — complete two-validation cycle + stop at one fresh unresolved gate. Advance to implementation, worktree stacked on 747.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.
