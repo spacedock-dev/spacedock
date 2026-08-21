@@ -19,6 +19,17 @@ gates:
                 digest: sha256:762bec3db88d71951ce7e63d642cf5a733021e712cf51e0876d7a5f7cc06c440
                 request-digest: sha256:59e11c6f4db63d26ee2ef6b1aa9a24beb45caddc0892cade24499076cff7059f
                 room-ref: ./repair-pi-default-headless-gate-stop/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ntarrp8jp5h34g6528d66kbe:backlog:1
+                briefing: briefing:ntarrp8jp5h34g6528d66kbe:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T16:12:40.386590704Z"
+                decision: approve
+                reason: 'Conn-held. Scope widened per gap-inventory disposition #10: ntarr owns the Pi implementation-worker-not-dispatched conduct class across default-headless-gate-stop + auto-continue-after-implementation (shared gate-presentation/dispatch seam root cause). Advance to ideation for a combined fix.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
