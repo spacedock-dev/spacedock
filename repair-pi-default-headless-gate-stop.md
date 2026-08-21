@@ -1,6 +1,6 @@
 ---
 title: Repair the Pi implementation-worker-not-dispatched conduct (default-headless-gate-stop + auto-continue-after-implementation)
-status: ideation
+status: implementation
 source: "CI run 31747645316 (PR #682, pi-live job) + 2026-08-13-02 Pi debrief; reproduced locally on lunaroute/glm-5.2-vision-background:max"
 score: 0.85
 sprint: pi-live-completeness
@@ -49,7 +49,7 @@ gates:
                 reason: 'Conn-held. ntarr ideation: async-yield boundary root cause for both Pi journeys, combined fix sound. Advance to implementation, worktree stacked on 750.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-21T16:13:06Z
 ---
 
