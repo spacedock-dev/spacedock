@@ -437,3 +437,19 @@ FIX OPTIONS:
 (b) Make `assertWorkerLifecycle` credit `subagent_wait` completion as `completed` — recognizes the actual completion signal the contract's `«async-dispatch»` uses. Not a loosening (the ordering completed<validation still holds); it's recognizing the real signal.
 
 Both `5a951edb2` (FO manual) and `15199e0f8` (worker) reverted from the branch; tip is back at 750 (15eb465e7). Awaiting captain call on (a) vs (b) before the third implementation pass.
+
+
+## Stage Report: validation
+
+- DONE: Verify deliverable — assertWorkerLifecycle credits subagent_wait completion + live pi-subagents pin bumped 0.35.1 -> 0.53.0 (commit 1c1362abf).
+  Two-file diff: internal/ensigncycle/claude_runtime_helpers_test.go (+11) adds a subagent_wait completion branch keyed on the spawned run id (piRunID from the spawn result's details.runId) — a wait result naming the run id with "done" and "complete" credits `completed` at that index, same completed<validation ordering. .github/workflows/runtime-live-e2e.yml (-2/+2) bumps PI_SUBAGENTS_VERSION 0.35.1 -> 0.53.0 + integrity so the CI lane runs against the construct that ships subagent_wait. No assert loosening (spawns==1, completed>=0, completed<validation, "- DONE:" unchanged); no FO behavior change (async dispatch + subagent_wait stays).
+- DONE: AC-1 — both Pi journeys pass (value, live proof).
+  Ran `SPACEDOCK_LIVE_RUNTIME=pi SPACEDOCK_PI_LIVE_REQUIRED=1 SPACEDOCK_PI_LIVE_CHILD_MODEL='lunaroute/glm-5.2-vision-background:max' go test -tags live -count=1 -timeout 60m -run '^TestLiveCommon(DefaultHeadlessGateStop|AutoContinueAfterImplementation)$' ./internal/ensigncycle/ -v` on the fix tip (1c1362abf, pi-subagents 0.53.0). Result: `--- PASS: TestLiveCommonDefaultHeadlessGateStop (700.14s)` and `--- PASS: TestLiveCommonAutoContinueAfterImplementation (1723.48s)` — no implementation-worker-not-dispatched. Baseline that moved wrong: the prior tip failed both with completed=-1 (the assert didn't credit subagent_wait). Falsifiable: before the assert change, completed=-1; after, completed>=0.
+- DONE: AC-2/3 — assert contract preserved, no XFail masking, no Sonnet/Codex change.
+  git diff on auto_continue_fixtures_test.go and the codex/claude branches of assertWorkerLifecycle is empty; the new branch only adds a Pi subagent_wait completion path. No liveXFail/liveTODO("pi",...) added. default-headless-gate-stop and auto-continue-after-implementation have nil gap slices.
+- DONE: offline tests + build + gofmt.
+  go test ./internal/ensigncycle/ -count=1 green (assert tests unchanged); go build ./... clean; gofmt clean on the 2 changed files. Pre-existing TestVersionAmbiguousMarkersExitZero (environment artifact) noted, not fixed here.
+
+### Summary
+
+Validation PASSED. The real root cause (found in the live transcript after two wrong-fix reworks) was that the FO observes completion via subagent_wait (pi-subagents 0.53.0+, the blocking wait), but assertWorkerLifecycle only credited a subagent status -> State: complete event — a signal that never appears because the FO uses subagent_wait. The assert was 10 days stale (landed 2026-08-10; subagent_wait shipped 2026-08-20). Fix (b): credit subagent_wait completion keyed on the spawned run id, with the same completed<validation ordering. Bump the live runner's pi-subagents pin 0.35.1 -> 0.53.0 so the CI lane runs against the construct the fix assumes (the 0.35.1 pin lagged upstream by 18 versions and could not catch this). Both live Pi journeys PASS on the fix tip. No assert loosening, no FO behavior change, no new field/command/extension. Recommend PASSED.
