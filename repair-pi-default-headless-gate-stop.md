@@ -1,6 +1,6 @@
 ---
 title: Repair the Pi implementation-worker-not-dispatched conduct (default-headless-gate-stop + auto-continue-after-implementation)
-status: validation
+status: implementation
 source: "CI run 31747645316 (PR #682, pi-live job) + 2026-08-13-02 Pi debrief; reproduced locally on lunaroute/glm-5.2-vision-background:max"
 score: 0.85
 sprint: pi-live-completeness
