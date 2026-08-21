@@ -406,3 +406,44 @@ Reproduced all five ACs on a throwaway clone rather than reading them off the re
 The dispatch's armed-gate-state concern is resolved: those prepares never touched live state. Live `define-fo` still tops out at `validation/briefing-5`, `preserve-pi` at `validation/briefing-1` (superseded), `merge-guard` holds no validation room, and the state checkout is clean. The implementation ran them in clones, and the attempt numbers it reported are exactly what live state would next mint — which corroborates that those clones were faithful rather than contradicting the report.
 
 On the crash-inheritance chain the concern was justified but narrow. Ten of eleven claimed falsifiers red exactly their stated case under mutation, so the AC-to-test bindings are real rather than asserted. Only two hunks rested on "tests pass" alone: the `--round` message, which no test asserts and which I exercised directly, and AC-1's lock-placement clause, which no test can red and which needs none.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Gate the refusal on a workflow-declared form so a workflow that declares nothing allows either shape
+  `8849dc880`. `refuseNewFlatCompanion` returns early unless the README declares `entity-form: folder`; `workflowDeclaresFolderForm` reads that one key through the same `frontmatterNode`/`mappingValue` path `entityIdentity` already uses for `id-style`, and treats an unreadable README as undeclared so the guard adds no new failure mode.
+- DONE: Prove the live-fixture shape now prepares: a fresh flat entity in an undeclared workflow succeeds, and a flat entity in a folder-declaring workflow is refused
+  Four cases run against the built binary on the live auto-continue fixture's own README bytes. Undeclared: exit 0, binds `./auto-continue-task/review/validation/briefing-1`. The cycle-1 binary on the identical fixture: exit 1 with the message the journeys quoted. Declared: exit 1, tree entry list unchanged, no companion minted. Declared with rooms already present: exit 0.
+- DONE: Rerun the targeted live journey locally against the built change before signalling, and report its observed codes
+  `TestLiveCommonAutoContinueAfterImplementation`, claude lane / sonnet, built from this branch: **PASS 393.04s, `go test` exit 0**. Codes and the one red I also observed are in `### Live evidence` below.
+
+### Grandfathering: kept, with a changed reason
+
+Reconsidered as instructed, and kept. Under the declaration it no longer protects the nine hybrids from a rule they never opted into; it protects them from one a workflow opts into later, which is the concrete next step here — `docs/dev` is both the likeliest first workflow to declare `entity-form: folder` and the one holding all nine hybrids, three at active validation gates. Without the branch, adding one README line arms a gate failure that fires at each hybrid's next gate: green now, blocked later, which is #739's shape. It costs four production lines and one test case, because gating on the declaration removed all of its fixture churn. Full reasoning in `## Cycle 2 narrowing`.
+
+### Falsifiers executed
+
+Five source mutations, each re-running `TestPrepareRefusesFlatEntityOnlyWhereTheWorkflowDeclaresFolderForm`. Every one reds exactly one branch and only that branch, so the three branches are independent rather than co-satisfied.
+
+- **AC-1 refusal.** Guard deleted -> `declared-folder-form-refuses-flat` FAILS. Key read as `entity-shape` -> FAILS. Declared value compared against `flat` -> FAILS. The last two matter because either makes a declaring workflow read as undeclared, which is the cycle-1 defect inverted.
+- **AC-1 permission.** Declaration check deleted, so the guard fires unconditionally -> `undeclared-workflow-prepares-flat` FAILS. This is the exact regression that reddened both live lanes; it is now a red offline test.
+- **AC-2.** Grandfathering early-return deleted -> `declared-folder-form-grandfathers-rooms` FAILS.
+- **AC-3/4/5 untouched.** The two `status --validate` findings are unchanged from cycle 1 and keep their validated falsifiers. Re-confirmed live read-only: 9 hybrid findings naming 9 slugs, 0 unresolved refs, `--validate` exit 0.
+
+### Live evidence
+
+- **`TestLiveCommonAutoContinueAfterImplementation` (the mandated journey) — PASS, 393.04s, exit 0.** Both fixture variants drove `gate prepare` on flat `auto-continue-task.md` and bound `briefing:auto-continue-task:validation:attempt-1:revision-1` with `state=open`. Occurrences of `requires folder-form entity` in either transcript: **0**.
+- **`TestLiveCommonRejectionFlow` (extra evidence, the other flat-entity gate fixture) — one RED, not attributable, and resolved.** Run 1 on this branch FAILED 356.67s on grade `rejection-worker-topology`: "the fresh branch owes 8 routing events, the run produced 6", with `reuse` where `spawn` was owed. `gate prepare` had already succeeded in that same run — it bound `briefing:rejection-task:validation:attempt-1:revision-1` with 0 refusals — so the guard was not what failed; the FO under-drove the rejection chain by two events. Settled by two further runs rather than by argument: the same journey at stack parent `8f29ad577` with no change present PASSED 496.36s on the full 8-event chain, and a rerun on this branch PASSED 432.68s. This branch changes 0 files under `skills/`, `internal/dispatch/`, or `internal/ensigncycle/`, which is where the FO's fresh-versus-reuse routing is decided.
+
+### Surface
+
+8 files, +331 / -7, **net +324**, against a declared +283 ±40 LOC and 13 ±2 files. Both bounds are missed and the estimate predates the captain's narrowing, so it is stale rather than met: files land 3 under the low bound because the declaration removed the fixture churn (6 files, 34 repairs, all reverted to their stronger pre-change assertions), and net LOC lands 1 over the high bound because `prepare.go` grew from +21 to +53 for the declaration reader and the guard's reasoning, `prepare_test.go` from +76 to +90 for the third branch, and docs from +9 to +11 for the added concepts page. Production alone is +99/-1. Flagging the deviation rather than reconciling it: the shape of the change moved when the rule did.
+
+### Checks run
+
+`go test ./... -race`: **19 packages green, 0 data races**. `gofmt -l ./cmd ./internal` clean. The only failure is `TestCodexResolveManifestAgainstInstalledHost`, which I confirmed fails identically at stack parent `8f29ad577` without this change — machine-local (a locally installed Codex plugin), not attributable.
+
+### Summary
+
+The guard now fires only where a workflow declares `entity-form: folder` in its README, so the shape `spacedock new` mints by default is refused nowhere and enforcement arrives with the declaration instead of ahead of it. Preparation only reads the key; `qpa` owns writing it. The clearest evidence that cycle 1's defect is closed is the before/after on the live fixture's own README bytes: the cycle-1 binary exits 1 there with the message the journeys quoted, this one exits 0 and binds the room, and the mandated live journey passes end to end with zero refusals in either variant's transcript.
+
+Two things a reviewer should weigh. First, the estimate is missed in both directions and I did not reconcile it — the narrowing deleted 34 fixture repairs and added a frontmatter reader, so 8 files/+324 is the honest measurement against a stale +283 ±40/13 ±2. Second, `gate record --round` still refuses every flat entity unconditionally at `operation.go:108`. That is pre-existing and untouched here except for cycle 1's remedy text, and no live journey drives `--round` on a flat entity today, but it does leave the two commands disagreeing about whose rule the form is: prepare now asks the workflow, `--round` still asserts it. Whether `--round` should take the same declaration is a scope decision I did not make.
