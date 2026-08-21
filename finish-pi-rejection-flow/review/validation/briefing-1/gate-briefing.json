@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:p17swb3375rt525fn7f8xt7e:validation:attempt-1:revision-1",
+  "question": "Validated and ready to deliver? p17: Pi rejection-flow target completes in 1500s with NO timeout (AC-1 met, the defect fixed); repair exercised live + offline extractors pass. XFAIL still reports rejection-worker-topology (separate semantic, stays registered). Stacked on 747. Conn-held approval.",
+  "artifacts": [
+    {
+      "id": "artifact:p17swb3375rt525fn7f8xt7e:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/72901d359a29e7bb314603ce19cb0827cd79d197/finish-pi-rejection-flow.md",
+      "rev": "sha256:03643825c9ba584c25360b00a719109ace1956414a00a15058a1673357743785",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED on timeout-fix: live Pi rejection-flow target completes in 1500s, no timeout (AC-1); repair exercised live + offline extractor tests pass (AC-2). gofmt/vet clean; ensigncycle green; 4 pre-existing failures unrelated. Deferred: rejection-worker-topology XFAIL stays registered (separate semantic, not closed by this repair). Stacked on 747."
+    }
+  ]
+}
