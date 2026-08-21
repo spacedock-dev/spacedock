@@ -302,14 +302,6 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 				return exitCodeError{1}
 			}
 			if args[0] == "prepare" {
-				if !filepath.IsAbs(prepareInput.Artifact) {
-					prepareInput.Artifact = filepath.Join(dir, prepareInput.Artifact)
-				}
-				for i := range prepareInput.References {
-					if !filepath.IsAbs(prepareInput.References[i]) {
-						prepareInput.References[i] = filepath.Join(dir, prepareInput.References[i])
-					}
-				}
 				prepareInput.WorkflowDir = definitionDir
 				result, err := gates.Prepare(path, prepareInput)
 				if err != nil {

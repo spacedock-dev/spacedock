@@ -72,15 +72,18 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if strings.TrimSpace(input.WorkflowDir) == "" {
 		return PrepareResult{}, fmt.Errorf("gate prepare requires a workflow directory")
 	}
+	entityRoot, err := entityResolveRoot(input.WorkflowDir)
+	if err != nil {
+		return PrepareResult{}, fmt.Errorf("resolve entity root: %w", err)
+	}
 	paths := append([]string{input.Artifact}, input.References...)
 	normalized := make([]string, 0, len(paths))
 	seen := map[string]bool{}
 	for _, selected := range paths {
-		path, err := filepath.Abs(selected)
+		path, err := resolveSelectedSource(selected, entityRoot)
 		if err != nil {
 			return PrepareResult{}, fmt.Errorf("resolve selected source: %w", err)
 		}
-		path = filepath.Clean(path)
 		if seen[path] {
 			return PrepareResult{}, fmt.Errorf("gate prepare received the same selected path more than once")
 		}
@@ -88,7 +91,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		normalized = append(normalized, path)
 	}
 
-	entityPath, err := filepath.Abs(entityPath)
+	entityPath, err = filepath.Abs(entityPath)
 	if err != nil {
 		return PrepareResult{}, fmt.Errorf("resolve entity: %w", err)
 	}
@@ -716,6 +719,52 @@ func mediaType(path string) string {
 	default:
 		return "application/octet-stream"
 	}
+}
+
+// entityResolveRoot returns the directory relative --artifact and --reference
+// paths resolve against. In a split-root workflow it is the state-checkout
+// entity root, computed once from the README `state:` field of workflowDir —
+// the same root the entity path is derived from. In a single-root workflow
+// (state: absent, empty, or $inline) it is workflowDir itself, matching the
+// prior cwd-based behavior when cwd and the workflow root coincide. The
+// absolute/.. rejection mirrors status.ClassifyState but stays local to gates
+// to avoid a status→gates import cycle.
+func entityResolveRoot(workflowDir string) (string, error) {
+	readme, err := os.ReadFile(filepath.Join(workflowDir, "README.md"))
+	if err != nil {
+		return "", err
+	}
+	root, _, _, err := frontmatterNode(readme)
+	if err != nil {
+		return "", err
+	}
+	state := mappingValue(root, "state")
+	if state == nil {
+		return workflowDir, nil
+	}
+	value := strings.TrimSpace(state.Value)
+	if value == "" || value == "$inline" {
+		return workflowDir, nil
+	}
+	if filepath.IsAbs(value) {
+		return "", fmt.Errorf("state: must be a path relative to the workflow README directory, not absolute: %s", value)
+	}
+	cleaned := filepath.Clean(value)
+	if cleaned == ".." || strings.HasPrefix(cleaned, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("state: must not escape the workflow README directory: %s", value)
+	}
+	return filepath.Join(workflowDir, cleaned), nil
+}
+
+// resolveSelectedSource makes a selected source path absolute. Relative paths
+// resolve against the entity root (the state-checkout root in split-root, the
+// workflow dir in single-root); absolute paths pass through cleaned. This is
+// the single resolution site — the CLI passes relative paths through unchanged.
+func resolveSelectedSource(selected, entityRoot string) (string, error) {
+	if filepath.IsAbs(selected) {
+		return filepath.Clean(selected), nil
+	}
+	return filepath.Clean(filepath.Join(entityRoot, selected)), nil
 }
 
 func isMarkdownPath(path string) bool {
