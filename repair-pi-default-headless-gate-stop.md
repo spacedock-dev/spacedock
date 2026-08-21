@@ -73,6 +73,17 @@ gates:
                 digest: sha256:3a5a8de39fc212e4f79984362f3236eb5da1aa11305cce376c6522bf18b3ca6c
                 request-digest: sha256:0b28f5a30163930bcaa0d491b475da3e09cbf4352cda26ed78e099171a802d1b
                 room-ref: ./repair-pi-default-headless-gate-stop/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ntarrp8jp5h34g6528d66kbe:validation:2
+                briefing: briefing:ntarrp8jp5h34g6528d66kbe:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-21T22:34:17.779243955Z"
+                decision: approve
+                reason: 'Conn-held. ntarr validation PASSED: assert credits subagent_wait, both Pi journeys live PASS, pin bumped 0.53.0. Deliver via stacked PR on 750.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-21T16:13:06Z
 worktree: .worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
 ---
