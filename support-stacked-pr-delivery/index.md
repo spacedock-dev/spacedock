@@ -10,6 +10,18 @@ score:
 worktree: .worktrees/spacedock-ensign-support-stacked-pr-delivery
 issue:
 pr: "#743"
+gates:
+    version: 1
+    records:
+        - id: gate:nxnbzzw9z60tx4bp3daeypkc:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:nxnbzzw9z60tx4bp3daeypkc-validation-1
+              briefing:
+                id: briefing:nxnbzzw9z60tx4bp3daeypkc:validation:attempt-1:revision-1
+                digest: sha256:b54eb6d43c28e2fab650dadd054a2b400a4a21ddb11fd8ae7cc1538db8fdaf92
+                request-digest: sha256:e631207440679311e683de63c97a2f953a4efd206ff689940ca721fdfef4465f
+                room-ref: ./review/validation/briefing-1
 ---
 
 Make a stacked delivery safe to drive from the `pr-merge` mod alone, and stop the mod from carrying tool knowledge that the official `gh stack` skill owns.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:nxnbzzw9z60tx4bp3daeypkc:validation:attempt-1:revision-1",
+  "question": "Approve to terminal on the captain's grant, without additional validation?",
+  "artifacts": [
+    {
+      "id": "artifact:nxnbzzw9z60tx4bp3daeypkc:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/748a299c18a9a164ffd1cea98124bb29123314cf/support-stacked-pr-delivery/index.md",
+      "rev": "sha256:a2b3ac2aca20f149bfd204e3f235a60e0bc2c8eaed78321cbb28119826e6d203",
+      "mediaType": "text/markdown",
+      "summary": "Stacked-mode section for the pr-merge mod: defers gh stack mechanics to the official skill with three declared overrides, adds a three-condition test that a layer contains its parent, skips the trunk push in stacked mode, uses a bare lease plus force-if-includes, re-records CANDIDATE_SHA after a rebase, routes conflicts to the recorded owner per #645, and states that a stack exists so one tip run proves every layer. Two independent adversarial reviews ran against the text; the FO exercised the procedure three times on this live stack and that use found and fixed two defects in it. No validator ran and the entity carries no prior gate record: it was fast-tracked at captain direction, and the captain approves to terminal with no additional validation."
+    }
+  ]
+}
