@@ -1,6 +1,6 @@
 ---
 title: Repair the Pi implementation-worker-not-dispatched conduct (default-headless-gate-stop + auto-continue-after-implementation)
-status: backlog
+status: ideation
 source: "CI run 31747645316 (PR #682, pi-live job) + 2026-08-13-02 Pi debrief; reproduced locally on lunaroute/glm-5.2-vision-background:max"
 score: 0.85
 sprint: pi-live-completeness
@@ -29,7 +29,7 @@ gates:
                 reason: 'Conn-held. Scope widened per gap-inventory disposition #10: ntarr owns the Pi implementation-worker-not-dispatched conduct class across default-headless-gate-stop + auto-continue-after-implementation (shared gate-presentation/dispatch seam root cause). Advance to ideation for a combined fix.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
