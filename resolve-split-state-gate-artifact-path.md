@@ -56,6 +56,17 @@ gates:
                 digest: sha256:00be9a055f8f8a545175fec89aef0f932e8abc4ebc62ed39e6e202888f0bb1b4
                 request-digest: sha256:1804a72d4ce1d7cb72acdafaf2b7e56247f6ac466619a4de77f007fa3a7cd7ef
                 room-ref: ./resolve-split-state-gate-artifact-path/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mvmpzgqxyb32t3b3vdw0x0h1:validation:1
+                briefing: briefing:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T09:13:37.371629499Z"
+                decision: approve
+                reason: 'Conn-held approval. mvmpzg validation PASSED: 3 ACs falsifiable, gates+cli green, gofmt/vet clean. Deliver via stacked PR on 747.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-21T08:15:56Z
 worktree: .worktrees/spacedock-ensign-resolve-split-state-gate-artifact-path
 ---
