@@ -30,6 +30,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-21T16:13:06Z
 ---
 
 ## Problem
