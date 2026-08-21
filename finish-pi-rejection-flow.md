@@ -65,6 +65,17 @@ gates:
                 digest: sha256:aa2b111c7ad2915de7194684e3b6a29ab40b42205e0c665e086e247efea3af98
                 request-digest: sha256:6de186022a6afcb124cdf7cbf392e16912a45fcc1f5670c54b21c1c34d228fad
                 room-ref: ./finish-pi-rejection-flow/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:p17swb3375rt525fn7f8xt7e:validation:1
+                briefing: briefing:p17swb3375rt525fn7f8xt7e:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T10:15:23.243324109Z"
+                decision: approve
+                reason: 'Conn-held approval. p17 validation PASSED on timeout-fix: live target completes 1500s no timeout (AC-1), repair exercised (AC-2). Topology XFAIL stays registered (deferred, separate semantic). Deliver via stacked PR on 747.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.
