@@ -1,6 +1,6 @@
 ---
 title: Resolve split-state gate artifact paths before preparation
-status: ideation
+status: implementation
 source: "PR #679 run 31640122995, Codex job 94260562369, artifact 9158783630: TestLiveCommonGateGuardrail found committed review files in the split state checkout, then passed a state-relative path to gate prepare, which resolved it from the workflow root and failed."
 score: 0.98
 id: mvmpzgqxyb32t3b3vdw0x0h1
@@ -46,7 +46,7 @@ gates:
                 reason: 'Captain approved both ideation gates. mvmpzg: one canonical resolver-owned gate-artifact path contract for split-root — root cause for the 3 required Pi journeys + Codex lane. Advance to implementation, worktree stacked on 747.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-21T08:15:56Z
 ---
 
