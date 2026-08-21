@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:p17swb3375rt525fn7f8xt7e:ideation:attempt-1:revision-1",
+  "question": "Is the design ready to implement? p17: minimal product repair so the Pi rejection-flow target completes the two-validation cycle and stops at one fresh unresolved gate (no timeout). With conn, approve to enter implementation in a worktree off 747.",
+  "artifacts": [
+    {
+      "id": "artifact:p17swb3375rt525fn7f8xt7e:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a0d03626dcf23630a7f51c67bdaf03341a0da6c5/finish-pi-rejection-flow.md",
+      "rev": "sha256:9658034be160aa06231d9a39068117dfce26bbf361accd6c8910a9a71cf41594",
+      "mediaType": "text/markdown",
+      "summary": "Ideation for p17: minimal product repair for the Pi rejection-flow timeout — the target reaches the second validation gate but times out before recording/completing the expected stop. Value-AC: focused live Pi target completes normally with two-validation state + one fresh unresolved gate; mechanism-AC: the repair exercised by the focused live target. Stacks on 747."
+    }
+  ]
+}

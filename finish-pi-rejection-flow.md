@@ -36,6 +36,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:p17swb3375rt525fn7f8xt7e:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:p17swb3375rt525fn7f8xt7e-ideation-1
+              briefing:
+                id: briefing:p17swb3375rt525fn7f8xt7e:ideation:attempt-1:revision-1
+                digest: sha256:9cff7832c212ad1a767abec10a7bfd5a13e5bc6105a3398bcb64410d7f91234b
+                request-digest: sha256:164fa54b69c3de84a4c65891ce0e432ace3505894ed296a12c87da1d5f982f99
+                room-ref: ./finish-pi-rejection-flow/review/ideation/briefing-1
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.
