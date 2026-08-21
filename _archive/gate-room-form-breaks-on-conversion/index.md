@@ -1,11 +1,11 @@
 ---
 id: gf0jvhj4y8vjhd6ww62vsb2q
 title: Gate rooms make a flat entity a hybrid, and converting it breaks every later gate
-status: validation
+status: done
 source: "Issue #739 (captain, 2026-08-20): gate prepare fails after a flat-to-folder conversion because a retained room-ref resolves relative to the new entity folder and duplicates the slug."
 started: 2026-08-20T19:59:06Z
-completed:
-verdict:
+completed: 2026-08-21T06:28:16Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-gate-room-form-breaks-on-conversion
 issue: "#739"
@@ -102,9 +102,10 @@ gates:
                 reason: 'Captain: ''consider it approved'' and ''no additional validation''. Cycle 2 loosens the guard to fire only where a workflow declares entity-form: folder, clearing the cycle-1 red that blocked every live fixture. Evidence is the worker''s own targeted live run (TestLiveCommonAutoContinueAfterImplementation, claude/sonnet, PASS 393s) plus codex-live passing at the stack tip on the journeys cycle 1 had broken. No validator ran on cycle 2 by captain direction.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:745
+archived: 2026-08-21T06:28:16Z
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
