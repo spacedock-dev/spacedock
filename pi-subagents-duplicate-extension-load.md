@@ -82,6 +82,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
+pr: "#747"
 ---
 
 `spacedock pi` loads the `pi-subagents` extension twice under two different specifiers when the package is also registered in `~/.pi/agent/settings.json` `packages` — the exact setup `spacedock pi --check` recommends. Package discovery loads `<pkg>/index.ts` (re-exporting `./src/extension/index.ts`), and `spacedock pi` additionally passes `--extension <pkg>/src/extension/index.ts --skill <pkg>/skills/pi-subagents` (internal/cli/pi.go, argv built at the `--extension`/`--skill` block; extensionPath is `filepath.Join(pkg, "src", "extension", "index.ts")`). Pi keys extension identity by resolved specifier, not module identity, so the second registration of `subagent`/`subagent_wait` collides and startup fails with `Tool "subagent" conflicts with ...`. Plain `pi` works; `spacedock pi -- --ne` works only by silencing all discovered extensions (lossy — also drops pi-intercom and host extensions).
