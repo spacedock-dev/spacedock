@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntarrp8jp5h34g6528d66kbe:validation:attempt-2:revision-1",
+  "question": "Validated and ready to deliver? ntarr: assertWorkerLifecycle credits subagent_wait completion (the FO's actual async-wait mechanism, pi-subagents 0.53.0+); both Pi journeys live PASS; live pin bumped 0.35.1-\u003e0.53.0. Conn-held approval.",
+  "artifacts": [
+    {
+      "id": "artifact:ntarrp8jp5h34g6528d66kbe:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/0cad5157c31a58eff50c2b2cf73d87c5d7cc286e/repair-pi-default-headless-gate-stop.md",
+      "rev": "sha256:47798c52c56997cb2800be14d21a4189e411dfc07015b52f67d99bcf3ca3a914",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: assert credits subagent_wait completion (10-day staleness fix); both DefaultHeadlessGateStop + AutoContinueAfterImplementation live PASS on the fix tip; live pi-subagents pin bumped 0.35.1-\u003e0.53.0. No assert loosening, no FO behavior change. Stacks on 750."
+    }
+  ]
+}
