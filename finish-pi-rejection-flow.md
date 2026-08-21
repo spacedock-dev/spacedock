@@ -45,6 +45,17 @@ gates:
                 digest: sha256:9cff7832c212ad1a767abec10a7bfd5a13e5bc6105a3398bcb64410d7f91234b
                 request-digest: sha256:164fa54b69c3de84a4c65891ce0e432ace3505894ed296a12c87da1d5f982f99
                 room-ref: ./finish-pi-rejection-flow/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:p17swb3375rt525fn7f8xt7e:ideation:1
+                briefing: briefing:p17swb3375rt525fn7f8xt7e:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T08:49:25.400665229Z"
+                decision: approve
+                reason: 'Captain approved both ideation gates. p17: minimal product repair for Pi rejection-flow timeout — complete two-validation cycle + stop at one fresh unresolved gate. Advance to implementation, worktree stacked on 747.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.
