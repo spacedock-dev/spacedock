@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:5xwwj9c2w50921t16s840p49:backlog:attempt-1:revision-1",
+  "question": "Is the seed clear enough to start design? Issue 746: spacedock pi double-loads the pi-subagents extension when the package is also registered, failing with 'Tool subagent conflicts'. Proposed fix: gate the explicit --extension/--skill flags on the package NOT being already registered (preserving the dev-override purpose). Stacked on PR 725 (rebased). Ready to enter ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:5xwwj9c2w50921t16s840p49:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/84cc857ae5b4666ac0b0991c8e9e03cb9d906e12/pi-subagents-duplicate-extension-load.md",
+      "rev": "sha256:2cf98ff629fa87e4cf903a640384bc3dd9d78e16b0ebe3a79a5c579c5b338d4d",
+      "mediaType": "text/markdown",
+      "summary": "Seed for issue #746: spacedock pi loads pi-subagents twice (package discovery + unconditional explicit --extension/--skill in internal/cli/pi.go) when the package is also in settings.json packages, colliding on 'Tool subagent conflicts'. Direction: gate the explicit flags on the package not being registered (flags exist for the dev-override case per code comments). AC sketch: registered -\u003e one load, no conflict; dev-override -\u003e explicit flags. Expected surface: internal/cli/pi.go + test, small diff. Stacked on rebased PR 725."
+    }
+  ]
+}
