@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntarrp8jp5h34g6528d66kbe:validation:attempt-1:revision-1",
+  "question": "Validation gate. AC-1 NOT met: FO live run on the ntarr tip shows both DefaultHeadlessGateStop and AutoContinueAfterImplementation still FAIL with implementation-worker-not-dispatched. The adapter-text binding did not change live FO behavior. Record REJECTED to route back to implementation as a design reset (mechanism-level fix, not adapter text).",
+  "artifacts": [
+    {
+      "id": "artifact:ntarrp8jp5h34g6528d66kbe:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/05837242c91bf3deb8381cc551bf038755e3c0e3/repair-pi-default-headless-gate-stop.md",
+      "rev": "sha256:35c59bc0a9373c5b1ac07aff2198a231be34d46bb450c4d1b0f16edd0c66e864",
+      "mediaType": "text/markdown",
+      "summary": "Validation REJECTED on AC-1: both live Pi journeys still fail implementation-worker-not-dispatched. Adapter-text fix insufficient; needs mechanism-level design reset. Route to feedback-to: implementation."
+    }
+  ]
+}

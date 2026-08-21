@@ -50,6 +50,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:ntarrp8jp5h34g6528d66kbe:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:ntarrp8jp5h34g6528d66kbe-validation-1
+              briefing:
+                id: briefing:ntarrp8jp5h34g6528d66kbe:validation:attempt-1:revision-1
+                digest: sha256:a3a27bfb0b483447b9c755322b5289b6b8f7615f548882a856dc85d9787130db
+                request-digest: sha256:e11ca78cd5cbf9d0d2a3b419f8f240df6f0231c0525468a01a5b3b275b76e0ed
+                room-ref: ./repair-pi-default-headless-gate-stop/review/validation/briefing-1
 started: 2026-08-21T16:13:06Z
 worktree: .worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
 ---
