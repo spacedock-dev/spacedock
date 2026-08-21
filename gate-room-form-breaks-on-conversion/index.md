@@ -103,8 +103,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
-mod-block:
-pr:
+mod-block: merge:pr-merge
+pr: "#745"
 ---
 
 Stop `gate prepare` from leaving an entity in a form whose retained references break on conversion, and unblock the entities already in that state.
