@@ -6,7 +6,7 @@ started: 2026-08-21T03:45:47Z
 completed:
 verdict:
 score: 0.8
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-subagents-duplicate-extension-load
 issue: spacedock-dev/spacedock#746
 id: 5xwwj9c2w50921t16s840p49
 gates:
