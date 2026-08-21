@@ -1,6 +1,6 @@
 ---
 title: Resolve split-state gate artifact paths before preparation
-status: backlog
+status: ideation
 source: "PR #679 run 31640122995, Codex job 94260562369, artifact 9158783630: TestLiveCommonGateGuardrail found committed review files in the split state checkout, then passed a state-relative path to gate prepare, which resolved it from the workflow root and failed."
 score: 0.98
 id: mvmpzgqxyb32t3b3vdw0x0h1
@@ -26,7 +26,7 @@ gates:
                 reason: Captain granted conn for pi-related fixes including gates (2026-08-21 chat). Seed clearly identifies the root cause (split-state gate-artifact path resolving against the wrong root) blocking 3 required Pi journeys + Codex lane; one-canonical-path approach is sound. Advance to ideation.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Make a split-root First Officer pass the exact committed artifact path that gate preparation can resolve.
