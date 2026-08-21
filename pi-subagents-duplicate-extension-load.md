@@ -71,6 +71,17 @@ gates:
                 digest: sha256:382c349d0f2593e691e6b126b0a68da9953a636b600ef1c830b8b629b73fca65
                 request-digest: sha256:d7ef87f7c2d665d19ab0d0ecc524838f14322f7bac4a679b3de936e993480c34
                 room-ref: ./pi-subagents-duplicate-extension-load/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:5xwwj9c2w50921t16s840p49:validation:2
+                briefing: briefing:5xwwj9c2w50921t16s840p49:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-21T06:08:10.344877692Z"
+                decision: approve
+                reason: 'Captain approved validation gate (re-verified on trimmed test set): AC-1 proven by production gate + detection unit test, AC-2 proven with falsifying change, 4 pre-existing failures identical on base, diff +85/-17. Deliver via stacked PR on rebased PR 725.'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 `spacedock pi` loads the `pi-subagents` extension twice under two different specifiers when the package is also registered in `~/.pi/agent/settings.json` `packages` — the exact setup `spacedock pi --check` recommends. Package discovery loads `<pkg>/index.ts` (re-exporting `./src/extension/index.ts`), and `spacedock pi` additionally passes `--extension <pkg>/src/extension/index.ts --skill <pkg>/skills/pi-subagents` (internal/cli/pi.go, argv built at the `--extension`/`--skill` block; extensionPath is `filepath.Join(pkg, "src", "extension", "index.ts")`). Pi keys extension identity by resolved specifier, not module identity, so the second registration of `subagent`/`subagent_wait` collides and startup fails with `Tool "subagent" conflicts with ...`. Plain `pi` works; `spacedock pi -- --ne` works only by silencing all discovered extensions (lossy — also drops pi-intercom and host extensions).
