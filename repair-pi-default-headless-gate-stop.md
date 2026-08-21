@@ -59,6 +59,14 @@ gates:
                 digest: sha256:a3a27bfb0b483447b9c755322b5289b6b8f7615f548882a856dc85d9787130db
                 request-digest: sha256:e11ca78cd5cbf9d0d2a3b419f8f240df6f0231c0525468a01a5b3b275b76e0ed
                 room-ref: ./repair-pi-default-headless-gate-stop/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ntarrp8jp5h34g6528d66kbe:validation:1
+                briefing: briefing:ntarrp8jp5h34g6528d66kbe:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T17:40:41.898733168Z"
+                decision: revise
+                reason: 'Conn-held rejection. AC-1 NOT met: live run on ntarr tip (e60f520f4) — both DefaultHeadlessGateStop and AutoContinueAfterImplementation FAIL with implementation-worker-not-dispatched. Adapter-text binding is a contract clarification the model reads, not a mechanism the FO structurally follows; live behavior unchanged. Design reset to a mechanism-level fix: event loop dispatches the implementation worker before presenting any gate, or completion-signal gate structurally blocks gate presentation until worker completion. Route to feedback-to: implementation.'
 started: 2026-08-21T16:13:06Z
 worktree: .worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
 ---
