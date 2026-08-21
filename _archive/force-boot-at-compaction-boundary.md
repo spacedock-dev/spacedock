@@ -1,11 +1,11 @@
 ---
 id: 4ctz4sfybfk0mfsbnrjcc7bv
 title: Force one boot at the compaction boundary — a compacted FO resumes on stale bindings
-status: validation
+status: done
 source: "Captain CL, 2026-08-18, in chat: 'file the compaction improvement, detail the problem diagnosis and proposed solution.' Raised after the FO opened three PRs by hand without reading the pr-merge mod, and diagnosed the root cause as never having run Startup in a compaction-resumed session."
 started: 2026-08-18T23:15:43Z
-completed:
-verdict:
+completed: 2026-08-21T06:28:10Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-force-boot-at-compaction-boundary
 issue:
@@ -150,9 +150,10 @@ gates:
                 reason: 'Captain: ''approve both''. Cycle 8 makes the matcher a value under test and widens it to compact and clear. Four mutants fail where two were invisible. Validation proved delivery at source=clear with a live instrumented run, closing the inference gap the widening opened, and closed cycle 7''s AC-1 finding. Net 241 against a 245 estimate. Carried, not blocking: the union assertion is under-constrained against a new source value, the payload is actionable after a clear by one sentence rather than by design, and no AC pins the payload''s instruction content.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:738
+archived: 2026-08-21T06:28:11Z
 ---
 
 A compacted First Officer session inherits the previous session's **narrative** but not its **bindings**. The transcript summary preserves what the FO was discussing and drops what it was standing on: which binary, which contract version, which mods are registered, which workers are alive, and what durable state actually says.
