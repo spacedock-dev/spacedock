@@ -69,6 +69,8 @@ gates:
                 state: pending
 started: 2026-08-21T08:15:56Z
 worktree: .worktrees/spacedock-ensign-resolve-split-state-gate-artifact-path
+mod-block: merge:pr-merge
+pr: "#749"
 ---
 
 Make a split-root First Officer pass the exact committed artifact path that gate preparation can resolve.
