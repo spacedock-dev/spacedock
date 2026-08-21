@@ -39,6 +39,17 @@ gates:
                 digest: sha256:9d23d441eb23900e0a6eaed9ed67c63fbedfb221f38db101e602e00606520a63
                 request-digest: sha256:46903799c3d969fe071f385a0df43419260b9c9311afd6857dc39033cafcd642
                 room-ref: ./repair-pi-default-headless-gate-stop/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ntarrp8jp5h34g6528d66kbe:ideation:1
+                briefing: briefing:ntarrp8jp5h34g6528d66kbe:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-21T16:25:11.843796629Z"
+                decision: approve
+                reason: 'Conn-held. ntarr ideation: async-yield boundary root cause for both Pi journeys, combined fix sound. Advance to implementation, worktree stacked on 750.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-21T16:13:06Z
 ---
 
