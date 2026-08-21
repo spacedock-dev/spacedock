@@ -20,6 +20,10 @@ The build artifact carries the entity slug/name, entity path, workflow directory
 
 After the host-neutral loop's first empty `status --next`, Pi runs the idle hook once, omits unavailable `«roster-reconcile»`, and runs the second query once. Only an active unresolved worker with no dispatchable, gate, mod/PR, or other state work qualifies for asynchronous status polling. Completed, errored, and absent workers do not qualify; emit the loop's explicit `no-dispatchable` stop instead. A poll is observation only and never completion evidence.
 
+### Async-yield-to-gate-lifecycle transition
+
+The async dispatch of a validation re-review (`feedback-rejection-flow` step 4) yields the FO to the main loop, breaking the sequential step 4→5 transition. After the async re-review worker completes and the FO verifies the PASSED stage report against the entity file, the FO is back in the main loop — not in the skill — and must resume step 5 (gate prepare) through the main loop's gate-first selection. Before entering the idle-wait, run `status --next` once more: a committed complete re-review at a gated validation stage surfaces a `needs-preparation` row (`CurrentStageReadinessWithReport` returns `needs-preparation` when `promotionProven` is true and no gate record exists). When `status --next` shows that row, load `fo-gate-lifecycle` and proceed through `gate prepare` → `state commit` → `status --read` → `present-gate` → stop — the `«gate.lifecycle»` sequence — instead of entering the idle-wait. Do not re-poll a completed worker or treat the `needs-preparation` row as idle; it is the gate work the main loop's gate-first selection must pick up.
+
 ## Live Harness Isolation
 
 Live Pi tests should run with an isolated Pi config directory and an isolated session directory. The harness may copy the operator's existing Pi auth file into the isolated config directory so OAuth/subscription credentials are reused without sharing global sessions, packages, or settings.

@@ -104,8 +104,10 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
-// The pi XFAIL below is structural: claude-dialect graders cannot parse pi streams,
-// so it can never XPASS (audit finding 11; re-anchor once pi-dialect extractors land).
+// The pi XFAIL below is registered because the Pi rejection-flow target times out
+// before completing the expected stop (registered owner p17swb3375rt525fn7f8xt7e).
+// Pi-dialect extractors now exist (piRecordedRejectionRound, etc.) so the XFAIL
+// can XPASS once the timeout repair lets the FO complete the two-validation cycle.
 //
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
