@@ -7,6 +7,18 @@ sprint: pi-live-completeness
 sprint-readiness: ready
 group: pi-live-followup
 id: ntarrp8jp5h34g6528d66kbe
+gates:
+    version: 1
+    records:
+        - id: gate:ntarrp8jp5h34g6528d66kbe:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:ntarrp8jp5h34g6528d66kbe-backlog-1
+              briefing:
+                id: briefing:ntarrp8jp5h34g6528d66kbe:backlog:attempt-1:revision-1
+                digest: sha256:762bec3db88d71951ce7e63d642cf5a733021e712cf51e0876d7a5f7cc06c440
+                request-digest: sha256:59e11c6f4db63d26ee2ef6b1aa9a24beb45caddc0892cade24499076cff7059f
+                room-ref: ./repair-pi-default-headless-gate-stop/review/backlog/briefing-1
 ---
 
 ## Problem

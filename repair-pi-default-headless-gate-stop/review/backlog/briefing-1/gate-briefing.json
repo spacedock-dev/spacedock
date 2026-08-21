@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntarrp8jp5h34g6528d66kbe:backlog:attempt-1:revision-1",
+  "question": "Is the seed clear enough to start design (widened scope)? ntarr owns the Pi implementation-worker-not-dispatched conduct class across TWO journeys: default-headless-gate-stop (FO stops at validation gate without dispatching the implementation worker) AND auto-continue-after-implementation (same conduct, spawns=2 completed=-1). Shared root cause in the gate-presentation/dispatch seam per the entity's own Notes + gap-inventory disposition #10. Ready to enter ideation for a combined fix?",
+  "artifacts": [
+    {
+      "id": "artifact:ntarrp8jp5h34g6528d66kbe:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c058d8979c486777fde6a48370279beb3f649cf8/repair-pi-default-headless-gate-stop.md",
+      "rev": "sha256:de67e4b7cefc788541323ba86c22fd5bd2e060d51c842541fb9ff97da7bb630b",
+      "mediaType": "text/markdown",
+      "summary": "Widened owner for the Pi implementation-worker-not-dispatched conduct class: default-headless-gate-stop + auto-continue-after-implementation. Both fail because the Pi FO presents the validation gate without dispatching the implementation worker. Shared root cause in the gate-presentation/dispatch seam. Stacks on 750."
+    }
+  ]
+}
