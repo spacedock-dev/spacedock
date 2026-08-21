@@ -52,3 +52,34 @@ Ideation writes these. They must include the ancestry check distinguishing a par
 ## Test plan
 
 Ideation writes this. The ancestry cases are offline and cheap: build a parallel pair and a stacked pair and grade both.
+
+## Stage Report: implementation
+
+- DONE: Write the implementation stage report for the delivered stacked-mode section, from the committed diff
+  Read from `git diff origin/main...HEAD -- mods/pr-merge.md` (+45/-6) across 7994539f2, 8a9b12cda, 8f29ad577; each element below was located in the diff text, not taken from the dispatch's list.
+- DONE: `### Stacked mode` defers every `gh stack` mechanic to `gh skill preview github/gh-stack gh-stack` and declares three overrides
+  7994539f2: no `gh stack submit` (auto-titles, so approved bytes never reach GitHub); `gh stack link` takes only PR numbers confirmed by `gh pr view {N} --json number`; no local stack tracking, so `rebase`/`sync`/`push`/`view` do not apply.
+- DONE: three-condition test that a layer contains its parent — ancestry, heads-not-equal, parent-holds-own-work
+  Exercised read-only on this entity's own live layer (PR #743 over parent `spacedock-ensign/force-boot-at-compaction-boundary`): `merge-base --is-ancestor` exit 0, heads differ exit 0, `rev-list --count "$PARENT_HEAD" --not "$TRUNK_SHA"` = 8. The heads-not-equal condition is the one a freshly branched parallel layer fails, since a commit is its own ancestor.
+- DONE: the trunk push is skipped in stacked mode
+  "Use the branch below the layer as `$BASE` … and skip the trunk push on approval. That push sends the parent layer, including commits the captain has not approved."
+- DONE: rebase procedure with `rebase --onto`, a bare lease, and `CANDIDATE_SHA` re-recorded
+  Steps 1-7: `OLD_PARENT` read before the fetch, `rebase --onto "origin/$PARENT_BRANCH" "$OLD_PARENT" "$BRANCH"`, step 5 replaces `CANDIDATE_SHA` with `$NEW_HEAD`, step 7 pushes `--force-with-lease --force-if-includes` with no value on the lease (8f29ad577).
+- DONE: conflict rule routes to the recorded owner of the layer's registered branch and worktree
+  Step 3 aborts, mutates no refs, and holds the entity with its pending approval and `mod-block` rather than taking `--rework`; the diff text itself does not cite #645 — that citation lives in this entity's Problem section and in 7994539f2's message.
+- DONE: why a stack exists, where its checks are approved, and the check-latency rule
+  8a9b12cda: one tip run proves every layer beneath it; a middle-layer run needs the captain plus a named falsification the tip cannot reach; an empty check list does not prove the repository runs none (wait 30s, stop after three empties, start no duplicate run).
+- DONE: two front-half lines shipped outside the declared stacked surface
+  7994539f2 also made "Always present the draft" explicit and added that a standing conn counts as push approval only when the captain's own words grant push or PR authority — a change to the unstacked approval path, not to `### Stacked mode`.
+- SKIPPED: Sync the installed mod with the repository copy, and make same-version drift detectable rather than silent
+  Did not ship: `docs/dev/_mods/pr-merge.md` still has no `### Stacked mode` heading, both copies still declare `version: 0.27.0`, and the two differ by 57 diff lines — the entity's second acceptance clause is unmet.
+- SKIPPED: Test whether `gh stack rebase --downstack` runs inside a layer's own worktree
+  Untested, so the hand-rolled seven-step procedure ships rather than deleting itself.
+- SKIPPED: Decide whether the ancestry check earns a mechanical guard
+  Undecided; a standing guard is its own captain decision and none was sought. Nothing mechanical covers this section: `grep -rn "Stacked mode\|force-if-includes" --include=*.go` matches no test.
+- DONE: Three commits removed prose the new section does not replace
+  The `gh api --method PATCH` title/body repair note (and its `gh pr edit` warning), the `gh stack link` HTTP 422 read-back paragraph, and the "back half needs no stacked case" statement are gone; only the link read-back survives, condensed to a base check.
+
+### Summary
+
+The deliverable is 45 lines of prose in `mods/pr-merge.md`, written by the first officer under a captain direct-edit grant, and there is no mechanical check behind any of it — no validator ran, no test asserts its text, and this entity carries no prior gate record (`verdict` and `score` are empty, and there are no Cycle lines). The dispatch cites two independent adversarial reviews; those left no artifact in the repo or the entity, so I cannot confirm them. What the git record does show is the three live exercises finding two real defects in the text: 7994539f2 names the ancestry hole an equal-heads test closes, and 8f29ad577 records that step 7 was rejected with "stale info" because a named lease blocks your own push. The installed-copy sync, the drift check, the `--downstack` experiment, and the mechanical-guard decision all remain open; the captain approved this entity to terminal with no further validation, so they are recorded here rather than fixed.
