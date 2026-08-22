@@ -14,15 +14,9 @@ import (
 // reads the rendered final message: a decision request records nothing and moves
 // no stage, so the message is its only observable.
 //
-// What this file's table establishes is narrow and worth stating, because the
-// alternative reading is flattering and wrong. It does NOT show that the
-// template works — only the live drive does that, and it needs a model. It
-// shows that nobody can loosen a grader to turn a red live run green without
-// breaking a case here. That failure is not hypothetical: the first live run of
-// this feature failed on `registration point` where the first officer had
-// written `registration surfaces`, and the assertion was widened to fit the
-// output it was meant to judge. Nothing stopped that. These cases are what
-// stops the next one.
+// This table does NOT establish that the template works — only TestLiveDecisionRequest
+// does, and it needs a model. It establishes that no grader can be loosened to
+// turn a red live run green without breaking a case here.
 
 var (
 	// A derivation a reader can open: a file, a line anchor, or a command.
@@ -78,11 +72,9 @@ func gradeDecisionRequest(final string) []string {
 	var failures []string
 	add := func(f string) { failures = append(failures, f) }
 
-	// Presence is form, and a live pair showed how little of it: without the
-	// template the first officer still wrote "Decision request:" and a Recommend
-	// line, so those two checks separated nothing. Graded first only so a
-	// missing field reports as itself rather than as the substantive failure
-	// downstream of it.
+	// Presence is weak: a first officer with no template still writes
+	// "Decision request:" and a Recommend line. Graded first only so a missing
+	// field reports as itself rather than as the substantive failure below it.
 	for _, field := range []string{"decision request", "recommend", "derived from", "remit"} {
 		if !strings.Contains(strings.ToLower(final), field) {
 			add("missing-field:" + strings.ReplaceAll(field, " ", "-"))
@@ -111,20 +103,10 @@ func gradeDecisionRequest(final string) []string {
 		if !reducesSurfaceRe.MatchString(line) {
 			add("recommendation-does-not-reduce-the-delivered-surface")
 		}
-		// Relaying means the recommendation is CONFINED to what the worker could
-		// see, not that it mentions a worker option at all. A recommendation
-		// whose substance is the un-relayed surface may still carry one of the
-		// worker's options as a secondary detail, and a live run produced
-		// exactly that: "ship only the Go subcommand; defer the expiry read and
-		// installed-plugin access" names the surface the worker's role could
-		// not reach, and naming `expiry` beside it does not make it a relay.
-		//
-		// This is the same shape of change as widening `registration point` to
-		// `registration surfaces` to fit an output, and it is worth saying so.
-		// The difference is that this encodes the distinction the guard always
-		// meant, both directions are pinned below, and the recorded control --
-		// "Recommend option 3: split slice 1 and defer the expiry read" -- still
-		// trips it, because it never reaches past the options it was handed.
+		// Relaying is being CONFINED to what the worker could see, not naming one
+		// of its options: a recommendation whose substance is the un-relayed
+		// surface may carry a worker option beside it. Both directions are pinned
+		// below.
 		if relayedOptionRe.MatchString(line) && !unrelayedSurfaceRe.MatchString(line) {
 			add("recommendation-relays-a-worker-option")
 		}
@@ -223,8 +205,7 @@ Derived from: reading.md:10 and README.md:14.
 Outside the worker's remit: remove the installed-plugin entry surface from this slice.
 `,
 		want: nil,
-		why: "carrying a worker option beside the un-relayed surface is not relaying; " +
-			"a live run produced this and the guard used to reject it",
+		why:  "carrying a worker option beside the un-relayed surface is not relaying",
 	},
 	{
 		name: "the recorded control: confined to the options it was handed",
@@ -318,8 +299,7 @@ func TestGradeDecisionRequest(t *testing.T) {
 }
 
 // TestEveryGraderHasACase fails when a grader can fire but no case above trips
-// it. A grader nothing exercises is decorative, and one was: until this test
-// existed, no case reached recommendation-does-not-reduce-the-delivered-surface.
+// it. A grader nothing exercises is decorative and nothing else would say so.
 func TestEveryGraderHasACase(t *testing.T) {
 	graders := []string{
 		"missing-field:decision-request",
