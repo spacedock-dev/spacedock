@@ -74,6 +74,20 @@ gates:
                 digest: sha256:a891d7c482875d6b068058c93cdd80c78de6fd5a25dc21a523b338101f8b2033
                 request-digest: sha256:23b2a5c1b87bc3e1d80a9b0f1109772d940cced542b94f7680d7da78d7cdf618
                 room-ref: ./align-pi-compaction-with-force-boot/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:h9nn5brc1dp0m82x5en21d56:validation:1
+                briefing: briefing:h9nn5brc1dp0m82x5en21d56:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-08-22T02:14:13.78099702Z"
+                decision: approve
+                reason: 'Validation PASSED: focused test (real .ts through Node harness) confirms compaction fires pi.exec boot read + injects boot record, FO_BOOTSTRAP_TEXT removed from compaction path. All 5 ACs satisfied (AC-1 value + AC-2 mechanism + AC-3 scope + AC-4 child-exemption + AC-5 dedup). go vet/gofmt/diff --check clean. Observable-semantics holds (only compaction-boundary context content changes). Pre-existing cli failures isolated (env-driven, confirmed on 753 tip). Approve to done (terminal, merge).'
+                conn:
+                    quote: we maybe we finish the compaction extension change first and trigger the stack pi ci lane?
+                    source: '2026-08-22 captain chat (conn for pi-related fixes: gates/PR/CI)'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 The Pi extension's `session_compact` hook (`.pi/extensions/spacedock.ts`) re-injects `FO_BOOTSTRAP_TEXT` at the compaction boundary — a contract pointer telling the FO to re-satisfy load preconditions and re-read durable state. PR #738 (`force-boot-at-compaction-boundary`, merged) established the opposite for Claude/Codex: fire one `«state.boot»()` (re-read durable state); the contract does not need re-injecting. The Pi extension is misaligned — it does the thing #738 rejected (re-inject the contract) and only points at re-reading state rather than doing it.
