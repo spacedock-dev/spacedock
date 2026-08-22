@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:h9nn5brc1dp0m82x5en21d56:ideation:attempt-2:revision-1",
+  "question": "Is the ideation approach sound for aligning the Pi extension's compaction hook with PR #738 (re-read state, not re-inject contract), with well-formed ACs and the spike resolved?",
+  "artifacts": [
+    {
+      "id": "artifact:h9nn5brc1dp0m82x5en21d56:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/6f9199bdad2e4a4c976f6d087203964ef6779098/_gate-reviews/align-pi-compaction-with-force-boot-ideation.md",
+      "rev": "sha256:38dfe9174fbfc179bc007e3789975c47f2ee148b1c3732a9e59a97ec0c6749a6",
+      "mediaType": "text/markdown",
+      "summary": "Approve ideation: add injectBootRecord flag for compaction; context handler runs spacedock status --boot --identify --json via pi.exec() and injects boot record; remove FO_BOOTSTRAP_TEXT from compaction path. All factual claims verified; 5 well-formed ACs; spike resolved. Go to implementation."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:h9nn5brc1dp0m82x5en21d56:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/bcaa4e0b7a66bf51174c255249ea8f2cdd1ac2c1/.pi/extensions/spacedock.ts",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:e647b21dbba6858d5773bef22e0a969768e14a3ad3bc5ca1547f314dc645e13d"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:h9nn5brc1dp0m82x5en21d56:ideation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/bcaa4e0b7a66bf51174c255249ea8f2cdd1ac2c1/internal/piruntime/spacedock_extension_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:442dac3bccf14e4c811795dc9ded049a13a07691da03a136bc6ce6c327cfcc5f"
+    }
+  ]
+}
