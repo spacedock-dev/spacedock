@@ -180,3 +180,24 @@ Diagnosed the `session_compact` misalignment: the Pi extension re-injects `FO_BO
 ### Summary
 
 Implemented the compaction-boundary alignment with PR #738: added a separate `injectBootRecord` flag set by `session_compact` only (clearing `injectBootstrap`); the `context` handler is now async and fires `pi.exec("spacedock", ["status","--boot","--identify","--json"])` on the boot-record path, injecting the boot record as a user message with the `[SPACEDOCK-FO-BOOT-v2]` marker + framing directive. `FO_BOOTSTRAP_TEXT` re-injection is fully removed from the compaction path (retained for `session_start` unchanged). `pi.exec` failure falls back to the directive without the boot record. The test harness was extended with a `pi.exec` mock, `execCalls` tracking, and `await` on the async context handler. Both `TestSpacedockPiExtensionBootstrapBehavior` and `TestSpacedockPiExtensionChildExemption` pass. The full test suite passes except `TestVersionAmbiguousMarkersExitZero` (pre-existing failure on the 753 tip — `PI_CODING_AGENT` is set in the Pi runtime environment, causing the version output to show 3 runtime markers instead of the expected 2; unrelated to this change). Committed as `d24fbaada` on `spacedock-ensign/align-pi-compaction-with-force-boot` (off 753 tip `185b53477`).
+
+## Stage Report: validation
+
+- DONE: AC-1 (value-measuring) — compaction injects boot record, not contract re-injection
+  FO ran the focused test (`go test ./internal/piruntime/... -run TestSpacedockPiExtension -v`): `TestSpacedockPiExtensionBootstrapBehavior` PASS. The compaction path asserts `countBootstraps(afterCompact.messages) === 0` and `countBootRecords(afterCompact.messages) === 1` — the compacted Pi FO receives the boot record (state), not `FO_BOOTSTRAP_TEXT` (contract). The baseline that can move the wrong way (re-inject contract without reading state) is replaced.
+- DONE: AC-2 (mechanism) — `pi.exec` fires the boot read
+  The test asserts `execCalls.length === 1`, `execCalls[0].command === "spacedock"`, `execCalls[0].args === ["status","--boot","--identify","--json"]` — PASS. The `session_compact` → `context` path fires `pi.exec` and injects the parsed JSON.
+- DONE: AC-3 (scope boundary) — `session_start` unchanged
+  The test asserts `countBootstraps(first.messages) === 1` and the injected message contains "Load the $spacedock:first-officer skill" — PASS. `session_start` still injects `FO_BOOTSTRAP_TEXT`.
+- DONE: AC-4 (child exemption) — `PI_SUBAGENT_CHILD=1` injects zero on both paths
+  `TestSpacedockPiExtensionChildExemption` PASS: `afterStart === undefined` and `afterCompact === undefined` — child sessions skip both flags.
+- DONE: AC-5 (deduplication) — existing boot record suppresses second injection
+  The test asserts `deduped === undefined` when the boot record is already present — PASS.
+- DONE: Observable-semantics declaration holds
+  Only the compaction-boundary context content changes (boot record instead of `FO_BOOTSTRAP_TEXT`). No change to FO bootstrap content, gate/dispatch/state mechanics, command grammar, stored formats, or authority. `go vet ./internal/piruntime/...` clean. `git diff --check` clean. Go test file gofmt-clean.
+- DONE: Pre-existing failures isolated
+  4 `internal/cli` tests fail on the 753 tip too (confirmed by running them on `185b53477` without this change): `TestVersionAmbiguousMarkersExitZero` (PI_CODING_AGENT set → 3 runtime markers not 2), `TestCodexChannelInstallLeavesCoHostedPluginInstalled`, `TestCodexModeSwitchRoundTripPreservesExclusivity`, `TestCodexPluginInstallIsHostNative` (/tmp helper-binaries warning leaking into JSON parse). All env-driven, none caused by this change.
+
+### Verdict: PASSED
+
+The compaction boundary fires a boot read (`pi.exec("spacedock", ["status","--boot","--identify","--json"])`) and injects the boot record, aligning the Pi extension with PR #738 (re-read durable state, not re-inject contract). All 5 ACs satisfied via the focused test (the real `.pi/extensions/spacedock.ts` through the Node harness). No scope breach. The fix is on branch `spacedock-ensign/align-pi-compaction-with-force-boot` (commit `d24fbaada`, off 753 tip `185b53477`), ready to stack on #748.
