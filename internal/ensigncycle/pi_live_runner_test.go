@@ -377,7 +377,22 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 		t.Fatalf("spawn skills %v do not include the artifact's skill %q", meta.Skills, envelope.Skill)
 	}
 	if !strings.Contains(meta.Task, envelope.DispatchFile) {
-		t.Fatalf("spawn task does not forward the artifact's dispatch-file pointer %s:\n%s", envelope.DispatchFile, tail(meta.Task, 400))
+		// pi-subagents 0.53.0+ redacts the task in the meta artifact
+		// ("[prompt redacted]", live Prompt Audit #1021), so the dispatch-file
+		// pointer is no longer recoverable from meta.Task. Verify it instead from
+		// the parent FO transcript: the subagent toolCall's task argument is the
+		// unredacted spawn task the FO forwarded to the worker.
+		parentSession := onePiSession(t, filepath.Join(artifactDir, "sessions", "*.jsonl"), "parent")
+		dispatchForwarded := false
+		for _, task := range piTranscriptSubagentTasks(t, parentSession) {
+			if strings.Contains(task, envelope.DispatchFile) {
+				dispatchForwarded = true
+				break
+			}
+		}
+		if !dispatchForwarded {
+			t.Fatalf("spawn task does not forward the artifact's dispatch-file pointer %s (meta task redacted; checked parent transcript):", envelope.DispatchFile)
+		}
 	}
 
 	reads := piTranscriptReadPaths(t, meta.TranscriptPath)
@@ -488,6 +503,46 @@ func piTranscriptToolValues(t *testing.T, transcriptPath, tool, alternate string
 
 func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
 	return piTranscriptToolValues(t, transcriptPath, "read", "")
+}
+
+// piTranscriptSubagentTasks extracts the unredacted task arguments from every
+// subagent spawn toolCall in a parent FO transcript. pi-subagents 0.53.0+
+// redacts the task in the worker meta artifact ("[prompt redacted]", live
+// Prompt Audit #1021), so the dispatch-file pointer the FO forwarded is
+// recoverable only from the parent's spawn toolCall, not from meta.Task.
+func piTranscriptSubagentTasks(t *testing.T, transcriptPath string) []string {
+	t.Helper()
+	var tasks []string
+	for lineNo, line := range strings.Split(readFile(t, transcriptPath), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		var record struct {
+			Message struct {
+				Content json.RawMessage `json:"content"`
+			} `json:"message"`
+		}
+		if err := json.Unmarshal([]byte(line), &record); err != nil {
+			t.Fatalf("transcript %s line %d is not JSON: %v", transcriptPath, lineNo+1, err)
+		}
+		var blocks []struct {
+			Type      string `json:"type"`
+			Name      string `json:"name"`
+			Arguments struct {
+				Task  string `json:"task"`
+				Agent string `json:"agent"`
+			} `json:"arguments"`
+		}
+		if err := json.Unmarshal(record.Message.Content, &blocks); err != nil {
+			continue
+		}
+		for _, b := range blocks {
+			if b.Type == "toolCall" && b.Name == "subagent" && b.Arguments.Agent != "" {
+				tasks = append(tasks, b.Arguments.Task)
+			}
+		}
+	}
+	return tasks
 }
 
 func headStrings(s []string, n int) []string {
