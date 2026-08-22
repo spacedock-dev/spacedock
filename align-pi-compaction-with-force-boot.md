@@ -21,6 +21,17 @@ gates:
                 digest: sha256:7192343da7f4ba50ac81545ad7b13d6164748bb92cb20b68fa21cd1b74602ad2
                 request-digest: sha256:e0f99158010258233aa1c4ccae34bb9b70ea5d506ba6a10e722397693488f7d6
                 room-ref: ./align-pi-compaction-with-force-boot/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:h9nn5brc1dp0m82x5en21d56:backlog:1
+                briefing: briefing:h9nn5brc1dp0m82x5en21d56:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-22T00:34:54.852202173Z"
+                decision: approve
+                reason: 'Conn-held. Seed clearly identifies the #738 misalignment: Pi re-injects contract text, #738 says re-read state. Advance to ideation for the alignment fix, stacking on 753.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The Pi extension's `session_compact` hook (`.pi/extensions/spacedock.ts`) re-injects `FO_BOOTSTRAP_TEXT` at the compaction boundary — a contract pointer telling the FO to re-satisfy load preconditions and re-read durable state. PR #738 (`force-boot-at-compaction-boundary`, merged) established the opposite for Claude/Codex: fire one `«state.boot»()` (re-read durable state); the contract does not need re-injecting. The Pi extension is misaligned — it does the thing #738 rejected (re-inject the contract) and only points at re-reading state rather than doing it.
