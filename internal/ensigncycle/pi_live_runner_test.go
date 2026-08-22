@@ -427,10 +427,20 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 
 	rootSession := onePiSession(t, filepath.Join(artifactDir, "sessions", "*.jsonl"), "root")
 	childSession := onePiSession(t, filepath.Join(artifactDir, "sessions", "*", "*", "run-*", "session.jsonl"), "child")
+	// pi-subagents 0.53.0+ redacts meta.Task ("[prompt redacted]"), so the
+	// dispatch-file pointer is recovered from the parent transcript's spawn
+	// toolCall, not meta.Task. Reuse the parent-transcript check above.
+	dispatchForwarded := false
+	for _, task := range piTranscriptSubagentTasks(t, rootSession) {
+		if strings.Contains(task, envelope.DispatchFile) {
+			dispatchForwarded = true
+			break
+		}
+	}
 	grade, err := buildPiFrontDoorEvidenceGrade(rootSession, childSession, true, piBootContractEvidence{
 		Agent:                 meta.Agent,
 		Skills:                meta.Skills,
-		DispatchFileForwarded: strings.Contains(meta.Task, envelope.DispatchFile),
+		DispatchFileForwarded: dispatchForwarded,
 		ReadCallCount:         len(reads),
 		EnsignSkillReadRank:   ensignRank,
 		FirstOfficerReads:     foReads,
