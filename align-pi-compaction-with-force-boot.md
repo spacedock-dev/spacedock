@@ -19,7 +19,7 @@ gates:
               briefing:
                 id: briefing:h9nn5brc1dp0m82x5en21d56:backlog:attempt-1:revision-1
                 digest: sha256:7192343da7f4ba50ac81545ad7b13d6164748bb92cb20b68fa21cd1b74602ad2
-                request-digest: sha256:e0f99158010258233aa1c4ccae34bb9b70ea5d506ba6a10e722397693488f7d6
+                request-digest: sha256:e0f99158010258233aa1a4ccae34bb9b70ea5d506ba6a10e722397693488f7d6
                 room-ref: ./align-pi-compaction-with-force-boot/review/backlog/briefing-1
               resolution:
                 type: Resolution
@@ -53,15 +53,13 @@ Direction: change the Pi `session_compact` hook to fire a `«state.boot»()` (th
 
 Acceptance sketch: value — a compacted Pi FO re-reads durable state on resume (the boot record), matching Claude/Codex; the bootstrap-text re-injection is removed or reduced to what #738's mechanism doesn't cover. mechanism — a behavior test asserting the compaction boundary triggers a boot read, not a contract re-injection. Expected surface: `.pi/extensions/spacedock.ts` + test; small. Stacks on PR 753 (same Pi-extension file).
 
-## Stage Report: ideation
-
-### Problem analysis
+## Problem
 
 The Pi extension (`.pi/extensions/spacedock.ts`) uses a single `injectBootstrap` flag set by both `session_start` and `session_compact`. The `context` handler injects `FO_BOOTSTRAP_TEXT` — a contract pointer ("Load the $spacedock:first-officer skill … re-satisfy every load precondition") plus a state directive ("re-read durable state before the next workflow effect"). After compaction the system prompt is rebuilt from the skill (discovered via `resources_discover`), so the contract is already present. Re-injecting the contract pointer is the exact mechanism #738 rejected.
 
 PR #738's Claude/Codex implementation (`hooks/session_start_compact_reminder.sh`, registered via `hooks.json` as a `SessionStart(compact|clear)` hook) does NOT re-inject the contract. It outputs a reminder: "your bindings are stale … take a fresh `spacedock status --boot --identify --json` … resume the loop where it stopped." The FO then runs `«state.boot»()` as part of its contract (the shared core says "Invoke `«state.boot»()` once and retain its boot record"). The Pi extension's `FO_BOOTSTRAP_TEXT` already says "re-read durable state" — the problem is it ALSO re-injects the contract, which #738 says is unnecessary, and it doesn't actually run the read.
 
-### Selected approach
+## Proposed approach
 
 **Replace the compaction-path injection with an extension-run boot read.** Add a separate `injectBootRecord` flag (set by `session_compact` only). When the `context` handler sees `injectBootRecord`, it runs `spacedock status --boot --identify --json` via `pi.exec()` (the Pi ExtensionAPI's built-in async subprocess executor) and injects the boot record as a user message with a minimal framing directive. The `FO_BOOTSTRAP_TEXT` contract re-injection is fully removed from the compaction path — #738 says the contract survives compaction (it's in the system prompt via `resources_discover` + the skill); only state goes stale.
 
@@ -78,21 +76,9 @@ This mirrors #738's reminder language ("bindings are stale, not just narrative";
 
 **Bootstrap text re-injection: fully removed on the compaction path.** No minimal pointer is kept — the boot record's framing directive carries the "resume the loop" + "compacted summary is not authoritative" language, and the contract is in the system prompt. A minimal contract pointer would be the thing #738 rejected.
 
-### Simplest alternative considered and why insufficient
+**Simplest alternative considered and why insufficient:** keep `FO_BOOTSTRAP_TEXT` on the compaction path, just strip the contract sentences ("Load the skill", "re-satisfy load preconditions") and keep the state directive ("re-read durable state"). This is the minimal text edit. Why insufficient: this keeps the reminder-only pattern — the FO is told to re-read state but the extension doesn't actually do it. The current `FO_BOOTSTRAP_TEXT` already says "re-read durable state before the next workflow effect" and that hasn't prevented stale-state resume failures (the thing #738 was filed to fix). The entity's direction is to *fire* `«state.boot»()`, not to improve the reminder. Just editing the text doesn't change the mechanism; it only removes the contract re-injection without adding the state read.
 
-**Alternative:** keep `FO_BOOTSTRAP_TEXT` on the compaction path, just strip the contract sentences ("Load the skill", "re-satisfy load preconditions") and keep the state directive ("re-read durable state"). This is the minimal text edit.
-
-**Why insufficient:** this keeps the reminder-only pattern — the FO is told to re-read state but the extension doesn't actually do it. The current `FO_BOOTSTRAP_TEXT` already says "re-read durable state before the next workflow effect" and that hasn't prevented stale-state resume failures (the thing #738 was filed to fix). The entity's direction is to *fire* `«state.boot»()`, not to improve the reminder. Just editing the text doesn't change the mechanism; it only removes the contract re-injection without adding the state read.
-
-### Riskiest-mechanism spike
-
-**No spike needed: proven mechanisms.**
-
-The Pi ExtensionAPI provides `exec(command: string, args: string[], options?: ExecOptions): Promise<ExecResult>` (confirmed in `@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts`). `ExecResult` has `{ stdout: string; stderr: string; code: number; killed: boolean }`. The `context` handler type is `ExtensionHandler<ContextEvent, ContextEventResult>` = `(event, ctx) => Promise<R | void> | R | void` — it can be async. The Pi runtime awaits async handlers before the LLM call. `pi` is captured in the factory closure, so `pi.exec()` is available inside `context` handler bodies.
-
-The boot read (`spacedock status --boot --identify --json`) is a fast local binary call (~100ms). No event-loop blocking concern for a one-shot post-compaction read. The `--identify` flag adds `discovery`, `stages`, and `ready_gates` to the boot record — the same fields #738's reminder tells the FO to read.
-
-### Acceptance criteria
+## Acceptance criteria
 
 **AC-1 (value-measuring):** A compacted Pi FO resumes on re-read durable state (the boot record injected at the compaction boundary), not a contract re-injection. Measured against the current baseline: the compaction path re-injects `FO_BOOTSTRAP_TEXT` (contract pointer) without reading state — a baseline that can move the wrong way (the FO re-satisfies load preconditions from a stale compacted summary instead of re-reading actual state). Test: fire `session_compact`, then `context`; assert the injected message contains boot-record fields (`"command":"boot"`, `"mods"`, `"ready_gates"`) and does NOT contain `FO_BOOTSTRAP_MARKER` ("SPACEDOCK-FO-BOOTSTRAP-v1") or "Load the $spacedock:first-officer skill".
 
@@ -104,7 +90,7 @@ The boot read (`spacedock status --boot --identify --json`) is a fast local bina
 
 **AC-5 (deduplication):** If the boot record is already present in the context messages, the `context` handler does not inject a second copy. Test: fire `session_compact`; fire `context` (injects boot record); fire `context` again with the same messages; assert the second call returns `undefined` (no duplicate injection).
 
-### Test plan
+## Test plan
 
 Update `internal/piruntime/spacedock_extension_test.go` — the existing JS harness:
 
@@ -117,7 +103,7 @@ Update `internal/piruntime/spacedock_extension_test.go` — the existing JS harn
 
 Cost: fixture test (no live run needed). The test runs the real `.pi/extensions/spacedock.ts` through a Node.js harness — same pattern as the existing test, extended with `pi.exec` mock + async `await`.
 
-### Expected surface
+## Expected surface
 
 **Files:** `.pi/extensions/spacedock.ts` (implementation), `internal/piruntime/spacedock_extension_test.go` (test harness update).
 
@@ -126,6 +112,29 @@ Cost: fixture test (no live run needed). The test runs the real `.pi/extensions/
 - `internal/piruntime/spacedock_extension_test.go`: +~15 (mock `pi.exec`, async `await`, boot-record assertions), -~5 (remove compaction-path `FO_BOOTSTRAP_TEXT` assertions, replaced by boot-record assertions). Net: +10.
 
 **Observable-semantics declaration:** No change to the FO bootstrap content itself (the first-officer skill `SKILL.md` is untouched). No change to gate/dispatch/state mechanics. No change to `resources_discover`, `session_start` injection, or `agent_end` flag-clearing. No change to command grammar, stored formats, or authority. The only observable semantic change: **the compaction boundary injects a boot record (state) instead of contract text** — a compacted Pi FO receives `spacedock status --boot --identify --json` output as a context message, not `FO_BOOTSTRAP_TEXT`. This changes post-compaction context content (what the FO sees on resume), not any command surface or persistent format.
+
+## Riskiest-mechanism spike
+
+**No spike needed: proven mechanisms.**
+
+The Pi ExtensionAPI provides `exec(command: string, args: string[], options?: ExecOptions): Promise<ExecResult>` (confirmed in `@earendil-works/pi-coding-agent/dist/core/extensions/types.d.ts`). `ExecResult` has `{ stdout: string; stderr: string; code: number; killed: boolean }`. The `context` handler type is `ExtensionHandler<ContextEvent, ContextEventResult>` = `(event, ctx) => Promise<R | void> | R | void` — it can be async. The Pi runtime awaits async handlers before the LLM call. `pi` is captured in the factory closure, so `pi.exec()` is available inside `context` handler bodies.
+
+The boot read (`spacedock status --boot --identify --json`) is a fast local binary call (~100ms). No event-loop blocking concern for a one-shot post-compaction read. The `--identify` flag adds `discovery`, `stages`, and `ready_gates` to the boot record — the same fields #738's reminder tells the FO to read.
+
+## Stage Report: ideation
+
+- DONE: Concrete approach specifying how the Pi extension's session_compact hook aligns with PR #738 (force-boot-at-compaction-boundary)
+  "Proposed approach" section: replace the compaction-path injection with an extension-run boot read via `pi.exec("spacedock", ["status", "--boot", "--identify", "--json"])`; add separate `injectBootRecord` flag for `session_compact`; remove `FO_BOOTSTRAP_TEXT` from compaction path entirely (retain for `session_start`).
+- DONE: Name the value-AC (a compacted Pi FO re-reads durable state, matching Claude/Codex) and the simplest alternative (keep the bootstrap text, just add a boot read) and why it is insufficient (keeps the rejected re-injection)
+  AC-1 (value-measuring): compacted Pi FO resumes on boot record, not contract re-injection. Simplest alternative named and rejected: keep `FO_BOOTSTRAP_TEXT` and strip contract sentences — insufficient because it keeps the reminder-only pattern (the extension tells the FO to re-read state but doesn't do it).
+- DONE: At least one value-measuring AC (compacted Pi FO resumes on re-read durable state, measured against the baseline that re-injects contract text without reading state)
+  AC-1 measures against the current baseline: compaction path re-injects `FO_BOOTSTRAP_TEXT` (contract pointer) without reading state — a baseline that can move the wrong way (the FO re-satisfies load preconditions from a stale compacted summary instead of re-reading actual state).
+- DONE: Pair the value AC with a mechanism AC for the session_compact hook firing a boot read, exercised by a focused test
+  AC-2 (mechanism): `session_compact` → `context` fires `pi.exec("spacedock", ["status", "--boot", "--identify", "--json"])` and injects the parsed JSON as a user message. Test: mock `pi.exec`, assert called with expected args + boot record present in injected message.
+- DONE: Expected surface and tolerance (net LOC change and files, with observable-semantics declaration)
+  "Expected surface" section: net +15–20 across 2 files (`.pi/extensions/spacedock.ts` + `internal/piruntime/spacedock_extension_test.go`). Tolerance +10–30. Observable-semantics: only compaction-boundary context content changes; no FO bootstrap content, gate/dispatch/state mechanics, command grammar, stored formats, or authority touched.
+- DONE: Record the riskiest-mechanism spike — whether session_compact hook can synchronously run a bash subprocess (spacedock status --boot) or whether it must schedule it — exercised first, or "no spike needed: {proven mechanisms}"
+  "Riskiest-mechanism spike" section: no spike needed — `pi.exec()` is a proven ExtensionAPI method (types.d.ts:947), `ExecResult` has `{stdout, stderr, code, killed}`, `context` handler can be async (`ExtensionHandler` returns `Promise<R | void> | R | void`), Pi runtime awaits async handlers before the LLM call.
 
 ### Summary
 
