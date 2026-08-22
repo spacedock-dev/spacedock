@@ -50,6 +50,7 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 	// agentDir/settings.json) resolves the basename skill "ensign"; auth-only
 	// piHome boots the child contract-free (skills: []).
 	writeFile(t, filepath.Join(piHome, "settings.json"), fmt.Sprintf("{\"packages\":[%q]}\n", "file:"+repo))
+	writePiSubagentsProjectArtifactDir(t, piHome)
 	workflowRoot, stateRoot, entityPath = writePiSplitRootSmokeWorkflow(t)
 	artifactDir = filepath.Join(piLiveArtifactDir(t, name), "run")
 	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
@@ -260,6 +261,22 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, oauthJSON, openAIAPIKey, req
 	}
 	t.Skip(decision.message)
 	return decision
+}
+
+// writePiSubagentsProjectArtifactDir opts the live test fixture into the
+// "project" artifact dir so spawned-worker meta artifacts land in
+// workflowRoot/.pi-subagents/artifacts/, where the graders glob for them.
+// pi-subagents 0.53.0 (#1062) flipped the default to "session" to keep
+// worktrees clean; the live tests need a stable, inspectable location.
+func writePiSubagentsProjectArtifactDir(t *testing.T, piHome string) {
+	t.Helper()
+	configDir := filepath.Join(piHome, "extensions", "subagent")
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(configDir, "config.json"), []byte("{\"artifactDir\":\"project\"}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func piSubagentsPackageRoot(t *testing.T) string {
