@@ -265,9 +265,11 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, oauthJSON, openAIAPIKey, req
 
 // writePiSubagentsProjectArtifactDir opts the live test fixture into the
 // "project" artifact dir so spawned-worker meta artifacts land in
-// workflowRoot/.pi-subagents/artifacts/, where the graders glob for them.
-// pi-subagents 0.53.0 (#1062) flipped the default to "session" to keep
-// worktrees clean; the live tests need a stable, inspectable location.
+// workflowRoot/.pi/subagents/artifacts/ (pi-subagents 0.53.0's
+// PROJECT_SUBAGENTS_RELATIVE_DIR is ".pi/subagents", not ".pi-subagents"),
+// where the FrontDoorSmoke grader globs for them. pi-subagents 0.53.0
+// (#1062) flipped the default to "session" to keep worktrees clean; the live
+// tests need a stable, inspectable location.
 func writePiSubagentsProjectArtifactDir(t *testing.T, piHome string) {
 	t.Helper()
 	configDir := filepath.Join(piHome, "extensions", "subagent")
@@ -343,7 +345,7 @@ func piLiveArtifactDir(t *testing.T, name string) string {
 // written next to the run artifacts as the durable acceptance trail.
 func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSmokeEnvelope, artifactDir string) {
 	t.Helper()
-	artifactsDir := filepath.Join(workflowRoot, ".pi-subagents", "artifacts")
+	artifactsDir := filepath.Join(workflowRoot, ".pi", "subagents", "artifacts")
 	metaPaths, err := filepath.Glob(filepath.Join(artifactsDir, "*_meta.json"))
 	if err != nil {
 		t.Fatal(err)
