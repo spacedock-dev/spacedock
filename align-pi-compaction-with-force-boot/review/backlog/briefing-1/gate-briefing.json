@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:h9nn5brc1dp0m82x5en21d56:backlog:attempt-1:revision-1",
+  "question": "Is the seed clear enough to start design? The Pi extension's session_compact hook re-injects FO_BOOTSTRAP_TEXT (a contract pointer), but PR #738 established the opposite: re-read durable state via «state.boot»(), don't re-inject the contract. Align the Pi hook to #738. Ready to enter ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:h9nn5brc1dp0m82x5en21d56:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9852c33391f0fe966aa647e7c22cf93eea445412/align-pi-compaction-with-force-boot.md",
+      "rev": "sha256:9594fa234b0cca831deaf31236d05f1dc44358957c85f0344865f7c1ed980081",
+      "mediaType": "text/markdown",
+      "summary": "Align the Pi extension's compaction hook with force-boot (#738): re-read durable state via «state.boot»() at the compaction boundary, not re-inject the contract. The Pi extension did not follow #738; it does the thing #738 rejected. Stacks on 753 (same .pi/extensions/spacedock.ts file)."
+    }
+  ]
+}
