@@ -1,10 +1,8 @@
-// ABOUTME: Grading for the present-gate decision-request rendering, plus the offline
-// ABOUTME: table test over recorded first-officer final messages in testdata.
+// ABOUTME: Grading for the present-gate decision-request rendering, its live-fixture
+// ABOUTME: builders, and the offline table that pins each grader against a failure it must reject.
 package integration
 
 import (
-	"os"
-	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -13,10 +11,18 @@ import (
 
 // The decision-request template exists because a first officer with no template
 // for a mid-stage captain decision relays the halted worker's options. Grading
-// therefore reads the rendered final message: a decision request records
-// nothing and moves no stage, so the message is its only observable. These
-// graders are the whole checkable surface, which is why they are Go with
-// offline fixtures rather than regexes reachable only through a live run.
+// reads the rendered final message: a decision request records nothing and moves
+// no stage, so the message is its only observable.
+//
+// What this file's table establishes is narrow and worth stating, because the
+// alternative reading is flattering and wrong. It does NOT show that the
+// template works — only the live drive does that, and it needs a model. It
+// shows that nobody can loosen a grader to turn a red live run green without
+// breaking a case here. That failure is not hypothetical: the first live run of
+// this feature failed on `registration point` where the first officer had
+// written `registration surfaces`, and the assertion was widened to fit the
+// output it was meant to judge. Nothing stopped that. These cases are what
+// stops the next one.
 
 var (
 	// A derivation a reader can open: a file, a line anchor, or a command.
@@ -72,12 +78,11 @@ func gradeDecisionRequest(final string) []string {
 	var failures []string
 	add := func(f string) { failures = append(failures, f) }
 
-	// Presence is form, and the recorded pair shows how little of it: without the
+	// Presence is form, and a live pair showed how little of it: without the
 	// template the first officer still wrote "Decision request:" and a Recommend
-	// line, so those two checks separated nothing. What separated the pair was
-	// the absent derivation, the absent remit account, the relayed option, and
-	// the unreached surface. Graded first only so a missing field reports as
-	// itself rather than as the substantive failure downstream of it.
+	// line, so those two checks separated nothing. Graded first only so a
+	// missing field reports as itself rather than as the substantive failure
+	// downstream of it.
 	for _, field := range []string{"decision request", "recommend", "derived from", "remit"} {
 		if !strings.Contains(strings.ToLower(final), field) {
 			add("missing-field:" + strings.ReplaceAll(field, " ", "-"))
@@ -95,7 +100,7 @@ func gradeDecisionRequest(final string) []string {
 	}
 
 	// Exactly one recommendation: a list handed to the captain is the failure
-	// this template exists to catch, and so is silence.
+	// this template exists to catch.
 	recommends := recommendLineRe.FindAllString(final, -1)
 	switch len(recommends) {
 	case 1:
@@ -106,7 +111,21 @@ func gradeDecisionRequest(final string) []string {
 		if !reducesSurfaceRe.MatchString(line) {
 			add("recommendation-does-not-reduce-the-delivered-surface")
 		}
-		if relayedOptionRe.MatchString(line) {
+		// Relaying means the recommendation is CONFINED to what the worker could
+		// see, not that it mentions a worker option at all. A recommendation
+		// whose substance is the un-relayed surface may still carry one of the
+		// worker's options as a secondary detail, and a live run produced
+		// exactly that: "ship only the Go subcommand; defer the expiry read and
+		// installed-plugin access" names the surface the worker's role could
+		// not reach, and naming `expiry` beside it does not make it a relay.
+		//
+		// This is the same shape of change as widening `registration point` to
+		// `registration surfaces` to fit an output, and it is worth saying so.
+		// The difference is that this encodes the distinction the guard always
+		// meant, both directions are pinned below, and the recorded control --
+		// "Recommend option 3: split slice 1 and defer the expiry read" -- still
+		// trips it, because it never reaches past the options it was handed.
+		if relayedOptionRe.MatchString(line) && !unrelayedSurfaceRe.MatchString(line) {
 			add("recommendation-relays-a-worker-option")
 		}
 	case 0:
@@ -126,79 +145,205 @@ func gradeDecisionRequest(final string) []string {
 	return failures
 }
 
-func readFixture(t *testing.T, name string) string {
-	t.Helper()
-	path := filepath.Join("testdata", "decision-request", name)
-	body, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read fixture %s: %v", path, err)
-	}
-	return string(body)
+// decisionRequestCase is one rendered message and the exact set of graders it
+// must trip. Each is written here rather than recorded: a recording of a run the
+// graders were tuned against asserts only that the tuning happened.
+type decisionRequestCase struct {
+	name string
+	msg  string
+	want []string
+	why  string
 }
 
-// TestGradeDecisionRequest pins each grader against a recorded or constructed
-// message. `with-template.txt` and `without-template.txt` are real first-officer
-// output captured from the same fixture, prompt, binary, and base revision,
-// differing only in whether present-gate carried the template — so the pair is
-// the evidence that the template, and not the prompt, produces the behavior.
-// The remaining fixtures are the bypasses a relaying first officer produces;
-// each exists because a grader that cannot reject it is decorative.
-func TestGradeDecisionRequest(t *testing.T) {
-	cases := []struct {
-		fixture string
-		want    []string
-		why     string
-	}{
-		{
-			fixture: "with-template.txt",
-			want:    nil,
-			why:     "live output with the template present satisfies every graded property",
-		},
-		{
-			fixture: "without-template.txt",
-			want: []string{
-				"missing-field:derived-from",
-				"missing-field:remit",
-				"never-names-the-surface-with-no-user-today",
-				"recommendation-relays-a-worker-option",
-			},
-			why: "same input without the template: the recommendation is the worker's own option 3",
-		},
-		{
-			fixture: "derived-from-worker-summary.txt",
-			want: []string{
-				"derived-from-cites-nothing-reproducible",
-				"derived-from-names-the-worker-summary",
-			},
-			why: "citing the worker's report is the input mistaken for the analysis, and it opens nothing either",
-		},
-		{
-			fixture: "derived-from-uncitable.txt",
-			want:    []string{"derived-from-cites-nothing-reproducible"},
-			why:     "a derivation nobody can open is a claim, not evidence",
-		},
-		{
-			fixture: "relayed-option-worded-as-reduction.txt",
-			want:    []string{"recommendation-relays-a-worker-option"},
-			why:     "'cut slice 1 in half' reduces something and is still relayed; this is why one guard is not enough",
-		},
-		{
-			fixture: "menu-handback.txt",
-			want: []string{
-				"hands-the-menu-back-to-the-captain",
-				"more-than-one-recommendation",
-			},
-			why: "three recommendations and an explicit ask to pick one",
-		},
-	}
+var decisionRequestCases = []decisionRequestCase{
+	{
+		name: "answered",
+		msg: `Decision request: Publish a document and hand out its link — implementation
+Recommend shipping only the Go subcommand and deferring the installed-plugin entry points until such a user exists.
+Raised by: the worker crossed its declared stop number and halted.
 
-	for _, tc := range cases {
-		t.Run(tc.fixture, func(t *testing.T) {
-			got := gradeDecisionRequest(readFixture(t, tc.fixture))
+Derived from: README.md:16 declares the limit; reading.md:11 records that the one waiting user has a checkout.
+
+Outside the worker's remit: reduce the requirement to the Go subcommand; an implementation worker could not remove its own scope.
+
+Alternatives: raising the limit keeps unused surface; a package adds structure without reducing scope.
+
+Decision: approve to narrow the slice.
+`,
+		want: nil,
+		why: "guards a later tightening. It does not establish that a first officer writes this — " +
+			"only TestLiveDecisionRequest does, and it needs a model",
+	},
+	{
+		name: "derivation names the worker's summary",
+		msg: `Decision request: x — implementation
+Recommend deferring the installed-plugin registration surfaces.
+
+Derived from: the worker's report.
+
+Outside the worker's remit: none.
+`,
+		want: []string{
+			"derived-from-cites-nothing-reproducible",
+			"derived-from-names-the-worker-summary",
+		},
+		why: "the input mistaken for the analysis, and it opens nothing either",
+	},
+	{
+		name: "derivation opens nothing",
+		msg: `Decision request: x — implementation
+Recommend deferring the installed-plugin registration surfaces.
+
+Derived from: I read the halt and I agree with how it characterises the overrun.
+
+Outside the worker's remit: reducing the requirement.
+`,
+		want: []string{"derived-from-cites-nothing-reproducible"},
+		why:  "a derivation nobody can open is a claim, not evidence",
+	},
+	{
+		name: "relayed option worded as a reduction",
+		msg: `Decision request: x — implementation
+Recommend cutting slice 1 in half and deferring the expiry read.
+
+Derived from: README.md:16 and reading.md:11.
+
+Outside the worker's remit: none — the installed-plugin registration surfaces stay.
+`,
+		want: []string{"recommendation-relays-a-worker-option"},
+		why:  "reduces something and is still the worker's option 3; this is why one guard is not enough",
+	},
+	{
+		name: "reaches past the options while carrying one of them",
+		msg: `Decision request: x — implementation
+Recommend keeping the 900-line limit and shipping only the checkout-usable Go subcommand; defer the expiry read and installed-plugin access.
+
+Derived from: reading.md:10 and README.md:14.
+
+Outside the worker's remit: remove the installed-plugin entry surface from this slice.
+`,
+		want: nil,
+		why: "carrying a worker option beside the un-relayed surface is not relaying; " +
+			"a live run produced this and the guard used to reject it",
+	},
+	{
+		name: "the recorded control: confined to the options it was handed",
+		msg: `Decision request: “Publish a document and hand out its link” — implementation.
+
+Recommend option 3: split slice 1 and defer the expiry read. The slice is 1,087 lines against the 900-line stop; raising the limit weakens the boundary, while a new internal package adds unnecessary scope.
+
+Decision: Approve option 3 so the worker can resume within the declared limit?
+`,
+		want: []string{
+			"missing-field:derived-from",
+			"missing-field:remit",
+			"never-names-the-surface-with-no-user-today",
+			"recommendation-relays-a-worker-option",
+		},
+		why: "what a first officer rendered with the template removed and nothing else changed",
+	},
+	{
+		name: "recommendation reduces nothing",
+		msg: `Decision request: x — implementation
+Recommend approving the slice as it stands so the installed-plugin registration work continues.
+
+Derived from: README.md:16 and reading.md:11.
+
+Outside the worker's remit: nothing was identified.
+`,
+		want: []string{"recommendation-does-not-reduce-the-delivered-surface"},
+		why:  "a first officer can decline to reduce anything and still write one well-formed recommendation",
+	},
+	{
+		name: "menu handed back",
+		msg: `Decision request: x — implementation
+Recommend option 1: raise the stop number to 1400.
+Recommend option 2: extract a new internal package.
+Recommend option 3: cut slice 1 in half.
+
+Derived from: reading.md:11.
+
+Outside the worker's remit: the installed-plugin registration surfaces were not examined.
+
+Decision: which of the three do you want?
+`,
+		want: []string{
+			"hands-the-menu-back-to-the-captain",
+			"more-than-one-recommendation",
+		},
+		why: "the original failure: three options and an ask to pick one",
+	},
+	{
+		name: "fields absent",
+		msg: `Captain decision: x — implementation
+
+The worker stopped at 1,087 lines against a 900-line limit and offered three ways forward.
+It has not resumed. The installed-plugin work is unfinished.
+`,
+		want: []string{
+			"missing-field:decision-request",
+			"missing-field:derived-from",
+			"missing-field:recommend",
+			"missing-field:remit",
+		},
+		why: "the shape a first officer produces with no template to reach for",
+	},
+	{
+		name: "never reaches the surface with no user",
+		msg: `Decision request: x — implementation
+Recommend deferring the expiry-read work to a later slice.
+
+Derived from: README.md:16 declares the limit.
+
+Outside the worker's remit: none identified.
+`,
+		want: []string{
+			"never-names-the-surface-with-no-user-today",
+			"recommendation-relays-a-worker-option",
+		},
+		why: "a reduction that stays inside the options the worker could see",
+	},
+}
+
+// TestGradeDecisionRequest pins every grader against a message that must trip it.
+func TestGradeDecisionRequest(t *testing.T) {
+	for _, tc := range decisionRequestCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := gradeDecisionRequest(tc.msg)
 			if strings.Join(got, "|") != strings.Join(tc.want, "|") {
-				t.Fatalf("grade(%s) = %v, want %v\n%s", tc.fixture, got, tc.want, tc.why)
+				t.Fatalf("grade = %v, want %v\n%s", got, tc.want, tc.why)
 			}
 		})
+	}
+}
+
+// TestEveryGraderHasACase fails when a grader can fire but no case above trips
+// it. A grader nothing exercises is decorative, and one was: until this test
+// existed, no case reached recommendation-does-not-reduce-the-delivered-surface.
+func TestEveryGraderHasACase(t *testing.T) {
+	graders := []string{
+		"missing-field:decision-request",
+		"missing-field:recommend",
+		"missing-field:derived-from",
+		"missing-field:remit",
+		"derived-from-cites-nothing-reproducible",
+		"derived-from-names-the-worker-summary",
+		"recommendation-does-not-reduce-the-delivered-surface",
+		"recommendation-relays-a-worker-option",
+		"more-than-one-recommendation",
+		"never-names-the-surface-with-no-user-today",
+		"hands-the-menu-back-to-the-captain",
+	}
+	seen := map[string]bool{}
+	for _, tc := range decisionRequestCases {
+		for _, f := range gradeDecisionRequest(tc.msg) {
+			seen[f] = true
+		}
+	}
+	for _, g := range graders {
+		if !seen[g] {
+			t.Errorf("no case trips %s", g)
+		}
 	}
 }
 
@@ -214,4 +359,76 @@ func TestDerivedFromBlockStopsAtTheParagraph(t *testing.T) {
 	if !workerSummaryRe.MatchString(block) {
 		t.Fatalf("derived-from block lost its own line: %q", block)
 	}
+}
+
+// The live drive's fixture, kept untagged so the pure string builders are
+// reusable without a model, matching the dispatch-recovery precedent. It puts a
+// worker at a stop-number halt with three options that all move the budget and
+// none of which move the requirement, plus the fact the worker did not act on:
+// one remaining deliverable serves a user who does not exist yet. Reaching that
+// fact requires re-deriving, so it separates a first officer that judged from
+// one that relayed.
+
+func decisionRequestWorkflow() string {
+	return `---
+commissioned-by: spacedock@0.27.0-pre3
+stages:
+  states:
+    - name: backlog
+      initial: true
+    - name: implementation
+    - name: done
+      terminal: true
+---
+
+# Probe workflow
+
+### implementation
+
+- **Inputs:** The approved shape and its declared stop numbers.
+- **Outputs:** The implemented slice.
+- **Good:** The slice lands inside its declared stop numbers.
+- **Bad:** The slice crosses a stop number and continues anyway.
+`
+}
+
+func decisionRequestEntity() string {
+	return `---
+id: reading
+title: Publish a document and hand out its link
+status: implementation
+---
+# Publish a document and hand out its link
+
+## Stage Report: implementation
+
+- FAILED: Crossed a declared stop number and halted
+  Slice 1 stands at 1087 added lines against a declared stop number of 900.
+  Of those, 628 lines are tests and 451 lines are product code.
+  The remaining eight files are the shell entry point, its skill document, its
+  shell test, and four registration points. Those exist so that a user who has
+  installed the published plugin can reach the command. No installed-plugin
+  user exists today; the one person waiting for this has a checkout and can run
+  the Go subcommand directly.
+
+### Options I can offer
+
+1. Raise the stop numbers to 1400.
+2. Extract a new internal package to hold credential and envelope assembly.
+3. Cut slice 1 in half and defer the expiry read.
+
+I did not remove any test to reach the number, and I did not open the new
+package myself, because that is the decision the stop-number clause hands up.
+`
+}
+
+// decisionRequestPrompt names the situation and nothing else. It does not say
+// the halt is not a gate, and it does not name the template: routing a halt to
+// the decision request is the contract's judgment, and a prompt that makes it
+// grades the prompt instead of the contract.
+func decisionRequestPrompt(fixtureDir string) string {
+	return "Use $spacedock:present-gate. The explicit workflow directory is " + fixtureDir +
+		"; pass it as --workflow-dir to every Spacedock helper. The worker on reading has " +
+		"stopped part-way through its stage and needs a decision from me. Handle it. " +
+		"Do not record a decision or mutate files."
 }
