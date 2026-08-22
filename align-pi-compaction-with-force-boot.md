@@ -51,6 +51,20 @@ gates:
                 digest: sha256:48ec027d68533d3644754b069c2d8647aeb52e97e8cea0f1bb06688fa148247e
                 request-digest: sha256:caa698011230ed3fee2c7a73de6e1919d0a7442988b33d3a01bf986b4cd957f6
                 room-ref: ./align-pi-compaction-with-force-boot/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:h9nn5brc1dp0m82x5en21d56:ideation:2
+                briefing: briefing:h9nn5brc1dp0m82x5en21d56:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-08-22T01:56:49.915459739Z"
+                decision: approve
+                reason: 'Ideation sound: injectBootRecord flag + pi.exec boot read replaces contract re-injection at compaction boundary, aligning with #738. All factual claims verified against code (session_compact:67-68, FO_BOOTSTRAP_TEXT:81, pi.exec ExtensionAPI types.d.ts:947). 5 well-formed ACs (AC-1 value-measuring + AC-2 mechanism both cited; AC-3 scope + AC-4 child-exemption + AC-5 dedup). Spike resolved. Expected surface +15-20 LOC, 2 files, only compaction-boundary context content changes. Approve to implementation.'
+                conn:
+                    quote: we maybe we finish the compaction extension change first and trigger the stack pi ci lane?
+                    source: '2026-08-22 captain chat (conn for pi-related fixes: gates/PR/CI)'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 The Pi extension's `session_compact` hook (`.pi/extensions/spacedock.ts`) re-injects `FO_BOOTSTRAP_TEXT` at the compaction boundary — a contract pointer telling the FO to re-satisfy load preconditions and re-read durable state. PR #738 (`force-boot-at-compaction-boundary`, merged) established the opposite for Claude/Codex: fire one `«state.boot»()` (re-read durable state); the contract does not need re-injecting. The Pi extension is misaligned — it does the thing #738 rejected (re-inject the contract) and only points at re-reading state rather than doing it.
