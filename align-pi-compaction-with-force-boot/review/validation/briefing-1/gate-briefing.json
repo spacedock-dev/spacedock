@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:h9nn5brc1dp0m82x5en21d56:validation:attempt-1:revision-1",
+  "question": "Did the implementation pass validation: compaction fires a boot read (not re-inject contract), all 5 ACs satisfied, no scope breach?",
+  "artifacts": [
+    {
+      "id": "artifact:h9nn5brc1dp0m82x5en21d56:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/47a58a124f9a0cda8615d4115f7bebb98d298c7b/_gate-reviews/align-pi-compaction-with-force-boot-validation.md",
+      "rev": "sha256:efa7a045b9930eb25ab643642eb01a9116821fcba3dc01c718e65a54aa9ba4cd",
+      "mediaType": "text/markdown",
+      "summary": "Approve validation: focused test PASS (real .ts through Node harness). All 5 ACs satisfied — compaction fires pi.exec boot read + injects boot record, FO_BOOTSTRAP_TEXT removed from compaction path (session_start unchanged). go vet + gofmt + diff --check clean. Observable-semantics holds. Pre-existing cli failures isolated (env-driven). Code on branch off 753 tip, ready to stack on #748. Go to done (terminal, merge)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:h9nn5brc1dp0m82x5en21d56:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/d24fbaada0dc4d26327efcda8c8c9f033fd14107/.pi/extensions/spacedock.ts",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b200c3b7a4add037129a3c07df97833166bcd3bd0cf379713e6be8dd111a517e"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:h9nn5brc1dp0m82x5en21d56:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/d24fbaada0dc4d26327efcda8c8c9f033fd14107/internal/piruntime/spacedock_extension_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:a6edc7e57387ce34ae971699753413a250d7a3462a65b5b5d0f89cce6aacbd50"
+    }
+  ]
+}

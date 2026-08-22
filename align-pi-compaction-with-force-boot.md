@@ -65,6 +65,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:h9nn5brc1dp0m82x5en21d56:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:h9nn5brc1dp0m82x5en21d56-validation-1
+              briefing:
+                id: briefing:h9nn5brc1dp0m82x5en21d56:validation:attempt-1:revision-1
+                digest: sha256:a891d7c482875d6b068058c93cdd80c78de6fd5a25dc21a523b338101f8b2033
+                request-digest: sha256:23b2a5c1b87bc3e1d80a9b0f1109772d940cced542b94f7680d7da78d7cdf618
+                room-ref: ./align-pi-compaction-with-force-boot/review/validation/briefing-1
 ---
 
 The Pi extension's `session_compact` hook (`.pi/extensions/spacedock.ts`) re-injects `FO_BOOTSTRAP_TEXT` at the compaction boundary — a contract pointer telling the FO to re-satisfy load preconditions and re-read durable state. PR #738 (`force-boot-at-compaction-boundary`, merged) established the opposite for Claude/Codex: fire one `«state.boot»()` (re-read durable state); the contract does not need re-injecting. The Pi extension is misaligned — it does the thing #738 rejected (re-inject the contract) and only points at re-reading state rather than doing it.
