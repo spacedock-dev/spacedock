@@ -6,7 +6,7 @@ started: 2026-08-22T00:41:38Z
 completed:
 verdict:
 score: 0.8
-worktree:
+worktree: /home/exedev/spacedock/.worktrees/spacedock-ensign-align-pi-compaction-with-force-boot
 issue:
 id: h9nn5brc1dp0m82x5en21d56
 gates:
