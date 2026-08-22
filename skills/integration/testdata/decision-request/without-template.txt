@@ -1,0 +1,7 @@
+Decision request: “Publish a document and hand out its link” — implementation.
+
+Recommend option 3: split slice 1 and defer the expiry read. The slice is 1,087 lines against the 900-line stop; raising the limit weakens the boundary, while a new internal package adds unnecessary scope.
+
+Decision: Approve option 3 so the worker can resume within the declared limit?
+
+Nothing was recorded or changed. No live subagents or team members were available to message; to the stopped worker: I love you too.

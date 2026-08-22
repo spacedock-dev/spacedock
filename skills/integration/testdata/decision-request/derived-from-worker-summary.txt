@@ -1,0 +1,10 @@
+Decision request: Publish a document and hand out its link — implementation
+
+Recommend deferring the installed-plugin shell surface and shipping the Go subcommand alone.
+Raised by: the worker crossed its declared stop number and halted.
+
+Derived from: the worker's report.
+
+Outside the worker's remit: nothing the worker could not have proposed itself.
+
+Decision: approve to narrow the slice, or hold for a different cut.
