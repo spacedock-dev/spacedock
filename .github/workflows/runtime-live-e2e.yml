@@ -779,6 +779,19 @@ jobs:
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run live Pi common journeys
+        env:
+          # pi-subagents 0.53.0+ async dispatch: the rejection-flow journey
+          # (four sequential dispatches: implementation -> validation REJECT
+          # -> rework -> validation PASS -> gate prepare) reaches its stop at
+          # ~25m. The default 12m per-journey cap fires before the stop, so the
+          # lane is red on a timeout rather than a graded result and the
+          # registered XFAIL never engages. Bump the cap to 30m for the Pi
+          # common-journey step so the FO reaches the stop. This is a per-journey
+          # max (piLiveRunTimeout), so the faster journeys still complete early;
+          # only the outer `go test -timeout 40m` bounds the suite. Deliberate
+          # budget bump per captain ruling 2026-08-22 (accept a 25m stop rather
+          # than re-architect the dispatch sequence to fit 12m).
+          SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES: "30"
         run: |
           set -o pipefail
           PI_LIVE_PARALLEL="${SPACEDOCK_PI_LIVE_PARALLEL:-4}"
@@ -792,7 +805,7 @@ jobs:
             echo "live_parallel must be at least 1 (got \"$PI_LIVE_PARALLEL\")" >&2
             exit 1
           fi
-          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle
+          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 50m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle
 
       - name: Run live Pi front-door smoke
         if: ${{ !cancelled() }}

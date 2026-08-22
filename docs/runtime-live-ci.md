@@ -117,7 +117,7 @@ Run the common Pi journeys separately from that substrate proof. Pi calls `t.Par
 
 ```bash
 PI_LIVE_PARALLEL="${SPACEDOCK_PI_LIVE_PARALLEL:-4}"
-SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 50m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle -v
 ```
 
 For a custom slow `:max`-thinking model, lower `PI_LIVE_PARALLEL` (e.g. `PI_LIVE_PARALLEL=2`) and raise `-timeout` above the per-run cap set by `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` (e.g. `-timeout 120m` with `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES=40`).
