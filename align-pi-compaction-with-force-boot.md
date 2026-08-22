@@ -1,6 +1,6 @@
 ---
 title: "Align the Pi extension's compaction hook with force-boot (re-read state, not re-inject contract)"
-status: ideation
+status: implementation
 source: "Captain (2026-08-21): the Pi extension's session_compact hook re-injects FO_BOOTSTRAP_TEXT (a contract pointer), but PR #738 (force-boot-at-compaction-boundary, merged) established the opposite mechanism — re-read durable state via one «state.boot»(), do NOT re-inject the contract. The Pi extension did not follow #738."
 started: 2026-08-22T00:41:38Z
 completed:
@@ -64,7 +64,7 @@ gates:
                     source: '2026-08-22 captain chat (conn for pi-related fixes: gates/PR/CI)'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 The Pi extension's `session_compact` hook (`.pi/extensions/spacedock.ts`) re-injects `FO_BOOTSTRAP_TEXT` at the compaction boundary — a contract pointer telling the FO to re-satisfy load preconditions and re-read durable state. PR #738 (`force-boot-at-compaction-boundary`, merged) established the opposite for Claude/Codex: fire one `«state.boot»()` (re-read durable state); the contract does not need re-injecting. The Pi extension is misaligned — it does the thing #738 rejected (re-inject the contract) and only points at re-reading state rather than doing it.
