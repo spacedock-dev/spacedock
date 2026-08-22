@@ -41,6 +41,10 @@ gates:
                 digest: sha256:90e7797c1f8a99f51c36968a91dc3a12a19a5c976bca8c2309d474a38d54a1c8
                 request-digest: sha256:8eedcf8221fec83fa39d8d710f4bace0bee00e3a0fef6debdea762d10462bc37
                 room-ref: ./align-pi-compaction-with-force-boot/review/ideation/briefing-1
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-22T01:40:11.876168343Z"
+                reason: 'report-incomplete: ideation report structure is non-conforming. ACs are level-3 (''### Acceptance criteria'') inside the stage report; ac-scan needs entity-level ''## Acceptance criteria'' (level 2). Stage report has no ''- DONE:/SKIPPED:/FAILED:'' checklist. Re-dispatch ensign to restructure.'
 ---
 
 The Pi extension's `session_compact` hook (`.pi/extensions/spacedock.ts`) re-injects `FO_BOOTSTRAP_TEXT` at the compaction boundary — a contract pointer telling the FO to re-satisfy load preconditions and re-read durable state. PR #738 (`force-boot-at-compaction-boundary`, merged) established the opposite for Claude/Codex: fire one `«state.boot»()` (re-read durable state); the contract does not need re-injecting. The Pi extension is misaligned — it does the thing #738 rejected (re-inject the contract) and only points at re-reading state rather than doing it.
