@@ -705,8 +705,8 @@ jobs:
           if (agentPackage.version !== '0.80.10') {
             fail(`expected @earendil-works/pi-coding-agent 0.80.10, got ${agentPackage.version}`);
           }
-          if (subagentsPackage.version !== '0.35.1') {
-            fail(`expected pi-subagents 0.35.1, got ${subagentsPackage.version}`);
+          if (subagentsPackage.version !== '0.53.0') {
+            fail(`expected pi-subagents 0.53.0, got ${subagentsPackage.version}`);
           }
 
           // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
