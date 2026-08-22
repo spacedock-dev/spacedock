@@ -19,7 +19,7 @@ gates:
               briefing:
                 id: briefing:h9nn5brc1dp0m82x5en21d56:backlog:attempt-1:revision-1
                 digest: sha256:7192343da7f4ba50ac81545ad7b13d6164748bb92cb20b68fa21cd1b74602ad2
-                request-digest: sha256:e0f99158010258233aa1a4ccae34bb9b70ea5d506ba6a10e722397693488f7d6
+                request-digest: sha256:e0f99158010258233aa1c4ccae34bb9b70ea5d506ba6a10e722397693488f7d6
                 room-ref: ./align-pi-compaction-with-force-boot/review/backlog/briefing-1
               resolution:
                 type: Resolution
