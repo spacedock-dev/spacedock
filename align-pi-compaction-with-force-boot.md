@@ -49,7 +49,7 @@ Direction: change the Pi `session_compact` hook to fire a `«state.boot»()` (th
 
 Acceptance sketch: value — a compacted Pi FO re-reads durable state on resume (the boot record), matching Claude/Codex; the bootstrap-text re-injection is removed or reduced to what #738's mechanism doesn't cover. mechanism — a behavior test asserting the compaction boundary triggers a boot read, not a contract re-injection. Expected surface: `.pi/extensions/spacedock.ts` + test; small. Stacks on PR 753 (same Pi-extension file).
 
-## Stage Report
+## Stage Report: ideation
 
 ### Problem analysis
 
