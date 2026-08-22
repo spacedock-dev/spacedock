@@ -2,7 +2,7 @@
 title: "Align the Pi extension's compaction hook with force-boot (re-read state, not re-inject contract)"
 status: ideation
 source: "Captain (2026-08-21): the Pi extension's session_compact hook re-injects FO_BOOTSTRAP_TEXT (a contract pointer), but PR #738 (force-boot-at-compaction-boundary, merged) established the opposite mechanism — re-read durable state via one «state.boot»(), do NOT re-inject the contract. The Pi extension did not follow #738."
-started:
+started: 2026-08-22T00:41:38Z
 completed:
 verdict:
 score: 0.8
