@@ -1,6 +1,6 @@
 ---
 title: Resolve split-state gate artifact paths before preparation
-status: implementation
+status: validation
 source: "PR #679 run 31640122995, Codex job 94260562369, artifact 9158783630: TestLiveCommonGateGuardrail found committed review files in the split state checkout, then passed a state-relative path to gate prepare, which resolved it from the workflow root and failed."
 score: 0.98
 id: mvmpzgqxyb32t3b3vdw0x0h1
