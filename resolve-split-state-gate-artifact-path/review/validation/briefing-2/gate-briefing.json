@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-2:revision-1",
+  "question": "Does the correction complete split-state reference resolution without breaking the artifact-strict safety test?",
+  "artifacts": [
+    {
+      "id": "artifact:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/764ec38676c09371211fec3f915c07fddd266066/_gate-reviews/resolve-split-state-gate-artifact-path-validation-cycle2.md",
+      "rev": "sha256:4b4e72dabd30d31799e5cab9aa986132fe361f433f17890459d82b89bb89a4f5",
+      "mediaType": "text/markdown",
+      "summary": "Approve validation cycle 2: workflow-root reference fallback for references; artifact stays state-root-strict (TestPrepareWrongRootRelativeArtifactFails green); new TestPrepareWorkflowRootReferenceResolves; gates+race+cli+gofmt green. Go to done (terminal)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/c75b8890f3bf179462c53506c33f2d8908ae86b6/internal/gates/prepare.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:fdd543c2c321cb462bb2c710adc52e9261ac7512464c0347e594396f563fb4aa"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/c75b8890f3bf179462c53506c33f2d8908ae86b6/internal/gates/prepare_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:9490909f41c4e710ce3e9dd68dc373f58b0ed996be1a96868c4ac870e9d05fd3"
+    }
+  ]
+}

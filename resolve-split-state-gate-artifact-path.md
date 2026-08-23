@@ -67,6 +67,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:mvmpzgqxyb32t3b3vdw0x0h1-validation-2
+              briefing:
+                id: briefing:mvmpzgqxyb32t3b3vdw0x0h1:validation:attempt-2:revision-1
+                digest: sha256:159411adac0c87601790f2875dc58298b6f78aafe80abf5d82ce0b56f9a29cae
+                request-digest: sha256:cb5cae80f10c6164b9098f6f134e477ff00822bd81c6bb0a15bc1bf95d5ec082
+                room-ref: ./resolve-split-state-gate-artifact-path/review/validation/briefing-2
 started: 2026-08-21T08:15:56Z
 worktree: /home/exedev/spacedock/.worktrees/spacedock-ensign-resolve-split-state-gate-artifact-path
 mod-block:
