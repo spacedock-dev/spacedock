@@ -204,3 +204,16 @@ Implemented the one canonical resolver-owned gate-artifact path contract: `gates
 ### Summary
 
 Validation PASSED. The one canonical resolver-owned gate-artifact path contract is correctly implemented: `gates.Prepare` resolves relative `--artifact`/`--reference` against the entity root computed once from the README `state:` field, and the CLI passes relative paths through unchanged. All three ACs are satisfied with falsifiable evidence — split-root reaches `state=open`, single-root resolves unchanged, absolute passes through, and the wrong-root path fails. No material findings. Deferred risk: the live `TestLiveCommonGateGuardrail` journey (AC-3's full end-to-end) was not exercised in validation (requires live model runtime); the focused tests prove the resolution mechanism that unblocks it.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Identified the live-lane finding: TestLiveCommonRecordedGateLifecycle fails because a bare workflow-root reference (`recorder-contract.md`) joined under the state checkout (`<state>/recorder-contract.md`) instead of the workflow root (`<workflow>/recorder-contract.md`).
+  The FO legitimately passes a workflow-root file as a `--reference` alongside state-rooted `--artifact` paths in a split-root gate-prepare call.
+- DONE: Added `isArtifact` parameter to `resolveSelectedSource` — the artifact stays strict (state-root only; `TestPrepareWrongRootRelativeArtifactFails` still passes), references fall back to the workflow directory when the entity-root join does not exist.
+  The fallback checks `os.Lstat` for a regular file at the entity-root join first, then the workflow-root join; if neither exists, it returns the entity-root join so the error shape ("no such file or directory") is preserved.
+- DONE: Added `TestPrepareWorkflowRootReferenceResolves` — a bare workflow-root reference file resolves to the workflow root while `TestPrepareWrongRootRelativeArtifactFails` still rejects a wrong-root artifact.
+  Verified: `go test ./internal/gates/ -race` PASS (all tests including both safety + new); `go test ./internal/cli/ -run TestGatePrepare` PASS; gofmt clean; `git diff --check` clean.
+
+### Summary
+
+Correction round on `resolve-split-state-gate-artifact-path`. The live pi lane proved the previous fix (commit 4a72b3a4a: dedupe + basename-strip) incomplete: a bare workflow-root reference (no `.spacedock-state` prefix) failed resolution because it joined under the state checkout. Added `isArtifact` to `resolveSelectedSource`: artifacts stay strict (state-root only, preserving `TestPrepareWrongRootRelativeArtifactFails`), references fall back to the workflow root when the entity-root join is absent. The existing dedupe and basename-strip behavior are unchanged. Committed as `c75b8890f`.
