@@ -79,8 +79,8 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	paths := append([]string{input.Artifact}, input.References...)
 	normalized := make([]string, 0, len(paths))
 	seen := map[string]bool{}
-	for _, selected := range paths {
-		path, err := resolveSelectedSource(selected, entityRoot)
+	for i, selected := range paths {
+		path, err := resolveSelectedSource(selected, entityRoot, i == 0)
 		if err != nil {
 			return PrepareResult{}, fmt.Errorf("resolve selected source: %w", err)
 		}
@@ -770,23 +770,41 @@ func entityResolveRoot(workflowDir string) (string, error) {
 // A relative path that already carries the state-checkout basename (e.g.
 // ".spacedock-state/auto-continue-task/index.md" in a split-root workflow where
 // entityRoot is "<workflow>/.spacedock-state") is workflow-rooted, not
-// entity-rooted: joining it under entityRoot would double the basename. Strip
-// the leading entity-root basename so a state-rooted path resolves correctly
-// whether the FO passes it workflow-relative or entity-relative.
-func resolveSelectedSource(selected, entityRoot string) (string, error) {
+// entity-rooted: joining it under entityRoot would double the basename. Resolve
+// it against the workflow directory (entityRoot's parent) instead.
+//
+// The artifact resolves strictly against the entity root — a wrong-root
+// artifact is rejected (TestPrepareWrongRootRelativeArtifactFails). A
+// reference may legitimately live at the workflow root (e.g.
+// recorder-contract.md alongside a split-root state checkout), so references
+// fall back to the workflow directory (entityRoot's parent) when the entity-root
+// join does not exist. A genuinely missing file reports the entity-root seek
+// path so the error shape is preserved.
+func resolveSelectedSource(selected, entityRoot string, isArtifact bool) (string, error) {
 	if filepath.IsAbs(selected) {
 		return filepath.Clean(selected), nil
 	}
-	root := entityRoot
 	selected = filepath.Clean(selected)
-	if base := filepath.Base(entityRoot); base != "." && strings.HasPrefix(selected, base+string(filepath.Separator)) {
-		// The path is workflow-rooted (it repeats the state-checkout basename);
-		// resolve it against the workflow directory (entityRoot's parent) so the
-		// basename is not doubled. Keep the path as-is (it already carries the
-		// basename) — only the join root changes.
-		root = filepath.Dir(entityRoot)
+	base := filepath.Base(entityRoot)
+	// A path carrying the state-checkout basename is workflow-rooted; resolve
+	// against the workflow directory so the basename is not doubled. This
+	// applies to both artifact and reference.
+	if base != "." && strings.HasPrefix(selected, base+string(filepath.Separator)) {
+		return filepath.Clean(filepath.Join(filepath.Dir(entityRoot), selected)), nil
 	}
-	return filepath.Clean(filepath.Join(root, selected)), nil
+	entityJoin := filepath.Clean(filepath.Join(entityRoot, selected))
+	if isArtifact {
+		return entityJoin, nil
+	}
+	// Reference: fall back to the workflow root if the entity-root join is absent.
+	if info, err := os.Lstat(entityJoin); err == nil && info.Mode().IsRegular() {
+		return entityJoin, nil
+	}
+	workflowJoin := filepath.Clean(filepath.Join(filepath.Dir(entityRoot), selected))
+	if info, err := os.Lstat(workflowJoin); err == nil && info.Mode().IsRegular() {
+		return workflowJoin, nil
+	}
+	return entityJoin, nil // not found; report the entity-root seek path
 }
 
 func isMarkdownPath(path string) bool {

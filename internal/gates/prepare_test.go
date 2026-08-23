@@ -1147,7 +1147,44 @@ func TestPrepareWrongRootRelativeArtifactFails(t *testing.T) {
 	}
 }
 
-// prepareSingleRootFixture builds an inline (single-root) workflow with a gate
+// TestPrepareWorkflowRootReferenceResolves verifies that a --reference pointing
+// to a file at the workflow root (not under the state checkout) resolves
+// correctly in a split-root workflow. The FO legitimately references a
+// workflow-root file (e.g. recorder-contract.md) alongside a state-rooted
+// artifact; the reference must fall back to the workflow directory when the
+// entity-root join does not exist. The artifact must stay strict (state-root
+// only) — TestPrepareWrongRootRelativeArtifactFails guards that separately.
+func TestPrepareWorkflowRootReferenceResolves(t *testing.T) {
+	workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+	// Place a workflow-root reference file (NOT under the state checkout).
+	workflowRef := filepath.Join(workflow, "recorder-contract.md")
+	if err := os.WriteFile(workflowRef, []byte("# Recorder contract\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, filepath.Dir(filepath.Dir(workflow)), "add", filepath.ToSlash(filepath.Join("docs", "dev", "recorder-contract.md")))
+	prepareGitRun(t, filepath.Dir(filepath.Dir(workflow)), "commit", "-q", "-m", "workflow-root reference")
+
+	// Precondition: the reference must NOT exist under the state checkout.
+	stateRef := filepath.Join(state, "recorder-contract.md")
+	if _, err := os.Stat(stateRef); !os.IsNotExist(err) {
+		t.Fatalf("precondition: %s must not exist under state checkout", stateRef)
+	}
+
+	result, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    artifact,
+		Summary:     "Split-root with workflow-root reference.",
+		References:  []string{"recorder-contract.md"},
+	})
+	if err != nil {
+		t.Fatalf("prepare with workflow-root reference failed: %v", err)
+	}
+	if result.State != "open" {
+		t.Fatalf("prepare state = %q, want open", result.State)
+	}
+}
+
 // stage where the entity, artifact, and workflow dir all live in the same Git
 // repo — the entity root equals the workflow dir.
 func prepareSingleRootFixture(t *testing.T) (workflow, entity, artifact string) {
