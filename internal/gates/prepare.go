@@ -85,7 +85,13 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 			return PrepareResult{}, fmt.Errorf("resolve selected source: %w", err)
 		}
 		if seen[path] {
-			return PrepareResult{}, fmt.Errorf("gate prepare received the same selected path more than once")
+			// The artifact is always the primary presentation item (sources[0]);
+			// a --reference that resolves to the same path as --artifact (or a
+			// repeat reference) is redundant, not an error. Drop the duplicate
+			// rather than rejecting the prepare — the FO legitimately references the
+			// entity under review alongside a gate-review artifact that is the same
+			// file, and a hard reject there blocks an otherwise-conforming gate.
+			continue
 		}
 		seen[path] = true
 		normalized = append(normalized, path)
@@ -760,11 +766,27 @@ func entityResolveRoot(workflowDir string) (string, error) {
 // resolve against the entity root (the state-checkout root in split-root, the
 // workflow dir in single-root); absolute paths pass through cleaned. This is
 // the single resolution site — the CLI passes relative paths through unchanged.
+//
+// A relative path that already carries the state-checkout basename (e.g.
+// ".spacedock-state/auto-continue-task/index.md" in a split-root workflow where
+// entityRoot is "<workflow>/.spacedock-state") is workflow-rooted, not
+// entity-rooted: joining it under entityRoot would double the basename. Strip
+// the leading entity-root basename so a state-rooted path resolves correctly
+// whether the FO passes it workflow-relative or entity-relative.
 func resolveSelectedSource(selected, entityRoot string) (string, error) {
 	if filepath.IsAbs(selected) {
 		return filepath.Clean(selected), nil
 	}
-	return filepath.Clean(filepath.Join(entityRoot, selected)), nil
+	root := entityRoot
+	selected = filepath.Clean(selected)
+	if base := filepath.Base(entityRoot); base != "." && strings.HasPrefix(selected, base+string(filepath.Separator)) {
+		// The path is workflow-rooted (it repeats the state-checkout basename);
+		// resolve it against the workflow directory (entityRoot's parent) so the
+		// basename is not doubled. Keep the path as-is (it already carries the
+		// basename) — only the join root changes.
+		root = filepath.Dir(entityRoot)
+	}
+	return filepath.Clean(filepath.Join(root, selected)), nil
 }
 
 func isMarkdownPath(path string) bool {
