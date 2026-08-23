@@ -1,6 +1,6 @@
 ---
 title: Resolve split-state gate artifact paths before preparation
-status: validation
+status: implementation
 source: "PR #679 run 31640122995, Codex job 94260562369, artifact 9158783630: TestLiveCommonGateGuardrail found committed review files in the split state checkout, then passed a state-relative path to gate prepare, which resolved it from the workflow root and failed."
 score: 0.98
 id: mvmpzgqxyb32t3b3vdw0x0h1
@@ -66,11 +66,11 @@ gates:
                 reason: 'Conn-held approval. mvmpzg validation PASSED: 3 ACs falsifiable, gates+cli green, gofmt/vet clean. Deliver via stacked PR on 747.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-21T08:15:56Z
-worktree: .worktrees/spacedock-ensign-resolve-split-state-gate-artifact-path
-mod-block: merge:pr-merge
-pr: "#749"
+worktree: /home/exedev/spacedock/.worktrees/spacedock-ensign-resolve-split-state-gate-artifact-path
+mod-block:
+pr:
 ---
 
 Make a split-root First Officer pass the exact committed artifact path that gate preparation can resolve.
