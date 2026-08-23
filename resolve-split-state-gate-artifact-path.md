@@ -217,3 +217,13 @@ Validation PASSED. The one canonical resolver-owned gate-artifact path contract 
 ### Summary
 
 Correction round on `resolve-split-state-gate-artifact-path`. The live pi lane proved the previous fix (commit 4a72b3a4a: dedupe + basename-strip) incomplete: a bare workflow-root reference (no `.spacedock-state` prefix) failed resolution because it joined under the state checkout. Added `isArtifact` to `resolveSelectedSource`: artifacts stay strict (state-root only, preserving `TestPrepareWrongRootRelativeArtifactFails`), references fall back to the workflow root when the entity-root join is absent. The existing dedupe and basename-strip behavior are unchanged. Committed as `c75b8890f`.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: AC-1 (value) — split-state reference resolution completes: a bare workflow-root reference (recorder-contract.md) resolves to the workflow root, not the state checkout. Verified by the new TestPrepareWorkflowRootReferenceResolves.
+- DONE: AC (safety) — artifact stays strict: a wrong-root artifact is still rejected. TestPrepareWrongRootRelativeArtifactFails PASS.
+- DONE: AC (no regression) — dedupe + basename-strip from the prior cycle unchanged; full gates suite + race green; cli gate-prepare green; gofmt/vet clean.
+
+### Verdict: PASSED
+
+The correction completes the split-state gate-artifact path resolution: references fall back to the workflow root when the entity-root join is absent, the artifact stays state-root-strict, and the safety test is preserved. The live-lane failure (RecordedGateLifecycle's bare workflow-root reference) is fixed without weakening the artifact-strict guarantee. Ready for re-run on the stack tip.
