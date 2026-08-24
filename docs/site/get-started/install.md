@@ -9,7 +9,7 @@ Pi. Install one of those first.
     brew tap spacedock-dev/homebrew-tap
     brew install spacedock
     # Edge channel instead (tracks prereleases; conflicts with the stable cask):
-    # brew install spacedock@next
+    # brew install spacedock-dev/tap/spacedock@next
     ```
 
     Match the cask to the plugin channel you install below — the edge plugin

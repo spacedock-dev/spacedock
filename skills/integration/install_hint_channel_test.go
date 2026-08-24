@@ -222,11 +222,11 @@ func tapInfo(t *testing.T) (tapPath string, caskTokens []string) {
 	if err != nil {
 		t.Skip("brew not on PATH")
 	}
-	cmd := exec.Command(brew, "tap-info", "--json", "spacedock-dev/homebrew-tap")
+	cmd := exec.Command(brew, "tap-info", "--json", "spacedock-dev/tap")
 	cmd.Env = append(os.Environ(), "HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ENV_HINTS=1")
 	out, err := cmd.Output()
 	if err != nil {
-		t.Skipf("cannot resolve tap spacedock-dev/homebrew-tap (not tapped, or brew unavailable): %v", err)
+		t.Skipf("cannot resolve tap spacedock-dev/tap (not tapped, or brew unavailable): %v", err)
 	}
 	var taps []struct {
 		Installed  bool     `json:"installed"`
@@ -237,7 +237,7 @@ func tapInfo(t *testing.T) (tapPath string, caskTokens []string) {
 		t.Skipf("cannot parse brew tap-info output: %v", err)
 	}
 	if len(taps) == 0 || !taps[0].Installed {
-		t.Skip("tap spacedock-dev/homebrew-tap is not installed on this machine")
+		t.Skip("tap spacedock-dev/tap is not installed on this machine")
 	}
 	return taps[0].Path, taps[0].CaskTokens
 }
@@ -270,7 +270,7 @@ func caskVersion(t *testing.T, tapPath, token string) string {
 //     hint would need to revert to the curl form.
 func TestContractCasks(t *testing.T) {
 	core := readFile(t, sharedCorePath(t))
-	hinted := regexp.MustCompile("brew install spacedock-dev/homebrew-tap/(\\S+?)`").FindAllStringSubmatch(core, -1)
+	hinted := regexp.MustCompile("brew install spacedock-dev/tap/(\\S+?)`").FindAllStringSubmatch(core, -1)
 	if len(hinted) != 2 {
 		t.Fatalf("expected the shared core to hint exactly two casks (stable and edge), found %d", len(hinted))
 	}
@@ -279,12 +279,12 @@ func TestContractCasks(t *testing.T) {
 	t.Run("names", func(t *testing.T) {
 		published := make(map[string]bool, len(tokens))
 		for _, tok := range tokens {
-			published[tok] = true // canonical form, e.g. spacedock-dev/tap/spacedock@next
+			published[tok] = true
 		}
 		for _, m := range hinted {
-			want := "spacedock-dev/tap/" + m[1] // brew normalizes the homebrew-tap repo name
+			want := "spacedock-dev/tap/" + m[1]
 			if !published[want] {
-				t.Errorf("the contract hints `brew install spacedock-dev/homebrew-tap/%s`, but the tap publishes no cask %q (has: %v)",
+				t.Errorf("the contract hints `brew install spacedock-dev/tap/%s`, but the tap publishes no cask %q (has: %v)",
 					m[1], want, tokens)
 			}
 		}

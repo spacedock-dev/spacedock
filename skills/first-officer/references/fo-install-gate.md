@@ -15,11 +15,10 @@ Loaded by the first officer ONLY when the version gate (Startup step 1, shared c
 
 The shared core's Binary-absent bullet carries the classifier itself, because the sandbox arm must name a channel-correct command without loading this file. This section is the rationale it defers.
 
-- **Why two signals.** The marketplace segment is the documented channel name, but a `next`-branch dev build can be installed under the stable marketplace name (`cache/spacedock/spacedock/0.27.0-pre7-dev`); a prerelease suffix catches that. Conversely an edge install can carry an unsuffixed version (`cache/spacedock-edge/spacedock/0.27.0`); the marketplace segment catches that. Either signal alone misclassifies a real observed install.
+- **Why two signals.** The marketplace segment is the documented channel name, but a dev build can be installed under the stable marketplace name while carrying a prerelease-suffixed version; the suffix catches that. Conversely an edge-marketplace install can carry an unsuffixed version; the marketplace segment catches that. Either signal alone misclassifies a real observed install shape.
 - **`local`.** A base with no version-shaped directory is a `--plugin-dir` source checkout. Do not hint a package install: the repo is present, so hint `go build -o spacedock ./cmd/spacedock` and ABORT. Guessing a channel here would install over a tree the human is editing.
-- **Never widen the match.** Test the version segment, never the whole path: a home directory such as `/Users/pre-release-tester` would otherwise force every install on that machine onto the edge channel.
+- **Never widen the match.** Test the version segment, never the whole path: a home directory whose name contains a prerelease-like token would otherwise force every install on that machine onto the edge channel.
 - **Where the env var goes.** On Linux edge the assignment binds to `sh`, not to `curl`: `curl … | SPACEDOCK_CHANNEL=edge sh`. A shell variable prefix applies to the first command of a pipeline, so prefixing `curl` leaves the variable unset in the script and silently installs stable — the exact channel skew this gate exists to close.
-- **Cask names.** The hint spells the tap `spacedock-dev/homebrew-tap`; brew strips the `homebrew-` prefix and reports the same tap as `spacedock-dev/tap`, so its cask tokens read `spacedock-dev/tap/spacedock@next`. Both spellings resolve — do not "correct" one into the other.
 
 ## Fallback-message grammar (both the post-failure fallback and every sentinel-blocked re-entry)
 
