@@ -3,7 +3,7 @@ id: tdng3g6fe5p4y08tj5dphywc
 title: install.sh resolves releases/latest and silently breaks edge version parity
 status: ideation
 source: "Captain CL fresh-install VM experience report, 2026-08-24: fresh VM tracking edge would have gotten v0.26.0 from install.sh with no warning"
-started:
+started: 2026-08-24T15:09:44Z
 completed:
 verdict:
 score:
