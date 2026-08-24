@@ -336,3 +336,56 @@ Folded in from a sibling task by captain order, before the ideation gate decisio
   Confirmed, none changed. AC-1 through AC-6 are properties of `install.sh` behavior; this is prose in a docs page that no AC asserts and no test reads. `internal/contractlint/workflow_trunk_test.go` lints stray `next` refs in *workflows*, not docs, so nothing existing covers or breaks on it either. Adding a lint for one comment line would be disproportionate; the ideation doc-diff rule already routes it to implementation.
 
 Scope note for the gate: this is a fourth doc hunk riding the existing doc-diff machinery, not a design change. The chosen mechanism, the spike evidence, and the ACs are untouched.
+
+## Stage Report: implementation
+
+- FAILED: The deliverable is committed on the worktree branch: SPACEDOCK_CHANNEL (validate-first, stable default | edge) threaded through tag resolution, asset naming, and the local-dist glob, with the unconditional resolved-tag stderr line, plus all four doc-diff items applied (install.md binary tab, install.md line-50 tracks-main fix without sweeping the adjacent correct marketplace@edge ref, releasing.md append, install.sh header next->main) - inside the approved +155 net / 5 files, tolerance +/-40 LOC / +/-1 file.
+  Mechanism and all four doc-diff items are committed and verified (`b00886d3a`); the SURFACE BOUND is breached — **+359 net across 7 files** vs +155 / 5 files (allowed +115..+195, <=6 files). See "Surface deviation" below; this needs a gate ruling, not a silent pass.
+- DONE: Offline fixture tests pin the channel branches (edge selects _edge asset, stable selects unsuffixed from a both-assets dist, tampered _edge aborts with empty install dir, SPACEDOCK_CHANNEL=egde aborts naming accepted values, stable print-target matches golden) and go test ./... plus -race are green.
+  `internal/release/install_channel_test.go` (new, 5 legs + one added offline `asset_name` pin) over a `buildInstallFixture` now writing BOTH channels' archives. `go test ./...` and `go test ./... -race`: only failure is `TestCodexResolveManifestAgainstInstalledHost`, which fails identically on untouched `main` (this machine's `~/.codex/.../spacedock-local` cache) — pre-existing, no Go production code was touched.
+- DONE: The install-e2e.yml edge leg runs on both runners against the snapshot dist asserting minor-equals-prose-stamp + Channel: edge, the live edge resolution test skips-on-unreachable per the existing pattern, and the live fresh-prefix AC-1 observation is recorded in the stage report with --version output.
+  Edge leg added to the existing matrix (both runners), exercised locally for real against a `goreleaser release --snapshot` dist rather than reasoned about; live test skips on the same `could not resolve the latest release tag` signal as `install_url_test.go:111`. AC-1 observation below.
+
+### Live AC-1 observation (darwin/arm64, real API, real download, prefix absent before the run)
+
+    $ SPACEDOCK_CHANNEL=edge SPACEDOCK_INSTALL_DIR=/tmp/sd-live-edge sh ./install.sh
+    install.sh: resolved edge channel to v0.27.0-pre8
+    install.sh: installed spacedock spacedock_0.27.0-pre8_darwin_arm64_edge.tar.gz to /tmp/sd-live-edge/spacedock
+    $ /tmp/sd-live-edge/spacedock --version
+    spacedock 0.27.0-pre8
+    OS: darwin/arm64
+    Channel: edge (spacedock@spacedock-edge)
+
+Minor 0.27 equals the FO shared-core prose stamp (`These skills require binary minor 0.27`), and the binary is edge-stamped — the gate the old path aborted on now passes. The default path on the same script still lands `spacedock 0.26.0` with no `Channel:` line, now preceded by `resolved stable channel to v0.26.0`: the skew is unchanged but no longer silent.
+
+### Falsifiability (mutation battery, each mutation applied to install.sh then reverted)
+
+- `asset_name` loses its `_edge` branch -> `TestInstallChannelURLBaseAssetName/edge` + live test red. This leg was ADDED after the first battery run showed the local-dist glob never calls `asset_name`, so the declared five fixture legs left the live release path's naming pinned only by a network test that skips offline.
+- edge local-dist glob collapses to the stable glob -> edge install, edge tamper, and print-target/edge all red.
+- `validate_channel`'s `*)` defaults to stable instead of aborting -> `TestInstallChannelRejectsUnknownValue` red (AC-6).
+- resolved-tag stderr line removed -> live test red (AC-2).
+- edge resolves `/releases/latest` -> live test red (AC-3): resolves v0.26.0, not v0.27.0-pre8.
+- Stable-path locks: print-target stdout is asserted as an exact whole-string match, so a disclosure line on stdout or a suffix leaking into the stable asset reds it (AC-4). Edge tamper asserts the abort names `checksum mismatch for <edge asset>`, so a rejection for any OTHER reason (missing asset, extract failure) reds instead of passing vacuously (AC-5).
+- `TestInstallHintNoDrift` still catches drift after the extraction change: pointing install.md's default curl at another host reds it.
+
+### Surface deviation (needs decision)
+
+| File | Net | vs estimate |
+| --- | --- | --- |
+| `install.sh` | +48 | +30 est |
+| `internal/release/install_channel_test.go` | +253 | +85 est |
+| `.github/workflows/install-e2e.yml` | +27 | +18 est |
+| `docs/site/get-started/install.md` | +16 | +14 est |
+| `docs/releasing.md` | +8 | +8 est |
+| `internal/release/install_checksum_gate_test.go` | +4 | not estimated (the both-assets fixture; churn is gofmt realignment) |
+| `internal/contractlint/install_hint_drift_test.go` | +3 | not estimated (see below) |
+
+The overrun is concentrated in one file: the Go test surface came in at 3x its estimate. Every test maps to a declared AC (five checklist legs plus the `asset_name` pin the battery proved was missing), no capability beyond AC-1..AC-6 was added, and no AC was narrowed. The estimate is what was wrong: 6 test cases with 4-line Go assertion blocks plus three runners cannot land in 85 lines at this repo's comment density. I did not cut coverage or comments to reach the number — narrowing ACs to hit a LOC bound is the captain's call, not mine.
+
+The 7th file is not optional: `internal/contractlint/install_hint_drift_test.go` requires EXACTLY ONE `^curl ` line in install.md's Binary tab, and the captain-approved doc diff adds a second (the `SPACEDOCK_CHANNEL=edge` variant). The approved doc text cannot land without it. The change excludes channel-carrying lines from the extraction, so the default command must still be unique and must still equal the FO hint — the guarded property is intact, verified by re-reddening it with a mutated default URL.
+
+### Summary
+
+`SPACEDOCK_CHANNEL` (validate-first, `stable` default | `edge`) now threads through tag resolution, asset naming, and the local-dist glob, with an unconditional stderr line naming the channel and tag before any download. Proven end to end rather than by inspection: a fresh prefix on the live API lands `0.27.0-pre8` / `Channel: edge`, the CI edge leg was run locally against a real `goreleaser --snapshot` dist (both channels' archives present, both globs disjoint for all four os/arch), and a five-mutation battery reds a distinct test per branch. The stable path is untouched — same endpoint, same unsuffixed asset, byte-identical print-target stdout, and `Channel: stable` still installed from a dist holding both.
+
+Two things for the gate. The surface is 2.3x the approved estimate (+359 net / 7 files vs +155 / 5, tolerance +/-40 / +/-1), concentrated entirely in the new test file; the ACs and the mechanism are unchanged, so this is an estimate correction, but it is past tolerance and I did not narrow scope to hide it. And the approved install.md diff collided with a checked-in contract lint that permits only one curl line in that tab, which the ideation body had not caught; the lint now extracts the channel-free default and still binds the FO hint.
