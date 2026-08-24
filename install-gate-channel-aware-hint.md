@@ -21,6 +21,17 @@ gates:
                 digest: sha256:20c0bb050069025cdf5f2b5627e1e28a9b2898b5ba07ead3e4dfc696107d6424
                 request-digest: sha256:e389ddd2fbb0e491876aca632fed54018124271aefbb8b98726f2b7afae32f95
                 room-ref: ./install-gate-channel-aware-hint/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:p1tgy61tbhxj9apvpswqbhcy:backlog:1
+                briefing: briefing:p1tgy61tbhxj9apvpswqbhcy:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-24T19:20:03.982043Z"
+                decision: approve
+                reason: 'Captain CL in chat 2026-08-24: ''let''s dispatch p1t on to the channel install script PR stack'' - accepts the seed into ideation with stacked delivery on the #756 branch'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 install.sh now takes SPACEDOCK_CHANNEL (#756), but the skill-first journey never uses it. The FO binary-absent gate (first-officer-shared-core.md:10) hints the channel-less `curl ... | sh` on Linux and plain brew on macOS; fo-install-gate.md has zero channel awareness. On an edge-channel plugin install the journey self-defeats: the skills pin "binary minor 0.27" (prerelease-only until 0.27 goes stable), the hinted command installs stable v0.26.0, and the same gate then aborts on the binary it just told the user to install - the fresh-VM trap of 2026-08-24, surviving in the path that tells humans what to run.
