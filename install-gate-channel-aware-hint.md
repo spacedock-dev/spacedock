@@ -1,7 +1,7 @@
 ---
 id: p1tgy61tbhxj9apvpswqbhcy
 title: The skill-first install hint is channel-blind - an edge plugin tells the user to install the stable binary its own version gate then rejects
-status: backlog
+status: ideation
 source: "Captain CL in chat, 2026-08-24, reviewing install-sh-edge-prerelease-parity (#756): 'does it work for the skill-first journey that tells the user to run it?' - it does not; follow-up scoped to the skill hint path #756 could not reach"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain CL in chat 2026-08-24: ''let''s dispatch p1t on to the channel install script PR stack'' - accepts the seed into ideation with stacked delivery on the #756 branch'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 install.sh now takes SPACEDOCK_CHANNEL (#756), but the skill-first journey never uses it. The FO binary-absent gate (first-officer-shared-core.md:10) hints the channel-less `curl ... | sh` on Linux and plain brew on macOS; fo-install-gate.md has zero channel awareness. On an edge-channel plugin install the journey self-defeats: the skills pin "binary minor 0.27" (prerelease-only until 0.27 goes stable), the hinted command installs stable v0.26.0, and the same gate then aborts on the binary it just told the user to install - the fresh-VM trap of 2026-08-24, surviving in the path that tells humans what to run.
