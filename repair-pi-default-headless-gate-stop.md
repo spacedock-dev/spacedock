@@ -480,6 +480,7 @@ Validation PASSED. The real root cause (found in the live transcript after two w
 - DONE: Fix — tolerate `spawns` in {1, 2} in `assertWorkerLifecycle` (`spawns < 1 || spawns > 2` instead of `spawns != 1`). A single dispatch or one legitimate retry passes; 0 (no dispatch) and 3+ (excessive re-dispatching) still fail. Also made the error code/message stage-aware: `stage + "-worker-not-dispatched"` / `stage + " lifecycle incomplete"` instead of the hardcoded "implementation-worker-not-dispatched" (misleading when checking validation).
   Evidence: `TestPiAutoContinueReplayDoubleDispatch` PASS (replays the captured artifact and grades GREEN after the fix); existing `TestAutoContinueReplayRealClaudeStream` PASS (spawns=1 still passes); negative tests PASS (spawns=0 still fails via `spawns < 1`).
 - DONE: No regression — full offline `internal/ensigncycle` suite green (29.6s). gofmt clean. `git diff --check` clean.
+  Evidence: `go test ./internal/ensigncycle/` PASS (33s); `go build ./...` clean; gofmt/vet clean; negative tests (spawns=0 fails via spawns<1, spawns=3 fails) green.
 
 ### Summary
 
