@@ -127,15 +127,17 @@ Added during ideation, as alternatives a reviewer may reasonably raise:
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: **+155**, across **5 files**. Insertions ~+160, deletions ~-5 (the replaced `resolve_latest_tag` / `asset_name` / glob lines and the `next` URL in the header).
+Estimate net LOC change: **+155**, across **5 files**. Insertions ~+161, deletions ~-6 (the replaced `resolve_latest_tag` / `asset_name` / glob lines, the `next` URL in the header, and the `(tracks next)` comment line).
 
 | File | Net | What |
 | --- | --- | --- |
 | `install.sh` | +30 | channel variable + validation, three channel branches, one disclosure line, header comment for the new grammar, `next`→`main` URL fix |
 | `internal/release/install_channel_test.go` (new) | +85 | offline fixture tests: channel asset selection both ways, edge tamper leg, bogus-channel abort, stable golden; plus the live edge tag-resolution test |
 | `.github/workflows/install-e2e.yml` | +18 | an edge leg beside the existing stable leg, on both runners |
-| `docs/site/get-started/install.md` | +14 | the edge binary path (doc diff below) |
+| `docs/site/get-started/install.md` | +14 | the edge binary path, plus the `(tracks next)`→`(tracks main)` comment fix (doc diff items 1 and 4) |
 | `docs/releasing.md` | +8 | edge binary install paths in "Advancing the Edge Line" (doc diff below) |
+
+The captain-ordered amendment (doc diff item 4) is a one-line replacement in a file already in the table, so it is **net +0** — one insertion against one deletion, no new file. The +155 total and the ±40 LOC / ±1 file tolerance are unchanged, and the file count stays at 5.
 
 **Tolerance: ±40 net LOC and ±1 file.** The extra file allowance is for the live edge resolution test landing in the existing `internal/release/install_url_test.go` instead of the new file, if the shared `runInstallPrintTarget`/`fetchLatestRelease` helpers are cleaner to extend in place than to export.
 
@@ -235,6 +237,19 @@ And the new grammar in the behavior block:
 +#   printed to stderr before any download.
 ```
 
+### 4. `docs/site/get-started/install.md` — the `## Skills` edge snippet comment (line 50)
+
+Folded in by captain order from a sibling task. Same defect class as the `install.sh:6` header fix above: an install surface naming a ref that is not the one resolved.
+
+```diff
+-# Edge (tracks next) — marketplace named `spacedock-edge`, entry still `spacedock`
++# Edge (tracks main) — marketplace named `spacedock-edge`, entry still `spacedock`
+```
+
+The claim is stale twice over, verified independently during this amendment (2026-08-24): the live edge-branch manifest at `spacedock-dev/marketplace@edge` declares marketplace `spacedock-edge` holding entry `spacedock` with `"ref": "main"`, and `git ls-remote --heads …/spacedock.git next` returns nothing — **no `next` branch exists on the repo at all**. So the comment names a resolution target that is both wrong and nonexistent. This matches `CLAUDE.md:25` and `docs/releasing.md:192` ("The edge marketplace entry resolves `main` directly"), and the marketplace repo's own README was already repaired to match (`spacedock-dev/marketplace` main `403c46f`, edge `d390cad`).
+
+The surrounding prose in that section is already correct — it explains the channel as the marketplace *name* and never repeats the `next` claim — so this one comment line is the whole fix. Note the `@edge` in the adjacent `claude plugin marketplace add spacedock-dev/marketplace@edge` is correct and must NOT be touched: that is the marketplace repo's branch, which is where the edge entry lives, and is unrelated to the ref that entry resolves.
+
 ## Acceptance criteria
 
 Each AC names a property of the finished entity, not a stage action, and how it is verified.
@@ -291,3 +306,16 @@ No live workflow (first-officer boot) test is needed: AC-1 asserts the installed
 The spike overturned the seeded design. Fixing tag resolution alone does not work: every release publishes a *pair* of per-arch archives, the edge one always suffixed `_edge` and the stable one suffixed `_stable` on prerelease tags, so the name `install.sh` builds today returns HTTP 404 on the newest prerelease (leg F) while `_edge` returns 200. The channel therefore has to reach `asset_name()` and the local-dist glob, not just the endpoint — which is also why the estimate moved from ~+40/2 files to +155/5 files. A corollary worth the gate's attention: `install.sh` cannot install an edge-stamped binary at *any* tag today, and since Homebrew casks are macOS-only, a Linux edge machine has no scripted binary path at all.
 
 Chosen mechanism is one env var, `SPACEDOCK_CHANNEL` (stable default | edge), threaded through resolution, asset naming, and the dist glob, plus one stderr line disclosing the resolved tag. Proven end to end on a clean prefix: `spacedock 0.27.0-pre8` / `Channel: edge`, against 0.26.0 with no channel line on the old path. Two regressions were checked and are clean — stable print-target stdout is byte-identical, and the new line is stderr and `=`-free so it cannot pollute the existing parser. The probe also exposed a defect in itself: a `case *)` default silently installs stable on a typo'd channel value (leg P), which is the exact silent-skew class this task closes, so AC-6 requires validation instead. Residual risk is declared, not eliminated: edge resolution trusts the API's created_at-descending order rather than sorting semver in shell, mitigated by the now-printed tag and an escape-hatch pin that the spike proved already works through existing variables at zero new cost. Ideation touched no code — `git status` over `install.sh`, `internal/`, `docs/site/`, and `.github/` is clean; the throwaway probe lived in a scratchpad.
+
+### Amendment: captain-ordered doc-diff addition (2026-08-24, pre-gate)
+
+Folded in from a sibling task by captain order, before the ideation gate decision (the gate was withdrawn and will be re-prepared).
+
+- DONE: add the `docs/site/get-started/install.md:50` `(tracks next)` -> `(tracks main)` correction to the doc diff.
+  Recorded as doc-diff item 4 with before/after. Both halves of the staleness claim were verified independently rather than relayed: the live `spacedock-dev/marketplace@edge` manifest declares marketplace `spacedock-edge` holding entry `spacedock` with `"ref": "main"`, and `git ls-remote --heads .../spacedock.git next` returns nothing, so the named branch does not exist. Item 4 also flags that the adjacent `marketplace@edge` ref is correct and must not be swept up in the fix.
+- DONE: reconcile the surface table.
+  A one-line replacement in a file already listed, so net +0: the `install.md` row and the +155 / 5-file total and the +/-40 LOC, +/-1 file tolerance all stand. Only the gross split moved, +161/-6, now noted in the estimate line.
+- DONE: confirm ACs and test plan need no change.
+  Confirmed, none changed. AC-1 through AC-6 are properties of `install.sh` behavior; this is prose in a docs page that no AC asserts and no test reads. `internal/contractlint/workflow_trunk_test.go` lints stray `next` refs in *workflows*, not docs, so nothing existing covers or breaks on it either. Adding a lint for one comment line would be disproportionate; the ideation doc-diff rule already routes it to implementation.
+
+Scope note for the gate: this is a fourth doc hunk riding the existing doc-diff machinery, not a design change. The chosen mechanism, the spike evidence, and the ACs are untouched.
