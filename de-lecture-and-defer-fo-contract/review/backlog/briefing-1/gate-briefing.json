@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:wn3dg7txnrte0jrcxf56b859:backlog:attempt-1:revision-1",
+  "question": "Accept this seed into ideation: de-lecture the FO contract per the 2026-08-24 audit cut list and defer the boot-unreachable shared-core sections (folding superseded s6q), delivered as stack layer 3 so live CI at the tip proves all three?",
+  "artifacts": [
+    {
+      "id": "artifact:wn3dg7txnrte0jrcxf56b859:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/eae445a595b49f954ac4dc357562d9d498707970/de-lecture-and-defer-fo-contract.md",
+      "rev": "sha256:82fe485e8ba3b0be3c9a06e75d2b4ce96a4ec0b772b9ee199b6cb35abb49495d",
+      "mediaType": "text/markdown",
+      "summary": "Two movements, one lens: delete the enumerated lecture (audit list carried verbatim in the seed - shared core, dispatch cores, write core; keep the banned-excuse prohibitions, compress Awaiting Completion narration under captain review), and fold s6q's measured deferral (candidate span 35% of the boot-resident core, greet baseline 40,450 tok, AC-1 inherited verbatim). Value ACs: greet occupancy down in tokens, contract net-negative LOC with contractlint plus live-lane parity. Ideation is LIGHT by captain order - the cut list is the spec; it prices, sequences deletes-vs-moves, and rules explicitly on Working Principles residency. Delivery: stacked on #757 so all three host live lanes run once at the tip."
+    }
+  ]
+}

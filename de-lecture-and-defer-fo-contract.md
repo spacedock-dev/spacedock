@@ -9,6 +9,18 @@ verdict:
 score:
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:wn3dg7txnrte0jrcxf56b859:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:wn3dg7txnrte0jrcxf56b859-backlog-1
+              briefing:
+                id: briefing:wn3dg7txnrte0jrcxf56b859:backlog:attempt-1:revision-1
+                digest: sha256:b879d0be71511f84291a906609ac6f12c9d70175e7665971caf86203204700c5
+                request-digest: sha256:e0160113b31146057ccfa33cf4ef0a3ece370f9b5cc84ad1c782dd9516f8467a
+                room-ref: ./de-lecture-and-defer-fo-contract/review/backlog/briefing-1
 ---
 
 Two movements over the FO contract with one lens: the contract carries rules and commands; rationale, narration, design history, and repeated justification live in entity bodies and tests. Movement 1 (delete): the 2026-08-24 FO audit enumerated the lecture, file by file. Movement 2 (defer, folded from s6q): move boot-unreachable shared-core sections behind their existing triggers, measured by boot occupancy in tokens (s6q's archived body carries the full measured profile: shared core ~10.1k tok of a 40.4k greet boot; candidate span 9,105 of 26,092 bytes = 35%).
