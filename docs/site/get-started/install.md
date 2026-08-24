@@ -8,7 +8,12 @@ Pi. Install one of those first.
     ```bash
     brew tap spacedock-dev/homebrew-tap
     brew install spacedock
+    # Edge channel instead (tracks prereleases; conflicts with the stable cask):
+    # brew install spacedock@next
     ```
+
+    Match the cask to the plugin channel you install below — the edge plugin
+    pins a binary minor that no stable release satisfies.
 
     `brew install` also pulls in `agentsview` (it powers `/spacedock:survey`).
     The optional sandbox, safehouse, is installed separately — see

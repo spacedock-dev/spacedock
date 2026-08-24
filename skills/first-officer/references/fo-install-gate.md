@@ -11,6 +11,15 @@ Loaded by the first officer ONLY when the version gate (Startup step 1, shared c
 3. **Converge (session-scoped repoint).** `install.sh` prints `install.sh: installed spacedock <version> to <dir>/spacedock` to stderr and warns when the dir is off PATH. Parse the installed path from that stderr line; if absent, probe `$HOME/.local/bin/spacedock`. If a path resolves, set `SPACEDOCK_BIN` to it **for this session only — never persist it to a shell profile** — and re-check `${SPACEDOCK_BIN:-spacedock} --version`. If line 1 parses to a compatible version, that repointing IS the gate's one launcher resolution (blessed by the shared-core invariant): resume Startup. Next session: if the install dir is on PATH, bare `spacedock` resolves with no override; if not, the gate fails again and the fallback hint names the exact installed path and tells the human to add the dir to PATH (or launch with `SPACEDOCK_BIN=<path>`).
 4. **Fall back, never loop.** If the re-check still fails, or no path resolves, fall back to hint-and-abort — **no second install attempt, no proceeding without the re-check**.
 
+## Channel selection
+
+The shared core's Binary-absent bullet carries the classifier itself, because the sandbox arm must name a channel-correct command without loading this file. This section is the rationale it defers.
+
+- **Why two signals.** The marketplace segment is the documented channel name, but a `next`-branch dev build can be installed under the stable marketplace name (`cache/spacedock/spacedock/0.27.0-pre7-dev`); a prerelease suffix catches that. Conversely an edge install can carry an unsuffixed version (`cache/spacedock-edge/spacedock/0.27.0`); the marketplace segment catches that. Either signal alone misclassifies a real observed install.
+- **`local`.** A base with no version-shaped directory is a `--plugin-dir` source checkout. Do not hint a package install: the repo is present, so hint `go build -o spacedock ./cmd/spacedock` and ABORT. Guessing a channel here would install over a tree the human is editing.
+- **Never widen the match.** Test the version segment, never the whole path: a home directory such as `/Users/pre-release-tester` would otherwise force every install on that machine onto the edge channel.
+- **Where the env var goes.** On Linux edge the assignment binds to `sh`, not to `curl`: `curl … | SPACEDOCK_CHANNEL=edge sh`. A shell variable prefix applies to the first command of a pipeline, so prefixing `curl` leaves the variable unset in the script and silently installs stable — the exact channel skew this gate exists to close.
+
 ## Fallback-message grammar (both the post-failure fallback and every sentinel-blocked re-entry)
 
 - The exact OS-aware install command for the human to run manually (Linux `curl|sh` lead, macOS brew lead, source-build fallback — per the shared core's hint).
