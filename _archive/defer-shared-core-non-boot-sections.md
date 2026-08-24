@@ -76,3 +76,7 @@ Verified by: {ideation designs this. It must not be a prose-grep over the contra
 ## Test plan
 
 {Ideation fills this in. Must name the required host live lanes: the diff touches `skills/**/references/**`, so per the Proof policy this is the shipped-contract high-stakes surface - the detached adversarial audit applies, and every host lane whose adapter or host-neutral core is touched is required green rather than optional.}
+
+## Superseded
+
+Folded into `de-lecture-and-defer-fo-contract` (wn3dg7txnrte0jrcxf56b859) by captain order, 2026-08-24 ("file and fold s6q"). That task carries this body's deferral groups, measured profile, and AC-1 verbatim, plus the contract de-lecture cut list from the same day's FO audit. Verdict left empty per the supersede convention.
