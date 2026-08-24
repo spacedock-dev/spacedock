@@ -1,7 +1,7 @@
 ---
 id: tdng3g6fe5p4y08tj5dphywc
 title: install.sh resolves releases/latest and silently breaks edge version parity
-status: ideation
+status: implementation
 source: "Captain CL fresh-install VM experience report, 2026-08-24: fresh VM tracking edge would have gotten v0.26.0 from install.sh with no warning"
 started: 2026-08-24T15:09:44Z
 completed:
@@ -61,7 +61,7 @@ gates:
                 reason: 'Captain CL in chat 2026-08-24: ''approve'' at re-presented attempt-2 (digest 21d4a15f) - accepts the SPACEDOCK_CHANNEL design with the folded install.md amendment'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 `install.sh:90` resolves `api.github.com/repos/$REPO/releases/latest`, and GitHub's `/latest` excludes prereleases. Verified 2026-08-24: it resolves `v0.26.0` while the edge-parity target is 0.27.0-pre8 — a fresh machine following the binary-install path silently lands a binary one minor behind the edge plugin, which the FO boot version gate (requires minor 0.27) then aborts on. The skew is silent at install time: nothing prints the resolved version or hints that prereleases are excluded. This defeated the exact parity claim a fresh-VM prototype run was testing.
