@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:wn3dg7txnrte0jrcxf56b859:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation design? Deletes-first de-lecture across five contract files plus ONE provably-safe move (Completion and Gates onto the dispatch-core read) - honest headline ~1,200-tok greet reduction plus ~1,500 tok of lecture off every load path, after the s6q grouping correction shrank the deferral win.",
+  "artifacts": [
+    {
+      "id": "artifact:wn3dg7txnrte0jrcxf56b859:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/679709e9cfdbfc111e9d0a6dec4ba8ad69f57d67/de-lecture-and-defer-fo-contract.md",
+      "rev": "sha256:6638d56265c68baf662568906f6b3e8aaded1cd82988d5f69b5d139f3336f2d3",
+      "mediaType": "text/markdown",
+      "summary": "Light as ordered, with one real finding: three of s6q's four first-dispatch-group sections fail AC-3 because engage selects gate-first and loads fo-gate-lifecycle INSTEAD of dispatch-core - a prior-session ready gate reaches feedback.route with dispatch-core never read. Only Completion and Gates moves; the three gate fns stay resident, their proper home (fo-gate-lifecycle) is 55 B under its captain-set 7,700 B cap, filed as follow-up. Working Principles ruled RESIDENT (4 of 5 posture bullets bind the greet itself; the one boundary blockquote is below the move bar). AC-2 re-denominated to BYTES with the falsifiability reason (clause strikes score +1/-1 in lines). Compaction After-bullet found duplicating the session-start hook - compresses, full delete blocked on Pi coverage. Surface: contract subtotal -3,693 B, overall +32 net LOC/7 files (tests grow), tol +/-25/+/-2/+/-800 B. Every cut measured at the stack base. Gate decision point: cap-raise follow-up vs fold - recommendation is follow-up."
+    }
+  ]
+}
