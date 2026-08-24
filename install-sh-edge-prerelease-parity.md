@@ -7,7 +7,7 @@ started: 2026-08-24T15:09:44Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-install-sh-edge-prerelease-parity
 issue:
 gates:
     version: 1
