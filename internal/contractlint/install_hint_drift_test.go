@@ -40,8 +40,10 @@ func installMDSection(t *testing.T, lines []string, header string) []string {
 //
 //  1. The curl|sh token in the FO prose equals install.md's documented Linux
 //     command — extraction: the single line inside the
-//     `=== "Binary (macOS / Linux)"` fence matching `^curl `, trimmed of the
-//     tab's 4-space indentation.
+//     `=== "Binary (macOS / Linux)"` fence matching `^curl ` and carrying no
+//     channel selector, trimmed of the tab's 4-space indentation. The tab also
+//     documents the `SPACEDOCK_CHANNEL=edge` variant; the hint tracks the
+//     DEFAULT command, so that line is excluded and the default stays unique.
 //  2. The FO prose's brew-install hint refers to the same tap and formula as
 //     install.md's Homebrew tab (`spacedock-dev/homebrew-tap` + `spacedock`);
 //     both the two-line `brew tap` + `brew install` form and the one-line
@@ -61,12 +63,13 @@ func TestInstallHintNoDrift(t *testing.T) {
 	// Arm 1: curl|sh token equality.
 	var curlLines []string
 	for _, l := range installMDSection(t, lines, "Binary (macOS / Linux)") {
-		if trimmed := strings.TrimSpace(l); strings.HasPrefix(trimmed, "curl ") {
+		trimmed := strings.TrimSpace(l)
+		if strings.HasPrefix(trimmed, "curl ") && !strings.Contains(trimmed, "SPACEDOCK_CHANNEL=") {
 			curlLines = append(curlLines, trimmed)
 		}
 	}
 	if len(curlLines) != 1 {
-		t.Fatalf("install.md Binary tab carries %d `^curl ` lines, want exactly 1", len(curlLines))
+		t.Fatalf("install.md Binary tab carries %d default (channel-free) `^curl ` lines, want exactly 1", len(curlLines))
 	}
 	documentedCurl := curlLines[0]
 	if !strings.Contains(prose, documentedCurl) {

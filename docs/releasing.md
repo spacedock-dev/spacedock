@@ -234,6 +234,14 @@ stamps the edge binary from the highest tag pointing at the commit (`git tag
 `X.(Y+1)` binary version is correct without an override; a
 `GORELEASER_CURRENT_TAG` pin is set on the goreleaser step as belt-and-suspenders.
 
+Both edge binary install paths track those prerelease tags: the `spacedock@next`
+cask, bumped on every tag including prereleases, and
+`SPACEDOCK_CHANNEL=edge … install.sh | sh`, which resolves the newest release
+including prereleases and fetches that tag's `_edge` asset. The default stable
+path resolves `/releases/latest`, which excludes prereleases — so a default
+install on an edge machine lands a lower minor and aborts at first-officer boot.
+Casks are macOS-only; on Linux the script is the only edge binary path.
+
 ## Dev-Only `next` Publishing
 
 Keep `next` for development. Source builds may use
