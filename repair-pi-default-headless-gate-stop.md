@@ -1,6 +1,6 @@
 ---
 title: Repair the Pi implementation-worker-not-dispatched conduct (default-headless-gate-stop + auto-continue-after-implementation)
-status: validation
+status: implementation
 source: "CI run 31747645316 (PR #682, pi-live job) + 2026-08-13-02 Pi debrief; reproduced locally on lunaroute/glm-5.2-vision-background:max"
 score: 0.85
 sprint: pi-live-completeness
@@ -83,11 +83,11 @@ gates:
                 reason: 'Conn-held. ntarr validation PASSED: assert credits subagent_wait, both Pi journeys live PASS, pin bumped 0.53.0. Deliver via stacked PR on 750.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-21T16:13:06Z
-worktree: .worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
-mod-block: merge:pr-merge
-pr: "#753"
+worktree: /home/exedev/spacedock/.worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
+mod-block:
+pr:
 ---
 
 ## Problem
