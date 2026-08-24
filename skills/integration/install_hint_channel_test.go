@@ -45,11 +45,11 @@ func readFile(t *testing.T, path string) string {
 }
 
 // classifierRe matches the shipped classifier in fo-install.md's Channel selection
-// section: a one-liner opening by stripping the skills dir off the retained
+// section: a one-liner opening by deriving the version-shaped directory from the retained
 // {first_officer_base}. Pinning that opening binds the classifier to its documented input;
 // a reshape that reads the environment or a marketplace file instead would not match, so
 // extraction is itself part of the guard.
-var classifierRe = regexp.MustCompile(`(?m)^\s*(R="\$\{B%/skills/first-officer\}";.*)$`)
+var classifierRe = regexp.MustCompile(`(?m)^\s*(V=\$\(basename .*)$`)
 
 // extractClassifier returns the one runnable classifier shipped in the install reference.
 // The tests EXECUTE it rather than a copy, so contract and test cannot drift.
@@ -86,6 +86,12 @@ func runClassifier(t *testing.T, classifier, base string) string {
 // plugin cache and installed_plugins.json, so expected values originate in the observed
 // install layout, not in the file under test. Each `why` naming a single arm is a row that
 // reds when that arm is removed — the two documented counterexamples.
+//
+// The channel space is edge/stable only. A third `local` arm for source checkouts was
+// removed by captain ruling 2026-08-24: a skill base with no binary is not a real class.
+// Source-checkout rows therefore expect `stable` — the version test requires a
+// digit-leading segment, so a non-version directory name falls through to stable rather
+// than being read as a prerelease.
 func TestChannelClassifierTable(t *testing.T) {
 	classifier := extractClassifier(t)
 
@@ -109,10 +115,10 @@ func TestChannelClassifierTable(t *testing.T) {
 			"older stable release"},
 		{"/Users/pre-release-tester/.claude/plugins/cache/spacedock/spacedock/0.26.0/skills/first-officer", "stable",
 			"adversarial home containing -pre must NOT widen the match to edge"},
-		{"/Users/clkao/git/spacedock-research/spacedock-v1/skills/first-officer", "local",
-			"--plugin-dir source checkout: no version-shaped directory"},
-		{"/Users/pre-release-tester/git/spacedock-v1/skills/first-officer", "local",
-			"source checkout under the adversarial home is still local, not edge"},
+		{"/Users/clkao/git/spacedock-research/spacedock-v1/skills/first-officer", "stable",
+			"--plugin-dir source checkout: no version-shaped directory, so not edge"},
+		{"/Users/pre-release-tester/git/spacedock-v1/skills/first-officer", "stable",
+			"source checkout whose own dir name carries a dash must NOT be read as a prerelease"},
 	}
 
 	for _, tc := range cases {

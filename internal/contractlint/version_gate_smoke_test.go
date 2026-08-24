@@ -63,26 +63,25 @@ func TestVersionGateSandboxRegistry(t *testing.T) {
 	if len(rows) == 0 {
 		t.Fatalf("source-grep of internal/safehouse/state.go found no insideRegistry rows — the extraction regex must track the table's literal shape")
 	}
+	// The registry mirror is asserted against the CORE ALONE, because the core is what
+	// PERFORMS the sandbox check (Startup step 1, every gate class). fo-install.md only
+	// consumes the verdict, so duplicating the env name+value there bought nothing but a
+	// second place to forget to update.
 	core := readSkillFile(t, sharedCorePath)
-	gate := readSkillFile(t, installRefPath)
 	for _, row := range rows {
 		name, wantValue := row[1], row[2]
-		for label, body := range map[string]string{"core": core, "fo-install": gate} {
-			if !strings.Contains(body, name) {
-				t.Fatalf("%s prose does not check the sandbox env var %q", label, name)
-			}
-			if !strings.Contains(body, wantValue) {
-				t.Fatalf("%s prose does not pin the registry VALUE %q for %q (matching is on value, not presence)", label, wantValue, name)
-			}
+		if !strings.Contains(core, name) {
+			t.Fatalf("core prose does not check the sandbox env var %q", name)
+		}
+		if !strings.Contains(core, wantValue) {
+			t.Fatalf("core prose does not pin the registry VALUE %q for %q (matching is on value, not presence)", wantValue, name)
 		}
 	}
 	if !strings.Contains(core, "outside the sandbox") {
 		t.Fatalf("core skeleton is missing the sandbox outcome sentence (run outside the sandbox)")
 	}
-	if !strings.Contains(gate, "outside the sandbox") {
+	// fo-install.md still owns the outcome the human sees: no install here, run it outside.
+	if !strings.Contains(readSkillFile(t, installRefPath), "outside the sandbox") {
 		t.Fatalf("fo-install.md is missing the human-run-outside-the-sandbox message body")
-	}
-	if !strings.Contains(gate, "^Sandbox: ") {
-		t.Fatalf("fo-install.md must name the ^Sandbox: line as corroboration-only")
 	}
 }
