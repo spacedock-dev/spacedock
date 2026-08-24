@@ -1,5 +1,5 @@
 // ABOUTME: Structural checks for the FO version gate (Startup step 1): the
-// ABOUTME: deferred references/fo-install-gate.md machinery resolves and stays
+// ABOUTME: deferred references/fo-install.md machinery resolves and stays
 // ABOUTME: out of the boot-resident core, and the sandbox registry and install
 // ABOUTME: hint match their sources outside the skill files.
 package contractlint
@@ -13,7 +13,7 @@ import (
 )
 
 var sharedCorePath = filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md")
-var installGatePath = filepath.Join("skills", "first-officer", "references", "fo-install-gate.md")
+var installRefPath = filepath.Join("skills", "first-officer", "references", "fo-install.md")
 
 func readSkillFile(t *testing.T, rel string) string {
 	t.Helper()
@@ -26,22 +26,22 @@ func readSkillFile(t *testing.T, rel string) string {
 
 // TestVersionGateDeferredTrigger checks the structural shape of the core
 // skeleton's deferred-read trigger: the deferred-load-points inventory carries
-// the references/fo-install-gate.md entry (mirroring the existing
+// the references/fo-install.md entry (mirroring the existing
 // fo-dispatch-core.md pattern) and the deferred body resolves non-trivially.
 // The heavyweight machinery must NOT live in the boot-resident core — the
 // byte-cap tests guard that.
 func TestVersionGateDeferredTrigger(t *testing.T) {
 	body := readSkillFile(t, sharedCorePath)
-	if !strings.Contains(body, "- `references/fo-install-gate.md`") {
-		t.Fatalf("deferred-load-points inventory must carry a references/fo-install-gate.md entry line")
+	if !strings.Contains(body, "- `references/fo-install.md`") {
+		t.Fatalf("deferred-load-points inventory must carry a references/fo-install.md entry line")
 	}
 	if strings.Contains(body, "gate --help") {
 		t.Fatalf("boot-resident core must not carry an inline `gate --help` capability probe: the binary gate relies on the minor-version match alone, and a stale launcher fails at the first `gate withdraw`")
 	}
 	// The deferred body exists and is non-trivial.
-	gate := readSkillFile(t, installGatePath)
+	gate := readSkillFile(t, installRefPath)
 	if len(gate) < 500 {
-		t.Fatalf("references/fo-install-gate.md = %d bytes, want the real install-offer machinery", len(gate))
+		t.Fatalf("references/fo-install.md = %d bytes, want the real install-offer machinery", len(gate))
 	}
 }
 
@@ -64,10 +64,10 @@ func TestVersionGateSandboxRegistry(t *testing.T) {
 		t.Fatalf("source-grep of internal/safehouse/state.go found no insideRegistry rows — the extraction regex must track the table's literal shape")
 	}
 	core := readSkillFile(t, sharedCorePath)
-	gate := readSkillFile(t, installGatePath)
+	gate := readSkillFile(t, installRefPath)
 	for _, row := range rows {
 		name, wantValue := row[1], row[2]
-		for label, body := range map[string]string{"core": core, "fo-install-gate": gate} {
+		for label, body := range map[string]string{"core": core, "fo-install": gate} {
 			if !strings.Contains(body, name) {
 				t.Fatalf("%s prose does not check the sandbox env var %q", label, name)
 			}
@@ -80,9 +80,9 @@ func TestVersionGateSandboxRegistry(t *testing.T) {
 		t.Fatalf("core skeleton is missing the sandbox outcome sentence (run outside the sandbox)")
 	}
 	if !strings.Contains(gate, "outside the sandbox") {
-		t.Fatalf("fo-install-gate.md is missing the human-run-outside-the-sandbox message body")
+		t.Fatalf("fo-install.md is missing the human-run-outside-the-sandbox message body")
 	}
 	if !strings.Contains(gate, "^Sandbox: ") {
-		t.Fatalf("fo-install-gate.md must name the ^Sandbox: line as corroboration-only")
+		t.Fatalf("fo-install.md must name the ^Sandbox: line as corroboration-only")
 	}
 }

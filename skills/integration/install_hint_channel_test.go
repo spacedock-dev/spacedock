@@ -13,12 +13,21 @@ import (
 	"testing"
 )
 
-// The two shipped files this test binds together: the boot-resident FO contract and the
-// user-facing doc. Nothing here asserts on their wording — the tests extract runnable
-// commands from them and observe what those commands do.
+// The shipped files this test binds together: the boot-resident FO core (which now keeps
+// only the version pin and the deferral), the deferred install reference that owns the
+// classifier and the commands, and the user-facing doc. Nothing here asserts on their
+// wording — the tests extract runnable commands and observe what those commands do.
 func sharedCorePath(t *testing.T) string {
 	t.Helper()
 	return filepath.Join(repoRoot(t), "skills", "first-officer", "references", "first-officer-shared-core.md")
+}
+
+// installRefPath is the deferred FO install reference. The channel classifier and the
+// per-OS install commands live here, not in the boot-resident core: the core defers the
+// whole binary-absent arm to this file, sandbox or not.
+func installRefPath(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(repoRoot(t), "skills", "first-officer", "references", "fo-install.md")
 }
 
 func installDocPath(t *testing.T) string {
@@ -35,20 +44,20 @@ func readFile(t *testing.T, path string) string {
 	return string(data)
 }
 
-// classifierRe matches the shipped classifier in the shared core's Binary-absent Channel
-// sub-bullet: a backticked one-liner opening by stripping the skills dir off the retained
+// classifierRe matches the shipped classifier in fo-install.md's Channel selection
+// section: a one-liner opening by stripping the skills dir off the retained
 // {first_officer_base}. Pinning that opening binds the classifier to its documented input;
 // a reshape that reads the environment or a marketplace file instead would not match, so
 // extraction is itself part of the guard.
-var classifierRe = regexp.MustCompile("`(R=\"\\$\\{B%/skills/first-officer\\}\";[^`]*)`")
+var classifierRe = regexp.MustCompile(`(?m)^\s*(R="\$\{B%/skills/first-officer\}";.*)$`)
 
-// extractClassifier returns the one runnable classifier shipped in the shared core. The
-// tests EXECUTE it rather than a copy, so contract and test cannot drift.
+// extractClassifier returns the one runnable classifier shipped in the install reference.
+// The tests EXECUTE it rather than a copy, so contract and test cannot drift.
 func extractClassifier(t *testing.T) string {
 	t.Helper()
-	m := classifierRe.FindAllStringSubmatch(readFile(t, sharedCorePath(t)), -1)
+	m := classifierRe.FindAllStringSubmatch(readFile(t, installRefPath(t)), -1)
 	if len(m) != 1 {
-		t.Fatalf("expected exactly one channel-classifier one-liner in the shared core matching %q, found %d",
+		t.Fatalf("expected exactly one channel-classifier one-liner in fo-install.md matching %q, found %d",
 			classifierRe.String(), len(m))
 	}
 	return m[0][1]
@@ -136,9 +145,9 @@ const installURLRe = `https://raw\.githubusercontent\.com/spacedock-dev/spacedoc
 // the stable command the docs publish are two independently maintained strings that must
 // stay byte-identical. Editing either one alone diverges the pair and fails here.
 func TestStableHintMatchesPublishedDoc(t *testing.T) {
-	contractM := stableCurlRe.FindStringSubmatch(readFile(t, sharedCorePath(t)))
+	contractM := stableCurlRe.FindStringSubmatch(readFile(t, installRefPath(t)))
 	if contractM == nil {
-		t.Fatalf("no Linux stable curl command found in the shared core matching %q", stableCurlRe.String())
+		t.Fatalf("no Linux stable curl command found in fo-install.md matching %q", stableCurlRe.String())
 	}
 	docM := docStableRe.FindStringSubmatch(readFile(t, installDocPath(t)))
 	if docM == nil {
@@ -269,10 +278,10 @@ func caskVersion(t *testing.T, tapPath, token string) string {
 //     its version falls back to the stable line and this reds — exactly when the macOS
 //     hint would need to revert to the curl form.
 func TestContractCasks(t *testing.T) {
-	core := readFile(t, sharedCorePath(t))
+	core := readFile(t, installRefPath(t))
 	hinted := regexp.MustCompile("brew install spacedock-dev/tap/(\\S+?)`").FindAllStringSubmatch(core, -1)
 	if len(hinted) != 2 {
-		t.Fatalf("expected the shared core to hint exactly two casks (stable and edge), found %d", len(hinted))
+		t.Fatalf("expected fo-install.md to hint exactly two casks (stable and edge), found %d", len(hinted))
 	}
 	tapPath, tokens := tapInfo(t)
 
@@ -284,7 +293,7 @@ func TestContractCasks(t *testing.T) {
 		for _, m := range hinted {
 			want := "spacedock-dev/tap/" + m[1]
 			if !published[want] {
-				t.Errorf("the contract hints `brew install spacedock-dev/tap/%s`, but the tap publishes no cask %q (has: %v)",
+				t.Errorf("fo-install.md hints `brew install spacedock-dev/tap/%s`, but the tap publishes no cask %q (has: %v)",
 					m[1], want, tokens)
 			}
 		}
