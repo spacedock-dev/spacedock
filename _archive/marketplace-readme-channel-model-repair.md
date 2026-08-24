@@ -1,11 +1,11 @@
 ---
 id: 76582d5pd91e33smcekrzm4q
 title: Marketplace README documents the retired channel model and omits the separate CLI install
-status: backlog
+status: done
 source: "Captain CL fresh-install VM experience report, 2026-08-24: edge install id wrong, next-branch claim wrong, plugin-ships-no-binary surprise"
 started:
-completed:
-verdict:
+completed: 2026-08-24T15:43:30Z
+verdict: PASSED
 score:
 worktree:
 issue:
