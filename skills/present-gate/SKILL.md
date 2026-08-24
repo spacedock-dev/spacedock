@@ -1,12 +1,12 @@
 ---
 name: present-gate
-description: "First-officer gate-presentation rendering — the captain-facing gate-review template and assembly rules, including workflow-owned finding labels. Invoke at the gate point after the FO has decided a stage must be presented."
+description: "First-officer captain-facing presentation rendering — the gate-review template and assembly rules including workflow-owned finding labels, and the decision-request template for a captain decision raised outside a gate. Invoke at the gate point after the FO has decided a stage must be presented, or when a worker halt or contract-required choice raises a captain decision mid-stage."
 user-invocable: false
 ---
 
 # Present Gate
 
-This skill carries the first-officer's captain-facing gate-presentation rendering: the gate-review format template and the assembly rules for filling it. The decide-to-gate and AC-cross-check policy stays always-on in the FO contract; this skill loads at the gate point to render the decision the FO has already made.
+This skill carries the first-officer's captain-facing presentation rendering: the gate-review format template, the decision-request template for a captain decision raised outside a gate, and the assembly rules for filling them. The decide-to-gate and AC-cross-check policy stays always-on in the FO contract; this skill loads at the presentation point to render the judgment the FO has already made.
 
 ## Presentation channels
 
@@ -41,3 +41,41 @@ Decision: {one-line decision prompt naming what approval/rejection does in concr
 - Omit missing evidence, empty result classes, empty finding categories, zero-result rows, and placeholders such as `None` or `N/A`. A negative summary such as `no material findings` means the finding group is empty; omit it. Do not print an aggregate count that names a zero class. Preserve the workflow's finding labels and order; presentation does not classify findings.
 - Name the task and stage, Briefing identity and digest, one recommendation, and one concrete decision effect. Keep `${SPACEDOCK_BIN:-spacedock} gate record --decision` as the sole recorder; presentation adds no authority.
 - Keep the decision visible and the review concise. Use the workflow's declared entity label in authored prose, name concrete reasons for rejection, and mention a worktree only when the decision changes worktree state.
+
+## Decision Request
+
+A captain decision raised outside a gate — a worker halting on a declared
+threshold, a contract-required choice, an unmet clarification — is presented in
+this format. It is not a gate: nothing is recorded by `gate record`, and the
+entity's stage does not change.
+
+```
+Decision request: {entity title} — {stage}
+Recommend {the single option, stated as the action it authorizes}.
+Raised by: {what stopped, in one line}
+
+Derived from: {the evidence the FO read for itself, cited by path, line, or command}
+
+Outside the worker's remit: {the option the worker's role structurally could not propose, or `none` and why}
+
+Alternatives: {each remaining option with what it costs and what it does not fix}
+
+Decision: {one line naming what each choice sets in motion}
+```
+
+### Decision-request assembly rules
+
+- **One recommendation, and a list is not one.** The `Recommend` line names a
+  single option. When the choice is genuinely the captain's — scope, priority,
+  an outward commitment — say so and still name which way the FO leans and why.
+- **A worker's report is an input at the level of a test result, never the
+  analysis.** Re-derive from the evidence it cites rather than from its
+  conclusion. `Derived from` names what the FO read for itself; a worker's
+  summary does not qualify.
+- **`Outside the worker's remit` is required and is never omitted.** A worker
+  told to build a thing cannot propose building less: that option does not exist
+  inside its role, so relaying its list relays its blind spot. Two questions
+  reach the options it could not see — what is the limit that stopped it
+  protecting, and who is the remaining work for today. When every option on the
+  table moves the budget and none moves the requirement, the list was written
+  from inside the requirement, and the FO has not finished its own work.
