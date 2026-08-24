@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:p1tgy61tbhxj9apvpswqbhcy:backlog:attempt-1:revision-1",
+  "question": "Accept this backlog seed into ideation: make the FO binary-absent install hint channel-aware so an edge plugin stops hinting the stable binary its own version gate rejects?",
+  "artifacts": [
+    {
+      "id": "artifact:p1tgy61tbhxj9apvpswqbhcy:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b693581a190500935b852192690a66af958f1709/install-gate-channel-aware-hint.md",
+      "rev": "sha256:84f83654fafe87728cd35c3eca26edcfe062a1cad12153326b5ef6ac95ea07a9",
+      "mediaType": "text/markdown",
+      "summary": "Follow-up to install-sh-edge-prerelease-parity (#756): the skill-first journey's install hint (shared-core binary-absent line + fo-install-gate.md) is channel-blind - an edge install is sent to plain brew or channel-less curl, landing stable v0.26.0 that the minor-0.27 pin then aborts. Seed names three candidate channel-detection signals for ideation (host plugin-install record, per-channel skill stamp, minor-pin-as-proxy) and notes macOS has no edge cask so SPACEDOCK_CHANNEL=edge curl is the only edge remedy on both OSes. Delivery will stack on the #756 branch (the env var ships there). Coordinates with d2k (upgrade journey) and xw (binary-absent harness)."
+    }
+  ]
+}
