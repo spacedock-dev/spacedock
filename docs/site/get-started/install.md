@@ -6,7 +6,7 @@ Pi. Install one of those first.
 === "macOS (Homebrew)"
 
     ```bash
-    brew tap spacedock-dev/homebrew-tap
+    brew tap spacedock-dev/tap
     brew install spacedock
     # Edge channel instead (tracks prereleases; conflicts with the stable cask):
     # brew install spacedock-dev/tap/spacedock@next
