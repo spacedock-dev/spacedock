@@ -7,7 +7,7 @@ started: 2026-08-24T19:20:28Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-install-gate-channel-aware-hint
 issue:
 gates:
     version: 1
