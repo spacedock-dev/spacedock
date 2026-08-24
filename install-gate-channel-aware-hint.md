@@ -361,6 +361,23 @@ Ordered by the captain in chat 2026-08-24, after the implementation gate approva
 
 **AC-3 note.** The macOS stable hint bytes changed (`spacedock-dev/homebrew-tap/spacedock` → `spacedock-dev/tap/spacedock`), which touches AC-3's "stable installs' hint bytes are unchanged" clause. AC-3's substance is intact: the cask NAMES it binds (`spacedock`, `spacedock@next`) are unchanged, and its tested binding is the Linux curl command, which this sweep does not touch. Flagged rather than assumed harmless — the captain's post-approval order supersedes the clause on this point.
 
-**Out of scope, flagged not swept.** `docs/site/get-started/install.md:9` still reads `brew tap spacedock-dev/homebrew-tap`. That line is pre-existing (unchanged from the parent layer) and is not this layer's addition, so it was left alone rather than silently widening the diff. Both spellings work, so this is cosmetic, but the doc is now internally mixed and someone may want it swept separately.
+**Scoping call corrected mid-sweep — the doc's tap line had to move too.** I first left `docs/site/get-started/install.md:9` (`brew tap spacedock-dev/homebrew-tap`) alone as pre-existing and not this layer's addition, and recorded the resulting mixed spelling as cosmetic. That was wrong. `internal/contractlint` `TestInstallHintNoDrift` binds the FO version-gate prose's `brew tap` and `brew install` tokens to the ones install.md's Homebrew tab publishes, so standardizing the contract without moving the doc broke a real, enforced pair. Fixed in `9583a4dfb`: the doc's tap line now reads `brew tap spacedock-dev/tap`, and no `homebrew-tap` spelling remains anywhere in `skills/` or `docs/site/`.
 
-**Rebase note.** The stack was rebased onto a newer `main` (now carrying the #754 merge) by the stack machinery between the gate approval and this sweep. Commit SHAs recorded earlier in this report are stale: the parent layer is now `035934968`, and this layer's commits are `149932b42` (implementation), `d4e1c5cbc` (normalization note, since superseded by this sweep), and `f6542e088` (this sweep). Local and remote were already in sync, so the sweep pushed as an ordinary fast-forward.
+**Process note, recorded because it nearly shipped.** The breakage was masked by my own test run: after the sweep I ran `internal/contractlint` with a `-run` filter that excluded `TestInstallHintNoDrift`, saw green, and only the unfiltered full-suite run caught it. The lesson is the obvious one — after a contract-text change, run the contract-lint package unfiltered, since its whole job is binding prose to other files.
+
+**Rebase note.** The stack was rebased onto a newer `main` (now carrying the #754 merge) by the stack machinery between the gate approval and this sweep. Commit SHAs recorded earlier in this report — and in the validation report — are stale. Current layer state, parent `035934968`:
+
+    149932b42  implementation
+    d4e1c5cbc  tap-normalization note (superseded: the note itself is deleted by the sweep)
+    f6542e088  the sweep
+    9583a4dfb  doc tap line, completing the sweep
+
+Local and remote were in sync throughout, so both sweep commits pushed as ordinary fast-forwards. No force-push, no parent rebase.
+
+**Relationship to the validation PASS.** Validation passed at pre-rebase `84699ca23` (= post-rebase `d4e1c5cbc`), which PRE-DATES this sweep; the captain ordered the sweep afterward. Three consequences for anyone re-reading that report:
+
+- Its recorded surface (+329 net) and lean-cap figure (925 chars) are superseded by **+328 net / 4 files** and **898 chars**. Both move in the safe direction.
+- Its polish note that "the doc's macOS edge line hints bare `spacedock@next` where the approved diff spelled the fully-qualified token" is RESOLVED by the sweep — that line now reads `brew install spacedock-dev/tap/spacedock@next`.
+- Its **deferred risk 1** promote-condition is NOT triggered. That condition is an edit to the Binary-absent bullet's *Linux-edge* clause; the sweep edited only the *macOS* clause's tap spelling and left `Linux edge: same with SPACEDOCK_CHANNEL=edge before sh` byte-identical. The risk stands open, unchanged, still unpromoted.
+
+Deferred risks 2 and 3 are untouched by the sweep. Re-validation, if the FO wants one, is a re-run of the same four tests plus unfiltered `internal/contractlint` at `9583a4dfb`; the full suite there is green except the same pre-existing `TestCodexResolveManifestAgainstInstalledHost` machine-state failure.
