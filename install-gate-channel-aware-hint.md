@@ -3,7 +3,7 @@ id: p1tgy61tbhxj9apvpswqbhcy
 title: The skill-first install hint is channel-blind - an edge plugin tells the user to install the stable binary its own version gate then rejects
 status: ideation
 source: "Captain CL in chat, 2026-08-24, reviewing install-sh-edge-prerelease-parity (#756): 'does it work for the skill-first journey that tells the user to run it?' - it does not; follow-up scoped to the skill hint path #756 could not reach"
-started:
+started: 2026-08-24T19:20:28Z
 completed:
 verdict:
 score:
