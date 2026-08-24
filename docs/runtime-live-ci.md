@@ -113,13 +113,14 @@ A slow `:max`-thinking model can take minutes per turn. Raise the per-run cap wi
 go test -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
 ```
 
-Run the common Pi journeys separately from that substrate proof. Pi now calls `t.Parallel()`, so `-parallel 2` fans common journeys out two at a time (Codex uses its separate `-parallel 3` command above):
+Run the common Pi journeys separately from that substrate proof. Pi calls `t.Parallel()`; the workflow pins `-parallel` to `SPACEDOCK_PI_LIVE_PARALLEL` (the `live_parallel` dispatch input, default 4), and the local command keeps the same pin:
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle -v
+PI_LIVE_PARALLEL="${SPACEDOCK_PI_LIVE_PARALLEL:-4}"
+SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 50m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle -v
 ```
 
-For a custom slow `:max`-thinking model, add `-parallel 2` and raise `-timeout` above the per-run cap set by `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` (e.g. `-parallel 2 -timeout 120m` with `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES=40`).
+For a custom slow `:max`-thinking model, lower `PI_LIVE_PARALLEL` (e.g. `PI_LIVE_PARALLEL=2`) and raise `-timeout` above the per-run cap set by `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES` (e.g. `-timeout 120m` with `SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES=40`).
 
 Without auth, the respective live suite skips locally (Claude/Codex/Pi), except in CI where the lane requires it.
 

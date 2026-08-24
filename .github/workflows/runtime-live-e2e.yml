@@ -28,6 +28,11 @@ on:
           - sonnet
           - opus-pre-release
           - pi
+      live_parallel:
+        description: "go test -parallel for the Pi common journeys (positive integer; default 4, the standard runner core count)."
+        required: false
+        type: string
+        default: "4"
       claude_version:
         description: "Pin Claude Code to a specific version (e.g. 2.1.107, stable, latest). Empty = installer default."
         required: false
@@ -587,6 +592,7 @@ jobs:
       SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/pi
       SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi
       PI_OFFLINE: "1"
+      SPACEDOCK_PI_LIVE_PARALLEL: ${{ inputs.live_parallel }}
     steps:
       - name: Check required secret
         run: |
@@ -618,8 +624,8 @@ jobs:
           # fall back to legacy-node20 pi-coding-agent while pi-subagents floats new.
           PI_CODING_AGENT_VERSION="0.80.10"
           PI_CODING_AGENT_INTEGRITY="sha512-aL4apbupCHiVLSXASXvRzH4Q2vmtfrDa+0s909CJuVu/GgGylbDzr7oyF1mPmip5E+VxYYxKWmph4hV04wUcQg=="
-          PI_SUBAGENTS_VERSION="0.35.1"
-          PI_SUBAGENTS_INTEGRITY="sha512-nIH6liO541FZ1RoeEu58Ligd59tiNw0/ODPgHh7uvx9Dk4UpWH08F84/l1+hXCzUgC85OCmyVtngWkZjcK94Cg=="
+          PI_SUBAGENTS_VERSION="0.53.0"
+          PI_SUBAGENTS_INTEGRITY="sha512-YwwvGGb9zKBWnqyYqO0+0Hzw8qTosMfkKMqSXbiJKEVljmJcjAeuxYKeoLEyrA3nIgAxbDlCXyx0gnbu/91WFQ=="
           PI_INTERCOM_VERSION="0.6.0"
           PI_INTERCOM_INTEGRITY="sha512-OFPh/DXfPhUUSDLTRJiFPEvw00fOA/spjsxUcXiuCHvb2ZkRL02G8Q91mTd+3d42A9AK8BSmbD0+8imFPuHGoQ=="
 
@@ -699,8 +705,8 @@ jobs:
           if (agentPackage.version !== '0.80.10') {
             fail(`expected @earendil-works/pi-coding-agent 0.80.10, got ${agentPackage.version}`);
           }
-          if (subagentsPackage.version !== '0.35.1') {
-            fail(`expected pi-subagents 0.35.1, got ${subagentsPackage.version}`);
+          if (subagentsPackage.version !== '0.53.0') {
+            fail(`expected pi-subagents 0.53.0, got ${subagentsPackage.version}`);
           }
 
           // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
@@ -773,9 +779,33 @@ jobs:
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run live Pi common journeys
+        env:
+          # pi-subagents 0.53.0+ async dispatch: the rejection-flow journey
+          # (four sequential dispatches: implementation -> validation REJECT
+          # -> rework -> validation PASS -> gate prepare) reaches its stop at
+          # ~25m. The default 12m per-journey cap fires before the stop, so the
+          # lane is red on a timeout rather than a graded result and the
+          # registered XFAIL never engages. Bump the cap to 30m for the Pi
+          # common-journey step so the FO reaches the stop. This is a per-journey
+          # max (piLiveRunTimeout), so the faster journeys still complete early;
+          # only the outer `go test -timeout 40m` bounds the suite. Deliberate
+          # budget bump per captain ruling 2026-08-22 (accept a 25m stop rather
+          # than re-architect the dispatch sequence to fit 12m).
+          SPACEDOCK_PI_LIVE_TIMEOUT_MINUTES: "30"
         run: |
           set -o pipefail
-          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -failfast ./internal/ensigncycle
+          PI_LIVE_PARALLEL="${SPACEDOCK_PI_LIVE_PARALLEL:-4}"
+          case "$PI_LIVE_PARALLEL" in
+            ''|*[!0-9]*)
+              echo "live_parallel must be a positive integer (got \"$PI_LIVE_PARALLEL\")" >&2
+              exit 1
+              ;;
+          esac
+          if [ "$PI_LIVE_PARALLEL" -lt 1 ]; then
+            echo "live_parallel must be at least 1 (got \"$PI_LIVE_PARALLEL\")" >&2
+            exit 1
+          fi
+          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 50m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle
 
       - name: Run live Pi front-door smoke
         if: ${{ !cancelled() }}

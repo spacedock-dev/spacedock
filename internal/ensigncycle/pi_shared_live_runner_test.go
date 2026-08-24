@@ -26,9 +26,10 @@ func newPiSharedLiveDriver(t *testing.T) piSharedLiveDriver {
 	piHome := t.TempDir()
 	decision := seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("CODEX_AUTH_JSON"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 	writeFile(t, filepath.Join(piHome, "settings.json"), fmt.Sprintf("{\"packages\":[%q]}\n", "file:"+repo))
+	writePiSubagentsProjectArtifactDir(t, piHome)
 	return piSharedLiveDriver{
 		t:      t,
-		binary: binary, pluginDir: repo, modelName: decision.model, piHome: piHome,
+		binary: binary, pluginDir: repo, modelName: piLiveChildModel(decision), piHome: piHome,
 		artifactRoot: piLiveArtifactDir(t, "pi-common"),
 		env:          piLiveEnvForAuth(piHome, t.TempDir(), t.TempDir(), filepath.Dir(binary), piSubagentsPackageRoot(t), os.Getenv("OPENAI_API_KEY"), decision.mode),
 	}

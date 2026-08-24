@@ -429,6 +429,11 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 		publications = codexRejectionRoundPublications(result.stream)
 		routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
 	}
+	if _, ok := runner.(piSharedLiveDriver); ok {
+		recordedRound = piRecordedRejectionRound(result.stream)
+		publications = piRejectionRoundPublications(result.stream)
+		routes, branch = piRejectionRoutes(result.stream)
+	}
 	writeRejectionTopologyDigest(t, result.artifactDir, branch, routes)
 	// Every check below is host-neutral. The gate-prepared check in particular was
 	// wired Codex-only, which made FO residual mode 1 (ends without `gate prepare`)

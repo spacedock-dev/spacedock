@@ -51,6 +51,7 @@ type piPackageStatus struct {
 	firstOfficerDiscoverable bool
 	source                   string // the settings.json packages entry for spacedock
 	packageRoot              string // the resolved package root
+	subagentsRegistered      bool   // a package named pi-subagents is in settings.json packages
 }
 
 type execPiRuntimeOps struct{}
@@ -239,10 +240,15 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	// has no per-action permission-prompting flag to suppress, so NO inner
 	// permission-mode flag is added on the wrap arm — safehouse isolation alone is
 	// the boundary, and the operator's --tools/--exclude-tools passthrough wins.
-	argv := []string{
-		"pi",
-		"--extension", cfg.extensionPath,
-		"--skill", cfg.subagentsSkill,
+	// When pi-subagents is registered in settings.json `packages`, pi's own
+	// package discovery loads <pkg>/index.ts (re-exporting ./src/extension/index.ts)
+	// as the sole extension specifier — passing the explicit --extension/--skill
+	// would register a second specifier for the same extension and collide
+	// (Tool "subagent" conflicts). Gate the explicit flags on the package NOT
+	// being registered so the only load path is pi's discovery (one specifier).
+	argv := []string{"pi"}
+	if !check.packageStatus.subagentsRegistered {
+		argv = append(argv, "--extension", cfg.extensionPath, "--skill", cfg.subagentsSkill)
 	}
 	// Dev override (--plugin-dir / SPACEDOCK_REPO_ROOT, i.e. cfg.repoRoot != ""):
 	// the Spacedock extension (.pi/extensions/spacedock.ts) is NOT registered in
@@ -588,6 +594,7 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 			firstOfficerDiscoverable: ops.Stat(filepath.Join(cfg.repoRoot, "skills", "first-officer", "SKILL.md")) == nil,
 			source:                   cfg.repoRoot + " (dev override)",
 			packageRoot:              cfg.repoRoot,
+			subagentsRegistered:      res.packageStatus.subagentsRegistered,
 		}
 	}
 	return res
@@ -692,6 +699,7 @@ func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
 	if json.Unmarshal(data, &settings) != nil {
 		return piPackageStatus{}
 	}
+	var st piPackageStatus
 	for _, raw := range settings.Packages {
 		src := piPackageSourceFromEntry(raw)
 		if src == "" {
@@ -702,22 +710,24 @@ func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
 			continue
 		}
 		name, skillPaths := readPackagePiSkills(root)
-		if name != "spacedock" {
-			continue
-		}
-		st := piPackageStatus{registered: true, source: src, packageRoot: root}
-		for _, sp := range skillPaths {
-			dir := filepath.Join(root, sp)
-			if piSkillFileExists(dir, "ensign") {
-				st.ensignDiscoverable = true
+		if name == "spacedock" && !st.registered {
+			st.registered = true
+			st.source = src
+			st.packageRoot = root
+			for _, sp := range skillPaths {
+				dir := filepath.Join(root, sp)
+				if piSkillFileExists(dir, "ensign") {
+					st.ensignDiscoverable = true
+				}
+				if piSkillFileExists(dir, "first-officer") {
+					st.firstOfficerDiscoverable = true
+				}
 			}
-			if piSkillFileExists(dir, "first-officer") {
-				st.firstOfficerDiscoverable = true
-			}
+		} else if name == "pi-subagents" {
+			st.subagentsRegistered = true
 		}
-		return st
 	}
-	return piPackageStatus{}
+	return st
 }
 
 func piPackageSourceFromEntry(raw json.RawMessage) string {

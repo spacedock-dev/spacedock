@@ -999,6 +999,214 @@ func TestChatDecisionValidatesPreparedAuthorityBeforeMutation(t *testing.T) {
 	}
 }
 
+// TestPrepareResolvesStateRelativeArtifactAgainstEntityRoot is the value AC-1:
+// under split-root, a state-relative --artifact path (as the FO would pass it)
+// resolves against the state-checkout entity root, not the workflow root, and
+// reaches state=open. Reverting resolution to cwd (the workflow root) fails
+// because the file does not exist there.
+func TestPrepareResolvesStateRelativeArtifactAgainstEntityRoot(t *testing.T) {
+	workflow, state, entity, _, _ := prepareFixture(t, "flat")
+	selected := filepath.Join(state, "selected", "gate-review.md")
+	if err := os.MkdirAll(filepath.Dir(selected), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(selected, []byte("# Selected review\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, state, "add", "selected")
+	prepareGitRun(t, state, "commit", "-q", "-m", "committed selected artifact")
+
+	rel := filepath.ToSlash(filepath.Join("selected", "gate-review.md"))
+	result, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    rel,
+		Summary:     "committed selected review",
+	})
+	if err != nil {
+		t.Fatalf("state-relative artifact error=%v", err)
+	}
+	if result.State != "open" {
+		t.Fatalf("state-relative artifact state=%q want open", result.State)
+	}
+}
+
+// TestPrepareResolvesStateRelativeReferenceAgainstEntityRoot verifies AC-2(d):
+// a relative --reference resolves against the same entity root as --artifact.
+func TestPrepareResolvesStateRelativeReferenceAgainstEntityRoot(t *testing.T) {
+	workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+	selectedRef := filepath.Join(state, "selected", "evidence.json")
+	if err := os.MkdirAll(filepath.Dir(selectedRef), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(selectedRef, []byte("{\"ok\":true}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, state, "add", "selected")
+	prepareGitRun(t, state, "commit", "-q", "-m", "committed selected reference")
+
+	relRef := filepath.ToSlash(filepath.Join("selected", "evidence.json"))
+	result, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    artifact,
+		Summary:     "with state-relative reference",
+		References:  []string{relRef},
+	})
+	if err != nil {
+		t.Fatalf("state-relative reference error=%v", err)
+	}
+	if result.State != "open" {
+		t.Fatalf("state-relative reference state=%q want open", result.State)
+	}
+}
+
+// TestPrepareAbsoluteArtifactPassesThroughUnchanged verifies AC-2(c): an absolute
+// --artifact path passes through unchanged in both split-root and single-root.
+func TestPrepareAbsoluteArtifactPassesThroughUnchanged(t *testing.T) {
+	t.Run("split-root", func(t *testing.T) {
+		workflow, _, entity, artifact, _ := prepareFixture(t, "flat")
+		result, err := Prepare(entity, PrepareInput{
+			WorkflowDir: workflow,
+			Question:    "Advance?",
+			Artifact:    artifact,
+			Summary:     "absolute path",
+		})
+		if err != nil {
+			t.Fatalf("absolute artifact error=%v", err)
+		}
+		if result.State != "open" {
+			t.Fatalf("absolute artifact state=%q want open", result.State)
+		}
+	})
+	t.Run("single-root", func(t *testing.T) {
+		workflow, entity, artifact := prepareSingleRootFixture(t)
+		result, err := Prepare(entity, PrepareInput{
+			WorkflowDir: workflow,
+			Question:    "Advance?",
+			Artifact:    artifact,
+			Summary:     "absolute path",
+		})
+		if err != nil {
+			t.Fatalf("absolute artifact error=%v", err)
+		}
+		if result.State != "open" {
+			t.Fatalf("absolute artifact state=%q want open", result.State)
+		}
+	})
+}
+
+// TestPrepareSingleRootResolvesRelativeArtifactAgainstWorkflowDir verifies
+// AC-2(b): in single-root (no state: field), a relative --artifact resolves
+// against the workflow dir unchanged (entity root = workflow dir).
+func TestPrepareSingleRootResolvesRelativeArtifactAgainstWorkflowDir(t *testing.T) {
+	workflow, entity, _ := prepareSingleRootFixture(t)
+	result, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    "gate-review.md",
+		Summary:     "single-root relative",
+	})
+	if err != nil {
+		t.Fatalf("single-root relative artifact error=%v", err)
+	}
+	if result.State != "open" {
+		t.Fatalf("single-root relative artifact state=%q want open", result.State)
+	}
+}
+
+// TestPrepareWrongRootRelativeArtifactFails is the falsifying change: a relative
+// path that resolves to an existing committed file under the workflow root but
+// NOT under the state checkout fails. Under the old cwd-based resolution
+// (cwd = workflow root in a live run) this would have succeeded against the
+// wrong root.
+func TestPrepareWrongRootRelativeArtifactFails(t *testing.T) {
+	workflow, state, entity, _, _ := prepareFixture(t, "flat")
+	wrongRoot := filepath.Join(workflow, "gate-review.md")
+	if err := os.WriteFile(wrongRoot, []byte("# Wrong root\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, filepath.Dir(filepath.Dir(workflow)), "add", filepath.ToSlash(filepath.Join("docs", "dev", "gate-review.md")))
+	prepareGitRun(t, filepath.Dir(filepath.Dir(workflow)), "commit", "-q", "-m", "wrong-root artifact")
+
+	resolved := filepath.Join(state, "gate-review.md")
+	if _, err := os.Stat(resolved); !os.IsNotExist(err) {
+		t.Fatalf("precondition: %s must not exist under state checkout", resolved)
+	}
+	_, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    "gate-review.md",
+		Summary:     "wrong root",
+	})
+	if err == nil {
+		t.Fatal("wrong-root relative artifact succeeded; resolution reverted to the workflow root")
+	}
+	if !strings.Contains(err.Error(), "no such file or directory") {
+		t.Fatalf("wrong-root error=%v want no such file or directory", err)
+	}
+}
+
+// TestPrepareWorkflowRootReferenceResolves verifies that a --reference pointing
+// to a file at the workflow root (not under the state checkout) resolves
+// correctly in a split-root workflow. The FO legitimately references a
+// workflow-root file (e.g. recorder-contract.md) alongside a state-rooted
+// artifact; the reference must fall back to the workflow directory when the
+// entity-root join does not exist. The artifact must stay strict (state-root
+// only) — TestPrepareWrongRootRelativeArtifactFails guards that separately.
+func TestPrepareWorkflowRootReferenceResolves(t *testing.T) {
+	workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+	// Place a workflow-root reference file (NOT under the state checkout).
+	workflowRef := filepath.Join(workflow, "recorder-contract.md")
+	if err := os.WriteFile(workflowRef, []byte("# Recorder contract\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, filepath.Dir(filepath.Dir(workflow)), "add", filepath.ToSlash(filepath.Join("docs", "dev", "recorder-contract.md")))
+	prepareGitRun(t, filepath.Dir(filepath.Dir(workflow)), "commit", "-q", "-m", "workflow-root reference")
+
+	// Precondition: the reference must NOT exist under the state checkout.
+	stateRef := filepath.Join(state, "recorder-contract.md")
+	if _, err := os.Stat(stateRef); !os.IsNotExist(err) {
+		t.Fatalf("precondition: %s must not exist under state checkout", stateRef)
+	}
+
+	result, err := Prepare(entity, PrepareInput{
+		WorkflowDir: workflow,
+		Question:    "Advance?",
+		Artifact:    artifact,
+		Summary:     "Split-root with workflow-root reference.",
+		References:  []string{"recorder-contract.md"},
+	})
+	if err != nil {
+		t.Fatalf("prepare with workflow-root reference failed: %v", err)
+	}
+	if result.State != "open" {
+		t.Fatalf("prepare state = %q, want open", result.State)
+	}
+}
+
+// stage where the entity, artifact, and workflow dir all live in the same Git
+// repo — the entity root equals the workflow dir.
+func prepareSingleRootFixture(t *testing.T) (workflow, entity, artifact string) {
+	t.Helper()
+	workflow = t.TempDir()
+	testgit.InitRepo(t, workflow, "-q")
+	if err := os.WriteFile(filepath.Join(workflow, "README.md"), []byte("---\nid-style: slug\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: done\n      terminal: true\n---\n# Workflow\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	artifact = filepath.Join(workflow, "gate-review.md")
+	if err := os.WriteFile(artifact, []byte("# Review\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	entity = filepath.Join(workflow, "task.md")
+	if err := os.WriteFile(entity, []byte("---\nid: task\nstatus: validation\ntitle: Task\n---\n# Task\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, workflow, "add", ".")
+	prepareGitRun(t, workflow, "commit", "-q", "-m", "single-root fixture")
+	return workflow, entity, artifact
+}
+
 func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifact, reference string) {
 	t.Helper()
 	root := t.TempDir()
@@ -1008,7 +1216,7 @@ func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifac
 	}
 	mainRoot := filepath.Dir(filepath.Dir(workflow))
 	testgit.InitRepo(t, mainRoot, "-q")
-	if err := os.WriteFile(filepath.Join(workflow, "README.md"), []byte("---\nid-style: slug\nstate: ../../../state\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: implementation\n    - name: done\n      terminal: true\n    - name: contradictory\n      gate: true\n      terminal: true\n---\n# Workflow\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(workflow, "README.md"), []byte("---\nid-style: slug\nstate: .state\nstages:\n  states:\n    - name: validation\n      initial: true\n      gate: true\n    - name: implementation\n    - name: done\n      terminal: true\n    - name: contradictory\n      gate: true\n      terminal: true\n---\n# Workflow\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	artifact = filepath.Join(mainRoot, "gate-review.md")
@@ -1018,7 +1226,7 @@ func prepareFixture(t *testing.T, form string) (workflow, state, entity, artifac
 	prepareGitRun(t, mainRoot, "add", ".")
 	prepareGitRun(t, mainRoot, "commit", "-q", "-m", "main fixture")
 
-	state = filepath.Join(root, "state")
+	state = filepath.Join(workflow, ".state")
 	if err := os.MkdirAll(state, 0o755); err != nil {
 		t.Fatal(err)
 	}

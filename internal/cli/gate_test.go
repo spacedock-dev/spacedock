@@ -127,6 +127,34 @@ func TestGatePrepareCLIPrintsExactRoomBindingAndCurrentV1HelpSurface(t *testing.
 	}
 }
 
+func TestGatePrepareCLIPassesStateRelativeArtifactWithoutCwdJoin(t *testing.T) {
+	workflow, state, _ := gatePrepareCLIFixture(t)
+	selected := filepath.Join(state, "selected", "gate-review.md")
+	if err := os.MkdirAll(filepath.Dir(selected), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(selected, []byte("# Selected review\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, state, "add", "selected")
+	git(t, state, "commit", "-q", "-m", "committed selected artifact")
+
+	var out, errOut bytes.Buffer
+	code := run(context.Background(), []string{
+		"gate", "prepare", "task",
+		"--question", "Advance?",
+		"--artifact", filepath.ToSlash(filepath.Join("selected", "gate-review.md")),
+		"--summary", "state-relative artifact",
+		"--workflow-dir", workflow,
+	}, nil, workflow, nil, &out, &errOut, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("prepare exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+	}
+	if !strings.Contains(out.String(), "state=open") {
+		t.Fatalf("prepare stdout=%q want state=open", out.String())
+	}
+}
+
 func TestGatePrepareCLIRejectsSummaryCardinalityAndEncodingBeforeMutation(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
