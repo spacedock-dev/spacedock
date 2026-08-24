@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:p1tgy61tbhxj9apvpswqbhcy:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED and proceed to the stacked merge ceremony: does the verified channel-aware install hint (classifier + per-OS channel-correct commands, stable bytes locked) clear the gate for PR creation on the #756 stack?",
+  "artifacts": [
+    {
+      "id": "artifact:p1tgy61tbhxj9apvpswqbhcy:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8dbc2c175a48fd4de01a4d070abc571b94bfa168/install-gate-channel-aware-hint.md",
+      "rev": "sha256:561eeb6214a55bad6a3f9ff23808450f1f3676f8db96e8cac0eca681d3695013",
+      "mediaType": "text/markdown",
+      "summary": "Validator reproduced every AC by execution at 84699ca23 on a throwaway checkout: classifier table reds exactly the documented counterexample row per removed arm; shape guard reds channel=UNSET on the prefix form (standing proof of the ratified sh-side wording); tap-resolved casks log edge 0.27.0-pre8 vs stable 0.26.0 vs pin 0.27; captive-PATH run on the parent's install.sh lands edge-parity 0.27.0-pre8 while stable lands 0.26.0 (baseline moves the wrong way, as AC-1 requires). Detached audit clean. Surface exactly the ratified +329/4 baseline; lean cap 925\u003c=932 held. Zero material findings; three evidence-class deferred risks with promote conditions (no contract-side binding on the Linux-edge clause; cask legs skip without the tap; two unobserved-layout misroutes) and two polish notes for FO disposition. All captain rulings honored. Merge ceremony still owes: PR + gh stack link on the #756 stack, all three host live lanes green, per Stacked mode. Recommendation: PASSED."
+    }
+  ]
+}
