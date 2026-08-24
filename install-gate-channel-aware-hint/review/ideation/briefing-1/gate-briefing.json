@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:p1tgy61tbhxj9apvpswqbhcy:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation design? A three-arm channel classifier (edge/stable/local) over the FO's already-retained skill base path, hinting the channel-correct install command per OS - +150 net / 4 files (seed guessed ~+25 / 2), delivered as a stacked layer on the #756 branch.",
+  "artifacts": [
+    {
+      "id": "artifact:p1tgy61tbhxj9apvpswqbhcy:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5092fa9f2210e4ddf12d497ba5ce919bfc33871b/install-gate-channel-aware-hint.md",
+      "rev": "sha256:93a1fe89040e7f23c2520a169983133e90532836b40cd0e28e0fcef64155b0fb",
+      "mediaType": "text/markdown",
+      "summary": "Spike resolved the riskiest claim cheaply: the FO already retains {first_officer_base}, so channel detection classifies a string in hand - no new mechanism (the staff-review necessity answer). Two seed premises refuted with evidence: macOS HAS an edge cask (spacedock@next at 0.27.0-pre8), and a per-channel skill stamp is impossible (goreleaser ships identical payloads to both channels). Classifier needs two signals - marketplace path segment AND prerelease suffix - each alone misclassifies a real observed install; exercised against ten fixture paths with two falsifying edits confirmed. Placement correction: the rule must live in the shared core (sandbox arm never loads fo-install-gate.md); rationale defers. Surface +150/4 (test file is the growth; boot-resident prose delta flagged honestly as +1 line but ~2x chars on that bullet). All three host live lanes REQUIRED at merge (host-neutral contract change) plus detached audit. Delivery: stacked on spacedock-ensign/install-sh-edge-prerelease-parity per Stacked mode."
+    }
+  ]
+}
