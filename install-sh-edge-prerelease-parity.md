@@ -51,6 +51,17 @@ gates:
                 digest: sha256:21d4a15f84bf8203246499afcfc814e8ac0f2879e1a920c55ade27e0b1aca92d
                 request-digest: sha256:8fe62dafdf31898791699cb874a0293872fadcee989ff0e32c3072f16da23a62
                 room-ref: ./install-sh-edge-prerelease-parity/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:tdng3g6fe5p4y08tj5dphywc:ideation:2
+                briefing: briefing:tdng3g6fe5p4y08tj5dphywc:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-24T15:40:44.28296Z"
+                decision: approve
+                reason: 'Captain CL in chat 2026-08-24: ''approve'' at re-presented attempt-2 (digest 21d4a15f) - accepts the SPACEDOCK_CHANNEL design with the folded install.md amendment'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 `install.sh:90` resolves `api.github.com/repos/$REPO/releases/latest`, and GitHub's `/latest` excludes prereleases. Verified 2026-08-24: it resolves `v0.26.0` while the edge-parity target is 0.27.0-pre8 — a fresh machine following the binary-install path silently lands a binary one minor behind the edge plugin, which the FO boot version gate (requires minor 0.27) then aborts on. The skew is silent at install time: nothing prints the resolved version or hints that prereleases are excluded. This defeated the exact parity claim a fresh-VM prototype run was testing.
