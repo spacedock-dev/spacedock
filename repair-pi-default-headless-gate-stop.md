@@ -90,6 +90,20 @@ gates:
                 digest: sha256:38278be7055990af0c0e0f0de339f7edd42509e8b7ddb3bdec21ca0b33dc719a
                 request-digest: sha256:260b070eafccc3a557315101221c8e221bc383e3c84bc882fad42af2fef74e15
                 room-ref: ./repair-pi-default-headless-gate-stop/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ntarrp8jp5h34g6528d66kbe:validation:3
+                briefing: briefing:ntarrp8jp5h34g6528d66kbe:validation:attempt-3:revision-1
+                by: agent:first-officer
+                at: "2026-08-24T19:13:35.940468801Z"
+                decision: approve
+                reason: 'Validation cycle 2 PASSED: AutoContinue single-root spawns=2 was a legitimate retry (dispatch-build entity_path error then re-dispatch); assertWorkerLifecycle tolerates spawns in {1,2} (rejects 0 and 3+); replay test reproduces+fixes; full ensigncycle suite green; stage-aware error. Approve to done.'
+                conn:
+                    quote: have an ensign do (a)
+                    source: '2026-08-24 captain chat (conn for pi-related fixes: correction rounds)'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-21T16:13:06Z
 worktree: /home/exedev/spacedock/.worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
 mod-block:
