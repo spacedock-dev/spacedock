@@ -82,6 +82,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
+pr: "#756"
 ---
 
 `install.sh:90` resolves `api.github.com/repos/$REPO/releases/latest`, and GitHub's `/latest` excludes prereleases. Verified 2026-08-24: it resolves `v0.26.0` while the edge-parity target is 0.27.0-pre8 — a fresh machine following the binary-install path silently lands a binary one minor behind the edge plugin, which the FO boot version gate (requires minor 0.27) then aborts on. The skew is silent at install time: nothing prints the resolved version or hints that prereleases are excluded. This defeated the exact parity claim a fresh-VM prototype run was testing.
