@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntarrp8jp5h34g6528d66kbe:validation:attempt-3:revision-1",
+  "question": "Does the correction fix the AutoContinue single-root spawns=2 (legitimate retry) without loosening the assert past spawns\u003c=2?",
+  "artifacts": [
+    {
+      "id": "artifact:ntarrp8jp5h34g6528d66kbe:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/ccc83ab2548184c2efc7096935ceb59b29e36f71/_gate-reviews/repair-pi-default-headless-gate-stop-validation-cycle2.md",
+      "rev": "sha256:793c888c6278a97d91d64043289a6e3f98b01147c0cb6b31c2481efc7b03e685",
+      "mediaType": "text/markdown",
+      "summary": "Approve validation cycle 2: assertWorkerLifecycle tolerates spawns in {1,2} (rejects 0 and 3+); the FO's legitimate retry after a dispatch-build entity_path error no longer fails. Replay test reproduces+fixes; full ensigncycle suite green. Go to done."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ntarrp8jp5h34g6528d66kbe:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/9ce2ef774fbb9671a2590448c5b84709906550ab/internal/ensigncycle/claude_runtime_helpers_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:873f150f7820e0b398274b71fbbcdbe39f78690c4002ec5e889278388baed7d0"
+    }
+  ]
+}
