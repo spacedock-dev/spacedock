@@ -1,5 +1,5 @@
 ---
-commissioned-by: spacedock@0.13.0-dev
+commissioned-by: spacedock@0.27.0-pre8
 entity-type: task
 entity-label: task
 entity-label-plural: tasks
@@ -73,6 +73,8 @@ Every task file has YAML frontmatter. Fields are documented below; see **Task Te
 | `score` | number | Priority score, 0.0-1.0 (optional). Workflows can upgrade to a multi-dimension rubric in their README. |
 | `worktree` | string | Worktree path while a dispatched agent is active, empty otherwise |
 | `issue` | string | Optional external ticket reference, such as `ENG-123`, `kata:task-abc123`, or `owner/repo#42` |
+| `pr` | string | GitHub PR reference (e.g., `#57`) — set when a PR is opened for this task's branch |
+| `mod-block` | string | Pending mod-declared blocking action, format `{lifecycle_point}:{mod_name}` |
 
 ## Proof policy
 
@@ -107,7 +109,7 @@ The four evidence fields are released user and normal workflow; observable harm;
 
 Materiality and ownership are independent. An owned Material finding is eligible for an FO-authorized fix; a Material remedy outside the approved surface or semantic boundary is `Needs decision` and holds unchanged for the captain. Deferred risk or Polish may be declined only after FO authorization.
 
-After reviewer and worker entries and FO consultation, the First Officer appends the workflow-defined Cycle line directly from the authorized package, then invokes `${SPACEDOCK_BIN:-spacedock} gate record --round` with the canonical Briefing/log. The neutral recorder retains those bytes and advances `review-round`; it applies no gate or status change and does not parse classifications or project workflow prose. When another pass follows, the workflow may append `- Cycle {N}: {verdict} — {reviewer/loop}; surface {files}/{LOC} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}` using `git diff --numstat "$(git merge-base main HEAD)"..HEAD`. Deviation is against the ideation estimate; past its declared tolerance, or on narrowed AC, record a captain-visible design-reset decision before another pass. Cycle 3 escalates.
+After reviewer and worker entries and FO consultation, the First Officer appends the workflow-defined Cycle line directly from the authorized package, then invokes `${SPACEDOCK_BIN:-spacedock} gate record --round` with the canonical Briefing/log. The neutral recorder retains those bytes and advances `review-round`; it applies no gate or status change and does not parse classifications or project workflow prose. When another pass follows, the workflow may append `- Cycle {N}: {verdict} — {reviewer/loop}; surface {files}/{LOC} vs estimate {declared} ({P}%); AC {unchanged | narrowed: <note>}` using `git diff --numstat "$(git merge-base main HEAD)"..HEAD`. Deviation is against the ideation estimate; past its declared tolerance, or on narrowed AC, record a captain-visible design-reset decision before another pass.
 
 ## Stages
 
@@ -153,9 +155,8 @@ A task moves to implementation once its design is approved. The work here is to 
 
 - **Inputs:** The fleshed-out task body from ideation with approach and acceptance criteria
 - **Outputs:** The deliverable committed to the relevant repo or state checkout, with a summary of what was produced and where
-- Implementation completion is not a stopping point: once the deliverable is committed and the stage report filed, the entity routes immediately to independent `validation` dispatch — a fresh validator, since `validation` is `fresh: true` — unless a gate, blocker, terminal ceremony, or captain decision intervenes. The FO does not park a completed implementation and wait.
 - During implementation, re-run the mechanism/value check before adding a protocol, daemon, lease, lifecycle state, recovery loop, process controller, or another coordination layer. Stop and request a design reset when the simpler supported-runtime path still reaches the value; do not repair the enabling mechanism merely because it already exists.
-- When a finding arrives, follow `## Review-finding disposition`: investigate read-only, preserve the canonical reviewer log, propose materiality/ownership/disposition, and obtain distinct FO authorization before any candidate edit, commit, or reviewer rerun. After FO consultation, append the workflow-defined Cycle line directly, then invoke `${SPACEDOCK_BIN:-spacedock} gate record --round` with the canonical Briefing/log; the neutral recorder retains bytes and advances `review-round` without parsing the Cycle line or classifying findings.
+- When a finding arrives, follow `## Review-finding disposition`.
 - **Good:** Minimal changes that satisfy acceptance criteria, clean Go packages, stable CLI output, tests that observe supported behavior through the simplest real substrate, and a self-contained deliverable
 - **Bad:** Over-engineering, a test harness that becomes a second implementation of the runtime, another coordination layer without visible product proof, unrelated refactoring, skipping tests, ignoring edge cases identified in ideation, or leaving the deliverable incomplete for validation to finish
 
@@ -188,6 +189,7 @@ A task moves to validation after implementation is complete. The work here is to
   - A PASSED/REJECTED recommendation, with deferred risks listed separately from material and polish findings.
 - **Good:** Thorough testing against acceptance criteria, clear evidence of pass/fail, honest assessment, and validation that tests prove the current intended behavior
 - **Bad:** Rubber-stamping without testing, ignoring failing edge cases, validating against wrong criteria, accepting passing tests that encode stale prose or obsolete assumptions, or accepting a string/substring/regex match over an instruction file (the contract, this README, a skill) as proof of a behavioral claim. A check whose expected value is just the text the implementer wrote into the file under test proves nothing — it cannot fail. Proof of behavior must run the behavior and observe output, exit code, or on-disk state; a static check counts only when it tests a real value against an independent source that can diverge from it, not as a spelling check over a file the model reads.
+- **Small-change fast path.** Scale the validation checks to the diff's blast radius. A routine, low-blast-radius change (a doc line, a one-line fix, a rename) does not need the full checklist or the detached adversarial audit — the same "routine changes exempt" carve-out the audit already grants, applied to validation as a whole. Match the rigor to the change; a trivial diff over-validated is its own waste.
 - **Gate content:** Show non-empty Stage Report results, checks run, evidence for each acceptance criterion, reviewer findings under workflow labels, and whether delivery can proceed.
 - **Spot-check principle:** Before committing to an expensive live workflow or compatibility run, do a cheap fixture or single-command spot-check to verify the infrastructure works end-to-end.
 - **Detached adversarial audit:** for the high-stakes surfaces named in the Proof policy above, run (or dispatch) the audit on a throwaway checkout, never the implementation worktree, before merging. Routine, low-blast-radius changes do not need it, except that the AC-provenance trigger in the Proof policy applies to them too, on that AC alone. Findings enter `## Review-finding disposition` before candidate mutation or rerun; the First Officer owns any workflow-defined `### Feedback Cycles` entry, while the neutral round producer retains only canonical Briefing/log bytes. Note a clean audit in the gate's reviewer-findings block. Real catches on the record: #262 (two test-strength holes in `contract_gate_test.go`), `1x` and `external-tracker-checkpoint` AC-6 (self-referential ACs that can never fail), and `7h` AC-3 (a tag-cut that folded the release notes into the tag subject).
@@ -203,21 +205,7 @@ A task reaches done when validation is complete and the captain approves the res
 
 ## Workflow State
 
-Entities live directly under `.spacedock-state/` (no `entities/` directory); the workflow README stays in the main repo. Workflow state is read from `.spacedock-state`. Read it with the launcher:
-
-```bash
-spacedock status --workflow-dir docs/dev
-```
-
-To list the tasks ready for dispatch (the query the first officer runs each loop):
-
-```bash
-spacedock status --workflow-dir docs/dev --next
-```
-
-### Reading sections
-
-**Read one section, not the whole file.** `spacedock status --workflow-dir <wf> --read <entity-ref-or-path> --json` returns the file's frontmatter plus an ordered heading map (`text`, `level`, `offset`, `lines`). Pass a heading's `offset`/`lines` to `Read(path, offset, limit)` to load just that section — e.g. an entity's latest `## Stage Report`, or this README's `## Sprints`, without the rest.
+Entities live directly under `.spacedock-state/` (no `entities/` directory); the workflow README stays in the main repo.
 
 ## Runtime Live CI
 
@@ -237,6 +225,8 @@ verdict:
 score:
 worktree:
 issue:
+pr:
+mod-block:
 ---
 
 Brief description of this task and what it aims to achieve.
@@ -248,6 +238,11 @@ Brief description of this task and what it aims to achieve.
 ## Proposed approach
 
 {How the task intends to solve the problem. Ideation fills this in.}
+
+## Risk evidence
+
+{Backlog: the check, artifact, or observation that decides whether design should start.}
+{Ideation: the riskiest unverified mechanism and what exercising it showed, or `no spike needed: {the proven mechanisms this relies on}`.}
 
 ## Out of scope
 
@@ -267,6 +262,10 @@ Verified by: {test name / command output or exit code / file the change produces
 ## Test plan
 
 {What verifies the implementation, estimated cost/complexity, and whether fixture, CLI, or live workflow tests are needed.}
+
+### Feedback Cycles
+
+{First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
 ```
 
 ## Testing Resources
@@ -298,8 +297,3 @@ Never use `git stash` while peer workers are active: stash refs are repo-global,
 
 After you send a stage completion signal, treat the entity body as frozen while its gate briefing is open: route further findings and corrections to the first officer instead of committing them, because every post-prepare commit invalidates the briefing's frozen digest and forces a withdraw-and-re-prepare cycle (three occurrences recorded 2026-08-15). The freeze binds worker writes only: the first officer's gate-frontmatter commits are exempt, and a revise decision that re-dispatches the entity lifts the freeze for that rework until its next completion signal.
 
-## Commit Discipline
-
-- Commit state changes at dispatch and archive boundaries.
-- Commit task body updates when substantive.
-- Keep main repo changes and `.spacedock-state` changes in their respective git repositories.

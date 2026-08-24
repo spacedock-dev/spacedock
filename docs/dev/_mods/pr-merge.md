@@ -54,7 +54,9 @@ Then present the draft to the captain:
   {constructed body}
   ```
 
-Wait for the captain's explicit approval before pushing. Do NOT infer approval from silence, acknowledgment of the summary, or the gate approval that preceded this step — only an explicit "push it", "go ahead", "yes", or equivalent counts.
+Always present the draft. Then wait for the captain's explicit approval before pushing. Do NOT infer approval from silence, acknowledgment of the summary, or the gate approval that preceded this step — only an explicit "push it", "go ahead", "yes", or equivalent counts.
+
+A standing conn counts as that approval only when the captain's own words grant push or PR authority. A conn for gates is not one. Present the draft, quote the grant as the authority, and proceed.
 
 **On approval:** First, push the trunk from the code worktree to ensure the remote is up to date: `git -C {worktree} push origin "$BASE"`. If that push fails (no remote, auth error), report to the captain and fall back to local merge.
 
@@ -67,6 +69,55 @@ Resolve the current integration tip as `BASE_SHA=$(git -C {worktree} rev-parse "
 For a clean result, push the approved commit with the exact-SHA refspec: `git -C {worktree} push origin "${CANDIDATE_SHA}:refs/heads/${BRANCH}"`. If that push fails, report to the captain and fall back to local merge.
 
 Then invoke `gh pr create` against the resolved code repository with title, branch, base, and body file as separate arguments: `gh pr create --repo "$CODE_REPO" --base "$BASE" --head "$BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY_FILE"`. Supply `CODE_REPO`, `BRANCH`, and `PR_TITLE` as data values from the resolutions and workflow context above; never interpolate entity text into executable shell syntax or use `eval`. The submitted body must be the exact reviewed bytes in `PR_BODY_FILE`. Remove the temporary file after success or failure. If `gh` is not available, warn the captain and fall back to local merge.
+
+### Stacked mode
+
+Read this section only when the candidate is one layer of a stack.
+
+**A stack exists so one expensive check run at the tip proves every layer beneath it.** The tip's tree contains all of them, so a green tip is evidence for the whole stack, and a middle layer's own lanes prove one layer in isolation at the same cost. Approve checks at the tip. When a middle layer needs its own run for any reason, ask the captain and name what that run can falsify that the tip cannot.
+
+Run `gh skill preview github/gh-stack gh-stack` and follow it for every `gh stack` mechanic. This ceremony overrides it three times:
+
+- Do NOT use `gh stack submit`. It auto-generates the title, so the approved bytes never reach GitHub. Create each layer with the `gh pr create` call above, then join them with `gh stack link`.
+- Give `gh stack link` only PR numbers confirmed by `gh pr view {N} --repo "$CODE_REPO" --json number`. An unmatched number becomes a branch push.
+- This ceremony keeps no local stack tracking, so `gh stack rebase`, `sync`, `push`, and `view` do not apply. Rebase and push each layer with the git commands below, and use their conflict rule in place of `gh stack rebase --continue`.
+
+Use the branch below the layer as `$BASE` in place of the trunk, and skip the trunk push on approval. That push sends the parent layer, including commits the captain has not approved.
+
+**Confirm the layer contains its parent.** All three conditions must hold:
+
+```
+git -C {worktree} merge-base --is-ancestor "$PARENT_HEAD" "$LAYER_HEAD"   # exit 0
+test "$PARENT_HEAD" != "$LAYER_HEAD"                                     # exit 0
+git -C {worktree} rev-list --count "$PARENT_HEAD" --not "$TRUNK_SHA"      # 1 or more
+```
+
+Resolve each value with `git -C {worktree} rev-parse`, and stop on a non-zero exit: `rev-parse` prints its own argument to stdout on failure. `$PARENT_HEAD` and `$LAYER_HEAD` come from the `origin/` refs. `$TRUNK_SHA` comes from `origin/` plus `spacedock dispatch trunk --workflow-dir {dir}`.
+
+Exit 1 on the first condition means the layer is parallel: rebase it. Exit 128 means a ref is gone, such as a merged parent's deleted branch: stop, do NOT rebase. Equal heads or a count of 0 mean the layer or the parent holds no work: stop and report.
+
+CAUTION: A parallel layer passes every other check — correct base, clean `merge-tree`, mergeable, and a diff of only its own files. A check on a parallel top layer exercises nothing below it. Test all three conditions before every push, draft, create, and link, and again after every rebase.
+
+Branch a layer only from a parent that already holds committed work. Do not build two layers at once.
+
+**Rebase a layer** when the parent moves, not only when it merges. This procedure rewrites a layer already on the remote. A layer not yet pushed rebases locally and reaches the remote through the approval step above.
+
+1. `OLD_PARENT=$(git -C {worktree} rev-parse "origin/$PARENT_BRANCH")` — the parent commit the layer sits on. Read it before the fetch, because the fetch moves that ref and step 3 needs the old value.
+2. `git -C {worktree} fetch origin`.
+3. `git -C {worktree} rebase --onto "origin/$PARENT_BRANCH" "$OLD_PARENT" "$BRANCH"`. Plain `git rebase "$PARENT_BRANCH"` replays from the old merge base and leaves the layer parallel. On conflict: `rebase --abort`, then surface the exact paths and the moved base. Resolve nothing and force nothing. Hand the abort to the workflow's conflict-owner handoff, which routes one reconciliation assignment to the worker recorded for that layer's registered branch and worktree. Restacking an unmerged stack is routine, so this is a per-entity hold, not a delivery failure: keep the entity at its stage with its pending approval and `mod-block`, mutate no refs while routing, and do not take `--rework`. Other entities continue. Re-run this procedure against the owner's new head. A cold or unowned checkout has no recorded owner, so report it and stop.
+4. `NEW_HEAD=$(git -C {worktree} rev-parse HEAD)`. Re-test the three conditions.
+5. Replace `CANDIDATE_SHA` with `$NEW_HEAD`. The rebase abandoned the approved commit that the PR body and the merge report cite.
+6. Run the tests of this layer and every layer below it.
+7. `git -C {worktree} push --force-with-lease --force-if-includes origin "${NEW_HEAD}:refs/heads/${BRANCH}"`. Brace every variable in the refspec. Pass no value to the lease. A bare lease expects the remote-tracking ref, and `--force-if-includes` refuses the push unless your local branch actually incorporates what the last fetch brought — together they reject a peer's commit without naming a value. Naming `$OLD_HEAD` also rejects your own push whenever your local branch is ahead of the remote, which is the ordinary state after a local commit.
+
+The rule against force operations above governs a two-writer content conflict on the candidate, and it still holds. This push rewrites one layer branch the ceremony owns, after a clean rebase.
+
+**After a link, confirm each PR's base with `gh pr view {N} --repo "$CODE_REPO" --json baseRefName`.** `gh stack link` reports success when GitHub refused the change, and it rewrites bases to fit its own chain. Stack membership is display only.
+
+**Read check results only after they appear.** A new PR reports no checks for a short time after a create or a push, and an empty list does not prove the repository runs none. Wait 30 seconds and query again. After three empty results, report and stop. Do NOT start a second run to compensate: a duplicate spends the same resources twice and does not attach to the PR.
+
+**A top layer is complete** when its base is the trunk and `git -C {worktree} log --oneline "$TRUNK_SHA..$LAYER_HEAD"` lists only its own commits. A squash-merged parent passes the ancestry condition while the layer still carries the parent's original commits.
+
 
 ### PR body template
 
