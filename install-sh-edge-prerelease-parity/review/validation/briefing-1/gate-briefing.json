@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:tdng3g6fe5p4y08tj5dphywc:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED and proceed to merge delivery: does the verified SPACEDOCK_CHANNEL deliverable (edge parity install + unconditional disclosure, stable path byte-identical) clear the gate for PR creation?",
+  "artifacts": [
+    {
+      "id": "artifact:tdng3g6fe5p4y08tj5dphywc:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f6109521d86c17b90aa6d8f8607cf607a95ad2f3/install-sh-edge-prerelease-parity.md",
+      "rev": "sha256:12ec8040a064cb2fe1cc28c764d9773748a277c3a9672569ba9f1a0007bacce1",
+      "mediaType": "text/markdown",
+      "summary": "Validator re-verified all six ACs by exercising behavior: live fresh-prefix edge install landed 0.27.0-pre8/Channel: edge (minor equals FO prose stamp), disclosure observed on both channels before download, URL byte-match live with forced-skip check, stable print-target byte-identical to pre-change script via cmp, tamper/typo aborts leave nothing on disk. Seven-value channel matrix plus asymmetric-dist legs held one invariant. Detached adversarial audit on throwaway checkout: clean, 8/8 claim-breaking mutations caught; AC-1 provenance independent (prose stamp vs goreleaser tag). Zero material findings; two evidence-class deferred risks with promote-conditions (offline disclosure guard, Linux e2e leg pending PR CI); one no-action polish note. Captain rulings honored: +359/7 baseline not re-flagged, marketplace@edge line untouched. Recommendation: PASSED."
+    }
+  ]
+}
