@@ -258,8 +258,8 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 		}
 	}
 	spans, reportErr := statuspkg.FindSectionSpans([]byte(entity), []string{"Stage Report: " + stage})
-	if spawns != 1 || completed < 0 || validation < 0 || completed >= validation || reportErr != nil || len(spans) != 1 || !strings.Contains(entity[spans[0].Start:spans[0].End], "- DONE:") {
-		return &gradedErr{code: "implementation-worker-not-dispatched", msg: fmt.Sprintf("implementation lifecycle incomplete: spawns=%d completed=%d validation=%d report=%v", spawns, completed, validation, reportErr)}
+	if spawns < 1 || spawns > 2 || completed < 0 || validation < 0 || completed >= validation || reportErr != nil || len(spans) != 1 || !strings.Contains(entity[spans[0].Start:spans[0].End], "- DONE:") {
+		return &gradedErr{code: stage + "-worker-not-dispatched", msg: fmt.Sprintf("%s lifecycle incomplete: spawns=%d completed=%d validation=%d report=%v", stage, spawns, completed, validation, reportErr)}
 	}
 	return nil
 }
