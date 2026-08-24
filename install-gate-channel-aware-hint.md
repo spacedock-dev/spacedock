@@ -268,3 +268,29 @@ The channel classifier ships as designed and is proven by execution rather than 
 **Two items for the gate.** First, the surface is 73% past its tolerance ceiling (+328 vs +190). The ideation estimate priced only ~130 lines of test for what turned out to be four ACs plus the new shape guard; I consolidated the two cask tests into subtests and trimmed comment prose, which recovered only 14 lines, and cutting further means dropping AC coverage — I chose falsifiability over the line estimate rather than deciding that trade silently. Second, AC-1's value is gated on parent #756 merging to main: until then the hint text is correct but the script it points at ignores the variable. Stacked delivery resolves this by construction (the parent merges first), but validation must not expect a green live AC-1 against main before then.
 
 Live-lane requirement for the PR ceremony: this diff touches `skills/first-officer/references/**`, so per the workflow's Proof policy ALL THREE host live lanes (`claude-live`, `codex-live`, `pi-live`) are REQUIRED green at merge — the shared core is host-neutral contract. I did not run them. A flake there is grounds to re-run to green, never to skip. The shipped contract is also one of the four high-stakes surfaces, so the detached read-only adversarial audit applies before merge.
+
+### Finding: the approved edge-hint wording cannot satisfy AC-1
+
+Recorded per `## Review-finding disposition`. Raised by the implementing ensign before any contract bytes were committed; candidate unchanged pending authorization.
+
+**Four evidence fields.**
+
+1. *Released user and normal workflow:* an edge-channel plugin user hits the binary-absent first-officer boot gate and runs the hinted Linux install command — this task's primary journey.
+2. *Observable harm:* the run lands `spacedock 0.26.0` reporting `Channel: stable`; the next boot aborts against the 0.27 pin. The abort loop the task exists to remove survives unchanged.
+3. *Affected value AC:* `value-ac[AC-1]` — "A binary-absent boot on an edge-channel plugin ends with an edge-parity binary, not an abort loop." The approved bytes are also AC-1's own declared falsifying change, so the approved wording reds the approved AC.
+4. *Trigger evidence:* measured in POSIX shell, both arms —
+
+       SPACEDOCK_CHANNEL=edge printf '…' | sh   ->  channel=[UNSET]
+       printf '…' | SPACEDOCK_CHANNEL=edge sh   ->  channel=[edge]
+
+   A variable prefix binds to the FIRST command of a pipeline, so prefixing `curl` never exports the variable to the `sh` that runs the script; `install.sh` then takes its `stable` default.
+
+**Classification (worker proposal):** Material · owned by this task · disposition `fix`.
+
+**FO authorization:** `fix`, authorized as proposed, 2026-08-24. The first officer reproduced the measurement independently (`channel=[UNSET]` on the prefix form, `channel=[edge]` on the sh-side form) and confirmed the parent layer already publishes the sh-side form at `install.md:31`, so the remedy is byte-neutral, satisfies AC-1, and additionally removes a contract-vs-doc divergence AC-3 would have caught. Captain's lean cap unaffected (925 chars vs the 932-char approved ceiling).
+
+**Disposition applied.** The Linux edge hint ships with the assignment on `sh` in every shipped surface: the shared-core Binary-absent bullet, the `fo-install-gate.md` "Where the env var goes" rationale bullet, and the tests (which execute the published doc form rather than a copy). Verified no prefix-on-curl form survives in any shipped command — the single remaining textual occurrence is a test comment naming the defect being guarded against. `TestEdgeHintDeliversChannelToScript` reds with `channel=UNSET` if the assignment is moved back onto `curl`.
+
+**Scope note.** The ideation-approved wording is superseded on this one point only. Design intent — hint the channel-correct command — is unchanged; the approved bytes were a means that failed the approved AC-1. No AC was narrowed and no approved surface boundary moved.
+
+**Also authorized this round.** The `install.md` delta shrinking to +5 (the parent layer already covers the Binary tab; only the macOS Homebrew tab needed the edge line) — landing under estimate, no ruling required. Brew's tap-name normalization is now recorded in `fo-install-gate.md` (commit `84699ca23`): the contract spells the tap `spacedock-dev/homebrew-tap`, brew reports `spacedock-dev/tap`, both resolve, and the cask test encodes the mapping.
