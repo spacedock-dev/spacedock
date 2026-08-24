@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:tdng3g6fe5p4y08tj5dphywc:ideation:attempt-2:revision-1",
+  "question": "Approve this ideation design? One env var SPACEDOCK_CHANNEL (stable default | edge) threaded through tag resolution, asset naming, and the local-dist glob, plus an unconditional resolved-tag stderr line - +155 net / 5 files (seed guessed ~+40 / 2), now including the captain-ordered install.md line-50 doc amendment (net +0).",
+  "artifacts": [
+    {
+      "id": "artifact:tdng3g6fe5p4y08tj5dphywc:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/8fb91ed0625d1bb96fbed0c09d927bf2b2b3cef5/install-sh-edge-prerelease-parity.md",
+      "rev": "sha256:3736e8ccc4f03247de80bda9274a733e42ab084da0e0bb660d4c9d2ebd76b600",
+      "mediaType": "text/markdown",
+      "summary": "Re-prepared after captain scope amendment (folded from 765): doc diff item 4 corrects install.md:50 '(tracks next)' to '(tracks main)', verified twice over (live edge manifest ref=main; no next branch exists), with an explicit do-not-sweep flag protecting the adjacent correct marketplace@edge ref. Net +0, estimate and tolerance unchanged, ACs and test plan confirmed unchanged. Original design intact: spike overturned the seed (prerelease tags publish only suffixed assets, unsuffixed 404s), proven live end-to-end 0.27.0-pre8/Channel: edge, stable path byte-identical, residual created_at-ordering risk declared with printed-tag + pin mitigation."
+    }
+  ]
+}
