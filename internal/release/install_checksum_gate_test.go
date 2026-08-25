@@ -14,71 +14,75 @@ import (
 	"testing"
 )
 
-// installFixture is a local goreleaser-shaped `dist/` directory: one
-// `spacedock_<ver>_<os>_<arch>.tar.gz` holding a bare runnable `spacedock` at the
-// archive root, plus a `checksums.txt` line matching that tarball — the same
-// layout install.sh's SPACEDOCK_INSTALL_FROM=<dir> path consumes.
+// installFixture is a local goreleaser-shaped `dist/` directory: the PAIR of
+// per-arch archives a real dist carries — `spacedock_<ver>_<os>_<arch>.tar.gz`
+// (stable) and `spacedock_<ver>_<os>_<arch>_edge.tar.gz` (edge) — each holding a
+// bare runnable `spacedock` at the archive root, plus a `checksums.txt` line for
+// each, the same layout install.sh's SPACEDOCK_INSTALL_FROM=<dir> path consumes.
+// Both channels present at once is what makes the channel selection a real
+// CHOICE the tests can bind, rather than the only file in the directory.
 type installFixture struct {
-	dir         string // the dist dir to point SPACEDOCK_INSTALL_FROM at
-	tarballPath string // absolute path to the single os/arch tarball
-	asset       string // the tarball's basename
-	marker      string // the string the installed binary prints when run
-	checksum    string // the sha256 recorded in checksums.txt for the original tarball
+	dir          string // the dist dir to point SPACEDOCK_INSTALL_FROM at
+	tarballPath  string // absolute path to the stable (unsuffixed) os/arch tarball
+	asset        string // the stable tarball's basename
+	marker       string // the string the installed stable binary prints when run
+	checksum     string // the sha256 recorded in checksums.txt for the original stable tarball
+	edgePath     string // absolute path to the `_edge` os/arch tarball
+	edgeAsset    string // the `_edge` tarball's basename
+	edgeMarker   string // the string the installed edge binary prints — distinct from marker
+	edgeChecksum string // the sha256 recorded in checksums.txt for the original edge tarball
 }
 
-// buildInstallFixture writes a dist/ fixture under a fresh temp dir. The bare
-// `spacedock` payload is a tiny shell script that echoes a unique marker, so the
-// happy-path test can exec the installed file and confirm a RUNNABLE binary
-// landed (not just any file). checksums.txt is computed from the real tarball
-// bytes, so the gate's expected hash is correct until a test mutates the tarball.
+// buildInstallFixture writes a dist/ fixture under a fresh temp dir. Each bare
+// `spacedock` payload is a tiny shell script that echoes a unique marker, so a
+// test can exec the installed file and confirm a RUNNABLE binary landed (not
+// just any file) AND tell the two channels' binaries apart. checksums.txt is
+// computed from the real tarball bytes, so the gate's expected hashes are
+// correct until a test mutates a tarball.
 func buildInstallFixture(t *testing.T) installFixture {
 	t.Helper()
 	os, arch := goosArch(t)
 	dist := t.TempDir()
 
 	const marker = "spacedock-fixture-ran-ok"
+	const edgeMarker = "spacedock-edge-fixture-ran-ok"
 	// A bare executable `spacedock` at the archive root. A shell script is enough
 	// for install.sh (it `install`s the file 0755) and lets the test exec it.
 	binary := "#!/bin/sh\necho " + marker + "\n"
+	edgeBinary := "#!/bin/sh\necho " + edgeMarker + "\n"
 
 	asset := "spacedock_0.0.0_" + os + "_" + arch + ".tar.gz"
 	tarballPath := filepath.Join(dist, asset)
 	writeTarGz(t, tarballPath, "spacedock", []byte(binary))
 
+	edgeAsset := "spacedock_0.0.0_" + os + "_" + arch + "_edge.tar.gz"
+	edgePath := filepath.Join(dist, edgeAsset)
+	writeTarGz(t, edgePath, "spacedock", []byte(edgeBinary))
+
 	sum := sha256OfFile(t, tarballPath)
+	edgeSum := sha256OfFile(t, edgePath)
 	// goreleaser's checksums.txt format is `<sha256>␣␣<filename>`; install.sh
 	// parses it with `awk '$2 == filename {print $1}'`, so two space-separated
 	// fields suffice.
-	checksums := sum + "  " + asset + "\n"
+	checksums := sum + "  " + asset + "\n" + edgeSum + "  " + edgeAsset + "\n"
 	if err := osWriteFile(filepath.Join(dist, "checksums.txt"), checksums); err != nil {
 		t.Fatal(err)
 	}
 
-	return installFixture{dir: dist, tarballPath: tarballPath, asset: asset, marker: marker, checksum: sum}
+	return installFixture{
+		dir: dist, tarballPath: tarballPath, asset: asset, marker: marker, checksum: sum,
+		edgePath: edgePath, edgeAsset: edgeAsset, edgeMarker: edgeMarker, edgeChecksum: edgeSum,
+	}
 }
 
 // runInstall runs the given install.sh script against a dist fixture via the
 // SPACEDOCK_INSTALL_FROM local-dist override, installing into a fresh dir. It
-// returns the install dir and the script's exit code (0 on success). The env is
-// set explicitly (not scrubbed) because this path REQUIRES the override.
-func runInstall(t *testing.T, script, distDir string) (installDir string, exitCode int) {
+// returns the install dir and the script's exit code (0 on success). channel is
+// the SPACEDOCK_CHANNEL value; "" leaves it unset (the default-channel case).
+func runInstall(t *testing.T, script, distDir, channel string) (installDir string, exitCode int) {
 	t.Helper()
-	installDir = filepath.Join(t.TempDir(), "bin")
-	cmd := exec.Command("sh", script)
-	cmd.Env = append(scrubInstallEnv(),
-		"SPACEDOCK_INSTALL_FROM="+distDir,
-		"SPACEDOCK_INSTALL_DIR="+installDir,
-	)
-	out, err := cmd.CombinedOutput()
-	t.Logf("install.sh (%s) output:\n%s", filepath.Base(script), out)
-	if err == nil {
-		return installDir, 0
-	}
-	if ee, ok := err.(*exec.ExitError); ok {
-		return installDir, ee.ExitCode()
-	}
-	t.Fatalf("install.sh failed to launch: %v", err)
-	return installDir, -1
+	installDir, exitCode, _, _ = runInstallCapture(t, script, distDir, channel)
+	return installDir, exitCode
 }
 
 // TestChecksumGateInstallsAndRejectsTamper locks AC-1: install.sh's checksum gate
@@ -91,7 +95,7 @@ func TestChecksumGateInstallsAndRejectsTamper(t *testing.T) {
 	// passes and a runnable `spacedock` lands and prints its marker.
 	t.Run("happy path installs a runnable binary", func(t *testing.T) {
 		fx := buildInstallFixture(t)
-		installDir, code := runInstall(t, script, fx.dir)
+		installDir, code := runInstall(t, script, fx.dir, "")
 		if code != 0 {
 			t.Fatalf("happy-path install exited %d, want 0", code)
 		}
@@ -115,7 +119,7 @@ func TestChecksumGateInstallsAndRejectsTamper(t *testing.T) {
 		fx := buildInstallFixture(t)
 		tamperFixtureTarball(t, fx)
 
-		installDir, code := runInstall(t, script, fx.dir)
+		installDir, code := runInstall(t, script, fx.dir, "")
 		if code == 0 {
 			t.Fatal("install.sh accepted a tampered tarball (exit 0); the checksum gate is not fail-closed")
 		}
@@ -149,7 +153,7 @@ func TestChecksumGateGuardIsLoadBearing(t *testing.T) {
 	fx := buildInstallFixture(t)
 	tamperFixtureTarball(t, fx)
 
-	installDir, code := runInstall(t, gatelessScript, fx.dir)
+	installDir, code := runInstall(t, gatelessScript, fx.dir, "")
 	if code != 0 {
 		t.Fatalf("gateless install.sh exited %d on a tampered tarball; expected 0 (the strip should let the tamper through), so the live tamper test is NOT exercising the gate", code)
 	}

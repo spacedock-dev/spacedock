@@ -58,6 +58,33 @@ jobs:
             *) echo "::error::unexpected --version output: $ver"; exit 1 ;;
           esac
 
+      # Edge channel: the SAME snapshot dist carries BOTH channels' archives (the
+      # edge one suffixed `_edge`), so SPACEDOCK_CHANNEL=edge asserts the whole
+      # value property offline — the edge asset is selected AND the binary it
+      # lands is edge-stamped at the minor the first-officer boot gate requires.
+      # The required minor is read from the FO shared-core's own stamped literal,
+      # not hardcoded, so it tracks the release line. This leg also covers Linux,
+      # the platform with no other scripted edge binary path.
+      - name: Install the edge channel from local snapshot and run
+        run: |
+          set -euo pipefail
+          export SPACEDOCK_CHANNEL=edge
+          export SPACEDOCK_INSTALL_FROM="$PWD/dist"
+          export SPACEDOCK_INSTALL_DIR="$RUNNER_TEMP/sd-bin-edge"
+          sh ./install.sh
+          out="$("$SPACEDOCK_INSTALL_DIR/spacedock" --version)"
+          echo "$out"
+          want="$(sed -n 's/.*These skills require binary minor \([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' \
+            skills/first-officer/references/first-officer-shared-core.md)"
+          got="$(printf '%s\n' "$out" | head -n 1 | awk '{print $2}' | cut -d. -f1,2)"
+          if [ "$want" != "$got" ]; then
+            echo "::error::edge binary minor $got != the minor the FO boot gate requires ($want)"; exit 1
+          fi
+          case "$out" in
+            *"Channel: edge"*) echo "edge install ok: minor $got, edge-stamped" ;;
+            *) echo "::error::edge channel installed a binary that is not edge-stamped: $out"; exit 1 ;;
+          esac
+
       # Tamper case: corrupt the native-OS tarball so its sha256 no longer matches
       # checksums.txt, then assert install.sh exits NON-ZERO and installs nothing.
       # This keeps the checksum gate load-bearing — without it a swapped tarball

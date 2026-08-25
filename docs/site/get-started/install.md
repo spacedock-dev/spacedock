@@ -20,7 +20,23 @@ Pi. Install one of those first.
     curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh
     ```
 
-    Installs a checksum-verified binary to `~/.local/bin`.
+    Installs a checksum-verified binary to `~/.local/bin`. This is the stable
+    channel: it resolves the latest stable release and prints the tag it
+    resolved before it installs anything.
+
+    To track edge, set `SPACEDOCK_CHANNEL=edge`. Edge resolves the newest
+    release including prereleases, and installs the edge-stamped binary:
+
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | SPACEDOCK_CHANNEL=edge sh
+    ```
+
+    Match the channel to the skills you run. The edge plugin requires an
+    edge-line binary minor, so a stable binary with edge skills aborts at
+    first-officer boot. On macOS,
+    `brew install spacedock-dev/tap/spacedock@next` is the Homebrew
+    equivalent; casks are macOS-only, so on Linux this script is the only
+    edge path.
 
 ## Launch
 
@@ -47,7 +63,7 @@ Spacedock installs the relevant skills on launch. To install them manually:
 claude plugin marketplace add spacedock-dev/marketplace
 claude plugin install spacedock@spacedock
 
-# Edge (tracks next) — marketplace named `spacedock-edge`, entry still `spacedock`
+# Edge (tracks main) — marketplace named `spacedock-edge`, entry still `spacedock`
 claude plugin marketplace add spacedock-dev/marketplace@edge
 claude plugin install spacedock@spacedock-edge
 ```
