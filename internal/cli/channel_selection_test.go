@@ -45,21 +45,27 @@ func TestChannelMarketplaceFromDevBranch(t *testing.T) {
 // marketplace-repo source — no `@<branch>` shorthand. The plugin id suffix is the
 // marketplace NAME (the channel); the entry before the `@` is always `spacedock`.
 // The marketplace-update refresh targets the channel's marketplace name; no step
-// spells `marketplace remove`.
+// spells `marketplace remove`. wantSibling is the OTHER channel's id the sequence
+// must uninstall for channel exclusivity, spelled out per case as an independent
+// literal rather than computed from otherChannelMarketplace — a production
+// sequence that derived the sibling from the wrong side (uninstalling the channel
+// it just selected) would still satisfy a derived expectation.
 func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
 		channel         string
 		devBranch       string
 		wantID          string
+		wantSibling     string
 		wantMarketplace string
 	}{
-		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantMarketplace: "spacedock"},
-		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantMarketplace: "spacedock-edge"},
+		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantSibling: "spacedock@spacedock-edge", wantMarketplace: "spacedock"},
+		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantSibling: "spacedock@spacedock", wantMarketplace: "spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
 				{argv: []string{"plugin", "uninstall", tc.wantID}, tolerateExit: true},
+				{argv: []string{"plugin", "uninstall", tc.wantSibling}, tolerateExit: true},
 				{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "marketplace", "update", tc.wantMarketplace}, tolerateExit: true},

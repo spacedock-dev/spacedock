@@ -79,16 +79,7 @@ func TestInstallHintNoDrift(t *testing.T) {
 	}
 
 	// Arm 2: Homebrew tap+formula token equality.
-	var tap, formula string
-	for _, l := range installMDSection(t, lines, "macOS (Homebrew)") {
-		trimmed := strings.TrimSpace(l)
-		if strings.HasPrefix(trimmed, "brew tap ") {
-			tap = strings.TrimPrefix(trimmed, "brew tap ")
-		}
-		if strings.HasPrefix(trimmed, "brew install ") {
-			formula = strings.TrimPrefix(trimmed, "brew install ")
-		}
-	}
+	tap, formula := brewTokens(installMDSection(t, lines, "macOS (Homebrew)"))
 	if tap == "" || formula == "" {
 		t.Fatalf("install.md Homebrew tab lacks the two-line brew tap/install form (tap=%q formula=%q)", tap, formula)
 	}
@@ -98,4 +89,55 @@ func TestInstallHintNoDrift(t *testing.T) {
 	if oneLine := "brew install " + tap + "/" + formula; !strings.Contains(prose, oneLine) {
 		t.Fatalf("FO install-reference prose must also carry the one-line form %q", oneLine)
 	}
+}
+
+// TestInstallHintProductReadmeNoDrift binds the product README's Homebrew
+// commands to install.md's `macOS (Homebrew)` tab, the same token-equality shape
+// as arm 2 above with the README standing in for the FO prose. The README is the
+// last unguarded copy of the install commands — mkdocs.yml does not include it, so
+// the docs strict build never validates it — and it had already drifted
+// (`spacedock-dev/homebrew-tap` against install.md's `spacedock-dev/tap`; Homebrew
+// strips the `homebrew-` prefix, so both resolved and nothing caught it). This
+// compares two independent files that can diverge; it asserts nothing about what
+// the README's prose says.
+func TestInstallHintProductReadmeNoDrift(t *testing.T) {
+	root := repoRoot(t)
+	rawInstall, err := os.ReadFile(filepath.Join(root, "docs", "site", "get-started", "install.md"))
+	if err != nil {
+		t.Fatalf("read install.md: %v", err)
+	}
+	tap, formula := brewTokens(installMDSection(t, strings.Split(string(rawInstall), "\n"), "macOS (Homebrew)"))
+	if tap == "" || formula == "" {
+		t.Fatalf("install.md Homebrew tab lacks the two-line brew tap/install form (tap=%q formula=%q)", tap, formula)
+	}
+
+	rawReadme, err := os.ReadFile(filepath.Join(root, "README.md"))
+	if err != nil {
+		t.Fatalf("read README.md: %v", err)
+	}
+	readmeInstall := markdownSectionFromText(t, string(rawReadme), "## Install")
+	readmeTap, readmeFormula := brewTokens(strings.Split(readmeInstall, "\n"))
+	if readmeTap != tap {
+		t.Errorf("README.md's Install section names tap %q; install.md's Homebrew tab names %q", readmeTap, tap)
+	}
+	if readmeFormula != formula {
+		t.Errorf("README.md's Install section names formula %q; install.md's Homebrew tab names %q", readmeFormula, formula)
+	}
+}
+
+// brewTokens returns the tap and formula named by the last `brew tap` /
+// `brew install` lines in a section, ignoring indentation and comment lines (the
+// Homebrew tab documents the edge cask as a commented `# brew install …`). Empty
+// strings mean the section documents no such command.
+func brewTokens(section []string) (tap, formula string) {
+	for _, l := range section {
+		trimmed := strings.TrimSpace(l)
+		if strings.HasPrefix(trimmed, "brew tap ") {
+			tap = strings.TrimPrefix(trimmed, "brew tap ")
+		}
+		if strings.HasPrefix(trimmed, "brew install ") {
+			formula = strings.TrimPrefix(trimmed, "brew install ")
+		}
+	}
+	return tap, formula
 }

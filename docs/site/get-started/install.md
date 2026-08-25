@@ -81,6 +81,13 @@ the `@edge` branch (named `spacedock-edge`) — so the `@edge` ref is what regis
 the `spacedock-edge` marketplace the edge entry resolves from. Codex installs the
 same way with `codex plugin add`.
 
+`spacedock install --host claude` and `spacedock install --host codex` keep exactly
+one channel installed per host: the selected channel's plugin replaces any
+co-installed stable or edge Spacedock plugin. Both channels ship the entry name
+`spacedock` and the same skill names, so leaving both installed makes which one
+serves unpredictable. Installing a channel by hand with the commands above does not
+remove the other; the next `spacedock install` — or the launcher's auto-install — does.
+
 Set `SPACEDOCK_MARKETPLACE_SOURCE` to install from a local or alternate
 marketplace instead of the default `spacedock-dev/marketplace` — useful for
 dogfooding a marketplace change before it reaches the production marketplace:
