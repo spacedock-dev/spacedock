@@ -298,3 +298,11 @@ Four things the reviewer should look at rather than take on trust. First, net LO
 ### Summary
 
 Verdict recommendation: PASSED once the one-line next-id restore is authorized and applied (or the captain explicitly accepts the strike on GitHub); every other check is green. The binding evidence reproduces exactly - subtotal -3,210 B in band, the move byte-identical with all three cross-references resolving, the AC-3 guard re-red three ways and restored, contractlint/build/vet green at the tip. The LOC breach is test-side estimate variance on a metric the ideation itself declared non-binding: recommend Polish. AC-1's live A/B stays unmeasured by ruling, with the byte-derived expectation recorded as an estimate, never as the measurement.
+
+### Correction round 1: next-id prohibition restored (FO-authorized fix)
+
+Validation confirmed the strike this report's second review item flagged: the `fo-write-core.md` next-id cut removed the prohibition, not just its rationale, and the substance does not survive at `## ID Styles`. The surviving text is concurrency-conditioned hazard framing — a single-writer reader can judge the preview window harmless and land the forbidden two-step without contradicting any of it.
+
+Commit `360e4afb9` reinstates one line at `## ID Styles`: "Do NOT pair `--next-id` with a hand-written file — `new` is the path; `--next-id` is candidate-preview only." Placed there rather than back in FO Write Scope, so the rule sits once at its natural home instead of restoring the duplication the audit named.
+
+Updated figures. `fo-write-core.md` 7,001 -> 7,112 B (+111), now -531 B against the parent rather than -642. **Contract subtotal -3,099 B** (was -3,210), still inside the -3,693 +/-800 band. The boot-resident core is unchanged at **22,545 B** — `fo-write-core.md` is a deferred, non-boot file, so AC-1's mechanism and the 23,500 B cap are untouched. Unfiltered `go test ./...` green except the known machine-local `TestCodexResolveManifestAgainstInstalledHost`, unchanged from the pre-restore run and still reproducing at the parent. No test binds the restored sentence; `grep -c` confirms it appears exactly once.
