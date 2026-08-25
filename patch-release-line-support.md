@@ -56,6 +56,17 @@ gates:
                 digest: sha256:89b23eb78b5eb31796828e6034d05d27c688975edf40f3955c32b458a755ac17
                 request-digest: sha256:c87923fce8ffe087cadb5ee9fee43018caa633890c3b8c1fc71976c3c9684f94
                 room-ref: ./patch-release-line-support/review/ideation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d0g21c517b5nvga1ybwckapk:ideation:2
+                briefing: briefing:d0g21c517b5nvga1ybwckapk:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-25T22:30:43.46659Z"
+                decision: approve
+                reason: 'Captain chat 2026-08-25: ''approve d0 onto 760 stack'' — accepts the trimmed lean cut at the +281 baseline; implementation delivers as a stacked layer on PR #760''s branch'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 **LEAN CUT (captain ruling, 2026-08-25).** Stop the release-line cut that silently regresses the
