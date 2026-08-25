@@ -407,9 +407,15 @@ patch-line cut, not after.
 
 ## Documentation diff
 
-All new and changed prose follows ASD-STE100 per the workflow README's Prose style section. New
-`release.yml` comments and Go doc comments follow it too; the moved stamp step's existing comment
-block converts as this task touches it.
+`docs/releasing.md` is user-facing documentation, so every "After" block below follows ASD-STE100 per
+the workflow README's Prose style section. The text was checked with the `simple-english` rule
+catalog, not merely declared compliant: the first draft of this section broke Rule 8.1 (a semicolon),
+Rule 6.3 (two sentences at 26 and 32 words), Rule 6.6 (a seven-sentence paragraph), Rule 3.6 (a
+passive with a known agent), and GR-1 (a dropped "that"). The blocks below are the corrected text and
+are ready to paste. New `release.yml` comments and Go doc comments follow the same rules. The moved
+stamp step's existing comment block converts as this task touches it, per the README's
+convert-on-touch clause. This task body itself is workflow state, not user-facing documentation, so
+it is out of the rule's scope.
 
 **1. `docs/releasing.md`, "What the Tag Push Does" — replace the stamp bullet.**
 
@@ -420,34 +426,78 @@ Before:
 ```
 After:
 ```
-- advances the stable channel ref to the tagged commit, but only when the tag is
-  newer than the release `stable` currently serves (see "Advancing the Stable
-  Channel" below);
-- on a latest-line stable tag only, stamps `main`'s plugin manifests and the FO
-  prose pin to the auto-cut `X.(Y+1).0-pre0` version. An old-line patch tag does
-  not touch `main`.
+- advances the stable channel ref to the tagged commit. The run advances the ref
+  only when the tag is newer than the release that `stable` serves. See
+  "Advancing the Stable Channel" below.
+- stamps the plugin manifests and the FO prose pin on `main`, but only on a
+  latest-line stable tag. The stamp writes the auto-cut `X.(Y+1).0-pre0` version.
+  An old-line patch tag does not touch `main`.
 ```
 
 **2. Replace the paragraph beginning "The stable entry is NOT repointed per release" (lines 40-46).**
-The `git push origin "$RELEASE_COMMIT:refs/heads/stable"` sentence becomes: the run reads the version
-`stable` currently serves, advances only when the tag is newer, and uses a lease so a patch line and
-a later minor can both reach the channel. Keep the "no marketplace-repo commit" point unchanged.
+
+After:
+```
+The stable entry is NOT repointed per release by a hand-edit in the marketplace
+repo. `stable` is a MOVING BRANCH in this repo. After the tag fires, release.yml
+reads the version that `stable` serves now. The run advances `stable` to the
+tagged commit only when the tag is newer than that version. The push uses a
+lease, so a patch line and a later minor can both reach the channel.
+
+A fresh `spacedock@spacedock` install resolves whatever `stable` points at. That
+push is what publishes the release to the stable channel. No marketplace-repo
+commit is necessary.
+```
 
 **3. Replace the paragraph beginning "The post-tag manifest stamp is idempotent" (lines 48-51).**
-This is now false: the stamp writes the pre0 version, which always differs from the tagged commit's
-version, so a latest-line cut always commits. After: "The post-tag stamp always makes a commit on a
-latest-line cut, because it writes the next prerelease version and the tagged commit carries the
-release version. An old-line tag makes no commit."
+The current text is now false. The stamp writes the pre0 version, which always differs from the
+tagged commit's version.
+
+After:
+```
+The post-tag stamp always makes a commit on a latest-line cut. The stamp writes
+the next prerelease version, and the tagged commit carries the release version.
+An old-line tag makes no commit.
+```
 
 **4. Delete step 9 entirely (lines 183-197), renumber step 10 to step 9.**
 
-**5. "Advancing the Edge Line" — extend both bullets.** The latest-line bullet gains: after the pre0
-run is verified, the same job stamps `main`'s manifests and FO pin to the pre0 version, so an edge
-install passes the FO version gate with no human step. The old-line bullet gains: the same decision
-also holds the `main` stamp, so an old-line tag cannot move `main` backwards.
+**5. "Advancing the Edge Line" — extend both bullets.**
 
-**6. New section "Advancing the Stable Channel"** after "Advancing the Edge Line": states the version
-gate, the lease, the skip notice, and the first-release case where the ref does not exist yet.
+Add to the latest-line bullet:
+```
+After the job verifies the pre0 run, the same job stamps the manifests and the
+FO pin on `main` to the pre0 version. An edge install then passes the FO version
+gate with no human step.
+```
+Add to the old-line bullet:
+```
+The same decision also gates the `main` stamp. An old-line tag cannot move
+`main` backwards.
+```
+
+**6. New section "Advancing the Stable Channel"**, after "Advancing the Edge Line".
+
+After:
+```
+## Advancing the Stable Channel
+
+The `stable` branch is the source that the stable marketplace entry resolves. A
+release run advances the branch only when the tag is newer than the release that
+`stable` serves now.
+
+- The run fetches `stable` and reads the version in its
+  `.claude-plugin/plugin.json`.
+- If the tag is not newer, the run writes a `::notice::` and makes no change.
+  The stable channel keeps the newer release.
+- If the tag is newer, the run pushes the tagged commit to `stable` with
+  `--force-with-lease`. The lease holds the SHA that the run read. If `stable`
+  moves during the run, the push stops.
+- A patch line leaves the history of `main`. The lease is what lets the next
+  latest-line release move `stable` back onto the history of `main`.
+- On the first stable release the `stable` ref does not exist yet. The run
+  creates the ref with a plain push.
+```
 
 ## Stage Report: ideation
 
@@ -456,7 +506,8 @@ gate, the lease, the skip notice, and the first-release case where the ref does 
 - DONE: Riskiest unverified mechanism exercised first and recorded in the task body (for example: what the stable-ref push actually does with a release-branch commit against a frozen stable ref; what the auto-pre0 tag job stamps today), or an auditable `no spike needed: {proven mechanisms}` line.
   `## Risk evidence` — a 7-test bare-origin fixture spike REFUTED the seed's premise, plus a decision-helper spike over the real 71-tag pool; both re-runnable, script path recorded.
 - DONE: Entity-level AC set with a value-measuring AC against a failing-today baseline; a sequencing section presenting v0.27.1-from-release-branch (cherry-pick the #760 fix) versus fold-into-v0.28.0 for the captain to rule at the gate; net-LOC estimate with tolerance; path-to-lane call (.github/** is release machinery — the detached adversarial audit's four-surface trigger applies); all comments and user-facing doc text follow ASD-STE100 per the workflow README's Prose style section.
-  AC-1/2/3 each measure resulting on-disk state with the same-replay-on-current-release.yml as the failing baseline and a named falsifying change; AC-3's baseline is the measured 6m18s / one-hand-commit v0.27.0 outage. `## Sequencing decision for the captain`, `## Expected surface and tolerance` (net +350 ±30%, 9 files ±2, six declared semantic changes), `## Path-to-lane call` (audit required, no live lane), `## Documentation diff` (six numbered before/after items, STE).
+  AC-1/2/3 each measure resulting on-disk state with the same-replay-on-current-release.yml as the failing baseline and a named falsifying change; AC-3's baseline is the measured 6m18s / one-hand-commit v0.27.0 outage. `## Sequencing decision for the captain`, `## Expected surface and tolerance` (net +350 ±30%, 9 files ±2, six declared semantic changes), `## Path-to-lane call` (audit required, no live lane), `## Documentation diff` (six numbered before/after items).
+  ASD-STE100: the six proposed doc-text blocks were CHECKED against the `simple-english` catalog, not declared compliant. The first draft broke five rules (8.1 semicolon, 6.3 twice at 26 and 32 words, 6.6 seven-sentence paragraph, 3.6 passive, GR-1 dropped "that"); all are corrected. The checker was falsified against the pre-fix text and reds on it, so a clean result is not vacuous.
 
 ### Summary
 
@@ -478,3 +529,10 @@ the replay harness, and the seed counted machinery only. Second, #760 is still O
 is only at ideation, so no v0.27.1 is cuttable today regardless of the ruling — and cutting one on
 today's machinery would stamp `main` DOWN to 0.27.1 and break every edge user, so this task ships
 before any patch-line cut either way.
+
+One correction round after the completion signal, before any gate briefing was prepared, so the
+body-freeze rule did not bind. The FO relayed today's ASD-STE100 ruling; my first draft had ASSERTED
+compliance without checking, and the check found five real violations in the proposed
+`docs/releasing.md` text. That is the same failure this workflow's proof policy names — treating a
+claim as proven because I wrote it down. Corrected, and the check itself was falsified so it can
+fail.
