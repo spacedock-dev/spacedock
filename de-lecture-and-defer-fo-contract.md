@@ -61,6 +61,17 @@ gates:
                 digest: sha256:bdc71b034e6dfd5fdaa1cbf4bb300714650984aa6bdc775af46a1b747738f7dd
                 request-digest: sha256:a8b503b0e3bf73c175bfb24e95ff4b676acd8ba4fc9867d422e4103666307e67
                 room-ref: ./de-lecture-and-defer-fo-contract/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wn3dg7txnrte0jrcxf56b859:validation:1
+                briefing: briefing:wn3dg7txnrte0jrcxf56b859:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T03:30:23.593469Z"
+                decision: approve
+                reason: 'Captain CL in chat 2026-08-25: ''approved'' at validation attempt-1 (digest bdc71b03) - accepts PASSED with the Polish LOC classification and the named AC-1 residual'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Two movements over the FO contract with one lens: the contract carries rules and commands; rationale, narration, design history, and repeated justification live in entity bodies and tests. Movement 1 (delete): the 2026-08-24 FO audit enumerated the lecture, file by file. Movement 2 (defer, folded from s6q): move boot-unreachable shared-core sections behind their existing triggers, measured by boot occupancy in tokens (s6q's archived body carries the full measured profile: shared core ~10.1k tok of a 40.4k greet boot; candidate span 9,105 of 26,092 bytes = 35%).
