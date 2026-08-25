@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7p4vxcb9edzrph0zsfn75cd9:validation:attempt-2:revision-1",
+  "question": "Accept validation cycle 3's PASSED recommendation and deliver the corrected candidate (4b5b4073a) to merge via PR #760?",
+  "artifacts": [
+    {
+      "id": "artifact:7p4vxcb9edzrph0zsfn75cd9:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/47da3ee559af094810342c618f07776ea68f7d29/claude-install-sibling-channel-cleanup/index.md",
+      "rev": "sha256:715f08448b1b6ddb0e9575f6ac473977beac544f2009ae10f6dedfd192d5bed9",
+      "mediaType": "text/markdown",
+      "summary": "Fresh validator, delta-scoped honestly: AST comparison proved the two correction commits are comment/doc-text only (all six Go files byte-identical code), so cycle 1's audit and live bug reproduction stand; re-run fresh were the live value test (PASS 3/3 no SKIP vs claude 2.1.226), both drift arms, both suites (exit 0), and mkdocs build --strict exit 0 — closing the lane implementation could not run in any round. STE spot-checks clean over all 74 added lines; the cut leaves only facts adjacent code cannot show (judgment call ruled correct); surface net +147 across 8 files, inside the approved +167±55 band — the cycle-1 breach closed by deletion. Recommendation PASSED; no material or polish findings; two deferred risks carried unchanged with promote conditions."
+    }
+  ]
+}
