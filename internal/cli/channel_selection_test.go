@@ -38,18 +38,22 @@ func TestChannelMarketplaceFromDevBranch(t *testing.T) {
 	}
 }
 
-// TestClaudeChannelInstallArgvSequence is AC-3's claude half: with marketplaceSource
-// repointed to the marketplace repo and devBranch set per channel, the issued
-// claude install argv installs the channel-correct id (`spacedock@spacedock` stable
-// / `spacedock@spacedock-edge` edge) and the marketplace add carries the BARE
-// marketplace-repo source — no `@<branch>` shorthand. The plugin id suffix is the
-// marketplace NAME (the channel); the entry before the `@` is always `spacedock`.
-// The marketplace-update refresh targets the channel's marketplace name; no step
-// spells `marketplace remove`. wantSibling is the OTHER channel's id the sequence
-// must uninstall for channel exclusivity, spelled out per case as an independent
-// literal rather than computed from otherChannelMarketplace — a production
-// sequence that derived the sibling from the wrong side (uninstalling the channel
-// it just selected) would still satisfy a derived expectation.
+// TestClaudeChannelInstallArgvSequence is the claude half of AC-3.
+// marketplaceSource points at the marketplace repo, and devBranch selects the
+// channel. The claude install argv then installs the correct id for the channel:
+// `spacedock@spacedock` for stable and `spacedock@spacedock-edge` for edge. The
+// marketplace add carries the bare marketplace-repo source, with no `@<branch>`
+// shorthand.
+//
+// The suffix of the plugin id is the marketplace name, which is the channel. The
+// entry name before the `@` is always `spacedock`. The marketplace update targets
+// the marketplace name of the channel. No step uses `marketplace remove`.
+//
+// wantSibling is the id of the other channel, which the sequence must uninstall to
+// keep one channel on the host. Each case spells this id as an independent literal.
+// It does not come from otherChannelMarketplace. A production sequence that takes
+// the sibling from the wrong side still satisfies a derived expectation. That fault
+// uninstalls the channel that the sequence just selected.
 func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
 		channel         string

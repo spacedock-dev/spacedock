@@ -91,15 +91,19 @@ func TestInstallHintNoDrift(t *testing.T) {
 	}
 }
 
-// TestInstallHintProductReadmeNoDrift binds the product README's Homebrew
-// commands to install.md's `macOS (Homebrew)` tab, the same token-equality shape
-// as arm 2 above with the README standing in for the FO prose. The README is the
-// last unguarded copy of the install commands — mkdocs.yml does not include it, so
-// the docs strict build never validates it — and it had already drifted
-// (`spacedock-dev/homebrew-tap` against install.md's `spacedock-dev/tap`; Homebrew
-// strips the `homebrew-` prefix, so both resolved and nothing caught it). This
-// compares two independent files that can diverge; it asserts nothing about what
-// the README's prose says.
+// TestInstallHintProductReadmeNoDrift binds the Homebrew commands of the product
+// README to the `macOS (Homebrew)` tab of install.md. It uses the same token
+// equality as arm 2 above, with the README in place of the FO prose.
+//
+// The README holds the last copy of the install commands that no test protects.
+// mkdocs.yml does not include the README, so the docs strict build never reads it.
+// The two files diverged before this test: the README named
+// `spacedock-dev/homebrew-tap` and install.md named `spacedock-dev/tap`. Homebrew
+// removes the `homebrew-` prefix, so both names resolved and no reader found the
+// difference.
+//
+// This test compares two independent files that can diverge. It asserts nothing
+// about the prose of the README.
 func TestInstallHintProductReadmeNoDrift(t *testing.T) {
 	root := repoRoot(t)
 	rawInstall, err := os.ReadFile(filepath.Join(root, "docs", "site", "get-started", "install.md"))
@@ -125,10 +129,10 @@ func TestInstallHintProductReadmeNoDrift(t *testing.T) {
 	}
 }
 
-// brewTokens returns the tap and formula named by the last `brew tap` /
-// `brew install` lines in a section, ignoring indentation and comment lines (the
-// Homebrew tab documents the edge cask as a commented `# brew install …`). Empty
-// strings mean the section documents no such command.
+// brewTokens returns the tap and the formula from the last `brew tap` line and the
+// last `brew install` line of a section. It removes the indentation and it ignores
+// comment lines. The Homebrew tab gives the edge cask as a comment line that starts
+// with `# brew install`. An empty string shows that the section has no such command.
 func brewTokens(section []string) (tap, formula string) {
 	for _, l := range section {
 		trimmed := strings.TrimSpace(l)

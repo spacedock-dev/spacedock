@@ -64,12 +64,11 @@ brew tap spacedock-dev/tap
 brew install spacedock
 ```
 
-These commands install the **stable** channel, and the first launch below
-installs the matching stable plugin. Spacedock also ships an **edge** channel
-that tracks prereleases. The channel is chosen at install time, not with a flag
-later, so if you want edge — or you are matching a teammate who runs it — start
-from the [install guide](docs/site/get-started/install.md) instead of the
-commands above.
+These commands install the **stable** channel. The first launch below installs the
+stable plugin that matches it. Spacedock also has an **edge** channel that follows
+the prereleases. You select the channel at install time, not with a flag
+afterwards. If you want edge, or your teammate runs edge, start from the
+[install guide](docs/site/get-started/install.md) instead of the commands above.
 
 Then launch. The first launch sets up the plugin for you, so a single line gets
 you a working session. Point it at a project you already have and let it survey:
