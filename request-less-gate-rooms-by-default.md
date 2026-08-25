@@ -7,7 +7,7 @@ started: 2026-08-25T17:27:46Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-request-less-gate-rooms-by-default
 issue:
 pr:
 mod-block:
