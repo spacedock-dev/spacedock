@@ -90,6 +90,17 @@ gates:
                 digest: sha256:ea3eddf1574759b33e53c114ff607ca20b0a48e43c3c3b3df8d7476930ddf8bd
                 request-digest: sha256:3e5f9221b2a3b5fd486b579a15f19331982cc7f081f7d9ce504388fd061324a6
                 room-ref: ./review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:7p4vxcb9edzrph0zsfn75cd9:validation:2
+                briefing: briefing:7p4vxcb9edzrph0zsfn75cd9:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-25T20:54:57.096619Z"
+                decision: approve
+                reason: 'Captain chat 2026-08-25: ''approve'' on validation attempt-2 — accepts cycle-3 PASSED on the corrected candidate 4b5b4073a; deliver via PR #760'
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:7p4vxcb9edzrph0zsfn75cd9:validation:2
     stage: validation
