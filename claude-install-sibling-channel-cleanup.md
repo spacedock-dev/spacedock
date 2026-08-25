@@ -758,3 +758,55 @@ paragraph in `## Skills` is outside the `macOS (Homebrew)` tab it reads. No coll
 and the test plan says to confirm it in the ordering rather than trust this note.
 
 The doctor cut is unchanged and remains the one open thread from round 1.
+
+## Stage Report: implementation
+
+- DONE: The tolerated sibling-uninstall step at position 2 of installArgvSequence with its updated sequence doc comment.
+  `host_exec.go:417` — `{argv: []string{"plugin", "uninstall", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true}`; comment now says 6-command, four tolerated cleanup steps, and carries the sibling/no-cascade rationale (commit b56e218a0).
+- DONE: The literal-argv test extensions where the sibling id is a per-channel LITERAL that can diverge from otherChannelMarketplace.
+  `TestInstallArgvSequence` spells `spacedock@spacedock` in wantEdge and `spacedock@spacedock-edge` in wantStable; `TestClaudeChannelInstallArgvSequence` gains a `wantSibling` table field with both literals. Deriving the sibling from the selected channel (so stable uninstalls itself) fails both. The three `TestInstallTolerates…` marker lists each gained the new step.
+- DONE: The new claude-on-PATH value test with the two-channel local marketplace fixture (three subtests: sibling-present, fresh-box, reverse).
+  `internal/cli/sibling_channel_exclusive_test.go` — `TestClaudeInstallLeavesOnlySelectedChannelEnabled` drives `execHost{}.Install` against two local directory marketplaces named `spacedock` / `spacedock-edge`, counting enabled `spacedock@*` entries in claude's own `plugin list --json`.
+- DONE: The install.md exclusivity paragraph.
+  `docs/site/get-started/install.md` +7, inserted after the "Codex installs the same way" paragraph as designed.
+- DONE: The README posture (b) diff (stable label, install-guide pointer, tap token normalized).
+  README.md +9/-2, exactly the designed diff.
+- DONE: The AC-5 contractlint drift arm (captain kept it).
+  `TestInstallHintProductReadmeNoDrift` extracts tap/formula from install.md's Homebrew tab and compares them to the README's `## Install` section.
+- DONE: Proof run — the AC-5 drift arm recorded RED against the pre-change README first, then green after the README edit.
+  RED: `install_hint_drift_test.go:121: README.md's Install section names tap "spacedock-dev/homebrew-tap"; install.md's Homebrew tab names "spacedock-dev/tap"` → `--- FAIL: TestInstallHintProductReadmeNoDrift`. Green after the edit. Re-proved RED a second time against the FINAL arm implementation (by reverting only the README token), because the first RED predated the dedup refactor below.
+- DONE: Proof run — the value test run locally with claude on PATH, output pasted (a SKIP is a failure).
+  `go test ./internal/cli -run TestClaudeInstallLeavesOnlySelectedChannelEnabled -count=1 -v` against claude 2.1.226: `--- PASS (9.47s)` with `sibling-present (3.64s)`, `fresh-box (2.28s)`, `reverse (3.55s)` all PASS. No SKIP. Falsification RUN, not asserted: deleting the sibling step made it report `enabled spacedock plugins after install = [spacedock@spacedock spacedock@spacedock-edge]` for sibling-present and reverse (fresh-box still passed, as predicted); step restored and re-verified green.
+- DONE: Proof run — go test ./... and go test ./... -race green; gofmt -w ./cmd ./internal clean.
+  Both run on the FINAL tree after the refactor: `go test ./... exit=0`; `go test ./... -race` exit=0 (all 21 packages ok). gofmt reports nothing for every file in the diff. One pre-existing unformatted file, `internal/release/runtime_live_evidence_workflow_test.go`, is also unformatted at HEAD and outside this surface — deliberately left alone rather than swept into this diff.
+- DONE: Surface stays within the approved baseline net +167 across 8 files (tolerance ±55 LOC / ±1 file) with only the declared semantic changes.
+  Final: net **+212 across 8 files** (+45 vs baseline, inside the ±55 band; file count exactly on baseline). First measurement came in at +244 (22 past the band) — see Summary for what changed and why it was not absorbed silently.
+- DONE: Deliverable committed on the worktree branch with a summary of what was produced and where.
+  Commit `b56e218a0` on `spacedock-ensign/claude-install-sibling-channel-cleanup`.
+
+### Summary
+
+The 6-line production fix landed as designed; every spike prediction held against
+the live host. The value test earns its keep: with the sibling step deleted it
+counts 2 enabled plugins in both sibling directions and 1 on a fresh box, which is
+the captain's bug reproduced and the exact discrimination AC-1 asked for — so the
+green result is not a tautology. The install.md edit does not disturb AC-5's arm
+(confirmed by running the arm after that edit, per the cross-half note), because
+`installMDSection` stops at the next `## ` heading.
+
+Two deviations worth the gate's attention. First, the initial surface was +244
+across 8 files, 22 LOC past the approved band. Rather than absorb it quietly or
+trim comments to fit, I removed real duplication: the brew tap/formula scan is now
+one `brewTokens` helper shared by the existing arm 2 and the new arm, the README
+section scan reuses the package's existing `markdownSectionFromText`, and a
+single-use fixture wrapper was inlined. That brought it to +212 — inside tolerance
+on the merits, not by golfing. Second, because that refactor changed the arm after
+its first RED run, I re-ran the red-then-green sequence against the shipped
+implementation; a red recorded against code that was later rewritten would not
+satisfy AC-5's obligation.
+
+Not done here, flagged for validation: `mkdocs build --strict` — mkdocs is not on
+this machine, and per the no-hidden-machine-dependencies rule I am not claiming a
+lane I did not run. The install.md change is a plain paragraph with inline code
+spans and no new links or nav entries. The doctor follow-up remains unfiled and is
+still the one open thread.
