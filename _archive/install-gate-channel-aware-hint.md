@@ -1,11 +1,11 @@
 ---
 id: p1tgy61tbhxj9apvpswqbhcy
 title: The skill-first install hint is channel-blind - an edge plugin tells the user to install the stable binary its own version gate then rejects
-status: validation
+status: done
 source: "Captain CL in chat, 2026-08-24, reviewing install-sh-edge-prerelease-parity (#756): 'does it work for the skill-first journey that tells the user to run it?' - it does not; follow-up scoped to the skill hint path #756 could not reach"
 started: 2026-08-24T19:20:28Z
-completed:
-verdict:
+completed: 2026-08-25T04:43:16Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-install-gate-channel-aware-hint
 issue:
@@ -71,9 +71,10 @@ gates:
                 reason: 'Captain CL in chat 2026-08-24: ''p1t - approve'' at validation attempt-1 (digest 2104a34a) - accepts PASSED with the three deferred risks and their promote-conditions'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:757
+archived: 2026-08-25T04:43:16Z
 ---
 
 install.sh now takes SPACEDOCK_CHANNEL (#756), but the skill-first journey never uses it. The FO binary-absent gate (first-officer-shared-core.md:10) hints the channel-less `curl ... | sh` on Linux and plain brew on macOS; fo-install-gate.md has zero channel awareness. On an edge-channel plugin install the journey self-defeats: the skills pin "binary minor 0.27" (prerelease-only until 0.27 goes stable), the hinted command installs stable v0.26.0, and the same gate then aborts on the binary it just told the user to install - the fresh-VM trap of 2026-08-24, surviving in the path that tells humans what to run.
