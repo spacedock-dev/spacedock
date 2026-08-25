@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rx3daftacggfmw1pt2febw31:ideation:attempt-2:revision-1",
+  "question": "Approve the one-shape reset ideation — one canonical Briefing file per room (index.json for new rooms), request.json retired everywhere, no new command surface, q0 amendment exercised against real code — at production +70 (±25) plus proof +330 (±80)?",
+  "artifacts": [
+    {
+      "id": "artifact:rx3daftacggfmw1pt2febw31:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/5b1db15715da1a8b9386ed5f134bcc7a7ee6e3f6/request-less-gate-rooms-by-default.md",
+      "rev": "sha256:695f596a7f12c7293548585234c07462b95c6d1e9e78602ab3f8ed5dff1519f5",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 reset per the captain's one-shape ruling. Seven mechanisms, four salvaged from the retired fork (312fa3f95); the --provider flag, channel plumbing, replay-decline check, and doubled matrix are deleted unbuilt; command grammar now unchanged. The riskiest claim exercised first: an amended q0 preflight written against spacedock-subspace internal/gateroom at 75ef1a2, run on rooms minted by the real CLI — accepts all three live shapes, derives identity identical to today's request-read values, recomputed digest equals the bound digest. Run 7/8 finding shaped the design: the preflight ACCEPTS a tampered Briefing (recomputation cannot detect tampering) while the recorder refuses the same bytes — so the recorder-as-authority-wall is load-bearing, stated in the design, added to the spec as a new paragraph, and tested by AC-3. Eight before/after doc diffs including five in the captain-required spec. Estimate split per the new discipline: production +70/5 files ±25/±2; proof +330/7 files ±80/±2, calibrated against cycle 1's measured +611. One recorded deviation: the authority-wall siting read as the recorder's existing validation, no --room surface added (a literal flag would need a captain decision reversing a v1 exclusion). Entity retitled to match the one-shape design."
+    }
+  ]
+}
