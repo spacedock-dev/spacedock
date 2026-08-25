@@ -47,6 +47,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-25T15:09:29.517214Z"
                 reason: 'Captain amendment 2026-08-25: fold the product README edge-channel deliverable into this task; design re-gates after the fold'
+            - id: gate-attempt:7p4vxcb9edzrph0zsfn75cd9-ideation-2
+              briefing:
+                id: briefing:7p4vxcb9edzrph0zsfn75cd9:ideation:attempt-2:revision-1
+                digest: sha256:2190d896a3e95805a7db88cbb1dd7fef4b9151ecfbf23837282b72fdf2d90f0b
+                request-digest: sha256:1f7af3722d949c1b4e5e2a2101f68577e3b01fa80245bae62689cc52d1bc36d8
+                room-ref: ./claude-install-sibling-channel-cleanup/review/ideation/briefing-2
 ---
 
 `spacedock install --host claude` never uninstalls the sibling channel's modern plugin id. A stable install on a machine that already has `spacedock@spacedock-edge` (or the reverse) leaves BOTH channel plugins installed and enabled. Both are entry `spacedock` shipping the same skill set, so which provider serves is unpredictable. Mirror the codex sequence's sibling-channel remove.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7p4vxcb9edzrph0zsfn75cd9:ideation:attempt-2:revision-1",
+  "question": "Approve the folded ideation design — install sibling-uninstall fix plus the README posture (b) edge-channel label — and rule on keeping or dropping the separable AC-5 contractlint drift arm?",
+  "artifacts": [
+    {
+      "id": "artifact:7p4vxcb9edzrph0zsfn75cd9:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/4ebbf0073782acb6519439578a25eec8cc15698e/claude-install-sibling-channel-cleanup.md",
+      "rev": "sha256:bd92fb31a085ccbdff6d6ecc9fb49a59366a326ae8e83a509f336b943ce1c069",
+      "mediaType": "text/markdown",
+      "summary": "Folded design per captain ruling (no doc-only task). Install half unchanged from briefing-1: one tolerated sibling-uninstall step at position 2 mirroring codex, doctor split out to filed follow-up, seven-item live spike, value AC counts enabled spacedock@* entries in claude's own plugin list (2 today -\u003e 1). README half folded from the superseded task: posture (b) diff (stable label + install-guide pointer, tap token normalized), AC-4 value baseline re-verified against the working tree, README spike evidence carried with its honest limit. Combined estimate net +167 across 8 files, tolerance ±55/±1 (subtotals +130/6 install, +37/2 README); alternate baseline net +137/7 if AC-5 drops. Fold consequences surfaced: the README half loses its small-change fast path (whole deliverable now carries full validation + detached adversarial audit, front-door surface); mkdocs strict build does not cover README.md, so AC-5's drift arm is the README's only mechanical guard — sharpening but not settling the necessity question. claude-live not required; detached audit required on both triggers, scoped at the install half."
+    }
+  ]
+}
