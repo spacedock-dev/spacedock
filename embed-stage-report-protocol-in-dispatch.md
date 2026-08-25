@@ -15,6 +15,17 @@ gates:
                 digest: sha256:e0f39a8f65f844ee0ee6111067ffed3fd4c9fce97862567591001bd1e52c8b1f
                 request-digest: sha256:7c11d27c46f2d428b7f1f5f7b67b75645e3b5b84f106d283e0ea7b8294b5a86f
                 room-ref: ./embed-stage-report-protocol-in-dispatch/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:t4rqqmmrqh69adgb1bbdx838:backlog:1
+                briefing: briefing:t4rqqmmrqh69adgb1bbdx838:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T20:19:55.599104Z"
+                decision: approve
+                reason: 'Captain approve: live-reproduced artifact-body gap on v0.28.0-pre0; scope matches the archived pin-ensign-contract-entry-point neighbor and the systemic self-describing-checklist coverage hole; direction accepted for ideation.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The dispatch artifact must carry the stage-report protocol so a worker writes a complete `## Stage Report:` section on a real dispatch, not only when a smoke-checklist tells it to.
