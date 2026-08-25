@@ -1,7 +1,7 @@
 ---
 id: dt8j3pas83725fma2wbez5ss
 title: Product README documents no edge channel path
-status: backlog
+status: ideation
 source: "Captain CL work-machine report 2026-08-25: README at v0.27.0 documents only brew tap/install (stable); someone following it for edge parity lands on stable and loses parity silently"
 started:
 completed:
@@ -33,7 +33,7 @@ gates:
                 reason: 'Captain chat 2026-08-25: ''file and dispatch'' — approved seeding and immediate dispatch of this task into design; README posture decision reserved to the captain at the ideation gate'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The product README's install section documents only `brew tap spacedock-dev/homebrew-tap` + `brew install spacedock` — the stable channel. No edge cask, no `SPACEDOCK_CHANNEL=edge`, no pointer to the edge marketplace. A reader seeking edge parity follows the README, lands on stable, and loses parity with no signal. Decide the intended README posture and ship the README diff.
