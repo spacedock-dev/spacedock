@@ -180,7 +180,23 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    The release commit is already on `main` from step 3; pushing the tag fires
    `release.yml`, which gates on the green run for this commit and then publishes.
 
-9. Clean up:
+9. Bump `main` to the next pre-version, immediately after the tag push. The
+   auto-pre0 job tags `vX.(Y+1).0-pre0` on the release commit, but nothing
+   stamps `main`'s manifests or the FO prose pin past the released minor.
+   Until this stamp lands, every edge install aborts at the FO version gate
+   with a binary/plugin mismatch (observed live at the v0.27.0 cut,
+   2026-08-25):
+
+   ```bash
+   go run ./cmd/spacedock-release stamp-version X.(Y+1).0-pre0 .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
+   git commit -m "release: bump version to spacedock@X.(Y+1).0-pre0" -- .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
+   git push origin main
+   ```
+
+   Run it on `main`. The stable branch is already frozen at the tagged commit
+   and is not touched.
+
+10. Clean up:
 
    ```bash
    git worktree remove .worktrees/release-X.Y.Z
