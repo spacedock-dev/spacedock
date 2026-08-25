@@ -1,11 +1,11 @@
 ---
 id: wn3dg7txnrte0jrcxf56b859
 title: De-lecture the FO contract and defer non-boot shared-core sections (folds s6q)
-status: validation
+status: done
 source: "Captain CL, 2026-08-24: contract audit ruling after the #757 fo-install overbuilt review - 'file and fold s6q. dispatch. keep it light in ideation as this is clear about what to cut'; folds defer-shared-core-non-boot-sections (s6qamkh7efky9zh5jh6ba6xq, superseded into this task)"
 started: 2026-08-24T23:37:58Z
-completed:
-verdict:
+completed: 2026-08-25T04:43:22Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-de-lecture-and-defer-fo-contract
 issue:
@@ -71,9 +71,10 @@ gates:
                 reason: 'Captain CL in chat 2026-08-25: ''approved'' at validation attempt-1 (digest bdc71b03) - accepts PASSED with the Polish LOC classification and the named AC-1 residual'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:759
+archived: 2026-08-25T04:43:22Z
 ---
 
 Two movements over the FO contract with one lens: the contract carries rules and commands; rationale, narration, design history, and repeated justification live in entity bodies and tests. Movement 1 (delete): the 2026-08-24 FO audit enumerated the lecture, file by file. Movement 2 (defer, folded from s6q): move boot-unreachable shared-core sections behind their existing triggers, measured by boot occupancy in tokens (s6q's archived body carries the full measured profile: shared core ~10.1k tok of a 40.4k greet boot; candidate span 9,105 of 26,092 bytes = 35%).
