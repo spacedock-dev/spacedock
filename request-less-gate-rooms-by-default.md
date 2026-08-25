@@ -23,6 +23,17 @@ gates:
                 digest: sha256:9a936b06ee55e932f0ef8997e0b3b79810718d78076fa69df98af75a87eae2e8
                 request-digest: sha256:e9dbc6437c5a986912593c1ec9cbe6e016f561b89f7d53818221ad5ac556af86
                 room-ref: ./request-less-gate-rooms-by-default/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rx3daftacggfmw1pt2febw31:backlog:1
+                briefing: briefing:rx3daftacggfmw1pt2febw31:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T17:27:27.228339Z"
+                decision: approve
+                reason: 'Captain chat 2026-08-25: ''dispatch rx'' — approved seeding into design; q0 coherence requirement baked into the seed'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 `gate prepare` mints `request.json` for every room. Only the subspace provider journey consumes it. Chat-presented gates are 100% of current practice, so almost every room pays for a handoff no consumer reads. Make the chat room one file, and mint the provider handoff only when the caller selects a provider presentation. Keep the minted form byte-compatible with q0's preflight.
