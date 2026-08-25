@@ -3,7 +3,7 @@ id: dt8j3pas83725fma2wbez5ss
 title: Product README documents no edge channel path
 status: ideation
 source: "Captain CL work-machine report 2026-08-25: README at v0.27.0 documents only brew tap/install (stable); someone following it for edge parity lands on stable and loses parity silently"
-started:
+started: 2026-08-25T14:36:24Z
 completed:
 verdict:
 score:
