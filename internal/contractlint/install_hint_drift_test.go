@@ -36,7 +36,9 @@ func installMDSection(t *testing.T, lines []string, header string) []string {
 }
 
 // TestInstallHintNoDrift asserts token equality (not formatting equality)
-// between the shared-core install hint and install.md:
+// between the FO install reference's hint and install.md. The commands live in
+// references/fo-install.md, not the boot-resident core: the core defers the
+// whole binary-absent arm to that file, so it is the prose that must not drift.
 //
 //  1. The curl|sh token in the FO prose equals install.md's documented Linux
 //     command — extraction: the single line inside the
@@ -45,7 +47,7 @@ func installMDSection(t *testing.T, lines []string, header string) []string {
 //     documents the `SPACEDOCK_CHANNEL=edge` variant; the hint tracks the
 //     DEFAULT command, so that line is excluded and the default stays unique.
 //  2. The FO prose's brew-install hint refers to the same tap and formula as
-//     install.md's Homebrew tab (`spacedock-dev/homebrew-tap` + `spacedock`);
+//     install.md's Homebrew tab (`spacedock-dev/tap` + `spacedock`);
 //     both the two-line `brew tap` + `brew install` form and the one-line
 //     full-token form are checked.
 //
@@ -58,7 +60,7 @@ func TestInstallHintNoDrift(t *testing.T) {
 		t.Fatalf("read install.md: %v", err)
 	}
 	lines := strings.Split(string(rawInstall), "\n")
-	prose := readSkillFile(t, sharedCorePath)
+	prose := readSkillFile(t, installRefPath)
 
 	// Arm 1: curl|sh token equality.
 	var curlLines []string
@@ -73,7 +75,7 @@ func TestInstallHintNoDrift(t *testing.T) {
 	}
 	documentedCurl := curlLines[0]
 	if !strings.Contains(prose, documentedCurl) {
-		t.Fatalf("FO version-gate prose's curl|sh hint drifts from install.md's documented command %q", documentedCurl)
+		t.Fatalf("FO install-reference prose's curl|sh hint drifts from install.md's documented command %q", documentedCurl)
 	}
 
 	// Arm 2: Homebrew tap+formula token equality.
@@ -91,9 +93,9 @@ func TestInstallHintNoDrift(t *testing.T) {
 		t.Fatalf("install.md Homebrew tab lacks the two-line brew tap/install form (tap=%q formula=%q)", tap, formula)
 	}
 	if !strings.Contains(prose, "brew tap "+tap) || !strings.Contains(prose, "brew install "+formula) {
-		t.Fatalf("FO version-gate prose's brew-install hint drifts from install.md (tap=%q formula=%q)", tap, formula)
+		t.Fatalf("FO install-reference prose's brew-install hint drifts from install.md (tap=%q formula=%q)", tap, formula)
 	}
 	if oneLine := "brew install " + tap + "/" + formula; !strings.Contains(prose, oneLine) {
-		t.Fatalf("FO version-gate prose must also carry the one-line form %q", oneLine)
+		t.Fatalf("FO install-reference prose must also carry the one-line form %q", oneLine)
 	}
 }
