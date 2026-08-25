@@ -858,3 +858,39 @@ Deferred risks:
 ### Summary
 
 All five ACs reproduced first-hand: the live value test passes in all three directions with no SKIP, AC-5's arm went red-then-green against the shipped implementation in both drift directions, both full suites pass fresh (-count=1 and -race), and the strict docs build — the one lane implementation could not run — passes with CI's pinned requirements. The detached audit refuted nothing material: five adversarial edits were each caught by exactly the tests the entity names, including a live reproduction of the captain's two-plugins bug. Surface +212 across 8 files is inside the approved band with only the declared semantic changes. Recommend PASSED.
+
+### Correction round 1 — ASD-STE100 prose (captain send-back of PR #760)
+
+- DONE: Every code comment and user-facing doc line this diff adds or edits conforms to ASD-STE100 (strict mode, simple-english skill catalog, self-check run).
+  Commit `2f91b6dd4`. Rewrote: the `installArgvSequence` sequence comment; the `TestInstallArgvSequence` doc comment and its tolerance-loop comment; the `TestClaudeChannelInstallArgvSequence` doc comment; the three `TestInstallTolerates…` doc comments; every comment in `sibling_channel_exclusive_test.go`; and the two new comments in `install_hint_drift_test.go`.
+- DONE: Self-check run (the skill's four checks, all four searched over the added lines).
+  Zero hits for `should`/`would`/`may`/`might`/`could`, present perfect, contractions, and semicolons. Zero sentences over 25 words, counting backticked, quoted, and parenthetical text as one word each per rules 8.5 and 8.6. Three mid-sentence `when` clauses were moved to condition-first form. One noun `guard` and one rotated verb removed: the check/verify/confirm/validate/ensure set collapses to `asserts` throughout.
+- DONE: Behavior and doc meaning are unchanged; untouched pre-existing comments stay as they are.
+  Comment text only — no identifier, command, assertion string, or quoted-output change. The README keeps the stable label, the edge pointer, and the `spacedock-dev/tap` token; install.md keeps the exclusivity statement. `go vet` clean.
+- DONE: Affected proofs re-run green after the rewrite and recorded.
+  `go test ./...` exit 0 (all 21 packages ok). `go test ./... -race` exit 0. `TestInstallHintNoDrift` and `TestInstallHintProductReadmeNoDrift` both PASS — the drift arm still passes after the README prose changed, because the rewrite did not touch the brew tap/formula tokens it reads. The AC-1 value test re-run live with claude 2.1.226: `--- PASS (6.23s)` with `sibling-present`, `fresh-box`, and `reverse` all PASS, no SKIP. gofmt reports nothing for every file in the diff.
+- SKIPPED: docs strict build.
+  mkdocs is not installed on this machine. Flagged for validation rather than claimed. The install.md change is prose inside an existing section, with no new link and no nav entry.
+- DONE: The correction is a new commit on the same branch (b56e218a0 preserved beneath it); state committed.
+  `2f91b6dd4` sits on top of `b56e218a0` on `spacedock-ensign/claude-install-sibling-channel-cleanup`, so PR #760 picks it up.
+
+**Scope interpretation, for the gate to rule on.** The assignment says to convert the
+comments this diff adds or edits, and not to convert pre-existing comments the diff
+does not touch. I applied that at the COMMENT-BLOCK level: where my earlier commit
+edited a line inside a doc comment, I converted that whole block. A sentence-level
+conversion would leave one paragraph half in STE and half not, which is harder to
+read and to validate than either extreme. Comment blocks my diff never touched are
+untouched — `codexInstallArgvSequence`, `TestInstallHintNoDrift`, `installMDSection`,
+and the codex tests all keep their original prose.
+
+**Surface deviation, captain-visible.** Cumulative against `main` is now net **+238
+across 8 files** (325 insertions, 87 deletions). The approved baseline is +167 with a
+±55 tolerance, so the band is +112 to +222 and this is **16 net LOC past the top**.
+The cause is the STE conversion itself: the candidate stood at +212, inside the band,
+and the rewrite added +26. STE costs lines by construction — it splits long sentences,
+removes semicolon-joined clauses, and turns the six-command sequence into a numbered
+list. The approved baseline predates the 2026-08-25 prose ruling and never carried its
+cost. I did not trim load-bearing rationale to fit a number that was set before the
+standard existed, and I did not adjust the tolerance myself: only the captain changes
+an approved tolerance (README `## Review-finding disposition`, step 5). Recorded here
+for that decision.
