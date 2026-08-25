@@ -81,3 +81,7 @@ Verified by: {docs/specs/gate-resolution-frontmatter-contract.md diff reviewed a
 ### Feedback Cycles
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+
+### Dispatch Retries
+
+- Retry 1: ideation — no-completion-signal (host session limit, login restored); nudged
