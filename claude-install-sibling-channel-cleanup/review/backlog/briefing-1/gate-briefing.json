@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7p4vxcb9edzrph0zsfn75cd9:backlog:attempt-1:revision-1",
+  "question": "Should design start on making the claude install sequence remove the sibling channel plugin, with doctor eyes on a co-installed sibling?",
+  "artifacts": [
+    {
+      "id": "artifact:7p4vxcb9edzrph0zsfn75cd9:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/19edf2c1043f251bd51a8c26cd495ffe9ee8d8b4/claude-install-sibling-channel-cleanup.md",
+      "rev": "sha256:c2228af049422886beeef14682cc937ee4633fbc9dde4054d4beaf731b5a3755",
+      "mediaType": "text/markdown",
+      "summary": "Seed: spacedock install --host claude uninstalls only the own-channel id and the retired route-A id, so a modern sibling edge plugin survives installed+enabled next to stable (captain repro on v0.27.0; main is byte-identical). Codex already removes the sibling. Seed ACs: exactly one channel plugin after install (VALUE); doctor flags the dual install. Excluded: PREFER_HTTPS docs (rb0), product README edge mention (own task), codex sequence."
+    }
+  ]
+}

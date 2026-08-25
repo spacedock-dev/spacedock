@@ -11,6 +11,18 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:7p4vxcb9edzrph0zsfn75cd9:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:7p4vxcb9edzrph0zsfn75cd9-backlog-1
+              briefing:
+                id: briefing:7p4vxcb9edzrph0zsfn75cd9:backlog:attempt-1:revision-1
+                digest: sha256:4b88d6e7f37061f48b8d0475ee4f5a15476c1728bf602afc4d29856f86b71fb9
+                request-digest: sha256:7652910a297d84b88917d9d48ad7e4009f83582811873821de42860027c6a649
+                room-ref: ./claude-install-sibling-channel-cleanup/review/backlog/briefing-1
 ---
 
 `spacedock install --host claude` never uninstalls the sibling channel's modern plugin id. A stable install on a machine that already has `spacedock@spacedock-edge` (or the reverse) leaves BOTH channel plugins installed and enabled. Both are entry `spacedock` shipping the same skill set, so which provider serves is unpredictable. Mirror the codex sequence's sibling-channel remove, and give doctor eyes on a co-installed enabled sibling.
