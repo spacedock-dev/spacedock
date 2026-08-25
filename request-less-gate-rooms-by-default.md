@@ -43,6 +43,17 @@ gates:
                 digest: sha256:c9e0b6fd6463605536e72f5e3d98b7d9df4d94a9565f8f7419e81b2d04205f06
                 request-digest: sha256:d09993fd1005af3bbce7d4b015b39f367b6fea405eaa1c8e8ccdeeeb8592db77
                 room-ref: ./request-less-gate-rooms-by-default/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rx3daftacggfmw1pt2febw31:ideation:1
+                briefing: briefing:rx3daftacggfmw1pt2febw31:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T21:02:13.592893Z"
+                decision: approve
+                reason: 'Captain chat 2026-08-25: ''rx - approve'' — accepts the predicate-centered design as presented, field drops cut per q0 evidence; approved baseline net +200 across 14 files, tolerance ±60/±3'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 `gate prepare` mints `request.json` for every room. Only the subspace provider journey reads it. Chat-presented gates are 100% of current practice. Almost every room therefore pays for a handoff that no consumer reads. Make the chat room one file. Mint the provider handoff only when the caller selects the provider channel.
