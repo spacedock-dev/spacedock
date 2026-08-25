@@ -1,7 +1,7 @@
 ---
 id: rx3daftacggfmw1pt2febw31
 title: Gate rooms are request-less by default; the provider handoff is opt-in at prepare
-status: ideation
+status: implementation
 source: "Captain gate-format review 2026-08-25: variance scan found 499/499 rooms carry request.json while only ~8 July-era provider results ever consumed one; q0 (subspace-r-scaffolded-gate-room, spacedock-subspace, at validation) finalizes the provider journey the file exists for"
 started: 2026-08-25T17:27:46Z
 completed:
@@ -53,7 +53,7 @@ gates:
                 reason: 'Captain chat 2026-08-25: ''rx - approve'' — accepts the predicate-centered design as presented, field drops cut per q0 evidence; approved baseline net +200 across 14 files, tolerance ±60/±3'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 `gate prepare` mints `request.json` for every room. Only the subspace provider journey reads it. Chat-presented gates are 100% of current practice. Almost every room therefore pays for a handoff that no consumer reads. Make the chat room one file. Mint the provider handoff only when the caller selects the provider channel.
