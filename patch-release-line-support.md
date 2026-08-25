@@ -186,24 +186,20 @@ release version. The remainder of the old step — the tagged-commit resolve and
   runs only after that verify poll passes. A failure before the stamp therefore leaves exactly
   today's recoverable state, never a worse one.
 
-### C. One bounded retry on the main-stamp push
+### Not included: a retry on the main-stamp push (cut at briefing-1)
 
-Today's stamp step usually finds no diff and commits nothing. After mechanism B it commits on every
-latest-line cut, so a concurrent merge to `main` between fetch and push becomes a realistic
-non-fast-forward rejection. One `git pull --rebase origin main`, then re-push.
+After mechanism B the stamp commits on every latest-line cut, so a concurrent merge to `main` between
+fetch and push becomes a realistic non-fast-forward rejection. An earlier draft answered that with one
+bounded `git pull --rebase origin main` and a re-push. The captain cut it at briefing-1 and this
+records the accepted consequence:
 
-- **Value AC served:** AC-3, at its margin.
-- **Corrected rationale (the earlier draft overstated this).** Without the retry the rejection reds
-  `edge-advance` and the recovery is a one-click, idempotent JOB RE-RUN — the pre0 tag is never
-  re-minted and the stamp is idempotent — NOT the hand-authored commit AC-3's 6m18s baseline
-  measured. The retry therefore buys "no human job re-run", not "no outage". It is kept at that
-  smaller value: eight lines against a foreseeable red job on the one step whose whole purpose is to
-  need no human.
-- *Alternative:* no retry, accept the rare rejection and the re-run. *Why insufficient (weakly):* the
-  re-run is manual attention on a path this task exists to make unattended. This is the least
-  load-bearing item in the cut and the cheapest to drop at the gate.
+**A concurrent-merge race lands as a red `edge-advance` job.** The recovery is a one-click, idempotent
+job re-run — the pre0 tag is never re-minted (the step checks `refs/tags/` before tagging) and the
+stamp itself is idempotent. It is NOT the hand-authored commit that AC-3's 6m18s baseline measured, so
+the value AC stands without the retry. The race is rare, the failure is loud, and the recovery needs
+no authoring. `docs/releasing.md` records the re-run instruction (Documentation diff block 5).
 
-### D. Retire the manual ritual
+### C. Retire the manual ritual
 
 `docs/releasing.md` step 9 is deleted and step 10 renumbered. The stamp and stable-channel prose is
 corrected to the new job layout, and a short "The Stable Regression Gate" section is added. The
@@ -309,35 +305,36 @@ that makes a patch line cuttable at all.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: **+355, across 11 files** (insertions ~+417, deletions ~-62).
-Tolerance: ±30% on the net figure (+249 to +462) and ±2 files.
+Estimate net LOC change: **+281, across 9 files** (insertions ~+343, deletions ~-62).
+Tolerance: ±30% on the net figure (+197 to +365) and ±2 files.
 
 | File | ins | del | Change |
 |---|---|---|---|
-| `.github/workflows/release.yml` | 72 | 36 | new gate step in `e2e-gate`; stamp step moved to `edge-advance` with the retry; goreleaser step renamed |
+| `.github/workflows/release.yml` | 64 | 36 | new gate step in `e2e-gate`; stamp step moved to `edge-advance`; goreleaser step renamed |
 | `internal/release/stable_regression_gate.go` | 32 | 0 | new — the decision over `ComparePreVersion` |
 | `cmd/spacedock-release/stable_regression_gate.go` | 34 | 0 | new — thin wrapper over `ManifestVersion` + the decision |
 | `cmd/spacedock-release/main.go` | 6 | 0 | dispatch case, usage line, doc comment |
 | `internal/release/stable_regression_gate_test.go` | 58 | 0 | new — unit table, including the `>=` boundary |
-| `cmd/spacedock-release/stable_regression_gate_test.go` | 34 | 0 | new — exit contract 0/1/2 |
-| `internal/release/stable_regression_shell_test.go` | 115 | 0 | new — bare-origin replay of the real step, plus the unguarded baseline |
+| `internal/release/stable_regression_shell_test.go` | 97 | 0 | new — bare-origin replay of the real step, plus the unguarded baseline |
 | `internal/release/edge_advance_wiring_test.go` | 18 | 0 | structural guard that the moved stamp shares the pre0 gate |
 | `internal/release/channel_agreement_guard_test.go` | 14 | 8 | two parsers follow the renamed/split steps |
-| `internal/release/goreleaser_guard_test.go` | 14 | 0 | pins AC-1's harm premise: `prerelease: auto` and the stable cask's `skip_upload: auto` |
 | `docs/releasing.md` | 20 | 18 | step 9 retired; three passages corrected; one short section added |
 
-**Honest note on the estimate, against the ruling that expected "well under half of +350".** It did
-not come out that way, and the reason is worth the gate's attention rather than a massaged number.
-The dropped mechanism cost roughly 200 insertions, of which about 140 were its test surface. The
-added centerpiece costs roughly the same, and for the same reason: the review's own sharpest
-requirement — that the fixture prove the UNGUARDED path would publish — can only be met by a
-bare-origin replay of the real steps, which is the single largest line item here (115 lines) and is
-not compressible without gutting AC-1's baseline. **The lean cut's saving is in authority and risk,
-not in lines:** no force-push capability, no new push-path wiring, no ancestry semantics in the
-release path, and one fewer irreversible failure mode. If the gate wants the number down, the
-available cuts are the goreleaser premise guard (−14), the cmd exit-contract test (−34), and
-mechanism C with its test (−26) — about −74, landing near +280. Cutting deeper means cutting AC-1's
-proof, which is the thing this reshape exists to add.
+**Estimate history, so the gate can audit the number rather than trust it.** Cycle 2 priced this at
++355 across 11 files and declined to massage it to fit the ruling's expectation, offering instead a
+priced menu of what could go. The captain took the whole menu at briefing-1, and this is that menu
+applied, line for line: the goreleaser premise guard (−14 insertions, one file), the command
+exit-contract test (−34, one file), and the stamp-push retry with its test (−26, split 8 in
+`release.yml` and 18 in the replay). 417 − 74 = 343 insertions, deletions unchanged at 62, so
+**net +281 across 9 files**. Each cut's accepted consequence is recorded where the cut lands, not
+only here.
+
+**What is now the floor.** AC-1's proof is untouchable by the captain's own reason, and it dominates
+what remains: the bare-origin replay (97 lines) exists to show that the UNGUARDED path really would
+publish, which is the review's sharpest requirement and the thing this whole reshape exists to add.
+The lean cut's saving was never mostly in lines — it is in authority and risk: no force-push
+capability, no new push-path wiring, no ancestry semantics in the release path, and one fewer
+irreversible failure mode.
 
 **Observable semantics this task changes:**
 
@@ -403,14 +400,15 @@ full `edge-advance` replay on a latest-line stable tag, `main`'s manifest versio
 pre0 tag's version and the FO prose pin equals its major.minor.**
 Verified by: `TestLatestLineCutStampsMainToPre0` in the same file — replay on `v0.27.0` against a
 fixture whose `main` carries 0.27.0, asserting `main`'s tip has `version: 0.28.0-pre0` and
-`These skills require binary minor 0.28`, matching the `v0.28.0-pre0` tag the same job cut; plus
-`TestStampRetriesOnceOnConcurrentMainMove`, which advances the fixture's origin `main` between the
-step's fetch and its push and asserts the step still lands the commit. Falsifying change: stamp
-`$RELEASE_VERSION` instead of the `edge-pre0-version` output — `main` lands on 0.27.0, the
-manifest/tag pair disagrees, and the test reds; or delete the rebase retry — the concurrent-move test
-reds. Today's baseline: the same replay leaves `main` at 0.27.0 while the pre0 tag is 0.28.0-pre0 —
-the exact 6m18s / one-hand-commit mismatch measured at the v0.27.0 cut (pre0 tag 21:55:31, hand
-repair b8346ffc9 at 22:01:49).
+`These skills require binary minor 0.28`, matching the `v0.28.0-pre0` tag the same job cut.
+Falsifying change: stamp `$RELEASE_VERSION` instead of the `edge-pre0-version` output — `main` lands
+on 0.27.0, the manifest/tag pair disagrees, and the test reds. Today's baseline: the same replay
+leaves `main` at 0.27.0 while the pre0 tag is 0.28.0-pre0 — the exact 6m18s / one-hand-commit
+mismatch measured at the v0.27.0 cut (pre0 tag 21:55:31, hand repair b8346ffc9 at 22:01:49).
+**Scope of the "zero human commits" claim, after the briefing-1 cut of the retry:** it is a claim
+about the SUCCESSFUL path, which is the path the 6m18s baseline measured. A concurrent merge to
+`main` reds the job instead, and the recovery is a re-run, not a commit — so the AC's measured
+quantity (human commits) stays zero either way.
 
 **AC-4 — The manual ritual is gone, not merely superseded: `docs/releasing.md` contains no post-tag
 `main` preversion bump step, and its stamp, stable-channel, and edge-advance prose describe the
@@ -429,14 +427,19 @@ re-run case, and the boundary that differs from `EdgeAdvanceDecision`'s strict `
 against a stable version (error, since the caller's `if:` guarantees a bare tag); an unparseable
 manifest version (error, so a miswiring fails loud rather than silently passing the cut).
 
-**Command exit contract — `cmd/spacedock-release/stable_regression_gate_test.go` (low cost).** Pass
-exits 0, block exits 1 with the tag and both versions in stderr, a missing argument exits 2. The
-`if:`-gated step depends on this contract and no other test reaches the usage-error path.
+**No separate command exit-contract test (cut at briefing-1, −34).** The replay below drives the real
+step, which invokes the real subcommand, so the 0-and-1 exits the `if:`-gated step depends on are
+exercised end to end. Accepted consequence: the usage-error path (exit 2 on a missing argument) is
+left unexercised. It is reachable only by editing the step's own argument list, which the replay would
+red anyway, and the library table already covers the loud-failure behavior on input the gate cannot
+parse.
 
 **Behavioral replay — `internal/release/stable_regression_shell_test.go` (the bulk of the cost).**
 Extends the shipped `edge_advance_decision_shell_test.go` harness with a bare-origin fixture. Each
 test extracts the REAL step's `run` block from the on-disk `release.yml` and executes it. Carries the
-four AC tests above plus `TestStableRegressionGatePassesWhenStableRefAbsent` (spike TEST A's exit-2
+four named in AC-1 through AC-3 — `TestStableRegressionGateBlocksOlderLine`,
+`TestUnguardedOldLineTagWouldReachStable`, `TestPatchTagDoesNotStampMain`, and
+`TestLatestLineCutStampsMainToPre0` — plus `TestStableRegressionGatePassesWhenStableRefAbsent` (spike TEST A's exit-2
 carve-out) and `TestStableRegressionGateFailsClosedOnUnreadableRemote` (spike TEST B). The
 fixture-construction helper is shared across all cases and drives them from one table; its shape is
 already exercised by spike 1, so the risk is front-loaded.
@@ -447,9 +450,14 @@ shipped `ifHasDecisionGate` helper, with the adversarial twin (diverge them → 
 `channel_agreement_guard_test.go`'s `releaseStampTarget` and `stableRefPushSource` parsers both key
 on the step name `"Stamp plugin manifests to the release version"`, which this task splits and
 renames — without the edit those tests fail, so this is mandatory, not optional. Both keep their
-adversarial twins. `goreleaser_guard_test.go` gains two asserts pinning AC-1's harm premise —
-`release.prerelease: auto` and the stable cask's `skip_upload: auto` — so the reason this gate exists
-cannot silently evaporate from `.goreleaser.yaml`.
+adversarial twins.
+
+**No standing guard on AC-1's harm premise (cut at briefing-1, −14).** The premise is recorded
+evidence, verified live at ideation: `.goreleaser.yaml:105` `release.prerelease: auto` and
+`.goreleaser.yaml:125` `skip_upload: auto` on the stable cask, both read at their shipped line
+numbers. Accepted consequence: a future edit to either setting would remove the reason this gate
+exists without any test reding. The gate itself stays correct under such an edit — a regressing tag
+is still refused — so what is lost is the standing proof of the motive, not the protection.
 
 **Full suite.** `go test ./...` and `go test ./... -race`, plus `gofmt -w ./cmd ./internal`.
 
@@ -498,8 +506,11 @@ stated agent). It reports 6 blocks, 0 violations; the longest sentence is 17 wor
 FALSIFIED before that result was trusted: re-run against a mutant of block 2 carrying a semicolon, a
 56-word sentence, a 13-sentence paragraph, and "is repointed by release.yml", it reports all four
 violations and exits 1. Rule 3.6 is why block 2 now opens "A hand-edit … does not repoint the stable
-entry" instead of the first draft's "The stable entry is NOT repointed … by a hand-edit". New
-`release.yml` comments and Go doc comments follow the same rules. The moved stamp step's existing comment block converts as this task touches
+entry" instead of the first draft's "The stable entry is NOT repointed … by a hand-edit". The
+dictionary rules a script cannot check were applied by hand: "serves" became "points at" — the
+phrasing the shipped `docs/releasing.md` already uses, and one word with one meaning — "occurs"
+became "happens", and "the stamp is idempotent" became "the stamp gives the same result each time".
+New `release.yml` comments and Go doc comments follow the same rules. The moved stamp step's existing comment block converts as this task touches
 it, per the README's convert-on-touch clause. This task body itself is workflow state, not
 user-facing documentation, so it is out of the rule's scope.
 
@@ -514,7 +525,7 @@ After:
 ```
 - advances the stable channel ref to the tagged commit. See below.
 - stops the cut before publication if the tag is older than the release that
-  `stable` serves. See "The Stable Regression Gate" below.
+  `stable` points at. See "The Stable Regression Gate" below.
 - stamps the plugin manifests and the FO prose pin on `main`, but only on a
   latest-line stable tag. The stamp writes the `X.(Y+1).0-pre0` version that the
   same job auto-cuts. An old-line tag does not change `main`.
@@ -553,8 +564,8 @@ Add to the latest-line bullet:
 ```
 After the job verifies the pre0 run, the same job stamps the manifests and the
 FO pin on `main` to the pre0 version. An edge install then passes the FO version
-gate with no human step. If a concurrent merge to `main` rejects the push, the
-step rebases one time and pushes again.
+gate with no human step. If a merge to `main` happens during the run, the push
+can fail. Run the job again, because the stamp gives the same result each time.
 ```
 Add to the old-line bullet:
 ```
@@ -568,15 +579,15 @@ After:
 ```
 ## The Stable Regression Gate
 
-A stable tag that is older than the release that `stable` serves can damage two
-binary channels. goreleaser marks each bare `vX.Y.Z` tag as a full release, so
+A stable tag that is older than the release that `stable` points at can damage
+two binary channels. goreleaser marks each bare `vX.Y.Z` tag as a full release, so
 GitHub moves `/releases/latest` to it. goreleaser also bumps the stable Homebrew
 cask, because `skip_upload: auto` skips only a prerelease. An old tag moves both
 channels DOWN, and every job stays green. The `e2e-gate` job stops this before
 goreleaser starts.
 
 - The gate reads the version in the `.claude-plugin/plugin.json` file that
-  `stable` serves.
+  `stable` points at.
 - If the tag is older than that version, the gate fails the run. goreleaser does
   not start, because it needs the `e2e-gate` job.
 - If the tag is the same version or newer, the gate lets the run continue. A
@@ -587,8 +598,8 @@ goreleaser starts.
   not a permission to publish.
 
 The gate does not make a patch line deliverable. A patch that is newer than the
-version `stable` serves still publishes, and `stable` then leaves the history of
-`main`. The next latest-line release cannot advance `stable` after that. Do not
+version `stable` points at still publishes, and `stable` then leaves the history
+of `main`. The next latest-line release cannot advance `stable` after that. Do not
 cut a patch line until that work is complete.
 ```
 
@@ -671,3 +682,39 @@ note's rationale that "with old-line cuts blocked pre-publication, `stable` neve
 history" is true only while no patch line is cut at all: a v0.27.1 cut while `stable` serves 0.27.0
 passes the gate by construction and still ends in a frozen channel on the next latest-line cut. The
 body states that precisely and keeps the do-not-cut-a-patch-line constraint until the follow-up ships.
+
+## Stage Report: ideation (cycle 3)
+
+Applied the captain's briefing-1 revise: the full −74 menu the cycle-2 body priced, taken whole.
+Cycles 1 and 2 above are left intact as the record.
+
+- DONE: Drop the goreleaser premise-guard test (−14).
+  Row removed from the surface table; the test plan's "Structural guards" now carries **No standing guard on AC-1's harm premise** with the accepted consequence — a future edit to `prerelease: auto` or `skip_upload: auto` removes the gate's stated motive with no test reding, while the gate itself stays correct. The premise evidence remains the live ideation verification at `.goreleaser.yaml:105` and `:125`.
+- DONE: Drop the cmd exit-contract test (−34).
+  Row removed; the test plan records that the replay drives the real step and so exercises the 0-and-1 exits end to end, and that the accepted loss is the exit-2 usage path, reachable only by editing the step's own argument list.
+- DONE: Drop mechanism C, the bounded rebase retry, with its test (−26).
+  The `### C` section is replaced by **Not included: a retry on the main-stamp push (cut at briefing-1)**, recording the accepted consequence verbatim from the ruling: a rare concurrent-merge race lands as a red `edge-advance` job whose re-run is one-click and idempotent. Old `### D` renumbered to `### C`. Doc-diff block 5 drops the rebase sentence and gains the re-run instruction instead.
+- DONE: Estimate, file table, ACs, test plan updated; AC-1's proof untouched.
+  **+281 net across 9 files** (insertions ~+343, deletions ~-62), tolerance ±30% (+197 to +365) and ±2 files — arithmetic shown in the body: 417 − 74 = 343, deletions unchanged. AC-3 loses `TestStampRetriesOnceOnConcurrentMainMove` and its falsifier, keeps the 6m18s baseline, and gains a scope note that the measured quantity (human commits) stays zero on the red path too. AC-1, its fixture, and `TestUnguardedOldLineTagWouldReachStable` are byte-unchanged.
+- DONE: All user-facing doc text strict ASD-STE100.
+  Re-checked after the edits: 6 blocks, 0 violations, longest sentence 17 words, and the falsifier still reds the mutant with all four rule classes. Three hand dictionary fixes the script cannot make are recorded in the Documentation diff preamble.
+
+### Summary
+
+Mechanical application of a menu I had already priced, so the only judgement calls were where each
+cut's accepted consequence gets recorded. I put each one at the site of the cut rather than in a
+single list, so a later reader meets the consequence where they would look for the mechanism.
+
+Two things worth the gate's eye. First, the AC-3 scope note: with the retry gone, "zero human
+commits" is a claim about the successful path. A concurrent merge reds the job instead, and since the
+recovery is a re-run rather than an authored commit, the AC's measured quantity still holds — the
+claim narrowed, it did not weaken. Second, dropping the premise guard costs the standing proof of
+AC-1's motive, not the protection: the gate still refuses a regressing tag if someone edits
+`.goreleaser.yaml`, but nothing would then tell a reader why the gate exists.
+
+One process note. My ASD-STE100 re-check first returned a clean exit from a script that had been
+overwritten in the shared scratchpad by another agent — its output named
+`internal/gates/prepare_channel_test.go`, a file unrelated to this entity. I caught it because the
+output shape did not match my checker's, rewrote the checker at a uniquely-named path, and re-ran
+both it and its falsifier. Recording it because a green from the wrong program is exactly the failure
+mode this workflow's proof policy names, and the shared scratchpad makes it reachable by accident.
