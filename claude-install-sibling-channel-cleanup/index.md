@@ -930,3 +930,33 @@ tests no longer restate their stub setup. A reader now gets the step list from t
 argv slice and the reason from the comment. I think that split is right, and it is
 the captain's stated direction, but it is a real change in how much a reader gets
 from the comment alone.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Every AC (AC-1 through AC-5) re-verified against the CORRECTED candidate 4b5b4073a (two correction commits atop b56e218a0): run the local claude-on-PATH value test yourself (a SKIP is a failure), re-run both drift arms, go test ./... and -race, and run mkdocs build --strict — implementation flagged it SKIPPED both rounds (mkdocs absent); the docs lane is required because install.md changed.
+  AC-1: `go test ./internal/cli -run TestClaudeInstallLeavesOnlySelectedChannelEnabled -count=1 -v` vs claude 2.1.226 — PASS 36.35s (sibling-present 18.76s, fresh-box 9.86s, reverse 7.73s), no SKIP.
+  AC-2: argv/tolerance tests green inside the fresh suites; sibling ids re-confirmed as per-channel literals — the only `otherChannelMarketplace` mention in the two test files is the comment stating the rule. Discrimination evidence is cycle 1's audit, which stands (delta-scope item below).
+  AC-3: the post-cut install.md still states exclusivity — "keep one channel on each host" plus the replaces-a-co-installed-plugin sentence; "exactly" was cut but the replacement semantics carry the claim. `uvx --with-requirements docs/requirements.txt mkdocs build --strict` exit 0 (CI's pinned deps, docs.yml:39-42) — closes the lane SKIPPED in both correction rounds.
+  AC-4: one-off existence check on the shipped README — the 1 of 1 install blocks (lines 62-65) is introduced by "Install the stable channel with Homebrew:" and the same paragraph names the edge channel and the install guide; the second bash block is the launch command, not an install block.
+  AC-5: both drift arms PASS fresh (`go test ./internal/contractlint/ -run TestInstallHint -count=1 -v`). Red-then-green is cycle 1's evidence and transfers because the arm's code is byte-identical after comment stripping.
+  Suites: `go test ./... -count=1` exit 0 and `go test ./... -race -count=1` exit 0, zero FAIL lines; `gofmt -l` flags only pre-existing out-of-diff `internal/release/runtime_live_evidence_workflow_test.go`.
+- DONE: The two correction rounds verified against their directives: diff-touched comments and doc text are strict ASD-STE100 (spot-check the four self-check searches over the added lines) AND carry only facts the adjacent code cannot show (the captain's cut directive); behavior, identifiers, commands, and assertion strings unchanged vs b56e218a0; surface confirmed at net +147 across 8 files via git diff --numstat against the merge-base — inside the approved +167±55 band.
+  STE spot-check over the 74 added comment/doc lines vs merge-base: zero banned modals, zero present perfect (the one `has` hit is possession — "Spacedock also has an edge channel"), zero contractions, zero semicolons.
+  Cut directive: the shipped comments carry only what adjacent code cannot show — the `plugin marketplace remove` ban with probe evidence, the uninstall-before-add ordering, the sibling entry-name collision, the two non-zero tolerance shapes, the literal-provenance rule, AC-1's falsifying edit, and SKIP-is-a-failure. No step narration or stub-setup restatement remains. The README and install.md cuts keep every load-bearing fact: stable label, edge pointer, `spacedock-dev/tap`, the replacement statement.
+  Unchanged vs b56e218a0: proven mechanically, not by eye — go/parser comment-stripped prints of all six touched Go files are byte-identical between b56e218a0 and 4b5b4073a, which covers identifiers, commands, and assertion strings at once.
+  Surface: `git diff --numstat` vs merge-base b04b3effd = 234 insertions / 87 deletions = net +147 across 8 files (88% of +167, inside ±55; file count on baseline), matching the round-2 figure.
+- DONE: Delta-scope the re-run honestly: cycle 1's full validation (five adversarial audit edits, live bug reproduction) stands for the unchanged production behavior — re-run the audit ONLY if any non-comment byte changed vs b56e218a0 (verify that claim first with a code-only diff); recommend PASSED or REJECTED with material findings, deferred risks, and polish listed separately, and rule on the flagged judgment call (comments no longer narrate what adjacent code shows).
+  The code-only diff was verified FIRST (the AST comparison above): no non-comment byte changed, so the audit was NOT re-run and cycle 1's five caught edits and live two-plugin reproduction stand.
+  Judgment-call ruling: the cut is right. The argv slice sits directly below the comment and is authoritative; a narrated step list is the same comment-drifts-from-code fault class this task fixes in doc form (the README tap token AC-5 now guards). Nothing a maintainer needs at the site was lost.
+
+### Recommendation: PASSED
+
+Material findings: none. Polish: none.
+
+Deferred risks (carried from cycle 1, unchanged by the comment-only corrections):
+1. The value test skips in CI (no claude on the build runner) — settled test-plan posture; promote if the mandatory local run is dropped while the install sequence changes, or a CI runner gains claude and the test fails there.
+2. brewTokens takes the last uncommented `brew tap`/`brew install` line per section; promote if a guarded section gains a second uncommented brew line whose token can diverge from what the arm compares.
+
+### Summary
+
+The two correction commits are comment-and-doc-text only — proven by AST comparison of all six Go files, not by reading the diff — so cycle 1's full validation stands and the delta re-run needed only the live value test, the drift arms, both suites, and the docs lane. All pass: the value test is green in all three directions with no SKIP against claude 2.1.226, both suites exit 0, and `mkdocs build --strict` exit 0 closes the lane implementation could not run in either round. Surface is net +147 across 8 files, inside the approved band, closing the cycle-1 breach by deletion. The STE spot-checks are clean over every added line, the cut leaves exactly the facts adjacent code cannot show, and the flagged judgment call is ruled correct. Recommend PASSED.
