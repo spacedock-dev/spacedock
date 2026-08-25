@@ -43,6 +43,14 @@ gates:
                 digest: sha256:e2a20a599f482863d12a18f79e69871a6c2af2c8a3939372ec381ff5b9c20582
                 request-digest: sha256:4933bf8a68692136d9810ae24cf453d18f7c4c777c66bb43854923eabd06d1cb
                 room-ref: ./product-readme-edge-channel-mention/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:dt8j3pas83725fma2wbez5ss:ideation:1
+                briefing: briefing:dt8j3pas83725fma2wbez5ss:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T15:09:33.119133Z"
+                decision: hold
+                reason: 'Captain chat 2026-08-25: ''readme should fold into this. no doc-only task'' — standalone task superseded; deliverable folds into claude-install-sibling-channel-cleanup'
 ---
 
 The product README's install section documents only `brew tap spacedock-dev/homebrew-tap` + `brew install spacedock` — the stable channel. No edge cask, no `SPACEDOCK_CHANNEL=edge`, no pointer to the edge marketplace. A reader seeking edge parity follows the README, lands on stable, and loses parity with no signal. Decide the intended README posture and ship the README diff.
