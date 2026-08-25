@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:wn3dg7txnrte0jrcxf56b859:validation:attempt-1:revision-1",
+  "question": "Accept validation PASSED and route to the stacked merge ceremony: does the de-lectured contract (subtotal -3,099 B in band, boot-resident core -3,326 B with the cap ratcheted, one provably-safe move, next-id prohibition restored) clear the gate for PR creation as stack layer 3?",
+  "artifacts": [
+    {
+      "id": "artifact:wn3dg7txnrte0jrcxf56b859:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d6863aa4cb2e4dd2962cb92a8ebfc0661f799717/de-lecture-and-defer-fo-contract.md",
+      "rev": "sha256:d43ddb7afc7421040c61a10ba1011fe7509a099f54dcf2a587222e4e3a1b5aae",
+      "mediaType": "text/markdown",
+      "summary": "Lean validation per captain order: binding evidence reproduced exactly from git objects (subtotal in band, move byte-identical with three cross-references resolving, AC-3 guard re-red three ways, contractlint/build/vet green; full matrix left to the stack tip lanes by design). Two deviations ruled: LOC +59 vs +32+/-25 classified Polish (test-side, non-binding metric; contract files -4 inside declaration); the next-id strike found to remove a rule whose substance did NOT survive - FO-authorized one-line restore applied at correction round 1, delta-confirmed verbatim at 360e4afb9. AC-1's live A/B greet ruled impractical (shared state checkout noise) - byte-derived expectation ~-1,280 tok recorded AS ESTIMATE, residual named explicitly for the captain's GitHub review. Merge ceremony owes: PR on the #757 tip, gh stack link, all three live lanes at the new tip, detached audit."
+    }
+  ]
+}
