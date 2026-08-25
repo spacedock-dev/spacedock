@@ -56,158 +56,177 @@ gates:
                 state: consumed
 ---
 
-`gate prepare` mints `request.json` for every room. Only the subspace provider journey reads it. Chat-presented gates are 100% of current practice. Almost every room therefore pays for a handoff that no consumer reads. Make the chat room one file. Mint the provider handoff only when the caller selects the provider channel.
+Every gate room holds two files. Only the subspace provider journey reads `request.json`, and the entity frontmatter already holds every fact that file carries. Make the room one file. Name it `index.json`, and keep every legacy name readable forever.
 
 ## Problem
 
-Every `gate prepare` publishes two files. `gate-briefing.json` holds the canonical Briefing. `request.json` holds the provider handoff. A scan of the dev state checkout on 2026-08-25 counts 499 of 499 prepared rooms with `request.json`, and about 8 July-era rooms with a provider result.
+`gate prepare` publishes `gate-briefing.json` and `request.json`. A scan of the dev state checkout on 2026-08-25 counts 499 of 499 prepared rooms with `request.json`. About 8 July-era rooms have a provider result.
 
-The request adds no fact that the entity does not already hold. Its `gate`, `attempt`, and Briefing id and digest all repeat the frontmatter binding. Its `actor` and `approver` are the constant `person:captain`, and `operation.go:530` refuses any other value.
+The request adds no fact the entity does not already hold. Its `gate`, `attempt`, and Briefing id and digest all repeat the frontmatter binding. Its `actor` and `approver` are the constant `person:captain`, and `operation.go:530` refuses any other value.
 
-The spec already permits the omission: "Request-less and chat-only attempts may omit it". `validateGateRoomRequest` (`operation.go:512`) returns nil on an empty `request-digest`.
-
-That permission is not sufficient, and this is the defect the seed did not see. Eight code sites read `request-digest != ""` as the test for "this attempt has a prepared room":
+Removing the file is not the whole task. Eight code sites read `request-digest != ""` as the test for "this attempt has a prepared room":
 
 - `prepare.go:245` — the frozen open binding cannot be rebound.
-- `prepare.go:300` — the entity replay source, which lets a re-prepare reuse the frozen entity bytes.
-- `prepare.go:351` — exact prepare replay, which makes a repeat prepare a no-op.
+- `prepare.go:300` — the entity replay source.
+- `prepare.go:351` — exact prepare replay.
 - `operation.go:178` — `gate withdraw`.
 - `operation.go:551`, `operation.go:562` — the bound Briefing read.
 - `application.go:244` — the reviewed-input staleness check.
 - `io.go:204` — retained-authority validation.
 - `model.go:281` — the frontmatter rule that a withdrawn attempt must retain a `request-digest`.
 
-Two of these are measured, not read. A chat room that this design prepares makes today's `gate withdraw` exit 1 with `Error: current attempt is not request-backed`. And `io.go:204` skips retained-authority validation for a request-less binding, so a corrupted chat Briefing passes unnoticed.
+Two of those guards were measured, not read. Today's `gate withdraw` exits 1 on a request-less room with `current attempt is not request-backed`. And `io.go:204` skips retained-authority validation for a request-less binding, so the shipped binary DURABLY RECORDS a captain approval over a corrupted Briefing: `state=closed ... decision=approve`. Both measurements are from cycle 0 and both fixes salvage forward.
 
-So the task is not "stop writing a file". The task is to give the reader a channel-independent test for "this attempt has a prepared room", and to keep every guard that `request-digest != ""` accidentally carried.
+Cycle 1 measured the cost of solving this with a presentation-channel fork: +740 net across 18 files, against an approved +200 across 14. The production column was close to estimate at +126; the fork's cost hid in the proof column, where a doubled test matrix reached +611. One room shape removes the fork, and with it the matrix.
 
 ## Proposed approach
 
-Select the presentation channel at prepare. The default is chat. The caller opts in to the provider channel.
+One room shape for every presentation channel. There is no channel flag and no command-grammar change.
 
-**1. `gate prepare` gains `--provider`.** Without the flag, prepare publishes `gate-briefing.json` alone and binds no `request-digest`. With the flag, prepare mints `request.json` and binds `request-digest` exactly as today.
+**1. The room is one file, named `index.json`.** `gate prepare` publishes the canonical Briefing alone and binds no `request-digest`. The name mirrors the entity convention `<slug>/index.md`.
 
 - Value AC: AC-1.
-- Simplest alternative: always mint the request, and let the chat path ignore it. That is today's behavior, and it is what AC-1 measures against. It cannot deliver AC-1.
-- Second alternative: a `--present chat|provider` value flag. A boolean is smaller, and two channels exist. Reject the value flag until a third channel exists.
-- The First Officer's command text does not change. `skills/fo-gate-lifecycle/SKILL.md:22` runs the chat form, which is the new default.
+- Simplest alternative: keep both files and let the chat path ignore the request. That is today's behavior, and it is what AC-1 measures against.
+- Rejected alternative, with a measured cost: the cycle-0 `--provider` channel fork. It reached +740 across 18 files, and its proof matrix was 84% of the overage. One shape needs neither the flag nor the matrix.
 
-**2. `preparedRoomBinding(entityPath, binding)` replaces `request-digest != ""` at the six runtime sites.** It reports true when the binding's `room-ref` names a real directory that holds `gate-briefing.json` as a regular file.
+**2. `preparedRoomBinding` replaces `request-digest != ""` at the six runtime sites.** SALVAGE from 312fa3f95; do not re-derive. A request-backed binding always has a prepared room. Otherwise the binding's `room-ref` must name a real directory that does not hold `briefing.json`.
 
-- Value AC: AC-1. Without it, a chat attempt loses replay, rebind protection, and withdraw.
-- Simplest alternative: a new frontmatter field, such as `channel: chat`. It costs a schema change, a validator rule, and a back-compat read for 600 archived bindings. The room shape already carries the fact.
-- Why the room shape is unambiguous: a new room holds `gate-briefing.json`. The 101 archived request-less rooms hold `briefing.json` under the old name, or an opaque ref such as `subspace-room:3k-gate-design`. No archived request-less binding can match.
+- Value AC: AC-1. Without it, a one-file attempt loses replay, rebind protection, retained-authority validation, and withdraw.
+- Simplest alternative: a new frontmatter field such as `channel: chat`. It costs a schema change, a validator rule, and a back-compat read for 600 archived bindings. The room shape already carries the fact.
+- Why the test reads `briefing.json` and not `index.json`: a prepared room whose Briefing is deleted must stay a prepared room. An `index.json` test sends that room to the archived read path. There it takes the retained-authority skip, and `gate record` closes over a Briefing that no longer exists. SALVAGE: this is the deleted-Briefing inversion from cycle 0.
 
-**3. `boundBriefingPath(entityPath, binding)` resolves the three binding shapes in one place.** A provider binding resolves through the frozen request locator. A chat binding reads the reserved locator in its room. A legacy binding names the Briefing file itself.
+**3. Locator resolution reads `index.json`, then `gate-briefing.json`.** `boundBriefingPath` resolves all four binding shapes in one place. SALVAGE from 312fa3f95, extended by one name.
 
-- Value AC: AC-1 and AC-2.
-- Simplest alternative: add the room case at each of the two read sites. That duplicates the shape test, and `application.go` and `operation.go` then can disagree. One resolver keeps them equal.
+- Value AC: AC-1 and AC-4.
+- Simplest alternative: add the name at each read site. That duplicates the order rule, and `application.go` and `operation.go` can then disagree.
+- The order is fixed so that two names in one room resolve deterministically. Preparation never writes two, and no room in the corpus holds two.
 
-**4. The withdraw guard moves from the frontmatter validator to the verb.** `Withdraw` requires a prepared room instead of a request-backed attempt. `model.go:281` drops the rule that a withdrawn attempt must retain a `request-digest`.
+**4. The withdraw guard moves from the frontmatter validator to the verb.** SALVAGE from 312fa3f95. `Withdraw` requires a prepared room. `model.go:281` drops the rule that a withdrawn attempt must retain a `request-digest`.
 
 - Value AC: AC-4.
-- Why the move is necessary: `Validate(doc)` reads frontmatter only. It cannot stat a room, so it cannot tell a new chat binding from a legacy opaque ref. `Withdraw` already stats the room at `operation.go:185`.
-- Simplest alternative: keep the frontmatter rule and let chat gates stay non-withdrawable. That is the measured regression in AC-4. It is not acceptable.
-- Declared narrowing: the pure validator no longer asserts this property. The mutating verb asserts it. The gate must approve that trade.
+- Why the move is necessary: `Validate(doc)` reads frontmatter only. It cannot stat a room, so it cannot tell a one-file room from an archived opaque ref.
+- Declared narrowing: the pure validator no longer asserts this property. The mutating verb asserts it.
 
-**5. Retained-authority validation extends to chat rooms.** `io.go` keeps the request checks for a provider binding, and it now runs the Briefing digest and Git-source checks for every prepared room.
+**5. Retained-authority validation covers every prepared room.** SALVAGE from 312fa3f95. The request checks stay, and they run for a binding that carries a `request-digest`. The Briefing digest and the Git-source checks run for every prepared room.
 
 - Value AC: AC-3.
-- Why it is necessary: without it, the default channel gets less validation than today's default. That inverts the value of the task.
-- Simplest alternative: skip it, because a chat room has no provider authority to protect. Insufficient: the Briefing digest and the selected Git objects are the authority a chat gate presents. They need the same check.
+- Why it is necessary: without it the one shape gets less validation than today's default. That inverts the value of the task.
 
-**6. Room-entry validation follows the published shape.** `validatePreparedRoomEntries` requires the exact file set that the room's channel publishes. `publishPreparedRoom` treats the request as optional.
+**6. Room-entry validation follows the binding, not a flag.** A binding with a `request-digest` requires exactly its locator plus `request.json`. A binding without one requires exactly its locator.
 
 - Value AC: AC-1.
-- Simplest alternative: accept one or two files without pinning the set. That drops the "no copied sources, no provider subtree" invariant the spec states at line 125.
+- Simplest alternative: accept any one or two files. That drops the "no copied sources, no provider subtree" invariant the spec states.
 
-### Two seeded cleanups are cut, not deferred
+**7. `request.json` is retired at preparation and readable forever.** Preparation never writes it again. The 499 existing rooms keep theirs, keep their bound `request-digest`, and keep the full request validation they have today. No room migrates.
 
-The seed proposed to drop the per-item `type` field and to consider dropping `mediaType`. The spike refutes both against the shipped q0 preflight. Neither belongs in this task.
+## Cross-repo interface contract: the q0 preflight
 
-- **Per-item `type` stays.** The seed states "q0 does not read it". That is false. With `"type": "Reference"` removed from the context items, q0 refuses the room: `briefing: context 0 requires id and type`. In the accepted control run, q0 materializes the reference blob; in the typeless run it does not. Spacedock's own `referenceInventory` (`operation.go:758`) uses the same field to find References, so dropping it would also silence Git-source validation for every reference.
-- **Artifact `mediaType` stays.** With `mediaType` removed from the primary artifact, q0 refuses the room: `briefing: artifact 0 requires id, uri, mediaType, and rev`. This is a resolved cross-repo requirement of the shipped `reviewv1` loader, not an open question and not a deferral.
+This is a dependency, not a deliverable. The captain routes the q0 change in `spacedock-subspace`. This contract is what the two sides must both meet.
+
+q0's `internal/gateroom.Prepare` amends to:
+
+1. Read the canonical Briefing alone. Try `index.json` first, then `gate-briefing.json`. Refuse with a name list when neither is a contained regular file.
+2. Derive identity from the Briefing id's positional components. For `briefing:<entity>:<stage>:attempt-<N>:revision-<M>`, the gate is `gate:<entity>:<stage>` and the attempt is `gate-attempt:<entity-tail>-<stage>-<N>`, where `<entity-tail>` is the last colon-separated segment of `<entity>`.
+3. Take the content digest by recomputation: JCS-canonicalize the Briefing bytes, then SHA-256.
+4. Set the actor and approver to the constant `person:captain`. That was always the value, and `operation.go:530` refuses any other.
+5. Read artifact Git coordinates exactly as today, through the same `reviewv1` source resolver.
+6. Drop the request-absence refusal.
+7. KEEP the provider-absence refusal. A provider subtree in the room is still an error.
+
+**q0 stops being an authority checkpoint, and this is the load-bearing consequence.** With no request, q0 recomputes the digest instead of comparing it, so it cannot detect a tampered Briefing. Risk evidence run 7 shows it accepting tampered bytes. Authority enforcement therefore sits entirely with the Spacedock recorder, which compares the room against the entity binding under the entity lock. That wall already exists as `validateRetainedAuthority` and it already runs at every mutating verb: `prepare.go:134`, `operation.go:170` and `operation.go:248`, `application.go:84` and `application.go:122`, and `delivery.go:173`. Run 8 shows it refusing the exact bytes q0 accepted.
+
+Note for the gate: the reset direction named this wall `gate record --room`. That surface does not exist, and three places exclude it — the spec's "Explicitly outside v1" list, `docs/roadmap/durable-decisions/index.md:81`, and `TestGateRecordRejectsProviderRoomBeforeMutation`, which pins the exit-2 refusal. This design reads the direction as naming where the wall lives, not as requisitioning a flag, and adds no command surface. A literal `--room` needs a captain decision to reverse a v1 exclusion.
 
 ## Risk evidence
 
-The riskiest claim is cross-repo byte compatibility. The spike exercised it first, against the q0 preflight in `spacedock-subspace` at `spacedock-ensign/subspace-r-scaffolded-gate-room` (75ef1a2), through `internal/gateroom.Prepare`.
+The riskiest claim is that q0 can preflight from the canonical Briefing alone. The spike exercised it first, against `spacedock-subspace` `internal/gateroom` at `75ef1a2`. The ref was read out with `git archive`, so that repo keeps its HEAD, its worktree list, and its tracked bytes. It holds 46 worktrees and other agents' in-flight work.
 
-The spike built the design in a throwaway checkout of `95f877cd6` and drove the real CLI against a split-root fixture with two Git roots. Results:
+The amended preflight was written and run against real rooms minted by the real CLI on a split-root fixture with two Git roots:
 
-1. **The provider opt-in reproduces today's room byte-for-byte.** In one fixture, at one pair of commits, the baseline binary and the patched binary with `--provider` produce identical `request.json` and identical `gate-briefing.json`. `diff -r` reports no difference.
-2. **q0 accepts the patched provider room.** `PREFLIGHT-ACCEPTED gate=gate:task:validation attempt=gate-attempt:task-validation-1 actor=person:captain`. The scratch tree holds the materialized artifact blob and the materialized reference blob.
-3. **q0 fails closed on a chat room, before any host command.** `PREFLIGHT-REFUSED: gate room: request.json: ... no such file or directory`. This is the correct outcome. A chat room is not a provider room, and q0 refuses it by name rather than by silent degradation.
-4. **The canonical Briefing is channel-independent.** The chat room's `gate-briefing.json` is byte-identical to the provider room's, at the same commits.
-5. **The withdraw regression is real, and the fix is load-bearing.** Against one chat room, the baseline binary prints `Error: current attempt is not request-backed` and exits 1. The patched binary prints `withdrawn ... state=withdrawn` and exits 0.
-6. **The chat lifecycle closes and consumes.** `gate record --decision approve --consume` reports `state=closed`, `sync=local-only`, and `route=approved-awaiting-merge`.
-7. **Archived rooms still read.** `status --workflow-dir docs/dev --validate` produces byte-identical output under the baseline binary and the patched binary, over the real state checkout of 600 rooms in every historical shape. Both exit 0.
-8. **The blast radius is bounded and named.** `go test ./internal/gates/... ./internal/cli/...` fails 13 cases in 11 test functions. Every one asserts the two-file shape or the request-backed precondition. `TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean/chat-only_request-less_attempt` asserts the exact behavior this design inverts, so it must be rewritten, not repaired.
+1. **A new one-file `index.json` room is accepted.** `PREFLIGHT-ACCEPTED gate=gate:task:validation attempt=gate-attempt:task-validation-1 actor=person:captain`, exit 0.
+2. **A legacy one-file `gate-briefing.json` room is accepted**, with identical derived identity.
+3. **An existing two-file room is accepted**, with identical derived identity. The 499 existing rooms keep working under the amended preflight.
+4. **The derived identity equals what today's request-backed path reads.** Running both preflights over the same room returns the same gate, attempt, actor, and Briefing id.
+5. **Recomputation equals the bound digest.** The preflight recomputes `sha256:05022451384f66de...`, and the entity frontmatter binds the same value.
+6. **The negatives still refuse.** A provider subtree gives `gate room: provider must be absent`. A room with no canonical Briefing gives `gate room: no canonical Briefing (index.json, gate-briefing.json)`. Both exit 1.
+7. **A tampered Briefing is ACCEPTED by the amended preflight**, and returns a different digest, `sha256:c9def6143cf8...`. q0 is not the wall.
+8. **The Spacedock recorder refuses those same tampered bytes.** `gate record --decision approve` prints `Error: bound canonical Briefing bytes do not match the frozen digest`, exits 1, and leaves entity bytes unchanged.
 
-The spike code is throwaway. Its runs seed the implementation's first tests, named in the test plan.
+Cycle 0 proved three more facts that this design keeps. The canonical Briefing is channel-independent. `status --validate` over the real 700-room state checkout is byte-identical before and after. The corpus separation is total. A classification of every archived request-less binding found 118 opaque refs, 33 refs that resolve to nothing, and about 70 directory-shaped rooms. Every one of those directories holds `briefing.json`, and none holds `index.json` or `gate-briefing.json`.
 
 ## Documentation changes
 
-**`docs/specs/gate-resolution-frontmatter-contract.md`, line 125.** Before: "It writes only `gate-briefing.json` and `request.json` at preparation time." After: "The caller selects the presentation channel. By default preparation writes only `gate-briefing.json`, and the binding carries no `request-digest`. With `--provider` it also writes `request.json` and binds its digest, for a provider that reads the room. Preparation copies no selected source, writes no association, and creates no provider subtree."
+Before/after is stated against `main`, because the cycle-0 fork is deleted unbuilt and the net effect must land on `main`.
 
-**Same file, line 107.** Before: "Request-less and chat-only attempts may omit it." After: "A chat attempt omits it. A binding whose `room-ref` names a directory that holds `gate-briefing.json` is a prepared room in either channel."
+**`docs/specs/gate-resolution-frontmatter-contract.md` line 28.** Before: `ROOM[("Frozen gate room<br/>request.json and canonical Briefing")]`. After: `ROOM[("Frozen gate room<br/>the canonical Briefing, one file")]`.
 
-**Same file, line 176.** Before: "requires the room to contain exactly `gate-briefing.json` and `request.json`". After: "requires the room to contain exactly the file set its channel publishes".
+**Same file, line 106.** Before: "A prepared provider-neutral room binds `request-digest`, the JCS digest of its `request.json`. Request-less and chat-only attempts may omit it." After: "A prepared room is one file: the canonical Briefing, named `index.json`. Its binding carries no `request-digest`. A binding whose `room-ref` names a directory that does not hold `briefing.json` is a prepared room. Rooms prepared before this change hold `gate-briefing.json` and `request.json`, and bind the JCS digest of that request. They stay readable, and they keep the full request validation. No room migrates."
 
-**`docs/site/reference/command-reference.md`, line 96.** Before: "Immediately after successful preparation the room contains exactly `gate-briefing.json` and `request.json`, with no copied sources or association." After: "Immediately after successful preparation a chat room contains exactly `gate-briefing.json`, with no copied sources or association. Add `--provider` to also mint the `request.json` handoff that a room-reading provider needs." The command cell gains `[--provider]`.
+**Same file, line 124.** Before: "It writes only `gate-briefing.json` and `request.json` at preparation time." After: "It writes only `index.json` at preparation time. Readers resolve the canonical Briefing by name: `index.json` first, then the earlier `gate-briefing.json`."
 
-**`docs/site/concepts/gates-and-decisions.md`, line 41.** Before: "two-file recorder-ready room". After: "recorder-ready room".
+**Same file, after line 109 (new paragraph).** "The recorder is the authority wall. A presentation channel materializes the room and can recompute what it reads. Only the recorder compares the room against the entity binding, under the entity lock. Every mutating verb runs that comparison before it writes."
 
-Implementation applies these diffs. Validation reviews them against ASD-STE100.
+**Same file, line 174.** Before: "retires only the selected current-stage open request-backed attempt. Under the shared lock it validates all retained authority and requires the room to contain exactly `gate-briefing.json` and `request.json`." After: "retires only the selected current-stage open prepared attempt. Under the shared lock it validates all retained authority and requires the room to contain exactly the file set its binding implies."
+
+**`docs/site/reference/command-reference.md` line 96.** Before: "Immediately after successful preparation the room contains exactly `gate-briefing.json` and `request.json`, with no copied sources or association." After: "Immediately after successful preparation the room contains exactly `index.json`, the canonical Briefing, with no copied sources or association."
+
+**`docs/site/concepts/gates-and-decisions.md` line 41.** Before: "a two-file recorder-ready room". After: "a one-file recorder-ready room".
+
+**`skills/present-gate/SKILL.md` line 13.** Before: "`request.json`, the canonical Briefing, and recorder validation retain the exact full digest authority." After: "The canonical Briefing and recorder validation retain the exact full digest authority."
 
 ## Out of scope
 
-Subspace-side changes (q0 owns its preflight and Result contract). The canonical five-key Result format. Retiring the provider machinery (the opt-in exists to keep it). The round recorder's `briefing.json` and `briefing.review.jsonl` shapes. Dropping the per-item `type` field and the artifact `mediaType` field, both refuted above. Converting existing archived rooms; they stay unchanged and readable.
+The q0-side code change (the captain routes it in `spacedock-subspace`). A `gate record --room` surface, which stays outside v1. Migrating or rewriting any existing room. The round recorder's `briefing.json` and `briefing.review.jsonl` shapes. Dropping the per-item `type` field and the artifact `mediaType` field, both refuted in cycle 0 against the shipped q0 loader.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +200, across 14 files (insertions ~+420, deletions ~-220). Tolerance: ±60 net LOC and ±3 files.
+Production and proof are stated separately. Cycle 1's lesson is that the fork's cost hid in the proof column, so a single combined figure hides the signal.
 
-The production part is measured, not estimated. The spike's non-test diff is +144 / -82, net +62, across 6 files: `internal/gates/prepare.go`, `operation.go`, `application.go`, `io.go`, `model.go`, and `internal/cli/cli.go`. The remainder is 5 test files and 3 documentation files.
+**Production: net +70 LOC, across 5 files. Tolerance ±25 net LOC and ±2 files.** The files are `internal/gates/prepare.go`, `operation.go`, `io.go`, `model.go`, and `application.go`. `internal/cli/cli.go` is NOT in the list: one shape adds no flag, so the command grammar does not change. Cycle 1 measured its own production column at +126 across 6 files with the fork. The flag, the channel plumbing, and the replay-decline check account for the difference.
+
+**Proof: net +330 LOC, across 7 files. Tolerance ±80 net LOC and ±2 files.** Four files change: `internal/gates/prepare_test.go`, `gates_test.go`, `internal/cli/gate_test.go`, and `internal/cli/terminal_consume_test.go`. One more changes in `internal/ensigncycle`. Two are new test files, one for each package. This figure is calibrated against a measurement, not a guess: cycle 1's proof column measured +611 across 8 files with two channels asserted everywhere. One channel roughly halves the new-test volume and keeps the edit volume.
+
+Combined for reference only: net +400 across 12 files. A correction round measures the two columns separately.
 
 Declared semantic changes:
 
-- **Command grammar:** `gate prepare` gains the `--provider` flag. No existing invocation changes meaning.
-- **Stored format:** a chat gate room holds one file, and its binding carries no `request-digest`. Archived rooms and bindings are unchanged.
-- **Authority:** `gate withdraw` accepts any prepared room, not only a request-backed one. The frontmatter validator no longer requires a withdrawn attempt to retain a `request-digest`.
-- **Runtime behavior:** retained-authority validation now covers prepared chat rooms. A corrupted chat Briefing that passes today will be refused. The `status --validate` run over 600 archived rooms shows no change there.
+- **Command grammar:** unchanged. No flag is added or removed.
+- **Stored format:** a new gate room holds one file named `index.json`, and its binding carries no `request-digest`. Existing rooms and bindings are unchanged.
+- **Authority:** `gate withdraw` accepts any prepared room. The frontmatter validator no longer requires a withdrawn attempt to retain a `request-digest`.
+- **Runtime behavior:** retained-authority validation now covers request-less prepared rooms. A corrupted Briefing that the shipped binary approves over will be refused. The `status --validate` run over the real state checkout shows no change there.
+- **Cross-repo:** a room this version prepares is not readable by the unamended q0 preflight, which refuses it by name. The amended preflight reads both shapes.
 
 ## Acceptance criteria
 
-Each AC names a property of the finished entity, not a stage action, and how it is verified.
+**AC-1 (VALUE) - A gate room is one file, and the gate closes, consumes, and archives as it does today.**
+Verified by: a behavior test that drives the built binary through prepare, record, and consume on a split-root fixture. It asserts the prepared room's entry set is exactly `{index.json}`, and that the binding has no `request-digest`. Independent baseline that fails today: the same journey publishes 2 files and binds a `request-digest`, in 499 of 499 rooms scanned. Falsifying edit: make `Prepare` mint the request again. The entry-set assertion reds.
 
-**AC-1 (VALUE) - A chat gate journey publishes a one-file room, and the room closes, consumes, and archives as it does today.**
-Verified by: a behavior test that drives the built binary through prepare, record, and consume on a split-root fixture, and asserts the prepared room's entry set is exactly `{gate-briefing.json}` and the binding has no `request-digest`. Independent baseline that fails today: the same journey publishes 2 files and binds a `request-digest`, in 499 of 499 rooms scanned. Falsifying edit: make `Prepare` mint the request unconditionally. The entry-set assertion reds.
+**AC-2 - The canonical Briefing bytes are unchanged, so the amended q0 preflight derives the same identity and digest.**
+Verified by: a golden test pinning the `index.json` bytes for fixed inputs, plus the recorded spike runs 1 through 5. Falsifying edit: change any manifest field, the key order, or the indent. The golden reds, and the recomputed digest stops matching the bound digest.
 
-**AC-2 - A `--provider` prepare publishes the exact room bytes today's prepare publishes, and the q0 preflight accepts it.**
-Verified by: a golden test that pins the `request.json` and `gate-briefing.json` bytes for fixed inputs, plus the recorded cross-repo run of `spacedock-subspace` `internal/gateroom.Prepare` against a `--provider` room. Falsifying edit: change any bound field, the key order, or the indent. The golden reds, and the q0 digest check reds.
+**AC-3 - A prepared room's retained authority is validated whether or not it has a request.**
+Verified by: a test that corrupts a one-file room's Briefing after binding, then asserts the next `gate prepare` and `gate record` refuse and leave entity bytes unchanged. Independent baseline that fails today: the shipped binary records `state=closed ... decision=approve` over the same corruption, because `io.go:204` skips a request-less binding. Falsifying edit: restore the `request-digest == ""` skip. The refusal assertion reds.
 
-**AC-3 - A prepared room's retained authority is validated in both channels.**
-Verified by: a test that corrupts a chat room's `gate-briefing.json` after binding, then asserts the next `gate prepare` and `gate record` refuse and leave entity bytes unchanged. Independent baseline that fails today: the same corruption passes, because `io.go:204` skips a request-less binding. Falsifying edit: restore the `request-digest == ""` skip. The refusal assertion reds.
+**AC-4 - `gate withdraw` retires an open one-file attempt, and the retired attempt validates.**
+Verified by: a test that prepares a one-file room, withdraws it, and asserts exit 0, a `withdrawal` block, and a clean `Validate`. Independent baseline that fails today: the same withdraw exits 1 with `current attempt is not request-backed`. Falsifying edit: restore the request-backed precondition. The exit-0 assertion reds.
 
-**AC-4 - `gate withdraw` retires an open chat attempt, and the retired attempt validates.**
-Verified by: a test that prepares a chat room, withdraws it, and asserts exit 0, a `withdrawal` block, and a clean `Validate`. Independent baseline that fails today: the same withdraw exits 1 with `current attempt is not request-backed`. Falsifying edit: restore the request-backed precondition. The exit-0 assertion reds.
+**AC-5 - Every archived and existing room still reads, under all four binding shapes.**
+Verified by: `spacedock status --workflow-dir docs/dev --validate` over the real state checkout, whose output must equal the pre-change binary's output byte for byte. A retained fixture pins one `gate-briefing.json` room with its request, one legacy `briefing.json` directory, and one opaque `subspace-room:` ref. Falsifying edit: drop the `briefing.json` test from `preparedRoomBinding`. The legacy fixture reds.
 
-**AC-5 - Archived rooms of every historical shape still read.**
-Verified by: `spacedock status --workflow-dir docs/dev --validate` over the real state checkout, whose output must equal the pre-change binary's output byte for byte. A retained fixture pins one legacy `briefing.json` room and one opaque `subspace-room:` ref. Falsifying edit: make `preparedRoomBinding` match any directory. The legacy fixture reds.
-
-**AC-6 (MEANS, serving AC-1) - The gate spec and the command reference document the chat default and the provider opt-in.**
+**AC-6 (MEANS, serving AC-1) - The gate spec and the site docs state the new contract: the one-file room, the locator order, the request retirement, and the authority wall.**
 Verified by: the doc diff above, reviewed at validation against ASD-STE100 per the workflow README.
 
 ## Test plan
 
 `internal/gates` is a status-mutation and guard surface, so the detached adversarial audit applies before merge.
 
-- **Unit, `internal/gates`:** both prepare shapes; the `--provider` golden bytes; `preparedRoomBinding` over the three binding shapes; replay and rebind protection on a chat room; withdraw on a chat room; retained-authority refusal on a corrupted chat Briefing. Cost: low. These reuse `prepareFixture`.
-- **Rewrite, not repair:** the 11 named failing test functions. `TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean/chat-only_request-less_attempt` and `TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities` assert the inverted behavior, so they must state the new contract.
-- **Behavior, `internal/cli`:** the CLI journey for AC-1, and the `--provider` usage surface. Cost: medium, because the existing gate CLI tests are slow.
-- **Back-compat fixture:** one retained legacy `briefing.json` room and one opaque ref, for AC-5.
-- **Cross-repo, recorded not committed:** the q0 preflight run for AC-2. It needs a `spacedock-subspace` checkout, so it is validation evidence, not a committed test.
+- **Unit, `internal/gates`:** the one-file prepare shape, the `index.json` golden bytes, and `preparedRoomBinding` over the four binding shapes. Also locator resolution order, replay and rebind protection, and withdraw on a one-file room. Also the retained-authority refusal on a corrupted Briefing, and the deleted-Briefing guard. Cost: low. These reuse `prepareFixture`.
+- **Edit, not double:** the existing tests that assert the two-file shape state the one-file contract instead. There is one shape, so no test gains a channel axis. The tests that corrupt `request.json` to reach retained-authority validation corrupt the Briefing instead.
+- **Behavior, `internal/cli`:** the CLI journey for AC-1. Cost: medium, because the existing gate CLI tests are slow.
+- **Back-compat fixture:** one `gate-briefing.json` room with its request, one legacy `briefing.json` directory, and one opaque ref, for AC-5.
+- **Cross-repo, recorded not committed:** the q0 spike runs above. They need a `spacedock-subspace` checkout, so they are recorded evidence, not a committed test.
 - No live workflow run is needed. The change touches no dispatch path, host adapter, or journey grader.
+
 
 ### Feedback Cycles
 
@@ -258,3 +277,19 @@ The first pass inherited q0 acceptance from the ideation spike and proved only b
 - Patched binary, chat default: `PREFLIGHT-REFUSED: gate room: request.json: ... no such file or directory`, exit 1. q0 refuses a chat room by name, before any host command, and does not degrade silently.
 
 That q0 accepts the patched provider room and refuses the chat room reproduces spike results 2 and 3 against the delivered code. The falsifying edit is unchanged: alter any bound field, the key order, or the indent, and the golden reds and the q0 digest check reds.
+## Stage Report: ideation (cycle 2)
+
+- DONE: The reshaped design lands the captain's one-shape direction exactly: index.json canonical for new rooms, no request.json in any channel, legacy names readable with the predicate discriminator intact, the q0 interface contract stated byte-precisely as an explicit cross-repo dependency, the salvage list from 312fa3f95 named, and the fork deleted unbuilt.
+  Seven mechanisms in "Proposed approach", each naming its value AC, the simplest alternative, and why that alternative fails. Mechanisms 2, 3, 4, and 5 are marked SALVAGE from 312fa3f95. The `--provider` flag, the channel plumbing, the replay-decline check, and the doubled matrix are gone; "Declared semantic changes" now records command grammar as unchanged, and `internal/cli/cli.go` leaves the production file list. The predicate discriminator is unchanged and still tests for `briefing.json`, which is what keeps a deleted Briefing loud; the corpus classification in "Risk evidence" shows the separation is total across 700 rooms. ONE DEVIATION, raised with the FO and recorded in the body: the direction sited the authority wall at `gate record --room`, which does not exist and is excluded from v1 in the spec, in `docs/roadmap/durable-decisions/index.md:81`, and by `TestGateRecordRejectsProviderRoomBeforeMutation`. The design reads the direction as naming where the wall lives and adds no command surface. A literal flag needs a captain decision.
+- DONE: The spec diff for docs/specs/gate-resolution-frontmatter-contract.md is concrete before/after (captain-required), plus the site docs; all prose strict ASD-STE100.
+  Eight before/after diffs in "Documentation changes": five in the gate spec (the mermaid room node, the request-digest paragraph, the preparation-writes sentence, a NEW recorder-as-authority-wall paragraph, and the withdraw room-contents sentence), plus `docs/site/reference/command-reference.md`, `docs/site/concepts/gates-and-decisions.md`, and `skills/present-gate/SKILL.md`. Before/after is quoted against `main`, not against the retired fork branch, because the fork is deleted unbuilt and the net effect must land on `main`. New body prose was scanned mechanically for the 25-word cap and the banned modals; the only `may` left is inside a quoted "before" string.
+- DONE: AC set and test plan rebuilt single-channel with failing-today baselines; the estimate states production and proof surface separately, each with tolerance.
+  Six ACs, no channel axis anywhere. AC-1 measures the room entry set against the 499/499 baseline. AC-3 and AC-4 each carry their own measured failing-today baseline, both re-measured this cycle against the real pre-change binary. AC-5 pins all four binding shapes. The estimate is split as the captain required: production net +70 across 5 files (±25/±2), proof net +330 across 7 files (±80/±2). The proof figure is calibrated against cycle 1's MEASURED +611 across 8 files, not guessed.
+
+### Summary
+
+The riskiest claim was that q0 can preflight from the canonical Briefing alone, so it was exercised first. The amended preflight was written against `spacedock-subspace` `internal/gateroom` at `75ef1a2` and run on real rooms minted by the real CLI. It accepts all three live shapes — a new `index.json` room, a legacy `gate-briefing.json` room, and an existing two-file room — and derives a gate, attempt, actor, and Briefing id identical to what today's request-backed path reads out of `request.json`. Its recomputed digest equals the digest the entity binds. The provider-absence and missing-Briefing refusals still fire by name. The ref was read out with `git archive`, so that repo keeps its HEAD, its worktree list, and its tracked bytes.
+
+Run 7 is the finding that shaped the design. A tampered Briefing is ACCEPTED by the amended preflight, which returns a different digest, because recomputation cannot detect tampering. Run 8 shows the Spacedock recorder refusing those same bytes with `bound canonical Briefing bytes do not match the frozen digest`, exit 1, entity byte-clean. Removing `request.json` therefore moves a real check off the presentation side, and the recorder-as-authority-wall statement is load-bearing rather than decorative. The design states it, the spec diff adds a paragraph for it, and AC-3 tests it.
+
+Falsifiability of the spike, in one line per claim: the identity derivation reds if the Briefing id grammar changes, because gate and attempt are parsed from its positional components; the digest claim reds if any manifest field, key order, or indent changes, because the recomputed value stops matching the bound value; the authority-wall claim reds if the `request-digest == ""` skip returns to `io.go`, because run 8 then records the approval instead of refusing it.
