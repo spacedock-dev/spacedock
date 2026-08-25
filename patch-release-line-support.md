@@ -1,7 +1,7 @@
 ---
 id: d0g21c517b5nvga1ybwckapk
 title: Patch-release line support - gate release.yml's main-stamp on line-latestness, fix the stable-branch advance, automate the preversion bump
-status: backlog
+status: ideation
 source: "Captain CL, 2026-08-25, reconciling gr and tw after the v0.27.0 cut: 'reconcile tw and gr and recommend best approach' - supersedes next-independent-release-line (twq68r4y8qg0wetztajtmmzz), whose body described the retired next-branch model; the live incidents of 2026-08-25 are the spec"
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain chat 2026-08-25: ''dispatch d0'' — approved seeding into design; the v0.27.0 cut''s live incidents are the spec'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 One owner for release.yml's stable-tag conditional. Today the machinery cannot ship an old-line patch (a v0.27.1 while main is the 0.28 line): two step-level defects, verified by reading the shipped workflow at the v0.27.0 cut, plus one automation the cut proved missing.
