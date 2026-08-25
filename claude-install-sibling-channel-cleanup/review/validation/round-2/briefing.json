@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7p4vxcb9edzrph0zsfn75cd9:validation:round-2:revision-1",
+  "question": "Correction round 2 (captain: cut content, not just convert): is the corrected candidate ready for the validation re-run?",
+  "artifacts": [
+    {
+      "id": "artifact:7p4vxcb9edzrph0zsfn75cd9:validation:round-2:revision-1:item-1",
+      "uri": "git-root://state/d493a5f31264ed9e153f28a3a70ef2a9ae27da64/claude-install-sibling-channel-cleanup/index.md",
+      "rev": "sha256:7d4c325e648abdc5d7575617113ccbb1c9e1440316c307586cf9f75ee9db2ca7",
+      "mediaType": "text/markdown",
+      "summary": "Captain directive: delete factless prose first, then keep survivors in STE. Correction 4b5b4073a atop 2f91b6dd4: restatements of adjacent code and body-resident rationale deleted; survivors strict STE (self-check re-run clean). Surface net +147 across 8 files - 65 under the +212 target, 20 under the original +167 baseline; the cycle-1 tolerance breach closes by deletion. Proofs green: go test ./..., -race, both drift arms, live value test 3/3 no SKIP, gofmt clean; docs strict build still SKIPPED (mkdocs absent, flagged). Judgment call flagged for the gate: comments no longer narrate what adjacent code shows."
+    }
+  ]
+}
