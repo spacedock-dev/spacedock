@@ -41,6 +41,17 @@ gates:
                 digest: sha256:f8d70f5565f1d662a98de3b20c6e7a311a00e338e66a5a115a75ad528903c3d4
                 request-digest: sha256:80b53391d0b55fa47c67da34fd6501e30dafccca843fe6e85832dc8dc4db6590
                 room-ref: ./de-lecture-and-defer-fo-contract/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wn3dg7txnrte0jrcxf56b859:ideation:1
+                briefing: briefing:wn3dg7txnrte0jrcxf56b859:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T00:42:16.785549Z"
+                decision: approve
+                reason: 'Captain CL in chat 2026-08-24: ''dispatch. keep the validation lean. i''ll review on github'' at ideation attempt-1 (digest f8d70f55) - accepts the design including the cap-raise-as-follow-up recommendation; sets a lean validation posture with captain GitHub review as the human check'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Two movements over the FO contract with one lens: the contract carries rules and commands; rationale, narration, design history, and repeated justification live in entity bodies and tests. Movement 1 (delete): the 2026-08-24 FO audit enumerated the lecture, file by file. Movement 2 (defer, folded from s6q): move boot-unreachable shared-core sections behind their existing triggers, measured by boot occupancy in tokens (s6q's archived body carries the full measured profile: shared core ~10.1k tok of a 40.4k greet boot; candidate span 9,105 of 26,092 bytes = 35%).
