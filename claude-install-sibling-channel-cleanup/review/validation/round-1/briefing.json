@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7p4vxcb9edzrph0zsfn75cd9:validation:round-1:revision-1",
+  "question": "Correction round 1 (captain ASD-STE100 send-back of PR #760): is the corrected candidate ready for the validation re-run?",
+  "artifacts": [
+    {
+      "id": "artifact:7p4vxcb9edzrph0zsfn75cd9:validation:round-1:revision-1:item-1",
+      "uri": "git-root://state/ee890273b0ee429f25a554909f168c5d14cce148/claude-install-sibling-channel-cleanup/index.md",
+      "rev": "sha256:fd0e993f2685155d266ae346ba3572120c54ce9c3fd9f9d58df02cd4959495de",
+      "mediaType": "text/markdown",
+      "summary": "Captain send-back: the diff's comments and user-facing doc text predate the ASD-STE100 ruling. Correction commit 2f91b6dd4 atop b56e218a0: diff-touched comments and doc text rewritten to strict STE (block-level scope interpretation recorded for the gate); behavior unchanged; go test ./... and -race green, drift arms PASS, live value test PASS 3/3 no SKIP; docs strict build SKIPPED (mkdocs absent, flagged to validation). Surface now +238 net across 8 files vs approved +167 tolerance 55 (16 past the top; STE conversion cost; baseline predates the prose ruling) - captain tolerance decision pending."
+    }
+  ]
+}
