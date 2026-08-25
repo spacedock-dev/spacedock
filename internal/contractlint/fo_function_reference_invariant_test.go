@@ -36,9 +36,16 @@ import (
 // option needed a raise, the captain chose the one that keeps the approved
 // wording where it was approved and raised the cap by the measured remainder
 // plus headroom.
+//
+// Cap ratchet DOWN (2026-08-24, entity de-lecture-and-defer-fo-contract, id
+// wn3dg7txnrte0jrcxf56b859): first-officer-shared-core.md 26900 -> 23500. The
+// de-lecture strikes plus moving ## Completion and Gates behind the dispatch
+// trigger measure the file at 22545 bytes. Ratcheting the cap to the measured
+// size plus headroom is what keeps the boot-occupancy win durable; left at
+// 26900, the freed headroom refills silently on the next contract edit.
 func TestFOInstructionComponentCaps(t *testing.T) {
 	for rel, cap := range map[string]int{
-		"skills/first-officer/references/first-officer-shared-core.md": 26900,
+		"skills/first-officer/references/first-officer-shared-core.md": 23500,
 		"skills/fo-gate-lifecycle/SKILL.md":                            7700,
 	} {
 		if got := len([]byte(readRepoFile(t, filepath.FromSlash(rel)))); got > cap {
