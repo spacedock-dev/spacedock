@@ -73,7 +73,7 @@ gates:
                 target-stage: done
                 state: pending
 mod-block: merge:pr-merge
-pr: "#759"
+pr: pr-merge:759
 ---
 
 Two movements over the FO contract with one lens: the contract carries rules and commands; rationale, narration, design history, and repeated justification live in entity bodies and tests. Movement 1 (delete): the 2026-08-24 FO audit enumerated the lecture, file by file. Movement 2 (defer, folded from s6q): move boot-unreachable shared-core sections behind their existing triggers, measured by boot occupancy in tokens (s6q's archived body carries the full measured profile: shared core ~10.1k tok of a 40.4k greet boot; candidate span 9,105 of 26,092 bytes = 35%).
