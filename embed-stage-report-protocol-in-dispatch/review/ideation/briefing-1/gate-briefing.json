@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:t4rqqmmrqh69adgb1bbdx838:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation design to enter implementation: embed the stage-report protocol in the dispatch build artifact body for Pi only (build.go step-8 conditional on host==pi + firstActionBlock wording narrowing), with a non-self-describing Pi live lane (AC-1/AC-3) and a fixture test (AC-2) asserting the body carries the protocol for Pi and not for Claude/Codex?",
+  "artifacts": [
+    {
+      "id": "artifact:t4rqqmmrqh69adgb1bbdx838:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/87b57fe9d1d599904b7fc7a9c85ba8e43cd697a0/embed-stage-report-protocol-in-dispatch.md",
+      "rev": "sha256:1a3a6b003abe7aed3496381acd153662a44d865898c8761fe64dbb7b2774b81f",
+      "mediaType": "text/markdown",
+      "summary": "Pi-only embed of the stage-report protocol (heading + DONE/SKIPPED/FAILED/Summary, sourced from ensign-shared-core.md:66-95) into build.go step 8 as a conditional block for host==pi, plus narrowing the Pi firstActionBlock overclaim to 'stage-report format template' (the ensign skill supplies polling/worktree/completion). AC-1 (value): a non-self-describing Pi live lane writes a complete ## Stage Report on a real dispatch. AC-2 (serves AC-1): a fixture asserts the body carries the protocol tokens for pi and not for claude/codex. AC-3 (serves AC-1): the non-self-describing lane reverts RED on body-embed removal, closing the self-describing-checklist tautology. Surface ~+120 net (~+130 ins/~-10 del) across ~3 files. No spike: build pipeline proven to emit body text; worker-follows-body verification deferred to the live lane as the implementation's first test."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/95f877cd6fb6066a76c6e40e4a74a6fb260f2f94/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/95f877cd6fb6066a76c6e40e4a74a6fb260f2f94/skills/ensign/references/ensign-shared-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:59e0dce08e13a1a01ef76cc0a8c55c312b8fe8e87cb983482f29b22efabfa9ad"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:ideation:attempt-1:revision-1:item-4",
+      "uri": "git-root://state/87b57fe9d1d599904b7fc7a9c85ba8e43cd697a0/_archive/pin-ensign-contract-entry-point.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:77ce3075bc6a423853c1422bbc10603b034c7cafd967034a5e692b06f65d9b8a"
+    }
+  ]
+}
