@@ -87,6 +87,18 @@ The FO contract's Operating Principles and Working Principles already govern gen
 - **Instruction-file read quarantine.** Tests do not read prompt or instruction files except in two cases. First, in `internal/contractlint`, and there only for structural checks: reference closure, frontmatter validity, structural absence, and dedup. Second, to extract a shipped runnable block and execute it against independent fixture conditions, where the oracle is the fixture's on-disk state or the block's observed output and never the file's wording — `skills/integration/survey_probe_test.go` is the reference shape. Prose-grep and prose-to-code consistency checks never substitute for running the behavior.
 - **Trace every mechanism to value.** At implementation dispatch, and whenever implementation introduces another mechanism, name the user-visible/value AC it serves, the simplest available alternative, and the concrete reason that alternative cannot prove or deliver the value. A test harness is a mechanism: it should orchestrate and observe the supported runtime, not acquire its own protocol, daemon, lease, lifecycle state, recovery loop, or process controller and become a second implementation of the system under test. For terminal multiplexers, `setsid`, process-group control, raw PTY writes, or a second lifecycle supervisor require an explicit architecture review; try an existing real-terminal substrate first. Before approving an enabling task, require one end-to-end run through the simplest substrate. If it has not produced visible product proof within 90 minutes, stop and review the architecture instead of adding another coordination layer.
 
+## Prose style
+
+All code comments and all user-facing documentation must follow ASD-STE100 Simplified Technical English (captain ruling, 2026-08-25). User-facing documentation includes the product README, `docs/site/**`, command help text, and error messages. Code, identifiers, commands, and quoted output are exempt.
+
+- Write procedural text in the imperative. The limit is 20 words for each sentence.
+- Write descriptive text with a limit of 25 words for each sentence.
+- Use one word for one meaning through a document. Do not rotate synonyms.
+- Use only the modals "can", "will", and "must". Do not use "should", "would", "may", "might", or "could".
+- The `simple-english` skill carries the full rule catalog. Workers apply it when they write or edit this text. Validation checks the changed text against it.
+
+Text that exists before this ruling converts when a task touches it, not in a bulk sweep.
+
 ## Review-finding disposition
 
 Every finding enters this checkpoint when it arrives during implementation, validation, a detached audit, consequential FO quick work, or a correction routed from a rejected gate.
