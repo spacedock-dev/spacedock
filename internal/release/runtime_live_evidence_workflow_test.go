@@ -16,8 +16,8 @@ type liveCadenceWorkflow struct {
 	On struct {
 		WorkflowDispatch struct {
 			Inputs map[string]struct {
-				Default  string   `yaml:"default"`
-				Options  []string `yaml:"options"`
+				Default string   `yaml:"default"`
+				Options []string `yaml:"options"`
 			} `yaml:"inputs"`
 		} `yaml:"workflow_dispatch"`
 	} `yaml:"on"`

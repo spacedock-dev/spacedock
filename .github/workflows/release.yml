@@ -165,6 +165,43 @@ jobs:
           set -euo pipefail
           go run ./cmd/spacedock-release manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
 
+      # Stop a cut that moves the two stable binary channels DOWN. goreleaser
+      # marks each bare vX.Y.Z tag as a full release (`prerelease: auto`), so
+      # GitHub moves /releases/latest to that tag. goreleaser also bumps the
+      # stable Homebrew cask, because `skip_upload: auto` skips a prerelease
+      # only. A tag older than the release that `stable` points at moves both
+      # channels DOWN with each job green.
+      #
+      # No job re-run can undo a published release or a pushed cross-repo cask
+      # commit. goreleaser needs this job, so a failure here stops the cut
+      # before goreleaser starts. The `if` skips a prerelease tag, which never
+      # reaches the stable channel.
+      - name: Gate the cut on the tag not regressing the stable channel
+        if: "!contains(github.ref, '-')"
+        run: |
+          set -euo pipefail
+          # `ls-remote --exit-code` gives exit 2 for a ref that does not exist,
+          # and a different non-zero code when it cannot read the remote. Only
+          # the first case is the first stable release, and it must pass. Each
+          # other failure must stop the cut, because an unreadable baseline is
+          # not a permission to publish.
+          LS=0
+          git ls-remote --exit-code origin refs/heads/stable >/dev/null || LS=$?
+          if [ "$LS" -eq 2 ]; then
+            echo "::notice::stable-regression gate: no stable ref yet, so there is no release to regress"
+            exit 0
+          elif [ "$LS" -ne 0 ]; then
+            echo "::error::stable-regression gate: cannot read refs/heads/stable (git ls-remote exit $LS); failing closed" >&2
+            exit 1
+          fi
+          # `stable` moves only after goreleaser succeeds, so its manifest is
+          # the true record of the release that the channel points at. A tag
+          # pool instead records what was CUT, which is a different fact.
+          git fetch origin stable
+          STABLE_MANIFEST="$(mktemp)"
+          git show FETCH_HEAD:.claude-plugin/plugin.json > "$STABLE_MANIFEST"
+          go run ./cmd/spacedock-release stable-regression-gate "$GITHUB_REF_NAME" "$STABLE_MANIFEST"
+
   goreleaser:
     needs: e2e-gate
     runs-on: macos-latest
@@ -233,55 +270,30 @@ jobs:
           # dry-run spike); belt-and-suspenders against a future resolution change.
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
 
-      # AC-4: stamp the plugin manifests' `version` to the release so the host
-      # plugin panel (`claude plugin list --json`) displays a version that tracks
-      # the binary instead of the frozen placeholder. release.yml triggers ONLY on
-      # a `push: tags: ['v*']` cut, which carries no channel signal and has no edge
-      # `v*`-tag scheme — so exactly ONE thing reaches this step: a STABLE release.
-      # The stable channel's plugin lives on `main` (the stable binary stamps
-      # devBranch=main), so the displayed version must be stamped+pushed to `main`.
-      # This is a single-target stamp: the edge marketplace entry now resolves
-      # `main` directly too (see docs/releasing.md "Advancing the Edge Line"), so
-      # this same stamp is what an edge install displays as well, until a later
-      # prerelease tag advances `main` further.
-      - name: Stamp plugin manifests to the release version
-        # A hyphenated tag is a pre-release (v0.23.0-pre); it ships binary +
-        # content as a GitHub pre-release but must stay OUT of the stable channel,
-        # so skip both the manifest stamp and the stable-ref advance below. A final
-        # vX.Y.Z has no hyphen and still runs, advancing stable as before.
+      # Advance the stable channel ref to the TAGGED commit. The
+      # spacedock-dev/marketplace stable entry pins source.ref=stable, a moving
+      # branch and not a per-release tag. A fresh `spacedock@spacedock` install
+      # resolves the commit that this branch points at, so this push is what
+      # publishes the release to the stable channel. It replaces a hand-edit of
+      # the marketplace repo. The `main` stamp is no longer part of this step:
+      # the edge-advance job owns it, under the decision that also cuts the
+      # matching edge binary.
+      - name: Advance the stable channel ref to the tagged commit
+        # A hyphenated tag is a prerelease (v0.23.0-pre). It ships a binary and
+        # content as a GitHub prerelease, but it must stay OUT of the stable
+        # channel, so the `if` skips this step. A final vX.Y.Z has no hyphen and
+        # still runs.
         if: "!contains(github.ref, '-')"
         run: |
           set -euo pipefail
-          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
-          FO_PROSE=skills/first-officer/references/first-officer-shared-core.md
-          # The tagged commit is the SHA the e2e-gate greened and the manifest-tag
-          # gate matched. Resolve it BEFORE switching to main, so the stable ref
-          # below advances to exactly THIS commit, not whatever main HEAD happens to
-          # be at push time.
+          # The tagged commit is the SHA that e2e-gate greened and the
+          # manifest-tag gate matched. The push source is that SHA and not
+          # `main`. `main` can move after the tag fires, and then the two refs
+          # point at different commits. The tagged commit is on main's history,
+          # so this push is a fast-forward. The push stays in this repo, so the
+          # default GITHUB_TOKEN is sufficient. The cross-repo tap push needs a
+          # PAT, but this one does not.
           RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
-          git fetch origin main
-          git switch main
-          go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" \
-            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
-          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"; then
-            echo "plugin manifests and FO prose already at $RELEASE_VERSION; nothing to commit"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "release: stamp plugin manifests and FO prose to $RELEASE_VERSION" \
-              -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
-            git push origin main
-          fi
-          # Advance the stable channel ref to the TAGGED commit. The
-          # spacedock-dev/marketplace stable entry pins source.ref=stable (a moving
-          # branch, not a per-release tag), so a fresh `spacedock@spacedock` install
-          # resolves whatever this branch points at — this push is what publishes the
-          # release to the stable channel, replacing a hand-edit of the marketplace
-          # repo. Pushing $RELEASE_COMMIT (the tagged SHA), not `main`, keeps stable
-          # and the tag the SAME commit even if main advanced after the tag fired.
-          # The tagged commit is on main's history, so this fast-forwards. Same-repo
-          # push, so the default GITHUB_TOKEN suffices (no cross-repo PAT, unlike the
-          # homebrew-tap push).
           git push origin "$RELEASE_COMMIT:refs/heads/stable"
 
   # Auto-cuts the vX.(Y+1).0-pre0 edge prerelease on a latest-line stable tag. A
@@ -428,3 +440,44 @@ jobs:
             fi
             sleep 10
           done
+
+      # Stamp `main` to the edge prerelease version that the step above cuts.
+      # Each edge user's plugin then matches the pre0 binary, and the
+      # first-officer version gate passes with no human commit. Before this step
+      # existed, the cutter had to author that commit by hand. Every edge install
+      # aborted until it landed (6m18s at the v0.27.0 cut, 2026-08-25).
+      #
+      # The step carries the SAME decision gate as the pre0 cut, and it runs
+      # AFTER the verify poll. A stamp without its matching binary points each
+      # edge user at a version that nothing built. One gate for both steps makes
+      # that disagreement impossible. A monotonic version check gets the
+      # arithmetic right and the coupling wrong, because only the decision knows
+      # if the pre0 binary exists. A failure before this step leaves the state
+      # that a cut leaves today, and never a worse one.
+      #
+      # `main` and the stable channel now carry different versions by design:
+      # `main` gets X.(Y+1).0-pre0 and `stable` keeps the tagged release commit.
+      # A merge to `main` during the run can make this push fail. Run the job
+      # again, because the stamp gives the same result each time.
+      - name: Stamp main to the next edge prerelease version
+        if: "!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          # The same command that names the pre0 tag names the stamp version, so
+          # the manifest and the tag cannot disagree.
+          PRE0_VERSION="$(go run ./cmd/spacedock-release edge-pre0-version "$RELEASE_VERSION")"
+          FO_PROSE=skills/first-officer/references/first-officer-shared-core.md
+          git fetch origin main
+          git switch main
+          go run ./cmd/spacedock-release stamp-version "$PRE0_VERSION" \
+            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"; then
+            echo "plugin manifests and FO prose already at $PRE0_VERSION; nothing to commit"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "release: bump version to spacedock@$PRE0_VERSION" \
+              -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+            git push origin main
+          fi

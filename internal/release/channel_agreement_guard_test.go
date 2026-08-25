@@ -12,7 +12,7 @@ import (
 // The post-flip agreement invariant: the released stable channel's plugin source
 // must settle on `main` across the two BINARY-side surfaces —
 //
-//	(1) release.yml's "Stamp plugin manifests" step git switch/push target,
+//	(1) release.yml's main-stamp step git switch/push target,
 //	(2) .goreleaser.yaml's stable-build cli.devBranch ldflag.
 //
 // Under Model B the marketplace manifest will move OUT of the plugin branch into a
@@ -27,17 +27,16 @@ import (
 // value the implementer wrote.
 const stableChannelBranch = "main"
 
-// releaseStampTarget extracts the branch the release.yml "Stamp plugin manifests
-// to the release version" step switches to and pushes — the surface (1) value.
-// It reads the step's run block, finds the `git switch <branch>` and `git push
-// origin <branch>` commands, and returns the branch only when BOTH name the same
-// branch (a switch/push split would itself be a drift). Returns "" when the step,
-// or either command, is absent. The step also pushes the stable channel ref
-// (`git push origin main:refs/heads/stable`); that refspec push (target contains
-// `:`) is skipped here so it does not shadow the bare-branch stamp target.
+// releaseStampTarget extracts the branch that release.yml's main-stamp step
+// switches to and pushes — the surface (1) value. It reads the step's run block
+// and finds the `git switch <branch>` and `git push origin <branch>` commands.
+// It gives the branch only when BOTH commands name the same branch, because a
+// switch/push split is itself a drift. It gives "" when the step, or either
+// command, is absent. A refspec push (a target that contains `:`) is skipped, so
+// a ref-advance push cannot shadow the bare-branch stamp target.
 func releaseStampTarget(workflow string) string {
 	for _, step := range parseWorkflowSteps(workflow) {
-		if step.name != "Stamp plugin manifests to the release version" {
+		if step.name != mainStampStepName {
 			continue
 		}
 		var switchTo, pushTo string
@@ -136,7 +135,7 @@ func readReleaseWorkflow(t *testing.T) string {
 func TestStableChannelBinaryPairAgreesOnMain(t *testing.T) {
 	stampTarget := releaseStampTarget(readReleaseWorkflow(t))
 	if stampTarget == "" {
-		t.Fatal("release.yml has no 'Stamp plugin manifests' step with matching git switch/push branch targets")
+		t.Fatalf("release.yml has no %q step with matching git switch/push branch targets", mainStampStepName)
 	}
 	stableDevBranch := goreleaserStableDevBranch(readGoreleaserConfig(t))
 	if stableDevBranch == "" {
@@ -154,13 +153,14 @@ func TestStableChannelBinaryPairAgreesOnMain(t *testing.T) {
 	}
 }
 
-// stableRefPushSource returns the push source (the part before `:refs/heads/stable`)
-// the "Stamp plugin manifests" step advances the stable channel ref to, with any
-// surrounding shell quotes stripped, or "" when the step has no such push. It looks
-// for a `git push origin <src>:refs/heads/stable` command in the step's run block.
+// stableRefPushSource gives the push source that the stable-advance step moves
+// the stable channel ref to — the part before `:refs/heads/stable`, with any
+// shell quotes stripped. It gives "" when the step has no such push. It looks
+// for a `git push origin <src>:refs/heads/stable` command in the step's run
+// block.
 func stableRefPushSource(workflow string) string {
 	for _, step := range parseWorkflowSteps(workflow) {
-		if step.name != "Stamp plugin manifests to the release version" {
+		if step.name != stableAdvanceStepName {
 			continue
 		}
 		for _, command := range executableShellCommands(step.run) {
@@ -178,7 +178,7 @@ func stableRefPushSource(workflow string) string {
 }
 
 // TestStampStepAdvancesStableRefToTaggedCommit locks the stable-channel publish
-// mechanism AND the tag-binding: the release stamp step MUST push the TAGGED commit
+// mechanism AND the tag-binding: the stable-advance step MUST push the TAGGED commit
 // ($RELEASE_COMMIT) to the `stable` ref, because the spacedock-dev/marketplace
 // stable entry pins source.ref=stable. Without this push the stable channel would
 // freeze at the prior release forever (a fresh `spacedock@spacedock` install would
@@ -190,7 +190,7 @@ func stableRefPushSource(workflow string) string {
 func TestStampStepAdvancesStableRefToTaggedCommit(t *testing.T) {
 	src := stableRefPushSource(readReleaseWorkflow(t))
 	if src == "" {
-		t.Fatal("release.yml stamp step does not push to refs/heads/stable; the stable marketplace channel (source.ref=stable) would never advance past the prior release")
+		t.Fatal("release.yml stable-advance step does not push to refs/heads/stable; the stable marketplace channel (source.ref=stable) would never advance past the prior release")
 	}
 	if src != "$RELEASE_COMMIT" {
 		t.Errorf("stable ref is advanced to %q, not the tagged commit $RELEASE_COMMIT; stable and the tag could diverge if main advances after the tag fires", src)

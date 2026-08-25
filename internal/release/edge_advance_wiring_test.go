@@ -40,6 +40,70 @@ func ifHasDecisionGate(ifCond string) bool {
 	return strings.Contains(strings.ReplaceAll(ifCond, " ", ""), "steps.decision.outputs.advance=='true'")
 }
 
+// edgeAdvanceMainStampStep returns the step that stamps `main` to the next edge
+// prerelease version, or nil when the job has none.
+func edgeAdvanceMainStampStep(job workflowJob) *workflowStep {
+	for i := range job.steps {
+		if job.steps[i].name == mainStampStepName {
+			return &job.steps[i]
+		}
+	}
+	return nil
+}
+
+// assertMainStampSharesPre0Gate binds AC-2's structural half: the `main` stamp
+// step and the auto-pre0 step must carry the SAME `if:` condition. A replay
+// drives a step directly, so it cannot prove that Actions gates the step. Only
+// this check can prove it. One condition for both steps makes a stamp to a
+// version that nothing built impossible. It also keeps an old-line tag from
+// moving `main` DOWN.
+func assertMainStampSharesPre0Gate(workflow string) error {
+	job := edgeAdvanceJob(workflow)
+	if job == nil {
+		return fmt.Errorf("release.yml has no edge-advance job")
+	}
+	stamp := edgeAdvanceMainStampStep(*job)
+	if stamp == nil {
+		return fmt.Errorf("edge-advance has no %q step", mainStampStepName)
+	}
+	pre0 := edgeAdvanceAutoPre0Step(*job)
+	if pre0 == nil {
+		return fmt.Errorf("edge-advance has no auto-cut pre0 step")
+	}
+	if !ifHasDecisionGate(stamp.ifCond) {
+		return fmt.Errorf("main stamp step is not decision-gated; if: %q — an old-line tag would stamp main DOWN", stamp.ifCond)
+	}
+	if normalizeIf(stamp.ifCond) != normalizeIf(pre0.ifCond) {
+		return fmt.Errorf("main stamp if: %q differs from the auto-pre0 if: %q; the stamp could run without its binary", stamp.ifCond, pre0.ifCond)
+	}
+	return nil
+}
+
+// normalizeIf drops the spaces from an `if:` condition, so two equivalent
+// conditions compare equal.
+func normalizeIf(ifCond string) string { return strings.ReplaceAll(ifCond, " ", "") }
+
+// TestMainStampSharesThePre0DecisionGate locks AC-2's structural half against the
+// on-disk release.yml. The adversarial twin widens the stamp's `if:` back to the
+// stable-path-only form the retired goreleaser step carried, and the guard must
+// red.
+func TestMainStampSharesThePre0DecisionGate(t *testing.T) {
+	workflow := readWorkflow(t, "release.yml")
+	if err := assertMainStampSharesPre0Gate(workflow); err != nil {
+		t.Fatalf("real release.yml main-stamp gate guard failed: %v", err)
+	}
+
+	widened := strings.Replace(workflow,
+		"      - name: "+mainStampStepName+"\n        if: \"!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'\"\n",
+		"      - name: "+mainStampStepName+"\n        if: \"!contains(github.ref, '-')\"\n", 1)
+	if widened == workflow {
+		t.Fatal("fixture workflow missing the main-stamp step guard to widen")
+	}
+	if err := assertMainStampSharesPre0Gate(widened); err == nil {
+		t.Fatal("guard accepted a main stamp gated only on the stable path (an old-line tag would stamp main DOWN)")
+	}
+}
+
 // edgeAdvanceAutoPre0Step returns the always-cut-pre0 step (the one running
 // edge-pre0-version to auto-create the vX.(Y+1).0-pre0 tag), or nil when none.
 func edgeAdvanceAutoPre0Step(job workflowJob) *workflowStep {

@@ -22,8 +22,12 @@ marketplace source.
 - publishes the GitHub Release with those assets;
 - bumps BOTH `spacedock-dev/homebrew-tap` casks (`spacedock` stable +
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
-- stamps the plugin manifests' `version` on `main`, then advances the stable
-  channel ref (see below).
+- advances the stable channel ref to the tagged commit. See below.
+- stops the cut before publication if the tag is older than the release that
+  `stable` points at. See "The Stable Regression Gate" below.
+- stamps the plugin manifests and the FO prose pin on `main`, but only on a
+  latest-line stable tag. The stamp writes the `X.(Y+1).0-pre0` version that the
+  same job auto-cuts. An old-line tag does not change `main`.
 - on a latest-line stable tag, auto-cuts a `vX.(Y+1).0-pre0` prerelease tag so
   the edge binary catches up to the new release line within minutes (see
   "Advancing the Edge Line" below).
@@ -37,18 +41,17 @@ the marketplace NAME, so a binary adds the channel's branch source —
 `spacedock-dev/marketplace` for stable, `spacedock-dev/marketplace@edge` for edge —
 and the marketplace it registers carries the matching name.
 
-The stable entry is NOT repointed per release by a hand-edit in the marketplace
-repo. `stable` is a MOVING BRANCH in THIS repo: after the manifest stamp,
-release.yml resolves the tagged commit as `RELEASE_COMMIT` and runs
-`git push origin "$RELEASE_COMMIT:refs/heads/stable"` (release.yml's "Stamp plugin
-manifests" step), advancing `stable` to that exact tagged commit. A fresh
-`spacedock@spacedock` install resolves whatever `stable` points at, so that push
-is what publishes the release to the stable channel — no marketplace-repo commit.
+A hand-edit in the marketplace repo does not repoint the stable entry per
+release. `stable` is a MOVING BRANCH in this repo. After the tag fires,
+release.yml resolves the tagged commit and pushes it to `refs/heads/stable`. A
+fresh `spacedock@spacedock` install resolves whatever `stable` points at. That
+push is what publishes the release to the stable channel. No marketplace-repo
+commit is necessary.
 
-The post-tag manifest stamp is idempotent: when the tagged commit ALREADY carries
-the release version in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`
-(it does, under the stamp-then-tag ordering below), the stamp step finds no diff
-and commits nothing; it still advances `stable` to that commit.
+The `main` stamp is no longer part of the stable-tag path. The `edge-advance`
+job stamps `main`, and only on a latest-line tag. The stamp writes the next
+prerelease version. The tagged commit keeps the release version. The two values
+are different by design, so the stamp always makes one commit on `main`.
 
 The tag triggers the release, but goreleaser publishes only after the `e2e-gate`
 job confirms the tagged commit has a green Runtime Live E2E run (or a recorded
@@ -180,23 +183,7 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    The release commit is already on `main` from step 3; pushing the tag fires
    `release.yml`, which gates on the green run for this commit and then publishes.
 
-9. Bump `main` to the next pre-version, immediately after the tag push. The
-   auto-pre0 job tags `vX.(Y+1).0-pre0` on the release commit, but nothing
-   stamps `main`'s manifests or the FO prose pin past the released minor.
-   Until this stamp lands, every edge install aborts at the FO version gate
-   with a binary/plugin mismatch (observed live at the v0.27.0 cut,
-   2026-08-25):
-
-   ```bash
-   go run ./cmd/spacedock-release stamp-version X.(Y+1).0-pre0 .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
-   git commit -m "release: bump version to spacedock@X.(Y+1).0-pre0" -- .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
-   git push origin main
-   ```
-
-   Run it on `main`. The stable branch is already frozen at the tagged commit
-   and is not touched.
-
-10. Clean up:
+9. Clean up:
 
    ```bash
    git worktree remove .worktrees/release-X.Y.Z
@@ -234,13 +221,18 @@ already published):
   already-landed tag is a no-op, and the run-verification poll executes again —
   so the re-run turns green once the pre0 run exists, and still fails loudly if
   the credential remains suppressed. Expect two GitHub releases per stable cut.
+  After the job verifies the pre0 run, the same job stamps the manifests and the
+  FO pin on `main` to the pre0 version. An edge install then passes the FO version
+  gate with no human step. If a merge to `main` happens during the run, the push
+  can fail. Run the job again, because the stamp gives the same result each time.
 - **Old-line / patch (`vX.Y.1`, cut after a newer `X.(Y').Z` line already
   shipped):** the decision step compares this tag's own version against the
   highest OTHER existing bare stable tag in the repo and prints `skip`, logged
   as a `::notice::`; the auto-pre0 step is gated on that decision, so it does
   NOT run. Without this check, the patch would auto-cut a WRONG, lower
   `vX.(Y+1).0-pre0` tag whose release run would bump the `spacedock@next` cask
-  DOWN to an older minor.
+  DOWN to an older minor. The same decision also gates the `main` stamp. An
+  old-line tag cannot move `main` to a lower version.
 
 The `vX.(Y+1).0-pre0` release run does not recurse: its `-pre0` tag is itself a
 prerelease (hyphenated), so both the decision step and the auto-pre0 step —
@@ -257,6 +249,31 @@ including prereleases and fetches that tag's `_edge` asset. The default stable
 path resolves `/releases/latest`, which excludes prereleases — so a default
 install on an edge machine lands a lower minor and aborts at first-officer boot.
 Casks are macOS-only; on Linux the script is the only edge binary path.
+
+## The Stable Regression Gate
+
+A stable tag that is older than the release that `stable` points at can damage
+two binary channels. goreleaser marks each bare `vX.Y.Z` tag as a full release, so
+GitHub moves `/releases/latest` to it. goreleaser also bumps the stable Homebrew
+cask, because `skip_upload: auto` skips only a prerelease. An old tag moves both
+channels DOWN, and every job stays green. The `e2e-gate` job stops this before
+goreleaser starts.
+
+- The gate reads the version in the `.claude-plugin/plugin.json` file that
+  `stable` points at.
+- If the tag is older than that version, the gate fails the run. goreleaser does
+  not start, because it needs the `e2e-gate` job.
+- If the tag is the same version or newer, the gate lets the run continue. A
+  re-run of a release that already reached `stable` is still possible.
+- On the first stable release the `stable` ref does not exist. The gate writes a
+  notice and lets the run continue.
+- If the gate cannot read the `stable` ref, it fails the run. A read failure is
+  not a permission to publish.
+
+The gate does not make a patch line deliverable. A patch that is newer than the
+version `stable` points at still publishes, and `stable` then leaves the history
+of `main`. The next latest-line release cannot advance `stable` after that. Do not
+cut a patch line until that work is complete.
 
 ## Dev-Only `next` Publishing
 

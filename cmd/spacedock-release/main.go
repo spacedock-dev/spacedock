@@ -55,7 +55,10 @@ import (
 // is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
 // unless every tagged `.json` manifest's version equals the tag semver AND every
 // tagged `.md` prose's stamped minor equals the tag's major.minor (the
-// stamp-then-tag ordering). notes summarizes the commit log
+// stamp-then-tag ordering). stable-regression-gate blocks the cut when the tag is
+// older than the version in the plugin manifest that `refs/heads/stable` points
+// at. Such a tag moves /releases/latest and the stable Homebrew cask DOWN.
+// notes summarizes the commit log
 // since the last tag into clean release notes and, on confirmation, cuts the
 // annotated tag whose body carries them (CI extracts that body and feeds
 // goreleaser via --release-notes).
@@ -83,6 +86,8 @@ func main() {
 		os.Exit(runE2EGate(os.Args[2:], ghRunListForCommit))
 	case "manifest-tag-gate":
 		os.Exit(runManifestTagGate(os.Args[2:]))
+	case "stable-regression-gate":
+		os.Exit(runStableRegressionGate(os.Args[2:]))
 	case "notes":
 		os.Exit(notes(os.Args[2:]))
 	default:
@@ -368,6 +373,7 @@ Usage:
   spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
   spacedock-release e2e-gate <release-commit-sha>
   spacedock-release manifest-tag-gate <tag> <manifest-or-prose> [<manifest-or-prose> ...]
+  spacedock-release stable-regression-gate <tag> <stable-plugin.json>
   spacedock-release notes <release-version>
 `)
 }
