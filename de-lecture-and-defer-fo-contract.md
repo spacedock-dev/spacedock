@@ -7,7 +7,7 @@ started: 2026-08-24T23:37:58Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-de-lecture-and-defer-fo-contract
 issue:
 gates:
     version: 1
