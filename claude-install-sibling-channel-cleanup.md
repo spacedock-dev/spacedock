@@ -7,7 +7,7 @@ started: 2026-08-25T14:36:08Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-claude-install-sibling-channel-cleanup
 issue:
 pr:
 mod-block:
