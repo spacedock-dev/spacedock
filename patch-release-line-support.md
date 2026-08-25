@@ -7,7 +7,7 @@ started: 2026-08-25T16:33:56Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-patch-release-line-support
 issue:
 related: "next-post-release-preversion-bump (closed delivered); stamp-then-tag-release-ritual"
 gates:
