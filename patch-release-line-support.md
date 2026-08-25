@@ -33,6 +33,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:d0g21c517b5nvga1ybwckapk:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:d0g21c517b5nvga1ybwckapk-ideation-1
+              briefing:
+                id: briefing:d0g21c517b5nvga1ybwckapk:ideation:attempt-1:revision-1
+                digest: sha256:7f5a4070fbf6a244571236e7d1bb75cc9a9a2059047f2728cd0d91e7b63d6dba
+                request-digest: sha256:bd53f3a5a3b4a3885bfcac2ba874365e74fb78c27e97c23d651cf42950eeb634
+                room-ref: ./patch-release-line-support/review/ideation/briefing-1
 ---
 
 **LEAN CUT (captain ruling, 2026-08-25).** Stop the release-line cut that silently regresses the

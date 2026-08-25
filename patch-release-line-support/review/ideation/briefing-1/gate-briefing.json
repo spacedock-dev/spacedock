@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d0g21c517b5nvga1ybwckapk:ideation:attempt-1:revision-1",
+  "question": "Approve the lean-cut ideation — pre-publication old-line block as centerpiece, stamp-move, retired step 9, no force/lease machinery — at net +355 across 11 files (harness-dominated; a -74 menu is offered), with the do-not-cut-a-patch-line constraint standing until the delivery follow-up ships?",
+  "artifacts": [
+    {
+      "id": "artifact:d0g21c517b5nvga1ybwckapk:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/926b8fe2afc7a774580f4ca2fe7d47fd2f6d1454/patch-release-line-support.md",
+      "rev": "sha256:47fda1d230e7c2d2208dc1cb686dcccce11f7f4f7e525b47899d022e3e07e28d",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 reshape to the captain's lean ruling. Centerpiece verified at source: .goreleaser.yaml line 105 makes any hyphen-free tag a full release and line 125's skip_upload:auto skips only prereleases, so an old-line cut moves /releases/latest AND the stable brew cask DOWN with all jobs green — the new e2e-gate step blocks that before goreleaser starts. Fresh six-test spike on the gate's own read path, including the review-demanded fixture shape (version inversion WITHOUT ancestry inversion: a 0.27.1-stamped CHILD of the 0.28.0 commit fast-forwards cleanly, so only the decision gate can refuse it). Lease/force machinery dropped with its findings; deferral pointer to patch-line-stable-delivery-merge-commit (mex) recorded with the merge-commit direction and the re-verified no-branch-protection fact. Two honest divergences: estimate +355/11 files, NOT under half — both the dropped and added mechanisms are dominated by the same replay harness; the lean saving is authority and risk, not lines, and a -74 menu is named. And the gate passes a legitimate same-line patch cut by construction, which still freezes the channel on the next latest-line cut — the do-not-cut-a-patch-line operational constraint stays until the follow-up ships."
+    }
+  ]
+}
