@@ -22,7 +22,7 @@ gates:
                 id: briefing:7p4vxcb9edzrph0zsfn75cd9:backlog:attempt-1:revision-1
                 digest: sha256:4b88d6e7f37061f48b8d0475ee4f5a15476c1728bf602afc4d29856f86b71fb9
                 request-digest: sha256:7652910a297d84b88917d9d48ad7e4009f83582811873821de42860027c6a649
-                room-ref: ./claude-install-sibling-channel-cleanup/review/backlog/briefing-1
+                room-ref: ./review/backlog/briefing-1
               resolution:
                 type: Resolution
                 id: resolution:spacedock:7p4vxcb9edzrph0zsfn75cd9:backlog:1
@@ -42,7 +42,7 @@ gates:
                 id: briefing:7p4vxcb9edzrph0zsfn75cd9:ideation:attempt-1:revision-1
                 digest: sha256:4a2309021baa7b1f887ecb610ccf7cda7b76cbda693a455ffe05eca2ce779e8b
                 request-digest: sha256:faa415c897b74c56ce8189ab8b79b1daca58007fd611cd511556ab9da0c4d8d2
-                room-ref: ./claude-install-sibling-channel-cleanup/review/ideation/briefing-1
+                room-ref: ./review/ideation/briefing-1
               withdrawal:
                 by: agent:first-officer
                 at: "2026-08-25T15:09:29.517214Z"
@@ -52,7 +52,7 @@ gates:
                 id: briefing:7p4vxcb9edzrph0zsfn75cd9:ideation:attempt-2:revision-1
                 digest: sha256:2190d896a3e95805a7db88cbb1dd7fef4b9151ecfbf23837282b72fdf2d90f0b
                 request-digest: sha256:1f7af3722d949c1b4e5e2a2101f68577e3b01fa80245bae62689cc52d1bc36d8
-                room-ref: ./claude-install-sibling-channel-cleanup/review/ideation/briefing-2
+                room-ref: ./review/ideation/briefing-2
               resolution:
                 type: Resolution
                 id: resolution:spacedock:7p4vxcb9edzrph0zsfn75cd9:ideation:2
@@ -72,7 +72,7 @@ gates:
                 id: briefing:7p4vxcb9edzrph0zsfn75cd9:validation:attempt-1:revision-1
                 digest: sha256:842cfa5fc2b3930a9dbd10a5bc213fc6ed24c540589e1c283fcd4c8242c6d53b
                 request-digest: sha256:43ebe1c775612b378cecfcce6a7b84a16e4c80eb2f7b984ef4d91eb5cbfafa5a
-                room-ref: ./claude-install-sibling-channel-cleanup/review/validation/briefing-1
+                room-ref: ./review/validation/briefing-1
               resolution:
                 type: Resolution
                 id: resolution:spacedock:7p4vxcb9edzrph0zsfn75cd9:validation:1
@@ -709,7 +709,7 @@ surprise there would be cheap to catch and confusing to debug later.
 
 ### Feedback Cycles
 
-{First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+- Cycle 1: REWORKED — captain send-back of PR #760 (ASD-STE100 ruling, 2026-08-25; correction commit 2f91b6dd4); surface 8 files/+238 net vs estimate +167±55 (142%); AC unchanged; surface is 16 net LOC past tolerance — cause is the STE conversion itself, baseline predates the prose ruling; captain tolerance decision pending before the validation re-run.
 
 ## Stage Report: ideation
 
