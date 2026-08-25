@@ -902,3 +902,30 @@ cost. I did not trim load-bearing rationale to fit a number that was set before 
 standard existed, and I did not adjust the tolerance myself: only the captain changes
 an approved tolerance (README `## Review-finding disposition`, step 5). Recorded here
 for that decision.
+
+### Correction round 2 — cut, then convert (captain: "cut things we don't need")
+
+The captain's criticism was correct. Round 1 held content constant and converted it,
+which grows text by construction. This round deleted first.
+
+- DONE: Every comment and doc line this diff adds or edits carries a fact a maintainer needs at that site.
+  Commit `4b5b4073a`. Deleted as restatements of adjacent code: the 6-item command list in `installArgvSequence` (the argv slice sits directly below it), the command order and id mapping in `TestInstallArgvSequence` (the test literals say it), the stub setup and marker lists in the three tolerance comments (the `writeClaudeStub` call and the want list say it), and the subtest narration in the value test (the case table names them). Deleted as body-resident rationale: probes 3, 4, and 9, the fixture design choice, and the duplicate copy of the sibling-ambiguity reason.
+- DONE: Survivors stay strict ASD-STE100.
+  What survived is what the code cannot show at that site: the `plugin marketplace remove` cascade, why the uninstalls precede the marketplace add, why cleanup steps are tolerated (two distinct non-zero shapes), the sibling ids being deliberate literals, the falsifying edit for AC-1, and the SKIP-is-a-failure rule. Self-check re-run over the final added lines: zero banned modals, zero present perfect, zero contractions, zero semicolons, zero prose sentences over 25 words, and two remaining mid-sentence `when` clauses moved to condition-first form.
+- DONE: Cumulative net at or under the pre-STE +212, inside the approved band.
+  **net +147 across 8 files** (234 insertions, 87 deletions) against `main`. That is 65 under the +212 target and 20 under the original +167 baseline, so the round-1 tolerance breach is closed rather than waived. Final numstat: `README.md` +7/-2, `docs/site/get-started/install.md` +7/-0, `internal/cli/channel_selection_test.go` +10/-10, `internal/cli/host_exec.go` +15/-24, `internal/cli/init_devbranch_test.go` +7/-23, `internal/cli/install_tolerance_test.go` +12/-18, `internal/cli/sibling_channel_exclusive_test.go` +128/-0, `internal/contractlint/install_hint_drift_test.go` +48/-10. `host_exec.go` is now net **-9**: the cut reached past my own round-1 text into the original comment it replaced.
+- DONE: Behavior, identifiers, commands, and assertion strings unchanged.
+  Comment and doc text only. `go vet` clean. The README keeps the stable label, the edge pointer, and the `spacedock-dev/tap` token. install.md keeps the exclusivity statement, with the wording trimmed and every fact intact.
+- DONE: Proofs re-run green and recorded.
+  `go test ./...` exit 0 (22 packages, no FAIL). `go test ./... -race` exit 0, no FAIL. Both drift arms PASS: `TestInstallHintNoDrift` and `TestInstallHintProductReadmeNoDrift`. The AC-1 live value test re-run with claude 2.1.226: `--- PASS (11.54s)`, `sibling-present` `fresh-box` `reverse` all PASS, no SKIP. gofmt reports nothing for any file in the diff.
+- SKIPPED: docs strict build.
+  mkdocs is still not installed on this machine. Flagged for validation, not claimed.
+- DONE: New commit on the same branch atop 2f91b6dd4; state committed.
+  `4b5b4073a` on `spacedock-ensign/claude-install-sibling-channel-cleanup`, above `2f91b6dd4` and `b56e218a0`.
+
+**One judgment call worth the gate's eye.** Cutting to what the code cannot show
+means `installArgvSequence` no longer narrates its six steps, and the three tolerance
+tests no longer restate their stub setup. A reader now gets the step list from the
+argv slice and the reason from the comment. I think that split is right, and it is
+the captain's stated direction, but it is a real change in how much a reader gets
+from the comment alone.
