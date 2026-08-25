@@ -1,7 +1,7 @@
 ---
 id: t4rqqmmrqh69adgb1bbdx838
 title: Embed the stage-report protocol in the dispatch artifact
-status: backlog
+status: ideation
 source: "/tmp/spacedock-pi-dispatch-diagnosis.md (2026-08-25): 3 of 4 Pi-dispatched ensigns completed implementation without writing a ## Stage Report; the dispatch build artifact's ## First action claims the file contains the stage-report format, but the body has 0 such tokens. Same class as archived pin-ensign-contract-entry-point (2026-08-01), which fixed the spawn binding but not the artifact-body gap."
 gates:
     version: 1
@@ -25,7 +25,7 @@ gates:
                 reason: 'Captain approve: live-reproduced artifact-body gap on v0.28.0-pre0; scope matches the archived pin-ensign-contract-entry-point neighbor and the systemic self-describing-checklist coverage hole; direction accepted for ideation.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The dispatch artifact must carry the stage-report protocol so a worker writes a complete `## Stage Report:` section on a real dispatch, not only when a smoke-checklist tells it to.
