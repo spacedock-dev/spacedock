@@ -1,7 +1,7 @@
 ---
 id: t4rqqmmrqh69adgb1bbdx838
 title: Embed the stage-report protocol in the dispatch artifact
-status: ideation
+status: implementation
 source: "/tmp/spacedock-pi-dispatch-diagnosis.md (2026-08-25): 3 of 4 Pi-dispatched ensigns completed implementation without writing a ## Stage Report; the dispatch build artifact's ## First action claims the file contains the stage-report format, but the body has 0 such tokens. Same class as archived pin-ensign-contract-entry-point (2026-08-01), which fixed the spawn binding but not the artifact-body gap."
 gates:
     version: 1
@@ -45,7 +45,7 @@ gates:
                 reason: 'Captain approve: Pi-only embed via build.go step-8 conditional + firstActionBlock narrowing is the minimal sufficient mechanism; AC-1/AC-2/AC-3 cover value + serves + tautology-closure; surface and semantic-change declaration are sound; no spike needed is legitimate with the non-self-describing live lane as the implementation''s first test. Framing nit on ''proven by existing Pi live lanes'' noted, not a blocker.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-08-25T20:22:24Z
 ---
 
