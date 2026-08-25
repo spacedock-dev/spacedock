@@ -64,6 +64,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-25T22:44:05.495002Z"
                 reason: 'Body finalized after binding: the --room ambiguity recorded as resolved, out-of-scope and test-plan edits (7573cd4c0) postdate briefing-2''s frozen snapshot'
+            - id: gate-attempt:rx3daftacggfmw1pt2febw31-ideation-3
+              briefing:
+                id: briefing:rx3daftacggfmw1pt2febw31:ideation:attempt-3:revision-1
+                digest: sha256:09b51baaf0dc18b87b81aff1eea38667e211d30871ac86264fcda8bdc269a154
+                request-digest: sha256:6ee5a290e31c631a680efc9d019816ecf85b9aa411760be3ca307b9b16a38789
+                room-ref: ./request-less-gate-rooms-by-default/review/ideation/briefing-3
 ---
 
 Every gate room holds two files. Only the subspace provider journey reads `request.json`, and the entity frontmatter already holds every fact that file carries. Make the room one file. Name it `index.json`, and keep every legacy name readable forever.

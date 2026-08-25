@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rx3daftacggfmw1pt2febw31:ideation:attempt-3:revision-1",
+  "question": "Approve the one-shape reset ideation — one canonical Briefing file per room (index.json for new rooms), request.json retired everywhere, no new command surface, q0 amendment exercised against real code — at production +70 (±25) plus proof +330 (±80)?",
+  "artifacts": [
+    {
+      "id": "artifact:rx3daftacggfmw1pt2febw31:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/0ed81036c8d238d7c42a73553664dae3a8af8993/request-less-gate-rooms-by-default.md",
+      "rev": "sha256:cd7b4bd99554d7a5e9b6b83407e5393564f5b74c9b13a95a6594079ba931ee31",
+      "mediaType": "text/markdown",
+      "summary": "Briefing-3 rebind on the final body; design unchanged from briefing-2's presentation plus the --room resolution now recorded in-body: the phrase named where the wall lives (imprecision from the FO's reset notes, not the captain), no new surface, no v1-exclusion reversal, and TestGateRecordRejectsProviderRoomBeforeMutation retained as the design's boundary guard with a test-plan bullet forbidding its relaxation. Everything else as presented: one-shape rooms, index.json canonical, legacy names readable, q0 preflight exercised at 75ef1a2 across all three live shapes, run 7/8 making the recorder-as-authority-wall load-bearing (AC-3), eight doc diffs including five in the captain-required spec, estimate split production +70/5 ±25/±2 and proof +330/7 ±80/±2 calibrated against the measured cycle-1 volume."
+    }
+  ]
+}
