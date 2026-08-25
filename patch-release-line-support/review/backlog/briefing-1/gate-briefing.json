@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d0g21c517b5nvga1ybwckapk:backlog:attempt-1:revision-1",
+  "question": "Should design start on patch-release line support — the release.yml line-latestness stamp gate, the stable-branch advance fix, and the automated post-tag preversion bump?",
+  "artifacts": [
+    {
+      "id": "artifact:d0g21c517b5nvga1ybwckapk:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5fc3808dd4f8dccfecbb8c47fd8d191e908a066d/patch-release-line-support.md",
+      "rev": "sha256:2459a2e5d17e1d4d3b9d469c3c00662bf77ddb60d52f22ab2ab0df40ac647604",
+      "mediaType": "text/markdown",
+      "summary": "Seed from the captain's 2026-08-25 gr/tw reconciliation; the v0.27.0 cut's live incidents are the spec. Three items: (1) the manifest-stamp step gates only on stable-tag shape, so a v0.27.1 tag would stamp main DOWN to 0.27.1 and re-break edge — it must consult line-latestness (the sibling edge-advance job already computes it); (2) the stable-branch advance assumes the tagged commit is on main's history and dies non-FF for a release-branch commit, so stable plugin users never receive the patch; (3) the post-tag main preversion bump is manual ritual step 9 — automate it. Ideation also presents the sequencing options for shipping the #760 fix to stable: v0.27.1 patch line vs fold into v0.28.0. Supersedes next-independent-release-line."
+    }
+  ]
+}
