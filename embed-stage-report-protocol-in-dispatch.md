@@ -39,11 +39,51 @@ The coverage gap is systemic: every live lane (`internal/ensigncycle/pi_live_run
 
 ## Proposed approach
 
-Embed the stage-report protocol (the `## Stage Report: {stage}` template with the DONE/SKIPPED/FAILED/Summary structure, sourced from `ensign-shared-core.md:66-95`) into the `dispatch build` artifact body for every host, so the `## First action` claim is literally true for the format. Narrow the Pi `firstActionBlock` wording so it no longer overclaims polling/worktree/completion (those stay in the skill) — unless ideation chooses to embed those too. Add a non-self-describing live-lane variant per host (checklist = the entity's real acceptance criteria, with no format or skill-path hints) that asserts the worker still writes a complete stage report. Ideation decides Pi-only vs all-host embed and whether to keep the skill-load instruction alongside the body.
+**Decision: Pi-only embed.** Embed the stage-report protocol — the `## Stage Report: {stage}` template with the DONE/SKIPPED/FAILED/Summary structure, sourced from `ensign-shared-core.md:66-95` — into the `dispatch build` artifact body only when `host=pi`. Rationale: the gap is Pi-specific — Claude auto-loads the skill via `Skill()`, and Codex has the proven `$spacedock:ensign; then` bootstrap edge (`codex_bootstrap_test.go:60-76`). The adversarial revert (AC-3) can only go RED for Pi; for Claude/Codex the skill supplies the format, so an all-host embed would be untestable redundancy. All-host embed considered and rejected: it adds the same template block to hosts that already work, with no adversarial test that can fail on revert for them.
+
+**Decision: keep the skill-load instruction for Claude/Codex; the embedded format is the format source for Pi.** For Pi, there is no skill-load instruction to keep or remove — Pi does not auto-load the skill, and auto-loading is out of scope. The embedded format block replaces the skill as the format source for Pi only. For Claude/Codex, the existing `Skill()` / `$spacedock:ensign` bootstrap stays unchanged; no body embed is added.
+
+**build.go step-8 edit.** Step 8 (`build.go:672-674`) currently emits `### Completion checklist` + `### Summary\n{brief description...}`. The edit adds a stage-report format template block after the Summary slot, conditional on `host == "pi"`:
+
+```markdown
+### Stage Report format
+
+Append a `## Stage Report: {stage}` section at the end of the entity file using this structure:
+
+- DONE: {item text}
+  {one-line evidence or reference}
+- SKIPPED: {item text}
+  {one-line rationale}
+- FAILED: {item text}
+  {one-line details}
+
+### Summary
+{2-3 sentences: what was done, key decisions, anything notable}
+
+Every checklist item must appear. Use `- DONE:` / `- SKIPPED:` / `- FAILED:` markers. Do not use checkbox markers. Append at the end of the entity file.
+```
+
+This block is sourced from `ensign-shared-core.md:66-95` (the `## Stage Report Protocol` section), trimmed to the template + rules a worker needs to produce the report.
+
+**firstActionBlock wording correction (Pi only).** The Pi `firstActionBlock` (`build.go:897-904`) currently claims:
+
+> This file contains the shared ensign discipline entry points (stage-report format, polling, worktree ownership, and completion protocol) plus the stage-specific assignment.
+
+After the embed, the body carries the stage-report format but NOT polling/worktree/completion. Corrected wording:
+
+> This file carries the stage-report format template plus the stage-specific assignment. The ensign skill supplies the remaining shared discipline (polling, worktree ownership, completion protocol); on Pi it is discoverable (`skill="ensign"`), not auto-loaded.
+
+The Claude and Codex `firstActionBlock` strings are unchanged — their claims already correctly attribute the discipline to the skill.
+
+### Mechanism justification
+
+1. **Embedded protocol block (Pi body).** Serves AC-1 (worker writes complete report) and AC-2 (body carries protocol). Simplest alternative: add a checklist hint ("append a stage report with heading `## Stage Report:`...") to every Pi dispatch. Why insufficient: that is the self-describing tautology this entity exists to close — the real dispatch checklist is the entity's acceptance criteria, which does not mention the format.
+2. **Non-self-describing live-lane variant (Pi).** Serves AC-1 and AC-3. Simplest alternative: extend the existing `runPiSmokeDispatchBuild` with a second checklist variant that mentions the format. Why insufficient: a format-mentioning checklist is the tautology — it cannot fail on revert because the hint, not the body embed, is what makes the worker produce the report.
+3. **firstActionBlock rewording (Pi).** Serves AC-1 (the worker trusts the body as the format source because the First-action claim says so). Simplest alternative: delete the overclaim, say nothing about what the file contains. Why insufficient: the worker needs to know the body has the format template; without the claim, the worker may not look for it in the body.
 
 ## Risk evidence
 
-Backlog: the gap is live-reproduced — the artifact body has 0 stage-report tokens on v0.28.0-pre0, and the prior fix `pin-ensign-contract-entry-point` proved the worker loads the skill only when the checklist tells it to, not on a real dispatch. Riskiest unverified mechanism: whether embedding the format in the body is sufficient for a Pi worker to write a complete report when its checklist does not mention the format — the non-self-describing live lane exercises exactly this.
+Backlog: the gap is live-reproduced — the artifact body has 0 stage-report tokens on v0.28.0-pre0, and the prior fix `pin-ensign-contract-entry-point` proved the worker loads the skill only when the checklist tells it to, not on a real dispatch. Riskiest unverified mechanism: whether embedding the format in the body is sufficient for a Pi worker to write a complete report when its checklist does not mention the format — the non-self-describing live lane exercises exactly this. No spike needed: the build pipeline already emits text into the dispatch body (step 8 emits the checklist + summary slot), and Pi workers already read and follow the dispatch file's instructions (proven by every existing Pi live lane in `internal/ensigncycle`). The non-self-describing live lane (AC-1/AC-3) is the first test of whether the embedded format alone suffices — it is the implementation's first test, seeded by this risk evidence.
 
 ## Out of scope
 
@@ -51,21 +91,27 @@ Auto-loading the ensign skill on Pi (the deeper root cause — `skill="ensign"` 
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: ~+120, across ~4 files (`internal/dispatch/build.go`, a new or extended `internal/dispatch` fixture test, a non-self-describing live-lane variant in `internal/ensigncycle`, and possibly a skill-text reference). Tolerance: ±50%.
+Estimate net LOC change: ~+120, across ~3 files. Insertions: ~+130, deletions: ~-10, net ~+120. Files: `internal/dispatch/build.go` (+~30 / -~10: stage-report format block function, step-8 conditional, Pi firstActionBlock rewording), a new fixture test in `internal/dispatch` (+~50: build artifact with non-self-describing checklist, assert body contains protocol tokens for host=pi, assert absence for host=claude and host=codex), a non-self-describing live-lane variant in `internal/ensigncycle` (+~50: Pi non-self-describing checklist + assertion). No skill-text reference change needed (Pi-only embed does not touch skill files). Tolerance: ±50%.
+
+Observable semantics this task may change: dispatch artifact body contents (Pi host gains a stage-report format block); the Pi `## First action` claim (narrowed from full ensign discipline to stage-report format only). No CLI grammar change, no stored-format change, no authority change, no runtime behavior change. The Claude and Codex dispatch artifacts are unchanged.
 
 ## Acceptance criteria
 
 **AC-1 (value) — A Pi-dispatched ensign writes a complete stage report on a real, non-self-describing dispatch.**
 Verified by: a live Pi lane that dispatches a worker through `dispatch build --host pi` with a checklist equal to a real entity's acceptance criteria (no "First read ensign/SKILL.md", no "append a stage report with heading..."), then asserts the entity file carries a complete `## Stage Report: implementation` (heading + one DONE/SKIPPED/FAILED per checklist item + `### Summary`) and a clean state-checkout commit. Fails today: with the current artifact body, the worker has no format source on Pi.
 
-**AC-2 (serves AC-1) — The `dispatch build` artifact body carries the stage-report protocol.**
-Verified by: a fixture test in `internal/dispatch` that builds an artifact with a non-self-describing checklist for host=pi (and claude, codex) and asserts the body contains `## Stage Report:`, `- DONE:`, `- SKIPPED:`, `- FAILED:`, and `### Summary`. Fails today (0 hits, reproduced). The template tokens' presence in the generated body is the claim — a presence check over generated output, not a behavioral prose-grep over an instruction file.
+**AC-2 (serves AC-1) — The `dispatch build` artifact body carries the stage-report protocol for Pi.**
+Verified by: a fixture test in `internal/dispatch` that builds an artifact with a non-self-describing checklist for host=pi and asserts the body contains `## Stage Report:`, `- DONE:`, `- SKIPPED:`, `- FAILED:`, and `### Summary`. The same test asserts host=claude and host=codex artifacts do NOT contain the embedded block (Pi-only scope). Fails today (0 hits, reproduced). The template tokens' presence in the generated body is the claim — a presence check over generated output, not a behavioral prose-grep over an instruction file.
 
-**AC-3 (serves AC-1) — A non-self-describing live lane exists and closes the tautology.**
-Verified by: at least one live lane per host runs with a checklist that does NOT name the ensign skill path, the stage-report heading, or the DONE/Summary structure, and still passes the stage-report assertion; reverting the AC-2 body embed makes that lane RED — the hole that was never tested.
+**AC-3 (serves AC-1) — A non-self-describing Pi live lane exists and closes the tautology.**
+Verified by: a Pi live lane runs with a checklist that does NOT name the ensign skill path, the stage-report heading, or the DONE/Summary structure, and still passes the stage-report assertion (`## Stage Report: implementation` + `- DONE:` + `### Summary`); reverting the AC-2 body embed makes that lane RED — the hole that was never tested.
 
 ## Test plan
 
-Fixture in `internal/dispatch`: build an artifact with a non-self-describing checklist, assert the body carries the protocol (AC-2). Live: extend `runPiSmokeDispatchBuild` / `assertPiLiveSmokeResult` with a non-self-describing-checklist variant (AC-1, AC-3); add Claude/Codex equivalents if ideation picks all-host scope. Adversarial: revert the body embed, confirm the non-self-describing lane goes RED while the self-describing lane stays green — proving the new lane tests the real mode, not the fixture's hint. `internal/dispatch/build.go` is a front-door launcher surface, so the README's detached-adversarial-audit trigger may fire; ideation scopes it.
+Fixture in `internal/dispatch`: build an artifact with a non-self-describing checklist for host=pi, assert the body carries the protocol tokens (AC-2); assert host=claude and host=codex artifacts do NOT carry the embedded block. Cost: low — pure output assertion over generated text, no runtime. Complexity: ~50 lines.
+
+Live: add a non-self-describing-checklist variant to the Pi live smoke runner (AC-1, AC-3) — a checklist equal to a real entity's acceptance criteria with no format or skill-path hints. Cost: medium — requires a live Pi dispatch round-trip. Complexity: ~50 lines, reuses `runPiSmokeDispatchBuild` / `assertPiLiveSmokeResult` infrastructure.
+
+Adversarial: revert the body embed in `build.go`, confirm the non-self-describing Pi lane goes RED while the existing self-describing Pi lane stays green — proving the new lane tests the real mode, not a fixture hint. Cost: low — a code revert + test run. `internal/dispatch/build.go` is a front-door launcher surface, so the README's detached-adversarial-audit trigger may fire; ideation scopes it to the fixture + live lane only (no detached audit needed for an ideation-stage body-text embed).
 
 ### Feedback Cycles
