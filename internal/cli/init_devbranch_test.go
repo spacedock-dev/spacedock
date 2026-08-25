@@ -36,31 +36,9 @@ func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {
 	}
 }
 
-// TestInstallArgvSequence asserts the tolerance asymmetry of AC-1 and AC-3, and the
-// non-destructive shape. execHost.Install runs 6 commands in this order: `plugin
-// uninstall <id>`, `plugin uninstall <sibling channel id>`, `plugin uninstall
-// spacedock-edge@spacedock`, `plugin marketplace add <source>`, `plugin marketplace
-// update <marketplace>`, and `plugin install <id>`.
-//
-// The first uninstall is tolerated. Claude tracks an installed plugin through its
-// marketplace record, and it exits 1 on a fresh box with "Plugin not found in
-// installed plugins". The second uninstall keeps one channel on the host. The
-// sibling ids below are independent literals for each channel. They never come from
-// otherChannelMarketplace, so this test and the production sequence can diverge.
-// The third uninstall is the round-1 route-A migration, and devBranch does not gate
-// it.
-//
-// The builder takes any source. channelMarketplaceSource resolves the channel
-// source before this call: the bare repo for stable and `<repo>@edge` for edge. The
-// id is the channel that devBranch selects, with the channel in the marketplace
-// name. For the edge binary the id is `spacedock@spacedock-edge`, and the
-// marketplace update targets `spacedock-edge`. For stable the id is
-// `spacedock@spacedock`.
-//
-// No step uses `plugin marketplace remove`. Probe 1 measured that this command
-// uninstalls every co-hosted plugin. The four cleanup steps (three uninstalls and
-// the marketplace update) are tolerated. The two pinning steps (marketplace add and
-// plugin install) are fail-fast.
+// TestInstallArgvSequence asserts the argv sequence and the tolerance asymmetry of
+// AC-1 and AC-3. The sibling ids below are independent literals for each channel,
+// never derived from otherChannelMarketplace.
 func TestInstallArgvSequence(t *testing.T) {
 	wantEdge := []installStep{
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true},
@@ -86,10 +64,8 @@ func TestInstallArgvSequence(t *testing.T) {
 		t.Errorf("installArgvSequence(devBranch=main) = %v, want %v", got, wantStable)
 	}
 
-	// This loop asserts the tolerance asymmetry directly. The four cleanup steps
-	// (three uninstalls and the marketplace update) are tolerated. The two pinning
-	// steps (marketplace add and plugin install) are fail-fast. A change toward
-	// tolerance on every step, or tolerance on a pinning step, fails here.
+	// A change toward tolerance on every step, or tolerance on a pinning step,
+	// fails here.
 	seq := installArgvSequence("spacedock-dev/marketplace", "next")
 	for i, step := range seq {
 		isCleanup := isUninstallStep(step.argv) || isMarketplaceUpdateStep(step.argv)

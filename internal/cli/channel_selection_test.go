@@ -38,22 +38,12 @@ func TestChannelMarketplaceFromDevBranch(t *testing.T) {
 	}
 }
 
-// TestClaudeChannelInstallArgvSequence is the claude half of AC-3.
-// marketplaceSource points at the marketplace repo, and devBranch selects the
-// channel. The claude install argv then installs the correct id for the channel:
-// `spacedock@spacedock` for stable and `spacedock@spacedock-edge` for edge. The
-// marketplace add carries the bare marketplace-repo source, with no `@<branch>`
-// shorthand.
+// TestClaudeChannelInstallArgvSequence is the claude half of AC-3: the argv installs
+// the id of the selected channel and adds the bare marketplace-repo source.
 //
-// The suffix of the plugin id is the marketplace name, which is the channel. The
-// entry name before the `@` is always `spacedock`. The marketplace update targets
-// the marketplace name of the channel. No step uses `marketplace remove`.
-//
-// wantSibling is the id of the other channel, which the sequence must uninstall to
-// keep one channel on the host. Each case spells this id as an independent literal.
-// It does not come from otherChannelMarketplace. A production sequence that takes
-// the sibling from the wrong side still satisfies a derived expectation. That fault
-// uninstalls the channel that the sequence just selected.
+// wantSibling is the id of the other channel. Each case spells it as an independent
+// literal. When the production sequence uninstalls the channel that it just
+// selected, a derived expectation also passes.
 func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
 		channel         string

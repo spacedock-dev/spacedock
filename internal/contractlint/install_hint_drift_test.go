@@ -92,18 +92,11 @@ func TestInstallHintNoDrift(t *testing.T) {
 }
 
 // TestInstallHintProductReadmeNoDrift binds the Homebrew commands of the product
-// README to the `macOS (Homebrew)` tab of install.md. It uses the same token
-// equality as arm 2 above, with the README in place of the FO prose.
-//
-// The README holds the last copy of the install commands that no test protects.
-// mkdocs.yml does not include the README, so the docs strict build never reads it.
-// The two files diverged before this test: the README named
-// `spacedock-dev/homebrew-tap` and install.md named `spacedock-dev/tap`. Homebrew
-// removes the `homebrew-` prefix, so both names resolved and no reader found the
-// difference.
-//
-// This test compares two independent files that can diverge. It asserts nothing
-// about the prose of the README.
+// README to the `macOS (Homebrew)` tab of install.md. mkdocs.yml does not include
+// the README, so the docs strict build never reads it. The two files diverged
+// before this test: the README named `spacedock-dev/homebrew-tap` and install.md
+// named `spacedock-dev/tap`. Homebrew removes the `homebrew-` prefix, so both
+// names resolved and nothing caught the difference.
 func TestInstallHintProductReadmeNoDrift(t *testing.T) {
 	root := repoRoot(t)
 	rawInstall, err := os.ReadFile(filepath.Join(root, "docs", "site", "get-started", "install.md"))
@@ -129,10 +122,9 @@ func TestInstallHintProductReadmeNoDrift(t *testing.T) {
 	}
 }
 
-// brewTokens returns the tap and the formula from the last `brew tap` line and the
-// last `brew install` line of a section. It removes the indentation and it ignores
-// comment lines. The Homebrew tab gives the edge cask as a comment line that starts
-// with `# brew install`. An empty string shows that the section has no such command.
+// brewTokens returns the tap and the formula from the last `brew tap` and `brew
+// install` lines of a section. The Homebrew tab gives the edge cask as a comment
+// line, which the `brew ` prefixes skip. An empty string means no such command.
 func brewTokens(section []string) (tap, formula string) {
 	for _, l := range section {
 		trimmed := strings.TrimSpace(l)

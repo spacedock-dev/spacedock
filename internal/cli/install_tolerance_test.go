@@ -11,10 +11,7 @@ import (
 )
 
 // TestInstallToleratesMarketplaceUpdateStepFailure asserts AC-2 on the
-// already-current path. The stub makes `claude plugin marketplace update
-// spacedock-edge` exit 1, and every other subcommand exits 0. execHost.Install must
-// return a nil error. The combined output must contain the stub marker of all 6
-// steps. Without the tolerance flag on each step, this test fails at the update
+// already-current path. Without the tolerance flag, this test fails at the update
 // step.
 func TestInstallToleratesMarketplaceUpdateStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
@@ -42,12 +39,8 @@ func TestInstallToleratesMarketplaceUpdateStepFailure(t *testing.T) {
 }
 
 // TestInstallToleratesUninstallStepFailure asserts the fresh-box uninstall half of
-// AC-2. The stub makes `claude plugin uninstall <channel-id>` exit 1, and every
-// other subcommand exits 0. Claude 2.1.160 gives the shape "Plugin not found in
-// installed plugins" on a box where the plugin is not installed. execHost.Install
-// must return a nil error. The combined output must contain the stub marker of all
-// 6 steps. Without the tolerance flag on the uninstall step, this test fails at
-// step 0.
+// AC-2. When the plugin is absent, claude 2.1.160 exits 1 with "Plugin not found
+// in installed plugins". Without the tolerance flag, this test fails at step 0.
 func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -74,11 +67,8 @@ func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 }
 
 // TestInstallToleratesRouteAMigrationStepFailure asserts the tolerance of the
-// round-1 migration step. The stub makes `claude plugin uninstall
-// spacedock-edge@spacedock`, the retired route-A id, exit 1. Every other subcommand
-// exits 0. execHost.Install must return a nil error. The combined output must
-// contain the stub marker of all 6 steps. Without the tolerance flag on this step,
-// every install fails for a captain who never used the retired route.
+// round-1 migration step. Without it, every install fails for a captain who never
+// used the retired route.
 func TestInstallToleratesRouteAMigrationStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")

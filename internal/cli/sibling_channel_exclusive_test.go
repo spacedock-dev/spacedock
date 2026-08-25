@@ -12,21 +12,14 @@ import (
 )
 
 // TestClaudeInstallLeavesOnlySelectedChannelEnabled asserts AC-1 against the real
-// claude CLI. After execHost.Install, `claude plugin list --json` reports exactly
-// one enabled `spacedock@*` entry, and its id is the id of the selected channel.
-// Claude reports this count, not Spacedock.
+// claude CLI: after execHost.Install, `claude plugin list --json` reports exactly
+// one enabled `spacedock@*` entry, and it is the selected channel.
 //
 // The baseline moves the wrong way. If you delete the sibling uninstall step from
-// installArgvSequence, the sibling-present subtest and the reverse subtest count 2.
-// This is the bug that the captain reported, in a hermetic form.
+// installArgvSequence, the sibling-present and reverse subtests count 2.
 //
-// The three subtests give three directions. A co-installed sibling is the shape
-// from the report. A fresh box shows that the tolerated non-zero exit of the absent
-// sibling does not stop the run. Edge over stable shows that the map works in both
-// directions.
-//
-// If `claude` is not on PATH, the test skips. The CI build job has no host CLI.
-// Validation must run this test locally and must treat a SKIP as a failure.
+// If `claude` is not on PATH, the test skips. Validation must run this test locally
+// and must treat a SKIP as a failure.
 func TestClaudeInstallLeavesOnlySelectedChannelEnabled(t *testing.T) {
 	claudeBin, err := exec.LookPath("claude")
 	if err != nil {
@@ -52,9 +45,8 @@ func TestClaudeInstallLeavesOnlySelectedChannelEnabled(t *testing.T) {
 			cacheDir := filepath.Join(tmp, "cache")
 			mustMkdir(t, configDir)
 			mustMkdir(t, cacheDir)
-			// The isolation must apply to the process environment. execHost.Install
-			// runs the host command with no explicit Env, so it inherits the
-			// environment of the process (co_hosted_survival_test.go).
+			// execHost.Install runs the host command with no explicit Env, so the
+			// isolation must apply to the process environment.
 			t.Setenv("CLAUDE_CONFIG_DIR", configDir)
 			t.Setenv("CLAUDE_CODE_PLUGIN_CACHE_DIR", cacheDir)
 			env := os.Environ()
@@ -89,8 +81,7 @@ func TestClaudeInstallLeavesOnlySelectedChannelEnabled(t *testing.T) {
 }
 
 // enabledSpacedockIDs returns the id of every enabled `spacedock@*` entry that
-// claude reports. This count is the quantity that AC-1 measures. It comes from the
-// JSON of the host.
+// claude reports. This count is the quantity that AC-1 measures.
 func enabledSpacedockIDs(t *testing.T, claudeBin string, env []string) []string {
 	t.Helper()
 	listOut := runHost(t, claudeBin, env, "plugin", "list", "--json")
@@ -112,12 +103,8 @@ func enabledSpacedockIDs(t *testing.T, claudeBin string, env []string) []string 
 
 // buildNamedChannelMarketplace writes one local directory marketplace with the name
 // of a channel (`spacedock` or `spacedock-edge`). The marketplace holds the single
-// `spacedock` entry. Both channels use the same entry name. If both plugins stay
-// installed, that entry name is ambiguous. The test calls this function once
-// for each channel, so both ids resolve offline and both marketplaces can register
-// at the same time. This function does not replace
-// buildLocalMarketplaceWithDependent, which builds one marketplace with a co-hosted
-// dependent for the cascade probe. The codex test shares that different fixture.
+// `spacedock` entry. The test calls it once for each channel, so both ids resolve
+// offline and both marketplaces can register at the same time.
 func buildNamedChannelMarketplace(t *testing.T, root, name string) string {
 	t.Helper()
 	marketplace := filepath.Join(root, name)
