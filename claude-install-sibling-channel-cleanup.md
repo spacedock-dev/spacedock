@@ -810,3 +810,31 @@ this machine, and per the no-hidden-machine-dependencies rule I am not claiming 
 lane I did not run. The install.md change is a plain paragraph with inline code
 spans and no new links or nav entries. The doctor follow-up remains unfiled and is
 still the one open thread.
+
+## Stage Report: validation
+
+- DONE: Every AC (AC-1 through AC-5) reproduced with cited evidence, not trusted from the implementation report: run the local claude-on-PATH value test yourself, reproduce AC-5's red-then-green claim against the shipped arm, run go test ./... and -race, and run mkdocs build --strict.
+  AC-1: `go test ./internal/cli -run TestClaudeInstallLeavesOnlySelectedChannelEnabled -count=1 -v` vs claude 2.1.226 — PASS 7.77s (sibling-present 2.92s, fresh-box 2.01s, reverse 2.84s), no SKIP.
+  AC-2: argv/tolerance tests green in the fresh suite; the audit's adversarial edits below prove they discriminate, which is what makes the green non-tautological.
+  AC-3: install.md exclusivity paragraph present as designed; `uvx --with-requirements docs/requirements.txt mkdocs build --strict` (CI's pinned deps, docs.yml:39-42) exit 0 — closes the lane implementation flagged NOT run.
+  AC-4: one-off existence check vs the stated baseline — README's 1 of 1 install blocks is now introduced by "Install the stable channel with Homebrew:" and the same-paragraph pointer names the edge channel and the install guide; the other bash block (line 77) is the launch command, not an install block.
+  AC-5: red-then-green reproduced against the SHIPPED arm on the throwaway checkout — reverting only README's tap token yields `install_hint_drift_test.go:121: README.md's Install section names tap "spacedock-dev/homebrew-tap"; install.md's Homebrew tab names "spacedock-dev/tap"` FAIL; shipped tree green; drifting install.md's side instead also reddens the arm, so both files guard.
+  Suites: `go test ./... -count=1` and `go test ./... -race -count=1` both exit 0 (20 packages ok each, zero FAIL lines; cli 257s with live tests). gofmt flags only pre-existing `internal/release/runtime_live_evidence_workflow_test.go`, outside this diff.
+- DONE: Detached adversarial audit on a THROWAWAY checkout, never the implementation worktree: the four-surface front-door trigger fires (host_exec.go is launcher auto-heal machinery) and the AC-provenance trigger fires; construct adversarial edits the tests should catch and confirm they do; findings enter Review-finding disposition; "refuted nothing material" is a valid recorded outcome.
+  Fresh clone of b56e218a0 in the session scratchpad. Front-door confirmed: frontdoor.go:350 — resolveHealableGate → ops.Install → installArgvSequence. Provenance confirmed: sibling ids are per-channel literals (wantStable "spacedock@spacedock-edge", wantEdge "spacedock@spacedock", wantSibling table field), never derived from otherChannelMarketplace.
+  Adversarial edits, each caught then restored: (1) delete the sibling step — all 6 CI-lane tests FAIL and the live value test counts 2 (`[spacedock@spacedock spacedock@spacedock-edge]`) in sibling-present and reverse with fresh-box still passing: the captain's bug reproduced; (2) derive the sibling from the SELECTED channel — both argv tests FAIL; (3) flip tolerateExit to false — both argv tests FAIL; (4) misspell to the retired route-A id — both argv tests FAIL; (5) AC-5 red in both drift directions as above.
+  Findings: refuted nothing material. One transient observation (codex's sibling remove appearing fail-fast) was an artifact of audit edit 3's own pattern touching host_exec.go:453 in the throwaway; at HEAD codexInstallArgvSequence's sibling remove is tolerateExit: true — no finding.
+- DONE: Semantic adversarial pass scaled to the diff plus surface check: measure git diff --numstat against the approved baseline net +167 across 8 files (tolerance ±55/±1); verify only the declared semantic changes; recommend PASSED or REJECTED with material findings, deferred risks, and polish listed separately.
+  `git diff --numstat "$(git merge-base main HEAD)"..HEAD` = 243 insertions / 31 deletions = net +212 across 8 files — inside the band, file count on baseline, matching the implementation's figure. All 8 file diffs read; only the declared semantic changes are present: the one tolerated sibling-uninstall step (plus its output line), comment and test extensions, the two doc diffs, and the drift arm with the behavior-preserving brewTokens dedup of arm 2 (same TrimSpace/last-match logic as the inline loop it replaced). The value test asserts cardinality AND exact id from claude's own `plugin list --json` with a seed-state guard, so it cannot pass on a wrong id or a silently failed fixture.
+
+### Recommendation: PASSED
+
+Material findings: none. Polish: none.
+
+Deferred risks:
+1. The value test skips in CI (no claude on the build runner) — the settled posture in the test plan; AC-2's argv tests guard the sequence in CI. Promote to material if validation practice drops the mandatory local run while the install sequence changes, or a CI runner gains claude and the test fails there.
+2. brewTokens takes the LAST uncommented `brew tap`/`brew install` line per section (pre-existing arm-2 behavior, pure dedup). Today each guarded section has exactly one uncommented line (the edge cask is commented). Promote to material if either section gains a second uncommented brew line whose token can diverge from what the arm compares.
+
+### Summary
+
+All five ACs reproduced first-hand: the live value test passes in all three directions with no SKIP, AC-5's arm went red-then-green against the shipped implementation in both drift directions, both full suites pass fresh (-count=1 and -race), and the strict docs build — the one lane implementation could not run — passes with CI's pinned requirements. The detached audit refuted nothing material: five adversarial edits were each caught by exactly the tests the entity names, including a live reproduction of the captain's two-plugins bug. Surface +212 across 8 files is inside the approved band with only the declared semantic changes. Recommend PASSED.
