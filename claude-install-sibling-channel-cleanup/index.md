@@ -718,6 +718,7 @@ surprise there would be cheap to catch and confusing to debug later.
 ### Feedback Cycles
 
 - Cycle 1: REWORKED — captain send-back of PR #760 (ASD-STE100 ruling, 2026-08-25; correction commit 2f91b6dd4); surface 8 files/+238 net vs estimate +167±55 (142%); AC unchanged; surface is 16 net LOC past tolerance — cause is the STE conversion itself, baseline predates the prose ruling; captain tolerance decision pending before the validation re-run.
+- Cycle 2: REWORKED — captain content-cut directive 2026-08-25 ("cut things we don't need, not just purely convert"; correction commit 4b5b4073a); surface 8 files/+147 net vs estimate +167±55 (88%); AC unchanged; the cycle-1 tolerance breach is closed by deletion, not waived — no captain tolerance decision needed.
 
 ## Stage Report: ideation
 
