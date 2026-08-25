@@ -22,6 +22,17 @@ gates:
                 digest: sha256:6217483748c63c0663f4d6a6b96d8b90277d19e216e08534a10f5fca95168c2f
                 request-digest: sha256:7c1dce1d1eb8b5e2720ce244ea77f986847eec757358eed954c21f83a61208e1
                 room-ref: ./patch-release-line-support/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d0g21c517b5nvga1ybwckapk:backlog:1
+                briefing: briefing:d0g21c517b5nvga1ybwckapk:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T16:33:44.49838Z"
+                decision: approve
+                reason: 'Captain chat 2026-08-25: ''dispatch d0'' — approved seeding into design; the v0.27.0 cut''s live incidents are the spec'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 One owner for release.yml's stable-tag conditional. Today the machinery cannot ship an old-line patch (a v0.27.1 while main is the 0.28 line): two step-level defects, verified by reading the shipped workflow at the v0.27.0 cut, plus one automation the cut proved missing.
