@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7p4vxcb9edzrph0zsfn75cd9:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation design — one tolerated sibling-channel uninstall step in installArgvSequence, doctor visibility split out to a follow-up, value proven by a claude-on-PATH count test with a validation obligation that a SKIP is a failure?",
+  "artifacts": [
+    {
+      "id": "artifact:7p4vxcb9edzrph0zsfn75cd9:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a1a4dcbb2221d0c034ee12304f9da4dbfd959c84/claude-install-sibling-channel-cleanup.md",
+      "rev": "sha256:5f7cecf6f015a0dc9e3f222c1bcebc0d3cf2f0a9346e3e126881f8209f6885e0",
+      "mediaType": "text/markdown",
+      "summary": "Design: add plugin uninstall spacedock@\u003cotherChannelMarketplace\u003e as tolerated step 2, mirroring codex; 6 production lines, the rest is the value test's two-channel local marketplace fixture. Two spikes run: claude 2.1.226 real uninstall semantics (absent sibling exits 1 with two different messages — forces tolerance; present sibling removes cleanly, survivor stays enabled, no cascade; end-to-end current 1-\u003e2 enabled vs proposed 1-\u003e1, fresh box and reverse direction green) and the fixture proven buildable offline. Doctor half split out as Needs-decision (gateHost fail-fast could refuse launch on dual-install machines) — follow-up seed filed. Estimate revised up from seed +40/4 to net +130/6 files, tolerance ±40/±1 (fixture is the bulk). Semantic change declared: a deliberately-held dual install is removed on next install/auto-heal. claude-live NOT required (ensigncycle has no install-path reference); detached adversarial audit REQUIRED (front-door + AC-provenance triggers). Value test skips in CI build; validation must run it locally, SKIP is not a pass."
+    }
+  ]
+}
