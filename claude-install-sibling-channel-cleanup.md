@@ -1,7 +1,7 @@
 ---
 id: 7p4vxcb9edzrph0zsfn75cd9
 title: claude install leaves the sibling edge plugin installed and enabled
-status: implementation
+status: validation
 source: "Captain CL work-machine report 2026-08-25: clean documented stable install on a machine with spacedock@spacedock-edge left both plugins installed and enabled; doctor OK; which plugin serves unpredictable"
 started: 2026-08-25T14:36:08Z
 completed:
