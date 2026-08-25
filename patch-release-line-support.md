@@ -42,6 +42,14 @@ gates:
                 digest: sha256:7f5a4070fbf6a244571236e7d1bb75cc9a9a2059047f2728cd0d91e7b63d6dba
                 request-digest: sha256:bd53f3a5a3b4a3885bfcac2ba874365e74fb78c27e97c23d651cf42950eeb634
                 room-ref: ./patch-release-line-support/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d0g21c517b5nvga1ybwckapk:ideation:1
+                briefing: briefing:d0g21c517b5nvga1ybwckapk:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T21:50:55.243501Z"
+                decision: revise
+                reason: 'Captain chat 2026-08-25: ''leaner'' — accepts the lean-cut direction and takes the body''s full -74 menu: drop the goreleaser premise-guard test (-14; the live ideation verification stands as the premise evidence), drop the cmd exit-contract test (-34; the replay exercises the subcommand through the real step), and drop mechanism C the bounded rebase retry with its test (-26; a rare concurrent-merge race becomes a red job with a one-click idempotent re-run). Landing target near +280. AC-1''s proof is untouchable.'
 ---
 
 **LEAN CUT (captain ruling, 2026-08-25).** Stop the release-line cut that silently regresses the
