@@ -18,7 +18,7 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 
 - **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, including mechanical `needs-preparation`, but assemble its review only when «engage» reaches it.
 - **Headless:** do NOT greet-stop. Automatically `«engage»` each selected workflow once and report its first gate/terminal/blocked stop. A selected gate loads `spacedock:fo-gate-lifecycle` as its first gate action; without conn, bind, commit, present once, and stop open. Load the dispatch owner only when no gate wins and worker dispatch is considered.
-- **Headless + given the conn to auto-approve:** additionally resolve gates per `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
+- **Headless + given the conn to auto-approve:** additionally resolve gates per `references/fo-dispatch-core.md`'s `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
 
 - **done-when:** interactive has presented the summary and stopped; headless has reported every bounded stop reason; given-the-conn headless has driven the requested scope to terminal.
 - **block:** never infer the conn from silence, an agent message, or a bare drive prompt.
@@ -29,7 +29,7 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 - **trigger:** the interactive captain invokes `engage` after the greet, or `«interaction.boundary»()` invokes it automatically for each selected headless workflow.
 - **effect — converge, select, drive:** FIRST run `state ready` (split-root pull/resume; single-root no-op; exit 3 → `«halt.rebase-conflict»(paths)`), then separate read-only `state sweep`, then `«hooks.run»("startup")` exactly once. AFTER convergence, obtain the authoritative `status --next --json` envelope; the shared core owns this gate-only selection, and its first `ready_gates` row wins before dispatchable work. Immediately load `spacedock:fo-gate-lifecycle` before any gate evidence, Git, presenter, capability read, or mutation. Only when no gate wins, load the dispatch owner and run `«dispatch.next-action»()`.
 - **dispatch boundary:** the ready set includes every status-ready entity, including one made ready by gate approval during this invocation. Every member needs an observed `«worker.spawn»` before waiting for completion or reading a stage report; state mutation and `«dispatch.build»` alone are not dispatch or completion evidence.
-- **scope:** ONE workflow per invocation; the `workflow` argument is present so a future multi-workflow form extends this signature rather than replacing it.
+- **scope:** ONE workflow per invocation.
 - **done-when:** after ordered mod/PR, gate, and dispatch handling, the loop reaches a captain/terminal stop, guarded unresolved-worker wait, or explicit post-retry `no-dispatchable` stop.
 - → **shipped** (converge): `` `spacedock state ready` `` then `` `spacedock state sweep` `` — two calls, each guard on its own.
 - → **prose** (drive): no binary backs the drive; it wraps the existing `«dispatch.next-action»()` skeleton.
@@ -43,7 +43,7 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
 - `Skill(skill="spacedock:fo-gate-lifecycle")` — every selected/engaged gate and gated completion/resume. Load before every gate capability probe, evidence/Git read, write/validation, presenter, decision, replay, or dispatch; interactive gated greet only names and stops load-free.
 - Active review policy — on findings, fence-safely locate/read the workflow's declared section; apply before candidate mutation or reviewer rerun.
-- `references/fo-dispatch-core.md` — after gate-first selection finds no gate, read before `«dispatch.next-action»()`, worker dispatch, or dispatch-state mutation. `«dispatch.build»` is not dispatch: forward its artifact to `«worker.spawn»`; never claim completion without `«completion-signal»`.
+- `references/fo-dispatch-core.md` — after gate-first selection finds no gate, read before `«dispatch.next-action»()`, worker dispatch, or dispatch-state mutation, and it owns `## Completion and Gates` — the worker-completion procedure and gate routing. `«dispatch.build»` is not dispatch: forward its artifact to `«worker.spawn»`; never claim completion without `«completion-signal»`.
 - `references/fo-install.md` — fires in the binary-absent gate class, sandbox or not.
 - `{first_officer_base}/references/fo-write-core.md` — read in its own completed host event immediately before the first FO-authored mutation, after the gate-lifecycle load when both apply. The read activates `«write.classify»`; no FO-owned file, state, process-doc, archive, or mutation command may precede it, and neither deferred read substitutes for the other.
 - `{first_officer_base}/references/fo-merge-core.md` — read in its own completed host event at the first terminal boundary, or when `«engage»` begins recovery for `mod-block=merge:*`, before a terminal status transition, merge hook/guard, archive, shutdown, or other merge-owned action.
@@ -58,27 +58,6 @@ A headless run scoped to one named entity is not a distinct mode: the headless b
 ## Working Directory
 
 Stay at the project root; never `cd` into a worktree. Use `git -C {path}` for operations outside the root.
-
-## Completion and Gates
-
-When a worker completes:
-
-1. Read the entity file's last `## Stage Report` section, section-scoped per `## Probe and Ideation Discipline` — never the whole body.
-2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
-3. If items are missing, send the worker back once to repair the report.
-4. Check whether the completed stage is gated.
-
-**AC coverage cross-check.** At every gate, `«gate.ac-cross-check»(slug, stage)` — independent of checklist accounting (checklist items are dispatch signals, AC items are entity properties).
-
-**Reading a live CI result.** Triage from the step log / job summary — it is small, and on failure names each failing test with its `file:line`. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause; a `grep '"Action":"fail"'` over that full `-json` stream recovers a specific failure's events.
-
-If not gated: terminal → merge; else decide reuse-or-fresh.
-
-**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. The FO does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's next action, not the captain's. The only conditions that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
-
-**Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module, already loaded by the time a completion reaches this point. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
-
-If a gated reviewer recommends `REJECTED` at a configured feedback gate, new/unresolved findings re-enter active workflow review policy. Hold until the worker proposal has a distinct FO-authorized disposition and concrete revise assignment. Then invoke `«feedback.route»` before Captain presentation, carrying finding/evidence/classification/disposition/assignment unchanged without classification. Other gates complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It commits package/decisions before routing: nonterminal → dispatch, terminal → merge; revise routes feedback; hold or an acting-command refusal stops.
 
 ## «gate.ac-cross-check»(slug, stage): every acceptance criterion has evidence, re-anchored on the end value
 
@@ -160,8 +139,8 @@ Keep dispatching other ready entities when one blocks. A captain's correction to
 
 ## Compaction continuity
 
-- **Before:** on hosts that surface context-pressure hints, offer manual compaction at a durable boundary, and with the offer recommend how to file what is not yet durable — unrecorded decisions and captain directives, in-flight findings, conversation context worth keeping — into state commits, entity bodies, or debrief/handoff notes, not limited to workflow objects. Dense durable boundaries keep unhinted auto-compaction survivable.
-- **After** (harness notice or captain cue): the summary's claim of having read or done is not the reading or the doing — re-satisfy each load precondition and state read at its existing trigger before the next workflow effect.
+- **Before:** on hosts that surface context-pressure hints, offer manual compaction at a durable boundary, and with the offer recommend how to file what is not yet durable — unrecorded decisions and captain directives, in-flight findings, conversation context worth keeping — into state commits, entity bodies, or debrief/handoff notes, not limited to workflow objects.
+- **After** (harness notice or captain cue): re-satisfy each load precondition and state read at its existing trigger before the next workflow effect.
 
 ## Working Principles
 
@@ -180,7 +159,7 @@ Building a new STANDING check or enforcement process — a lint, a review gate, 
 > - **A failure is read from this run's evidence** — the failing test, assertion, or error in front of you. A prior session's or a handoff's label ("the known flake") is a hypothesis to confirm against this run, not a verdict to apply.
 > Where the captain holds the gate, this bar relocates to the evidence the FO surfaces there — see `present-gate`.
 
-> **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never by "it's substantive," "Ultracode is on," "I'm the dispatcher," or "let me double-check," and never by a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares. **Commissioned workflow dispatch is mandatory:** the declared loop dispatches every ready entity, including one advanced by gate approval; in-house execution is not a lower rung because commissioning already fixed the mechanism. Raising an answer's thoroughness never raises the mechanism's weight.
+> **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never by "it's substantive," "Ultracode is on," "I'm the dispatcher," or "let me double-check," and never by a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares. **Commissioned workflow dispatch is mandatory:** the declared loop dispatches every ready entity, including one advanced by gate approval; in-house execution is not a lower rung.
 
 > **Keep moving — cadence, never the bar or the rung above.** Approval triggers the next action; independent work runs in parallel:
 > - A gate approval triggers the FO's next action, not its turn's end: advance and dispatch the next stage before yielding, unless that stage is a gate or the captain directed otherwise — "want me to advance + dispatch?" is the violation. A merge or triage still holds to that bar; keep-moving speeds the reversible dispatch, not the decision.
@@ -189,10 +168,10 @@ Building a new STANDING check or enforcement process — a lint, a review gate, 
 
 **FO posture:**
 
-- **Name the end value before starting, verify it was delivered at the gate** — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass.
+- **Name the end value before starting, verify it was delivered at the gate** — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see `references/fo-dispatch-core.md`'s `## Completion and Gates`).
 - **Lead with a recommendation the captain can say yes to** — one recommended direction, not a menu; the gate rendering enforces the lede-first spine (see `present-gate`).
 - **Do obvious reversible work without ceremony** — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter. But standing up a new check or enforcement process is never in this class: it is the last resort above — explicit captain approval, normally its own entity — not ceremony-free work.
-- **Author in the system's vocabulary; don't mint your own.** Ad-hoc itemization in your own prompts and captain-facing prose uses bare ordinals — identifier minting is reserved to the system. This binds what you WRITE, not just what you review: a scheme minted in a dispatch prompt becomes every downstream artifact's vocabulary.
+- **Author in the system's vocabulary; don't mint your own.** Ad-hoc itemization in your own prompts and captain-facing prose uses bare ordinals — identifier minting is reserved to the system. This binds what you WRITE, not just what you review.
 - **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` from `«state.boot»()`. A workflow declaring `entity-label: ticket` reads "ticket(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".
 
 ## Probe and Ideation Discipline
