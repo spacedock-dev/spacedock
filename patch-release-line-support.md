@@ -735,3 +735,55 @@ overwritten in the shared scratchpad by another agent — its output named
 output shape did not match my checker's, rewrote the checker at a uniquely-named path, and re-ran
 both it and its falsifier. Recording it because a green from the wrong program is exactly the failure
 mode this workflow's proof policy names, and the shared scratchpad makes it reachable by accident.
+
+## Stage Report: implementation
+
+- DONE: STACK FIRST: before any work, base your branch on the #760 layer
+  `git reset --hard origin/spacedock-ensign/claude-install-sibling-channel-cleanup` ran first; the single deliverable commit 284fa8566 sits directly on 4b5b4073a, so the PR bases on that branch, not `main`.
+- DONE: The deliverable lands the approved trimmed design exactly
+  `e2e-gate` gains "Gate the cut on the tag not regressing the stable channel"; the stamp moved to `edge-advance` as "Stamp main to the next edge prerelease version" under the pre0 step's own `if:`; the goreleaser remainder is renamed "Advance the stable channel ref to the tagged commit" with its two commands unchanged; `docs/releasing.md` step 9 is gone (9 steps, "Clean up" is now 9) and all six doc blocks are applied verbatim. The three menu cuts STAY cut — no `.goreleaser.yaml` premise-guard test, no cmd exit-contract test, no rebase retry anywhere in the diff.
+- DONE: Proofs recorded red-then-green per each AC's failing-today baseline
+  Baselines captured by replaying TODAY's step on the same fixtures before any workflow edit: AC-1 — today's step exits 0 and `stable` moves 0.28.0 -> 0.27.1, with `e2e-gate` carrying only its two existing gates; AC-2 — today's step commits main 31b57e18 -> 29a6893b, manifest 0.28.0-pre0 -> 0.26.1 and FO pin 0.28 -> 0.26; AC-3 — main stays 0.27.0 while the auto-cut pre0 tag is v0.28.0-pre0. All six replays then failed red against the unedited workflow ("release.yml has no step named ...") and pass green after it.
+- DONE: go test ./... and -race green; gofmt clean
+  Both full-suite runs exit 0 after the final edits; `gofmt -l ./cmd ./internal` prints nothing.
+- DONE: all comments and doc text strict ASD-STE100
+  A checker at a uniquely-named scratchpad path (not the shared one that collided in cycle 3) reports 3 blocks, 0 violations, longest sentence 25 words over the added `docs/releasing.md` prose, the added `release.yml` comments, and the new/changed Go comments. It was FALSIFIED first: against a mutant it reports all five classes (6.3 at 41 words, 3.6 "is repointed by", 8.1 semicolon, banned modal "should", 6.6 at 13 sentences) and exits 1. The first clean run was NOT trusted — the real first pass found 27 violations and every one was rewritten, not waived.
+- FAILED: surface within the approved net +281 across 9 files (tolerance +197..+365, ±2 files)
+  Measured **net +644 across 10 files** (+741/-97) — 229% of the estimate and +279 past the ceiling. File count is IN tolerance (10 of 7..11); the LOC is not. Overage by file: replay harness +233 (330 vs 97), wiring guard +46 (64 vs 18), cmd wrapper +37 (71 vs 34), release.yml +25, gate library +19, docs +15. The 10th file is `runtime_live_evidence_workflow_test.go`, +2/-2 and net zero — pre-existing gofmt drift the mandated `gofmt -w ./cmd ./internal` corrected, not task content.
+
+### Falsifiers, grouped by claim
+
+- AC-1 blocks: `TestStableRegressionGateBlocksOlderLine` asserts the real gate step exits non-zero and names v0.27.1 and 0.28.0. Falsified by flipping the predicate to `<= 0` (the unit table's equality row reds — verified live) or by deleting the step from `e2e-gate` (`assertStepInJob` reds).
+- AC-1 is not redundant with git: `TestUnguardedOldLineTagWouldReachStable` asserts the real stable-push step SUCCEEDS on the same fixture and leaves `stable` at 0.27.1. It reds if the fixture ever stops being a fast-forward, which is the exact masking the review named.
+- AC-2 leaves main alone: `TestPatchTagDoesNotStampMain` asserts main's tip SHA and all three stamped files are byte-identical after a v0.26.1 replay. `TestMainStampSharesThePre0DecisionGate` asserts the stamp's `if:` equals the pre0 step's; its twin widens the `if:` to the stable-path-only form and the guard reds.
+- AC-3 restores the edge line: `TestLatestLineCutStampsMainToPre0` asserts main lands on 0.28.0-pre0 with FO pin 0.28. Stamping `$RELEASE_VERSION` instead reds it.
+- Gate boundary and loudness: the unit table pins `>=` (equality passes, the re-run case) and errors on a prerelease tag, an unparseable manifest, and an empty version.
+- Renamed-step consumers: `releaseStampTarget` and `stableRefPushSource` now key on the two new names; without the edit their tests fail, so the change is mandatory rather than cosmetic.
+
+### Summary
+
+All four ACs are satisfied and both full-suite runs are green, but the surface
+missed its approved ceiling by a wide margin and I did not massage it to fit.
+The scope is exactly what was approved — no test, mechanism, or doc block beyond
+the trimmed cut, and the three menu cuts are still cut — so the overage is a
+mispriced estimate, not added scope. The evidence: this repo's comparable
+existing harness, `edge_advance_decision_shell_test.go`, is 245 lines for 3
+tests and 3 helpers (82 lines/test); the new one is 330 lines for 6 tests and 9
+helpers (55 lines/test) and additionally builds a two-repo bare-origin fixture,
+substitutes the binary, and looks steps up across three jobs. It is denser than
+the file it extends, so the 97-line estimate could not have been met by any
+implementation of the approved test plan.
+
+A priced menu, if the captain wants the number down. Drop the two carve-out
+replays (-35), but audit target 3 asks whether the fail-closed arm can be
+flipped without a test reding, and after this cut the answer becomes yes. Drop
+the job-identity assertions (-15), and AC-1's "delete the gate step" falsifier
+stops reding. Halve the comment density in the new test files (-60 to -80),
+which removes the falsification rationale the gate reads. Together they reach
+about +545, still 194% — so no combination of them lands inside tolerance. This
+needs a captain-visible decision on the estimate, not a code cut.
+
+One thing worth the gate's eye beyond the surface. The AC-2 replay can only
+drive the stamp step directly, so it cannot prove that Actions honours the `if:`;
+that half rests entirely on the wiring guard, which is why the guard compares the
+two conditions for equality rather than merely checking that a gate is present.
