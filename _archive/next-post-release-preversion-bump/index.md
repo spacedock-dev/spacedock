@@ -1,10 +1,10 @@
 ---
 title: Post-release `next` preversion bump for dev/plugin manifests
-status: backlog
+status: done
 source: "Captain question 2026-06-21 after Codex local marketplace dogfood: should dev bump to 0.(next).0-pre.1 once stable releases? FO recommendation: yes, as a next-only post-release step."
 started:
-completed:
-verdict:
+completed: 2026-08-25T05:35:42Z
+verdict: PASSED
 score: 0.25
 worktree:
 issue:
