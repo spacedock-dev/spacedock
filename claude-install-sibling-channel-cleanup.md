@@ -64,6 +64,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:7p4vxcb9edzrph0zsfn75cd9:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:7p4vxcb9edzrph0zsfn75cd9-validation-1
+              briefing:
+                id: briefing:7p4vxcb9edzrph0zsfn75cd9:validation:attempt-1:revision-1
+                digest: sha256:842cfa5fc2b3930a9dbd10a5bc213fc6ed24c540589e1c283fcd4c8242c6d53b
+                request-digest: sha256:43ebe1c775612b378cecfcce6a7b84a16e4c80eb2f7b984ef4d91eb5cbfafa5a
+                room-ref: ./claude-install-sibling-channel-cleanup/review/validation/briefing-1
 ---
 
 `spacedock install --host claude` never uninstalls the sibling channel's modern plugin id. A stable install on a machine that already has `spacedock@spacedock-edge` (or the reverse) leaves BOTH channel plugins installed and enabled. Both are entry `spacedock` shipping the same skill set, so which provider serves is unpredictable. Mirror the codex sequence's sibling-channel remove.

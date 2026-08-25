@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:7p4vxcb9edzrph0zsfn75cd9:validation:attempt-1:revision-1",
+  "question": "Accept validation's PASSED recommendation and deliver the folded sibling-cleanup + README deliverable to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:7p4vxcb9edzrph0zsfn75cd9:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/00de6e9412e9a7c0827ff630d4bb8fc0f7c9b69c/claude-install-sibling-channel-cleanup.md",
+      "rev": "sha256:d5d0742ac68ae45102d077a757c2486219dc1b928b2f27e462142a7ffd5ac3ba",
+      "mediaType": "text/markdown",
+      "summary": "Validator reproduced all five ACs first-hand: live value test PASS in all three directions (no SKIP) against claude 2.1.226; AC-5 red-then-green against the SHIPPED arm in both drift directions; go test ./... and -race fresh green; mkdocs build --strict with CI's pinned deps exit 0 (closes the lane implementation could not run). Detached audit on a throwaway clone of b56e218a0: front-door and provenance triggers confirmed, five adversarial edits each caught by the named tests including a live reproduction of the captain's two-plugins bug; refuted nothing material. Surface net +212 across 8 files, inside the approved ±55 band, only declared semantics. Recommendation PASSED; no material or polish findings; two deferred risks recorded with promote-to-material conditions (CI value-test skip posture; brewTokens last-uncommented-line behavior)."
+    }
+  ]
+}
