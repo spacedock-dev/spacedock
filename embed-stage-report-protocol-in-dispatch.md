@@ -115,3 +115,16 @@ Live: add a non-self-describing-checklist variant to the Pi live smoke runner (A
 Adversarial: revert the body embed in `build.go`, confirm the non-self-describing Pi lane goes RED while the existing self-describing Pi lane stays green — proving the new lane tests the real mode, not a fixture hint. Cost: low — a code revert + test run. `internal/dispatch/build.go` is a front-door launcher surface, so the README's detached-adversarial-audit trigger may fire; ideation scopes it to the fixture + live lane only (no detached audit needed for an ideation-stage body-text embed).
 
 ### Feedback Cycles
+
+## Stage Report: ideation
+
+- DONE: Four-section design completion (problem statement, proposed approach, acceptance criteria, test plan)
+  Entity body carries Problem (live-reproduced artifact-body gap on v0.28.0-pre0), Proposed approach (Pi-only embed via build.go step-8 conditional + firstActionBlock wording correction), Acceptance criteria (AC-1/AC-2/AC-3 with test methods), and Test plan (fixture + live + adversarial). Commit ae0ffd8bb.
+- DONE: Surface declaration with insertions/deletions/net
+  "Expected surface and tolerance" section declares net ~+120, insertions ~+130, deletions ~-10, across ~3 files (build.go, new fixture test in internal/dispatch, non-self-describing live-lane in internal/ensigncycle); tolerance ±50%; observable semantics declared (Pi artifact body, Pi First-action claim).
+- DONE: Risk-evidence/no-spike-needed determination
+  "Risk evidence" section records no spike needed: build pipeline already emits text into the dispatch body (step 8), and Pi workers already read and follow the dispatch file's instructions (proven by existing Pi live lanes in internal/ensigncycle); the non-self-describing live lane (AC-1/AC-3) is seeded as the implementation's first test of whether the embedded format alone suffices.
+
+### Summary
+
+Ideation design is complete and committed (ae0ffd8bb). The design embeds the stage-report protocol into the dispatch build artifact body for Pi only (build.go step-8 conditional block + firstActionBlock wording correction), closing the gap where Pi-dispatched ensigns missed the stage report because `skill="ensign"` is discoverable, not loaded. Three acceptance criteria gate the implementation: a value AC (AC-1, a non-self-describing Pi live lane writes a complete report), a serves AC-1 fixture (AC-2, body carries protocol tokens for Pi and not for Claude/Codex), and a tautology-closing live lane (AC-3, reverts RED on body-embed removal). No spike needed — the build pipeline and Pi worker behavior are already proven; the non-self-describing live lane is the implementation's first test.
