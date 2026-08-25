@@ -49,7 +49,25 @@ gates:
                 reason: 'Captain amendment 2026-08-25: fold the product README edge-channel deliverable into this task; design re-gates after the fold'
 ---
 
-`spacedock install --host claude` never uninstalls the sibling channel's modern plugin id. A stable install on a machine that already has `spacedock@spacedock-edge` (or the reverse) leaves BOTH channel plugins installed and enabled. Both are entry `spacedock` shipping the same skill set, so which provider serves is unpredictable. Mirror the codex sequence's sibling-channel remove, and give doctor eyes on a co-installed enabled sibling.
+`spacedock install --host claude` never uninstalls the sibling channel's modern plugin id. A stable install on a machine that already has `spacedock@spacedock-edge` (or the reverse) leaves BOTH channel plugins installed and enabled. Both are entry `spacedock` shipping the same skill set, so which provider serves is unpredictable. Mirror the codex sequence's sibling-channel remove.
+
+**Scope after the captain's 2026-08-25 amendment** ("readme should fold into this. no
+doc-only task"): this task ships TWO channel-hygiene deliverables that were separate
+tasks, plus one that was cut.
+
+1. **The install fix** — `installArgvSequence` gains the sibling-channel uninstall, so
+   a claude install converges on exactly one enabled channel plugin. (AC-1, AC-2, AC-3.)
+2. **The product README channel label** — folded in from the superseded
+   `product-readme-edge-channel-mention` (`_archive/product-readme-edge-channel-mention.md`),
+   whose ideation was complete and gate-verified. Its recommended posture (b) diff,
+   value AC, drift arm, and spike evidence are folded below. (AC-4, AC-5.)
+3. **Doctor visibility — CUT from this task, routed as a follow-up.** See "Doctor
+   visibility" below. This is the one open thread; it was ruled out on necessity and
+   on an unowned product decision, not deferred for effort.
+
+The two shipped halves share a subject — which channel a machine ends up on, and
+whether the user can tell — and both are proven against the same live install
+machinery. They do not share code.
 
 ## Problem
 
@@ -61,6 +79,46 @@ front door does not merely fail to catch the dual install, it cannot heal it —
 auto-heal fires only on NoPluginFound or TooOldPlugin, and a dual install whose
 own-channel manifest is Compatible never reaches either, so an affected machine stays
 affected until someone runs `spacedock install` explicitly.
+
+### The README half (folded from the superseded task)
+
+`README.md` lines 60-65 (verified 2026-08-25: the "Install with Homebrew:" lead-in at
+60 and the fenced command block at 62-65) document only `brew tap
+spacedock-dev/homebrew-tap` + `brew install spacedock` — the stable channel. No edge
+cask, no `SPACEDOCK_CHANNEL=edge`, no channel label. A reader seeking edge parity
+follows the README, lands on stable, and loses parity with no signal. The archived task
+`marketplace-readme-channel-model-repair` (done 2026-08-24) fixed the MARKETPLACE repo
+README and the docs site install page; the product README was out of its scope.
+
+Four findings from the folded ideation shape that half of the design:
+
+1. **The install block already defers every other axis.** README.md:60-65 documents
+   exactly one path — macOS Homebrew, stable. The Linux/binary `curl | sh` path, the
+   Codex path, and the Pi path are all absent and deferred to
+   `docs/site/get-started/install.md` via the "Full docs" pointer at README.md:77-80.
+   Channel is not an oversight in an otherwise complete block; it is the one deferred
+   axis carrying no label saying it was deferred.
+2. **A bottom-of-section docs link is already there and already failed.**
+   README.md:77-80 links the install guide, which documents edge in both of its tabs.
+   The captain still landed on stable and lost parity silently. The absent thing is not
+   a link to edge — it is a channel signal *adjacent to the commands*. Proximity is the
+   fix, not link presence.
+3. **"Edge is a dev convenience" conflates two things.** CLAUDE.md's dev-only claim is
+   about the `next` **branch** (a source-build convenience: `go install …@next`,
+   `--plugin-dir`). The edge **channel** is a shipped user-facing release channel: cask
+   `spacedock@next` v0.28.0-pre0 in `spacedock-dev/homebrew-tap`, marketplace
+   `spacedock-edge` tracking main, published `-pre` tags, `SPACEDOCK_CHANNEL=edge` in
+   `install.sh`. The captain's own work machine runs the edge cask. So "should the
+   README mention edge at all" is not settled against edge by CLAUDE.md; the posture
+   call is genuinely open, which is why it stays the captain's at the re-gate.
+4. **The README holds the last unguarded copy of the install commands.**
+   `internal/contractlint/install_hint_drift_test.go` binds the first-officer
+   install-hint prose to install.md's tokens. The product README is not covered, and it
+   has already drifted: README.md:63 says `brew tap spacedock-dev/homebrew-tap` while
+   install.md:9 says `brew tap spacedock-dev/tap`. Both resolve to the same tap
+   (verified in Risk evidence), so nothing is broken today — but nothing would catch it
+   if it were. This is the sole motivation for AC-5, and it is why AC-5 is flagged
+   separable rather than assumed.
 
 ## Proposed approach
 
@@ -123,6 +181,25 @@ is what probe 1 measured `marketplace remove` doing.
   harmful and banned by the sequence's design rule: probe 1 measured that command
   cascade-uninstalling every plugin installed from the removed marketplace.
 
+**Second mechanism, folded and FLAGGED FOR NECESSITY:** a new arm in
+`internal/contractlint/install_hint_drift_test.go`. **Value AC it serves:** AC-4's
+durability — a block labeled "stable" must keep naming the commands install.md
+documents, or the label becomes a lie.
+
+- *Simplest alternative — no check at all.* Insufficient by present evidence, narrowly:
+  the divergence exists in the file today (Problem finding 4), no reviewer caught it,
+  and the same commands are already guarded in the FO-prose copy by this very test file.
+- *Alternative — assert the words "stable"/"edge" appear in the section.* Rejected: a
+  prose-grep that passes without helping any reader, and banned outright by the
+  workflow's Proof policy.
+
+The arm therefore checks ONLY the cross-file token invariant (two independent files that
+can diverge, which is the legitimate form); AC-4's reader-facing property stays a
+one-off human check. **This mechanism is separable and the captain may drop it at the
+re-gate:** dropping AC-5 leaves AC-4 unaffected and lowers the combined estimate to net
++137 across 7 files. The flag is preserved verbatim from the folded ideation rather than
+quietly resolved, because the fold is not a ruling on it.
+
 ### Doctor visibility: SPLIT OUT, not shipped here
 
 The backlog seed left this open. Decision: **route the doctor half to a separate
@@ -156,12 +233,17 @@ finding surfaced here: `docs/site/reference/command-reference.md:42` already cla
 doctor`", which overstates what doctor does today (one manifest's version; it reads no
 enablement at all). That doc line is out of scope here.
 
-### Documentation diff
+## Documentation diffs
+
+Two files, both apply-ready. The first serves the install fix; the second is the folded
+README deliverable.
+
+### 1. `docs/site/get-started/install.md` — the exclusivity statement (serves AC-1)
 
 `spacedock install --host claude` gains host-integration behavior a reader would want
-stated, so ideation owns the doc change. One file, one paragraph, inserted in
-`docs/site/get-started/install.md` immediately after the existing channel paragraph
-that ends "Codex installs the same way with `codex plugin add`." (line 82):
+stated, so ideation owns the doc change. One paragraph, inserted immediately after the
+existing channel paragraph that ends "Codex installs the same way with `codex plugin
+add`." (line 82):
 
 ```diff
  the `spacedock-edge` marketplace the edge entry resolves from. Codex installs the
@@ -181,6 +263,60 @@ that ends "Codex installs the same way with `codex plugin add`." (line 82):
 `spacedock install` row and the paragraph below it describe the compatibility check,
 not channel semantics, and the install page is where channel behavior already lives.
 Repeating the fact in two files invites drift.
+
+### 2. `README.md` — posture (b), the channel label (serves AC-4)
+
+Folded from the superseded task, which worked out TWO postures as apply-ready diffs and
+recommended (b). **Posture (a) — documenting the edge install path in the README — was
+NOT selected.** Its full diff and the three-part argument against it are preserved at
+`_archive/product-readme-edge-channel-mention.md` (Proposed approach, "Why (b)"); the
+short form is that (a) adds *channel* branching to a block that still omits *platform*
+branching, stranding an edge-seeking Linux reader in the very block meant to stop
+stranding, and it plants a third copy of channel-specific install commands in a
+pitch-cadence document — the exact failure `marketplace-readme-channel-model-repair`
+existed to repair. **What would flip the call to (a):** a decision that edge is a
+first-class advertised channel for new users rather than an opt-in for people who
+already know they want it. That is product positioning, and it is the captain's call at
+the re-gate — which is why both diffs remain on file.
+
+One folded finding shrinks this diff: the README does **not** need to document the
+plugin install. The binary's build stamp selects its own plugin channel, so installing
+the edge cask and launching is sufficient (verified live — Risk evidence, README spike
+finding 3). Neither posture carries `claude plugin marketplace add` lines.
+
+````diff
+--- a/README.md
++++ b/README.md
+@@ -60,8 +60,15 @@
+-Install with Homebrew:
++Install the stable channel with Homebrew:
+
+ ```bash
+-brew tap spacedock-dev/homebrew-tap
++brew tap spacedock-dev/tap
+ brew install spacedock
+ ```
+
++These commands install the **stable** channel, and the first launch below
++installs the matching stable plugin. Spacedock also ships an **edge** channel
++that tracks prereleases. The channel is chosen at install time, not with a flag
++later, so if you want edge — or you are matching a teammate who runs it — start
++from the [install guide](docs/site/get-started/install.md) instead of the
++commands above.
++
+ Then launch. The first launch sets up the plugin for you, so a single line gets
+````
+
+README.md +9/-2, net +7.
+
+The diff also normalizes the tap token to install.md's spelling (`spacedock-dev/tap`).
+The two spellings are equivalent — Homebrew strips the `homebrew-` prefix, verified in
+Risk evidence — so no reader's install breaks; the change removes a divergence between
+two docs a reader compares side by side, and it is what makes AC-5's arm go green.
+
+**Cost of (b), accepted:** the edge-seeking reader takes one hop to install.md. In
+exchange they arrive at platform-aware commands (mac cask *and* the Linux script)
+instead of a mac-only line the README would have to keep correct.
 
 ## Risk evidence
 
@@ -241,9 +377,57 @@ local fixture reproduced the same discrimination: **current sequence → 2 enabl
 proposed sequence → 1 enabled**. `plugin marketplace update` on a local Directory
 source exits 0. The fixture needs no network, so the value test is offline-hermetic.
 
+### README spike (folded, run at the superseded task's ideation, darwin/arm64 2026-08-25)
+
+Every command posture (b) documents was exercised against the shipped install
+machinery — spiked, not deferred.
+
+1. **Both tap spellings resolve to the same tap.** `brew tap-info
+   spacedock-dev/homebrew-tap` and `brew tap-info spacedock-dev/tap` return
+   byte-identical output — `spacedock-dev/tap: Installed`, same path
+   `/opt/homebrew/Library/Taps/spacedock-dev/homebrew-tap`, same `HEAD:
+   4ed86b9fa445e625b2b6d18c2a03b0667a25e19a`. Homebrew strips the `homebrew-` repo
+   prefix, so the README's current spelling is not broken and the normalization to
+   `spacedock-dev/tap` is safe for every reader.
+2. **Both cask names are real, and the conflict claim is real.** The tap ships exactly
+   two casks. `Casks/spacedock.rb`: `cask "spacedock"`, `version "0.27.0"`,
+   `conflicts_with cask: ["spacedock@next"]`. `Casks/spacedock@next.rb`: `cask
+   "spacedock@next"`, `version "0.28.0-pre0"`, `conflicts_with cask: ["spacedock"]`,
+   assets `spacedock_#{version}_darwin_arm64_edge.tar.gz`. Both `brew install` targets
+   name shipped casks, and the "two casks conflict" claim is the casks' own declared
+   metadata, not an inference.
+3. **The binary picks its own plugin channel — live.**
+   `/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre0/spacedock --version` prints
+   `Channel: edge (spacedock@spacedock-edge)`, and `spacedock doctor` on the same binary
+   prints `OK: spacedock binary 0.28.0-pre0 and plugin 0.28.0-pre0 are compatible.` This
+   is what removes the plugin commands from the diff: install the edge cask, launch, and
+   the matching edge plugin is what you get.
+4. **Both channel mappings proven, not just the installed one.** `go test
+   ./internal/cli/ -run
+   'TestChannelMarketplaceFromDevBranch|TestChannelMarketplaceCarriesTheChannel|TestChannelPluginIDIsEntryAtMarketplace|TestClaudeNoPluginAutoInstallSelectsChannelEntry'`
+   — all PASS, each with stable and edge subtests (existing tests, cited not written).
+5. **`SPACEDOCK_CHANNEL=edge` is real**, so posture (b)'s pointer has a real destination:
+   `install.sh:38` reads `SPACEDOCK_CHANNEL` defaulting to `stable`, `install.sh:49-52`
+   accepts only `stable|edge` and dies otherwise, `install.sh:131-132` selects the
+   `_edge` asset.
+
+**Honest limit, carried forward unchanged:** no `brew install` transaction was run.
+Installing the stable cask would conflict with the edge cask this host runs, and
+mutating the host's install is out of proportion for a README diff. Cask names,
+versions, asset URLs, and conflict metadata were read from the tap's own shipped `.rb`
+files and confirmed via `brew tap-info`; the install transaction itself is unexercised.
+For posture (b) — the recommendation — the only commands the README documents are the
+stable pair, whose tokens are verified above to name a real tap and a real cask in it.
+
 ## Out of scope
 
-CLAUDE_CODE_PLUGIN_PREFER_HTTPS documentation (plugin-install-https-keyless-machines / rb0). Product README edge-channel mention (product-readme-edge-channel-mention). The codex install sequence (already removes the sibling).
+CLAUDE_CODE_PLUGIN_PREFER_HTTPS documentation (plugin-install-https-keyless-machines /
+rb0). The codex install sequence (already removes the sibling). The marketplace repo
+README (done: marketplace-readme-channel-model-repair). `install.sh` behavior — read as
+evidence that posture (b)'s pointer has a real destination, never edited.
+
+(The former cross-reference to `product-readme-edge-channel-mention` is dropped: that
+task is superseded and archived, and its deliverable is now IN scope here.)
 
 Split out by this ideation (see "Doctor visibility" above): doctor/`--version`
 visibility into a co-installed enabled sibling, and the overstated
@@ -256,24 +440,34 @@ owns.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: **+130, across 6 files** (insertions ~+134, deletions ~-4).
-Tolerance: **±40 net LOC and ±1 file**.
+Combined figure for both folded deliverables.
 
-The backlog seed said +40/4 files. Ideation revises it upward: the production change is
-6 lines; the rest is the value test's two-channel fixture, which nothing in the repo
-builds yet.
+Estimate net LOC change: **+167, across 8 files** (insertions ~+173, deletions ~-6).
+Tolerance: **±55 net LOC and ±1 file**.
 
-| File | Net | What |
-| --- | --- | --- |
-| `internal/cli/host_exec.go` | +6 | the argv step (+1) and the sequence doc comment (5-command → 6-command, sibling rationale, "three cleanup steps" → four) |
-| `internal/cli/init_devbranch_test.go` | +3 | `TestInstallArgvSequence`: one literal step in each of `wantEdge`/`wantStable`, comment |
-| `internal/cli/channel_selection_test.go` | +4 | `TestClaudeChannelInstallArgvSequence`: `wantSibling` table field, one literal step, comment |
-| `internal/cli/install_tolerance_test.go` | +3 | three existing tests each expect one more stub marker; "five steps" → "six steps" in comments |
-| `internal/cli/sibling_channel_exclusive_test.go` (new) | +108 | the value test plus the two-channel local marketplace fixture builder |
-| `docs/site/get-started/install.md` | +6 | the exclusivity paragraph |
+| File | Net | What | Half |
+| --- | --- | --- | --- |
+| `internal/cli/host_exec.go` | +6 | the argv step (+1) and the sequence doc comment (5-command → 6-command, sibling rationale, "three cleanup steps" → four) | install |
+| `internal/cli/init_devbranch_test.go` | +3 | `TestInstallArgvSequence`: one literal step in each of `wantEdge`/`wantStable`, comment | install |
+| `internal/cli/channel_selection_test.go` | +4 | `TestClaudeChannelInstallArgvSequence`: `wantSibling` table field, one literal step, comment | install |
+| `internal/cli/install_tolerance_test.go` | +3 | three existing tests each expect one more stub marker; "five steps" → "six steps" in comments | install |
+| `internal/cli/sibling_channel_exclusive_test.go` (new) | +108 | the value test plus the two-channel local marketplace fixture builder | install |
+| `docs/site/get-started/install.md` | +6 | the exclusivity paragraph | install |
+| `README.md` | +7 | posture (b): +9/-2 — stable label, edge pointer, tap token normalized | README |
+| `internal/contractlint/install_hint_drift_test.go` | +30 | the AC-5 drift arm plus its doc comment, reusing the existing `installMDSection` helper | README |
 
-Tolerance rationale: the fixture builder's final size is the only real unknown (the
-spike built it in shell, not Go). The ±1 file covers putting the fixture helper beside
+Subtotals: install half **+130 across 6 files**; README half **+37 across 2 files**.
+
+**Alternate approved baseline if the captain drops AC-5 at the re-gate: net +137 across
+7 files, tolerance ±45.** Record whichever the gate approves, so a later correction
+round calibrates against the posture actually approved rather than this superset.
+
+The install half's backlog seed said +40/4 files; ideation revised it upward because the
+production change is 6 lines and the rest is the value test's two-channel fixture, which
+nothing in the repo builds yet. Tolerance rationale: the fixture builder's final size is
+the only real unknown (the spike built it in shell, not Go); the README half's two diffs
+are written out line for line and carry almost no uncertainty, which is why folding it
+in adds only ±15 to the tolerance. The ±1 file covers putting the fixture helper beside
 the existing one in `co_hosted_survival_test.go` instead of a new file.
 
 ### Declared semantic changes
@@ -285,6 +479,11 @@ the existing one in `co_hosted_survival_test.go` instead of a new file.
 - **Command output:** `spacedock install --host claude` gains claude's own line for the
   extra step (a success line when the sibling was present, a tolerated failure line
   when it was not). No Spacedock-authored output changes.
+- **README half: none.** No command grammar, no stored format, no authority boundary,
+  no runtime behavior — the output is README prose plus one test arm. The one
+  behavior-adjacent edit is the documented tap token's spelling
+  (`spacedock-dev/homebrew-tap` → `spacedock-dev/tap`), verified equivalent in Risk
+  evidence, so no reader's install changes.
 - **Unchanged:** command grammar, flags, stored formats, exit codes, authority, the
   version gate, doctor, the `plugin marketplace remove` ban, and the tolerance
   asymmetry rule (four cleanup steps tolerated, two pinning steps fail-fast).
@@ -304,7 +503,24 @@ local claude-on-PATH value test are the required set.
 `installArgvSequence` is what `resolveHealableGate` shells during an auto-heal on
 launch — so the four-surface trigger fires. The provenance trigger fires too: the
 audit must confirm the sibling id in the argv tests is a literal that diverges from
-`otherChannelMarketplace`, not a re-derivation of it.
+`otherChannelMarketplace`, not a re-derivation of it. Scope the audit at the install
+half; the README half is inside the same diff but is not what the trigger is about.
+
+**Docs strict build covers one doc file, not both.** `mkdocs.yml` does not include
+`README.md` (checked — no README entry), so `mkdocs build --strict` validates
+`docs/site/get-started/install.md` and not the product README. The README's only
+mechanical guard is AC-5's drift arm, which is precisely the gap Problem finding 4
+describes — and precisely why dropping AC-5 leaves the README's tokens unguarded again.
+Worth the captain's attention when ruling on AC-5's necessity.
+
+**Consequence of the fold the re-gate should see:** the superseded task claimed the
+validation small-change fast path (`docs/dev/README.md:192`) for its README diff, and
+that claim was correct in isolation. **It no longer applies.** The combined task touches
+the front-door launcher, so the whole deliverable carries the heavier posture — full
+validation and the detached audit. Folding a low-blast-radius doc change into a
+high-stakes-surface change raises the doc change's validation cost; that is a real,
+accepted cost of the captain's "no doc-only task" ruling, not an oversight. It does not
+change the work, only how it is checked before merge.
 
 ## Acceptance criteria
 
@@ -345,11 +561,50 @@ fails a named assertion.
 
 **AC-3 (MEANS, serving AC-1's discoverability) - The install documentation states that Spacedock keeps exactly one channel installed per host.**
 
-Verified by: the doc diff above applied to `docs/site/get-started/install.md`, reviewed
+Verified by: doc diff 1 above applied to `docs/site/get-started/install.md`, reviewed
 at the validation gate, with the docs strict build (`mkdocs build --strict`, the docs
 lane) as the mechanical check. Stated honestly: no committed test proves prose says
 what we wrote — a grep over it would be the banned prose-grep. This AC counts only as
 a companion to AC-1, which is where the behavior is measured.
+
+---
+
+*AC-4 and AC-5 are the folded README deliverable. AC-4 is its own value AC — a distinct
+end-value from AC-1, measured against its own baseline — not a mechanism serving the
+install fix.*
+
+**AC-4 (VALUE) - Every install command block in the product README names the channel it installs, and a reader who wants the other channel is told where it lives — so no reader following the README toward edge silently lands on stable.**
+
+Verified by: a one-off existence check recorded in the validation report, measured
+against a stated baseline that fails today. **Baseline (re-verified 2026-08-25 at
+b04b3ef):** README.md has 1 install command block (lines 62-65) and 0 channel labels,
+and its only edge pointer is the general "Full docs" link at lines 77-80, thirteen lines
+below the block — the exact state that produced the captain's report. **After:** 1 of 1
+blocks names its channel adjacent to the commands, and the other channel's location is
+named in the same paragraph. Presence is the claim, so a one-off check is legitimate
+evidence here per the Proof policy's own carve-out ("presence or absence is an existence
+fact, and a grep establishes it soundly when that fact is itself the claim") — this is
+NOT a standing prose-grep test and must not be committed as one. Falsifying edit: delete
+the added paragraph and the section reverts to unlabeled brew steps; the AC fails.
+
+**AC-5 (MEANS, serving AC-4's durability — SEPARABLE, captain may drop at the re-gate) - The product README's Homebrew tap and cask tokens equal the tokens in install.md's `macOS (Homebrew)` tab, and a check fails if either side drifts.**
+
+Verified by: a new arm in `internal/contractlint/install_hint_drift_test.go` that reuses
+`installMDSection` to extract `tap` and `formula` from install.md's Homebrew tab, then
+asserts README.md's Install section carries `brew tap <tap>` and `brew install
+<formula>`. This binds two independent files that can diverge — the legitimate form,
+not a prose-grep. **Baseline that moves the wrong way:** the arm FAILS on the pre-change
+README (`spacedock-dev/homebrew-tap` at README.md:63 vs install.md:9's
+`spacedock-dev/tap` — both re-verified today) and passes after. Falsifying edit: change
+the tap token in either file and the arm goes red. Implementation MUST record it red
+before green; a drift arm never seen red is a tautology.
+
+**Necessity flag, preserved for the captain's ruling:** this is the only new mechanism
+in the folded half, and the folded ideation deliberately flagged it rather than
+smuggling it in. Drop AC-5 and AC-4 is unaffected; the estimate becomes net +137 across
+7 files. The argument for keeping it is that the divergence exists in the file today and
+nothing caught it; the argument against is that one stale token in a README is cheap to
+fix by hand and a standing check is a permanent cost for a rare fault.
 
 ## Test plan
 
@@ -361,6 +616,8 @@ a companion to AC-1, which is where the behavior is measured.
 | three `TestInstallTolerates…` (extend marker lists) | no regression in `runInstallSteps` tolerance | +3 LOC, ~1s | CI `build` |
 | `TestClaudeChannelInstallLeavesCoHostedPluginInstalled` (existing, unchanged) | the sibling step did not reintroduce cascade harm | 0 LOC | local, claude on PATH |
 | docs strict build (existing) | AC-3 well-formed | 0 LOC | docs lane |
+| one-off existence check vs the stated baseline | AC-4 | 0 LOC, recorded in the validation report | not committed — see AC-4 |
+| new arm in `install_hint_drift_test.go` | AC-5 | +30 LOC, instant | CI `build` (`go test ./internal/contractlint/ -run TestInstallHint`) |
 
 **The value test's fixture.** A new helper builds two local directory marketplaces
 whose `marketplace.json` names are `spacedock` and `spacedock-edge`, each with the
@@ -391,7 +648,27 @@ prove AC-1.
   uninstall` names one `<entry>@<marketplace>` record. Confirmed incidentally in spike
   item 3 (both marketplace records survived).
 
-**Estimated total cost:** ~1 hour implementation, dominated by the fixture builder.
+**AC-5's red-then-green obligation.** Implementation MUST run `go test
+./internal/contractlint/ -run TestInstallHint` and record the arm FAILING on the
+pre-change README first — pasting the failure line showing the two divergent tap tokens
+— then edit README.md and record it passing. This ordering is the only sequencing
+constraint in the whole task. A drift arm first seen green proves nothing: it would
+equally "pass" if it asserted nothing at all.
+
+**Regression:** `go test ./...` once. No `-race` needed for the README half (no
+concurrency); the install half introduces none either, but `-race` runs anyway as the
+repo's standing command.
+
+**Cross-half interaction: none.** The two halves touch disjoint files and disjoint
+tests. The only shared object is `docs/site/get-started/install.md`, which the install
+half EDITS (adding the exclusivity paragraph) and which AC-5's arm READS (extracting the
+Homebrew tab's tap/formula tokens). Those do not collide — the added paragraph is in the
+`## Skills` section, not the `macOS (Homebrew)` tab `installMDSection` parses — but
+implementation should run the drift arm after the install.md edit to confirm it, since a
+surprise there would be cheap to catch and confusing to debug later.
+
+**Estimated total cost:** ~1.5 hours implementation — ~1 hour for the install half
+(dominated by the fixture builder), ~30 minutes for the folded README half.
 
 ### Feedback Cycles
 
@@ -426,3 +703,41 @@ rather than change CI machinery for one test, and made it a validation obligatio
 run it locally and treat a SKIP as a failure. Second, the change removes a co-installed
 sibling from a captain's claude on the next install or auto-heal, which is intended but
 is a real behavior change for anyone deliberately holding both channels.
+
+### Amendment: README deliverable folded in (2026-08-25)
+
+Captain ruling "readme should fold into this. no doc-only task" withdrew briefing-1 and
+gave this task the deliverable from `product-readme-edge-channel-mention`, now
+superseded and archived. Its ideation was complete and gate-verified, so this was a fold
+of finished design, not a re-design.
+
+- DONE: Fold the posture (b) README diff into the Proposed approach / Documentation diff section.
+  "Documentation diffs" is now two numbered diffs — install.md (serves AC-1) and README.md posture (b) (serves AC-4). Posture (a) was NOT selected and is cited, not copied, at `_archive/product-readme-edge-channel-mention.md`, with the short-form argument against it and the "what would flip the call" note kept inline so the captain can still rule without opening the archive. Tap token normalized to `spacedock-dev/tap`.
+- DONE: Fold the value AC and the contractlint drift arm AC into Acceptance criteria, renumbered, mechanism→value pairings explicit, drift arm's separability/necessity flag kept.
+  AC-1 (VALUE, install) → AC-2, AC-3 as its means; AC-4 (VALUE, README) → AC-5 as its means. Two value ACs because the halves deliver two distinct end-values against two distinct baselines. AC-5 carries the separability flag verbatim plus the arguments on both sides, and states the alternate estimate if dropped. Re-verified both AC baselines against the working tree today rather than trusting the archived numbers: README.md:60/62-65/77-80 and install.md:9 all check out, so the folded citations are accurate as written.
+- DONE: Fold the relevant spike evidence into Risk evidence.
+  Five findings plus the honest limit, under their own "README spike" heading with provenance and date: tap-spelling equivalence (identical `brew tap-info` output, same HEAD), both cask names and the `conflicts_with` metadata read from the tap's shipped `.rb` files, the live edge binary printing `Channel: edge` (which is why neither diff carries plugin commands), the channel-mapping tests, and `SPACEDOCK_CHANNEL` in install.sh. The "no `brew install` transaction was run" limit is carried forward unchanged rather than quietly dropped.
+- DONE: Update Expected surface and tolerance to one combined net estimate, the Test plan, and Out of scope.
+  Combined: net +167 across 8 files, tolerance ±55 / ±1 file, with per-half subtotals (+130/6 install, +37/2 README) and the alternate approved baseline (+137/7) if AC-5 is dropped. Test plan gains the AC-4 one-off check, the AC-5 arm with its red-then-green obligation called out as the task's only sequencing constraint, and a cross-half interaction note. Out of scope drops the superseded cross-reference and picks up the archived task's exclusions (marketplace repo README, install.sh); rb0 kept.
+
+### Amendment summary
+
+Two consequences of the fold that the re-gate should see, neither of which is visible
+from the diff. First, **the validation posture changed for the README half**: the
+superseded task correctly claimed the small-change fast path, and that claim no longer
+holds — the combined task touches the front-door launcher, so the whole deliverable
+carries full validation and the detached adversarial audit. That is an accepted cost of
+"no doc-only task", not an oversight, and it raises the checking cost of the doc change
+without changing the work. Second, **`mkdocs.yml` does not include README.md**, so the
+docs strict build guards install.md and not the product README; AC-5's drift arm is the
+README's only mechanical guard. That sharpens the AC-5 necessity question rather than
+settling it — dropping the arm leaves the README's tokens unguarded again, which is the
+gap Problem finding 4 documents.
+
+I did not re-litigate the folded design. The one thing I checked rather than assumed was
+the cross-half interaction: install.md is edited by one half and parsed by the other's
+drift arm, and `installMDSection` stops at the next `## ` heading, so the exclusivity
+paragraph in `## Skills` is outside the `macOS (Homebrew)` tab it reads. No collision,
+and the test plan says to confirm it in the ordering rather than trust this note.
+
+The doctor cut is unchanged and remains the one open thread from round 1.
