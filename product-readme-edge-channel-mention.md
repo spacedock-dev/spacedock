@@ -11,6 +11,18 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:dt8j3pas83725fma2wbez5ss:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:dt8j3pas83725fma2wbez5ss-backlog-1
+              briefing:
+                id: briefing:dt8j3pas83725fma2wbez5ss:backlog:attempt-1:revision-1
+                digest: sha256:c35c57a4aa2757547aae765122da7e1cea5396fe267ae9c5f52959b6799c9161
+                request-digest: sha256:70b91d9acb281b900da42fd590b89cab6d58cb951ea020386a137234aa5709ab
+                room-ref: ./product-readme-edge-channel-mention/review/backlog/briefing-1
 ---
 
 The product README's install section documents only `brew tap spacedock-dev/homebrew-tap` + `brew install spacedock` — the stable channel. No edge cask, no `SPACEDOCK_CHANNEL=edge`, no pointer to the edge marketplace. A reader seeking edge parity follows the README, lands on stable, and loses parity with no signal. Decide the intended README posture and ship the README diff.

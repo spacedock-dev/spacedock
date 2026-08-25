@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dt8j3pas83725fma2wbez5ss:backlog:attempt-1:revision-1",
+  "question": "Should design start on fixing the product README's silent stable-only install path — document edge, or state stable-only explicitly with a pointer?",
+  "artifacts": [
+    {
+      "id": "artifact:dt8j3pas83725fma2wbez5ss:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/19edf2c1043f251bd51a8c26cd495ffe9ee8d8b4/product-readme-edge-channel-mention.md",
+      "rev": "sha256:4c79e58f7cc0a9a29f91680b0d888313fcf081177f2cbdbceade816342d08eaf",
+      "mediaType": "text/markdown",
+      "summary": "Seed: the product README documents only the stable brew steps; a reader seeking edge parity silently lands on stable. The marketplace README fix (done 2026-08-24) did not cover the product README. Posture decision (advertise edge vs explicit stable-only + link) is the captain's at the ideation gate; this task ships the README diff either way. Seed AC: no reader silently lands on stable (VALUE). Excluded: marketplace README, install.sh, PREFER_HTTPS docs (rb0), sibling-plugin cleanup (own task)."
+    }
+  ]
+}
