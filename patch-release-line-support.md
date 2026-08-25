@@ -35,36 +35,38 @@ gates:
                 state: consumed
 ---
 
-One owner for release.yml's stable-tag conditional. Today the machinery cannot ship an old-line patch (a v0.27.1 while main is the 0.28 line): two step-level defects, verified by reading the shipped workflow at the v0.27.0 cut, plus one automation the cut proved missing.
+**LEAN CUT (captain ruling, 2026-08-25).** Stop the release-line cut that silently regresses the
+binary channels, and stop hand-repairing the edge line after every stable cut. Patch-line DELIVERY —
+moving `stable` across release lines — is deliberately NOT in this cut and is deferred whole to a
+filed follow-up. See "Deferred: patch-line delivery" below for what was dropped and why.
 
 ## Problem
 
 `release.yml` has one conditional for stable tags — `!contains(github.ref, '-')` — and it decides
-three unrelated questions at once: does `main` get stamped, does `stable` advance, and does the edge
-line move. On the only shape the repo has ever cut (a stable release from `main`'s tip) all three
-answers coincide, so the collapse has never been visible. A patch on an older line answers them
-differently, and the single conditional gets two of the three wrong.
+several unrelated questions at once. On the only shape the repo has ever cut (a stable release from
+`main`'s tip) every answer coincides, so the collapse has never been visible. A tag on an older line
+answers them differently.
 
-**1. The main stamp has no line-awareness.** "Stamp plugin manifests to the release version"
+**1. An old-line stable tag publishes a binary-channel regression with every job green.** Nothing in
+the pipeline compares the tag being cut against the release the stable channel already serves. On a
+`v0.27.1` tag cut while `stable` serves 0.28.0, goreleaser runs to completion: `release.prerelease:
+auto` (`.goreleaser.yaml:105`) marks any hyphen-free tag a normal release, so GitHub flips
+`/releases/latest` DOWN to 0.27.1; and `homebrew_casks[spacedock].skip_upload: auto`
+(`.goreleaser.yaml:125`) skips the cask bump ONLY for prereleases, so the stable Homebrew cask is
+bumped DOWN too. Both are binary channels, both are consumed by `brew upgrade` and by the install
+script, and neither is recoverable by a job re-run — the release is published and the cross-repo tap
+commit is pushed. Every job is green. This is the sharpest defect in the surface and the centerpiece
+of this cut.
+
+**2. The main stamp has no line-awareness.** "Stamp plugin manifests to the release version"
 (`.github/workflows/release.yml:247`) fires on any hyphen-free tag. On a `v0.27.1` tag it switches to
 `main` and stamps `main` DOWN to 0.27.1 — rewriting the 0.28.0-pre0 manifests and the FO prose pin
 (`These skills require binary minor 0.28`), so every edge user's plugin claims 0.27 while their
 binary is 0.28.0-pre0 and the FO binary gate aborts. This is worse than the v0.27.0 incident: it
 breaks a currently-working state rather than failing to repair a broken one. The latest-line decision
-already exists in the sibling `edge-advance` job, and this step does not consult it.
-
-**2. The stable advance is not the failure the seed described, and the real failure is worse.**
-The seed expected the patch push to die non-fast-forward. The spike (Risk evidence below) refutes
-that: a patch branched off the current `stable` tip pushes as a clean fast-forward, because `stable`
-points at the prior stable release's commit and the patch is that commit's child. The push succeeds.
-What breaks is the cut AFTER it. Once `stable` sits on a patch commit that is not on `main`'s
-history, the next latest-line stable cut from `main` is non-fast-forward and is REJECTED, so
-`stable` freezes on the patch line permanently and every later stable release is invisible to
-`spacedock@spacedock` installs. Separately, an old-line patch cut while `stable` already serves a
-newer release is also rejected — semantically the right outcome, but it arrives as a red job after
-goreleaser has already published, not as a deliberate skip. The step's own comment ("The tagged
-commit is on main's history, so this fast-forwards", `release.yml:283`) states a reason that is false
-for every patch-line commit; the push happens to work for the wrong reason.
+already exists in the sibling `edge-advance` job, and this step does not consult it. Defect 1's gate
+does NOT cover this case: a `v0.27.1` cut while `stable` serves 0.27.0 is not a regression of the
+stable channel, so it passes the gate — and stamps `main` DOWN anyway.
 
 **3. Nothing stamps `main` past the released minor.** The auto-pre0 job tags `vX.(Y+1).0-pre0` and
 publishes that edge binary, but leaves `main`'s manifests and FO pin at the released version. Every
@@ -73,29 +75,79 @@ v0.27.0 cut: the pre0 tag landed 2026-08-24 21:55:31 PDT, the failing install hi
 22:01, and the hand repair b8346ffc9 landed 22:01:49 — a 6m18s outage closed by one human commit.
 `docs/releasing.md` step 9 (b04b3effd) is the interim procedure; this item retires it.
 
-Items 1 and 2 are latent — verified by reading and exercising the shipped workflow, never yet
-triggered live. Item 3 is the observed incident. All three share one root cause and one fix surface.
+Defects 1 and 2 are latent — verified by reading and exercising the shipped workflow, never yet
+triggered live. Defect 3 is the observed incident.
 
 ## Proposed approach
 
-Split the one overloaded conditional into the two questions it actually conflates, and give each an
-owner that already exists or is a thin wrapper over shipped code.
+Three mechanisms, in descending order of harm removed. Each is either a new step under an existing
+job's existing setup, or a move of a shipped step under a shipped gate.
 
-**The two questions are genuinely different.** "Does the edge line move?" and "Does the stable
-channel move?" have different answers for the same tag. Cutting `v0.27.1` today: the edge line must
-NOT move (`main` is already 0.28.0-pre0, and a 0.28 edge binary is published), but the stable channel
-MUST move (stable serves 0.27.0, and patch users need 0.27.1). Any design that answers both with one
-predicate gets one of them wrong. This is the necessity argument for two decisions rather than one.
+### A. Stop the regressing cut before it publishes — a new gate step in `e2e-gate`
 
-### A. Main stamp — move it into the job that already owns the decision
+A bare-tag step in the `e2e-gate` job reads the version the stable channel serves NOW and fails the
+run when the tag is older than it. goreleaser `needs: e2e-gate`, so a failure here means goreleaser
+never starts: no GitHub Release, no `/releases/latest` flip, no cask commit.
+
+```bash
+set -euo pipefail
+LS=0
+git ls-remote --exit-code origin refs/heads/stable >/dev/null || LS=$?
+if [ "$LS" -eq 2 ]; then
+  echo "::notice::stable-regression gate: no stable ref yet, so there is no release to regress"
+  exit 0
+elif [ "$LS" -ne 0 ]; then
+  echo "::error::stable-regression gate: cannot read refs/heads/stable (git ls-remote exit $LS); failing closed" >&2
+  exit 1
+fi
+git fetch origin stable
+STABLE_MANIFEST="$(mktemp)"
+git show FETCH_HEAD:.claude-plugin/plugin.json > "$STABLE_MANIFEST"
+go run ./cmd/spacedock-release stable-regression-gate "$GITHUB_REF_NAME" "$STABLE_MANIFEST"
+```
+
+- **Value AC served:** AC-1 (an old-line tag never publishes).
+- **Placement is free.** The `e2e-gate` job already checks out with `fetch-depth: 0`, already sets up
+  Go, and already carries two block-the-cut steps (`e2e-gate`, `manifest-tag-gate`) with exactly this
+  exit contract. This step is the third of the same family. Placing it in `goreleaser` instead would
+  start a job that must then abort; placing it in a new job would add a node to the critical path.
+- **The predicate is `>=`, not `>`.** The gate blocks only a STRICTLY older tag. Equality must pass:
+  re-running a release whose commit already reached `stable` is a supported, idempotent recovery (the
+  auto-pre0 step is written for exactly that re-run). A strict-`>` boundary would turn every re-run
+  into a red job. This is the one place this gate's boundary deliberately differs from
+  `EdgeAdvanceDecision`'s strict `>`, and the unit table pins it.
+- **New mechanism — `stable-regression-gate`.** A new `spacedock-release` subcommand in the shipped
+  gate family: read a manifest, compare, exit 0 or 1. It reuses `release.ManifestVersion` and
+  `release.ComparePreVersion`, both shipped and both already tested.
+  - *Simplest alternative:* no new Go at all — feed the tag version and the stable version to the
+    shipped `highest-known-edge-version` and fail when its answer is not the tag. Arithmetically this
+    is the same `>=` predicate. *Why insufficient:* `HighestKnownEdgeVersion` SKIPS an unparseable
+    candidate rather than erroring (`edge_advance_decision.go:187`), so a corrupt or renamed stable
+    manifest would drop out of the comparison, the tag would win by default, and the gate would pass
+    the cut it exists to block. A gate must fail loudly on input it cannot read. It also still needs
+    a Go call to read the version out of the JSON, so the "no new Go" saving is not real.
+  - *Second alternative:* compare the tag against the highest bare stable TAG in the repo, which
+    needs no fetch at all. *Why insufficient:* a tag records what was CUT, and the channels this gate
+    protects record what was PUBLISHED. A tag whose run died before goreleaser would then block the
+    re-cut that repairs it, and a published release whose tag was later deleted would stop being
+    counted. `stable` moves only after goreleaser succeeds, so it is the true record of the channel.
+- **Failure direction is asymmetric, so the carve-outs are asymmetric.** A missing `stable` ref
+  (`ls-remote` exit 2) is the first-stable-release case and must PASS — there is no release to
+  regress. Any other non-zero exit is a read failure and must FAIL — an unreadable baseline is not a
+  permission to publish, and the cost of a false block is one job re-run against a published
+  regression that cannot be re-run away.
+
+### B. Main stamp — move it into the job that already owns the decision
 
 Move the stamp step out of `goreleaser` and into `edge-advance`, placed AFTER the auto-pre0 step and
 carrying the SAME gate the pre0 step carries (`steps.decision.outputs.advance == 'true'`). Change
 what it stamps: `edge-pre0-version "$RELEASE_VERSION"` (X.(Y+1).0-pre0), not `$RELEASE_VERSION`.
 Rename it to `Stamp main to the next edge prerelease version`, because it no longer stamps the
-release version.
+release version. The remainder of the old step — the tagged-commit resolve and
+`git push origin "$RELEASE_COMMIT:refs/heads/stable"` — stays in `goreleaser`, renamed to
+`Advance the stable channel ref to the tagged commit` and otherwise BYTE-UNCHANGED.
 
-- **Value AC served:** AC-1 (an old-line tag never touches `main`) and AC-3 (the edge gate passes
+- **Value AC served:** AC-2 (a patch tag never moves `main` backwards) and AC-3 (the edge gate passes
   with no human step).
 - **Simplest alternative considered:** leave the step where it is and gate it on monotonicity —
   stamp only when the target version exceeds `main`'s current manifest version. No cross-job move, no
@@ -109,115 +161,108 @@ release version.
 - **Alternative also considered and rejected:** promote the decision to a standalone job with
   outputs, consumed by both. Same result, but it adds a job to `goreleaser`'s critical path and about
   25 lines of wiring for no behavior the move does not already give.
+- **Why mechanism A does not make this redundant.** A's gate blocks a tag older than what `stable`
+  serves. It does NOT block a `v0.27.1` cut while `stable` serves 0.27.0 — correctly, that patch is
+  the newest stable release at that moment. That is precisely the tag today's stamp step would use to
+  rewrite `main` DOWN to 0.27.1. The two mechanisms cover disjoint cases.
 - **Ordering inside the job matters.** The pre0 tag is cut and its run is verified FIRST; the stamp
   runs only after that verify poll passes. A failure before the stamp therefore leaves exactly
   today's recoverable state, never a worse one.
 
-### B. Stable advance — its own step, its own predicate, in the goreleaser job
+### C. One bounded retry on the main-stamp push
 
-The remainder of the old stamp step becomes a step of its own, `Advance the stable channel ref to
-the tagged commit`. It fetches `stable`, reads that branch's OWN `.claude-plugin/plugin.json`
-version, and advances only when the tag's version is strictly greater:
-
-```bash
-RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
-if git fetch origin stable; then
-  STABLE_SHA="$(git rev-parse FETCH_HEAD)"
-  git show "$STABLE_SHA:.claude-plugin/plugin.json" > "$STABLE_MANIFEST"
-  if [ "$(go run ./cmd/spacedock-release stable-advance-decision "$GITHUB_REF_NAME" "$STABLE_MANIFEST")" != "advance" ]; then
-    echo "::notice::stable ref NOT advanced for $GITHUB_REF_NAME: the stable channel already serves a newer release"
-    exit 0
-  fi
-  git push --force-with-lease="refs/heads/stable:$STABLE_SHA" origin "$RELEASE_COMMIT:refs/heads/stable"
-else
-  git push origin "$RELEASE_COMMIT:refs/heads/stable"   # first stable release: the ref does not exist yet
-fi
-```
-
-- **Value AC served:** AC-2 (the newest stable release reaches stable-channel users, across lines).
-- **New mechanism 1 — `stable-advance-decision`.** A new `spacedock-release` subcommand mirroring
-  `edge-advance-decision`'s signature and exit contract (prints `advance`/`skip`, exit 0 for both,
-  non-zero on unparseable input). It wraps the already-shipped `ComparePreVersion`.
-  - *Simplest alternative:* reuse `edge-advance-decision` with `stable`'s manifest as the known
-    version. *Why insufficient:* it computes `DevPreVersion(tag)` as the target, so it answers the
-    edge question, not the stable one — for `v0.27.1` it compares 0.28.0-pre1 against 0.27.0 and says
-    advance for the wrong reason, and its answer diverges from the stable question in exactly the
-    cases this task exists to fix.
-  - *Second alternative:* compare in shell with `sort -V`. *Why insufficient:* prerelease ordering
-    (`pre2` before `pre10`, stable above its own prereleases) is the distinction the shipped
-    comparator exists to make; re-deriving it in YAML duplicates the one function that already has
-    tests.
-- **New mechanism 2 — `--force-with-lease`.** The lease is required, not defensive. Once a patch has
-  moved `stable` off `main`'s history, the next latest-line advance is non-fast-forward by
-  construction (spike TEST 2), so a plain push can never publish it.
-  - *Simplest alternative:* plain push, and treat a non-fast-forward rejection as a skip. *Why
-    insufficient:* spike TEST 2 shows that turns the permanent stable-channel freeze from a loud
-    failure into a silent one. Git's ancestry check cannot distinguish "older line, correctly
-    refused" from "newer line, wrongly refused" — both are non-fast-forward.
-  - The version predicate is what makes the force safe: it establishes this tag is newer than what
-    `stable` serves BEFORE any force. The lease then guards the read-to-write window and refuses on a
-    concurrent move (spike TEST 4). Both are proven, not assumed.
-- **The FF-vs-force branch is deliberately absent.** One path — gate, then lease-push — covers both,
-  because a fast-forward under a correct lease succeeds too. A branch on ancestry would be a third
-  mechanism with no case of its own.
-
-### C. Retire the manual ritual
-
-`docs/releasing.md` step 9 is deleted and step 10 renumbered. Sections "What the Tag Push Does" and
-"Advancing the Edge Line" are corrected, and a short "Advancing the Stable Channel" section is added.
-The concrete diff is in **Documentation diff** below.
-
-### One bounded retry on the main-stamp push
-
-Today's stamp step usually finds no diff and commits nothing. After this change it commits on every
+Today's stamp step usually finds no diff and commits nothing. After mechanism B it commits on every
 latest-line cut, so a concurrent merge to `main` between fetch and push becomes a realistic
-non-fast-forward rejection — which would reintroduce the manual bump AC-3 exists to remove. One
-`git pull --rebase origin main` retry, then re-push. *Alternative:* no retry, accept a rare
-rejection. *Why insufficient:* the rejection's cost is precisely the failure mode this task closes.
+non-fast-forward rejection. One `git pull --rebase origin main`, then re-push.
+
+- **Value AC served:** AC-3, at its margin.
+- **Corrected rationale (the earlier draft overstated this).** Without the retry the rejection reds
+  `edge-advance` and the recovery is a one-click, idempotent JOB RE-RUN — the pre0 tag is never
+  re-minted and the stamp is idempotent — NOT the hand-authored commit AC-3's 6m18s baseline
+  measured. The retry therefore buys "no human job re-run", not "no outage". It is kept at that
+  smaller value: eight lines against a foreseeable red job on the one step whose whole purpose is to
+  need no human.
+- *Alternative:* no retry, accept the rare rejection and the re-run. *Why insufficient (weakly):* the
+  re-run is manual attention on a path this task exists to make unattended. This is the least
+  load-bearing item in the cut and the cheapest to drop at the gate.
+
+### D. Retire the manual ritual
+
+`docs/releasing.md` step 9 is deleted and step 10 renumbered. The stamp and stable-channel prose is
+corrected to the new job layout, and a short "The Stable Regression Gate" section is added. The
+concrete diff is in **Documentation diff** below.
+
+- **Value AC served:** AC-4, which counts only paired with AC-3.
+
+## Deferred: patch-line delivery
+
+**Dropped from this cut, whole:** the stable-advance rework — a version-gated `--force-with-lease`
+push, its decision wiring on the push path, and the new force authority over `refs/heads/stable`. The
+`goreleaser` job keeps today's plain `git push origin "$RELEASE_COMMIT:refs/heads/stable"`, untouched
+except for the step rename.
+
+**What this cut therefore does NOT fix, stated precisely.** Mechanism A blocks the REGRESSING class
+of old-line cut. It does not block the non-regressing one: a `v0.27.1` cut while `stable` serves
+0.27.0 passes the gate, publishes correctly, and advances `stable` to a commit that is NOT on `main`'s
+history. The NEXT latest-line cut then fails its stable push non-fast-forward (spike TEST 2), after
+goreleaser has published, and the stable channel freezes on the patch line. That failure is LOUD and
+post-publication; the failure mechanism A removes is SILENT and post-publication. The lean cut takes
+the silent one and leaves the loud one to the follow-up. Until the follow-up ships, the operating
+constraint is: do not cut a patch line.
+
+**Follow-up:** `patch-line-stable-delivery-merge-commit`. Direction, from the staff review: advance
+`stable` with a MERGE COMMIT — `git commit-tree` on the tagged commit's tree with `stable`'s current
+tip as the first parent and the tagged commit as the second. The advance is then always a
+fast-forward, so no force and no lease are needed, and a concurrent move of `stable` fails closed on
+a plain non-fast-forward rejection. Its cost, which is why it is its own task and not a line here:
+`stable`'s tip SHA no longer equals the tag's SHA, so every consumer that assumes the identity —
+`stableRefPushSource` in `channel_agreement_guard_test.go`, and any install-path check comparing the
+resolved ref to a tag — must be revisited.
+
+**Verified fact recorded for the follow-up's gate.** `refs/heads/stable` has NO branch protection and
+this repo has NO rulesets, checked directly on 2026-08-25:
+`gh api repos/spacedock-dev/spacedock/branches/stable/protection` returns 404 `Branch not protected`,
+and `gh api repos/spacedock-dev/spacedock/rulesets` returns `[]`. A `--force-with-lease` push from CI
+would therefore have been NORMALIZED behavior under the credentials the release run already holds,
+not a new capability grant. That weakens — it does not remove — the "new authority" objection the
+earlier draft raised against itself. The follow-up should weigh the merge-commit approach on its
+fail-closed race behavior, not on a protection boundary that does not exist.
 
 ## Risk evidence
 
-The riskiest unverified mechanism was the stable-ref push: the seed asserted it dies non-fast-forward
-for a release-branch commit, and the whole shape of AC-2 depended on that being true. Exercised
-first, in a throwaway bare-origin fixture. The script is inlined here rather than left in a
-scratchpad so any reviewer can re-run it (bash, not zsh — zsh's `:r` modifier mangles the refspecs):
-
-```bash
-set -uo pipefail
-S=$(mktemp -d); cd "$S"
-git init -q --bare origin.git && git clone -q origin.git work && cd work
-git config user.email a@b.c; git config user.name t
-c() { echo "$1" > f.txt; git add f.txt; git commit -qm "$1"; }
-c A; c B_v0_27_0; git tag v0.27.0; git push -q origin main
-B=$(git rev-parse HEAD); git push -q origin "${B}:refs/heads/stable"   # stable at the v0.27.0 commit
-c C; c D_0_28_line; git push -q origin main; D=$(git rev-parse HEAD)   # main advances
-git switch -q -c release/0.27.1 "$B"; c P_v0_27_1; P=$(git rev-parse HEAD)  # patch off the stable tip
-git push origin "${P}:refs/heads/stable"                                     # TEST 1
-git push origin "${D}:refs/heads/stable"                                     # TEST 2
-git push --force-with-lease="refs/heads/stable:${P}" origin "${D}:refs/heads/stable"  # TEST 3
-git push --force-with-lease="refs/heads/stable:${P}" origin "${P}:refs/heads/stable"  # TEST 4 (stale lease)
-git push origin "${P}:refs/heads/stable"                                     # TEST 5 (backwards)
-git fetch -q origin stable && git rev-parse --short FETCH_HEAD               # TEST 6
-git fetch -q origin nosuchbranch                                             # TEST 7
-```
-
-Results:
+**Spike 1 (this cycle) — the read path mechanism A depends on, and the fixture shape AC-1 needs.**
+The gate's discrimination rests on three unexercised claims: that `git ls-remote --exit-code`
+distinguishes "no such ref" from "cannot read the remote", that `git show FETCH_HEAD:<path>` reads
+the manifest the stable channel serves, and — the one the review named as the likeliest hole in the
+earlier design's own tests — that a version regression can reach `stable` WITHOUT git's ancestry
+check refusing it, so a missing gate cannot be masked by a git refusal. Run in a throwaway
+bare-origin fixture (bash, not zsh):
 
 | Test | Setup | Result |
 |---|---|---|
-| 1 | patch commit P (child of `stable`) → `stable` | **fast-forward SUCCESS** — refutes the seed |
-| 2 | later `main` commit D (not a descendant of P) → `stable` | **rejected, non-fast-forward** |
-| 3 | D → `stable` with `--force-with-lease=refs/heads/stable:<P>` | **forced update SUCCESS** |
-| 4 | same lease, stale expected SHA | **rejected (stale info)**, `stable` unchanged |
-| 5 | old-line P → `stable` when `stable` is at D | **rejected, non-fast-forward**, unchanged |
-| 6 | `git fetch origin stable` + `rev-parse FETCH_HEAD` | resolves the lease SHA and the manifest read |
-| 7 | fetch a `stable` ref that does not exist | **exit 128** — the first-release case needs its own branch |
+| A | `ls-remote --exit-code origin refs/heads/stable`, ref absent | **exit 2** — the first-release carve-out is distinguishable |
+| B | same against an unreachable remote | **exit 128** — so "fail closed on any non-2" is a real discrimination, not theatre |
+| C | same, ref present | exit 0 |
+| D | `fetch origin stable` + `git show FETCH_HEAD:.claude-plugin/plugin.json` | prints `{"version":"0.27.0"}` — the baseline read works |
+| E | stable at the 0.28.0 commit; push a **child** commit stamped 0.27.1 to `stable` | **fast-forward SUCCESS**, `stable` then serves 0.27.1 — a version regression through a clean fast-forward |
+| F | `LS=0; git ls-remote … \|\| LS=$?` under `set -euo pipefail` | captures the code, shell survives — the earlier draft's unbound-variable finding cannot recur in this shape |
 
-This inverted item 2's design: the defect is not a failed patch publish, it is a permanently frozen
-stable channel on the NEXT cut, and the fix needs a lease rather than a refusal message.
+TEST E is the load-bearing one. It builds exactly the state the review demanded the fixture prove:
+**version inversion WITHOUT ancestry inversion.** Git accepts the push, so the unguarded path really
+would publish and really would move the channel down. It is also the realistic mis-cut, not a
+contrived one: `docs/releasing.md` step 2 tells the cutter to branch off `origin/main`, so a cutter
+hand-stamping 0.27.1 on a branch off today's `main` produces precisely commit shape E.
 
-Second spike, against this repo's real 71-tag pool, confirming the seed's claim that the existing
-decision helper already ranks the patch case (so no change to `edge-advance-decision` is needed):
+**Spike 2 (prior cycle, still standing) — the stable-ref push semantics.** A 7-test bare-origin
+fixture established that a patch commit that is a CHILD of `stable` fast-forwards cleanly (TEST 1,
+refuting the seed's premise that the patch push dies), that a later `main` commit is then rejected
+non-fast-forward (TEST 2), and that fetching an absent `stable` exits 128 (TEST 7). TESTs 1, 2 and 7
+still carry weight: TEST 2 is the evidence for the deferred follow-up's frozen-channel failure, and
+TEST 7 corroborates spike 1's carve-out. TESTs 3 and 4 exercised `--force-with-lease` and are now
+moot with that mechanism dropped; they are retained in the follow-up's record, not here.
+
+**Spike 3 (prior cycle, still standing) — the decision helper already ranks the patch case** against
+this repo's real 71-tag pool, so mechanism B needs no change to `edge-advance-decision`:
 
 ```
 v0.27.1   known=0.28.0-pre1  -> skip      (correct: main is already the 0.28 line)
@@ -225,63 +270,72 @@ v0.28.0   known=0.28.0-pre1  -> advance   (correct: the next latest-line cut)
 v0.26.1   known=0.28.0-pre1  -> skip      (correct: two lines back)
 ```
 
-Third: the harness for AC-1/AC-2/AC-3 is not new. `internal/release/edge_advance_decision_shell_test.go`
-already extracts a real `release.yml` step's `run` block and executes it against a fixture git repo
-via `GIT_DIR`/`GIT_WORK_TREE` with a stubbed `$GITHUB_OUTPUT`. This task extends that proven harness
-with a bare origin remote (spike TEST 1-7 shape) rather than inventing one.
+**The harness is not new.** `internal/release/edge_advance_decision_shell_test.go` already extracts a
+real `release.yml` step's `run` block and executes it against a fixture git repo via
+`GIT_DIR`/`GIT_WORK_TREE` with a stubbed `$GITHUB_OUTPUT`. This task extends that proven harness with
+a bare origin (spike 1's shape) rather than inventing one.
 
 **Declared harness limitation.** The replayed steps invoke `go run ./cmd/spacedock-release`, which
-resolves relative to the process working directory. Running the script with the working directory at
-the repo root would let `stamp-version` write this checkout's real manifests. The harness therefore
-runs with the working directory in the fixture and substitutes that one token for a pre-built binary
-path. Every other byte of the script — the gating, the refspecs, the lease, the conditionals — runs
-verbatim. This substitution is declared here so validation checks it rather than discovering it.
+resolves relative to the process working directory. Running with the working directory at the repo
+root would let a replayed stamp write this checkout's real manifests. The harness therefore runs with
+the working directory in the fixture and substitutes that one token for a pre-built binary path.
+Every other byte of the script — the gating, the refspecs, the conditionals — runs verbatim. This
+substitution is declared here so validation checks it rather than discovering it.
 
 ## Out of scope
 
-The e2e-gate/waiver mechanics (work for branch SHAs today). The marketplace display-version fields
-(cosmetic; tidied 2026-08-25, automation optional here). The release notes ritual. The release ritual's
-own patch-line steps (step 2 branches off `origin/main`; a patch branches off the prior stable tag
-instead) — a documentation change worth making, but it is operator procedure, not machinery, and
-folding it in here widens the diff without serving a value AC. Recorded as a follow-up.
+The stable-advance rework and all patch-line delivery (see "Deferred" above). The e2e-gate/waiver
+mechanics themselves. The marketplace display-version fields. The release notes ritual. The release
+ritual's own patch-line steps (step 2 branches off `origin/main`; a patch would branch off the prior
+stable tag instead) — operator procedure, not machinery, and it belongs with the delivery follow-up
+that makes a patch line cuttable at all.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: **+350, across 9 files** (insertions ~+420, deletions ~-70).
-Tolerance: ±30% on the net figure (+245 to +455) and ±2 files.
+Estimate net LOC change: **+355, across 11 files** (insertions ~+417, deletions ~-62).
+Tolerance: ±30% on the net figure (+249 to +462) and ±2 files.
 
-| File | Change |
-|---|---|
-| `.github/workflows/release.yml` | split the stamp step; move the main stamp into `edge-advance`; new stable-advance step |
-| `cmd/spacedock-release/stable_advance_decision.go` | new — the subcommand |
-| `cmd/spacedock-release/main.go` | dispatch case, usage line, doc comment |
-| `internal/release/edge_advance_decision.go` | `StableAdvanceDecision` over the shipped comparator |
-| `internal/release/stable_advance_decision_test.go` | new — unit tests for the decision |
-| `internal/release/stable_advance_shell_test.go` | new — bare-origin fixture replay of the real steps |
-| `internal/release/channel_agreement_guard_test.go` | parsers follow the renamed/split steps |
-| `internal/release/edge_advance_wiring_test.go` | structural guard that the stamp shares the pre0 gate |
-| `docs/releasing.md` | step 9 retired; three sections corrected |
+| File | ins | del | Change |
+|---|---|---|---|
+| `.github/workflows/release.yml` | 72 | 36 | new gate step in `e2e-gate`; stamp step moved to `edge-advance` with the retry; goreleaser step renamed |
+| `internal/release/stable_regression_gate.go` | 32 | 0 | new — the decision over `ComparePreVersion` |
+| `cmd/spacedock-release/stable_regression_gate.go` | 34 | 0 | new — thin wrapper over `ManifestVersion` + the decision |
+| `cmd/spacedock-release/main.go` | 6 | 0 | dispatch case, usage line, doc comment |
+| `internal/release/stable_regression_gate_test.go` | 58 | 0 | new — unit table, including the `>=` boundary |
+| `cmd/spacedock-release/stable_regression_gate_test.go` | 34 | 0 | new — exit contract 0/1/2 |
+| `internal/release/stable_regression_shell_test.go` | 115 | 0 | new — bare-origin replay of the real step, plus the unguarded baseline |
+| `internal/release/edge_advance_wiring_test.go` | 18 | 0 | structural guard that the moved stamp shares the pre0 gate |
+| `internal/release/channel_agreement_guard_test.go` | 14 | 8 | two parsers follow the renamed/split steps |
+| `internal/release/goreleaser_guard_test.go` | 14 | 0 | pins AC-1's harm premise: `prerelease: auto` and the stable cask's `skip_upload: auto` |
+| `docs/releasing.md` | 20 | 18 | step 9 retired; three passages corrected; one short section added |
 
-The test files carry roughly 60% of the insertions. The seeded ~+60 estimate counted the machinery
-only and did not include the replay harness.
+**Honest note on the estimate, against the ruling that expected "well under half of +350".** It did
+not come out that way, and the reason is worth the gate's attention rather than a massaged number.
+The dropped mechanism cost roughly 200 insertions, of which about 140 were its test surface. The
+added centerpiece costs roughly the same, and for the same reason: the review's own sharpest
+requirement — that the fixture prove the UNGUARDED path would publish — can only be met by a
+bare-origin replay of the real steps, which is the single largest line item here (115 lines) and is
+not compressible without gutting AC-1's baseline. **The lean cut's saving is in authority and risk,
+not in lines:** no force-push capability, no new push-path wiring, no ancestry semantics in the
+release path, and one fewer irreversible failure mode. If the gate wants the number down, the
+available cuts are the goreleaser premise guard (−14), the cmd exit-contract test (−34), and
+mechanism C with its test (−26) — about −74, landing near +280. Cutting deeper means cutting AC-1's
+proof, which is the thing this reshape exists to add.
 
-**Observable semantics this task changes** (cost is lines; these are the boundary):
+**Observable semantics this task changes:**
 
-1. **Which refs a stable tag mutates.** An old-line stable tag will mutate neither `main` nor
-   `stable`. Today it mutates both.
+1. **A new pre-publication block.** A stable tag older than the release `stable` serves fails the run
+   before goreleaser starts. Today it publishes and moves both binary channels down.
 2. **What `main` carries after a latest-line cut.** The plugin manifests and the FO prose pin move to
-   `X.(Y+1).0-pre0` instead of `X.Y.Z`. This is a change to on-disk content the edge marketplace
-   serves.
-3. **New authority: CI can rewrite `stable`'s history.** `--force-with-lease` lets the release run
-   move `stable` non-fast-forward. Today CI can only extend it. This is the most consequential item
-   here and the one that most needs the captain's explicit approval; the version gate and the lease
-   bound it, but the authority is genuinely new.
-4. **New command grammar:** `spacedock-release stable-advance-decision <tag> <manifest>`.
-5. **Failure attribution moves.** A main-stamp failure will red `edge-advance`, not `goreleaser`.
-6. **A documented procedure is removed:** `docs/releasing.md` step 9.
+   `X.(Y+1).0-pre0` instead of `X.Y.Z`. This is a change to on-disk content the edge marketplace serves.
+3. **New command grammar:** `spacedock-release stable-regression-gate <tag> <manifest>`.
+4. **Failure attribution moves.** A main-stamp failure will red `edge-advance`, not `goreleaser`.
+5. **A documented procedure is removed:** `docs/releasing.md` step 9.
 
-Not changed: the e2e-gate, the manifest-tag-gate, goreleaser itself, the journey ledger, the pre0 tag
-mechanics, the marketplace repo, and the `edge-advance-decision` logic (reused verbatim).
+**Explicitly NOT changed — this is the point of the lean cut.** CI's push authority over
+`refs/heads/stable` stays a plain fast-forward push. No force, no lease, no new capability. Also
+unchanged: the e2e-gate's own logic, the manifest-tag-gate, goreleaser itself, the journey ledger, the
+pre0 tag mechanics, the marketplace repo, and `edge-advance-decision` (reused verbatim).
 
 ## Path-to-lane call
 
@@ -299,43 +353,51 @@ targets are named in the test plan.
 Each AC's baseline is the SAME replay run against the CURRENT `release.yml`, which must produce the
 stated failing result. That baseline is independent of this task's code and can move the wrong way.
 
-**AC-1 (value) — An old-line patch tag leaves `main` untouched: after a full `edge-advance` replay on
-a non-latest-line stable tag, `main`'s tip SHA and the bytes of `.claude-plugin/plugin.json`,
-`.codex-plugin/plugin.json`, and the FO shared-core prose are identical to their pre-run values.**
-Verified by: `TestOldLineTagDoesNotStampMain` in `internal/release/stable_advance_shell_test.go` —
-a fixture repo tagged `v0.26.0`, `v0.27.0`, `v0.28.0-pre0`, replaying the `decision` step and then
-the stamp step under the decision it produces for `v0.26.1`, asserting `main` is byte-identical.
-Falsifying change: remove the `steps.decision.outputs.advance` gate from the stamp step's `if:`, or
-widen it back to `!contains(github.ref, '-')` — the fixture's `main` then moves to 0.27.0-pre0 and
-the test reds. Today's baseline: the same replay stamps `main` DOWN to 0.26.1.
+**AC-1 (value) — A stable tag older than the release `stable` serves never reaches publication: the
+run fails in `e2e-gate`, and on the same fixture the unguarded path DOES reach a published state.**
+Verified by: `TestStableRegressionGateBlocksOlderLine` in
+`internal/release/stable_regression_shell_test.go` — spike TEST E's fixture (`stable` at the 0.28.0
+commit, a CHILD commit stamped 0.27.1 and tagged `v0.27.1`), replaying the real gate step and
+asserting a non-zero exit with the tag and both versions named in stderr. Paired with
+`TestUnguardedOldLineTagWouldReachStable`, which on the SAME fixture runs the real stable-push step
+WITHOUT the gate and asserts the push SUCCEEDS and `stable` then serves 0.27.1 — the independent
+baseline, and the proof the block is not redundant with git's own ancestry check. Falsifying change:
+flip the gate's comparison to `<= 0` (the pass case reds) or delete the gate step from `e2e-gate`
+(the structural check in `stable_regression_shell_test.go` reds). Today's baseline: the gate step
+does not exist, the run is green, and `TestUnguardedOldLineTagWouldReachStable` describes exactly
+what today's pipeline does.
 
-**AC-2 (value) — The stable channel serves the newest stable release across a line change: after a
-patch cut off the stable line and then a latest-line stable cut from `main`, `refs/heads/stable`
-points at the SECOND cut's commit, and no run ever moves it to an older release's commit.**
-Verified by: `TestStableAdvanceCrossesLines` in the same file — the spike's TEST 1/2/3 sequence
-driven through the real step script against a bare-origin fixture, asserting `stable` equals the
-patch commit after cut one and the `main` commit after cut two; plus
-`TestStableAdvanceRefusesOlderLine` asserting `stable` is unchanged and the step exits 0 with its
-`::notice::` when an old-line tag is cut against a newer `stable`. Falsifying change: drop
-`--force-with-lease` (cut two reds non-fast-forward, spike TEST 2) or drop the
-`stable-advance-decision` gate (the old-line cut force-moves `stable` backwards and
-`TestStableAdvanceRefusesOlderLine` reds). Today's baseline: cut two is rejected and `stable` stays
-frozen on the patch commit.
+**AC-2 (value) — A patch tag that PASSES the regression gate still leaves `main` untouched: after an
+`edge-advance` replay on a `v0.27.1` tag whose decision output is `advance=false`, `main`'s tip SHA
+and the bytes of `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and the FO shared-core
+prose are identical to their pre-run values.**
+Verified by: `TestPatchTagDoesNotStampMain` in the same file — a fixture repo tagged `v0.26.0`,
+`v0.27.0`, `v0.28.0-pre0`, replaying the `decision` step and then the stamp step under the decision
+it produces for `v0.26.1`, asserting `main` is byte-identical; plus a structural check in
+`edge_advance_wiring_test.go` that the stamp step's `if:` names the same
+`steps.decision.outputs.advance` condition as the auto-pre0 step, with its adversarial twin
+(diverge them → red). The structural half is load-bearing: a replay drives the step directly and
+cannot prove Actions gates it. Falsifying change: remove the gate from the stamp step's `if:`, or
+widen it back to `!contains(github.ref, '-')` — the wiring guard reds. Today's baseline: the same
+replay stamps `main` DOWN to 0.26.1.
 
 **AC-3 (value) — A latest-line stable cut needs zero human commits to restore the edge line: after a
 full `edge-advance` replay on a latest-line stable tag, `main`'s manifest version equals the auto-cut
 pre0 tag's version and the FO prose pin equals its major.minor.**
 Verified by: `TestLatestLineCutStampsMainToPre0` in the same file — replay on `v0.27.0` against a
 fixture whose `main` carries 0.27.0, asserting `main`'s tip has `version: 0.28.0-pre0` and
-`These skills require binary minor 0.28`, matching the `v0.28.0-pre0` tag the same job cut.
-Falsifying change: stamp `$RELEASE_VERSION` instead of the `edge-pre0-version` output — `main` lands
-on 0.27.0, the manifest/tag pair disagrees, and the test reds. Today's baseline: the same replay
-leaves `main` at 0.27.0 while the pre0 tag is 0.28.0-pre0 — the exact 6m18s / one-hand-commit
-mismatch measured at the v0.27.0 cut (pre0 tag 21:55:31, hand repair b8346ffc9 at 22:01:49).
+`These skills require binary minor 0.28`, matching the `v0.28.0-pre0` tag the same job cut; plus
+`TestStampRetriesOnceOnConcurrentMainMove`, which advances the fixture's origin `main` between the
+step's fetch and its push and asserts the step still lands the commit. Falsifying change: stamp
+`$RELEASE_VERSION` instead of the `edge-pre0-version` output — `main` lands on 0.27.0, the
+manifest/tag pair disagrees, and the test reds; or delete the rebase retry — the concurrent-move test
+reds. Today's baseline: the same replay leaves `main` at 0.27.0 while the pre0 tag is 0.28.0-pre0 —
+the exact 6m18s / one-hand-commit mismatch measured at the v0.27.0 cut (pre0 tag 21:55:31, hand
+repair b8346ffc9 at 22:01:49).
 
 **AC-4 — The manual ritual is gone, not merely superseded: `docs/releasing.md` contains no post-tag
-`main` preversion bump step, and its stable-advance and edge-advance prose describe the gated
-behavior.**
+`main` preversion bump step, and its stamp, stable-channel, and edge-advance prose describe the
+shipped job layout.**
 Verified by: the Documentation diff below applied, `docs/releasing.md` step count reduced by one with
 step 10 renumbered to 9, and the changed prose passing the `simple-english` check the workflow README
 requires. Falsifying change: leave step 9 in place — the doc then documents a hand bump the pipeline
@@ -344,80 +406,87 @@ AC-3, which measures the value it serves.
 
 ## Test plan
 
-**Unit — `internal/release/stable_advance_decision_test.go` (low cost).** Table over
-`StableAdvanceDecision`: newer patch vs older stable (advance); older line vs newer stable (skip);
-equal versions (skip — the boundary is strict `>`, matching `EdgeAdvanceDecision`); a hyphenated tag
-(error, since the caller's `if:` guarantees a bare tag); unparseable manifest version (error, so a
-miswiring fails loud rather than silently skipping). Plus a `cmd` exit-contract test: `advance` and
-`skip` both exit 0, bad input exits non-zero.
+**Unit — `internal/release/stable_regression_gate_test.go` (low cost).** Table over the decision:
+older tag vs newer stable (block); newer tag vs older stable (pass); EQUAL versions (pass — the
+re-run case, and the boundary that differs from `EdgeAdvanceDecision`'s strict `>`); a prerelease tag
+against a stable version (error, since the caller's `if:` guarantees a bare tag); an unparseable
+manifest version (error, so a miswiring fails loud rather than silently passing the cut).
 
-**Behavioral replay — `internal/release/stable_advance_shell_test.go` (the bulk of the cost).**
+**Command exit contract — `cmd/spacedock-release/stable_regression_gate_test.go` (low cost).** Pass
+exits 0, block exits 1 with the tag and both versions in stderr, a missing argument exits 2. The
+`if:`-gated step depends on this contract and no other test reaches the usage-error path.
+
+**Behavioral replay — `internal/release/stable_regression_shell_test.go` (the bulk of the cost).**
 Extends the shipped `edge_advance_decision_shell_test.go` harness with a bare-origin fixture. Each
 test extracts the REAL step's `run` block from the on-disk `release.yml` and executes it. Carries the
-three AC tests above plus `TestStableAdvanceCreatesMissingStableRef` (spike TEST 7's exit-128 path)
-and `TestStableAdvanceLeaseRefusesConcurrentMove` (spike TEST 4). Complexity is moderate and the risk
-is front-loaded: the fixture shape is already exercised by the spike script.
+four AC tests above plus `TestStableRegressionGatePassesWhenStableRefAbsent` (spike TEST A's exit-2
+carve-out) and `TestStableRegressionGateFailsClosedOnUnreadableRemote` (spike TEST B). The
+fixture-construction helper is shared across all cases and drives them from one table; its shape is
+already exercised by spike 1, so the risk is front-loaded.
 
-**Structural guards.** `edge_advance_wiring_test.go` gains a check that the stamp step's `if:` and
-the auto-pre0 step's `if:` name the same `steps.decision.outputs.advance` condition, with the
-adversarial twin (diverge them → red). `channel_agreement_guard_test.go`'s `releaseStampTarget` and
-`stableRefPushSource` parsers follow the renamed and split steps; `stableRefPushSource` must accept a
-flag-bearing push, since `--force-with-lease` breaks its current exact-four-field match. Both keep
-their adversarial twins.
+**Structural guards.** `edge_advance_wiring_test.go` gains the AC-2 check that the stamp step's `if:`
+and the auto-pre0 step's `if:` name the same `steps.decision.outputs.advance` condition, reusing the
+shipped `ifHasDecisionGate` helper, with the adversarial twin (diverge them → red).
+`channel_agreement_guard_test.go`'s `releaseStampTarget` and `stableRefPushSource` parsers both key
+on the step name `"Stamp plugin manifests to the release version"`, which this task splits and
+renames — without the edit those tests fail, so this is mandatory, not optional. Both keep their
+adversarial twins. `goreleaser_guard_test.go` gains two asserts pinning AC-1's harm premise —
+`release.prerelease: auto` and the stable cask's `skip_upload: auto` — so the reason this gate exists
+cannot silently evaporate from `.goreleaser.yaml`.
 
 **Full suite.** `go test ./...` and `go test ./... -race`, plus `gofmt -w ./cmd ./internal`.
 
 **No live workflow test.** No live lane loads or drives any changed file (see Path-to-lane call). The
-one claim a replay cannot make is that GitHub Actions itself evaluates the step `if:` as expected;
-that is covered structurally, and the first real latest-line cut after merge is the live
-confirmation. Naming this now: **AC-3's live behavior is proven by fixture replay, not by a live cut,
-and the next real stable release is where it is observed.** That observation is deliberately NOT an
-AC, because it cannot be reproduced by validation on demand.
+one claim a replay cannot make is that GitHub Actions itself evaluates a step `if:` as expected; that
+is covered structurally, and the first real stable cut after merge is the live confirmation. Naming
+this now: **AC-3's live behavior is proven by fixture replay, not by a live cut, and the next real
+stable release is where it is observed.** That observation is deliberately NOT an AC, because it
+cannot be reproduced by validation on demand.
 
-**Detached adversarial audit targets.** Sharpest questions for the auditor: can the stamp step be
-edited to stamp `main` while the pre0 tag was never pushed, with every test still green? Can the
-lease be widened to a bare `--force` without a test reding? Does `TestStableAdvanceRefusesOlderLine`
-actually fail when the decision gate is removed, or does the fixture's ancestry make git refuse the
-push anyway and mask the missing gate? That last one is the likeliest hole in this design's own
-tests, and the fixture must be built so the old-line push WOULD succeed if unguarded.
+**Detached adversarial audit targets.** Sharpest questions for the auditor: (1) Does
+`TestUnguardedOldLineTagWouldReachStable` genuinely succeed at the push, or does the fixture's
+ancestry make git refuse it anyway and mask a gate that never fires? This is the same hole the review
+found in the earlier design and the reason spike TEST E exists — re-check it against the built
+fixture, not against this claim. (2) Can the gate step be edited to compare against the TAG pool
+instead of the `stable` ref with every test still green? (3) Can the `ls-remote` fail-closed arm be
+flipped to fail-open without a test reding? (4) Can the stamp step be edited to stamp `main` while
+the pre0 tag was never pushed, with every test still green?
 
 ## Sequencing decision for the captain
 
-Two ways to get the #760 fix ("claude install leaves the sibling edge plugin installed and enabled")
-to users. Both require this task to ship first — see the one-way constraint below.
+**#760 rides v0.28.0.** The fix for #760 ("claude install leaves the sibling edge plugin installed and
+enabled") lands on `main` and ships in the next minor. No patch-line cut, no release branch, no
+exercise of any patch machinery. This is not merely the recommendation — it is the only option the
+lean cut leaves open, because patch-line DELIVERY is deferred with the follow-up. A v0.27.1 cut after
+this task ships would publish correctly and then freeze the stable channel on the next latest-line
+cut (see "Deferred" above).
 
-**Option 1 — fold into v0.28.0 (recommended).** Land the #760 fix on `main`, ship it in the next
-minor. No patch-line cut, no release-branch, no exercise of the new machinery in production.
-Cheapest, and it is what the current state supports: **#760 is still OPEN and unmerged**, and its fix
-is itself only at ideation in this session, so no v0.27.1 can be cut today regardless.
+**v0.27.1 defers with the delivery machinery.** The first genuinely urgent old-line patch is the
+trigger to promote `patch-line-stable-delivery-merge-commit` out of the backlog, not to cut against
+half the machinery.
 
-**Option 2 — cut v0.27.1 from a release branch.** After #760 merges, branch off the `v0.27.0` tag,
-cherry-pick the fix, stamp 0.27.1, green that SHA, tag. This is the only way to observe the patch
-line end-to-end in production, and it is the scenario the ACs model. It costs a full release cut
-(green run, notes, tag) and it is the first time `stable` would leave `main`'s history.
-
-My recommendation is Option 1 for #760, and to treat the first genuinely urgent old-line patch as the
-live confirmation. The fixture replays cover the ACs; spending a release cut purely to exercise
-machinery the replays already prove is not a good trade.
-
-**The one-way constraint, either way.** Do NOT cut a v0.27.1 on today's machinery. The stamp step
-would switch to `main` and stamp it DOWN to 0.27.1, rewriting the 0.28.0-pre0 manifests and the FO
-pin to 0.27 — breaking every edge user, whose binary is 0.28.0-pre0. This task ships before any
-patch-line cut, not after.
+**The one-way constraint, unchanged in force and narrowed in reason.** Do NOT cut a v0.27.1 on
+today's machinery: the stamp step would switch to `main` and stamp it DOWN to 0.27.1, rewriting the
+0.28.0-pre0 manifests and the FO pin to 0.27, breaking every edge user. After this task, that
+specific breakage is gated away (AC-2) and the regressing cut is blocked outright (AC-1) — but the
+frozen-channel failure remains until the follow-up ships, so the constraint stands either way.
 
 ## Documentation diff
 
 `docs/releasing.md` is user-facing documentation, so every "After" block below follows ASD-STE100 per
-the workflow README's Prose style section. The text was checked with the `simple-english` rule
-catalog, not merely declared compliant: the first draft of this section broke Rule 8.1 (a semicolon),
-Rule 6.3 (two sentences at 26 and 32 words), Rule 6.6 (a seven-sentence paragraph), Rule 3.6 (a
-passive with a known agent), and GR-1 (a dropped "that"). The blocks below are the corrected text and
-are ready to paste. New `release.yml` comments and Go doc comments follow the same rules. The moved
-stamp step's existing comment block converts as this task touches it, per the README's
-convert-on-touch clause. This task body itself is workflow state, not user-facing documentation, so
-it is out of the rule's scope.
+the workflow README's Prose style section. The text was CHECKED mechanically, not declared compliant:
+a script extracts all six "After" blocks from this section and flags Rule 6.3 (sentence over 25
+words), Rule 6.6 (paragraph over six sentences), Rule 8.1 (semicolon), and Rule 3.6 (passive with a
+stated agent). It reports 6 blocks, 0 violations; the longest sentence is 17 words. The checker was
+FALSIFIED before that result was trusted: re-run against a mutant of block 2 carrying a semicolon, a
+56-word sentence, a 13-sentence paragraph, and "is repointed by release.yml", it reports all four
+violations and exits 1. Rule 3.6 is why block 2 now opens "A hand-edit … does not repoint the stable
+entry" instead of the first draft's "The stable entry is NOT repointed … by a hand-edit". New
+`release.yml` comments and Go doc comments follow the same rules. The moved stamp step's existing comment block converts as this task touches
+it, per the README's convert-on-touch clause. This task body itself is workflow state, not
+user-facing documentation, so it is out of the rule's scope.
 
-**1. `docs/releasing.md`, "What the Tag Push Does" — replace the stamp bullet.**
+**1. "What the Tag Push Does" — replace the stamp bullet (lines 25-26).**
 
 Before:
 ```
@@ -426,38 +495,37 @@ Before:
 ```
 After:
 ```
-- advances the stable channel ref to the tagged commit. The run advances the ref
-  only when the tag is newer than the release that `stable` serves. See
-  "Advancing the Stable Channel" below.
+- advances the stable channel ref to the tagged commit. See below.
+- stops the cut before publication if the tag is older than the release that
+  `stable` serves. See "The Stable Regression Gate" below.
 - stamps the plugin manifests and the FO prose pin on `main`, but only on a
-  latest-line stable tag. The stamp writes the auto-cut `X.(Y+1).0-pre0` version.
-  An old-line patch tag does not touch `main`.
+  latest-line stable tag. The stamp writes the `X.(Y+1).0-pre0` version that the
+  same job auto-cuts. An old-line tag does not change `main`.
 ```
 
 **2. Replace the paragraph beginning "The stable entry is NOT repointed per release" (lines 40-46).**
+The current text cites the "Stamp plugin manifests" step by name, and this task renames it.
 
 After:
 ```
-The stable entry is NOT repointed per release by a hand-edit in the marketplace
-repo. `stable` is a MOVING BRANCH in this repo. After the tag fires, release.yml
-reads the version that `stable` serves now. The run advances `stable` to the
-tagged commit only when the tag is newer than that version. The push uses a
-lease, so a patch line and a later minor can both reach the channel.
-
-A fresh `spacedock@spacedock` install resolves whatever `stable` points at. That
+A hand-edit in the marketplace repo does not repoint the stable entry per
+release. `stable` is a MOVING BRANCH in this repo. After the tag fires,
+release.yml resolves the tagged commit and pushes it to `refs/heads/stable`. A
+fresh `spacedock@spacedock` install resolves whatever `stable` points at. That
 push is what publishes the release to the stable channel. No marketplace-repo
 commit is necessary.
 ```
 
 **3. Replace the paragraph beginning "The post-tag manifest stamp is idempotent" (lines 48-51).**
-The current text is now false. The stamp writes the pre0 version, which always differs from the
-tagged commit's version.
+The current text is false in two ways after this task: the stamp is no longer on the stable-tag path,
+and it no longer finds "no diff".
 
 After:
 ```
-The post-tag stamp always makes a commit on a latest-line cut. The stamp writes
-the next prerelease version, and the tagged commit carries the release version.
-An old-line tag makes no commit.
+The `main` stamp is no longer part of the stable-tag path. The `edge-advance`
+job stamps `main`, and only on a latest-line tag. The stamp writes the next
+prerelease version. The tagged commit keeps the release version. The two values
+are different by design, so the stamp always makes one commit on `main`.
 ```
 
 **4. Delete step 9 entirely (lines 183-197), renumber step 10 to step 9.**
@@ -468,35 +536,43 @@ Add to the latest-line bullet:
 ```
 After the job verifies the pre0 run, the same job stamps the manifests and the
 FO pin on `main` to the pre0 version. An edge install then passes the FO version
-gate with no human step.
+gate with no human step. If a concurrent merge to `main` rejects the push, the
+step rebases one time and pushes again.
 ```
 Add to the old-line bullet:
 ```
 The same decision also gates the `main` stamp. An old-line tag cannot move
-`main` backwards.
+`main` to a lower version.
 ```
 
-**6. New section "Advancing the Stable Channel"**, after "Advancing the Edge Line".
+**6. New section "The Stable Regression Gate"**, after "Advancing the Edge Line".
 
 After:
 ```
-## Advancing the Stable Channel
+## The Stable Regression Gate
 
-The `stable` branch is the source that the stable marketplace entry resolves. A
-release run advances the branch only when the tag is newer than the release that
-`stable` serves now.
+A stable tag that is older than the release that `stable` serves can damage two
+binary channels. goreleaser marks each bare `vX.Y.Z` tag as a full release, so
+GitHub moves `/releases/latest` to it. goreleaser also bumps the stable Homebrew
+cask, because `skip_upload: auto` skips only a prerelease. An old tag moves both
+channels DOWN, and every job stays green. The `e2e-gate` job stops this before
+goreleaser starts.
 
-- The run fetches `stable` and reads the version in its
-  `.claude-plugin/plugin.json`.
-- If the tag is not newer, the run writes a `::notice::` and makes no change.
-  The stable channel keeps the newer release.
-- If the tag is newer, the run pushes the tagged commit to `stable` with
-  `--force-with-lease`. The lease holds the SHA that the run read. If `stable`
-  moves during the run, the push stops.
-- A patch line leaves the history of `main`. The lease is what lets the next
-  latest-line release move `stable` back onto the history of `main`.
-- On the first stable release the `stable` ref does not exist yet. The run
-  creates the ref with a plain push.
+- The gate reads the version in the `.claude-plugin/plugin.json` file that
+  `stable` serves.
+- If the tag is older than that version, the gate fails the run. goreleaser does
+  not start, because it needs the `e2e-gate` job.
+- If the tag is the same version or newer, the gate lets the run continue. A
+  re-run of a release that already reached `stable` is still possible.
+- On the first stable release the `stable` ref does not exist. The gate writes a
+  notice and lets the run continue.
+- If the gate cannot read the `stable` ref, it fails the run. A read failure is
+  not a permission to publish.
+
+The gate does not make a patch line deliverable. A patch that is newer than the
+version `stable` serves still publishes, and `stable` then leaves the history of
+`main`. The next latest-line release cannot advance `stable` after that. Do not
+cut a patch line until that work is complete.
 ```
 
 ## Stage Report: ideation
@@ -536,3 +612,45 @@ compliance without checking, and the check found five real violations in the pro
 `docs/releasing.md` text. That is the same failure this workflow's proof policy names — treating a
 claim as proven because I wrote it down. Corrected, and the check itself was falsified so it can
 fail.
+
+## Stage Report: ideation (cycle 2)
+
+Reshape to the captain's LEAN CUT ruling (2026-08-25, "lean") after an independent staff review
+returned needs-rework. The cycle-1 report above is left intact as the record of what was reshaped.
+
+- DONE: The reshaped design carries exactly the lean-cut scope from the scope notes: the pre-publication old-line hard-fail in e2e-gate (with a fixture proving the unguarded path WOULD publish), the main-stamp move into edge-advance stamping pre0, the retired manual step 9, and the corrected-rationale rebase retry — with the stable-advance lease/force rework dropped and its deferral pointer plus the review's verified facts recorded in the body.
+  `## Proposed approach` is now A (the `e2e-gate` hard-fail, centerpiece), B (the stamp move), C (the retry, with the corrected "avoids a human job re-run, not an outage" rationale), D (the retired ritual). `## Deferred: patch-line delivery` carries the drop, the `patch-line-stable-delivery-merge-commit` pointer with the merge-commit direction and its SHA-identity cost, and the branch-protection fact. The lease/force mechanism and its two review findings (fail-open fetch, unbound `$STABLE_MANIFEST`) are gone with it, not repaired.
+- DONE: ACs, net-LOC estimate with tolerance, test plan, and sequencing section updated to the lean scope; every kept mechanism still names its value AC; all comments and user-facing doc text strict ASD-STE100.
+  AC-1 is now the pre-publication block, measured against `TestUnguardedOldLineTagWouldReachStable` on the same fixture; AC-2 is the patch-tag/main case with its structural half declared load-bearing; AC-3 keeps the 6m18s baseline and gains the concurrent-move test; AC-4 unchanged in kind. Estimate is +355 across 11 files. `## Documentation diff` is six blocks, longest sentence 17 words, no semicolons, passives rewritten active — checked by counting, not asserted.
+- DONE: The reshape is appended to the Stage Report and state is committed before the completion message.
+  This section, plus the path-scoped state commit cited in the completion message.
+
+### Summary
+
+The centerpiece changed. The review's material finding is that an old-line cut regresses the BINARY
+channels with all jobs green, and I verified the premise directly in `.goreleaser.yaml`:
+`release.prerelease: auto` (line 105) makes any hyphen-free tag a full release, and the stable cask's
+`skip_upload: auto` (line 125) skips only prereleases. So `/releases/latest` and the Homebrew cask
+both move DOWN, and neither is recoverable by a job re-run. The new gate step in `e2e-gate` blocks
+that before goreleaser starts, at the cost of one shipped-family subcommand.
+
+I spiked the gate's own unexercised read path rather than reusing the prior cycle's evidence: six
+tests establishing that `ls-remote --exit-code` returns 2 for a missing ref and 128 for an unreadable
+remote (so the fail-closed arm is a real discrimination), that `git show FETCH_HEAD:<path>` reads
+stable's manifest, and — the load-bearing one — that a commit stamped 0.27.1 pushed as a CHILD of the
+0.28.0 commit reaches `stable` as a clean FAST-FORWARD. That is the fixture shape the review demanded:
+version inversion without ancestry inversion, so git's own refusal cannot mask a missing gate. I also
+re-verified the branch-protection fact rather than relaying it: `stable` is unprotected and the repo
+has zero rulesets.
+
+Two things the gate should weigh, and one of them contradicts the ruling. First, the ruling expected
+"well under half of +350" and the reshape lands at +355. I did not massage the number. The dropped
+mechanism and the added one cost about the same, because both are dominated by the same bare-origin
+replay harness, and AC-1's baseline test — the review's own sharpest requirement — is the largest
+single line item and is not compressible without gutting the proof. The lean cut's real saving is
+authority and risk: no force capability, no new push-path wiring, one fewer irreversible failure
+mode. The estimate section names a −74 menu if the gate wants the number down. Second, the scope
+note's rationale that "with old-line cuts blocked pre-publication, `stable` never leaves main's
+history" is true only while no patch line is cut at all: a v0.27.1 cut while `stable` serves 0.27.0
+passes the gate by construction and still ends in a frozen channel on the next latest-line cut. The
+body states that precisely and keeps the do-not-cut-a-patch-line constraint until the follow-up ships.
