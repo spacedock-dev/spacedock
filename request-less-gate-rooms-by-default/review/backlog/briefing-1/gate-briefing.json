@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rx3daftacggfmw1pt2febw31:backlog:attempt-1:revision-1",
+  "question": "Should design start on request-less gate rooms by default with a provider opt-in at prepare, coherent with subspace q0's finalizing journey?",
+  "artifacts": [
+    {
+      "id": "artifact:rx3daftacggfmw1pt2febw31:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b9316fbd6f3a3a206fc0d55af110f2c873e7e5fc/request-less-gate-rooms-by-default.md",
+      "rev": "sha256:1b4f0d8be9a3805fb8622e47fc6db84df58d002149b41facce769d725706dabb",
+      "mediaType": "text/markdown",
+      "summary": "Seed from the captain's 2026-08-25 gate-format review. Facts: 499/499 rooms carry request.json; only ~8 July-era provider results ever consumed one; every field it carries is either already in the frontmatter binding or a hardcoded constant. q0 (subspace repo, at validation) finalizes the provider journey that makes the file real: subspace-tui preflights the frozen request; gate record --room cross-checks resolution.by == request.approver. Seed design: chat default = one-file room (existing empty-request-digest validator path); provider opt-in mints today's exact bytes; drop unused per-item type; mediaType held behind cross-repo agreement (q0's Result echoes it). Ideation spikes q0's preflight against both room shapes. internal/gates = high-stakes surface: detached audit applies."
+    }
+  ]
+}

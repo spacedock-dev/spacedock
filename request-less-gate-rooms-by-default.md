@@ -11,6 +11,18 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:rx3daftacggfmw1pt2febw31:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:rx3daftacggfmw1pt2febw31-backlog-1
+              briefing:
+                id: briefing:rx3daftacggfmw1pt2febw31:backlog:attempt-1:revision-1
+                digest: sha256:9a936b06ee55e932f0ef8997e0b3b79810718d78076fa69df98af75a87eae2e8
+                request-digest: sha256:e9dbc6437c5a986912593c1ec9cbe6e016f561b89f7d53818221ad5ac556af86
+                room-ref: ./request-less-gate-rooms-by-default/review/backlog/briefing-1
 ---
 
 `gate prepare` mints `request.json` for every room. Only the subspace provider journey consumes it. Chat-presented gates are 100% of current practice, so almost every room pays for a handoff no consumer reads. Make the chat room one file, and mint the provider handoff only when the caller selects a provider presentation. Keep the minted form byte-compatible with q0's preflight.
