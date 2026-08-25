@@ -673,6 +673,15 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		"### Completion checklist\n\n%s\n\n### Summary\n{brief description of what was accomplished}\n",
 		checklistText))
 
+	// 8a. Stage-report format template (Pi only). Pi does not auto-load the
+	// ensign skill (it is discoverable, not loaded), so the dispatch body must
+	// carry the stage-report protocol the worker is expected to produce.
+	// Claude's Skill() and Codex's $spacedock:ensign bootstrap already supply
+	// the format, so the block is Pi-only to avoid untestable redundancy.
+	if host == "pi" {
+		parts = append(parts, stageReportFormatBlock())
+	}
+
 	// 9 (retired): standing-teammate auto-injection via a legacy team_name only
 	// ever fired in the deleted legacy branch — merged and bare dispatches always
 	// omitted the command (documented behavior, unchanged by this removal). The
@@ -881,6 +890,23 @@ func pathSafeSessionToken(sessionID string) string {
 	return token
 }
 
+// stageReportFormatBlock emits the stage-report protocol template a Pi-dispatched
+// worker needs to produce its `## Stage Report:` section. Pi does not auto-load
+// the ensign skill, so the dispatch body is the worker's only format source. The
+// structure is sourced from skills/ensign/references/ensign-shared-core.md.
+func stageReportFormatBlock() string {
+	return `### Stage Report format
+
+` + "Append a `## Stage Report: {stage}` section at the end of the entity file using this structure:" + `
+
+` +
+		"- DONE: {item text}\n  {one-line evidence or reference}\n" +
+		"- SKIPPED: {item text}\n  {one-line rationale}\n" +
+		"- FAILED: {item text}\n  {one-line details}\n\n" +
+		"### Summary\n{2-3 sentences: what was done, key decisions, anything notable}\n\n" +
+		"Every checklist item must appear. Use `- DONE:` / `- SKIPPED:` / `- FAILED:` markers. Do not use checkbox markers. Append at the end of the entity file.\n"
+}
+
 func firstActionBlock(host string) string {
 	if host == "codex" {
 		return "## First action\n" +
@@ -898,8 +924,9 @@ func firstActionBlock(host string) string {
 			"\n" +
 			"Read this dispatch file directly and treat its content as your operating contract and assignment.\n" +
 			"\n" +
-			"This file contains the shared ensign discipline entry points (stage-report format, polling, " +
-			"worktree ownership, and completion protocol) plus the stage-specific assignment. " +
+			"This file carries the stage-report format template plus the stage-specific assignment. " +
+			"The ensign skill supplies the remaining shared discipline (polling, worktree ownership, " +
+			"completion protocol); on Pi it is discoverable (`skill=\"ensign\"`), not auto-loaded. " +
 			"Pi dispatch is delivered through a Pi-native substrate such as pi-subagents; the Pi subagent completion result " +
 			"is the completion signal observed by the first officer. Do not emit Claude team-tool calls.\n"
 	}
