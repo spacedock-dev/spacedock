@@ -1,7 +1,7 @@
 ---
 id: wn3dg7txnrte0jrcxf56b859
 title: De-lecture the FO contract and defer non-boot shared-core sections (folds s6q)
-status: implementation
+status: validation
 source: "Captain CL, 2026-08-24: contract audit ruling after the #757 fo-install overbuilt review - 'file and fold s6q. dispatch. keep it light in ideation as this is clear about what to cut'; folds defer-shared-core-non-boot-sections (s6qamkh7efky9zh5jh6ba6xq, superseded into this task)"
 started: 2026-08-24T23:37:58Z
 completed:
