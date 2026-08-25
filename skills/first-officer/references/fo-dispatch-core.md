@@ -35,9 +35,30 @@ Build a numbered checklist of one to three dispatch-specific linchpin signals fr
 - **done-when:** the output contains no more than three outcome signals and no structural task boilerplate.
 - → **prose** — deterministic assembly from the entity and stage definition.
 
+## Completion and Gates
+
+When a worker completes:
+
+1. Read the entity file's last `## Stage Report` section, section-scoped per `## Probe and Ideation Discipline` — never the whole body.
+2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
+3. If items are missing, send the worker back once to repair the report.
+4. Check whether the completed stage is gated.
+
+**AC coverage cross-check.** At every gate, `«gate.ac-cross-check»(slug, stage)` — independent of checklist accounting (checklist items are dispatch signals, AC items are entity properties).
+
+**Reading a live CI result.** Triage from the step log / job summary — it is small, and on failure names each failing test with its `file:line`. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause; a `grep '"Action":"fail"'` over that full `-json` stream recovers a specific failure's events.
+
+If not gated: terminal → merge; else decide reuse-or-fresh.
+
+**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. Only these conditions legitimately halt the turn here: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one, stopping after a completion-only report is a contract violation.
+
+**Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module, already loaded by the time a completion reaches this point. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
+
+If a gated reviewer recommends `REJECTED` at a configured feedback gate, new/unresolved findings re-enter active workflow review policy. Hold until the worker proposal has a distinct FO-authorized disposition and concrete revise assignment. Then invoke `«feedback.route»` before Captain presentation, carrying finding/evidence/classification/disposition/assignment unchanged without classification. Other gates complete `Skill(skill="spacedock:fo-gate-lifecycle")`, then `«gate.lifecycle»(slug, stage)`. It commits package/decisions before routing: nonterminal → dispatch, terminal → merge; revise routes feedback; hold or an acting-command refusal stops.
+
 ## Reuse and Fresh Dispatch
 
-Advancing a completed worker. The gate-presentation spine is in the boot-resident core's `## Completion and Gates`; the reuse rules it defers to live here.
+Advancing a completed worker. The gate-presentation spine is `## Completion and Gates` above; the reuse rules it defers to live here.
 
 **Gate successor guard.** If the next stage has `gate: true`, update it with `status={next_stage} started`. Dispatch it under the normal reuse and freshness rules. Enter `«gate.lifecycle»` only after `«completion-signal»` arrives and the stage report passes the completion gate.
 
