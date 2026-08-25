@@ -35,6 +35,17 @@ gates:
                 digest: sha256:aad9a5cd7a059bef30d67afa7fab9179d845617404cfd574bf164e711eb8aeca
                 request-digest: sha256:b0275dbec35d2beacd6813e25faf0ee9a0794e29e93ac45ff686e5222349fac3
                 room-ref: ./embed-stage-report-protocol-in-dispatch/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:t4rqqmmrqh69adgb1bbdx838:ideation:1
+                briefing: briefing:t4rqqmmrqh69adgb1bbdx838:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-25T20:52:30.269986Z"
+                decision: approve
+                reason: 'Captain approve: Pi-only embed via build.go step-8 conditional + firstActionBlock narrowing is the minimal sufficient mechanism; AC-1/AC-2/AC-3 cover value + serves + tautology-closure; surface and semantic-change declaration are sound; no spike needed is legitimate with the non-self-describing live lane as the implementation''s first test. Framing nit on ''proven by existing Pi live lanes'' noted, not a blocker.'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-08-25T20:22:24Z
 ---
 
