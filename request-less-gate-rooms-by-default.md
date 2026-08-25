@@ -211,7 +211,7 @@ Verified by: the doc diff above, reviewed at validation against ASD-STE100 per t
 
 ### Feedback Cycles
 
-{First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+- Cycle 1: DESIGN RESET — captain ruling 2026-08-25 ("find a simpler way" → one room shape, `index.json`): implementation 312fa3f95 landed at 18 files/+740 net vs approved 14±3/+200±60; overage was the channel fork's doubled test matrix. Reset to ideation: one file for every channel, no request.json anywhere, q0 amended to preflight from the canonical Briefing alone; predicate work and both hole fixes salvage forward; the fork and its matrix are deleted unbuilt. Spec update (gate-resolution-frontmatter-contract.md) required per captain.
 
 ## Stage Report: ideation
 
