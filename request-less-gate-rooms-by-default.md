@@ -246,3 +246,15 @@ Chat is now the default gate channel and `--provider` is the opt-in. The predica
 One refinement to mechanism 2 needs a ruling. The design defines the predicate as "a directory that holds `gate-briefing.json`". Implemented literally, a chat room whose Briefing is deleted stops being a prepared room, takes the skip archived rooms get, and `gate record` then closes the captain's approval over a Briefing that no longer exists - the exact inversion mechanism 5 exists to prevent. The predicate therefore tests for the archived `briefing.json` name instead. A classification of all 700 rooms in the real state checkout shows the separation is total: every archived directory-shaped room holds `briefing.json`, and none holds `gate-briefing.json`. AC-5's falsifying edit still falsifies, because dropping the `briefing.json` test is what makes the predicate match any directory.
 
 Two holes the design did not name were found and closed. An exact replay was channel-blind, so `gate prepare --provider` over an open chat room silently replayed the chat room and returned success with no `request.json`; replay now declines on a channel change and the frozen open binding refuses the rebind. The deleted-chat-Briefing hole above is the second.
+
+### Addendum: AC-2 cross-repo leg exercised
+
+The first pass inherited q0 acceptance from the ideation spike and proved only byte identity. The q0 preflight is now run directly against this implementation's rooms, so AC-2 rests on exercise and not on inheritance.
+
+`internal/gateroom.Prepare` was read out of `spacedock-subspace` at `75ef1a2` with `git archive` into a scratch tree, so that repo keeps its HEAD, its worktree list, and its tracked bytes. Three rooms were prepared from one split-root fixture at one pair of commits:
+
+- Patched binary, `--provider`: `PREFLIGHT-ACCEPTED gate=gate:task:validation attempt=gate-attempt:task-validation-1 actor=person:captain briefing=briefing:task:validation:attempt-1:revision-1`, exit 0. The scratch tree holds the materialized Briefing plus both Git blobs, `git-root:/main/4c3c7b9d.../gate-review.md` and `git-root:/state/d34ff644.../reference.json`.
+- Baseline binary at `95f877cd6`, today's default, as the control: identical accepted line and identical materialized set, exit 0. `diff -r` of the two rooms reports no difference.
+- Patched binary, chat default: `PREFLIGHT-REFUSED: gate room: request.json: ... no such file or directory`, exit 1. q0 refuses a chat room by name, before any host command, and does not degrade silently.
+
+That q0 accepts the patched provider room and refuses the chat room reproduces spike results 2 and 3 against the delivered code. The falsifying edit is unchanged: alter any bound field, the key order, or the indent, and the golden reds and the q0 digest check reds.
