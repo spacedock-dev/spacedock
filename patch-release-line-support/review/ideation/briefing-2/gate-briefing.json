@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d0g21c517b5nvga1ybwckapk:ideation:attempt-2:revision-1",
+  "question": "Approve the trimmed lean-cut ideation at net +281 across 9 files — pre-publication old-line block centerpiece, stamp-move, retired step 9; premise-guard test, exit-contract test, and the rebase retry dropped per your -74 menu ruling?",
+  "artifacts": [
+    {
+      "id": "artifact:d0g21c517b5nvga1ybwckapk:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/7d0a4893654e1c72339c49ba5325709bd8da8486/patch-release-line-support.md",
+      "rev": "sha256:accfbe7e4473425fa219acf265dd28c205cd75ac444aaa435e526eb0a5babe58",
+      "mediaType": "text/markdown",
+      "summary": "Briefing-2 after the captain's 'leaner' revise. All three menu cuts applied exactly as priced: goreleaser premise-guard test (live ideation verification stands as premise evidence), cmd exit-contract test (replay exercises the subcommand through the real step), and mechanism C the rebase retry (a concurrent-merge race lands as a red job with a one-click idempotent re-run — and AC-3's zero-human-commits claim is now explicitly about the successful path, with the measured quantity intact). Estimate +281 net across 9 files, insertions ~+343 / deletions ~-62, tolerance +197..+365 and ±2 files, arithmetic shown in the body (417-74=343). AC-1, its fixture, and TestUnguardedOldLineTagWouldReachStable byte-unchanged. The do-not-cut-a-patch-line constraint stands until mex ships. STE re-checked with a rewritten checker after catching a shared-scratchpad script collision; falsifier reds on all four rule classes."
+    }
+  ]
+}
