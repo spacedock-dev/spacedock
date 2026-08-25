@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:dt8j3pas83725fma2wbez5ss:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation design — posture (b), label the README brew block stable and point at the install guide for edge, is recommended — and rule on posture (a) vs (b) plus keep-or-drop of the contractlint drift arm (AC-2)?",
+  "artifacts": [
+    {
+      "id": "artifact:dt8j3pas83725fma2wbez5ss:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/85545e8c9c725b1e8f9aed52594b7577da5478b2/product-readme-edge-channel-mention.md",
+      "rev": "sha256:cfc76b453db7bf963fd0cd8fa5f023127e62e44935bbe79892b3e5ef4ea82f55",
+      "mediaType": "text/markdown",
+      "summary": "Both postures shipped as apply-ready diffs against README.md@b04b3ef. Recommended (b): +7 net, 1 file — label the block stable, point at install.md for edge; (a) documents the edge cask inline (+9 net) but adds channel branching to a block that defers platform, and plants a third copy of channel commands (the stale-copy failure marketplace-readme-channel-model-repair just repaired). Spike run live: tap spellings verified equivalent, cask names+conflicts read from shipped .rb, edge binary self-selects its plugin (drops all claude-plugin lines from both diffs). Separable new mechanism flagged for necessity ruling: contractlint drift arm (AC-2, +30 net) guarding the tap-token divergence that exists today; drop it and the baseline is net +7/1 file. Estimate net +37 across 2 files, tolerance ±15; semantic changes: none."
+    }
+  ]
+}
