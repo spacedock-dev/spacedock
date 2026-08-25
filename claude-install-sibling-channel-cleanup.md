@@ -1,7 +1,7 @@
 ---
 id: 7p4vxcb9edzrph0zsfn75cd9
 title: claude install leaves the sibling edge plugin installed and enabled
-status: backlog
+status: ideation
 source: "Captain CL work-machine report 2026-08-25: clean documented stable install on a machine with spacedock@spacedock-edge left both plugins installed and enabled; doctor OK; which plugin serves unpredictable"
 started:
 completed:
@@ -33,7 +33,7 @@ gates:
                 reason: 'Captain chat 2026-08-25: ''file and dispatch'' — approved seeding and immediate dispatch of this task into design after the FO''s verified source report'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 `spacedock install --host claude` never uninstalls the sibling channel's modern plugin id. A stable install on a machine that already has `spacedock@spacedock-edge` (or the reverse) leaves BOTH channel plugins installed and enabled. Both are entry `spacedock` shipping the same skill set, so which provider serves is unpredictable. Mirror the codex sequence's sibling-channel remove, and give doctor eyes on a co-installed enabled sibling.
