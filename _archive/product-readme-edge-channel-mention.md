@@ -51,6 +51,7 @@ gates:
                 at: "2026-08-25T15:09:33.119133Z"
                 decision: hold
                 reason: 'Captain chat 2026-08-25: ''readme should fold into this. no doc-only task'' — standalone task superseded; deliverable folds into claude-install-sibling-channel-cleanup'
+archived: 2026-08-25T15:09:47Z
 ---
 
 The product README's install section documents only `brew tap spacedock-dev/homebrew-tap` + `brew install spacedock` — the stable channel. No edge cask, no `SPACEDOCK_CHANNEL=edge`, no pointer to the edge marketplace. A reader seeking edge parity follows the README, lands on stable, and loses parity with no signal. Decide the intended README posture and ship the README diff.
@@ -221,3 +222,7 @@ Estimated cost: under an hour. The only sequencing constraint is AC-2's red-then
 Recommended posture (b) — label the README's brew block as stable and point at the install guide for edge — over posture (a). The decisive argument is structural rather than stylistic: the install block already defers platform, host, and channel to `install.md`, so posture (a) would add channel branching to a block that still omits platform branching, stranding an edge-seeking Linux reader in the very block meant to stop stranding. Posture (a) would also plant a third copy of channel-specific install commands in a pitch-cadence document, which is the exact failure the previous task in this queue existed to repair.
 
 Two things the gate should look at. First, I pushed back on the seed's framing that CLAUDE.md settles this against edge: CLAUDE.md's dev-only claim is about the `next` *branch*, whereas the edge *channel* is a shipped user-facing channel with a published cask, a marketplace, and `-pre` tags — the captain's own machine runs it. The posture call is genuinely open. Second, the one new mechanism (the contractlint drift arm, AC-2) is flagged for a necessity challenge rather than smuggled in: it is separable, the body states what to drop and what the estimate becomes, and it exists because the README already carries a divergent tap spelling that nothing guards. I also found and fixed a rendering bug in my own body — nested code fences inside the diff blocks were closing the outer fence early, so the diffs are now wrapped in four-backtick fences.
+
+## Superseded
+
+Captain ruling 2026-08-25 ("readme should fold into this. no doc-only task"): no standalone doc-only task. The ideation deliverable — posture (b) README diff, the contractlint drift arm (AC-2), and the spike evidence — folds into `claude-install-sibling-channel-cleanup`, which re-gates with the folded design. Verdict left empty per the supersede convention.
