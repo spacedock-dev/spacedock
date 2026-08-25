@@ -26,6 +26,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-25T20:22:24Z
 ---
 
 The dispatch artifact must carry the stage-report protocol so a worker writes a complete `## Stage Report:` section on a real dispatch, not only when a smoke-checklist tells it to.
