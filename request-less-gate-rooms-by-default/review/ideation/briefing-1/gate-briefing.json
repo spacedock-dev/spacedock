@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rx3daftacggfmw1pt2febw31:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation design — one-file chat rooms via a new channel-independent prepared-room predicate, provider opt-in minting today's exact bytes, and the mediaType/item-type drops CUT because q0's preflight requires both?",
+  "artifacts": [
+    {
+      "id": "artifact:rx3daftacggfmw1pt2febw31:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/600794b8cc3a573ae0c3d166d2e1838e05e21e70/request-less-gate-rooms-by-default.md",
+      "rev": "sha256:75233e75ec3904fccd8dd50d70db4367132f1bb5e817eece8ddaf6074dcd854b",
+      "mediaType": "text/markdown",
+      "summary": "Spike inverted the seed: request-digest != '' is the predicate eight code sites use for 'this attempt has a prepared room', so dropping the file naively drops four guards (replay, rebind, retained-authority, withdraw — measured: gate withdraw exits 1 on a chat room today; io.go:204 skips retained-authority for request-less bindings). Design adds preparedRoomBinding as the channel-independent predicate at six sites, moves the withdraw guard to the verb that can stat the room, and extends retained-authority validation to chat rooms — the new default is MORE checked than today's, not less. Provider opt-in proven byte-identical to baseline at fixture commits; q0's actual Prepare (75ef1a2) accepts the opt-in room and refuses the chat room by name. Both seeded field drops are CUT, not deferred: q0's preflight refuses manifests without item type or mediaType (proven by exercise with passing controls). status --validate byte-identical over the real 600-room checkout. Estimate net +200 across 14 files, tolerance ±60/±3 (production +62, measured from the spike diff). internal/gates high-stakes: detached audit in the test plan. Four doc diffs included."
+    }
+  ]
+}
