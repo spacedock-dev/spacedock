@@ -202,8 +202,8 @@ func TestConsumedNonterminalApprovalAllowsOrdinaryTerminalFields(t *testing.T) {
 	}
 
 	code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task",
-		"status=done", "verdict=PASSED", "completed")
-	if code != 0 {
+		"status=done", "completed", "verdict=PASSED", "worktree=")
+	if code != 0 || strings.Contains(out+errOut, "ineligible") {
 		t.Fatalf("ordinary terminal fields exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	fields := entityFields(t, entity)
@@ -212,6 +212,24 @@ func TestConsumedNonterminalApprovalAllowsOrdinaryTerminalFields(t *testing.T) {
 	}
 	if body, err := os.ReadFile(entity); err != nil || !bytes.Contains(body, []byte("## Stage Report: implementation")) {
 		t.Fatalf("terminal write lost the worker report: read error=%v", err)
+	}
+}
+
+// TestConsumedNonterminalApprovalAllowsMergeGuard proves the alternate ordinary
+// terminal journey uses consumed gate history without inventing new authority.
+func TestConsumedNonterminalApprovalAllowsMergeGuard(t *testing.T) {
+	root, entity := consumedNonterminalWorkflow(t)
+	code, out, errOut := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
+	if code != 0 || strings.Contains(out+errOut, "ineligible") {
+		t.Fatalf("merge guard exit=%d stdout=%q stderr=%q", code, out, errOut)
+	}
+	archived := filepath.Join(root, "_archive", filepath.Base(entity))
+	fields := entityFields(t, archived)
+	if fields["status"] != "done" || fields["verdict"] != "PASSED" || strings.TrimSpace(fields["completed"]) == "" {
+		t.Fatalf("archived terminal fields = status:%q verdict:%q completed:%q", fields["status"], fields["verdict"], fields["completed"])
+	}
+	if got := gateApplicationStates(t, archived); !slices.Equal(got, []string{"consumed"}) {
+		t.Fatalf("merge guard rewrote consumed authority: %v", got)
 	}
 }
 

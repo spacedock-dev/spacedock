@@ -59,6 +59,10 @@ var stageReportHeadingRe = regexp.MustCompile(`^##\s+Stage Report:\s+(\S+)`)
 // the stage-report protocol's fixed three.
 var checklistBulletRe = regexp.MustCompile(`^-\s+(DONE|SKIPPED|FAILED):\s*(.*)$`)
 
+// checklistNearMissRe catches status-like bullets that the canonical parser
+// intentionally ignores, such as "- DONE (annotation): ...".
+var checklistNearMissRe = regexp.MustCompile(`^-\s+(DONE|SKIPPED|FAILED)\b`)
+
 // acHeadingRe matches an `**AC-N**` acceptance-criteria heading and captures the
 // AC id. The id is tokenized on the heading boundary (AC- followed by an
 // alphanumeric run), never split on `-` (the spike's AC-id boundary finding). An
@@ -81,6 +85,26 @@ type checklistItem struct {
 	text   string
 	start  int // 1-based
 	end    int // 1-based, inclusive
+}
+
+type checklistNearMiss struct {
+	status string
+	line   int
+	text   string
+}
+
+func firstChecklistNearMiss(lines []string, start, end int) *checklistNearMiss {
+	for line := start; line <= end; line++ {
+		text := lines[line-1]
+		if strings.HasPrefix(text, "### ") {
+			break
+		}
+		match := checklistNearMissRe.FindStringSubmatch(text)
+		if match != nil && !checklistBulletRe.MatchString(text) {
+			return &checklistNearMiss{status: match[1], line: line, text: strings.TrimSpace(text)}
+		}
+	}
+	return nil
 }
 
 // selectStageReport returns the line range [start,end] (1-based, inclusive) of

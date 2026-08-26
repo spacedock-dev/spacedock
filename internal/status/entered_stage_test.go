@@ -4,6 +4,7 @@ package status
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,6 +82,7 @@ func TestEnteredStageProjectionRequiresCommittedCompleteReport(t *testing.T) {
 		{"missing summary", "\n## Stage Report: implementation\n\n- DONE: Produce the implementation.\n  Commit abc123 contains evidence.\n"},
 		{"empty summary", "\n## Stage Report: implementation\n\n- DONE: Produce the implementation.\n  Commit abc123 contains evidence.\n\n### Summary\n\n"},
 		{"wrong stage", strings.ReplaceAll(completeImplementationReport, "Stage Report: implementation", "Stage Report: handoff")},
+		{"stage-token near miss", strings.ReplaceAll(completeImplementationReport, "Stage Report: implementation", "Stage Report: implementation-notes")},
 		{"later malformed masks older valid", completeImplementationReport + "\n## Stage Report: implementation (cycle 2)\n\n- DONE: Later report has no evidence.\n\n### Summary\n\nLater but malformed.\n"},
 	}
 	for _, tc := range cases {
@@ -135,30 +137,58 @@ func TestEnteredStageProjectionRequiresCommittedCompleteReport(t *testing.T) {
 			Current: "implementation", Next: "validation", Worktree: "no",
 		})
 	})
+	t.Run("spaced heading suffix remains accepted", func(t *testing.T) {
+		report := strings.Replace(completeImplementationReport, "Stage Report: implementation", "Stage Report: implementation (cycle 2)", 1)
+		def, _, _ := buildEnteredStageFixture(t, enteredStageEntity+report)
+		assertEnteredStageRows(t, def, enteredStageRow{
+			ID: "entered-task", Slug: "entered-task",
+			Current: "implementation", Next: "validation", Worktree: "no",
+		})
+	})
 }
 
-func TestEnteredWorktreeStageAwayStatusMutationsAreByteClean(t *testing.T) {
+func TestEnteredWorktreeStageFailureDiagnosticsAreDistinctAndByteClean(t *testing.T) {
+	annotated := "\n## Stage Report: implementation\n\n- DONE: Produce the implementation.\n  Commit abc123 contains evidence.\n- DONE (annotation): Document the edge case.\n  The annotation must not hide this obligation.\n\n### Summary\n\nThe implementation is complete.\n"
 	cases := []struct {
-		name string
-		args []string
+		name   string
+		report string
+		setup  func(t *testing.T, state, entity string)
+		want   func(body, state, entity string) string
 	}{
-		{"successor", []string{"status=validation"}},
-		{"backward", []string{"status=backlog"}},
-		{"terminal", []string{"status=done"}},
-		{"force successor", []string{"status=validation", "--force"}},
-		{"force terminal", []string{"status=done", "--force"}},
-		{"same then away", []string{"status=implementation", "status=validation"}},
-		{"away then same", []string{"status=validation", "status=implementation"}},
+		{"missing report", "", nil, func(_, _, _ string) string {
+			return `missing current-stage report: no heading whose first stage token is "implementation"; add "## Stage Report: implementation"`
+		}},
+		{"incomplete checklist", annotated, nil, func(body, _, _ string) string {
+			line := strings.Count(body[:strings.Index(body, "- DONE (annotation):")], "\n") + 1
+			return fmt.Sprintf(`incomplete current-stage report: line %d "- DONE (annotation): Document the edge case." is not canonical; use "- DONE: <item text>"`, line)
+		}},
+		{"untracked entity", completeImplementationReport, func(t *testing.T, state, _ string) {
+			gitC(t, state, "rm", "-q", "--cached", "--", "entered-task.md")
+		}, func(_, state, entity string) string {
+			return fmt.Sprintf("untracked completion artifact: %s is not tracked in local Git root %s; add and commit that path", entity, state)
+		}},
+		{"dirty entity", completeImplementationReport, func(t *testing.T, _, entity string) {
+			writeFile(t, entity, readBytes(t, entity)+"\nUncommitted entity dirt.\n")
+		}, func(_, state, entity string) string {
+			return fmt.Sprintf("dirty completion artifact: %s differs from local HEAD in Git root %s; commit that path (this guard does not require a remote push)", entity, state)
+		}},
 	}
+	gotMessages := map[string]bool{}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			body := strings.Replace(enteredStageEntity, "worktree:", "worktree: .worktrees/entered-task", 1)
-			def, _, entity := buildEnteredStageFixture(t, body)
+			body := strings.Replace(enteredStageEntity+tc.report, "worktree:", "worktree: .worktrees/entered-task", 1)
+			def, state, entity := buildEnteredStageFixture(t, body)
+			if tc.setup != nil {
+				tc.setup(t, state, entity)
+			}
 			before, err := os.ReadFile(entity)
 			if err != nil {
 				t.Fatal(err)
 			}
-			args := append([]string{"--workflow-dir", def, "--set", "entered-task"}, tc.args...)
+			args := []string{"--workflow-dir", def, "--set", "entered-task", "status=validation"}
+			if tc.name == "missing report" {
+				args = append(args, "--force")
+			}
 			stdout, stderr, code := runNative(t, def, pinnedEnv(t), args...)
 			if code != 1 {
 				t.Fatalf("away mutation exit=%d, want 1; stdout=%q stderr=%q", code, stdout, stderr)
@@ -166,11 +196,12 @@ func TestEnteredWorktreeStageAwayStatusMutationsAreByteClean(t *testing.T) {
 			if stdout != "" {
 				t.Fatalf("away mutation emitted success stdout: %q", stdout)
 			}
-			for _, want := range []string{"implementation", "Stage Report"} {
-				if !strings.Contains(stderr, want) {
-					t.Fatalf("stderr=%q, want actionable %q", stderr, want)
-				}
+			want := fmt.Sprintf("Error: entity entered-task cannot change status away from entered stage %q: %s.\n",
+				"implementation", tc.want(body, state, entity))
+			if stderr != want {
+				t.Fatalf("stderr=%q, want %q", stderr, want)
 			}
+			gotMessages[stderr] = true
 			after, err := os.ReadFile(entity)
 			if err != nil {
 				t.Fatal(err)
@@ -179,6 +210,9 @@ func TestEnteredWorktreeStageAwayStatusMutationsAreByteClean(t *testing.T) {
 				t.Fatalf("away mutation changed entity bytes\n--- before ---\n%s\n--- after ---\n%s", before, after)
 			}
 		})
+	}
+	if len(gotMessages) != 4 {
+		t.Fatalf("distinct completion diagnostics=%d, want 4", len(gotMessages))
 	}
 }
 

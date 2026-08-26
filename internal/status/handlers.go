@@ -115,15 +115,18 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 	// non-status updates remain allowed.
 	if strings.TrimSpace(currentFields["worktree"]) != "" {
 		for _, stage := range stages {
-			if stage.Name != currentStatus || !enteredStageAwaitingCompletion(&entity{path: entityPath}, stage) {
+			if stage.Name != currentStatus {
+				continue
+			}
+			failure := enteredStageCompletionFailure(&entity{path: entityPath}, stage)
+			if failure == nil {
 				continue
 			}
 			for _, u := range set.updates {
 				if u.field == "status" && u.hasValue && u.value != currentStatus {
 					return errExit(stderr, fmt.Sprintf(
-						"entity %s cannot change status away from entered stage %q until a durable, complete "+
-							"## Stage Report: %s is committed.",
-						slug, currentStatus, currentStatus))
+						"entity %s cannot change status away from entered stage %q: %s.",
+						slug, currentStatus, failure.diagnostic(currentStatus)))
 				}
 			}
 			break
