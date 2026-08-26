@@ -38,28 +38,28 @@ func TestChannelMarketplaceFromDevBranch(t *testing.T) {
 	}
 }
 
-// TestClaudeChannelInstallArgvSequence is AC-3's claude half: with marketplaceSource
-// repointed to the marketplace repo and devBranch set per channel, the issued
-// claude install argv installs the channel-correct id (`spacedock@spacedock` stable
-// / `spacedock@spacedock-edge` edge) and the marketplace add carries the BARE
-// marketplace-repo source — no `@<branch>` shorthand. The plugin id suffix is the
-// marketplace NAME (the channel); the entry before the `@` is always `spacedock`.
-// The marketplace-update refresh targets the channel's marketplace name; no step
-// spells `marketplace remove`.
+// TestClaudeChannelInstallArgvSequence is the claude half of AC-3: the argv installs
+// the id of the selected channel and adds the bare marketplace-repo source.
+//
+// wantSibling is the id of the other channel. Each case spells it as an independent
+// literal. When the production sequence uninstalls the channel that it just
+// selected, a derived expectation also passes.
 func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
 		channel         string
 		devBranch       string
 		wantID          string
+		wantSibling     string
 		wantMarketplace string
 	}{
-		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantMarketplace: "spacedock"},
-		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantMarketplace: "spacedock-edge"},
+		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantSibling: "spacedock@spacedock-edge", wantMarketplace: "spacedock"},
+		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantSibling: "spacedock@spacedock", wantMarketplace: "spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
 				{argv: []string{"plugin", "uninstall", tc.wantID}, tolerateExit: true},
+				{argv: []string{"plugin", "uninstall", tc.wantSibling}, tolerateExit: true},
 				{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "marketplace", "update", tc.wantMarketplace}, tolerateExit: true},

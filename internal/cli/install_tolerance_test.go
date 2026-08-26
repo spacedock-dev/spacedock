@@ -10,11 +10,9 @@ import (
 	"testing"
 )
 
-// TestInstallToleratesMarketplaceUpdateStepFailure locks AC-2: the
-// already-current path where `claude plugin marketplace update spacedock-edge`
-// exits 1 and every other subcommand exits 0. execHost.Install MUST return a nil
-// error and the combined output MUST contain all five steps' stub markers.
-// Without the per-step tolerance flag this test would fail at the update step.
+// TestInstallToleratesMarketplaceUpdateStepFailure asserts AC-2 on the
+// already-current path. Without the tolerance flag, this test fails at the update
+// step.
 func TestInstallToleratesMarketplaceUpdateStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -30,6 +28,7 @@ func TestInstallToleratesMarketplaceUpdateStepFailure(t *testing.T) {
 		"stub:plugin marketplace update spacedock-edge:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
 		"stub:plugin uninstall spacedock@spacedock-edge:exit=0",
+		"stub:plugin uninstall spacedock@spacedock:exit=0",
 		"stub:plugin uninstall spacedock-edge@spacedock:exit=0",
 		"stub:plugin install spacedock@spacedock-edge:exit=0",
 	} {
@@ -39,13 +38,9 @@ func TestInstallToleratesMarketplaceUpdateStepFailure(t *testing.T) {
 	}
 }
 
-// TestInstallToleratesUninstallStepFailure locks the fresh-box uninstall
-// tolerance half of AC-2: when `claude plugin uninstall <channel-id>` exits 1
-// (the empirically observed "Plugin not found in installed plugins" shape against
-// claude 2.1.160 on a box where the plugin is not installed) and every other
-// subcommand exits 0, execHost.Install MUST return a nil error and the combined
-// output MUST contain all five steps' stub markers. Without the per-step tolerance
-// flag on the uninstall step this test would fail at step 0.
+// TestInstallToleratesUninstallStepFailure asserts the fresh-box uninstall half of
+// AC-2. When the plugin is absent, claude 2.1.160 exits 1 with "Plugin not found
+// in installed plugins". Without the tolerance flag, this test fails at step 0.
 func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -59,6 +54,7 @@ func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	}
 	for _, want := range []string{
 		"stub:plugin uninstall spacedock@spacedock-edge:exit=1",
+		"stub:plugin uninstall spacedock@spacedock:exit=0",
 		"stub:plugin uninstall spacedock-edge@spacedock:exit=0",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
 		"stub:plugin marketplace update spacedock-edge:exit=0",
@@ -70,12 +66,9 @@ func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	}
 }
 
-// TestInstallToleratesRouteAMigrationStepFailure locks the round-1 migration
-// step's tolerance: when `claude plugin uninstall spacedock-edge@spacedock`
-// (the retired route-A id) exits 1 and every other subcommand exits 0,
-// execHost.Install MUST return a nil error and the combined output MUST contain
-// all five steps' stub markers. Without the per-step tolerance flag on this step
-// a captain who never held the retired route would fail every install.
+// TestInstallToleratesRouteAMigrationStepFailure asserts the tolerance of the
+// round-1 migration step. Without it, every install fails for a captain who never
+// used the retired route.
 func TestInstallToleratesRouteAMigrationStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -89,6 +82,7 @@ func TestInstallToleratesRouteAMigrationStepFailure(t *testing.T) {
 	}
 	for _, want := range []string{
 		"stub:plugin uninstall spacedock@spacedock-edge:exit=0",
+		"stub:plugin uninstall spacedock@spacedock:exit=0",
 		"stub:plugin uninstall spacedock-edge@spacedock:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
 		"stub:plugin marketplace update spacedock-edge:exit=0",

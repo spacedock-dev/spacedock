@@ -379,34 +379,25 @@ type installStep struct {
 // stable or edge — round 1's AC-4.
 const retiredRouteAID = "spacedock-edge@spacedock"
 
-// installArgvSequence is the 5-command upgrade shape `Install` issues. No step
-// ever spells `plugin marketplace remove`: on stable that command names the
-// `spacedock` marketplace that also hosts unrelated co-installed plugins
-// (subspace, cargento), and claude's remove measurably CASCADE-UNINSTALLS every
-// plugin installed from the removed marketplace (probe 1) — the destructive
-// failure mode this shape exists to stop. The steps: uninstall any existing
-// channel plugin (tolerated — claude tracks an installed plugin via its
-// marketplace record, so removing the record before uninstalling would orphan a
-// live uninstall), uninstall a retired route-A holder if present (tolerated — the
-// round-1 migration), add the channel-resolved marketplace source (fail-fast —
-// claude natively re-pins a changed source at the same name, probe 3, so this
-// alone recovers the re-pin the old remove step existed to force), update the
-// channel marketplace snapshot (tolerated — probe 4's non-destructive refresh:
-// covers the case where add no-op'd because the source was already current), then
-// install the channel id the devBranch selects (`spacedock@spacedock` stable /
-// `spacedock@spacedock-edge` edge — the entry is always `spacedock`, the channel
-// is the marketplace name; probe 9 — plugin install unconditionally re-clones).
-// The version pin lives in the marketplace manifest. Tolerance asymmetry: the
-// three cleanup/refresh steps (both uninstalls, marketplace update) are
-// best-effort — claude exits 1 on fresh-box or already-current cases with no
-// stable stderr shape to distinguish those from real failures. The two pinning
-// steps (marketplace add + plugin install) stay fail-fast — they are the
-// real-failure backstops that surface a broken install (network, contract
-// incompatibility, missing source).
+// installArgvSequence gives the commands that `Install` runs for claude. No step
+// uses `plugin marketplace remove`. That command names a marketplace which also
+// holds unrelated plugins, and probe 1 measured that it uninstalls all of them.
+//
+// The uninstalls come before the marketplace add. Claude tracks an installed plugin
+// through its marketplace record, so a removed record leaves the uninstall with
+// nothing to act on. The sibling uninstall keeps one channel on the host. Both
+// channels use the entry name `spacedock` and the same skill names. If both stay
+// installed, the plugin that serves is unpredictable.
+//
+// The cleanup steps are tolerated. Claude exits 1 on a fresh box and on an
+// already-current source. No stable stderr shape separates those cases from a real
+// failure. An absent sibling alone gives two different non-zero shapes. The pinning
+// steps stay fail-fast, because they report a broken install.
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	return []installStep{
 		{argv: []string{"plugin", "uninstall", id}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", retiredRouteAID}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},

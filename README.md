@@ -57,12 +57,17 @@ Prerequisite: a coding agent harness. Claude Code, Codex, and Pi are tier-1
 supported; through skill systems it also runs in most other harnesses, including
 Hermes-class agents.
 
-Install with Homebrew:
+Install the stable channel with Homebrew:
 
 ```bash
-brew tap spacedock-dev/homebrew-tap
+brew tap spacedock-dev/tap
 brew install spacedock
 ```
+
+These commands install the **stable** channel. Spacedock also has an **edge**
+channel that follows the prereleases. You select the channel at install time, not
+with a flag afterwards. If you want edge, start from the
+[install guide](docs/site/get-started/install.md) instead.
 
 Then launch. The first launch sets up the plugin for you, so a single line gets
 you a working session. Point it at a project you already have and let it survey:
