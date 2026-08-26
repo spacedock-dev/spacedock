@@ -7,7 +7,7 @@ started: 2026-08-26T20:04:25Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-dispatch-checklist-out-of-scope-delegation
 issue:
 pr:
 mod-block:
