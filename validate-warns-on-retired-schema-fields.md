@@ -22,6 +22,16 @@ gates:
                 id: briefing:wyzg6knr8whtmg79mxkb78jg:backlog:attempt-1:revision-1
                 digest: sha256:ae90a8befc3588f499f77645840d99414c911362ce1184fe1bb180afe01575a1
                 room-ref: ./validate-warns-on-retired-schema-fields/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wyzg6knr8whtmg79mxkb78jg:backlog:1
+                briefing: briefing:wyzg6knr8whtmg79mxkb78jg:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-26T21:59:45.808528Z"
+                decision: approve
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A workflow with history cannot pass `status --validate` because entities written under an old gate schema carry fields the current schema retired. A check that is always red cannot fail meaningfully. Captain ruling: do not build a migration. Downgrade retired-field findings to warnings and exit zero when they are the only findings.
