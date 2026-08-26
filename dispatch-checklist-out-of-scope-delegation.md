@@ -11,6 +11,18 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:yv3w8rhxrjyqywadmy666nph:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:yv3w8rhxrjyqywadmy666nph-backlog-1
+              briefing:
+                id: briefing:yv3w8rhxrjyqywadmy666nph:backlog:attempt-1:revision-1
+                digest: sha256:fdeded6ab1ba8db3e1f57aa7a922ad2f54b7f62ea9904566b6bcf27a2b7c3f8f
+                request-digest: sha256:a282e23565a3dd60c9d2b1c30a74446d283f395997d4be887147d801441421f0
+                room-ref: ./dispatch-checklist-out-of-scope-delegation/review/backlog/briefing-1
 ---
 
 A live FO wrote "advance status to done" into two ensign checklists. One ensign complied by silently hand-editing frontmatter (the write-scope ban is unenforced for workers). The other honored the ban and improvised: five failed `--set` attempts, `strings` on the binary, and an FO-only skill loaded to find the syntax. The durable-journey grader then failed the run on the hand-edited transition. The FO's own state work was clean throughout.

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:yv3w8rhxrjyqywadmy666nph:backlog:attempt-1:revision-1",
+  "question": "Should this task advance from backlog to ideation to define the smallest enforceable boundary that keeps status advancement with the first officer?",
+  "artifacts": [
+    {
+      "id": "artifact:yv3w8rhxrjyqywadmy666nph:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/67991aa8d6ff5885422d1de38380afdc201ededa/dispatch-checklist-out-of-scope-delegation.md",
+      "rev": "sha256:119084459e7853f4f054d18a24ece8d27992134d389093f099439fd708e44740",
+      "mediaType": "text/markdown",
+      "summary": "A reproduced live journey delegated FO-owned status mutation to two workers: one hand-edited frontmatter and the other spent five failed commands discovering an unauthorized path. Ideation must choose the smallest contract or stage-definition remedy, preserve worker write scope, exclude grader and unrelated host repairs, and prove a fully tool-mediated correctly attributed journey."
+    }
+  ]
+}
