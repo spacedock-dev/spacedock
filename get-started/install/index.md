@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-26 04:53:24"
+last_updated: "2026-08-26 08:45:55"
 ---
 
 # Install Spacedock
@@ -65,6 +65,8 @@ claude plugin install spacedock@spacedock-edge
 ```
 
 The channel is the marketplace name; the entry name stays `spacedock` on both channels (it equals the plugin's own `name`, so the host's entry-name vs plugin-name check passes). Each channel adds its own marketplace source — the stable marketplace lives at the repo root (named `spacedock`), the edge one on the `@edge` branch (named `spacedock-edge`) — so the `@edge` ref is what registers the `spacedock-edge` marketplace the edge entry resolves from. Codex installs the same way with `codex plugin add`.
+
+`spacedock install --host claude` and `spacedock install --host codex` keep one channel on each host. The plugin of the selected channel replaces a co-installed stable or edge plugin. Both channels use the entry name `spacedock` and the same skill names, so two installed plugins make the plugin that serves unpredictable. The commands above do not remove the other channel. The next `spacedock install` does, and so does the auto-install of the launcher.
 
 Set `SPACEDOCK_MARKETPLACE_SOURCE` to install from a local or alternate marketplace instead of the default `spacedock-dev/marketplace` — useful for dogfooding a marketplace change before it reaches the production marketplace:
 
