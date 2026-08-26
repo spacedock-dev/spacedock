@@ -57,6 +57,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-26T20:25:52.132529Z"
                 reason: Rebuild the prepared room with the local gate-room-v1 binary so Subspace can validate index.json.
+            - id: gate-attempt:9xnaq83nryb38fyt18mh0gbt-ideation-3
+              briefing:
+                id: briefing:9xnaq83nryb38fyt18mh0gbt:ideation:attempt-3:revision-1
+                digest: sha256:8b9808bcd11396d088220ead5047865fee7f7b15270bf8d9e8fefd2e4cbd5e06
+                room-ref: ./completion-guard-error-names-failing-subcheck/review/ideation/briefing-3
 ---
 
 The stage-advance guard emits one message — "cannot change status away from entered stage until a durable, complete ## Stage Report is committed" — for four distinct failures: the stage-report heading is not found (exact-token match), the checklist is incomplete (missing bullets, FAILED items, or no Summary), the entity file is untracked, or the entity file differs from local HEAD. An operator who cannot tell which failed diagnoses by round-trip; one field session needed three.
