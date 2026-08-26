@@ -203,6 +203,70 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    git branch -d release/X.Y.Z
    ```
 
+## Cutting a Patch Release
+
+A patch release ships fixes to the newest stable line while `main` carries the
+next line. It is a manual procedure. Do not build automation for it (captain
+ruling, 2026-08-26).
+
+**The one rule: only patch the newest stable line.** Never push a patch tag for
+an old line after a newer stable release exists. The CI walk below shows why.
+
+1. Branch from the prior stable tag:
+
+   ```bash
+   git worktree add .worktrees/release-X.Y.Z -b release/X.Y.Z vX.Y.(Z-1)
+   ```
+
+2. Cherry-pick the fix commits.
+
+3. Stamp the manifests and the FO prose pin to `X.Y.Z`, commit:
+
+   ```bash
+   go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
+   ```
+
+4. Push the branch and green that exact SHA (dispatch Runtime Live E2E on it —
+   the e2e-gate binds the run to the tagged SHA, same as a stable cut).
+
+5. Create the annotated tag on the greened commit and push it.
+
+6. Immediately after the tag run completes, run step 9 of the stable cut on
+   `main`: re-stamp `main` to the current `X.(Y+1).0-pre0`. The walk below says
+   why this is not optional.
+
+## What the Existing CI Does on a Patch Tag
+
+The tag push runs the same `release.yml` as a stable cut. What each part does,
+and what the operator owes:
+
+- **goreleaser publishes, `/releases/latest` moves, the brew casks bump.** This
+  is correct when the patch is the newest stable release. On an OLD-line tag it
+  is a silent catastrophe: `release.prerelease: auto` treats any hyphen-free tag
+  as a full release, and the stable cask's `skip_upload: auto` skips only
+  prereleases — so `/releases/latest` and the cask both move DOWN with every job
+  green. That is the reason for the one rule above.
+- **The manifest-stamp step checks out `main` and stamps it DOWN to `X.Y.Z`.**
+  The edge manifests and the FO minor pin go backwards. The operator re-stamps
+  `main` to the current `X.(Y+1).0-pre0` immediately (procedure step 6). The
+  measured cost of forgetting, at the v0.27.0 cut: every edge install failed the
+  FO version gate for 6 minutes until a hand commit landed.
+- **The stable-ref push fast-forwards.** The patch commit descends from the
+  stable tip, so the push succeeds. `stable` then leaves `main`'s history. At
+  the NEXT latest-line cut, that push is rejected as non-fast-forward. One-time
+  remedy at that cut, after you confirm the new tag is newer than what `stable`
+  serves:
+
+  ```bash
+  git push --force-with-lease=refs/heads/stable:OLD_STABLE_SHA origin RELEASE_COMMIT:refs/heads/stable
+  ```
+
+- **edge-advance skips.** Its decision compares the tag against the highest
+  known edge version, so a patch tag cuts no pre0 tag and that job does not
+  touch `main`.
+- **e2e-gate works unchanged.** It binds the green run to the exact SHA, on a
+  release branch the same as on `main`.
+
 ## Advancing the Edge Line
 
 The edge marketplace entry resolves `main` directly — the same branch stable
