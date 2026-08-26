@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rx3daftacggfmw1pt2febw31:validation:attempt-2:revision-1",
+  "question": "Confirm terminal delivery of the one-shape gate rooms: PR #762 merged by the captain (085318647) with codex-live green and the claude-live red diagnosed as an in-scenario flake outside the diff's reach?",
+  "artifacts": [
+    {
+      "id": "artifact:rx3daftacggfmw1pt2febw31:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/2ca85ea5d574a34afc6f29d98c095b10feb47302/request-less-gate-rooms-by-default.md",
+      "rev": "sha256:189d159951fcf42acfd6315153694817973a374f2c74b17503891fe6fac6ee84",
+      "mediaType": "text/markdown",
+      "summary": "Successor attempt after the cycle-3 CI rework. The live-tag fix (acd06d4ce) landed; codex-live green; claude-live's two rotating reds were diagnosed from artifacts: the mechanism trace passes the grader exactly, and the failure sits in the durable-journey half on fixture entities the diff cannot reach (no gate rooms in that fixture). Captain merged #762 directly (2026-08-26, 'merge it') and ordered the cherry-pick to release/0.27.1 (ecc315c81). Cycle-2 validation's PASSED (all six ACs first-hand, detached audit, q0 contract re-derived) plus the comment-only AST-verified corrections remain the validation of record."
+    }
+  ]
+}

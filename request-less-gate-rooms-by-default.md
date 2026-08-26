@@ -101,6 +101,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:rx3daftacggfmw1pt2febw31-validation-2
+              briefing:
+                id: briefing:rx3daftacggfmw1pt2febw31:validation:attempt-2:revision-1
+                digest: sha256:396c0aa7ecf247738f04260fb783d13ed46e7b7ffd7a78d8f809dfbdba692ed5
+                request-digest: sha256:2375f64b92b93dd64ca4b2280761952afcd76f25eb4844f79d722376acd8e793
+                room-ref: ./request-less-gate-rooms-by-default/review/validation/briefing-2
 ---
 
 Every gate room holds two files. Only the subspace provider journey reads `request.json`, and the entity frontmatter already holds every fact that file carries. Make the room one file. Name it `index.json`, and keep every legacy name readable forever.
