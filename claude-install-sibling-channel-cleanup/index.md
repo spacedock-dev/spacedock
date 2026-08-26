@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-claude-install-sibling-channel-cleanup
 issue:
-pr: "#760"
+pr: pr-merge:760
 mod-block: merge:pr-merge
 gates:
     version: 1
