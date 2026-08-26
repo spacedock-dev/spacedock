@@ -143,3 +143,27 @@ Ideation narrows the repair to one host-neutral composer rule at the point where
 ### Summary
 
 Implementation clarifies the First Officer's checklist-composition authority at the approved one-file, two-line surface and passes both repository regression suites. Two retained Claude journeys eliminate the original 2-of-2 delegation defect and correctly attribute every terminal state transition to a successful post-completion root-FO command, while the unchanged grader remains red on two distinct lifecycle durability failures outside the approved candidate surface.
+
+### Review-finding proposal 1: ready-two terminal transition lacks a preceding durable worker report
+
+- Exact observation/evidence: in run 1, the child edited `ready-two.md` at 21:13:01Z and sent completion to root at 21:13:11Z but issued no Git commit; root read the report at 21:13:14Z and `merge guard --verdict passed` finalized at 21:13:19Z with exit 0, while history jumps from `0c1bed1 dispatch: ready-two entering ready` to `b0be70f archive ready-two (merge guard)`.
+- Released user and normal workflow: supported Claude First Officer-to-ensign standing dispatch for a commissioned ready entity, the normal workflow exercised by the unchanged live journey.
+- Observable harm: the archive commit absorbs both report and terminal fields, so durable Git history cannot prove that worker evidence existed before the First Officer's terminal state mutation even though the public stream orders completion, report read, and root command correctly.
+- Affected authority: `value-ac[AC-1]` — its required ordered path history must establish the report/completion gate before each durable terminal transition.
+- Trigger evidence: a worker appends the required report, sends completion, and omits its mandatory pre-signal commit; terminalization then commits the dirty report with the archive transition.
+- Proposed release scope: Needs decision; the harm is material to the protected durability proof, but enforcement belongs to worker completion or merge-guard behavior outside this ticket's approved one-paragraph surface.
+- Task ownership: outside this checklist-composer ticket; route to the existing `merge-guard-requires-preceding-report` / ensign commit-before-signal work rather than changing this candidate.
+- Proposed disposition: route for decision and hold the candidate unchanged; do not rerun the reviewer until the captain selects or explicitly waives the separate durability repair.
+- AC effect: full AC-1 is not established for run 1 because durable report ordering is missing; AC-2 is unaffected, and the 0-of-2 delegation, zero child state-mutation, and successful post-completion root-FO transition evidence remain valid.
+
+### Review-finding proposal 2: ready-two dispatch entry is absent from the grader's qualifying path history
+
+- Exact observation/evidence: in run 2, root `status --set ready-two status=ready started` reports `ready -> ready`, sets `started`, and exits 0 at 21:17:22Z; root `dispatch build --stamp` exits 0 at 21:17:25Z; the worker reads those fields and final global history lists `d343851 dispatch: ready-two entering ready`, yet the unchanged grader reports no path-scoped dispatch entry with stage and started.
+- Released user and normal workflow: the same supported Claude standing-dispatch path, using the shipped status and stamped dispatch commands before a normal ensign spawn.
+- Observable harm: retained archive-following history cannot certify the entity's durable dispatch boundary despite successful commands and a visible global commit, leaving the commissioned journey at 1-of-2 durable proofs.
+- Affected authority: `value-ac[AC-1]` — its verifier requires an ordered per-entity Git history that identifies every durable lifecycle boundary before terminalization.
+- Trigger evidence: ready-two is stamped and later archived among two highly similar entities; after cleanup, the grader's archive-following path history does not qualify the globally visible dispatch commit. Retained artifacts lack the commit's changed-path listing, so whether the fault is stamp scope, rename/history identity, or grading remains unresolved.
+- Proposed release scope: Needs decision; the proof gap is material to the protected durable journey, while diagnosis or repair would cross into the explicitly excluded CLI, storage, fixture, or grader surfaces.
+- Task ownership: outside this checklist-composer ticket; captain must assign dispatch-stamp/archive-history ownership after preserving the current artifacts.
+- Proposed disposition: route for decision and hold the candidate unchanged; no reviewer rerun or speculative fix until the owning surface is selected.
+- AC effect: full AC-1 is not established for run 2 because its path history is not qualifying; AC-2 is unaffected, and the 0-of-2 delegation, zero child state-mutation, and successful post-completion root-FO transition evidence remain valid.
