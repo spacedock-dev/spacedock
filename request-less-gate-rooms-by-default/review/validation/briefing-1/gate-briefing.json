@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:rx3daftacggfmw1pt2febw31:validation:attempt-1:revision-1",
+  "question": "Accept validation's PASSED and deliver the one-shape gate rooms — index.json canonical, request.json retired — with the audit's archived-shape finding dispositioned as a deferred risk and its remedy filed?",
+  "artifacts": [
+    {
+      "id": "artifact:rx3daftacggfmw1pt2febw31:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0267019049f7e0a1c0b81e54e754ce8246f0e0e1/request-less-gate-rooms-by-default.md",
+      "rev": "sha256:dc8a2354396060d5c4e186b6b94a47be15df70aabc6d5ffab64e3b6cd852abeb",
+      "mediaType": "text/markdown",
+      "summary": "Validator reproduced all six ACs first-hand with red sides driven by the real merge-base binary on its own fixtures, not the implementer's recordings: one-file rooms close/consume/archive cleanly; the tampered-Briefing baseline hole (durable approve over corrupted bytes) now refuses byte-clean; withdraw works on one-file rooms; goldens red under one-space mutation; status --validate byte-identical over today's corpus; both suites fresh-green from their own exit codes. Cross-repo leg re-run through an INDEPENDENTLY REWRITTEN amended preflight from the contract text against q0 at 75ef1a2: accepts the minted index.json room with identity identical to the entity binding and digest exactly equal to the bound value; legacy and two-file rooms identical under shipped and amended; the shipped preflight's by-name refusal confirmed as the declared q0-side change. Audit confirmed both pre-named targets and added ONE new finding, properly dispositioned: an archived-shape perturbation (planted briefing.json or symlinked room dir) can drop the digest wall — deferred risk (hand mutation required, zero corpus occurrences, actor could already rewrite the binding), FO-authorized decline, remedy filed as gate-record-prepared-room-guard (en). Surface exactly the amended baselines: production -32, proof +490, docs +8. PASSED; no material findings; two polish items recorded (spec sentence scoping folded into the filed seed)."
+    }
+  ]
+}
