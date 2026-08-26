@@ -331,8 +331,11 @@ func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, sce
 	}
 	secondRoom := filepath.Join(filepath.Dir(fixture.entity), filepath.FromSlash(current.Briefing.RoomRef))
 	entries, err := os.ReadDir(secondRoom)
-	if err != nil || len(entries) != 2 {
-		t.Fatalf("successor room is not the emitted two-file room: entries=%v err=%v\nArtifacts: %s", entries, err, result.artifactDir)
+	if err != nil || len(entries) != 1 || entries[0].Name() != "index.json" || !entries[0].Type().IsRegular() {
+		t.Fatalf("successor room is not the emitted one-file room: entries=%v err=%v\nArtifacts: %s", entries, err, result.artifactDir)
+	}
+	if current.Briefing.RequestDigest != "" {
+		t.Fatalf("successor binding carries request-digest %q\nArtifacts: %s", current.Briefing.RequestDigest, result.artifactDir)
 	}
 	log := readFile(t, commandLog)
 	const prepare = "exit=0\tgate prepare recorded-gate-task "
