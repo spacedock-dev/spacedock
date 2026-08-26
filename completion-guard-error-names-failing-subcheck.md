@@ -281,3 +281,31 @@ The implementation now reports the first actual completion failure and explicitl
 separates local HEAD durability from remote publication. Annotated checklist
 near-misses refuse with a line and repair, while the existing authority boundary is
 pinned by successful ungated direct/merge journeys and the pending-terminal refusal.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 and AC-2 from real status commands: prove four byte-clean failure classes have exact distinct remedies, canonical checklist forms retain behavior, and the annotated near-miss refuses with its line and repair instead of silently advancing.
+  `TestEnteredWorktreeStageFailureDiagnosticsAreDistinctAndByteClean` ran real `status --set` calls and would fail on a changed byte, nonempty stdout, wrong exit, collapsed remedy, missing line/repair, or an advancing annotated obligation; canonical DONE/SKIPPED and spaced-cycle controls also passed.
+- DONE: Verify AC-3 and AC-4 end to end: both consumed-nonterminal terminal journeys succeed with zero ineligible refusals, pending terminal approval remains merge-guard-only, local-HEAD/no-origin and dirty-path boundaries remain intact, and applicable focused, full, race, and formatting checks actually run green.
+  Direct and merge-guard consumed-history fixtures reached terminal state without `ineligible`, the full documented direct form stayed byte-clean with pending authority, focused/full/race suites passed, and gofmt left every candidate-changed Go file unchanged.
+- DONE: Perform the declared detached semantic adversarial audit from a throwaway checkout, trace diagnostic identity/order/bytes and authority state across adjacent variants, challenge how the tests could pass with wrong observable behavior, and report PASSED or REJECTED with every finding classified under the workflow policy.
+  Detached audit proved report/checklist/Git precedence, exact Unicode near-miss identity and repair, spaced Unicode cycle acceptance, full pending-terminal refusal bytes and authority, and found no material, deferred-risk, or polish candidate finding; recommendation: PASSED.
+- DONE: AC-1 evidence is external and falsifiable.
+  The four-row CLI table asserts exact stderr and four unique values plus exit 1, empty stdout, and unchanged entity bytes; restoring the generic diagnostic or reordering the guard makes it red.
+- DONE: AC-2 evidence is external and falsifiable.
+  Parser and CLI controls cover canonical DONE/SKIPPED, FAILED, blank text/evidence, absent/empty Summary, exact stage-token selection, and a valid item followed by the annotated near-miss; deleting the scan incorrectly advances.
+- DONE: AC-3 evidence is external and falsifiable.
+  Real prepare/approve/consume journeys exercise direct status and merge guard, inspect terminal fields and consumed authority, while the pending-terminal control refuses the documented full write and preserves pending authority byte-for-byte.
+- DONE: AC-4 evidence is external and falsifiable.
+  `go test ./internal/status -run 'TestEntered' -count=1`, focused terminal tests, `go test ./...`, and `go test ./... -race` passed; no-origin, sibling-dirt, entity-dirt, latest-cycle, and force controls remain covered.
+- DONE: Candidate surface remains within the approved ideation tolerance.
+  Commit `d24e90a8e` changes the declared six files by 216 insertions and 41 deletions (+175 net), within the +145 +/-40 net and six +/-1 file bounds.
+- DONE: Reviewer-finding disposition and delivery recommendation.
+  Outcome defects: none. Evidence defects: none. Material findings: none. Deferred risks: none. Polish findings: none. The detached checkout exposed unrelated pre-existing gofmt drift in `internal/release/runtime_live_evidence_workflow_test.go`; it is outside commit `d24e90a8e` and does not affect this candidate recommendation.
+
+### Summary
+
+Validation recommends PASSED for commit `d24e90a8e`: AC-1 through AC-4 all have
+behavioral, state-based evidence, and the detached audit found no candidate defect.
+The candidate preserves diagnostic order, local-HEAD durability, and terminal gate
+authority while making the named failure and repair observable.
