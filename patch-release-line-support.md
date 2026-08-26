@@ -502,6 +502,7 @@ fail-closed arm is now an accepted uncovered path, recorded above.
 
 - Cycle 1: REWORK — captain proof-posture ruling 2026-08-25 ("we don't need those tests; we would know if the release fails", recorded as the README's release-machinery proof posture): delete the bare-origin replay harness; keep the comparator unit table, the structural wiring guards, and the renamed-step consumer updates; production untouched; ACs re-verify by unit + structural + next-live-cut observation. Supersedes the FAILED +644 surface item; re-measure after the cut.
 - Cycle 2: REWORKED — harness deleted whole (b8e186df5, two test files, zero production bytes); surface 10 files/+381 net vs estimate +281±84 (136%, +16 past the ceiling — residual is ordinary per-file under-pricing, harness was 330 of the 363 overage); cycle-1 suite-green claim corrected (grep swallowed the exit code; both suites re-run properly, exit 0); ensigncycle timeout-edge finding preserved, FO-authorized decline, filed separately.
+- Cycle 2 ruling: captain accepted net +381 across 10 files as the amended baseline (2026-08-26, 'approve'); validation proceeds against it.
 
 ## Sequencing decision for the captain
 
