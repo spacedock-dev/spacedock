@@ -40,35 +40,190 @@ The stage-advance guard emits one message — "cannot change status away from en
 
 ## Problem
 
-{Ideation fills this in. Seeded: internal/status/entered_stage.go hasCompleteCommittedStageReport returns one bool from hasCompleteStageReport && entityPathCleanInHEAD; handlers.go renders one string. The guard is fully local (two git commands against local HEAD) — the field report's remote-push theory arose only because the message gave no clue the failure was a dirty working tree. The exact-heading match (a parenthetical suffix defeats it) is also invisible in the message. Folded by captain direction 2026-08-26, same error-vocabulary family: (1) merge guard's "ineligible" refusal on an ungated terminal transition names no path forward — it should say the workflow's terminal transition is ungated and give the status --set form; (2) a checklist bullet written as `- DONE (annotation):` silently drops out of the guard's checklist (the colon must follow the status token), so a report can pass or fail for invisible reasons — the message should name unrecognized near-miss bullets.}
+`status --set` currently reduces four completion checks to one boolean and one
+generic refusal: a matching current-stage report exists, its checklist and Summary
+are complete, the entity is tracked, and its bytes equal local `HEAD`. The field
+report therefore misdiagnosed a dirty entity as an unpushed commit and spent three
+human round trips on remote pushes that the guard never inspects.
+
+The current parser matches the first whitespace-delimited stage token, not the
+whole heading. Thus `## Stage Report: implementation (cycle 2)` is valid, while
+`implementation-notes` is not. The new message must describe that real boundary
+instead of repeating the field report's refuted exact-whole-heading theory.
+
+Two related vocabulary failures are folded in. A status-like checklist bullet such
+as `- DONE (annotation):` is ignored because the colon is not immediately after
+`DONE`; an otherwise valid bullet can then let an omitted obligation pass unseen.
+The folded field report also records merge guard exposing `condition "ineligible"`
+for an ungated terminal path without naming the direct terminal `status --set` form.
+That exact source shape has since received a semantic repair, so ideation must not
+reintroduce it merely to improve its wording.
 
 ## Proposed approach
 
-{Ideation fills this in. Seeded: return which sub-check failed and say it plainly — "no ## Stage Report: {stage} heading found (the match is exact)", "checklist incomplete: {first failing item or missing Summary}", "entity file is not tracked in {git root}", "entity file differs from local HEAD — commit it in {git root}". No behavior change to the guard itself. Note the release-machinery proof posture does not apply; this is the status-guard surface.}
+Replace the completion predicate's internal boolean with a small structured result
+(`kind`, line/item detail, Git root) and retain a boolean wrapper for scheduler and
+gate-readiness callers. `status --set` renders the first failure in existing guard
+order, so precedence and all current fences remain stable:
+
+1. No heading whose first stage token equals the current stage: name the required
+   token and show the canonical heading.
+2. Checklist incomplete: name the first malformed/FAILED/blank/unevidenced item,
+   no recognized items, or a missing/empty `### Summary`, including a line number
+   when one exists.
+3. Entity untracked: name the path and enclosing local Git root, and say to add and
+   commit that path.
+4. Entity dirty: name the path and Git root, say it differs from local `HEAD`, and
+   explicitly state that this guard does not require a remote push.
+
+Add a narrow near-miss scan beside the existing checklist parser. A bullet beginning
+with `DONE`, `SKIPPED`, or `FAILED` but not the canonical immediate-colon form is a
+checklist-incomplete failure, with the original line and corrected form in stderr.
+This intentionally tightens one edge: a report containing a valid item plus an
+ignored annotated near-miss no longer advances. Valid syntax, stage-token selection,
+local-HEAD durability, sibling-dirt isolation, and `--force` behavior do not change.
+
+For the folded terminal case, retain the repaired behavior rather than adding a dead
+error branch. A consumed nonterminal approval is ordinary history, so both merge
+guard and the direct ungated terminal write succeed without `--force`; neither may
+emit raw `ineligible`. Add the missing merge-guard regression beside the existing
+direct-write regression, and document the concrete direct form:
+`spacedock status --workflow-dir DIR --set SLUG status=TERMINAL completed verdict=PASSED worktree=`.
+An actually unreadable, stale, superseded, or pending authority remains fail-closed
+and must not receive that hint: on those shapes the suggested direct write would
+itself refuse, so printing it would be false guidance.
+
+Mechanisms and necessity:
+
+- The structured result serves AC-1/AC-4. The simplest alternative is a generic
+  suffix listing all four remedies; it is insufficient because it preserves the
+  guess-and-retry loop and can still recommend a push for a syntax failure.
+- The near-miss scan serves AC-2. A warning-only alternative is insufficient because
+  the command could still advance while silently omitting the annotated obligation.
+- The ungated regression plus concrete documentation serves AC-3. Adding a formatter
+  for residual `ineligible` errors is insufficient and unsafe because current source
+  already succeeds for the reported shape, while genuine residual authority errors
+  also block direct `status --set` and cannot truthfully recommend it.
 
 ## Risk evidence
 
-{Backlog: the field report's three-round-trip timeline plus this session's own live falsification (no-remote fixture repo: local commit alone passes the guard) decide design should start.}
+The external report records three unnecessary push round trips. Source inspection
+shows the guard runs only `git ls-files` and `git diff --quiet HEAD`; it has no remote
+operation. `go test ./internal/status -run TestEnteredStage -count=1` passed on
+2026-08-26 and exercises complete/incomplete/dirty real-Git states;
+its committed-completion fixture has no origin and advances successfully. The focused
+checklist tests also passed and prove that `(cycle 2)` suffixes are selected by the
+leading stage token.
+
+A throwaway CLI spike built a real gate, approved and consumed it into an ordinary
+stage, then ran merge guard through the ungated terminal transition. It exited 0 and
+reported `finalized`; the spike was removed after the run. Commit `7a0de4018` and
+`consumedNonterminalHistory` explain why: the reported `ineligible` failure has already
+been repaired. No further mechanism spike is needed because the remaining design
+reuses exercised parser, CLI, and local-Git mechanisms. Its first red tests are the
+four-message table and annotated near-miss; the spike becomes the durable AC-3
+regression.
 
 ## Out of scope
 
-Relaxing the exact-heading match or the clean-vs-HEAD requirement (fences, not bugs). Any remote/sync coupling (none exists).
+Relaxing the exact stage-token match, checklist evidence rules, or clean-vs-local-HEAD
+requirement; adding remote/sync coupling; changing JSON/status table output; changing
+gate authority; adding speculative merge-guard error branches; or broadly redesigning
+merge guard eligibility. Unrelated Git command failures may get an honest "unable to
+inspect" diagnostic but must remain fail-closed.
 
 ## Expected surface and tolerance
 
-Estimate: production +25 across 2 files; proof +40 across 1 file. {Backlog seed; ideation refines.}
+Estimate net LOC change: +145, across 6 files. Expected insertions: 168; deletions:
+23. Tolerance: net LOC +/-40 and file count +/-1; crossing either bound requires a
+correction round before implementation continues.
+
+Expected files: `internal/status/entered_stage.go`, `gate_extract.go`, `handlers.go`,
+`entered_stage_test.go`, `internal/cli/terminal_consume_test.go`, and
+`docs/site/reference/command-reference.md`. Command grammar, stored formats, and gate
+authority do not change. Observable stderr becomes failure-specific; annotated
+status-token near-misses newly refuse; consumed nonterminal history remains a successful
+ungated terminal path; all other guard pass/fail outcomes, exit codes, byte-clean
+refusals, and local-only durability remain unchanged.
 
 ## Acceptance criteria
 
 Each AC names a property of the finished entity, not a stage action, and how it is verified.
 
-**AC-1 (VALUE) - A blocked stage advance names the failing sub-check, and each of the four failure classes produces a distinct message.**
-Verified by: {ideation refines — seed: a table test driving --set against four fixture states (missing heading, incomplete checklist, untracked file, dirty file) asserting four distinct stderr messages; falsifying edit: collapse them back to the generic string — the distinctness assertions red. Baseline that fails today: all four produce the identical message.}
+**AC-1 (VALUE) - A blocked stage advance names the failing sub-check, and the four core failure fixtures produce four distinct remedies instead of one generic message.**
+Verified by: a table test drives real `status --set` calls for missing current-stage
+heading, incomplete checklist/Summary, complete-but-untracked entity, and
+complete-but-dirty entity. It asserts exit 1, empty stdout, unchanged bytes, exact
+class-specific stderr, and four unique messages. Collapsing any result to the old
+generic string makes the exact and uniqueness assertions fail; baseline distinct
+message count is 1 and required count is 4.
+
+**AC-2 (VALUE) - No status-like checklist obligation is silently omitted: canonical bullets retain current behavior, while each named near-miss is refused with its line and repair.**
+Verified by: a table covers canonical `DONE`/`SKIPPED`, `FAILED`, blank text, missing
+evidence, missing/empty Summary, and `- DONE (annotation):`. The annotated case also
+contains one valid DONE item, so deleting the near-miss scan incorrectly advances and
+fails the test. A spaced heading suffix remains accepted; changing selection to an
+exact whole-heading comparison fails that control.
+
+**AC-3 (VALUE) - The reported ungated terminal journey has zero `ineligible` refusals, and users have a concrete direct terminal command, while a gated terminal approval still routes only through merge guard.**
+Verified by: two real CLI fixtures modeled on `/tmp/spacedock-gate-merge-frictions.md`
+each prepare, approve, and consume a gate into an ordinary stage. One runs merge guard;
+the other runs the documented direct `status --set` form. Both must exit 0 and produce
+terminal on-disk state, and neither channel may contain `ineligible`. The existing
+pending-terminal-approval control continues to refuse direct status and route through
+merge guard. Removing `consumedNonterminalHistory` makes both ordinary paths red;
+weakening sole-consumer authority makes the gated control red.
+
+**AC-4 - Existing completion and authority invariants remain intact outside the declared near-miss tightening.**
+Verified by: existing scheduler/gate-readiness matrices plus a no-origin real-Git
+fixture prove local committed completion passes, sibling dirt is ignored, entity-path
+dirt blocks, latest stage cycle wins, and `--force` behavior is unchanged. Full normal
+and race suites must pass; introducing a remote query or accepting dirty bytes makes
+the focused fixtures fail or hang on a repo with no origin.
+
+The concrete command-reference change is:
+
+```diff
+- ... `merge guard` discovers/arms the delivery mechanism when it acts.
++ ... `merge guard` discovers/arms the delivery mechanism when it acts. For an
++ ungated current-stage-to-terminal transition, finalize directly with
++ `spacedock status --workflow-dir DIR --set SLUG status=TERMINAL completed
++ verdict=PASSED worktree=`; do not use that route for a pending terminal-target
++ approval, whose sole consumer remains `merge guard`.
+```
 
 ## Test plan
 
-{Ideation fills this in.}
+- Add the four-row behavior table in `entered_stage_test.go` using real temporary Git
+  checkouts. Cost: small, under five seconds; CLI fixtures are required, no live host.
+- Add parser/guard rows for checklist defects and annotated near-misses. Cost: small;
+  unit plus CLI fixture. Assertions include the mutation that would make each red.
+- Extend the existing consumed-nonterminal CLI fixture with a merge-guard subtest;
+  retain the direct-write and pending-terminal controls. Inspect resulting frontmatter
+  and archive state rather than only searching prose. Cost: medium; no network/live run.
+- Run `go test ./internal/status -run 'TestEntered' -count=1` and
+  `go test ./internal/cli -run 'TestConsumedNonterminal|TestTerminalDelivery' -count=1`, then
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
+- Review the command-reference diff against the exercised stderr/command. No golden
+  prose-only test is proposed because the CLI behavior tests are the independent
+  oracle and a static substring check would be tautological.
 
 ### Feedback Cycles
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+
+## Stage Report: ideation
+
+- DONE: Define a bounded, behavior-first diagnostic design for every named completion-guard failure while preserving the existing guard invariants and resolving the two folded error-vocabulary cases.
+  The body specifies ordered diagnostics, the one declared near-miss tightening, an ungated regression plus concrete guidance, and unchanged authority/local-HEAD fences.
+- DONE: Declare the expected net LOC change, insertions, deletions, files, tolerance, affected observable semantics, simplest alternative, and why it is insufficient.
+  The expected surface is +145 net (168 insertions, 23 deletions) across six files with +/-40 net and +/-1 file tolerance; each mechanism has a rejected simpler alternative.
+- DONE: Specify falsifiable proof for the four core failure classes, checklist near-misses, and ungated-terminal guidance, including spike/no-spike evidence and any concrete user-facing documentation change.
+  AC-1 through AC-4 name behavior fixtures and falsifying edits; Risk evidence records the exercised no-origin baseline, and the command-reference diff is concrete.
+
+### Summary
+
+Ideation now defines a bounded structured diagnostic without relaxing the completion
+or gate-authority fences. It corrects the heading-boundary misconception, makes
+annotated checklist near-misses fail visibly, and turns the already-repaired ungated
+journey into a durable regression plus concrete command guidance.
