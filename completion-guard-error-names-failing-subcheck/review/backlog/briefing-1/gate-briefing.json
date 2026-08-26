@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9xnaq83nryb38fyt18mh0gbt:backlog:attempt-1:revision-1",
+  "question": "Should this task advance from backlog to ideation to design distinct, actionable completion-guard diagnostics without weakening the guard?",
+  "artifacts": [
+    {
+      "id": "artifact:9xnaq83nryb38fyt18mh0gbt:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0c09b372a9a5049a957740524709db1f847e85c1/completion-guard-error-names-failing-subcheck.md",
+      "rev": "sha256:bb7a15bf66c38e772d7a640dc87f0cdd4b3233df11a5974ef7565428fb7c2651",
+      "mediaType": "text/markdown",
+      "summary": "Field evidence shows one generic error caused three diagnostic round trips across four failure classes. The proposed ideation keeps every guard invariant, separates the failure reasons, includes near-miss checklist and ungated-terminal guidance, and owes falsifiable fixture coverage plus a refined surface estimate."
+    }
+  ]
+}
