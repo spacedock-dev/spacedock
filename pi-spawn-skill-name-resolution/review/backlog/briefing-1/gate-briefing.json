@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntnywe6wfk1g5sersjbe5yt7:backlog:attempt-1:revision-1",
+  "question": "Approve this task to enter ideation: verify whether the Pi spawn skill name should be bare 'ensign' or 'spacedock:ensign' against the CURRENT pi-subagents loader. Installed is 0.35.1 (basename === match -\u003e bare 'ensign' resolves, qualified does NOT), but latest npm is 0.57.0 — ideation must check whether newer pi-subagents changed resolveSkillPath to want the qualified name, before deciding whether to change piSpawnSkill.",
+  "artifacts": [
+    {
+      "id": "artifact:ntnywe6wfk1g5sersjbe5yt7:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0af098b988add73a30e6700b5efbdfab64b5cbc0/pi-spawn-skill-name-resolution.md",
+      "rev": "sha256:b8f0c016d3c8e0a0c441036f3807e812b42820a122323cfb977731f42de19cad",
+      "mediaType": "text/markdown",
+      "summary": "dispatch build --host pi emits bare skill 'ensign' (build.go piSpawnSkill) on the documented assumption 'pi-subagents resolves skills by directory basename only.' Verified on INSTALLED 0.35.1: resolveSkillPath does skills.find(s =\u003e s.name === skillName) where name = path.basename(dirPath) = 'ensign' — so bare resolves, 'spacedock:ensign' does NOT. BUT latest npm pi-subagents is 0.57.0 (22 versions newer); the field report says newer pi wants 'spacedock:ensign'. Ideation must re-verify resolveSkillPath on a newer pi-subagents (0.53.0+) before any change — if newer pi made the resolver want the qualified name, piSpawnSkill needs to become loader-version-aware; if not, the task closes as verified-working with the loader version pinned. The task's own AC-1 (one transcript check confirming the ensign skill loaded) is the right falsifier."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ntnywe6wfk1g5sersjbe5yt7:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:ntnywe6wfk1g5sersjbe5yt7:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://state/0af098b988add73a30e6700b5efbdfab64b5cbc0/_archive/pin-ensign-contract-entry-point.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:77ce3075bc6a423853c1422bbc10603b034c7cafd967034a5e692b06f65d9b8a"
+    }
+  ]
+}
