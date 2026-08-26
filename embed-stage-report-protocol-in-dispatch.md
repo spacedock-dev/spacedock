@@ -1,7 +1,7 @@
 ---
 id: t4rqqmmrqh69adgb1bbdx838
 title: Embed the stage-report protocol in the dispatch artifact
-status: implementation
+status: validation
 source: "/tmp/spacedock-pi-dispatch-diagnosis.md (2026-08-25): 3 of 4 Pi-dispatched ensigns completed implementation without writing a ## Stage Report; the dispatch build artifact's ## First action claims the file contains the stage-report format, but the body has 0 such tokens. Same class as archived pin-ensign-contract-entry-point (2026-08-01), which fixed the spawn binding but not the artifact-body gap."
 gates:
     version: 1
