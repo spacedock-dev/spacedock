@@ -1,7 +1,7 @@
 ---
 id: rx3daftacggfmw1pt2febw31
 title: Gate rooms hold one canonical Briefing file; request.json is retired
-status: ideation
+status: implementation
 source: "Captain gate-format review 2026-08-25: variance scan found 499/499 rooms carry request.json while only ~8 July-era provider results ever consumed one; q0 (subspace-r-scaffolded-gate-room, spacedock-subspace, at validation) finalizes the provider journey the file exists for"
 started: 2026-08-25T17:27:46Z
 completed:
@@ -80,7 +80,7 @@ gates:
                 reason: 'Captain chat 2026-08-25: ''approve rx'' — accepts the one-shape reset design on briefing-3; approved baselines: production +70 across 5 files (±25/±2) and proof +330 across 7 files (±80/±2), reported separately'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Every gate room holds two files. Only the subspace provider journey reads `request.json`, and the entity frontmatter already holds every fact that file carries. Make the room one file. Name it `index.json`, and keep every legacy name readable forever.
