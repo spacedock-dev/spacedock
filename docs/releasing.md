@@ -22,8 +22,9 @@ marketplace source.
 - publishes the GitHub Release with those assets;
 - bumps BOTH `spacedock-dev/homebrew-tap` casks (`spacedock` stable +
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
-- stamps the plugin manifests' `version` on `main`, then advances the stable
-  channel ref (see below).
+- stamps the plugin manifests' `version` on `main` on a `.0` release only (a
+  patch tag does not touch `main`), then advances the stable channel ref (see
+  below).
 - on a latest-line stable tag, auto-cuts a `vX.(Y+1).0-pre0` prerelease tag so
   the edge binary catches up to the new release line within minutes (see
   "Advancing the Edge Line" below).
@@ -231,9 +232,8 @@ an old line after a newer stable release exists. The CI walk below shows why.
 
 5. Create the annotated tag on the greened commit and push it.
 
-6. Immediately after the tag run completes, run step 9 of the stable cut on
-   `main`: re-stamp `main` to the current `X.(Y+1).0-pre0`. The walk below says
-   why this is not optional.
+6. `main` needs no follow-up. The CI stamp runs on `.0` releases only, so a
+   patch tag does not touch `main` (captain ruling, 2026-08-26).
 
 ## What the Existing CI Does on a Patch Tag
 
@@ -246,11 +246,11 @@ and what the operator owes:
   as a full release, and the stable cask's `skip_upload: auto` skips only
   prereleases — so `/releases/latest` and the cask both move DOWN with every job
   green. That is the reason for the one rule above.
-- **The manifest-stamp step checks out `main` and stamps it DOWN to `X.Y.Z`.**
-  The edge manifests and the FO minor pin go backwards. The operator re-stamps
-  `main` to the current `X.(Y+1).0-pre0` immediately (procedure step 6). The
-  measured cost of forgetting, at the v0.27.0 cut: every edge install failed the
-  FO version gate for 6 minutes until a hand commit landed.
+- **The manifest-stamp step skips.** The stamp runs on `.0` releases only, so a
+  patch tag does not touch `main` or the edge line. Before this condition
+  landed, a patch tag stamped `main` DOWN and every edge install failed the FO
+  version gate until a hand commit restored it (measured at the v0.27.0 and
+  v0.27.1 cuts).
 - **The stable-ref push fast-forwards.** The patch commit descends from the
   stable tip, so the push succeeds. `stable` then leaves `main`'s history. At
   the NEXT latest-line cut, that push is rejected as non-fast-forward. One-time

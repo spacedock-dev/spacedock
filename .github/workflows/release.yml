@@ -260,18 +260,29 @@ jobs:
           # be at push time.
           RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
           git fetch origin main
-          git switch main
-          go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" \
-            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
-          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"; then
-            echo "plugin manifests and FO prose already at $RELEASE_VERSION; nothing to commit"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "release: stamp plugin manifests and FO prose to $RELEASE_VERSION" \
-              -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
-            git push origin main
-          fi
+          # Stamp main on a .0 release only (captain ruling, 2026-08-26). During
+          # a patch cut, main carries the NEXT line, and the edge channel serves
+          # main. A patch stamp moves main backwards, and every edge install then
+          # fails the FO version gate (measured at the v0.27.1 cut).
+          case "$RELEASE_VERSION" in
+            *.0)
+              git switch main
+              go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" \
+                .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+              if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"; then
+                echo "plugin manifests and FO prose already at $RELEASE_VERSION; nothing to commit"
+              else
+                git config user.name "github-actions[bot]"
+                git config user.email "github-actions[bot]@users.noreply.github.com"
+                git commit -m "release: stamp plugin manifests and FO prose to $RELEASE_VERSION" \
+                  -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+                git push origin main
+              fi
+              ;;
+            *)
+              echo "patch tag v$RELEASE_VERSION: main is not stamped — the stamp runs on .0 releases only"
+              ;;
+          esac
           # Advance the stable channel ref to the TAGGED commit. The
           # spacedock-dev/marketplace stable entry pins source.ref=stable (a moving
           # branch, not a per-release tag), so a fresh `spacedock@spacedock` install
