@@ -7,7 +7,7 @@ started: 2026-08-26T19:51:27Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-completion-guard-error-names-failing-subcheck
 issue:
 pr:
 mod-block:
