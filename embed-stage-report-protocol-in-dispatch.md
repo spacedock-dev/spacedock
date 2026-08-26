@@ -68,6 +68,8 @@ gates:
                 state: pending
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
+mod-block: merge:pr-merge
+pr: "#764"
 ---
 
 The dispatch artifact must carry the stage-report protocol so a worker writes a complete `## Stage Report:` section on a real dispatch, not only when a smoke-checklist tells it to.
