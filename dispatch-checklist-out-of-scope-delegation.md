@@ -1,7 +1,7 @@
 ---
 id: yv3w8rhxrjyqywadmy666nph
 title: Dispatch checklists must not delegate status advancement out of worker scope
-status: ideation
+status: implementation
 source: "claude-live smallest-sufficient-mechanism red, PR #762 run attempt 2, diagnosed from artifacts 2026-08-26: the live FO's checklist told both ensigns to 'advance status to done' — a frontmatter mutation the ensign contract forbids and documents no syntax for"
 started: 2026-08-26T20:04:25Z
 completed:
@@ -51,7 +51,7 @@ gates:
                 decision: approve
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A live FO wrote "advance status to done" into two ensign checklists. One ensign complied by silently hand-editing frontmatter (the write-scope ban is unenforced for workers). The other honored the ban and improvised: five failed `--set` attempts, `strings` on the binary, and an FO-only skill loaded to find the syntax. The durable-journey grader then failed the run on the hand-edited transition. The FO's own state work was clean throughout.
