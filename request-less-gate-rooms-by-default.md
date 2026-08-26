@@ -1,7 +1,7 @@
 ---
 id: rx3daftacggfmw1pt2febw31
 title: Gate rooms hold one canonical Briefing file; request.json is retired
-status: validation
+status: implementation
 source: "Captain gate-format review 2026-08-25: variance scan found 499/499 rooms carry request.json while only ~8 July-era provider results ever consumed one; q0 (subspace-r-scaffolded-gate-room, spacedock-subspace, at validation) finalizes the provider journey the file exists for"
 started: 2026-08-25T17:27:46Z
 completed:
@@ -9,8 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-request-less-gate-rooms-by-default
 issue:
-pr: "#762"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 gates:
     version: 1
     records:
@@ -100,7 +100,7 @@ gates:
                 reason: 'Captain chat 2026-08-26: ''approve both'' — accepts validation PASSED; deliver via PR to main; archived-shape finding dispositioned deferred with remedy filed as gate-record-prepared-room-guard'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Every gate room holds two files. Only the subspace provider journey reads `request.json`, and the entity frontmatter already holds every fact that file carries. Make the room one file. Name it `index.json`, and keep every legacy name readable forever.
@@ -280,6 +280,7 @@ Verified by: the doc diff above, reviewed at validation against ASD-STE100 per t
 
 - Cycle 1: DESIGN RESET — captain ruling 2026-08-25 ("find a simpler way" → one room shape, `index.json`): implementation 312fa3f95 landed at 18 files/+740 net vs approved 14±3/+200±60; overage was the channel fork's doubled test matrix. Reset to ideation: one file for every channel, no request.json anywhere, q0 amended to preflight from the canonical Briefing alone; predicate work and both hole fixes salvage forward; the fork and its matrix are deleted unbuilt. Spec update (gate-resolution-frontmatter-contract.md) required per captain.
 - Cycle 2: one-shape implementation (0c1679864, rebuilt from origin/main at b59c208d8); surface production net -32 vs +70±25 (favorable: the request-minting path and four orphaned functions deleted) and proof net +490 across 10 files vs +330±80 across 7 (room shape hard-coded in four ensigncycle files where ideation counted one, plus the retained legacy-shape fixture); captain accepted both as amended baselines (2026-08-26, 'approve'); validation proceeds against them.
+- Cycle 3: REWORK — required live lanes red on PR #762: shared_live_runner_test.go:162 asserts the retired two-file room while the candidate mints the approved one-file index.json room (claude-live and codex-live, identical line); a fifth hard-coded room-shape site behind the live build tag, invisible to go test ./...; fix routed to the implementation worker; lanes re-run green are the delta validation.
 
 ## Stage Report: ideation
 
