@@ -41,7 +41,6 @@ func TestWithdrawalDefinesThirdValidatedFrozenAttemptState(t *testing.T) {
 		"wrong actor":      func(a *Attempt) { a.Withdrawal.By = "person:captain" },
 		"bad time":         func(a *Attempt) { a.Withdrawal.At = "now" },
 		"blank reason":     func(a *Attempt) { a.Withdrawal.Reason = " \t" },
-		"no request":       func(a *Attempt) { a.Briefing.RequestDigest = "" },
 		"with resolution":  func(a *Attempt) { a.Resolution = eligibleDocument().Records[0].Attempts[0].Resolution },
 		"with application": func(a *Attempt) { a.Application = &Application{} },
 	} {
@@ -52,6 +51,19 @@ func TestWithdrawalDefinesThirdValidatedFrozenAttemptState(t *testing.T) {
 				t.Fatalf("invalid withdrawn shape %q accepted", name)
 			}
 		})
+	}
+
+	// A one-file attempt is withdrawn with no request-digest. This validator
+	// reads frontmatter alone, so it cannot tell that shape from an archived
+	// opaque ref. Withdraw stats the room and owns the prepared-room
+	// requirement. TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean's
+	// "no prepared room" case is the negative, and
+	// TestWithdrawPreparedAttemptThenPrepareAppendsSuccessorWithoutRewritingOldRoom
+	// is the positive.
+	requestLess := cloneDocument(t, withdrawn)
+	requestLess.Records[0].Attempts[0].Briefing.RequestDigest = ""
+	if err := Validate(requestLess); err != nil {
+		t.Fatalf("withdrawn request-less attempt rejected by the frontmatter validator: %v", err)
 	}
 
 	oldBytes, err := yaml.Marshal(withdrawn)

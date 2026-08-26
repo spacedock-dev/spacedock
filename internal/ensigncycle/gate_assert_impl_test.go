@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
 	"gopkg.in/yaml.v3"
@@ -23,35 +24,48 @@ type gateHeldExpectation struct {
 	gateID, attemptID, briefingID, digest string
 }
 
+// canonicalPreparedBriefingID is the v1 Briefing identity grammar. Group 1 is
+// the entity identity, group 2 the stage, group 3 the attempt ordinal.
+var canonicalPreparedBriefingID = regexp.MustCompile(`^briefing:(.+):([^:]+):attempt-([1-9][0-9]*):revision-[1-9][0-9]*$`)
+
+// recordedGateHeldExpectation reads what the gate must hold from the published
+// room, not from the entity the assertion checks. The room is one file, so the
+// canonical Briefing carries the identity and the digest.
 func recordedGateHeldExpectation(fixture recordedGateFixture) (gateHeldExpectation, error) {
-	requests, err := filepath.Glob(filepath.Join(filepath.Dir(fixture.entity), "review", "validation", "briefing-*", "request.json"))
+	briefings, err := filepath.Glob(filepath.Join(filepath.Dir(fixture.entity), "review", "validation", "briefing-*", "index.json"))
 	if err != nil {
 		return gateHeldExpectation{}, err
 	}
-	if len(requests) != 1 {
-		return gateHeldExpectation{}, fmt.Errorf("prepared fixture request count = %d, want 1", len(requests))
+	if len(briefings) != 1 {
+		return gateHeldExpectation{}, fmt.Errorf("prepared fixture Briefing count = %d, want 1", len(briefings))
 	}
-	body, err := os.ReadFile(requests[0])
+	body, err := os.ReadFile(briefings[0])
 	if err != nil {
 		return gateHeldExpectation{}, err
 	}
-	var request struct {
-		Gate     string `json:"gate"`
-		Attempt  string `json:"attempt"`
-		Briefing struct {
-			ID     string `json:"id"`
-			Digest string `json:"digest"`
-		} `json:"briefing"`
+	var briefing struct {
+		ID string `json:"id"`
 	}
-	if err := json.Unmarshal(body, &request); err != nil {
-		return gateHeldExpectation{}, fmt.Errorf("decode prepared request: %w", err)
+	if err := json.Unmarshal(body, &briefing); err != nil {
+		return gateHeldExpectation{}, fmt.Errorf("decode prepared Briefing: %w", err)
 	}
-	if request.Gate == "" || request.Attempt == "" || request.Briefing.ID == "" || request.Briefing.Digest == "" {
-		return gateHeldExpectation{}, fmt.Errorf("prepared request is incomplete")
+	parts := canonicalPreparedBriefingID.FindStringSubmatch(briefing.ID)
+	if parts == nil {
+		return gateHeldExpectation{}, fmt.Errorf("prepared Briefing id %q is not canonical", briefing.ID)
+	}
+	digest, err := gates.CanonicalDigest(body)
+	if err != nil {
+		return gateHeldExpectation{}, fmt.Errorf("canonicalize prepared Briefing: %w", err)
+	}
+	entity, stage, ordinal := parts[1], parts[2], parts[3]
+	if cut := strings.LastIndex(entity, ":"); cut >= 0 {
+		entity = entity[cut+1:]
 	}
 	return gateHeldExpectation{
-		gateID: request.Gate, attemptID: request.Attempt,
-		briefingID: request.Briefing.ID, digest: request.Briefing.Digest,
+		gateID:     "gate:" + parts[1] + ":" + stage,
+		attemptID:  "gate-attempt:" + entity + "-" + stage + "-" + ordinal,
+		briefingID: briefing.ID,
+		digest:     digest,
 	}, nil
 }
 

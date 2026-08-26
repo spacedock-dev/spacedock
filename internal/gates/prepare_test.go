@@ -89,7 +89,11 @@ func prepareTreeSnapshot(t *testing.T, root string) string {
 	return entryTypes.String() + treeDigest(t, root)
 }
 
-func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing.T) {
+// TestPrepareCreatesOneFileRecorderRoomForFolderAndFlatEntities is the unit half
+// of value AC-1. Preparation publishes the canonical Briefing alone, under the
+// reserved name, and binds no request-digest. Make Prepare mint a request again
+// and the entry-set assertion reds.
+func TestPrepareCreatesOneFileRecorderRoomForFolderAndFlatEntities(t *testing.T) {
 	for _, form := range []string{"folder", "flat"} {
 		t.Run(form, func(t *testing.T) {
 			workflow, state, entity, artifact, reference := prepareFixture(t, form)
@@ -122,7 +126,7 @@ func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing
 				}
 				names = append(names, entry.Name())
 			}
-			if want := []string{"gate-briefing.json", "request.json"}; !reflect.DeepEqual(names, want) {
+			if want := []string{preparedBriefingLocator}; !reflect.DeepEqual(names, want) {
 				t.Fatalf("room files=%v want %v", names, want)
 			}
 			for _, copied := range []string{filepath.Base(artifact), filepath.Base(reference), "association.json", "provider"} {
@@ -131,7 +135,7 @@ func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing
 				}
 			}
 
-			briefingBytes, err := os.ReadFile(filepath.Join(result.Room, "gate-briefing.json"))
+			briefingBytes, err := os.ReadFile(filepath.Join(result.Room, preparedBriefingLocator))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -182,8 +186,11 @@ func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing
 				t.Fatalf("prepared binding not open: %#v", current)
 			}
 			attempt := doc.Records[0].Attempts[0]
-			if attempt.Briefing.Digest != result.Digest || attempt.Briefing.RequestDigest == "" {
-				t.Fatalf("binding pins incomplete: %#v", attempt.Briefing)
+			if attempt.Briefing.Digest != result.Digest || attempt.Briefing.RequestDigest != "" {
+				t.Fatalf("binding pins incomplete or request-backed: %#v", attempt.Briefing)
+			}
+			if !preparedRoomBinding(entity, attempt.Briefing) {
+				t.Fatalf("published room is not read as prepared: %#v", attempt.Briefing)
 			}
 			wantRef := "./task/review/validation/briefing-1"
 			if form == "folder" {
@@ -206,7 +213,7 @@ func TestPrepareCreatesOneTwoFileRecorderRoomForFolderAndFlatEntities(t *testing
 				t.Fatalf("replay=%#v err=%v want %#v", replayed, err, result)
 			}
 			afterEntity, _ := os.ReadFile(entity)
-			afterBriefing, _ := os.ReadFile(filepath.Join(result.Room, "gate-briefing.json"))
+			afterBriefing, _ := os.ReadFile(filepath.Join(result.Room, preparedBriefingLocator))
 			if !bytes.Equal(beforeEntity, afterEntity) || !bytes.Equal(beforeBriefing, afterBriefing) {
 				t.Fatal("exact replay changed durable bytes")
 			}
@@ -227,7 +234,6 @@ func TestWithdrawPreparedAttemptThenPrepareAppendsSuccessorWithoutRewritingOldRo
 		t.Fatal(err)
 	}
 	firstBriefing := readPreparedFile(t, filepath.Join(first.Room, preparedBriefingLocator))
-	firstRequest := readPreparedFile(t, filepath.Join(first.Room, "request.json"))
 
 	summary, err := Withdraw(entity, WithdrawInput{
 		WorkflowDir: workflow,
@@ -239,6 +245,21 @@ func TestWithdrawPreparedAttemptThenPrepareAppendsSuccessorWithoutRewritingOldRo
 	if summary.State != "withdrawn" || summary.Attempt != "gate-attempt:task-validation-1" ||
 		summary.Resolution != "" || summary.Decision != "" || summary.Application != "" {
 		t.Fatalf("withdraw summary = %#v", summary)
+	}
+	// AC-4: the retired one-file attempt keeps a withdrawal block and still
+	// validates. Restore the request-backed precondition in Withdraw and the
+	// Withdraw call above reds with "current attempt is not request-backed".
+	retired, _, err := Read(entity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	block := retired.Records[0].Attempts[0].Withdrawal
+	if block == nil || block.By != "agent:first-officer" ||
+		block.Reason != "Sprint re-scope replaced the reviewed candidate." {
+		t.Fatalf("withdrawal block = %#v", block)
+	}
+	if err := Validate(retired); err != nil {
+		t.Fatalf("retired one-file attempt does not validate: %v", err)
 	}
 
 	second, err := Prepare(entity, PrepareInput{
@@ -256,9 +277,6 @@ func TestWithdrawPreparedAttemptThenPrepareAppendsSuccessorWithoutRewritingOldRo
 	}
 	if got := readPreparedFile(t, filepath.Join(first.Room, preparedBriefingLocator)); !bytes.Equal(got, firstBriefing) {
 		t.Fatal("successor prepare rewrote withdrawn Briefing bytes")
-	}
-	if got := readPreparedFile(t, filepath.Join(first.Room, "request.json")); !bytes.Equal(got, firstRequest) {
-		t.Fatal("successor prepare rewrote withdrawn request bytes")
 	}
 	doc, _, err := Read(entity)
 	if err != nil {
@@ -285,6 +303,7 @@ func TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean(t *testing.T) {
 		}
 	})
 
+	// The room holds one file. Provider output is an unexpected extra entry.
 	t.Run("provider output", func(t *testing.T) {
 		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
 		prepared, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"})
@@ -296,7 +315,7 @@ func TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean(t *testing.T) {
 		}
 		before := treeDigest(t, state)
 		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
-			!strings.Contains(err.Error(), "exactly two regular files") {
+			!strings.Contains(err.Error(), "exactly one regular file") {
 			t.Fatalf("provider-output withdrawal = %v", err)
 		}
 		if got := treeDigest(t, state); got != before {
@@ -304,15 +323,19 @@ func TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean(t *testing.T) {
 		}
 	})
 
-	t.Run("corrupt retained request", func(t *testing.T) {
+	t.Run("corrupt retained Briefing", func(t *testing.T) {
 		workflow, state, entity, artifact, _ := prepareFixture(t, "folder")
 		prepared, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		request := filepath.Join(prepared.Room, "request.json")
-		body := readPreparedFile(t, request)
-		if err := os.WriteFile(request, bytes.Replace(body, []byte(`"actor": "person:captain"`), []byte(`"actor": "agent:other"`), 1), 0o644); err != nil {
+		briefing := filepath.Join(prepared.Room, preparedBriefingLocator)
+		body := readPreparedFile(t, briefing)
+		tampered := bytes.Replace(body, []byte(`"summary": "candidate"`), []byte(`"summary": "tampered"`), 1)
+		if bytes.Equal(tampered, body) {
+			t.Fatal("fixture lost the summary anchor this case tampers with")
+		}
+		if err := os.WriteFile(briefing, tampered, 0o644); err != nil {
 			t.Fatal(err)
 		}
 		before := treeDigest(t, state)
@@ -371,16 +394,43 @@ func TestWithdrawRefusalsLeaveEntityRoomAndLockBytesClean(t *testing.T) {
 		}
 	})
 
-	t.Run("chat-only request-less attempt", func(t *testing.T) {
-		workflow, entity := recordStageFixture(t, "validation",
-			"briefing:task:validation:attempt-2:revision-1", "      gate: true\n")
-		before := treeDigest(t, workflow)
-		if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
-			!strings.Contains(err.Error(), "not request-backed") {
-			t.Fatalf("request-less withdrawal = %v", err)
-		}
-		if got := treeDigest(t, workflow); got != before {
-			t.Fatal("request-less refusal changed workflow tree")
+	// Withdraw now requires a prepared room, not a request-backed attempt. The
+	// property moved out of the frontmatter validator, which reads no room.
+	// This is the negative that keeps the property enforced. All three archived
+	// request-less shapes fail it. One is a ref with no room on disk. One is a
+	// legacy ref that names the Briefing file itself. One is an archived room
+	// directory that holds briefing.json.
+	t.Run("no prepared room", func(t *testing.T) {
+		for _, shape := range []string{"absent room", "legacy briefing file", "archived room directory"} {
+			t.Run(shape, func(t *testing.T) {
+				workflow, entity := recordStageFixture(t, "validation",
+					"briefing:task:validation:attempt-2:revision-1", "      gate: true\n")
+				room := filepath.Join(workflow, "review", "validation", "briefing-2")
+				switch shape {
+				case "legacy briefing file":
+					if err := os.MkdirAll(filepath.Dir(room), 0o755); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(room, []byte("{}\n"), 0o644); err != nil {
+						t.Fatal(err)
+					}
+				case "archived room directory":
+					if err := os.MkdirAll(room, 0o755); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(filepath.Join(room, archivedBriefingLocator), []byte("{}\n"), 0o644); err != nil {
+						t.Fatal(err)
+					}
+				}
+				before := treeDigest(t, workflow)
+				if _, err := Withdraw(entity, WithdrawInput{WorkflowDir: workflow, Reason: "stale"}); err == nil ||
+					!strings.Contains(err.Error(), "no prepared gate room") {
+					t.Fatalf("%s withdrawal = %v", shape, err)
+				}
+				if got := treeDigest(t, workflow); got != before {
+					t.Fatalf("%s refusal changed workflow tree", shape)
+				}
+			})
 		}
 	})
 
@@ -583,17 +633,21 @@ func TestPrepareSuccessorRejectsCorruptedRetainedAuthorityWithoutChangingTree(t 
 	}); err != nil {
 		t.Fatal(err)
 	}
-	requestPath := filepath.Join(first.Room, "request.json")
-	request, err := os.ReadFile(requestPath)
+	briefingPath := filepath.Join(first.Room, preparedBriefingLocator)
+	briefing, err := os.ReadFile(briefingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(requestPath, bytes.Replace(request, []byte(`"actor": "person:captain"`), []byte(`"actor": "agent:other"`), 1), 0o644); err != nil {
+	tampered := bytes.Replace(briefing, []byte(`"summary": "Exact summary."`), []byte(`"summary": "Tampered."`), 1)
+	if bytes.Equal(tampered, briefing) {
+		t.Fatal("fixture lost the summary anchor this test tampers with")
+	}
+	if err := os.WriteFile(briefingPath, tampered, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	before := treeDigest(t, state)
 
-	if _, err := Prepare(entity, input); err == nil || !strings.Contains(err.Error(), "retained request.json") {
+	if _, err := Prepare(entity, input); err == nil || !strings.Contains(err.Error(), "frozen digest") {
 		t.Fatalf("successor prepare retained-authority error=%v", err)
 	}
 	if after := treeDigest(t, state); after != before {
@@ -602,7 +656,7 @@ func TestPrepareSuccessorRejectsCorruptedRetainedAuthorityWithoutChangingTree(t 
 }
 
 func TestPrepareReplayRejectsSymlinkedAuthorityEntriesWithoutChangingBytes(t *testing.T) {
-	for _, name := range []string{preparedBriefingLocator, "request.json"} {
+	for _, name := range []string{preparedBriefingLocator} {
 		t.Run(name, func(t *testing.T) {
 			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
 			input := PrepareInput{
@@ -899,24 +953,15 @@ func TestPrepareRollsBackPublishedRoomAfterBindingWriteFailure(t *testing.T) {
 	}
 }
 
+// TestPreparedAuthorityIsRecomputedDuringReadOnlyValidation covers AC-3 in the
+// read-only direction. A one-file room's retained authority is recomputed, and
+// this reds today because io.go skipped every request-less binding. Restore that
+// skip and both cases red.
 func TestPreparedAuthorityIsRecomputedDuringReadOnlyValidation(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
 		mutate func(t *testing.T, workflow, entity, artifact, room string)
 	}{
-		{
-			name: "request drift",
-			mutate: func(t *testing.T, _, _, _, room string) {
-				path := filepath.Join(room, "request.json")
-				body, err := os.ReadFile(path)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if err := os.WriteFile(path, bytes.Replace(body, []byte(`"actor": "person:captain"`), []byte(`"actor": "agent:other"`), 1), 0o644); err != nil {
-					t.Fatal(err)
-				}
-			},
-		},
 		{
 			name: "Briefing summary drift",
 			mutate: func(t *testing.T, _, _, _, room string) {
@@ -960,6 +1005,11 @@ func TestPreparedAuthorityIsRecomputedDuringReadOnlyValidation(t *testing.T) {
 	}
 }
 
+// TestChatDecisionValidatesPreparedAuthorityBeforeMutation is the mutating half
+// of AC-3. A one-file room whose Briefing drifted refuses the next gate record,
+// and leaves the entity bytes unchanged. This fails today: the shipped binary
+// records `state=closed ... decision=approve` over the same corruption, because
+// io.go skipped retained-authority validation for a request-less binding.
 func TestChatDecisionValidatesPreparedAuthorityBeforeMutation(t *testing.T) {
 	workflow, _, entity, artifact, _ := prepareFixture(t, "flat")
 	result, err := Prepare(entity, PrepareInput{
@@ -971,12 +1021,16 @@ func TestChatDecisionValidatesPreparedAuthorityBeforeMutation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	requestPath := filepath.Join(result.Room, "request.json")
-	request, err := os.ReadFile(requestPath)
+	briefingPath := filepath.Join(result.Room, preparedBriefingLocator)
+	briefing, err := os.ReadFile(briefingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(requestPath, bytes.Replace(request, []byte(`"actor": "person:captain"`), []byte(`"actor": "agent:other"`), 1), 0o644); err != nil {
+	tampered := bytes.Replace(briefing, []byte(`"summary": "summary"`), []byte(`"summary": "tampered"`), 1)
+	if bytes.Equal(tampered, briefing) {
+		t.Fatal("fixture lost the summary anchor this test tampers with")
+	}
+	if err := os.WriteFile(briefingPath, tampered, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	before, err := os.ReadFile(entity)
@@ -987,7 +1041,7 @@ func TestChatDecisionValidatesPreparedAuthorityBeforeMutation(t *testing.T) {
 		Decision:    "approve",
 		Actor:       "person:captain",
 		WorkflowDir: workflow,
-	}); err == nil || !strings.Contains(err.Error(), "retained request.json") {
+	}); err == nil || !strings.Contains(err.Error(), "frozen digest") {
 		t.Fatalf("drifted authority chat decision error=%v", err)
 	}
 	after, err := os.ReadFile(entity)

@@ -201,27 +201,36 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 			if record.ID == skipGate && attempt.ID == skipAttempt {
 				continue
 			}
-			if attempt.Briefing.RequestDigest == "" {
+			// A prepared room retains authority whether or not it has a
+			// request. The request checks below belong to a retained
+			// request-backed binding alone. The Briefing digest and the
+			// selected Git objects are what every gate presents, so every
+			// prepared room gets those two checks. A skip here gives the
+			// one-file room less validation than the two-file room had, and
+			// that inverts the point of the change.
+			if !preparedRoomBinding(entityPath, attempt.Briefing) {
 				continue
 			}
-			room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef))
-			requestBytes, err := os.ReadFile(filepath.Join(room, "request.json"))
-			if err != nil {
-				return fmt.Errorf("attempt %s retained request.json: %w", attempt.ID, err)
-			}
-			requestDigest, err := CanonicalDigest(requestBytes)
-			if err != nil || requestDigest != attempt.Briefing.RequestDigest {
-				return fmt.Errorf("attempt %s retained request.json does not match its frozen digest", attempt.ID)
-			}
-			request, err := decodeGateRoomRequest(requestBytes)
-			if err != nil {
-				return err
-			}
-			if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
-				request.Gate != record.ID || request.Attempt != attempt.ID ||
-				request.Briefing.ID != attempt.Briefing.ID || request.Briefing.Digest != attempt.Briefing.Digest ||
-				request.Actor != "person:captain" || request.Approver != "person:captain" {
-				return fmt.Errorf("attempt %s request does not bind its gate, attempt, Briefing, and captain authority", attempt.ID)
+			if attempt.Briefing.RequestDigest != "" {
+				room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef))
+				requestBytes, err := os.ReadFile(filepath.Join(room, "request.json"))
+				if err != nil {
+					return fmt.Errorf("attempt %s retained request.json: %w", attempt.ID, err)
+				}
+				requestDigest, err := CanonicalDigest(requestBytes)
+				if err != nil || requestDigest != attempt.Briefing.RequestDigest {
+					return fmt.Errorf("attempt %s retained request.json does not match its frozen digest", attempt.ID)
+				}
+				request, err := decodeGateRoomRequest(requestBytes)
+				if err != nil {
+					return err
+				}
+				if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
+					request.Gate != record.ID || request.Attempt != attempt.ID ||
+					request.Briefing.ID != attempt.Briefing.ID || request.Briefing.Digest != attempt.Briefing.Digest ||
+					request.Actor != "person:captain" || request.Approver != "person:captain" {
+					return fmt.Errorf("attempt %s request does not bind its gate, attempt, Briefing, and captain authority", attempt.ID)
+				}
 			}
 			manifest, err := boundBriefingManifest(entityPath, attempt.Briefing)
 			if err != nil {
