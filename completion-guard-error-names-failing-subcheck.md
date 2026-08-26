@@ -34,6 +34,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:9xnaq83nryb38fyt18mh0gbt:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:9xnaq83nryb38fyt18mh0gbt-ideation-1
+              briefing:
+                id: briefing:9xnaq83nryb38fyt18mh0gbt:ideation:attempt-1:revision-1
+                digest: sha256:7c3d06cf5e1fa2dcec86f81bff1a82d94a3598e493cff0eb7744366856bece47
+                request-digest: sha256:bbeddb51f2622ef1af95fe8ae5c7d5f9b432710bee1bd7ae4076488e189b9722
+                room-ref: ./completion-guard-error-names-failing-subcheck/review/ideation/briefing-1
 ---
 
 The stage-advance guard emits one message — "cannot change status away from entered stage until a durable, complete ## Stage Report is committed" — for four distinct failures: the stage-report heading is not found (exact-token match), the checklist is incomplete (missing bullets, FAILED items, or no Summary), the entity file is untracked, or the entity file differs from local HEAD. An operator who cannot tell which failed diagnoses by round-trip; one field session needed three.
