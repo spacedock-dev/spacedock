@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:wyzg6knr8whtmg79mxkb78jg:backlog:attempt-1:revision-1",
+  "question": "Approve ideation to downgrade only explicitly retired gate-schema fields to visible warnings while preserving nonzero validation for current corruption?",
+  "artifacts": [
+    {
+      "id": "artifact:wyzg6knr8whtmg79mxkb78jg:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d56686f602b9066ca933acf36eecf23e0089e989/validate-warns-on-retired-schema-fields/gate-decision.md",
+      "rev": "sha256:9c97a3ab9ce20706c2642b72444cda190a8cd9f6bb54b5b424aba749c60739c4",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: immutable history currently makes validation permanently red; the bounded design restores signal without migration or broad schema weakening."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:wyzg6knr8whtmg79mxkb78jg:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/d56686f602b9066ca933acf36eecf23e0089e989/validate-warns-on-retired-schema-fields.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:dd91ecd9cf405e92619026c257c0e2767897da62d39fa37cbb6ae96d3ac5d1f0"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:wyzg6knr8whtmg79mxkb78jg:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
