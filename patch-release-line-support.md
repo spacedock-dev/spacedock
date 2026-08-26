@@ -87,6 +87,8 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
+pr: "#761"
 ---
 
 **LEAN CUT (captain ruling, 2026-08-25).** Stop the release-line cut that silently regresses the
