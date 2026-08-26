@@ -205,3 +205,16 @@ and the corresponding paragraph in `docs/site/reference/frontmatter-contract.md`
 ### Feedback Cycles
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+
+## Stage Report: ideation
+
+- DONE: Define an explicit, reviewable retired-field classification and warning/exit-code behavior that restores validation signal without rewriting history or weakening unrelated unknown-field and corruption checks.
+  Commit `8d122d5c3` defines exact path plus historical-shape rules for `gates.current` and Briefing `digest-domain`, preserves the separate provider/application classes, and leaves every other or malformed key strict.
+- DONE: Produce entity-level value and boundary criteria plus falsifiable fixtures where retired-only findings warn and exit zero, while adding one real current-schema defect exits nonzero; name how the retired set can fail closed when fields evolve.
+  AC-1 measures exit 1 to 0 with two warnings; AC-2 plants an invalid canonical digest; AC-3's wrong-path/value table fails if classification widens, and the closed code-owned set requires an explicit code, fixture, and docs change to evolve.
+- DONE: Refine the net LOC/file estimate and tolerance, declare output/grammar/storage semantics, identify the smallest alternative and why it is insufficient, and specify the concrete documentation change if user-visible validation output changes.
+  Expected surface is net +145 LOC across 6 files with +/-45 net and +1-file tolerance; the entity pins text/JSON stderr/stdout/exit behavior, no grammar or storage write, rejects decoder-string matching, and includes the two-file contract diff.
+
+### Summary
+
+Ideation turns the captain's “no migration, just warn” ruling into an exact compatibility boundary for the two fields Spacedock retired together in `f566f821b`. It pairs the recovered validation value with strict corruption controls, byte-preservation and authority checks, focused CLI fixtures, a bounded implementation surface, and concrete contract wording.
