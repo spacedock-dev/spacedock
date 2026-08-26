@@ -17,7 +17,7 @@ The stage-advance guard emits one message — "cannot change status away from en
 
 ## Problem
 
-{Ideation fills this in. Seeded: internal/status/entered_stage.go hasCompleteCommittedStageReport returns one bool from hasCompleteStageReport && entityPathCleanInHEAD; handlers.go renders one string. The guard is fully local (two git commands against local HEAD) — the field report's remote-push theory arose only because the message gave no clue the failure was a dirty working tree. The exact-heading match (a parenthetical suffix defeats it) is also invisible in the message.}
+{Ideation fills this in. Seeded: internal/status/entered_stage.go hasCompleteCommittedStageReport returns one bool from hasCompleteStageReport && entityPathCleanInHEAD; handlers.go renders one string. The guard is fully local (two git commands against local HEAD) — the field report's remote-push theory arose only because the message gave no clue the failure was a dirty working tree. The exact-heading match (a parenthetical suffix defeats it) is also invisible in the message. Folded by captain direction 2026-08-26, same error-vocabulary family: (1) merge guard's "ineligible" refusal on an ungated terminal transition names no path forward — it should say the workflow's terminal transition is ungated and give the status --set form; (2) a checklist bullet written as `- DONE (annotation):` silently drops out of the guard's checklist (the colon must follow the status token), so a report can pass or fail for invisible reasons — the message should name unrecognized near-miss bullets.}
 
 ## Proposed approach
 
