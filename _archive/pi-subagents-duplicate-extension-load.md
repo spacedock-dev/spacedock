@@ -1,9 +1,9 @@
 ---
 title: "spacedock pi dedupes the pi-subagents extension when it is installed as a package"
-status: validation
+status: done
 source: "GitHub issue spacedock-dev/spacedock#746 — spacedock pi fails at startup when pi-subagents is installed as a package: duplicate extension load ('Tool \"subagent\" conflicts with ...')"
 started: 2026-08-21T03:45:47Z
-completed: 2026-08-21T04:30:00Z
+completed: 2026-08-26T22:55:05Z
 verdict: PASSED
 score: 0.8
 worktree: .worktrees/spacedock-ensign-pi-subagents-duplicate-extension-load
@@ -81,9 +81,10 @@ gates:
                 reason: 'Captain approved validation gate (re-verified on trimmed test set): AC-1 proven by production gate + detection unit test, AC-2 proven with falsifying change, 4 pre-existing failures identical on base, diff +85/-17. Deliver via stacked PR on rebased PR 725.'
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
 pr: pr-merge:747
+archived: 2026-08-26T22:55:05Z
 ---
 
 `spacedock pi` loads the `pi-subagents` extension twice under two different specifiers when the package is also registered in `~/.pi/agent/settings.json` `packages` — the exact setup `spacedock pi --check` recommends. Package discovery loads `<pkg>/index.ts` (re-exporting `./src/extension/index.ts`), and `spacedock pi` additionally passes `--extension <pkg>/src/extension/index.ts --skill <pkg>/skills/pi-subagents` (internal/cli/pi.go, argv built at the `--extension`/`--skill` block; extensionPath is `filepath.Join(pkg, "src", "extension", "index.ts")`). Pi keys extension identity by resolved specifier, not module identity, so the second registration of `subagent`/`subagent_wait` collides and startup fails with `Tool "subagent" conflicts with ...`. Plain `pi` works; `spacedock pi -- --ne` works only by silencing all discovered extensions (lossy — also drops pi-intercom and host extensions).
