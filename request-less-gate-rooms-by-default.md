@@ -70,6 +70,17 @@ gates:
                 digest: sha256:09b51baaf0dc18b87b81aff1eea38667e211d30871ac86264fcda8bdc269a154
                 request-digest: sha256:6ee5a290e31c631a680efc9d019816ecf85b9aa411760be3ca307b9b16a38789
                 room-ref: ./request-less-gate-rooms-by-default/review/ideation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:rx3daftacggfmw1pt2febw31:ideation:3
+                briefing: briefing:rx3daftacggfmw1pt2febw31:ideation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-26T00:29:36.785316Z"
+                decision: approve
+                reason: 'Captain chat 2026-08-25: ''approve rx'' — accepts the one-shape reset design on briefing-3; approved baselines: production +70 across 5 files (±25/±2) and proof +330 across 7 files (±80/±2), reported separately'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Every gate room holds two files. Only the subspace provider journey reads `request.json`, and the entity frontmatter already holds every fact that file carries. Make the room one file. Name it `index.json`, and keep every legacy name readable forever.
