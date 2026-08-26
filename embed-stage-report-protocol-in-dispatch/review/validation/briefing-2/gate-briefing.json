@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-2:revision-1",
+  "question": "Approve validation (cycle 2) to enter the terminal merge ceremony: AC-2/AC-3 green with the adversarial falsifier breaking the right tests; AC-1 live lane now CI-wired (TestLivePiNonSelfDescribingDispatch selected by the pi-live front-door-smoke step) and compiles, auth-blocked locally but runs in CI; firstActionBlock overclaim removed; production code (build.go +29/-2) within estimate; surface deviation (483 ins / 5 files) is in-scope test infrastructure. The correction wired the test into CI; the embed itself is unchanged.",
+  "artifacts": [
+    {
+      "id": "artifact:t4rqqmmrqh69adgb1bbdx838:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/a2f2da390059e367d1abff0a10b02d3e9e842764/embed-stage-report-protocol-in-dispatch.md",
+      "rev": "sha256:0670ad0f627a5e5224db6394cb05d0023962c353e61a5b8f1ca014a4e10124f4",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 validation re-verification. AC-2 (fixture): pi body carries the protocol tokens, claude/codex do not — all subtests green. AC-3 (adversarial revert): removing the host==pi embed makes the pi subtest + ensigncycle build guard FAIL (claude/codex stay green), self-describing lane unaffected. AC-1 (live lane): TestLivePiNonSelfDescribingDispatch now selected by the pi-live front-door-smoke step -run filter; compiles under -tags live; live dispatch auth-blocked locally, runs in CI. firstActionBlock overclaim gone. Non-live tests/gofmt/vet clean; full go test ./... sweep green except one pre-existing env failure (TestVersionAmbiguousMarkersExitZero, confirmed on main). Surface 483 ins / 5 files vs ~130 / 3 estimated — test infrastructure, not production scope creep."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/3950d47e0bb55fe096319821ff5f04e0a62f97ee/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:15292dc8475076d3e10fbab8e469566210027d7c5434604593d69cc29c33fb00"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-2:revision-1:item-4",
+      "uri": "git-root://main/3950d47e0bb55fe096319821ff5f04e0a62f97ee/internal/ensigncycle/pi_nonself_describing_live_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:f87ddc4397ec9d8e7fd42f5d692ebfa54e33f4866530b4b61dd36ca4e5969208"
+    }
+  ]
+}
