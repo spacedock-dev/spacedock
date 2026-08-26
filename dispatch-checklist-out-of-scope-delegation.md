@@ -128,3 +128,18 @@ Verified by: keep the fixture's passive “the entity advances to `done`” sent
 ### Summary
 
 Ideation narrows the repair to one host-neutral composer rule at the point where the bad checklist was created. The unchanged passive fixture and retained failing run form the negative control, while one targeted Claude live journey must prove zero worker delegation and correctly attributed First Officer transitions before the guidance is accepted.
+
+## Stage Report: implementation
+
+- DONE: Add only the approved host-neutral authority paragraph at the dispatch-checklist composition boundary; do not change the fixture, grader, CLI, storage, or worker contract.
+  Commit `6af283ec0` adds the approved paragraph after `«dispatch.checklist»` assembly in `skills/first-officer/references/fo-dispatch-core.md`; removing it makes lifecycle prose eligible for checklist composition again.
+- DONE: Keep the candidate within net 0..+3 lines in exactly one file and run gofmt, go test ./..., and go test ./... -race.
+  Diff is 2 insertions/0 deletions in one file; gofmt ran with its unrelated formatter-only delta excluded, and exact `go test ./...` plus `go test ./... -race` pass (the former also reproduced its initial timeout target alone before a clean retry).
+- DONE: Run the unchanged targeted Claude live journey and audit retained artifacts for 0-of-2 delegated transitions, zero worker state mutations, and every durable status delta paired with a successful post-completion root-FO spacedock command.
+  Both retained runs emit 0-of-2 delegated checklists (4/4 contain only the ready report), descendant events contain no state/frontmatter command, and all four terminal `ready -> done` deltas follow completion signals and successful root `merge guard --verdict passed` calls; artifacts are under `/tmp/spacedock-live-yv3w8rhxrj-candidate-6af283ec0{,-rerun}`.
+- FAILED: The unchanged targeted Claude live test exits successfully.
+  Run 1 failed because ready-two's worker report was not separately committed; run 2 failed because ready-two lacked the path-scoped dispatch-entry commit. Both completed the two journeys and preserved the mechanism audit above, but these out-of-scope durability findings kept the unchanged grader red.
+
+### Summary
+
+Implementation clarifies the First Officer's checklist-composition authority at the approved one-file, two-line surface and passes both repository regression suites. Two retained Claude journeys eliminate the original 2-of-2 delegation defect and correctly attribute every terminal state transition to a successful post-completion root-FO command, while the unchanged grader remains red on two distinct lifecycle durability failures outside the approved candidate surface.
