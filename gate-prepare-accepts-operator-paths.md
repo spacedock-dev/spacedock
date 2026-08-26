@@ -22,6 +22,16 @@ gates:
                 id: briefing:9n02rsw1s4tztqzgmwb07n1k:backlog:attempt-1:revision-1
                 digest: sha256:a1db71cb8071b29305e8b027b71b0c14747ac5c4c62eaee6631f73b1de70ede5
                 room-ref: ./gate-prepare-accepts-operator-paths/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9n02rsw1s4tztqzgmwb07n1k:backlog:1
+                briefing: briefing:9n02rsw1s4tztqzgmwb07n1k:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-26T21:18:44.298895Z"
+                decision: approve
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 `gate prepare --artifact` and `--reference` resolve supplied paths relative to the state entity directory. An operator who supplies a project-relative path (`docs/triage/.spacedock-state/x.md`) gets it re-prefixed under the state root and the command fails: "selected source must be a readable non-symlink regular file" with the doubled path. Three of six live preparations hit this, and the gate skill's cwd-path wording is ambiguous against the binary's resolution rule.
