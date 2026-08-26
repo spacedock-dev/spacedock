@@ -481,7 +481,7 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 		durableAppendReport(t, root, "ready-one")
 	}
 	room := "ready-one/review/review/briefing-1"
-	roomFile := room + "/gate-briefing.json"
+	roomFile := room + "/index.json"
 	if mutation == "atomic-room-preexisting" {
 		path := filepath.Join(root, "ready-one.md")
 		writeFile(t, path, durableBindRoom(readFile(t, path), room))
@@ -533,9 +533,9 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 			writeFile(t, path, content)
 			if roomDispatch {
 				if mutation == "dispatch-room-sibling" {
-					roomFile = "ready-one/review/review/briefing-2/gate-briefing.json"
+					roomFile = "ready-one/review/review/briefing-2/index.json"
 				} else {
-					roomFile = room + "/gate-briefing.json"
+					roomFile = room + "/index.json"
 				}
 				writeFile(t, filepath.Join(root, roomFile), "new\n")
 				git(t, root, "add", "--", slug+".md", roomFile)
@@ -576,9 +576,9 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 				if mutation != "atomic-room-preexisting" {
 					writeFile(t, path, durableBindRoom(readFile(t, path), workerRoom))
 				}
-				workerRoomFile := workerRoom + "/gate-briefing.json"
+				workerRoomFile := workerRoom + "/index.json"
 				if mutation == "atomic-room-outside" {
-					workerRoomFile = "ready-one/review/review/briefing-2/gate-briefing.json"
+					workerRoomFile = "ready-one/review/review/briefing-2/index.json"
 				}
 				writeFile(t, filepath.Join(root, workerRoomFile), "new\n")
 				git(t, root, "add", "--", slug+".md", workerRoomFile)

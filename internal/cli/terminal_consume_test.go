@@ -105,6 +105,25 @@ func approvedTerminalGate(t *testing.T, root string) {
 	}
 }
 
+// disturbRetainedGateRoom tampers the retained canonical Briefing of the room
+// approvedTerminalGate published, so the frozen digest no longer matches. The
+// Briefing is the whole retained authority of a one-file room.
+func disturbRetainedGateRoom(t *testing.T, root string) {
+	t.Helper()
+	var briefingFile string
+	if err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && info.Name() == "index.json" {
+			briefingFile = p
+		}
+		return nil
+	}); err != nil || briefingFile == "" {
+		t.Fatalf("locate retained index.json: %v %q", err, briefingFile)
+	}
+	if err := os.WriteFile(briefingFile, []byte("{\"type\":\"tampered\"}\n"), 0o644); err != nil {
+		t.Fatalf("disturb briefing room: %v", err)
+	}
+}
+
 func entityFields(t *testing.T, entity string) map[string]string {
 	t.Helper()
 	return status.ParseFrontmatter(entity)
@@ -474,18 +493,7 @@ func TestTerminalSetRefusedOnUnclassifiableAuthority(t *testing.T) {
 		t.Fatalf("consume exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
 	// Disturb the retained briefing room: digest-stale authority.
-	var requestFile string
-	if err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && info.Name() == "request.json" {
-			requestFile = p
-		}
-		return nil
-	}); err != nil || requestFile == "" {
-		t.Fatalf("locate retained request.json: %v %q", err, requestFile)
-	}
-	if err := os.WriteFile(requestFile, []byte("tampered"), 0o644); err != nil {
-		t.Fatalf("disturb briefing room: %v", err)
-	}
+	disturbRetainedGateRoom(t, root)
 	before, err := os.ReadFile(entity)
 	if err != nil {
 		t.Fatal(err)
@@ -524,20 +532,9 @@ func TestMergeGuardRefusesDigestStaleAuthorityByteClean(t *testing.T) {
 	if code, out, errOut := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=pr-merge:7"); code != 0 {
 		t.Fatalf("record merge sentinel exit=%d stdout=%q stderr=%q", code, out, errOut)
 	}
-	// THEN disturb the retained briefing room recorded at prepare: tamper the
-	// room's retained request.json so its frozen digest no longer matches.
-	var requestFile string
-	if err := filepath.Walk(root, func(p string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && info.Name() == "request.json" {
-			requestFile = p
-		}
-		return nil
-	}); err != nil || requestFile == "" {
-		t.Fatalf("locate retained request.json: %v %q", err, requestFile)
-	}
-	if err := os.WriteFile(requestFile, []byte("tampered"), 0o644); err != nil {
-		t.Fatalf("disturb briefing room: %v", err)
-	}
+	// THEN disturb the retained briefing room recorded at prepare, so its
+	// frozen digest no longer matches.
+	disturbRetainedGateRoom(t, root)
 	before, err := os.ReadFile(entity)
 	if err != nil {
 		t.Fatal(err)

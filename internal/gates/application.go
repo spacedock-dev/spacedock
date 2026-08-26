@@ -237,12 +237,17 @@ const (
 )
 
 func inspectReviewedInput(entityPath string, binding Briefing) reviewedInputCheck {
-	path := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
 	var digest string
 	var err error
 	var data []byte
 	if binding.RequestDigest == "" {
-		data, err = os.ReadFile(path)
+		// boundBriefingPath resolves a prepared room's locator and a legacy ref
+		// to the Briefing file itself. It does not compare the digest, so a
+		// drifted Briefing still reports stale here rather than unknown.
+		var path string
+		if path, err = boundBriefingPath(entityPath, binding); err == nil {
+			data, err = os.ReadFile(path)
+		}
 	} else {
 		data, _, err = boundBriefingBytes(entityPath, binding)
 	}

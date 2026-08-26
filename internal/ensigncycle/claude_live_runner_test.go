@@ -304,8 +304,8 @@ func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, sce
 		"--reference", fixture.references[1],
 		"--workflow-dir", fixture.root)
 	firstRoom := outputValue(prepared.stdout, "room")
-	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
-	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
+	firstBriefingPath := filepath.Join(firstRoom, "index.json")
+	firstBriefing := readFile(t, firstBriefingPath)
 	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
 	mustRecordedGate(t, binary, fixture.root,
 		"gate", "withdraw", "recorded-gate-task",
@@ -326,8 +326,7 @@ func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, sce
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	current := doc.Records[0].Attempts[1]
-	if readFile(t, filepath.Join(firstRoom, "gate-briefing.json")) != firstBriefing ||
-		readFile(t, filepath.Join(firstRoom, "request.json")) != firstRequest {
+	if readFile(t, firstBriefingPath) != firstBriefing {
 		t.Fatalf("recovery rewrote withdrawn room bytes\nArtifacts: %s", result.artifactDir)
 	}
 	secondRoom := filepath.Join(filepath.Dir(fixture.entity), filepath.FromSlash(current.Briefing.RoomRef))
