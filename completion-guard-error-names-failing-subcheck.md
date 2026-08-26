@@ -300,6 +300,10 @@ pinned by successful ungated direct/merge journeys and the pending-terminal refu
   `go test ./internal/status -run 'TestEntered' -count=1`, focused terminal tests, `go test ./...`, and `go test ./... -race` passed; no-origin, sibling-dirt, entity-dirt, latest-cycle, and force controls remain covered.
 - DONE: Candidate surface remains within the approved ideation tolerance.
   Commit `d24e90a8e` changes the declared six files by 216 insertions and 41 deletions (+175 net), within the +145 +/-40 net and six +/-1 file bounds.
+- DONE: Changed hot paths have no new scaling or blocking-I/O risk.
+  Completion still reads one entity and runs the same two path-scoped Git commands; parsing adds bounded linear passes over those bytes, so no over-limit test is warranted.
+- DONE: The command-reference guidance matches the exercised authority boundary.
+  It gives the successful ungated full status form and excludes pending terminal-target approval, whose real full-form control still routes only through merge guard.
 - DONE: Reviewer-finding disposition and delivery recommendation.
   Outcome defects: none. Evidence defects: none. Material findings: none. Deferred risks: none. Polish findings: none. The detached checkout exposed unrelated pre-existing gofmt drift in `internal/release/runtime_live_evidence_workflow_test.go`; it is outside commit `d24e90a8e` and does not affect this candidate recommendation.
 
