@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4avk4msa3ktyk1fdt6j5ktw1:backlog:attempt-1:revision-1",
+  "question": "Approve this task to enter ideation: gate the Pi front door bootstrap on resume so 'spacedock pi --resume' does not re-load the FO contract as a fresh start — mirror the Claude/Codex front door's containsResume gate in internal/cli/pi.go, and decide whether the .pi/extensions/spacedock.ts session_start handler also needs resume detection?",
+  "artifacts": [
+    {
+      "id": "artifact:4avk4msa3ktyk1fdt6j5ktw1:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0af098b988add73a30e6700b5efbdfab64b5cbc0/gate-pi-frontdoor-bootstrap-on-resume.md",
+      "rev": "sha256:819a734579bc2aff7f31af0cd4189886a79ead485aebc0ac92b4f4661d3a51a8",
+      "mediaType": "text/markdown",
+      "summary": "spacedock pi appends piBootstrapPrompt ('Use :first-officer for this whole Pi session.') unconditionally (pi.go:271) — zero containsResume calls vs frontdoor.go's 3 (Claude/Codex gate on !resume). The .pi/extensions/spacedock.ts session_start handler re-injects FO_BOOTSTRAP_TEXT with no resume detection. CL compaction-hook hypothesis checked and disproven (session_compact is correctly scoped). Fix scope: add the resume gate to pi.go (mirror frontdoor.go:556-559 token set); decide in ideation whether the extension session_start needs resume-awareness or whether the launch-prompt gate alone suffices (the extension's re-injection is load-bearing for compaction survival, so touching it risks PR #738)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:4avk4msa3ktyk1fdt6j5ktw1:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/cli/pi.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:7eb8957cbdd1d66c156f6a3d5689ddef643a7a6141049f0cc41fb574aa1ed016"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:4avk4msa3ktyk1fdt6j5ktw1:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/cli/frontdoor.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:84f8b2450fb7e355478d2472645e2b54402c9693fd7c8c775c400b55a4f197bb"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:4avk4msa3ktyk1fdt6j5ktw1:backlog:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/.pi/extensions/spacedock.ts",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b200c3b7a4add037129a3c07df97833166bcd3bd0cf379713e6be8dd111a517e"
+    }
+  ]
+}
