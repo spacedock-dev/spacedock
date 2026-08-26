@@ -55,6 +55,17 @@ gates:
                 digest: sha256:f0b937d6dcaed3c8f6e31ca7b57ab15e360959d4ed1f6c10a832b58e6cb5e422
                 request-digest: sha256:fae652050c4670990fffd390aae2b1f35f96ef09c2c37da8c81f420d89710f9a
                 room-ref: ./embed-stage-report-protocol-in-dispatch/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:t4rqqmmrqh69adgb1bbdx838:validation:1
+                briefing: briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-26T08:47:44.172031Z"
+                decision: approve
+                reason: 'Captain approve (PASSED-with-deferred-risk): AC-2/AC-3 green with the falsifier breaking the right tests; firstActionBlock overclaim removed; production code (build.go +31/-2) within estimate. AC-1 live run deferred to the Pi CI lane per captain directive ''run pi ci lane'' — auth-blocked locally, runs in CI on PR. Surface deviation (482 ins / 5 files vs ~130 / 3) is test infrastructure, not production scope creep; noted for the record.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
 ---
