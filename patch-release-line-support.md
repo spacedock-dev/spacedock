@@ -67,6 +67,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:d0g21c517b5nvga1ybwckapk:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:d0g21c517b5nvga1ybwckapk-validation-1
+              briefing:
+                id: briefing:d0g21c517b5nvga1ybwckapk:validation:attempt-1:revision-1
+                digest: sha256:e7c096b0bac498f1c15340e0e3f5df97c4aa126d88f918ec27aba9a9f6014147
+                request-digest: sha256:4a7f0ea2b267c662c7e258ef29406c6976f18dc3c25ee923766527367af421b3
+                room-ref: ./patch-release-line-support/review/validation/briefing-1
 ---
 
 **LEAN CUT (captain ruling, 2026-08-25).** Stop the release-line cut that silently regresses the

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d0g21c517b5nvga1ybwckapk:validation:attempt-1:revision-1",
+  "question": "Accept validation's PASSED and deliver the lean-cut release-machinery fix as a stacked PR based on #760's branch?",
+  "artifacts": [
+    {
+      "id": "artifact:d0g21c517b5nvga1ybwckapk:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/4332f8aa10b10c8f3922ceeb1e1de5a6f9366873/patch-release-line-support.md",
+      "rev": "sha256:3e7f3570a53c24eec065b3d4809e47023d0930baa3b7855978d6104a1d884da2",
+      "mediaType": "text/markdown",
+      "summary": "Validator re-verified all four ACs first-hand under the release-machinery posture: the 10-row unit table with its equality-row falsifier, both structural guards red under real on-disk mutations (including symmetric widening — the equality check cannot be gamed), the stamp ordered after the verify poll, all six doc blocks applied. Suites green from their own exit codes at raised timeouts (-count=1 20m exit 0; -race 30m exit 0, no data race). Detached audit on a throwaway clone: five live mutations each caught and restored; two green-under-mutation probes confirmed consequences the captain's posture rulings already accepted, not new findings; no AC evidence-free. Stack verified: exactly two commits atop 4b5b4073a, worktree clean; surface +381/10 matching the amended baseline. PASSED; no material findings; five deferred risks all previously recorded with standing revisit conditions; one new polish recommendation (make the stamp-order and run-block catches intentional pins). The do-not-cut-a-patch-line constraint stands until mex ships."
+    }
+  ]
+}
