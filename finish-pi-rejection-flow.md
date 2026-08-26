@@ -10,7 +10,7 @@ score: 0.8
 group: pi-live-followup
 worktree: .worktrees/spacedock-ensign-finish-pi-rejection-flow
 issue:
-pr: "#750"
+pr: pr-merge:750
 mod-block: merge:pr-merge
 sprint: pi-live-completeness
 gates:
