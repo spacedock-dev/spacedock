@@ -1,7 +1,7 @@
 ---
 id: rx3daftacggfmw1pt2febw31
 title: Gate rooms hold one canonical Briefing file; request.json is retired
-status: implementation
+status: validation
 source: "Captain gate-format review 2026-08-25: variance scan found 499/499 rooms carry request.json while only ~8 July-era provider results ever consumed one; q0 (subspace-r-scaffolded-gate-room, spacedock-subspace, at validation) finalizes the provider journey the file exists for"
 started: 2026-08-25T17:27:46Z
 completed:
