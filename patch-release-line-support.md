@@ -305,7 +305,11 @@ real `release.yml` step's `run` block and executes it against a fixture git repo
 `GIT_DIR`/`GIT_WORK_TREE` with a stubbed `$GITHUB_OUTPUT`. This task extends that proven harness with
 a bare origin (spike 1's shape) rather than inventing one.
 
-**Declared harness limitation.** The replayed steps invoke `go run ./cmd/spacedock-release`, which
+**Declared harness limitation — MOOT as of the Cycle 1 proof-posture ruling.** No harness ships; the
+paragraph below is retained as the record of what was designed, not as a description of the
+deliverable. Validation should expect no replay harness and no binary substitution in the diff.
+
+The replayed steps invoke `go run ./cmd/spacedock-release`, which
 resolves relative to the process working directory. Running with the working directory at the repo
 root would let a replayed stamp write this checkout's real manifests. The harness therefore runs with
 the working directory in the fixture and substitutes that one token for a pre-built binary path.
@@ -381,47 +385,48 @@ targets are named in the test plan.
 
 ## Acceptance criteria
 
-Each AC's baseline is the SAME replay run against the CURRENT `release.yml`, which must produce the
-stated failing result. That baseline is independent of this task's code and can move the wrong way.
+**Proof posture (captain ruling, 2026-08-25; README "Release-machinery proof posture").** A release
+failure is loud, so the next real cut is the live test for in-situ shell behavior. Decision logic is
+proven by Go unit table, YAML wiring by structural check, and nothing replays workflow shell against
+a fixture repository. Each AC below states which of the three carries it.
 
-**AC-1 (value) — A stable tag older than the release `stable` serves never reaches publication: the
-run fails in `e2e-gate`, and on the same fixture the unguarded path DOES reach a published state.**
-Verified by: `TestStableRegressionGateBlocksOlderLine` in
-`internal/release/stable_regression_shell_test.go` — spike TEST E's fixture (`stable` at the 0.28.0
-commit, a CHILD commit stamped 0.27.1 and tagged `v0.27.1`), replaying the real gate step and
-asserting a non-zero exit with the tag and both versions named in stderr. Paired with
-`TestUnguardedOldLineTagWouldReachStable`, which on the SAME fixture runs the real stable-push step
-WITHOUT the gate and asserts the push SUCCEEDS and `stable` then serves 0.27.1 — the independent
-baseline, and the proof the block is not redundant with git's own ancestry check. Falsifying change:
-flip the gate's comparison to `<= 0` (the pass case reds) or delete the gate step from `e2e-gate`
-(the structural check in `stable_regression_shell_test.go` reds). Today's baseline: the gate step
-does not exist, the run is green, and `TestUnguardedOldLineTagWouldReachStable` describes exactly
-what today's pipeline does.
+**AC-1 (value) — A stable tag older than the release `stable` points at never reaches publication:
+the run fails in `e2e-gate`, before goreleaser starts.**
+Verified by: `TestEvaluateStableRegressionGate` in `internal/release/stable_regression_gate_test.go`
+— the decision table over every input class, including the older-tag block rows, the `>=` boundary
+that lets a re-run pass, and the error rows that keep the gate loud on input it cannot read. This is
+the silent class the posture bullet names: a wrong decision that publishes. Paired with
+`TestReleaseStepsSitInTheirOwningJobs` in `stable_regression_wiring_test.go`, which binds the gate
+step to `e2e-gate` — the job goreleaser needs, and therefore the placement that gives the gate its
+blocking power. Falsifying change: flip the comparison to `<= 0` (the equality row reds — verified
+live) or rename/move the gate step out of `e2e-gate` (the presence guard reds — verified live
+against a mutated `release.yml`). In-situ: the gate's shell arms (the `ls-remote` exit-2 carve-out
+and the fail-closed arm) are observed at the next real cut, per the posture.
 
-**AC-2 (value) — A patch tag that PASSES the regression gate still leaves `main` untouched: after an
-`edge-advance` replay on a `v0.27.1` tag whose decision output is `advance=false`, `main`'s tip SHA
-and the bytes of `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and the FO shared-core
-prose are identical to their pre-run values.**
-Verified by: `TestPatchTagDoesNotStampMain` in the same file — a fixture repo tagged `v0.26.0`,
-`v0.27.0`, `v0.28.0-pre0`, replaying the `decision` step and then the stamp step under the decision
-it produces for `v0.26.1`, asserting `main` is byte-identical; plus a structural check in
-`edge_advance_wiring_test.go` that the stamp step's `if:` names the same
-`steps.decision.outputs.advance` condition as the auto-pre0 step, with its adversarial twin
-(diverge them → red). The structural half is load-bearing: a replay drives the step directly and
-cannot prove Actions gates it. Falsifying change: remove the gate from the stamp step's `if:`, or
-widen it back to `!contains(github.ref, '-')` — the wiring guard reds. Today's baseline: the same
-replay stamps `main` DOWN to 0.26.1.
+**AC-2 (value) — A patch tag that PASSES the regression gate still leaves `main` untouched: the
+`main` stamp cannot run on a tag whose latest-line decision is `advance=false`.**
+Verified by: `TestMainStampSharesThePre0DecisionGate` in `edge_advance_wiring_test.go` — the stamp
+step's `if:` must be EQUAL to the auto-pre0 step's `if:`, not merely carry some gate, so the stamp
+and the binary that backs it cannot disagree. Its adversarial twin widens the stamp's `if:` back to
+the stable-path-only form the retired goreleaser step carried, and the guard reds. Paired with
+`TestReleaseStepsSitInTheirOwningJobs`, which binds the stamp to `edge-advance` — the job that owns
+the decision. This AC is wiring, so the structural check is the whole proof: Actions itself
+evaluates the `if:`, and per the posture that evaluation is observed at the next real cut.
+Falsifying change: remove the decision gate from the stamp's `if:`, or diverge it from the pre0
+step's — the guard reds (verified live).
 
-**AC-3 (value) — A latest-line stable cut needs zero human commits to restore the edge line: after a
-full `edge-advance` replay on a latest-line stable tag, `main`'s manifest version equals the auto-cut
-pre0 tag's version and the FO prose pin equals its major.minor.**
-Verified by: `TestLatestLineCutStampsMainToPre0` in the same file — replay on `v0.27.0` against a
-fixture whose `main` carries 0.27.0, asserting `main`'s tip has `version: 0.28.0-pre0` and
-`These skills require binary minor 0.28`, matching the `v0.28.0-pre0` tag the same job cut.
-Falsifying change: stamp `$RELEASE_VERSION` instead of the `edge-pre0-version` output — `main` lands
-on 0.27.0, the manifest/tag pair disagrees, and the test reds. Today's baseline: the same replay
-leaves `main` at 0.27.0 while the pre0 tag is 0.28.0-pre0 — the exact 6m18s / one-hand-commit
-mismatch measured at the v0.27.0 cut (pre0 tag 21:55:31, hand repair b8346ffc9 at 22:01:49).
+**AC-3 (value) — A latest-line stable cut needs zero human commits to restore the edge line: the
+`main` stamp writes the `edge-pre0-version` output, which is the version the same job's auto-cut
+tags.**
+Verified by: `TestMainStampSharesThePre0DecisionGate` for the co-location and shared gate, plus the
+shipped `Pre0EdgeVersion` unit coverage for the version arithmetic — the stamp and the tag call the
+SAME command on the SAME input, so agreement is by construction rather than by assertion.
+Falsifying change: stamp `$RELEASE_VERSION` instead of the `edge-pre0-version` output; `main` then
+lands on the released version and the manifest/tag pair disagrees. Recorded baseline, measured
+before this change: on the fixture the v0.27.0 replay left `main` at 0.27.0 while the auto-cut pre0
+tag was v0.28.0-pre0 — the exact 6m18s / one-hand-commit mismatch at the v0.27.0 cut (pre0 tag
+21:55:31, hand repair b8346ffc9 at 22:01:49). Per the posture, the restored edge line is observed at
+the next real cut.
 **Scope of the "zero human commits" claim, after the briefing-1 cut of the retry:** it is a claim
 about the SUCCESSFUL path, which is the path the 6m18s baseline measured. A concurrent merge to
 `main` reds the job instead, and the recovery is a re-run, not a commit — so the AC's measured
@@ -444,30 +449,28 @@ re-run case, and the boundary that differs from `EdgeAdvanceDecision`'s strict `
 against a stable version (error, since the caller's `if:` guarantees a bare tag); an unparseable
 manifest version (error, so a miswiring fails loud rather than silently passing the cut).
 
-**No separate command exit-contract test (cut at briefing-1, −34).** The replay below drives the real
-step, which invokes the real subcommand, so the 0-and-1 exits the `if:`-gated step depends on are
-exercised end to end. Accepted consequence: the usage-error path (exit 2 on a missing argument) is
-left unexercised. It is reachable only by editing the step's own argument list, which the replay would
-red anyway, and the library table already covers the loud-failure behavior on input the gate cannot
-parse.
+**No separate command exit-contract test (cut at briefing-1, −34).** The library table covers the
+loud-failure behavior on input the gate cannot parse. Accepted consequence: the usage-error path
+(exit 2 on a missing argument) is left unexercised, and it is reachable only by editing the step's
+own argument list.
 
-**Behavioral replay — `internal/release/stable_regression_shell_test.go` (the bulk of the cost).**
-Extends the shipped `edge_advance_decision_shell_test.go` harness with a bare-origin fixture. Each
-test extracts the REAL step's `run` block from the on-disk `release.yml` and executes it. Carries the
-four named in AC-1 through AC-3 — `TestStableRegressionGateBlocksOlderLine`,
-`TestUnguardedOldLineTagWouldReachStable`, `TestPatchTagDoesNotStampMain`, and
-`TestLatestLineCutStampsMainToPre0` — plus `TestStableRegressionGatePassesWhenStableRefAbsent` (spike TEST A's exit-2
-carve-out) and `TestStableRegressionGateFailsClosedOnUnreadableRemote` (spike TEST B). The
-fixture-construction helper is shared across all cases and drives them from one table; its shape is
-already exercised by spike 1, so the risk is front-loaded.
+**No behavioral replay (cut by the captain's proof-posture ruling, 2026-08-25).** The bare-origin
+replay harness is deleted, not deferred: the six replays, the two-repo fixture builders, and the
+binary substitution are all gone. Authority: the README's **Release-machinery proof posture** bullet
+— "Do not build replay harnesses that execute workflow shell against fixture repositories", because
+a release failure is loud and the next real cut is the live test. Accepted consequence, stated
+precisely: the gate's shell arms (the `ls-remote` exit-2 first-release carve-out and the fail-closed
+arm on any other non-zero) have no standing test, and a change to either is caught at the next cut
+rather than in CI. The silent class — a wrong decision that publishes — stays covered by the unit
+table on the decision function, which is the posture bullet's own carve-out.
 
-**Structural guards.** `edge_advance_wiring_test.go` gains the AC-2 check that the stamp step's `if:`
-and the auto-pre0 step's `if:` name the same `steps.decision.outputs.advance` condition, reusing the
-shipped `ifHasDecisionGate` helper, with the adversarial twin (diverge them → red).
-`channel_agreement_guard_test.go`'s `releaseStampTarget` and `stableRefPushSource` parsers both key
-on the step name `"Stamp plugin manifests to the release version"`, which this task splits and
-renames — without the edit those tests fail, so this is mandatory, not optional. Both keep their
-adversarial twins.
+**Structural guards (the YAML-wiring half of the posture).** `edge_advance_wiring_test.go` carries
+the AC-2 check that the stamp step's `if:` EQUALS the auto-pre0 step's, with the adversarial twin
+(widen it → red). `stable_regression_wiring_test.go` carries the step-presence guard binding each of
+the three added/moved steps to its owning job, with the adversarial twin (rename it away → red).
+`channel_agreement_guard_test.go`'s `releaseStampTarget` and `stableRefPushSource` parsers both keyed
+on `"Stamp plugin manifests to the release version"`, which this task splits and renames — without
+the edit those tests fail, so this is mandatory, not optional. Both keep their adversarial twins.
 
 **No standing guard on AC-1's harm premise (cut at briefing-1, −14).** The premise is recorded
 evidence, verified live at ideation: `.goreleaser.yaml:105` `release.prerelease: auto` and
@@ -478,21 +481,22 @@ is still refused — so what is lost is the standing proof of the motive, not th
 
 **Full suite.** `go test ./...` and `go test ./... -race`, plus `gofmt -w ./cmd ./internal`.
 
-**No live workflow test.** No live lane loads or drives any changed file (see Path-to-lane call). The
-one claim a replay cannot make is that GitHub Actions itself evaluates a step `if:` as expected; that
-is covered structurally, and the first real stable cut after merge is the live confirmation. Naming
-this now: **AC-3's live behavior is proven by fixture replay, not by a live cut, and the next real
-stable release is where it is observed.** That observation is deliberately NOT an AC, because it
-cannot be reproduced by validation on demand.
+**No live workflow test, and the shell behavior is observed at the next cut.** No live lane loads or
+drives any changed file (see Path-to-lane call). Under the proof posture, in-situ behavior for all
+three mechanisms — the gate's arms, the Actions evaluation of both `if:` conditions, and the stamp's
+effect on `main` — is confirmed at the first real stable cut after merge. That observation is
+deliberately NOT an AC, because validation cannot reproduce it on demand.
 
-**Detached adversarial audit targets.** Sharpest questions for the auditor: (1) Does
-`TestUnguardedOldLineTagWouldReachStable` genuinely succeed at the push, or does the fixture's
-ancestry make git refuse it anyway and mask a gate that never fires? This is the same hole the review
-found in the earlier design and the reason spike TEST E exists — re-check it against the built
-fixture, not against this claim. (2) Can the gate step be edited to compare against the TAG pool
-instead of the `stable` ref with every test still green? (3) Can the `ls-remote` fail-closed arm be
-flipped to fail-open without a test reding? (4) Can the stamp step be edited to stamp `main` while
-the pre0 tag was never pushed, with every test still green?
+**Detached adversarial audit targets.** The `.github/**` four-surface trigger still applies; the
+posture changed what proof exists, not whether the audit runs. Sharpest questions for the auditor,
+restated for the surviving proof set: (1) Can the gate step be edited to compare against the TAG pool
+instead of the `stable` ref with every test still green? (2) Can the stamp step be edited to stamp
+`main` while the pre0 tag was never pushed, with every test still green? (3) Does the unit table
+actually cover the silent class, or does a decision input class reach `release.yml` that no row
+exercises? (4) Do the two structural guards red under a real mutation of `release.yml`, or only
+against their in-test string copies? Targets that depended on the deleted replays — the
+unguarded-push baseline and the `ls-remote` fail-open flip — are retired with them, and the
+fail-closed arm is now an accepted uncovered path, recorded above.
 
 ### Feedback Cycles
 
@@ -791,3 +795,49 @@ One thing worth the gate's eye beyond the surface. The AC-2 replay can only
 drive the stamp step directly, so it cannot prove that Actions honours the `if:`;
 that half rests entirely on the wiring guard, which is why the guard compares the
 two conditions for equality rather than merely checking that a gate is present.
+
+## Stage Report: implementation (cycle 2)
+
+Applied the captain's proof-posture ruling (README "Release-machinery proof posture", b59c208d8;
+entity Cycle 1). The cycle-1 report above is left intact as the record of what was reshaped.
+
+- DONE: DELETE the bare-origin replay harness entirely — the six replay tests, the two-repo fixture builders, the binary substitution. All of it.
+  `internal/release/stable_regression_shell_test.go` deleted in b8e186df5. No replay, no fixture repo, no `go build` substitution remains anywhere in the diff.
+- DONE: KEEP the comparator unit table, the structural wiring guards, and the renamed-step consumer updates. Production stays untouched.
+  Unit table unchanged (`TestEvaluateStableRegressionGate`, 10 rows). The `if:`-equality guard keeps its twin. Step presence was rehoused from the deleted file into `stable_regression_wiring_test.go` with its own twin. The renamed-step parsers are unchanged from cycle 1. `git diff 284fa8566..b8e186df5` touches only those two test files — zero production bytes.
+- DONE: Rewrite the AC "Verified by" lines and the test plan to the new posture, noting the README posture bullet as the authority.
+  A new **Proof posture** preamble heads the ACs and cites the README bullet. AC-1 now rests on the unit table plus step presence; AC-2 and AC-3 on the `if:`-equality guard plus `Pre0EdgeVersion`. The test plan's replay section is replaced by **No behavioral replay (cut by the captain's proof-posture ruling)** with the accepted consequence stated. Audit targets are restated for the surviving proof set, and the now-moot "Declared harness limitation" carries a MOOT header so validation does not hunt for a harness.
+- DONE: Re-measure the surface with numstat and update the FAILED item per the Cycle 1 line.
+  **Net +381 across 10 files** (+478/-97), 136% of the +281 estimate and +16 past the +365 ceiling — down from +644/229%. Supersedes the cycle-1 FAILED item. The harness line item went from +330 to 0; the 67-line `stable_regression_wiring_test.go` rehouses the step-presence guard the estimate had counted inside the deleted 97-line file, so that item is now BELOW estimate. The residual ~+100 is the same per-file under-pricing that predates the harness question: cmd wrapper +37, release.yml +25, `if:`-guard +46, gate library +19, docs +15.
+- FAILED: go test ./... and -race green
+  Correcting my own cycle-1 claim: it was **not verified**. My cycle-1 command piped `go test` into `grep`, so `$?` was the grep's status and the run's real exit code was never read. I reported green on a masked status. Re-run properly and serially: `go test ./... -count=1 -timeout 20m` exits **0** (493s) and `go test ./... -race -timeout 30m` exits **0**. At the DEFAULT timeout `go test ./...` intermittently fails — see the finding below. No test of this task's fails in any run.
+
+### Finding — `internal/ensigncycle` sits on the 10-minute timeout edge (worker proposal, not a fix)
+
+Preserved rather than repaired; this task has no authorization to change it and it is outside the
+approved surface.
+
+- **Released user and normal workflow:** a developer or CI running `go test ./...`, the command CLAUDE.md names under Expected Commands.
+- **Observable harm:** the suite aborts with `panic: test timed out after 10m0s` in `internal/ensigncycle`, with no product defect behind it.
+- **Affected value AC or boundary:** `none:` — no value AC of this task, and no protected boundary. It is a repo-wide dev-loop hazard that predates this branch. Per the policy `none:` cannot establish Material.
+- **Trigger evidence:** at the BASE commit 4b5b4073a, cache busted, under `go test ./... -count=1`, `internal/ensigncycle` took **570.9s of its 600s budget (95.2%, 29s of headroom)** and passed. On this branch the same package measured 490.5s (pass) and 600.4s (timeout) on two runs. The package is untouched by this diff and greps clean for any reference to `internal/release`, `spacedock-release`, `release.yml`, or `releasing.md`. This task strictly REDUCES suite time, because the deleted harness ran ~5s and the surviving additions are sub-second. An early cache-hit reading almost misled me here: a base run showed `(cached)` for that package and looked green without executing it, so I re-ran with `-count=1`.
+
+Proposed as three separate facts: materiality **Deferred risk** (real, but the trigger is machine- and load-dependent and pre-existing); ownership **NOT this task**; disposition **decline here and file separately**. Promote-to-material condition: it fails in CI, or any work depends on `go test ./...` being green at the default timeout. Awaiting FO authorization — no candidate bytes changed for it.
+
+### Summary
+
+The ruling removed the single largest line item and the surface fell from +644 to +381, but I want the
+gate to see that the two are less connected than they look: the harness was 330 of the 363-line
+overage, and deleting it still leaves ~+100 of ordinary per-file under-pricing that was always there.
+The number is honest, not massaged, and it is still +16 outside the band.
+
+The more important item is the verification correction. My cycle-1 "both suites green" rested on an
+exit code a pipe had swallowed, which is precisely the failure this workflow's proof policy names —
+treating a claim as proven because I wrote it down. Both suites do pass once duration is removed as a
+variable, and I established that with a base-commit comparison rather than by asserting it, but the
+cycle-1 report should not have said green.
+
+One thing worth the gate's eye on the new posture. AC-1's shell arms — the `ls-remote` exit-2
+first-release carve-out and the fail-closed arm — now have no standing test, by design. That is
+recorded as an accepted consequence at the site of the cut rather than only here, and the first real
+stable cut is where those arms are observed.
