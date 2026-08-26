@@ -265,3 +265,19 @@ Ideation now defines a bounded structured diagnostic without relaxing the comple
 or gate-authority fences. It corrects the heading-boundary misconception, makes
 annotated checklist near-misses fail visibly, and turns the already-repaired ungated
 journey into a durable regression plus concrete command guidance.
+
+## Stage Report: implementation
+
+- DONE: Implement the four failure-specific completion diagnostics, annotated checklist near-miss refusal, terminal regression, and command documentation while preserving the approved authority and local-HEAD boundaries.
+  Commit `d24e90a8e` adds ordered structured failures, strict status-bullet scanning, both consumed-history terminal journeys, and the documented direct command without changing gate writers or Git pathspecs.
+- DONE: Add falsifiable behavior coverage for AC-1 through AC-4: four distinct byte-clean refusals, checklist syntax controls, ungated merge/direct completion, and the pending-terminal sole-consumer control.
+  `TestEnteredWorktreeStageFailureDiagnosticsAreDistinctAndByteClean` fails if messages collapse, bytes mutate, or the annotated item advances; heading controls fail if token selection changes, terminal tests fail without consumed history, and the pending control fails if direct completion spends authority.
+- DONE: Keep the change within +145 net lines across six files with the approved tolerance, run gofmt plus focused, full, and race suites, and report exact surface and results.
+  Surface is 6 files, 216 insertions/41 deletions, +175 net; gofmt and both focused commands passed, `go test ./...` passed on rerun after two transient ensigncycle fixtures passed in isolation, and `go test ./... -race` passed.
+
+### Summary
+
+The implementation now reports the first actual completion failure and explicitly
+separates local HEAD durability from remote publication. Annotated checklist
+near-misses refuse with a line and repair, while the existing authority boundary is
+pinned by successful ungated direct/merge journeys and the pending-terminal refusal.
