@@ -494,6 +494,10 @@ instead of the `stable` ref with every test still green? (3) Can the `ls-remote`
 flipped to fail-open without a test reding? (4) Can the stamp step be edited to stamp `main` while
 the pre0 tag was never pushed, with every test still green?
 
+### Feedback Cycles
+
+- Cycle 1: REWORK — captain proof-posture ruling 2026-08-25 ("we don't need those tests; we would know if the release fails", recorded as the README's release-machinery proof posture): delete the bare-origin replay harness; keep the comparator unit table, the structural wiring guards, and the renamed-step consumer updates; production untouched; ACs re-verify by unit + structural + next-live-cut observation. Supersedes the FAILED +644 surface item; re-measure after the cut.
+
 ## Sequencing decision for the captain
 
 **#760 rides v0.28.0.** The fix for #760 ("claude install leaves the sibling edge plugin installed and
