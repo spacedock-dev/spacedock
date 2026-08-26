@@ -72,6 +72,17 @@ gates:
                 digest: sha256:454c9d2ed3159777137eaa666fec7d3b46cffc2f53538d809a7e24fc17b38034
                 request-digest: sha256:9c1b3683f49995e3135dcdbaccf8a0a18a64794b6b04549d5f163c806e734cc6
                 room-ref: ./embed-stage-report-protocol-in-dispatch/review/validation/briefing-2
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:t4rqqmmrqh69adgb1bbdx838:validation:2
+                briefing: briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-08-26T22:19:56.950352Z"
+                decision: approve
+                reason: 'Captain approve (cycle-2 PASSED-with-deferred-risk): AC-2/AC-3 green with the adversarial falsifier breaking the right tests; firstActionBlock overclaim removed; production code (build.go +29/-2) within estimate. AC-1 live lane now CI-wired (TestLivePiNonSelfDescribingDispatch selected by the pi-live front-door-smoke step -run filter — regex verified to select it and exclude the TestLiveCommon flake); compiles, auth-blocked locally, runs in CI per the cycle-2 correction. Surface deviation (483 ins / 5 files) is in-scope test infrastructure, not production scope creep; noted for the record. Pre-existing TestLiveCommonRecordedGateLifecycle flake and TestVersionAmbiguousMarkersExitZero env failure are deferred as separate risks.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
 mod-block:
