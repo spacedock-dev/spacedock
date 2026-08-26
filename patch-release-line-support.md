@@ -1,7 +1,7 @@
 ---
 id: d0g21c517b5nvga1ybwckapk
 title: Patch-release line support - gate release.yml's main-stamp on line-latestness, fix the stable-branch advance, automate the preversion bump
-status: implementation
+status: validation
 source: "Captain CL, 2026-08-25, reconciling gr and tw after the v0.27.0 cut: 'reconcile tw and gr and recommend best approach' - supersedes next-independent-release-line (twq68r4y8qg0wetztajtmmzz), whose body described the retired next-branch model; the live incidents of 2026-08-25 are the spec"
 started: 2026-08-25T16:33:56Z
 completed:
