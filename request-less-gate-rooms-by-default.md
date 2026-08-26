@@ -9,8 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-request-less-gate-rooms-by-default
 issue:
-pr:
-mod-block:
+pr: "#762"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
