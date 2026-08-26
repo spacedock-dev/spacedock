@@ -1,17 +1,17 @@
 ---
 id: p17swb3375rt525fn7f8xt7e
 title: Finish the Pi rejection-flow journey
-status: validation
+status: done
 source: "Deferred Pi follow-up from the test-behavior-completeness priority recarve, 2026-08-10"
 started: 2026-08-21T08:17:02Z
-completed:
-verdict:
+completed: 2026-08-26T22:54:56Z
+verdict: PASSED
 score: 0.8
 group: pi-live-followup
 worktree: .worktrees/spacedock-ensign-finish-pi-rejection-flow
 issue:
 pr: pr-merge:750
-mod-block: merge:pr-merge
+mod-block:
 sprint: pi-live-completeness
 gates:
     version: 1
@@ -75,7 +75,8 @@ gates:
                 reason: 'Conn-held approval. p17 validation PASSED on timeout-fix: live target completes 1500s no timeout (AC-1), repair exercised (AC-2). Topology XFAIL stays registered (deferred, separate semantic). Deliver via stacked PR on 747.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-26T22:54:57Z
 ---
 
 Pi still needs a product repair for the `rejection-flow` journey. Sonnet is complete, and Codex has a separate active owner. This task owns only the deferred Pi result.
