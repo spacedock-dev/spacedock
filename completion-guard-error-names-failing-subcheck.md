@@ -47,6 +47,12 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-26T20:08:11.020575Z"
                 reason: Captain requested a decision-focused primary artifact with the entity retained only as supporting reference.
+            - id: gate-attempt:9xnaq83nryb38fyt18mh0gbt-ideation-2
+              briefing:
+                id: briefing:9xnaq83nryb38fyt18mh0gbt:ideation:attempt-2:revision-1
+                digest: sha256:da5664c8495a4e9a55f2d02b499fe4831a705594ef73f25fe70dfb23f6615c24
+                request-digest: sha256:1422ffb53cec73320d3a8d2496b6d1baf7d303f09ddfcbcac83115703bf7d89e
+                room-ref: ./completion-guard-error-names-failing-subcheck/review/ideation/briefing-2
 ---
 
 The stage-advance guard emits one message — "cannot change status away from entered stage until a durable, complete ## Stage Report is committed" — for four distinct failures: the stage-report heading is not found (exact-token match), the checklist is incomplete (missing bullets, FAILED items, or no Summary), the entity file is untracked, or the entity file differs from local HEAD. An operator who cannot tell which failed diagnoses by round-trip; one field session needed three.
