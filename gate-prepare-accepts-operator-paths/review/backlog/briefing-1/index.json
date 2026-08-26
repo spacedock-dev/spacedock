@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9n02rsw1s4tztqzgmwb07n1k:backlog:attempt-1:revision-1",
+  "question": "Approve ideation to make gate preparation resolve equivalent operator path forms deterministically and prevent doubled state-root paths?",
+  "artifacts": [
+    {
+      "id": "artifact:9n02rsw1s4tztqzgmwb07n1k:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7607b3cd285ce20ce2e35ed0e8de96509999eb13/gate-prepare-accepts-operator-paths/gate-decision.md",
+      "rev": "sha256:a2e8fad4982643903c3828320422aac9e79b90d40f24f47a134a9f441eca39a9",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: the defect is frequent, reproduced live, and stalls gates under the no-retry rule; scope is limited to guarded path resolution and matching contract text."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:9n02rsw1s4tztqzgmwb07n1k:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/7607b3cd285ce20ce2e35ed0e8de96509999eb13/gate-prepare-accepts-operator-paths.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:362103bad992081ff10afa942649d15743af3ad2c87bfe221d685495aab5c3b2"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:9n02rsw1s4tztqzgmwb07n1k:backlog:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
