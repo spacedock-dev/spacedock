@@ -3,7 +3,7 @@ id: yv3w8rhxrjyqywadmy666nph
 title: Dispatch checklists must not delegate status advancement out of worker scope
 status: ideation
 source: "claude-live smallest-sufficient-mechanism red, PR #762 run attempt 2, diagnosed from artifacts 2026-08-26: the live FO's checklist told both ensigns to 'advance status to done' — a frontmatter mutation the ensign contract forbids and documents no syntax for"
-started:
+started: 2026-08-26T20:04:25Z
 completed:
 verdict:
 score:
