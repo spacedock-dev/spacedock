@@ -141,3 +141,16 @@ The test mechanism serves AC-1 through AC-3. Simplest alternative considered: on
 ### Feedback Cycles
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+
+## Stage Report: ideation
+
+- DONE: Define deterministic precedence and ambiguity handling for absolute, cwd-relative, and state-relative gate Artifact/Reference paths while preserving readable-regular-file, symlink, and repository-boundary guards; record the reproduced doubled-path baseline or a smaller falsifying spike.
+  Commit `de8e35fef` records absolute/unique-relative/ambiguous/absent rules and a two-flag spike whose doubled-path assertion would fail if launch-cwd resolution already worked; selected paths still flow through `gitsource.Inspect`.
+- DONE: Turn the operator outcome into entity-level acceptance criteria and a behavior-first test plan that proves equivalent accepted forms (or precise supported-form refusals) and pairs the mechanism with the stalled-gate value measure.
+  AC-1 measures exit 1/no binding becoming exit 0/one open binding; AC-2/AC-3 require immutable-source equivalence and pre-mutation ambiguity refusal, falsified by removing launch-root candidates or restoring silent priority.
+- DONE: Declare expected net LOC/files with tolerance, all observable semantic changes, the concrete first-officer wording/doc diff, and the simplest alternative considered for each new mechanism.
+  The body declares +145 net LOC (+182/−37) across 6 files with bounded tolerance, unchanged grammar/storage/authority, exact FO/site diffs, and rejected simpler alternatives per resolver, ambiguity rule, prose alignment, and proof mechanism.
+
+### Summary
+
+Ideation defines one explicit-launch-directory resolver that accepts unique absolute, cwd-relative, and state-relative forms while refusing ambiguous spellings before mutation. A focused throwaway spike reproduced the doubled Artifact and Reference paths, and the acceptance plan ties the fix to reopening the gates that currently stall.
