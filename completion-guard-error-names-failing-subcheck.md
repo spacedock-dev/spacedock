@@ -23,6 +23,17 @@ gates:
                 digest: sha256:484cdf1ea7ca83bc9d95c2302368bb5ca70c64fe31e2220a3b6e37e4449115f5
                 request-digest: sha256:65459f1836c9fb15d4ea01d5a55184a3581fd59098ffdf0833bbec2b0dbb7473
                 room-ref: ./completion-guard-error-names-failing-subcheck/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9xnaq83nryb38fyt18mh0gbt:backlog:1
+                briefing: briefing:9xnaq83nryb38fyt18mh0gbt:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-26T19:50:43.055728Z"
+                decision: approve
+                reason: The seed has a bounded diagnostic outcome, preserves the existing guard invariants, and names falsifiable ideation proof for each failure class.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The stage-advance guard emits one message — "cannot change status away from entered stage until a durable, complete ## Stage Report is committed" — for four distinct failures: the stage-report heading is not found (exact-token match), the checklist is incomplete (missing bullets, FAILED items, or no Summary), the entity file is untracked, or the entity file differs from local HEAD. An operator who cannot tell which failed diagnoses by round-trip; one field session needed three.
