@@ -1,7 +1,7 @@
 ---
 id: t4rqqmmrqh69adgb1bbdx838
 title: Embed the stage-report protocol in the dispatch artifact
-status: validation
+status: implementation
 source: "/tmp/spacedock-pi-dispatch-diagnosis.md (2026-08-25): 3 of 4 Pi-dispatched ensigns completed implementation without writing a ## Stage Report; the dispatch build artifact's ## First action claims the file contains the stage-report format, but the body has 0 such tokens. Same class as archived pin-ensign-contract-entry-point (2026-08-01), which fixed the spawn binding but not the artifact-body gap."
 gates:
     version: 1
@@ -65,11 +65,11 @@ gates:
                 reason: 'Captain approve (PASSED-with-deferred-risk): AC-2/AC-3 green with the falsifier breaking the right tests; firstActionBlock overclaim removed; production code (build.go +31/-2) within estimate. AC-1 live run deferred to the Pi CI lane per captain directive ''run pi ci lane'' — auth-blocked locally, runs in CI on PR. Surface deviation (482 ins / 5 files vs ~130 / 3) is test infrastructure, not production scope creep; noted for the record.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
-mod-block: merge:pr-merge
-pr: "#764"
+mod-block:
+pr:
 ---
 
 The dispatch artifact must carry the stage-report protocol so a worker writes a complete `## Stage Report:` section on a real dispatch, not only when a smoke-checklist tells it to.
