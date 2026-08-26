@@ -1,0 +1,45 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1",
+  "question": "Approve validation (PASSED-with-deferred-risk) to enter the terminal merge ceremony: AC-2/AC-3 green (falsifier breaks the right tests), firstActionBlock overclaim removed, production code (build.go +31/-2) within estimate; AC-1 live run deferred to the Pi CI lane (auth-blocked locally, will run in CI). Surface deviation (482 ins / 5 files vs ~130 / 3) is test infrastructure, not production scope creep.",
+  "artifacts": [
+    {
+      "id": "artifact:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a193ec72f96c69cdd4120e94bdb221310efd89c4/embed-stage-report-protocol-in-dispatch.md",
+      "rev": "sha256:6d19b046cc6da1a6bf430540004fda38670b745682dadd1fda2da5da16d0371c",
+      "mediaType": "text/markdown",
+      "summary": "Validation of the Pi-only stage-report protocol embed. AC-2 (fixture): pi body carries ## Stage Report:/DONE/SKIPPED/FAILED/Summary; claude/codex do not — green. AC-3 (adversarial revert): removing the host==pi embed makes the pi subtest + ensigncycle build guard FAIL, claude/codex stay green, self-describing lane unaffected — green. AC-1 (value, live lane): compiles under -tags live, build guard green, but the live dispatch was auth-blocked (No API key found for openai-codex) — deferred to CI. Non-live tests, gofmt, go vet, race all clean. firstActionBlock overclaim string gone (grep exit 1). Surface 482 ins / 5 files vs ~130 / 3 estimated — the two extra files are test infrastructure (offline build guard + live registry entry)."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/825dc36d5443c15e7529cabf6b244e55dd209afa/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/90694e622e11258d4d243ff19b23011967ce55db/internal/dispatch/build_stage_report_protocol_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:a1d285c6f3361082d9cc7f27f5e356322aa5dd7e713a83f293deddbc704d3491"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1:item-4",
+      "uri": "git-root://main/90694e622e11258d4d243ff19b23011967ce55db/internal/ensigncycle/pi_nonself_describing_live_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:f87ddc4397ec9d8e7fd42f5d692ebfa54e33f4866530b4b61dd36ca4e5969208"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1:item-5",
+      "uri": "git-root://main/825dc36d5443c15e7529cabf6b244e55dd209afa/skills/ensign/references/ensign-shared-core.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:59e0dce08e13a1a01ef76cc0a8c55c312b8fe8e87cb983482f29b22efabfa9ad"
+    }
+  ]
+}

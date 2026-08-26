@@ -46,6 +46,15 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:t4rqqmmrqh69adgb1bbdx838:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:t4rqqmmrqh69adgb1bbdx838-validation-1
+              briefing:
+                id: briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-1:revision-1
+                digest: sha256:f0b937d6dcaed3c8f6e31ca7b57ab15e360959d4ed1f6c10a832b58e6cb5e422
+                request-digest: sha256:fae652050c4670990fffd390aae2b1f35f96ef09c2c37da8c81f420d89710f9a
+                room-ref: ./embed-stage-report-protocol-in-dispatch/review/validation/briefing-1
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
 ---
