@@ -72,6 +72,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:9xnaq83nryb38fyt18mh0gbt:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:9xnaq83nryb38fyt18mh0gbt-validation-1
+              briefing:
+                id: briefing:9xnaq83nryb38fyt18mh0gbt:validation:attempt-1:revision-1
+                digest: sha256:e2c03864bf232561010e49c04f734891ae3a015b0c1ec588e94d824b0748eed7
+                room-ref: ./completion-guard-error-names-failing-subcheck/review/validation/briefing-1
 ---
 
 The stage-advance guard emits one message — "cannot change status away from entered stage until a durable, complete ## Stage Report is committed" — for four distinct failures: the stage-report heading is not found (exact-token match), the checklist is incomplete (missing bullets, FAILED items, or no Summary), the entity file is untracked, or the entity file differs from local HEAD. An operator who cannot tell which failed diagnoses by round-trip; one field session needed three.
