@@ -567,7 +567,7 @@ func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
 		workflow, state, artifact := gatePrepareCLIFixture(t)
 		entity := filepath.Join(state, "task.md")
 		room := filepath.Join(state, "task", "review", "validation", "briefing-1")
-		briefing := filepath.Join(room, "gate-briefing.json")
+		briefing := filepath.Join(room, "index.json")
 		if code, out, errOut := invoke(t, workflow,
 			"gate", "prepare", "task",
 			"--question", "Advance?",
@@ -642,27 +642,10 @@ func TestGatePreparedBriefingLocatorLifecycleAndRefusals(t *testing.T) {
 			},
 			wants: []string{"bound canonical Briefing bytes", "frozen digest"},
 		},
-		{
-			name: "tampered request locator",
-			mutate: func(t *testing.T, fixture fixture) {
-				t.Helper()
-				requestPath := filepath.Join(fixture.room, "request.json")
-				body, err := os.ReadFile(requestPath)
-				if err != nil {
-					t.Fatal(err)
-				}
-				changed := bytes.Replace(body,
-					[]byte(`"locator": "gate-briefing.json"`),
-					[]byte(`"locator": "missing-gate-briefing.json"`), 1)
-				if bytes.Equal(changed, body) {
-					t.Fatal("prepared request locator fixture was not found")
-				}
-				if err := os.WriteFile(requestPath, changed, 0o644); err != nil {
-					t.Fatal(err)
-				}
-			},
-			wants: []string{"retained request.json", "frozen digest"},
-		},
+		// The retained two-file room and its frozen request locator are covered
+		// in internal/gates by TestRetainedTwoFileRoomKeepsItsFullValidation.
+		// Preparation no longer publishes that shape, so there is nothing for a
+		// CLI journey to build it from.
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			fixture := prepareClosed(t)

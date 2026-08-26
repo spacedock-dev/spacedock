@@ -417,8 +417,7 @@ func TestRecordedGateLifecycleRealCLIReplay(t *testing.T) {
 	log := git(t, fixture.stateRoot, "show", "--name-only", "--format=", "HEAD~5..HEAD")
 	for _, want := range []string{
 		"recorded-gate-task/index.md",
-		"recorded-gate-task/review/validation/briefing-1/gate-briefing.json",
-		"recorded-gate-task/review/validation/briefing-1/request.json",
+		"recorded-gate-task/review/validation/briefing-1/index.json",
 	} {
 		if !strings.Contains(log, want) {
 			t.Errorf("folder-form state commits omitted %s:\n%s", want, log)
@@ -442,8 +441,8 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 		"--reference", fixture.references[1],
 		"--workflow-dir", fixture.root)
 	firstRoom := outputValue(prepare.stdout, "room")
-	firstBriefing := readFile(t, filepath.Join(firstRoom, "gate-briefing.json"))
-	firstRequest := readFile(t, filepath.Join(firstRoom, "request.json"))
+	firstBriefingPath := filepath.Join(firstRoom, "index.json")
+	firstBriefing := readFile(t, firstBriefingPath)
 	commitRecordedGateState(t, binary, fixture, "prepare stale attempt")
 
 	withdraw := mustRecordedGate(t, binary, fixture.root,
@@ -502,8 +501,7 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 		current.Application == nil || current.Application.State != "consumed" {
 		t.Fatalf("replacement did not exclusively own consumed authority: %#v", current)
 	}
-	if readFile(t, filepath.Join(firstRoom, "gate-briefing.json")) != firstBriefing ||
-		readFile(t, filepath.Join(firstRoom, "request.json")) != firstRequest {
+	if readFile(t, firstBriefingPath) != firstBriefing {
 		t.Fatal("replacement lifecycle changed withdrawn room bytes")
 	}
 	if !strings.Contains(readFile(t, fixture.entity), "status: handoff") {
@@ -513,9 +511,14 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 		t.Fatal("path-scoped lifecycle commits swept dirty sibling")
 	}
 
+	// The withdrawn room is one file, so the canonical Briefing carries its
+	// whole retained authority. Drift it and consume must still refuse.
 	entityBeforeRefusal := readFile(t, fixture.entity)
-	firstRequestPath := filepath.Join(firstRoom, "request.json")
-	writeFile(t, firstRequestPath, strings.Replace(firstRequest, `"actor": "person:captain"`, `"actor": "agent:other"`, 1))
+	drifted := strings.Replace(firstBriefing, `"summary": "Stale candidate."`, `"summary": "Tampered candidate."`, 1)
+	if drifted == firstBriefing {
+		t.Fatal("fixture lost the summary anchor this case tampers with")
+	}
+	writeFile(t, firstBriefingPath, drifted)
 	refused := runRecordedGateCommand(binary, fixture.root, "", "gate", "consume", "recorded-gate-task", "--workflow-dir", fixture.root)
 	if refused.exit == 0 || !strings.Contains(refused.stderr, "frozen digest") {
 		t.Fatalf("withdrawn retained-authority drift validated: exit=%d stderr=%q", refused.exit, refused.stderr)
@@ -523,7 +526,7 @@ func TestRecordedGateLifecycleWithdrawColdBootReplaceAndConsume(t *testing.T) {
 	if readFile(t, fixture.entity) != entityBeforeRefusal {
 		t.Fatal("withdrawn retained-authority refusal changed entity")
 	}
-	writeFile(t, firstRequestPath, firstRequest)
+	writeFile(t, firstBriefingPath, firstBriefing)
 
 }
 

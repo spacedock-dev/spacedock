@@ -1,5 +1,5 @@
-// ABOUTME: Mechanical provider-neutral gate-room preparation and atomic binding.
-// ABOUTME: Successful preparation publishes only request plus canonical Briefing.
+// ABOUTME: Mechanical one-file gate-room preparation and atomic binding.
+// ABOUTME: Successful preparation publishes the canonical Briefing and nothing else.
 package gates
 
 import (
@@ -15,7 +15,23 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/gitsource"
 )
 
-const preparedBriefingLocator = "gate-briefing.json"
+// preparedBriefingLocator is the canonical Briefing name a new room uses. It
+// mirrors the entity convention <slug>/index.md.
+const preparedBriefingLocator = "index.json"
+
+// legacyPreparedLocator is the name preparation wrote before the one-file room.
+// The rooms prepared under it stay readable, and none migrates.
+const legacyPreparedLocator = "gate-briefing.json"
+
+// archivedBriefingLocator is the Review-v1 name an archived request-less room
+// holds its Briefing under. preparedRoomBinding tests for this name, so an
+// archived room keeps the read path it has today.
+const archivedBriefingLocator = "briefing.json"
+
+// preparedLocators is the ordered read list for a prepared room. Preparation
+// writes one name, and no room holds two, so the order only fixes the result
+// when a room is hand-built.
+var preparedLocators = []string{preparedBriefingLocator, legacyPreparedLocator}
 
 var prepareWriteBinding = writeDocument
 
@@ -53,6 +69,7 @@ type preparedBriefing struct {
 
 // Prepare validates selected committed sources, constructs one canonical open
 // room under the entity lock, publishes it, and binds it to the current stage.
+// The room is one file: the canonical Briefing, named preparedBriefingLocator.
 func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if strings.TrimSpace(input.Question) == "" {
 		return PrepareResult{}, fmt.Errorf("--question must be nonblank")
@@ -212,51 +229,31 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, fmt.Errorf("canonicalize prepared Briefing: %w", err)
 	}
-	request := gateRoomRequest{
-		Type:     "spacedock-gate-presentation-request",
-		Version:  "1",
-		Gate:     gateID,
-		Attempt:  attemptID,
-		Actor:    "person:captain",
-		Approver: "person:captain",
-	}
-	request.Briefing.Locator = preparedBriefingLocator
-	request.Briefing.ID = briefingID
-	request.Briefing.Digest = briefingDigest
-	requestBytes, err := indentedJSON(request)
-	if err != nil {
-		return PrepareResult{}, err
-	}
-	requestDigest, err := CanonicalDigest(requestBytes)
-	if err != nil {
-		return PrepareResult{}, fmt.Errorf("canonicalize prepared request: %w", err)
-	}
 	roomRef, err := relativeRoomRef(entityPath, room)
 	if err != nil {
 		return PrepareResult{}, err
 	}
 	binding := Briefing{
-		ID:            briefingID,
-		Digest:        briefingDigest,
-		RequestDigest: requestDigest,
-		RoomRef:       roomRef,
+		ID:      briefingID,
+		Digest:  briefingDigest,
+		RoomRef: roomRef,
 	}
 
-	if previous != nil && attemptState(previous) == "open" && previous.Briefing.RequestDigest != "" &&
+	if previous != nil && attemptState(previous) == "open" && preparedRoomBinding(entityPath, previous.Briefing) &&
 		!sameBinding(previous.Briefing, binding) {
 		return PrepareResult{}, fmt.Errorf("open gate room binding is frozen and cannot be rebound")
 	}
-	if err := validatePreparedCandidate(entityPath, roots, room, binding, gateID, attemptID, briefingBytes, requestBytes); err != nil {
+	if err := validatePreparedCandidate(roots, briefingBytes); err != nil {
 		return PrepareResult{}, err
 	}
 	if err := validatePreparedRoomAncestry(entityPath, room); err != nil {
 		return PrepareResult{}, err
 	}
-	created, createdParents, err := publishPreparedRoom(room, briefingBytes, requestBytes)
+	created, createdParents, err := publishPreparedRoom(room, briefingBytes)
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	if err := validatePreparedRoomEntries(room); err != nil {
+	if err := validatePreparedRoomEntries(room, binding); err != nil {
 		if created {
 			rollbackPreparedRoom(room, createdParents)
 		}
@@ -297,7 +294,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 }
 
 func preparedEntityReplaySource(entityPath string, roots gitsource.Roots, previous *Attempt, ordinal int) (gitsource.Source, bool, error) {
-	if previous == nil || attemptState(previous) != "open" || previous.Briefing.RequestDigest == "" {
+	if previous == nil || attemptState(previous) != "open" || !preparedRoomBinding(entityPath, previous.Briefing) {
 		return gitsource.Source{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -348,7 +345,7 @@ func entityWithoutGates(data []byte) ([]byte, error) {
 }
 
 func preparedReplay(entityPath string, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
-	if previous == nil || attemptState(previous) != "open" || previous.Briefing.RequestDigest == "" {
+	if previous == nil || attemptState(previous) != "open" || !preparedRoomBinding(entityPath, previous.Briefing) {
 		return PrepareResult{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -389,7 +386,7 @@ func preparedReplay(entityPath string, previous *Attempt, briefingID, question, 
 	if err != nil {
 		return PrepareResult{}, false, fmt.Errorf("resolve prepared room: %w", err)
 	}
-	if err := validatePreparedRoomEntries(room); err != nil {
+	if err := validatePreparedRoomEntries(room, previous.Briefing); err != nil {
 		return PrepareResult{}, false, err
 	}
 	return PrepareResult{
@@ -461,19 +458,7 @@ func entityIdentity(path, workflowDir string) (string, error) {
 	return id.Value, nil
 }
 
-func validatePreparedCandidate(entityPath string, roots gitsource.Roots, room string, binding Briefing, gateID, attemptID string, briefingBytes, requestBytes []byte) error {
-	tmp, err := os.MkdirTemp("", "spacedock-gate-prepare-validate-*")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tmp)
-	briefingPath := filepath.Join(tmp, preparedBriefingLocator)
-	if err := os.WriteFile(briefingPath, briefingBytes, 0o644); err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(tmp, "request.json"), requestBytes, 0o644); err != nil {
-		return err
-	}
+func validatePreparedCandidate(roots gitsource.Roots, briefingBytes []byte) error {
 	manifest, err := parseBriefingManifest(briefingBytes)
 	if err != nil {
 		return err
@@ -490,9 +475,7 @@ func validatePreparedCandidate(entityPath string, roots gitsource.Roots, room st
 			return err
 		}
 	}
-	candidateBinding := binding
-	candidateBinding.RoomRef = "./"
-	return validateGateRoomRequest(briefingPath, candidateBinding, gateID, attemptID)
+	return nil
 }
 
 func validatePreparedRoomAncestry(entityPath, room string) error {
@@ -525,40 +508,91 @@ func validatePreparedRoomAncestry(entityPath, room string) error {
 	return nil
 }
 
-func validatePreparedRoomEntries(room string) error {
+// preparedRoomBinding reports whether the binding has a prepared gate room. It
+// is the shape-independent test that replaces `request-digest != ""`. Six
+// runtime sites used that field to mean "this attempt has a prepared room".
+//
+// A request-backed binding always has a prepared room, so the test
+// short-circuits. Every guard the old test gave such an attempt therefore stays
+// as strict, and a room that lost its files still refuses.
+//
+// A request-less binding has a prepared room when its room-ref names a real
+// directory that is not an archived room.
+//
+// An archived request-less binding fails the test three ways. An opaque
+// provider ref such as `subspace-room:3k-gate-design` names no local path. A
+// legacy ref names the Briefing file itself. An archived room is a directory
+// that holds briefing.json.
+//
+// The test reads that archived name, and not the reserved name, for one reason.
+// A prepared room whose Briefing is deleted must stay a prepared room. The
+// archived read path gives a skip. A deleted Briefing must not take that skip,
+// because gate record then closes over it.
+func preparedRoomBinding(entityPath string, binding Briefing) bool {
+	if binding.RequestDigest != "" {
+		return true
+	}
+	if binding.RoomRef == "" {
+		return false
+	}
+	room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
+	if info, err := os.Lstat(room); err != nil || !info.IsDir() {
+		return false
+	}
+	_, err := os.Lstat(filepath.Join(room, archivedBriefingLocator))
+	return err != nil
+}
+
+// validatePreparedRoomEntries requires the exact file set the binding implies:
+// one canonical Briefing under either accepted name, plus the retained
+// request.json when the binding froze one. Any other entry is a copied source
+// or a provider subtree, and both are refused.
+func validatePreparedRoomEntries(room string, binding Briefing) error {
 	entries, err := os.ReadDir(room)
 	if err != nil {
 		return err
 	}
-	expected := map[string]bool{preparedBriefingLocator: true, "request.json": true}
-	if len(entries) != len(expected) {
-		return fmt.Errorf("prepared room must contain exactly two regular files")
+	want, counted := 1, "one regular file"
+	if binding.RequestDigest != "" {
+		want, counted = 2, "two regular files"
 	}
+	if len(entries) != want {
+		return fmt.Errorf("prepared room must contain exactly %s", counted)
+	}
+	locators := 0
 	for _, entry := range entries {
 		info, err := entry.Info()
 		if err != nil {
 			return err
 		}
-		if !expected[entry.Name()] || !info.Mode().IsRegular() {
-			return fmt.Errorf("prepared room entry %s is not an expected regular file", entry.Name())
+		name := entry.Name()
+		locator := name == preparedBriefingLocator || name == legacyPreparedLocator
+		retained := binding.RequestDigest != "" && name == "request.json"
+		if (!locator && !retained) || !info.Mode().IsRegular() {
+			return fmt.Errorf("prepared room entry %s is not an expected regular file", name)
 		}
+		if locator {
+			locators++
+		}
+	}
+	if locators != 1 {
+		return fmt.Errorf("prepared room must hold exactly one canonical Briefing")
 	}
 	return nil
 }
 
-func publishPreparedRoom(room string, briefing, request []byte) (bool, []string, error) {
+func publishPreparedRoom(room string, briefing []byte) (bool, []string, error) {
 	info, err := os.Lstat(room)
 	if err == nil {
 		if !info.IsDir() {
 			return false, nil, fmt.Errorf("prepared room target is occupied")
 		}
 		entries, readErr := os.ReadDir(room)
-		if readErr != nil || len(entries) != 2 {
+		if readErr != nil || len(entries) != 1 {
 			return false, nil, fmt.Errorf("prepared room target is occupied by divergent content")
 		}
-		currentBriefing, briefingErr := os.ReadFile(filepath.Join(room, preparedBriefingLocator))
-		currentRequest, requestErr := os.ReadFile(filepath.Join(room, "request.json"))
-		if briefingErr != nil || requestErr != nil || !bytes.Equal(currentBriefing, briefing) || !bytes.Equal(currentRequest, request) {
+		current, briefingErr := os.ReadFile(filepath.Join(room, preparedBriefingLocator))
+		if briefingErr != nil || !bytes.Equal(current, briefing) {
 			return false, nil, fmt.Errorf("prepared room target is occupied by divergent content")
 		}
 		return false, nil, nil
@@ -578,10 +612,6 @@ func publishPreparedRoom(room string, briefing, request []byte) (bool, []string,
 	}
 	defer os.RemoveAll(tmp)
 	if err := writeSyncedFile(filepath.Join(tmp, preparedBriefingLocator), briefing); err != nil {
-		removePreparedParents(createdParents)
-		return false, nil, err
-	}
-	if err := writeSyncedFile(filepath.Join(tmp, "request.json"), request); err != nil {
 		removePreparedParents(createdParents)
 		return false, nil, err
 	}
@@ -635,11 +665,11 @@ func removePreparedParents(created []string) {
 
 func validatePreparedSummary(manifest *briefingManifest) error {
 	if len(manifest.Artifacts) == 0 || manifest.Artifacts[0].Summary == nil || strings.TrimSpace(*manifest.Artifacts[0].Summary) == "" {
-		return fmt.Errorf("request-backed Briefing requires a nonblank primary Artifact summary")
+		return fmt.Errorf("prepared Briefing requires a nonblank primary Artifact summary")
 	}
 	for _, artifact := range manifest.Artifacts[1:] {
 		if artifact.Summary != nil {
-			return fmt.Errorf("request-backed Briefing References must not carry summaries")
+			return fmt.Errorf("prepared Briefing References must not carry summaries")
 		}
 	}
 	return nil

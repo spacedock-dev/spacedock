@@ -25,7 +25,7 @@ chat or Subspace for presentation; Spacedock prepares and records authority.
 flowchart TD
     FO["First Officer<br/>selects Artifact and References<br/>authors question and summary"]
     PREP["spacedock gate prepare<br/>derives IDs, digests, Git locators,<br/>authority, room, and binding"]
-    ROOM[("Frozen gate room<br/>request.json and canonical Briefing")]
+    ROOM[("Frozen gate room<br/>the canonical Briefing, one file")]
     COMMIT_PREP["spacedock state commit<br/>publishes the prepared binding"]
 
     CHANNEL{"Presentation interface"}
@@ -103,10 +103,17 @@ bytes. A request-backed room additionally freezes its
 request digest; that request names the canonical Briefing with a clean room-relative
 locator, id, and digest. No reader infers a canonical basename.
 
-A prepared provider-neutral room binds `request-digest`, the JCS digest of its
-`request.json`. Request-less and chat-only attempts may omit it. Changing the request,
-located Briefing, or a selected Git object after the attempt binds therefore fails
-before semantic decision recording or entity mutation.
+A prepared room is one file: the canonical Briefing, named `index.json`. Its binding
+carries no `request-digest`. A binding whose `room-ref` names a directory that does not
+hold `briefing.json` is a prepared room. Rooms prepared before this change hold
+`gate-briefing.json` and `request.json`, and bind the JCS digest of that request. They
+stay readable, and they keep the full request validation. No room migrates. Changing the
+located Briefing, the retained request, or a selected Git object after the attempt binds
+therefore fails before semantic decision recording or entity mutation.
+
+The recorder is the authority wall. A presentation channel materializes the room and can
+recompute what it reads. Only the recorder compares the room against the entity binding,
+under the entity lock. Every mutating verb runs that comparison before it writes.
 
 ## Provider-neutral preparation
 
@@ -122,7 +129,8 @@ The caller supplies exactly one question, Markdown primary Artifact, and nonblan
 valid-UTF-8 primary summary; References may repeat in caller order. Spacedock preserves
 the summary string exactly, assigns deterministic ordinal item identities, and derives
 the gate, attempt, Briefing, Captain authority, digests, and room. It writes only
-`gate-briefing.json` and `request.json` at preparation time. It copies no selected
+`index.json` at preparation time. Readers resolve the canonical Briefing by name:
+`index.json` first, then the earlier `gate-briefing.json`. Preparation copies no selected
 source, writes no association, and creates no provider subtree.
 
 The room layout is the same for both entity forms:
@@ -172,8 +180,8 @@ preparation appends a successor while earlier authority remains frozen; only a c
 attempt may have a pending application to supersede.
 
 `spacedock gate withdraw ENTITY --reason TEXT` retires only the selected current-stage
-open request-backed attempt. Under the shared lock it validates all retained authority
-and requires the room to contain exactly `gate-briefing.json` and `request.json`. It
+open prepared attempt. Under the shared lock it validates all retained authority
+and requires the room to contain exactly the file set its binding implies. It
 records only `withdrawal: {by: agent:first-officer, at: <UTC>, reason: <TEXT>}`: no
 Resolution, provider evidence, application, status change, successor, or room write.
 

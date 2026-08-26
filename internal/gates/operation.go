@@ -142,8 +142,10 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 	return CurrentSummary(doc, stage), nil
 }
 
-// Withdraw retires the selected request-backed prepared attempt without
-// inventing a Resolution or application.
+// Withdraw retires the selected prepared attempt without inventing a Resolution
+// or application. The prepared-room requirement lives here, not in Validate.
+// Validate reads frontmatter only, so it cannot tell a prepared room from an
+// archived opaque ref.
 func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
 	if strings.TrimSpace(input.Reason) == "" {
 		return Summary{}, fmt.Errorf("gate withdraw requires a nonblank --reason")
@@ -175,14 +177,14 @@ func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
 	if state := attemptState(attempt); state != "open" {
 		return Summary{}, fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
 	}
-	if attempt.Briefing.RequestDigest == "" {
-		return Summary{}, fmt.Errorf("current attempt is not request-backed")
+	if !preparedRoomBinding(entityPath, attempt.Briefing) {
+		return Summary{}, fmt.Errorf("current attempt has no prepared gate room")
 	}
 	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef)))
 	if err != nil {
 		return Summary{}, fmt.Errorf("resolve bound gate room: %w", err)
 	}
-	if err := validatePreparedRoomEntries(room); err != nil {
+	if err := validatePreparedRoomEntries(room, attempt.Briefing); err != nil {
 		return Summary{}, err
 	}
 	attempt.Withdrawal = &Withdrawal{
@@ -509,33 +511,6 @@ func successorAttemptID(previous string) (string, error) {
 	return previous[:cut+1] + strconv.Itoa(sequence+1), nil
 }
 
-func validateGateRoomRequest(briefingPath string, binding Briefing, gateID, attemptID string) error {
-	if binding.RequestDigest == "" {
-		return nil
-	}
-	_, requestBytes, request, err := requestForBriefing(briefingPath)
-	if err != nil {
-		return err
-	}
-	if request == nil {
-		return fmt.Errorf("request-backed Briefing has no request.json")
-	}
-	requestDigest, err := CanonicalDigest(requestBytes)
-	if err != nil {
-		return fmt.Errorf("canonicalize gate room request: %w", err)
-	}
-	if requestDigest != binding.RequestDigest {
-		return fmt.Errorf("gate room request does not match the bound request digest")
-	}
-	if request.Type != "spacedock-gate-presentation-request" || request.Version != "1" ||
-		request.Gate != gateID || request.Attempt != attemptID ||
-		request.Briefing.ID != binding.ID || request.Briefing.Digest != binding.Digest ||
-		request.Actor != "person:captain" || request.Approver != "person:captain" {
-		return fmt.Errorf("gate room request does not bind the derived gate, attempt, Briefing, and captain authority")
-	}
-	return nil
-}
-
 func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManifest, error) {
 	data, _, err := boundBriefingBytes(entityPath, binding)
 	if err != nil {
@@ -548,7 +523,7 @@ func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManife
 	if manifest.ID != binding.ID {
 		return nil, fmt.Errorf("bound canonical Briefing identity does not match the current binding")
 	}
-	if binding.RequestDigest != "" {
+	if preparedRoomBinding(entityPath, binding) {
 		if err := validatePreparedSummary(manifest); err != nil {
 			return nil, err
 		}
@@ -556,32 +531,55 @@ func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManife
 	return manifest, nil
 }
 
-func boundBriefingBytes(entityPath string, binding Briefing) ([]byte, string, error) {
+// boundBriefingPath resolves the binding shapes to the canonical Briefing file,
+// in one place, so every reader agrees. A retained request-backed binding
+// resolves through the frozen request locator, after the request proves its own
+// digest and Briefing identity. A prepared room reads its own locator, the
+// reserved name first and the earlier name second. A legacy binding names the
+// Briefing file itself.
+func boundBriefingPath(entityPath string, binding Briefing) (string, error) {
 	retained := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
-	briefingPath := retained
 	if binding.RequestDigest != "" {
 		requestBytes, err := os.ReadFile(filepath.Join(retained, "request.json"))
 		if err != nil {
-			return nil, "", fmt.Errorf("read bound gate room request: %w", err)
+			return "", fmt.Errorf("read bound gate room request: %w", err)
 		}
 		requestDigest, err := CanonicalDigest(requestBytes)
 		if err != nil {
-			return nil, "", fmt.Errorf("canonicalize bound gate room request: %w", err)
+			return "", fmt.Errorf("canonicalize bound gate room request: %w", err)
 		}
 		if requestDigest != binding.RequestDigest {
-			return nil, "", fmt.Errorf("bound gate room request does not match the frozen request digest")
+			return "", fmt.Errorf("bound gate room request does not match the frozen request digest")
 		}
 		request, err := decodeGateRoomRequest(requestBytes)
 		if err != nil {
-			return nil, "", err
+			return "", err
 		}
-		briefingPath, err = resolveBriefingLocator(retained, request.Briefing.Locator)
+		briefingPath, err := resolveBriefingLocator(retained, request.Briefing.Locator)
 		if err != nil {
-			return nil, "", err
+			return "", err
 		}
 		if request.Briefing.ID != binding.ID || request.Briefing.Digest != binding.Digest {
-			return nil, "", fmt.Errorf("bound gate room request does not match the frozen Briefing identity and digest")
+			return "", fmt.Errorf("bound gate room request does not match the frozen Briefing identity and digest")
 		}
+		return briefingPath, nil
+	}
+	if preparedRoomBinding(entityPath, binding) {
+		for _, locator := range preparedLocators {
+			if path, err := resolveBriefingLocator(retained, locator); err == nil {
+				return path, nil
+			}
+		}
+		// Report against the reserved name, so the error names what is absent.
+		return resolveBriefingLocator(retained, preparedBriefingLocator)
+	}
+	return retained, nil
+}
+
+func boundBriefingBytes(entityPath string, binding Briefing) ([]byte, string, error) {
+	briefingPath, err := boundBriefingPath(entityPath, binding)
+	if err != nil {
+		return nil, "", err
 	}
 	data, err := os.ReadFile(briefingPath)
 	if err != nil {
@@ -595,82 +593,6 @@ func boundBriefingBytes(entityPath string, binding Briefing) ([]byte, string, er
 		return nil, "", fmt.Errorf("bound canonical Briefing bytes do not match the frozen digest")
 	}
 	return data, briefingPath, nil
-}
-
-func requestForBriefing(briefingPath string) (string, []byte, *gateRoomRequest, error) {
-	briefingPath, err := filepath.Abs(briefingPath)
-	if err != nil {
-		return "", nil, nil, err
-	}
-	if resolved, resolveErr := filepath.EvalSymlinks(briefingPath); resolveErr == nil {
-		briefingPath = resolved
-	}
-	for room := filepath.Dir(briefingPath); ; room = filepath.Dir(room) {
-		requestPath := filepath.Join(room, "request.json")
-		requestBytes, readErr := os.ReadFile(requestPath)
-		if readErr == nil {
-			locators := requestLocatorCandidates(requestBytes)
-			for _, locator := range locators {
-				located, locateErr := resolveBriefingLocator(room, locator)
-				if locateErr == nil && filepath.Clean(located) == filepath.Clean(briefingPath) {
-					request, err := decodeGateRoomRequest(requestBytes)
-					if err != nil {
-						return "", nil, nil, err
-					}
-					return room, requestBytes, request, nil
-				}
-			}
-		}
-		if readErr != nil && !os.IsNotExist(readErr) {
-			return "", nil, nil, fmt.Errorf("read gate room request: %w", readErr)
-		}
-		parent := filepath.Dir(room)
-		if parent == room {
-			return "", nil, nil, nil
-		}
-	}
-}
-
-func requestLocatorCandidates(data []byte) []string {
-	var locators []string
-	for _, briefing := range duplicatePreservingObjectValues(data, "briefing") {
-		for _, raw := range duplicatePreservingObjectValues(briefing, "locator") {
-			var locator string
-			if json.Unmarshal(raw, &locator) == nil {
-				locators = append(locators, locator)
-			}
-		}
-	}
-	return locators
-}
-
-// duplicatePreservingObjectValues is only a membership probe. Matching request
-// bytes still pass through decodeGateRoomRequest's strict duplicate rejection.
-func duplicatePreservingObjectValues(data []byte, want string) []json.RawMessage {
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	token, err := decoder.Token()
-	if err != nil || token != json.Delim('{') {
-		return nil
-	}
-	var values []json.RawMessage
-	for decoder.More() {
-		keyToken, err := decoder.Token()
-		if err != nil {
-			return values
-		}
-		key, ok := keyToken.(string)
-		if !ok {
-			return values
-		}
-		var raw json.RawMessage
-		if err := decoder.Decode(&raw); err != nil {
-			return values
-		}
-		if key == want {
-			values = append(values, raw)
-		}
-	}
-	return values
 }
 
 func resolveBriefingLocator(room, locator string) (string, error) {

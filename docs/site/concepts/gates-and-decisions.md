@@ -38,7 +38,7 @@ so the two shapes stay distinguishable.
 Stable v1 gate reviews may appear in chat or Subspace. Before presenting one, the first officer commits
 newly authored selected sources and calls `gate prepare` with its question, primary
 Markdown review, exact concise summary, and References. Spacedock authors and binds a
-two-file recorder-ready room; the first officer commits that entity-owned room. The
+one-file recorder-ready room; the first officer commits that entity-owned room. The
 selected source payloads remain singular local Git objects rather than room copies.
 
 Both presentation interfaces return semantic decision and reason input to the first

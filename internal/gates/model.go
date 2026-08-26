@@ -278,9 +278,11 @@ func Validate(doc *Document) error {
 				}
 				continue
 			case "withdrawn":
-				if a.Briefing.RequestDigest == "" {
-					return fmt.Errorf("withdrawn attempt %s must retain a request-digest", a.ID)
-				}
+				// A withdrawn attempt must come from a prepared room. Only the
+				// room on disk proves that, and this validator reads
+				// frontmatter alone. Withdraw owns the requirement, because it
+				// can stat the room and tell a prepared room from an archived
+				// opaque ref.
 				if err := validateWithdrawal(a.Withdrawal); err != nil {
 					return fmt.Errorf("attempt %s: %w", a.ID, err)
 				}
