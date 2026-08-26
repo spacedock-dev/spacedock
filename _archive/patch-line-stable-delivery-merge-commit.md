@@ -11,6 +11,7 @@ worktree:
 issue:
 pr:
 mod-block:
+archived: 2026-08-26T04:54:08Z
 ---
 
 Ship an old-line patch release (a v0.X.Z while main is a later line) to stable-channel users. Deferred until a patch is genuinely demanded: the lean cut blocks old-line cuts pre-publication, so `stable` never diverges and delivery machinery is not yet needed.
@@ -49,3 +50,7 @@ Verified by: {ideation refines — seed: bare-origin replay of the real steps ac
 ### Feedback Cycles
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+
+## Superseded
+
+Captain ruling 2026-08-26: no patch-release machinery. The stable-channel line-crossing is handled as a documented one-time manual force-with-lease push at the next latest-line cut (docs/releasing.md, commit 8ccebceb5). The merge-commit design and the staff review's comparison stay recorded here.

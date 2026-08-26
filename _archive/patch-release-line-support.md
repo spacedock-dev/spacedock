@@ -89,6 +89,7 @@ gates:
                 state: superseded
 mod-block:
 pr:
+archived: 2026-08-26T04:54:08Z
 ---
 
 **LEAN CUT (captain ruling, 2026-08-25).** Stop the release-line cut that silently regresses the
@@ -886,3 +887,7 @@ stable cut is where those arms are observed.
 ### Summary
 
 All four ACs hold under the release-machinery proof posture, with each named falsifier verified live on a throwaway checkout rather than taken from the report. Both full suites are green from their own exit codes at raised timeouts, and the stack and surface match the captain-amended baseline exactly. The audit produced no material finding: the two green-under-mutation probes confirm consequences the captain's rulings already accepted, and the single new observation is polish. Recommend PASSED.
+
+## Superseded
+
+Captain ruling 2026-08-26: no patch-release machinery. PR #761 closed unmerged; the deliverable became the hand-written manual patch-release rule and CI walk in docs/releasing.md (commit 8ccebceb5), built from this entity's measured evidence. Verdict left empty per the supersede convention. The analysis, spikes, and review record remain here for the day a real patch-line demand reopens the question.
