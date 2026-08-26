@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-08-26 08:45:55",
+        "dateModified": "2026-08-26 15:41:33",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1405,7 +1405,7 @@ plugins must be installed persistently with <code>codex plugin add</code>.</p>
 </tr>
 <tr>
 <td><code>spacedock gate prepare &lt;entity&gt; --question TEXT --artifact REVIEW.md --summary TEXT [--reference FILE ...]</code></td>
-<td>At an actionable current workflow stage (<code>gate: true</code> and nonterminal), derive and bind a recorder-ready room for folder or flat form. Where the workflow README declares <code>entity-form: folder</code>, a flat entity that holds no rooms yet is refused instead, because the room would land in a <code>&lt;slug&gt;/</code> companion and bind a ref that breaks if the entity later becomes <code>&lt;slug&gt;/index.md</code>; file it as <code>&lt;slug&gt;/index.md</code>. A workflow that declares no form accepts either shape, and a flat entity that already holds rooms is grandfathered under the declaration and prepares as before. At an ungated or terminal stage, preparation exits nonzero before changing the entity or review tree and names the rejected stage. Immediately after successful preparation the room contains exactly <code>gate-briefing.json</code> and <code>request.json</code>, with no copied sources or association. Selected files are exact local <code>git-root://&lt;main\|state&gt;/&lt;full-commit&gt;/&lt;path&gt;</code> objects with raw SHA-256 revisions; there is no fetch, ref requirement, or worktree fallback. Success prints <code>room</code>, <code>briefing</code>, <code>digest</code>, and <code>state=open</code>; the caller commits this prepared binding once before presentation.</td>
+<td>At an actionable current workflow stage (<code>gate: true</code> and nonterminal), derive and bind a recorder-ready room for folder or flat form. Where the workflow README declares <code>entity-form: folder</code>, a flat entity that holds no rooms yet is refused instead, because the room would land in a <code>&lt;slug&gt;/</code> companion and bind a ref that breaks if the entity later becomes <code>&lt;slug&gt;/index.md</code>; file it as <code>&lt;slug&gt;/index.md</code>. A workflow that declares no form accepts either shape, and a flat entity that already holds rooms is grandfathered under the declaration and prepares as before. At an ungated or terminal stage, preparation exits nonzero before changing the entity or review tree and names the rejected stage. Immediately after successful preparation the room contains exactly <code>index.json</code>, the canonical Briefing, with no copied sources or association. Selected files are exact local <code>git-root://&lt;main\|state&gt;/&lt;full-commit&gt;/&lt;path&gt;</code> objects with raw SHA-256 revisions; there is no fetch, ref requirement, or worktree fallback. Success prints <code>room</code>, <code>briefing</code>, <code>digest</code>, and <code>state=open</code>; the caller commits this prepared binding once before presentation.</td>
 </tr>
 <tr>
 <td><code>spacedock gate withdraw &lt;entity&gt; --reason TEXT</code></td>
@@ -1505,7 +1505,7 @@ locally but could not push, regardless of which command wrote it.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 26, 2026 08:45:55 UTC">2026-08-26 08:45:55</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="August 26, 2026 15:41:33 UTC">2026-08-26 15:41:33</span>
   </span>
 
     

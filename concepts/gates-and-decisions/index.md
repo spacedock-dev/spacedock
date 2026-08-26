@@ -2,7 +2,7 @@
 title: "Gates & decisions"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-26 08:45:55"
+last_updated: "2026-08-26 15:41:33"
 ---
 
 # Gates & decisions
@@ -37,7 +37,7 @@ The first officer may act only after an explicit grant in the active conversatio
 
 ## How the review reaches you
 
-Stable v1 gate reviews may appear in chat or Subspace. Before presenting one, the first officer commits newly authored selected sources and calls `gate prepare` with its question, primary Markdown review, exact concise summary, and References. Spacedock authors and binds a two-file recorder-ready room; the first officer commits that entity-owned room. The selected source payloads remain singular local Git objects rather than room copies.
+Stable v1 gate reviews may appear in chat or Subspace. Before presenting one, the first officer commits newly authored selected sources and calls `gate prepare` with its question, primary Markdown review, exact concise summary, and References. Spacedock authors and binds a one-file recorder-ready room; the first officer commits that entity-owned room. The selected source payloads remain singular local Git objects rather than room copies.
 
 Both presentation interfaces return semantic decision and reason input to the first officer. The first officer records that input through the same `gate record --decision` command; Subspace is not a second recorder and does not return Result or inventory files for Spacedock to ingest.
 
