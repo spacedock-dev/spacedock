@@ -259,6 +259,7 @@ Verified by: the doc diff above, reviewed at validation against ASD-STE100 per t
 ### Feedback Cycles
 
 - Cycle 1: DESIGN RESET — captain ruling 2026-08-25 ("find a simpler way" → one room shape, `index.json`): implementation 312fa3f95 landed at 18 files/+740 net vs approved 14±3/+200±60; overage was the channel fork's doubled test matrix. Reset to ideation: one file for every channel, no request.json anywhere, q0 amended to preflight from the canonical Briefing alone; predicate work and both hole fixes salvage forward; the fork and its matrix are deleted unbuilt. Spec update (gate-resolution-frontmatter-contract.md) required per captain.
+- Cycle 2: one-shape implementation (0c1679864, rebuilt from origin/main at b59c208d8); surface production net -32 vs +70±25 (favorable: the request-minting path and four orphaned functions deleted) and proof net +490 across 10 files vs +330±80 across 7 (room shape hard-coded in four ensigncycle files where ideation counted one, plus the retained legacy-shape fixture); captain accepted both as amended baselines (2026-08-26, 'approve'); validation proceeds against them.
 
 ## Stage Report: ideation
 
