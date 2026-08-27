@@ -255,3 +255,16 @@ Corresponding change for `docs/site/reference/frontmatter-contract.md`:
 ### Summary
 
 Ideation turns the captain's “no migration, just warn” ruling into an exact compatibility boundary for the two fields Spacedock retired together in `f566f821b`. It pairs the recovered validation value with strict corruption controls, byte-preservation and authority checks, focused CLI fixtures, a bounded implementation surface, and concrete contract wording.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Define an explicit, reviewable retired-field classification and warning/exit-code behavior that restores validation signal without rewriting history or weakening unrelated unknown-field and corruption checks.
+  Commit `be5170fdc` tightens `current.gate` and `digest-domain` to their historical YAML string-scalar shapes while retaining strict wrong-shape handling and the separate silent provider-evidence class.
+- DONE: Produce entity-level value and boundary criteria plus falsifiable fixtures where retired-only findings warn and exit zero, while adding one real current-schema defect exits nonzero; name how the retired set can fail closed when fields evolve.
+  AC-4 now structurally traverses the source nodes returned by both read APIs, retains the disk hash and readiness controls, and explicitly fails if either retired node is filtered from the original instead of the validation clone.
+- DONE: Refine the net LOC/file estimate and tolerance, declare output/grammar/storage semantics, identify the smallest alternative and why it is insufficient, and specify the concrete documentation change if user-visible validation output changes.
+  The estimate is refined to net +155 across 6 files; the two exact documentation diffs now preserve the internal contract's silent provider-evidence paragraph as unchanged context.
+
+### Summary
+
+Cycle 2 closes the review gap between preserved disk bytes and preserved in-memory source state. The implementation proof must now observe both retired nodes structurally in every returned source `*yaml.Node`, so filtering the original node cannot pass behind an unchanged file hash.
