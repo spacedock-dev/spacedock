@@ -325,3 +325,16 @@ No deferred-risk or polish findings were identified. Recommendation: **REJECTED*
 ### Summary
 
 Validation confirms the intended text/JSON warning behavior, byte and source-node preservation, status/order authority, silent compatibility paths, documentation, and isolated repository checks. The detached audit nevertheless rejects the candidate because custom tags on retired key names bypass strict decoding, violating AC-3's exact-encoding and wrong-tag boundary.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Fix Material R1 by requiring canonical string-scalar key kind/tag for every retired key before clone filtering, with no compatibility or authority widening.
+  Commit `8e3175f78` requires scalar `!!str` key nodes for top-level `current`, nested `gate`, and Briefing `digest-domain` before any compatibility removal; the canonical value/shape/location checks and status/order authority remain unchanged.
+- DONE: Add and pass durable tagged-key adversarial coverage for `current`, nested `gate`, and `digest-domain`, while keeping AC-1 through AC-5 and all focused/full/race/gofmt/mkdocs checks green.
+  Each `!legacy` key variant first failed against `8d2c3e282` and now independently fails closed; focused gate/status tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and pinned-dependency `mkdocs build --strict` all passed.
+- DONE: Report exact insertions, deletions, net LOC, and files against the +155 estimate and hard +200 net / 7-file ceiling; stop for design reset rather than overrun or delete meaningful proof.
+  The correction is 10 insertions and 10 deletions across 3 existing files; the complete candidate remains 228 insertions, 28 deletions, net +200 across 6 files, exactly at the approved ceiling with all prior proof retained.
+
+### Summary
+
+Cycle 2 closes R1 by validating the YAML identity of every retired key before clone filtering, so custom-tagged lookalikes reach strict rejection instead of compatibility removal. Commit `8e3175f78` preserves the exact positive historical encodings and all storage, authority, provider-evidence, archive, output, and documentation behavior proved in cycle 1.
