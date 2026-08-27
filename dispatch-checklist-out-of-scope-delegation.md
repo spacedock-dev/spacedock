@@ -52,6 +52,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:yv3w8rhxrjyqywadmy666nph:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:yv3w8rhxrjyqywadmy666nph-validation-1
+              briefing:
+                id: briefing:yv3w8rhxrjyqywadmy666nph:validation:attempt-1:revision-1
+                digest: sha256:61e8e11595f0dc249f2434f7511fb322626c536a645ac5a52dfe4920ffd8c3f6
+                room-ref: ./dispatch-checklist-out-of-scope-delegation/review/validation/briefing-1
 ---
 
 A live FO wrote "advance status to done" into two ensign checklists. One ensign complied by silently hand-editing frontmatter (the write-scope ban is unenforced for workers). The other honored the ban and improvised: five failed `--set` attempts, `strings` on the binary, and an FO-only skill loaded to find the syntax. The durable-journey grader then failed the run on the hand-edited transition. The FO's own state work was clean throughout.

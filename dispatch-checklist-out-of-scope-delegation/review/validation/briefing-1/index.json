@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:yv3w8rhxrjyqywadmy666nph:validation:attempt-1:revision-1",
+  "question": "Approve validation of the checklist authority-boundary fix and add its +2 LOC/1-file candidate to the PR stack?",
+  "artifacts": [
+    {
+      "id": "artifact:yv3w8rhxrjyqywadmy666nph:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/19e8aa20f917b27f8fd926331b11378ee83934f6/dispatch-checklist-out-of-scope-delegation/gate-decision-validation.md",
+      "rev": "sha256:5a7f8823275fea1504d7cf1060868069ad06461b1981794f9ca676c7df8d34c7",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed AC-1 and AC-2: live delegation fell from 2/2 to 0/2, child state mutations stayed zero, and actual +2 LOC/1 file is within the approved 0..+3/1 tolerance."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:yv3w8rhxrjyqywadmy666nph:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/19e8aa20f917b27f8fd926331b11378ee83934f6/dispatch-checklist-out-of-scope-delegation.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:0c6a3addf7f18d020fa6b6229f8e32f953d0ce44bb9bf8ed0763bb8f27c42cfb"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:yv3w8rhxrjyqywadmy666nph:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
