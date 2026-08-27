@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntnywe6wfk1g5sersjbe5yt7:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation to enter implementation: VERIFIED-WORKING, no code change to piSpawnSkill — the bare 'ensign' resolves on installed 0.37.2 and latest npm 0.57.0 (byte-identical basename match); the field report is inverted (spacedock:ensign would fail). The only production change is a comment pin in build.go:56-63 (net ~0 LOC) recording the re-verification. Existing TestBuildPiHostEmitsSpawnAgentAndSkill locks skill='ensign'. Approve to apply the comment pin, or reject to close as verified-working with no edit?",
+  "artifacts": [
+    {
+      "id": "artifact:ntnywe6wfk1g5sersjbe5yt7:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a3d2db353b78888acc4c668a533c03f4d13c52dd/pi-spawn-skill-name-resolution.md",
+      "rev": "sha256:42768df21c1038c3b644b324a29fa7fcec19eb0f44bc81de48c731d3d349f315",
+      "mediaType": "text/markdown",
+      "summary": "Verify-first outcome: VERIFIED-WORKING. Spiked resolveSkillPath+normalizeSkillInput on installed pi-subagents 0.37.2 and latest npm 0.57.0 — byte-identical, both skills.find(s =\u003e s.name === skillName) (exact basename match, no namespace handling). Live transcript (run 4c6e9c44) confirms the ensign skill resolved in \u003cavailable_skills\u003e. The field report is inverted: bare 'ensign' resolves; 'spacedock:ensign' would fail (likely confused subagent_type with skill field). No loader-version-aware logic warranted — resolver unchanged across the version range. The only production change is a comment refinement in build.go:56-63 pinning the verified loader versions (net ~0 LOC). Existing TestBuildPiHostEmitsSpawnAgentAndSkill locks skill='ensign'. The broken DONE formatting belongs to t4 (embed), out of scope."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ntnywe6wfk1g5sersjbe5yt7:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    }
+  ]
+}
