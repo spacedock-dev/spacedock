@@ -141,3 +141,16 @@ Spiked the riskiest unverified mechanism (newer-loader resolver behavior) before
 ### Summary
 
 Ideation design was already committed (9ff6e54ca); this report appends the missing stage-report section. All three ideation checklist items are complete: the four-section design is in the entity body, the verify-first spike of the newer-loader resolver was executed (0.37.2 and 0.57.0 byte-identical basename match, live transcript confirms end-to-end resolution), and the expected surface declares net ~0 LOC (comment pin only). Outcome: verified-working, no code change to `piSpawnSkill`.
+
+## Stage Report: implementation
+
+- DONE: Comment-only edit to internal/dispatch/build.go piSpawnSkill block (build.go:56–66)
+  Replaced the stale unverified assumption text ("pi-subagents resolves agents and skills by directory basename only, so the artifact carries…") with pinned loader-version evidence: re-verified on 2026-08-27 against pi-subagents 0.37.2 (installed) and 0.57.0 (latest npm), both using exact basename match (`skills.find((s) => s.name === skillName)` in `resolveSkillPath`, `src/agents/skills.ts`) — byte-identical across versions, no namespace/qualified-name handling. The bare basename is the only resolving form; passing `spacedock:ensign` would fail to match. `piSpawnSkill` value unchanged (`"ensign"`), `piSpawnAgent` unchanged (`"worker"`). Net +5 lines comment, 0 lines code — comment-pin only.
+- DONE: No behavior change verified (go test, go build, gofmt all green)
+  `go test ./internal/dispatch/ -run TestBuildPiHostEmitsSpawnAgentAndSkill` — ok (asserts `*out.Skill == "ensign"`, locking the verified-correct value). `go build ./...` — ok. `go test ./internal/dispatch/` — ok (98.6s). `gofmt -l internal/dispatch/build.go` — clean (no output). No accidental code change.
+- DONE: Field report inversion recorded
+  The field report diagnosis was inverted: bare `ensign` resolves (confirmed by live dispatch transcript run 4c6e9c44 and source spike); qualified `spacedock:ensign` is the form that would fail (no namespace handling in the loader). The report likely confused the `subagent_type` field (host-neutral `"spacedock:ensign"`) with the `skill` field (bare `"ensign"`). No loader-version-aware logic added — the ideation established verified-working.
+
+### Summary
+
+Comment-only edit to internal/dispatch/build.go (commit 466ee03f9 on branch spacedock-ensign/pi-spawn-skill-name-resolution): replaced the stale unverified piSpawnSkill assumption with pinned loader-version evidence (0.37.2 installed, 0.57.0 latest npm, both exact basename match, dated 2026-08-27). piSpawnSkill remains `"ensign"` — no code behavior change. All validation green: targeted test, full dispatch test suite, go build, gofmt. The field report diagnosis was inverted; the bare name is the only resolving form.
