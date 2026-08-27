@@ -251,3 +251,23 @@ CI-wiring complete (commit 3950d47e0). The `TestLivePiNonSelfDescribingDispatch`
 
 ### Summary
 Rework complete: the Pi-only `stageReportFormatBlock` embed and its two body-presence fixtures are removed; the narrowed Pi `firstActionBlock` (overclaim gone) and the live lane + CI wiring are kept as the proof infra for the stacked follow-up layer that will rewrite the firstActionBlock to invoke the ensign skill. Non-live dispatch/ensigncycle tests pass (incl. `-race`), the live-tagged build compiles, and gofmt is clean. The live lane will go RED in pi-live until the follow-up layer lands — by design (the lane proves the fix). The pre-existing `TestVersionAmbiguousMarkersExitZero` env failure in internal/cli is unrelated and deferred.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify the embed is gone: grep -rn stageReportFormatBlock internal/ returns no matches
+  `grep -rn stageReportFormatBlock internal/` → exit 1 (no matches). The 17-line `stageReportFormatBlock()` function and the 11-line step-8a `if host == "pi" { parts = append(parts, stageReportFormatBlock()) }` conditional are both deleted from `internal/dispatch/build.go` (confirmed by the rework diff 430ab47ad..HEAD, build.go -26 lines).
+- DONE: Confirm the narrowed firstActionBlock (overclaim gone) is kept
+  `grep -n "This file contains the shared ensign discipline entry points" internal/dispatch/build.go` → exit 1 (overclaim absent from production code). `grep -n "This file carries the stage-report format template" internal/dispatch/build.go` → line 901 (narrowed text retained). `TestBuildPiFirstActionNarrowedToStageReportFormat` → PASS (0.20s), asserts the overclaim is absent and the narrowed text is present. Claude/Codex `firstActionBlock` branches unchanged (diff confirms only the Pi branch was edited in the prior cycle).
+- DONE: Confirm the live lane + CI wiring are kept
+  `internal/ensigncycle/pi_nonself_describing_live_test.go` exists (8807 bytes, `//go:build live`). `.github/workflows/runtime-live-e2e.yml` line 814: `-run 'TestLivePiFrontDoorSmoke|TestLivePiNonSelfDescribingDispatch'` — the CI filter selects both front-door live smokes. `go test -tags live -list '.*' ./internal/ensigncycle/` lists both `TestLivePiFrontDoorSmoke` and `TestLivePiNonSelfDescribingDispatch`, confirming the regex selects them. `writePiNonSelfDescribingSmokeWorkflow` helper retained in `pi_nonself_describing_build_test.go`.
+- DONE: Run go test ./internal/dispatch/ ./internal/ensigncycle/ green
+  `go test ./internal/dispatch/ ./internal/ensigncycle/` → both `ok` (dispatch cached, ensigncycle 416.2s). `go test -race ./internal/dispatch/ ./internal/ensigncycle/` → both `ok` (dispatch cached, ensigncycle 299.3s).
+- DONE: Confirm go build -tags live ./internal/ensigncycle/... compiles; gofmt clean
+  `go build -tags live ./internal/ensigncycle/...` → exit 0 (compiles clean). `gofmt -l ./internal/dispatch/ ./internal/ensigncycle/` → no files listed (clean). `go vet ./internal/dispatch/ ./internal/ensigncycle/` → exit 0 (clean).
+- DONE: Confirm TestLivePiNonSelfDescribingDispatch is kept and the CI -run filter still selects it
+  Listed by `go test -tags live -list '.*' ./internal/ensigncycle/`. The CI step's `-run 'TestLivePiFrontDoorSmoke|TestLivePiNonSelfDescribingDispatch'` regex selects it (verified by listing). The live lane is EXPECTED to go RED in pi-live until the stacked follow-up (#774) lands — by design: the lane proves the fix, and the fix is the firstActionBlock rewrite to invoke the ensign skill, which is not yet in this layer.
+- DONE: Confirm no staged files; working tree clean
+  `git status --porcelain` in the worktree → empty (exit 0). No staged or untracked files.
+
+### Summary
+Independent validation of the embed-removal rework (cycle 3) is complete. The `stageReportFormatBlock` embed and its two body-presence fixtures are confirmed gone (grep exit 1, diff 430ab47ad..HEAD shows -175 deletions across 4 files). The narrowed Pi `firstActionBlock` (overclaim removed, narrowed text retained) and the live lane + CI wiring are confirmed kept. Non-live dispatch/ensigncycle tests pass including `-race`; the live-tagged build compiles; gofmt and go vet are clean; no staged files. The live lane failing in pi-live is by-design — it is the proof infrastructure for the stacked follow-up layer (#774) that will rewrite the firstActionBlock to invoke the ensign skill. Recommend PASSED for the embed-removal rework; the fix lands in the follow-up layer.
