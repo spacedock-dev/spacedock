@@ -7,7 +7,7 @@ started: 2026-08-27T17:15:11Z
 completed:
 verdict:
 score: 0.7
-worktree:
+worktree: .worktrees/spacedock-ensign-flat-entity-gate-room-durability
 issue:
 gates:
     version: 1
