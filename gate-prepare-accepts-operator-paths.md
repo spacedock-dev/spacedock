@@ -155,3 +155,16 @@ The test mechanism serves AC-1 through AC-3. Simplest alternative considered: on
 ### Summary
 
 Ideation defines one explicit-launch-directory resolver that accepts unique absolute, cwd-relative, and state-relative forms while refusing ambiguous spellings before mutation. A focused throwaway spike reproduced the doubled Artifact and Reference paths, and the acceptance plan ties the fix to reopening the gates that currently stall.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Replace the recorded FO wording with an exact diff that stays within the existing 7,700-byte cap and saves at least 64 bytes of growth versus the rejected wording; align AC-4, estimate, and tests.
+  Commit `49ac425d6` records 7,645−526+578=7,697 bytes: +52 growth, 67 bytes less than rejected +119; AC-4 and the byte-count/cap test fail if either bound regresses.
+- DONE: Preserve omitted-`LaunchDir` direct-package behavior and require the CLI to inject launch context, with a wrong-root regression.
+  Blank `LaunchDir` now specifies no launch candidate; AC-2 retains `TestPrepareWrongRootRelativeArtifactFails`, which would fail if omission defaulted to `WorkflowDir`, while the CLI regression explicitly supplies its invocation directory.
+- DONE: Clarify ambiguity de-duplication and selected-source guard ownership; record the revised exact surface and LOC estimate.
+  Candidates de-duplicate cleaned absolute lexical paths only, never symlink/file identity; unique candidates still reach `gitsource.Inspect`, and the declared surface is +151 net (+189/−38) across exactly 6 files with bounded 7-file tolerance.
+
+### Summary
+
+Cycle 2 removes the two staff-review blockers without implementing product code. The revised design fits the existing FO byte cap, keeps direct callers backward-compatible when launch context is absent, and makes lexical ambiguity versus Git-source guard ownership testable.
