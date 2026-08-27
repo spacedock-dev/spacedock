@@ -142,3 +142,20 @@ Fleshed out the ideation for gating the Pi front door bootstrap on resume. Key d
 ### Summary
 
 Implemented the Pi front door resume gate: wrapped the `launchPrompt(piBootstrapPrompt, fd)` append in `internal/cli/pi.go` with `if !containsResume(fd.passthrough)` so a resume launch omits the fresh-start FO bootstrap prompt, matching the Claude/Codex front door. Added a table-driven `TestPiResumeSuppressesBootstrapPrompt` in `internal/cli/pi_frontdoor_test.go` pinning AC-1/AC-2. pi.go-only change, no extension touch. Committed to `spacedock-ensign/gate-pi-frontdoor-bootstrap-on-resume`.
+
+## Stage Report: validation
+
+- DONE: AC-1 — `TestPiResumeSuppressesBootstrapPrompt` launches Pi with `--resume` in passthrough and asserts argv does NOT contain `piBootstrapPrompt`; non-resume keeps it as the last argv token
+  `go test ./internal/cli/ -run TestPiResumeSuppressesBootstrapPrompt -v -count=1` → PASS (7/7 subtests: resume/--resume, resume/--resume=abc123, resume/-r, resume/--continue, resume/-c, nonresume/model_flag, nonresume/task_string). Per-token: resume tokens suppress the prompt (argv has no piBootstrapPrompt token); non-resume `--model google/gemini` and `review this code` keep piBootstrapPrompt as the last argv token.
+- DONE: AC-2 — resume gate matches Claude/Codex front door token set; `containsResume` is the shared helper at frontdoor.go:553 (no new token set added)
+  `grep -n "func containsResume" internal/cli/frontdoor.go` → 553:func containsResume; callsites: frontdoor.go:428 (Claude), frontdoor.go:447 (Codex, via `resume :=`), pi.go:277 (this change). Table-driven test covers all five tokens (`--resume`, `--resume=<id>`, `-r`, `--continue`, `-c`) plus two non-resume cases.
+- DONE: AC-3 — extension `.pi/extensions/spacedock.ts` UNCHANGED (pi.go-only fix)
+  `git diff --numstat main` → only internal/cli/pi.go (9/1) and internal/cli/pi_frontdoor_test.go (70/0); no `.pi/extensions/spacedock.ts` in the diff.
+- DONE: pre-existing failure isolated
+  `TestVersionAmbiguousMarkersExitZero` fails identically on main (`go test ./internal/cli/ -run TestVersionAmbiguousMarkersExitZero` on `43fc79a23 [main]` → same `want "Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)"` vs got `... (CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT)`) because the worker env sets `PI_CODING_AGENT=true`. Unrelated to this change.
+- DONE: semantic adversarial pass
+  Non-resume launch still gets the prompt (nonresume/model_flag, nonresume/task_string PASS — baseline that can move wrong is intact). The guard is exactly the `if !containsResume(fd.passthrough) { argv = append(...) }` wrap; no other argv mutation (diff confirms only the one append is wrapped). gofmt clean, go vet clean, -race clean on the focused test.
+
+### Summary
+
+Validation PASSED. The pi.go-only resume gate (`if !containsResume(fd.passthrough)` wrapping `launchPrompt(piBootstrapPrompt, fd)`) suppresses the fresh-start FO bootstrap prompt on all five resume tokens and preserves it on non-resume launches, matching the Claude/Codex front door. Extension unchanged. The sole suite failure (`TestVersionAmbiguousMarkersExitZero`) is a pre-existing environmental failure reproduced identically on main. Recommend PASSED.
