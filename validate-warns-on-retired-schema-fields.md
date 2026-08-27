@@ -1,7 +1,7 @@
 ---
 id: wyzg6knr8whtmg79mxkb78jg
 title: status --validate warns on retired gate-schema fields and exits zero
-status: ideation
+status: implementation
 source: "email-triage field report 2026-08-26: historical batches carry retired gate-schema fields (current, digest-domain — the latter absent from today's source), so --validate exits non-zero forever on any workflow with history; captain ruling: no migration, just warn"
 started: 2026-08-26T22:00:13Z
 completed:
@@ -49,7 +49,7 @@ gates:
                 decision: approve
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 A workflow with history cannot pass `status --validate` because entities written under an old gate schema carry fields the current schema retired. A check that is always red cannot fail meaningfully. Captain ruling: do not build a migration. Downgrade retired-field findings to warnings and exit zero when they are the only findings.
