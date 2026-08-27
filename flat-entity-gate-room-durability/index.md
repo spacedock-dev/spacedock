@@ -3,7 +3,7 @@ id: b9pjkz3rv0svx9rt63kw8yg7
 title: "A flat entity's gate room is neither committed by `state commit` nor migratable to folder form"
 status: ideation
 source: "Observed eight times driving gates on 79 and cn, 2026-07-27/28. Every gate room bound on a flat entity needed a manual path-scoped commit after `state commit` reported success; the obvious repair — converting to folder form — silently breaks prior closed gates."
-started:
+started: 2026-08-27T17:15:11Z
 completed:
 verdict:
 score: 0.7
