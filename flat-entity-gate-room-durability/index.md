@@ -9,6 +9,17 @@ verdict:
 score: 0.7
 worktree:
 issue:
+gates:
+    version: 1
+    records:
+        - id: gate:b9pjkz3rv0svx9rt63kw8yg7:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:b9pjkz3rv0svx9rt63kw8yg7-backlog-1
+              briefing:
+                id: briefing:b9pjkz3rv0svx9rt63kw8yg7:backlog:attempt-1:revision-1
+                digest: sha256:5d63d8641afab33a2f57b0f4054d12583c8e1b6fd4e3d043f94ce0c6edfee97b
+                room-ref: ./review/backlog/briefing-1
 ---
 
 Make a gate room on a flat entity durable through the supported command, and give a flat entity a migration path to folder form that does not corrupt its gate history.
