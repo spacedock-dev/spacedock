@@ -299,3 +299,29 @@ Cycle 2 closes the review gap between preserved disk bytes and preserved in-memo
 ### Summary
 
 Implementation commit `8d2c3e282` restores zero-exit validation for the two exact historical encodings while keeping current schema corruption fail-closed and gate authority status/order-owned. Both read APIs retain the original YAML nodes and disk bytes, and explicit active validation alone renders the two deterministic retired-field warnings.
+
+## Review-finding disposition
+
+### R1 — REJECTED: tagged retired key names bypass strict decode
+
+- Defect kind: outcome defect; release scope: Material; ownership: this task; proposed disposition: fix.
+- Released user and normal workflow: repository-owned entity frontmatter is the supported validation input, and AC-3 explicitly promises that wrong tags remain fatal.
+- Observable harm: `!legacy current`, `!legacy gate`, and `!legacy digest-domain` keys are accepted as the historical pair, produce two retired warnings, and return a canonical document instead of failing closed.
+- Authority: value-ac[AC-3] only the two exact historical encodings are compatible; corrupted lookalikes and wrong tags must remain fatal.
+- Trigger evidence: detached test `TestAdversarialTaggedRetiredKeysAreStrict` failed all three variants against commit `8d2c3e282`; `mappingKeyIndex`, the `current.Content[0].Value` check, and the digest scan compare key values without requiring scalar `!!str` keys, then remove those nodes before `KnownFields(true)` can reject their tags.
+- Test-strength explanation: the candidate's wrong-tag cases change only retired value tags, so they stay green while malformed key tags cross the filter; requiring canonical key kind/tag at each removed key would make the adversarial test pass.
+
+No deferred-risk or polish findings were identified. Recommendation: **REJECTED** until R1 is corrected and the detached tagged-key matrix passes.
+
+## Stage Report: validation
+
+- FAILED: Reproduce AC-1 through AC-3 through real text/JSON validation: exact historical retired nodes yield two deterministic warnings and exit zero; mixed current corruption, wrong locations/shapes/tags/values, duplicates, missing records, and unrelated unknown fields remain fatal with no broad fallback.
+  Focused CLI/gate tests prove AC-1/AC-2 and most AC-3 variants, but detached `TestAdversarialTaggedRetiredKeysAreStrict` proves three wrong key tags are accepted; removing either classifier or warning routing still fails the positive fixtures, while R1 distinguishes the false-green boundary.
+- DONE: Verify AC-4 and AC-5 end to end: both read APIs return source YAML nodes retaining the retired fields, disk bytes remain unchanged, readiness/authority follow status plus ordered attempts, ordinary/archive behavior and silent provider-evidence remain unchanged, contract wording matches implementation, and focused/full/race/gofmt/mkdocs checks actually ran green.
+  Source-node/tag/value, SHA-256 byte identity, stale-pointer readiness and summary, provider-evidence, ordinary silence, and detached archive silence/strictness probes passed; focused tests, isolated `go test ./...`, isolated `go test ./... -race`, pinned `mkdocs build --strict`, and `gofmt -w ./cmd ./internal` exited zero, with gofmt touching only unrelated pre-existing `internal/release/runtime_live_evidence_workflow_test.go` in the throwaway checkout and none of the task's Go files.
+- FAILED: Perform a detached semantic adversarial audit of the high-stakes gate/status change from a throwaway checkout, trace warnings/errors/bytes/source nodes/authority across adjacent variants, challenge how tests could pass with wrong behavior, report actual 228 insertions/28 deletions/+200 net across 6 files against +155 +/-45 and max 7, and classify every finding with a PASSED or REJECTED recommendation.
+  Audit checkout at `8d2c3e282` passed exact/alone/mixed unknown/location/value/shape/duplicate/missing/archive variants but exposed Material outcome defect R1; actual surface is 228 insertions, 28 deletions, +200 net across 6 files, within +155 +/-45 and max 7, so the recommendation is REJECTED for semantics rather than scope drift.
+
+### Summary
+
+Validation confirms the intended text/JSON warning behavior, byte and source-node preservation, status/order authority, silent compatibility paths, documentation, and isolated repository checks. The detached audit nevertheless rejects the candidate because custom tags on retired key names bypass strict decoding, violating AC-3's exact-encoding and wrong-tag boundary.
