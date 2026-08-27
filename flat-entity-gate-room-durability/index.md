@@ -488,3 +488,16 @@ Round publication and replay use the resolved ticket review home instead of
 `filepath.Dir(entityPath)`, so a flat round cannot bind a sibling entity or mutable
 `<slug>.md`. Canonical refs, frozen legacy behavior, narrowed scope, and the +180/12
 estimate with its existing tolerance remain unchanged.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved canonical `@review/...` writer/resolver and direct flat/folder round publication while preserving frozen legacy refs and command authority.
+  Commit `add2d0632`; gate/round form tables fail if new refs become entity-relative, the flat guard returns, or legacy folder pointers are rewritten on replay.
+- DONE: Carry the shared ticket review home through round Artifact validation, with byte-clean flat/folder tests for in-home success and out-of-home, sibling, and mutable-entity refusal.
+  Publication and `ValidateRoundFile` tests fail if either form trusts a sibling/out-of-home target, its mutable entity, or changes bytes on refusal.
+- DONE: Prove one-commit fresh-clone durability, update the two approved docs, run focused/full/race/gofmt checks, and report actual net LOC/files against +180/12 with ±70/±2 tolerance.
+  The two-host real-Git test fails if one `state commit` omits the flat room or sibling dirt leaks; focused, full, and race suites pass, with +249 net LOC across 13 files (+69/+1).
+
+### Summary
+
+Implemented one canonical review-home namespace for new gate and round rooms while retaining every legacy reader path and advisory authority boundary. Flat and folder rounds now publish and replay through the same home, with Artifact containment enforced during publication and replay. The fresh-host Git proof, both contract docs, and repository-required verification are complete in `add2d0632`.
