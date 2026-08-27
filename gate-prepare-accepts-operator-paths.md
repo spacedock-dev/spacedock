@@ -1,7 +1,7 @@
 ---
 id: 9n02rsw1s4tztqzgmwb07n1k
 title: gate prepare resolves operator-supplied artifact paths without doubling
-status: implementation
+status: validation
 source: "email-triage codex audit 2026-08-26: three of six gate-prepare attempts across two days failed with a doubled state path (.../.spacedock-state/docs/triage/.spacedock-state/...); under the no-retry rule the third failure left a batch's gate unprepared for the rest of the window"
 started: 2026-08-26T21:19:07Z
 completed:
