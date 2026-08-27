@@ -1,7 +1,7 @@
 ---
 id: t4rqqmmrqh69adgb1bbdx838
 title: Embed the stage-report protocol in the dispatch artifact
-status: validation
+status: implementation
 source: "/tmp/spacedock-pi-dispatch-diagnosis.md (2026-08-25): 3 of 4 Pi-dispatched ensigns completed implementation without writing a ## Stage Report; the dispatch build artifact's ## First action claims the file contains the stage-report format, but the body has 0 such tokens. Same class as archived pin-ensign-contract-entry-point (2026-08-01), which fixed the spawn binding but not the artifact-body gap."
 gates:
     version: 1
@@ -82,7 +82,7 @@ gates:
                 reason: 'Captain approve (cycle-2 PASSED-with-deferred-risk): AC-2/AC-3 green with the adversarial falsifier breaking the right tests; firstActionBlock overclaim removed; production code (build.go +29/-2) within estimate. AC-1 live lane now CI-wired (TestLivePiNonSelfDescribingDispatch selected by the pi-live front-door-smoke step -run filter — regex verified to select it and exclude the TestLiveCommon flake); compiles, auth-blocked locally, runs in CI per the cycle-2 correction. Surface deviation (483 ins / 5 files) is in-scope test infrastructure, not production scope creep; noted for the record. Pre-existing TestLiveCommonRecordedGateLifecycle flake and TestVersionAmbiguousMarkersExitZero env failure are deferred as separate risks.'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
 mod-block:
@@ -239,3 +239,15 @@ Independent validation re-verification complete. All three ACs reproduced: AC-2 
 ### Summary
 
 CI-wiring complete (commit 3950d47e0). The `TestLivePiNonSelfDescribingDispatch` live lane is now selected by the `pi-live` job's "Run live Pi front-door smoke" step via the extended `-run 'TestLivePiFrontDoorSmoke|TestLivePiNonSelfDescribingDispatch'` filter, so AC-1 is auto-proven in CI on every pi-live cadence and PR instead of relying on a manual local run. Validation chosen: extended the front-door-smoke step rather than adding a dedicated step (both are front-door live smokes sharing fixture infra, per the dispatch preference). Offline guard + dispatch fixture green; full offline dispatch/ensigncycle sweep green; YAML parses; live lane compiles under `-tags live`. The pre-existing `TestLiveCommonRecordedGateLifecycle` flake was not touched. No staged files; working tree clean.
+
+## Stage Report: implementation
+
+- DONE: Drop the embed — delete `stageReportFormatBlock()` and the step-8a `if host == "pi" { parts = append(parts, stageReportFormatBlock()) }` conditional in internal/dispatch/build.go; keep the Pi firstActionBlock narrowing unchanged
+  Removed the 17-line `stageReportFormatBlock()` function and the 11-line step-8a conditional block (build.go -26 net, 3 insertions/174 deletions across the 3-file diff). The Pi `firstActionBlock` narrowed text ("This file carries the stage-report format template…not auto-loaded") is untouched; the firstActionBlock was NOT rewritten to invoke the skill (deferred to the stacked follow-up layer).
+- DONE: Remove the body-asserts fixtures — `TestBuildPiArtifactCarriesStageReportProtocol` (internal/dispatch/build_stage_report_protocol_test.go) and `TestPiNonSelfDescribingDispatchBuildBodyCarriesProtocol` (internal/ensigncycle/pi_nonself_describing_build_test.go); keep `TestBuildPiFirstActionNarrowedToStageReportFormat`
+  `TestBuildPiArtifactCarriesStageReportProtocol` deleted (asserted body carried the embedded tokens being removed). `TestPiNonSelfDescribingDispatchBuildBodyCarriesProtocol` deleted along with its now-unused imports (bytes/context/encoding/json/os/os/exec/strings/time), leaving only the `writePiNonSelfDescribingSmokeWorkflow` + readme/entity helpers the live lane still uses. `TestBuildPiFirstActionNarrowedToStageReportFormat` kept verbatim (asserts the overclaim "This file contains the shared ensign discipline entry points" is gone — still valid against the retained narrowed firstActionBlock).
+- DONE: Keep `TestLivePiNonSelfDescribingDispatch` + CI wiring; validate non-live green, live-tagged build compiles, gofmt clean; commit to the worktree branch + append this stage report path-scoped to the state checkout
+  `go test ./internal/dispatch/ ./internal/ensigncycle/` → both `ok` (dispatch 88.1s, ensigncycle 546.8s); `go test -race` same packages → both `ok`. `go build -tags live ./internal/ensigncycle/...` compiles clean. `gofmt -l ./internal/dispatch/ ./internal/ensigncycle/` → no files listed (clean). The live lane and `.github/workflows/runtime-live-e2e.yml` `-run` filter untouched. Committed to `spacedock-ensign/embed-stage-report-protocol-in-dispatch` (740d528fb). State-checkout stage report committed path-scoped.
+
+### Summary
+Rework complete: the Pi-only `stageReportFormatBlock` embed and its two body-presence fixtures are removed; the narrowed Pi `firstActionBlock` (overclaim gone) and the live lane + CI wiring are kept as the proof infra for the stacked follow-up layer that will rewrite the firstActionBlock to invoke the ensign skill. Non-live dispatch/ensigncycle tests pass (incl. `-race`), the live-tagged build compiles, and gofmt is clean. The live lane will go RED in pi-live until the follow-up layer lands — by design (the lane proves the fix). The pre-existing `TestVersionAmbiguousMarkersExitZero` env failure in internal/cli is unrelated and deferred.
