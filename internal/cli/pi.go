@@ -268,7 +268,15 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		}
 	}
 	argv = append(argv, fd.passthrough...)
-	argv = append(argv, launchPrompt(piBootstrapPrompt, fd))
+	// Suppress the fresh-start bootstrap prompt on a resume, mirroring the
+	// Claude/Codex front door (frontdoor.go containsResume): a resume carries
+	// its own session intent and the FO contract survives in the system prompt
+	// via resources_discover, so re-injecting piBootstrapPrompt would tell the
+	// resumed session to load the contract as if starting fresh. Covers --resume,
+	// --resume=<id>, -r, --continue, -c (the same token set as containsResume).
+	if !containsResume(fd.passthrough) {
+		argv = append(argv, launchPrompt(piBootstrapPrompt, fd))
+	}
 	// Resolve the fnm per-shell multishell symlink to its stable node-installation
 	// bin so execHost.Launch's stdlib exec.LookPath(<absolute>) hands Node a script
 	// path fnm never tears down. On any miss/failure argv[0] stays "pi" (current
