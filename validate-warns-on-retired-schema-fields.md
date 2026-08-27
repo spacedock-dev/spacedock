@@ -286,3 +286,16 @@ Ideation turns the captain's “no migration, just warn” ruling into an exact 
 ### Summary
 
 Cycle 2 closes the review gap between preserved disk bytes and preserved in-memory source state. The implementation proof must now observe both retired nodes structurally in every returned source `*yaml.Node`, so filtering the original node cannot pass behind an unchanged file hash.
+
+## Stage Report: implementation
+
+- DONE: Implement only the approved exact-location/string-shape retired-field classifiers in the existing clone-before-decode seam, preserve original source nodes/bytes and status/order authority, render warning-only active validation, and apply the exact internal/public contract updates without widening provider-evidence or archive behavior.
+  Commit `8d2c3e282` filters only validated clone nodes, types/sorts retired diagnostics, keeps active-only rendering, and updates both approved contract surfaces; wrong location, shape, tag, value, duplicate, and missing-record cases remain fatal.
+- DONE: Add falsifiable AC-1 through AC-5 coverage: retired-only text/JSON exits zero with two warnings; mixed current corruption and all wrong-shape/location lookalikes stay fatal; returned ReadDiagnostics/Read YAML nodes and disk bytes retain both retired fields; readiness ignores stale retired pointers; docs behavior matches implementation.
+  Gate/status tests fail if either exact classifier, warning class/path, source-node retention, byte hash, status-selected readiness, strict negative, JSON/text result, mixed-corruption error, ordinary-read silence, or contract behavior changes.
+- DONE: Keep the candidate at +155 net LOC across 6 files within +/-45 net and at most 7 files, with no grammar/storage/writer/authority change; run focused gate/status tests, gofmt, go test ./..., go test ./... -race, and mkdocs build --strict, reporting exact insertions, deletions, net, files, and results.
+  Exact surface is 228 insertions, 28 deletions, net +200 across 6 files; focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, and pinned-dependency `mkdocs build --strict` all passed.
+
+### Summary
+
+Implementation commit `8d2c3e282` restores zero-exit validation for the two exact historical encodings while keeping current schema corruption fail-closed and gate authority status/order-owned. Both read APIs retain the original YAML nodes and disk bytes, and explicit active validation alone renders the two deterministic retired-field warnings.
