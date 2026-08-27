@@ -1,7 +1,7 @@
 ---
 id: wyzg6knr8whtmg79mxkb78jg
 title: status --validate warns on retired gate-schema fields and exits zero
-status: validation
+status: implementation
 source: "email-triage field report 2026-08-26: historical batches carry retired gate-schema fields (current, digest-domain — the latter absent from today's source), so --validate exits non-zero forever on any workflow with history; captain ruling: no migration, just warn"
 started: 2026-08-26T22:00:13Z
 completed:
