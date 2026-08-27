@@ -194,3 +194,22 @@ Ideation reduces the design to a single host-neutral residency/invalidation rule
 ### Summary
 
 Cycle 2 replaces the seed metric with a reproducible exact-session baseline and separates AC-1's historical workload from the AC-2–AC-4 safety suffix. It also makes gate-before-write ordering falsifiable without changing the one-file implementation surface.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Cite AC-1 value evidence.
+  Mill's completed independent PASS, durably captured in state commit `1f50243ab` at `fo-contract-reread-churn/gate-decision-ideation.md`, reproduced the historical **28/151 = 18.5%** baseline and the **5/128 = 3.9%** result under the 5-read/4.0% cap; repeated same-window reads make the value oracle fail.
+- DONE: Cite AC-2 same-context residency evidence.
+  Mill verified the same-window reuse mutation falsifier: permitting a second unchanged-body load fails AC-1/AC-2, while the safety suffix remains outside the value numerator and denominator.
+- DONE: Cite AC-3 invalidation evidence.
+  Mill verified the compaction and direct-replacement edges independently: omitting either lazy next-trigger reload or adding an eager reload fails the AC-3 safety oracle.
+- DONE: Cite AC-4 prerequisite-order evidence.
+  Mill verified `gate-load → write-load → mutation` and `gate-load → write-load → merge-load → transition`, initially and after each invalidator; every adjacent swap and omitted required load fails.
+- DONE: Cite AC-5 boundary and surface evidence.
+  The reviewed surface remains **+2 net LOC across exactly 1 file**, projecting `first-officer-shared-core.md` to **23,170 bytes**, 330 bytes below the 23,500-byte cap, with command grammar, formats, authority, gate/merge decisions, and runtime adapters unchanged.
+- DONE: Record the completed independent review disposition.
+  Rebuilt validator Mill returned **PASS with no remaining findings** after reproducing both ratios and verifying the ordering, duplicate-read, omitted-reload, eager-reload, adjacent-swap, and omitted-load falsifiers.
+
+### Summary
+
+Cycle 3 repairs only the gate evidence report: all five ACs now have explicit citations, and Mill's completed independent PASS is durably referenced. Completion count: **6 DONE, 0 SKIPPED, 0 FAILED**; the design, ACs, test plan, estimate, and product scope are unchanged.
