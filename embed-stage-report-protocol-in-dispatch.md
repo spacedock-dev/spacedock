@@ -89,6 +89,17 @@ gates:
                 digest: sha256:f3ee956955b1cc600ac4150b346e164445bf1dac53a2e6973569891c648ea2c3
                 request-digest: sha256:d136acdc15cac8eb74dbd11da2fdb1c3d6214a53bb62f97be817c8d762d1d36f
                 room-ref: ./embed-stage-report-protocol-in-dispatch/review/validation/briefing-3
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:t4rqqmmrqh69adgb1bbdx838:validation:3
+                briefing: briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-27T08:50:21.435348Z"
+                decision: approve
+                reason: 'Captain approve: PASSED. AC wording is stale (original scope, not the rework) but the validation evidence is sound for the embed-removal/firstActionBlock-fix rework; mismatch noted in the gate record.'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
 mod-block:
