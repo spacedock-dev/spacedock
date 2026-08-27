@@ -501,3 +501,37 @@ estimate with its existing tolerance remain unchanged.
 ### Summary
 
 Implemented one canonical review-home namespace for new gate and round rooms while retaining every legacy reader path and advisory authority boundary. Flat and folder rounds now publish and replay through the same home, with Artifact containment enforced during publication and replay. The fresh-host Git proof, both contract docs, and repository-required verification are complete in `add2d0632`.
+
+## Review-finding disposition (validation cycle 1 worker triage)
+
+- Reviewer observation: detached candidate `add2d0632` accepts a malformed reserved ref through the gate-close path. After ordinary flat `Prepare`, replacing `@review/validation/briefing-1` with `@review/a/../b` makes direct `ResolveRoomRef` refuse, but `RecordSemantic(... approve ...)` returns nil and writes the Resolution/application.
+- Worker proposal: Material outcome defect, task-owned, narrow correction. Released workflow: closing a prepared gate with its persisted binding; observable harm: captain authority closes over an unverified room after the reserved parser rejected it; authority: `value-ac[AC-5]: malformed @review values are rejected without mutation`; trigger evidence: detached `TestAuditMalformedCanonicalRoomRefCannotBeClosedAsLegacy` fails at “gate close accepted malformed reserved room-ref.” `preparedRoomBinding` converts the resolver error to false, and `validateRetainedAuthority` then skips the binding. Candidate mutation remains held pending First Officer authorization.
+- Reviewer observation: repo-wide `gofmt -w ./cmd ./internal` changes only the audit test plus pre-existing `internal/release/runtime_live_evidence_workflow_test.go`; the ten task-touched Go files are format-clean. Worker proposal: Polish, outside task ownership; released workflow: none; observable harm: none; authority: `none: pre-existing alignment only`; trigger evidence: gofmt changes two struct-field spacing lines. Proposed disposition: decline from this candidate.
+
+## Stage Report: validation
+
+- DONE: Independently verify AC-1 and AC-2 with the two-host state-commit proof and flat/folder canonical `@review/...` writer/resolver behavior, including zero-byte replay and no sibling dirt.
+  Uncached `TestStateCommitMakesFlatRoundDurableInFreshHost` proves exact remote paths, digest-valid Host B readback, clean replay, and sibling exclusion; the flat/folder writer/resolver tests fail if the companion commit unit or canonical base changes.
+- FAILED: Adversarially verify AC-3 through AC-5: frozen legacy refs and digests, flat/folder round parity, reserved-ref refusals, and ticket-home Artifact containment during publication and replay.
+  AC-3/AC-4 reproduce, but detached mutation proves AC-5 false: malformed `@review/a/../b` is demoted to a legacy/non-prepared binding and gate close succeeds instead of refusing byte-clean.
+- DONE: Perform detached diff audit plus focused/full/race/gofmt checks, classify every finding, and compare actual +249 net LOC/13 files against approved +180/12 with ±70/±2 tolerance.
+  Detached audit found one Material outcome defect and one unrelated Polish item; focused/full/race pass, task-touched Go is format-clean, diff-check passes, and +249/13 is +69/+1 within tolerance.
+
+### Acceptance evidence
+
+- AC-1: PASSED — the two-host real-Git test observes four exact committed paths, absent dirty sibling state, resolving Host B round/digest, and a clean replay; removing the flat companion from the commit unit fails the path/readback assertions.
+- AC-2: PASSED — prepare and round writers emit the same normalized `@review/...` refs for flat/folder forms, and literal resolver expectations reach `<state-root>/<slug>/review/...`; restoring entity-directory-relative output fails one form.
+- AC-3: PASSED — a detached six-row matrix exercises flat `./task/review/...` and folder `./review/...` through prepare replay, withdraw, and record with ref/Briefing bytes unchanged; the frozen folder round pointer also validates and replays unchanged.
+- AC-4: PASSED — flat/folder publication, exact retained bytes, lifecycle preservation, replay no-op/divergence refusal, and publication/replay Artifact containment pass; restoring `filepath.Dir(entityPath)` as the trust root admits the flat sibling rows.
+- AC-5: FAILED — the parser table refuses malformed reserved refs, but the observable gate-close reader bypasses that error and mutates the entity. This is an outcome defect at the reserved-ref refusal boundary, not merely missing evidence.
+
+### Checks and recommendation
+
+- Focused uncached gates/status/two-host suites: PASS; full `go test ./...`: PASS; `go test ./... -race`: PASS; candidate diff check: PASS.
+- Repo-wide gofmt exposes the unrelated pre-existing spacing noted above; every task-touched Go file emits an empty `gofmt -d`.
+- Surface: 383 insertions, 134 deletions, net +249 across 13 files versus +180/12; deviation +69/+1 is within ±70/±2.
+- Recommendation: **REJECTED** — route the task-owned AC-5 refusal defect through First Officer authorization before reviewer rerun; do not change the approved design or the passing AC-1 through AC-4 behavior.
+
+### Summary
+
+The canonical review home, flat-room durability, legacy compatibility, and Artifact containment are independently proven, and all repository test suites pass. Validation still rejects `add2d0632` because one supported reserved-namespace refusal can be bypassed by gate close, allowing a malformed binding to spend captain authority and mutate state.
