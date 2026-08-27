@@ -35,13 +35,13 @@ gates:
                 state: consumed
 ---
 
-The contract's deferred load points phrase their triggers per occurrence: "load before every selected gate", "read immediately before the first FO-authored mutation". The contract never states that a file already resident in context satisfies the precondition. A literal reader therefore re-reads the full file at every trigger occurrence. One measured day: 14 reads of the same unchanged write-core, roughly one per mutation boundary.
+The contract's deferred load points phrase their triggers per occurrence: "load before every selected gate", "read immediately before the first FO-authored mutation". The contract never states that a file already resident in context satisfies the precondition. A literal reader therefore re-reads unchanged bodies at later triggers inside one context. That qualitative ambiguity is the problem; the exact quantitative risk evidence is the reproducible transcript slice in `## Risk evidence`, not the original seed estimate preserved in frontmatter.
 
 ## Problem
 
 The boot-resident `## Deferred load points` section defines trigger timing but not the lifetime of a satisfied load. Its gate arm says both "every selected/engaged gate" and "Load before every ..."; its write and merge arms say to read at the "first" mutation or terminal boundary without saying first since what. A sticky reader therefore treats a loaded body as valid for the context, while a literal reader can repeat the tool call at every occurrence. Both interpretations satisfy the present words.
 
-The divergence is expensive and can feed further discovery churn. The audited 2026-08-26 Codex FO day made 59 skill/contract reads (34% of tool calls), including 14 reads of `fo-write-core.md` and 10 of `fo-gate-lifecycle`, although those sources did not change. Only two compactions occurred, so an unchanged body needed at most one load in each of three context windows. Each repeated read brings roughly 200 lines back through the tool surface; in the same session, one failed command flag led to `--help` and `strings` fallback discovery because the contract offers no explicit, cheap answer to "is the body I already hold still valid?"
+The divergence spends tool calls and context on contract text the FO already holds, and it can feed further discovery churn. In one bound uncompacted session window, the literal reader repeatedly loaded the write and gate bodies without any intervening compaction or source-replacement cue. The defect is excess within-context rereading, independent of its precise frequency; the authoritative counts, denominator, and rounding rules are published below.
 
 The correct safety boundary must remain: after compaction, and after known replacement of the loaded contract, the next relevant workflow effect must use a fresh body. Gate, write, and merge actions must also keep their existing prerequisite and ordering rules. The defect is only the absence of an explicit validity interval between those boundaries.
 
@@ -74,7 +74,42 @@ Cheaper alternatives are insufficient:
 
 ## Risk evidence
 
-The 2026-08-26 Codex FO audit is both the negative control and baseline: 59 reads, 34% read share, per-file repetition against unchanged bytes, and two compaction timestamps. Sticky-reader sessions are the positive feasibility evidence: hosts already retain loaded bodies and can reuse them until context is compacted. No parser, on-disk format, or runtime handoff is introduced, so no mechanism spike is needed. The uncertain claim is instruction adherence by the literal reader; the first validation exercise is therefore the live/replayed trigger trace below, and prose inspection alone cannot pass the gate.
+The frontmatter `source` and backlog-resolution reason preserve the original 59-read / 34% seed as historical provenance; they are not measurement authority. The reproducible negative control is this exact Codex session slice:
+
+- Session ID: `01a039ae-b6be-7cc3-92d6-f1b1a1dbe9fd`; transcript: `~/.codex/sessions/2026/08/25/rollout-2026-08-25T09-09-06-01a039ae-b6be-7cc3-92d6-f1b1a1dbe9fd.jsonl`.
+- Inclusive event range: ordinals **1923 through 2997**, from root call `call_4CxCagSvmptgsizaGkUFqg0K` at `2026-08-26T16:24:36.267Z` through root call `call_6M1tWLMEZHDURkN8PkJOFw09` at `2026-08-26T20:25:01.934Z`.
+- Context boundary: the slice follows compaction ordinal 1913 at `2026-08-26T16:24:21.427Z` (window `01a03ee3-08af-70e1-aa9c-43b4d88f9c43`) and ends before compaction ordinal 3001 at `2026-08-26T20:26:21.560Z` (next window `01a03fc0-97e9-73e2-b97c-91c96926150b`). It contains no compaction or direct source-replacement cue.
+
+Canonical-body normalization strips `/Users/clkao/.codex/plugins/cache/spacedock-edge/spacedock/0.28.0-pre0/` and retains the literal `skills/...` suffix. The numerator includes only the seven bodies named directly by `## Deferred load points`. In this transcript, a read is one successful root `exec` whose input runs `sed -n` on a canonical path and whose matching output begins `Script completed`. Multiple chunks of one body in one root call count once; different canonical bodies batched in one root call each count once. `wc`, `stat`, `strings`, path mentions, and failed or missing outputs do not count as body reads.
+
+| Canonical deferred body | Successful reads |
+| --- | ---: |
+| `skills/fo-status-viewer/SKILL.md` | 2 |
+| `skills/fo-gate-lifecycle/SKILL.md` | 9 |
+| `skills/first-officer/references/fo-dispatch-core.md` | 3 |
+| `skills/first-officer/references/fo-install.md` | 0 |
+| `skills/first-officer/references/fo-write-core.md` | 11 |
+| `skills/first-officer/references/fo-merge-core.md` | 3 |
+| `skills/fo-dispatch-recovery/SKILL.md` | 0 |
+| **Numerator** | **28** |
+
+The denominator counts every issued root tool call in the inclusive range exactly once: `response_item.payload.type=custom_tool_call` for `exec`, plus `response_item.payload.type=function_call` for the five agent-tool classes below. Nested `exec_command` work is part of its root `exec`, not another denominator call. Tool outputs, messages, reasoning, token-count events, compaction records, world state, and inter-agent metadata are excluded. Failed root calls remain in the denominator because they consume workload, while failed body loads remain outside the numerator. This slice has 0 missing outputs, 0 failed root `exec` calls, and 0 failed canonical-body reads; three completed `wait_agent` calls report timeouts and remain denominator calls.
+
+| Root-tool class | Calls |
+| --- | ---: |
+| `exec` | 131 |
+| `followup_task` | 2 |
+| `list_agents` | 2 |
+| `send_message` | 4 |
+| `spawn_agent` | 4 |
+| `wait_agent` | 8 |
+| **Denominator** | **151** |
+
+Thus the baseline is the integer ratio **28 / 151**: `100 × 28 / 151 = 18.543046358%`, rounded to the nearest tenth as **18.5%**. Five distinct deferred bodies were actually triggered. In this uncompacted stream the residency rule permits one read of each, removing 23 redundant body-read calls: `151 - (28 - 5) = 128`, and `100 × 5 / 128 = 3.90625%`, rounded as **3.9%**. AC-1 therefore caps the historical replay at **5 reads and 4.0%**.
+
+The historical stream and only that stream owns AC-1's numerator and denominator. The later invalidation/safety suffix is excluded from both metrics and separately proves AC-2 through AC-4. Other bodies read for boot, presenter, debugging, or ensign forensics remain denominator calls but are excluded from the numerator because this paragraph does not govern their load points.
+
+Sticky-reader sessions are the positive feasibility evidence: hosts already retain loaded bodies and can reuse them until context is compacted. No parser, on-disk format, or runtime handoff is introduced, so no mechanism spike is needed. The uncertain claim is instruction adherence by the literal reader; the first validation exercise is therefore the live/replayed trigger trace below, and prose inspection alone cannot pass the gate.
 
 The principal regression risk is over-broad reuse: a host could skip a required post-compaction or post-replacement load, or could perform gate/write/merge work before the relevant body is resident. The boundary replay separates that risk from the value metric so a low read count cannot hide a missing prerequisite.
 
@@ -92,8 +127,8 @@ Expected file: `skills/first-officer/references/first-officer-shared-core.md`. N
 
 Each AC names a property of the finished entity, not a stage action, and how it is verified.
 
-**AC-1 (VALUE) - The audited FO-day workload over unchanged contract sources uses at most 29 contract reads and at most 21% of all tool calls for contract reads, versus the fixed 59-read / 34% baseline.**
-Verified by: replay the audit's ordered workflow triggers and its two compaction cues against a fresh FO with the changed contract, then count successful loads by canonical body identity from the host transcript (a batched command counts once per body). The replay fails if either cap is exceeded, if any unchanged body loads more than once inside one of the three context windows, or if the original baseline artifact is rewritten instead of compared.
+**AC-1 (VALUE) - The bound historical stream uses at most 5 deferred-body reads and at most 4.0% of its root tool calls for those reads, versus the reproducible 28 / 151 = 18.5% baseline.**
+Verified by: replay session `01a039ae-b6be-7cc3-92d6-f1b1a1dbe9fd` ordinals 1923–2997 against a fresh FO with the changed contract, then apply the published canonical-body, numerator, denominator, failure, and rounding rules. The replay fails if it does not preserve the historical workflow stream, if either cap is exceeded, or if any of the five triggered unchanged bodies loads more than once. The invalidation/safety suffix is excluded from this numerator and denominator.
 
 **AC-2 (serves AC-1) - One successful body load satisfies all later triggers for that unchanged body in the same uncompacted context, without an eager replacement probe.**
 Verified by: the boundary replay drives at least two gate selections, two FO-authored mutations, and dispatch/status work in one window. For each body, the first trigger must show one load and later same-window triggers must show zero additional loads; any filesystem, version, loader, hash, or stat probe whose sole purpose is replacement detection fails the criterion.
@@ -109,10 +144,10 @@ Verified by: inspect the implementation diff for the one approved paragraph, run
 
 ## Test plan
 
-1. Preserve the 2026-08-26 audit transcript/count table as the immutable 59-read / 34% negative control. Derive the ordered trigger stream and the two existing compaction cues from it; do not derive expected post-change counts from the candidate prose. The 29-read cap is a greater-than-50% reduction, and 21% is the corresponding conservative read-share ceiling after redundant read calls disappear from the denominator.
-2. Exercise the counter on the original transcript before editing: it must reproduce 59 reads and approximately 34%, or the measurement is invalid. Do not rerun the old FO day merely to recreate evidence already preserved by the audit.
-3. Apply only the approved paragraph, then replay on Codex, the host that exhibited the defect. Record canonical-body reads, total tool calls, window boundaries, replacement cue, and workflow-effect ordering. This one trace proves AC-1 through AC-4 and is falsifiable in both directions: extra reads fail value; missing or misordered reads fail safety.
-4. Use a short boundary suffix after the historical stream: repeated gate/write/dispatch triggers; explicit compaction; next gate/write/terminal triggers; explicit source-replacement evidence; next gate/write/terminal triggers. Require no eager reads and exactly-once lazy reloads. Estimated cost is one additional scripted live segment, not a permanent binary mechanism.
+1. Treat session `01a039ae-b6be-7cc3-92d6-f1b1a1dbe9fd` ordinals 1923–2997 as the immutable negative control. Run the published counter before implementation: it must reproduce the canonical-body table, root-class table, **28 / 151 = 18.5%**, and zero failed/missing outputs. Any mismatch invalidates the measurement; do not substitute the frontmatter seed or recreate the historical session.
+2. Apply only the approved paragraph, then replay the ordered historical stream on Codex, the host that exhibited the defect. Count only the historical range for AC-1. It must produce at most five deferred-body reads; removing the baseline's 23 redundant body-read calls yields 128 root calls and **5 / 128 = 3.9%**, within the 4.0% cap. Extra reads fail value; the separate suffix cannot improve or dilute this metric.
+3. After the historical stream, run a short boundary suffix that is excluded from AC-1's numerator and denominator: repeated gate/write/dispatch triggers; explicit compaction; next gate/write/terminal triggers; explicit source-replacement evidence; next gate/write/terminal triggers. This suffix separately proves AC-2 and AC-3 by requiring no eager reads, same-window reuse, and exactly-once lazy reloads. Estimated cost is one additional scripted live segment, not a permanent binary mechanism.
+4. In that suffix, record workflow-effect ordering and prove AC-4 with `gate-load → write-load → mutation` for every gated mutation and `gate-load → write-load → merge-load → transition` for every gated terminal mutation, initially and after each invalidator.
 5. Run focused `go test ./internal/contractlint ./internal/ensigncycle`, then `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` with a clean diff check. Existing topology, component-cap, write-scope, gate, and routing tests cover AC-5; no static wording-presence test is added because it would prove only that the means shipped.
 6. Because shipped contract/scaffolding is a high-stakes surface, run the workflow's detached adversarial audit on a throwaway checkout. Challenge the evidence with three mutation classes: permit repeated same-window loads (AC-1/2 must fail), remove a compaction/replacement reload edge (AC-3 must fail), and exercise every adjacent swap and every omitted required load in both AC-4 sequences, initially and after each invalidator. A green replay under any mutation is a validation hole, not a pass.
 
@@ -128,8 +163,8 @@ Test complexity is moderate because one live Codex replay is required; repositor
   `## Proposed approach` selects one boot-resident ensure-resident paragraph; AC-2 through AC-4 fail on duplicate reads, missing reloads, or reordered prerequisites.
 - DONE: Declare concrete before/after contract wording, semantic boundaries, expected net LOC and file surface with tolerance, and why cheaper alternatives are insufficient.
   The exact one-paragraph diff, five rejected alternatives, unchanged semantic classes, and +2 LOC/one-file estimate (+1..+4 tolerance) are recorded in the body.
-- DONE: Define acceptance criteria and a falsifiable live or replay measurement against the 59-read / 34% baseline, including proof that required reloads still occur.
-  AC-1 caps the replay at 29 reads/21%; AC-3/AC-4 independently red on absent post-cue reloads or gate/write/merge ordering loss.
+- DONE: Define acceptance criteria and a falsifiable live or replay measurement against a reproducible exact-session baseline, including proof that required reloads still occur.
+  AC-1 caps the bound historical replay at 5 reads/4.0% against 28/151=18.5%; the excluded suffix makes AC-3/AC-4 independently red on absent post-cue reloads or gate/write/merge ordering loss.
 
 ### Summary
 
@@ -139,11 +174,11 @@ Ideation reduces the design to a single host-neutral residency/invalidation rule
 
 - DONE: Correct Finding 2's gate-before-write ordering oracle.
   AC-4 now requires `gate-load → write-load → mutation` for every gated mutation and `gate-load → write-load → merge-load → transition` for every gated terminal mutation, initially and after each invalidator. The adversarial audit now fails every adjacent swap and every omitted required load.
-- SKIPPED: Finding 1's baseline reproducibility and threshold changes.
-  The First Officer held the finding for captain decision, so the 59-read / 34% baseline and 29-read / 21% target remain unchanged.
+- DONE: Replace Finding 1's unreproducible seed baseline and derive a materially-fewer AC-1 target.
+  Captain authorization binds session ordinals 1923–2997, publishes the 28/151=18.5% count tables and rules, and derives the 5/128=3.9% result with caps of 5 reads/4.0%; the safety suffix is excluded.
 - SKIPPED: Reviewer rerun.
   The First Officer explicitly excluded a reviewer rerun from this correction authorization.
 
 ### Summary
 
-Cycle 2 tightens the safety oracle to make gate-before-write ordering falsifiable without changing the one-file implementation surface or the held workload metric.
+Cycle 2 replaces the seed metric with a reproducible exact-session baseline and separates AC-1's historical workload from the AC-2–AC-4 safety suffix. It also makes gate-before-write ordering falsifiable without changing the one-file implementation surface.
