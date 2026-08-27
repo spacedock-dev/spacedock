@@ -62,8 +62,8 @@ The explicit classification is:
 
 | Class | Exact stored location and accepted historical shape | Diagnostic |
 | --- | --- | --- |
-| retired-warning | `gates.current`: a mapping containing only scalar `gate`, whose nonblank value names a record in the same document | `Warning: retired gate field 'current' at gates.current: ...` |
-| retired-warning | `gates.records[*].attempts[*].briefing.digest-domain`: scalar value exactly `canonical-bytes` | `Warning: retired gate field 'digest-domain' at gates.records[N].attempts[N].briefing.digest-domain: ...` |
+| retired-warning | `gates.current`: a mapping containing only `gate`, whose value is a nonblank YAML string scalar (`!!str`, plain or quoted) naming a record in the same document | `Warning: retired gate field 'current' at gates.current: ...` |
+| retired-warning | `gates.records[*].attempts[*].briefing.digest-domain`: YAML string scalar (`!!str`) with value exactly `canonical-bytes` | `Warning: retired gate field 'digest-domain' at gates.records[N].attempts[N].briefing.digest-domain: ...` |
 | retired-silent (existing, unchanged) | `gates.records[*].attempts[*].provider-evidence` | no diagnostic; it retains its existing frozen-provider compatibility behavior |
 | application-extension (existing, unchanged) | unknown keys only inside an exact `application` mapping | existing unknown-application warning |
 | strict | every other unknown field, wrong location, duplicate retired key, or malformed retired shape/value | `Error: invalid gates: ...`, exit 1 |
@@ -121,7 +121,7 @@ warning policies; and changing gate selection, readiness, or writer authority.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +145, across 6 files. Expected gross composition is about +160
+Estimate net LOC change: +155, across 6 files. Expected gross composition is about +170
 insertions and -15 deletions: compatibility classification in `internal/gates/io.go`,
 diagnostic rendering in `internal/status/validate.go`, focused gate and CLI fixtures in
 `internal/gates/gates_test.go` plus one new `internal/status/*_test.go`, and contract wording
@@ -164,9 +164,14 @@ fail.
 
 **AC-4 (STORAGE/AUTHORITY) - Validation and ordinary reads never rewrite retired bytes or use them as gate authority.**
 Verified by: the reader fixture hashes the entity before and after diagnostic and ordinary
-reads, asserts byte equality, and plants a well-formed but status-stale `current.gate`; the
-projected readiness must follow entity `status` and ordered attempts. Filtering the source
-node or restoring pointer selection makes it fail.
+reads and asserts byte equality. For each of `ReadDiagnostics` and `Read`, it also traverses
+the returned source `*yaml.Node` structurally (mapping/sequence nodes, not a disk substring)
+and asserts that `gates.current.gate` and the nested Briefing `digest-domain` nodes still
+exist with their original tags and values, following the existing application-extension
+source-node test pattern. A well-formed but status-stale `current.gate` is planted, and
+projected readiness must follow entity `status` and ordered attempts. Filtering either
+retired node from the original returned node, filtering the on-disk source, or restoring
+pointer selection makes the fixture fail.
 
 **AC-5 (DOCUMENTATION) - The public and internal frontmatter contracts distinguish exact retired compatibility from arbitrary unknown-field rejection.**
 Verified by: review the concrete diff below against the implementation and run the docs
@@ -176,8 +181,13 @@ active `--validate`, non-authority, no rewrite, and strict fallback.
 ## Test plan
 
 1. Add gate-package table tests for exact retired classification, deterministic paths,
-   preserved source nodes/bytes, status-based authority, and the AC-3 strict negatives.
-   Cost: medium; in-memory/temp-file Go fixtures, no live workflow.
+   status-based authority, and the AC-3 strict negatives. In the positive case, call both
+   `ReadDiagnostics` and ordinary `Read`; structurally traverse each returned source
+   `*yaml.Node` through `current -> gate` and
+   `records -> attempts -> briefing -> digest-domain`, assert the original YAML tags and
+   values remain, and separately assert the file hash is unchanged. This must fail if the
+   compatibility pass filters the source node instead of its clone. Cost: medium;
+   in-memory/temp-file Go fixtures, no live workflow.
 2. Add status-package command fixtures for retired-only text and JSON branches plus the
    mixed invalid-digest control. Assert output bytes, stderr class/count, and exit codes.
    Cost: medium; native CLI fixture, no external runtime.
@@ -187,19 +197,46 @@ active `--validate`, non-authority, no rewrite, and strict fallback.
 4. Run `mkdocs build --strict` after applying the approved wording, matching the docs CI
    command in `.github/workflows/docs.yml`. Cost: low; docs-only check, no live workflow.
 
-Concrete documentation change for `docs/specs/gate-resolution-frontmatter-contract.md`
-and the corresponding paragraph in `docs/site/reference/frontmatter-contract.md`:
+Concrete documentation change for `docs/specs/gate-resolution-frontmatter-contract.md`;
+the unchanged context deliberately preserves its separate silent `provider-evidence`
+compatibility paragraph:
+
+```diff
+ The binary-owned model is closed for canonical validation and writes. In particular,
+ the pilot-only attempt selector, `current-attempt`, `sequence`, `previous-attempt`,
+-and explicit attempt `state` encodings are rejected. A read tolerates unknown keys
+-only under each `records[*].attempts[*].application` mapping, reports them as warnings
+-on explicit `status --validate`, ignores them for authority, and
+-never writes them. A read also drops the retired
++and explicit attempt `state` encodings are rejected. Read-only compatibility accepts
++`gates.current` only as `{gate: <existing-record-id>}` with a string-scalar value and
++accepts `records[*].attempts[*].briefing.digest-domain` only as the string scalar
++`canonical-bytes`. They never supply authority or appear in canonical writes. Explicit
++`status --validate` reports them as active-scope warnings but remains valid and exits
++zero; ordinary reads and archived warning scope stay silent, and no read rewrites stored
++bytes. A read continues to tolerate unknown keys only under each exact
++`records[*].attempts[*].application` mapping, reports those keys as warnings on explicit
++`status --validate`, ignores them for authority, and never writes them. A read also drops the retired
+ `records[*].attempts[*].provider-evidence` key silently: its writer was cut with
+ provider-backed closure, frozen archived records still carry it, and it is retired
+ rather than unknown, so it raises no warning and never reaches the model. All other
+ unknown or malformed fields fail closed. There is no migration or compatibility rewrite.
+```
+
+Corresponding change for `docs/site/reference/frontmatter-contract.md`:
 
 ```diff
 -Unknown or prototype fields inside binary-owned `gates` fail closed except unknown keys
--inside an exact `application` mapping; those keys warn on explicit `status --validate`.
+-inside an exact `records[*].attempts[*].application` mapping; those keys produce warnings
+-only on explicit `status --validate` over active entities, are ignored for authority,
+-and are never written.
 +Unknown or prototype fields inside binary-owned `gates` fail closed. Read-only
-+compatibility accepts only the historical `gates.current: {gate: <existing-record-id>}`
-+mapping and `records[*].attempts[*].briefing.digest-domain: canonical-bytes` scalar.
-+They never supply authority or appear in canonical writes. Explicit `status --validate`
-+warns for them on active entities but remains valid and exits zero; ordinary reads and
-+archived warning scope stay silent, and validation never rewrites stored bytes. Unknown
-+keys inside an exact `application` mapping retain their existing warning-only behavior.
++compatibility accepts only `gates.current: {gate: <existing-record-id>}` with a string
++scalar and Briefing `digest-domain: canonical-bytes`. They never supply authority or
++appear in canonical writes. Explicit `status --validate` warns for them on active
++entities but remains valid and exits zero; ordinary reads and archived warning scope
++stay silent, and no read rewrites stored bytes. Unknown keys inside an exact
++`records[*].attempts[*].application` mapping retain their existing warning-only behavior.
 ```
 
 ### Feedback Cycles
