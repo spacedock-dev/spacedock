@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-3:revision-1",
+  "question": "Approve validation (cycle 3) to enter the merge ceremony: PASSED — the embed is removed (stageReportFormatBlock gone), the narrowed firstActionBlock kept, the live lane + CI wiring kept. The live lane fails in pi-live until #774 lands (by design — the lane proves the fix). This PR is now the embed-REMOVAL rework (no longer the embed-ADD); the fix is in #774.",
+  "artifacts": [
+    {
+      "id": "artifact:t4rqqmmrqh69adgb1bbdx838:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/c7121edcab64480bf645c1a3e393f5240fb459d5/embed-stage-report-protocol-in-dispatch.md",
+      "rev": "sha256:0a161588d4f5acbac0378ffa95d949c5ac23473db103d1d7034d8f8ad2957e06",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-3 validation PASSED — embed-removal rework. stageReportFormatBlock gone (grep exit 1, -175 deletions across 4 files). The narrowed Pi firstActionBlock (overclaim removed, 'stage-report format template' text retained at line 901) is kept. TestBuildPiFirstActionNarrowedToStageReportFormat PASS. The live lane TestLivePiNonSelfDescribingDispatch + CI -run filter are kept (the proof infra). Non-live dispatch/ensigncycle tests green incl -race; live-tagged build compiles; gofmt/vet clean; no staged files. The live lane is EXPECTED to go RED in pi-live until #774 (the firstActionBlock skill-load fix) lands — by design: the lane proves the fix. This PR is now embed-REMOVAL; the fix is #774."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:t4rqqmmrqh69adgb1bbdx838:validation:attempt-3:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/.github/workflows/runtime-live-e2e.yml",
+      "mediaType": "application/yaml",
+      "rev": "sha256:c8c972c1f4d34cd621d4d96b1337dc8f38e021114b67fecc0555ff874addf75c"
+    }
+  ]
+}

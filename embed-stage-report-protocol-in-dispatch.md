@@ -83,6 +83,12 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:t4rqqmmrqh69adgb1bbdx838-validation-3
+              briefing:
+                id: briefing:t4rqqmmrqh69adgb1bbdx838:validation:attempt-3:revision-1
+                digest: sha256:f3ee956955b1cc600ac4150b346e164445bf1dac53a2e6973569891c648ea2c3
+                request-digest: sha256:d136acdc15cac8eb74dbd11da2fdb1c3d6214a53bb62f97be817c8d762d1d36f
+                room-ref: ./embed-stage-report-protocol-in-dispatch/review/validation/briefing-3
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
 mod-block:
