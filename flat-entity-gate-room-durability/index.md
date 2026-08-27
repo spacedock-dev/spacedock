@@ -107,6 +107,16 @@ room-ancestry check, and stores `@review/<stage>/round-<cycle>`. Folder and flat
 therefore share one physical and stored shape. `readRoundPointerData` accepts the new
 canonical ref and the frozen legacy folder `./review/...` ref for exact replay.
 
+`resolveRound` returns that derived review home with the round room instead of making
+later validation reconstruct a root from `filepath.Dir(entityPath)`. The resulting
+round location carries `reviewHome` into `loadValidateRound` and
+`verifyRoundArtifacts` during publication and through `ValidateRoundFile` during
+replay. A relative Artifact is valid only when its resolved regular path stays inside
+`<state-root>/<slug>/`. A relative Artifact that reaches a sibling entity or any other
+path outside that home refuses byte-clean. The mutable entity also refuses: folder
+`<slug>/index.md` remains covered by the explicit mutable-entity check, while flat
+`<slug>.md` is outside the shared home and fails containment.
+
 Every gate reader routes `@review/...` through the new helper before its existing
 Briefing, digest, and authority checks. All non-`@review/` values take the unchanged
 legacy path. The existing `status --validate` missing-room diagnostic uses the same
@@ -135,7 +145,11 @@ flat commit unit and tracked deletion; `flatEntityCommitPaths` is already shared
 explicit state commit and implicit gate sync; and
 `TestPrepareRejectsSymlinkedFlatCompanionWithoutChangingBytes` proves prepare's room
 ancestry check can be reused by round. `TestRoundRequiresFolderFormWithoutCrossEntityCollision`
-pins the one guard this task removes. These focused baselines passed on 2026-08-27.
+pins the one guard this task removes. `round.go` also supplies the direct defect
+evidence: both publication and `ValidateRoundFile` currently pass
+`filepath.Dir(entityPath)` as the Artifact trust root, which is the ticket home for
+folder `index.md` but the whole state root for flat `<slug>.md`. These focused
+baselines passed on 2026-08-27.
 
 ## Consumer inventory and boundaries
 
@@ -167,9 +181,11 @@ pins the one guard this task removes. These focused baselines passed on 2026-08-
 - `internal/gates/operation.go:RecordSemanticSummary` removes the unconditional
   folder-only guard and reuses the existing declared-folder grandfathering check.
 - `internal/gates/round.go`: `resolveRound` derives the review home and room;
-  `recordRoundLockedWith` writes `@review/...`; `readRoundPointerData` accepts canonical
-  and frozen legacy folder refs; `ValidateRoundFile` reads either. The recorder reuses
-  prepare's existing ancestry check before publication.
+  its result carries `reviewHome` as the Artifact trust root into
+  `loadValidateRound`/`verifyRoundArtifacts` for `recordRoundLockedWith` publication
+  and `ValidateRoundFile` replay. `recordRoundLockedWith` writes `@review/...`;
+  `readRoundPointerData` accepts canonical and frozen legacy folder refs. The recorder
+  reuses prepare's existing ancestry check before publication.
 - `skills/feedback-rejection-flow/SKILL.md` already passes an entity operand and then
   calls `state commit`; its command text needs no change.
 
@@ -195,7 +211,9 @@ pins the one guard this task removes. These focused baselines passed on 2026-08-
 - **Runtime behavior:** flat `gate record --round` changes from refusal to publication
   and exact replay through the shared review home. New gate and round writes use one
   canonical ref spelling for both forms. Legacy replay, folder physical layout, state
-  commit output, validation severity, and ordinary status remain compatible.
+  commit output, validation severity, and ordinary status remain compatible. Round
+  Artifact containment is consistently rooted at that ticket home, preventing a flat
+  round from trusting a sibling entity or its mutable flat entity file.
 - **Excluded semantics:** no entity move, migration command, automatic ref rewrite,
   room retention change, request-digest ordering change, broader Git staging, dispatch
   stamp change, general entity resolver, or validation expansion.
@@ -235,11 +253,11 @@ Expected files:
 1. `internal/gates/prepare.go` — review-home helper, reserved ref parser/writer, and prepare readers.
 2. `internal/gates/io.go` — route retained request-backed room reads through the helper.
 3. `internal/gates/operation.go` — remove the folder-only round guard and route gate-room readers.
-4. `internal/gates/round.go` — flat/folder physical room, canonical pointer, and frozen legacy replay.
+4. `internal/gates/round.go` — flat/folder physical room, canonical pointer, shared-home Artifact trust root, and frozen legacy replay.
 5. `internal/status/validate.go` — resolve `@review/...` in the existing missing-room diagnostic and remove obsolete conversion advice.
 6. `internal/gates/prepare_test.go` — canonical new gate refs and legacy open replay.
 7. `internal/gates/prepare_shape_test.go` — reserved syntax and frozen legacy reader table.
-8. `internal/gates/round_test.go` — flat/folder publication, legacy folder replay, policy, ancestry, and divergence.
+8. `internal/gates/round_test.go` — flat/folder publication, Artifact containment, legacy folder replay, policy, ancestry, and divergence.
 9. `internal/cli/state_commit_test.go` — two-host fresh-clone durability proof for a flat round room.
 10. `internal/status/hybrid_flat_rooms_warn_test.go` — canonical-ref resolution and removal of conversion warnings.
 11. `docs/specs/gate-resolution-frontmatter-contract.md` — normative namespace and direct flat-round contract.
@@ -279,16 +297,21 @@ Expected files:
 4. **AC-4 — Flat and folder advisory rounds publish and replay identically.** A
    policy-valid flat entity and folder entity each publish exactly one immutable
    `review/<stage>/round-<cycle>` room, retain the supplied Briefing/log bytes, and
-   preserve status, gates, and body bytes. Exact replay is a whole-tree no-op and
-   divergence fails byte-clean. The form table fails if the folder-only guard returns,
-   the flat physical home is wrong, or replay changes any byte.
+   preserve status, gates, and body bytes. For both forms, an in-home relative Artifact
+   validates; a relative Artifact outside `<state-root>/<slug>/` and the mutable entity
+   refuse byte-clean during publication and `ValidateRoundFile` replay. Exact replay is
+   a whole-tree no-op and divergence fails byte-clean. The form table fails if the
+   folder-only guard returns, the flat physical home or Artifact trust root is wrong,
+   an invalid Artifact leaves residue, or replay changes any byte.
 5. **AC-5 — The reserved namespace fails closed without broadening legacy semantics.**
    Empty, absolute, dot-segment, traversal, and backslash `@review` values are rejected;
    a valid value cannot escape the review root. Round publication reuses the existing
-   room-ancestry guard, and the existing declared-folder preparation policy also gates
-   new flat rounds. All other ref strings take the unchanged legacy reader. Parser and
-   policy tables name the rejected value and compare the entity/room tree before and
-   after; accepting a malformed reserved ref or reclassifying a legacy ref makes them
+   room-ancestry guard, uses the derived review home rather than the entity directory as
+   its Artifact trust root, and the existing declared-folder preparation policy also
+   gates new flat rounds. All other ref strings take the unchanged legacy reader.
+   Parser, Artifact, and policy tables name the rejected value and compare the
+   entity/room tree before and after; accepting a malformed reserved ref, trusting an
+   out-of-home or mutable-entity Artifact, or reclassifying a legacy ref makes them
    fail.
 
 ## Test plan
@@ -314,8 +337,17 @@ unchanged. Cost: medium; it reuses current fixtures.
 Replace the unconditional-flat round test with a flat/folder table. Assert canonical
 pointer bytes, exact retained Briefing/log bytes, body/gates/status preservation,
 whole-tree exact replay, divergent byte-clean refusal, declared-folder grandfathering,
-and reuse of prepare's ancestry guard. Retain a frozen legacy folder pointer fixture.
-Cost: medium.
+and reuse of prepare's ancestry guard. Run these Artifact rows for both forms and for
+both publication and `ValidateRoundFile` replay:
+
+| Artifact row | Flat result | Folder result |
+| --- | --- | --- |
+| Relative regular file inside `<state-root>/<slug>/` | validates | validates |
+| Relative path resolving outside `<state-root>/<slug>/` | refuses byte-clean | refuses byte-clean |
+| Mutable entity (`<slug>.md` or `<slug>/index.md`) | refuses byte-clean | refuses byte-clean |
+
+Use literal paths so the test cannot reproduce the production root-selection bug in
+its oracle. Retain a frozen legacy folder pointer fixture. Cost: medium.
 
 Update the existing status warning fixture only enough to prove that `@review/...`
 resolves and that the obsolete blanket conversion warning is absent. Do not add the
@@ -335,8 +367,10 @@ gofmt -w ./cmd ./internal
 - In `docs/specs/gate-resolution-frontmatter-contract.md`, replace the conversion
   prescription with the `@review/...` namespace. State its physical resolution for both
   forms and the frozen legacy fallback. Replace the folder-only round paragraph with
-  direct flat/folder publication and exact replay. Preserve `git-root://` Artifact
-  identity text and the existing supported state-commit unit.
+  direct flat/folder publication and exact replay. Specify the shared review home as
+  the relative Artifact trust root for both forms, including out-of-home and mutable
+  entity refusal. Preserve `git-root://` Artifact identity text and the existing
+  supported state-commit unit.
 - In `docs/site/reference/command-reference.md`, change the `status --validate` row
   so canonical refs do not produce a missing-room or blanket conversion warning. Change
   gate prepare and round rows to name `@review/...`, both physical forms, frozen legacy
@@ -409,3 +443,30 @@ Cycle 3 replaces the broad +420/16 architecture with the captain's canonical
 `@review/...` namespace and the smallest consumer changes needed for flat rounds.
 Already-shipped flat commit durability stays production-unchanged and receives a
 fresh-clone regression proof; broader hardening is recorded as follow-up scope.
+
+## Stage Report: ideation (cycle 4)
+
+- DONE: Select one backward-compatible review-home and room-ref design that supports flat and folder tickets without migration or rewriting frozen gate bindings.
+  Canonical `@review/...` and the frozen legacy reader remain unchanged; `resolveRound` now carries the already-derived shared review home through validation.
+- DONE: Enumerate the exact state-commit, advisory-round, validation, and path-resolution consumers; declare semantic boundaries and expected net LOC/files with tolerance.
+  The only new consumer obligation is in `internal/gates/round.go`; the estimate remains exactly net +180 LOC across 12 files, about 270 insertions/90 deletions, with +/-70 net LOC and +/-2 files tolerance.
+- DONE: Define falsifiable historical-fixture and two-clone tests proving flat sibling rooms commit and replay, flat rounds record, existing refs retain meaning, and broken refs fail validation.
+  The existing proof plan is retained and its flat/folder round table now runs Artifact-containment rows in publication and `ValidateRoundFile` replay.
+- DONE: AC-1 supported state-commit durability evidence.
+  The supported flat commit unit and fresh-clone proof are unchanged by this correction.
+- DONE: AC-2 canonical namespace evidence.
+  `@review/...` still resolves from the shared review home for both entity forms.
+- DONE: AC-3 frozen compatibility evidence.
+  Legacy flat, folder, and round refs remain on the unchanged reader path and are never rewritten.
+- DONE: AC-4 round Artifact trust-root evidence.
+  Flat and folder rows require an in-home regular Artifact to validate, while an out-of-home relative Artifact and the mutable entity refuse byte-clean in publication and replay.
+- DONE: AC-5 closed-boundary evidence.
+  Literal-path tests fail if `resolveRound` does not pass its derived review home into `loadValidateRound` and `verifyRoundArtifacts`, or if any rejected Artifact leaves residue.
+
+### Summary
+
+Cycle 4 corrects the one in-scope trust-root defect without broadening the ticket.
+Round publication and replay use the resolved ticket review home instead of
+`filepath.Dir(entityPath)`, so a flat round cannot bind a sibling entity or mutable
+`<slug>.md`. Canonical refs, frozen legacy behavior, narrowed scope, and the +180/12
+estimate with its existing tolerance remain unchanged.
