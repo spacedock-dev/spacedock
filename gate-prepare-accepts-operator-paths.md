@@ -214,3 +214,16 @@ Cycle 3 aligns every operator-facing ambiguity promise with cleaned lexical path
 ### Summary
 
 Gate preparation now accepts a uniquely resolving operator path in absolute, launch-relative, or state-relative form without silently choosing between different existing paths. The implementation preserves direct-package omission behavior, immutable Git-source inspection, CLI grammar, stored authority, and the approved six-file surface.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 and AC-2 through real gate prepare behavior for Artifact and Reference: the formerly doubled launch-relative path creates exactly one open binding; absolute/launch/state forms resolve to identical immutable Git source and replay identity; omitted LaunchDir preserves direct-package wrong-root refusal.
+  At main `43fc79a23`, a detached CLI fixture observed the doubled path for both flags with no gate binding or room; at `a20385e8e` the same real CLI behavior exits 0, and the detached candidate matrix observed one open attempt/room plus byte-identical Briefing, git-root URI, raw revision, digest, ID, and replay result across all three forms. `TestPrepareWrongRootRelativeArtifactFails` passes and fails if blank LaunchDir gains a workflow/launch candidate.
+- DONE: Verify AC-3 and AC-4 fail-closed boundaries and contracts: ambiguity, absence, non-ENOENT Lstat errors, symlink/non-regular/unreadable/foreign sources refuse before mutation with actionable flag/path evidence; gitsource.Inspect remains sole guard owner; grammar/help stay byte-identical; FO wording matches behavior at exactly 7,697 bytes.
+  Focused resolver/guard tests and the detached matrix passed for Artifact and Reference; they fail if lexical aliases collapse, probe order falls through, errors lose flag/path/forms, state bytes/status/room mutate, or inspector-owned safety/repository refusals are bypassed. Exact help and component-cap tests pass; independent counts are 7,645→7,697 bytes for the skill and 526→578 bytes for Prepare.
+- DONE: Perform a detached semantic adversarial audit from a throwaway checkout over lexical aliases, candidate order, errors, bytes, binding cardinality, source identity, and repository boundaries; run applicable focused/full/race/gofmt checks, report actual +222/-39/+183 net across 6 files against +151 and +110..+215/max 7, and classify every finding with PASSED or REJECTED.
+  Detached audit at `a20385e8e` passed accepted-form/replay cardinality, lexical-alias/absence/non-ENOENT ordering and byte-clean refusal, and absolute/launch/state inspector-boundary matrices; focused packages, exact CLI/help/cap tests, `go test ./...`, and `go test ./... -race` pass, while gofmt changed no candidate bytes. Surface is +222/−39 = +183 net across 6 files: +32 versus the +151 estimate, inside +110..+215 and maximum 7.
+
+### Summary
+
+Recommendation: PASSED. AC-1 through AC-4 have behavioral evidence, the detached semantic audit found no material, deferred-risk, polish, or evidence findings, and the candidate remains clean at committed HEAD `a20385e8e`.
