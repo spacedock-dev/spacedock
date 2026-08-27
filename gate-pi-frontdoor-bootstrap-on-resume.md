@@ -129,3 +129,13 @@ Fixture in `internal/cli/pi_frontdoor_test.go`: a table-driven resume-suppressio
 ### Summary
 
 Fleshed out the ideation for gating the Pi front door bootstrap on resume. Key decision: pi.go-only fix (add `containsResume` guard wrapping the `piBootstrapPrompt` append), no extension change. The extension's `FO_BOOTSTRAP_TEXT` injection is transient (Pi `context` hook uses a deep copy per Pi docs) so it does not re-load the contract as a durable message on resume, and `session_start` fires with `reason: "startup"` on CLI launch so it cannot detect CLI resume anyway. No spike needed — all mechanisms proven by code + Pi docs reading. Residual: Pi's `--session <path|id>` flag is a resume form not covered by the shared `containsResume` token set, flagged as a follow-up.
+
+## Stage Report: implementation
+
+- DONE: the pi.go `containsResume` guard wrapping the `piBootstrapPrompt` append (pi.go:271) is in place, mirroring frontdoor.go's token set (`--resume`, `--resume=<id>`, `-r`, `--continue`, `-c`) via the shared `containsResume(fd.passthrough)` call — no new function or token set added.
+- DONE: the table-driven `TestPiResumeSuppressesBootstrapPrompt` in `internal/cli/pi_frontdoor_test.go` asserts each resume token suppresses `piBootstrapPrompt` from `ops.launched` and that non-resume passthrough (`--model google/gemini`, a task string) keeps the prompt as the last argv token (independent non-resume baseline).
+- DONE: test and gofmt results — `go test ./internal/cli/ -run TestPiResumeSuppressesBootstrapPrompt` is green; `gofmt -l` on the two changed files is clean; the full `go test ./internal/cli/` suite's only failure is `TestVersionAmbiguousMarkersExitZero`, a pre-existing environmental failure (`PI_CODING_AGENT=true` in the worker env) reproduced on the base branch via `git stash`, unrelated to this change.
+
+### Summary
+
+Implemented the Pi front door resume gate: wrapped the `launchPrompt(piBootstrapPrompt, fd)` append in `internal/cli/pi.go` with `if !containsResume(fd.passthrough)` so a resume launch omits the fresh-start FO bootstrap prompt, matching the Claude/Codex front door. Added a table-driven `TestPiResumeSuppressesBootstrapPrompt` in `internal/cli/pi_frontdoor_test.go` pinning AC-1/AC-2. pi.go-only change, no extension touch. Committed to `spacedock-ensign/gate-pi-frontdoor-bootstrap-on-resume`.
