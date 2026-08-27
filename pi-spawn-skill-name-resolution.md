@@ -1,7 +1,7 @@
 ---
 id: ntnywe6wfk1g5sersjbe5yt7
 title: Verify the Pi spawn skill name resolves - bare "ensign" versus "spacedock:ensign"
-status: validation
+status: implementation
 source: "Pi/GLM FO field report 2026-08-26: dispatched ensigns repeatedly produced broken DONE formatting, and the FO's diagnosis was that the dispatch artifact passes skill \"ensign\" while the Pi skill loader wants the exact name spacedock:ensign — if true, Pi ensigns spawn without the ensign contract at all"
 started: 2026-08-27T00:12:01Z
 completed:
@@ -73,7 +73,7 @@ gates:
                 reason: 'Captain approve: PASSED'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 `dispatch build --host pi` emits the bare skill name `ensign` by design (internal/dispatch/build.go piSpawnSkill), on a documented assumption: "pi-subagents resolves agents and skills by directory basename only." A field report says the loader needs `spacedock:ensign`. If the assumption rotted, every Pi ensign runs without its contract, and the observed broken stage-report formatting is a symptom, not a separate defect.
@@ -191,3 +191,18 @@ Comment-only edit to internal/dispatch/build.go (commit 466ee03f9 on branch spac
 ### Recommendation: PASSED
 
 Comment-only change to `internal/dispatch/build.go` (commit 466ee03f9): the piSpawnSkill comment block now pins the verified loader versions (0.37.2 installed, 0.57.0 latest npm, both exact basename match, dated 2026-08-27). `piSpawnSkill` remains `"ensign"`, `piSpawnAgent` remains `"worker"` — byte-identical to main. Targeted test, go build, and gofmt all green. AC-1 satisfied by live transcript + source spike + existing test. No material, deferred, or polish findings. Delivery can proceed.
+
+## Stage Report: implementation
+
+- DONE: Rewrote Pi firstActionBlock (internal/dispatch/build.go firstActionBlock host=="pi" branch) to load the ensign skill before reading the dispatch file
+  New text directs the worker to run `/skill:ensign` (Pi's skill-invoke slash command), or fall back to reading `skills/ensign/SKILL.md` and its `references/` directly, to load the shared ensign discipline (stage-report format, polling, worktree ownership, completion signal protocol), then read the dispatch file for the stage-specific assignment. This mirrors Claude's `Skill(skill="spacedock:ensign")` and Codex's `$spacedock:ensign` bootstrap. The false claim "This file contains the shared ensign discipline entry points" is dropped; the superseded "This file carries the stage-report format template" narrowed text is replaced.
+- DONE: Dropped the comment-only piSpawnSkill loader-version pin (reverted commit 1b921d3f1's comment expansion)
+  The piSpawnSkill comment block reverts to the original simple form ("pi-subagents resolves agents and skills by directory basename only, so the artifact carries…"). `piSpawnSkill = "ensign"` and `piSpawnAgent = "worker"` values are unchanged. The prior scope (comment pin) was wrong; this task is the firstActionBlock fix.
+- DONE: Added offline guard TestPiFirstActionInvokesEnsignSkill (internal/dispatch/build_stage_report_protocol_test.go)
+  Builds an artifact for host=pi and asserts the firstActionBlock contains a skill-load instruction (`/skill:ensign` or `skills/ensign/SKILL.md`), does NOT contain the false claim "This file contains the shared ensign discipline entry points", and that the skill-load instruction precedes the "read this dispatch file" instruction (mirroring Claude/Codex ordering). Replaced the superseded TestBuildPiFirstActionNarrowedToStageReportFormat. Updated two sibling tests (build_pi_host_test.go, build_json_ergonomics_test.go) whose body assertions referenced the old "Read this dispatch file directly" phrase.
+- DONE: Committed to worktree branch + validation green
+  Commit 2b6b69671 on branch spacedock-ensign/pi-spawn-skill-name-resolution. `go test ./internal/dispatch/ -run 'TestPiFirstAction|TestBuildPi'` — PASS. `go test ./internal/dispatch/` — ok (77.8s). `go test ./internal/dispatch/ -race` — ok (113.4s). `gofmt -l internal/dispatch` — clean. `go test ./... -race` — internal/dispatch ok; one pre-existing unrelated failure (TestVersionAmbiguousMarkersExitZero in internal/cli, caused by PI_CODING_AGENT env var present in this environment, fails identically on the base commit).
+
+### Summary
+
+Rewrote the Pi firstActionBlock to direct the worker to load the ensign skill before reading the dispatch file, mirroring Claude and Codex. The worker runs `/skill:ensign` (or reads `skills/ensign/SKILL.md` + `references/` as fallback), then reads the dispatch file for the stage-specific assignment. The false "this file contains the ensign discipline entry points" claim is dropped. Reverted the prior wrong-scope comment-only piSpawnSkill pin (piSpawnSkill="ensign" unchanged). Added offline guard TestPiFirstActionInvokesEnsignSkill and updated two sibling tests whose assertions referenced the old firstActionBlock phrase. All dispatch tests green under -race; gofmt clean. The non-self-describing live lane TestLivePiNonSelfDescribingDispatch is the test this fix greens — a worker with a bare checklist loads the skill and writes a complete stage report.
