@@ -84,7 +84,7 @@ An unsandboxed bootstrap launch carries no safehouse isolation, so per-action pe
 
 Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. When the plugin is still contract-compatible but a newer one is available, `doctor` and the front-door launch print an opt-in upgrade hint (`run spacedock install --host <host> to refresh`); the hint never blocks the launch. See [Install Spacedock](../get-started/install.md) for the full setup path.
 
-The launcher and plugin are a version-gated bundle. During a gate lifecycle, the real `gate prepare` invocation is the capability check: a nonzero result halts before presentation or later state effects. Refresh the installed bundle or build the current checkout and select that executable with `SPACEDOCK_BIN`; do not scrape help output or hand-edit gate frontmatter as a fallback. Relative selected-source and room inputs resolve from the launch working directory.
+The launcher and plugin are a version-gated bundle. During a gate lifecycle, the real `gate prepare` invocation is the capability check: a nonzero result halts before presentation or later state effects. Refresh the installed bundle or build the current checkout and select that executable with `SPACEDOCK_BIN`; do not scrape help output or hand-edit gate frontmatter as a fallback. Selected-source inputs may be absolute, launch-working-directory-relative, or state-checkout-relative. A relative spelling that names different existing paths under the launch directory and state checkout is refused; use an absolute path. Relative room inputs continue to resolve from the launch working directory.
 
 ## Workflow
 

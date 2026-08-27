@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/testgit"
@@ -1189,6 +1190,7 @@ func TestPrepareWrongRootRelativeArtifactFails(t *testing.T) {
 	}
 	_, err := Prepare(entity, PrepareInput{
 		WorkflowDir: workflow,
+		LaunchDir:   "",
 		Question:    "Advance?",
 		Artifact:    "gate-review.md",
 		Summary:     "wrong root",
@@ -1196,8 +1198,138 @@ func TestPrepareWrongRootRelativeArtifactFails(t *testing.T) {
 	if err == nil {
 		t.Fatal("wrong-root relative artifact succeeded; resolution reverted to the workflow root")
 	}
-	if !strings.Contains(err.Error(), "no such file or directory") {
-		t.Fatalf("wrong-root error=%v want no such file or directory", err)
+	if !strings.Contains(err.Error(), resolved) || !strings.Contains(err.Error(), "was not found") {
+		t.Fatalf("wrong-root error=%v want state-root absence", err)
+	}
+}
+
+func TestPrepareSelectedSourceFormsShareImmutableBinding(t *testing.T) {
+	for _, flag := range []string{"--artifact", "--reference"} {
+		t.Run(flag, func(t *testing.T) {
+			workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+			selected := filepath.Join(state, "selected", "review.md")
+			if err := os.MkdirAll(filepath.Dir(selected), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(selected, []byte("# Review\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			prepareGitRun(t, state, "add", "selected")
+			prepareGitRun(t, state, "commit", "-q", "-m", "selected source")
+			launch := filepath.Dir(filepath.Dir(workflow))
+			forms := []string{selected, filepath.Join("selected", "review.md"), filepath.Join("docs", "dev", ".state", "selected", "review.md")}
+			var first PrepareResult
+			for i, form := range forms {
+				input := PrepareInput{WorkflowDir: workflow, LaunchDir: launch, Question: "Advance?", Artifact: artifact, Summary: "same source"}
+				if flag == "--artifact" {
+					input.Artifact = form
+				} else {
+					input.References = []string{form}
+				}
+				result, err := Prepare(entity, input)
+				if err != nil {
+					t.Fatalf("form %q: %v", form, err)
+				}
+				if i == 0 {
+					first = result
+				} else if result != first {
+					t.Fatalf("form %q binding=%#v want %#v", form, result, first)
+				}
+			}
+		})
+	}
+}
+
+func TestResolveSelectedSourceRefusesAmbiguityAbsenceAndProbeErrors(t *testing.T) {
+	workflow, state, _, _, _ := prepareFixture(t, "flat")
+	launch := filepath.Dir(filepath.Dir(workflow))
+	rel := filepath.Join("shared", "review.md")
+	for _, root := range []string{state, launch} {
+		if err := os.MkdirAll(filepath.Join(root, "shared"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, rel), []byte(root), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, artifact := range []bool{true, false} {
+		_, err := resolveSelectedSource(rel, launch, state, artifact)
+		flag := "--reference"
+		if artifact {
+			flag = "--artifact"
+		}
+		if err == nil || !strings.Contains(err.Error(), flag) || !strings.Contains(err.Error(), filepath.Join(state, rel)) ||
+			!strings.Contains(err.Error(), filepath.Join(launch, rel)) || !strings.Contains(err.Error(), "use an absolute path") {
+			t.Fatalf("ambiguity error=%v", err)
+		}
+		_, err = resolveSelectedSource("missing.md", launch, state, artifact)
+		if err == nil || !strings.Contains(err.Error(), "attempted paths") || !strings.Contains(err.Error(), "launch-cwd-relative") {
+			t.Fatalf("absence error=%v", err)
+		}
+	}
+	if err := os.Remove(filepath.Join(launch, rel)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(state, rel), filepath.Join(launch, rel)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := resolveSelectedSource(rel, launch, state, true); err == nil || !strings.Contains(err.Error(), "different paths") {
+		t.Fatalf("lexical alias was collapsed: %v", err)
+	}
+
+	original := selectedSourceLstat
+	defer func() { selectedSourceLstat = original }()
+	probes := 0
+	selectedSourceLstat = func(path string) (os.FileInfo, error) {
+		probes++
+		return nil, &os.PathError{Op: "lstat", Path: path, Err: syscall.EACCES}
+	}
+	_, err := resolveSelectedSource("denied.md", launch, state, true)
+	if err == nil || probes != 1 || !strings.Contains(err.Error(), "--artifact") || !strings.Contains(err.Error(), filepath.Join(state, "denied.md")) || !strings.Contains(err.Error(), "permission denied") {
+		t.Fatalf("non-ENOENT error=%v probes=%d", err, probes)
+	}
+}
+
+func TestPrepareSelectedSourceGuardsRemainByteClean(t *testing.T) {
+	workflow, state, entity, artifact, _ := prepareFixture(t, "flat")
+	directory := filepath.Join(state, "directory.md")
+	if err := os.Mkdir(directory, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(state, "link.md")
+	if err := os.Symlink(artifact, link); err != nil {
+		t.Fatal(err)
+	}
+	unreadable := filepath.Join(state, "unreadable.md")
+	if err := os.WriteFile(unreadable, []byte("# Unreadable\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, state, "add", "unreadable.md")
+	prepareGitRun(t, state, "commit", "-q", "-m", "unreadable source")
+	if err := os.Chmod(unreadable, 0); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(unreadable, 0o644)
+	foreign := t.TempDir()
+	testgit.InitRepo(t, foreign, "-q")
+	if err := os.WriteFile(filepath.Join(foreign, "foreign.md"), []byte("# Foreign\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	prepareGitRun(t, foreign, "add", ".")
+	prepareGitRun(t, foreign, "commit", "-q", "-m", "foreign")
+	before, _ := os.ReadFile(entity)
+	for _, tc := range []struct{ selected, launch, want string }{
+		{"directory.md", "", "non-symlink regular file"},
+		{"link.md", "", "non-symlink regular file"},
+		{"unreadable.md", "", "read selected source"},
+		{"foreign.md", foreign, "not owned by a workflow Git root"},
+	} {
+		statusBefore := prepareGitOutput(t, state, "status", "--porcelain")
+		_, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, LaunchDir: tc.launch, Question: "Advance?", Artifact: tc.selected, Summary: "guard"})
+		after, _ := os.ReadFile(entity)
+		if err == nil || !strings.Contains(err.Error(), tc.want) || !bytes.Equal(before, after) || prepareGitOutput(t, state, "status", "--porcelain") != statusBefore {
+			t.Fatalf("selected=%q error=%v changed bytes or status", tc.selected, err)
+		}
 	}
 }
 

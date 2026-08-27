@@ -155,6 +155,39 @@ func TestGatePrepareCLIPassesStateRelativeArtifactWithoutCwdJoin(t *testing.T) {
 	}
 }
 
+func TestGatePrepareCLIResolvesLaunchRelativeSelectedSources(t *testing.T) {
+	for _, flag := range []string{"--artifact", "--reference"} {
+		t.Run(flag, func(t *testing.T) {
+			workflow, state, artifact := gatePrepareCLIFixture(t)
+			selected := filepath.Join(state, "selected", "review.md")
+			if err := os.MkdirAll(filepath.Dir(selected), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, selected, "# Selected review\n")
+			git(t, state, "add", "selected")
+			git(t, state, "commit", "-q", "-m", "selected source")
+
+			launchDir := filepath.Dir(filepath.Dir(workflow))
+			relative := filepath.ToSlash(filepath.Join("docs", "dev", ".state", "selected", "review.md"))
+			args := []string{"gate", "prepare", "task", "--question", "Advance?", "--artifact", artifact,
+				"--summary", "launch-relative source", "--workflow-dir", workflow}
+			if flag == "--artifact" {
+				args[6] = relative
+			} else {
+				args = append(args, "--reference", relative)
+			}
+			var out, errOut bytes.Buffer
+			code := run(context.Background(), args, nil, launchDir, nil, &out, &errOut, &status.NativeRunner{}, nil)
+			if code != 0 || errOut.Len() != 0 || !strings.Contains(out.String(), "state=open") {
+				t.Fatalf("prepare exit=%d stdout=%q stderr=%q", code, out.String(), errOut.String())
+			}
+			if _, err := os.Stat(filepath.Join(state, "docs")); !os.IsNotExist(err) {
+				t.Fatalf("prepare created doubled path: %v", err)
+			}
+		})
+	}
+}
+
 func TestGatePrepareCLIRejectsSummaryCardinalityAndEncodingBeforeMutation(t *testing.T) {
 	for _, tc := range []struct {
 		name    string

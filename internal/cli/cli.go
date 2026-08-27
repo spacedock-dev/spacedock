@@ -303,6 +303,7 @@ func newGateCommand(dir string, stdout, stderr io.Writer) *cobra.Command {
 			}
 			if args[0] == "prepare" {
 				prepareInput.WorkflowDir = definitionDir
+				prepareInput.LaunchDir = dir
 				result, err := gates.Prepare(path, prepareInput)
 				if err != nil {
 					fmt.Fprintln(stderr, "Error:", err)
