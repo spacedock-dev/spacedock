@@ -55,6 +55,17 @@ gates:
                 digest: sha256:e455516eef36fc670f79984a1425c5c500acae5f42803c08fa07dc443a6985f1
                 request-digest: sha256:b11f2127b0897d6ec9335c9942e38718e8f03f269f555779c2b0d3af6854ace9
                 room-ref: ./gate-pi-frontdoor-bootstrap-on-resume/review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:4avk4msa3ktyk1fdt6j5ktw1:validation:1
+                briefing: briefing:4avk4msa3ktyk1fdt6j5ktw1:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-27T06:20:20.333079Z"
+                decision: approve
+                reason: 'Captain approve: PASSED'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-27T00:11:57Z
 worktree: .worktrees/spacedock-ensign-gate-pi-frontdoor-bootstrap-on-resume
 ---
