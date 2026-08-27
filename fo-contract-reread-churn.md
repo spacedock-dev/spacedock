@@ -22,6 +22,17 @@ gates:
                 id: briefing:kc1rvn663yt8qkzqbakzda1v:backlog:attempt-1:revision-1
                 digest: sha256:a562429be9ee66eddf15442aa4bea797111178a583f49f23cd68bc9b8a45379d
                 room-ref: ./fo-contract-reread-churn/review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kc1rvn663yt8qkzqbakzda1v:backlog:1
+                briefing: briefing:kc1rvn663yt8qkzqbakzda1v:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-27T06:55:14.394209Z"
+                decision: approve
+                reason: 'Captain approved the bound Subspace backlog review: the 59-read baseline justifies ideation while preserving gate, write, merge, and post-compaction reload boundaries.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The contract's deferred load points phrase their triggers per occurrence: "load before every selected gate", "read immediately before the first FO-authored mutation". The contract never states that a file already resident in context satisfies the precondition. A literal reader therefore re-reads the full file at every trigger occurrence. One measured day: 14 reads of the same unchanged write-core, roughly one per mutation boundary.
