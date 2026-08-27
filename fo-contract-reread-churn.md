@@ -11,6 +11,17 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:kc1rvn663yt8qkzqbakzda1v:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:kc1rvn663yt8qkzqbakzda1v-backlog-1
+              briefing:
+                id: briefing:kc1rvn663yt8qkzqbakzda1v:backlog:attempt-1:revision-1
+                digest: sha256:a562429be9ee66eddf15442aa4bea797111178a583f49f23cd68bc9b8a45379d
+                room-ref: ./fo-contract-reread-churn/review/backlog/briefing-1
 ---
 
 The contract's deferred load points phrase their triggers per occurrence: "load before every selected gate", "read immediately before the first FO-authored mutation". The contract never states that a file already resident in context satisfies the precondition. A literal reader therefore re-reads the full file at every trigger occurrence. One measured day: 14 reads of the same unchanged write-core, roughly one per mutation boundary.
