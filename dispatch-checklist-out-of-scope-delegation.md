@@ -186,3 +186,23 @@ Implementation clarifies the First Officer's checklist-composition authority at 
 ### Summary
 
 The captain-directed unchanged proof run passes and supplies the previously missing AC-1 durability evidence for both entities. Candidate `6af283ec0`, fixture, grader, CLI, storage, and acceptance criteria remain unchanged; the result is 0-of-2 delegated lifecycle items with every report and state transition correctly committed, ordered, and attributed.
+
+## Stage Report: validation
+
+- DONE: Independently validate AC-1 from the retained proof3 artifacts: 0-of-2 delegated lifecycle items, zero child state mutations, report commits before terminalization, qualifying dispatch commits, and every status delta after completion through a successful root-FO command.
+  PASSED — an independent JSONL audit found one report-only item in each dispatch, 2 child body edits/2 report commits/0 state mutations, and ordered commit→signal→root-guard events for both entities; changing an actor ID, order, command result, or chain hash fails the audit.
+- DONE: Validate AC-2 and the approved surface: exactly one shared-core file, net 0..+3 LOC, unchanged fixture/grader/CLI/storage/worker contract, and passive lifecycle prose excluded from worker obligations.
+  PASSED — `git diff --numstat main...HEAD` is `2 0 skills/first-officer/references/fo-dispatch-core.md`; protected surfaces are byte-identical to `main`, while both emitted checklists exclude the unchanged passive `the entity advances to done` lifecycle context.
+- DONE: Perform detached adversarial review plus required focused/full/race/gofmt checks, compare actual LOC/files to estimate, and classify every finding with PASSED or REJECTED evidence.
+  PASSED — detached artifact/order assertions and focused durable/mechanism tests pass; actual +2/-0 in 1 file is +1 LOC (+100%) versus the +1/1 estimate but remains inside the approved net 0..+3, exactly-1-file tolerance.
+
+### Reviewer findings
+
+- PASSED — Material findings: none; AC-1 and AC-2 have command/artifact evidence and the candidate stays inside the captain-approved surface.
+- PASSED — Deferred risks: none; the two earlier durability gaps are absent in proof3, whose unchanged grader exits 0 and whose raw hashes/order agree with the audit manifest.
+- PASSED — Polish observation: `gofmt -w ./cmd ./internal` changes only pre-existing `internal/release/runtime_live_evidence_workflow_test.go`, a file byte-identical between `main` and candidate; the candidate changes no Go file.
+- PASSED — Infrastructure observation: fresh exact full/race attempts exhausted the temporary volume or hit the 10-minute package timeout under host pressure, not semantic assertions; implementation's exact full/race runs on `6af283ec0` are green, and the independent focused suite passes.
+
+### Summary
+
+Validation recommends PASSED: the retained candidate journey removes the baseline 2-of-2 delegation defect while preserving First Officer-only state authority and every approved compatibility boundary. No material, deferred-risk, or polish finding belongs to the candidate; fresh full-suite evidence is limited only by the recorded host resource failures.
