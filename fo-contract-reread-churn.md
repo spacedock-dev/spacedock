@@ -3,7 +3,7 @@ id: kc1rvn663yt8qkzqbakzda1v
 title: The FO contract's load triggers cause re-reads of resident, unchanged files
 status: ideation
 source: "email-triage codex session audit 2026-08-26: 59 skill-file reads in one FO day — fo-write-core.md 14x, fo-gate-lifecycle 10x — about 34% of the FO's tool calls, against files that never changed; only two compactions occurred, so at most three reads per file were mandated"
-started:
+started: 2026-08-27T06:56:34Z
 completed:
 verdict:
 score:
