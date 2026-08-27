@@ -31,6 +31,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:b9pjkz3rv0svx9rt63kw8yg7:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:b9pjkz3rv0svx9rt63kw8yg7-ideation-1
+              briefing:
+                id: briefing:b9pjkz3rv0svx9rt63kw8yg7:ideation:attempt-1:revision-1
+                digest: sha256:803ff34b274f373d3fdf25c3c04e356d2ebc25eb7048035bad8fe8e362aadf97
+                room-ref: ./review/ideation/briefing-1
 ---
 
 Make a flat entity's gate rooms durable through the supported command and let it record

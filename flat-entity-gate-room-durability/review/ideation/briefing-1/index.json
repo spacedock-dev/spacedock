@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:b9pjkz3rv0svx9rt63kw8yg7:ideation:attempt-1:revision-1",
+  "question": "Approve the canonical @review/... design as the implementation baseline for flat advisory rounds?",
+  "artifacts": [
+    {
+      "id": "artifact:b9pjkz3rv0svx9rt63kw8yg7:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c73a794fdd5f7e227b87f5a9bcf0910a2e166329/flat-entity-gate-room-durability/gate-decision-ideation.md",
+      "rev": "sha256:7d937ab935c8e682c01e050b5eeb9e46894fe30d7d9dcc613f91ad0223b17586",
+      "mediaType": "text/markdown",
+      "summary": "Approve a form-independent @review/... locator, frozen legacy refs, ticket-scoped Artifact validation, and a +180 net LOC/12-file implementation baseline."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:b9pjkz3rv0svx9rt63kw8yg7:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/c73a794fdd5f7e227b87f5a9bcf0910a2e166329/flat-entity-gate-room-durability/index.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:a8ffff1ee57efe7b1e520b91e503770ea4d30be5f900a0a34cc24f3153c5ecd6"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:b9pjkz3rv0svx9rt63kw8yg7:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
