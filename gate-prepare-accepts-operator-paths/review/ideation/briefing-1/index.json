@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9n02rsw1s4tztqzgmwb07n1k:ideation:attempt-1:revision-1",
+  "question": "Approve the reviewed safe multi-root path-resolution design for implementation at +151 net LOC across 6 files, tolerance +110..+215 and at most 7 files?",
+  "artifacts": [
+    {
+      "id": "artifact:9n02rsw1s4tztqzgmwb07n1k:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/cc8f382e13d26f65f159d4a2eb02a9e3d7c9d2ee/gate-prepare-accepts-operator-paths/gate-decision-ideation.md",
+      "rev": "sha256:6231331bb9217ba62b90ce0e6c9a13ffdb4d4c472ab2e5457819cc2bb09838b9",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: explicit CLI launch context fixes doubled paths, omitted-context callers retain authority, ambiguity and non-ENOENT errors fail before mutation, gitsource guards remain sole safety owner, and independent review passed."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:9n02rsw1s4tztqzgmwb07n1k:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/cc8f382e13d26f65f159d4a2eb02a9e3d7c9d2ee/gate-prepare-accepts-operator-paths.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:443dc680a48b052b845c403472a2e041e3fc5b06335218b156424fe6d1c875f0"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:9n02rsw1s4tztqzgmwb07n1k:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
