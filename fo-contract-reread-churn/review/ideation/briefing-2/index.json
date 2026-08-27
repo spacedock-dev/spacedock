@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kc1rvn663yt8qkzqbakzda1v:ideation:attempt-2:revision-1",
+  "question": "Approve this corrected design and dispatch implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:kc1rvn663yt8qkzqbakzda1v:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/789e0e9fafdc1b4e08fa8e739a71132b1ac98de4/fo-contract-reread-churn/gate-decision-ideation.md",
+      "rev": "sha256:fc7176cb9a19e52605ad2bfe98513a630e3a616992df0646e4671159b72024d2",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: reproducible 28/151 baseline falls to \u003c=5/128; all five ACs now have explicit evidence; prerequisite ordering and invalidation reloads are falsifiable; +2 net LOC in one file stays 330 bytes below cap; independent review passed."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:kc1rvn663yt8qkzqbakzda1v:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/789e0e9fafdc1b4e08fa8e739a71132b1ac98de4/fo-contract-reread-churn.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3b73a0da790e6a1e186956b7e1908b8425af10192e4aa35203a4f7bb25d95cdf"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:kc1rvn663yt8qkzqbakzda1v:ideation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
