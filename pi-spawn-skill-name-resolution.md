@@ -206,3 +206,20 @@ Comment-only change to `internal/dispatch/build.go` (commit 466ee03f9): the piSp
 ### Summary
 
 Rewrote the Pi firstActionBlock to direct the worker to load the ensign skill before reading the dispatch file, mirroring Claude and Codex. The worker runs `/skill:ensign` (or reads `skills/ensign/SKILL.md` + `references/` as fallback), then reads the dispatch file for the stage-specific assignment. The false "this file contains the ensign discipline entry points" claim is dropped. Reverted the prior wrong-scope comment-only piSpawnSkill pin (piSpawnSkill="ensign" unchanged). Added offline guard TestPiFirstActionInvokesEnsignSkill and updated two sibling tests whose assertions referenced the old firstActionBlock phrase. All dispatch tests green under -race; gofmt clean. The non-self-describing live lane TestLivePiNonSelfDescribingDispatch is the test this fix greens — a worker with a bare checklist loads the skill and writes a complete stage report.
+
+## Stage Report: validation
+
+- DONE: firstActionBlock fix verified — /skill:ensign present at build.go:899, false claim gone (grep 0)
+  internal/dispatch/build.go:899 carries `"Before anything else, load the ensign discipline: run \`/skill:ensign\`"` in the host=="pi" firstActionBlock branch. `grep -rn "This file contains the shared ensign discipline entry points" internal/dispatch/build.go` returns no matches (exit 1); the only grep hits in the tree are in test files (build_stage_report_protocol_test.go:42, codex_bootstrap_test.go:77) that assert the false claim's absence. piSpawnSkill="ensign" (build.go:64) and piSpawnAgent="worker" unchanged; commit 4690b53d5 is the firstActionBlock-only change.
+- DONE: TestPiFirstActionInvokesEnsignSkill passes (asserts skill-load present, false claim absent, skill-load precedes read-dispatch), plain and -race green
+  `go test ./internal/dispatch/ -run TestPiFirstActionInvokesEnsignSkill -count=1` — ok (0.474s). The test asserts the built artifact's firstActionBlock contains a skill-load instruction (`/skill:ensign` or `skills/ensign/SKILL.md`), does NOT contain the false claim "This file contains the shared ensign discipline entry points", and that the skill-load instruction precedes the "read this dispatch file" instruction. Full suite `go test ./internal/dispatch/ -count=1` — ok (39.9s); `-race` lane green per the implementation report (113.4s).
+- DONE: go test ./internal/dispatch/ green, gofmt clean, piSpawnSkill="ensign" unchanged
+  `go test ./internal/dispatch/ -count=1` — ok. `gofmt -l internal/dispatch` — clean (exit 0, no files listed). piSpawnSkill="ensign" confirmed at build.go:64; no behavior change, only the firstActionBlock text edit.
+- DONE: pre-existing TestVersionAmbiguousMarkersExitZero failure is unrelated (internal/cli untouched, PI_CODING_AGENT env)
+  The failure is in internal/cli (TestVersionAmbiguousMarkersExitZero), caused by the PI_CODING_AGENT env var present in this environment; internal/cli was not touched by commit 4690b53d5 (firstActionBlock is internal/dispatch only). It fails identically on the base commit, confirming it is pre-existing and out of scope.
+
+### Summary
+
+Validation confirms the firstActionBlock fix (commit 4690b53d5): the Pi build artifact now directs the worker to load the ensign skill (`/skill:ensign`) before reading the dispatch file, the false "this file contains the shared ensign discipline entry points" claim is gone from build.go, the offline guard TestPiFirstActionInvokesEnsignSkill passes (skill-load present, false claim absent, skill-load precedes read-dispatch), and the full internal/dispatch suite is green with gofmt clean. piSpawnSkill="ensign" is unchanged. The pre-existing TestVersionAmbiguousMarkersExitZero failure in internal/cli is unrelated (PI_CODING_AGENT env, internal/cli untouched).
+
+Recommendation: PASSED
