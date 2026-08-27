@@ -102,7 +102,7 @@ Verified by: the boundary replay drives at least two gate selections, two FO-aut
 Verified by: in the same replay, inject one explicit compaction cue and later one explicit replacement cue. After each cue, assert zero eager reads before a trigger, exactly one fresh load for every subsequently triggered affected body, and no second load until another invalidator. Remove either cue-to-reload edge from the trace oracle and the test must fail.
 
 **AC-4 (SAFETY) - Gate, write, and merge prerequisites and combined-boundary ordering remain intact on initial and invalidated loads.**
-Verified by: event-order assertions require gate lifecycle before any gate capability/evidence/Git/presenter/decision effect; write core in its own completed host event before the first FO mutation; and, at a terminal mutation, write satisfaction before merge satisfaction before transition. The assertions run once before invalidation and once after each invalidator; swapping an order or deleting a required load must fail.
+Verified by: event-order assertions require `gate-load → write-load → mutation` for every gated mutation and `gate-load → write-load → merge-load → transition` for every gated terminal mutation. The assertions run initially and after each invalidator; every adjacent swap and every omitted required load must fail.
 
 **AC-5 (BOUNDARY) - The change alters only contract-read frequency and timing: command grammar, output, stored formats, write authority, and gate/merge decisions remain unchanged.**
 Verified by: inspect the implementation diff for the one approved paragraph, run the existing contract lint and full Go suite including race, and compare the replay's workflow effects/durable state to its input script. Any changed command result, state transition, authority classification, extra file, or component-cap failure rejects the change.
@@ -114,7 +114,7 @@ Verified by: inspect the implementation diff for the one approved paragraph, run
 3. Apply only the approved paragraph, then replay on Codex, the host that exhibited the defect. Record canonical-body reads, total tool calls, window boundaries, replacement cue, and workflow-effect ordering. This one trace proves AC-1 through AC-4 and is falsifiable in both directions: extra reads fail value; missing or misordered reads fail safety.
 4. Use a short boundary suffix after the historical stream: repeated gate/write/dispatch triggers; explicit compaction; next gate/write/terminal triggers; explicit source-replacement evidence; next gate/write/terminal triggers. Require no eager reads and exactly-once lazy reloads. Estimated cost is one additional scripted live segment, not a permanent binary mechanism.
 5. Run focused `go test ./internal/contractlint ./internal/ensigncycle`, then `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` with a clean diff check. Existing topology, component-cap, write-scope, gate, and routing tests cover AC-5; no static wording-presence test is added because it would prove only that the means shipped.
-6. Because shipped contract/scaffolding is a high-stakes surface, run the workflow's detached adversarial audit on a throwaway checkout. Challenge the evidence with three mutations: permit repeated same-window loads (AC-1/2 must fail), remove a compaction/replacement reload edge (AC-3 must fail), and swap write/merge ordering (AC-4 must fail). A green replay under any mutation is a validation hole, not a pass.
+6. Because shipped contract/scaffolding is a high-stakes surface, run the workflow's detached adversarial audit on a throwaway checkout. Challenge the evidence with three mutation classes: permit repeated same-window loads (AC-1/2 must fail), remove a compaction/replacement reload edge (AC-3 must fail), and exercise every adjacent swap and every omitted required load in both AC-4 sequences, initially and after each invalidator. A green replay under any mutation is a validation hole, not a pass.
 
 Test complexity is moderate because one live Codex replay is required; repository tests are low-cost and unchanged. No Claude/Pi live matrix is required: the semantics are host-neutral and host context management is out of scope, while the Codex negative control is the measured failing host. If the Codex replay cannot distinguish a skill invocation from a body load, validation must count the underlying tool/file-open events directly rather than weakening the metric.
 
@@ -134,3 +134,16 @@ Test complexity is moderate because one live Codex replay is required; repositor
 ### Summary
 
 Ideation reduces the design to a single host-neutral residency/invalidation rule in the shared FO core, with no runtime registry or probe. The validation design replays the measured Codex workload and makes excess reads and unsafe missing reloads independently falsifiable.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Correct Finding 2's gate-before-write ordering oracle.
+  AC-4 now requires `gate-load → write-load → mutation` for every gated mutation and `gate-load → write-load → merge-load → transition` for every gated terminal mutation, initially and after each invalidator. The adversarial audit now fails every adjacent swap and every omitted required load.
+- SKIPPED: Finding 1's baseline reproducibility and threshold changes.
+  The First Officer held the finding for captain decision, so the 59-read / 34% baseline and 29-read / 21% target remain unchanged.
+- SKIPPED: Reviewer rerun.
+  The First Officer explicitly excluded a reviewer rerun from this correction authorization.
+
+### Summary
+
+Cycle 2 tightens the safety oracle to make gate-before-write ordering falsifiable without changing the one-file implementation surface or the held workload metric.
