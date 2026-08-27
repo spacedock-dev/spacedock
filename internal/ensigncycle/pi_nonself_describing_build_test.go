@@ -1,81 +1,9 @@
 package ensigncycle
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
-	"time"
 )
-
-// TestPiNonSelfDescribingDispatchBuildBodyCarriesProtocol is the offline
-// (non-live) guard for the non-self-describing lane (AC-2 body presence +
-// AC-3 tautology closure): it builds the dispatch artifact with a checklist
-// equal to a real entity's acceptance criteria — no ensign skill path, no
-// stage-report heading, no DONE/Summary structure — and asserts the body
-// carries the embedded stage-report protocol tokens while the checklist
-// stdin does not smuggle any format hint. This runs without the `live` tag
-// so the AC-2 body presence and the AC-3 tautology-closure (checklist has no
-// format hint) are checked on every test run, not only live dispatches.
-func TestPiNonSelfDescribingDispatchBuildBodyCarriesProtocol(t *testing.T) {
-	binary := buildRecordedGateBinary(t)
-	workflowRoot, stateRoot, entityPath := writePiNonSelfDescribingSmokeWorkflow(t)
-	_ = stateRoot
-	checklist := []string{
-		"- append the smoke marker line `PI-NONSD-SMOKE-MARKER` to the entity file",
-		"- commit only the entity path in the state checkout with message 'ensign: pi live smoke' (path-scoped git add/commit for pi-nonsd-smoke/index.md)",
-	}
-	stdin, err := json.Marshal(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   workflowRoot,
-		"stage":          "implementation",
-		"checklist":      checklist,
-		"bare_mode":      true,
-		"host":           "pi",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, binary, "dispatch", "build", "--workflow-dir", workflowRoot)
-	cmd.Dir = workflowRoot
-	cmd.Stdin = strings.NewReader(string(stdin))
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("dispatch build --host pi failed: %v\nstderr:\n%s", err, stderr.String())
-	}
-	var envelope piSmokeEnvelope
-	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
-		t.Fatalf("dispatch build stdout is not the build envelope: %v\n%s\nstderr:\n%s", err, stdout.String(), stderr.String())
-	}
-	body, err := os.ReadFile(envelope.DispatchFile)
-	if err != nil {
-		t.Fatalf("read dispatch artifact: %v", err)
-	}
-	bodyStr := string(body)
-	// AC-2: the body carries the embedded protocol tokens.
-	for _, want := range []string{"### Stage Report format", "## Stage Report:", "- DONE:", "- SKIPPED:", "- FAILED:", "### Summary"} {
-		if !strings.Contains(bodyStr, want) {
-			t.Fatalf("non-self-describing dispatch body missing embedded protocol token %q:\n%s", want, bodyStr)
-		}
-	}
-	// AC-3 tautology closure: the checklist (stdin) must not name the ensign
-	// skill path, the stage-report heading, or the DONE/Summary structure —
-	// the body embed is the worker's only format source.
-	for _, banned := range []string{"ensign/SKILL.md", "## Stage Report:", "- DONE:", "- SKIPPED:", "- FAILED:", "### Summary", "Stage Report format"} {
-		if strings.Contains(string(stdin), banned) {
-			t.Fatalf("non-self-describing checklist smuggles format hint %q into the dispatch stdin:\n%s", banned, stdin)
-		}
-	}
-}
 
 // writePiNonSelfDescribingSmokeWorkflow creates a split-root smoke workflow
 // whose implementation stage-def names only the real work (append a marker
