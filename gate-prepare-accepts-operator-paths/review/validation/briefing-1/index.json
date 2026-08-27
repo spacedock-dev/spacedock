@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9n02rsw1s4tztqzgmwb07n1k:validation:attempt-1:revision-1",
+  "question": "Approve validation and admit this fix to the 0.27.x PR stack?",
+  "artifacts": [
+    {
+      "id": "artifact:9n02rsw1s4tztqzgmwb07n1k:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bfe3ff8df8f4793850454cecfd7c5517670dee85/gate-prepare-accepts-operator-paths/gate-decision-validation.md",
+      "rev": "sha256:4e568ad789af1c3da725bdeab076f6e9cfc5e758ee89bf7e288077064f3944f5",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: all four ACs passed; full/race and detached audit are green; actual +183 net across 6 files is within the approved +110..+215 and max-7 tolerance."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:9n02rsw1s4tztqzgmwb07n1k:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/bfe3ff8df8f4793850454cecfd7c5517670dee85/gate-prepare-accepts-operator-paths.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:e2b179d341ec20edf2a33b7cdb3d40b86f5596276e387c977c6e89425aa9d0b0"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:9n02rsw1s4tztqzgmwb07n1k:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
