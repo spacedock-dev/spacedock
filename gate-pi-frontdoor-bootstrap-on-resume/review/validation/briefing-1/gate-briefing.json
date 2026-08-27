@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4avk4msa3ktyk1fdt6j5ktw1:validation:attempt-1:revision-1",
+  "question": "Approve validation to enter the terminal merge ceremony: PASSED — pi.go-only resume gate (if !containsResume wraps the piBootstrapPrompt append), reusing the shared frontdoor.go:553 helper; TestPiResumeSuppressesBootstrapPrompt 7/7 green; extension unchanged; non-resume baseline intact. ~+79/−1 across 2 files.",
+  "artifacts": [
+    {
+      "id": "artifact:4avk4msa3ktyk1fdt6j5ktw1:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c47d92d231f71fe6bb44ec590bcac0d637cc4b0c/gate-pi-frontdoor-bootstrap-on-resume.md",
+      "rev": "sha256:c5ef4da3f6b67f37f4d3bf22841f0ce81103735970f0cf46a90ea402fdeb3445",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED. Pi.go-only resume gate: if !containsResume(fd.passthrough) wraps launchPrompt(piBootstrapPrompt, fd) (pi.go:277), reusing the shared containsResume helper at frontdoor.go:553 (no new token set). TestPiResumeSuppressesBootstrapPrompt 7/7 subtests green — all five resume tokens (--resume, --resume=\u003cid\u003e, -r, --continue, -c) suppress piBootstrapPrompt; non-resume (--model, task string) keeps it as the last argv token (baseline intact). git diff --numstat shows only pi.go (9/1) + pi_frontdoor_test.go (70/0); .pi/extensions/spacedock.ts absent (pi.go-only, no extension change). gofmt/go vet/-race clean. TestVersionAmbiguousMarkersExitZero fails identically on main (PI_CODING_AGENT env marker, pre-existing). Residual: Pi --session \u003cpath|id\u003e resume form not in the shared containsResume set — flagged as follow-up, out of scope."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:4avk4msa3ktyk1fdt6j5ktw1:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/cli/pi.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:7eb8957cbdd1d66c156f6a3d5689ddef643a7a6141049f0cc41fb574aa1ed016"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:4avk4msa3ktyk1fdt6j5ktw1:validation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/cli/pi_frontdoor_test.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:fb9559dbc84b84046ec4e0987cf89d348af5c677cf7904c8983c71148afcac3d"
+    }
+  ]
+}
