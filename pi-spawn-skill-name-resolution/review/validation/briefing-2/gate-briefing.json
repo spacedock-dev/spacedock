@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntnywe6wfk1g5sersjbe5yt7:validation:attempt-2:revision-1",
+  "question": "Approve validation (cycle 2) to enter the merge ceremony: PASSED — the FIX. The Pi firstActionBlock now invokes the ensign skill (/skill:ensign or read skills/ensign/SKILL.md) before the dispatch file, mirroring Claude Skill() and Codex $spacedock:ensign. The false 'this file contains the ensign discipline entry points' claim is gone. TestPiFirstActionInvokesEnsignSkill green (skill-load present, false claim absent, ordering correct). piSpawnSkill='ensign' unchanged. The test this greens: TestLivePiNonSelfDescribingDispatch (CI pi-live).",
+  "artifacts": [
+    {
+      "id": "artifact:ntnywe6wfk1g5sersjbe5yt7:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/e8ca3751860c0add727cf55794642d95b6c736cd/pi-spawn-skill-name-resolution.md",
+      "rev": "sha256:f82046e364a9664f03516427f228ac7c6fa3883d79a11d19f2b7604a0631ce80",
+      "mediaType": "text/markdown",
+      "summary": "Cycle-2 validation PASSED — the fix. The Pi firstActionBlock (build.go:899) now directs the worker to run /skill:ensign (or read skills/ensign/SKILL.md + references) to load the ensign discipline before reading the dispatch file, mirroring Claude's Skill(skill=spacedock:ensign) and Codex's $spacedock:ensign; then. The false claim 'This file contains the shared ensign discipline entry points' is gone (grep 0). TestPiFirstActionInvokesEnsignSkill PASS (asserts skill-load present, false claim absent, skill-load precedes read-dispatch), plain and -race. go test ./internal/dispatch/ green; gofmt clean. piSpawnSkill='ensign' unchanged. The prior comment-pin scope was dropped (reverted). The test this fix greens is TestLivePiNonSelfDescribingDispatch — a bare-checklist Pi worker loads the skill and writes a complete stage report; runs in CI pi-live (auth-blocked locally). Pre-existing TestVersionAmbiguousMarkersExitZero failure unrelated."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ntnywe6wfk1g5sersjbe5yt7:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    }
+  ]
+}
