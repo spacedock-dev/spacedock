@@ -7,7 +7,7 @@ started: 2026-08-27T00:12:01Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-spawn-skill-name-resolution
 issue:
 pr:
 mod-block:
