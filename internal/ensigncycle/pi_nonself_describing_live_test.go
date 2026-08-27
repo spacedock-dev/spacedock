@@ -19,7 +19,7 @@ import (
 // ensign/SKILL.md", no stage-report heading, no DONE/Summary structure — and
 // asserts the worker still writes a complete `## Stage Report: implementation`
 // (heading + `- DONE:` + `### Summary`) with a clean state-checkout commit.
-// The worker's only format source is the embedded `### Stage Report format`
+// The worker's only format source is the ensign skill the firstActionBlock
 // block the build artifact now carries for host=pi. Reverting the AC-2 body
 // embed makes this lane RED (the worker has no format source), while the
 // self-describing TestLivePiFrontDoorSmoke stays green — proving this lane
@@ -68,7 +68,7 @@ func newPiNonSelfDescribingSmokeFixture(t *testing.T, name, repo, piSubagentsRoo
 // for the non-self-describing smoke entity with a checklist equal to a real
 // entity's acceptance criteria: no ensign skill path, no stage-report heading,
 // no DONE/Summary structure. The worker's only stage-report format source is
-// the embedded `### Stage Report format` block the build artifact carries for
+// the ensign skill the firstActionBlock directs the worker to load for
 // host=pi (AC-2).
 func runPiNonSelfDescribingDispatchBuild(t *testing.T, binary, workflowRoot, entityPath string) piSmokeEnvelope {
 	t.Helper()
@@ -110,17 +110,21 @@ func runPiNonSelfDescribingDispatchBuild(t *testing.T, binary, workflowRoot, ent
 	if envelope.Prompt == "" || envelope.DispatchFile == "" {
 		t.Fatalf("pi build envelope missing prompt/dispatch_file_path:\n%s", out)
 	}
-	// Adversarial guard: confirm the dispatch body carries the embedded
-	// stage-report format block (AC-2) so the worker has a format source.
+	// Adversarial guard: confirm the dispatch body's First action block
+	// directs the worker to load the ensign skill (the format source), not
+	// that the body carries the format inline (the embed was removed).
 	body, err := os.ReadFile(envelope.DispatchFile)
 	if err != nil {
 		t.Fatalf("read dispatch artifact: %v", err)
 	}
 	bodyStr := string(body)
-	for _, want := range []string{"### Stage Report format", "## Stage Report:", "- DONE:", "### Summary"} {
+	for _, want := range []string{"/skill:ensign", "skills/ensign/SKILL.md"} {
 		if !strings.Contains(bodyStr, want) {
-			t.Fatalf("non-self-describing dispatch body missing embedded protocol token %q:\n%s", want, bodyStr)
+			t.Fatalf("non-self-describing dispatch body missing skill-load instruction %q:\n%s", want, bodyStr)
 		}
+	}
+	if strings.Contains(bodyStr, "### Stage Report format") {
+		t.Fatalf("non-self-describing dispatch body still carries the removed embed block")
 	}
 	return envelope
 }
@@ -131,7 +135,7 @@ func runPiNonSelfDescribingDispatchBuild(t *testing.T, binary, workflowRoot, ent
 // `## Stage Report: implementation` and the state git log has the worker
 // commit. Unlike piLiveSmokePrompt it does NOT tell the FO to verify the
 // smoke marker — the marker is the worker's real work, not the proof; the
-// stage report (sourced from the embedded body block) is the proof.
+// stage report (sourced from the loaded ensign skill) is the proof.
 func piNonSelfDescribingSmokePrompt(repo, workflowRoot, stateRoot, entityPath string, envelope piSmokeEnvelope) string {
 	return fmt.Sprintf(`You are the Spacedock first officer for a live Pi smoke test.
 
