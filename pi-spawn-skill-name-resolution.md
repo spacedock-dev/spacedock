@@ -108,3 +108,16 @@ No new mechanism is introduced, so there is no new mechanism to name a value AC 
 ### Summary
 
 Spiked the riskiest unverified mechanism (newer-loader resolver behavior) before deciding. Read `resolveSkillPath` and `normalizeSkillInput` in pi-subagents `src/agents/skills.ts` on installed 0.37.2 and latest npm 0.57.0 — byte-identical, both use exact basename match (`s.name === skillName`), no namespace/qualified-name handling. Confirmed end-to-end with a live dispatch transcript (this session, run 4c6e9c44): the system prompt carries the resolved ensign skill in `<available_skills>`, proving the bare `"ensign"` resolves. The field report's diagnosis is inverted — the bare name is the resolving form; `spacedock:ensign` is the form that would fail (likely confused the `subagent_type` field with the `skill` field). Outcome: verified-working, no code change to `piSpawnSkill`. The only production change is a comment refinement pinning the verified loader versions in build.go. The broken DONE formatting belongs to the stage-report protocol embed (t4), out of scope here.
+
+## Stage Report: ideation
+
+- DONE: Four-section design completion (Problem/Proposed approach/AC/Test plan)
+  Entity body carries all four sections; Problem refutes the field report via live transcript + source spike, Proposed approach records the verify-first outcome, AC-1 names the falsifying condition and the live transcript that falsifies it, Test plan cites the existing Go test locking `skill = "ensign"`.
+- DONE: Verify-first spike of the newer-loader resolver (executed — 0.37.2 and 0.57.0 byte-identical basename match)
+  Read `resolveSkillPath` and `normalizeSkillInput` in `src/agents/skills.ts` on installed 0.37.2 and latest npm 0.57.0 — byte-identical, both use exact basename match (`s.name === skillName`); no namespace/qualified-name handling. Live dispatch transcript (run 4c6e9c44) confirms end-to-end resolution of bare `"ensign"`.
+- DONE: Expected surface declaration (net ~0 LOC, comment pin only)
+  Expected surface section declares net +0 across 1 file (internal/dispatch/build.go), comment refinement only (pin verified loader versions 0.37.2/0.57.0, dated 2026-08-27), tolerance ±3 lines. No observable semantic change; no new test needed (existing `TestBuildPiHostEmitsSpawnAgentAndSkill` locks the value).
+
+### Summary
+
+Ideation design was already committed (9ff6e54ca); this report appends the missing stage-report section. All three ideation checklist items are complete: the four-section design is in the entity body, the verify-first spike of the newer-loader resolver was executed (0.37.2 and 0.57.0 byte-identical basename match, live transcript confirms end-to-end resolution), and the expected surface declares net ~0 LOC (comment pin only). Outcome: verified-working, no code change to `piSpawnSkill`.
