@@ -154,3 +154,20 @@ Ideation design was already committed (9ff6e54ca); this report appends the missi
 ### Summary
 
 Comment-only edit to internal/dispatch/build.go (commit 466ee03f9 on branch spacedock-ensign/pi-spawn-skill-name-resolution): replaced the stale unverified piSpawnSkill assumption with pinned loader-version evidence (0.37.2 installed, 0.57.0 latest npm, both exact basename match, dated 2026-08-27). piSpawnSkill remains `"ensign"` — no code behavior change. All validation green: targeted test, full dispatch test suite, go build, gofmt. The field report diagnosis was inverted; the bare name is the only resolving form.
+
+## Stage Report: validation
+
+- DONE: Comment-only change verified (diff vs main shows no code-value movement)
+  `git diff --numstat main` shows only `internal/dispatch/build.go` (6 ins, 1 del). The diff body contains only comment lines in the `piSpawnSkill`/`piSpawnAgent` comment block (build.go:56–66). Content-only compare of the assignment lines (`piSpawnAgent = "worker"`, `piSpawnSkill = "ensign"`) against `main` is byte-identical — only line numbers shifted (63→68, 64→69) due to the inserted comment lines. No code-value diff lines match the skill/agent string literals. The single changed file is the one declared in the expected surface.
+- DONE: Tests and build green (targeted test locks skill="ensign", go build, gofmt clean)
+  `go test ./internal/dispatch/ -run TestBuildPiHostEmitsSpawnAgentAndSkill` — PASS (asserts `*out.Skill == "ensign"` and `*out.Agent == "worker"` for default-path Pi dispatch). `go build ./...` — OK. `gofmt -l internal/dispatch/build.go` — clean (no output). The existing test locks the verified-correct spawn constants; no new test needed for a comment-only change.
+- DONE: Semantic adversarial pass (no accidental code change)
+  Adversarial trace through the changed lines: the only mutated bytes are Go comment text (lines beginning `//`). The `const` block holding `piSpawnAgent`/`piSpawnSkill` is untouched; the value `"ensign"` is byte-identical to main. `git diff --numstat` confirms only the declared file changed. Grep for the piSpawnSkill assignment confirms the value is byte-identical to main. The change cannot alter runtime behavior because Go comments are not compiled. How could this test pass while behavior is wrong? It could not — the test exercises the actual build output and asserts the literal skill value; a comment change does not touch it, and the value is unchanged. Recommendation: PASSED (comment-only, no behavior change).
+- DONE: AC-1 evidence reproduced
+  AC-1 (VALUE): a Pi-dispatched ensign demonstrably loads the ensign contract. Verified by the live dispatch transcript (this session, run 4c6e44): the system prompt carries an `<available_skills>` block with the ensign skill at `skills/ensign/SKILL.md` — the skill resolved and is resident before stage work begins. The falsifying condition (skill name fails to resolve, transcript shows no contract load) does not hold. Corroborated by the source spike (`resolveSkillPath` exact basename match on 0.37.2 and 0.57.0) and the existing Go test locking `skill = "ensign"`. The comment pin makes the re-verification auditable in-source. No self-referential evidence; no decision-only deliverable.
+- DONE: No review findings (no material/deferred/polish findings)
+  No findings arose during validation. The change is comment-only with zero behavior surface; no value AC is at risk. Deferred risks: none. Polish findings: none.
+
+### Recommendation: PASSED
+
+Comment-only change to `internal/dispatch/build.go` (commit 466ee03f9): the piSpawnSkill comment block now pins the verified loader versions (0.37.2 installed, 0.57.0 latest npm, both exact basename match, dated 2026-08-27). `piSpawnSkill` remains `"ensign"`, `piSpawnAgent` remains `"worker"` — byte-identical to main. Targeted test, go build, and gofmt all green. AC-1 satisfied by live transcript + source spike + existing test. No material, deferred, or polish findings. Delivery can proceed.
