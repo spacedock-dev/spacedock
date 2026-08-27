@@ -33,39 +33,78 @@ started: 2026-08-27T00:11:57Z
 
 ## Problem
 
-`internal/cli/pi.go:271` appends `piBootstrapPrompt` ("Use $spacedock:first-officer for this whole Pi session.") to the Pi argv with no resume gate — `pi.go` has zero `containsResume` calls; `frontdoor.go` (Claude/Codex) has 3 and gates its bootstrap on `if !resume` (frontdoor.go:428,447). So `spacedock pi -- --resume` still injects the launch prompt that tells the session to load the FO contract.
+`internal/cli/pi.go:271` appends `piBootstrapPrompt` ("Use $spacedock:first-officer for this whole Pi session.") to the Pi argv with no resume gate — `pi.go` has zero `containsResume` calls; `frontdoor.go` (Claude/Codex) has 3 and gates its bootstrap on `if !resume` (frontdoor.go:428,447). So `spacedock pi -- --resume` still injects the launch prompt as a durable user message that tells the resumed session to load the FO contract as if starting fresh.
 
-Second path: `.pi/extensions/spacedock.ts` `session_start` handler (line 80) sets `injectBootstrap=true` unconditionally — no resume detection. On a resume, `session_start` still fires, and the `context` hook re-injects `FO_BOOTSTRAP_TEXT` (the `hasStructuralBootstrap` idempotency guard checks `event.messages` for a prior injection, but the injection is a transient context-message modification, not a durable logged message, so a resumed transcript won't match it). The extension has compaction-awareness (PR #738: `session_compact` switches to the lighter `injectBootRecord`) but no resume-awareness.
+Second path (`.pi/extensions/spacedock.ts`): the `session_start` handler (line 80) sets `injectBootstrap=true` unconditionally. The `context` hook then re-injects `FO_BOOTSTRAP_TEXT` on each turn. Pi's extension docs (`tmp/pi/packages/coding-agent/docs/extensions.md:653`) describe the `context` event's `event.messages` as a **deep copy, safe to modify** — the returned message array is what the LLM sees for that turn; modifications are **non-destructive** and do NOT persist to the session transcript. So `hasStructuralBootstrap` (which checks `event.messages` for a prior injection) never matches: the per-turn injection is transient, not a durable logged message, so the injection re-fires every turn (fresh and resume alike) but does not corrupt the resumed transcript with a new user message. Additionally, Pi's lifecycle docs (`extensions.md:281,319,398`) show `session_start` fires with `reason: "startup"` on CLI launch — `reason: "resume"` is only for mid-session switches via `/resume`, NOT for CLI `pi --resume`. So the extension's `session_start` cannot detect a CLI resume via `event.reason`. The extension has compaction-awareness (PR #738: `session_compact` → `injectBootRecord`) but this is a separate event untouched by the front-door fix.
 
 ## Proposed approach
 
-Gate the Pi front door bootstrap on `!resume`, mirroring the Claude/Codex front door: add `containsResume(fd.passthrough)` to `pi.go` and suppress `piBootstrapPrompt` when resume is forwarded. Decide in ideation whether the extension's `session_start` should also detect resume (if Pi's session_start event carries a resume marker) and skip `injectBootstrap`, or whether gating the launch prompt alone suffices — the extension's re-injection is redundant on resume but load-bearing for compaction survival, so touching it risks the PR #738 compaction boundary. Lean: fix the front door only; leave the extension's session_start alone unless a resume marker is cheaply available.
+**Decision: pi.go-only fix. No extension change.**
+
+Gate the Pi front door bootstrap on `!resume`, mirroring the Claude/Codex front door: wrap the `launchPrompt(piBootstrapPrompt, fd)` append (pi.go:271) in `if !containsResume(fd.passthrough)`, reusing the existing shared `containsResume` function (frontdoor.go:553-562). Pi's resume flags (`-r`, `--resume`, `-c`, `--continue` — confirmed in `tmp/pi/packages/coding-agent/README.md:566-571`) match `containsResume`'s token set exactly. No new function or token set needed.
+
+### Per-mechanism breakdown
+
+1. **pi.go resume gate** (`containsResume(fd.passthrough)` guard on `piBootstrapPrompt`).
+   - Value AC served: AC-1 (argv omits the prompt on resume), AC-2 (token-set parity).
+   - Simplest alternative: suppress only on an exact `--resume` match.
+   - Why insufficient: misses `-r`, `-c`, `--continue`, and `--resume=<id>` — all valid Pi resume forms.
+
+2. **Extension `session_start` resume-awareness** — CONSIDERED AND REJECTED.
+   - Value AC it would serve: AC-3 (no fresh `FO_BOOTSTRAP_TEXT` on resume).
+   - Simplest alternative: `if (event.reason === "resume") return;` in the `session_start` handler.
+   - Why unnecessary/insufficient: (a) CLI `pi --resume` fires `session_start` with `reason: "startup"`, not `"resume"` (Pi docs lifecycle: `reason: "resume"` is mid-session `/resume` only) — the extension cannot detect CLI resume via `event.reason`; (b) the `context` injection is transient (deep copy, non-destructive per Pi docs) — it does not add a durable message to the resumed transcript, so it does not re-load the contract as a fresh start; the FO sees a redundant per-turn directive in its context window, not a new bootstrap user message; (c) touching the extension risks the PR #738 compaction-boundary behavior (`session_compact` → `injectBootRecord`) for no gain.
 
 ## Risk evidence
 
-Backlog: the gap is verified by code reading — `pi.go` has no `containsResume` call; `frontdoor.go` gates on `!resume`; the extension's `session_start` is unconditional. CL's compaction-hook-leak hypothesis checked and disproven: `session_compact` → `injectBootRecord` is a separate event scoped to compaction; it does not fire on startup/resume. Riskiest unverified mechanism: whether gating the launch prompt alone stops the contract loading on resume, or whether the extension's `session_start` re-injection independently loads it (needs a live `spacedock pi --resume` probe to settle).
+No spike needed: proven mechanisms.
+1. `containsResume` is a proven shared function with 3 live call sites in `frontdoor.go` (lines 428, 447, 553-562) — reusing it for pi.go adds no new mechanism.
+2. Pi's `context` hook is transient: Pi extension docs (`extensions.md:653`) state `event.messages` is a "deep copy, safe to modify" and changes are "non-destructive" — the injection does not persist to the transcript, so it cannot re-load the contract as a fresh start on resume.
+3. Pi's `session_start` fires with `reason: "startup"` on CLI launch (Pi docs `extensions.md:281,398`) — `reason: "resume"` is mid-session only, so the extension cannot detect CLI resume.
+4. `piBootstrapPrompt` is the durable launch argv token (pi.go:271) — the only path that adds a fresh bootstrap user message to a resumed session. Gating it is sufficient.
 
 ## Out of scope
 
-Changing the compaction-boundary behavior (PR #738 / `force-boot-at-compaction-boundary` owns that). The ensign child-session bootstrap exemption (`PI_SUBAGENT_CHILD=1`, owned by `pin-ensign-contract-entry-point`). The Claude/Codex front doors (already gated on resume).
+Changing the compaction-boundary behavior (PR #738 / `force-boot-at-compaction-boundary` owns that). The ensign child-session bootstrap exemption (`PI_SUBAGENT_CHILD=1`, owned by `pin-ensign-contract-entry-point`). The Claude/Codex front doors (already gated on resume). The extension's `session_start`/`context` handlers (transient injection, not harmful on resume — see Risk evidence).
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: ~+15, across ~2 files (`internal/cli/pi.go` add the `containsResume` gate + a test in `internal/cli/pi_frontdoor_test.go` or `pi_launch_test.go`; possibly `.pi/extensions/spacedock.ts` if ideation chooses to make `session_start` resume-aware). Tolerance: ±50%.
+**Fix is pi.go-only.** Insertions: ~+3 (pi.go: the `if !containsResume` guard wrapping the existing append). Deletions: 0. Net: +3 for the code change. Test: ~+30 (a table-driven resume-suppression test in `internal/cli/pi_frontdoor_test.go`). Total: ~+33 insertions, 0 deletions, net +33, across 2 files (`internal/cli/pi.go`, `internal/cli/pi_frontdoor_test.go`). Tolerance: ±50%.
+
+Observable semantics: the Pi launch argv on resume (`--resume`, `-r`, `-c`, `--continue`) omits `piBootstrapPrompt`; a non-resume launch still appends it. No CLI grammar change. No stored-format change. The extension's `session_start`/`context` behavior is unchanged. No user-facing documentation describes the Pi bootstrap prompt or its resume suppression (checked `docs/site/` — no reference to `piBootstrapPrompt` or Pi resume behavior), so no doc diff is required.
+
+Residual: Pi's `--session <path|id>` flag (loads a specific session file — also a resume form) is NOT covered by the shared `containsResume` token set (which mirrors the Claude/Codex front door). `--session` is Pi-specific and would require a Pi-specific gate addition. Flagged as a follow-up, not in this fix's scope (AC-2 pins parity with the existing front-door token set).
 
 ## Acceptance criteria
 
-**AC-1 (value) — `spacedock pi --resume` does not inject the fresh-start FO contract.**
-Verified by: a fixture in `internal/cli` that launches the Pi front door with `--resume` in the passthrough and asserts the assembled argv does NOT contain `piBootstrapPrompt`, while a launch without `--resume` still contains it. Fails today (pi.go appends unconditionally).
+**AC-1 (value) — `spacedock pi --resume` does not inject the fresh-start FO contract as a durable user message.**
+Verified by: a fixture in `internal/cli/pi_frontdoor_test.go` that launches the Pi front door with `--resume` in the passthrough and asserts the assembled argv does NOT contain `piBootstrapPrompt`, while a launch without `--resume` still contains it. Fails today (pi.go:271 appends unconditionally). Baseline: the non-resume argv contains the prompt — this test fails if the gate regresses or the non-resume path loses the prompt.
 
 **AC-2 (serves AC-1) — the resume gate matches the Claude/Codex front door's resume token set.**
-Verified by: a test asserting `--resume`, `--resume=<id>`, `-r`, `--continue`, `-c` all suppress the prompt (mirroring frontdoor.go:556-559), and non-resume passthrough does not. Fails today (no gate exists).
+Verified by: a table-driven test asserting `--resume`, `--resume=<id>`, `-r`, `--continue`, `-c` all suppress the prompt (mirroring frontdoor.go:553-562), and non-resume passthrough (e.g. `--model`, a task string) does not. Fails today (no gate exists).
 
-**AC-3 (serves AC-1) — a live `spacedock pi --resume` does not re-load the contract as a fresh start.**
-Verified by: a live probe (or a fixture exercising the extension's `session_start`) confirming a resumed session does not receive `FO_BOOTSTRAP_TEXT` as a fresh injection; if the extension's `session_start` cannot be made resume-aware cheaply, record the residual and downgrade AC-1's "Verified by" accordingly so the AC matches what the front-door gate actually proves.
+**AC-3 (serves AC-1) — the extension's transient `FO_BOOTSTRAP_TEXT` injection does not re-load the contract as a fresh start on resume.**
+Verified by: code+docs reasoning recorded in Risk evidence — the `context` hook is transient (deep copy, non-destructive per Pi docs), so it does not add a durable message to the resumed transcript. No extension change needed. The residual is `--session <path|id>` (Pi resume form not covered by `containsResume`), flagged as a follow-up.
 
 ## Test plan
 
-Fixture in `internal/cli`: extend `pi_frontdoor_test.go` / `pi_launch_test.go` with a resume-suppression test mirroring `frontdoor_test.go`'s codex/claude resume tests (frontdoor_test.go:848-915). Live (optional, gated on whether the extension needs a change): a `spacedock pi --resume` probe confirming no fresh `FO_BOOTSTRAP_TEXT` injection. Cost: low — the front-door gate is a few lines + a test.
+Fixture in `internal/cli/pi_frontdoor_test.go`: a table-driven resume-suppression test mirroring `frontdoor_test.go`'s codex resume tests (frontdoor_test.go:876-915). For each resume form (`--resume`, `--resume=<id>`, `-r`, `--continue`, `-c`), launch `runPi` with the form in the passthrough and assert `piBootstrapPrompt` is absent from `ops.launched`. For a non-resume passthrough (e.g. `--model google/gemini`), assert the prompt is present as the last argv token. Reuses the existing `fakePiRuntimeOps` harness and `healthyPiPackageStatus` fixtures. No live probe needed (mechanisms proven by code + Pi docs reading — see Risk evidence). Cost: low — the gate is ~3 lines + a ~30-line test.
 
 ### Feedback Cycles
+
+## Stage Report: ideation
+
+- DONE: Flesh out the four ideation sections (Problem, Proposed approach, Acceptance criteria, Test plan)
+  Entity body updated with refined Problem (context hook transient per Pi docs; session_start reason "startup" on CLI launch), Proposed approach (firm pi.go-only decision with per-mechanism breakdown), AC-1/AC-2/AC-3 (value-measuring AC-1 against non-resume baseline), and Test plan (table-driven fixture in pi_frontdoor_test.go).
+- DONE: For every new mechanism, name the value AC it serves, the simplest alternative, and why insufficient
+  Mechanism 1 (pi.go resume gate): serves AC-1/AC-2; simplest alternative is exact `--resume` match; insufficient because it misses `-r`/`-c`/`--continue`/`--resume=<id>`. Mechanism 2 (extension session_start resume-awareness): serves AC-3; simplest alternative is `event.reason === "resume"` guard; rejected because CLI launch fires reason "startup" not "resume", and the context injection is transient (non-destructive).
+- DONE: Record Risk evidence (exercise riskiest mechanism OR record "no spike needed")
+  Recorded "no spike needed: proven mechanisms" — containsResume proven (3 frontdoor.go call sites); context hook transient (Pi docs: deep copy, non-destructive); session_start reason "startup" on CLI launch (Pi docs lifecycle); piBootstrapPrompt is the only durable bootstrap path (pi.go:271).
+- DONE: Declare expected surface (net LOC + files + tolerance, insertions/deletions separately) and observable semantics
+  ~+33 insertions, 0 deletions, net +33, across 2 files (pi.go, pi_frontdoor_test.go); tolerance ±50%. Observable: resume argv omits piBootstrapPrompt; no CLI grammar/stored-format change; extension unchanged. Fix is pi.go-only.
+- DONE: Name whether the fix is pi.go-only or also touches the extension
+  pi.go-only. Extension session_start change considered and rejected (see Per-mechanism breakdown #2).
+
+### Summary
+
+Fleshed out the ideation for gating the Pi front door bootstrap on resume. Key decision: pi.go-only fix (add `containsResume` guard wrapping the `piBootstrapPrompt` append), no extension change. The extension's `FO_BOOTSTRAP_TEXT` injection is transient (Pi `context` hook uses a deep copy per Pi docs) so it does not re-load the contract as a durable message on resume, and `session_start` fires with `reason: "startup"` on CLI launch so it cannot detect CLI resume anyway. No spike needed — all mechanisms proven by code + Pi docs reading. Residual: Pi's `--session <path|id>` flag is a resume form not covered by the shared `containsResume` token set, flagged as a follow-up.
