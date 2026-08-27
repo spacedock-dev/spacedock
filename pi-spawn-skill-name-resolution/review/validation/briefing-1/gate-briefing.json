@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ntnywe6wfk1g5sersjbe5yt7:validation:attempt-1:revision-1",
+  "question": "Approve validation to enter the terminal merge ceremony: PASSED — comment-only pin in build.go:56-66 (piSpawnSkill stays 'ensign', byte-identical to main); targeted test locks skill='ensign'; go build/gofmt clean; AC-1 verified by live transcript + source spike (0.37.2 + 0.57.0 basename match). No behavior change, no findings.",
+  "artifacts": [
+    {
+      "id": "artifact:ntnywe6wfk1g5sersjbe5yt7:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/75fa7b5e870e393a0f1af50cb15b147a47a45573/pi-spawn-skill-name-resolution.md",
+      "rev": "sha256:63dd3af5456e7c648ed748c4509cb3349e804561fc6a36eda31c6444572a081e",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED. Comment-only change to internal/dispatch/build.go (commit 466ee03f9): the piSpawnSkill comment block pins the verified loader versions (0.37.2 installed, 0.57.0 latest npm, both exact basename match, dated 2026-08-27). piSpawnSkill remains 'ensign', piSpawnAgent remains 'worker' — byte-identical to main (only line numbers shifted). git diff --numstat shows only build.go (6 ins, 1 del), comment lines only. TestBuildPiHostEmitsSpawnAgentAndSkill PASS (locks skill='ensign'); go build OK; gofmt clean. AC-1 satisfied: live dispatch transcript (run 4c6e9c44) shows the ensign skill resident in \u003cavailable_skills\u003e; source spike confirms resolveSkillPath exact basename match on 0.37.2 and 0.57.0. No material/deferred/polish findings."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:ntnywe6wfk1g5sersjbe5yt7:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/dispatch/build.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:b9bed1b4e98017d229cd84c7b718fa8e05b67c73a3ad1b0a6bc41890257e253d"
+    }
+  ]
+}
