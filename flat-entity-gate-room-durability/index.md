@@ -33,15 +33,19 @@ gates:
                 state: consumed
 ---
 
-Make a gate room on a flat entity durable through the supported command, and give a flat entity a migration path to folder form that does not corrupt its gate history.
+Make a flat entity's gate rooms durable through the supported command and let it record
+advisory rounds without moving the entity or rewriting frozen gate history.
 
 ## Two defects that compose into a cul-de-sac
 
 A flat entity (`<slug>.md`) may legitimately carry a sibling room directory (`<slug>/review/...`). The shipped precedent is `source-build-compatibility-identity`, whose backlog briefing lives exactly that way. Both defects below apply to that shape.
 
-### 1. `state commit` reports success having committed only the index
+### 1. The observed `state commit` defect is already fixed in current source
 
-Observed on every gate room bound during the 2026-07-27/28 session — eight occurrences across `79` and `cn`, at backlog, ideation and validation gates. `spacedock state commit <slug>` commits `<slug>.md` and pushes, printing `Committed and pushed …`, while `<slug>/review/<stage>/briefing-N/` remains untracked.
+Observed on every gate room bound during the 2026-07-27/28 session — eight occurrences
+across `79` and `cn`, at backlog, ideation and validation gates. At that time,
+`spacedock state commit <slug>` committed `<slug>.md` and pushed while
+`<slug>/review/<stage>/briefing-N/` remained untracked.
 
 The consequence is not cosmetic. The committed frontmatter carries a `room-ref` pointing at a room that does not exist on the state remote, so a peer or a later session cannot retrieve the Briefing that justified a recorded decision. That is the "digests no committed tree reproduces" failure class the durable-decisions sprint was created to eliminate, reproduced through the supported path.
 
@@ -51,7 +55,11 @@ Every occurrence was worked around by hand:
 git add -- <slug>/ && git commit -m "…" -- <slug>/ && git push origin HEAD:spacedock-state/dev
 ```
 
-`sync-merge-guard-archive-state` (`rd`) owns the folder-form version of this and explicitly scopes its work to folder-form entities. The flat-plus-sibling-room shape is uncovered by it.
+Current `main` now includes `flatEntityCommitPaths`: explicit state commit and implicit
+gate sync include `<slug>.md` plus the present or tracked `<slug>/` companion, including
+tracked deletions. `TestStateCommitFlatIncludesExactCompanionDirectoryAndTrackedDeletions`
+passes. This ticket adds a fresh-clone regression proof but no state-sync production
+change.
 
 ### 2. Converting to folder form silently breaks every prior closed gate
 
@@ -65,7 +73,10 @@ There is no supported repair once broken. `gate record --briefing` will not rewr
 
 ### Why the two compose badly
 
-Round recording requires folder form. A flat entity therefore cannot machine-record advisory rounds — and the migration that would fix that corrupts its closed gate records. An entity filed flat is permanently stuck with hand-authored rounds, and the only escape damages its decision history.
+Current source has repaired the durability half but still requires folder form for round
+recording. A flat entity therefore remains stuck with hand-authored rounds, while moving
+it would change the meaning of its frozen relative refs. Canonical `@review/...` refs
+remove the form dependency for all new rooms without rewriting history.
 
 ## What a fix needs to decide
 
@@ -74,298 +85,241 @@ The selected design makes migration unnecessary. A ticket's **review home** is a
 `<state-root>/<slug>.md` or folder-form `<state-root>/<slug>/index.md`. Gate Briefings
 and advisory-round rooms live below that home at `review/<stage>/...`.
 
-One new standard-library-only package, `internal/entityhome`, owns that identity. Its
-resolver receives the state root, slug, and an explicit operation mode. It returns the
-unique entity form, canonical entity path, review home, and literal commit paths. It
-refuses an active flat-plus-folder collision rather than preferring either form. An
-existing entity leaf must be a non-symlink regular file; an existing review home and
-each existing descendant on the requested room path must be non-symlink directories.
-An absent flat companion is allowed only in the explicit controlled-creation mode used
-by prepare and round publication. A tracked deletion is allowed only when the Git
-caller proves the exact missing canonical path; it never enters creation mode. These
-separate modes preserve tracked deletion without making an arbitrary missing entity
-valid.
+The selected stored namespace is `@review/<path>`. It always resolves from the ticket's
+review home, so `@review/ideation/briefing-1` names
+`<state-root>/<slug>/review/ideation/briefing-1` for both entity forms. The resolver is
+a small gate-package helper, not a new entity identity subsystem. It accepts only the
+reserved `@review/` prefix plus a nonempty normalized slash path with no backslash,
+absolute segment, `.` segment, or `..` segment. The resolved path must stay below the
+review root.
 
-Every mutating consumer resolves before it locks, stages, commits, or creates a room.
-Resolution rejects absolute or escaping operands, a non-directory home, symlinked
-entity/home/room components, and a home outside the state root. The resolver does not
-follow a symlink and then bless its external target as the boundary. Prepare, round,
-`state commit`, and `dispatch build --stamp` use the same result, so one slug cannot
-acquire different ownership under different commands.
+Every newly prepared gate room and newly recorded round stores `@review/...`. Existing
+flat `./<slug>/review/...`, folder `./review/...`, and other legacy refs retain their
+existing entity-directory-relative reader path. No command rewrites a retained binding,
+and exact replay of a legacy open gate or folder round leaves its stored ref unchanged.
+There is no migration or flat-to-folder move in this task. The existing declared-folder
+preparation policy remains; round recording reuses its small grandfathering check when
+the workflow declares folder form.
 
-Stored `room-ref` keeps its existing meaning: it is relative to the entity file's own
-directory. Therefore the same physical room is stored as `./<slug>/review/...` for a
-flat entity and `./review/...` for a folder entity. Existing bindings need no rewrite,
-the frozen-record rule remains intact, and a flat ticket can stay flat for its whole
-lifecycle. There is no flat-to-folder migration verb in this task; a manual move that
-changes the base directory remains unsupported. A workflow's `entity-form: folder`
-filing rule also remains authoritative: this design supports grandfathered and
-otherwise-valid flat tickets, but does not make a declared-folder workflow accept a
-newly misfiled flat ticket.
+`gate record --round` removes only its unconditional folder-form refusal. It derives
+the room with the same review-home function already used by prepare, reuses prepare's
+room-ancestry check, and stores `@review/<stage>/round-<cycle>`. Folder and flat rounds
+therefore share one physical and stored shape. `readRoundPointerData` accepts the new
+canonical ref and the frozen legacy folder `./review/...` ref for exact replay.
 
-That filing rule is one shared gate-package policy check, not a preparation-only
-special case. A declared-folder workflow refuses a flat entity whose valid review home
-does not yet contain a real `review/` directory. It allows a grandfathered flat entity
-whose canonical home already contains that real directory. An undeclared workflow
-allows either valid form. Prepare and round call the same check before mutation, so a
-round cannot create the first companion that preparation refuses.
-
-`gate record --round` must derive both its room and pointer from that review home. It
-must stop assuming `filepath.Dir(entityPath)` is the review home or that the pointer is
-always `./review/...`. For a flat entity it publishes
-`<slug>/review/<stage>/round-<cycle>` and stores
-`./<slug>/review/<stage>/round-<cycle>`; folder behavior and bytes stay unchanged.
-Artifact containment is rooted at the review home, not the state root, so a flat round
-cannot cite a sibling entity. The mutable flat `<slug>.md` is outside that home and is
-also explicitly forbidden as a round artifact.
-
-Explicit `status --validate` becomes the shipped integrity check over retained evidence,
-independent of gate-record presence. It inspects `gates` and `review-round` separately
-for both active and archived entities. A normalized local `./...` ref resolves relative
-to the historical entity-directory base and must remain inside that base. This preserves
-legacy flat local-file refs outside the newer review home without permitting traversal.
-Absolute, traversal, backslash, non-normalized, escaping, symlinked, missing, and
-wrong-type local refs fail validation with the entity path and offending ref. A local
-gate binding must resolve through its historical file-or-room reader; a round ref must
-name its exact immutable two-file room. An opaque provider ref remains non-filesystem
-evidence and is never dereferenced. Ordinary status stays nonblocking. Existing gate
-mutation paths keep their stronger Briefing and digest checks.
+Every gate reader routes `@review/...` through the new helper before its existing
+Briefing, digest, and authority checks. All non-`@review/` values take the unchanged
+legacy path. The existing `status --validate` missing-room diagnostic uses the same
+helper so a valid new ref does not produce a false warning. Broader validation changes
+are outside this task.
 
 ### Why this design
 
-- The review-home derivation serves AC-1 and AC-2. The simpler alternative, requiring
-  folder form and moving every flat entity, is insufficient because it either strands
-  existing flat tickets or rewrites frozen bindings.
-- Shape-specific relative refs serve AC-2 and AC-3. A new state-root-relative ref
-  scheme is insufficient because it changes the meaning of every existing folder ref;
-  a single fixed `./review/...` ref is wrong for flat entities under the historical
-  resolver.
-- Validation dereference serves AC-4. Keeping the current warning is insufficient
-  because exit 0 lets automation accept absent evidence; blindly promoting the old
-  join is also insufficient because it would reject opaque provider history and miss
-  round-only or archived state.
-- Literal flat commit units serve AC-1 and AC-5. A top-level `git add -A` is
-  insufficient because it can attribute a concurrent sibling writer's state to the
-  wrong ticket.
-- The shared resolver and form-policy check serve AC-2 and AC-5. Keeping four local
-  derivations is insufficient because current state commit prefers folder form at an
-  active collision while companion discovery follows symlinks; a prepare-only policy
-  also leaves round publication as a bypass.
+- `@review/...` serves AC-1 through AC-3. Keeping new refs entity-relative is
+  insufficient because the same physical home needs two stored spellings and a manual
+  entity move changes the base. Rewriting legacy refs is insufficient because closed
+  bindings are frozen.
+- The small dual-mode resolver serves AC-2 and AC-3. Replacing every ref with a new
+  general path model is unnecessary; dispatch only the reserved prefix, then preserve
+  the existing legacy path verbatim.
+- Reusing the current flat commit unit serves AC-1. Reworking state sync is unnecessary
+  because source and real-Git tests already include a flat tracked companion and its
+  tracked deletions.
 
-No separate throwaway spike is needed because the risky filesystem mechanisms are
-already exercised in the repository:
+No new spike is needed. Current-code evidence already proves the physical and Git
+mechanisms:
 `TestPrepareCreatesOneFileRecorderRoomForFolderAndFlatEntities` proves the common
-physical review home and both historical ref spellings;
+physical review home for both forms;
 `TestStateCommitFlatIncludesExactCompanionDirectoryAndTrackedDeletions` proves the
-flat commit unit and tracked deletion; and
-`TestPrepareRejectsSymlinkedFlatCompanionWithoutChangingBytes` proves the required
-byte-clean `Lstat` boundary behavior. `TestRoundRequiresFolderFormWithoutCrossEntityCollision`
-pins the refusal that must become the policy matrix. These focused baselines passed on
-2026-08-27. The implementation's first test must be the shared resolver matrix; the
-first production change must make that independent table green before any consumer is
-rewired.
+flat commit unit and tracked deletion; `flatEntityCommitPaths` is already shared by
+explicit state commit and implicit gate sync; and
+`TestPrepareRejectsSymlinkedFlatCompanionWithoutChangingBytes` proves prepare's room
+ancestry check can be reused by round. `TestRoundRequiresFolderFormWithoutCrossEntityCollision`
+pins the one guard this task removes. These focused baselines passed on 2026-08-27.
 
 ## Consumer inventory and boundaries
 
-### Canonical identity and form policy
+### Review-home and ref resolution
 
-- New `internal/entityhome` owns active-form collision detection, regular-file entity
-  requirements, review-home derivation, symlink/non-directory refusal, state-root
-  containment, controlled flat-home creation, and the Git-proven tracked-deletion mode.
-- `internal/gates/prepare.go` retains the README parser but replaces
-  `refuseNewFlatCompanion` with one shared form-policy check. Prepare and round receive
-  the same allow/refuse result after canonical resolution and before mutation.
-- `internal/status/validate.go` keeps the workflow-wide flat/folder diagnostic, while
-  the shared resolver owns whether a specific operation has one safe active identity.
+- `internal/gates/prepare.go` already owns `entitySlug`, `preparedRoomPath`, room
+  ancestry, and legacy replay. It adds the reserved-prefix parser, canonical writer,
+  and one resolver that maps `@review/...` through the common physical review home.
+- The same resolver returns the unchanged entity-directory-relative path for every
+  legacy ref. `prepare.go`, `io.go`, and `operation.go` replace their five direct joins
+  with this helper; their Briefing, request, digest, and authority logic stays intact.
+- `internal/status/validate.go:unresolvedRoomRefs` uses the exported resolver only to
+  understand the new namespace. It keeps its current scope and warning semantics.
 
 ### State commit and publication
 
-- `internal/cli/state_sync.go`: `runStateCommit`, `commitInlineEntity`,
-  `syncActiveEntity`, `resolveEntityCommitTarget`, `flatEntityCommitPaths`, and
-  `commitEntityPathsScoped` consume the canonical resolver. Existing entities require
-  regular non-symlink leaves and unambiguous form. Git-proven tracked deletions retain
-  their exact literal path plus a tracked companion without authorizing creation.
-- `internal/cli/gate_ceremony.go` consumes `syncActiveEntity` for implicit split-root
-  record/consume publication and therefore inherits the same flat unit.
-- `internal/dispatch/stamp.go`: `commitAndPublishEntity` and its duplicate
-  `entityCommitPaths` are the `dispatch build --stamp` consumer. They must consume the
-  canonical resolver and match state-commit collision, symlink, non-directory, and
-  literal-scope behavior rather than keeping a second `os.Stat` derivation.
-- Archived publication and `internal/status/merge.go` archive moves remain out of
-  scope; they do not publish a newly recorded active flat round.
+- `internal/cli/state_sync.go` already resolves a flat active commit unit as
+  `<slug>.md` plus `<slug>/` when present or tracked. `commitEntityPathsScoped` already
+  stages and commits only literal paths, including tracked deletions.
+- `internal/cli/gate_ceremony.go` already consumes that seam for implicit gate sync.
+  No production change is required in either file.
+- `internal/cli/state_commit_test.go` extends the existing two-host proof so Host B
+  retrieves an `@review`-bound flat round after the supported command alone.
 
 ### Advisory rounds
 
 - `internal/cli/cli.go:newGateCommand` routes `gate record --round` and performs the
   immediate readback; its grammar and output stay unchanged.
-- `internal/gates/operation.go:RecordSemantic` selects the round recorder and applies
-  the shared form-policy preflight before the round lock or write. Authority and status
-  behavior stay unchanged.
+- `internal/gates/operation.go:RecordSemanticSummary` removes the unconditional
+  folder-only guard and reuses the existing declared-folder grandfathering check.
 - `internal/gates/round.go`: `resolveRound` derives the review home and room;
-  `recordRoundLockedWith` derives the shape-correct ref; `readRoundPointerData` and
-  `ValidateRoundFile` validate that ref against the entity path; `loadValidateRound`
-  and `verifyRoundArtifacts` use the canonical review home as the containment boundary.
+  `recordRoundLockedWith` writes `@review/...`; `readRoundPointerData` accepts canonical
+  and frozen legacy folder refs; `ValidateRoundFile` reads either. The recorder reuses
+  prepare's existing ancestry check before publication.
 - `skills/feedback-rejection-flow/SKILL.md` already passes an entity operand and then
   calls `state commit`; its command text needs no change.
 
 ### Validation and historical path resolution
 
-- `internal/gates/io.go` and `internal/gates/operation.go` expose one secure historical
-  local-ref reader used by gate authority checks and the explicit diagnostic. It
-  distinguishes normalized local refs from opaque provider refs and enforces the
-  canonical filesystem boundary without changing stored bytes.
-- `internal/status/validate.go:gateValidationDiagnostics` becomes a retained-evidence
-  pass that does not return on `ErrNoGateRecord`. It validates gates and
-  `review-round` independently, runs for active and archived entities, keeps unknown
-  application warnings active-only, and emits invalid local refs as errors.
-- Historical gate refs continue to resolve entity-directory-relative at the exact
-  readers in `internal/gates/prepare.go` (replay and prepared-room classification),
-  `internal/gates/io.go:validateRetainedAuthorityExcept`, and
-  `internal/gates/operation.go` (`Withdraw`, `boundBriefingPath`). These consumers use
-  the shared safe reader but do not reinterpret `./<slug>/review/...` or
-  `./review/...`.
-- New round refs use `relativeRoomRef(entityPath, room)`, the same writer rule as gate
-  preparation. No fallback search, existence-dependent rebasing, ref normalization,
-  or closed-attempt rewrite is allowed.
+- Historical gate refs continue to resolve entity-directory-relative in prepare replay,
+  `validateRetainedAuthorityExcept`, `Withdraw`, prepared-room classification, and
+  `boundBriefingPath`. Frozen legacy fixtures exercise resolved bytes and digests.
+- New gate and round refs use the same canonical writer. The parser rejects malformed
+  values inside the reserved namespace; it does not reinterpret other legacy strings.
+- Full archive/round-only validation, opaque-provider classification, and new global
+  local-ref hardening remain follow-up work. This ticket only prevents the existing
+  unresolved-room warning from misreading a valid `@review/...` gate ref.
 
 ### Observable semantic boundary
 
 - **Command grammar:** unchanged. No new command or flag.
-- **Stored formats:** unchanged keys and schemas. Flat round `room-ref` uses the
-  already-supported `./<slug>/review/...` spelling; folder bytes remain
-  `./review/...`. Existing `git-root://<main|state>/<commit>/<path>` Artifact identity
-  remains unchanged.
+- **Stored formats:** the only addition is reserved `room-ref` syntax
+  `@review/<normalized-path>` for newly written rooms. Existing keys, legacy refs, and
+  `git-root://<main|state>/<commit>/<path>` Artifact identity remain unchanged.
 - **Authority:** unchanged. Closed gate attempts stay frozen; round Resolutions remain
   advisory; only the First Officer mutates entity state.
 - **Runtime behavior:** flat `gate record --round` changes from refusal to publication
-  and exact replay when the shared form policy allows it. Newly misfiled declared-folder
-  flats, active collisions, unsafe entity/home shapes, and invalid local refs fail
-  byte-clean. Explicit validation changes invalid retained local evidence from an
-  exit-0 warning or omission to an exit-nonzero error. Plain reads, opaque refs,
-  grandfathered flats, undeclared flats, folder rounds, and commit output remain
-  compatible.
+  and exact replay through the shared review home. New gate and round writes use one
+  canonical ref spelling for both forms. Legacy replay, folder physical layout, state
+  commit output, validation severity, and ordinary status remain compatible.
 - **Excluded semantics:** no entity move, migration command, automatic ref rewrite,
-  room retention change, request-digest ordering change, or broader Git staging.
+  room retention change, request-digest ordering change, broader Git staging, dispatch
+  stamp change, general entity resolver, or validation expansion.
+
+### Separable risks and existing guards
+
+- Active flat-plus-folder collision is already an explicit `status --validate` error,
+  and supported workflows do not operate in that shape. `state commit` preferring the
+  folder path in an invalid collision is a separable state-identity hardening task.
+- Gate prepare already rejects a symlinked flat companion byte-clean through
+  `validatePreparedRoomAncestry`; round reuses that guard. Broader entity-leaf and
+  dispatch-stamp symlink parity are separable hardening, not required to publish a
+  valid flat round.
+- `state commit` already includes a present or tracked flat companion and its tracked
+  deletions through literal Git pathspecs. No state-sync repair remains in current
+  source; only a fresh-clone regression proof belongs here.
+- Archive coverage, round-only status validation, and opaque-provider classification
+  are defects or compatibility work independent of resolving the reserved namespace.
+  The dispatcher leaves every non-`@review/` ref on its current reader path, so this
+  task neither fixes nor regresses those cases.
+- Dispatch stamp already includes a present flat companion directory. Its broader
+  tracked-deletion and invalid-shape parity do not block the supported explicit
+  `state commit` outcome measured by this task.
 
 ## Expected surface
 
-Estimate net LOC change: **+420, across 16 files**. Expected movement is approximately
-580 insertions and 160 deletions. Tolerance is **net +/-140 LOC and +/-2 files**.
-No ideation baseline has yet been approved, so this is the candidate baseline rather
-than a correction against +155/8. Crossing either tolerance bound, narrowing an AC, or
-changing a semantic outside the declaration above requires a design reset before
-another correction round.
+Estimate net LOC change: **+180, across 12 files**. Expected movement is approximately
+270 insertions and 90 deletions. Tolerance is **net +/-70 LOC and +/-2 files**. The
+estimate is test-heavy: five production files receive a small helper or call-site
+replacement, five test files add compatibility and behavior rows, and two docs change.
+No state-sync, dispatch, archive, or new-package production work is included. Crossing
+either tolerance bound, narrowing an AC, or changing a semantic outside the declaration
+above requires a design reset.
 
 Expected files:
 
-1. `internal/entityhome/home.go` — canonical form, review-home, and commit-unit resolver.
-2. `internal/entityhome/home_test.go` — collision, file type, symlink, containment, creation, and tracked-deletion matrix.
-3. `internal/gates/prepare.go` — shared form policy and canonical home/ref derivation.
-4. `internal/gates/io.go` — secure retained local-ref reads for authority and diagnostics.
-5. `internal/gates/operation.go` — round policy preflight and shared gate-room reader.
-6. `internal/gates/round.go` — flat room derivation, pointer validation, and artifact boundary.
-7. `internal/gates/prepare_test.go` — prepare half of the form-policy and safe-home matrix.
-8. `internal/gates/round_test.go` — round half, flat/folder replay, policy, collision, and containment.
-9. `internal/cli/state_sync.go` — canonical active commit units with tracked-deletion mode.
-10. `internal/cli/state_commit_test.go` — combined-room two-clone proof and commit adversaries.
-11. `internal/dispatch/stamp.go` — canonical resolver parity for stamped state publication.
-12. `internal/dispatch/build_stamp_test.go` — stamp collision/symlink/non-directory parity.
-13. `internal/status/validate.go` — independent active/archive gate/round validation.
-14. `internal/status/hybrid_flat_rooms_warn_test.go` — local/opaque/history validation and removal of conversion warnings.
-15. `docs/specs/gate-resolution-frontmatter-contract.md` — normative identity, policy, ref, and validation contract.
-16. `docs/site/reference/command-reference.md` — user-visible flat rounds and failing explicit validation.
+1. `internal/gates/prepare.go` — review-home helper, reserved ref parser/writer, and prepare readers.
+2. `internal/gates/io.go` — route retained request-backed room reads through the helper.
+3. `internal/gates/operation.go` — remove the folder-only round guard and route gate-room readers.
+4. `internal/gates/round.go` — flat/folder physical room, canonical pointer, and frozen legacy replay.
+5. `internal/status/validate.go` — resolve `@review/...` in the existing missing-room diagnostic and remove obsolete conversion advice.
+6. `internal/gates/prepare_test.go` — canonical new gate refs and legacy open replay.
+7. `internal/gates/prepare_shape_test.go` — reserved syntax and frozen legacy reader table.
+8. `internal/gates/round_test.go` — flat/folder publication, legacy folder replay, policy, ancestry, and divergence.
+9. `internal/cli/state_commit_test.go` — two-host fresh-clone durability proof for a flat round room.
+10. `internal/status/hybrid_flat_rooms_warn_test.go` — canonical-ref resolution and removal of conversion warnings.
+11. `docs/specs/gate-resolution-frontmatter-contract.md` — normative namespace and direct flat-round contract.
+12. `docs/site/reference/command-reference.md` — user-visible canonical refs, flat rounds, and supported commit boundary.
 
 ## Out of scope
 
 - The folder-form `state commit` boundary, which is `rd`'s.
 - Gate-room retention size, which is `9t`'s.
 - The request-digest ordering trap, which is a separate defect in the same command family.
+- General active-form collision handling and dispatch-stamp parity.
+- Archive/round-only validation and opaque-provider ref classification.
+- Entity-leaf and repository-wide symlink hardening beyond the reused room-ancestry guard.
 
 ## Acceptance criteria
 
-1. **AC-1 — A supported flat commit is self-contained on the state remote.** After
-   Host A prepares one gate room and records one advisory round for the same flat
-   entity, one supported `spacedock state commit <slug>` publishes both. A fresh Host B
-   clone contains the flat Markdown and both complete sibling rooms. Both refs resolve,
-   both Briefing digests match, gate-prepare replay and round replay change zero bytes,
-   and the publishing commit contains no dirty sibling. The two-clone CLI test measures
-   the two retained rooms, two digests, one commit, and zero replay delta; removing the
-   companion from the commit unit or publishing only one room makes it fail.
-2. **AC-2 — Form policy and advisory rounds agree for every supported entity form.**
-   Prepare and round both refuse a newly misfiled flat entity in a declared-folder
-   workflow before lock or mutation. Both allow a grandfathered declared-folder flat,
-   an undeclared valid flat, and a valid folder entity. Each allowed form publishes one
-   immutable `review/<stage>/round-<cycle>` below its canonical review home, stores the
-   shape-correct relative ref, and exact replay changes zero bytes. A shared four-row
-   table drives both commands; omitting either policy call, restoring the unconditional
-   flat refusal, or keeping a fixed `./review` ref makes a row fail.
-3. **AC-3 — Historical refs retain their meaning without migration.** Existing flat
+1. **AC-1 — One supported state commit makes a flat round durable.** After Host A
+   records a flat advisory round and runs one `spacedock state commit <slug>`, a fresh
+   Host B clone contains `<slug>.md`, both immutable round files under
+   `<slug>/review/...`, and a resolving `@review/...` pointer whose Briefing digest
+   matches. Exact replay changes zero bytes, and dirty sibling state remains absent from
+   the commit. The existing two-host harness measures remote paths, digest, commit
+   scope, and replay delta; removing the companion from `flatEntityCommitPaths` makes
+   it fail.
+2. **AC-2 — New gate and round refs have one canonical meaning for both forms.** Every
+   newly prepared gate room and recorded round stores normalized `@review/...`, and
+   that ref resolves to `<state-root>/<slug>/review/...` for flat and folder entities.
+   The table exercises both writers and both readers; restoring entity-relative output
+   or resolving from the entity directory makes at least one form fail.
+3. **AC-3 — Frozen historical refs retain their meaning without migration.** Existing flat
    `./<slug>/review/...` and folder `./review/...` gate bindings still resolve to the
    same canonical Briefing bytes, while pre-existing folder `review-round` pointers
-   replay unchanged. Opaque provider refs retain their non-filesystem meaning, and
-   `git-root://` Artifact identities remain byte-for-byte unchanged. Historical
-   fixtures exercise the actual gate and round readers and compare refs, resolved
-   bytes, and digests; changing either base, dereferencing opaque refs, or rewriting
-   Artifact identity makes a fixture fail.
-4. **AC-4 — Explicit validation covers every retained local evidence scope.** Gates and
-   `review-round` validate independently for active and archived entities, including a
-   round-only entity with no `gates` record. Valid normalized `./...` refs pass. Missing,
-   absolute, traversal, backslash, non-normalized, escaping, symlinked, and wrong-type
-   local refs make `status --validate` exit nonzero with entity path and offending ref.
-   Opaque provider refs pass without filesystem access, and plain `status` stays
-   readable. A scope-by-evidence CLI matrix asserts exit codes and on-disk targets;
-   retaining the early return, active-only skip, old warning, or blind join makes a row
+   replay with their stored refs unchanged. Existing `git-root://` Artifact identities
+   remain byte-for-byte unchanged. Historical fixtures drive the actual gate and round
+   readers and compare stored refs, resolved bytes, and digests; routing legacy refs
+   through the new namespace or rewriting a binding makes them fail.
+4. **AC-4 — Flat and folder advisory rounds publish and replay identically.** A
+   policy-valid flat entity and folder entity each publish exactly one immutable
+   `review/<stage>/round-<cycle>` room, retain the supplied Briefing/log bytes, and
+   preserve status, gates, and body bytes. Exact replay is a whole-tree no-op and
+   divergence fails byte-clean. The form table fails if the folder-only guard returns,
+   the flat physical home is wrong, or replay changes any byte.
+5. **AC-5 — The reserved namespace fails closed without broadening legacy semantics.**
+   Empty, absolute, dot-segment, traversal, and backslash `@review` values are rejected;
+   a valid value cannot escape the review root. Round publication reuses the existing
+   room-ancestry guard, and the existing declared-folder preparation policy also gates
+   new flat rounds. All other ref strings take the unchanged legacy reader. Parser and
+   policy tables name the rejected value and compare the entity/room tree before and
+   after; accepting a malformed reserved ref or reclassifying a legacy ref makes them
    fail.
-5. **AC-5 — Canonical entity ownership is unambiguous, safe, and path-scoped.** Prepare,
-   round, `state commit`, and dispatch stamp resolve the same entity form and review
-   home. They refuse active flat-plus-folder collision; symlinked or wrong-type entity,
-   home, or room components; and boundary escape before mutation or commit. Controlled
-   creation can create only an absent valid flat companion. Git-proven tracked flat and
-   folder deletions still commit their literal units. Dirty siblings remain untouched,
-   and flat round Artifacts cannot escape `<state-root>/<slug>/` or resolve to mutable
-   `<slug>.md`. Resolver, real-Git, round, and stamp-parity adversarial tests compare
-   HEAD, index, worktree, external targets, and origin before/after; restoring
-   `os.Stat` discovery, form preference, unscoped staging, or state/stamp divergence
-   makes at least one test fail.
 
 ## Test plan
 
 Use the existing `twoHostStateWorkflow` real-Git harness in
-`internal/cli/state_commit_test.go`; do not add another clone framework. Host A prepares
-a gate room and records an advisory round on the same flat entity, then invokes one
-`state commit`. A fresh Host B clone integrates the state branch, opens and digest-checks
-both retained Briefings, exactly replays gate preparation from the committed selected
-Git objects, and exactly replays the round from its retained two-file room. Assert one
-publishing commit contains `<slug>.md` and both `<slug>/review/...` trees, while dirty
-sibling state remains untracked. Cost: high, one combined two-clone CLI journey.
+`internal/cli/state_commit_test.go`; do not add another clone framework. Host A records
+one flat round, leaves dirty sibling state, and runs one supported `state commit`. A
+fresh Host B clone integrates the state branch, resolves `@review/...`, checks both
+retained files and the Briefing digest, and exactly replays the round. Assert the commit
+contains only the flat entity and companion paths. Cost: medium, one focused extension
+to the existing real-Git harness.
 
-Write `internal/entityhome` tests before its production resolver. The table covers flat,
-folder, active collision, symlinked entity, symlinked home, home-as-file, index-as-dir,
-outside root, controlled absent companion, and Git-proven flat/folder deletion. Each
-refusal compares the entity, index, worktree, external sentinel, HEAD, and origin as
-applicable. Then drive the same collision/symlink/non-directory rows through state
-commit and dispatch stamp; both must return the same refusal class and leave the same
-state unchanged. Cost: high, unit plus real-Git parity fixtures.
+Add a gate-package table for `@review/...`: canonical gate and round refs for flat and
+folder entities; empty suffix, absolute-like suffix, dot, traversal, and backslash
+refusals; and physical resolution below the shared review root. The test uses literal
+expected paths rather than the production writer as its oracle. Cost: small.
 
-Replace `TestRoundRequiresFolderFormWithoutCrossEntityCollision` with a shared policy
-table used by prepare and round: declared-folder new flat refuses; grandfathered flat,
-undeclared flat, and folder succeed. For successful rows assert canonical review home,
-exact stored ref, whole-tree replay no-op, divergent replay refusal, distinct homes for
-two flat slugs, workflow-stage validation, and Artifact containment. Retain the
-existing folder fixture as a historical byte baseline. Cost: medium.
+Extend the existing prepare and binding-shape fixtures with frozen legacy flat and
+folder refs. Exercise prepare replay, retained-authority validation, withdraw/record
+room reads, and canonical Briefing digest comparison. Assert the stored legacy ref is
+unchanged. Cost: medium; it reuses current fixtures.
 
-Expand the historical validation fixture into active/archive by gate/round-only rows.
-Include valid flat gate, folder gate, folder round, flat round, no-gates round, opaque
-provider ref, missing room, absolute ref, traversal, backslash, non-normalized ref,
-symlink escape, and wrong file type. Drive the native CLI rather than searching prose:
-valid local history and opaque refs exit 0; every invalid local row exits 1 with stable
-entity/ref evidence; ordinary status remains exit 0. Cost: high, fixture-backed CLI
-behavior tests.
+Replace the unconditional-flat round test with a flat/folder table. Assert canonical
+pointer bytes, exact retained Briefing/log bytes, body/gates/status preservation,
+whole-tree exact replay, divergent byte-clean refusal, declared-folder grandfathering,
+and reuse of prepare's ancestry guard. Retain a frozen legacy folder pointer fixture.
+Cost: medium.
 
-Retain focused regression coverage for prepared-room authority and historical gate
-readers in `prepare.go`, `io.go`, and `operation.go`. These tests must exercise resolved
-bytes and digests, not only returned path strings. No committed prose-grep test is part
-of the proof.
+Update the existing status warning fixture only enough to prove that `@review/...`
+resolves and that the obsolete blanket conversion warning is absent. Do not add the
+separate archive/opaque/general-local-ref matrix to this ticket.
 
 Run the focused tests first, then the repository-required verification:
 
@@ -379,20 +333,15 @@ gofmt -w ./cmd ./internal
 ### Documentation diff proposed at ideation
 
 - In `docs/specs/gate-resolution-frontmatter-contract.md`, replace the conversion
-  prescription and all conversion-warning language with the canonical review-home and
-  form-policy rules. State that direct flat support needs no move or frozen-ref rewrite.
-  Add the active-collision, regular-file, symlink/non-directory, controlled-creation,
-  tracked-deletion, and shared state/stamp boundaries. Replace "Round recording requires
-  a folder-form entity" with the flat/folder derived-room and shape-specific ref table.
-  Define local versus opaque refs and the active/archive, gate/round-only failing
-  explicit validation contract. Preserve `git-root://` Artifact identity text exactly.
+  prescription with the `@review/...` namespace. State its physical resolution for both
+  forms and the frozen legacy fallback. Replace the folder-only round paragraph with
+  direct flat/folder publication and exact replay. Preserve `git-root://` Artifact
+  identity text and the existing supported state-commit unit.
 - In `docs/site/reference/command-reference.md`, change the `status --validate` row
-  from conversion warnings to failing invalid-local-ref validation across active and
-  archived gate/round evidence, with opaque refs excluded from dereference. Change the
-  round row to support policy-valid flat and folder entities below their canonical
-  homes; name the two ref spellings and declared-folder grandfathering rule. Update the
-  state-commit and stamped-dispatch descriptions to name collision/symlink refusal and
-  tracked-deletion preservation. Remove every instruction to convert a flat entity.
+  so canonical refs do not produce a missing-room or blanket conversion warning. Change
+  gate prepare and round rows to name `@review/...`, both physical forms, frozen legacy
+  refs, and no migration. Keep the current state-commit description because it already
+  documents the flat companion commit unit.
 
 ## Stage Report: ideation
 
@@ -434,3 +383,29 @@ fresh-clone durability, historical fixtures, replay, and adversarial containment
 Cycle 2 incorporates all four authorized independent-review findings without migration
 or frozen-ref rewrites. The revised design shares identity and form policy across every
 writer, validates all retained evidence scopes, and provides adversarial parity proof.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Select one backward-compatible review-home and room-ref design that supports flat and folder tickets without migration or rewriting frozen gate bindings.
+  Captain correction selects canonical `@review/...` for new rooms; all legacy refs remain frozen on their current reader path.
+- DONE: Enumerate the exact state-commit, advisory-round, validation, and path-resolution consumers; declare semantic boundaries and expected net LOC/files with tolerance.
+  Revised baseline is exactly net +180 LOC across 12 files, about 270 insertions/90 deletions, with +/-70 net LOC and +/-2 files tolerance.
+- DONE: Define falsifiable historical-fixture and two-clone tests proving flat sibling rooms commit and replay, flat rounds record, existing refs retain meaning, and broken refs fail validation.
+  Focused tables prove canonical writes, frozen legacy reads, flat/folder round replay, malformed reserved-ref refusal, and Host-B retrieval after state commit.
+- DONE: AC-1 supported state-commit durability evidence.
+  Existing flat commit-unit code is unchanged; fresh Host B must retrieve both round files and matching digest after one Host-A commit.
+- DONE: AC-2 canonical namespace evidence.
+  Literal expected paths fail if either entity form writes or resolves `@review/...` from the entity directory.
+- DONE: AC-3 frozen compatibility evidence.
+  Actual readers must return the same bytes/digests and preserve stored flat, folder, and legacy round refs on replay.
+- DONE: AC-4 flat/folder round evidence.
+  Whole-tree snapshots fail on folder-only refusal, wrong physical home, retained-byte change, replay mutation, or divergent-write residue.
+- DONE: AC-5 reserved-prefix boundary evidence.
+  Parser and policy tables fail on malformed acceptance, review-root escape, legacy reclassification, or mutation after refusal.
+
+### Summary
+
+Cycle 3 replaces the broad +420/16 architecture with the captain's canonical
+`@review/...` namespace and the smallest consumer changes needed for flat rounds.
+Already-shipped flat commit durability stays production-unchanged and receives a
+fresh-clone regression proof; broader hardening is recorded as follow-up scope.
