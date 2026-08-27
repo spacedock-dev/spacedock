@@ -181,7 +181,7 @@ func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
 	if state := attemptState(attempt); state != "open" {
 		return Summary{}, fmt.Errorf("attempt %s is frozen %s", attempt.ID, state)
 	}
-	if !preparedRoomBinding(entityPath, attempt.Briefing) {
+	if !isPreparedRoomBinding(entityPath, attempt.Briefing) {
 		return Summary{}, fmt.Errorf("current attempt has no prepared gate room")
 	}
 	room, err := ResolveRoomRef(entityPath, attempt.Briefing.RoomRef)
@@ -531,7 +531,7 @@ func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManife
 	if manifest.ID != binding.ID {
 		return nil, fmt.Errorf("bound canonical Briefing identity does not match the current binding")
 	}
-	if preparedRoomBinding(entityPath, binding) {
+	if isPreparedRoomBinding(entityPath, binding) {
 		if err := validatePreparedSummary(manifest); err != nil {
 			return nil, err
 		}
@@ -575,7 +575,7 @@ func boundBriefingPath(entityPath string, binding Briefing) (string, error) {
 		}
 		return briefingPath, nil
 	}
-	if preparedRoomBinding(entityPath, binding) {
+	if isPreparedRoomBinding(entityPath, binding) {
 		for _, locator := range preparedLocators {
 			if path, err := resolveBriefingLocator(retained, locator); err == nil {
 				return path, nil

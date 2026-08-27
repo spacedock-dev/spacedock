@@ -244,7 +244,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		RoomRef: roomRef,
 	}
 
-	if previous != nil && attemptState(previous) == "open" && preparedRoomBinding(entityPath, previous.Briefing) &&
+	if previous != nil && attemptState(previous) == "open" && isPreparedRoomBinding(entityPath, previous.Briefing) &&
 		!sameBinding(previous.Briefing, binding) {
 		return PrepareResult{}, fmt.Errorf("open gate room binding is frozen and cannot be rebound")
 	}
@@ -299,7 +299,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 }
 
 func preparedEntityReplaySource(entityPath string, roots gitsource.Roots, previous *Attempt, ordinal int) (gitsource.Source, bool, error) {
-	if previous == nil || attemptState(previous) != "open" || !preparedRoomBinding(entityPath, previous.Briefing) {
+	if previous == nil || attemptState(previous) != "open" || !isPreparedRoomBinding(entityPath, previous.Briefing) {
 		return gitsource.Source{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -350,7 +350,7 @@ func entityWithoutGates(data []byte) ([]byte, error) {
 }
 
 func preparedReplay(entityPath string, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
-	if previous == nil || attemptState(previous) != "open" || !preparedRoomBinding(entityPath, previous.Briefing) {
+	if previous == nil || attemptState(previous) != "open" || !isPreparedRoomBinding(entityPath, previous.Briefing) {
 		return PrepareResult{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -527,42 +527,27 @@ func validatePreparedRoomAncestry(entityPath, room string) error {
 	return nil
 }
 
-// preparedRoomBinding reports whether the binding has a prepared gate room. It
-// is the shape-independent test that replaces `request-digest != ""`. Six
-// runtime sites used that field to mean "this attempt has a prepared room".
-//
-// A request-backed binding always has a prepared room, so the test
-// short-circuits. Every guard the old test gave such an attempt therefore stays
-// as strict, and a room that lost its files still refuses.
-//
-// A request-less binding has a prepared room when its room-ref names a real
-// directory that is not an archived room.
-//
-// An archived request-less binding fails the test three ways. An opaque
-// provider ref such as `subspace-room:3k-gate-design` names no local path. A
-// legacy ref names the Briefing file itself. An archived room is a directory
-// that holds briefing.json.
-//
-// The test reads that archived name, and not the reserved name, for one reason.
-// A prepared room whose Briefing is deleted must stay a prepared room. The
-// archived read path gives a skip. A deleted Briefing must not take that skip,
-// because gate record then closes over it.
-func preparedRoomBinding(entityPath string, binding Briefing) bool {
-	if binding.RequestDigest != "" {
-		return true
-	}
-	if binding.RoomRef == "" {
-		return false
-	}
+func preparedRoomBinding(entityPath string, binding Briefing) (bool, error) {
 	room, err := ResolveRoomRef(entityPath, binding.RoomRef)
 	if err != nil {
-		return false
+		return false, err
+	}
+	if binding.RequestDigest != "" {
+		return true, nil
+	}
+	if binding.RoomRef == "" {
+		return false, nil
 	}
 	if info, err := os.Lstat(room); err != nil || !info.IsDir() {
-		return false
+		return false, nil
 	}
 	_, err = os.Lstat(filepath.Join(room, archivedBriefingLocator))
-	return err != nil
+	return err != nil, nil
+}
+
+func isPreparedRoomBinding(entityPath string, binding Briefing) bool {
+	prepared, _ := preparedRoomBinding(entityPath, binding)
+	return prepared
 }
 
 // validatePreparedRoomEntries requires the exact file set the binding implies:
@@ -797,18 +782,12 @@ func canonicalReviewRoomRef(entityPath, room string) (string, error) {
 	return "@review/" + ref, nil
 }
 
-// ResolveRoomRef maps the reserved review namespace through the ticket's stable
-// review home. Every other value retains the historical entity-directory base.
+// ResolveRoomRef resolves canonical review-home refs and preserves every legacy base.
 func ResolveRoomRef(entityPath, ref string) (string, error) {
 	if ref == "@review" || strings.HasPrefix(ref, "@review/") {
 		suffix := strings.TrimPrefix(ref, "@review/")
-		if ref == "@review" || suffix == "" || path.IsAbs(suffix) || strings.Contains(suffix, `\`) || path.Clean(suffix) != suffix {
+		if ref == "@review" || suffix == "" || suffix == "." || suffix == ".." || path.IsAbs(suffix) || strings.Contains(suffix, `\`) || path.Clean(suffix) != suffix {
 			return "", fmt.Errorf("invalid @review room-ref %q", ref)
-		}
-		for _, segment := range strings.Split(suffix, "/") {
-			if segment == "" || segment == "." || segment == ".." {
-				return "", fmt.Errorf("invalid @review room-ref %q", ref)
-			}
 		}
 		return filepath.Join(reviewHome(entityPath), "review", filepath.FromSlash(suffix)), nil
 	}

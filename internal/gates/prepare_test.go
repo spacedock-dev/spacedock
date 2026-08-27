@@ -190,7 +190,7 @@ func TestPrepareCreatesOneFileRecorderRoomForFolderAndFlatEntities(t *testing.T)
 			if attempt.Briefing.Digest != result.Digest || attempt.Briefing.RequestDigest != "" {
 				t.Fatalf("binding pins incomplete or request-backed: %#v", attempt.Briefing)
 			}
-			if !preparedRoomBinding(entity, attempt.Briefing) {
+			if !isPreparedRoomBinding(entity, attempt.Briefing) {
 				t.Fatalf("published room is not read as prepared: %#v", attempt.Briefing)
 			}
 			wantRef := "@review/validation/briefing-1"
