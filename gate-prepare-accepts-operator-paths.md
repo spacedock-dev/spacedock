@@ -7,7 +7,7 @@ started: 2026-08-26T21:19:07Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-gate-prepare-accepts-operator-paths
 issue:
 pr:
 mod-block:
