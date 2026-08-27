@@ -20,6 +20,17 @@ gates:
                 id: briefing:b9pjkz3rv0svx9rt63kw8yg7:backlog:attempt-1:revision-1
                 digest: sha256:5d63d8641afab33a2f57b0f4054d12583c8e1b6fd4e3d043f94ce0c6edfee97b
                 room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:b9pjkz3rv0svx9rt63kw8yg7:backlog:1
+                briefing: briefing:b9pjkz3rv0svx9rt63kw8yg7:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-27T17:14:04.981857Z"
+                decision: approve
+                reason: 'Captain approved the bound Subspace backlog review: support flat tickets directly, preserve historical room-ref meaning, and make sibling review rooms durable and round-recordable without migration.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make a gate room on a flat entity durable through the supported command, and give a flat entity a migration path to folder form that does not corrupt its gate history.
