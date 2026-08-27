@@ -1,7 +1,7 @@
 ---
 id: ntnywe6wfk1g5sersjbe5yt7
 title: Verify the Pi spawn skill name resolves - bare "ensign" versus "spacedock:ensign"
-status: implementation
+status: validation
 source: "Pi/GLM FO field report 2026-08-26: dispatched ensigns repeatedly produced broken DONE formatting, and the FO's diagnosis was that the dispatch artifact passes skill \"ensign\" while the Pi skill loader wants the exact name spacedock:ensign — if true, Pi ensigns spawn without the ensign contract at all"
 started: 2026-08-27T00:12:01Z
 completed:
