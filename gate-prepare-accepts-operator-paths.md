@@ -170,3 +170,16 @@ Ideation defines one explicit-launch-directory resolver that accepts unique abso
 ### Summary
 
 Cycle 2 removes the two staff-review blockers without implementing product code. The revised design fits the existing FO byte cap, keeps direct callers backward-compatible when launch context is absent, and makes lexical ambiguity versus Git-source guard ownership testable.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Replace both exact operator-documentation ambiguity phrases with `different paths` wording while preserving the projected FO size.
+  Commit `40d134757` changes `files` to same-length `paths` in both diffs; the FO replacement remains exactly 578 bytes and still projects 7,645−526+578=7,697 bytes.
+- DONE: State and test that non-ENOENT `Lstat` errors return immediately and never become absence or fallback.
+  The resolver contract now reserves absence for ENOENT; AC-3/test plan inject a first-candidate non-ENOENT error and fail on any later probe, fallback, mutation, or missing flag/path attribution.
+- DONE: Update AC-4 and observable semantics consistently and reconfirm the approved implementation surface.
+  AC-4 now proves lexical-path wording, observable semantics name immediate non-ENOENT refusal, and the estimate remains +151 net (+189/−38) across 6 files with +110..+215 and maximum-7-file tolerance.
+
+### Summary
+
+Cycle 3 aligns every operator-facing ambiguity promise with cleaned lexical paths and closes the error-classification gap in candidate probing. The correction is byte-neutral, stays within the approved surface, and changes no product code.
