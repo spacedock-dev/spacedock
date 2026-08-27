@@ -9,8 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-completion-guard-error-names-failing-subcheck
 issue:
-pr:
-mod-block:
+pr: "#767"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
