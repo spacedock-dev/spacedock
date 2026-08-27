@@ -26,6 +26,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-08-27T00:11:57Z
 ---
 
 `spacedock pi --resume` must not load the Spacedock first-officer contract as if starting fresh; a resume carries its own session intent and the contract survives in the system prompt via resources_discover. Today it loads the contract via two unconditional paths.
