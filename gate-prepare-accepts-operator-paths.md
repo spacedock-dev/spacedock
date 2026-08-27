@@ -201,3 +201,16 @@ Cycle 2 removes the two staff-review blockers without implementing product code.
 ### Summary
 
 Cycle 3 aligns every operator-facing ambiguity promise with cleaned lexical paths and closes the error-classification gap in candidate probing. The correction is byte-neutral, stays within the approved surface, and changes no product code.
+
+## Stage Report: implementation
+
+- DONE: Implement only the approved explicit-LaunchDir selected-source resolver: CLI injects launch context; omitted context preserves package behavior; cleaned lexical candidates de-duplicate; ambiguity/absence/non-ENOENT errors refuse before mutation; the selected path still flows through gitsource.Inspect; apply the exact FO and command-reference wording at 7,697 bytes.
+  Commit `a20385e8e` adds the CLI-owned launch context and one lexical candidate selector; downstream `gitsource.Inspect` still rejects unsafe sources, while the FO skill measures 7,697 bytes and its Prepare paragraph 578 bytes.
+- DONE: Add falsifiable AC-1 through AC-4 coverage over Artifact and Reference: reproduce then fix cwd-relative doubled paths; prove absolute/cwd/state forms share immutable source identity; preserve omitted-context wrong-root refusal; reject ambiguity, absence, non-ENOENT errors, symlinks, non-regular/unreadable/foreign sources byte-clean; keep help grammar and component cap unchanged.
+  `TestGatePrepareCLIResolvesLaunchRelativeSelectedSources` failed on both doubled paths before the resolver and passes now; package tests fail if a form changes the binding, omitted context gains a root, aliases collapse, probing falls through, inspector guards are bypassed, help changes, or the FO cap grows.
+- DONE: Keep the candidate at +151 net LOC (+189/-38) across 6 files within +110..+215 net and at most 7 files, with no stored-format/authority/new-flag change; run focused gates/CLI/gitsource/contractlint tests, gofmt, go test ./..., and go test ./... -race, reporting exact insertions, deletions, net, files, and skill bytes.
+  The committed candidate is +222/−39, net +183 across exactly 6 files; focused packages passed, `gofmt -w ./cmd ./internal` ran, `go test ./...` passed on retry after one unrelated `internal/ensigncycle` timeout, and `go test ./... -race` passed; skill size is exactly 7,697 bytes.
+
+### Summary
+
+Gate preparation now accepts a uniquely resolving operator path in absolute, launch-relative, or state-relative form without silently choosing between different existing paths. The implementation preserves direct-package omission behavior, immutable Git-source inspection, CLI grammar, stored authority, and the approved six-file surface.
