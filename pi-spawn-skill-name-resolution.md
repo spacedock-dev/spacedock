@@ -43,6 +43,17 @@ gates:
                 digest: sha256:c1214eb165d4ad512de5fb703c46795cfaa710bc26f386e2223c5f31bb9b46ce
                 request-digest: sha256:5909800fe51bd5c4d73aa7a3b644187ae7387adabc2cc5207e4f6a374a9d6433
                 room-ref: ./pi-spawn-skill-name-resolution/review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ntnywe6wfk1g5sersjbe5yt7:ideation:1
+                briefing: briefing:ntnywe6wfk1g5sersjbe5yt7:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-27T01:59:23.385088Z"
+                decision: approve
+                reason: 'Captain approve: enter implementation'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 `dispatch build --host pi` emits the bare skill name `ensign` by design (internal/dispatch/build.go piSpawnSkill), on a documented assumption: "pi-subagents resolves agents and skills by directory basename only." A field report says the loader needs `spacedock:ensign`. If the assumption rotted, every Pi ensign runs without its contract, and the observed broken stage-report formatting is a symptom, not a separate defect.
