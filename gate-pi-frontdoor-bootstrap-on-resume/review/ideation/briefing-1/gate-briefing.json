@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:4avk4msa3ktyk1fdt6j5ktw1:ideation:attempt-1:revision-1",
+  "question": "Approve this ideation design to enter implementation: a pi.go-only containsResume guard wrapping the piBootstrapPrompt append (mirror frontdoor.go:556-559 token set), no extension change (the FO_BOOTSTRAP_TEXT injection is transient and session_start fires reason 'startup' on CLI launch, so it can't detect resume). ~+33 LOC across 2 files (pi.go + pi_frontdoor_test.go), tolerance ±50%.",
+  "artifacts": [
+    {
+      "id": "artifact:4avk4msa3ktyk1fdt6j5ktw1:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1b24df85da9f8d3b240b303bbfbdcfb45d96c614/gate-pi-frontdoor-bootstrap-on-resume.md",
+      "rev": "sha256:fd8602c5c5a8d480add24805e38edceedb4e096deade12d6de0f953348291b6f",
+      "mediaType": "text/markdown",
+      "summary": "Pi.go-only fix: add containsResume(fd.passthrough) guard wrapping the piBootstrapPrompt append (pi.go:271), mirroring frontdoor.go:556-559 (--resume/-r/--continue/-c/--resume=\u003cid\u003e). No extension change: the .pi/extensions/spacedock.ts FO_BOOTSTRAP_TEXT injection is transient (Pi context hook deep-copy, non-destructive) and session_start fires reason 'startup' on CLI launch so it cannot detect CLI resume anyway. AC-1 (value): a fixture asserts the resumed argv omits piBootstrapPrompt while non-resume keeps it. AC-2 (serves AC-1): the resume gate matches the Claude/Codex front door token set. AC-3 (serves AC-1): the extension session_start is unchanged. Surface ~+33 insertions, 0 deletions, across 2 files; tolerance ±50%. No spike needed (containsResume proven, context hook transient per Pi docs, session_start reason 'startup'). Residual flagged: Pi --session \u003cpath|id\u003e is a resume form not in the shared containsResume set — follow-up."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:4avk4msa3ktyk1fdt6j5ktw1:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/cli/pi.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:7eb8957cbdd1d66c156f6a3d5689ddef643a7a6141049f0cc41fb574aa1ed016"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:4avk4msa3ktyk1fdt6j5ktw1:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/internal/cli/frontdoor.go",
+      "mediaType": "application/octet-stream",
+      "rev": "sha256:84f8b2450fb7e355478d2472645e2b54402c9693fd7c8c775c400b55a4f197bb"
+    }
+  ]
+}

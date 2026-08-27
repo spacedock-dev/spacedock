@@ -26,6 +26,15 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:4avk4msa3ktyk1fdt6j5ktw1:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:4avk4msa3ktyk1fdt6j5ktw1-ideation-1
+              briefing:
+                id: briefing:4avk4msa3ktyk1fdt6j5ktw1:ideation:attempt-1:revision-1
+                digest: sha256:fcdcd6469e168a567db59ca473a6e4e6eca09efd4721140dd5389984badb5337
+                request-digest: sha256:7e4f6dcfec058013a65787a90c11eb9fe118d48ee5a90a05540cb511211d2c4a
+                room-ref: ./gate-pi-frontdoor-bootstrap-on-resume/review/ideation/briefing-1
 started: 2026-08-27T00:11:57Z
 ---
 
