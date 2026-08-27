@@ -55,7 +55,12 @@ var namePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$`)
 var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true, "fable": true}
 
 // Pi spawn delivery defaults for `dispatch build --host pi`: pi-subagents
-// resolves agents and skills by directory basename only, so the artifact
+// resolves agents and skills by directory basename only. Re-verified on
+// 2026-08-27 against pi-subagents 0.37.2 (installed) and 0.57.0 (latest npm):
+// both use exact basename match (skills.find((s) => s.name === skillName) in
+// resolveSkillPath, src/agents/skills.ts) — byte-identical across versions, no
+// namespace/qualified-name handling. The bare basename is the only resolving
+// form; passing "spacedock:ensign" would fail to match. The artifact therefore
 // carries the generic write-capable agent ("worker") and the basename skill
 // ("ensign"); a stage agent: override replaces agent and drops skill (the
 // override agent owns its own contract).
