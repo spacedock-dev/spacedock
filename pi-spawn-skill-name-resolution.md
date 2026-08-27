@@ -1,7 +1,7 @@
 ---
 id: ntnywe6wfk1g5sersjbe5yt7
 title: Verify the Pi spawn skill name resolves - bare "ensign" versus "spacedock:ensign"
-status: ideation
+status: implementation
 source: "Pi/GLM FO field report 2026-08-26: dispatched ensigns repeatedly produced broken DONE formatting, and the FO's diagnosis was that the dispatch artifact passes skill \"ensign\" while the Pi skill loader wants the exact name spacedock:ensign — if true, Pi ensigns spawn without the ensign contract at all"
 started: 2026-08-27T00:12:01Z
 completed:
@@ -53,7 +53,7 @@ gates:
                 reason: 'Captain approve: enter implementation'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 `dispatch build --host pi` emits the bare skill name `ensign` by design (internal/dispatch/build.go piSpawnSkill), on a documented assumption: "pi-subagents resolves agents and skills by directory basename only." A field report says the loader needs `spacedock:ensign`. If the assumption rotted, every Pi ensign runs without its contract, and the observed broken stage-report formatting is a symptom, not a separate defect.
