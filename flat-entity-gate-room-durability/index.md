@@ -535,3 +535,14 @@ Implemented one canonical review-home namespace for new gate and round rooms whi
 ### Summary
 
 The canonical review home, flat-room durability, legacy compatibility, and Artifact containment are independently proven, and all repository test suites pass. Validation still rejects `add2d0632` because one supported reserved-namespace refusal can be bypassed by gate close, allowing a malformed binding to spend captain authority and mutate state.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Fix the AC-5 gate-close bypass by preserving malformed reserved-ref errors through prepared-room classification and retained-authority validation.
+  Commit `e4cd8afec`; `TestMalformedCanonicalRoomRefCannotSpendGateAuthority` fails if classification suppresses the parser error or close changes any entity byte.
+- DONE: Add and pass the byte-clean gate-close regression while preserving AC-1 through AC-4 and remaining within the approved LOC/file tolerance.
+  Focused gates/status/CLI, full, and race suites pass; final surface is +250 net LOC across 13 files (+70/+1), and task-touched formatting plus diff-check are clean.
+
+### Summary
+
+Malformed reserved refs now remain errors through retained-authority validation, so a gate close cannot spend authority after canonical resolution fails. The correction preserves the approved canonical/legacy behavior, all earlier acceptance proofs, and the declared surface envelope; the unrelated repository formatting polish remains intentionally unchanged.
