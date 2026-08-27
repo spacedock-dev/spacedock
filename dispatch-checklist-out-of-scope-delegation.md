@@ -167,3 +167,22 @@ Implementation clarifies the First Officer's checklist-composition authority at 
 - Task ownership: outside this checklist-composer ticket; captain must assign dispatch-stamp/archive-history ownership after preserving the current artifacts.
 - Proposed disposition: route for decision and hold the candidate unchanged; no reviewer rerun or speculative fix until the owning surface is selected.
 - AC effect: full AC-1 is not established for run 2 because its path history is not qualifying; AC-2 is unaffected, and the 0-of-2 delegation, zero child state-mutation, and successful post-completion root-FO transition evidence remain valid.
+
+## Stage Report: implementation evidence run
+
+- DONE: Run one additional unchanged targeted Claude live journey exactly as the entity test plan specifies, with a fresh retained artifact directory and the existing candidate commit `6af283ec0`.
+  Exact command passed with exit 0 in 168.841s; raw artifacts and audit manifest are retained at `/tmp/spacedock-live-yv3w8rhxrj-candidate-6af283ec0-proof3/claude-shared-scenarios/smallest-sufficient-mechanism/`.
+- DONE: Require 0-of-2 delegated lifecycle checklist items and zero descendant worker state/frontmatter mutations.
+  Retained `dispatches/ready-{one,two}.md` contain only the report item; `claude-stream.jsonl` partitions children by `parent_tool_use_id` (`toolu_01Mz6G9rCRGCsuMFNcqJyq9q`, `toolu_01VtJ9wy45hEgPbRvqcFEHaZ`) and shows only body edits plus path-scoped report commits.
+- DONE: For every durable status delta, prove a successful root-FO `spacedock` command after the attributed completion signal.
+  Ready One signals at 08:51:24/28Z precede ROOT merge tool `toolu_01GC7GmFdXr4E6h7kA9WfyF9` at 08:51:48Z; Ready Two signals at 08:52:25/28Z precede ROOT `toolu_019ng6iBGH2U28xWM199vRGL` at 08:52:32Z; both successful guards produce the only `ready -> done` deltas.
+- DONE: Prove the worker Stage Report was durably committed before the terminal transition.
+  Qualifying history is `9ea2239` dispatch -> `aea1532` report -> `ee6f5b7` archive for Ready One and `540a941` dispatch -> `370d66a` report -> `db893a6` archive for Ready Two; worker results record one-file commits before completion.
+- DONE: Prove the dispatch-entry commit is in the entity's qualifying path history with stage and nonempty started.
+  The passing unchanged grader qualifies path-scoped `9ea2239` (`ready-one.md`, `status=ready`, `started=2026-08-27T08:51:00Z`) and `540a941` (`ready-two.md`, `status=ready`, `started=2026-08-27T08:52:01Z`); removing path scope, stage, or started makes the grader fail.
+- DONE: Preserve command exits, changed-path lists, ordered commits, parent_tool_use_id partition, and artifact paths.
+  `ac1-audit.md` beside the raw stream records the successful tool-result flags, entity-owned changed paths, ordered commit chains, actor IDs, exact dispatch files, and terminal artifact locations.
+
+### Summary
+
+The captain-directed unchanged proof run passes and supplies the previously missing AC-1 durability evidence for both entities. Candidate `6af283ec0`, fixture, grader, CLI, storage, and acceptance criteria remain unchanged; the result is 0-of-2 delegated lifecycle items with every report and state transition correctly committed, ordered, and attributed.
