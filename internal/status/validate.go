@@ -245,28 +245,11 @@ func gateValidationDiagnostics(entities []*entity, workflowDir string) (errs, wa
 			problem := fmt.Sprintf("unknown gate application field '%s' at %s", warning.Field, warning.Path)
 			warns = append(warns, entityEvidenceLine("Warning", e, workflowDir, problem, e.displayID))
 		}
-		// A retained room that no longer resolves is the #739 end state: the gate
-		// commands fail on it mid-ceremony while every read surface still reports
-		// the entity as healthy. Reporting it here is what makes a hand
-		// conversion verifiable — the operator can confirm the rewrite landed
-		// instead of finding out at the next gate.
+		// Retained rooms use the same dual-mode resolver as gate commands, so new
+		// review-home refs and frozen entity-relative refs receive one diagnostic.
 		for _, ref := range unresolvedRoomRefs(e.path) {
 			warns = append(warns, entityEvidenceLine("Warning", e, workflowDir,
 				"retained gate room does not resolve: "+ref, e.displayID))
-		}
-		// A flat entity that already holds prepared rooms is grandfathered by
-		// gate prepare: its refs are ./<slug>/review/... and correct while it
-		// stays flat. Moving it to folder form without rewriting them in the
-		// same commit makes every retained room unreadable, and nothing else
-		// reports that — so the warning carries the whole remedy, not just the
-		// finding. Warn tier, and only on explicit --validate: an error here
-		// would exit 1 on the plain status read path.
-		if filepath.Base(e.path) != "index.md" {
-			if _, err := os.Stat(filepath.Join(filepath.Dir(e.path), e.slug, "review")); err == nil {
-				warns = append(warns, entityEvidenceLine("Warning", e, workflowDir, fmt.Sprintf(
-					"flat entity holds gate rooms in %s/review/; to convert it, `git mv %s.md %s/index.md` AND rewrite every `room-ref: ./%s/` to `room-ref: ./` in the same commit, or every retained room becomes unreadable",
-					e.slug, e.slug, e.slug, e.slug), e.displayID))
-			}
 		}
 	}
 	return errs, warns
@@ -375,7 +358,12 @@ func unresolvedRoomRefs(entityPath string) []string {
 			if ref == "" {
 				continue
 			}
-			if _, err := os.Stat(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(ref))); err != nil {
+			room, resolveErr := gates.ResolveRoomRef(entityPath, ref)
+			if resolveErr != nil {
+				missing = append(missing, ref)
+				continue
+			}
+			if _, err := os.Stat(room); err != nil {
 				missing = append(missing, ref)
 			}
 		}

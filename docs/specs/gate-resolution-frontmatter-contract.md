@@ -139,19 +139,15 @@ The room layout is the same for both entity forms:
 <state-root>/<slug>/review/<stage>/briefing-<attempt>/
 ```
 
-but `room-ref` is written relative to the entity file's own directory, so folder form
-binds `./review/...` while flat form binds `./<slug>/review/...`. Only the folder-form
-ref is invariant under a later move of the entity. A workflow states which form it
-keeps with `entity-form: folder` in its README frontmatter, and where that declaration
-is present preparation refuses to create the first room beside a flat `<slug>.md`,
-whose `<slug>/` companion would hold refs that break on conversion. A workflow that
-declares no form accepts either shape and preparation refuses neither. Flat entities
-that already hold rooms are grandfathered under the declaration, and their
-slug-prefixed refs stay correct while they stay flat; converting one requires
-`git mv <slug>.md <slug>/index.md` and rewriting every `room-ref: ./<slug>/` to
-`room-ref: ./` in the same commit, and `status --validate` reports both the
-grandfathered shape and any ref that stops resolving. State commit and archive
-operations continue to treat the flat
+New bindings store `room-ref: @review/<stage>/briefing-<attempt>`. The reserved
+namespace resolves below `<state-root>/<slug>/review/` for both entity forms and
+rejects empty, absolute, non-normalized, dot-segment, traversal, and backslash paths.
+Existing flat `./<slug>/review/...`, folder `./review/...`, and other legacy refs keep
+their entity-directory-relative meaning and are never rewritten. A workflow may still
+declare `entity-form: folder`; preparation refuses the first flat companion under that
+policy and grandfathers an existing one. No migration is required to record later
+rooms, and `status --validate` uses the same resolver when reporting a retained ref
+that no longer resolves. State commit and archive operations continue to treat the flat
 Markdown plus companion directory as one literal path-scoped unit, including tracked
 deletions and rollback, without sweeping siblings.
 
@@ -216,11 +212,17 @@ append its authorized Cycle line before invoking the producer; the recorder pres
 that body byte-for-byte. The published round is the durable evidence; `gate record
 --round` reports every Resolution as advisory structural evidence on publication.
 
-Round recording requires a folder-form entity at `<slug>/index.md`, so its accumulating
-`review/` artifacts are scoped beside that entity. Flat entities refuse before locking
-or writing; the recorder does not alter the approved derived room path to compensate.
+Flat `<slug>.md` and folder `<slug>/index.md` entities publish directly to the same
+ticket review home and store `@review/<stage>/round-<cycle>`. Frozen folder pointers
+using `./review/...` replay unchanged. A workflow's declared-folder policy applies to
+new flat round homes and grandfathers an existing companion, as it does for prepare.
 `STAGE` must name a stage in the workflow definition, but need not equal current
 `status`: explicit historical backfill remains supported.
+
+A relative round Artifact is trusted only when its resolved regular path stays inside
+`<state-root>/<slug>/`. Paths outside that home and the mutable entity (`<slug>.md` or
+`<slug>/index.md`) refuse during publication and replay. Existing `git-root://`
+Artifact identities are unchanged.
 
 The room is immutable: exact whole-room replay is a whole-tree no-op; any different
 Briefing, log, room shape, or pointer fails closed. New-room publication rolls back if

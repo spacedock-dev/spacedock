@@ -1,5 +1,5 @@
-// ABOUTME: --validate warns on a flat entity holding gate rooms, carrying the
-// ABOUTME: conversion remedy, while the plain status read path stays unaffected.
+// ABOUTME: --validate resolves canonical flat review rooms without prescribing
+// ABOUTME: migration, while frozen legacy refs retain their old meaning.
 package status
 
 import (
@@ -23,11 +23,15 @@ func hybridFlatRoomsFixture(t *testing.T) string {
 		return "---\nid: " + slug + "\nstatus: ideation\ntitle: Task\ngates:\n  version: 1\n  records:\n    - id: gate:" + slug +
 			":ideation\n      stage: ideation\n      attempts:\n        - id: attempt:" + slug +
 			":ideation\n          briefing: {id: briefing:" + slug + ":ideation:attempt-1:revision-1, digest: sha256:" +
-			strings.Repeat("1", 64) + ", room-ref: " + ref + "}\n---\n# Task\n"
+			strings.Repeat("1", 64) + ", room-ref: '" + ref + "'}\n---\n# Task\n"
 	}
 	for _, slug := range []string{"alpha", "beta"} {
+		ref := "./" + slug + "/review/ideation/briefing-1"
+		if slug == "alpha" {
+			ref = "@review/ideation/briefing-1"
+		}
 		if err := os.WriteFile(filepath.Join(root, slug+".md"),
-			[]byte(body(slug, "./"+slug+"/review/ideation/briefing-1")), 0o644); err != nil {
+			[]byte(body(slug, ref)), 0o644); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.MkdirAll(filepath.Join(root, slug, "review", "ideation", "briefing-1"), 0o755); err != nil {
@@ -45,28 +49,16 @@ func hybridFlatRoomsFixture(t *testing.T) string {
 	return root
 }
 
-// The remedy is the payload: a reader who only sees "this is a hybrid" still
-// hand-converts and destroys every retained room, so the line must name the move
-// AND the ref rewrite. Asserting both tokens fails if either half is dropped.
-func TestValidateWarnsFlatEntityHoldingGateRoomsWithConversionRemedy(t *testing.T) {
+func TestValidateResolvesCanonicalFlatRoomWithoutConversionWarning(t *testing.T) {
 	root := hybridFlatRoomsFixture(t)
 	out, stderr, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--validate")
 	if code != 0 || strings.TrimSpace(out) != "VALID" {
 		t.Fatalf("--validate exit=%d stdout=%q stderr=%q", code, out, stderr)
 	}
-	if got := strings.Count(stderr, "flat entity holds gate rooms"); got != 2 {
-		t.Fatalf("want 2 hybrid warnings, got %d: %q", got, stderr)
-	}
-	for _, want := range []string{
-		"slug=alpha", "slug=beta",
-		"git mv alpha.md alpha/index.md", "rewrite every `room-ref: ./alpha/` to `room-ref: ./`",
-	} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("hybrid warning missing %q: %q", want, stderr)
+	for _, unwanted := range []string{"flat entity holds gate rooms", "does not resolve", "git mv", "rewrite every"} {
+		if strings.Contains(stderr, unwanted) {
+			t.Fatalf("canonical/legacy room emitted obsolete warning %q: %q", unwanted, stderr)
 		}
-	}
-	if strings.Contains(stderr, "slug=gamma") {
-		t.Fatalf("folder-form entity flagged: %q", stderr)
 	}
 }
 
@@ -95,27 +87,25 @@ func TestHybridFindingLeavesPlainStatusReadPathUnaffected(t *testing.T) {
 // instead of a mid-ceremony gate failure.
 func TestValidateReportsRetainedRoomThatNoLongerResolves(t *testing.T) {
 	root := hybridFlatRoomsFixture(t)
-	// The hand conversion, ref rewrite forgotten: alpha.md -> alpha/index.md
-	// leaves ./alpha/review/... resolving at alpha/alpha/review/...
-	body, err := os.ReadFile(filepath.Join(root, "alpha.md"))
+	// The hand conversion, ref rewrite forgotten: beta.md -> beta/index.md
+	// leaves the frozen ./beta/review/... resolving one level too deep.
+	body, err := os.ReadFile(filepath.Join(root, "beta.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(root, "alpha", "index.md"), body, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "beta", "index.md"), body, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Remove(filepath.Join(root, "alpha.md")); err != nil {
+	if err := os.Remove(filepath.Join(root, "beta.md")); err != nil {
 		t.Fatal(err)
 	}
 	_, stderr, code := runNative(t, root, pinnedEnv(t), "--workflow-dir", root, "--validate")
 	if code != 0 {
 		t.Fatalf("--validate exit=%d stderr=%q", code, stderr)
 	}
-	if !strings.Contains(stderr, "retained gate room does not resolve: ./alpha/review/ideation/briefing-1") {
+	if !strings.Contains(stderr, "retained gate room does not resolve: ./beta/review/ideation/briefing-1") {
 		t.Fatalf("botched conversion not reported: %q", stderr)
 	}
-	// beta is untouched and its rooms resolve; gamma is folder-form and clean.
-	// Exactly one unresolved-ref finding, and it is alpha's.
 	if got := strings.Count(stderr, "does not resolve"); got != 1 {
 		t.Fatalf("want exactly 1 unresolved-ref finding, got %d: %q", got, stderr)
 	}

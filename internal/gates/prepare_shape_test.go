@@ -165,6 +165,34 @@ func TestBindingShapesClassifyAndResolve(t *testing.T) {
 	}
 }
 
+func TestReviewRoomRefsHaveOneMeaningAcrossEntityForms(t *testing.T) {
+	root := t.TempDir()
+	flat := filepath.Join(root, "task.md")
+	folder := filepath.Join(root, "task", "index.md")
+	room := filepath.Join(root, "task", "review", "validation", "briefing-1")
+	for _, entity := range []string{flat, folder} {
+		if got, err := canonicalReviewRoomRef(entity, room); err != nil || got != "@review/validation/briefing-1" {
+			t.Fatalf("canonical ref for %s = %q, %v", entity, got, err)
+		}
+		if got, err := ResolveRoomRef(entity, "@review/validation/briefing-1"); err != nil || got != room {
+			t.Fatalf("canonical resolution for %s = %q, %v", entity, got, err)
+		}
+	}
+	for _, tc := range []struct{ ref, want string }{
+		{"./task/review/validation/briefing-1", room},
+		{"opaque-provider:task", filepath.Join(root, "opaque-provider:task")},
+	} {
+		if got, err := ResolveRoomRef(flat, tc.ref); err != nil || got != tc.want {
+			t.Fatalf("legacy %q = %q, %v; want %q", tc.ref, got, err, tc.want)
+		}
+	}
+	for _, ref := range []string{"@review", "@review/", "@review//absolute", "@review/.", "@review/a/../b", `@review/a\b`} {
+		if _, err := ResolveRoomRef(flat, ref); err == nil {
+			t.Fatalf("malformed reserved ref %q resolved", ref)
+		}
+	}
+}
+
 // TestRoomThatLostItsBriefingStaysAPreparedRoom pins why preparedRoomBinding
 // tests for the archived name and not the reserved one. A room whose Briefing is
 // deleted must keep failing loudly. The archived read path instead gives it the

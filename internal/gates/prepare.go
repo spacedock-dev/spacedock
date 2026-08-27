@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -233,7 +234,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, fmt.Errorf("canonicalize prepared Briefing: %w", err)
 	}
-	roomRef, err := relativeRoomRef(entityPath, room)
+	roomRef, err := canonicalReviewRoomRef(entityPath, room)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -386,7 +387,11 @@ func preparedReplay(entityPath string, previous *Attempt, briefingID, question, 
 			return PrepareResult{}, false, nil
 		}
 	}
-	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(previous.Briefing.RoomRef)))
+	room, err := ResolveRoomRef(entityPath, previous.Briefing.RoomRef)
+	if err != nil {
+		return PrepareResult{}, false, fmt.Errorf("resolve prepared room: %w", err)
+	}
+	room, err = filepath.Abs(room)
 	if err != nil {
 		return PrepareResult{}, false, fmt.Errorf("resolve prepared room: %w", err)
 	}
@@ -483,7 +488,17 @@ func validatePreparedCandidate(roots gitsource.Roots, briefingBytes []byte) erro
 }
 
 func validatePreparedRoomAncestry(entityPath, room string) error {
-	trustedHome := filepath.Dir(entityPath)
+	trustedHome := reviewHome(entityPath)
+	if info, err := os.Lstat(trustedHome); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("prepared room parent %s is a symlink", trustedHome)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("prepared room parent %s is not a directory", trustedHome)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
 	parent := filepath.Dir(room)
 	rel, err := filepath.Rel(trustedHome, parent)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
@@ -539,11 +554,14 @@ func preparedRoomBinding(entityPath string, binding Briefing) bool {
 	if binding.RoomRef == "" {
 		return false
 	}
-	room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
+	room, err := ResolveRoomRef(entityPath, binding.RoomRef)
+	if err != nil {
+		return false
+	}
 	if info, err := os.Lstat(room); err != nil || !info.IsDir() {
 		return false
 	}
-	_, err := os.Lstat(filepath.Join(room, archivedBriefingLocator))
+	_, err = os.Lstat(filepath.Join(room, archivedBriefingLocator))
 	return err != nil
 }
 
@@ -750,11 +768,7 @@ func workflowDeclaresFolderForm(workflowDir string) bool {
 }
 
 func preparedRoomPath(entityPath, stage string, attempt int) (string, error) {
-	slug := entitySlug(entityPath)
-	home := filepath.Dir(entityPath)
-	if filepath.Base(entityPath) != "index.md" {
-		home = filepath.Join(home, slug)
-	}
+	home := reviewHome(entityPath)
 	reviewRoot := filepath.Join(home, "review")
 	room := filepath.Join(reviewRoot, stage, "briefing-"+strconv.Itoa(attempt))
 	rel, err := filepath.Rel(reviewRoot, room)
@@ -764,16 +778,41 @@ func preparedRoomPath(entityPath, stage string, attempt int) (string, error) {
 	return room, nil
 }
 
-func relativeRoomRef(entityPath, room string) (string, error) {
-	ref, err := filepath.Rel(filepath.Dir(entityPath), room)
+func reviewHome(entityPath string) string {
+	if filepath.Base(entityPath) == "index.md" {
+		return filepath.Dir(entityPath)
+	}
+	return filepath.Join(filepath.Dir(entityPath), entitySlug(entityPath))
+}
+
+func canonicalReviewRoomRef(entityPath, room string) (string, error) {
+	ref, err := filepath.Rel(filepath.Join(reviewHome(entityPath), "review"), room)
 	if err != nil {
 		return "", fmt.Errorf("resolve prepared room reference: %w", err)
 	}
 	ref = filepath.ToSlash(ref)
-	if !strings.HasPrefix(ref, ".") {
-		ref = "./" + ref
+	if ref == "." || ref == ".." || strings.HasPrefix(ref, "../") {
+		return "", fmt.Errorf("prepared room escapes the entity review directory")
 	}
-	return ref, nil
+	return "@review/" + ref, nil
+}
+
+// ResolveRoomRef maps the reserved review namespace through the ticket's stable
+// review home. Every other value retains the historical entity-directory base.
+func ResolveRoomRef(entityPath, ref string) (string, error) {
+	if ref == "@review" || strings.HasPrefix(ref, "@review/") {
+		suffix := strings.TrimPrefix(ref, "@review/")
+		if ref == "@review" || suffix == "" || path.IsAbs(suffix) || strings.Contains(suffix, `\`) || path.Clean(suffix) != suffix {
+			return "", fmt.Errorf("invalid @review room-ref %q", ref)
+		}
+		for _, segment := range strings.Split(suffix, "/") {
+			if segment == "" || segment == "." || segment == ".." {
+				return "", fmt.Errorf("invalid @review room-ref %q", ref)
+			}
+		}
+		return filepath.Join(reviewHome(entityPath), "review", filepath.FromSlash(suffix)), nil
+	}
+	return filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(ref)), nil
 }
 
 func entitySlug(entityPath string) string {

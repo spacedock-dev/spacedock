@@ -46,7 +46,7 @@ func TestGateOneFileRoomJourneyPublishesAndCompletes(t *testing.T) {
 	if binding.RequestDigest != "" {
 		t.Fatalf("binding carries request-digest %q", binding.RequestDigest)
 	}
-	if binding.RoomRef != "./task/review/validation/briefing-1" {
+	if binding.RoomRef != "@review/validation/briefing-1" {
 		t.Fatalf("room-ref=%q", binding.RoomRef)
 	}
 

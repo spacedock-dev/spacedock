@@ -104,8 +104,12 @@ func RecordSemanticSummary(entityPath string, input RecordInput) (Summary, error
 		if filepath.Base(input.BriefingPath) != "briefing.json" || filepath.Base(input.LogPath) != "briefing.review.jsonl" {
 			return Summary{}, fmt.Errorf("--round inputs must name briefing.json and briefing.review.jsonl")
 		}
-		if filepath.Base(entityPath) != "index.md" {
-			return Summary{}, fmt.Errorf("gate record --round requires folder-form entity <slug>/index.md because review artifacts accumulate beside the entity; convert with `git mv <slug>.md <slug>/index.md` AND rewrite every `room-ref: ./<slug>/` to `room-ref: ./` in the same commit")
+		workflowDir := input.WorkflowDir
+		if workflowDir == "" {
+			workflowDir = nearestWorkflowDir(filepath.Dir(entityPath))
+		}
+		if err := refuseNewFlatCompanion(entityPath, workflowDir); err != nil {
+			return Summary{}, err
 		}
 		unlock, err := lockEntity(entityPath)
 		if err != nil {
@@ -180,7 +184,11 @@ func Withdraw(entityPath string, input WithdrawInput) (Summary, error) {
 	if !preparedRoomBinding(entityPath, attempt.Briefing) {
 		return Summary{}, fmt.Errorf("current attempt has no prepared gate room")
 	}
-	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef)))
+	room, err := ResolveRoomRef(entityPath, attempt.Briefing.RoomRef)
+	if err != nil {
+		return Summary{}, fmt.Errorf("resolve bound gate room: %w", err)
+	}
+	room, err = filepath.Abs(room)
 	if err != nil {
 		return Summary{}, fmt.Errorf("resolve bound gate room: %w", err)
 	}
@@ -538,7 +546,10 @@ func boundBriefingManifest(entityPath string, binding Briefing) (*briefingManife
 // reserved name first and the earlier name second. A legacy binding names the
 // Briefing file itself.
 func boundBriefingPath(entityPath string, binding Briefing) (string, error) {
-	retained := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
+	retained, err := ResolveRoomRef(entityPath, binding.RoomRef)
+	if err != nil {
+		return "", err
+	}
 	if binding.RequestDigest != "" {
 		requestBytes, err := os.ReadFile(filepath.Join(retained, "request.json"))
 		if err != nil {

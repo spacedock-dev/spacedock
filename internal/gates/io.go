@@ -212,7 +212,10 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 				continue
 			}
 			if attempt.Briefing.RequestDigest != "" {
-				room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef))
+				room, err := ResolveRoomRef(entityPath, attempt.Briefing.RoomRef)
+				if err != nil {
+					return err
+				}
 				requestBytes, err := os.ReadFile(filepath.Join(room, "request.json"))
 				if err != nil {
 					return fmt.Errorf("attempt %s retained request.json: %w", attempt.ID, err)
