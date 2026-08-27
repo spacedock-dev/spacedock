@@ -132,9 +132,12 @@ Fleshed out the ideation for gating the Pi front door bootstrap on resume. Key d
 
 ## Stage Report: implementation
 
-- DONE: the pi.go `containsResume` guard wrapping the `piBootstrapPrompt` append (pi.go:271) is in place, mirroring frontdoor.go's token set (`--resume`, `--resume=<id>`, `-r`, `--continue`, `-c`) via the shared `containsResume(fd.passthrough)` call — no new function or token set added.
-- DONE: the table-driven `TestPiResumeSuppressesBootstrapPrompt` in `internal/cli/pi_frontdoor_test.go` asserts each resume token suppresses `piBootstrapPrompt` from `ops.launched` and that non-resume passthrough (`--model google/gemini`, a task string) keeps the prompt as the last argv token (independent non-resume baseline).
-- DONE: test and gofmt results — `go test ./internal/cli/ -run TestPiResumeSuppressesBootstrapPrompt` is green; `gofmt -l` on the two changed files is clean; the full `go test ./internal/cli/` suite's only failure is `TestVersionAmbiguousMarkersExitZero`, a pre-existing environmental failure (`PI_CODING_AGENT=true` in the worker env) reproduced on the base branch via `git stash`, unrelated to this change.
+- DONE: the pi.go `containsResume` guard wrapping the `piBootstrapPrompt` append (pi.go:271) is in place
+  Mirrors frontdoor.go's token set (`--resume`, `--resume=<id>`, `-r`, `--continue`, `-c`) via the shared `containsResume(fd.passthrough)` call — no new function or token set added.
+- DONE: the table-driven `TestPiResumeSuppressesBootstrapPrompt` in `internal/cli/pi_frontdoor_test.go` asserts each resume token suppresses `piBootstrapPrompt` from `ops.launched`
+  Non-resume passthrough (`--model google/gemini`, a task string) keeps the prompt as the last argv token (independent non-resume baseline).
+- DONE: test and gofmt results
+  `go test ./internal/cli/ -run TestPiResumeSuppressesBootstrapPrompt` is green; `gofmt -l` on the two changed files is clean; the full `go test ./internal/cli/` suite's only failure is `TestVersionAmbiguousMarkersExitZero`, a pre-existing environmental failure (`PI_CODING_AGENT=true` in the worker env) reproduced on the base branch via `git stash`, unrelated to this change.
 
 ### Summary
 
