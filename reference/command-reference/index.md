@@ -2,7 +2,7 @@
 title: "Command reference"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-28 07:27:37"
+last_updated: "2026-08-28 16:57:24"
 ---
 
 # Command reference
@@ -56,7 +56,7 @@ Sandbox: none (safehouse not installed)
 
 `spacedock status --boot` reports the same three. The pre-launch banner answers the neighbouring but different question — whether the launch it is about to perform will be wrapped — so its `Sandbox:` line reads in terms of that launch.
 
-The trailing `contract 3` is a frozen compatibility sentinel read only by skill versions predating the current version gate. It prints inside a session only. For what is installed for each host — plugin versions and enablement — use `spacedock doctor`.
+The trailing `contract 3` is a frozen compatibility sentinel read only by skill versions predating the current version gate. It prints inside a session only. Use `spacedock doctor --host <host>` to compare this binary with the selected channel plugin. If another channel is enabled, doctor names both plugins and reports the load conflict without changing it. A normal launch repairs that conflict before starting the host; under `--no-install`, run `spacedock install --host <host>` manually.
 
 ## Launch
 
