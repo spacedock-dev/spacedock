@@ -1,7 +1,7 @@
 ---
 id: x0petxt7xvr459b6zh4vf4wj
 title: doctor is blind to a co-installed enabled sibling spacedock plugin
-status: backlog
+status: ideation
 source: "Split out of claude-install-sibling-channel-cleanup ideation (2026-08-25): making doctor see a sibling reaches gateHost's fail-fast branch — a front-door product decision that task could not own"
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 decision: approve
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 `spacedock doctor` resolves ONE manifest — the running binary's own channel via `hostOps.ResolveManifest(host)` — so a machine holding both `spacedock@spacedock` and `spacedock@spacedock-edge` enabled reports OK. After the sibling-cleanup install fix, the affected population is machines that already hold a dual install AND never run `spacedock install` again: a Compatible own-channel manifest never triggers the launcher auto-heal, so the condition does not self-clear on launch.
