@@ -38,6 +38,8 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 
 A greet-and-stop boot loads NONE of these — it composes its summary from `«state.boot»()` and follows the interactive branch of `«interaction.boundary»()`. Each loads only at its trigger:
 
+**Residency and invalidation.** At every trigger below, the named body must be resident before the listed effect. One successful load satisfies later triggers for that body in the same uncompacted context; `load` and `read` below mean ensure resident, not repeat a tool call. Only a harness notice or captain cue of compaction, or direct evidence that the loaded source was replaced, invalidates it. After invalidation, reload at the next existing trigger—never eagerly—and preserve that trigger's ordering and own-host-event requirements. Do not probe the filesystem, version, or loader merely to look for replacement.
+
 **Combined-boundary order:** evaluate the write trigger before the merge trigger. A terminal status transition is both an FO-authored mutation and a terminal boundary, so complete the write-core read first, then the merge-core read, then issue the transition. Never select merge first merely because the requested action is terminal. Each deferred read must complete in its own host event; do not batch either read with the other or with the mutation command.
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
