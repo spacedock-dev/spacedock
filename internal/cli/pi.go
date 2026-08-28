@@ -408,7 +408,13 @@ func runDoctorWithPi(ctx context.Context, args []string, hostOps hostOps, piOps 
 		return code
 	}
 	if host != "pi" {
-		return runDoctor(ctx, args, hostOps, stdout, stderr)
+		doctorCode := runDoctor(ctx, args, hostOps, stdout, stderr)
+		if host == "claude" {
+			if note := envScrubDoctorNote(env); note != "" {
+				fmt.Fprint(stdout, note)
+			}
+		}
+		return doctorCode
 	}
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)

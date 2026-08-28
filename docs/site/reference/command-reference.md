@@ -75,6 +75,8 @@ Spacedock reserves `agents.enabled`, `features.multi_agent`, and the complete `f
 
 An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and Codex starts in `--ask-for-approval on-request` unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact `resume` token; an explicit approval mode prevents only a duplicate automatic approval flag.
 
+If `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` is set in your environment (Claude Code's own subprocess credential-scrubbing hardening), Claude Code forces the launched session's permission mode back to `default` unless you declare `--allowedTools` yourself — `spacedock claude` warns about this at launch, and `spacedock doctor --host claude` notes it too. Declare `--allowedTools` explicitly to keep both the hardening and a friction-free dispatch, or unset the var for the launch.
+
 ## Setup
 
 | Command | What it does |
