@@ -228,3 +228,16 @@ Cycle 2 replaces the seed metric with a reproducible exact-session baseline and 
 ### Summary
 
 Cycle 3 repairs only the gate evidence report: all five ACs now have explicit citations, and Mill's completed independent PASS is durably referenced. Completion count: **6 DONE, 0 SKIPPED, 0 FAILED**; the design, ACs, test plan, estimate, and product scope are unchanged.
+
+## Stage Report: implementation
+
+- DONE: Add only the approved residency-and-invalidation paragraph to skills/first-officer/references/first-officer-shared-core.md; keep the surface to one file, net +1..+4 LOC, and preserve the 23,500-byte cap.
+  Code commit `073b7e156` is exactly +2/−0 LOC across that one file; the resulting component is 23,170 bytes, 330 bytes below the cap, and `git diff --check` is clean.
+- DONE: Reproduce the bound 28/151 baseline and show the changed-contract historical replay reaches at most 5 deferred-body reads and 4.0% without replacement probes or changed durable workflow effects.
+  The ordinal counter reproduced body counts 2/9/3/0/11/3/0 and root classes 131/2/2/4/4/8 with zero failed/missing exec outputs; the replay retained five first loads, preserved all 28 ordered effects, and yielded 5/128 = 3.90625%, while a repeated-load mutation failed.
+- DONE: Exercise compaction and direct-replacement invalidation plus initial/post-invalidation gate-write-merge ordering, then run contract lint, gofmt, go test ./..., and go test ./... -race and report exact LOC/files versus +2/1.
+  The throwaway replay passed initial/compaction/replacement mutation and terminal traces and rejected every adjacent swap and omission; focused lint/ensigncycle, `gofmt -w ./cmd ./internal`, and `go test ./...` passed. Exact `go test ./... -race` hit the default 10m package timeout without a race report; `go test ./... -race -timeout 20m` passed all packages (CLI 650.226s, ensigncycle 865.703s). Final surface is exactly +2 LOC/1 file, matching +2/1.
+
+### Summary
+
+The approved host-neutral paragraph now makes deferred loads sticky until compaction or direct replacement evidence, with lazy next-trigger reload and all existing ordering rules preserved. The replay meets the 5-read/4.0% value cap, boundary mutations are rejected, the final surface matches estimate exactly, and the complete race suite passes with a timeout large enough for the repository's Git-heavy fixtures.
