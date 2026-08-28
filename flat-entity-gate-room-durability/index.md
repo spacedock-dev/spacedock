@@ -546,3 +546,37 @@ The canonical review home, flat-room durability, legacy compatibility, and Artif
 ### Summary
 
 Malformed reserved refs now remain errors through retained-authority validation, so a gate close cannot spend authority after canonical resolution fails. The correction preserves the approved canonical/legacy behavior, all earlier acceptance proofs, and the declared surface envelope; the unrelated repository formatting polish remains intentionally unchanged.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-run the AC-5 malformed `@review/...` gate-close reproduction against corrected commit e4cd8afec and prove refusal is byte-clean.
+  The committed regression passes, and a detached six-variant matrix proves empty, absolute-like, dot, traversal, and backslash refs all refuse with an unchanged whole-tree digest and no gate-lock residue; removing error propagation from retained-authority classification makes it fail.
+- DONE: Reconfirm AC-1 through AC-4, frozen legacy refs, flat/folder round parity, and ticket-home Artifact containment are unchanged.
+  Uncached focused gates/status/two-host tests pass; a detached flat/folder × replay/withdraw/record matrix preserves each legacy ref and canonical Briefing byte, while round publication/replay and Artifact boundary rows remain green.
+- DONE: Run focused/full/race and task-touched formatting checks, classify remaining findings, and verify final +250 net LOC/13 files stays within +180/12 with ±70/±2.
+  Focused, full, and race suites pass; task-touched gofmt and diff checks are clean; +250/13 is +70/+1 and therefore within the inclusive tolerance; no remaining finding was observed.
+
+### Acceptance evidence
+
+- AC-1: PASSED — `TestStateCommitMakesFlatRoundDurableInFreshHost` observes the exact flat entity/companion commit, absent sibling dirt, digest-valid Host B readback, and clean exact replay.
+- AC-2: PASSED — flat/folder prepare and round writers retain one `@review/...` spelling and literal resolution below the shared ticket review home.
+- AC-3: PASSED — detached legacy-reader rows plus the frozen folder-round replay retain stored refs, Briefing bytes, digests, and Git-root identities without migration.
+- AC-4: PASSED — flat/folder publication, lifecycle preservation, exact replay/divergence controls, and in-home/out-of-home/mutable-entity Artifact rows pass during publication and replay.
+- AC-5: PASSED — canonical parser refusals now reach gate close before authority spend; all six detached malformed variants leave the complete state tree and lock state unchanged.
+
+### Reviewer findings
+
+- Material findings: none remaining; the cycle-1 AC-5 outcome defect is fixed by `e4cd8afec` and independently reproduced green.
+- Deferred risks: none observed in the corrected behavior or proof boundary.
+- Polish: none new; the First Officer's prior decline of unrelated pre-existing formatting remains unchanged and outside this candidate.
+
+### Checks and recommendation
+
+- Focused uncached gates/status/two-host suites: PASS; `go test ./...`: PASS; `go test ./... -race`: PASS.
+- Task-touched `gofmt -d`: empty; candidate `git diff --check`: PASS; code worktree: clean.
+- Surface: 423 insertions, 173 deletions, net +250 across 13 files versus +180/12; deviation +70/+1 is within ±70/±2.
+- Recommendation: **PASSED** — the corrected candidate can proceed to review with AC-1 through AC-5 proven and no remaining material finding.
+
+### Summary
+
+Correction `e4cd8afec` closes the malformed canonical-ref authority bypass without changing the approved durability, compatibility, or Artifact-containment behavior. Independent detached controls and all repository verification pass, so validation recommends proceeding.
