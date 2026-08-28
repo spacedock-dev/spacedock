@@ -33,6 +33,25 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:qcwrzza9xkr5kfwmdmvbqhkv:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:qcwrzza9xkr5kfwmdmvbqhkv-ideation-1
+              briefing:
+                id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:ideation:attempt-1:revision-1
+                digest: sha256:5486fa9d172e375ab53f5bdd9e3dadfb7afdc3e0825e72f73b43db0ba56f052a
+                room-ref: ./review/ideation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qcwrzza9xkr5kfwmdmvbqhkv:ideation:1
+                briefing: briefing:qcwrzza9xkr5kfwmdmvbqhkv:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-28T19:21:25.084766Z"
+                decision: approve
+                reason: 'Captain approve (2026-08-28 chat): cycle-2 design review-confirmed RESOLVED; advance to implementation.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 A stable launcher can install skills from a newer release and then fail its first binary gate.

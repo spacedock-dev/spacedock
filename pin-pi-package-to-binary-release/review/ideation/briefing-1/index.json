@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qcwrzza9xkr5kfwmdmvbqhkv:ideation:attempt-1:revision-1",
+  "question": "Approve the cycle-2 ideation design and dispatch implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:qcwrzza9xkr5kfwmdmvbqhkv:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/801780d0e4c47051282df027346967d9f9723fa1/pin-pi-package-to-binary-release/review/ideation/gate-review.md",
+      "rev": "sha256:6538d309cbe110caeaa5173378717e23b6cdc6674ba8b532480eb34135448114",
+      "mediaType": "text/markdown",
+      "summary": "Design review-confirmed RESOLVED after one correction round; recommend approval to implementation."
+    }
+  ]
+}
