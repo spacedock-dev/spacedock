@@ -598,3 +598,14 @@ Malformed reserved refs now remain errors through retained-authority validation,
 ### Summary
 
 Correction `e4cd8afec` closes the malformed canonical-ref authority bypass without changing the approved durability, compatibility, or Artifact-containment behavior. Independent detached controls and all repository verification pass, so validation recommends proceeding.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Rebase the existing two-commit b9p candidate onto origin/spacedock-ensign/dispatch-checklist-out-of-scope-delegation, resolving only the owned docs/site/reference/command-reference.md conflict without changing approved behavior or scope.
+  Commits `63bbe1699` and `8b615d92b` now sit on exact parent `1a8054a838f1d58f7bd9164bd4427ede1d718c34`; the sole conflict retains both the parent selected-source/direct-terminal guidance and the candidate canonical `@review/...`/flat-round semantics. Range-diff shows the second correction patch unchanged, conflict markers are absent, and the code worktree is clean.
+- DONE: Re-run focused checks plus go test ./... and go test ./... -race on the reconciled stack tip, confirm the final layer remains +250 net LOC/13 files against its parent, and report the new head.
+  Focused gates/status/CLI checks, exact `go test ./...`, and exact `go test ./... -race` pass at new head `8b615d92b85f3f5841efc48fa005bc5855bbb3e3`. The final layer against its approved parent is 423 insertions and 173 deletions, net +250 across 13 files: +70 net LOC/+1 file versus the approved +180/12 estimate, within the inclusive +/-70 LOC and +/-2 file tolerance; task-touched gofmt and diff-check are clean.
+
+### Summary
+
+The approved two-commit candidate is reconciled onto the moved parent with both parent and b9p command-reference semantics intact. The exact full and race suites pass, and the final +250/13 layer remains inside the approved estimate tolerance at head `8b615d92b85f3f5841efc48fa005bc5855bbb3e3`.
