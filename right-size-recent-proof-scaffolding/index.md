@@ -1,6 +1,6 @@
 ---
 title: Right-size recent proof scaffolding
-status: ideation
+status: implementation
 source: "Captain review of PRs #767, #768, #776, #777, #780, and #781 on 2026-08-28."
 started: 2026-08-28T22:07:02Z
 completed:
@@ -52,7 +52,7 @@ gates:
                 reason: Captain approved the prepared ideation Briefing in Subspace.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Remove redundant tests and fake proof from the current 0.28 stack. Keep one authoritative observation for each distinct failure mode.
