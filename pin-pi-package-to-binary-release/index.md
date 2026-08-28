@@ -91,9 +91,9 @@ Accepted residual risks (stated, not silently held): the spike covered the local
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +100, across 4 files. Tolerance: +/-60 net LOC and +/-2 files.
+Estimate net LOC change: +664, across 6 files. Tolerance: +/-40 net LOC and +/-1 file (re-baselined to as-implemented actuals per the captain's design-reset ruling, 2026-08-28: the growth over the original +100/4-file estimate is the cycle-2 reviewer-demanded branches' test matrix (proxy-tagged identity, AC-5 no-clobber, wrong-ref repair) and the previously unbudgeted AC-1 live-journey wiring).
 
-Expected files: `internal/cli/pi.go` (pinned-source derivation replacing the bare const at the install call site, one front-door repair attempt with recheck and refusal, repair suppression for non-git entries and dev builds), one new small file for the source-derivation helper (release ref derivation: linker stamp, then build-info tag for proxy builds, then the dev sentinel), `internal/cli/pi_frontdoor_test.go` (repair/pin command-behavior tests), and the Pi live test wiring for the no-override proof journey. Observable semantics that may change: stored format (the `packages` entry for spacedock in `~/.pi/agent/settings.json` gains an `@<ref>` suffix for release-stamped binaries) and front-door runtime behavior (one repair attempt with launch refusal on remaining mismatch). Command grammar is unchanged; no new flags. Authority is unchanged. Doctor remedy lines may gain wording pointing at the pinned repair.
+As-implemented files: `internal/cli/pi.go` (+54/−1; pinned-source derivation call site, one front-door repair attempt with recheck and refusal, repair suppression for non-git entries and dev builds), `internal/cli/pi_package_source.go` (+150 new, the source-derivation helper: linker stamp, then build-info tag for proxy builds, then the dev sentinel), `internal/cli/pi_frontdoor_test.go` (+9, seam extension), `internal/cli/pi_package_repair_test.go` (+335, AC-2/3/4/5 command-behavior tests), `internal/ensigncycle/pi_frontdoor_pin_live_test.go` (+96, the no-override live proof journey), `docs/runtime-live-ci-registry.md` (+18, live-journey registration). Observable semantics that may change: stored format (the `packages` entry for spacedock in `~/.pi/agent/settings.json` gains an `@<ref>` suffix for release-stamped binaries) and front-door runtime behavior (one repair attempt with launch refusal on remaining mismatch). Command grammar is unchanged; no new flags. Authority is unchanged. Doctor remedy lines may gain wording pointing at the pinned repair.
 
 ## Acceptance criteria
 
@@ -156,3 +156,14 @@ Ideation fleshed out the seed into a gated design: pinned-source derivation from
 ### Summary
 
 Implemented the release-pinned Pi package source and the one-repair-attempt front door per the approved cycle-2 design, with the wrong-ref mismatch (settings entry vs the binary's release ref) as the repair trigger — no package-manifest field needed. The review-found proxy-build gap is closed by the build-info arm of the derivation helper. AC-1's live journey is wired and registered in the runtime live registry; CI's pi-live lane is its proof run (needs CI-E2E-PI approval), so the live run itself remains open as designed.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: re-baseline the Expected surface and tolerance in the task body's "Expected surface and tolerance" section to the as-implemented figures, per the captain's design-reset ruling (2026-08-28 chat, option 2): actuals are ~664 net insertions across 6 files (internal/cli/pi.go +54/-1, internal/cli/pi_package_source.go +150 new, internal/cli/pi_package_repair_test.go +335, internal/cli/pi_frontdoor_test.go +9, internal/ensigncycle/pi_frontdoor_pin_live_test.go +96, docs/runtime-live-ci-registry.md +18) — set the estimate to the as-implemented net and file figures and keep the design, acceptance criteria, and approach unchanged; state in one sentence that the growth over the original estimate is the cycle-2 reviewer-demanded branches' test matrix and the previously unbudgeted live-journey wiring
+  "Expected surface and tolerance" now reads +664 net across 6 files, tolerance ±40/±1, with the per-file as-implemented breakdown and one sentence attributing the growth to the cycle-2 reviewer-demanded test matrix plus the previously unbudgeted AC-1 live-journey wiring; the as-implemented figures were independently re-measured from `git diff --numstat origin/main...HEAD` on the worktree branch (18+54+9+335+150+96 insertions, 1 deletion) before writing them, and the design, acceptance criteria, and mechanism sections are byte-unchanged.
+- append a `## Stage Report: ideation (cycle 3)` section per the ensign discipline recording only the re-baseline (frontmatter off-limits), with each DONE's evidence on a separate indented line, and commit path-scoped to the state checkout
+  This section; frontmatter untouched (`status: implementation`, `id`, `pr:` unchanged — verified by scoped read before commit); commit is path-scoped to pin-pi-package-to-binary-release/index.md only.
+
+### Summary
+
+Measurement-only re-baseline of pin-pi-package-to-binary-release's expected surface to the as-implemented figures (+664 net / 6 files) per the captain's design-reset ruling; design, acceptance criteria, and delivered code unchanged.
