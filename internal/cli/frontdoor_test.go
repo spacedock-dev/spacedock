@@ -83,6 +83,12 @@ func stableInventory(selected, sibling bool) []pluginInventoryEntry {
 	}
 }
 
+func repeatedStableInventory() []pluginInventoryEntry {
+	return append(stableInventory(true, false), pluginInventoryEntry{
+		ID: "spacedock@spacedock-edge", Version: "0.28.0-pre0", Installed: true, Enabled: true,
+	})
+}
+
 func TestStable0271FrontDoorsHealEnabledSiblingBeforeLaunch(t *testing.T) {
 	withVersion(t, "0.27.1")
 	savedBranch := devBranch
@@ -104,6 +110,16 @@ func TestStable0271FrontDoorsHealEnabledSiblingBeforeLaunch(t *testing.T) {
 	}
 
 	for _, door := range frontDoors {
+		t.Run(door.name+"/repeated-scope-auto-heal", func(t *testing.T) {
+			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: repeatedStableInventory(), inventoryAfterInstall: stableInventory(true, false)[:1]}
+			var stderr bytes.Buffer
+			if code := door.run(nil, host, &stderr); code != 0 || host.launchedArg == nil {
+				t.Fatalf("exit=%d launched=%v stderr=%q", code, host.launchedArg != nil, stderr.String())
+			}
+			if len(host.installCmds) != 3 || host.inventoryCalls != 2 {
+				t.Fatalf("install=%v inventoryCalls=%d, want one heal and verification", host.installCmds, host.inventoryCalls)
+			}
+		})
 		t.Run(door.name+"/auto-heal", func(t *testing.T) {
 			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: stableInventory(true, true), inventoryAfterInstall: stableInventory(true, false)[:1]}
 			var stderr bytes.Buffer
@@ -145,18 +161,22 @@ func TestDoctorSiblingInventory(t *testing.T) {
 	savedBranch := devBranch
 	devBranch = "main"
 	t.Cleanup(func() { devBranch = savedBranch })
-	for _, hostName := range []string{"claude", "codex"} {
-		t.Run(hostName+" conflict", func(t *testing.T) {
-			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: stableInventory(true, true)}
+	conflicts := []struct {
+		name, host string
+		inventory  []pluginInventoryEntry
+	}{{"claude conflict", "claude", stableInventory(true, true)}, {"codex conflict", "codex", stableInventory(true, true)}, {"repeated sibling scopes", "claude", repeatedStableInventory()}}
+	for _, conflict := range conflicts {
+		t.Run(conflict.name, func(t *testing.T) {
+			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: conflict.inventory}
 			var stdout, stderr bytes.Buffer
-			if code := runDoctor(context.Background(), []string{"--host", hostName}, host, &stdout, &stderr); code != 0 {
+			if code := runDoctor(context.Background(), []string{"--host", conflict.host}, host, &stdout, &stderr); code != 0 {
 				t.Fatalf("exit=%d stderr=%q", code, stderr.String())
 			}
 			want := "OK: spacedock binary 0.27.1 and plugin 0.27.1 are compatible.\n" +
-				"CONFLICT: " + hostName + " can load a different Spacedock plugin than doctor checked.\n" +
+				"CONFLICT: " + conflict.host + " can load a different Spacedock plugin than doctor checked.\n" +
 				"  checked: spacedock@spacedock 0.27.1 (installed, enabled)\n" +
 				"  sibling: spacedock@spacedock-edge 0.28.0-pre0 (installed, enabled)\n" +
-				"Run `spacedock install --host " + hostName + "` to keep only the stable channel.\n"
+				"Run `spacedock install --host " + conflict.host + "` to keep only the stable channel.\n"
 			if stdout.String() != want || len(host.installCmds) != 0 {
 				t.Fatalf("stdout=%q, want %q; doctor installs=%v", stdout.String(), want, host.installCmds)
 			}

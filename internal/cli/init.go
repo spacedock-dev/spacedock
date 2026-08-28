@@ -137,8 +137,13 @@ func enabledSiblingPlugin(inventory []pluginInventoryEntry) (pluginInventoryEntr
 	if devBranch == "main" {
 		siblingBranch = "next"
 	}
-	sibling, ok := installedPlugin(inventory, channelPluginID(siblingBranch))
-	return sibling, ok && sibling.Enabled
+	siblingID := channelPluginID(siblingBranch)
+	for _, sibling := range inventory {
+		if sibling.ID == siblingID && sibling.Installed && sibling.Enabled {
+			return sibling, true
+		}
+	}
+	return pluginInventoryEntry{}, false
 }
 
 func installedPlugin(inventory []pluginInventoryEntry, id string) (pluginInventoryEntry, bool) {
