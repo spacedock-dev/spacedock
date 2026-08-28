@@ -9,8 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-doctor-blind-to-sibling-dual-install
 issue:
-pr:
-mod-block:
+pr: "#781"
+mod-block: merge:pr-merge
 gates:
     version: 1
     records:
