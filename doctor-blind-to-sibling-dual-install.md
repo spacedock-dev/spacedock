@@ -381,3 +381,34 @@ bootstrap rather than in a special-purpose test.
 Validation recommends REJECTED because a supported repeated-scope Claude inventory can
 bypass the enabled-sibling gate and doctor report. All other required checks passed,
 the change remains within tolerance, and the candidate is unchanged pending disposition.
+
+## Stage Report: implementation correction 1
+
+- DONE: Apply the First Officer-authorized fix for Finding V-1 without changing scope.
+  `enabledSiblingPlugin` now scans every record for the sibling ID. It returns a
+  conflict when any record is installed and enabled instead of trusting the first
+  installed record.
+- DONE: Add order-sensitive behavior coverage at both affected boundaries.
+  Disabled-first/enabled-second repeated IDs now require one launcher repair, a clean
+  re-gate and re-inventory, then launch. Doctor requires the same exact `CONFLICT`
+  output as a single sibling record and makes no repair call. These tests failed before
+  the helper fix and pass after it.
+- DONE: Re-run the authorized verification set on the corrected candidate.
+  Focused tests, `go test ./...`, `go test ./... -race`, changed-file formatting,
+  diff checks, and temporary-venv `mkdocs build --strict` pass. Existing Codex
+  `TestLiveCommonShallowBoot` passes in 34.88 seconds through the installed stable
+  package and ordinary front door. The bounded Claude run loads installed
+  `spacedock@spacedock` v0.28.0-pre0 through that same front door, then the external
+  expired OAuth credential returns 401 before FO work.
+- DONE: Keep the correction inside the approved implementation envelope.
+  Corrected commit `20608bba42fd9348e968d8f0837cbb52f33a8277` changes 9 files
+  with 410 insertions and 83 deletions: +327 net LOC versus +255, and +2 files versus
+  7. Production is +130 net LOC, tests are +197 net LOC, and documentation is 0 net
+  LOC. This remains inside the declared +/-80 LOC and +/-2 file tolerance.
+
+### Summary
+
+The repeated-scope cardinality gap is closed. Every enabled sibling record is now
+authoritative regardless of list order, and both the launcher and doctor prove that
+behavior at their normal deterministic seams. The common live bootstrap mechanism and
+all other candidate behavior remain unchanged.
