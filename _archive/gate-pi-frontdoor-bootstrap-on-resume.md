@@ -1,7 +1,7 @@
 ---
 id: 4avk4msa3ktyk1fdt6j5ktw1
 title: Gate the Pi front door bootstrap on resume
-status: validation
+status: done
 source: "Captain CL, 2026-08-25: 'spacedock pi --resume didn't avoid loading the spacedock initial contract.' The Pi front door (internal/cli/pi.go) appends piBootstrapPrompt unconditionally — no containsResume gate, unlike the Claude/Codex front door (internal/cli/frontdoor.go:428,447) which suppresses its bootstrap prompt on --resume/-r/--continue/-c. The spacedock .pi extension session_start handler also re-injects FO_BOOTSTRAP_TEXT with no resume detection. CL hypothesis 'compaction hook leaked into general startup' checked and disproven: session_compact is correctly scoped to the compaction event (PR #738 / force-boot-at-compaction-boundary); the leak is the front door + session_start, neither resume-aware."
 gates:
     version: 1
@@ -65,11 +65,14 @@ gates:
                 reason: 'Captain approve: PASSED'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-27T00:11:57Z
 worktree: .worktrees/spacedock-ensign-gate-pi-frontdoor-bootstrap-on-resume
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:777
+verdict: PASSED
+completed: 2026-08-28T21:59:55Z
+archived: 2026-08-28T21:59:56Z
 ---
 
 `spacedock pi --resume` must not load the Spacedock first-officer contract as if starting fresh; a resume carries its own session intent and the contract survives in the system prompt via resources_discover. Today it loads the contract via two unconditional paths.
