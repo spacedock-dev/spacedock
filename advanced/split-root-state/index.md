@@ -2,7 +2,7 @@
 title: "Split-root state"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-08-28 17:10:44"
+last_updated: "2026-08-28 20:28:40"
 ---
 
 # Split-root state
