@@ -34,6 +34,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:3nm832m6pcnm8008n3wt7h9s:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:3nm832m6pcnm8008n3wt7h9s-ideation-1
+              briefing:
+                id: briefing:3nm832m6pcnm8008n3wt7h9s:ideation:attempt-1:revision-1
+                digest: sha256:36b334984f1673428edbf0730e97ec92cc1fdc21137fade8d50d62d14f800941
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Remove redundant tests and fake proof from the current 0.28 stack. Keep one authoritative observation for each distinct failure mode.
