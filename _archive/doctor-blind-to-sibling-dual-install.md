@@ -1,16 +1,16 @@
 ---
 id: x0petxt7xvr459b6zh4vf4wj
 title: doctor is blind to a co-installed enabled sibling spacedock plugin
-status: validation
+status: done
 source: "Split out of claude-install-sibling-channel-cleanup ideation (2026-08-25): making doctor see a sibling reaches gateHost's fail-fast branch — a front-door product decision that task could not own"
 started: 2026-08-28T06:48:16Z
-completed:
-verdict:
+completed: 2026-08-28T16:57:47Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-doctor-blind-to-sibling-dual-install
 issue:
 pr: pr-merge:781
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -67,7 +67,7 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 review-round:
     id: round:x0petxt7xvr459b6zh4vf4wj:validation:1
     stage: validation
@@ -76,6 +76,7 @@ review-round:
         id: briefing:x0p:validation:round-1
         digest: sha256:0405f04cb178897140aea8ea7779035da7d6f1afd70bd26bd0404a6d5ff27a79
         room-ref: '@review/validation/round-1'
+archived: 2026-08-28T16:57:48Z
 ---
 
 `spacedock doctor` resolves ONE manifest — the running binary's own channel via `hostOps.ResolveManifest(host)` — so a machine holding both `spacedock@spacedock` and `spacedock@spacedock-edge` enabled reports OK. The corrected behavior inventories providers on the launch critical path and reuses the existing one-shot install repair before a host can resolve the wrong first-officer skill.
