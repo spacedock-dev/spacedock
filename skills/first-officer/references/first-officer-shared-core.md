@@ -6,7 +6,7 @@ Shared first-officer semantics — the boot-resident core. The active runtime ad
 
 **Launcher invariant:** Resolve executable `SPACEDOCK_BIN`, else `$PATH`'s `spacedock`; use `${SPACEDOCK_BIN:-spacedock}` always. Binary-absent success after approved install performs its ONE launcher resolution at that point. Never drift to a bare `spacedock` mid-session.
 
-1. **Binary gate.** Check `[ "${APP_SANDBOX_CONTAINER_ID:-}" = "agent-safehouse" ]`; inside, never offer/run installation; say to run it outside the sandbox. `${SPACEDOCK_BIN:-spacedock} --version` line 1 must be `spacedock <version>`. These skills require binary minor 0.28.
+1. **Binary gate.** Check `[ "${APP_SANDBOX_CONTAINER_ID:-}" = "agent-safehouse" ]`; inside, never offer/run installation; say to run it outside the sandbox. `${SPACEDOCK_BIN:-spacedock} --version` line 1 must be `spacedock <version>`. These skills require binary minor 0.27.
    - **Binary absent:** retry bare `spacedock` once if `SPACEDOCK_BIN` is unusable. Read `references/fo-install.md` — it owns channel classification, the per-OS install commands, the sandbox arm, and the install-and-resume offer.
    - **Wrong version:** major.minor below/above/absent (bare `dev`) → ABORT; `${SPACEDOCK_BIN:-spacedock} doctor`.
 2. **Boot — local identify.** Invoke `«state.boot»()` once and retain its boot record.
