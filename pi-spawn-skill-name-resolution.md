@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-pi-spawn-skill-name-resolution
 issue:
-pr:
+pr: "#776"
 mod-block:
 gates:
     version: 1

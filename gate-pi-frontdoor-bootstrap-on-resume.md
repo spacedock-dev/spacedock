@@ -68,6 +68,8 @@ gates:
                 state: pending
 started: 2026-08-27T00:11:57Z
 worktree: .worktrees/spacedock-ensign-gate-pi-frontdoor-bootstrap-on-resume
+mod-block: merge:pr-merge
+pr: "#777"
 ---
 
 `spacedock pi --resume` must not load the Spacedock first-officer contract as if starting fresh; a resume carries its own session intent and the contract survives in the system prompt via resources_discover. Today it loads the contract via two unconditional paths.
