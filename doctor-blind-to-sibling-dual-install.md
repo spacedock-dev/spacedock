@@ -58,6 +58,16 @@ gates:
                 id: briefing:x0petxt7xvr459b6zh4vf4wj:validation:attempt-1:revision-1
                 digest: sha256:2dd9ffe38ee18092f0292bb37ca8103888fa9af239ca189aa6d004426fba8457
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:x0petxt7xvr459b6zh4vf4wj:validation:1
+                briefing: briefing:x0petxt7xvr459b6zh4vf4wj:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-28T16:31:14.00332Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:x0petxt7xvr459b6zh4vf4wj:validation:1
     stage: validation
