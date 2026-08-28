@@ -26,6 +26,8 @@ The prior sibling-provider fix covered Claude and Codex only. Its approved scope
 
 Bind the default Pi package source to the running launcher's release identity. Preserve `--plugin-dir` as the explicit development override. Define the development-build source behavior without letting a release-shaped binary float across tags.
 
+Make the normal `spacedock pi` front door own one repair attempt. If the package is missing, unpinned, or incompatible, install the binary's pinned source. Recheck the package before launch. Refuse the launch if the repair fails or the package still does not match.
+
 Exercise the ordinary installed Pi front door. Do not use `--plugin-dir`, `SPACEDOCK_REPO_ROOT`, a prose marker, or a direct skill path as the proof.
 
 ## Risk evidence
@@ -42,12 +44,12 @@ Pi's installed package manager marks a Git source with `@ref` as pinned. It fetc
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +70, across 3 files. Tolerance: +/-50 net LOC and +/-2 files.
+Estimate net LOC change: +100, across 4 files. Tolerance: +/-60 net LOC and +/-2 files.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - A released launcher installs and boots the Pi skill suite from the same release line.**
-Verified by: an ordinary installed-package Pi front-door run uses no development override and reaches `status --boot` with the binary and loaded first-officer contract on the same major.minor. Changing the install source back to an unpinned default-branch source makes this run fail at the binary gate.
+**AC-1 (VALUE) - A released launcher repairs and boots the Pi skill suite from the same release line.**
+Verified by: an ordinary `spacedock pi` run starts with a missing or unpinned package, performs one pinned install, and reaches `status --boot`. The run uses no development override. The binary and loaded first-officer contract have the same major.minor. Removing the repair or its pin makes the run fail before workflow work.
 
 **AC-2 - The default Pi install source is release-pinned, and the development override remains local.**
 Verified by: command behavior tests observe the source passed to Pi for a release-stamped binary and for `--plugin-dir`. Changing the release source to omit its ref or changing the override to use the release source fails the assertions.
@@ -55,9 +57,12 @@ Verified by: command behavior tests observe the source passed to Pi for a releas
 **AC-3 - The release fix is safe for v0.27.3 and the v0.28 prerelease line.**
 Verified by: table tests cover stable, prerelease, and unstamped development identities. The test owns literal expected sources instead of deriving them from the production source function.
 
+**AC-4 - A failed or ineffective repair cannot launch Pi.**
+Verified by: command behavior tests require one install attempt, one recheck, no launch, and an actionable error after an install failure or remaining mismatch.
+
 ## Test plan
 
-Use focused command behavior tests first. Run one existing Pi live journey through the installed-package front door without a development override. Then run formatting, the full suite, race, and a detached adversarial audit because this changes a front door.
+Use focused command behavior tests first. Run one existing Pi live journey through the installed-package front door without a development override. Start that run with no valid Spacedock package. Then run formatting, the full suite, race, and a detached adversarial audit because this changes a front door.
 
 ### Feedback Cycles
 
