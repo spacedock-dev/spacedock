@@ -57,6 +57,16 @@ gates:
                 id: briefing:b9pjkz3rv0svx9rt63kw8yg7:validation:attempt-1:revision-1
                 digest: sha256:e5565796c7e891018103e39f9f8911a67c347427608d98d74f807367ff94a928
                 room-ref: ./review/validation/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:b9pjkz3rv0svx9rt63kw8yg7:validation:1
+                briefing: briefing:b9pjkz3rv0svx9rt63kw8yg7:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-28T06:34:24.604296Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make a flat entity's gate rooms durable through the supported command and let it record
