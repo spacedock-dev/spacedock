@@ -1,11 +1,11 @@
 ---
 id: b9pjkz3rv0svx9rt63kw8yg7
 title: "A flat entity's gate room is neither committed by `state commit` nor migratable to folder form"
-status: validation
+status: done
 source: "Observed eight times driving gates on 79 and cn, 2026-07-27/28. Every gate room bound on a flat entity needed a manual path-scoped commit after `state commit` reported success; the obvious repair — converting to folder form — silently breaks prior closed gates."
 started: 2026-08-27T17:15:11Z
-completed:
-verdict:
+completed: 2026-08-28T08:05:04Z
+verdict: PASSED
 score: 0.7
 worktree: .worktrees/spacedock-ensign-flat-entity-gate-room-durability
 issue:
@@ -66,7 +66,9 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+mod-block:
+pr: "#780"
 ---
 
 Make a flat entity's gate rooms durable through the supported command and let it record
