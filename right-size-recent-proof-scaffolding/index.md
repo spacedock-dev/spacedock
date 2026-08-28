@@ -23,6 +23,17 @@ gates:
                 id: briefing:3nm832m6pcnm8008n3wt7h9s:backlog:attempt-1:revision-1
                 digest: sha256:110006f02ab3dbf144f9b908a67ff15f6eb208135613e3b6556d17ffb457c998
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3nm832m6pcnm8008n3wt7h9s:backlog:1
+                briefing: briefing:3nm832m6pcnm8008n3wt7h9s:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-28T22:06:23.935141Z"
+                decision: approve
+                reason: Captain approved the prepared backlog Briefing in Subspace.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Remove redundant tests and fake proof from the current 0.28 stack. Keep one authoritative observation for each distinct failure mode.
