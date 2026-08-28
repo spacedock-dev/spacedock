@@ -811,7 +811,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           set -o pipefail
-          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run 'TestLivePiFrontDoorSmoke|TestLivePiNonSelfDescribingDispatch' ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()

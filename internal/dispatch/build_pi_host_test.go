@@ -61,7 +61,8 @@ func TestBuildPiHostPromptShape(t *testing.T) {
 		}
 	}
 	for _, want := range []string{
-		"Read this dispatch file directly",
+		"read this dispatch file",
+		"/skill:ensign",
 		"Pi subagent completion result",
 		"Do not emit Claude team-tool calls",
 	} {
