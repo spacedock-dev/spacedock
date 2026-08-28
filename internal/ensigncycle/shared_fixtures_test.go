@@ -39,6 +39,7 @@ func writePreGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	t.Helper()
 	fixture := writePreparedRecordedGateFixtureAt(t, root)
 	writeFile(t, filepath.Join(fixture.root, "README.md"), strings.Replace(strings.Replace(recordedGateReadme(), "    - name: implementation\n      initial: true\n", "    - name: queued\n      initial: true\n    - name: implementation\n", 1), "### validation", "### implementation\n\nAppend exactly one `## Stage Report: implementation`, then return completion.\n\n### validation", 1))
+	gitCommitPathScoped(t, fixture.root, "README.md", "queue coherent workflow definition")
 	writeFile(t, fixture.entity, strings.Replace(strings.Split(recordedGateEntity(), "\n## Stage Report: validation\n")[0]+"\n", "status: validation", "status: queued", 1))
 	writeFile(t, fixture.references[0], "# Entity snapshot\n\nThe retained package is ready for implementation.\n")
 	git(t, fixture.stateRoot, "add", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md")
