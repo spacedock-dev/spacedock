@@ -896,12 +896,17 @@ func firstActionBlock(host string) string {
 	if host == "pi" {
 		return "## First action\n" +
 			"\n" +
-			"Read this dispatch file directly and treat its content as your operating contract and assignment.\n" +
+			"Before anything else, load the ensign discipline: run `/skill:ensign` " +
+			"(Pi's skill-invoke slash command), or if that is unavailable, read " +
+			"`skills/ensign/SKILL.md` and its `references/` directly. This loads the " +
+			"shared ensign discipline (stage-report format, polling, worktree " +
+			"ownership, completion signal protocol).\n" +
 			"\n" +
-			"This file contains the shared ensign discipline entry points (stage-report format, polling, " +
-			"worktree ownership, and completion protocol) plus the stage-specific assignment. " +
-			"Pi dispatch is delivered through a Pi-native substrate such as pi-subagents; the Pi subagent completion result " +
-			"is the completion signal observed by the first officer. Do not emit Claude team-tool calls.\n"
+			"Then read this dispatch file and treat its content as your " +
+			"stage-specific assignment. Pi dispatch is delivered through a Pi-native " +
+			"substrate such as pi-subagents; the Pi subagent completion result is the " +
+			"completion signal observed by the first officer. Do not emit Claude " +
+			"team-tool calls.\n"
 	}
 	return "## First action\n" +
 		"\n" +
