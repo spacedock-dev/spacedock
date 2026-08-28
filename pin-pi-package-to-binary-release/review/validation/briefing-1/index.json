@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-1:revision-1",
+  "question": "Approve the validated deliverable and advance to terminal (approved-awaiting-merge)?",
+  "artifacts": [
+    {
+      "id": "artifact:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/617b176327bead9e1fa073e88cb0ab131374df71/pin-pi-package-to-binary-release/review/validation/gate-review.md",
+      "rev": "sha256:93744ecefc305e35a126bdfc91af81979bc639e01284e107e9a6f4e136192cff",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED: all ACs verified with literal-pinning falsifiers, race clean, pre-existing env failure attributed; AC-1 live proof rides the CI pi-live lane. Recommend approval."
+    }
+  ]
+}
