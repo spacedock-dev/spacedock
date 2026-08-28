@@ -94,6 +94,8 @@ Use focused command behavior tests first: `internal/cli/pi_frontdoor_test.go` (e
 
 ### Feedback Cycles
 
+- Cycle 1: independent pre-gate review (fresh-context) verdict NEEDS REVISION — blockers: (a) unstamped proxy-build (`go install ...@vX.Y.Z`) carries Version=="dev" so a release-shaped binary would float, recreating the incident; (b) the incompatible-mismatch trigger is unimplementable as specced (piPackageStatus has no manifest-version field) and untested; plus unspecified repair behavior for non-git sources and dev overrides. Routed to the ideation worker as a correction round.
+
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
 
 ## Stage Report: ideation
