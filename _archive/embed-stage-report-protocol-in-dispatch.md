@@ -1,7 +1,7 @@
 ---
 id: t4rqqmmrqh69adgb1bbdx838
 title: Embed the stage-report protocol in the dispatch artifact
-status: validation
+status: done
 source: "/tmp/spacedock-pi-dispatch-diagnosis.md (2026-08-25): 3 of 4 Pi-dispatched ensigns completed implementation without writing a ## Stage Report; the dispatch build artifact's ## First action claims the file contains the stage-report format, but the body has 0 such tokens. Same class as archived pin-ensign-contract-entry-point (2026-08-01), which fixed the spawn binding but not the artifact-body gap."
 gates:
     version: 1
@@ -99,11 +99,14 @@ gates:
                 reason: 'Captain approve: PASSED. AC wording is stale (original scope, not the rework) but the validation evidence is sound for the embed-removal/firstActionBlock-fix rework; mismatch noted in the gate record.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-25T20:22:24Z
 worktree: .worktrees/spacedock-ensign-embed-stage-report-protocol-in-dispatch
 mod-block:
 pr: pr-merge:776
+verdict: PASSED
+completed: 2026-08-28T21:59:29Z
+archived: 2026-08-28T21:59:30Z
 ---
 
 The dispatch artifact must carry the stage-report protocol so a worker writes a complete `## Stage Report:` section on a real dispatch, not only when a smoke-checklist tells it to.
