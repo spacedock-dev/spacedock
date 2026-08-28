@@ -52,7 +52,7 @@ gates:
                 state: consumed
 ---
 
-`spacedock doctor` resolves ONE manifest — the running binary's own channel via `hostOps.ResolveManifest(host)` — so a machine holding both `spacedock@spacedock` and `spacedock@spacedock-edge` enabled reports OK. After the sibling-cleanup install fix, the affected population is machines that already hold a dual install AND never run `spacedock install` again: a Compatible own-channel manifest never triggers the launcher auto-heal, so the condition does not self-clear on launch.
+`spacedock doctor` resolves ONE manifest — the running binary's own channel via `hostOps.ResolveManifest(host)` — so a machine holding both `spacedock@spacedock` and `spacedock@spacedock-edge` enabled reports OK. The corrected behavior inventories providers on the launch critical path and reuses the existing one-shot install repair before a host can resolve the wrong first-officer skill.
 
 ## Problem
 
@@ -80,7 +80,7 @@ install can therefore stay in this state until the operator runs install again.
 
 ## Proposed approach
 
-Add a doctor-only plugin inventory to `hostOps`. The production implementation runs
+Add a plugin inventory to `hostOps`. The production implementation runs
 `<host> plugin list --json` and normalizes these fields:
 
 - plugin ID
@@ -105,8 +105,8 @@ The selected plugin can be disabled. In that case, the `checked:` line reports
 `(installed, disabled)`. An installed but disabled sibling does not produce the
 conflict because it cannot supply the runtime skill.
 
-The conflict keeps the compatibility exit code. A compatible dual install therefore
-exits `0`. Doctor is a report, and `spacedock install --host <host>` is the repair.
+The conflict keeps the compatibility exit code. Doctor remains diagnostic-only and
+never mutates the host.
 
 If inventory fails, doctor prints this line and keeps the compatibility exit code:
 
@@ -117,25 +117,21 @@ INCOMPLETE: doctor checked compatibility but did not read the claude plugin enab
 This line prevents a silent `OK` when doctor cannot check the new condition.
 `--plugin-manifest` remains a manifest-only override and does not inspect host state.
 
-`gateHost` does not call the inventory method. A dual install remains recoverable, and
-the front door continues to launch. A later `spacedock install --host <host>` removes
-the sibling through the cleanup sequence that already shipped.
+After a compatible manifest verdict, `resolveHealableGate` reads the same inventory.
+With an enabled sibling, the default front door invokes its existing `Install` seam
+once. That sequence already removes sibling providers and reinstalls the binary's
+channel. The launcher then rechecks manifest compatibility and inventory exclusivity
+before host launch. It never loops or adds a second repair implementation.
 
-This is the smallest sufficient mechanism for AC-1. Reusing `ResolveManifest` is not
-sufficient because that method discards sibling and enablement state. A concrete
-`execHost` call outside the interface is not sufficient because tests could not supply
-the failing state.
+Under `--no-install`, the front door refuses before launch and prints
+`spacedock install --host <host>` as the repair. If inventory cannot be read, the
+critical path also refuses rather than launching without provider identity evidence.
 
-A new compatibility verdict is not necessary. It adds contract and `gateHost` paths
-for a condition that does not change compatibility. The default `gateHost` branch can
-also turn a new verdict into a launch refusal.
-
-An automatic front-door repair is not necessary. The install command already repairs
-the state, and a launch refusal would block access to a recoverable session. Lowering
-the skill version floor is also not sufficient because it hides the wrong provider.
-
-The doctor output serves AC-1. The inventory method supplies the missing evidence for
-that output. The simpler single-manifest method cannot observe the end-value failure.
+This is the smallest sufficient mechanism for AC-1. `ResolveManifest` discards sibling
+and enablement state, while the existing one-shot install path already owns safe
+removal. A new compatibility verdict or a second uninstall sequence would add contract
+surface without improving the guarantee. Lowering the skill version floor would hide
+the wrong-provider fault.
 
 ## Risk evidence
 
@@ -182,8 +178,8 @@ doctor report therefore applies to both hosts.
 
 - Changes to the first-officer version floor.
 - Changes to Claude or Codex skill-loader precedence.
-- A new compatibility verdict or a front-door launch gate.
-- Automatic plugin removal from `doctor` or the launch path.
+- A new compatibility verdict.
+- Automatic plugin removal from `doctor`.
 - The existing install-sequence sibling cleanup.
 - Local `spacedock@spacedock-local` and retired provider IDs.
 - A disabled sibling, which cannot supply the runtime skill.
@@ -192,86 +188,72 @@ doctor report therefore applies to both hosts.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +255, across 7 files. Expected insertions are 263 lines.
-Expected deletions are 8 lines. Tolerance: net LOC +/-80 and file count +/-2.
+Approved estimate remains +255 net LOC across 7 files, with net LOC +/-80 and file
+count +/-2 tolerance. The release-package live proof must therefore fit at or below
++335 net LOC across 9 files; a worker cannot revise this baseline mid-stage.
 
-Expected files:
+Implemented files:
 
-- `internal/cli/frontdoor.go`: add the inventory capability and normalized entry type.
+- `internal/cli/frontdoor.go`: add the inventory type and one-shot sibling heal/refusal.
 - `internal/cli/host_exec.go`: read and normalize Claude and Codex plugin JSON.
 - `internal/cli/init.go`: add the doctor-only conflict and incomplete reports.
-- `internal/cli/frontdoor_test.go`: extend `fakeHost` and prove non-gating behavior.
-- `internal/cli/doctor_sibling_test.go`: add doctor output and exit-code behavior tests.
-- `internal/cli/plugin_inventory_test.go`: add live-captured host JSON parser fixtures.
+- `internal/cli/frontdoor_test.go`: extend `fakeHost` and prove heal/refusal behavior.
+- `internal/ensigncycle/live_test.go`: package the current plugin and stamp one shared stable binary.
+- `internal/ensigncycle/claude_live_runner_test.go`: install that package before every common Claude journey.
+- `internal/ensigncycle/codex_live_runner_test.go`: install that package before every common Codex journey.
+- `internal/ensigncycle/team_capability_test.go`: keep common Codex launches on the ordinary front door.
 - `docs/site/reference/command-reference.md`: correct the doctor contract.
-
-The two new test files can be combined with existing test files. This choice stays
-inside the file-count tolerance.
 
 Declared semantic changes:
 
 - Command grammar: unchanged.
 - Stored formats: unchanged.
 - Authority: unchanged. Doctor remains read-only.
-- Runtime behavior: default Claude and Codex doctor runs add a read-only plugin-list
-  query. They print `CONFLICT` for an enabled sibling and `INCOMPLETE` on inventory
-  failure. Both reports keep the current compatibility exit code.
-- Front-door behavior: unchanged. `gateHost` continues to use only manifest
-  compatibility.
+- Runtime behavior: doctor adds a read-only plugin-list query and remains diagnostic.
+  Front doors inventory after compatibility; an enabled sibling is repaired through
+  one install attempt, or refused under `--no-install`.
+- Front-door behavior: a host launches only after the selected channel is compatible
+  and no enabled sibling remains.
 - Healthy output: a single-channel compatible install keeps the current one-line `OK`.
 
 ## Acceptance criteria
 
 Each AC names a property of the finished entity, not a stage action, and how it is verified.
 
-**AC-1 (VALUE) - On a host with an enabled sibling channel, `spacedock doctor` cannot report only `OK`.**
+**AC-1 (VALUE) - An enabled sibling cannot reach runtime first-officer resolution.**
 
-Verified by: a table-driven command test for Claude and Codex. Each fixture has a
-compatible selected manifest and an enabled sibling. The test requires the exact
-`CONFLICT`, `checked:`, `sibling:`, and repair lines. It also requires exit `0`.
-Removing the inventory call or either sibling entry makes this test fail.
+Verified by: deterministic launcher-seam tests provide a compatible selected manifest
+plus an enabled sibling, require the existing `Install` path exactly once, then require
+a clean re-gate, re-inventory, and launch. Every existing Claude/Codex common live
+journey now installs the current release-stamped stable package and uses the ordinary
+front door without bypass flags. A bad stable skill floor therefore fails before the
+journey workload rather than relying on a marker-only special test.
 
-**AC-2 - A valid stable `0.27.1` bundle still boots, and a dual install does not block the front door.**
+**AC-2 - `--no-install` refuses a dual-enabled launch with the actionable repair.**
 
-Verified by: a front-door test with binary `0.27.1`, channel `main`, and a stable
-`0.27.1` manifest. The single-channel fixture must reach `Launch` with no new output.
-A second fixture supplies the dual inventory and must also reach `Launch` because
-`gateHost` does not inspect it. Calling inventory from `gateHost` makes this test fail.
-The bounded validation proof then loads the stable `0.27.1` skill and passes its
-binary gate on Claude and Codex.
+Verified by: both front-door command tests require exit `1`, no `Install`, no `Launch`,
+and the exact host-correct `spacedock install --host <host>` command.
 
-**AC-3 - Doctor reports host enablement from both supported JSON schemas and does not flag a disabled sibling.**
+**AC-3 - Doctor reports the same conflict without repairing it.**
 
-Verified by: parser and command tests with live-captured Claude and Codex JSON. The
-fixtures contain both-enabled, selected-disabled, and sibling-disabled states.
-Both-enabled and selected-disabled cases produce a conflict. The sibling-disabled case
-keeps the exact one-line `OK` output. Ignoring `enabled` makes at least one case fail.
+Verified by: Claude/Codex command fixtures require `CONFLICT`, checked/sibling identity,
+exit `0`, and no install call. Live-schema parser fixtures preserve installed/enabled,
+and a disabled sibling remains quiet.
 
-**AC-4 - The command reference states the selected-manifest limit and the non-fatal sibling report.**
+**AC-4 - Healthy single-channel launches and the command reference remain correct.**
 
-Verified by: review of the exact diff below and `mkdocs build --strict`. Validation
-also compares the text with the command fixture output from AC-1. This criterion serves
-AC-1 by making the repair discoverable. Leaving the current overstatement is not
-sufficient because it does not state the selected-manifest limit or the conflict.
+Verified by: existing front-door suites plus `go test ./...`, race, and strict docs.
+The reference describes doctor diagnostics, launcher auto-repair, and manual repair.
 
 ## Test plan
 
-1. Add failing command tests for AC-1 and AC-2 before the implementation.
-   Cost: small, with no host process.
-2. Add pure parser tests for the two live-captured JSON envelopes.
-   Cost: small, with no host process.
-3. Add the inventory method and the doctor report. Run the focused tests after each
-   change.
-4. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
-5. Run `mkdocs build --strict` for the command-reference change.
-6. Repeat the bounded isolated host proof during validation.
-   Install both plugin snapshots, run doctor, and require more than the `OK` line.
-   Remove the sibling through `spacedock install`, then require the one-line `OK`.
-7. Run a stable-only `0.27.1` bounded bootstrap on Claude and Codex.
-   The runtime must load the stable skill and pass the binary gate.
-
-The deterministic Go tests prove the product behavior. The bounded live runs prove the
-host JSON and runtime-loader assumptions. No permanent live harness is necessary.
+1. Add pure parser, doctor, heal, and `--no-install` command tests.
+2. Reuse `resolveHealableGate` and `Install`; re-gate and re-inventory once.
+3. Package the current plugin with a binary stamped from its structured manifest
+   version and `devBranch=main`; install it into each isolated common-live host home.
+4. Remove `--plugin-dir` and `--skip-compat-check` from the common Claude/Codex paths.
+5. Run formatting, focused tests, `go test ./...`, race, strict docs, and one existing
+   common live journey per host. Do not add a bespoke dual-install journey.
 
 Because `internal/cli/frontdoor.go` is in the launch path, Claude and Codex live CI are
 required before merge. Pi live CI is not required because the Pi doctor and launch
@@ -285,7 +267,7 @@ Replace the current sentence in `docs/site/reference/command-reference.md`:
 -For what is installed for each host — plugin versions and enablement — use `spacedock doctor`.
 +Use `spacedock doctor --host <host>` to compare this binary with the selected channel plugin.
 +If another channel is enabled, doctor names both plugins and reports the load conflict.
-+This report does not block a launch. Run `spacedock install --host <host>` to keep one channel.
++A normal launch repairs that conflict before starting the host; under `--no-install`, run the repair command manually.
 ```
 
 This is a reference page. The replacement states the visible contract and the repair.
@@ -308,5 +290,46 @@ It does not describe the parser or the host inventory.
 
 The live proof found the same split-brain state on Claude and Codex. Doctor follows the
 binary channel, while the runtime skill loader selected the enabled edge provider.
-The proposed report exposes that difference without changing compatibility or launch
-behavior.
+The corrected implementation must expose that difference in doctor and remove it on
+the launch critical path before runtime skill resolution.
+
+## Stage Report: implementation
+
+- DONE: Add a normalized Claude/Codex plugin inventory to doctor and the launcher.
+  Doctor now emits exact non-mutating `CONFLICT` or `INCOMPLETE` reports after its
+  compatibility result. An installed but disabled sibling keeps the healthy one-line
+  `OK` result.
+- DONE: Heal an enabled sibling through the existing one-shot install path.
+  Both normal front doors now inventory after compatibility, invoke `Install` exactly
+  once for a conflict, re-gate and re-inventory, and launch only after the enabled
+  sibling is gone. `--no-install` and inventory failure refuse before launch with the
+  host-correct repair.
+- DONE: Put the critical bootstrap prerequisite in every existing common live journey.
+  The shared live package reads the plugin version from its JSON manifest, stamps one
+  stable-channel binary, installs the current plugin into each isolated Claude/Codex
+  home, and launches through the ordinary front door without `--plugin-dir` or
+  `--skip-compat-check`. No bespoke dual-install journey, marker workflow, transcript
+  oracle, registry entry, remote tag clone, or prose grep remains.
+- DONE: Verify AC-1 through AC-4.
+  Focused launcher, doctor, inventory-failure, disabled-sibling, and real-schema tests
+  pass. `go test ./...`, `go test ./... -race`, and a temporary-environment
+  `mkdocs build --strict` pass. Existing Codex `TestLiveCommonShallowBoot` passes in
+  33.09 seconds through the installed stable package. Claude reaches the same ordinary
+  front door and reports exactly `spacedock@spacedock` v0.28.0-pre0 loaded from that
+  package, then the local benchmark credential fails with an expired-token 401 before
+  FO work; the package/bootstrap portion passed, but a green Claude model journey is
+  externally blocked on credential renewal.
+- DONE: Stay inside the approved implementation envelope.
+  The final code candidate changes 9 files with 385 insertions and 83 deletions: +302
+  net LOC versus +255, and +2 files versus 7. Production is +125 net LOC, tests are
+  +177 net LOC, and documentation is 0 net LOC. This is inside the declared +/-80 LOC
+  and +/-2 file tolerance. The deliverable is commit
+  `62f0b103c25e1fd12e0af17c098311dfedda4400`.
+
+### Summary
+
+Doctor now exposes enabled sibling-channel conflicts without mutation, while both
+front doors reuse the existing install sequence to restore exclusivity before launch.
+Every common Claude/Codex live journey now exercises the current stable-stamped package
+through the ordinary front door, so an incompatible stable skill floor fails at shared
+bootstrap rather than in a special-purpose test.
