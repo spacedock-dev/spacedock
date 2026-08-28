@@ -23,11 +23,6 @@ type fakePiRuntimeOps struct {
 	piInstallOut  string
 	piInstallErr  error
 	packageStatus piPackageStatus
-	// statusAfterInstall, when set, replaces packageStatus for every
-	// SpacedockPackageStatus call after the first PiInstall — the model for
-	// "the repair ran; here is the recheck result".
-	statusAfterInstall *piPackageStatus
-	statusCalls        int
 }
 
 func (f *fakePiRuntimeOps) LookPath(name string) (string, error) {
@@ -56,10 +51,6 @@ func (f *fakePiRuntimeOps) PiInstall(source string) (string, error) {
 }
 
 func (f *fakePiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPackageStatus {
-	f.statusCalls++
-	if f.statusAfterInstall != nil && len(f.piInstalls) > 0 {
-		return *f.statusAfterInstall
-	}
 	return f.packageStatus
 }
 
