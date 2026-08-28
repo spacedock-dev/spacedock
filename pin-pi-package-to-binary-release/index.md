@@ -24,7 +24,7 @@ The prior sibling-provider fix covered Claude and Codex only. Its approved scope
 
 ## Proposed approach
 
-Bind the default Pi package source to the running launcher's release identity. Preserve `--plugin-dir` as the explicit development override. Define the development-build source behavior without letting a release-shaped binary float across tags.
+Bind the default Pi package source to the running launcher's release identity: a release-stamped binary pins the source to its own release ref and never floats across tags. The unstamped development-build source behavior must be stated explicitly in ideation — float to the default branch, track `next`, or refuse — because an unpinned default silently re-creates this skew for development builds. State the pinning tradeoff as intended semantics: a pinned source does not auto-update, so stable users receive package fixes by upgrading the launcher, matching the Claude/Codex marketplace pin. Preserve `--plugin-dir` as the explicit development override.
 
 Make the normal `spacedock pi` front door own one repair attempt. If the package is missing, unpinned, or incompatible, install the binary's pinned source. Recheck the package before launch. Refuse the launch if the repair fails or the package still does not match.
 
