@@ -7,7 +7,7 @@ started: 2026-08-28T06:48:16Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-doctor-blind-to-sibling-dual-install
 issue:
 pr:
 mod-block:
