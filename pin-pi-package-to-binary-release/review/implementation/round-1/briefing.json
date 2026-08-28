@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qcwrzza9xkr5kfwmdmvbqhkv:implementation:round-1:revision-1",
+  "question": "Correction round implementation/1 (captain design reset of the surface breach): is the re-baselined design ready for gate re-entry?",
+  "artifacts": [
+    {
+      "id": "artifact:qcwrzza9xkr5kfwmdmvbqhkv:implementation:round-1:revision-1:item-1",
+      "uri": "git-root://state/21730a5d8d8b413b434c4b935f3a83227e8884f4/pin-pi-package-to-binary-release/index.md",
+      "rev": "sha256:d50f8542ee526c8515dd256f9d725ee79bfaddddaad78c19404ad4c605344aa8",
+      "mediaType": "text/markdown",
+      "summary": "Captain ruled option 2 (design reset) at the implementation point: implemented surface ~661 net / 6 files breached the approved +100+/-60 / 4+/-2 baseline. Correction commits 354f33cb1 + 21730a5d8: Expected surface re-baselined to +661 net / 6 files (tolerance +40/+1) with per-file as-implemented breakdown and the growth attribution (cycle-2 reviewer-demanded test matrix + unbudgeted AC-1 live wiring); design, ACs, and mechanism byte-unchanged; code deliverable 178661933 stands; suite green except the pre-existing env-marker failure, race clean, gofmt clean (FO-verified)."
+    }
+  ]
+}
