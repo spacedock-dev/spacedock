@@ -101,7 +101,7 @@ Accepted residuals: Pi versions older than the locally spiked one may not honor 
 
 ### Feedback Cycles
 
-- Cycle 1: independent pre-gate review (fresh-context) verdict NEEDS REVISION — blockers: (a) unstamped proxy-build (`go install ...@vX.Y.Z`) carries Version=="dev" so a release-shaped binary would float, recreating the incident; (b) the incompatible-mismatch trigger is unimplementable as specced (piPackageStatus has no manifest-version field) and untested; plus unspecified repair behavior for non-git sources and dev overrides. Routed to the ideation worker as a correction round.
+- Cycle 2: revision complete (commit 4a018730e) — all three blockers resolved: (a) pin ref derivation chain linker-stamp → build-info semver tag (proxy builds) → dev sentinel; (b) manifest-version trigger dropped, wrong-ref git-entry detection instead; (c) AC-5 no-repair/no-clobber for non-git entries, dev builds, dev overrides. Independent reviewer re-run verdict: RESOLVED — ready for gate.
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
 
