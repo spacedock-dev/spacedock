@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -27,15 +28,19 @@ type fakeHost struct {
 	// empty (the default), ResolveManifest keeps returning the pre-install
 	// manifest even after Install — simulating an install that does NOT change
 	// resolution, the "second miss" case.
-	manifestAfterInstall string
-	installed            bool
-	resolveErr           error
-	launchedArg          []string // argv captured by Launch
-	launchedEnv          []string // env captured by Launch
-	launchCode           int      // host exit code Launch returns (default 0)
-	launchErr            error
-	installCmds          []string // host commands captured by Install
-	installOut           string
+	manifestAfterInstall  string
+	installed             bool
+	resolveErr            error
+	launchedArg           []string // argv captured by Launch
+	launchedEnv           []string // env captured by Launch
+	launchCode            int      // host exit code Launch returns (default 0)
+	launchErr             error
+	installCmds           []string // host commands captured by Install
+	installOut            string
+	inventory             []pluginInventoryEntry
+	inventoryAfterInstall []pluginInventoryEntry
+	inventoryErr          error
+	inventoryCalls        int
 }
 
 func (f *fakeHost) ResolveManifest(host string) (string, error) {
@@ -43,6 +48,14 @@ func (f *fakeHost) ResolveManifest(host string) (string, error) {
 		return f.manifestAfterInstall, nil
 	}
 	return f.manifest, f.resolveErr
+}
+
+func (f *fakeHost) PluginInventory(host string) ([]pluginInventoryEntry, error) {
+	f.inventoryCalls++
+	if f.installed && f.inventoryAfterInstall != nil {
+		return f.inventoryAfterInstall, f.inventoryErr
+	}
+	return f.inventory, f.inventoryErr
 }
 
 func (f *fakeHost) Launch(argv []string, env []string) (int, error) {
@@ -61,6 +74,143 @@ func (f *fakeHost) InstallCodexLocalPluginDir(source string) (string, error) {
 	f.installCmds = append(f.installCmds, "codex", source)
 	f.installed = true
 	return f.installOut, nil
+}
+
+func stableInventory(selected, sibling bool) []pluginInventoryEntry {
+	return []pluginInventoryEntry{
+		{ID: "spacedock@spacedock", Version: "0.27.1", Installed: true, Enabled: selected},
+		{ID: "spacedock@spacedock-edge", Version: "0.28.0-pre0", Installed: true, Enabled: sibling},
+	}
+}
+
+func repeatedStableInventory() []pluginInventoryEntry {
+	return append(stableInventory(true, false), pluginInventoryEntry{
+		ID: "spacedock@spacedock-edge", Version: "0.28.0-pre0", Installed: true, Enabled: true,
+	})
+}
+
+func TestStable0271FrontDoorsHealEnabledSiblingBeforeLaunch(t *testing.T) {
+	withVersion(t, "0.27.1")
+	savedBranch := devBranch
+	devBranch = "main"
+	t.Cleanup(func() { devBranch = savedBranch })
+
+	frontDoors := []struct {
+		name string
+		run  func([]string, *fakeHost, *bytes.Buffer) int
+	}{
+		{name: "claude", run: func(args []string, host *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, t.TempDir(), host, lookFound, &stdout, stderr)
+		}},
+		{name: "codex", run: func(args []string, host *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, t.TempDir(), host, lookFound, &stdout, stderr)
+		}},
+	}
+
+	for _, door := range frontDoors {
+		t.Run(door.name+"/repeated-scope-auto-heal", func(t *testing.T) {
+			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: repeatedStableInventory(), inventoryAfterInstall: stableInventory(true, false)[:1]}
+			var stderr bytes.Buffer
+			if code := door.run(nil, host, &stderr); code != 0 || host.launchedArg == nil {
+				t.Fatalf("exit=%d launched=%v stderr=%q", code, host.launchedArg != nil, stderr.String())
+			}
+			if len(host.installCmds) != 3 || host.inventoryCalls != 2 {
+				t.Fatalf("install=%v inventoryCalls=%d, want one heal and verification", host.installCmds, host.inventoryCalls)
+			}
+		})
+		t.Run(door.name+"/auto-heal", func(t *testing.T) {
+			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: stableInventory(true, true), inventoryAfterInstall: stableInventory(true, false)[:1]}
+			var stderr bytes.Buffer
+			if code := door.run(nil, host, &stderr); code != 0 || host.launchedArg == nil {
+				t.Fatalf("exit=%d launched=%v stderr=%q", code, host.launchedArg != nil, stderr.String())
+			}
+			if len(host.installCmds) != 3 || host.inventoryCalls != 2 {
+				t.Fatalf("install=%v inventoryCalls=%d, want one heal and verification", host.installCmds, host.inventoryCalls)
+			}
+		})
+		t.Run(door.name+"/no-install", func(t *testing.T) {
+			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: stableInventory(true, true)}
+			var stderr bytes.Buffer
+			if code := door.run([]string{"--no-install"}, host, &stderr); code == 0 || host.launchedArg != nil || len(host.installCmds) != 0 {
+				t.Fatalf("exit=%d launched=%v install=%v", code, host.launchedArg != nil, host.installCmds)
+			}
+			want := "Run `spacedock install --host " + door.name + "` to keep only the stable channel.\n"
+			if stderr.String() != want {
+				t.Fatalf("stderr=%q, want %q", stderr.String(), want)
+			}
+		})
+		t.Run(door.name+"/inventory-failure", func(t *testing.T) {
+			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventoryErr: errors.New("host unavailable")}
+			var stderr bytes.Buffer
+			if code := door.run(nil, host, &stderr); code == 0 || host.launchedArg != nil || len(host.installCmds) != 0 {
+				t.Fatalf("exit=%d launched=%v install=%v", code, host.launchedArg != nil, host.installCmds)
+			}
+			want := "Spacedock: could not verify the " + door.name + " plugin enablement state: host unavailable.\n" +
+				"Run `spacedock install --host " + door.name + "` before launching.\n"
+			if stderr.String() != want {
+				t.Fatalf("stderr=%q, want %q", stderr.String(), want)
+			}
+		})
+	}
+}
+
+func TestDoctorSiblingInventory(t *testing.T) {
+	withVersion(t, "0.27.1")
+	savedBranch := devBranch
+	devBranch = "main"
+	t.Cleanup(func() { devBranch = savedBranch })
+	conflicts := []struct {
+		name, host string
+		inventory  []pluginInventoryEntry
+	}{{"claude conflict", "claude", stableInventory(true, true)}, {"codex conflict", "codex", stableInventory(true, true)}, {"repeated sibling scopes", "claude", repeatedStableInventory()}}
+	for _, conflict := range conflicts {
+		t.Run(conflict.name, func(t *testing.T) {
+			host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: conflict.inventory}
+			var stdout, stderr bytes.Buffer
+			if code := runDoctor(context.Background(), []string{"--host", conflict.host}, host, &stdout, &stderr); code != 0 {
+				t.Fatalf("exit=%d stderr=%q", code, stderr.String())
+			}
+			want := "OK: spacedock binary 0.27.1 and plugin 0.27.1 are compatible.\n" +
+				"CONFLICT: " + conflict.host + " can load a different Spacedock plugin than doctor checked.\n" +
+				"  checked: spacedock@spacedock 0.27.1 (installed, enabled)\n" +
+				"  sibling: spacedock@spacedock-edge 0.28.0-pre0 (installed, enabled)\n" +
+				"Run `spacedock install --host " + conflict.host + "` to keep only the stable channel.\n"
+			if stdout.String() != want || len(host.installCmds) != 0 {
+				t.Fatalf("stdout=%q, want %q; doctor installs=%v", stdout.String(), want, host.installCmds)
+			}
+		})
+	}
+	t.Run("disabled sibling", func(t *testing.T) {
+		host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventory: stableInventory(true, false)}
+		var stdout, stderr bytes.Buffer
+		want := "OK: spacedock binary 0.27.1 and plugin 0.27.1 are compatible.\n"
+		if code := runDoctor(context.Background(), nil, host, &stdout, &stderr); code != 0 || stdout.String() != want {
+			t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+		}
+	})
+	t.Run("inventory failure", func(t *testing.T) {
+		host := &fakeHost{manifest: writeVersionedManifest(t, "0.27.1"), inventoryErr: errors.New("host unavailable")}
+		var stdout, stderr bytes.Buffer
+		want := "OK: spacedock binary 0.27.1 and plugin 0.27.1 are compatible.\n" +
+			"INCOMPLETE: doctor checked compatibility but did not read the claude plugin enablement state: host unavailable\n"
+		if code := runDoctor(context.Background(), nil, host, &stdout, &stderr); code != 0 || stdout.String() != want {
+			t.Fatalf("exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+		}
+	})
+}
+
+func TestParsePluginInventoryLiveSchemas(t *testing.T) {
+	want := stableInventory(false, true)
+	claude := `[{"id":"spacedock@spacedock","version":"0.27.1","enabled":false,"installPath":"/stable"},{"id":"spacedock@spacedock-edge","version":"0.28.0-pre0","enabled":true,"installPath":"/edge"}]`
+	codex := `{"installed":[{"pluginId":"spacedock@spacedock","version":"0.27.1","installed":true,"enabled":false},{"pluginId":"spacedock@spacedock-edge","version":"0.28.0-pre0","installed":true,"enabled":true}]}`
+	for _, fixture := range []struct{ host, data string }{{"claude", claude}, {"codex", codex}} {
+		got, err := parsePluginInventory(fixture.host, []byte(fixture.data))
+		if err != nil || !reflect.DeepEqual(got, want) {
+			t.Errorf("%s inventory=%#v err=%v, want %#v", fixture.host, got, err, want)
+		}
+	}
 }
 
 // testBinaryVersion is the deterministic binary version a handful of gating

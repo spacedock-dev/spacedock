@@ -33,8 +33,8 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 // real `spacedock claude` launch and returns the (before, after, observed) state
 // the shared assertions consume — the same assertions the Codex runner feeds. The
 // ONLY Claude-specific surface is auth/HOME isolation (isolatedClaudeEnv: clean
-// HOME + OAuth benchmark-token / ANTHROPIC_API_KEY), the --plugin-dir local
-// checkout install, the `spacedock claude -- -p <prompt> --output-format
+// HOME + OAuth benchmark-token / ANTHROPIC_API_KEY), the stable release install,
+// the `spacedock claude -- -p <prompt> --output-format
 // stream-json` launch, and the observed-extract: the final message comes from the
 // stream's result/success event (the front-door analog of Codex
 // --output-last-message) via extractClaudeFinalMessage. The common declarations,
@@ -43,7 +43,6 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 type claudeLiveRunner struct {
 	t            *testing.T
 	binary       string
-	pluginDir    string
 	env          []string
 	modelName    string
 	artifactRoot string
@@ -145,10 +144,9 @@ func runClaudeRecordedGateLifecycleScenario(t *testing.T, runner liveDriver, sce
 		durableSemantic("recorded-gate-lifecycle-violation", assert(observation)))
 }
 
-func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
+func newClaudeLiveRunner(t *testing.T, setupIDs ...string) claudeLiveRunner {
 	t.Helper()
-	binary := buildRecordedGateBinary(t)
-	pluginDir := livePluginDir(t)
+	binary, marketplace := stableLiveRelease(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	// isolatedClaudeEnv resolves the credential (OAuth benchmark-token locally,
@@ -158,12 +156,24 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	// binary. Both are reused verbatim from the full-cycle live test.
 	env := isolatedClaudeEnv(t, os.Getenv("HOME"))
 	env = withBinaryOnPath(env, binary)
+	env = withRecordedGateEnv(env, "SPACEDOCK_MARKETPLACE_SOURCE", marketplace)
+	setupID := t.Name()
+	if len(setupIDs) > 0 {
+		setupID = setupIDs[0]
+	}
+	if base, ok := envValue(env, "CLAUDE_CONFIG_DIR"); ok {
+		env = withClaudeConfigDir(env, filepath.Join(base, setupID))
+	}
 
 	homeDir, _ := envValue(env, "HOME")
+	setupDir := codexLiveSetupArtifactDir(claudeLiveArtifactDir(t, "claude-shared-scenarios"), setupID)
+	if err := os.MkdirAll(setupDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runCodexLiveCommand(t, setupDir, "stable-plugin-install.txt", "", env, binary, "install", "--host", "claude")
 	return claudeLiveRunner{
 		t:            t,
 		binary:       binary,
-		pluginDir:    pluginDir,
 		env:          env,
 		modelName:    model,
 		artifactRoot: claudeLiveArtifactDir(t, "claude-shared-scenarios"),
@@ -200,16 +210,7 @@ func (r claudeLiveRunner) gradeShallowBootObservation(t *testing.T, result liveR
 	emitShallowBootWindowMetrics(t, result.stream, r.modelName)
 }
 func (r claudeLiveRunner) prepareRecordedGate(t *testing.T) (liveDriver, func(liveResult)) {
-	source := r.pluginDir
-	r.pluginDir = t.TempDir()
-	if err := copyTree(source, r.pluginDir); err != nil {
-		t.Fatal(err)
-	}
-	return r, func(result liveResult) {
-		if !strings.Contains(result.stream, r.pluginDir) || !strings.Contains(result.stream, "# First Officer Gate Lifecycle") {
-			t.Fatalf("recorded gate lifecycle did not load the copied skill body\nArtifacts: %s", result.artifactDir)
-		}
-	}
+	return r, noLiveGrade
 }
 
 // withStubPATH returns a runner copy whose launched FO subprocess resolves a stub
@@ -601,8 +602,8 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 
 // run launches the real `spacedock claude` front door for one shared scenario and
 // returns the (finalMessage, full stream) the shared assertions consume. The
-// launch shape is the spike WINNER: --plugin-dir + --skip-compat-check are the
-// spacedock-owned flags BEFORE `--`; every host flag (-p with the scenario prompt,
+// launch shape uses the installed stable package through the ordinary front door;
+// every host flag (-p with the scenario prompt,
 // --permission-mode, --output-format stream-json, --verbose, --model) rides AFTER
 // `--` and forwards verbatim to claude. The observed source is the stream's
 // result/success event via extractClaudeFinalMessage — a 401/is_error result is a
@@ -625,29 +626,17 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	streamPath := filepath.Join(artifactDir, "claude-stream.jsonl")
 	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 
-	cmd := exec.Command(r.binary, "claude",
-		"--plugin-dir", r.pluginDir,
-		"--skip-compat-check",
-		"--",
-		"-p", prompt+" "+antiShutdownOverride,
+	frontDoorArgs := []string{"claude", "--",
+		"-p", prompt + " " + antiShutdownOverride,
 		"--permission-mode", "bypassPermissions",
 		"--output-format", "stream-json",
 		"--verbose",
 		"--model", r.modelName,
-	)
+	}
+	cmd := exec.Command(r.binary, frontDoorArgs...)
 	cmd.Dir = workflowRoot
-	// Per-scenario CLAUDE_CONFIG_DIR so parallel scenarios never share claude's
-	// session/config state. It nests under the runner's base config dir (the
-	// archivable CI path), so the artifact upload — which grabs the whole
-	// per-model config dir — still captures each scenario's projects/*.jsonl. A
-	// fresh slice (never a mutation of the shared r.env) keeps the parallel
-	// invocations race-free.
 	cmd.Env = r.env
 	configDir, _ := envValue(r.env, "CLAUDE_CONFIG_DIR")
-	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
-		configDir = filepath.Join(base, scenario.name)
-		cmd.Env = withClaudeConfigDir(r.env, configDir)
-	}
 	if err := seedStoredLoginCredential(configDir); err == nil {
 		cmd.Env = withoutEnvKey(cmd.Env, "CLAUDE_CODE_OAUTH_TOKEN")
 	}
