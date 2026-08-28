@@ -1,7 +1,7 @@
 ---
 id: qcwrzza9xkr5kfwmdmvbqhkv
 title: Pin the installed Pi package to the launcher release
-status: backlog
+status: ideation
 source: "Released v0.27.2 Pi bootstrap abort reported by the captain on 2026-08-28"
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: 'Captain approve (2026-08-28 chat): seed QC-verified, QC amendments folded; advance to ideation.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A stable launcher can install skills from a newer release and then fail its first binary gate.
