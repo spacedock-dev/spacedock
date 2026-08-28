@@ -206,6 +206,18 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	}
 	cfg := piRuntimeConfigFromEnv(env, dir, lastString(pluginDirs))
 	check := checkPiRuntime(ops, cfg)
+	// The front door owns one Spacedock-package repair attempt
+	// (pin-pi-package-to-binary-release): a release-shaped binary whose entry
+	// is missing, unpinned, or wrong-line installs its own pinned ref —
+	// proactively, even when the package would "launch", because the
+	// first-officer binary gate aborts inside pi on a wrong-line package.
+	// Suppressed for dev-sentinel binaries, non-git entries, and declared dev
+	// overrides (--plugin-dir / SPACEDOCK_REPO_ROOT own the package surface
+	// for their run). The recheck below, never a second attempt, decides
+	// launch readiness.
+	if piRepairAttempt(ops, cfg, check, stderr) {
+		check = checkPiRuntime(ops, cfg)
+	}
 	if !piRuntimeLaunchReady(check) {
 		fmt.Fprint(stderr, "spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`\n")
 		printPiDoctorReport(stdout, check)
@@ -365,7 +377,12 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		return runInit(ctx, args, hostOps, stdout, stderr)
 	}
 	if !checkOnly {
-		source := piSpacedockPackageSource
+		// Pin the default install source to the running launcher's release
+		// identity (pin-pi-package-to-binary-release): a release-shaped binary
+		// installs its own tag so Pi never floats the package across release
+		// lines; a dev-sentinel build keeps the bare floating source. The
+		// --plugin-dir dev override still wins when declared.
+		source := piPinnedSource(piReleaseRef())
 		if pluginDir != "" {
 			source = pluginDir
 		}
@@ -610,6 +627,42 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 
 func piRuntimeLaunchReady(c piCheckResult) bool {
 	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.subagentsIntercomBridgeOK && c.intercomPackageOK && c.intercomSkillOK && c.spacedockPackageOK
+}
+
+// piRepairAttempt runs the `spacedock pi` front door's one Spacedock-package
+// repair (pin-pi-package-to-binary-release). It reports whether an install
+// was attempted, so the caller rechecks the runtime before the launch gate.
+// Exactly one install runs per launch; the recheck — never a second attempt —
+// decides launch readiness.
+func piRepairAttempt(ops piRuntimeOps, cfg piRuntimeConfig, check piCheckResult, stderr io.Writer) bool {
+	// A declared development override owns the package surface for its run:
+	// the repair never fights --plugin-dir / SPACEDOCK_REPO_ROOT.
+	if cfg.repoRoot != "" {
+		return false
+	}
+	// The repair cannot help when pi itself is unavailable — and `pi install`
+	// needs the pi binary anyway. (The failure being outside the package gate
+	// does not matter here: piPackageNeedsRepair already scopes the trigger to
+	// the package entry, including the proactive wrong-line case where the
+	// package currently "launches" but the FO binary gate would abort.)
+	if !check.piBinOK {
+		return false
+	}
+	ref := piReleaseRef()
+	needed, reason := piPackageNeedsRepair(check.packageStatus, ref)
+	if !needed {
+		return false
+	}
+	source := piPinnedSource(ref)
+	fmt.Fprintf(stderr, "spacedock pi: Spacedock package %s; installing pinned source %s\n", reason, source)
+	out, err := ops.PiInstall(source)
+	if strings.TrimSpace(out) != "" {
+		fmt.Fprint(stderr, out)
+	}
+	if err != nil {
+		fmt.Fprintf(stderr, "spacedock pi: package repair install failed: %v\n", err)
+	}
+	return true // one attempt spent; the caller's recheck decides the launch
 }
 
 func piDoctorHealthy(c piCheckResult) bool {
