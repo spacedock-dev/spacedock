@@ -6,7 +6,7 @@ started: 2026-08-28T22:07:02Z
 completed:
 verdict:
 score: 0.98
-worktree:
+worktree: .worktrees/spacedock-ensign-right-size-recent-proof-scaffolding
 issue:
 pr:
 mod-block:
