@@ -24,8 +24,53 @@ var _ hostOps = execHost{}
 // an installed plugin can be present-but-disabled.)
 type pluginListEntry struct {
 	ID          string `json:"id"`
+	PluginID    string `json:"pluginId"`
+	Version     string `json:"version"`
 	InstallPath string `json:"installPath"`
+	Installed   bool   `json:"installed"`
 	Enabled     bool   `json:"enabled"`
+}
+
+// PluginInventory normalizes the host's JSON listing for doctor.
+func (execHost) PluginInventory(host string) ([]pluginInventoryEntry, error) {
+	out, err := exec.Command(host, "plugin", "list", "--json").CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("%s plugin list --json: %w (%s)", host, err, strings.TrimSpace(string(out)))
+	}
+	return parsePluginInventory(host, out)
+}
+
+func parsePluginInventory(host string, data []byte) ([]pluginInventoryEntry, error) {
+	var raw []pluginListEntry
+	switch host {
+	case "claude":
+		if err := json.Unmarshal(data, &raw); err != nil {
+			return nil, fmt.Errorf("parse claude plugin list --json: %w", err)
+		}
+	case "codex":
+		var envelope struct {
+			Installed []pluginListEntry `json:"installed"`
+		}
+		if err := json.Unmarshal(data, &envelope); err != nil {
+			return nil, fmt.Errorf("parse codex plugin list --json: %w", err)
+		}
+		if envelope.Installed == nil {
+			return nil, fmt.Errorf("parse codex plugin list --json: missing installed inventory")
+		}
+		raw = envelope.Installed
+	default:
+		return nil, fmt.Errorf("plugin inventory is unsupported for host %q", host)
+	}
+	inventory := make([]pluginInventoryEntry, 0, len(raw))
+	for _, entry := range raw {
+		if host == "claude" {
+			entry.Installed = entry.InstallPath != ""
+		} else {
+			entry.ID = entry.PluginID
+		}
+		inventory = append(inventory, pluginInventoryEntry{entry.ID, entry.Version, entry.Installed, entry.Enabled})
+	}
+	return inventory, nil
 }
 
 // ResolveManifest returns the installed spacedock@spacedock plugin manifest path

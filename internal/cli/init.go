@@ -51,12 +51,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		return runDoctor(ctx, []string{"--host", "claude"}, ops, stdout, stderr)
 	case "codex":
 		if check {
-			resolved, err := ops.ResolveManifest("codex")
-			if err != nil {
-				fmt.Fprintf(stderr, "spacedock init: could not resolve the installed codex plugin: %v\n", err)
-				return 1
-			}
-			return contract.RunDoctor(resolved, "codex", displayVersion(), runningEdgeCask(), stdout, stderr)
+			return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
 		}
 		// `install --host codex` drives the install seam (marketplace add + plugin
 		// add, re-pinning the source) and runs doctor — the same programmatic path
@@ -100,8 +95,64 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 		return 1
 	}
 	// An empty resolved path is the no-plugin-found report; RunDoctor renders it
-	// from a non-existent path as a non-fatal report.
-	return contract.RunDoctor(resolved, host, displayVersion(), runningEdgeCask(), stdout, stderr)
+	// from a non-existent path as a non-fatal report. Inventory is deliberately
+	// queried afterward, and its report never changes the compatibility exit code.
+	compatCode := contract.RunDoctor(resolved, host, displayVersion(), runningEdgeCask(), stdout, stderr)
+	inventory, err := ops.PluginInventory(host)
+	if err != nil {
+		fmt.Fprintf(stdout, "INCOMPLETE: doctor checked compatibility but did not read the %s plugin enablement state: %v\n", host, err)
+		return compatCode
+	}
+	printSiblingConflict(host, inventory, stdout)
+	return compatCode
+}
+
+func printSiblingConflict(host string, inventory []pluginInventoryEntry, stdout io.Writer) {
+	selectedID := channelPluginID(devBranch)
+	selected, selectedOK := installedPlugin(inventory, selectedID)
+	sibling, siblingOK := enabledSiblingPlugin(inventory)
+	if !selectedOK || !siblingOK {
+		return
+	}
+	selectedState := "disabled"
+	if selected.Enabled {
+		selectedState = "enabled"
+	}
+
+	fmt.Fprintf(stdout, "CONFLICT: %s can load a different Spacedock plugin than doctor checked.\n", host)
+	fmt.Fprintf(stdout, "  checked: %s %s (installed, %s)\n", selected.ID, selected.Version, selectedState)
+	fmt.Fprintf(stdout, "  sibling: %s %s (installed, enabled)\n", sibling.ID, sibling.Version)
+	fmt.Fprintf(stdout, "Run `spacedock install --host %s` to keep only the %s channel.\n", host, selectedChannelWord())
+}
+
+func selectedChannelWord() string {
+	if devBranch == "main" {
+		return "stable"
+	}
+	return "edge"
+}
+
+func enabledSiblingPlugin(inventory []pluginInventoryEntry) (pluginInventoryEntry, bool) {
+	siblingBranch := "main"
+	if devBranch == "main" {
+		siblingBranch = "next"
+	}
+	siblingID := channelPluginID(siblingBranch)
+	for _, sibling := range inventory {
+		if sibling.ID == siblingID && sibling.Installed && sibling.Enabled {
+			return sibling, true
+		}
+	}
+	return pluginInventoryEntry{}, false
+}
+
+func installedPlugin(inventory []pluginInventoryEntry, id string) (pluginInventoryEntry, bool) {
+	for _, entry := range inventory {
+		if entry.ID == id && entry.Installed {
+			return entry, true
+		}
+	}
+	return pluginInventoryEntry{}, false
 }
 
 // parseInitArgs reads `--host claude|codex` (default claude) and `--check`. A
