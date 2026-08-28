@@ -333,3 +333,51 @@ front doors reuse the existing install sequence to restore exclusivity before la
 Every common Claude/Codex live journey now exercises the current stable-stamped package
 through the ordinary front door, so an incompatible stable skill floor fails at shared
 bootstrap rather than in a special-purpose test.
+
+## Review-finding disposition
+
+### Finding V-1 — repeated scoped sibling entries bypass the conflict gate
+
+- Reviewer observation: Claude inventories can repeat one plugin ID across scopes,
+  but `enabledSiblingPlugin` accepts only the first installed matching entry.
+- Released user and normal workflow: `claude plugin install` supports user, project,
+  and local scopes; the live inventory contains one ID six times across local scopes.
+- Observable harm: a disabled sibling listed before an enabled same-ID sibling makes
+  the ordinary front door launch with zero repair calls, leaving the enabled provider
+  able to supply `spacedock:first-officer`; doctor can omit the same conflict.
+- Authority: value-ac[AC-1] An enabled sibling cannot reach runtime first-officer
+  resolution.
+- Trigger evidence: detached test `TestAuditEnabledSiblingAfterDisabledDuplicateCannotLaunch`
+  failed with exit 0, launch reached, zero installs, and one inventory read.
+- Defect kind: Outcome defect at the sibling-entry cardinality boundary; AC-1 and
+  AC-3 both consume the faulty helper.
+- Release scope: Material. The host supports and emits repeated scoped IDs, and the
+  result violates a value AC on the ordinary Claude front door.
+- Ownership: Current task; the intended behavior and acceptance criteria are unchanged.
+- Proposed disposition: Fix by scanning every sibling entry for `Installed && Enabled`,
+  then rerun the focused, live-front-door, full, race, docs, and detached checks.
+- Candidate state: Unchanged at `62f0b103c25e1fd12e0af17c098311dfedda4400`
+  pending distinct First Officer authorization.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce AC-1 through AC-4: exact doctor output and schemas, enabled-sibling one-shot heal, --no-install refusal, disabled-sibling behavior, and stable release-stamped common-front-door bootstrap.
+  Focused behavior passed; real Claude doctor emitted the exact conflict at exit 0, real `--no-install` refused at exit 1, and the repeated-scope AC-1/AC-3 variant failed as Finding V-1.
+- DONE: Adversarially audit that no prose grep or bespoke marker journey substitutes for behavior, and require Claude plus Codex evidence from ordinary installed-package front doors; use a bounded manual Claude run if the reviewer environment cannot authenticate.
+  Codex `TestLiveCommonShallowBoot` passed in 30.14s; bounded Claude loaded installed `spacedock@spacedock` 0.28.0-pre0 through the ordinary front door before an external expired-token 401 stopped FO work.
+- DONE: Run focused tests, go test ./..., go test ./... -race, mkdocs strict, and a detached diff audit; report exact +302 net LOC across 9 files against +255/7 ±80/±2 and classify every finding.
+  Focused, full, race, and temporary-venv strict docs passed; detached `62f0b103c` audit confirmed 385 insertions/83 deletions = +302 across 9 files, within +47 LOC/+2 files, and classified V-1 Material.
+- FAILED: AC-1 (VALUE) - An enabled sibling cannot reach runtime first-officer resolution.
+  A disabled-first/enabled-second same-ID Claude inventory launches without repair; changing entry order or scanning all entries makes this test fail/pass at the exact observable boundary.
+- DONE: AC-2 - `--no-install` refuses a dual-enabled launch with the actionable repair.
+  Both seam hosts require exit 1/no install/no launch/exact host repair, and the real dual-installed Claude front door reproduced exit 1 with the stable-channel command.
+- FAILED: AC-3 - Doctor reports the same conflict without repairing it.
+  Exact ordinary dual-install output passes, but the same repeated-scope ordering can hide the enabled sibling because doctor uses the faulty cardinality helper.
+- DONE: AC-4 - Healthy single-channel launches and the command reference remain correct.
+  Full/race suites and strict docs pass; changed-file gofmt and diff checks are clean, and no behavior proof depends on documentation text.
+
+### Summary
+
+Validation recommends REJECTED because a supported repeated-scope Claude inventory can
+bypass the enabled-sibling gate and doctor report. All other required checks passed,
+the change remains within tolerance, and the candidate is unchanged pending disposition.
