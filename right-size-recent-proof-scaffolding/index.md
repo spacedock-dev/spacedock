@@ -42,6 +42,17 @@ gates:
                 id: briefing:3nm832m6pcnm8008n3wt7h9s:ideation:attempt-1:revision-1
                 digest: sha256:36b334984f1673428edbf0730e97ec92cc1fdc21137fade8d50d62d14f800941
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3nm832m6pcnm8008n3wt7h9s:ideation:1
+                briefing: briefing:3nm832m6pcnm8008n3wt7h9s:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-28T22:55:13.742015Z"
+                decision: approve
+                reason: Captain approved the prepared ideation Briefing in Subspace.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Remove redundant tests and fake proof from the current 0.28 stack. Keep one authoritative observation for each distinct failure mode.
