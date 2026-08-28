@@ -11,6 +11,28 @@ worktree:
 issue:
 pr:
 mod-block:
+gates:
+    version: 1
+    records:
+        - id: gate:qcwrzza9xkr5kfwmdmvbqhkv:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:qcwrzza9xkr5kfwmdmvbqhkv-backlog-1
+              briefing:
+                id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:backlog:attempt-1:revision-1
+                digest: sha256:b978c947fcd19d4db838077f568d7d231f71fd4bbe7b146b6752a560ad0e579e
+                room-ref: ./review/backlog/briefing-1
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qcwrzza9xkr5kfwmdmvbqhkv:backlog:1
+                briefing: briefing:qcwrzza9xkr5kfwmdmvbqhkv:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-08-28T18:46:31.966666Z"
+                decision: approve
+                reason: 'Captain approve (2026-08-28 chat): seed QC-verified, QC amendments folded; advance to ideation.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A stable launcher can install skills from a newer release and then fail its first binary gate.

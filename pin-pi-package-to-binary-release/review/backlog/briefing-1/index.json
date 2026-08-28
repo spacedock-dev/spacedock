@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qcwrzza9xkr5kfwmdmvbqhkv:backlog:attempt-1:revision-1",
+  "question": "Approve advancing pin-pi-package-to-binary-release to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:qcwrzza9xkr5kfwmdmvbqhkv:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/c76bd78e2ff0aa44436f547d027e91fd90442bb2/pin-pi-package-to-binary-release/review/backlog/gate-review.md",
+      "rev": "sha256:bafa02a02785ad8006b073c44fd8ffc9a55949862c0d2269dc5478f783b5f224",
+      "mediaType": "text/markdown",
+      "summary": "Seed QC-verified against code; QC amendments folded; recommend approval to ideation."
+    }
+  ]
+}
