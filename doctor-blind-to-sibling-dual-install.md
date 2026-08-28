@@ -32,6 +32,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:x0petxt7xvr459b6zh4vf4wj:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:x0petxt7xvr459b6zh4vf4wj-ideation-1
+              briefing:
+                id: briefing:x0petxt7xvr459b6zh4vf4wj:ideation:attempt-1:revision-1
+                digest: sha256:8691bd6bcfa6fe506664f012bd9b0006633b042f268b02c4cb77ae2974f08d93
+                room-ref: ./doctor-blind-to-sibling-dual-install/review/ideation/briefing-1
 ---
 
 `spacedock doctor` resolves ONE manifest — the running binary's own channel via `hostOps.ResolveManifest(host)` — so a machine holding both `spacedock@spacedock` and `spacedock@spacedock-edge` enabled reports OK. After the sibling-cleanup install fix, the affected population is machines that already hold a dual install AND never run `spacedock install` again: a Compatible own-channel manifest never triggers the launcher auto-heal, so the condition does not self-clear on launch.

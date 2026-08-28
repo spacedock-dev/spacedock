@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x0petxt7xvr459b6zh4vf4wj:ideation:attempt-1:revision-1",
+  "question": "Approve this reproduced design and dispatch the 0.27.2 bootstrap fix?",
+  "artifacts": [
+    {
+      "id": "artifact:x0petxt7xvr459b6zh4vf4wj:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/27253adbf6ca617b94538ec2525a3d75bdf43cdb/doctor-blind-to-sibling-dual-install/gate-decision-ideation.md",
+      "rev": "sha256:bedb4199b46d66c8656e00ead027f8fb43e6a9db644013329829c7b4129ef60e",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approval: Claude and Codex both reproduced a stable-doctor/edge-skill split; add doctor-only sibling inventory and nonfatal CONFLICT/INCOMPLETE reports, preserve the version floor and front-door behavior, prove four ACs, and keep the surface to +255 net LOC/7 files with ±80/±2."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:x0petxt7xvr459b6zh4vf4wj:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/27253adbf6ca617b94538ec2525a3d75bdf43cdb/doctor-blind-to-sibling-dual-install.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:52256a4fc4e3314c278a0ef471f328d80ec68190194c7fadb866dcb6898087b9"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:x0petxt7xvr459b6zh4vf4wj:ideation:attempt-1:revision-1:item-3",
+      "uri": "git-root://main/43fc79a23ea5f35458321f9830593243022bc9e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3fb556338f84f70b2716a8619583eba05aca2de14ccb3e0b85bd57c1a1d917b9"
+    }
+  ]
+}
