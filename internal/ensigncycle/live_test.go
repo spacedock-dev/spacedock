@@ -5,6 +5,8 @@
 package ensigncycle
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -65,7 +67,8 @@ func repoRoot(t *testing.T) string {
 // discoverable `docs/dev` workflow (with live entities), so an FO that anchors its
 // `git rev-parse --show-toplevel` + `status --discover` on the plugin path — instead
 // of its isolated cwd fixture — finds and drives the REAL workflow. Staging copies
-// ONLY the plugin scaffolding (`.claude-plugin/`, `skills/`, `agents/`) into a temp
+// ONLY the plugin scaffolding (`.claude-plugin/`, `.codex-plugin/`, `skills/`,
+// `agents/`) into a temp
 // dir with NO `docs/dev` sibling, then `git init`s it so a `rev-parse` from the
 // plugin path resolves to a workflow-free root. An FO that boots from here discovers
 // zero workflows and falls back to the cwd fixture. The result is cached per repo
@@ -86,12 +89,13 @@ func cachedLivePluginDir(t *testing.T, repo string) string {
 	livePluginOnce.Do(func() {
 		// MkdirTemp (not t.TempDir) so the staged plugin outlives the first test's
 		// cleanup and the cached path stays valid for every scenario in the run.
-		staged, err := os.MkdirTemp("", "spacedock-live-plugin-")
+		marketplace, err := os.MkdirTemp("", "spacedock-live-plugin-")
 		if err != nil {
 			livePluginErr = err
 			return
 		}
-		for _, sub := range []string{".claude-plugin", "skills", "agents"} {
+		staged := filepath.Join(marketplace, "spacedock")
+		for _, sub := range []string{".claude-plugin", ".codex-plugin", "skills", "agents"} {
 			src := filepath.Join(repo, sub)
 			if _, statErr := os.Stat(src); statErr != nil {
 				continue // optional members (e.g. a layout without a top-level agents/)
@@ -100,6 +104,16 @@ func cachedLivePluginDir(t *testing.T, repo string) string {
 				livePluginErr = copyErr
 				return
 			}
+		}
+		manifestDir := filepath.Join(marketplace, ".claude-plugin")
+		if err := os.MkdirAll(manifestDir, 0o755); err != nil {
+			livePluginErr = err
+			return
+		}
+		manifest := []byte("{\n  \"name\": \"spacedock\",\n  \"owner\": { \"name\": \"Spacedock live suite\" },\n  \"plugins\": [\n    { \"name\": \"spacedock\", \"source\": \"./spacedock\", \"description\": \"release candidate\", \"category\": \"workflow\" }\n  ]\n}\n")
+		if err := os.WriteFile(filepath.Join(manifestDir, "marketplace.json"), manifest, 0o644); err != nil {
+			livePluginErr = err
+			return
 		}
 		// git init so the FO's `git rev-parse --show-toplevel` resolves to this
 		// workflow-free root, not an enclosing checkout that has a docs/dev.
@@ -110,6 +124,50 @@ func cachedLivePluginDir(t *testing.T, repo string) string {
 		t.Fatalf("stage isolated live plugin dir: %v", livePluginErr)
 	}
 	return livePluginPath
+}
+
+var (
+	stableLiveBinaryOnce sync.Once
+	stableLiveBinaryPath string
+	stableLiveBinaryErr  error
+)
+
+// stableLiveRelease returns the current plugin packaged as the stable channel
+// plus a binary stamped with that package's release version and channel. Every
+// common live journey installs this package before using the ordinary front door.
+func stableLiveRelease(t *testing.T) (binary, marketplace string) {
+	t.Helper()
+	plugin := livePluginDir(t)
+	stableLiveBinaryOnce.Do(func() {
+		manifestData, err := os.ReadFile(filepath.Join(plugin, ".claude-plugin", "plugin.json"))
+		if err != nil {
+			stableLiveBinaryErr = err
+			return
+		}
+		var manifest struct {
+			Version string `json:"version"`
+		}
+		if err := json.Unmarshal(manifestData, &manifest); err != nil {
+			stableLiveBinaryErr = err
+			return
+		}
+		buildDir, err := os.MkdirTemp("", "spacedock-live-stable-")
+		if err != nil {
+			stableLiveBinaryErr = err
+			return
+		}
+		stableLiveBinaryPath = filepath.Join(buildDir, "spacedock")
+		stamp := fmt.Sprintf("-X github.com/spacedock-dev/spacedock/internal/cli.Version=%s -X github.com/spacedock-dev/spacedock/internal/cli.devBranch=main", manifest.Version)
+		cmd := exec.Command("go", "build", "-ldflags", stamp, "-o", stableLiveBinaryPath, "./cmd/spacedock")
+		cmd.Dir = repoRoot(t)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			stableLiveBinaryErr = fmt.Errorf("build stable live binary: %w: %s", err, out)
+		}
+	})
+	if stableLiveBinaryErr != nil {
+		t.Fatal(stableLiveBinaryErr)
+	}
+	return stableLiveBinaryPath, filepath.Dir(plugin)
 }
 
 // copyTree recursively copies src to dst, preserving file modes. Symlinks are

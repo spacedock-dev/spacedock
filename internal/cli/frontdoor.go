@@ -35,6 +35,8 @@ type hostOps interface {
 	// when no plugin is installed (a distinct, non-error state). A non-nil error
 	// means the host CLI itself failed.
 	ResolveManifest(host string) (string, error)
+	// PluginInventory supplies the launch gate and doctor's sibling-channel view.
+	PluginInventory(host string) ([]pluginInventoryEntry, error)
 	// Launch spawns argv with env as a resident child and waits (production) or
 	// records it (test), returning the host's propagated exit code. The error is
 	// reserved for a launch failure (host binary not found, fork failure), not a
@@ -49,6 +51,14 @@ type hostOps interface {
 	// dedicated `spacedock-local` marketplace, distinct from either real
 	// channel's marketplace name — returning combined output.
 	InstallCodexLocalPluginDir(source string) (string, error)
+}
+
+// pluginInventoryEntry normalizes the Claude and Codex plugin-list schemas.
+type pluginInventoryEntry struct {
+	ID        string
+	Version   string
+	Installed bool
+	Enabled   bool
 }
 
 // devBranch is the binary's channel stamp: it selects which marketplace entry the
@@ -322,8 +332,8 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Result {
 	}
 }
 
-// resolveHealableGate runs the version gate for host and, for its two healable
-// verdicts (NoPluginFound, TooOldPlugin), either auto-installs the plugin and
+// resolveHealableGate runs the version gate for host and, for its healable
+// states (NoPluginFound, TooOldPlugin, or an enabled sibling), auto-installs and
 // re-gates ONCE (the default) or refuses with the host-correct remedy
 // (--no-install) — D6's shared "a single command yields a working session"
 // contract for both front doors. A too-old-plugin heal announces "Refreshing"
@@ -334,34 +344,58 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Result {
 // already on stderr).
 func resolveHealableGate(ops hostOps, host string, noInstall bool, stderr io.Writer) bool {
 	res := gateHost(ops, host, stderr)
+	announce := ""
 	switch res.Verdict {
 	case contract.Compatible:
-		return true
-	case contract.NoPluginFound, contract.TooOldPlugin:
-		if noInstall {
-			printHealableRemedy(host, res, stderr)
+		inventory, err := ops.PluginInventory(host)
+		if err != nil {
+			fmt.Fprintf(stderr, "Spacedock: could not verify the %s plugin enablement state: %v.\n", host, err)
+			fmt.Fprintf(stderr, "Run `spacedock install --host %s` before launching.\n", host)
 			return false
 		}
-		announce := "Installing the " + host + " plugin…"
+		if _, conflict := enabledSiblingPlugin(inventory); !conflict {
+			return true
+		}
+		announce = "Refreshing the " + host + " plugin to remove its enabled sibling…"
+	case contract.NoPluginFound, contract.TooOldPlugin:
+		announce = "Installing the " + host + " plugin…"
 		if res.Verdict == contract.TooOldPlugin {
 			announce = "Refreshing the " + host + " plugin…"
 		}
-		fmt.Fprintln(stderr, announce)
-		if _, err := ops.Install(host, channelMarketplaceSource(devBranch), devBranch); err != nil {
-			fmt.Fprintf(stderr, "spacedock %s: auto-install failed: %v\n", host, err)
-			return false
-		}
-		regate := gateHost(ops, host, stderr)
-		if regate.Verdict != contract.Compatible {
-			printHealableRemedy(host, regate, stderr)
-			return false
-		}
-		return true
 	default:
 		// too-old-binary / malformed-version: gateHost already printed the
 		// remedy. Fail fast — auto-installing would not fix an incompatibility.
 		return false
 	}
+	if noInstall {
+		if res.Verdict == contract.Compatible {
+			printSiblingRemedy(host, stderr)
+		} else {
+			printHealableRemedy(host, res, stderr)
+		}
+		return false
+	}
+	fmt.Fprintln(stderr, announce)
+	if _, err := ops.Install(host, channelMarketplaceSource(devBranch), devBranch); err != nil {
+		fmt.Fprintf(stderr, "spacedock %s: auto-install failed: %v\n", host, err)
+		return false
+	}
+	regate := gateHost(ops, host, stderr)
+	if regate.Verdict != contract.Compatible {
+		printHealableRemedy(host, regate, stderr)
+		return false
+	}
+	inventory, err := ops.PluginInventory(host)
+	if _, conflict := enabledSiblingPlugin(inventory); err != nil || conflict {
+		fmt.Fprintf(stderr, "Spacedock: the %s plugin repair did not leave one enabled channel.\n", host)
+		printSiblingRemedy(host, stderr)
+		return false
+	}
+	return true
+}
+
+func printSiblingRemedy(host string, stderr io.Writer) {
+	fmt.Fprintf(stderr, "Run `spacedock install --host %s` to keep only the %s channel.\n", host, selectedChannelWord())
 }
 
 // printHealableRemedy prints the caller-owned remedy for a NoPluginFound or
