@@ -50,6 +50,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+review-round:
+    id: round:x0petxt7xvr459b6zh4vf4wj:validation:1
+    stage: validation
+    cycle: 1
+    briefing:
+        id: briefing:x0p:validation:round-1
+        digest: sha256:0405f04cb178897140aea8ea7779035da7d6f1afd70bd26bd0404a6d5ff27a79
+        room-ref: '@review/validation/round-1'
 ---
 
 `spacedock doctor` resolves ONE manifest — the running binary's own channel via `hostOps.ResolveManifest(host)` — so a machine holding both `spacedock@spacedock` and `spacedock@spacedock-edge` enabled reports OK. The corrected behavior inventories providers on the launch critical path and reuses the existing one-shot install repair before a host can resolve the wrong first-officer skill.
@@ -276,6 +284,8 @@ It does not describe the parser or the host inventory.
 ### Feedback Cycles
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
+
+- Cycle 1: Validation Finding V-1 routed to implementation; Material outcome defect, current-task owned, First Officer disposition `fix`; corrected candidate +327 net LOC across 9 files versus +255/7, within +/-80 LOC and +/-2 files.
 
 ## Stage Report: ideation
 

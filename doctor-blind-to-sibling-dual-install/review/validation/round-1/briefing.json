@@ -1,0 +1,40 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x0p:validation:round-1",
+  "question": "Does rejected candidate 62f0b103c25e1fd12e0af17c098311dfedda4400 satisfy AC-1 and AC-3 when Claude reports repeated scoped sibling IDs? Preserve the original REJECTED/revise record and its authorized correction without treating corrected candidate 20608bba42fd9348e968d8f0837cbb52f33a8277 as re-reviewed.",
+  "artifacts": [
+    {
+      "id": "artifact:rejected-candidate-62f0b103c",
+      "uri": "git:commit/62f0b103c25e1fd12e0af17c098311dfedda4400",
+      "mediaType": "application/vnd.git.commit",
+      "rev": "sha256:a1115cd80715efc73542ef4514bedcd7a72439452fb0c3af66369983b087539a"
+    },
+    {
+      "id": "artifact:validation-rejection-cd93dd100",
+      "uri": "git:commit/cd93dd1007707cfb0e9685518779fc8d58e05947",
+      "mediaType": "application/vnd.git.commit",
+      "rev": "sha256:2e3a34d3175064a878e09404a96339c61cd432b9d9c92bcbab83bb91e4c59d2d"
+    },
+    {
+      "id": "artifact:fo-authorization-30299a0a1",
+      "uri": "git:commit/30299a0a10570ef7a4a3299d27e6978271f7b024",
+      "mediaType": "application/vnd.git.commit",
+      "rev": "sha256:3e77696df04b96dfad637bc53a361f148ea79fd09bac0fca1a56268563a1cbd2"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:authorized-correction-20608bba4",
+      "uri": "git:commit/20608bba42fd9348e968d8f0837cbb52f33a8277",
+      "rev": "sha256:18ce4eb478d52ad6a97acce494ee3d1f8f71e85796011f9cef64b86deb419176"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:correction-report-446f1ece7",
+      "uri": "git:commit/446f1ece7d5514b92ed1122495c4e2081a1f3a87",
+      "rev": "sha256:92deee852ebe0cca6e4d5c8ba8f91f627e4c4a6e5532c17c5fa8913ae2f789b0"
+    }
+  ]
+}
