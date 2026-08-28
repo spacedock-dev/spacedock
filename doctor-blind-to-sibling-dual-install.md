@@ -50,6 +50,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:x0petxt7xvr459b6zh4vf4wj:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:x0petxt7xvr459b6zh4vf4wj-validation-1
+              briefing:
+                id: briefing:x0petxt7xvr459b6zh4vf4wj:validation:attempt-1:revision-1
+                digest: sha256:2dd9ffe38ee18092f0292bb37ca8103888fa9af239ca189aa6d004426fba8457
+                room-ref: '@review/validation/briefing-1'
 review-round:
     id: round:x0petxt7xvr459b6zh4vf4wj:validation:1
     stage: validation

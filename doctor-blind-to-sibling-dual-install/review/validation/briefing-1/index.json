@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:x0petxt7xvr459b6zh4vf4wj:validation:attempt-1:revision-1",
+  "question": "Approve x0p for terminal delivery and the 0.27.2 patch stack?",
+  "artifacts": [
+    {
+      "id": "artifact:x0petxt7xvr459b6zh4vf4wj:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/42655369463bed0322cd222802dcf1d4ced3a3ff/doctor-blind-to-sibling-dual-install/gate-decision-validation.md",
+      "rev": "sha256:03a9864d97183f5a1be004197de2b0907bb3df87643e03f46a59ad1803b915df",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed after the repeated-scope fix. All four ACs and required checks pass; +327 net LOC across 9 files is within tolerance. Claude bootstrap passed before an external expired-OAuth 401."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:x0petxt7xvr459b6zh4vf4wj:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://state/42655369463bed0322cd222802dcf1d4ced3a3ff/doctor-blind-to-sibling-dual-install.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:9f28a7a1342b3e7f8c7be7b635cfa771ce725105808a18895be619dee9a13da7"
+    }
+  ]
+}
