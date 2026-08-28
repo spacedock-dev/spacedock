@@ -2,7 +2,7 @@
 title: Right-size recent proof scaffolding
 status: ideation
 source: "Captain review of PRs #767, #768, #776, #777, #780, and #781 on 2026-08-28."
-started:
+started: 2026-08-28T22:07:02Z
 completed:
 verdict:
 score: 0.98
