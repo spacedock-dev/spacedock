@@ -422,3 +422,28 @@ The repeated-scope cardinality gap is closed. Every enabled sibling record is no
 authoritative regardless of list order, and both the launcher and doctor prove that
 behavior at their normal deterministic seams. The common live bootstrap mechanism and
 all other candidate behavior remain unchanged.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify the corrected repeated disabled-first, enabled-second sibling-ID case at the launcher and doctor boundaries, then cross-check AC-1 through AC-4 without prose grep.
+  Launcher tests require one install, two inventories, clean re-gate, and launch; doctor requires exact conflict bytes/no install, while AC-2 refusal and AC-4 healthy behavior remain green.
+- DONE: Verify the existing installed stable-stamped Codex and bounded manual Claude common journeys use the ordinary front door; distinguish any external authentication failure from bootstrap behavior.
+  Codex `TestLiveCommonShallowBoot` passed in 36.91s; Claude loaded installed `spacedock@spacedock` 0.28.0-pre0 before the reviewer's expired OAuth token returned 401 prior to FO work.
+- DONE: Run focused, full, race, formatting/diff, strict-docs, and detached checks; report exact net LOC and files against +255/7 +/-80/+/-2 and recommend PASSED or REJECTED.
+  Focused, full, race, changed-file gofmt, diff, and strict MkDocs checks pass; +410/-83 = +327 net across 9 files, a +72 LOC/+2 file variance within tolerance; recommendation PASSED.
+- DONE: AC-1 (VALUE) - An enabled sibling cannot reach runtime first-officer resolution.
+  Disabled-first/enabled-second and reversed-order inventories both repair before launch; the detached matrix would fail if scanning again stopped at the first installed record.
+- DONE: AC-2 - `--no-install` refuses a dual-enabled launch with the actionable repair.
+  Both host seams require exit 1/no install/no launch/exact repair, and the real Claude dual install reproduced the stable-channel command at exit 1.
+- DONE: AC-3 - Doctor reports the same conflict without repairing it.
+  Repeated-scope and ordinary Claude/Codex fixtures require exact output and zero installs; the real Claude inventory emitted the same five-line report at exit 0.
+- DONE: AC-4 - Healthy single-channel launches and the command reference remain correct.
+  Full/race suites and strict docs pass, installed-package journeys use no bypass flags, and healthy disabled-sibling behavior remains the one-line `OK` result.
+- DONE: Classify every reviewer finding.
+  V-1 is corrected at `20608bba42fd9348e968d8f0837cbb52f33a8277`; cycle 2 found no material, deferred-risk, or polish findings.
+
+### Summary
+
+Validation recommends PASSED. The authorized V-1 correction is order-independent at
+both observable boundaries, all four ACs have behavioral evidence, the installed-package
+bootstrap proof is intact, and the candidate remains inside the approved tolerance.
