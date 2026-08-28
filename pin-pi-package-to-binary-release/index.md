@@ -7,7 +7,7 @@ started:
 completed:
 verdict:
 score: "1.0"
-worktree:
+worktree: .worktrees/spacedock-ensign-pin-pi-package-to-binary-release
 issue:
 pr:
 mod-block:
@@ -143,3 +143,16 @@ Ideation fleshed out the seed into a gated design: pinned-source derivation from
   (1) resolved in the source-derivation helper: linker-stamped Version wins; else debug.ReadBuildInfo() main module version when it is a semver tag (covers proxy installs — verified the mechanism exists as stdlib and .goreleaser.yaml:46-60 stamps only goreleaser artifacts); else dev sentinel floats; (2) the manifest-version trigger is dropped — the wrong-ref case is detected as a git-entry ref mismatch against the binary's release ref (settings entry string, already surfaced as packageStatus.source), which needs no manifest field and repairs a pinned-wrong-line package; (3) AC-5 specifies no-repair/no-clobber for file:/npm: entries, dev builds, and --plugin-dir/SPACEDOCK_REPO_ROOT runs.
 - DONE: extend the ACs/test plan for the resolved branches: an incompatible-trigger test, a non-git-source no-clobber test, and dev-binary front-door behavior (does a dev build repair at all?), each with a named falsifier
   Wrong-ref repair test (entry @v0.28.0-pre1 under v0.27.2 identity → installs @v0.27.2) in the AC-2/AC-4 behavior set; non-git no-clobber + dev-build no-repair + dev-override suppression are AC-5 with its named falsifier; AC-2/AC-3 tables gained the proxy-tagged identity.
+
+## Stage Report: implementation
+
+- DONE: implement the approved design in the worktree .worktrees/spacedock-ensign-pin-pi-package-to-binary-release: the ordered pin-ref derivation helper (linker-stamped internal/cli.Version, then debug.ReadBuildInfo().Main.Version semver tag for proxy builds, else the dev sentinel), the release-pinned default install source at the install call site, the one-repair-attempt front door (triggers: absent entry, git entry with absent/differing ref) with recheck via the existing discovery, launch refusal on remaining mismatch, and AC-5 suppression for non-git entries, dev-sentinel builds, and --plugin-dir/SPACEDOCK_REPO_ROOT runs
+  Commit 1a90b76c9 on spacedock-ensign/pin-pi-package-to-binary-release: `internal/cli/pi_package_source.go` (derivation + parse + repair decision), `pi.go` install call site uses `piPinnedSource(piReleaseRef())`, `piRepairAttempt` runs ahead of the readiness gate (proactive on the wrong-ref delta — the v0.27.2 incident shape — because the FO binary gate would abort inside pi), recheck via the existing `checkPiRuntime` discovery, refusal on remaining mismatch, AC-5 suppression for file:/npm:/local entries, dev-sentinel builds, and declared dev overrides.
+- DONE: add the command-behavior tests for AC-2/AC-3/AC-4/AC-5 in internal/cli/pi_frontdoor_test.go using the existing fake piRuntimeOps pattern: literal sources per identity (stamped, proxy-tagged, dev, plugin-dir), the wrong-ref repair (@v0.28.0-pre1 under a v0.27.2-identity binary installs @v0.27.2), one-install/one-recheck/no-launch-on-failure, and no-clobber for non-git/dev/override shapes, each with its named falsifier
+  `internal/cli/pi_package_repair_test.go` + fake `statusAfterInstall` seam: derivation table (incl. pseudo-version and checkout-build sentinels) flips if any identity's source changes; wrong-ref test pins entry @v0.28.0-pre1 under a 0.27.2 binary and asserts the install of @v0.27.2; failure/ineffective-repair tests assert 1 install, 2 status reads (initial+one recheck), zero Launch calls, and the actionable stderr; suppression tests assert zero installs for file:/npm: entries, dev binaries, and --plugin-dir.
+- run gofmt on changed dirs, go test ./..., and go test ./... -race; commit the deliverable to the worktree branch spacedock-ensign/pin-pi-package-to-binary-release with path-scoped adds (never a bare git add -A), and write the stage report as `## Stage Report: implementation` per the ensign discipline with each DONE's evidence on a separate indented line below the marker
+  gofmt clean on changed dirs (internal/release/runtime_live_evidence_workflow_test.go was already unformatted on main, untouched); full suite green except the pre-existing env-marker failure TestVersionAmbiguousMarkersExitZero (reproduced on main at the repo root: the sandbox sets PI_CODING_AGENT); go test ./... -race same single pre-existing failure, no races. Commit pushed to spacedock-ensign/pin-pi-package-to-binary-release.
+
+### Summary
+
+Implemented the release-pinned Pi package source and the one-repair-attempt front door per the approved cycle-2 design, with the wrong-ref mismatch (settings entry vs the binary's release ref) as the repair trigger — no package-manifest field needed. The review-found proxy-build gap is closed by the build-info arm of the derivation helper. AC-1's live journey is wired and registered in the runtime live registry; CI's pi-live lane is its proof run (needs CI-E2E-PI approval), so the live run itself remains open as designed.
