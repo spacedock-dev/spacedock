@@ -1,7 +1,7 @@
 ---
 id: x0petxt7xvr459b6zh4vf4wj
 title: doctor is blind to a co-installed enabled sibling spacedock plugin
-status: implementation
+status: validation
 source: "Split out of claude-install-sibling-channel-cleanup ideation (2026-08-25): making doctor see a sibling reaches gateHost's fail-fast branch — a front-door product decision that task could not own"
 started: 2026-08-28T06:48:16Z
 completed:
