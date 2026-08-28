@@ -1105,3 +1105,73 @@ func TestPiSpacedockPackageStatus_SubagentsRegistered(t *testing.T) {
 		})
 	}
 }
+
+// TestPiResumeSuppressesBootstrapPrompt pins AC-1/AC-2: a Pi launch with a resume
+// token in the passthrough (--resume, --resume=<id>, -r, --continue, -c) must
+// NOT append piBootstrapPrompt to the argv, while a non-resume launch still
+// does. The non-resume case is the independent baseline that can move the wrong
+// way (if the gate regresses or the non-resume path loses the prompt).
+func TestPiResumeSuppressesBootstrapPrompt(t *testing.T) {
+	resumeTokens := []string{
+		"--resume",
+		"--resume=abc123",
+		"-r",
+		"--continue",
+		"-c",
+	}
+	for _, token := range resumeTokens {
+		t.Run("resume/"+token, func(t *testing.T) {
+			repo := t.TempDir()
+			writePiSkillFixtures(t, repo)
+			pkg := t.TempDir()
+			writePiSubagentsFixtures(t, pkg)
+			ops := &fakePiRuntimeOps{
+				lookPath:      piHealthyPathFixtures(),
+				statOK:        statOKForPiResources(repo, pkg),
+				packageStatus: healthyPiPackageStatus(),
+			}
+			var stdout, stderr bytes.Buffer
+			args := []string{"--plugin-dir", repo, "--", token}
+			code := runPi(context.Background(), args, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+			}
+			for _, tok := range ops.launched {
+				if strings.Contains(tok, piBootstrapPrompt) {
+					t.Fatalf("resume token %q: argv contains piBootstrapPrompt: %v", token, ops.launched)
+				}
+			}
+		})
+	}
+
+	nonResumeCases := []struct {
+		name     string
+		passthru []string
+	}{
+		{"model_flag", []string{"--model", "google/gemini"}},
+		{"task_string", []string{"review this code"}},
+	}
+	for _, tc := range nonResumeCases {
+		t.Run("nonresume/"+tc.name, func(t *testing.T) {
+			repo := t.TempDir()
+			writePiSkillFixtures(t, repo)
+			pkg := t.TempDir()
+			writePiSubagentsFixtures(t, pkg)
+			ops := &fakePiRuntimeOps{
+				lookPath:      piHealthyPathFixtures(),
+				statOK:        statOKForPiResources(repo, pkg),
+				packageStatus: healthyPiPackageStatus(),
+			}
+			var stdout, stderr bytes.Buffer
+			args := append([]string{"--plugin-dir", repo, "--"}, tc.passthru...)
+			code := runPi(context.Background(), args, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+			}
+			prompt := ops.launched[len(ops.launched)-1]
+			if !strings.Contains(prompt, piBootstrapPrompt) {
+				t.Fatalf("non-resume passthrough %v: last argv token missing piBootstrapPrompt: %v", tc.passthru, ops.launched)
+			}
+		})
+	}
+}
