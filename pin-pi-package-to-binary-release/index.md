@@ -1,9 +1,9 @@
 ---
 id: qcwrzza9xkr5kfwmdmvbqhkv
 title: Pin the installed Pi package to the launcher release
-status: validation
+status: implementation
 source: "Released v0.27.2 Pi bootstrap abort reported by the captain on 2026-08-28"
-started:
+started: 2026-08-29T01:29:55Z
 completed:
 verdict:
 score: "1.0"
