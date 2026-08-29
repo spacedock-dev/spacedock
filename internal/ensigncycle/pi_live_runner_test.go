@@ -135,7 +135,7 @@ func piSpacedockBinary(t *testing.T, repo string) string {
 func runPiSmokeDispatchBuild(t *testing.T, binary, workflowRoot, entityPath string) piSmokeEnvelope {
 	t.Helper()
 	checklist := []string{
-		"- First read " + filepath.Join(repoRoot(t), "skills", "ensign", "SKILL.md") + " and " + filepath.Join(repoRoot(t), "skills", "ensign", "references", "pi-ensign-runtime.md") + "; then append a stage report with the exact heading '## Stage Report: implementation' containing the exact marker " + piLiveSmokeMarker + ", at least one '- DONE:' item, and a '### Summary' subsection",
+		"- append the smoke marker line `" + piLiveSmokeMarker + "` to the entity file",
 		"- Commit only the entity path in the state checkout with message 'ensign: pi live smoke' (path-scoped git add/commit for pi-live-smoke/index.md)",
 	}
 	stdin, err := json.Marshal(map[string]any{

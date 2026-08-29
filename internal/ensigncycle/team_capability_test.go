@@ -64,6 +64,8 @@ func TestCleanupKeepMovingRootRetainsOnlyFailures(t *testing.T) {
 func codexLiveFrontDoorArgv(pluginDir, workflowRoot, finalPath, prompt string) []string {
 	return []string{
 		"codex",
+		"--plugin-dir", pluginDir,
+		"--skip-compat-check",
 		prompt,
 		"--",
 		"exec",
@@ -106,12 +108,12 @@ func TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs(t *testing.T) {
 	if fence < 0 {
 		t.Fatalf("Codex live argv has no host-argument fence: %v", args)
 	}
-	if args[0] != "codex" {
-		t.Fatalf("Codex front door is not first: %v", args)
+	if args[0] != "codex" || !argvHasAdjacent(args[:fence], "--plugin-dir", "/tmp/plugin") {
+		t.Fatalf("Spacedock-owned Codex setup is not before host args: %v", args)
 	}
-	for _, arg := range args {
+	for _, arg := range args[fence+1:] {
 		if arg == "--plugin-dir" || arg == "/tmp/plugin" || arg == "--skip-compat-check" {
-			t.Fatalf("common live runner bypassed the installed stable package: %v", args)
+			t.Fatalf("Spacedock-owned argument leaked after host fence: %v", args)
 		}
 	}
 	if args[fence+1] != "exec" {

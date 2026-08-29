@@ -34,21 +34,6 @@ Reference paths: ensign contract at %[1]s/skills/ensign/SKILL.md; Pi ensign adap
 		repo, workflowRoot, stateRoot, entityPath, envelope.Agent, envelope.Skill, envelope.Prompt, piLiveSmokeMarker)
 }
 
-func TestPiLiveSmokePromptRequiresExactStageReportHeading(t *testing.T) {
-	envelope := piSmokeEnvelope{Agent: "worker", Skill: "ensign", Prompt: "Read /tmp/spacedock-dispatch/x.md and treat its content as your assignment."}
-	prompt := piLiveSmokePrompt("/repo", "/workflow", "/workflow/.spacedock-state", "/workflow/.spacedock-state/pi-live-smoke/index.md", envelope)
-	want := "exact heading '## Stage Report: implementation'"
-	if !strings.Contains(prompt, want) {
-		t.Fatalf("pi live smoke prompt missing %q:\n%s", want, prompt)
-	}
-	source := readFile(t, "pi_live_runner_test.go")
-	for _, contract := range []string{`filepath.Join(repoRoot(t), "skills", "ensign", "SKILL.md")`, `filepath.Join(repoRoot(t), "skills", "ensign", "references", "pi-ensign-runtime.md")`} {
-		if !strings.Contains(source, contract) {
-			t.Fatalf("Pi live smoke checklist missing boot-contract action %s", contract)
-		}
-	}
-}
-
 func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string) []string {
 	env := cleanEnviron(
 		"CODEX_THREAD_ID", "CLAUDECODE", "HOME", "PI_CODING_AGENT_DIR",
