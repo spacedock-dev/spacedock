@@ -69,6 +69,10 @@ gates:
                 id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-2:revision-1
                 digest: sha256:af07b07fe62e68b02f5b733a091a60ce7080694d422b2db3ea70760fd516f551
                 room-ref: '@review/validation/briefing-2'
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-08-29T02:19:15.173895Z"
+                reason: 'Captain clarified that the cleanup patch must be the stack tip above PR #782; attempt 2 was prepared against the wrong branch topology.'
 review-round:
     id: round:qcwrzza9xkr5kfwmdmvbqhkv:validation:2
     stage: validation
