@@ -11,6 +11,7 @@ import "testing"
 func TestPiReleaseRefDerivation(t *testing.T) {
 	const pseudo1 = "v0.28.0-pre0.0.20260828120000-abcdef123456" // @next over a pre tag
 	const pseudo2 = "v0.27.1-0.20260828120000-abcdef123456"      // no base tag
+	const dirtyPseudo = "v0.28.0-pre0.0.20260828165724-81e3386e8234+dirty"
 	for _, tc := range []struct {
 		name, stamp, buildInfo, want string
 	}{
@@ -22,6 +23,7 @@ func TestPiReleaseRefDerivation(t *testing.T) {
 		{"empty build info is the dev sentinel", "dev", "", ""},
 		{"next pseudo-version floats", "dev", pseudo1, ""},
 		{"plain pseudo-version floats", "dev", pseudo2, ""},
+		{"dirty checkout pseudo-version floats", "dev", dirtyPseudo, ""},
 		{"non-semver build info floats", "dev", "not-a-version", ""},
 		{"empty stamp uses build info", "", "v0.27.2", "v0.27.2"},
 	} {

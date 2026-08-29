@@ -215,8 +215,18 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	// overrides (--plugin-dir / SPACEDOCK_REPO_ROOT own the package surface
 	// for their run). The recheck below, never a second attempt, decides
 	// launch readiness.
-	if piRepairAttempt(ops, cfg, check, stderr) {
+	if attempted, installErr := piRepairAttempt(ops, cfg, check, stderr); attempted {
+		if installErr != nil {
+			fmt.Fprint(stderr, "spacedock pi: package repair failed; run `spacedock doctor --host pi` or `spacedock install --host pi`\n")
+			return 1
+		}
 		check = checkPiRuntime(ops, cfg)
+		ref, isGit := piGitSourceRef(check.packageStatus.source)
+		if !check.packageStatus.registered || !isGit || ref != piReleaseRef() {
+			fmt.Fprint(stderr, "spacedock pi: package repair did not install the required release; run `spacedock doctor --host pi` or `spacedock install --host pi`\n")
+			printPiDoctorReport(stdout, check)
+			return 1
+		}
 	}
 	if !piRuntimeLaunchReady(check) {
 		fmt.Fprint(stderr, "spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`\n")
@@ -631,14 +641,14 @@ func piRuntimeLaunchReady(c piCheckResult) bool {
 
 // piRepairAttempt runs the `spacedock pi` front door's one Spacedock-package
 // repair (pin-pi-package-to-binary-release). It reports whether an install
-// was attempted, so the caller rechecks the runtime before the launch gate.
-// Exactly one install runs per launch; the recheck — never a second attempt —
-// decides launch readiness.
-func piRepairAttempt(ops piRuntimeOps, cfg piRuntimeConfig, check piCheckResult, stderr io.Writer) bool {
+// was attempted and returns its install error. Exactly one install runs per
+// launch; after a successful install, the caller rechecks the package source
+// and runtime before the launch gate.
+func piRepairAttempt(ops piRuntimeOps, cfg piRuntimeConfig, check piCheckResult, stderr io.Writer) (bool, error) {
 	// A declared development override owns the package surface for its run:
 	// the repair never fights --plugin-dir / SPACEDOCK_REPO_ROOT.
 	if cfg.repoRoot != "" {
-		return false
+		return false, nil
 	}
 	// The repair cannot help when pi itself is unavailable — and `pi install`
 	// needs the pi binary anyway. (The failure being outside the package gate
@@ -646,12 +656,12 @@ func piRepairAttempt(ops piRuntimeOps, cfg piRuntimeConfig, check piCheckResult,
 	// the package entry, including the proactive wrong-line case where the
 	// package currently "launches" but the FO binary gate would abort.)
 	if !check.piBinOK {
-		return false
+		return false, nil
 	}
 	ref := piReleaseRef()
 	needed, reason := piPackageNeedsRepair(check.packageStatus, ref)
 	if !needed {
-		return false
+		return false, nil
 	}
 	source := piPinnedSource(ref)
 	fmt.Fprintf(stderr, "spacedock pi: Spacedock package %s; installing pinned source %s\n", reason, source)
@@ -662,7 +672,7 @@ func piRepairAttempt(ops piRuntimeOps, cfg piRuntimeConfig, check piCheckResult,
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: package repair install failed: %v\n", err)
 	}
-	return true // one attempt spent; the caller's recheck decides the launch
+	return true, err
 }
 
 func piDoctorHealthy(c piCheckResult) bool {

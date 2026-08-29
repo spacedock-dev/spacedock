@@ -94,7 +94,7 @@ func piSemverTag(v string) string {
 // the base-tag form vX.Y.Z-pre.0.<ts>-<hash>). Both end in a 14-digit
 // timestamp followed by the commit hash; they resolve no tag, so they carry
 // no release identity: the dev sentinel applies.
-var piPseudoVersion = regexp.MustCompile(`\d{14}-[0-9a-f]{7,12}$`)
+var piPseudoVersion = regexp.MustCompile(`\d{14}-[0-9a-f]{7,12}(?:\+[^ ]+)?$`)
 
 // piPinnedSource returns the install source for the Spacedock Pi package given
 // the binary's release ref: a ref-pinned source for a release-shaped binary
