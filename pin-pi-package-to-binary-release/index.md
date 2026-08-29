@@ -78,6 +78,17 @@ gates:
                 id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-3:revision-1
                 digest: sha256:276214fbf388fa6b699eb9b00180c4378a6e2575d202163112a1d13072e14efc
                 room-ref: '@review/validation/briefing-3'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:qcwrzza9xkr5kfwmdmvbqhkv:validation:3
+                briefing: briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-08-29T20:01:50.12418Z"
+                decision: approve
+                reason: Captain approved merge after reviewing impact surface and CI; all 5 ACs PASS, no material findings.
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:qcwrzza9xkr5kfwmdmvbqhkv:validation:2
     stage: validation
