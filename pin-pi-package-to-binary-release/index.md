@@ -277,3 +277,34 @@ Rebased and force-pushed PR #782 safely onto the moved base without restoring an
 ### Summary
 
 Corrected the two authorized validation findings without expanding the approved surface: a spent repair can no longer launch unless the post-install source carries the binary's required ref, and dirty pseudo-versions stay development sentinels. The pushed code commit is `284299e3b`; the retained process-level matrix now passes every AC-1/AC-4/AC-5 scenario.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently re-review corrected tip 284299e3b against the two validation/2 Material findings: repeat the retained wrong-line install-failure, ineffective-repair, and dirty-dev scenarios and verify exit, launch count, install count, stderr, and settings bytes prove AC-4 and AC-5.
+  Wrong-line install failure and ineffective repair each exit 1 after one install and zero launches with settings byte-unchanged; stderr distinguishes install failure from remaining mismatch and names the doctor/install remedy. The dirty dev binary makes zero installs: missing-package shape exits 1/zero launches, while registered-unpinned shape exits 0/one launch, both byte-unchanged.
+- DONE: Confirm cleanup de61c1baf remains an ancestor, the PR diff remains limited to the approved three files with no registry/live/fake-seam scaffolding restored, and report +LOC/-LOC/net/files against +295±80 net / 3±1.
+  `de61c1baf` and base `af70297dd` are ancestors of remote-matched tip `284299e3b`; diff is +310/−1 = +309 net across `pi.go` +64/−1, `pi_package_source.go` +150, and `pi_package_source_test.go` +96, within tolerance, with all removed scaffolding byte-identical to or absent as on `origin/main`.
+- DONE: Cross-check AC-1 through AC-5 and the implementation cycle-3 focused/full/race evidence, then recommend PASSED or REJECTED with any material findings separated from deferred risks.
+  Independently repeated all three focused tables, isolated `go test ./...`, and isolated `go test ./... -race`; all pass. Recommendation: PASSED, with no Material finding and two accepted deferred risks listed below.
+
+### AC evidence and retained run artifacts
+
+- AC-1 PASS: unpinned and wrong-line starts each perform exactly one install of `git:github.com/spacedock-dev/spacedock@v0.27.2`, rewrite settings to `{"packages":["git:github.com/spacedock-dev/spacedock@v0.27.2"]}`, exit 0, and launch once.
+- AC-2 PASS: the derivation/classifier/repair-decision tables pass, release runs expose the literal pinned source, and both development override inputs avoid the release source.
+- AC-3 PASS: stable, prerelease, proxy-tagged, checkout-dev, clean pseudo, and dirty pseudo identities retain their literal expected derivations; the real dirty build info `v0.28.0-pre0.0.20260828165724-81e3386e8234+dirty` now floats.
+- AC-4 PASS: missing and wrong-line install failures, plus reported-success remaining mismatch, each spend one attempt, exit 1, make zero launches, preserve settings, and print actionable refusal; successful repair still launches exactly once.
+- AC-5 PASS: `file:`, dirty dev, `--plugin-dir`, and `SPACEDOCK_REPO_ROOT` cases make zero installs and preserve settings bytes; healthy pinned also remains a zero-install launch.
+- Test/format transcript: focused tables PASS; isolated full suite PASS (CLI 112s, ensigncycle 168s); isolated race PASS (CLI 145s, ensigncycle 205s). Required gofmt touched only pre-existing main whitespace, restored byte-identically; candidate files are gofmt-clean and `git diff --check` passes.
+
+### Material findings
+
+- None. Both validation/2 Material outcome defects are RESOLVED by observed terminal behavior, not only passing tables.
+
+### Deferred risks
+
+- Older Pi package managers might not honor `@ref`; trigger is a Pi version outside the locally spiked supported setup, while the supported path satisfies AC-1. Promote to Material if a supported Pi version fails to reconcile the pinned source.
+- Concurrent `spacedock pi` processes can race the settings rewrite; trigger is simultaneous launch in a single-user path, while every serial one-attempt scenario converges correctly. Promote to Material if concurrent use becomes supported or an observed race leaves persistent wrong-line state.
+
+### Summary
+
+Independent validation confirms correction tip `284299e3b` resolves both prior Material findings without restoring removed proof scaffolding or exceeding the approved surface tolerance. Every AC has executable evidence, full and race suites pass, no Material finding remains, and validation recommends PASSED with only the two previously accepted deferred risks.
