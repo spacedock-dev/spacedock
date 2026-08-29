@@ -67,13 +67,15 @@ The result is slow CI, large fixtures, and false confidence. At stack parent `37
 
 A validator can prove the same distinct failures with existing owners, one smaller Pi journey, and one-off install evidence whose source is named truthfully.
 
+During implementation, the first Pi validation reported a material finding: the child committed the work marker but omitted the required Stage Report. The first officer classified the supported normal workflow as a fresh Pi initial dispatch with a work-only checklist, the observable harm as an incomplete completion artifact, and the authority as `value-ac[AC-3]`; the captain then ruled “ok do it” and authorized the smallest product correction. Root-cause investigation before mutation found that this run had selected a stale main-root `spacedock` binary whose dispatch artifact predated the stack parent's Pi first-action correction. A diagnostic run bound to the current worktree binary loaded `skills/ensign/SKILL.md`, `ensign-shared-core.md`, and the Pi adapter, then wrote and committed the exact Stage Report. The correction is therefore already present in the approved stack parent and must be preserved by this cleanup; duplicating the report protocol in generated dispatch text would recreate the scaffolding this task removes.
+
 ## Required outcome
 
 Delete or combine the redundant proof added by PRs #767, #768, #776, #777, #780, and #781. Preserve one primary proof owner for each distinct product failure mode.
 
 Add a short workflow rule for test selection. The rule must not add a lint, gate, CI lane, required table, or recurring ceremony.
 
-Implementation starts from stack parent `37f50588aa37cfa571a88e4aa87b8f5c8f1b39e8`. It changes proof selection and validation guidance only; it does not change product behavior.
+Implementation starts from stack parent `37f50588aa37cfa571a88e4aa87b8f5c8f1b39e8`. It changes proof selection and validation guidance while preserving the stack parent's smallest Pi behavior correction: a fresh worker is explicitly directed to load the ensign discipline and its shared Stage Report protocol before reading a work-only assignment. No additional product mechanism is justified unless the retained owner fails with the current worktree binary.
 
 ## Proposed approach and proof-owner audit
 
@@ -109,7 +111,7 @@ No product-mechanism spike is needed: every cleanup target relies on an already 
 
 ## Out of scope
 
-- Product behavior changes.
+- Product behavior changes beyond preserving the authorized Pi first-action correction already present at the stack parent.
 - New test frameworks, CI lanes, runtime controllers, or fixture protocols.
 - The older dead-oracle cleanup owned by `retire-non-authoritative-test-oracles`.
 - Release-process redesign.
@@ -124,6 +126,8 @@ Expected files: `docs/dev/README.md`; `.github/workflows/runtime-live-e2e.yml`; 
 Count baselines: relevant Pi journeys fall from two to one. The common journey inventory remains 17 per host; package installs fall from 17 per common host set (19 full Claude, 18 full Codex) to zero committed live-suite installs. Release-source validation uses at most two one-off installs: one local candidate and one real published stable package.
 
 Allowed semantic change: test selection, test setup, live-run count, and validation guidance. Command grammar, stored formats, authority, and supported runtime behavior must not change.
+
+Corrected implementation estimate after the captain's authorization remains +65/-625 = -560 net across 18 files: root-cause evidence shows the required product behavior is already in the stack parent, so the cleanup adds no duplicate production lines or files. The current implementation surface before final validation is +87/-603 = -516 net across 17 files, within both approved tolerances. If a current-binary owner failure requires a new product edit, recompute this surface before mutation and stop if it exceeds either tolerance.
 
 ## Exact proposed workflow diff
 
@@ -165,8 +169,8 @@ Verified by: compare `git diff --numstat` from stack parent `37f50588aa37cfa571a
 **AC-2: No committed test claims agent or runtime behavior from prose, generated prompt text, or Go source text.**
 Verified by: inspect the changed tests and execute their retained behavioral owners. A retained assertion whose expected behavior comes only from instruction/source text fails; deterministic artifact-output shape remains legitimate only where that shape itself is the claim.
 
-**AC-3: Pi frontdoor behavior has one live journey that observes the real child transcript, ensign skill load, report, and clean commit.**
-Verified by: run modified `TestLivePiFrontDoorSmoke` once with a non-self-describing work checklist. A second journey, fixture, registry row, or CI lane for the same behavior fails this criterion.
+**AC-3: A fresh Pi worker given a work-only, non-self-describing checklist produces the required Stage Report, and one live journey observes the real child transcript, ensign skill load, report, and clean commit.**
+Verified by: build the current worktree binary and run only modified `TestLivePiFrontDoorSmoke` with `SPACEDOCK_BIN` bound explicitly to that binary. The transcript must show the worker load the ensign skill and shared core before producing the structurally valid report and clean commit. A stale/ambient launcher, missing report, second journey, fixture, registry row, or CI lane for the same behavior fails this criterion.
 
 **AC-4: Package-source claims name the real source. A copied checkout is never labeled as published stable.**
 Verified by: confirm common live runners use checkout-candidate overrides with zero installs. Run one candidate frontdoor install from the staged marketplace and inspect its source. When published stable is relevant, manually install with no marketplace override from the real release channel and record source, version, and launch behavior. A temporary marketplace presented as published stable fails this criterion.
@@ -184,7 +188,7 @@ Verified by: run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./..
 
 The selection rule is concrete: use a committed deterministic test for repeatable product behavior, at the lowest layer that owns the failure; reuse or modify the nearest owner first. Add another committed check only when a named falsifying edit escapes the primary owner. Use one existing live journey only when agent/runtime behavior cannot be observed deterministically. Use manual validation when truth depends on a mutable external source, especially release-channel provenance or one-time installation wiring.
 
-Implementation sequence: perform the exact deletions/combinations in the owner audit; restore checkout-candidate common live runners; apply the approved README diff; run the behavior-diff comparison before committing that rule; format and run focused plus full deterministic suites; then run the one Pi frontdoor journey and the one-off package installations justified by AC-4.
+Implementation sequence: perform the exact deletions/combinations in the owner audit; restore checkout-candidate common live runners; apply the approved README diff; run the behavior-diff comparison before committing that rule; format and run focused plus full deterministic suites; then build the current worktree launcher and run the one Pi frontdoor journey with `SPACEDOCK_BIN` explicitly bound to it, followed by the one-off package installations justified by AC-4. Inspect the retained journey's child transcript for the ensign skill and shared-core reads as well as its report, commit, and clean-tree graders. Treat a failure from an ambient or stale launcher as invalid evidence and rerun with the bound candidate before proposing mutation.
 
 No audit row exposes an uncovered failure mode. Therefore implementation adds no test file, live scenario, fixture, registry row, CI lane, lint, gate, or harness code.
 
@@ -202,3 +206,25 @@ No audit row exposes an uncovered failure mode. Therefore implementation adds no
 ### Summary
 
 Ideation reduces the recent proof stack by deleting duplicate live, source-reading, cross-product, and install scaffolding while preserving a named owner for every distinct failure. It adds only concise workflow guidance, with its effect measured by an incident-derived `behavior-diff` run during implementation rather than by new enforcement machinery.
+
+## Stage Report: implementation
+
+- DONE: Apply the approved proof-owner audit: delete or combine the named duplicate checks, retain every distinct behavioral owner, and change no product behavior.
+  Commit `de61c1baf` removes 603 lines and adds 87 across 17 files; focused status, gate, dispatch, round, terminal, runner, and Pi owners passed, and deleting any retained classification, trust-boundary, fresh-clone, or launch-argv behavior would fail its named owner.
+- DONE: Apply the exact docs/dev/README.md rule uncommitted, run Engram behavior-diff with three trials per variant, and commit the rule only after reporting a real flow divergence or an honest inconclusive result.
+  Base capsule printed `CAPSULE OK`; six valid REVIEW trials produced an honest inconclusive result because repo-shell reads were denied, at `/private/tmp/spacedock-engram-behavior-diff-3nm832/runs/diff-20260828-164836/report.md`, before the README entered `de61c1baf`.
+- DONE: Verify focused owners plus gofmt, go test ./..., go test ./... -race, one targeted Pi frontdoor journey, package-source observations, and actual LOC/files/install counts against the -560/18 estimate.
+  Gofmt/diff checks and focused owners passed; isolated fresh-CODEX_HOME full and race suites passed, while the first ambient runs failed only on a stale local Codex plugin cache that the isolated reruns removed.
+
+### Validation evidence
+
+- The single retained `TestLivePiFrontDoorSmoke` passed in 198.29s with the current launcher and declared pi-subagents 0.53.0: one child, five reads, ensign skill at read #2, shared-core protocol, valid report, required commit, and clean state. Removing the first-action skill load or report protocol makes it fail.
+- The first Pi attempt found a marker-only commit and no Stage Report. The FO recorded normal fresh-Pi/work-only use, incomplete-artifact harm, and `value-ac[AC-3]`; the captain authorized FIX with “ok do it.”
+- Root-cause investigation showed that attempt used the ambient stale main-root binary and its pre-correction dispatch. A current-binary diagnostic produced the report; the remaining metadata-location failure came from local pi-subagents 0.35.1, and the declared 0.53.0 rerun passed. No duplicate product or harness edit was justified.
+- Candidate install evidence used an isolated CODEX_HOME and staged local marketplace: one enabled `spacedock@spacedock-local` 0.28.0-pre1, doctor-compatible with the candidate binary.
+- Published evidence used ordinary stable installation with no override: marketplace `https://github.com/spacedock-dev/marketplace.git`, plugin `https://github.com/spacedock-dev/spacedock.git` ref `stable`, version 0.27.2, compatible doctor, and successful `spacedock codex --no-install -- --version` launch.
+- Actual surface is +87/-603 = -516 net across 17 files, within -560/18 tolerance; relevant Pi journeys are 2-to-1, common journeys stay 17 per host, committed suite installs are zero, and validation used one candidate plus one published-stable install.
+
+### Summary
+
+Implementation keeps one behavioral owner per distinct failure, removes duplicate/source-reading/live-install proof, and adds the approved concise workflow rule. It preserves the stack parent's authorized Pi first-action correction and proves a fresh worker can derive the Stage Report from a work-only checklist without adding another test, scenario, fixture, registry row, lane, lint, gate, table, harness, or product mechanism.
