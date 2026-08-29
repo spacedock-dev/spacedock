@@ -112,11 +112,10 @@ homebrew_casks:
   # release, pinning the per-arch url + sha256 from the release assets +
   # checksums.txt — the seam the homebrew-tap entity consumes. `brews:` is
   # hard-deprecated at goreleaser v2.16; casks auto-detect the bare `spacedock`
-  # binary from the archive root, so no install/test stanza is given. Two casks
-  # ship per release: the STABLE `spacedock` cask (from the stable archive,
-  # installs the `main` plugin) and the EDGE `spacedock@next` cask (from the edge
-  # archive, installs the `next` plugin). Each pins ONLY its own channel's archive
-  # via `ids: [<archive-id>]` so the two casks never cross-pin.
+  # binary from the archive root, so no install/test stanza is given. The config
+  # defines two casks, but each tag publishes only its matching channel. A final
+  # tag publishes `spacedock`. A prerelease tag publishes `spacedock@next`. Each
+  # cask pins only its channel archive via `ids: [<archive-id>]`.
   - name: spacedock
     # `auto` skips the cask bump when goreleaser marks the release a pre-release
     # (release.prerelease: auto flags a hyphenated tag like v0.23.0-pre), so a
@@ -174,11 +173,9 @@ homebrew_casks:
   # devBranch=next binary that installs the `next` plugin. Its on-demand re-pull
   # cadence rides the unchanged next-publish.yml; goreleaser only emits the cask.
   - name: spacedock@next
-    # `false` publishes the edge cask on every tag, including pre-releases, so the
-    # edge tap tracks `-pre` cuts. This diverges from the stable cask's `auto`
-    # (which skips on a pre-release) — the edge channel is meant to surface
-    # pre-release builds, while stable never gets a pre-release.
-    skip_upload: false
+    # Skip final tags. Publish only prerelease tags, where `.Prerelease` is not
+    # empty. This is the inverse of the stable cask's `auto` routing.
+    skip_upload: '{{ eq .Prerelease "" }}'
     ids:
       - spacedock-edge
     # The archive ships the binary as `spacedock`, so the edge command is also

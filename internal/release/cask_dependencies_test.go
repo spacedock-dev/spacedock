@@ -177,12 +177,37 @@ func renderCasks(t *testing.T) (map[string]string, bool) {
 type goreleaserCaskConfig struct {
 	HomebrewCasks []struct {
 		Name         string `yaml:"name"`
+		SkipUpload   string `yaml:"skip_upload"`
 		Caveats      string `yaml:"caveats"`
 		Dependencies []struct {
 			Cask    string `yaml:"cask"`
 			Formula string `yaml:"formula"`
 		} `yaml:"dependencies"`
 	} `yaml:"homebrew_casks"`
+}
+
+// TestCaskReleaseChannelRouting makes sure that a final tag cannot replace the
+// edge cask and that a prerelease tag cannot replace the stable cask.
+func TestCaskReleaseChannelRouting(t *testing.T) {
+	var cfg goreleaserCaskConfig
+	if err := yaml.Unmarshal([]byte(readGoreleaserConfig(t)), &cfg); err != nil {
+		t.Fatalf("parse .goreleaser.yaml: %v", err)
+	}
+	want := map[string]string{
+		"spacedock":      "auto",
+		"spacedock@next": `{{ eq .Prerelease "" }}`,
+	}
+	for _, cask := range cfg.HomebrewCasks {
+		if expected, ok := want[cask.Name]; ok {
+			if cask.SkipUpload != expected {
+				t.Errorf("cask %q skip_upload = %q, want %q", cask.Name, cask.SkipUpload, expected)
+			}
+			delete(want, cask.Name)
+		}
+	}
+	for name := range want {
+		t.Errorf("missing cask %q", name)
+	}
 }
 
 // assertCaskConfig is the fallback proof: it parses .goreleaser.yaml's

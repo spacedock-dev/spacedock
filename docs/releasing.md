@@ -20,8 +20,9 @@ marketplace source.
   prerelease's `_stable` tarball — it exists only because the cask pipe cannot
   tolerate a skipped build;
 - publishes the GitHub Release with those assets;
-- bumps BOTH `spacedock-dev/homebrew-tap` casks (`spacedock` stable +
-  `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
+- updates one matching cask in `spacedock-dev/homebrew-tap` via
+  `HOMEBREW_TAP_TOKEN`: final tags update `spacedock`, and prerelease tags update
+  `spacedock@next`;
 - stamps the plugin manifests' `version` on `main` on a `.0` release only (a
   patch tag does not touch `main`), then advances the stable channel ref (see
   below).

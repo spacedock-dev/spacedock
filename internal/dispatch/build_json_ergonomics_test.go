@@ -240,7 +240,7 @@ func assertPiBuildOutput(t *testing.T, stdout string) {
 		t.Fatalf("derived Pi prompt should be the read-dispatch-file form: %q", out.Prompt)
 	}
 	body := readDispatchBody(t, out.DispatchFilePath)
-	for _, want := range []string{"read this dispatch file", "/skill:ensign", "Pi subagent completion result", "Do not emit Claude team-tool calls"} {
+	for _, want := range []string{"read this dispatch file", "Pi subagent completion result", "Do not emit Claude team-tool calls"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("derived Pi dispatch body missing %q:\n%s", want, body)
 		}

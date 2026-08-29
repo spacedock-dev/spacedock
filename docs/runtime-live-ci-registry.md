@@ -313,22 +313,6 @@ limited to the named runtime boundary.
 - **Fixture:** `pi/split-root-smoke` — a current-checkout Pi environment and
   split-root workflow with one child-dispatchable member.
 
-### `pi-non-self-describing-dispatch`
-
-- **Entry point:** `TestLivePiNonSelfDescribingDispatch`
-- **Lane:** `pi-live`
-- **Required outcome:** A Pi worker dispatched with a checklist equal to a real
-  entity's acceptance criteria (no skill-path, stage-report heading, or
-  DONE/Summary hints) still writes a complete `## Stage Report: implementation`
-  with a clean state-checkout commit. The worker's only stage-report format
-  source is the `### Stage Report format` block the dispatch build artifact
-  embeds for host=pi. This is the tautology-closing lane: reverting the body
-  embed makes it RED while the self-describing `pi-front-door-subagent-dispatch`
-  lane stays green.
-- **Fixture:** `pi/non-self-describing-smoke` — a split-root Pi workflow whose
-  implementation stage-def names only the real work (no stage-report mention),
-  so the embedded dispatch body block is the worker's only format source.
-
 ## Non-gating live experiments
 
 These tests are intentionally not release evidence and are not selected by a

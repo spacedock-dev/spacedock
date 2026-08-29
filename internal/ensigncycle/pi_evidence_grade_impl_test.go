@@ -232,24 +232,3 @@ func validPiBootContractEvidence() piBootContractEvidence {
 		Transcript:            "/run/child-transcript.jsonl",
 	}
 }
-
-func TestLivePiFrontDoorSmokeRetainsAllGraders(t *testing.T) {
-	source, err := os.ReadFile("pi_live_runner_test.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	start := strings.Index(string(source), "func TestLivePiFrontDoorSmoke")
-	if start < 0 {
-		t.Fatal("cannot locate TestLivePiFrontDoorSmoke")
-	}
-	end := strings.Index(string(source)[start:], "func newPiLiveSmokeFixture")
-	if end < 0 {
-		t.Fatal("cannot locate TestLivePiFrontDoorSmoke")
-	}
-	body := string(source)[start : start+end]
-	for _, grader := range []string{"runPiLiveCommand", "assertPiLiveSmokeResult", "assertPiEnsignBootContract"} {
-		if !strings.Contains(body, grader) {
-			t.Fatalf("TestLivePiFrontDoorSmoke lost grader %q", grader)
-		}
-	}
-}

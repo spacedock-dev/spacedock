@@ -15,7 +15,7 @@ import (
 // real `spacedock codex` launch and returns the (before, after, observed) state
 // the shared assertions consume. Auth/HOME isolation (isolated CODEX_HOME +
 // minimal config plus copied auth.json / OPENAI_API_KEY), Spacedock-owned local
-// stable release plugin setup, and the `--output-last-message` observed-extract are the ONLY
+// checkout-candidate plugin setup, and the `--output-last-message` observed-extract are the ONLY
 // Codex-specific surface; the common declarations, fixtures, prompts, and assertions
 // are shared with the Claude runner.
 type codexLiveRunner struct {
@@ -107,7 +107,7 @@ func newCodexLiveRunner(t *testing.T, setupIDs ...string) codexLiveRunner {
 		t.Fatal("codex not on PATH; install Codex CLI before running the live Codex suite")
 	}
 
-	binary, marketplace := stableLiveRelease(t)
+	binary := spacedockBinary(t)
 	repo := repoRoot(t)
 	artifactRoot := codexLiveArtifactDir(t, "codex-shared-scenarios")
 	codexHome := newCodexLiveIsolatedHome(t, repo, artifactRoot)
@@ -126,7 +126,6 @@ func newCodexLiveRunner(t *testing.T, setupIDs ...string) codexLiveRunner {
 		}
 	}
 	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), openAIAPIKey, decision.mode)
-	env = withRecordedGateEnv(env, "SPACEDOCK_MARKETPLACE_SOURCE", marketplace)
 
 	setupID := ""
 	if len(setupIDs) > 0 {
@@ -142,7 +141,6 @@ func newCodexLiveRunner(t *testing.T, setupIDs ...string) codexLiveRunner {
 	case codexAuthOAuth, codexAuthLocal:
 		runCodexLiveCommand(t, setupDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
 	}
-	runCodexLiveCommand(t, setupDir, "stable-plugin-install.txt", "", env, binary, "install", "--host", "codex")
 
 	adapterPath := filepath.Join(repo, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
 	if _, err := os.Stat(adapterPath); err != nil {
@@ -156,7 +154,7 @@ func newCodexLiveRunner(t *testing.T, setupIDs ...string) codexLiveRunner {
 		t.Fatal("current-checkout source HEAD is empty")
 	}
 
-	return codexLiveRunner{binary: binary, codexBin: codexBin, codexHome: codexHome, env: env, artifactRoot: artifactRoot}
+	return codexLiveRunner{binary: binary, pluginDir: livePluginDir(t), codexBin: codexBin, codexHome: codexHome, env: env, artifactRoot: artifactRoot}
 }
 
 func codexLiveSetupArtifactDir(artifactRoot, setupID string) string {

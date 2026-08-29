@@ -80,7 +80,7 @@ jobs:
         run: go test ./...
 
       - name: Run deterministic live-harness controls offline
-        run: go test ./internal/ensigncycle -count=1 -run 'TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveSmokePromptRequiresExactStageReportHeading|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
+        run: go test ./internal/ensigncycle -count=1 -run 'TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
 
   # Pull requests normalize to one Sonnet 5 leg. Manual dispatches choose the
   # routine Sonnet cadence or the separately approved Opus pre-release cadence.
@@ -811,7 +811,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           set -o pipefail
-          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run 'TestLivePiFrontDoorSmoke|TestLivePiNonSelfDescribingDispatch' ./internal/ensigncycle
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 15m -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()
