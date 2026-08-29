@@ -150,38 +150,132 @@ func TestRoundAcceptsWorkflowForeignLabelsAndActors(t *testing.T) {
 	}
 }
 
-func TestRoundRequiresFolderFormWithoutCrossEntityCollision(t *testing.T) {
-	workflow := t.TempDir()
-	for _, slug := range []string{"task-a", "task-b"} {
-		entity := filepath.Join(workflow, slug+".md")
-		if err := os.WriteFile(entity, []byte("---\nid: "+slug+"\nstatus: implementation\n---\n# Task\n"), 0o644); err != nil {
+func TestRoundPublishesFlatAndFolderThroughSharedReviewHome(t *testing.T) {
+	for _, form := range []string{"folder", "flat"} {
+		t.Run(form, func(t *testing.T) {
+			var root, entity, briefing, log string
+			if form == "folder" {
+				root, entity, briefing, log, _ = advisoryRoundFixture(t)
+			} else {
+				root, entity, briefing, log, _ = flatAdvisoryRoundFixture(t)
+			}
+			before := lifecycleBytes(t, entity)
+			if err := RecordSemantic(entity, inputForRound(briefing, log)); err != nil {
+				t.Fatal(err)
+			}
+			pointer, err := readRoundPointerData(mustReadBytes(t, entity))
+			if err != nil || pointer.Briefing.RoomRef != "@review/implementation/round-1" {
+				t.Fatalf("pointer=%#v err=%v", pointer, err)
+			}
+			if !bytes.Equal(before, lifecycleBytes(t, entity)) {
+				t.Fatal("round changed status or gates")
+			}
+			if _, err := os.Stat(filepath.Join(root, "review", "implementation", "round-1", "briefing.json")); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := ValidateRoundFile(entity, "implementation/1"); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+
+	t.Run("declared folder policy refuses a new flat home and grandfathers an existing one", func(t *testing.T) {
+		root, entity, briefing, log, _ := flatAdvisoryRoundFixture(t)
+		state := filepath.Dir(root)
+		readme := "---\nentity-form: folder\nstages:\n  states:\n    - name: implementation\n---\n# Workflow\n"
+		if err := os.WriteFile(filepath.Join(state, "README.md"), []byte(readme), 0o644); err != nil {
 			t.Fatal(err)
 		}
+		before := treeDigest(t, state)
+		if err := RecordSemantic(entity, inputForRound(briefing, log)); err == nil || treeDigest(t, state) != before {
+			t.Fatalf("declared-folder refusal err=%v or changed bytes", err)
+		}
+		if err := os.MkdirAll(filepath.Join(root, "review", "retained"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := RecordSemantic(entity, inputForRound(briefing, log)); err != nil {
+			t.Fatalf("grandfathered flat round: %v", err)
+		}
+	})
+}
+
+func TestRoundArtifactBoundaryIsByteCleanForFlatAndFolder(t *testing.T) {
+	for _, form := range []string{"folder", "flat"} {
+		for _, row := range []string{"outside home", "mutable entity"} {
+			t.Run(form+"/"+row, func(t *testing.T) {
+				root, entity, briefing, log := roundFixtureForForm(t, form)
+				target, uri := filepath.Join(filepath.Dir(root), "sibling.txt"), "../../../../sibling.txt"
+				if row == "mutable entity" {
+					target, uri = entity, "../../../index.md"
+					if form == "flat" {
+						uri = "../../../../task.md"
+					}
+				} else if err := os.WriteFile(target, []byte("sibling\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				body := bytes.Replace(mustReadBytes(t, briefing), []byte("../../../candidate.patch"), []byte(uri), 1)
+				body = bytes.Replace(body, []byte("sha256:8e85d4c9523a617e05b17c92390b10b2f9892152ca348433311230ac3ad98dd3"), []byte(RawDigest(mustReadBytes(t, target))), 1)
+				if err := os.WriteFile(briefing, body, 0o644); err != nil {
+					t.Fatal(err)
+				}
+				state := filepath.Dir(root)
+				before := treeDigest(t, state)
+				if err := RecordSemantic(entity, inputForRound(briefing, log)); err == nil || treeDigest(t, state) != before {
+					t.Fatalf("boundary refusal err=%v or changed bytes", err)
+				}
+			})
+		}
 	}
-	if err := os.WriteFile(filepath.Join(workflow, "unrelated"), []byte("preserve"), 0o644); err != nil {
+}
+
+func TestRoundFrozenLegacyFolderPointerReplaysUnchanged(t *testing.T) {
+	_, entity, briefing, log, _ := advisoryRoundFixture(t)
+	input := inputForRound(briefing, log)
+	if err := RecordSemantic(entity, input); err != nil {
 		t.Fatal(err)
 	}
-	inputRoot := filepath.Join(workflow, "inputs")
-	if err := os.MkdirAll(inputRoot, 0o755); err != nil {
+	body := bytes.Replace(mustReadBytes(t, entity), []byte("@review/implementation/round-1"), []byte("./review/implementation/round-1"), 1)
+	if err := os.WriteFile(entity, body, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	briefing := filepath.Join(inputRoot, "briefing.json")
-	log := filepath.Join(inputRoot, "briefing.review.jsonl")
-	copyRoundFixture(t, briefing, "briefing.json")
-	copyRoundFixture(t, log, "briefing.review.jsonl")
-	for _, slug := range []string{"task-a", "task-b"} {
-		before := treeDigest(t, workflow)
-		entity := filepath.Join(workflow, slug+".md")
-		err := RecordSemantic(entity, inputForRound(briefing, log))
-		if err == nil || !strings.Contains(err.Error(), "folder-form entity") || treeDigest(t, workflow) != before {
-			t.Fatalf("%s flat refusal error=%v or changed workflow bytes", slug, err)
-		}
-		if _, statErr := os.Stat(entity + ".gates.lock"); !os.IsNotExist(statErr) {
-			t.Fatalf("%s flat refusal left a lock: %v", slug, statErr)
-		}
+	if _, err := ValidateRoundFile(entity, input.Round); err != nil {
+		t.Fatalf("legacy pointer validation: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(workflow, "review")); !os.IsNotExist(err) {
-		t.Fatalf("flat refusals created a shared review room: %v", err)
+	if err := RecordSemantic(entity, input); err != nil {
+		t.Fatalf("legacy pointer exact replay: %v", err)
+	}
+	if got := mustReadBytes(t, entity); !bytes.Equal(got, body) {
+		t.Fatal("exact replay rewrote the frozen legacy room-ref")
+	}
+}
+
+func TestRoundReplayRefusesSiblingAndMutableEntityArtifacts(t *testing.T) {
+	for _, form := range []string{"folder", "flat"} {
+		t.Run(form, func(t *testing.T) {
+			root, entity, briefing, log := roundFixtureForForm(t, form)
+			if err := RecordSemantic(entity, inputForRound(briefing, log)); err != nil {
+				t.Fatal(err)
+			}
+			candidate := filepath.Join(root, "candidate.patch")
+			sibling := filepath.Join(filepath.Dir(root), "sibling.patch")
+			copyRoundFixture(t, sibling, "candidate.patch")
+			for _, target := range []string{sibling, entity} {
+				if err := os.Remove(candidate); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(target, candidate); err != nil {
+					t.Fatal(err)
+				}
+				before := treeDigest(t, filepath.Dir(root))
+				if _, err := ValidateRoundFile(entity, "implementation/1"); err == nil || treeDigest(t, filepath.Dir(root)) != before {
+					t.Fatalf("replay target %s was accepted or changed bytes", target)
+				}
+				if err := os.Remove(candidate); err != nil {
+					t.Fatal(err)
+				}
+				copyRoundFixture(t, candidate, "candidate.patch")
+			}
+		})
 	}
 }
 
@@ -495,6 +589,28 @@ func inputForRound(briefing, log string) RecordInput {
 func advisoryRoundFixture(t *testing.T) (root, entity, briefing, log, feedback string) {
 	t.Helper()
 	return advisoryRoundFixtureAt(t, filepath.Join(t.TempDir(), "task"))
+}
+
+func flatAdvisoryRoundFixture(t *testing.T) (root, entity, briefing, log, feedback string) {
+	state := t.TempDir()
+	root, folderEntity, briefing, log, feedback := advisoryRoundFixtureAt(t, filepath.Join(state, "task"))
+	if err := os.Rename(filepath.Join(root, "README.md"), filepath.Join(state, "README.md")); err != nil {
+		t.Fatal(err)
+	}
+	entity = filepath.Join(state, "task.md")
+	if err := os.Rename(folderEntity, entity); err != nil {
+		t.Fatal(err)
+	}
+	return root, entity, briefing, log, feedback
+}
+
+func roundFixtureForForm(t *testing.T, form string) (root, entity, briefing, log string) {
+	if form == "flat" {
+		root, entity, briefing, log, _ = flatAdvisoryRoundFixture(t)
+		return
+	}
+	root, entity, briefing, log, _ = advisoryRoundFixture(t)
+	return
 }
 
 func advisoryRoundFixtureAt(t *testing.T, root string) (string, string, string, string, string) {

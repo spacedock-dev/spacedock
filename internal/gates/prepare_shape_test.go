@@ -1,6 +1,7 @@
 package gates
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -134,7 +135,11 @@ func TestBindingShapesClassifyAndResolve(t *testing.T) {
 				Digest:  "sha256:" + strings.Repeat("1", 64),
 				RoomRef: tc.ref,
 			}
-			if got := preparedRoomBinding(entity, binding); got != tc.prepared {
+			got, classifyErr := preparedRoomBinding(entity, binding)
+			if classifyErr != nil {
+				t.Fatal(classifyErr)
+			}
+			if got != tc.prepared {
 				t.Fatalf("preparedRoomBinding(%q) = %v, want %v", tc.ref, got, tc.prepared)
 			}
 			path, err := boundBriefingPath(entity, binding)
@@ -162,6 +167,52 @@ func TestBindingShapesClassifyAndResolve(t *testing.T) {
 				t.Fatalf("%q resolved %q want %q", tc.ref, path, want)
 			}
 		})
+	}
+}
+
+func TestMalformedCanonicalRoomRefCannotSpendGateAuthority(t *testing.T) {
+	workflow, _, entity, artifact, _ := prepareFixture(t, "flat")
+	if _, err := Prepare(entity, PrepareInput{WorkflowDir: workflow, Question: "Advance?", Artifact: artifact, Summary: "candidate"}); err != nil {
+		t.Fatal(err)
+	}
+	body := bytes.Replace(mustReadBytes(t, entity), []byte("@review/validation/briefing-1"), []byte("@review/a/../b"), 1)
+	if err := os.WriteFile(entity, body, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	err := RecordSemantic(entity, RecordInput{Decision: "approve", Actor: "person:captain", WorkflowDir: workflow})
+	if err == nil || !strings.Contains(err.Error(), "invalid @review room-ref") {
+		t.Fatalf("gate close accepted malformed reserved room-ref: %v", err)
+	}
+	if got := mustReadBytes(t, entity); !bytes.Equal(got, body) {
+		t.Fatal("malformed reserved-ref refusal changed entity bytes")
+	}
+}
+
+func TestReviewRoomRefsHaveOneMeaningAcrossEntityForms(t *testing.T) {
+	root := t.TempDir()
+	flat := filepath.Join(root, "task.md")
+	folder := filepath.Join(root, "task", "index.md")
+	room := filepath.Join(root, "task", "review", "validation", "briefing-1")
+	for _, entity := range []string{flat, folder} {
+		if got, err := canonicalReviewRoomRef(entity, room); err != nil || got != "@review/validation/briefing-1" {
+			t.Fatalf("canonical ref for %s = %q, %v", entity, got, err)
+		}
+		if got, err := ResolveRoomRef(entity, "@review/validation/briefing-1"); err != nil || got != room {
+			t.Fatalf("canonical resolution for %s = %q, %v", entity, got, err)
+		}
+	}
+	for _, tc := range []struct{ ref, want string }{
+		{"./task/review/validation/briefing-1", room},
+		{"opaque-provider:task", filepath.Join(root, "opaque-provider:task")},
+	} {
+		if got, err := ResolveRoomRef(flat, tc.ref); err != nil || got != tc.want {
+			t.Fatalf("legacy %q = %q, %v; want %q", tc.ref, got, err, tc.want)
+		}
+	}
+	for _, ref := range []string{"@review", "@review/", "@review//absolute", "@review/.", "@review/a/../b", `@review/a\b`} {
+		if _, err := ResolveRoomRef(flat, ref); err == nil {
+			t.Fatalf("malformed reserved ref %q resolved", ref)
+		}
 	}
 }
 
@@ -218,7 +269,7 @@ func TestRetainedTwoFileRoomKeepsItsFullValidation(t *testing.T) {
 		t.Fatal(err)
 	}
 	binding := doc.Records[0].Attempts[0].Briefing
-	if binding.RequestDigest == "" || !preparedRoomBinding(entity, binding) {
+	if binding.RequestDigest == "" || !isPreparedRoomBinding(entity, binding) {
 		t.Fatalf("retained room binding = %#v", binding)
 	}
 	if err := validateRetainedAuthority(entity, workflow, doc); err != nil {

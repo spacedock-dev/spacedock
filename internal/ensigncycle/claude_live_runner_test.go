@@ -330,10 +330,10 @@ func runClaudeWithdrawnGateRecoveryScenario(t *testing.T, runner liveDriver, sce
 	if readFile(t, firstBriefingPath) != firstBriefing {
 		t.Fatalf("recovery rewrote withdrawn room bytes\nArtifacts: %s", result.artifactDir)
 	}
-	secondRoom := filepath.Join(filepath.Dir(fixture.entity), filepath.FromSlash(current.Briefing.RoomRef))
+	secondRoom, resolveErr := gates.ResolveRoomRef(fixture.entity, current.Briefing.RoomRef)
 	entries, err := os.ReadDir(secondRoom)
-	if err != nil || len(entries) != 1 || entries[0].Name() != "index.json" || !entries[0].Type().IsRegular() {
-		t.Fatalf("successor room is not the emitted one-file room: entries=%v err=%v\nArtifacts: %s", entries, err, result.artifactDir)
+	if resolveErr != nil || err != nil || len(entries) != 1 || entries[0].Name() != "index.json" || !entries[0].Type().IsRegular() {
+		t.Fatalf("successor room is not the emitted one-file room: resolve=%v entries=%v err=%v\nArtifacts: %s", resolveErr, entries, err, result.artifactDir)
 	}
 	if current.Briefing.RequestDigest != "" {
 		t.Fatalf("successor binding carries request-digest %q\nArtifacts: %s", current.Briefing.RequestDigest, result.artifactDir)

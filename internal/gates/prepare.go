@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -233,7 +234,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, fmt.Errorf("canonicalize prepared Briefing: %w", err)
 	}
-	roomRef, err := relativeRoomRef(entityPath, room)
+	roomRef, err := canonicalReviewRoomRef(entityPath, room)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -243,7 +244,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 		RoomRef: roomRef,
 	}
 
-	if previous != nil && attemptState(previous) == "open" && preparedRoomBinding(entityPath, previous.Briefing) &&
+	if previous != nil && attemptState(previous) == "open" && isPreparedRoomBinding(entityPath, previous.Briefing) &&
 		!sameBinding(previous.Briefing, binding) {
 		return PrepareResult{}, fmt.Errorf("open gate room binding is frozen and cannot be rebound")
 	}
@@ -298,7 +299,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 }
 
 func preparedEntityReplaySource(entityPath string, roots gitsource.Roots, previous *Attempt, ordinal int) (gitsource.Source, bool, error) {
-	if previous == nil || attemptState(previous) != "open" || !preparedRoomBinding(entityPath, previous.Briefing) {
+	if previous == nil || attemptState(previous) != "open" || !isPreparedRoomBinding(entityPath, previous.Briefing) {
 		return gitsource.Source{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -349,7 +350,7 @@ func entityWithoutGates(data []byte) ([]byte, error) {
 }
 
 func preparedReplay(entityPath string, previous *Attempt, briefingID, question, summary string, sources []gitsource.Source) (PrepareResult, bool, error) {
-	if previous == nil || attemptState(previous) != "open" || !preparedRoomBinding(entityPath, previous.Briefing) {
+	if previous == nil || attemptState(previous) != "open" || !isPreparedRoomBinding(entityPath, previous.Briefing) {
 		return PrepareResult{}, false, nil
 	}
 	manifest, err := boundBriefingManifest(entityPath, previous.Briefing)
@@ -386,7 +387,11 @@ func preparedReplay(entityPath string, previous *Attempt, briefingID, question, 
 			return PrepareResult{}, false, nil
 		}
 	}
-	room, err := filepath.Abs(filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(previous.Briefing.RoomRef)))
+	room, err := ResolveRoomRef(entityPath, previous.Briefing.RoomRef)
+	if err != nil {
+		return PrepareResult{}, false, fmt.Errorf("resolve prepared room: %w", err)
+	}
+	room, err = filepath.Abs(room)
 	if err != nil {
 		return PrepareResult{}, false, fmt.Errorf("resolve prepared room: %w", err)
 	}
@@ -483,7 +488,17 @@ func validatePreparedCandidate(roots gitsource.Roots, briefingBytes []byte) erro
 }
 
 func validatePreparedRoomAncestry(entityPath, room string) error {
-	trustedHome := filepath.Dir(entityPath)
+	trustedHome := reviewHome(entityPath)
+	if info, err := os.Lstat(trustedHome); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("prepared room parent %s is a symlink", trustedHome)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("prepared room parent %s is not a directory", trustedHome)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
 	parent := filepath.Dir(room)
 	rel, err := filepath.Rel(trustedHome, parent)
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
@@ -512,39 +527,27 @@ func validatePreparedRoomAncestry(entityPath, room string) error {
 	return nil
 }
 
-// preparedRoomBinding reports whether the binding has a prepared gate room. It
-// is the shape-independent test that replaces `request-digest != ""`. Six
-// runtime sites used that field to mean "this attempt has a prepared room".
-//
-// A request-backed binding always has a prepared room, so the test
-// short-circuits. Every guard the old test gave such an attempt therefore stays
-// as strict, and a room that lost its files still refuses.
-//
-// A request-less binding has a prepared room when its room-ref names a real
-// directory that is not an archived room.
-//
-// An archived request-less binding fails the test three ways. An opaque
-// provider ref such as `subspace-room:3k-gate-design` names no local path. A
-// legacy ref names the Briefing file itself. An archived room is a directory
-// that holds briefing.json.
-//
-// The test reads that archived name, and not the reserved name, for one reason.
-// A prepared room whose Briefing is deleted must stay a prepared room. The
-// archived read path gives a skip. A deleted Briefing must not take that skip,
-// because gate record then closes over it.
-func preparedRoomBinding(entityPath string, binding Briefing) bool {
+func preparedRoomBinding(entityPath string, binding Briefing) (bool, error) {
+	room, err := ResolveRoomRef(entityPath, binding.RoomRef)
+	if err != nil {
+		return false, err
+	}
 	if binding.RequestDigest != "" {
-		return true
+		return true, nil
 	}
 	if binding.RoomRef == "" {
-		return false
+		return false, nil
 	}
-	room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(binding.RoomRef))
 	if info, err := os.Lstat(room); err != nil || !info.IsDir() {
-		return false
+		return false, nil
 	}
-	_, err := os.Lstat(filepath.Join(room, archivedBriefingLocator))
-	return err != nil
+	_, err = os.Lstat(filepath.Join(room, archivedBriefingLocator))
+	return err != nil, nil
+}
+
+func isPreparedRoomBinding(entityPath string, binding Briefing) bool {
+	prepared, _ := preparedRoomBinding(entityPath, binding)
+	return prepared
 }
 
 // validatePreparedRoomEntries requires the exact file set the binding implies:
@@ -750,11 +753,7 @@ func workflowDeclaresFolderForm(workflowDir string) bool {
 }
 
 func preparedRoomPath(entityPath, stage string, attempt int) (string, error) {
-	slug := entitySlug(entityPath)
-	home := filepath.Dir(entityPath)
-	if filepath.Base(entityPath) != "index.md" {
-		home = filepath.Join(home, slug)
-	}
+	home := reviewHome(entityPath)
 	reviewRoot := filepath.Join(home, "review")
 	room := filepath.Join(reviewRoot, stage, "briefing-"+strconv.Itoa(attempt))
 	rel, err := filepath.Rel(reviewRoot, room)
@@ -764,16 +763,35 @@ func preparedRoomPath(entityPath, stage string, attempt int) (string, error) {
 	return room, nil
 }
 
-func relativeRoomRef(entityPath, room string) (string, error) {
-	ref, err := filepath.Rel(filepath.Dir(entityPath), room)
+func reviewHome(entityPath string) string {
+	if filepath.Base(entityPath) == "index.md" {
+		return filepath.Dir(entityPath)
+	}
+	return filepath.Join(filepath.Dir(entityPath), entitySlug(entityPath))
+}
+
+func canonicalReviewRoomRef(entityPath, room string) (string, error) {
+	ref, err := filepath.Rel(filepath.Join(reviewHome(entityPath), "review"), room)
 	if err != nil {
 		return "", fmt.Errorf("resolve prepared room reference: %w", err)
 	}
 	ref = filepath.ToSlash(ref)
-	if !strings.HasPrefix(ref, ".") {
-		ref = "./" + ref
+	if ref == "." || ref == ".." || strings.HasPrefix(ref, "../") {
+		return "", fmt.Errorf("prepared room escapes the entity review directory")
 	}
-	return ref, nil
+	return "@review/" + ref, nil
+}
+
+// ResolveRoomRef resolves canonical review-home refs and preserves every legacy base.
+func ResolveRoomRef(entityPath, ref string) (string, error) {
+	if ref == "@review" || strings.HasPrefix(ref, "@review/") {
+		suffix := strings.TrimPrefix(ref, "@review/")
+		if ref == "@review" || suffix == "" || suffix == "." || suffix == ".." || path.IsAbs(suffix) || strings.Contains(suffix, `\`) || path.Clean(suffix) != suffix {
+			return "", fmt.Errorf("invalid @review room-ref %q", ref)
+		}
+		return filepath.Join(reviewHome(entityPath), "review", filepath.FromSlash(suffix)), nil
+	}
+	return filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(ref)), nil
 }
 
 func entitySlug(entityPath string) string {

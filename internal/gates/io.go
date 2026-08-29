@@ -208,11 +208,18 @@ func validateRetainedAuthorityExcept(entityPath, workflowDir string, doc *Docume
 			// prepared room gets those two checks. A skip here gives the
 			// one-file room less validation than the two-file room had, and
 			// that inverts the point of the change.
-			if !preparedRoomBinding(entityPath, attempt.Briefing) {
+			prepared, err := preparedRoomBinding(entityPath, attempt.Briefing)
+			if err != nil {
+				return fmt.Errorf("attempt %s room-ref: %w", attempt.ID, err)
+			}
+			if !prepared {
 				continue
 			}
 			if attempt.Briefing.RequestDigest != "" {
-				room := filepath.Join(filepath.Dir(entityPath), filepath.FromSlash(attempt.Briefing.RoomRef))
+				room, err := ResolveRoomRef(entityPath, attempt.Briefing.RoomRef)
+				if err != nil {
+					return err
+				}
 				requestBytes, err := os.ReadFile(filepath.Join(room, "request.json"))
 				if err != nil {
 					return fmt.Errorf("attempt %s retained request.json: %w", attempt.ID, err)

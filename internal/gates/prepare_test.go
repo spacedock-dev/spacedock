@@ -190,13 +190,10 @@ func TestPrepareCreatesOneFileRecorderRoomForFolderAndFlatEntities(t *testing.T)
 			if attempt.Briefing.Digest != result.Digest || attempt.Briefing.RequestDigest != "" {
 				t.Fatalf("binding pins incomplete or request-backed: %#v", attempt.Briefing)
 			}
-			if !preparedRoomBinding(entity, attempt.Briefing) {
+			if !isPreparedRoomBinding(entity, attempt.Briefing) {
 				t.Fatalf("published room is not read as prepared: %#v", attempt.Briefing)
 			}
-			wantRef := "./task/review/validation/briefing-1"
-			if form == "folder" {
-				wantRef = "./review/validation/briefing-1"
-			}
+			wantRef := "@review/validation/briefing-1"
 			if attempt.Briefing.RoomRef != wantRef {
 				t.Fatalf("room-ref=%q want %q", attempt.Briefing.RoomRef, wantRef)
 			}
@@ -1540,10 +1537,7 @@ func TestPrepareRefusesFlatEntityOnlyWhereTheWorkflowDeclaresFolderForm(t *testi
 			if err != nil {
 				t.Fatal(err)
 			}
-			// Flat form binds a slug-prefixed ref. It is correct while the entity
-			// stays flat and is exactly what a later conversion must rewrite; the
-			// validator warning carries that instruction.
-			if got := doc.Records[0].Attempts[0].Briefing.RoomRef; got != "./task/review/validation/briefing-1" {
+			if got := doc.Records[0].Attempts[0].Briefing.RoomRef; got != "@review/validation/briefing-1" {
 				t.Fatalf("flat room-ref=%q", got)
 			}
 		})

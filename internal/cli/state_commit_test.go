@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/status"
 	"github.com/spacedock-dev/spacedock/internal/testgit"
 )
@@ -257,6 +258,68 @@ func TestStateCommitFlatIncludesExactCompanionDirectoryAndTrackedDeletions(t *te
 	names = strings.Fields(git(t, checkout, "show", "--name-only", "--pretty=format:", "HEAD"))
 	if strings.Join(names, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("flat deletion commit paths=%q want %q", names, want)
+	}
+}
+
+func TestStateCommitMakesFlatRoundDurableInFreshHost(t *testing.T) {
+	bare, workflowA, workflowB, stateBranch := twoHostStateWorkflow(t)
+	checkoutA := filepath.Join(workflowA, ".spacedock-state")
+	checkoutB := filepath.Join(workflowB, ".spacedock-state")
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+	const slug = "first-task"
+	entityA := filepath.Join(checkoutA, slug+".md")
+	writeEntity(t, workflowA, slug, "---\nid: first-task\nstatus: ideation\ntitle: First Task\n---\n# Flat round\n")
+	homeA := filepath.Join(checkoutA, slug)
+	if err := os.MkdirAll(homeA, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	copyFixture := func(dst, name string) {
+		t.Helper()
+		body, err := os.ReadFile(filepath.Join("..", "gates", "testdata", "advisory-round", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(dst, body, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	copyFixture(filepath.Join(homeA, "candidate.patch"), "candidate.patch")
+	inputs := t.TempDir()
+	briefing, log := filepath.Join(inputs, "briefing.json"), filepath.Join(inputs, "briefing.review.jsonl")
+	copyFixture(briefing, "briefing.json")
+	copyFixture(log, "briefing.review.jsonl")
+	if err := gates.RecordSemantic(entityA, gates.RecordInput{Round: "ideation/1", BriefingPath: briefing, LogPath: log, WorkflowDir: workflowA}); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(checkoutA, "dirty-sibling.md"), []byte("do not commit\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, slug, "-m", "durable flat round"); code != 0 {
+		t.Fatalf("state commit exit=%d stderr=%q", code, errOut)
+	}
+	want := []string{
+		"first-task.md", "first-task/candidate.patch",
+		"first-task/review/ideation/round-1/briefing.json",
+		"first-task/review/ideation/round-1/briefing.review.jsonl",
+	}
+	if got := strings.Fields(git(t, checkoutA, "show", "--name-only", "--pretty=format:", "HEAD")); strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("flat round commit paths=%q want %q", got, want)
+	}
+	if _, ok := gitOK(t, bare, "cat-file", "-e", stateBranch+":dirty-sibling.md"); ok {
+		t.Fatal("dirty sibling reached the state remote")
+	}
+	git(t, checkoutB, "pull", "-q", "--rebase", "origin", stateBranch)
+	entityB := filepath.Join(checkoutB, slug+".md")
+	if _, err := gates.ValidateRoundFile(entityB, "ideation/1"); err != nil {
+		t.Fatalf("fresh-host round validation: %v", err)
+	}
+	roomB := filepath.Join(checkoutB, slug, "review", "ideation", "round-1")
+	before := git(t, checkoutB, "status", "--porcelain")
+	if err := gates.RecordSemantic(entityB, gates.RecordInput{Round: "ideation/1", BriefingPath: filepath.Join(roomB, "briefing.json"), LogPath: filepath.Join(roomB, "briefing.review.jsonl"), WorkflowDir: workflowB}); err != nil {
+		t.Fatalf("fresh-host exact replay: %v", err)
+	}
+	if after := git(t, checkoutB, "status", "--porcelain"); after != before {
+		t.Fatalf("exact replay changed checkout: before=%q after=%q", before, after)
 	}
 }
 

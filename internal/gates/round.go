@@ -18,10 +18,10 @@ type loadedRound struct {
 	Digest        string
 }
 type roundLocation struct {
-	stage, room, entityID string
-	cycle                 int
-	entity                []byte
-	pointer               RoundPointer
+	stage, room, reviewHome, entityID string
+	cycle                             int
+	entity                            []byte
+	pointer                           RoundPointer
 }
 
 func resolveRound(entityPath, spec string) (roundLocation, error) {
@@ -30,7 +30,7 @@ func resolveRound(entityPath, spec string) (roundLocation, error) {
 	if !ok || !roundStageRE.MatchString(stage) || err != nil || cycle < 1 || strconv.Itoa(cycle) != rawCycle {
 		return roundLocation{}, fmt.Errorf("--round must be a normalized STAGE/positive-cycle")
 	}
-	result := roundLocation{stage: stage, cycle: cycle}
+	result := roundLocation{stage: stage, cycle: cycle, reviewHome: reviewHome(entityPath)}
 	if result.entity, err = os.ReadFile(entityPath); err != nil {
 		return result, err
 	}
@@ -46,11 +46,18 @@ func resolveRound(entityPath, spec string) (roundLocation, error) {
 	if result.pointer.ID != "" && result.pointer.ID != fmt.Sprintf("round:%s:%s:%d", id.Value, result.pointer.Stage, result.pointer.Cycle) {
 		return result, fmt.Errorf("review-round identity does not match the entity")
 	}
-	result.room = filepath.Join(filepath.Dir(entityPath), "review", stage, fmt.Sprintf("round-%d", cycle))
-	for _, parent := range []string{filepath.Dir(result.room), filepath.Dir(filepath.Dir(result.room))} {
-		if info, statErr := os.Lstat(parent); statErr == nil && info.Mode()&os.ModeSymlink != 0 {
-			return result, fmt.Errorf("derived round room crosses symlink %s", parent)
+	result.room = filepath.Join(result.reviewHome, "review", stage, fmt.Sprintf("round-%d", cycle))
+	if result.pointer.ID != "" && result.pointer.Stage == stage && result.pointer.Cycle == cycle {
+		boundRoom, resolveErr := ResolveRoomRef(entityPath, result.pointer.Briefing.RoomRef)
+		if resolveErr != nil {
+			return result, resolveErr
 		}
+		if filepath.Clean(boundRoom) != filepath.Clean(result.room) {
+			return result, fmt.Errorf("review-round pointer room does not resolve %s", spec)
+		}
+	}
+	if err := validatePreparedRoomAncestry(entityPath, result.room); err != nil {
+		return result, err
 	}
 	return result, nil
 }
@@ -89,7 +96,7 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 	if _, err := applicationForDecision(entityPath, input.WorkflowDir, location.stage, "revise"); err != nil {
 		return err
 	}
-	inputRound, err := loadValidateRound(filepath.Dir(entityPath), location.room, input.BriefingPath, input.LogPath, nil)
+	inputRound, err := loadValidateRound(location.reviewHome, location.room, input.BriefingPath, input.LogPath, nil)
 	if err != nil {
 		return err
 	}
@@ -99,7 +106,10 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 	}
 	pointer := RoundPointer{ID: fmt.Sprintf("round:%s:%s:%d", location.entityID, location.stage, location.cycle), Stage: location.stage, Cycle: location.cycle,
 		Briefing: Briefing{ID: inputRound.Manifest.ID, Digest: inputRound.Digest,
-			RoomRef: fmt.Sprintf("./review/%s/round-%d", location.stage, location.cycle)}}
+			RoomRef: fmt.Sprintf("@review/%s/round-%d", location.stage, location.cycle)}}
+	if location.pointer.ID == pointer.ID {
+		pointer.Briefing.RoomRef = location.pointer.Briefing.RoomRef
+	}
 	if _, statErr := os.Lstat(location.room); location.pointer.ID == pointer.ID && os.IsNotExist(statErr) {
 		return fmt.Errorf("round identity already has a pointer without its immutable room")
 	}
@@ -107,6 +117,9 @@ func recordRoundLockedWith(entityPath string, input RecordInput, beforePublish f
 		beforePublish(location.room)
 	}
 	return publishRound(location.room, roundRoomBytes{Exists: true, Briefing: inputRound.Briefing, Log: inputRound.Log}, func(replay bool) error {
+		if replay && location.pointer == pointer {
+			return nil
+		}
 		return mutateEntity(entityPath, entityExpectation{Bytes: location.entity}, func(entity []byte) ([]byte, error) {
 			next, err := rebuildRoundEntity(entity, pointer)
 			if err == nil && replay && !bytes.Equal(next, entity) {
@@ -158,7 +171,7 @@ func ValidateRoundFile(entityPath, spec string) (RoundSummary, error) {
 	if _, err := readRoundRoom(location.room); err != nil {
 		return RoundSummary{}, err
 	}
-	loaded, err := loadValidateRound(filepath.Dir(entityPath), location.room, filepath.Join(location.room, "briefing.json"), filepath.Join(location.room, "briefing.review.jsonl"), &location.pointer.Briefing)
+	loaded, err := loadValidateRound(location.reviewHome, location.room, filepath.Join(location.room, "briefing.json"), filepath.Join(location.room, "briefing.review.jsonl"), &location.pointer.Briefing)
 	if err != nil {
 		return RoundSummary{}, err
 	}
@@ -187,9 +200,11 @@ func readRoundPointerData(data []byte) (RoundPointer, error) {
 		return RoundPointer{}, fmt.Errorf("entity has invalid review-round pointer")
 	}
 	err = node.Decode(&pointer)
-	wantRoom := fmt.Sprintf("./review/%s/round-%d", pointer.Stage, pointer.Cycle)
+	canonicalRoom := fmt.Sprintf("@review/%s/round-%d", pointer.Stage, pointer.Cycle)
+	legacyRoom := fmt.Sprintf("./review/%s/round-%d", pointer.Stage, pointer.Cycle)
 	if err != nil || pointer.ID == "" || !roundStageRE.MatchString(pointer.Stage) || pointer.Cycle < 1 ||
-		pointer.Briefing.ID == "" || !digestRE.MatchString(pointer.Briefing.Digest) || pointer.Briefing.RoomRef != wantRoom {
+		pointer.Briefing.ID == "" || !digestRE.MatchString(pointer.Briefing.Digest) ||
+		(pointer.Briefing.RoomRef != canonicalRoom && pointer.Briefing.RoomRef != legacyRoom) {
 		return RoundPointer{}, fmt.Errorf("entity has invalid review-round pointer")
 	}
 	return pointer, nil
