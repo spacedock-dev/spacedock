@@ -225,3 +225,31 @@ Re-scoped the verification design per the captain's ruling that proof comes from
 ### Summary
 
 Shrank the deliverable to the re-scoped surface per the captain's proof ruling (executed use of the code, behavior observation — never prose grep): the production mechanism is byte-unchanged (derivation helper + repair call site), the automated surface is now three pure-function tables (+94) pinning every retained falsifier class, and the fake-seam flow suite, live journey, and registry registration are removed — their claims move to the hand-executed scenario matrix at validation. Final measured surface is +297 net across 3 files, inside the re-baselined +295±80/±1 envelope.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Rebase PR #782 onto current origin/main so cleanup commit de61c1baf is an ancestor of the new stack tip, while preserving the approved three-file Pi package-pin deliverable and its net behavior.
+  Rebased commits `6209e9450` + `989e193de`; both `de61c1baf` and `af70297dd` are ancestors, and an exact lease force-push moved only the registered PR branch from `0d8144092` to `989e193de`.
+- DONE: Resolve docs/runtime-live-ci-registry.md according to the approved cycle-2 scope: the dedicated live journey and registry wiring stay removed; verify the rebased PR diff does not reintroduce them or other cleanup deletions.
+  The rebased diff is exactly `internal/cli/pi.go` +54/−1, `pi_package_source.go` +150, and `pi_package_source_test.go` +94; registry, fake-seam, frontdoor-seam, and live-journey paths are byte-identical to or absent as on `origin/main`.
+- FAILED: Verify the combined tip, including the hand-executed AC-1/AC-4/AC-5 behavior scenarios, focused pure-function tables, gofmt, go test ./..., and go test ./... -race; report the new SHA and exact LOC/files against the +295 net / 3-file estimate.
+  Tip `989e193de` is +298/−1 = +297 net across 3 files (estimate +295/3); focused tables PASS, isolated full suite PASS, and isolated race PASS, but the ordinary-front-door matrix deterministically fails AC-4 and AC-5, so recommendation is REJECTED.
+
+### AC evidence and retained run artifacts
+
+- AC-1 PASS: unpinned and wrong-line starts each recorded exactly one `install git:github.com/spacedock-dev/spacedock@v0.27.2`, one launch, exit 0; resulting settings bytes were `{"packages":["git:github.com/spacedock-dev/spacedock@v0.27.2"]}`.
+- AC-2 FAIL / AC-3 PASS: all three pure tables pass and stamped stable/prerelease/proxy literals remain covered, but `go version -m` for the hand-built dev binary reported `v0.28.0-pre0.0.20260828165724-81e3386e8234+dirty`, which was misclassified as a release ref and attempted an install.
+- AC-4 FAIL: missing-package install failure refused correctly (exit 1, one install, zero launches), but wrong-line install failure exited 0 and launched once with settings still `@v0.28.0-pre1`; ineffective repair also exited 0 and launched once with the unpinned settings bytes unchanged.
+- AC-5 FAIL: `file:` and `--plugin-dir` settings were byte-unchanged with zero installs and one launch, and healthy pinned was a zero-install launch; the plain dev build attempted one install of the dirty pseudo-version ref, violating dev-sentinel suppression.
+- Test transcript: `go test ./...` PASS with isolated `CODEX_HOME` (the ambient run only hit the machine-local Codex cache test); `go test ./... -race` PASS; the unrelated 150ms ensigncycle timing flake passed 10/10 focused and the aggregate rerun.
+- Formatting transcript: required `gofmt -w ./cmd ./internal` touched only pre-existing `internal/release/runtime_live_evidence_workflow_test.go` whitespace already present on `origin/main`; that unrelated byte was restored, while the three candidate files remain gofmt-clean and `git diff --check` passes.
+
+### Reviewer findings
+
+- Material outcome defect — failed/ineffective repair can launch. Released user and normal workflow: a release binary with a usable wrong-line or unpinned package; observable harm: the front door launches the mismatched suite after reporting install failure or no state change; authority: `value-ac[AC-4]` failed or ineffective repair cannot launch Pi; trigger evidence: both PATH-shim runs recorded one install, one launch, exit 0, and unchanged settings.
+- Material outcome defect — dirty checkout pseudo-version is treated as a tag. Released user and normal workflow: the promised plain checkout `go build` dev path; observable harm: it attempts to rewrite the package entry to a non-tag pseudo ref instead of suppressing repair; authority: `value-ac[AC-5]` a dev-sentinel binary never rewrites the package surface; trigger evidence: build-info `...-81e3386e8234+dirty` produced one install attempt for that literal ref.
+- Proposed disposition: REJECTED; keep both findings in this task. Recheck post-install source identity before launch and reject pseudo-versions before build metadata, then rerun the same retained hand matrix and pure tables; candidate mutation requires First Officer authorization.
+
+### Summary
+
+Rebased and force-pushed PR #782 safely onto the moved base without restoring any cleanup deletion; the approved +297-net three-file surface is intact and the full/race suites are green in an isolated host environment. Semantic hand execution found two material product defects that the pure tables cannot expose, so validation recommends REJECTED rather than shipping a front door that can launch after a failed repair or repair a plain dev build to a dirty pseudo ref.
