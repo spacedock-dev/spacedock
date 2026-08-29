@@ -1,16 +1,16 @@
 ---
 id: 9xnaq83nryb38fyt18mh0gbt
 title: The completion-guard error names the failing sub-check
-status: validation
+status: done
 source: "External field report 2026-08-26 (/tmp/spacedock-durability-guard-defect.md, WhisperLiveKit sandbox session): three human round-trips to diagnose a dirty entity file because one generic error covers four distinct failures; the reporter misread the guard as requiring a remote push — refuted by source read and a live no-remote repro on 0.28.0-pre0"
 started: 2026-08-26T19:51:27Z
-completed:
-verdict:
+completed: 2026-08-29T20:53:20Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-completion-guard-error-names-failing-subcheck
 issue:
 pr: pr-merge:767
-mod-block: merge:pr-merge
+mod-block:
 gates:
     version: 1
     records:
@@ -89,7 +89,8 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-08-29T20:53:20Z
 ---
 
 The stage-advance guard emits one message — "cannot change status away from entered stage until a durable, complete ## Stage Report is committed" — for four distinct failures: the stage-report heading is not found (exact-token match), the checklist is incomplete (missing bullets, FAILED items, or no Summary), the entity file is untracked, or the entity file differs from local HEAD. An operator who cannot tell which failed diagnoses by round-trip; one field session needed three.
