@@ -1,11 +1,11 @@
 ---
 id: qcwrzza9xkr5kfwmdmvbqhkv
 title: Pin the installed Pi package to the launcher release
-status: validation
+status: done
 source: "Released v0.27.2 Pi bootstrap abort reported by the captain on 2026-08-28"
 started: 2026-08-29T01:29:55Z
-completed:
-verdict:
+completed: 2026-08-29T20:03:34Z
+verdict: PASSED
 score: "1.0"
 worktree: .worktrees/spacedock-ensign-pin-pi-package-to-binary-release
 issue:
@@ -88,7 +88,7 @@ gates:
                 reason: Captain approved merge after reviewing impact surface and CI; all 5 ACs PASS, no material findings.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 review-round:
     id: round:qcwrzza9xkr5kfwmdmvbqhkv:validation:2
     stage: validation
@@ -97,6 +97,7 @@ review-round:
         id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:round-2:revision-1
         digest: sha256:3b1cf6d58d2affdf6e24a0afb6f33469541509f096f9b3d7864652247cf5e94c
         room-ref: '@review/validation/round-2'
+archived: 2026-08-29T20:03:36Z
 ---
 
 A stable launcher can install skills from a newer release and then fail its first binary gate.
