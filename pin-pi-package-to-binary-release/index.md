@@ -253,3 +253,26 @@ Shrank the deliverable to the re-scoped surface per the captain's proof ruling (
 ### Summary
 
 Rebased and force-pushed PR #782 safely onto the moved base without restoring any cleanup deletion; the approved +297-net three-file surface is intact and the full/race suites are green in an isolated host environment. Semantic hand execution found two material product defects that the pure tables cannot expose, so validation recommends REJECTED rather than shipping a front door that can launch after a failed repair or repair a plain dev build to a dirty pseudo ref.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Fix the AC-4 launch guard so an install error or a post-install source mismatch after the one allowed repair attempt always refuses Pi launch; retain the single-attempt bound and existing user-managed/dev override suppression.
+  Commit `284299e3b` returns the install error to the front door and validates the re-read package ref after success; either failure exits 1 before launch, while the repair decision/suppression table remains unchanged.
+- DONE: Fix release-ref derivation so a dirty checkout pseudo-version such as v0.28.0-pre0.0.YYYYMMDDHHMMSS-<sha>+dirty remains the dev sentinel and never becomes a package pin; extend only the existing pure-function table needed to falsify this case.
+  `TestPiReleaseRefDerivation` first failed on the new literal dirty-pseudo row, then passed after pseudo-version detection was extended across build metadata; removing that detection makes the row pin the pseudo ref again.
+- DONE: Run the retained hand-executed AC-1/AC-4/AC-5 matrix against the corrected combined tip, plus focused tables, gofmt, go test ./..., and go test ./... -race; report exact LOC/files against +295 net across 3 files and do not restore deleted registry/live/fake-seam scaffolding.
+  Combined tip `284299e3b` is +310/−1 = +309 net across exactly `pi.go`, `pi_package_source.go`, and `pi_package_source_test.go` (estimate +295/3); focused tables, isolated full suite, and isolated race suite pass, and no removed scaffolding path is present.
+
+### Retained hand-executed evidence
+
+- AC-1 unpinned and wrong-line: each exited 0 after exactly one `install git:github.com/spacedock-dev/spacedock@v0.27.2` and one launch; resulting settings were `{"packages":["git:github.com/spacedock-dev/spacedock@v0.27.2"]}`.
+- AC-4 install failure: exited 1 after one install and zero launches; settings stayed on `@v0.28.0-pre1`, and stderr named both the install failure and `spacedock doctor --host pi`.
+- AC-4 ineffective repair: exited 1 after one install and zero launches; the re-read unpinned settings bytes were unchanged, and stderr reported that the required release was not installed.
+- AC-5 user-managed `file:` entry: exited 0 with zero installs and one launch; settings bytes were unchanged.
+- AC-5 dirty dev build: `go version -m` reported `v0.28.0-pre0.0.20260828165724-81e3386e8234+dirty`; it exited 0 with zero installs, one launch, and unchanged unpinned settings.
+- AC-5 `--plugin-dir`: exited 0 with zero installs and one launch; empty settings bytes were unchanged. Healthy pinned likewise made zero installs and launched.
+- Formatting/tests: required `gofmt -w ./cmd ./internal` ran; all three focused pure tables passed. Direct `go test ./...` reached only the known machine-local Codex plugin-cache assertion; with empty `CODEX_HOME`, `go test ./...` and `go test ./... -race` both passed all packages with no races.
+
+### Summary
+
+Corrected the two authorized validation findings without expanding the approved surface: a spent repair can no longer launch unless the post-install source carries the binary's required ref, and dirty pseudo-versions stay development sentinels. The pushed code commit is `284299e3b`; the retained process-level matrix now passes every AC-1/AC-4/AC-5 scenario.
