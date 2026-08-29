@@ -32,6 +32,8 @@ A feedback-stage worker checks and reports on what was produced; it does not sil
 
 Build a numbered checklist of one to three dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage naturally advances. When neither source supplies an item, use the target stage's declared requirement as one linchpin; do not pad. Name what separates a good outcome from a ceremonial one.
 
+**Authority boundary.** Checklist items describe only worker-owned outcomes: never assign `status`/frontmatter mutation or stage advancement to a worker. After the completion signal and report gate, the First Officer alone advances entity state through the applicable `spacedock` command; passive stage prose such as “the entity advances” is lifecycle context, not a worker checklist item.
+
 - **done-when:** the output contains no more than three outcome signals and no structural task boilerplate.
 - → **prose** — deterministic assembly from the entity and stage definition.
 
