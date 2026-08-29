@@ -64,6 +64,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-28T21:42:13.356773Z"
                 reason: 'Captain re-scope (2026-08-28 chat): proof may come from executed use of the code with behavior observation; the 335-line fake-seam flow suite, 96-line live journey, and 18-line registry are cut. AC verifiers re-scoped to hand-executed scenario runs (retained artifacts) + pure-function tables. Routing to ideation for AC re-scope, then implementation shrink.'
+            - id: gate-attempt:qcwrzza9xkr5kfwmdmvbqhkv-validation-2
+              briefing:
+                id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-2:revision-1
+                digest: sha256:af07b07fe62e68b02f5b733a091a60ce7080694d422b2db3ea70760fd516f551
+                room-ref: '@review/validation/briefing-2'
 review-round:
     id: round:qcwrzza9xkr5kfwmdmvbqhkv:validation:2
     stage: validation
