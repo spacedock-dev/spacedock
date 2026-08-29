@@ -5,11 +5,13 @@ package gates
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"unicode/utf8"
 
 	"github.com/spacedock-dev/spacedock/internal/gitsource"
@@ -34,9 +36,11 @@ const archivedBriefingLocator = "briefing.json"
 var preparedLocators = []string{preparedBriefingLocator, legacyPreparedLocator}
 
 var prepareWriteBinding = writeDocument
+var selectedSourceLstat = os.Lstat
 
 type PrepareInput struct {
 	WorkflowDir string
+	LaunchDir   string
 	Question    string
 	Artifact    string
 	Summary     string
@@ -97,7 +101,7 @@ func Prepare(entityPath string, input PrepareInput) (PrepareResult, error) {
 	normalized := make([]string, 0, len(paths))
 	seen := map[string]bool{}
 	for i, selected := range paths {
-		path, err := resolveSelectedSource(selected, entityRoot, i == 0)
+		path, err := resolveSelectedSource(selected, input.LaunchDir, entityRoot, i == 0)
 		if err != nil {
 			return PrepareResult{}, fmt.Errorf("resolve selected source: %w", err)
 		}
@@ -845,49 +849,62 @@ func entityResolveRoot(workflowDir string) (string, error) {
 	return filepath.Join(workflowDir, cleaned), nil
 }
 
-// resolveSelectedSource makes a selected source path absolute. Relative paths
-// resolve against the entity root (the state-checkout root in split-root, the
-// workflow dir in single-root); absolute paths pass through cleaned. This is
-// the single resolution site — the CLI passes relative paths through unchanged.
-//
-// A relative path that already carries the state-checkout basename (e.g.
-// ".spacedock-state/auto-continue-task/index.md" in a split-root workflow where
-// entityRoot is "<workflow>/.spacedock-state") is workflow-rooted, not
-// entity-rooted: joining it under entityRoot would double the basename. Resolve
-// it against the workflow directory (entityRoot's parent) instead.
-//
-// The artifact resolves strictly against the entity root — a wrong-root
-// artifact is rejected (TestPrepareWrongRootRelativeArtifactFails). A
-// reference may legitimately live at the workflow root (e.g.
-// recorder-contract.md alongside a split-root state checkout), so references
-// fall back to the workflow directory (entityRoot's parent) when the entity-root
-// join does not exist. A genuinely missing file reports the entity-root seek
-// path so the error shape is preserved.
-func resolveSelectedSource(selected, entityRoot string, isArtifact bool) (string, error) {
+// resolveSelectedSource selects one cleaned lexical interpretation. Presence
+// chooses a candidate; gitsource.Inspect remains the only source validator.
+func resolveSelectedSource(selected, launchDir, entityRoot string, isArtifact bool) (string, error) {
 	if filepath.IsAbs(selected) {
 		return filepath.Clean(selected), nil
 	}
 	selected = filepath.Clean(selected)
-	base := filepath.Base(entityRoot)
-	// A path carrying the state-checkout basename is workflow-rooted; resolve
-	// against the workflow directory so the basename is not doubled. This
-	// applies to both artifact and reference.
-	if base != "." && strings.HasPrefix(selected, base+string(filepath.Separator)) {
-		return filepath.Clean(filepath.Join(filepath.Dir(entityRoot), selected)), nil
-	}
-	entityJoin := filepath.Clean(filepath.Join(entityRoot, selected))
+	flag := "--reference"
 	if isArtifact {
-		return entityJoin, nil
+		flag = "--artifact"
 	}
-	// Reference: fall back to the workflow root if the entity-root join is absent.
-	if info, err := os.Lstat(entityJoin); err == nil && info.Mode().IsRegular() {
-		return entityJoin, nil
+	var candidates []string
+	add := func(root string) error {
+		path, err := filepath.Abs(filepath.Join(root, selected))
+		if err != nil {
+			return err
+		}
+		path = filepath.Clean(path)
+		for _, candidate := range candidates {
+			if candidate == path {
+				return nil
+			}
+		}
+		candidates = append(candidates, path)
+		return nil
 	}
-	workflowJoin := filepath.Clean(filepath.Join(filepath.Dir(entityRoot), selected))
-	if info, err := os.Lstat(workflowJoin); err == nil && info.Mode().IsRegular() {
-		return workflowJoin, nil
+	if err := add(entityRoot); err != nil {
+		return "", fmt.Errorf("%s %q: resolve state-relative path: %w", flag, selected, err)
 	}
-	return entityJoin, nil // not found; report the entity-root seek path
+	if strings.TrimSpace(launchDir) != "" {
+		if err := add(launchDir); err != nil {
+			return "", fmt.Errorf("%s %q: resolve launch-relative path: %w", flag, selected, err)
+		}
+	}
+	base := filepath.Base(entityRoot)
+	if !isArtifact || (base != "." && strings.HasPrefix(selected, base+string(filepath.Separator))) {
+		if err := add(filepath.Dir(entityRoot)); err != nil {
+			return "", fmt.Errorf("%s %q: resolve workflow-relative path: %w", flag, selected, err)
+		}
+	}
+
+	var present []string
+	for _, candidate := range candidates {
+		if _, err := selectedSourceLstat(candidate); err == nil {
+			present = append(present, candidate)
+		} else if !errors.Is(err, syscall.ENOENT) {
+			return "", fmt.Errorf("%s %q: inspect candidate %s: %w", flag, selected, candidate, err)
+		}
+	}
+	if len(present) == 1 {
+		return present[0], nil
+	}
+	if len(present) > 1 {
+		return "", fmt.Errorf("%s %q resolves to different paths: %s; use an absolute path", flag, selected, strings.Join(present, ", "))
+	}
+	return "", fmt.Errorf("%s %q was not found; attempted paths: %s; use an absolute, launch-cwd-relative, or state-relative path", flag, selected, strings.Join(candidates, ", "))
 }
 
 func isMarkdownPath(path string) bool {

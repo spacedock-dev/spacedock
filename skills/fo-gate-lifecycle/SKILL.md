@@ -14,7 +14,7 @@ The binary owns preparation, withdrawal, recording, and one-use consume; this sk
 
 **Boot.** `status --boot --identify --json` `ready_gates` gives `definition_dir`, `entity_dir`, slug/stage/readiness. Engage slug via `status --read <slug> --json`, never search. `needs-preparation`: review report, or at an `initial: true` stage the committed seed itself; `awaiting-captain`: open; `withdrawn-awaiting-prepare`: successor; approved: unblocked; malformed/ambiguous: fail closed.
 
-**Prepare.** Resolve `${SPACEDOCK_BIN:-spacedock}`; keep supplied paths. Else, per distinct applicable retained absolute R=`definition_dir`/`entity_dir`, resolve intended root-relative P; state R uses the engaged task directory, never `.`. Run: `git -C "<R>" ls-tree -r --name-only HEAD -- "<P>" | awk 'tolower($0)~/\.(md|markdown)$/{print}'`. `<R>/<P>`: shell-quoted values. Read/use once; summarize. No harness logs/history/status/help probes. Supply judgment/cwd paths; no binary JSON/ids/digests/Git locators/room coords.
+**Prepare.** Resolve `${SPACEDOCK_BIN:-spacedock}`; keep paths. For each retained absolute R (`definition_dir`, `entity_dir`), derive relative P; state R is the engaged task directory, never `.`. Run `git -C "<R>" ls-tree -r --name-only HEAD -- "<P>" | awk 'tolower($0)~/\.(md|markdown)$/{print}'`, quoted. Read once; summarize. No logs/history/status/help probes. Supply absolute, launch-cwd-relative, or state-relative judgment paths; use absolute before the one prepare if a spelling names different cwd/state paths. No binary JSON/IDs/digests/Git locators/room coordinates.
 
 Run this sequence once and in this order:
 
