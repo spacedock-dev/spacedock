@@ -65,13 +65,13 @@ gates:
                 at: "2026-08-28T21:42:13.356773Z"
                 reason: 'Captain re-scope (2026-08-28 chat): proof may come from executed use of the code with behavior observation; the 335-line fake-seam flow suite, 96-line live journey, and 18-line registry are cut. AC verifiers re-scoped to hand-executed scenario runs (retained artifacts) + pure-function tables. Routing to ideation for AC re-scope, then implementation shrink.'
 review-round:
-    id: round:qcwrzza9xkr5kfwmdmvbqhkv:implementation:1
-    stage: implementation
-    cycle: 1
+    id: round:qcwrzza9xkr5kfwmdmvbqhkv:validation:2
+    stage: validation
+    cycle: 2
     briefing:
-        id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:implementation:round-1:revision-1
-        digest: sha256:9d201f249c99e925759d1c17ac725ec593693f96744722c581a00549ac27c0d2
-        room-ref: ./review/implementation/round-1
+        id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:round-2:revision-1
+        digest: sha256:3b1cf6d58d2affdf6e24a0afb6f33469541509f096f9b3d7864652247cf5e94c
+        room-ref: '@review/validation/round-2'
 ---
 
 A stable launcher can install skills from a newer release and then fail its first binary gate.
@@ -142,6 +142,7 @@ Accepted residuals: Pi versions older than the locally spiked one may not honor 
 
 - Cycle 2: revision complete (commit 4a018730e) — all three blockers resolved: (a) pin ref derivation chain linker-stamp → build-info semver tag (proxy builds) → dev sentinel; (b) manifest-version trigger dropped, wrong-ref git-entry detection instead; (c) AC-5 no-repair/no-clobber for non-git entries, dev builds, dev overrides. Independent reviewer re-run verdict: RESOLVED — ready for gate.
 - Cycle 3: REJECTED at the implementation point (surface breach, no gate — captain ruling 2026-08-28 chat "2"): implemented ~661 net / 6 files vs approved +100±60 / 4±2 (~4× over ceiling). Captain ruled option 2 (design reset): return through ideation to re-baseline. Correction commits 354f33cb1 + 21730a5d8: Expected surface re-baselined to +661 net / 6 files (tolerance ±40/±1), per-file breakdown + growth attribution added; design/ACs/mechanism byte-unchanged; round implementation/1 recorded (4 entries).
+- Cycle 4: REJECTED at validation on combined tip 989e193de — AC-4 failed because an install error or ineffective repair could still launch Pi, and AC-5 failed because a dirty checkout pseudo-version was treated as a release ref. Both Material outcome defects were owned by this task and authorized `fix`; correction commit 284299e3b now refuses launch after a spent failed/ineffective repair and keeps dirty pseudo-versions on the dev sentinel. Surface +309 net / 3 files vs estimate +295±80 / 3±1; AC unchanged.
 
 {First officer appends one `- Cycle {N}: ...` line per correction round; the validation gate reads reviewer findings from here.}
 

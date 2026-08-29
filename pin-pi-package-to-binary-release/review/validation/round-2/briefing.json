@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:round-2:revision-1",
+  "question": "Correction round validation/2: do the authorized AC-4 and AC-5 fixes resolve the combined-tip rejection without restoring removed proof scaffolding?",
+  "artifacts": [
+    {
+      "id": "artifact:qcwrzza9xkr5kfwmdmvbqhkv:validation:round-2:revision-1:item-1",
+      "uri": "git-root://state/dbc08ef977eac94fc4aa01b4af2322643640bc2a/pin-pi-package-to-binary-release/index.md",
+      "rev": "sha256:bf498b01cf03e38b5db4fd317e3cbc88ed7c4ebb7e12290e2607c7d796124420",
+      "mediaType": "text/markdown",
+      "summary": "Validation cycle 2 rejected combined tip 989e193de: failed or ineffective repair could launch Pi, and a dirty checkout pseudo-version was misclassified as a release ref. Both findings were Material outcome defects owned by this task. Correction commit 284299e3b preserves the three-file surface, refuses launch after a spent failed or ineffective repair, and keeps dirty pseudo-versions on the dev sentinel; the retained hand matrix now passes."
+    }
+  ]
+}
