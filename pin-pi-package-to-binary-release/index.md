@@ -9,7 +9,7 @@ verdict:
 score: "1.0"
 worktree: .worktrees/spacedock-ensign-pin-pi-package-to-binary-release
 issue:
-pr:
+pr: "#782"
 mod-block:
 gates:
     version: 1
