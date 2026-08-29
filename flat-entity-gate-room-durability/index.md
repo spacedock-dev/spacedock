@@ -68,7 +68,7 @@ gates:
                 target-stage: done
                 state: consumed
 mod-block:
-pr: "#780"
+pr: pr-merge:780
 ---
 
 Make a flat entity's gate rooms durable through the supported command and let it record

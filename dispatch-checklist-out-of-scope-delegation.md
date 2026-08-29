@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-dispatch-checklist-out-of-scope-delegation
 issue:
-pr: "#779"
+pr: pr-merge:779
 mod-block: merge:pr-merge
 gates:
     version: 1

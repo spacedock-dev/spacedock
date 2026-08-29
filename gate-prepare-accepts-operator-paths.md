@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-gate-prepare-accepts-operator-paths
 issue:
-pr: "#768"
+pr: pr-merge:768
 mod-block: merge:pr-merge
 gates:
     version: 1
