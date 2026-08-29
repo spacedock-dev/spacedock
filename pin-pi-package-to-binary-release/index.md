@@ -73,6 +73,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-29T02:19:15.173895Z"
                 reason: 'Captain clarified that the cleanup patch must be the stack tip above PR #782; attempt 2 was prepared against the wrong branch topology.'
+            - id: gate-attempt:qcwrzza9xkr5kfwmdmvbqhkv-validation-3
+              briefing:
+                id: briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-3:revision-1
+                digest: sha256:276214fbf388fa6b699eb9b00180c4378a6e2575d202163112a1d13072e14efc
+                room-ref: '@review/validation/briefing-3'
 review-round:
     id: round:qcwrzza9xkr5kfwmdmvbqhkv:validation:2
     stage: validation

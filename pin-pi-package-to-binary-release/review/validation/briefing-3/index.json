@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-3:revision-1",
+  "question": "Does the validation evidence approve the pin-pi-package-to-binary-release deliverable (tip 284299e3b) for merge?",
+  "artifacts": [
+    {
+      "id": "artifact:qcwrzza9xkr5kfwmdmvbqhkv:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/86462c42869c64292d1a405d8d6813e5f1c8f330/pin-pi-package-to-binary-release/review/validation/gate-review.md",
+      "rev": "sha256:a3711828caeb69f1370868899b563d8b7ed48f156c68e7028cfb464dae411999",
+      "mediaType": "text/markdown",
+      "summary": "Validation cycle-3: all 5 ACs PASS via hand-executed scenario matrix + pure-function tables; no material findings; two accepted deferred risks; tip 284299e3b within surface tolerance; standard CI green."
+    }
+  ]
+}
