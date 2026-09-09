@@ -32,6 +32,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:1ytadmcakh5s27r8wjn7qa6f:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:1ytadmcakh5s27r8wjn7qa6f-ideation-1
+              briefing:
+                id: briefing:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-1:revision-1
+                digest: sha256:ca7b907305fc10019661d8878ce775883ff480119e1d5ea376f1a8f3f4de875a
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Design the smallest lifecycle change that makes stage occupancy distinct from completed stage work. The captain requested filing and ideation only; implementation requires a later design approval.

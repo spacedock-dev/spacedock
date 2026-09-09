@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-1:revision-1",
+  "question": "Revise the ungated completion design before implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/dc0b6f2b0e401fcc425b6758e9b29bba3dc67a5a/explicit-ungated-stage-completion/index.md",
+      "rev": "sha256:2102d583508b977fbf4c6cf39c848a941460bed04d258a21aa44713b7552f42c",
+      "mediaType": "text/markdown",
+      "summary": "Recommend revising this ideation before implementation. Proposed design: stage-complete boolean, report-count baseline, and restart action; estimate +650 net LOC across 24 files, tolerance +450 to +850 and 20 to 28 files. The isolated fixture reproduced initial intake skipping to triage; the focused existing test passed. Independent staff review: durable FO acceptance is a product choice beyond the intake bug; the boolean is justified if that distinction is retained. Needs decision: remove redundant set-false adoption semantics in favor of restart. Material design gaps: accepted state must remain ineligible until its entity commit is durable; bound the count-baseline freshness claim to append-only reports and exercise stale report rejection, appended report acceptance, and restart. No implementation or provider operations performed. Broad test invocations encountered unrelated recovery-file compile errors and are not passing implementation evidence."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/af70297ddae6ec64444849e8e3fcf57484bc16e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8c798101c71c8f64fe47546dc852c73e5f7510d209be3d1661a188fa9d02613f"
+    }
+  ]
+}
