@@ -10,6 +10,17 @@ worktree:
 issue:
 pr:
 id: 1ytadmcakh5s27r8wjn7qa6f
+gates:
+    version: 1
+    records:
+        - id: gate:1ytadmcakh5s27r8wjn7qa6f:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:1ytadmcakh5s27r8wjn7qa6f-backlog-1
+              briefing:
+                id: briefing:1ytadmcakh5s27r8wjn7qa6f:backlog:attempt-1:revision-1
+                digest: sha256:ed30f7885e6d58e90499bdda191ab2f9e3f2cffb4e02c23f532845e0b98be368
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Design the smallest lifecycle change that makes stage occupancy distinct from completed stage work. The captain requested filing and ideation only; implementation requires a later design approval.

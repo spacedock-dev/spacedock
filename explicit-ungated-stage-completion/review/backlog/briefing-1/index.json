@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1ytadmcakh5s27r8wjn7qa6f:backlog:attempt-1:revision-1",
+  "question": "Begin ideation on explicit ungated stage completion?",
+  "artifacts": [
+    {
+      "id": "artifact:1ytadmcakh5s27r8wjn7qa6f:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/983c6fa864a257331fe765df02365e15e8214d40/explicit-ungated-stage-completion/index.md",
+      "rev": "sha256:4b69c01e1712ba9802348601b4646191c5e47d227c8fdf02180eafedc98ea8a4",
+      "mediaType": "text/markdown",
+      "summary": "Design the smallest durable distinction between stage occupancy and completion. Evaluate one ungated completion field, preserve gate authority, and decide migration explicitly. Ideation only; no implementation or live email mutations."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1ytadmcakh5s27r8wjn7qa6f:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/af70297ddae6ec64444849e8e3fcf57484bc16e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8c798101c71c8f64fe47546dc852c73e5f7510d209be3d1661a188fa9d02613f"
+    }
+  ]
+}
