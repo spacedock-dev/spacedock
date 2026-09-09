@@ -2,7 +2,7 @@
 title: Make stage occupancy and ungated completion explicit
 status: ideation
 source: Captain discussion of email triage seed skipping intake, 2026-09-09
-started:
+started: 2026-09-09T20:33:27Z
 completed:
 verdict:
 score: 0.8
