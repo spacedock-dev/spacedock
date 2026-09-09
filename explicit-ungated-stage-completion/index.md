@@ -40,6 +40,14 @@ gates:
                 id: briefing:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-1:revision-1
                 digest: sha256:ca7b907305fc10019661d8878ce775883ff480119e1d5ea376f1a8f3f4de875a
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1ytadmcakh5s27r8wjn7qa6f:ideation:1
+                briefing: briefing:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-09T21:32:57.96483Z"
+                decision: revise
+                reason: 'Captain: send it back. Revise ideation in place: enforce committed acceptance before successor dispatch; bound and exercise report freshness; remove redundant set-false adoption semantics in favor of restart. Return for independent review and a visual design presentation. No implementation authorized.'
 ---
 
 Design the smallest lifecycle change that makes stage occupancy distinct from completed stage work. The captain requested filing and ideation only; implementation requires a later design approval.
