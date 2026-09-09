@@ -21,6 +21,17 @@ gates:
                 id: briefing:1ytadmcakh5s27r8wjn7qa6f:backlog:attempt-1:revision-1
                 digest: sha256:ed30f7885e6d58e90499bdda191ab2f9e3f2cffb4e02c23f532845e0b98be368
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:1ytadmcakh5s27r8wjn7qa6f:backlog:1
+                briefing: briefing:1ytadmcakh5s27r8wjn7qa6f:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-09T20:33:12.337022Z"
+                decision: approve
+                reason: 'Captain requested: file this and dispatch for ideation; then explicitly overrode the unrelated dirty-state startup blocker. Approval authorizes ideation only.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Design the smallest lifecycle change that makes stage occupancy distinct from completed stage work. The captain requested filing and ideation only; implementation requires a later design approval.
