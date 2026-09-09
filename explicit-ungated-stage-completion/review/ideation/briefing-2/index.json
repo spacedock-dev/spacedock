@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-2:revision-1",
+  "question": "Approve the revised explicit ungated completion design for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/128740d27c002e51c2435e0a4b56e3f21d0a86eb/explicit-ungated-stage-completion/index.md",
+      "rev": "sha256:73ad73ea6c53764fd7b4a21cfe89bc994efc743852971fafa327d82a5f2a7c41",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approve revised ideation. Status is occupied stage; ungated stage-complete plus report baseline separate pending work from committed FO acceptance. New entry/restart captures baseline; dispatch retries preserve it. Accepted work cannot advance until entity bytes are tracked, committed and clean. Gate attempts remain authoritative for gated stages, including existing terminal delivery. Restart owns pending adoption and rework; no false setter. Independent reviewer approved closure of all three findings at 128740d27. Freshness relies on append-only report history and FO semantic review; arbitrary heading rewrites can defeat count freshness. One-off exercise passed six assertions using actual Git and modeled predicates, not shipped command implementation. Legacy absent-field behavior remains until adoption/entry. Estimate +630 net LOC across 25 files, tolerance +430 to +830 and 21 to 29 files. Approving authorizes implementation and real command/fixture validation; no implementation has occurred."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:1ytadmcakh5s27r8wjn7qa6f:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/af70297ddae6ec64444849e8e3fcf57484bc16e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8c798101c71c8f64fe47546dc852c73e5f7510d209be3d1661a188fa9d02613f"
+    }
+  ]
+}
