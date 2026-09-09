@@ -1,6 +1,6 @@
 ---
 title: Make stage occupancy and ungated completion explicit
-status: backlog
+status: ideation
 source: Captain discussion of email triage seed skipping intake, 2026-09-09
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain requested: file this and dispatch for ideation; then explicitly overrode the unrelated dirty-state startup blocker. Approval authorizes ideation only.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Design the smallest lifecycle change that makes stage occupancy distinct from completed stage work. The captain requested filing and ideation only; implementation requires a later design approval.
