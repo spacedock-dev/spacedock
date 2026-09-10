@@ -13,7 +13,7 @@ import (
 // error-path parity run. Each closure crafts exactly the condition the error
 // guards, leaving the rest of the request well-formed so the guard under test
 // is the one that fires.
-type errFixture func(t *testing.T, root string) (workflowDir, stdin string)
+type errFixture func(t *testing.T, root string) (args []string, stdin string)
 
 // goodReadme is a minimal well-formed README with a non-worktree backlog stage
 // and a worktree implementation stage, reused by most error fixtures.
@@ -64,46 +64,24 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 		name string
 		fx   errFixture
 	}{
-		{"stdin-not-object", func(t *testing.T, root string) (string, string) {
-			wd := writeGood(t, root)
-			return wd, `[1,2,3]`
-		}},
-		{"missing-required-field", func(t *testing.T, root string) (string, string) {
-			wd := writeGood(t, root)
-			// schema_version present, entity_path omitted.
-			return wd, `{"schema_version":2,"workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
-		}},
-		{"present-but-null-field", func(t *testing.T, root string) (string, string) {
-			wd := writeGood(t, root)
-			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":null,"checklist":["- a"]}`
-		}},
-		{"unsupported-schema-version", func(t *testing.T, root string) (string, string) {
-			wd := writeGood(t, root)
-			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":1,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
-		}},
-		{"worktree-absolute-entity-path", func(t *testing.T, root string) (string, string) {
+
+		{"worktree-absolute-entity-path", func(t *testing.T, root string) ([]string, string) {
 			wd := writeGood(t, root)
 			bad := filepath.Join(wd, ".worktrees", "x", "thing.md")
-			return wd, `{"schema_version":2,"entity_path":"` + bad + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", bad, "--stage", "backlog", "--checklist-file", "-"}, "- a"
 		}},
-		{"checklist-empty", func(t *testing.T, root string) (string, string) {
+		{"checklist-empty", func(t *testing.T, root string) ([]string, string) {
 			wd := writeGood(t, root)
 			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":[]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-"}, ""
 		}},
-		{"checklist-not-a-list", func(t *testing.T, root string) (string, string) {
-			wd := writeGood(t, root)
-			ep := writeFlatEntity(t, wd, "backlog", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":"not a list"}`
-		}},
-		{"entity-not-readable", func(t *testing.T, root string) (string, string) {
+
+		{"entity-not-readable", func(t *testing.T, root string) ([]string, string) {
 			wd := writeGood(t, root)
 			missing := filepath.Join(wd, "nope.md")
-			return wd, `{"schema_version":2,"entity_path":"` + missing + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", missing, "--stage", "backlog", "--checklist-file", "-"}, "- a"
 		}},
-		{"readme-not-found", func(t *testing.T, root string) (string, string) {
+		{"readme-not-found", func(t *testing.T, root string) ([]string, string) {
 			// workflow_dir has no README; entity lives in root (readable).
 			wd := filepath.Join(root, "noreadme")
 			if err := os.MkdirAll(wd, 0o755); err != nil {
@@ -112,59 +90,59 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(root, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "backlog", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-"}, "- a"
 		}},
-		{"no-stages-block", func(t *testing.T, root string) (string, string) {
+		{"no-stages-block", func(t *testing.T, root string) ([]string, string) {
 			wd := root
 			writeFile(t, filepath.Join(wd, "README.md"), "---\nentity-type: task\nid-style: slug\n---\n# No stages\n")
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "backlog", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-"}, "- a"
 		}},
-		{"stage-not-in-workflow", func(t *testing.T, root string) (string, string) {
+		{"stage-not-in-workflow", func(t *testing.T, root string) ([]string, string) {
 			wd := writeGood(t, root)
 			ep := writeFlatEntity(t, wd, "nonesuch", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"nonesuch","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "nonesuch", "--checklist-file", "-"}, "- a"
 		}},
-		{"invalid-stage-model", func(t *testing.T, root string) (string, string) {
+		{"invalid-stage-model", func(t *testing.T, root string) ([]string, string) {
 			wd := root
 			writeFile(t, filepath.Join(wd, "README.md"), readmeBadModel("badmodel", "frobnicate", ""))
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "badmodel", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"badmodel","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "badmodel", "--checklist-file", "-"}, "- a"
 		}},
-		{"invalid-defaults-model", func(t *testing.T, root string) (string, string) {
+		{"invalid-defaults-model", func(t *testing.T, root string) ([]string, string) {
 			wd := root
 			writeFile(t, filepath.Join(wd, "README.md"), readmeBadModel("ok", "", "frobnicate"))
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "ok", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"ok","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "ok", "--checklist-file", "-"}, "- a"
 		}},
-		{"worktree-path-missing", func(t *testing.T, root string) (string, string) {
+		{"worktree-path-missing", func(t *testing.T, root string) ([]string, string) {
 			wd := writeGood(t, root)
 			// Entity stamps a worktree path that does not exist on disk.
 			ep := writeFlatEntity(t, wd, "implementation", ".worktrees/does-not-exist")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"implementation","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "implementation", "--checklist-file", "-"}, "- a"
 		}},
-		{"worktree-stage-no-worktree", func(t *testing.T, root string) (string, string) {
+		{"worktree-stage-no-worktree", func(t *testing.T, root string) ([]string, string) {
 			wd := writeGood(t, root)
 			// implementation is a worktree stage but the entity has no worktree.
 			ep := writeFlatEntity(t, wd, "implementation", "")
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"implementation","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "implementation", "--checklist-file", "-"}, "- a"
 		}},
-		{"feedback-context-missing", func(t *testing.T, root string) (string, string) {
+		{"feedback-context-missing", func(t *testing.T, root string) ([]string, string) {
 			wd := writeGood(t, root)
 			wtRel := ".worktrees/spacedock-ensign-thing"
 			if err := os.MkdirAll(filepath.Join(root, wtRel), 0o755); err != nil {
 				t.Fatal(err)
 			}
 			ep := writeFlatEntity(t, wd, "validation", wtRel)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"validation","checklist":["- a"],"is_feedback_reflow":true}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "validation", "--checklist-file", "-", "--feedback-reflow"}, "- a"
 		}},
-		{"invalid-stage-name", func(t *testing.T, root string) (string, string) {
+		{"invalid-stage-name", func(t *testing.T, root string) ([]string, string) {
 			// A stage name with an uppercase letter fails the kebab-case regex
 			// at name-derivation time.
 			wd := root
@@ -172,16 +150,16 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "BadStage", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"BadStage","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "BadStage", "--checklist-file", "-"}, "- a"
 		}},
-		{"malformed-heading", func(t *testing.T, root string) (string, string) {
+		{"malformed-heading", func(t *testing.T, root string) ([]string, string) {
 			wd := root
 			// The stage name appears as a non-first token in a ### heading.
 			writeFile(t, filepath.Join(wd, "README.md"), readmeMalformedHeading())
 			ep := filepath.Join(wd, "thing.md")
 			writeFile(t, ep, entityFM("Thing", "ideation", ""))
 			gitInit(t, root)
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"ideation","checklist":["- a"]}`
+			return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "ideation", "--checklist-file", "-"}, "- a"
 		}},
 	}
 
@@ -190,9 +168,15 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			home := t.TempDir()
 			t.Setenv("HOME", home)
 			root := t.TempDir()
-			wd, stdin := tc.fx(t, root)
+			args, stdin := tc.fx(t, root)
 
-			native := runNative(stdin, "build", "--workflow-dir", wd)
+			native := runNative(stdin, args...)
+			if tc.name == "checklist-empty" {
+				if native.exit != 1 || native.stdout != "" || native.stderr != "error: missing required field 'checklist'\n" {
+					t.Fatalf("empty checklist: %+v", native)
+				}
+				return
+			}
 			assertGolden(t, "build-error-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 		})
 	}
@@ -201,23 +185,6 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 // TestBuildStrEErrors covers the two str(e)-bearing paths (AC-1b): they match on
 // exit code and a byte-identical stderr PREFIX, not the interpreter-version tail.
 func TestBuildStrEErrors(t *testing.T) {
-	t.Run("invalid-json-on-stdin", func(t *testing.T) {
-		home := t.TempDir()
-		t.Setenv("HOME", home)
-		root := t.TempDir()
-		wd := writeGood(t, root)
-		stdin := `{"a": ` // truncated -> JSON syntax error
-
-		native := runNative(stdin, "build", "--workflow-dir", wd)
-
-		const prefix = "error: invalid JSON on stdin: "
-		if native.exit != 1 {
-			t.Errorf("exit native=%d, want 1", native.exit)
-		}
-		if !strings.HasPrefix(native.stderr, prefix) {
-			t.Errorf("native stderr lacks prefix %q:\n%q", prefix, native.stderr)
-		}
-	})
 
 	t.Run("dispatch-file-write-failed", func(t *testing.T) {
 		home := t.TempDir()
@@ -225,7 +192,7 @@ func TestBuildStrEErrors(t *testing.T) {
 		root := t.TempDir()
 		wd := writeGood(t, root)
 		ep := writeFlatEntity(t, wd, "backlog", "")
-		stdin := `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
+		stdin := "- a"
 
 		// Force the write to fail: make the dispatch-file path a directory so
 		// open()/WriteFile cannot write a regular file there. Clear any leftover
@@ -241,7 +208,7 @@ func TestBuildStrEErrors(t *testing.T) {
 		}
 		defer os.RemoveAll(target)
 
-		native := runNative(stdin, "build", "--workflow-dir", wd)
+		native := runNative(stdin, "build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-")
 
 		prefix := "dispatch_file_write_failed: " + target + ": "
 		if native.exit != 1 {

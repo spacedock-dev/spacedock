@@ -3,7 +3,6 @@
 package dispatch
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,16 +29,10 @@ func TestBuildAbsoluteWorktreeParity(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", absWorktree))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
@@ -84,71 +77,6 @@ func TestShowStageDefSeparatorParity(t *testing.T) {
 
 			native := runNative("", "show-stage-def", "--workflow-dir", root, "--stage", "ideation")
 			assertGolden(t, "showstagedef-separator-"+sc.name, goldenEnvelope{res: normRun(native, root, home)})
-		})
-	}
-}
-
-// TestBuildSchemaVersionNumericParity locks fix 3: schema_version is compared
-// numerically. 2 and 2.0 accept; "2" (string), true, and a wrong number reject —
-// matching the oracle's `sv != 2` in both directions.
-func TestBuildSchemaVersionNumericParity(t *testing.T) {
-	cases := []struct {
-		name string
-		sv   string // raw JSON literal for schema_version
-	}{
-		{"int-2", "2"},
-		{"float-2.0", "2.0"},
-		{"string-2", `"2"`},
-		{"int-1", "1"},
-		{"float-2.5", "2.5"},
-		{"bool-true", "true"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			home := t.TempDir()
-			t.Setenv("HOME", home)
-			root := t.TempDir()
-			writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
-			entityPath := filepath.Join(root, "thing.md")
-			writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
-			gitInit(t, root)
-
-			stdin := fmt.Sprintf(
-				`{"schema_version":%s,"entity_path":%q,"workflow_dir":%q,"stage":"backlog","checklist":["- a"]}`,
-				tc.sv, entityPath, root)
-
-			native := runNative(stdin, "build", "--workflow-dir", root)
-			// Accepted cases write a dispatch body; the golden freezes the channels.
-			assertGolden(t, "build-schemaversion-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
-		})
-	}
-}
-
-// TestBuildNonObjectStdinParity locks fix 4: a valid non-object top-level (null,
-// array, scalar) yields "stdin must be a JSON object" with exit 1, matching the
-// oracle's isinstance(inp, dict) check after json.loads — not a downstream
-// missing-field error.
-func TestBuildNonObjectStdinParity(t *testing.T) {
-	cases := []struct {
-		name  string
-		stdin string
-	}{
-		{"null", "null"},
-		{"array", "[1,2,3]"},
-		{"number", "42"},
-		{"string", `"hello"`},
-		{"bool", "true"},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			home := t.TempDir()
-			t.Setenv("HOME", home)
-			root := t.TempDir()
-			writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
-			gitInit(t, root)
-
-			native := runNative(tc.stdin, "build", "--workflow-dir", root)
-			assertGolden(t, "build-nonobject-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 		})
 	}
 }

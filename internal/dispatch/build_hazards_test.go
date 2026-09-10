@@ -3,9 +3,11 @@
 package dispatch
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -141,16 +143,10 @@ func TestBuildModelPrecedence(t *testing.T) {
 			writeFile(t, entityPath, entityFM("Thing", tc.stage, ""))
 			gitInit(t, root)
 
-			stdin := mergeStdin(map[string]any{
-				"schema_version": 2,
-				"entity_path":    entityPath,
-				"workflow_dir":   root,
-				"stage":          tc.stage,
-				"checklist":      []string{"- a"},
-				"bare_mode":      false,
-			}, nil)
+			stdin := strings.Join([]string{"- a"}, "\n")
+			stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", tc.stage, "--checklist-file", "-"}
 
-			native := runNative(stdin, "build", "--workflow-dir", root)
+			native := runNative(stdin, stdinArgs...)
 			assertGolden(t, "build-model-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 
 			// Lock the "model" JSON value explicitly (the golden already covers it,
@@ -190,18 +186,12 @@ func TestBuildNoHTMLEscape(t *testing.T) {
 	}
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version":     2,
-		"entity_path":        entityPath,
-		"workflow_dir":       root,
-		"stage":              "validation",
-		"checklist":          []string{"- a < b", "- c > d & e"},
-		"bare_mode":          false,
-		"is_feedback_reflow": true,
-		"feedback_context":   "compare a < b && c > d in <Tag> & raw &amp; ampersand",
-	}, nil)
+	stdinFeedbackContext := filepath.Join(t.TempDir(), "feedback_context.md")
+	writeFile(t, stdinFeedbackContext, "compare a < b && c > d in <Tag> & raw &amp; ampersand")
+	stdin := strings.Join([]string{"- a < b", "- c > d & e"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "validation", "--checklist-file", "-", "--feedback-reflow", "--feedback-context-file", stdinFeedbackContext}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
@@ -233,17 +223,11 @@ func TestBuildSpaceBearingPath(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   workflowDir,
-		"stage":          "backlog",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-"}
 
 	workflowLauncher := filepath.Join(root, "launcher dir", "spacedock")
-	native := runNativeWithLauncher(stdin, workflowLauncher, "build", "--workflow-dir", workflowDir, "--host", "claude")
+	native := runNativeWithLauncher(stdin, workflowLauncher, append(stdinArgs, "--host", "claude")...)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
@@ -252,5 +236,32 @@ func TestBuildSpaceBearingPath(t *testing.T) {
 	wantQuoted := "    " + shlexQuote(workflowLauncher)
 	if !strings.Contains(nativeBody, wantQuoted) {
 		t.Errorf("workflow launcher is not shell-quoted:\nwant contains: %s\ngot:\n%s", wantQuoted, nativeBody)
+	}
+}
+
+func TestBuildQuotedHeredocTransport(t *testing.T) {
+	root, entity := buildHostFixture(t)
+	binary := filepath.Join(t.TempDir(), "spacedock")
+	build := exec.Command("go", "build", "-o", binary, "./cmd/spacedock")
+	build.Dir = "../.."
+	if out, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build CLI: %v\n%s", err, out)
+	}
+	sentinel := filepath.Join(t.TempDir(), "SHOULD_NOT_EXIST")
+	line := "  Keep \"quotes\", `echo expanded`, $(touch " + shlexQuote(sentinel) + "), $HOME, 雪  "
+	command := shlexQuote(binary) + " dispatch build --host claude --workflow-dir " + shlexQuote(root) + " --entity-path " + shlexQuote(entity) + " --stage backlog --checklist-file - <<'CHECKLIST'\n" + line + "\nCHECKLIST\n"
+	cmd := exec.Command("sh", "-c", command)
+	var out, errout bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errout
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("quoted heredoc: %v stderr=%s", err, errout.String())
+	}
+	body := readDispatchBody(t, dispatchFilePathFromStdout(t, out.String()))
+	if !strings.Contains(body, "### Completion checklist\n\n"+line+"\n\n### Summary") {
+		t.Fatal("shell changed literal checklist bytes")
+	}
+	if _, err := os.Stat(sentinel); !os.IsNotExist(err) {
+		t.Fatalf("shell expanded checklist payload: %v", err)
 	}
 }

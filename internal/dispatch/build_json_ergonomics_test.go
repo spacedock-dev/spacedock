@@ -3,7 +3,6 @@ package dispatch
 
 import (
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -45,16 +44,16 @@ func TestBuildFlagFileInputModePreservesLiteralChecklist(t *testing.T) {
 	}
 }
 
-func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
+func TestBuildHostResolutionFromFlagAndEnv(t *testing.T) {
 	t.Setenv("PI_CODING_AGENT", "")
 	t.Setenv("PI_CODING_AGENT_DIR", "")
 
 	t.Run("derived-codex", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "codex-thread")
 		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -71,9 +70,9 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 	t.Run("derived-claude", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "1")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -87,9 +86,9 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
 		t.Setenv("PI_CODING_AGENT", "true")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -101,9 +100,9 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		t.Setenv("CLAUDECODE", "")
 		t.Setenv("PI_CODING_AGENT", "")
 		t.Setenv("PI_CODING_AGENT_DIR", t.TempDir())
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -113,22 +112,9 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 	t.Run("host-flag", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root, "--host", "codex")
-		if native.exit != 0 {
-			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
-		}
-		out := decodeBuildOutput(t, native.stdout)
-		assertCodexFreshPrompt(t, out.Prompt, out.DispatchFilePath)
-	})
-
-	t.Run("matching-explicit-sources", func(t *testing.T) {
-		t.Setenv("CODEX_THREAD_ID", "")
-		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
-
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, map[string]any{"host": "codex"}), "build", "--workflow-dir", root, "--host", "codex")
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-", "--host", "codex")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -140,9 +126,9 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
 		t.Setenv("PI_CODING_AGENT", "true")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root, "--host", "claude")
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-", "--host", "claude")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -152,13 +138,13 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		}
 	})
 
-	t.Run("json-host-overrides-pi-runtime", func(t *testing.T) {
+	t.Run("codex-flag-overrides-pi-runtime", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
 		t.Setenv("PI_CODING_AGENT", "true")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, map[string]any{"host": "codex"}), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-", "--host", "codex")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -166,39 +152,30 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		assertCodexFreshPrompt(t, out.Prompt, out.DispatchFilePath)
 	})
 
-	t.Run("conflicting-explicit-sources", func(t *testing.T) {
-		t.Setenv("CODEX_THREAD_ID", "")
-		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
-
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, map[string]any{"host": "codex"}), "build", "--workflow-dir", root, "--host", "claude")
-		assertBuildHostError(t, native, "--host", "JSON host")
-	})
-
 	t.Run("unsupported-explicit-host", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root, "--host", "banana")
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-", "--host", "banana")
 		assertBuildHostError(t, native, "unsupported host", "claude, codex, or pi")
 	})
 
 	t.Run("missing-source", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "")
 		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
 		assertBuildHostError(t, native, "host source", "CODEX_THREAD_ID", "CLAUDECODE", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR")
 	})
 
 	t.Run("ambiguous-runtime", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "codex-thread")
 		t.Setenv("CLAUDECODE", "1")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
 		assertBuildHostError(t, native, "ambiguous", "CODEX_THREAD_ID", "CLAUDECODE")
 	})
 
@@ -206,18 +183,18 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "codex-thread")
 		t.Setenv("CLAUDECODE", "")
 		t.Setenv("PI_CODING_AGENT", "true")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root)
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
 		assertBuildHostError(t, native, "ambiguous", "CODEX_THREAD_ID", "PI_CODING_AGENT", "--host claude, codex, or pi")
 	})
 
 	t.Run("explicit-overrides-runtime", func(t *testing.T) {
 		t.Setenv("CODEX_THREAD_ID", "codex-thread")
 		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
+		root, entity := buildHostFixture(t)
 
-		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root, "--host", "claude")
+		native := runNativePreservingHostEnv("- a\n- b", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-", "--host", "claude")
 		if native.exit != 0 {
 			t.Fatalf("build exit=%d stderr=%s", native.exit, native.stderr)
 		}
@@ -247,95 +224,6 @@ func assertPiBuildOutput(t *testing.T, stdout string) {
 	}
 }
 
-func TestBuildSchemaAndValidateOnly(t *testing.T) {
-	t.Setenv("PI_CODING_AGENT", "")
-	t.Setenv("PI_CODING_AGENT_DIR", "")
-
-	t.Run("print-schema", func(t *testing.T) {
-		native := runNativePreservingHostEnv("", "build", "--print-schema")
-		if native.exit != 0 {
-			t.Fatalf("print-schema exit=%d stderr=%s", native.exit, native.stderr)
-		}
-		var schema map[string]any
-		if err := json.Unmarshal([]byte(native.stdout), &schema); err != nil {
-			t.Fatalf("schema is not valid JSON: %v\n%s", err, native.stdout)
-		}
-		props, ok := schema["properties"].(map[string]any)
-		if !ok {
-			t.Fatalf("schema missing properties object:\n%s", native.stdout)
-		}
-		host, ok := props["host"].(map[string]any)
-		if !ok {
-			t.Fatalf("schema missing host property:\n%s", native.stdout)
-		}
-		if got := strings.Join(anyStrings(host["enum"]), ","); got != "claude,codex,pi" {
-			t.Fatalf("host enum = %q, want claude,codex,pi", got)
-		}
-		if containsAnyString(schema["required"], "host") {
-			t.Fatalf("host must be optional in schema required list:\n%s", native.stdout)
-		}
-	})
-
-	t.Run("validate-only-derived-host-does-not-write-dispatch", func(t *testing.T) {
-		t.Setenv("CODEX_THREAD_ID", "codex-thread")
-		t.Setenv("CLAUDECODE", "")
-		root, _ := buildHostFixture(t)
-		reqPath := filepath.Join(root, "request.json")
-		writeFile(t, reqPath, buildHostStdin(t, root, nil))
-		dispatchPath := filepath.Join(dispatchFileDir, "spacedock-ensign-thing-backlog.md")
-		if err := os.Remove(dispatchPath); err != nil && !os.IsNotExist(err) {
-			t.Fatal(err)
-		}
-
-		native := runNativePreservingHostEnv("", "build", "--validate-only", reqPath)
-		if native.exit != 0 {
-			t.Fatalf("validate-only exit=%d stderr=%s", native.exit, native.stderr)
-		}
-		if native.stdout != "" {
-			t.Fatalf("validate-only success should not emit dispatch JSON, got %q", native.stdout)
-		}
-		if _, err := os.Stat(dispatchPath); !os.IsNotExist(err) {
-			t.Fatalf("validate-only wrote deterministic dispatch file %s (stat err=%v)", dispatchPath, err)
-		}
-	})
-
-	t.Run("validate-only-errors", func(t *testing.T) {
-		cases := []struct {
-			name  string
-			env   map[string]string
-			extra map[string]any
-			body  string
-			want  []string
-		}{
-			{name: "malformed-json", body: `{"schema_version":`, want: []string{"invalid JSON"}},
-			{name: "missing-host", env: map[string]string{"CODEX_THREAD_ID": "", "CLAUDECODE": ""}, want: []string{"host source"}},
-			{name: "ambiguous-env", env: map[string]string{"CODEX_THREAD_ID": "codex-thread", "CLAUDECODE": "1"}, want: []string{"ambiguous", "CODEX_THREAD_ID", "CLAUDECODE"}},
-			{name: "unsupported-host", extra: map[string]any{"host": "banana"}, want: []string{"unsupported host"}},
-			{name: "empty-checklist", extra: map[string]any{"host": "claude", "checklist": []string{}}, want: []string{"checklist must not be empty"}},
-		}
-		for _, tc := range cases {
-			t.Run(tc.name, func(t *testing.T) {
-				for _, key := range []string{"CODEX_THREAD_ID", "CLAUDECODE", "PI_CODING_AGENT", "PI_CODING_AGENT_DIR"} {
-					t.Setenv(key, "")
-				}
-				for key, value := range tc.env {
-					t.Setenv(key, value)
-				}
-				root, _ := buildHostFixture(t)
-				body := tc.body
-				if body == "" {
-					body = buildHostStdin(t, root, tc.extra)
-				}
-				reqPath := filepath.Join(root, "request.json")
-				writeFile(t, reqPath, body)
-
-				native := runNativePreservingHostEnv("", "build", "--validate-only", reqPath)
-				assertBuildHostError(t, native, tc.want...)
-			})
-		}
-	})
-}
-
 func buildHostFixture(t *testing.T) (string, string) {
 	t.Helper()
 	root := t.TempDir()
@@ -344,19 +232,6 @@ func buildHostFixture(t *testing.T) (string, string) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 	return root, entityPath
-}
-
-func buildHostStdin(t *testing.T, root string, extra map[string]any) string {
-	t.Helper()
-	entityPath := filepath.Join(root, "thing.md")
-	return mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-	}, extra)
 }
 
 func decodeBuildOutput(t *testing.T, stdout string) struct {
@@ -388,25 +263,46 @@ func assertBuildHostError(t *testing.T, native runResult, wants ...string) {
 	}
 }
 
-func anyStrings(v any) []string {
-	arr, ok := v.([]any)
-	if !ok {
-		return nil
+func TestChecklistSourcesHaveIdenticalLiteralSections(t *testing.T) {
+	root, entity := buildHostFixture(t)
+	const hazard = "  Keep \"quotes\", `ticks`, $(touch SHOULD_NOT_EXIST), $HOME, 雪 & <tag>  "
+	scope, feedback := filepath.Join(t.TempDir(), "scope.md"), filepath.Join(t.TempDir(), "feedback.md")
+	const scopeText = "### Scope\n`code` $HOME\n\n"
+	const feedbackText = "REJECTED:\n  $(literal) 雪\n\n"
+	writeFile(t, scope, scopeText)
+	writeFile(t, feedback, feedbackText)
+	for _, tc := range []struct{ name, input, want string }{
+		{"one terminal CR", "x\r\r\n", "x\r"},
+		{"EOF", hazard, hazard}, {"LF", hazard + "\n", hazard},
+		{"CRLF blanks", "\r\n" + hazard + "\r\n\t \r\nsecond\r\n", hazard + "\nsecond"},
+		{"long line", strings.Repeat("x", 70000), strings.Repeat("x", 70000)},
+		{"JSON literal", `{"checklist":"ordinary text"}`, `{"checklist":"ordinary text"}`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var previous string
+			for _, source := range []string{"-", filepath.Join(t.TempDir(), "checklist")} {
+				input := tc.input
+				if source != "-" {
+					writeFile(t, source, input)
+					input = "must not consume this"
+				}
+				result := runNative(input, "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", source, "--scope-notes-file", scope, "--feedback-context-file", feedback)
+				if result.exit != 0 {
+					t.Fatalf("%s: %s", source, result.stderr)
+				}
+				body := readDispatchBody(t, dispatchFilePathFromStdout(t, result.stdout))
+				expected := "### Completion checklist\n\n" + tc.want + "\n\n### Summary\n"
+				if !strings.Contains(body, expected) {
+					t.Fatal("checklist section bytes changed")
+				}
+				if !strings.Contains(body, "### Feedback from prior review\n\n"+feedbackText+"\n\n"+scopeText+"\n\n### Completion checklist") {
+					t.Fatal("supporting prose bytes changed")
+				}
+				if previous != "" && body != previous {
+					t.Fatal("file/stdin artifacts differ")
+				}
+				previous = body
+			}
+		})
 	}
-	out := make([]string, 0, len(arr))
-	for _, item := range arr {
-		if s, ok := item.(string); ok {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
-func containsAnyString(v any, want string) bool {
-	for _, s := range anyStrings(v) {
-		if s == want {
-			return true
-		}
-	}
-	return false
 }

@@ -82,16 +82,10 @@ func TestBuildStageDisciplineRidesExactFetchCommand(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "ideation", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "ideation",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "ideation", "--checklist-file", "-"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit %d, stderr:\n%s", native.exit, native.stderr)
 	}
@@ -147,11 +141,8 @@ func TestDeclaredContextBuildAndHostNeutralFetch(t *testing.T) {
 
 	for _, host := range []string{"claude", "codex", "pi"} {
 		t.Run(host, func(t *testing.T) {
-			req := mergeStdin(map[string]any{
-				"schema_version": 2, "entity_path": entityPath, "workflow_dir": root,
-				"stage": "ideation", "checklist": []string{"- prove context"},
-			}, nil)
-			built := runNative(req, "build", "--workflow-dir", root, "--host", host)
+			req := "- prove context"
+			built := runNative(req, "build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "ideation", "--checklist-file", "-", "--host", host)
 			if built.exit != 0 {
 				t.Fatalf("build exit=%d stderr=%q", built.exit, built.stderr)
 			}
@@ -220,11 +211,8 @@ func TestDeclaredContextInvalidBuildPreflight(t *testing.T) {
 			entityPath := filepath.Join(root, "thing.md")
 			writeFile(t, entityPath, entityFM("Thing", "ideation", ""))
 			gitInit(t, root)
-			req := mergeStdin(map[string]any{
-				"schema_version": 2, "entity_path": entityPath, "workflow_dir": root,
-				"stage": "ideation", "checklist": []string{"- x"},
-			}, nil)
-			got := runNative(req, "build", "--workflow-dir", root)
+			req := "- x"
+			got := runNative(req, "build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "ideation", "--checklist-file", "-")
 			if got.exit == 0 || !strings.Contains(got.stderr, tc.want) ||
 				!strings.Contains(got.stderr, filepath.Join(root, "README.md")) ||
 				!strings.Contains(got.stderr, "ideation") {
@@ -246,11 +234,8 @@ func TestDeclaredContextLiveReadAdoptsValidAndRejectsInvalidCurrent(t *testing.T
 	entityPath := filepath.Join(root, "thing.md")
 	writeFile(t, entityPath, entityFM("Thing", "ideation", ""))
 	gitInit(t, root)
-	req := mergeStdin(map[string]any{
-		"schema_version": 2, "entity_path": entityPath, "workflow_dir": root,
-		"stage": "ideation", "checklist": []string{"- x"},
-	}, nil)
-	if got := runNative(req, "build", "--workflow-dir", root); got.exit != 0 {
+	req := "- x"
+	if got := runNative(req, "build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "ideation", "--checklist-file", "-"); got.exit != 0 {
 		t.Fatalf("v1 build exit=%d stderr=%q", got.exit, got.stderr)
 	}
 

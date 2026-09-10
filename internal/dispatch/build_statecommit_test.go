@@ -51,16 +51,10 @@ func TestStateCommitPathAbsoluteFromRelativeWorkflowDir(t *testing.T) {
 		t.Fatalf("derived workflow-dir spelling is not relative: %q", workflowRel)
 	}
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   workflowRel,
-		"stage":          "implementation",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", workflowRel, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-"}
 
-	native := runNative(stdin, "build", "--workflow-dir", workflowRel)
+	native := runNative(stdin, stdinArgs...)
 	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	// Pull the `git -C <path>` token out of the emitted state-commit command and
@@ -122,16 +116,10 @@ func TestEntityPathAbsoluteFromRelativeInput(t *testing.T) {
 		t.Fatalf("derived entity_path spelling is not relative: %q", entityRel)
 	}
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityRel,
-		"workflow_dir":   workflowDir,
-		"stage":          "implementation",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityRel, "--stage", "implementation", "--checklist-file", "-"}
 
-	native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+	native := runNative(stdin, stdinArgs...)
 	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	// Pull the entity-read line's path and assert it is absolute.
@@ -211,16 +199,10 @@ func TestSingleRootNoStateCommitGuidance(t *testing.T) {
 
 			gitInit(t, root)
 
-			stdin := mergeStdin(map[string]any{
-				"schema_version": 2,
-				"entity_path":    entityPath,
-				"workflow_dir":   workflowDir,
-				"stage":          tc.stage,
-				"checklist":      []string{"- a", "- b"},
-				"bare_mode":      false,
-			}, nil)
+			stdin := strings.Join([]string{"- a", "- b"}, "\n")
+			stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", tc.stage, "--checklist-file", "-"}
 
-			native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+			native := runNative(stdin, stdinArgs...)
 			body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 			if strings.Contains(body, "This workflow is split-root") {
@@ -286,16 +268,10 @@ func TestStateCommitGuidanceResolvesPaths(t *testing.T) {
 			// build_state_no_origin_test.go.
 			gitAddOrigin(t, root)
 
-			stdin := mergeStdin(map[string]any{
-				"schema_version": 2,
-				"entity_path":    entityPath,
-				"workflow_dir":   workflowDir,
-				"stage":          tc.stage,
-				"checklist":      []string{"- a", "- b"},
-				"bare_mode":      false,
-			}, nil)
+			stdin := strings.Join([]string{"- a", "- b"}, "\n")
+			stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", tc.stage, "--checklist-file", "-"}
 
-			native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+			native := runNative(stdin, stdinArgs...)
 			body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 			// POSITIVE: the resolved path-scoped state-commit command targets the

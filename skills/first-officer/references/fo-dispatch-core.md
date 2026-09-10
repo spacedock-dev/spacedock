@@ -166,20 +166,22 @@ Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any requ
 
 The ONLY initial-dispatch path: route input through `spacedock dispatch build`, forward its output to `«worker.spawn»` verbatim. Manual prompt/`name` assembly is a protocol violation outside the break-glass block.
 
-- **guard:** write fragile inputs (checklist, scope notes, feedback context) to files first — one checklist item per non-empty line — so Markdown/backticks/shell-vars survive shell quoting.
+- **guard:** feed checklist text to stdin with --checklist-file - — one item per non-empty line. Use a quoted heredoc delimiter that does not occur as a complete input line, or pass literal stdin bytes through the tool. Keep scope notes and feedback context in files. Preserve Markdown, backticks and shell variables literally. An existing checklist file remains supported; do not create one merely to dispatch.
 - **effect:** run the helper, then forward its stdout fields to `«worker.spawn»` unchanged:
   ```
   ${SPACEDOCK_BIN:-spacedock} dispatch build \
     --workflow-dir {workflow_dir} \
     --entity-path {entity_file_path} \
     --stage {target_stage_name} \
-    --checklist-file {checklist_file} \
+    --checklist-file - \
     [--scope-notes-file {scope_notes_file}] \
     [--feedback-context-file {feedback_context_file}] \
     [--bare-mode] \
     [--feedback-reflow] \
     [--advance] \
-    [--stamp]
+    [--stamp] <<'CHECKLIST'
+  {one_checklist_item_per_nonempty_line}
+  CHECKLIST
   ```
   `host` derives from the runtime (`--host` is for tests/cross-host tooling only). Select the dispatch transport shape only from the already-bound runtime adapter and invoke that shape once; never probe a second shape after a refusal. In particular, Codex fresh dispatch is named and omits `--bare-mode`. `--bare-mode` reads from live team state only when the active adapter calls for it, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no spawn/transport fields (nothing is spawned; the adapter enumerates them) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`. Add `--stamp` for an ordinary (non-reuse) dispatch into a gate-consumed or freshly-advanced entry: it folds the `started`/`worktree=` frontmatter stamps, the state commit+sync, and worktree creation into this same call, before assembly; it refuses (no mutation) unless the entity's status already equals `--stage`, and is incompatible with `--advance` (a reuse advance presupposes an already-stamped live worker).
   Feedback context is opaque transport: preserve the authorized finding, evidence, workflow classification, disposition, workflow-defined correction projection, and assignment bytes.

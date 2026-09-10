@@ -1,4 +1,4 @@
-// ABOUTME: stdin-JSON typed accessors, path joins, and the team/split-root
+// ABOUTME: normalized build-field typed accessors, path joins, and the team/split-root
 // ABOUTME: probes build needs, matching the oracle's helper semantics.
 package dispatch
 
@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
@@ -15,53 +14,6 @@ import (
 // isJSONNull reports whether a raw JSON value is the literal null.
 func isJSONNull(v json.RawMessage) bool {
 	return string(bytes.TrimSpace(v)) == "null"
-}
-
-// isSchemaVersion reports whether the raw value equals schema version 2 the way
-// the oracle's `sv != SCHEMA_VERSION` does after json.loads: a numeric
-// comparison. JSON 2 and 2.0 both accept (Python `2.0 != 2` is False); a string
-// "2", a bool, or null reject (Python `"2" != 2` is True). Only a JSON number
-// whose value is exactly 2 is accepted.
-func isSchemaVersion(v json.RawMessage) bool {
-	var val interface{}
-	dec := json.NewDecoder(bytes.NewReader(v))
-	dec.UseNumber()
-	if err := dec.Decode(&val); err != nil {
-		return false
-	}
-	n, ok := val.(json.Number)
-	if !ok {
-		return false
-	}
-	f, err := n.Float64()
-	return err == nil && f == 2
-}
-
-// renderSchemaVersion renders the parsed schema_version the way Python's f-string
-// renders it in the unsupported-version error: a JSON number prints bare (2.0
-// stays 2.0), a string prints its contents, a bool/null print Python-style.
-func renderSchemaVersion(v json.RawMessage) string {
-	var val interface{}
-	dec := json.NewDecoder(bytes.NewReader(v))
-	dec.UseNumber()
-	if err := dec.Decode(&val); err != nil {
-		return strings.TrimSpace(string(v))
-	}
-	switch t := val.(type) {
-	case string:
-		return t
-	case json.Number:
-		return t.String()
-	case bool:
-		if t {
-			return "True"
-		}
-		return "False"
-	case nil:
-		return "None"
-	default:
-		return strings.TrimSpace(string(v))
-	}
 }
 
 // jsonString decodes a raw JSON string value, returning "" for a non-string.

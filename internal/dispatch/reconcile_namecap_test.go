@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
@@ -81,15 +82,9 @@ func buildCappedName(t *testing.T, stateRoot, workflowDir, slug, id string) stri
 	t.Helper()
 	ep := filepath.Join(stateRoot, slug+".md")
 	writeFile(t, ep, entityFMID(id, "Thing", "backlog"))
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    ep,
-		"workflow_dir":   workflowDir,
-		"stage":          "backlog",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-	}, nil)
-	native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-"}
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build %s exit=%d\nstderr:\n%s", slug, native.exit, native.stderr)
 	}

@@ -59,17 +59,10 @@ func buildAdvancePromptFixture(t *testing.T, stageBody string, checklist []strin
 	writeFile(t, entityPath, entityFM(entityTitle, "implementation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      checklist,
-		"bare_mode":      false,
-		"advance":        true,
-	}, nil)
+	stdin := strings.Join(checklist, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--advance"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("advance build exit=%d stderr=%s", native.exit, native.stderr)
 	}

@@ -24,27 +24,24 @@ type buildResult struct {
 }
 
 // runBuild drives the native in-process `dispatch.Run build` with the given
-// input JSON, returning the parsed output and the dispatch body written to
+// explicit CLI inputs and literal checklist stdin, returning the parsed output and the dispatch body written to
 // dispatch_file_path. The build derives the worktree/state paths from the
 // git root of the workflow dir (FindGitRoot), so the git-initialized fixture
 // root is reachable through the absolute entity_path/workflow_dir in the input,
 // not the process working directory. It fails the test on a non-zero exit so
 // callers can assert on a known-good build.
-func runBuild(t *testing.T, root, workflowDir string, input map[string]any) buildResult {
+func runBuild(t *testing.T, workflowDir, entityPath, stage string) buildResult {
 	t.Helper()
-	if _, ok := input["host"]; !ok {
-		input["host"] = "claude"
-	}
-	raw, err := json.Marshal(input)
-	if err != nil {
-		t.Fatal(err)
-	}
 	// A unique HOME keeps the build's bare-mode team-evidence probe from reading
 	// the developer's real ~/.claude/teams; the build path does not depend on it
 	// in team mode (team_name supplied), but pin it for hermeticity.
 	t.Setenv("HOME", t.TempDir())
+	before, err := os.ReadDir(workflowDir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var stdout, stderr bytes.Buffer
-	if exit := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", workflowDir}, strings.NewReader(string(raw)), &stdout, &stderr); exit != 0 {
+	if exit := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", stage, "--checklist-file", "-", "--host", "claude"}, strings.NewReader("- do the work"), &stdout, &stderr); exit != 0 {
 		t.Fatalf("dispatch build exited %d\nstdout: %s\nstderr: %s", exit, stdout.String(), stderr.String())
 	}
 	var res buildResult
@@ -59,6 +56,21 @@ func runBuild(t *testing.T, root, workflowDir string, input map[string]any) buil
 		t.Fatalf("read dispatch body %s: %v", res.DispatchFilePath, err)
 	}
 	res.body = string(bodyBytes)
+	if !strings.Contains(res.body, "### Completion checklist\n\n- do the work\n\n### Summary") {
+		t.Fatal("dispatch changed literal checklist stdin")
+	}
+	after, err := os.ReadDir(workflowDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != len(after) {
+		t.Fatal("stdin dispatch created a scratch input file")
+	}
+	for i := range before {
+		if before[i].Name() != after[i].Name() {
+			t.Fatal("stdin dispatch changed workflow inputs")
+		}
+	}
 	return res
 }
 
@@ -199,14 +211,7 @@ Body.
 	}
 	gitInitFixture(t, root)
 
-	res := runBuild(t, root, stateDir, map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   stateDir,
-		"stage":          "implementation",
-		"checklist":      []string{"- do the work"},
-		"bare_mode":      false,
-	})
+	res := runBuild(t, stateDir, entityPath, "implementation")
 
 	// AC-4: name and dispatch file use the folder slug, never `index`.
 	wantName := "spacedock-ensign-skill-launcher-implementation"
@@ -273,14 +278,7 @@ Body.
 `)
 	gitInitFixture(t, root)
 
-	res := runBuild(t, root, root, map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- do the work"},
-		"bare_mode":      false,
-	})
+	res := runBuild(t, root, entityPath, "backlog")
 
 	wantName := "spacedock-ensign-vendor-script-backlog"
 	if res.Name != wantName {

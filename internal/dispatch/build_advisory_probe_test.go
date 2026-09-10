@@ -25,15 +25,7 @@ func bareBuildFixture(t *testing.T) (root, stdin string) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 
-	stdin = mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      true,
-		"host":           "claude",
-	}, nil)
+	stdin = "- a\n- b"
 	return root, stdin
 }
 
@@ -41,7 +33,7 @@ func bareBuildFixture(t *testing.T) (root, stdin string) {
 func runBareBuild(t *testing.T, root, stdin string, probe claudeteam.TeamStateProbe) (stdout, stderr string) {
 	t.Helper()
 	var out, errBuf bytes.Buffer
-	if code := RunWithLauncher(probe, testWorkflowLauncher, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
+	if code := RunWithLauncher(probe, testWorkflowLauncher, []string{"build", "--workflow-dir", root, "--entity-path", filepath.Join(root, "thing.md"), "--stage", "backlog", "--checklist-file", "-", "--bare-mode", "--host", "claude"}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
 		t.Fatalf("bare build exit=%d stderr=%q", code, errBuf.String())
 	}
 	return out.String(), errBuf.String()

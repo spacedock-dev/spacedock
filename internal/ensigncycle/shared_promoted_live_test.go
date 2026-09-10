@@ -30,6 +30,20 @@ func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedR
 	if !assert(t, root, "make-it-work") {
 		t.Fatalf("full ensign cycle has no path-scoped entity commit; artifacts: %s", result.artifactDir)
 	}
+	// Inspect the existing successful-command capture alongside durable lifecycle proof.
+	builds := 0
+	for _, command := range result.commands {
+		if !strings.Contains(command, "dispatch build") || !strings.Contains(command, "--checklist-file") {
+			continue
+		}
+		builds++
+		if !strings.Contains(command, "--checklist-file -") && !strings.Contains(command, "--checklist-file=-") {
+			t.Fatalf("full cycle created a checklist input file instead of using stdin: %s; artifacts: %s", command, result.artifactDir)
+		}
+	}
+	if builds == 0 {
+		t.Fatalf("full cycle captured no stdin checklist dispatch; artifacts: %s", result.artifactDir)
+	}
 	driver.emitMetrics(t, scenario, result)
 }
 

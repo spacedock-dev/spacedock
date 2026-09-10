@@ -19,22 +19,12 @@ type mergedBuildOutput struct {
 	DispatchFile    string  `json:"dispatch_file_path"`
 }
 
-// mergedStdin builds a well-formed non-bare claude request with NO team_name —
-// the merged dispatch shape. Every other guard is satisfied so the Rule-8
-// merged-path behavior is the one under test.
-func mergedStdin(t *testing.T, root, stage string) (workflowDir, stdin string) {
+// mergedBuildArgs supplies a complete CLI fixture for the merged Claude shape.
+func mergedBuildArgs(t *testing.T, root, stage string) []string {
 	t.Helper()
 	wd := writeGood(t, root)
 	ep := writeFlatEntity(t, wd, stage, "")
-	return wd, mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    ep,
-		"workflow_dir":   wd,
-		"stage":          stage,
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-		// team_name intentionally absent: this is the merged .178+ shape.
-	}, nil)
+	return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", stage, "--checklist-file", "-"}
 }
 
 // TestBuildMergedModeEmission is AC-1's fixture: on host=claude, not bare, no
@@ -44,9 +34,10 @@ func TestBuildMergedModeEmission(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
-	wd, stdin := mergedStdin(t, root, "backlog")
+	stdinArgs := mergedBuildArgs(t, root, "backlog")
+	stdin := "- a"
 
-	native := runNative(stdin, "build", "--workflow-dir", wd)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("merged build exit=%d, want 0\nstdout:\n%s\nstderr:\n%s",
 			native.exit, native.stdout, native.stderr)
@@ -77,9 +68,10 @@ func TestBuildMergedModeCompletionSignal(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
-	wd, stdin := mergedStdin(t, root, "backlog")
+	stdinArgs := mergedBuildArgs(t, root, "backlog")
+	stdin := "- a"
 
-	native := runNative(stdin, "build", "--workflow-dir", wd)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("merged build exit=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 	}
@@ -96,45 +88,6 @@ func TestBuildMergedModeCompletionSignal(t *testing.T) {
 	}
 }
 
-// TestBuildStdinTeamNameIgnored is AC-2's fixture: a stdin team_name key is an
-// unrecognized field on the retired legacy path — the build emits the SAME
-// merged shape (name present, team_name absent, run_in_background true) with or
-// without it, byte-identical to TestBuildMergedModeEmission's assertions.
-func TestBuildStdinTeamNameIgnored(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	root := t.TempDir()
-	wd := writeGood(t, root)
-	ep := writeFlatEntity(t, wd, "backlog", "")
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    ep,
-		"workflow_dir":   wd,
-		"stage":          "backlog",
-		"checklist":      []string{"- a"},
-		"team_name":      "fixture-team",
-		"bare_mode":      false,
-	}, nil)
-
-	native := runNative(stdin, "build", "--workflow-dir", wd)
-	if native.exit != 0 {
-		t.Fatalf("build exit=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
-	}
-	var out mergedBuildOutput
-	if err := json.Unmarshal([]byte(native.stdout), &out); err != nil {
-		t.Fatalf("stdout is not build JSON: %v\n%s", err, native.stdout)
-	}
-	if out.Name == nil || *out.Name == "" {
-		t.Errorf("build must emit a non-empty name regardless of the ignored team_name key; got %v", out.Name)
-	}
-	if out.TeamName != nil {
-		t.Errorf("a stdin team_name key must not resurrect the retired field; got %q", *out.TeamName)
-	}
-	if out.RunInBackground == nil || !*out.RunInBackground {
-		t.Errorf("build must still emit run_in_background=true with team_name present in stdin; got %v", out.RunInBackground)
-	}
-}
-
 // TestBuildBareModeUnchanged guards that bare mode (no name, no team_name, no
 // run_in_background — the blocking sequential shape) is untouched by the merged
 // path: bare omits all three keys, distinct from merged's name+run_in_background.
@@ -144,16 +97,10 @@ func TestBuildBareModeUnchanged(t *testing.T) {
 	root := t.TempDir()
 	wd := writeGood(t, root)
 	ep := writeFlatEntity(t, wd, "backlog", "")
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    ep,
-		"workflow_dir":   wd,
-		"stage":          "backlog",
-		"checklist":      []string{"- a"},
-		"bare_mode":      true,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-", "--bare-mode"}
 
-	native := runNative(stdin, "build", "--workflow-dir", wd)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("bare build exit=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 	}
@@ -174,15 +121,16 @@ func TestBuildMergedModeDispatchFileDisambiguator(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
-	wd, stdin := mergedStdin(t, root, "backlog")
+	stdinArgs := mergedBuildArgs(t, root, "backlog")
+	stdin := "- a"
 
 	t.Setenv("CLAUDE_CODE_SESSION_ID", "sessionaaa")
-	a := runNative(stdin, "build", "--workflow-dir", wd)
+	a := runNative(stdin, stdinArgs...)
 	if a.exit != 0 {
 		t.Fatalf("merged build (session A) exit=%d\nstderr:\n%s", a.exit, a.stderr)
 	}
 	t.Setenv("CLAUDE_CODE_SESSION_ID", "sessionbbb")
-	b := runNative(stdin, "build", "--workflow-dir", wd)
+	b := runNative(stdin, stdinArgs...)
 	if b.exit != 0 {
 		t.Fatalf("merged build (session B) exit=%d\nstderr:\n%s", b.exit, b.stderr)
 	}

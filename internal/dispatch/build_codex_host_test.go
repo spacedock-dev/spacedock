@@ -22,17 +22,10 @@ func TestBuildCodexHostPromptShape(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-		"host":           "codex",
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}
@@ -81,16 +74,8 @@ func TestBuildCodexHostRejectsBareModeBeforeArtifactCreation(t *testing.T) {
 	artifactPath := filepath.Join(dispatchFileDir, "spacedock-ensign-f02codexbare-implementation.md")
 	_ = os.Remove(artifactPath)
 	t.Cleanup(func() { _ = os.Remove(artifactPath) })
-	fields := map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- prove Codex host shape"},
-		"bare_mode":      true,
-		"host":           "codex",
-	}
-	bare := runNative(mergeStdin(fields, nil), "build", "--workflow-dir", root)
+	args := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex"}
+	bare := runNative("- prove Codex host shape", append(args, "--bare-mode")...)
 	if bare.exit != 2 {
 		t.Fatalf("bare Codex build exit=%d, want 2; stderr=%q", bare.exit, bare.stderr)
 	}
@@ -101,8 +86,7 @@ func TestBuildCodexHostRejectsBareModeBeforeArtifactCreation(t *testing.T) {
 	if _, err := os.Stat(artifactPath); !os.IsNotExist(err) {
 		t.Fatalf("bare Codex created dispatch artifact %s; stat err=%v", artifactPath, err)
 	}
-	fields["bare_mode"] = false
-	named := runNative(mergeStdin(fields, nil), "build", "--workflow-dir", root)
+	named := runNative("- prove Codex host shape", args...)
 	if named.exit != 0 {
 		t.Fatalf("named Codex build exit=%d, want 0; stderr=%q", named.exit, named.stderr)
 	}
@@ -129,17 +113,10 @@ func TestBuildCodexHostIgnoresModelWithNote(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "stagemodel", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "stagemodel",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-		"host":           "codex",
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "stagemodel", "--checklist-file", "-", "--host", "codex"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	assertGolden(t, "build-host-codex-model-ignored", goldenEnvelope{res: normRun(native, root, home)})
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)

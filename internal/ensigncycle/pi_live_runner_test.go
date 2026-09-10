@@ -138,24 +138,12 @@ func runPiSmokeDispatchBuild(t *testing.T, binary, workflowRoot, entityPath stri
 		"- append the smoke marker line `" + piLiveSmokeMarker + "` to the entity file",
 		"- Commit only the entity path in the state checkout with message 'ensign: pi live smoke' (path-scoped git add/commit for pi-live-smoke/index.md)",
 	}
-	stdin, err := json.Marshal(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   workflowRoot,
-		"stage":          "implementation",
-		"checklist":      checklist,
-		"bare_mode":      true,
-		"host":           "pi",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
 	// Patches 1+2 (validation attempt-1 correction): the CLI surface is
 	// `dispatch build`, and stderr (e.g. the bare-mode advisory) must not
 	// contaminate the stdout JSON envelope parse.
-	cmd := exec.Command(binary, "dispatch", "build", "--workflow-dir", workflowRoot)
+	cmd := exec.Command(binary, "dispatch", "build", "--workflow-dir", workflowRoot, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi", "--bare-mode")
 	cmd.Dir = workflowRoot
-	cmd.Stdin = strings.NewReader(string(stdin))
+	cmd.Stdin = strings.NewReader(strings.Join(checklist, "\n"))
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

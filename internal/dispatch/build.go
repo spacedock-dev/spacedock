@@ -1,4 +1,4 @@
-// ABOUTME: build assembles structured dispatch JSON from stdin + workflow README
+// ABOUTME: build assembles structured dispatch JSON from flags/checklist + workflow README
 // ABOUTME: + entity file, matching the vendored claude-team build oracle.
 package dispatch
 
@@ -42,9 +42,6 @@ const (
 	// leaves ample collision headroom while the resulting name stays ≤ nameCapTarget.
 	sdB32NameIDPrefixLen = 10
 )
-
-// buildRequiredFields are the stdin keys that must be present and non-null.
-var buildRequiredFields = []string{"schema_version", "entity_path", "workflow_dir", "stage", "checklist"}
 
 // namePattern is the dispatch-name regex derived worker names must match.
 var namePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$`)
@@ -114,15 +111,11 @@ func buildError(stderr io.Writer, code int, format string, a ...any) int {
 	return code
 }
 
-// runBuild reads a dispatch request from stdin JSON or the flag/file input mode
+// runBuild reads dispatch flags and checklist bytes from a file or stdin
 // and assembles the dispatch envelope on stdout plus the self-contained
 // dispatch-file body written to a deterministic path.
 func runBuild(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, stdin io.Reader, stdout, stderr io.Writer) int {
-	if opts.PrintSchema {
-		return emitBuildSchema(stdout)
-	}
-
-	fields, code := loadBuildFields(opts, stdin, stderr)
+	fields, code := fieldsFromBuildFlags(opts, stdin, stderr)
 	if code != 0 {
 		return code
 	}
@@ -136,68 +129,31 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowLauncher string, opts bui
 	return runBuildFields(probe, workflowLauncher, opts, fields, stdout, stderr)
 }
 
-func loadBuildFields(opts buildOptions, stdin io.Reader, stderr io.Writer) (map[string]json.RawMessage, int) {
-	switch {
-	case opts.ValidateOnly != "":
-		raw, err := os.ReadFile(opts.ValidateOnly)
-		if err != nil {
-			return nil, buildError(stderr, 1, "failed to read validate-only file %q: %s", opts.ValidateOnly, err)
-		}
-		return decodeBuildFields(raw, stderr)
-	case opts.hasRequestFlags():
-		return fieldsFromBuildFlags(opts, stderr)
-	default:
-		raw, err := io.ReadAll(stdin)
-		if err != nil {
-			return nil, buildError(stderr, 1, "failed to read stdin: %s", err)
-		}
-		return decodeBuildFields(raw, stderr)
-	}
-}
-
-func decodeBuildFields(raw []byte, stderr io.Writer) (map[string]json.RawMessage, int) {
-	if len(raw) == 0 {
-		raw = []byte{}
-	}
-
-	// Classify the top-level value the way the oracle does (json.loads then
-	// isinstance(inp, dict)): invalid JSON -> "invalid JSON on stdin"; a valid
-	// non-object top-level (null, array, scalar) -> "stdin must be a JSON object".
-	// A bare-map decode cannot tell these apart -- decoding JSON null into a map
-	// succeeds with a nil map, masking the non-object case as a missing field.
-	var top interface{}
-	if err := json.Unmarshal(raw, &top); err != nil {
-		return nil, buildError(stderr, 1, "invalid JSON on stdin: %s", err)
-	}
-	if _, ok := top.(map[string]interface{}); !ok {
-		return nil, buildError(stderr, 1, "stdin must be a JSON object")
-	}
-
-	// Distinguish present-but-null from absent (the required-field rule fires for
-	// both), so decode into a raw-message map for typed field access.
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &fields); err != nil {
-		return nil, buildError(stderr, 1, "invalid JSON on stdin: %s", err)
-	}
-	return fields, 0
-}
-
-func fieldsFromBuildFlags(opts buildOptions, stderr io.Writer) (map[string]json.RawMessage, int) {
+func fieldsFromBuildFlags(opts buildOptions, stdin io.Reader, stderr io.Writer) (map[string]json.RawMessage, int) {
 	if opts.EntityPath == "" || opts.Stage == "" || opts.ChecklistFile == "" {
-		return nil, buildError(stderr, 2, "flag/file input requires --entity-path, --stage, and --checklist-file")
+		return nil, buildError(stderr, 2, "flag/file input requires --entity-path, --stage, and --checklist-file\nJSON request input is retired; pass checklist lines on stdin with --checklist-file -")
 	}
-	checklist, err := readChecklistFile(opts.ChecklistFile)
-	if err != nil {
-		return nil, buildError(stderr, 1, "failed to read checklist file %q: %s", opts.ChecklistFile, err)
+	var raw []byte
+	var err error
+	if opts.ChecklistFile == "-" {
+		raw, err = io.ReadAll(stdin)
+		if err != nil {
+			return nil, buildError(stderr, 1, "failed to read checklist stdin: %s", err)
+		}
+	} else {
+		raw, err = os.ReadFile(opts.ChecklistFile)
+		if err != nil {
+			return nil, buildError(stderr, 1, "failed to read checklist file %q: %s", opts.ChecklistFile, err)
+		}
 	}
+	checklist := checklistLines(raw)
 	fields := map[string]json.RawMessage{
-		"schema_version": rawJSON(schemaVersion),
-		"entity_path":    rawJSON(opts.EntityPath),
-		"workflow_dir":   rawJSON(opts.WorkflowDir),
-		"stage":          rawJSON(opts.Stage),
-		"checklist":      rawJSON(checklist),
-		"bare_mode":      rawJSON(opts.BareMode),
-		"advance":        rawJSON(opts.Advance),
+		"entity_path":  rawJSON(opts.EntityPath),
+		"workflow_dir": rawJSON(opts.WorkflowDir),
+		"stage":        rawJSON(opts.Stage),
+		"checklist":    rawJSON(checklist),
+		"bare_mode":    rawJSON(opts.BareMode),
+		"advance":      rawJSON(opts.Advance),
 	}
 	if opts.ScopeNotesFile != "" {
 		scopeNotes, err := os.ReadFile(opts.ScopeNotesFile)
@@ -219,11 +175,7 @@ func fieldsFromBuildFlags(opts buildOptions, stderr io.Writer) (map[string]json.
 	return fields, 0
 }
 
-func readChecklistFile(path string) ([]string, error) {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
+func checklistLines(raw []byte) []string {
 	var out []string
 	for _, line := range strings.Split(string(raw), "\n") {
 		line = strings.TrimSuffix(line, "\r")
@@ -232,7 +184,7 @@ func readChecklistFile(path string) ([]string, error) {
 		}
 		out = append(out, line)
 	}
-	return out, nil
+	return out
 }
 
 func rawJSON(v any) json.RawMessage {
@@ -240,21 +192,12 @@ func rawJSON(v any) json.RawMessage {
 	return raw
 }
 
-func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (string, error) {
+func resolveBuildHost(flagHost string, getenv func(string) string) (string, error) {
 	if flagHost != "" && !validBuildHost(flagHost) {
 		return "", fmt.Errorf("unsupported host %q (want claude, codex, or pi)", flagHost)
 	}
-	if jsonHost != "" && !validBuildHost(jsonHost) {
-		return "", fmt.Errorf("unsupported host %q (want claude, codex, or pi)", jsonHost)
-	}
-	if flagHost != "" && jsonHost != "" && flagHost != jsonHost {
-		return "", fmt.Errorf("conflicting explicit host sources: --host=%q, JSON host=%q", flagHost, jsonHost)
-	}
 	if flagHost != "" {
 		return flagHost, nil
-	}
-	if jsonHost != "" {
-		return jsonHost, nil
 	}
 
 	// The marker table lives in internal/runtimehost, shared with --version's
@@ -269,7 +212,7 @@ func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (st
 	if host != "" {
 		return host, nil
 	}
-	return "", fmt.Errorf("missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT, or PI_CODING_AGENT_DIR")
+	return "", fmt.Errorf("missing host source: pass --host or run under CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT, or PI_CODING_AGENT_DIR")
 }
 
 func validBuildHost(host string) bool {
@@ -277,32 +220,16 @@ func validBuildHost(host string) bool {
 }
 
 func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
-	// Rule 1: Required fields present and non-null.
-	for _, field := range buildRequiredFields {
-		v, ok := fields[field]
-		if !ok || isJSONNull(v) {
-			return buildError(stderr, 1, "missing required field '%s'", field)
-		}
-	}
-
-	// Rule 2: Schema version supported (CLEAN-BREAK: v1 rejected). The oracle
-	// compares the parsed value against 2; a non-integer or wrong version is
-	// rejected with exit 2 and the value rendered as the oracle renders it.
-	if !isSchemaVersion(fields["schema_version"]) {
-		return buildError(stderr, 2,
-			"unsupported input schema_version %s, schema_version: %d required",
-			renderSchemaVersion(fields["schema_version"]), schemaVersion)
+	if isJSONNull(fields["checklist"]) {
+		return buildError(stderr, 1, "missing required field 'checklist'")
 	}
 
 	entityPath := jsonString(fields["entity_path"])
 	workflowDir := opts.WorkflowDir
-	if workflowDir == "" {
-		workflowDir = jsonString(fields["workflow_dir"])
-	}
 	stage := jsonString(fields["stage"])
 	feedbackContext := optString(fields, "feedback_context")
 	scopeNotes := optString(fields, "scope_notes")
-	host, err := resolveBuildHost(opts.Host, optString(fields, "host"), os.Getenv)
+	host, err := resolveBuildHost(opts.Host, os.Getenv)
 	if err != nil {
 		return buildError(stderr, 1, "%s", err)
 	}
@@ -354,11 +281,8 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 				"The helper derives the worktree read target internally.", entityPath)
 	}
 
-	// Rule 9: Checklist non-empty (a non-list collapses to the same message).
-	checklist, ok := jsonStringList(fields["checklist"])
-	if !ok || len(checklist) == 0 {
-		return buildError(stderr, 1, "checklist must not be empty")
-	}
+	// The flag loader supplies checklist lines; the nil/empty case was refused above.
+	checklist, _ := jsonStringList(fields["checklist"])
 
 	// Rule 10: Entity file readable.
 	if !isFile(entityPath) {
@@ -573,7 +497,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	if stageSubsection == "" {
 		return buildError(stderr, 1, "stage '%s' heading not found in %s", stage, readmePath)
 	}
-	if opts.ValidateOnly == "" && (workflowLauncher == "" || !filepath.IsAbs(workflowLauncher)) {
+	if workflowLauncher == "" || !filepath.IsAbs(workflowLauncher) {
 		return buildError(stderr, 1, "cannot resolve the running spacedock executable; refusing to write a dispatch artifact")
 	}
 
@@ -698,9 +622,6 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	}
 
 	dispatchBody := strings.Join(parts, "\n")
-	if opts.ValidateOnly != "" {
-		return 0
-	}
 
 	// v2 file-pointer: write the body to a collision-free path under the shared
 	// dispatch dir; emit a tiny prompt the ensign Reads on first action. A bare
@@ -1046,52 +967,4 @@ func stateCommitGuidance(stateCheckout, entityPath, stateBranch string, hasOrigi
 // out is buildOutput for a spawn envelope or buildAdvanceOutput for --advance.
 func emitBuildJSON(stdout io.Writer, out any) int {
 	return claudeteam.EmitPythonJSON(stdout, out)
-}
-
-func emitBuildSchema(stdout io.Writer) int {
-	schema := map[string]any{
-		"$schema":              "https://json-schema.org/draft/2020-12/schema",
-		"title":                "spacedock dispatch build request",
-		"type":                 "object",
-		"additionalProperties": true,
-		"required":             buildRequiredFields,
-		"properties": map[string]any{
-			"schema_version": map[string]any{
-				"const": schemaVersion,
-			},
-			"entity_path": map[string]any{
-				"type": "string",
-			},
-			"workflow_dir": map[string]any{
-				"type": "string",
-			},
-			"stage": map[string]any{
-				"type": "string",
-			},
-			"checklist": map[string]any{
-				"type":  "array",
-				"items": map[string]any{"type": "string"},
-			},
-			"feedback_context": map[string]any{
-				"type": []string{"string", "null"},
-			},
-			"scope_notes": map[string]any{
-				"type": []string{"string", "null"},
-			},
-			"bare_mode": map[string]any{
-				"type": "boolean",
-			},
-			"is_feedback_reflow": map[string]any{
-				"type": "boolean",
-			},
-			"advance": map[string]any{
-				"type": "boolean",
-			},
-			"host": map[string]any{
-				"type": "string",
-				"enum": []string{"claude", "codex", "pi"},
-			},
-		},
-	}
-	return claudeteam.EmitPythonJSON(stdout, schema)
 }

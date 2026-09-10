@@ -32,7 +32,7 @@ Agent(
 
 A name-less dispatch forfeits reuse — `name` is the `«addressable-worker»` handle `SendMessage(to=name)` addresses. The worker→lead **completion** target is pinned to the single name **`team-lead`** — the build helper emits `SendMessage(to="team-lead", …)` in the dispatch's completion-signal block, matching the ensign runtime's completion contract. Do not also accept `to="main"` as the completion signal; pin one name.
 
-**Reuse-advance handle (SendMessage):** When advancing a reused ensign (fo-dispatch-core.md `## Reuse and Fresh Dispatch`, "If reuse"), run `${SPACEDOCK_BIN:-spacedock} dispatch build --advance` (the same helper, advance mode: `--workflow-dir`, `--entity-path`, `--stage {next_stage}`, `--checklist-file`; `--feedback-context-file` + `--feedback-reflow` when routing rejection findings). On a zero-exit run, send:
+**Reuse-advance handle (SendMessage):** When advancing a reused ensign (fo-dispatch-core.md `## Reuse and Fresh Dispatch`, "If reuse"), run `${SPACEDOCK_BIN:-spacedock} dispatch build --advance` (the same helper, advance mode: `--workflow-dir`, `--entity-path`, `--stage {next_stage}`, `--checklist-file -` with literal checklist lines on stdin; an existing checklist file is also accepted; `--feedback-context-file` + `--feedback-reflow` when routing rejection findings). On a zero-exit run, send:
 
 SendMessage(to="{live worker handle from session roster}", message=output.prompt)
 

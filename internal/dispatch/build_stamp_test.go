@@ -78,73 +78,87 @@ func writeChecklist(t *testing.T) string {
 // origin -> local-only, exit 0 continues to envelope assembly), and the CODE
 // worktree is created at the main repo root on branch {worker_key}/{slug}.
 func TestStampStagesCommitsAndCreatesWorktree(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	mainRepo, workflowDir, statePath, entityPath := stampFixture(t, "implementation", "implementation", false)
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			mainRepo, workflowDir, statePath, entityPath := stampFixture(t, "implementation", "implementation", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	native := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if native.exit != 0 {
-		t.Fatalf("--stamp build exit=%d stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
-	}
+			native := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if native.exit != 0 {
+				t.Fatalf("--stamp build exit=%d stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
+			}
 
-	fields := status.ParseFrontmatter(entityPath)
-	if fields["started"] == "" {
-		t.Errorf("--stamp did not stamp started; frontmatter=%#v", fields)
-	}
-	wantWorktree := ".worktrees/spacedock-ensign-thing"
-	if fields["worktree"] != wantWorktree {
-		t.Errorf("--stamp worktree=%q, want %q", fields["worktree"], wantWorktree)
-	}
+			fields := status.ParseFrontmatter(entityPath)
+			if fields["started"] == "" {
+				t.Errorf("--stamp did not stamp started; frontmatter=%#v", fields)
+			}
+			wantWorktree := ".worktrees/spacedock-ensign-thing"
+			if fields["worktree"] != wantWorktree {
+				t.Errorf("--stamp worktree=%q, want %q", fields["worktree"], wantWorktree)
+			}
 
-	// The state checkout committed the stamp and is clean (local-only, no
-	// origin).
-	if porcelain := gitOutput(t, statePath, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
-		t.Errorf("state checkout dirty after --stamp: %q", porcelain)
-	}
-	log := gitOutput(t, statePath, "log", "--oneline", "-1")
-	if !strings.Contains(log, "dispatch: thing entering implementation") {
-		t.Errorf("state checkout commit message = %q, want the dispatch: <slug> entering <stage> shape", log)
-	}
+			// The state checkout committed the stamp and is clean (local-only, no
+			// origin).
+			if porcelain := gitOutput(t, statePath, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
+				t.Errorf("state checkout dirty after --stamp: %q", porcelain)
+			}
+			log := gitOutput(t, statePath, "log", "--oneline", "-1")
+			if !strings.Contains(log, "dispatch: thing entering implementation") {
+				t.Errorf("state checkout commit message = %q, want the dispatch: <slug> entering <stage> shape", log)
+			}
 
-	// The CODE worktree was created at the main repo root on the expected branch.
-	worktreePath := filepath.Join(mainRepo, wantWorktree)
-	if info, err := os.Stat(worktreePath); err != nil || !info.IsDir() {
-		t.Fatalf("--stamp did not create worktree at %s: %v", worktreePath, err)
-	}
-	branch := strings.TrimSpace(gitOutput(t, worktreePath, "rev-parse", "--abbrev-ref", "HEAD"))
-	if branch != "spacedock-ensign/thing" {
-		t.Errorf("worktree branch = %q, want spacedock-ensign/thing", branch)
-	}
+			// The CODE worktree was created at the main repo root on the expected branch.
+			worktreePath := filepath.Join(mainRepo, wantWorktree)
+			if info, err := os.Stat(worktreePath); err != nil || !info.IsDir() {
+				t.Fatalf("--stamp did not create worktree at %s: %v", worktreePath, err)
+			}
+			branch := strings.TrimSpace(gitOutput(t, worktreePath, "rev-parse", "--abbrev-ref", "HEAD"))
+			if branch != "spacedock-ensign/thing" {
+				t.Errorf("worktree branch = %q, want spacedock-ensign/thing", branch)
+			}
 
-	// The build still assembled and emitted a normal spawn envelope.
-	if !strings.Contains(native.stdout, `"schema_version"`) {
-		t.Errorf("--stamp build emitted no envelope on success:\nstdout=%s\nstderr=%s", native.stdout, native.stderr)
+			// The build still assembled and emitted a normal spawn envelope.
+			if !strings.Contains(native.stdout, `"schema_version"`) {
+				t.Errorf("--stamp build emitted no envelope on success:\nstdout=%s\nstderr=%s", native.stdout, native.stderr)
+			}
+		})
 	}
 }
 
 // TestStampNonWorktreeStageOnlyStampsStarted pins the non-worktree-stage case:
 // only `started` is stamped (no worktree: field, no CODE worktree created).
 func TestStampNonWorktreeStageOnlyStampsStarted(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	mainRepo, workflowDir, _, entityPath := stampFixture(t, "backlog", "", false)
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			mainRepo, workflowDir, _, entityPath := stampFixture(t, "backlog", "", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	native := runNative("", buildStampArgs(workflowDir, entityPath, "backlog", checklistFile)...)
-	if native.exit != 0 {
-		t.Fatalf("--stamp build exit=%d stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
-	}
+			native := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "backlog", checklistFile)...)
+			if native.exit != 0 {
+				t.Fatalf("--stamp build exit=%d stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
+			}
 
-	fields := status.ParseFrontmatter(entityPath)
-	if fields["started"] == "" {
-		t.Errorf("--stamp did not stamp started on a non-worktree stage")
-	}
-	if fields["worktree"] != "" {
-		t.Errorf("--stamp stamped worktree=%q on a non-worktree stage", fields["worktree"])
-	}
-	if _, err := os.Stat(filepath.Join(mainRepo, ".worktrees")); !os.IsNotExist(err) {
-		t.Errorf(".worktrees was created for a non-worktree stage")
+			fields := status.ParseFrontmatter(entityPath)
+			if fields["started"] == "" {
+				t.Errorf("--stamp did not stamp started on a non-worktree stage")
+			}
+			if fields["worktree"] != "" {
+				t.Errorf("--stamp stamped worktree=%q on a non-worktree stage", fields["worktree"])
+			}
+			if _, err := os.Stat(filepath.Join(mainRepo, ".worktrees")); !os.IsNotExist(err) {
+				t.Errorf(".worktrees was created for a non-worktree stage")
+			}
+		})
 	}
 }
 
@@ -153,35 +167,42 @@ func TestStampNonWorktreeStageOnlyStampsStarted(t *testing.T) {
 // envelope, no frontmatter write, no commit) rather than stamping a stale
 // dispatch.
 func TestStampRefusesStatusStageMismatchWithoutMutation(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	_, workflowDir, statePath, entityPath := stampFixture(t, "backlog", "", false)
-	checklistFile := writeChecklist(t)
-	before, err := os.ReadFile(entityPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	headBefore := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD"))
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			_, workflowDir, statePath, entityPath := stampFixture(t, "backlog", "", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
+			before, err := os.ReadFile(entityPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			headBefore := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD"))
 
-	native := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if native.exit == 0 {
-		t.Fatalf("--stamp accepted a status/stage mismatch: stdout=%q", native.stdout)
-	}
-	if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
-		t.Errorf("stamp failure stderr missing the dispatch build --stamp: prefix: %q", native.stderr)
-	}
-	if native.stdout != "" {
-		t.Errorf("refused --stamp emitted an envelope on stdout: %q", native.stdout)
-	}
-	after, err := os.ReadFile(entityPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(after) != string(before) {
-		t.Error("refused --stamp mutated the entity frontmatter")
-	}
-	if headAfter := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD")); headAfter != headBefore {
-		t.Error("refused --stamp advanced the state checkout HEAD")
+			native := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if native.exit == 0 {
+				t.Fatalf("--stamp accepted a status/stage mismatch: stdout=%q", native.stdout)
+			}
+			if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
+				t.Errorf("stamp failure stderr missing the dispatch build --stamp: prefix: %q", native.stderr)
+			}
+			if native.stdout != "" {
+				t.Errorf("refused --stamp emitted an envelope on stdout: %q", native.stdout)
+			}
+			after, err := os.ReadFile(entityPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(after) != string(before) {
+				t.Error("refused --stamp mutated the entity frontmatter")
+			}
+			if headAfter := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD")); headAfter != headBefore {
+				t.Error("refused --stamp advanced the state checkout HEAD")
+			}
+		})
 	}
 }
 
@@ -191,31 +212,38 @@ func TestStampRefusesStatusStageMismatchWithoutMutation(t *testing.T) {
 // the existing worktree as a skip rather than an error (`git worktree add`
 // otherwise fatals "already exists").
 func TestStampIdempotentReRunSkipsAlreadyStamped(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	_, workflowDir, statePath, entityPath := stampFixture(t, "implementation", "implementation", false)
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			_, workflowDir, statePath, entityPath := stampFixture(t, "implementation", "implementation", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	first := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if first.exit != 0 {
-		t.Fatalf("first --stamp build exit=%d stderr=%q", first.exit, first.stderr)
-	}
-	headAfterFirst := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD"))
-	fieldsAfterFirst := status.ParseFrontmatter(entityPath)
+			first := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if first.exit != 0 {
+				t.Fatalf("first --stamp build exit=%d stderr=%q", first.exit, first.stderr)
+			}
+			headAfterFirst := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD"))
+			fieldsAfterFirst := status.ParseFrontmatter(entityPath)
 
-	second := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if second.exit != 0 {
-		t.Fatalf("second --stamp build exit=%d stdout=%q stderr=%q", second.exit, second.stdout, second.stderr)
-	}
-	fieldsAfterSecond := status.ParseFrontmatter(entityPath)
-	if fieldsAfterSecond["started"] != fieldsAfterFirst["started"] {
-		t.Errorf("idempotent re-run changed started: before=%q after=%q", fieldsAfterFirst["started"], fieldsAfterSecond["started"])
-	}
-	if headAfterSecond := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD")); headAfterSecond != headAfterFirst {
-		t.Errorf("idempotent re-run created a new state commit: before=%s after=%s", headAfterFirst, headAfterSecond)
-	}
-	if !strings.Contains(second.stdout, `"schema_version"`) {
-		t.Errorf("idempotent re-run did not still assemble an envelope:\nstdout=%s\nstderr=%s", second.stdout, second.stderr)
+			second := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if second.exit != 0 {
+				t.Fatalf("second --stamp build exit=%d stdout=%q stderr=%q", second.exit, second.stdout, second.stderr)
+			}
+			fieldsAfterSecond := status.ParseFrontmatter(entityPath)
+			if fieldsAfterSecond["started"] != fieldsAfterFirst["started"] {
+				t.Errorf("idempotent re-run changed started: before=%q after=%q", fieldsAfterFirst["started"], fieldsAfterSecond["started"])
+			}
+			if headAfterSecond := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD")); headAfterSecond != headAfterFirst {
+				t.Errorf("idempotent re-run created a new state commit: before=%s after=%s", headAfterFirst, headAfterSecond)
+			}
+			if !strings.Contains(second.stdout, `"schema_version"`) {
+				t.Errorf("idempotent re-run did not still assemble an envelope:\nstdout=%s\nstderr=%s", second.stdout, second.stderr)
+			}
+		})
 	}
 }
 
@@ -224,18 +252,25 @@ func TestStampIdempotentReRunSkipsAlreadyStamped(t *testing.T) {
 // presupposes an already-stamped live worker, so the post-gate reuse path needs
 // no stamps at all).
 func TestStampAdvanceIncompatible(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	_, workflowDir, _, entityPath := stampFixture(t, "implementation", "implementation", false)
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			_, workflowDir, _, entityPath := stampFixture(t, "implementation", "implementation", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	args := append(buildStampArgs(workflowDir, entityPath, "implementation", checklistFile), "--advance")
-	native := runNative("", args...)
-	if native.exit != 2 {
-		t.Fatalf("--stamp --advance exit=%d, want 2; stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
-	}
-	if !strings.Contains(native.stderr, "incompatible") {
-		t.Errorf("--stamp --advance stderr missing an incompatibility diagnostic: %q", native.stderr)
+			args := append(buildStampArgs(workflowDir, entityPath, "implementation", checklistFile), "--advance")
+			native := runNative("- a\n- b\n", args...)
+			if native.exit != 2 {
+				t.Fatalf("--stamp --advance exit=%d, want 2; stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
+			}
+			if !strings.Contains(native.stderr, "incompatible") {
+				t.Errorf("--stamp --advance stderr missing an incompatibility diagnostic: %q", native.stderr)
+			}
+		})
 	}
 }
 
@@ -245,40 +280,47 @@ func TestStampAdvanceIncompatible(t *testing.T) {
 // rerun, never break-glass); an ordinary assembly failure (missing checklist,
 // no --stamp involved) does not carry that prefix (break-glass eligible).
 func TestStampFailureStderrDiscriminatesFromAssemblyFailure(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
 
-	t.Run("stamp failure carries the prefix", func(t *testing.T) {
-		_, workflowDir, _, entityPath := stampFixture(t, "backlog", "", false)
-		checklistFile := writeChecklist(t)
-		native := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-		if native.exit == 0 {
-			t.Fatal("expected a stamp status-mismatch failure")
-		}
-		if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
-			t.Errorf("stamp failure stderr = %q, want the dispatch build --stamp: prefix", native.stderr)
-		}
-	})
+			t.Run("stamp failure carries the prefix", func(t *testing.T) {
+				_, workflowDir, _, entityPath := stampFixture(t, "backlog", "", false)
+				checklistFile := "-"
+				if source == "file" {
+					checklistFile = writeChecklist(t)
+				}
+				native := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+				if native.exit == 0 {
+					t.Fatal("expected a stamp status-mismatch failure")
+				}
+				if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
+					t.Errorf("stamp failure stderr = %q, want the dispatch build --stamp: prefix", native.stderr)
+				}
+			})
 
-	t.Run("assembly failure without --stamp carries no prefix", func(t *testing.T) {
-		root := t.TempDir()
-		workflowDir := filepath.Join(root, "wf")
-		writeFile(t, filepath.Join(workflowDir, "README.md"), readmeWorktree(false))
-		entityPath := filepath.Join(workflowDir, "thing.md")
-		writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
-		gitInit(t, root)
+			t.Run("assembly failure without --stamp carries no prefix", func(t *testing.T) {
+				root := t.TempDir()
+				workflowDir := filepath.Join(root, "wf")
+				writeFile(t, filepath.Join(workflowDir, "README.md"), readmeWorktree(false))
+				entityPath := filepath.Join(workflowDir, "thing.md")
+				writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
+				gitInit(t, root)
 
-		emptyChecklist := filepath.Join(t.TempDir(), "empty.checklist")
-		writeFile(t, emptyChecklist, "")
-		native := runNative("", "build", "--workflow-dir", workflowDir,
-			"--entity-path", entityPath, "--stage", "backlog", "--checklist-file", emptyChecklist)
-		if native.exit == 0 {
-			t.Fatal("expected an empty-checklist assembly failure")
-		}
-		if strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
-			t.Errorf("assembly failure stderr wrongly carries the --stamp: prefix: %q", native.stderr)
-		}
-	})
+				emptyChecklist := filepath.Join(t.TempDir(), "empty.checklist")
+				writeFile(t, emptyChecklist, "")
+				native := runNative("", "build", "--workflow-dir", workflowDir,
+					"--entity-path", entityPath, "--stage", "backlog", "--checklist-file", emptyChecklist)
+				if native.exit == 0 {
+					t.Fatal("expected an empty-checklist assembly failure")
+				}
+				if strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
+					t.Errorf("assembly failure stderr wrongly carries the --stamp: prefix: %q", native.stderr)
+				}
+			})
+		})
+	}
 }
 
 // gitOutput runs a git command in dir and returns combined output, failing the
@@ -350,43 +392,50 @@ func blockPush(t *testing.T, checkout string) (restore func()) {
 // before creating the worktree, rather than silently proceeding against
 // unresolved divergent state.
 func TestStampRetriesSyncOnRetryEvenWhenAlreadyStamped(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	mainRepo, workflowDir, statePath, entityPath, bareDir := stampFixtureWithOrigin(t, "implementation", false)
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			mainRepo, workflowDir, statePath, entityPath, bareDir := stampFixtureWithOrigin(t, "implementation", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	restore := blockPush(t, statePath)
-	first := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if first.exit != 1 {
-		t.Fatalf("first --stamp (blocked push) exit=%d stdout=%q stderr=%q, want 1", first.exit, first.stdout, first.stderr)
-	}
-	fieldsAfterFirst := status.ParseFrontmatter(entityPath)
-	if fieldsAfterFirst["started"] == "" {
-		t.Fatal("first --stamp did not commit the stamp locally before the sync failure")
-	}
-	worktreePath := filepath.Join(mainRepo, ".worktrees", "spacedock-ensign-thing")
-	if _, err := os.Stat(worktreePath); err == nil {
-		t.Fatal("first --stamp created the worktree despite the sync failure")
-	}
+			restore := blockPush(t, statePath)
+			first := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if first.exit != 1 {
+				t.Fatalf("first --stamp (blocked push) exit=%d stdout=%q stderr=%q, want 1", first.exit, first.stdout, first.stderr)
+			}
+			fieldsAfterFirst := status.ParseFrontmatter(entityPath)
+			if fieldsAfterFirst["started"] == "" {
+				t.Fatal("first --stamp did not commit the stamp locally before the sync failure")
+			}
+			worktreePath := filepath.Join(mainRepo, ".worktrees", "spacedock-ensign-thing")
+			if _, err := os.Stat(worktreePath); err == nil {
+				t.Fatal("first --stamp created the worktree despite the sync failure")
+			}
 
-	restore()
-	second := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if second.exit != 0 {
-		t.Fatalf("retried --stamp exit=%d stdout=%q stderr=%q, want 0 once the block is lifted", second.exit, second.stdout, second.stderr)
-	}
-	if porcelain := gitOutput(t, statePath, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
-		t.Errorf("state checkout still dirty after the retried --stamp: %q", porcelain)
-	}
-	// The retry's own commit-or-noop step no-ops (nothing new to stage), but
-	// Publish must still have run and pushed the FIRST attempt's local commit —
-	// the bug this pins is exactly that a retry skipped this step entirely.
-	originHead := strings.TrimSpace(gitOutput(t, bareDir, "rev-parse", "spacedock-state/dev"))
-	localHead := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD"))
-	if originHead != localHead {
-		t.Errorf("origin HEAD %s != local HEAD %s after the retried --stamp; the first attempt's commit was never published", originHead, localHead)
-	}
-	if _, err := os.Stat(worktreePath); err != nil {
-		t.Errorf("retried --stamp did not create the worktree: %v", err)
+			restore()
+			second := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if second.exit != 0 {
+				t.Fatalf("retried --stamp exit=%d stdout=%q stderr=%q, want 0 once the block is lifted", second.exit, second.stdout, second.stderr)
+			}
+			if porcelain := gitOutput(t, statePath, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
+				t.Errorf("state checkout still dirty after the retried --stamp: %q", porcelain)
+			}
+			// The retry's own commit-or-noop step no-ops (nothing new to stage), but
+			// Publish must still have run and pushed the FIRST attempt's local commit —
+			// the bug this pins is exactly that a retry skipped this step entirely.
+			originHead := strings.TrimSpace(gitOutput(t, bareDir, "rev-parse", "spacedock-state/dev"))
+			localHead := strings.TrimSpace(gitOutput(t, statePath, "rev-parse", "HEAD"))
+			if originHead != localHead {
+				t.Errorf("origin HEAD %s != local HEAD %s after the retried --stamp; the first attempt's commit was never published", originHead, localHead)
+			}
+			if _, err := os.Stat(worktreePath); err != nil {
+				t.Errorf("retried --stamp did not create the worktree: %v", err)
+			}
+		})
 	}
 }
 
@@ -395,37 +444,44 @@ func TestStampRetriesSyncOnRetryEvenWhenAlreadyStamped(t *testing.T) {
 // itself that file (a stray duplicate elsewhere) must be refused — not
 // validated against the wrong file while status --set mutates the real one.
 func TestStampRefusesMismatchedEntityPath(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	_, workflowDir, statePath, entityPath := stampFixture(t, "implementation", "implementation", false)
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			_, workflowDir, statePath, entityPath := stampFixture(t, "implementation", "implementation", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	// A stray duplicate named identically (same slug "thing") but living
-	// outside the discoverable state checkout.
-	strayPath := filepath.Join(t.TempDir(), "thing.md")
-	body, err := os.ReadFile(entityPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	writeFile(t, strayPath, string(body))
-	before := string(body)
+			// A stray duplicate named identically (same slug "thing") but living
+			// outside the discoverable state checkout.
+			strayPath := filepath.Join(t.TempDir(), "thing.md")
+			body, err := os.ReadFile(entityPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			writeFile(t, strayPath, string(body))
+			before := string(body)
 
-	native := runNative("", buildStampArgs(workflowDir, strayPath, "implementation", checklistFile)...)
-	if native.exit == 0 {
-		t.Fatalf("--stamp accepted a mismatched entity_path sharing a slug with the canonical entity: stdout=%q", native.stdout)
-	}
-	if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
-		t.Errorf("mismatched-path failure stderr missing the --stamp: prefix: %q", native.stderr)
-	}
-	after, err := os.ReadFile(entityPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(after) != before {
-		t.Error("refused --stamp still mutated the real canonical entity")
-	}
-	if porcelain := gitOutput(t, statePath, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
-		t.Errorf("refused --stamp left the state checkout dirty: %q", porcelain)
+			native := runNative("- a\n- b\n", buildStampArgs(workflowDir, strayPath, "implementation", checklistFile)...)
+			if native.exit == 0 {
+				t.Fatalf("--stamp accepted a mismatched entity_path sharing a slug with the canonical entity: stdout=%q", native.stdout)
+			}
+			if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
+				t.Errorf("mismatched-path failure stderr missing the --stamp: prefix: %q", native.stderr)
+			}
+			after, err := os.ReadFile(entityPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(after) != before {
+				t.Error("refused --stamp still mutated the real canonical entity")
+			}
+			if porcelain := gitOutput(t, statePath, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
+				t.Errorf("refused --stamp left the state checkout dirty: %q", porcelain)
+			}
+		})
 	}
 }
 
@@ -436,53 +492,60 @@ func TestStampRefusesMismatchedEntityPath(t *testing.T) {
 // record/consume write) would otherwise hand a freshly-dispatched worker a
 // stale, pre-decision copy of the entity.
 func TestStampCommitsInlineBeforeWorktreeCreation(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	root := t.TempDir()
-	workflowDir := filepath.Join(root, "wf")
-	writeFile(t, filepath.Join(workflowDir, "README.md"), readmeWorktree(false))
-	writeFile(t, filepath.Join(root, ".gitignore"), ".worktrees/\n")
-	entityPath := filepath.Join(workflowDir, "thing.md")
-	// Simulate a just-recorded gate decision: status already at the target
-	// stage, dirty/uncommitted, exactly as gate consume would leave it for an
-	// inline workflow (mechanism 1 never syncs inline).
-	writeFile(t, entityPath, entityFM("Thing", "implementation", ""))
-	gitInit(t, root)
-	// gitInit's own commit passes -c user.name/user.email inline, but the
-	// inline --stamp commit under test (stampCommitInline) runs a plain `git
-	// commit` that relies on the repo's configured identity — CI runners carry
-	// no global git identity, so that commit fails there without this.
-	runGitFatal(t, root, "config", "user.name", "Spacedock Test")
-	runGitFatal(t, root, "config", "user.email", "spacedock@example.invalid")
-	writeFile(t, entityPath, strings.Replace(entityFM("Thing", "implementation", ""), "Body.", "Body (post-decision, uncommitted).", 1))
-	if headBefore, dirty := gitOutput(t, root, "rev-parse", "HEAD"), gitOutput(t, root, "status", "--porcelain"); strings.TrimSpace(dirty) == "" {
-		t.Fatalf("fixture setup did not leave the entity dirty relative to HEAD=%s", strings.TrimSpace(headBefore))
-	}
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			root := t.TempDir()
+			workflowDir := filepath.Join(root, "wf")
+			writeFile(t, filepath.Join(workflowDir, "README.md"), readmeWorktree(false))
+			writeFile(t, filepath.Join(root, ".gitignore"), ".worktrees/\n")
+			entityPath := filepath.Join(workflowDir, "thing.md")
+			// Simulate a just-recorded gate decision: status already at the target
+			// stage, dirty/uncommitted, exactly as gate consume would leave it for an
+			// inline workflow (mechanism 1 never syncs inline).
+			writeFile(t, entityPath, entityFM("Thing", "implementation", ""))
+			gitInit(t, root)
+			// gitInit's own commit passes -c user.name/user.email inline, but the
+			// inline --stamp commit under test (stampCommitInline) runs a plain `git
+			// commit` that relies on the repo's configured identity — CI runners carry
+			// no global git identity, so that commit fails there without this.
+			runGitFatal(t, root, "config", "user.name", "Spacedock Test")
+			runGitFatal(t, root, "config", "user.email", "spacedock@example.invalid")
+			writeFile(t, entityPath, strings.Replace(entityFM("Thing", "implementation", ""), "Body.", "Body (post-decision, uncommitted).", 1))
+			if headBefore, dirty := gitOutput(t, root, "rev-parse", "HEAD"), gitOutput(t, root, "status", "--porcelain"); strings.TrimSpace(dirty) == "" {
+				t.Fatalf("fixture setup did not leave the entity dirty relative to HEAD=%s", strings.TrimSpace(headBefore))
+			}
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	native := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if native.exit != 0 {
-		t.Fatalf("--stamp build exit=%d stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
-	}
-	if porcelain := gitOutput(t, root, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
-		t.Errorf("main repo still dirty after inline --stamp: %q", porcelain)
-	}
+			native := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if native.exit != 0 {
+				t.Fatalf("--stamp build exit=%d stdout=%q stderr=%q", native.exit, native.stdout, native.stderr)
+			}
+			if porcelain := gitOutput(t, root, "status", "--porcelain"); strings.TrimSpace(porcelain) != "" {
+				t.Errorf("main repo still dirty after inline --stamp: %q", porcelain)
+			}
 
-	worktreePath := filepath.Join(root, ".worktrees", "spacedock-ensign-thing")
-	// The worktree checks out the whole git root's tree, so the entity lives
-	// under the same workflowDir-relative path as in the main checkout (root/wf/
-	// thing.md), not directly at the worktree's own root.
-	worktreeEntity := filepath.Join(worktreePath, "wf", "thing.md")
-	body, err := os.ReadFile(worktreeEntity)
-	if err != nil {
-		t.Fatalf("worktree missing its own entity copy: %v", err)
-	}
-	if !strings.Contains(string(body), "post-decision, uncommitted") {
-		t.Errorf("worktree's entity copy is stale (built before the inline commit):\n%s", body)
-	}
-	fields := status.ParseFrontmatter(worktreeEntity)
-	if fields["started"] == "" {
-		t.Errorf("worktree's entity copy is missing the started stamp: %#v", fields)
+			worktreePath := filepath.Join(root, ".worktrees", "spacedock-ensign-thing")
+			// The worktree checks out the whole git root's tree, so the entity lives
+			// under the same workflowDir-relative path as in the main checkout (root/wf/
+			// thing.md), not directly at the worktree's own root.
+			worktreeEntity := filepath.Join(worktreePath, "wf", "thing.md")
+			body, err := os.ReadFile(worktreeEntity)
+			if err != nil {
+				t.Fatalf("worktree missing its own entity copy: %v", err)
+			}
+			if !strings.Contains(string(body), "post-decision, uncommitted") {
+				t.Errorf("worktree's entity copy is stale (built before the inline commit):\n%s", body)
+			}
+			fields := status.ParseFrontmatter(worktreeEntity)
+			if fields["started"] == "" {
+				t.Errorf("worktree's entity copy is missing the started stamp: %#v", fields)
+			}
+		})
 	}
 }
 
@@ -492,23 +555,30 @@ func TestStampCommitsInlineBeforeWorktreeCreation(t *testing.T) {
 // {worker_key}/{slug} — a stray directory, or a worktree left on the wrong
 // branch, is an error, not a silent skip.
 func TestStampRefusesWorktreePathOnWrongBranch(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	mainRepo, workflowDir, _, entityPath := stampFixture(t, "implementation", "implementation", false)
-	checklistFile := writeChecklist(t)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			home := t.TempDir()
+			t.Setenv("HOME", home)
+			mainRepo, workflowDir, _, entityPath := stampFixture(t, "implementation", "implementation", false)
+			checklistFile := "-"
+			if source == "file" {
+				checklistFile = writeChecklist(t)
+			}
 
-	worktreePath := filepath.Join(mainRepo, ".worktrees", "spacedock-ensign-thing")
-	runGitFatal(t, mainRepo, "worktree", "add", "-b", "some-other-branch", worktreePath)
+			worktreePath := filepath.Join(mainRepo, ".worktrees", "spacedock-ensign-thing")
+			runGitFatal(t, mainRepo, "worktree", "add", "-b", "some-other-branch", worktreePath)
 
-	native := runNative("", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
-	if native.exit == 0 {
-		t.Fatalf("--stamp silently accepted a worktree path already occupied by the wrong branch: stdout=%q", native.stdout)
-	}
-	if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
-		t.Errorf("wrong-branch worktree failure stderr missing the --stamp: prefix: %q", native.stderr)
-	}
-	branch := strings.TrimSpace(gitOutput(t, worktreePath, "rev-parse", "--abbrev-ref", "HEAD"))
-	if branch != "some-other-branch" {
-		t.Errorf("refused --stamp mutated the existing worktree's branch: now %q", branch)
+			native := runNative("- a\n- b\n", buildStampArgs(workflowDir, entityPath, "implementation", checklistFile)...)
+			if native.exit == 0 {
+				t.Fatalf("--stamp silently accepted a worktree path already occupied by the wrong branch: stdout=%q", native.stdout)
+			}
+			if !strings.HasPrefix(native.stderr, "dispatch build --stamp:") {
+				t.Errorf("wrong-branch worktree failure stderr missing the --stamp: prefix: %q", native.stderr)
+			}
+			branch := strings.TrimSpace(gitOutput(t, worktreePath, "rev-parse", "--abbrev-ref", "HEAD"))
+			if branch != "some-other-branch" {
+				t.Errorf("refused --stamp mutated the existing worktree's branch: now %q", branch)
+			}
+		})
 	}
 }

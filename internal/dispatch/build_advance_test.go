@@ -13,11 +13,11 @@ import (
 // advanceCase is a positive advance-mode golden fixture: it builds a fixture
 // tree, runs the native --advance build, and asserts golden envelope + body.
 type advanceCase struct {
-	name       string
-	splitRoot  bool
-	stage      string
-	stdinExtra map[string]any
-	host       string // "" = default (claude, via runNativeWithDefaultClaudeHost)
+	name      string
+	splitRoot bool
+	stage     string
+	feedback  bool
+	host      string // "" = default (claude, via runNativeWithDefaultClaudeHost)
 }
 
 func TestBuildAdvanceGoldens(t *testing.T) {
@@ -26,10 +26,7 @@ func TestBuildAdvanceGoldens(t *testing.T) {
 		{name: "split-root", splitRoot: true, stage: "validation"},
 		{
 			name: "feedback-reflow", splitRoot: false, stage: "implementation",
-			stdinExtra: map[string]any{
-				"is_feedback_reflow": true,
-				"feedback_context":   "REJECTED: do better.",
-			},
+			feedback: true,
 		},
 		{name: "codex-host", splitRoot: false, stage: "validation", host: "codex"},
 	}
@@ -63,21 +60,18 @@ func TestBuildAdvanceGoldens(t *testing.T) {
 				gitAddOrigin(t, stateCheckout)
 			}
 
-			stdinFields := map[string]any{
-				"schema_version": 2,
-				"entity_path":    entityPath,
-				"workflow_dir":   workflowDir,
-				"stage":          tc.stage,
-				"checklist":      []string{"- a", "- b"},
-				"bare_mode":      false,
-				"advance":        true,
-			}
+			stdin := "- a\n- b"
+			stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", tc.stage, "--checklist-file", "-", "--advance"}
 			if tc.host != "" {
-				stdinFields["host"] = tc.host
+				stdinArgs = append(stdinArgs, "--host", tc.host)
 			}
-			stdin := mergeStdin(stdinFields, tc.stdinExtra)
+			if tc.feedback {
+				feedback := filepath.Join(t.TempDir(), "feedback.md")
+				writeFile(t, feedback, "REJECTED: do better.")
+				stdinArgs = append(stdinArgs, "--feedback-reflow", "--feedback-context-file", feedback)
+			}
 
-			native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+			native := runNative(stdin, stdinArgs...)
 			if native.exit != 0 {
 				t.Fatalf("advance build exit=%d stderr=%s", native.exit, native.stderr)
 			}
@@ -112,17 +106,10 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "validation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "validation",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-		"advance":        true,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "validation", "--checklist-file", "-", "--advance"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("advance build exit=%d stderr=%s", native.exit, native.stderr)
 	}
@@ -134,15 +121,9 @@ func TestBuildAdvanceFilenameSuffix(t *testing.T) {
 
 	// A fresh (non-advance) dispatch for the identical session/slug/stage must
 	// write to the bare filename — no collision with the advance file.
-	freshStdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "validation",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-	}, nil)
-	freshNative := runNative(freshStdin, "build", "--workflow-dir", root)
+	freshStdin := strings.Join([]string{"- a"}, "\n")
+	freshStdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "validation", "--checklist-file", "-"}
+	freshNative := runNative(freshStdin, freshStdinArgs...)
 	if freshNative.exit != 0 {
 		t.Fatalf("fresh build exit=%d stderr=%s", freshNative.exit, freshNative.stderr)
 	}
@@ -172,17 +153,10 @@ func TestBuildAdvanceEnvelopeOmitsSpawnFields(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "validation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "validation",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-		"advance":        true,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "validation", "--checklist-file", "-", "--advance"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("advance build exit=%d stderr=%s", native.exit, native.stderr)
 	}
@@ -216,17 +190,10 @@ func TestBuildAdvanceBareModeConflict(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a"},
-		"bare_mode":      true,
-		"advance":        true,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-", "--bare-mode", "--advance"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 2 {
 		t.Fatalf("advance+bare_mode exit=%d, want 2; stderr=%s", native.exit, native.stderr)
 	}
@@ -270,18 +237,10 @@ func TestBuildAdvanceFeedbackReflowRequiresContext(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version":     2,
-		"entity_path":        entityPath,
-		"workflow_dir":       root,
-		"stage":              "implementation",
-		"checklist":          []string{"- a"},
-		"bare_mode":          false,
-		"advance":            true,
-		"is_feedback_reflow": true,
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--advance", "--feedback-reflow"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 1 {
 		t.Fatalf("advance feedback-reflow without context exit=%d, want 1; stderr=%s", native.exit, native.stderr)
 	}

@@ -36,11 +36,8 @@ func TestGeneratedAssignmentExecutesStageLoadThroughPinnedA(t *testing.T) {
 	bPath := writeExecutable(t, bDir, "spacedock", "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$B_LOG\"\nexit 91\n")
 	cPath := writeExecutable(t, t.TempDir(), "product-C", "#!/bin/sh\nprintf 'C:%s\\n' \"$*\" >> \"$A_LOG\"\n")
 
-	fields := map[string]any{
-		"schema_version": 2, "entity_path": entityPath, "workflow_dir": root,
-		"stage": "implementation", "checklist": []string{"- pin A"}, "host": "codex",
-	}
-	built := runNativeWithLauncher(mergeStdin(fields, nil), aPath, "build", "--workflow-dir", root, "--host", "codex")
+	checklist := "- pin A"
+	built := runNativeWithLauncher(checklist, aPath, "build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex")
 	if built.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%s", built.exit, built.stderr)
 	}
@@ -85,15 +82,12 @@ func TestBuildWithoutResolvedLauncherFailsBeforeWritingArtifact(t *testing.T) {
 	writeFile(t, filepath.Join(root, "README.md"), "---\nstages:\n  states:\n    - name: implementation\n      initial: true\n---\n# Fixture\n\n### implementation\nwork\n")
 	writeFile(t, entityPath, entityFM("Unique", "implementation", ""))
 	gitInit(t, root)
-	fields := map[string]any{
-		"schema_version": 2, "entity_path": entityPath, "workflow_dir": root,
-		"stage": "implementation", "checklist": []string{"- fail closed"}, "host": "codex",
-	}
+	checklist := "- fail closed"
 	path := filepath.Join(dispatchFileDir, "spacedock-ensign-unique-no-launcher-implementation.md")
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatalf("test artifact already exists: %s", path)
 	}
-	result := runNativeWithLauncher(mergeStdin(fields, nil), "", "build", "--workflow-dir", root, "--host", "codex")
+	result := runNativeWithLauncher(checklist, "", "build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex")
 	if result.exit != 1 || result.stdout != "" {
 		t.Fatalf("exit=%d stdout=%q stderr=%q", result.exit, result.stdout, result.stderr)
 	}
@@ -121,19 +115,15 @@ func writeExecutable(t *testing.T, dir, name, body string) string {
 	return path
 }
 
-func selfContainedBuild(t *testing.T, root, host string, advance bool, stage, context string, checklist []string, extra map[string]any) (selfContainedOutput, string) {
+func selfContainedBuild(t *testing.T, root, host string, advance bool, stage, context string, checklist []string) (selfContainedOutput, string) {
 	t.Helper()
 	readme := "---\nentity-type: task\nid-style: slug\nstages:\n  defaults:\n    worktree: false\n    context-sections: [Authority]\n  states:\n    - name: implementation\n      initial: true\n---\n# Fixture\n\n### implementation\n\n" + stage + "\n\n## Authority\n\n" + context + "\n"
 	writeFile(t, filepath.Join(root, "README.md"), readme)
-	fields := map[string]any{
-		"schema_version": 2, "entity_path": filepath.Join(root, "thing.md"),
-		"workflow_dir": root, "stage": "implementation", "checklist": checklist,
-		"host": host, "advance": advance,
+	args := []string{"build", "--workflow-dir", root, "--entity-path", filepath.Join(root, "thing.md"), "--stage", "implementation", "--checklist-file", "-", "--host", host}
+	if advance {
+		args = append(args, "--advance")
 	}
-	for key, value := range extra {
-		fields[key] = value
-	}
-	run := runNative(mergeStdin(fields, nil), "build", "--workflow-dir", root, "--host", host)
+	run := runNative(strings.Join(checklist, "\n"), args...)
 	if run.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%s", run.exit, run.stderr)
 	}
@@ -180,7 +170,7 @@ func TestBuildHostModeMatrixKeepsPointerTransportAndExactFetchShape(t *testing.T
 				writeFile(t, filepath.Join(root, "thing.md"), entityFM("Thing", "implementation", ""))
 				gitInit(t, root)
 				checklist := []string{"- CHECKLIST-SENTINEL"}
-				got, body := selfContainedBuild(t, root, host, advance, "STAGE-SENTINEL", "CONTEXT-SENTINEL", checklist, nil)
+				got, body := selfContainedBuild(t, root, host, advance, "STAGE-SENTINEL", "CONTEXT-SENTINEL", checklist)
 				if len(got.Fetch) != 1 {
 					t.Fatalf("fetch command count=%d, want 1: %v", len(got.Fetch), got.Fetch)
 				}

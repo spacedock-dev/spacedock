@@ -83,25 +83,16 @@ func stageReflowFixture(t *testing.T, reflow bool, feedbackContext string) reflo
 	}
 	gitInit(t, root)
 
-	fields := map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		// dispatched to the gate stage's feedback-to target, not the reviewer.
-		"stage":     "implementation",
-		"checklist": []string{"- Address the rejection findings"},
-		"team_name": "fixture-team",
-		"bare_mode": false,
-		"host":      "claude",
-	}
+	args := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "claude"}
 	if reflow {
-		fields["is_feedback_reflow"] = true
-		fields["feedback_context"] = feedbackContext
+		path := filepath.Join(t.TempDir(), "feedback.md")
+		writeFile(t, path, feedbackContext)
+		args = append(args, "--feedback-reflow", "--feedback-context-file", path)
 	}
 
 	var stdout, stderr strings.Builder
-	code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root},
-		strings.NewReader(mustJSON(t, fields)), &stdout, &stderr)
+	code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", args,
+		strings.NewReader("- Address the rejection findings"), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("dispatch build exit=%d stderr=%s", code, stderr.String())
 	}
@@ -181,21 +172,12 @@ func TestFeedbackReflowGoesRedOnBrokenOutput(t *testing.T) {
 		}
 		gitInit(t, root)
 
-		stdin := mustJSON(t, map[string]any{
-			"schema_version":     2,
-			"entity_path":        entityPath,
-			"workflow_dir":       root,
-			"stage":              "implementation",
-			"checklist":          []string{"- Address the rejection findings"},
-			"team_name":          "fixture-team",
-			"bare_mode":          false,
-			"host":               "claude",
-			"is_feedback_reflow": true,
-			"feedback_context":   "",
-		})
+		stdin := "- Address the rejection findings"
+		feedback := filepath.Join(t.TempDir(), "feedback.md")
+		writeFile(t, feedback, "")
 
 		var stdout, stderr strings.Builder
-		code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root},
+		code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "claude", "--feedback-reflow", "--feedback-context-file", feedback},
 			strings.NewReader(stdin), &stdout, &stderr)
 
 		if code == 0 {
