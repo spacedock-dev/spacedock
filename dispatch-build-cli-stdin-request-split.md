@@ -200,3 +200,36 @@ Recommended an explicit assignment-stdin opt-in so CLI controls can accompany st
 ### Summary
 
 The revised design removes JSON request input and uses the existing checklist-file option's dash convention for stdin. It changes normal FO dispatch, preserves file-format and lifecycle behavior, and accounts for real caller/test migration; no product implementation was performed.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved single flag/file interface with --checklist-file -; retire JSON request input and request-schema controls while preserving literal checklist, scope, feedback, envelope and lifecycle behavior.
+  Code commit `ceaf05b6d` removes the JSON reader/selector/schema and JSON-host precedence; the existing normalized assembly map and schema-v2 output remain.
+- DONE: Migrate real in-tree callers and existing tests without losing behavioral coverage; add focused failing tests before changes, update the approved FO/help/docs wording, and demonstrate AC-1, AC-2, and AC-3.
+  Direct CLI/stdin/file calls replace active JSON callers; existing golden, host, state, bootstrap and feedback assertions remain. Initial stdin and retired-switch tests failed before the implementation, then passed.
+- DONE: Commit the implementation and canonical report with actual checks, AC evidence, net LOC/files versus tolerance, and residual blockers; preserve unrelated work and stop for independent validation.
+  `ceaf05b6d`: 39 product files, +1050/-1636, net -586 (approved 34–48 files and -900 to -150); code worktree clean; this report is committed path-scoped in the state checkout. No PR or merge performed.
+- DONE: AC-1 — zero checklist scratch inputs in normal dispatch.
+  `TestBuildChecklistStdin` compares zero new inputs with the one-file baseline; split-root/flat integration checks preserve directory entries and exact checklist bytes. Requiring a scratch file makes these fail.
+- DONE: AC-1 — revised FO default exercised through the existing live journey.
+  Candidate-bound `TestLiveCommonFullEnsignCycle` passed in 165.52s: durable done/report/path-scoped commit assertions; captured successful `--checklist-file - --stamp` quoted heredoc, with no separate checklist write. Evidence: `/tmp/dispatch-cli-stdin-candidate-live/codex-shared-scenarios/full-ensign-cycle/codex-exec.jsonl` and `codex-final-message.txt`.
+- DONE: AC-2 — literal transport and whole-file supporting prose.
+  `TestChecklistSourcesHaveIdenticalLiteralSections` compares independent expected sections for indentation, trailing spaces, CRLF/blank lines, EOF, one-terminal-CR removal, Unicode, JSON-looking text and 70 KB lines; `TestBuildQuotedHeredocTransport` runs a built CLI and checks the expansion sentinel stays absent. Trimming, Scanner limits or an unquoted heredoc falsify these checks.
+- DONE: AC-3 — retirement, input refusal and literal dash-file behavior.
+  Final input race checks passed (2.305s): retired no-flag JSON, empty input and reader/flag failures preserve artifact/entity/HEAD; `./-` never reads poison stdin, while `-` reads stdin even with a file named `-`. Restoring JSON fallback, reading the false file sentinel or mutating on refusal fails them.
+- DONE: AC-3 — retained lifecycle and caller proof.
+  Existing stamp success/mismatch/retry-sync/inline-before-worktree fixtures now run both sources; advance retains pointer-only envelopes. Full dispatch race passed (74.840s); existing cycle/feedback success and broken-output controls passed under race (4.140s). Skipping state guards/sync or changing artifact/report behavior falsifies these checks.
+- DONE: Correct the owned Material proof-policy defect with FO authorization.
+  The first full run caught the added instruction-text test via `TestNoInstructionReadsOutsideQuarantine`; contributors could not pass required checks (`contract[AGENTS.md#expected-commands]`). FO authorized replacing prohibited prose-grep with existing integration behavior; boundary/integration/input checks passed (1.265s/1.438s/2.246s). The live journey remains the FO-default proof owner.
+- FAILED: Whole-repository green test result.
+  `go test ./...` failed on the above corrected lint issue and pre-existing `TestCodexResolveManifestAgainstInstalledHost`: `spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"`. Log: `/tmp/dispatch-all-tests.log`; normal dispatch/integration/ensigncycle suites separately passed (41.337s/7.333s/247.462s).
+- SKIPPED: Repair the unrelated installed-manifest fixture mismatch.
+  Identical failure reproduced from unchanged baseline `af70297ddae6ec64444849e8e3fcf57484bc16e1` (`/tmp/dispatch-baseline-resolver.log`): the test expects stable identity while production deliberately accepts the supported local install. Material verification issue, outside task ownership; FO authorized decline within this task, not a green-suite claim.
+- FAILED: Whole-repository race completion without environment failures.
+  `go test ./... -race` exhausted temporary disk space; `GOFLAGS=-p=1 go test ./... -race` repeated `no space left on device` in CLI and broad ensigncycle fixtures, then completed with exit 1. Remaining packages, including dispatch/contractlint/integration, passed; relevant cycle/feedback race tests passed separately. Logs: `/tmp/dispatch-all-race.log`, `/tmp/dispatch-all-race-serial.log`, `/tmp/dispatch-cycle-feedback-race.log`. No third broad retry or unrelated cleanup.
+- DONE: Required formatting and live setup accounting.
+  Ran `gofmt -w ./cmd ./internal`; changed Go files and `git diff --check` are clean. Excluded an initial CI-auth-flag refusal and an installed-pre2 live run that correctly failed the new source assertion; the accepted live run explicitly used the built candidate with the existing local-auth path, without a new harness.
+
+### Summary
+
+Implemented the approved CLI/file interface, migrated callers, and proved the checklist value through exact command fixtures and the existing live Codex journey. The implementation is committed and ready for independent validation; full-suite green is explicitly limited by the reproduced baseline resolver test and repeated temporary-disk exhaustion, with no remaining task-owned failure identified.
