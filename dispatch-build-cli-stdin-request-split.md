@@ -64,6 +64,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:09ptxgq8zma6qnx0h1w8a6wp:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:09ptxgq8zma6qnx0h1w8a6wp-validation-1
+              briefing:
+                id: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-1:revision-1
+                digest: sha256:546174f116f05e7785399a05614381173ada0877ee40733b8928a9db3121c5c9
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This cycle supersedes the cycle-1 design; implementation remains gated.
