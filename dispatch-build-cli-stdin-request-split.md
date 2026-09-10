@@ -1,6 +1,6 @@
 ---
 title: Separate dispatch invocation controls from stdin assignment data
-status: backlog
+status: ideation
 source: Captain discussion of checklist transport and dispatch assembly, 2026-09-10
 started:
 completed:
@@ -31,7 +31,7 @@ gates:
                 reason: 'Captain requested: assume this behavior already works in this session. now dispatch it. Authorization is to begin ideation, not implementation.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Design and implement a clear dispatch build interface with invocation controls in CLI flags and assignment data in stdin JSON. Captain requested filing only; do not dispatch or implement from this filing.
