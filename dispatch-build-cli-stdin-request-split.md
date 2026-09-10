@@ -40,6 +40,14 @@ gates:
                 id: briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-1:revision-1
                 digest: sha256:8eb17db161d3dd3b9454cf66e8b8f3a5babb78d424bcdfe452ff76192f15d666
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:09ptxgq8zma6qnx0h1w8a6wp:ideation:1
+                briefing: briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-10T20:44:53.720381Z"
+                decision: revise
+                reason: 'Captain approved a narrower replacement: keep parameters in CLI flags; support --checklist-file - for newline-delimited checklist stdin; preserve scope/feedback file options; retire legacy JSON-stdin parsing and request-schema controls; migrate JSON callers/tests. This explicitly supersedes the legacy JSON compatibility requirement and assignment-stdin proposal. Return revised ideation before implementation.'
 ---
 
 Make stdin assignment data usable alongside explicit CLI invocation controls without changing existing dispatch callers. This ideation records the implementation contract; product implementation has not started.
