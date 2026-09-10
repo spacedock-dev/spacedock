@@ -21,6 +21,17 @@ gates:
                 id: briefing:09ptxgq8zma6qnx0h1w8a6wp:backlog:attempt-1:revision-1
                 digest: sha256:cb3ae42ccb7d64430aef08321f5cb896c7ad8566738a23db978598647dde5adc
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:09ptxgq8zma6qnx0h1w8a6wp:backlog:1
+                briefing: briefing:09ptxgq8zma6qnx0h1w8a6wp:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-10T20:26:00.677523Z"
+                decision: approve
+                reason: 'Captain requested: assume this behavior already works in this session. now dispatch it. Authorization is to begin ideation, not implementation.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Design and implement a clear dispatch build interface with invocation controls in CLI flags and assignment data in stdin JSON. Captain requested filing only; do not dispatch or implement from this filing.
