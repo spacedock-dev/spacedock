@@ -6,7 +6,7 @@ started: 2026-09-10T20:26:39Z
 completed:
 verdict:
 score: 0.5
-worktree:
+worktree: .worktrees/spacedock-ensign-dispatch-build-cli-stdin-request-split
 issue:
 pr:
 id: 09ptxgq8zma6qnx0h1w8a6wp
