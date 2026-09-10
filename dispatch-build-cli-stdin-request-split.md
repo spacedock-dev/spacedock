@@ -2,7 +2,7 @@
 title: Separate dispatch invocation controls from stdin assignment data
 status: ideation
 source: Captain discussion of checklist transport and dispatch assembly, 2026-09-10
-started:
+started: 2026-09-10T20:26:39Z
 completed:
 verdict:
 score: 0.5
