@@ -53,6 +53,17 @@ gates:
                 id: briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-2:revision-1
                 digest: sha256:d4e1106ddcaaddb3ace907389610f5b27a861fbf68acb9de46ace9932d391dec
                 room-ref: '@review/ideation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:09ptxgq8zma6qnx0h1w8a6wp:ideation:2
+                briefing: briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-10T21:03:13.639109Z"
+                decision: approve
+                reason: 'Captain approved ideation attempt 2: checklist stdin via --checklist-file -, retirement of JSON request input and schema controls, caller/test migration, and FO default update within the stated scope.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This cycle supersedes the cycle-1 design; implementation remains gated.
