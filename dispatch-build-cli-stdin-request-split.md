@@ -48,6 +48,11 @@ gates:
                 at: "2026-09-10T20:44:53.720381Z"
                 decision: revise
                 reason: 'Captain approved a narrower replacement: keep parameters in CLI flags; support --checklist-file - for newline-delimited checklist stdin; preserve scope/feedback file options; retire legacy JSON-stdin parsing and request-schema controls; migrate JSON callers/tests. This explicitly supersedes the legacy JSON compatibility requirement and assignment-stdin proposal. Return revised ideation before implementation.'
+            - id: gate-attempt:09ptxgq8zma6qnx0h1w8a6wp-ideation-2
+              briefing:
+                id: briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-2:revision-1
+                digest: sha256:d4e1106ddcaaddb3ace907389610f5b27a861fbf68acb9de46ace9932d391dec
+                room-ref: '@review/ideation/briefing-2'
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This cycle supersedes the cycle-1 design; implementation remains gated.

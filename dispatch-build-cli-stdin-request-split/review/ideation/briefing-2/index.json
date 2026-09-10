@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-2:revision-1",
+  "question": "Approve checklist stdin and retirement of JSON request input for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/537f14ea7c64286c530660f03128e4d8c8740db4/dispatch-build-cli-stdin-request-split.md",
+      "rev": "sha256:ff54e1d070a179dae5ca48914ad69936b3f07fb923786a85edc5c5e84d8cf151",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approve revised ideation. Single flag/file path; --checklist-file - reads stdin with existing line semantics. All other parameters remain flags; scope and feedback remain files. Remove JSON request reader/mode/schema-validation controls and migrate actual callers/tests without losing behavioral coverage. Output JSON envelope, assignment pointer, stamp/advance and state authority unchanged. Update FO default to quoted checklist heredoc. Twelve current-binary file versus stdin-descriptor builds and four existing baseline tests passed; dash routing and retirement are not yet implemented. Estimate net -500 LOC across 40 files, tolerance -900 to -150 and 34 to 48 files; breadth is principally test/caller migration. Intentional JSON API break authorized by captain. Implementation must run real dash-routing, retirement, retained lifecycle, and FO journey checks; prior unrelated full-suite errors remain disclosed."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/af70297ddae6ec64444849e8e3fcf57484bc16e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8c798101c71c8f64fe47546dc852c73e5f7510d209be3d1661a188fa9d02613f"
+    }
+  ]
+}
