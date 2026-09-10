@@ -10,6 +10,17 @@ worktree:
 issue:
 pr:
 id: 09ptxgq8zma6qnx0h1w8a6wp
+gates:
+    version: 1
+    records:
+        - id: gate:09ptxgq8zma6qnx0h1w8a6wp:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:09ptxgq8zma6qnx0h1w8a6wp-backlog-1
+              briefing:
+                id: briefing:09ptxgq8zma6qnx0h1w8a6wp:backlog:attempt-1:revision-1
+                digest: sha256:cb3ae42ccb7d64430aef08321f5cb896c7ad8566738a23db978598647dde5adc
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Design and implement a clear dispatch build interface with invocation controls in CLI flags and assignment data in stdin JSON. Captain requested filing only; do not dispatch or implement from this filing.
