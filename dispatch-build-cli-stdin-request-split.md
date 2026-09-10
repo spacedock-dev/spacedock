@@ -233,3 +233,37 @@ The revised design removes JSON request input and uses the existing checklist-fi
 ### Summary
 
 Implemented the approved CLI/file interface, migrated callers, and proved the checklist value through exact command fixtures and the existing live Codex journey. The implementation is committed and ready for independent validation; full-suite green is explicitly limited by the reproduced baseline resolver test and repeated temporary-disk exhaustion, with no remaining task-owned failure identified.
+
+
+## Stage Report: validation
+
+- DONE: Independently assess AC-1, AC-2, and AC-3 against the approved revision and implementation; verify CLI retirement, stdin/file semantics, preserved callers and stamp/advance authority using the report and appropriate existing proof.
+  Validated candidate `ceaf05b6d6b48a1cf10d712cd65e3ffc3e31d3fb` against approved ideation attempt 2; AC citations are this entity's lines 106, 108 and 110. Cycle-1 JSON compatibility is superseded.
+- DONE: AC-1 — Normal FO dispatch needs zero checklist scratch files.
+  Independent `TestBuildChecklistStdin`, `TestBuildQuotedHeredocTransport`, `TestSplitRootFolderWorktreeDispatch` and `TestFlatEntitySlugUnchanged` passed: helper artifact/envelope, literal stdin and zero extra inputs versus file baseline. Opening dash as a file or requiring scratch input fails these checks.
+- DONE: AC-1 — Existing live journey reaches durable done with the revised FO default.
+  Reused and inspected `/tmp/dispatch-cli-stdin-candidate-live.log` (165.52s PASS) and its full-ensign-cycle `codex-exec.jsonl`: successful quoted-heredoc `--checklist-file - --stamp`, candidate-path fetch command, schema-v2 pointer, archived done/PASSED and clean Git log containing completion commit `0664c38`; no checklist write in captured commands. Reverting the default or losing durable completion invalidates this proof.
+- DONE: AC-2 — Checklist and supporting prose retain the surviving format's semantics.
+  Independent `TestChecklistSourcesHaveIdenticalLiteralSections` passed both sources across CRLF/blanks, EOF/LF, Unicode/shell hazards, JSON-looking text, 70 KB and doubled-CR boundaries; independent expected sections and whole-artifact equality preserve opaque scope/feedback bytes. Heredoc test checks the shell sentinel stays absent.
+- DONE: AC-3 — The single supported input interface replaces JSON without losing dispatch behavior.
+  Independent retirement/no-read/no-mutation, literal `./-` versus stdin `-`, advance-envelope, status-mismatch, retry-sync and inline-before-worktree checks passed. JSON reader/schema/selector/version helpers are deleted; migrated callers pass direct flags/bytes, with historical oracle JSON retained as history. Restoring JSON fallback, consuming poison stdin or bypassing state/sync guards falsifies these checks.
+- DONE: Reproduce the bounded command, input and lifecycle evidence without repeating broad green suites.
+  In detached candidate checkout: `go test ./internal/dispatch ./skills/integration -run 'TestBuildChecklistStdin|TestBuildQuotedHeredocTransport|TestChecklistSourcesHaveIdenticalLiteralSections|TestBuildRequestControlsRetired|TestBuildInputFailuresDoNotReadOrStamp|TestChecklistFileDoesNotReadStdin|TestDispatchBuildAdvanceInputMode|TestStampRefusesStatusStageMismatchWithoutMutation|TestStampRetriesSyncOnRetryEvenWhenAlreadyStamped|TestStampCommitsInlineBeforeWorktreeCreation|TestSplitRootFolderWorktreeDispatch|TestFlatEntitySlugUnchanged' -count=1`; PASS 10.183s/0.919s, `/tmp/dispatch-validation-focused.log`.
+- DONE: Perform the required detached adversarial audit on a throwaway checkout for changed CLI/contract behavior; attack a distinct claim rather than rerunning already-green suites, and route material findings before any candidate edits.
+  Created detached `.validation-audit` beneath the assigned worktree at `ceaf05b6d`; changed only `checklistLines` from `strings.TrimSuffix(line, "\r")` to `strings.TrimRight(line, "\r")`, attacking exact one-CR removal while leaving common LF/CRLF results intact. Existing test caught the wrong bytes; no new harness or candidate changes.
+- DONE: Demonstrate the distinct falsifying edit and restoration.
+  `go test ./internal/dispatch -run '^TestChecklistSourcesHaveIdenticalLiteralSections$/one_terminal_CR$' -count=1` exited 1 at `build_json_ergonomics_test.go:296` (`checklist section bytes changed`); restored code exited 0 (0.362s). Logs: `/tmp/dispatch-validation-mutant.log`, `/tmp/dispatch-validation-restored.log`; detached checkout removed after cleanup.
+- DONE: Audit necessity, soundness, representations and scaling.
+  Dash source selection is the smallest mechanism delivering AC-1; deleting JSON serves AC-3 without an adapter. Both sources use one linear byte-to-lines parser and existing normalized fields/assembly; no Scanner cap or new lifecycle controller. Read-to-EOF allocation remains proportional to input, matching the supported file behavior; 70 KB coverage exercises the relevant limit. Source-read and CLI refusal precede stamp, while downstream validation/stamp order remains as approved.
+- DONE: Compare approved surface and preserve candidate ownership.
+  `af70297dd..ceaf05b6d`: 39 files, +1050/-1636, net -586, within 34–48 files and -900 to -150. Candidate HEAD and bytes unchanged; `git diff --check` clean. `gofmt -w ./cmd ./internal` in audit exposed only pre-existing alignment in unchanged `internal/release/runtime_live_evidence_workflow_test.go`; discarded that audit-only formatting.
+- DONE: Verify recorded required-suite limitations and authorized dispositions.
+  Inspected normal/race logs: unchanged installed-manifest failure matches `/tmp/dispatch-baseline-resolver.log`; normal run also hit disk exhaustion, as did both broad race attempts. The prohibited prose-read test was removed; current behavioral proof replaces it. Reused final input race (2.305s), cycle/feedback race (4.140s) and reported full dispatch race; these do not make whole-repository suites green.
+- SKIPPED: Repeat whole-repository normal/race suites or launch provider operations.
+  FO authorized no third broad retry or unrelated cache cleanup; only 1.2 GiB was available. Existing `/tmp/dispatch-all-tests.log`, `/tmp/dispatch-all-race.log` and `/tmp/dispatch-all-race-serial.log` retain failures. Provider operations are outside this assignment.
+- DONE: Commit a canonical validation report with exact AC citations, approved-surface comparison, honest baseline/resource limitations, and PASSED or REJECTED recommendation; do not approve, merge, publish a PR, or modify implementation.
+  Recommendation: PASSED for local AC validation; detached audit refuted nothing material. No new material, deferred-risk or polish findings. This recommendation is not merge authorization: all host live CI lanes required by `docs/dev/README.md#proof-policy` remain pending before merge, acknowledged by FO; none is waived or claimed green.
+
+### Summary
+
+AC-1, AC-2 and AC-3 have independent command/state evidence for the approved interface, and the detached mutation demonstrated a real byte-preservation failure boundary. Recommend PASSED for validation, with whole-suite baseline/resource failures and required host live CI before merge explicitly outstanding; candidate code was not modified.
