@@ -1,6 +1,6 @@
 ---
 title: Separate dispatch invocation controls from stdin assignment data
-status: ideation
+status: implementation
 source: Captain discussion of checklist transport and dispatch assembly, 2026-09-10
 started: 2026-09-10T20:26:39Z
 completed:
@@ -63,7 +63,7 @@ gates:
                 reason: 'Captain approved ideation attempt 2: checklist stdin via --checklist-file -, retirement of JSON request input and schema controls, caller/test migration, and FO default update within the stated scope.'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This cycle supersedes the cycle-1 design; implementation remains gated.
