@@ -32,6 +32,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:09ptxgq8zma6qnx0h1w8a6wp:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:09ptxgq8zma6qnx0h1w8a6wp-ideation-1
+              briefing:
+                id: briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-1:revision-1
+                digest: sha256:8eb17db161d3dd3b9454cf66e8b8f3a5babb78d424bcdfe452ff76192f15d666
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Make stdin assignment data usable alongside explicit CLI invocation controls without changing existing dispatch callers. This ideation records the implementation contract; product implementation has not started.

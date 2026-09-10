@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-1:revision-1",
+  "question": "Approve assignment-stdin CLI capability for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7c5a2cb18878e4d51e6ec3b31f2894890976e51a/dispatch-build-cli-stdin-request-split.md",
+      "rev": "sha256:3be1cbd60241cfdf5481bd6bd08f29e99877cddd65d47c8d03d1f4214d66ba80",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approve the opt-in --assignment-stdin input adapter. CLI owns workflow, host, stamp/advance, and transport controls; JSON owns schema_version, entity_path, stage, checklist, scope_notes, and feedback_context. Reject mixed locations. Existing stdin and file input remain unchanged; same helper assembly and stamp semantics. Installed mixed-form refusal observed; actual legacy JSON transport preserves hazardous prose without scratch files; focused existing tests passed. New parser integration and real stamped fixtures remain implementation work. Scope is binary/help/site capability, not FO skill migration. Estimate +240 net LOC across 7 files, tolerance +160 to +330 and 6 to 8 files. Broad checks hit unrelated untracked recovery-file compile errors; no green full-suite claim. Approval authorizes implementation only within these boundaries."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:09ptxgq8zma6qnx0h1w8a6wp:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/af70297ddae6ec64444849e8e3fcf57484bc16e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8c798101c71c8f64fe47546dc852c73e5f7510d209be3d1661a188fa9d02613f"
+    }
+  ]
+}
