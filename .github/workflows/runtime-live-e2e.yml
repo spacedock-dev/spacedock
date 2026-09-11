@@ -619,16 +619,17 @@ jobs:
           npm --version
           node --version
 
-          # Compatibility pins: pi-coding-agent 0.80.x requires Node >=22.19 and
-          # provides @earendil-works/pi-ai/compat, which pi-subagents 0.35.x loads.
+          # Compatibility pins: pi-coding-agent 0.85.x is the ready-gate floor
+          # (s98: spacedock pi refuses launches when `pi --version` < 0.83.0), and
+          # the substrate pins ride the same family (pi-subagents, pi-intercom).
           # Keep these exact pins together; do not let npm's engine-aware resolver
-          # fall back to legacy-node20 pi-coding-agent while pi-subagents floats new.
-          PI_CODING_AGENT_VERSION="0.80.10"
-          PI_CODING_AGENT_INTEGRITY="sha512-aL4apbupCHiVLSXASXvRzH4Q2vmtfrDa+0s909CJuVu/GgGylbDzr7oyF1mPmip5E+VxYYxKWmph4hV04wUcQg=="
-          PI_SUBAGENTS_VERSION="0.53.0"
-          PI_SUBAGENTS_INTEGRITY="sha512-YwwvGGb9zKBWnqyYqO0+0Hzw8qTosMfkKMqSXbiJKEVljmJcjAeuxYKeoLEyrA3nIgAxbDlCXyx0gnbu/91WFQ=="
-          PI_INTERCOM_VERSION="0.6.0"
-          PI_INTERCOM_INTEGRITY="sha512-OFPh/DXfPhUUSDLTRJiFPEvw00fOA/spjsxUcXiuCHvb2ZkRL02G8Q91mTd+3d42A9AK8BSmbD0+8imFPuHGoQ=="
+          # mix a sub-floor pi-coding-agent with newer substrates.
+          PI_CODING_AGENT_VERSION="0.85.1"
+          PI_CODING_AGENT_INTEGRITY="sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ=="
+          PI_SUBAGENTS_VERSION="0.67.0"
+          PI_SUBAGENTS_INTEGRITY="sha512-43FGBi82sbxEGhEfsaj0P7I/rRJfsw1UPuFSVSkjZw0Fy92lrBIB9d3gDTpwmK5hLj3ZzZUnvtlqiKQatySCTw=="
+          PI_INTERCOM_VERSION="0.13.0"
+          PI_INTERCOM_INTEGRITY="sha512-+QjKJRAEhrgQZj4+M9OW/8unRLvCzeCp0K66lZmbS5/me0fsClXRtANBgM6mY+EoX+Fcd+qBE8dTThp8+ND//g=="
 
           pack_dir="$RUNNER_TEMP/pi-live-npm-packs"
           mkdir -p "$pack_dir"
