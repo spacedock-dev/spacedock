@@ -85,6 +85,17 @@ gates:
                 id: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-2:revision-1
                 digest: sha256:9a04c6a82dfa68d070a90229f8fbb32f282544503ab42d923d12f378e2364b00
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:09ptxgq8zma6qnx0h1w8a6wp:validation:2
+                briefing: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-11T05:52:31.315756Z"
+                decision: approve
+                reason: 'Captain: approve PR and ci env. Approves validation attempt 2 for PR delivery and required CI environment approval; does not waive required checks.'
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:09ptxgq8zma6qnx0h1w8a6wp:validation:1
     stage: validation
