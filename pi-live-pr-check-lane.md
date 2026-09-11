@@ -27,8 +27,91 @@ gates:
                 state: consumed
 started: 2026-09-11T06:01:40Z
 ---
-Problem: in `.github/workflows/runtime-live-e2e.yml`, `claude-live` and `codex-live` run on every `pull_request` (behind the `CI-E2E` required-reviewer environment), but `pi-live` is gated `if: workflow_dispatch && inputs.live_cadence == 'pi'` — it never runs on a PR, and a manual `workflow_dispatch` run against a PR branch produces no check run on that PR (the workflow's own journey-delta-comment job notes "a workflow_dispatch run has no PR"). So pi live evidence is neither PR-associated nor manually triggerable per-PR; it only exists as an unassociated manual run or the release-time precondition.
+## Problem
 
-Deliverable: pi live E2E becomes an opt-in, PR-associated check. Proposed shape (mirrors the existing claude/codex job pattern): add `labeled` (and `synchronize`) to the `pull_request` trigger types and run `pi-live` when a `live:pi` label is present — `if: (github.event_name == 'pull_request' && contains-label) || inputs.live_cadence == 'pi'` — with its own environment (e.g. `CI-E2E-PI`, required reviewer) holding the pi secret. The label is the cost opt-in; the environment approval is the human gate; the run appears in the PR's Checks tab and can be a required check where warranted. Alternatives considered: workflow_dispatch + out-of-band commit-status on the PR head SHA (associates but bypasses the Checks-tab model and needs a pr_number input); scheduled nightly pi cadence on main (cheap, but never PR-associated).
+In `.github/workflows/runtime-live-e2e.yml`, `claude-live` and `codex-live` run on every `pull_request` (behind the `CI-E2E` / `CI-E2E-CODEX` required-reviewer environments), but `pi-live` is gated `if: github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi'` — it never runs on a PR, and a manual `workflow_dispatch` run against a PR branch produces no check run on that PR (the workflow's own journey-delta-comment job notes "a workflow_dispatch run has no PR"). So pi live evidence is neither PR-associated nor manually triggerable per-PR; it only exists as an unassociated manual run or the release-time precondition. Today's baseline: **zero PR-associated `pi-live` check runs have ever existed** — that is the number this entity moves to ≥1.
 
-Acceptance criteria and test plan to be fleshed out at ideation (workflow file change; proof = workflow-syntax validation plus a live dispatched run of the lane on a scratch PR).
+## Proposed approach (the minimal workflow diff)
+
+Mirrors the existing claude/codex job pattern. Three coordinated edits to `.github/workflows/runtime-live-e2e.yml`, nothing else:
+
+**1. Widen the PR trigger with `labeled`** (the only functional addition; `synchronize` is already a default type but is listed explicitly because declaring `types:` replaces the default set):
+
+```yaml
+# before
+  pull_request:
+    branches: [main]
+# after
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+```
+
+**2. Label-gate `pi-live` onto PR events** (manual dispatch leg unchanged):
+
+```yaml
+# before (pi-live)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi' }}
+# after
+    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'live:pi')) || (github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi') }}
+```
+
+**3. Guard the other PR-gated jobs against the widened trigger.** Adding `labeled` makes `github.event_name == 'pull_request'` true on label events, so `claude-live` (line 88), `codex-live` (line 317), and `journey-delta-comment` (line 842) each gain `&& github.event.action != 'labeled'` — without this, adding e.g. a `bug` label would re-run both paid live lanes and re-post the journey comment. This is not a new mechanism; it preserves today's semantics for the existing lanes under the widened trigger. `offline` stays unconditional: on a `labeled` event it is the gate `pi-live` `needs`, and it is cheap and secret-free.
+
+**CI-E2E-PI environment:** already declared on `pi-live` and already in use by manual dispatches. The only wiring to verify at implementation is repo-settings: the `CI-E2E-PI` environment exists with a required reviewer (it does for the manual cadence today); if it is missing, that is a one-time repo-settings step to surface to the captain — not YAML.
+
+**Observable semantics:** the `live:pi` label is the cost opt-in; the `CI-E2E-PI` required-reviewer approval is the human gate; the run appears in the PR's Checks tab associated with the PR head SHA, where it can be a required check where warranted. Labels persist, so later `synchronize` pushes re-run pi-live while labeled; `reopened` re-runs it too (consistent with claude/codex). Unlabeled PRs and non-pi labels run no pi-live. The manual `workflow_dispatch` cadence is byte-for-byte unchanged in behavior.
+
+**Security posture unchanged:** the trigger stays `pull_request` (not `pull_request_target`), so fork PRs still receive no secrets; only triage+ can add labels, so the label introduces no new exfiltration surface — the environment approval remains the human gate.
+
+**Rejected (stays rejected unless a blocker appears):** workflow_dispatch + out-of-band commit-status on the PR head SHA (bypasses the Checks-tab model, needs a `pr_number` input); scheduled nightly pi cadence on main (cheap, but never PR-associated). No `pr_number` inputs, no commit statuses, no scheduled lanes.
+
+## Acceptance criteria (entity-level, with proof owner and falsifying check)
+
+- **AC-1 (value, measured against today's baseline of zero):** a PR carrying the `live:pi` label exhibits a PR-associated `pi-live` check run in its Checks tab (head SHA) after `CI-E2E-PI` approval. Proof owner: the lane's first REAL run on 6v's own delivery PR (dogfood), not a synthetic test. Falsifying check: label present + approval granted but no pi-live check run on the PR ⇒ fail.
+- **AC-2:** no PR event runs `pi-live` without the `live:pi` label (the cost opt-in holds). Proof owner: workflow-syntax inspection at the ideation/implementation gate, plus the dogfood PR observed unlabeled before labeling. Falsifying check: pi-live appears on an unlabeled PR ⇒ fail.
+- **AC-3:** the existing manual `workflow_dispatch` `live_cadence=pi` cadence is unchanged. Proof owner: the next release-time manual dispatch (existing lane). Falsifying check: a `live_cadence=pi` dispatch skips pi-live ⇒ fail.
+- **AC-4:** a non-pi label add re-runs neither claude-live, codex-live, nor the journey-delta comment, while unlabeled PRs still run offline + claude-live + codex-live as today. Proof owner: workflow-syntax inspection + observation on the dogfood PR (scratch label added before `live:pi`). Falsifying check: a `bug`-style label add re-runs a paid lane ⇒ fail.
+- **AC-5:** the edited workflow remains valid Actions workflow syntax. Proof owner: actionlint at implementation. Falsifying check: actionlint error on the edited file ⇒ fail.
+
+## Test plan (captain directive 2026-09-11: "no tests for test infra bs")
+
+No unit tests of CI YAML. Proof is two-layered:
+
+1. **Deterministic, zero-cost:** actionlint (or equivalent workflow parse) over the edited `.github/workflows/runtime-live-e2e.yml`. Distinct falsifying edit: introduce a YAML/expression syntax error → validation fails.
+2. **Live, one-off manual validation (the dogfood, on 6v's own PR):** (a) confirm no pi-live check run before labeling (AC-2); (b) add a scratch non-pi label, confirm claude-live/codex-live do not re-run (AC-4); (c) add `live:pi`, approve `CI-E2E-PI`, confirm the pi-live check run appears on the PR and runs the real journeys (AC-1). Estimated cost: one real pi-live run (~the existing manual cadence cost); the deterministic step is trivial.
+
+## Expected surface
+
+- `.github/workflows/runtime-live-e2e.yml` — net +5 (≈ +9 insertions / −4 deletions), tolerance net ±10, 1 file.
+- `docs/runtime-live-ci.md` — net +1 (≈ +3 / −2), 1 file (user-visible CI-lane doc; the only doc that describes the lanes).
+
+Observable semantics declared: CI runtime behavior only — when pi-live runs (label-gated PR events; manual dispatch unchanged) and what gates it (`live:pi` label + `CI-E2E-PI` required-reviewer approval). No command grammar, stored-format, or authority changes.
+
+### Doc diff (docs/runtime-live-ci.md, "Workflow:" section, line-171 bullet tail)
+
+- Before: "…Pull requests still run only Sonnet and Codex; Pi is optional and is not a merge requirement."
+- After: "…Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment to attach a Pi live check to the PR. Pi is not a merge requirement."
+
+## Spike
+
+No spike needed: the design relies on already-proven mechanisms — GitHub's `pull_request` `labeled` trigger type and the `contains(github.event.pull_request.labels.*.name, …)` expression are documented Actions behavior, and environment-gated live jobs on pull_request events are the existing claude/codex pattern in this same workflow. The one behavior the dogfood must observe (AC-4's labeled-event spillover guard) is covered by the static inspection in the same pass plus the behavioral observation on the dogfood PR.
+
+## Stage Report: ideation
+
+- DONE: Fleshed-out body with the MINIMAL concrete workflow diff (labeled+synchronize trigger types, label-gated pi-live if-condition, CI-E2E-PI wiring verification)
+  Body now carries three concrete before/after YAML edits to `.github/workflows/runtime-live-e2e.yml`; CI-E2E-PI is already declared on pi-live (workflow line 586), so wiring = repo-settings verification, not new YAML.
+- DONE: Labeled-event spillover guard identified and folded into the minimal diff
+  Adding `labeled` makes `github.event_name == 'pull_request'` true on label events; claude-live (l.88), codex-live (l.317), journey-delta-comment (l.842) each gain `&& github.event.action != 'labeled'`, offline stays unconditional (pi-live's `needs` gate). Not a new mechanism — preserves today's semantics under the widened trigger; without it a `bug` label re-runs both paid lanes.
+- DONE: Entity-level ACs, each naming proof owner and falsifying check
+  AC-1 value AC measured against today's baseline (zero PR-associated pi-live check runs ever) with proof = the lane's first REAL dogfood run on 6v's own PR; AC-2 unlabeled-PR opt-in; AC-3 manual dispatch unchanged; AC-4 non-pi-label no-re-run; AC-5 actionlint validity.
+- DONE: No unit tests of CI YAML per captain directive 2026-09-11
+  Test plan is two-layered: deterministic actionlint validation + one-off live dogfood run (unlabeled → scratch label → live:pi + approval) on the dogfood PR.
+- DONE: Expected surface and observable semantics declared
+  1 workflow file net +5 (≈+9/−4, tolerance ±10) + docs/runtime-live-ci.md net +1 (the only user-visible doc describing the lanes, with concrete before/after wording); semantics = CI runtime behavior only (when pi-live runs and what gates it).
+- DONE: Mechanisms beyond the label gate rejected in the body
+  pr_number inputs, out-of-band commit statuses, scheduled lanes all stay rejected; spike section records "no spike needed" with the proven mechanisms relied on (documented Actions labeled trigger + contains() expression; existing claude/codex PR+environment pattern in the same workflow).
+
+### Summary
+
+Fleshed out the 6v entity body into a gated ideation design: a three-edit diff to runtime-live-e2e.yml that makes pi-live an opt-in PR check via a `live:pi` label plus the existing CI-E2E-PI required-reviewer environment, with a necessary spillover guard on the other PR-gated jobs (the only addition beyond the seed's named edits, justified as semantics-preservation of the trigger widening, not a new mechanism). Proof stays lean per the captain directive: actionlint + the lane's first real dogfood run on 6v's own PR; AC-1 measures against today's zero-baseline. No code was changed — ideation output is the body itself, committed path-scoped to the state checkout.
