@@ -33,6 +33,10 @@ gates:
                 id: briefing:6v7sdg4pfzwcfnjstt80pvqj:ideation:attempt-1:revision-1
                 digest: sha256:6eb6ed68eb0dd6b146d0d3dce21e01fb84465cd89621583b850a28fc355d6374
                 room-ref: '@review/ideation/briefing-1'
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-09-11T06:11:08.934571Z"
+                reason: 'Artifact normalized after prepare under captain direct-edit grant (''fix it'', 2026-09-11): AC heading renamed to the scanner-exact ''## Acceptance criteria''; the bound briefing digest would be stale at record time'
 started: 2026-09-11T06:01:40Z
 ---
 ## Problem
