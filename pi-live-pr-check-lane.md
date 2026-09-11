@@ -1,6 +1,6 @@
 ---
 title: "Pi live E2E runs as an associated, manually-approved PR check"
-status: implementation
+status: validation
 source: "Captain directive 2026-09-11 at the s98 validation gate: 'approve the pi ci lane' + 'the pi live is simply skipped and we can't manually trigger that check to be really associated with the PR'."
 id: 6v7sdg4pfzwcfnjstt80pvqj
 gates:
