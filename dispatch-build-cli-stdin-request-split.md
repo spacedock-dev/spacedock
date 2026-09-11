@@ -72,6 +72,14 @@ gates:
                 id: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-1:revision-1
                 digest: sha256:546174f116f05e7785399a05614381173ada0877ee40733b8928a9db3121c5c9
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:09ptxgq8zma6qnx0h1w8a6wp:validation:1
+                briefing: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-11T00:30:13.874529Z"
+                decision: revise
+                reason: 'Captain expands this task: permit FO-authored scope instructions appended directly to the helper pointer sent to the ensign; unchanged prompt forwarding is not a requirement. Preserve the pointer optimization and checklist verification. Remove mandatory scope-notes scratch-file usage for ordinary dispatch, retain existing optional file compatibility and feedback transport, update contracts and exercise actual appended-instruction behavior. Re-review the combined implementation before delivery.'
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This cycle supersedes the cycle-1 design; implementation remains gated.
