@@ -1,6 +1,6 @@
 ---
 title: "Single-owner FO contract bootstrap on Pi: extension-owned injection, version self-check, resolvable skill trigger"
-status: backlog
+status: ideation
 source: "Root-cause follow-up to the 2026-09-10 stale-skill incident in the email-triage-282 FO session: the FO fell back to a stale ~/git/spacedock checkout (release/0.12.1, v0.12.1-3-g8396a6de) after BOTH contract pointers failed to resolve from a workflow cwd ($spacedock:first-officer is not pi-expandable; skills/first-officer/SKILL.md is relative and ENOENT outside the package root). Findings in /tmp/spacedock-fo-stale-skill-findings.md, validated 2026-09-11 with corrections: absence of the bootstrap message in a session log is NOT evidence (context-hook injection is request-time-only, never persisted), and no dev override was in play on that launch. Captain consolidated the derived fixes into one entity."
 sprint:
 id: s98gb2f779fbz41gn54ja9c3
@@ -25,7 +25,7 @@ gates:
                 reason: 'Captain approved in chat 2026-09-11: seed outcome clear, scope bounded, proof named'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Pi sessions receive the FO contract through two channels with unclear ownership, and neither is reliable today. The frontdoor launch prompt (`Use $spacedock:first-officer for this whole Pi session.`, `internal/cli/pi.go:20`) is inert syntax pi cannot expand (`agent-session.js:_expandSkillCommand` only expands `/skill:`), and the extension's session-start contract bootstrap (`FO_BOOTSTRAP_TEXT`, `.pi/extensions/spacedock.ts`) names the skill with the same unexpandable reference plus a relative path that is ENOENT from any workflow cwd. The failure is not delivery — it is resolution: even with both injections landing, an FO outside the package root ends up hunting the filesystem, and a stale visible checkout wins. Nothing in either contract verifies the loaded skill's version against the binary.
