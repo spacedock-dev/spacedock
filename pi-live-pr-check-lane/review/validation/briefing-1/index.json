@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6v7sdg4pfzwcfnjstt80pvqj:validation:attempt-1:revision-1",
+  "question": "Does the delivered change satisfy every acceptance criterion with evidence — ready to merge, with the live dogfood observation deferred to the delivery PR?",
+  "artifacts": [
+    {
+      "id": "artifact:6v7sdg4pfzwcfnjstt80pvqj:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1f02bdafe3ce3f075be39cbc5195b2d33c94f668/pi-live-pr-check-lane.md",
+      "rev": "sha256:83760814014acf393cdb66c443be9727267e5098d71d212132175a0caf28dfb4",
+      "mediaType": "text/markdown",
+      "summary": "Validation verdict PASSED (worker 887c9d8d, commit 1f02bdafe). Fresh re-runs: actionlint 1.7.12 → 0 errors; byte-exact verification of all four edited conditions against the pre-image and the ideation-approved wording (trigger types, pi-live if with byte-identical manual disjunct, parenthesized spillover guards on claude-live/codex-live/journey-delta-comment, offline unconditional); live repo-settings re-verification of CI-E2E-PI (required reviewer clkao + CODEX_AUTH_JSON secret); verbatim doc-line check; surface adjudicated +6/-5 across 2 files vs declared, within tolerance; no tests added per captain directive; adversarial audit of every pull_request-keyed expression (no dispatch regression, unlabeled PR opt-in holds, non-pi label runs only the secret-free offline gate). AC-1/AC-2/AC-4 live dogfood adjudicated: static + actionlint evidence suffices to gate — every mechanism is already proven in production by the claude/codex lanes in the same workflow; a scratch PR would spend a real pi-live run to falsify nothing the delivery PR's first run doesn't observe identically. Delivery-gate condition recorded: on 6v's delivery PR, (a) no pi-live check run before labeling, (b) non-pi scratch label re-runs no paid lane, (c) live:pi + CI-E2E-PI approval produces the PR-associated pi-live run. Deferred risk: the live observation is not yet observed."
+    }
+  ]
+}

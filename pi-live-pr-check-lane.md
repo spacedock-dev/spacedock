@@ -53,6 +53,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:6v7sdg4pfzwcfnjstt80pvqj:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:6v7sdg4pfzwcfnjstt80pvqj-validation-1
+              briefing:
+                id: briefing:6v7sdg4pfzwcfnjstt80pvqj:validation:attempt-1:revision-1
+                digest: sha256:1e716aade94ef8ffe345a1143763a2aead56ceedccae45f9db430b66c8041593
+                room-ref: '@review/validation/briefing-1'
 started: 2026-09-11T06:01:40Z
 worktree: .worktrees/spacedock-ensign-pi-live-pr-check-lane
 ---
