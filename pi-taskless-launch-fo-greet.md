@@ -65,6 +65,8 @@ gates:
                 state: pending
 started: 2026-09-11T15:48:32Z
 worktree: .worktrees/spacedock-ensign-pi-taskless-launch-fo-greet
+mod-block: merge:pr-merge
+pr: "#787"
 ---
 Problem: a fresh `spacedock pi` launch with no operator task sits silent — the FO never presents the boot summary or workflow stats until the operator types something (and a weak model may never self-boot even then; glm-5.3-flash misreported its own context twice today). The pre-s98 launch greeted at startup; s98's correct argv fix removed the trigger without replacing it.
 
