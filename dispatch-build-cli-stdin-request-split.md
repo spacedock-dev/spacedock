@@ -388,3 +388,21 @@ Materiality: Material required-verification failure. Ownership: task-owned, intr
 ### Summary
 
 Corrected the task-owned CI placement defect at `09f123d33` and preserved the negative proof unchanged. The candidate is ready for review and authorized CI publication by the FO; no push or gate approval was performed here.
+
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Review the bounded CI correction at `09f123d33` without changing candidate code.
+  The two-file delta moves the constant, literal-output assertion and negative control unchanged from live-tagged `shared_promoted_live_test.go` into existing offline `shared_scenarios_negative_test.go`, adding its `fmt` import. The live journey calls the same assertion; no registry entry, file or harness was added. Candidate clean; diff check passes.
+- DONE: Review actual red-to-green reconciliation evidence and preserve prior verification.
+  `/tmp/dispatch-amendment-registry-before.log` reproduces exit 1 at `live_registry_reconciliation_test.go:222`: the deterministic control was an unregistered live-tagged test. Post-fix reconciliation passes in 0.326s, offline control in 0.252s and live-tag compilation/control in 0.268s (`/tmp/dispatch-registry-fix-{reconciliation,offline,live-compile}.log`). This was a task-owned CI failure missed by the amendment's focused offline selection; no whole-offline-suite pass is claimed.
+- DONE: Assess whether the control is necessary or prohibited prose-grep.
+  It reads no instruction file: supplied missing and shell-expanded worker-output strings exercise a pure grader. The existing offline negative-control convention fits this distinct failure mode: a weakened grader still passes a successful live run with correct output, but the negative control rejects it, as cycle-2 detached mutation demonstrated. It is justified as grader protection, not independent evidence of delivery, report placement or exact spawn arguments.
+- SKIPPED: Repeat deterministic checks, detached mutation, broad suites or live journey.
+  Direct diff establishes unchanged assertion/control semantics, and existing recorded checks cover placement and both build tags. Prior AC-1/AC-2/AC-3 evidence and mutation remain applicable. Baseline/resource limitations, public spawn-payload visibility and required host live CI before merge remain unchanged.
+- DONE: Commit this validation addendum and recommend whether the existing PR may be updated.
+  Recommendation: PASSED for this correction; safe for FO to update existing PR #784 with `09f123d33` and obtain fresh CI. Combined surface is 46 files/net -551, within approved tolerance. No new finding, code edit, push, provider operation or merge authorization; the authorized task-owned registry defect is locally resolved, not yet proven green in refreshed PR CI.
+
+### Summary
+
+The correction places an unchanged deterministic grader control in its existing offline owner and resolves the reproduced registry failure. Recommend updating the existing PR for CI; this review does not claim whole-suite or host-live success.
