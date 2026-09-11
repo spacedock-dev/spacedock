@@ -3,6 +3,17 @@ title: "A taskless spacedock pi launch never boots the FO: no first request, sil
 status: backlog
 source: "Captain observation 2026-09-11 in the wrapped dev-override TUI session: silence at startup was the evidence the FO never booted; manual /first-officer produced the greeting and workflow stats. Diagnosis trail: post-s98 the frontdoor no longer appends any launch task (AC-3 removed the inert $spacedock:first-officer sentence), so a taskless launch sends no first model request; the extension bootstrap (session_start-armed, context-hook injected) is request-time-only and once-per-turn (agent_end disarms), so it never fires. Pre-s98 behavior greeted at startup because the always-appended prompt forced a first request and the old ungated extension injected."
 id: n315frdw60950kjde4cx017q
+gates:
+    version: 1
+    records:
+        - id: gate:n315frdw60950kjde4cx017q:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:n315frdw60950kjde4cx017q-backlog-1
+              briefing:
+                id: briefing:n315frdw60950kjde4cx017q:backlog:attempt-1:revision-1
+                digest: sha256:0bde44c6681bd0f95ed27aa526533c8a4ad99776979c01b4888ed8dae11d7d39
+                room-ref: '@review/backlog/briefing-1'
 ---
 Problem: a fresh `spacedock pi` launch with no operator task sits silent — the FO never presents the boot summary or workflow stats until the operator types something (and a weak model may never self-boot even then; glm-5.3-flash misreported its own context twice today). The pre-s98 launch greeted at startup; s98's correct argv fix removed the trigger without replacing it.
 
