@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s98gb2f779fbz41gn54ja9c3:backlog:attempt-1:revision-1",
+  "question": "Should this seed enter ideation: is the outcome clear, the scope bounded, and the proof named for deciding design start?",
+  "artifacts": [
+    {
+      "id": "artifact:s98gb2f779fbz41gn54ja9c3:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/f25ee51206ca97f5f956cf2bec8ef2fca5b41f47/pi-contract-bootstrap-single-owner.md",
+      "rev": "sha256:b7462e86a0919e1a30b65b196159da3e6cdf96e88ec8ee1af61f108426729c0e",
+      "mediaType": "text/markdown",
+      "summary": "Consolidated Pi contract-bootstrap fix from the 2026-09-10 stale-skill incident root cause: (1) extension-owned bootstrap, gated on a frontdoor launch marker, worded pi-resolvably (/skill:first-officer, no relative path, no commission vocabulary); (2) frontdoor launch-time extension health check replacing the inert $spacedock:first-officer prompt sentence; (3) FO contract version self-check at startup vs the binary's contract N; (4) folded runtime-mechanics docs (two-channel design, request-time-only injection, compaction boot-record contract, duplicate-registration hazard). Out of scope: dev-override version guard, safehouse grant hygiene, gate-record exit-0 quirk. Six external ACs sketched."
+    }
+  ]
+}
