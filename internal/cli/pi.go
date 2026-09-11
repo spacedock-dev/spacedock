@@ -24,6 +24,17 @@ import (
 // tells users to set that session-scoped). The wrap forwards it via --env-pass.
 const piLaunchMarkerEnv = "PI_SPACEDOCK_LAUNCH"
 
+// piLaunchTasklessEnv marks a TASKLESS frontdoor launch: no operator task argv
+// and no resume passthrough — the only launch shape where nothing else
+// triggers a first model request, so the extension delivers the FO bootstrap
+// as a real first-turn user message via sendUserMessage (which boots the
+// greet and persists it in the transcript). Env-only, like the launch marker:
+// never argv text, never a returned launch string (AC-3). The value is set
+// deterministically — "1" on a taskless launch, "0" otherwise — so an
+// operator shell value cannot flip the gate on a taskful launch, and the
+// wrap forwards the name via --env-pass alongside piLaunchMarkerEnv.
+const piLaunchTasklessEnv = "PI_SPACEDOCK_LAUNCH_TASKLESS"
+
 // piVersionFloor is the declared floor for the load-bearing pi behaviors the
 // FO bootstrap mechanism rests on (context-hook injection; <available_skills>
 // with absolute per-skill locations; /skill: user-input-only expansion).
@@ -366,17 +377,27 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		// launcherBinEnvPassFlags() forwards SPACEDOCK_BIN via --env-pass. The
 		// pi-specific additions are --safehouse-add-dirs <fnmSandboxDir> (the
 		// stable `pi`'s code+deps, see fnmStableSandboxDir) and --env-pass
-		// PI_SPACEDOCK_LAUNCH so the gated injection fires under wrap too.
+		// PI_SPACEDOCK_LAUNCH + PI_SPACEDOCK_LAUNCH_TASKLESS so the gated
+		// extension's markers survive the sandbox boundary.
 		piExtra := append(launcherBinEnvPassFlags(), extra...)
-		piExtra = append(piExtra, "--env-pass", piLaunchMarkerEnv)
+		piExtra = append(piExtra, "--env-pass", piLaunchMarkerEnv, "--env-pass", piLaunchTasklessEnv)
 		if fnmSandboxDir != "" {
 			piExtra = append(piExtra, "--add-dirs="+fnmSandboxDir)
 		}
 		argv = safehouse.Wrap(argv, piExtra)
 	}
-	// PI_SPACEDOCK_LAUNCH=1 on EVERY launch shape: the extension's injection
+	// PI_SPACEDOCK_LAUNCH=1 on EVERY launch shape: the extension's bootstrap
 	// gate. A plain `pi` session carries no marker and receives no bootstrap.
-	launchEnvList := append(launchEnv(os.Environ()), piLaunchMarkerEnv+"=1")
+	// PI_SPACEDOCK_LAUNCH_TASKLESS is 1 only when this launch is taskless (no
+	// operator task argv, no resume passthrough) — the sole trigger for the
+	// extension's first-turn greet send. The value is deterministic ("0" when
+	// taskful/resume); os/exec keeps the LAST entry per key, so this append
+	// also overrides any operator shell value.
+	tasklessValue := "0"
+	if !containsResume(fd.passthrough) && !fd.hasTask {
+		tasklessValue = "1"
+	}
+	launchEnvList := append(launchEnv(os.Environ()), piLaunchMarkerEnv+"=1", piLaunchTasklessEnv+"="+tasklessValue)
 	code, err := ops.Launch(argv, launchEnvList)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)

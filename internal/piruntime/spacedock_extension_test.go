@@ -38,12 +38,14 @@ import * as fs from 'node:fs';
 
 const handlers = new Map();
 const execCalls = [];
+const sent = [];
 const pi = {
   on(event, handler) { handlers.set(event, handler); },
   exec(command, args, options) {
     execCalls.push({ command, args, options });
     return Promise.resolve({ stdout: '{"command":"boot","mods":{},"ready_gates":[],"state_backend":"single-root"}', stderr: '', code: 0, killed: false });
-  }
+  },
+  sendUserMessage(content) { sent.push(content); }
 };
 register(pi);
 
@@ -60,6 +62,7 @@ const assert = (condition, message) => { if (!condition) throw new Error(message
 // here so an inherited (or absent) marker on the host shell cannot flip the
 // gate.
 assert(process.env.PI_SPACEDOCK_LAUNCH === '1', 'harness must run under the frontdoor launch marker');
+assert(process.env.PI_SPACEDOCK_LAUNCH_TASKLESS === '1', 'harness must run under the taskless launch marker');
 
 // The real pi contract loads this extension from the registered package root,
 // where package.json declares pi.skills: ["./skills"]. The module is staged
@@ -72,14 +75,17 @@ fs.writeFileSync(manifestPath, JSON.stringify({ pi: { skills: ['./skills'] } }))
 resources = handlers.get('resources_discover')({ type: 'resources_discover', cwd: process.cwd(), reason: 'test' });
 assert(resources.skillPaths.length === 0, 'resources_discover skips the skills dir the package manifest already declares');
 
-// --- session_start path (AC-3: unchanged) ---
-handlers.get('session_start')({ type: 'session_start' });
-let first = await handlers.get('context')({ messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }] });
-assert(countBootstraps(first.messages) === 1, 'session_start injects exactly one structural bootstrap');
-assert(textOf(first.messages[0]).includes('[SPACEDOCK-FO-BOOTSTRAP-v1]'), 'bootstrap carries the FO bootstrap marker');
-assert(textOf(first.messages[0]).includes('<available_skills>'), 'bootstrap points at the resolvable <available_skills> trigger');
-assert(!textOf(first.messages[0]).includes('$spacedock:'), 'bootstrap uses no unexpandable $spacedock: syntax');
-assert(textOf(first.messages[0]).includes('Pi tool mapping: read/write/edit/bash/grep/find/ls'), 'bootstrap includes the Pi tool mapping');
+// --- session_start path: SINGLE delivery path — a REAL first-turn user
+// message via sendUserMessage (AC-1/AC-6); NO context-hook bootstrap arm ---
+handlers.get('session_start')({ type: 'session_start', reason: 'startup' });
+assert(sent.length === 1, 'taskless session_start sends exactly one user message via sendUserMessage');
+const bootstrapText = String(sent[0] ?? '');
+assert(bootstrapText.includes('[SPACEDOCK-FO-BOOTSTRAP-v1]'), 'bootstrap carries the FO bootstrap marker');
+assert(bootstrapText.includes('<available_skills>'), 'bootstrap points at the resolvable <available_skills> trigger');
+assert(!bootstrapText.includes('$spacedock:'), 'bootstrap uses no unexpandable $spacedock: syntax');
+assert(bootstrapText.includes('Pi tool mapping: read/write/edit/bash/grep/find/ls'), 'bootstrap includes the Pi tool mapping');
+const first = await handlers.get('context')({ messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }] });
+assert(first === undefined, 'NO context-hook bootstrap arm remains: the context hook injects nothing on the first request');
 
 // --- session_compact path (AC-1 value-measuring, AC-2 mechanism) ---
 handlers.get('agent_end')({ type: 'agent_end' }); // clear flags between paths
@@ -109,6 +115,12 @@ assert(deduped === undefined, 'existing boot record de-duplicates context inject
 handlers.get('agent_end')({ type: 'agent_end' });
 let suppressed = await handlers.get('context')({ messages: [{ role: 'user', content: [{ type: 'text', text: 'new turn' }] }] });
 assert(suppressed === undefined, 'agent_end suppresses further injection');
+
+// --- send-failure path (AC-5): a throwing send is caught — no crash, no
+// bootstrap, no fallback arm (single delivery path) ---
+pi.sendUserMessage = () => { throw new Error('send unavailable'); };
+handlers.get('session_start')({ type: 'session_start', reason: 'startup' });
+assert(sent.length === 1, 'a throwing send adds no bootstrap message');
 `
 	if err := os.WriteFile(harnessPath, []byte(harness), 0o644); err != nil {
 		t.Fatalf("write harness: %v", err)
@@ -121,7 +133,7 @@ assert(suppressed === undefined, 'agent_end suppresses further injection');
 	// flip the exemption inside the harness process. The frontdoor launch
 	// marker is pinned ON: the real pi contract runs this extension under a
 	// frontdoor launch, and the injection gate reads it at handler time.
-	cmd.Env = harnessEnv(map[string]string{"PI_SPACEDOCK_LAUNCH": "1"}, "PI_SUBAGENT_CHILD")
+	cmd.Env = harnessEnv(map[string]string{"PI_SPACEDOCK_LAUNCH": "1", "PI_SPACEDOCK_LAUNCH_TASKLESS": "1"}, "PI_SUBAGENT_CHILD")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("extension behavior harness failed: %v\n%s", err, out)
@@ -149,9 +161,11 @@ func TestSpacedockPiExtensionChildExemption(t *testing.T) {
 import register from './.pi/extensions/spacedock-extension.mjs';
 
 const handlers = new Map();
+const sent = [];
 const pi = {
   on(event, handler) { handlers.set(event, handler); },
-  exec() { return Promise.resolve({ stdout: '', stderr: '', code: 0, killed: false }); }
+  exec() { return Promise.resolve({ stdout: '', stderr: '', code: 0, killed: false }); },
+  sendUserMessage(content) { sent.push(content); }
 };
 register(pi);
 
@@ -162,9 +176,10 @@ assert(process.env.PI_SPACEDOCK_LAUNCH === '1', 'child harness must pin the fron
 const resources = handlers.get('resources_discover')({ type: 'resources_discover', cwd: process.cwd(), reason: 'test' });
 assert(resources.skillPaths.length === 1 && resources.skillPaths[0].endsWith('/skills'), 'child sessions still discover the package skills directory');
 
-handlers.get('session_start')({ type: 'session_start' });
+handlers.get('session_start')({ type: 'session_start', reason: 'startup' });
 const afterStart = await handlers.get('context')({ messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }] });
 assert(afterStart === undefined, 'PI_SUBAGENT_CHILD=1 session_start injects zero FO bootstrap');
+assert(sent.length === 0, 'PI_SUBAGENT_CHILD=1 session_start sends zero user messages (child exemption dominates the taskless marker)');
 
 handlers.get('session_compact')({ type: 'session_compact' });
 const afterCompact = await handlers.get('context')({ messages: [{ role: 'user', content: [{ type: 'text', text: 'continue' }] }] });
@@ -176,7 +191,7 @@ assert(afterCompact === undefined, 'PI_SUBAGENT_CHILD=1 session_compact injects 
 
 	cmd := exec.Command(node, harnessPath)
 	cmd.Dir = repoRoot
-	cmd.Env = harnessEnv(map[string]string{"PI_SUBAGENT_CHILD": "1", "PI_SPACEDOCK_LAUNCH": "1"})
+	cmd.Env = harnessEnv(map[string]string{"PI_SUBAGENT_CHILD": "1", "PI_SPACEDOCK_LAUNCH": "1", "PI_SPACEDOCK_LAUNCH_TASKLESS": "1"})
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("child-exemption harness failed: %v\n%s", err, out)

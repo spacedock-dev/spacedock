@@ -929,7 +929,7 @@ func TestPiFrontDoorWrapsWhenKnobPresent(t *testing.T) {
 	// --env-pass PI_SPACEDOCK_LAUNCH so the gated extension's marker survives
 	// the sandbox boundary too.
 	wantExtra = append(launcherBinEnvPassFlags(), wantExtra...)
-	wantExtra = append(wantExtra, "--env-pass", piLaunchMarkerEnv)
+	wantExtra = append(wantExtra, "--env-pass", piLaunchMarkerEnv, "--env-pass", piLaunchTasklessEnv)
 	if !equalArgv(piSafehouseExtra(ops.launched), wantExtra) {
 		t.Fatalf("extra = %v, want TranslateFlags output prefixed by launcherBinEnvPassFlags %v\nargv=%v", piSafehouseExtra(ops.launched), wantExtra, ops.launched)
 	}
@@ -991,7 +991,7 @@ func TestPiFrontDoorWrapsWhenSafehouseProfileAlone(t *testing.T) {
 	if len(ops.launched) == 0 || ops.launched[0] != "safehouse" {
 		t.Fatalf("expected safehouse-wrapped argv for .safehouse profile alone, got %v", ops.launched)
 	}
-	wantProfileAlone := append(launcherBinEnvPassFlags(), "--env-pass", piLaunchMarkerEnv)
+	wantProfileAlone := append(launcherBinEnvPassFlags(), "--env-pass", piLaunchMarkerEnv, "--env-pass", piLaunchTasklessEnv)
 	if !equalArgv(piSafehouseExtra(ops.launched), wantProfileAlone) {
 		t.Fatalf("extra should be launcherBinEnvPassFlags + the pi launch marker env-pass for profile-alone wrap, got %v", piSafehouseExtra(ops.launched))
 	}
@@ -1244,6 +1244,139 @@ func hasLaunchMarkerEnv(env []string) bool {
 		}
 	}
 	return false
+}
+
+// envHasKV reports whether env carries the exact KEY=VALUE entry.
+func envHasKV(env []string, kv string) bool {
+	for _, e := range env {
+		if e == kv {
+			return true
+		}
+	}
+	return false
+}
+
+// TestRunPi_SetsTasklessMarkerIffNoTaskOrResume pins the taskless-greet env
+// gate: PI_SPACEDOCK_LAUNCH_TASKLESS=1 EXACTLY when the launch carries no
+// operator task and no resume passthrough (the only shape where nothing else
+// triggers a first model request), and "0" otherwise — the deterministic "0"
+// also overrides any operator shell value (os/exec keeps the last entry per
+// key). Falsifying edits: gating on hasTask alone (resume case fails),
+// dropping the append (taskless case fails), or removing the "0" arm (the
+// taskful/resume cases fail).
+func TestRunPi_SetsTasklessMarkerIffNoTaskOrResume(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+		wrap bool
+		want string
+	}{
+		{"taskless_installed", []string{"--", "--version"}, false, "1"},
+		{"taskless_dev_override", []string{"--plugin-dir", "REPO", "--", "--version"}, false, "1"},
+		{"taskful", []string{"review this", "--plugin-dir", "REPO"}, false, "0"},
+		{"resume_passthrough", []string{"--plugin-dir", "REPO", "--", "--resume"}, false, "0"},
+		{"taskless_wrap", []string{"--plugin-dir", "REPO"}, true, "1"},
+		{"taskful_wrap", []string{"review this", "--plugin-dir", "REPO"}, true, "0"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := t.TempDir()
+			writePiSkillFixtures(t, repo)
+			writeFileWithDirs(t, filepath.Join(repo, ".pi", "extensions", "spacedock.ts"), "export default function(){}\n")
+			pkg := t.TempDir()
+			writePiSubagentsFixtures(t, pkg)
+			var ops *fakePiRuntimeOps
+			var dir string
+			if tc.wrap {
+				ops = piSafehouseReadyOps(repo, pkg)
+				dir = safehouseFixtureDir(t)
+			} else {
+				ops = &fakePiRuntimeOps{
+					lookPath:      piHealthyPathFixtures(),
+					statOK:        statOKForPiResources(repo, pkg),
+					packageStatus: healthyPiPackageStatus(),
+				}
+				dir = t.TempDir()
+			}
+			var stdout, stderr bytes.Buffer
+			args := make([]string, 0, len(tc.args))
+			for _, a := range tc.args {
+				if a == "REPO" {
+					args = append(args, repo)
+					continue
+				}
+				args = append(args, a)
+			}
+			code := runPi(context.Background(), args, dir, piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+			}
+			if !envHasKV(ops.launchedEnv, piLaunchTasklessEnv+"="+tc.want) {
+				t.Fatalf("%s: launched env missing %s=%s: %v", tc.name, piLaunchTasklessEnv, tc.want, ops.launchedEnv)
+			}
+		})
+	}
+}
+
+// TestPiFrontDoorTasklessArgvCarriesNoGreetText pins AC-3's taskless arm: the
+// taskless marker is env-only — the greet/bootstrap text NEVER appears in the
+// launch argv, and a taskless launch appends no task positional (argv shape
+// unchanged vs pre-taskless-launch), while a taskful launch keeps the bare
+// operator task as the last argv token. Falsifying edit: any frontdoor-owned
+// greet text appended to argv (either arm fails).
+func TestPiFrontDoorTasklessArgvCarriesNoGreetText(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		taskful bool
+	}{
+		{"taskless", false},
+		{"taskful", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := t.TempDir()
+			writePiSkillFixtures(t, repo)
+			writeFileWithDirs(t, filepath.Join(repo, ".pi", "extensions", "spacedock.ts"), "export default function(){}\n")
+			pkg := t.TempDir()
+			writePiSubagentsFixtures(t, pkg)
+			ops := &fakePiRuntimeOps{
+				lookPath:      piHealthyPathFixtures(),
+				statOK:        statOKForPiResources(repo, pkg),
+				packageStatus: healthyPiPackageStatus(),
+			}
+			var stdout, stderr bytes.Buffer
+			args := []string{"--plugin-dir", repo}
+			if tc.taskful {
+				args = append(args, "review this")
+			}
+			code := runPi(context.Background(), args, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+			}
+			joined := strings.Join(ops.launched, " ")
+			for _, banned := range []string{"SPACEDOCK-FO-BOOTSTRAP", "EXTREMELY_IMPORTANT", "greet"} {
+				if strings.Contains(joined, banned) {
+					t.Fatalf("%s: launch argv carries greet/bootstrap text %q: %v", tc.name, banned, ops.launched)
+				}
+			}
+			if tc.taskful {
+				if last := ops.launched[len(ops.launched)-1]; last != "review this" {
+					t.Fatalf("taskful launch must keep the bare operator task as the last argv token, got %q (argv=%v)", last, ops.launched)
+				}
+				if !envHasKV(ops.launchedEnv, piLaunchTasklessEnv+"=0") {
+					t.Fatalf("taskful launch env must carry %s=0: %v", piLaunchTasklessEnv, ops.launchedEnv)
+				}
+			} else {
+				// Taskless: no task positional appended — the argv still ends
+				// with the dev-override skill flag, exactly as before.
+				if last := ops.launched[len(ops.launched)-1]; last != filepath.Join(repo, "skills") {
+					t.Fatalf("taskless launch must append no task positional, argv ends %q (argv=%v)", last, ops.launched)
+				}
+				if !envHasKV(ops.launchedEnv, piLaunchTasklessEnv+"=1") {
+					t.Fatalf("taskless launch env must carry %s=1: %v", piLaunchTasklessEnv, ops.launchedEnv)
+				}
+			}
+		})
+	}
 }
 
 // TestRunPi_SetsLaunchMarkerEnvOnEveryLaunchShape pins AC-3's dev-override arm:

@@ -11,13 +11,20 @@
 // from the package's own `skills/` directory — resolved relative to this
 // extension's location, exactly like the obra/superpowers reference.
 //
-// It also installs the FO contract in the parent session through
-// Pi's context hook. The launcher keeps only its argv-only duties (pass the
+// It also delivers the FO contract in the parent session as a REAL first-turn
+// user message via pi.sendUserMessage() — but ONLY on a taskless frontdoor
+// launch (PI_SPACEDOCK_LAUNCH_TASKLESS=1, which the launcher sets exactly when
+// no operator task argv and no resume passthrough is present: the only launch
+// shape where nothing else triggers a first model request). The send both
+// triggers the first turn and persists the bootstrap in the session transcript.
+// A taskful launch or a resume already has its first request / history, so the
+// extension sends nothing there; a plain `pi` session for unrelated work
+// receives no bootstrap (single-owner gate, PI_SPACEDOCK_LAUNCH-gated). The
+// delivery is send-only: if the send throws, the launch continues WITHOUT a
+// bootstrap (caught, named diagnostic) — there is no context-hook bootstrap
+// fallback arm. The launcher keeps only its argv-only duties (pass the
 // operator task, suppress the launch prompt on resume); this extension owns
-// the durable contract bootstrap because context hooks can re-inject after
-// compaction while launch argv prompts cannot, and the injection is gated on
-// the PI_SPACEDOCK_LAUNCH=1 marker `spacedock pi` sets on every launch — a
-// plain `pi` session for unrelated work receives no bootstrap.
+// the durable contract bootstrap.
 //
 // Compaction boundary: PR #738 (force-boot-at-compaction-boundary) established
 // that at compaction the FO re-reads durable state (one «state.boot»()), NOT
@@ -62,6 +69,15 @@ function isFrontdoorLaunch() {
 	return process.env.PI_SPACEDOCK_LAUNCH === "1";
 }
 
+// isTasklessLaunch: the PI_SPACEDOCK_LAUNCH_TASKLESS=1 marker the frontdoor
+// sets ONLY when the launch carries no operator task argv and no resume
+// passthrough. Env-only — the frontdoor never appends launch text (AC-3), and
+// at session_start the argv prompt is not yet in the session, so the extension
+// cannot distinguish taskless from taskful by content alone.
+function isTasklessLaunch() {
+	return process.env.PI_SPACEDOCK_LAUNCH_TASKLESS === "1";
+}
+
 // manifestDeclaredSkillDirs resolves the package manifest's `pi.skills` entries
 // against repoRoot. Each declared dir is a skill-registration route pi already
 // scans — resources_discover returning the same dir again doubles every skill
@@ -85,12 +101,6 @@ function messageText(message) {
 	return String(message?.content ?? "");
 }
 
-function hasStructuralBootstrap(message) {
-	if (message?.role !== "user") return false;
-	const text = messageText(message);
-	return text.startsWith("<EXTREMELY_IMPORTANT>") && text.includes(FO_BOOTSTRAP_MARKER);
-}
-
 function hasBootRecord(message) {
 	if (message?.role !== "user") return false;
 	return messageText(message).includes(FO_BOOT_RECORD_MARKER);
@@ -102,7 +112,6 @@ function isLeadingCompactionSummary(message) {
 }
 
 export default function registerSpacedockExtension(pi) {
-	let injectBootstrap = false;
 	let injectBootRecord = false;
 
 	pi.on("resources_discover", () => {
@@ -121,17 +130,35 @@ export default function registerSpacedockExtension(pi) {
 		return { skillPaths: [skillsDir] };
 	});
 
-	pi.on("session_start", () => {
-		injectBootstrap = true;
+	// Taskless frontdoor launch → deliver the FO bootstrap as a REAL first-turn
+	// user message. This is the SINGLE delivery path: the send triggers the
+	// first model turn (which a taskless launch otherwise never has) and
+	// persists the bootstrap as a normal transcript message. No context-hook
+	// bootstrap fallback exists — if the send throws, the launch gets no
+	// bootstrap and must not crash (caught, named diagnostic below).
+	// Gated on reason "startup" only: a reload/new/resume/fork of an existing
+	// session already has turns and must not be re-greeted.
+	pi.on("session_start", (event, ctx) => {
+		if (event?.reason !== "startup") return;
+		if (isPiSubagentChild() || !isFrontdoorLaunch() || !isTasklessLaunch()) return;
+		try {
+			pi.sendUserMessage(FO_BOOTSTRAP_TEXT);
+		} catch (err) {
+			const detail = err instanceof Error ? err.message : String(err);
+			const diagnostic = `spacedock: FO bootstrap send failed — launch continues without greet (${detail})`;
+			try {
+				ctx?.ui?.notify?.(diagnostic, "warning");
+			} catch {
+				console.error(diagnostic);
+			}
+		}
 	});
 
 	pi.on("session_compact", () => {
-		injectBootstrap = false;
 		injectBootRecord = true;
 	});
 
 	pi.on("agent_end", () => {
-		injectBootstrap = false;
 		injectBootRecord = false;
 	});
 
@@ -178,29 +205,11 @@ export default function registerSpacedockExtension(pi) {
 			};
 		}
 
-		if (injectBootstrap) {
-			if (event.messages.some(hasStructuralBootstrap)) return;
-
-			const bootstrapMessage = {
-				role: "user",
-				content: [{ type: "text", text: FO_BOOTSTRAP_TEXT }],
-				timestamp: Date.now(),
-			};
-
-			let insertAt = 0;
-			while (insertAt < event.messages.length && isLeadingCompactionSummary(event.messages[insertAt])) {
-				insertAt++;
-			}
-
-			return {
-				messages: [
-					...event.messages.slice(0, insertAt),
-					bootstrapMessage,
-					...event.messages.slice(insertAt),
-				],
-			};
-		}
-
+		// (The once-per-turn FO bootstrap injection arm was removed: the
+		// bootstrap now ships as a real first-turn user message on taskless
+		// launches via sendUserMessage — see session_start. Only the compaction
+		// boot record remains request-time-only, by design: it rides requests
+		// and must never persist as a transcript message.)
 		return;
 	});
 }
