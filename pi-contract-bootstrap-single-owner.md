@@ -88,6 +88,10 @@ One ownership transfer, one gate, two safety nets. Ownership: the frontdoor stop
 - **AC-7 (mechanism).** `spacedock doctor --host pi` reports the first-officer skill check line and flags duplicate registration with a remedy naming `pi remove`. Proof: Go unit test on `printPiDoctorReport` with a double-entry `piPackageStatus` fixture. Falsifying edit: remove the warning/report lines → the test fails. Cost: low, deterministic.
 - **AC-8 (mechanism, doc).** The reference doc carries the four documented facts with the concrete wording in this body's doc diffs, and the stale "Skill install and load paths" text is corrected. Proof: the doc diff in this body is the reviewable artifact; implementation applies it (modulo merge drift); checked at the ideation gate and re-checked at implementation review. Counts only paired with AC-1/AC-2/AC-6, which measure the value the docs describe. Falsifying edit: removing any of the four facts → gate review fails.
 
+### Feedback Cycles
+
+- Cycle 1 (2026-09-11, captain-directed revise at ideation gate attempt-2, no reviewer run): fold four additions into approach/ACs/surface/doc diffs — (1) `--plugin-dir` dev-override arm coverage (env + gated-extension assertions plus one live probe against a current checkout; stale checkout stays AC-6 territory); (2) duplicate-extension load under dev override stated deterministically (dedupe mechanism + test, or ready-gate/doctor flag); (3) declared pi-behavior dependency list (context-hook API, `<available_skills>` listing with absolute locations, `/skill:` user-input-only expansion) with a `pi >= 0.83` floor enforced in ready-gate/doctor via `pi --version` at binary level — org moved to `@earendil-works`, old-org installs flagged; (4) one-line note naming `expandPromptTemplates` on `pi.sendUserMessage()` as the known upgrade path for programmatic skill expansion. Correction package assembled (`/tmp/s98-revise-context.md`); dispatch withheld on captain instruction.
+
 ## Expected surface
 
 Net LOC change: **+230 across 6 files** (insertions +281 / deletions −52), tolerance ±60 net lines / ±2 files:
