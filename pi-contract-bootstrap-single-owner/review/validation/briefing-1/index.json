@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s98gb2f779fbz41gn54ja9c3:validation:attempt-1:revision-1",
+  "question": "Does the delivered change satisfy every acceptance criterion with fresh, falsifiable evidence — ready to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:s98gb2f779fbz41gn54ja9c3:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bc5774df011fc312c87ff250c25081a0a1fccf1d/pi-contract-bootstrap-single-owner.md",
+      "rev": "sha256:a2e0fabc8d9efcbbfa72730e30a2a2503b102b08121ab4c996b826abf5cdbeeb",
+      "mediaType": "text/markdown",
+      "summary": "Validation stage gate (attempt 1). Validation verdict PASSED, no Material findings (worker 03ce3021, commit bc5774df0). Every AC re-proven from fresh evidence: bun extension tests 4/4 incl. a falsification spot-check (gate flipped to return true → 2 fail/2 pass, revert restores); full entity Go test set green (argv task-only prompt, marker env incl. dev-override arm, ready-gate extension/first-officer/pi\u003e=0.83 floor with 0.82.9 refuse..1.0.0 pass, route-aware duplicate + dev-override double-extension warnings, doctor report). Live probes re-run fresh under /tmp/s98-val: AC-1 baseline leak reproduced on the installed ungated extension + gated silence; AC-2 \u003cavailable_skills\u003e lists first-officer exactly once with absolute location from a foreign cwd and /skill: expansion works; AC-4 dev-override arm both polarities; AC-6 stale-fixture ABORT naming contract 2 vs 3 + PASS control. Real launches: frontdoor green through the new gate from /tmp cwd, live duplicate warning naming both roots + remedy, live sub-floor refusal (0.73.1 \u003c 0.83.0) with @earendil-works remedy, live doctor report. Full go test ./internal/cli/ triaged: both flagged failures verified pre-existing on pre-entity HEAD (env-dependent or codex-resolver), stay deferred risk with promote conditions. Surface drift +783/8 files vs declared +270/6 adjudicated: past LOC tolerance but composed of the revise-cycle test matrix + contract comments; the one undeclared observable (dev-override without extension now refuses) is AC-5a's own refusal semantics. Deferred risks recorded: the two pre-existing test failures; installed package still ships the ungated extension until the package updates (deployment lag); pi --no-tools lists no skills (no supported launch shape passes it). Polish notes (non-blocking): doctor ceiling wording pre-manifest-skip; doc 'Three facts' lead-in vs five bullets."
+    }
+  ]
+}
