@@ -75,7 +75,7 @@ gates:
 started: 2026-09-11T06:01:40Z
 worktree: .worktrees/spacedock-ensign-pi-live-pr-check-lane
 mod-block: merge:pr-merge
-pr: "#785"
+pr: pr-merge:785
 ---
 ## Problem
 
