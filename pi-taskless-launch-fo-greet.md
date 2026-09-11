@@ -1,6 +1,6 @@
 ---
 title: "A taskless spacedock pi launch never boots the FO: no first request, silent startup"
-status: implementation
+status: validation
 source: "Captain observation 2026-09-11 in the wrapped dev-override TUI session: silence at startup was the evidence the FO never booted; manual /first-officer produced the greeting and workflow stats. Diagnosis trail: post-s98 the frontdoor no longer appends any launch task (AC-3 removed the inert $spacedock:first-officer sentence), so a taskless launch sends no first model request; the extension bootstrap (session_start-armed, context-hook injected) is request-time-only and once-per-turn (agent_end disarms), so it never fires. Pre-s98 behavior greeted at startup because the always-appended prompt forced a first request and the old ungated extension injected."
 id: n315frdw60950kjde4cx017q
 gates:
