@@ -52,6 +52,17 @@ gates:
                 id: briefing:n315frdw60950kjde4cx017q:validation:attempt-1:revision-1
                 digest: sha256:c4fa33766c9106460ac5050096a4ed7a48a029c285c12cc36cb9a485950a682a
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:n315frdw60950kjde4cx017q:validation:1
+                briefing: briefing:n315frdw60950kjde4cx017q:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-11T20:47:45.75831Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-09-11 at the validation gate after live-testing the worktree branch themselves: taskless launch in the triage-282 repo booted and greeted the FO with zero operator input (skill load, binary gate, boot identify observed in-session); PASSED verdict with the two deferred risks and the install-refresh condition accepted'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-09-11T15:48:32Z
 worktree: .worktrees/spacedock-ensign-pi-taskless-launch-fo-greet
 ---
