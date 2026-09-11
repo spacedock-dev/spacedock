@@ -26,6 +26,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-09-11T03:46:14Z
 ---
 
 Pi sessions receive the FO contract through two channels with unclear ownership, and neither is reliable today. The frontdoor launch prompt (`Use $spacedock:first-officer for this whole Pi session.`, `internal/cli/pi.go:20`) is inert syntax pi cannot expand (`agent-session.js:_expandSkillCommand` only expands `/skill:`), and the extension's session-start contract bootstrap (`FO_BOOTSTRAP_TEXT`, `.pi/extensions/spacedock.ts`) names the skill with the same unexpandable reference plus a relative path that is ENOENT from any workflow cwd. The failure is not delivery — it is resolution: even with both injections landing, an FO outside the package root ends up hunting the filesystem, and a stale visible checkout wins. Nothing in either contract verifies the loaded skill's version against the binary.
