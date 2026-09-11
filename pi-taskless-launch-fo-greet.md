@@ -14,6 +14,17 @@ gates:
                 id: briefing:n315frdw60950kjde4cx017q:backlog:attempt-1:revision-1
                 digest: sha256:0bde44c6681bd0f95ed27aa526533c8a4ad99776979c01b4888ed8dae11d7d39
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:n315frdw60950kjde4cx017q:backlog:1
+                briefing: briefing:n315frdw60950kjde4cx017q:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-11T15:48:17.855233Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-09-11 at the seed presentation: fast-track, ideation steered toward mechanism (a) — extension delivers the bootstrap as a real first-turn message via the documented pi.sendUserMessage()/expandPromptTemplates upgrade path; frontdoor stays argv-and-env-only'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 Problem: a fresh `spacedock pi` launch with no operator task sits silent — the FO never presents the boot summary or workflow stats until the operator types something (and a weak model may never self-boot even then; glm-5.3-flash misreported its own context twice today). The pre-s98 launch greeted at startup; s98's correct argv fix removed the trigger without replacing it.
 
