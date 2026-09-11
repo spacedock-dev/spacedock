@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6v7sdg4pfzwcfnjstt80pvqj:backlog:attempt-1:revision-1",
+  "question": "Does this seed belong in the dev workflow with a clear outcome, bounded scope, and a nameable proof — approve to enter ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:6v7sdg4pfzwcfnjstt80pvqj:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a2cb679f9e2c1113af445a704057056d1dd2a036/pi-live-pr-check-lane.md",
+      "rev": "sha256:9a8649747b52b0893be12d45c993342e3500c45894ea90fd7694a967e380c5c0",
+      "mediaType": "text/markdown",
+      "summary": "Captain-commissioned at the s98 validation gate ('approve the pi ci lane'). Seed: pi-live is the only live lane that never runs on pull_request and has no PR-associated manual trigger; deliverable is an opt-in label-gated pi-live PR check reusing the existing claude/codex job pattern (labeled+synchronize triggers, dedicated CI-E2E-PI environment). Alternatives named in the seed. Proof direction: workflow-syntax validation + one live lane run on a scratch PR."
+    }
+  ]
+}
