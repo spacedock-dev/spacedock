@@ -54,6 +54,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-09-11T06:01:40Z
+worktree: .worktrees/spacedock-ensign-pi-live-pr-check-lane
 ---
 ## Problem
 
