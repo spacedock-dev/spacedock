@@ -3,7 +3,7 @@
 // manifest-skip (the intra-package double-registration remedy). Run: bun test
 // ./.pi/extensions/spacedock.test.ts
 import { describe, expect, test } from "bun:test";
-import registerSpacedockExtension from "./spacedock.ts";
+import registerSpacedockExtension from "../.pi/extensions/spacedock.ts";
 
 type Handler = (event?: any) => any;
 
