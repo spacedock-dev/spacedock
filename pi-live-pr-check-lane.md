@@ -74,7 +74,7 @@ Mirrors the existing claude/codex job pattern. Three coordinated edits to `.gith
 
 **Rejected (stays rejected unless a blocker appears):** workflow_dispatch + out-of-band commit-status on the PR head SHA (bypasses the Checks-tab model, needs a `pr_number` input); scheduled nightly pi cadence on main (cheap, but never PR-associated). No `pr_number` inputs, no commit statuses, no scheduled lanes.
 
-## Acceptance criteria (entity-level, with proof owner and falsifying check)
+## Acceptance criteria
 
 - **AC-1 (value, measured against today's baseline of zero):** a PR carrying the `live:pi` label exhibits a PR-associated `pi-live` check run in its Checks tab (head SHA) after `CI-E2E-PI` approval. Proof owner: the lane's first REAL run on 6v's own delivery PR (dogfood), not a synthetic test. Falsifying check: label present + approval granted but no pi-live check run on the PR ⇒ fail.
 - **AC-2:** no PR event runs `pi-live` without the `live:pi` label (the cost opt-in holds). Proof owner: workflow-syntax inspection at the ideation/implementation gate, plus the dogfood PR observed unlabeled before labeling. Falsifying check: pi-live appears on an unlabeled PR ⇒ fail.
