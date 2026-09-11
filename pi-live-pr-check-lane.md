@@ -144,3 +144,28 @@ No spike needed: the design relies on already-proven mechanisms — GitHub's `pu
 ### Summary
 
 Fleshed out the 6v entity body into a gated ideation design: a three-edit diff to runtime-live-e2e.yml that makes pi-live an opt-in PR check via a `live:pi` label plus the existing CI-E2E-PI required-reviewer environment, with a necessary spillover guard on the other PR-gated jobs (the only addition beyond the seed's named edits, justified as semantics-preservation of the trigger widening, not a new mechanism). Proof stays lean per the captain directive: actionlint + the lane's first real dogfood run on 6v's own PR; AC-1 measures against today's zero-baseline. No code was changed — ideation output is the body itself, committed path-scoped to the state checkout.
+
+## Stage Report: implementation
+
+- DONE: Apply edit 1 — widen the pull_request trigger with labeled+synchronize
+  `.github/workflows/runtime-live-e2e.yml:52` now reads `types: [opened, synchronize, reopened, labeled]` under the existing `pull_request: branches: [main]`.
+- DONE: Apply edit 2 — label-gate pi-live onto PR events (manual dispatch leg unchanged)
+  `pi-live` if-condition (line 584) is now `(pull_request && contains(pull_request.labels.*.name, 'live:pi')) || (workflow_dispatch && inputs.live_cadence == 'pi')`; the manual cadence disjunct is byte-identical to before.
+- DONE: Apply edit 3 — spillover guard on claude-live, codex-live, journey-delta-comment
+  claude-live (l.89), codex-live (l.318), journey-delta-comment (l.843) each gained `&& github.event.action != 'labeled'`; offline left unconditional as the gate pi-live `needs`.
+- DONE: Parenthesization detail (flagged, not absorbed): the guard wraps each job's full disjunction in parens
+  Actions `&&` binds tighter than `||`, so the literal "gain `&& …`" reading would guard only the last disjunct (e.g. leave a PR-label event re-running claude-live via the first disjunct). The approved guard semantics required the paren form; no other wording changed.
+- DONE: Verify CI-E2E-PI environment wiring (repo-settings read, no new YAML)
+  `gh api repos/spacedock-dev/spacedock/environments/CI-E2E-PI`: exists with a `required_reviewers` protection rule (reviewer clkao, prevent_self_review false); environment secrets list shows `CODEX_AUTH_JSON`. `environment: name: CI-E2E-PI` remains declared on pi-live (workflow l.587).
+- DONE: Run actionlint over the edited workflow (AC-5)
+  actionlint 1.7.7 on `.github/workflows/runtime-live-e2e.yml`: "Found total 0 errors"; exit 0 (shellcheck/pyflakes rules skipped — binaries not installed; only the two new `if:` expressions and the trigger types changed, no embedded scripts touched).
+- DONE: Apply the doc diff to docs/runtime-live-ci.md exactly as approved
+  Line-171 bullet tail replaced verbatim with the approved after-wording ("Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment …"); net +1 line as declared.
+- DONE: Commit deliverable to the worktree branch
+  Commit 10ffbf7a8 on `spacedock-ensign/pi-live-pr-check-lane` — 2 files, +6/−5 (within the declared surface tolerance); no tests added per the captain directive.
+- SKIPPED: AC-1/AC-2/AC-4 live dogfood observation (scratch label → live:pi → approval on 6v's own PR)
+  Proof owner for those ACs is the delivery PR itself after merge/dispatch; implementation proves AC-2/AC-3/AC-5 statically (label-only pi-live condition; unchanged manual disjunct; actionlint 0 errors) and leaves the live observation to validation/dogfood.
+
+### Summary
+
+Implemented the approved three-edit workflow diff plus the one-line doc diff, committed as 10ffbf7a8 on the worktree branch. CI-E2E-PI verified in repo settings (required reviewer + CODEX_AUTH_JSON secret) so no new YAML or secrets were needed. Only deviation-shaped detail is the guard parenthesization, which is required for the approved semantics and is flagged above rather than absorbed. actionlint passes with 0 errors; live dogfood (AC-1) remains owned by the delivery PR.
