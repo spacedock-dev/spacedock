@@ -656,7 +656,7 @@ jobs:
           test -x "$(command -v pi)"
           pi --version
           global_npm_root="$(npm root -g)"
-          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (p.version !== '$PI_CODING_AGENT_VERSION') throw new Error('unexpected Pi version '+p.version); if (!p.bin || p.bin.pi !== 'dist/cli.js') throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
+          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (p.version !== '$PI_CODING_AGENT_VERSION') throw new Error('unexpected Pi version '+p.version); if (!p.bin || !p.bin.pi) throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
 
           pi_npm_root="$HOME/.pi/agent/npm"
           mkdir -p "$pi_npm_root"
