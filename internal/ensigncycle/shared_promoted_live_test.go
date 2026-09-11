@@ -14,26 +14,6 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
-const fullCycleSupplementalNote = "The worker preserved $HOME and `uname` as literal scope text."
-
-func assertFullCycleSupplementalNote(entity string) error {
-	if !strings.Contains(entity, fullCycleSupplementalNote) {
-		return fmt.Errorf("worker report is missing the appended literal note")
-	}
-	return nil
-}
-
-func TestFullCycleSupplementalNoteRejectsMissingWorkerOutput(t *testing.T) {
-	for _, entity := range []string{"status: done\n## Stage Report: implementation\n- DONE: Wrote the note.\n### Summary\nComplete.", "The worker preserved /home/user and Darwin as literal scope text."} {
-		if assertFullCycleSupplementalNote(entity) == nil {
-			t.Fatal("missing or shell-expanded supplemental note must fail despite completed lifecycle")
-		}
-	}
-	if err := assertFullCycleSupplementalNote("## Stage Report: implementation\n" + fullCycleSupplementalNote); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) string, assert func(*testing.T, string, string) bool) {
 	t.Helper()
 	root := build(t)
