@@ -49,6 +49,7 @@ on:
   # Same-repo PRs get the secret; the live job stays per-variant environment-gated.
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled]
 
 permissions:
   contents: read
@@ -85,7 +86,7 @@ jobs:
   # Pull requests normalize to one Sonnet 5 leg. Manual dispatches choose the
   # routine Sonnet cadence or the separately approved Opus pre-release cadence.
   claude-live:
-    if: ${{ github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' || inputs.live_cadence == 'opus-pre-release' }}
+    if: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' || inputs.live_cadence == 'opus-pre-release') && github.event.action != 'labeled' }}
     needs: offline
     # The offline gate runs first without secrets. The selected live leg then
     # waits for its CI-E2E or CI-E2E-OPUS approval.
@@ -314,7 +315,7 @@ jobs:
           if-no-files-found: warn
 
   codex-live:
-    if: ${{ github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' }}
+    if: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && github.event.action != 'labeled' }}
     needs: offline
     runs-on: ubuntu-latest
     environment:
@@ -580,7 +581,7 @@ jobs:
           if-no-files-found: warn
 
   pi-live:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi' }}
+    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'live:pi')) || (github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi') }}
     needs: offline
     runs-on: ubuntu-latest
     environment:
@@ -839,7 +840,7 @@ jobs:
   # are restated here for checkout and cross-job artifact download.
   journey-delta-comment:
     needs: [claude-live, codex-live]
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.action != 'labeled'
     runs-on: ubuntu-latest
     permissions:
       contents: read

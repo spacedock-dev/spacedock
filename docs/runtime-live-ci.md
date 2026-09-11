@@ -168,7 +168,7 @@ Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go te
 
 - Pull requests run `claude-sonnet-5` at maximum effort and `gpt-5.6-luna` at maximum effort.
 - An explicit `live_cadence=opus-pre-release` dispatch runs offline plus `claude-opus-4-8` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
-- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests still run only Sonnet and Codex; Pi is optional and is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
+- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment to attach a Pi live check to the PR. Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 
