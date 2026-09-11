@@ -61,6 +61,17 @@ gates:
                 id: briefing:6v7sdg4pfzwcfnjstt80pvqj:validation:attempt-1:revision-1
                 digest: sha256:1e716aade94ef8ffe345a1143763a2aead56ceedccae45f9db430b66c8041593
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6v7sdg4pfzwcfnjstt80pvqj:validation:1
+                briefing: briefing:6v7sdg4pfzwcfnjstt80pvqj:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-11T06:39:23.07426Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-09-11 at the validation gate presentation: PASSED verdict accepted; live dogfood deferral to the delivery PR accepted with its delivery-gate condition'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-09-11T06:01:40Z
 worktree: .worktrees/spacedock-ensign-pi-live-pr-check-lane
 ---
