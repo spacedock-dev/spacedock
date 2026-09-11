@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s98gb2f779fbz41gn54ja9c3:ideation:attempt-1:revision-1",
+  "question": "Does the design hold — selected approach, spike-backed risk evidence, expected surface and semantics, and proof per AC — ready to baseline implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:s98gb2f779fbz41gn54ja9c3:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/a504e7bda62edaca7a1d9b29434ac7e6c8a5ff2f/pi-contract-bootstrap-single-owner.md",
+      "rev": "sha256:bc39ff1cfb3770701921d71779f2987984c4414f1c9d92b32bfe7e434c930a65",
+      "mediaType": "text/markdown",
+      "summary": "Ideation complete (worker 5f557e70, report in entity, commit a504e7bd). Design: single-owner bootstrap — frontdoor keeps argv-only duties; extension gate PI_SPACEDOCK_LAUNCH=1 (not SPACEDOCK_BIN, rejected alternative recorded); two safety nets (ready-gate refusal at launch, contract-level version abort). Spike ran first and changed the design twice: /skill:first-officer expands only on user input, so bootstrap wording points at the \u003cavailable_skills\u003e listing; duplicate registration is real on this machine (dev-link shadows installed git package), making the flag + self-check load-bearing. Method finding recorded: AC proofs specified as deterministic artifacts, never model self-report. Surface +230 net (+281/−52) across 6 files, tolerance ±60 net / ±2 files; five observable semantics declared; four concrete doc diffs; AC-1..AC-8 with proof owner + falsifying edit each."
+    }
+  ]
+}
