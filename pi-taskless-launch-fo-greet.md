@@ -44,6 +44,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:n315frdw60950kjde4cx017q:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:n315frdw60950kjde4cx017q-validation-1
+              briefing:
+                id: briefing:n315frdw60950kjde4cx017q:validation:attempt-1:revision-1
+                digest: sha256:c4fa33766c9106460ac5050096a4ed7a48a029c285c12cc36cb9a485950a682a
+                room-ref: '@review/validation/briefing-1'
 started: 2026-09-11T15:48:32Z
 worktree: .worktrees/spacedock-ensign-pi-taskless-launch-fo-greet
 ---

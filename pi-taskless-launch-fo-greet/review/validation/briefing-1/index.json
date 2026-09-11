@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:n315frdw60950kjde4cx017q:validation:attempt-1:revision-1",
+  "question": "Does the delivered single-path taskless greet satisfy every acceptance criterion with fresh evidence — ready to merge?",
+  "artifacts": [
+    {
+      "id": "artifact:n315frdw60950kjde4cx017q:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1b4680793da2ca4ea86a0e4258cac59418a55fda/pi-taskless-launch-fo-greet.md",
+      "rev": "sha256:4b2cbf17e758bd0f1bab7a2b37fe7de70231130907f04858ff883ccbd431895c",
+      "mediaType": "text/markdown",
+      "summary": "Validation verdict PASSED (worker 2ecc9dbb, commit 1b4680793). Full shipped suite fresh: go test -p 3 -timeout 30m ./... — every package ok incl. ensigncycle (184s) and piruntime; internal/cli fails only the two documented pre-existing environmental failures. bun 6/6; piruntime -count=1 ok. Single-path design verified in shipped bytes: NO context-hook bootstrap arm, sendUserMessage sole delivery, throw caught with named diagnostic no crash, compaction boot-record untouched, body/design match. FRESH live arms this run (headless rpc mode after interactive-TUI arms proved unrunnable inside the sandboxed worker — pi TUI dies at stdin EOF \u003c3s, documented with instrumented probe evidence, supervisor escalations timed out, candidate untouched): taskless dev-override launch with ZERO operator input persisted the SPACEDOCK-FO-BOOTSTRAP-v1 user message and booted the complete FO greet turn (skill load, boot identify, binary gate, session summary); plain-pi control silent. AC-1/2/3/4/5/6 all PASSED. Deferred risks recorded: (1) TUI launch with stdin at EOF dies \u003c3s — pre-existing pi TUI lifecycle, outside supported interactive workflow, promote if a real interactive launch fails to greet; (2) sendUserMessage is fire-and-forget at pi runtime — async send failures surface as pi extension errors, not the named diagnostic (polish/deferred). SKIPPED honestly: installed-package arm (defers to the install refresh — promote condition recorded), fresh wrap arm (env-blocked; unit-pinned + impl wrap transcript stands). Undeclared 6th file (piruntime harness reown) adjudicated as required maintenance; net drift +49 within ±60; surface-estimate miss noted for ideation hygiene. No material findings."
+    }
+  ]
+}
