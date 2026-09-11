@@ -42,6 +42,17 @@ gates:
                 id: briefing:6v7sdg4pfzwcfnjstt80pvqj:ideation:attempt-2:revision-1
                 digest: sha256:c88af45c39e52fa0e3dd0e6215a5395a643b07259c1da9e9fc7ef75d8541b74e
                 room-ref: '@review/ideation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6v7sdg4pfzwcfnjstt80pvqj:ideation:2
+                briefing: briefing:6v7sdg4pfzwcfnjstt80pvqj:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-11T06:35:42.856775Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-09-11 at the attempt-2 presentation: minimal label-gated diff with spillover guard, lean proof per the no-test-infra directive'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-09-11T06:01:40Z
 ---
 ## Problem
