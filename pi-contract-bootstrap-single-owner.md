@@ -75,6 +75,17 @@ gates:
                 id: briefing:s98gb2f779fbz41gn54ja9c3:validation:attempt-1:revision-1
                 digest: sha256:b525f19fe5ed805b7687912881799f795d86f5b8b91d0b02948668c362a6d455
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s98gb2f779fbz41gn54ja9c3:validation:1
+                briefing: briefing:s98gb2f779fbz41gn54ja9c3:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-11T05:54:00.274763Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-09-11 after surface-drift and contract-comment review: PASSED verdict accepted with fresh falsifiable evidence for all eight ACs; drift adjudicated as revise-cycle test matrix + contract comments (captain-visible note)'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-09-11T03:46:14Z
 worktree: .worktrees/spacedock-ensign-pi-contract-bootstrap-single-owner
 ---
