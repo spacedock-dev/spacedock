@@ -14,6 +14,17 @@ gates:
                 id: briefing:6v7sdg4pfzwcfnjstt80pvqj:backlog:attempt-1:revision-1
                 digest: sha256:6faef9094b173d98daaeba38e9c398603310446f1490ee0edf6340897a4eafd9
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6v7sdg4pfzwcfnjstt80pvqj:backlog:1
+                briefing: briefing:6v7sdg4pfzwcfnjstt80pvqj:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-11T06:01:25.950478Z"
+                decision: approve
+                reason: 'Captain directed in chat 2026-09-11 at the seed presentation: ''let''s get 6v done first so we can get s98 with proper tag and pr'' — approves the seed to enter ideation; the lane must land before s98''s PR delivery'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 Problem: in `.github/workflows/runtime-live-e2e.yml`, `claude-live` and `codex-live` run on every `pull_request` (behind the `CI-E2E` required-reviewer environment), but `pi-live` is gated `if: workflow_dispatch && inputs.live_cadence == 'pi'` — it never runs on a PR, and a manual `workflow_dispatch` run against a PR branch produces no check run on that PR (the workflow's own journey-delta-comment job notes "a workflow_dispatch run has no PR"). So pi live evidence is neither PR-associated nor manually triggerable per-PR; it only exists as an unassociated manual run or the release-time precondition.
 
