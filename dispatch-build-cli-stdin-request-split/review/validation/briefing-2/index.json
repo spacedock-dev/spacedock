@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-2:revision-1",
+  "question": "Approve the combined checklist-stdin and direct appended-scope change for PR delivery, with required host CI enforced before merge?",
+  "artifacts": [
+    {
+      "id": "artifact:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/c3cc7a6b2febfecc70225498d38863cdb939f345/dispatch-build-cli-stdin-request-split.md",
+      "rev": "sha256:b151dd2c991060412a25e2a737eaaee0cdb3ebca957ad26be02d08426f5f6223",
+      "mediaType": "text/markdown",
+      "summary": "Candidate 4db65d817 folds in captain-requested direct supplemental instructions after the intact helper pointer. Ordinary scope notes need no scratch file/helper roundtrip; optional files, FO checklist verification and lifecycle authority remain. Checklist stdin and JSON retirement are retained. Independent amended AC-1/2/3 validation and detached adversarial audit passed; live Codex cycle passed in 124.26s with exact supplemental text in durable worker output and absent from helper input/artifact. Public stream does not expose spawn arguments. 45 files/net -552 lines within tolerance. Full suites retain baseline manifest and disk limitations; required all-host live CI remains pending before merge."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/af70297ddae6ec64444849e8e3fcf57484bc16e1/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:8c798101c71c8f64fe47546dc852c73e5f7510d209be3d1661a188fa9d02613f"
+    }
+  ]
+}

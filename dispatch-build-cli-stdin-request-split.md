@@ -80,6 +80,11 @@ gates:
                 at: "2026-09-11T00:30:13.874529Z"
                 decision: revise
                 reason: 'Captain expands this task: permit FO-authored scope instructions appended directly to the helper pointer sent to the ensign; unchanged prompt forwarding is not a requirement. Preserve the pointer optimization and checklist verification. Remove mandatory scope-notes scratch-file usage for ordinary dispatch, retain existing optional file compatibility and feedback transport, update contracts and exercise actual appended-instruction behavior. Re-review the combined implementation before delivery.'
+            - id: gate-attempt:09ptxgq8zma6qnx0h1w8a6wp-validation-2
+              briefing:
+                id: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-2:revision-1
+                digest: sha256:9a04c6a82dfa68d070a90229f8fbb32f282544503ab42d923d12f378e2364b00
+                room-ref: '@review/validation/briefing-2'
 review-round:
     id: round:09ptxgq8zma6qnx0h1w8a6wp:validation:1
     stage: validation
