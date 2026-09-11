@@ -169,13 +169,26 @@ Required worker actions:
 After subagent(...) returns, you as first officer must verify the entity file contains PI-LIVE-SUBAGENT-ENSIGN-SMOKE and verify the state checkout git log contains 'ensign: pi live smoke'. Exit successfully only after those durable checks pass.
 ```
 
+### First-officer contract bootstrap (Pi)
+
+The FO contract has one owner on Pi: the Spacedock extension. The frontdoor launch prompt carries no contract sentence — it passes the operator task and suppresses the launch prompt on resume; the extension injects the contract through Pi's context hook, gated on the `PI_SPACEDOCK_LAUNCH=1` marker `spacedock pi` sets on every launch, so a plain `pi` session for unrelated work receives no bootstrap. The bootstrap names the resolvable trigger: the `first-officer` entry of the session's `<available_skills>` listing, whose location pi resolves from the registered package root regardless of cwd (`/skill:first-officer` remains the human-invocable form in interactive input; the model loads the skill by reading the listed location).
+
+Three facts about this surface that session evidence cannot show directly:
+
+- **Compaction contract.** At a compaction boundary the FO re-reads durable state via the boot-record injection (PR #738); the contract is never re-injected.
+- **Request-time only.** Context-hook injections are never persisted to session logs. Absence of the bootstrap message in a session log is NOT evidence that it was absent at request time.
+- **Duplicate registration.** When two registered packages both provide `first-officer` (e.g. a dev-link checkout and the installed git package), pi's skill scan is first-match: the first `settings.json` entry wins. Each package also registers its skills through two routes (the manifest's `pi.skills` scan and the extension's `resources_discover`, which skips paths the manifest already declares). `spacedock doctor --host pi` and launch output flag the condition with a route-aware count; the remedy is `pi remove` of the stale entry.
+- **Dev-override double extension.** Under the dev override (`SPACEDOCK_REPO_ROOT` / `--plugin-dir` install source), the checkout's `spacedock.ts` loads via `--extension` while the installed package's `spacedock.ts` loads via package discovery; `spacedock doctor --host pi` and launch output flag the double load.
+- **Version floor.** The mechanism requires `pi >= 0.83` (context-hook injection; `<available_skills>` with absolute per-skill locations; `/skill:` user-input-only expansion). The ready gate and doctor read the binary's `pi --version`; a sub-floor install is refused at launch and flagged by `doctor` (pi now publishes as `@earendil-works`; the old `@mariozechner` line is stale).
+
 ### Skill install and load paths
 
-For Pi, `spacedock pi` launches the proven front door by loading local resources explicitly:
+For Pi, `spacedock pi` launches the front door through the registered Spacedock package: the package's `.pi/extensions/spacedock.ts` discovers the Spacedock skills (`first-officer`, `ensign`, …) from the package's own `skills/` directory via pi's `resources_discover`, and installs the FO contract through Pi's context hook, gated on the `PI_SPACEDOCK_LAUNCH=1` marker the frontdoor sets on every launch:
 
 ```text
-<spacedock checkout>/skills/first-officer
-<spacedock checkout>/skills/ensign
+<spacedock package root>/.pi/extensions/spacedock.ts   (registered package or --plugin-dir dev override)
+<spacedock package root>/skills/first-officer
+<spacedock package root>/skills/ensign
 ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
 ~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
 ```

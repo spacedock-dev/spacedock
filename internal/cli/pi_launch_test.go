@@ -383,3 +383,46 @@ func TestRunPi_LaunchArgv0_UnchangedForDirect(t *testing.T) {
 		t.Fatalf("launched argv[0]=%q, want \"pi\" (unchanged)\nargv=%v", got, ops.launched)
 	}
 }
+
+// TestRunPi_WrapCarriesLaunchMarker pins AC-4's wrap arm: under the safehouse
+// wrap, the launched (safehouse) env carries PI_SPACEDOCK_LAUNCH=1 and the
+// safehouse extra carries --env-pass PI_SPACEDOCK_LAUNCH so the marker reaches
+// the sandboxed pi child and the extension's gated injection fires on wrapped
+// launches too. The falsifying edit drops either the env append or the
+// --env-pass flag in runPi.
+func TestRunPi_WrapCarriesLaunchMarker(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	ops := &fakePiRuntimeOps{
+		lookPath: map[string]string{
+			"pi":        "/usr/local/bin/pi",
+			"safehouse": "/bin/safehouse",
+		},
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
+	}
+	var stdout, stderr bytes.Buffer
+	code := runPi(context.Background(), []string{"--plugin-dir", repo, "--safehouse", "--", "--version"}, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("runPi exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if len(ops.launched) == 0 || ops.launched[0] != "safehouse" {
+		t.Fatalf("expected safehouse-wrapped argv, got %v", ops.launched)
+	}
+	if !hasLaunchMarkerEnv(ops.launchedEnv) {
+		t.Fatalf("safehouse process env missing %s=1: %v", piLaunchMarkerEnv, ops.launchedEnv)
+	}
+	extra := piSafehouseExtra(ops.launched)
+	found := false
+	for i, flag := range extra {
+		if flag == "--env-pass" && i+1 < len(extra) && extra[i+1] == piLaunchMarkerEnv {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("safehouse extra missing --env-pass %s (the marker would not reach the sandboxed pi)\nextra=%v", piLaunchMarkerEnv, extra)
+	}
+}
