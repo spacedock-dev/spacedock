@@ -86,6 +86,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:s98gb2f779fbz41gn54ja9c3-validation-2
+              briefing:
+                id: briefing:s98gb2f779fbz41gn54ja9c3:validation:attempt-2:revision-1
+                digest: sha256:fb690cf422e2a7331cfd28ccf60b41760289fba0b42f4f054c8be7d6f8edcdea
+                room-ref: '@review/validation/briefing-2'
 started: 2026-09-11T03:46:14Z
 worktree: .worktrees/spacedock-ensign-pi-contract-bootstrap-single-owner
 mod-block:

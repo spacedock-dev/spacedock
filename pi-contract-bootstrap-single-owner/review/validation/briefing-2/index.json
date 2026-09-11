@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s98gb2f779fbz41gn54ja9c3:validation:attempt-2:revision-1",
+  "question": "Does the reworked delivery satisfy every acceptance criterion with the FULL shipped suite in scope — ready to merge, with the live:pi/CI-E2E-PI path staged?",
+  "artifacts": [
+    {
+      "id": "artifact:s98gb2f779fbz41gn54ja9c3:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/8c648b5722d3e07f142638a6487aaf52b96412f3/pi-contract-bootstrap-single-owner.md",
+      "rev": "sha256:d27ae3babfc802bf60f5ed93a8305de2a4912c95d4c7ce63c394c178e2be23fe",
+      "mediaType": "text/markdown",
+      "summary": "Validation cycle 2 (post-rework; worker d2c39dc9, commit 8c648b572). Scope correction: this cycle ran the FULL CI-offline scope (go test -p 3 ./...), which is what caught the piruntime red last cycle when validation ran only internal/cli. Result: 19 packages ok, only the two documented pre-existing internal/cli failures (both re-triaged fresh: TestVersionAmbiguousMarkersExitZero env-dependent, passes with env -u PI_CODING_AGENT; TestCodexResolveManifestAgainstInstalledHost host-state codex resolver, diff since b6d1dc073 touches only the piruntime fixture). Root cause of the CI red: a stale piruntime harness fixture predating the marker gate and resolvable wording — the extension code was NOT at fault; fixture fixed to the real pi contract shape (real package layout, pinned PI_SPACEDOCK_LAUNCH=1, manifest-skip arm asserted in Go too, child exemption dominates); fix commit a4184745a is fixture-only (+46/-16), extension and bun test byte-identical to the approved head. Fresh evidence: piruntime harnesses pass, bun 4/4, PR #786 CI offline SUCCESS on a4184745a, cycle-1 live-probe artifacts re-verified on disk (AC-1 baseline leak + gated silence, AC-2 listing/expansion, AC-4 dev-override polarity, AC-6 ABORT + PASS control). All eight ACs PASSED. Delivery plan: live:pi label applied on #786, pi-live check queued behind CI-E2E-PI environment approval, then merge on green."
+    }
+  ]
+}
