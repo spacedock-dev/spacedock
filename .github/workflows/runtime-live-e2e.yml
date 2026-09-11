@@ -704,11 +704,24 @@ jobs:
           const subagentsRoot = process.env.PI_SUBAGENTS_ROOT;
           const agentPackage = readPackage(agentRoot);
           const subagentsPackage = readPackage(subagentsRoot);
-          if (agentPackage.version !== '0.80.10') {
-            fail(`expected @earendil-works/pi-coding-agent 0.80.10, got ${agentPackage.version}`);
+          // Floor checks, not equality: the pins move together (see the install
+          // step), but the guard's job is to catch a sub-floor or mismatched
+          // runtime, not to mirror a version literal. pi >= 0.83.0 is the
+          // spacedock ready-gate floor (s98).
+          function versionAtLeast(version, floor) {
+            const parse = (v) => v.replace(/^v/, '').split('-')[0].split('.').map(Number);
+            const v = parse(version), f = parse(floor);
+            for (let i = 0; i < 3; i++) {
+              if ((v[i] || 0) > (f[i] || 0)) return true;
+              if ((v[i] || 0) < (f[i] || 0)) return false;
+            }
+            return true;
           }
-          if (subagentsPackage.version !== '0.53.0') {
-            fail(`expected pi-subagents 0.53.0, got ${subagentsPackage.version}`);
+          if (!versionAtLeast(agentPackage.version, '0.83.0')) {
+            fail(`@earendil-works/pi-coding-agent ${agentPackage.version} is below the spacedock ready-gate floor 0.83.0`);
+          }
+          if (!versionAtLeast(subagentsPackage.version, '0.53.0')) {
+            fail(`pi-subagents ${subagentsPackage.version} is below the last verified pairing (0.53.0)`);
           }
 
           // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
