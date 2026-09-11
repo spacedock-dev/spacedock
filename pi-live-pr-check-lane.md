@@ -169,3 +169,28 @@ Fleshed out the 6v entity body into a gated ideation design: a three-edit diff t
 ### Summary
 
 Implemented the approved three-edit workflow diff plus the one-line doc diff, committed as 10ffbf7a8 on the worktree branch. CI-E2E-PI verified in repo settings (required reviewer + CODEX_AUTH_JSON secret) so no new YAML or secrets were needed. Only deviation-shaped detail is the guard parenthesization, which is required for the approved semantics and is flagged above rather than absorbed. actionlint passes with 0 errors; live dogfood (AC-1) remains owned by the delivery PR.
+
+## Stage Report: validation
+
+- DONE: Re-run actionlint fresh over the edited workflow (AC-5) — expect 0 errors, got 0
+  actionlint v1.7.12 (fetched from upstream release; not preinstalled on this machine) on `.github/workflows/runtime-live-e2e.yml`: no output, exit 0. Supersedes the implementation's 1.7.7 run with a newer linter.
+- DONE: Verify shipped diff matches the ideation-approved wording, byte-for-byte
+  Trigger `types: [opened, synchronize, reopened, labeled]` exact (l.52); pi-live if (l.584) = approved condition, with the manual-dispatch disjunct `github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi'` byte-identical to the pre-image (1 occurrence each, verified against `10ffbf7a8^`); spillover guards on claude-live (l.89) and codex-live (l.318) use the required parenthesized form `(disjunction) && github.event.action != 'labeled'`; journey-delta-comment (l.843) gains the same conjunction (no parens needed — no disjunction there); offline left unconditional (no `if:`).
+- DONE: Re-verify the CI-E2E-PI environment claim against live repo settings
+  `gh api repos/spacedock-dev/spacedock/environments/CI-E2E-PI`: exists, protection_rules contains `required_reviewers` (reviewer clkao, prevent_self_review false); environment secrets list = `["CODEX_AUTH_JSON"]`. Workflow `environment: name: CI-E2E-PI` unchanged on pi-live.
+- DONE: Verify docs/runtime-live-ci.md line 171 matches the approved after-wording verbatim
+  Exact-substring check of the approved after-wording ("Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment …") passes on line 171.
+- DONE: Adjudicate surface actuals vs declared estimate
+  Actual +6/−5 across 2 files (workflow +5/−4, docs +1/−1) vs declared ≈+9/−4 workflow + ≈+3/−2 docs, net tolerance ±10: within tolerance (workflow came in net +1 vs declared net +5 — conservative direction; doc net 0 vs declared net +1, one-line replacement as approved).
+- DONE: Confirm no tests were added per the captain directive
+  Commit 10ffbf7a8 touches exactly `.github/workflows/runtime-live-e2e.yml` and `docs/runtime-live-ci.md`; no test files in the diff or worktree.
+- DONE: Semantic adversarial pass over the widened trigger
+  Grep-audited every `event_name == 'pull_request'` / `event.pull_request` consumer: l.98-101 (claude cadence/model/env) and l.953 (pr number arg) live inside jobs guarded by the new `!= 'labeled'` clause; manual-dispatch evaluation of `github.event.action != 'labeled'` is true (workflow_dispatch has no action), so no dispatch regression; unlabeled-PR `contains(labels.*.name, 'live:pi')` on an empty label array is false (AC-2 holds); a non-pi label event runs only the cheap, secret-free `offline` gate.
+- DONE: Adjudicate AC-1/AC-2/AC-4 live-dogfood gating question
+  Static + actionlint evidence SUFFICES to gate; the live observation is deferred to 6v's own delivery PR, no scratch-PR live run required. Rationale: every mechanism (documented `labeled` trigger, `contains()` label expression, environment required-reviewer approval) is already proven in production by the claude/codex lanes in this same workflow; a scratch PR would spend a real pi-live run (~manual-cadence cost) to falsify nothing the delivery PR's first real run — the actual zero→≥1 value moment — doesn't observe identically. AC-1 delivery-gate condition: on 6v's delivery PR, (a) no pi-live check run before labeling, (b) non-pi scratch label re-runs no paid lane, (c) `live:pi` + CI-E2E-PI approval produces the PR-associated pi-live run.
+- SKIPPED: Repo go test suite run
+  Diff touches no Go code (CI YAML + one doc line); captain directive rules out workflow unit tests; existing tests cannot falsify trigger semantics. Static + actionlint is the applicable deterministic proof per the approved test plan.
+
+### Summary
+
+Validation re-ran every deterministic check fresh: actionlint 1.7.12 → 0 errors, byte-exact wording verification of all four edited conditions against the pre-image and the ideation-approved text, live repo-settings re-verification of CI-E2E-PI (required reviewer clkao + CODEX_AUTH_JSON), verbatim doc-line check, surface adjudication (+6/−5 vs declared, within tolerance), no-tests confirmation, and an adversarial audit of every pull_request-keyed expression. Verdict: all five ACs PASSED on available evidence, with AC-1/AC-2/AC-4's live dogfood explicitly deferred to 6v's own delivery PR (static evidence judged sufficient to gate; no scratch-PR run required). Recommendation: PASSED.
