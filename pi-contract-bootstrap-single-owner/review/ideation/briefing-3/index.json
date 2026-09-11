@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:s98gb2f779fbz41gn54ja9c3:ideation:attempt-3:revision-1",
+  "question": "Does the design hold — selected approach, spike-backed risk evidence, expected surface and semantics, and proof per AC — ready to baseline implementation? (revision 2: captain's four revise asks folded)",
+  "artifacts": [
+    {
+      "id": "artifact:s98gb2f779fbz41gn54ja9c3:ideation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/04ce892d4c5d5e1d3d6d80d8880561c1d8f1aae8/pi-contract-bootstrap-single-owner.md",
+      "rev": "sha256:d5eb44ff630ed889ef78fde2dc1c7ea56e6829a3ae6cc2d2b1843d481c17a8fa",
+      "mediaType": "text/markdown",
+      "summary": "Ideation revision 2 (reflow dispatch f05035e8, commit 04ce892d4, pushed): the captain's four revise asks from attempt-2 are folded without redesign — (1) dev-override arm coverage: AC-3 child-env unit assertion (PI_SPACEDOCK_LAUNCH=1 with repoRoot set) + AC-4 one live probe of the gated extension under --extension \u003ccheckout\u003e against a CURRENT checkout, stale checkout stays AC-6; (2) duplicate-extension load stated deterministically at packages x routes granularity: route-aware doctor/launch count, static double-extension flag (repoRoot set AND spacedock package registered), hasStructuralBootstrap dedupe boundary named (covers one hook instance; hook-chaining unverified), resources_discover manifest-skip remedy with bun-test assertion; (3) declared pi-behavior dependency list (context-hook API, \u003cavailable_skills\u003e absolute locations, /skill: user-input-only) with pi \u003e= 0.83 floor enforced in ready-gate/doctor from binary pi --version, old-org @mariozechner installs flagged with @earendil-works upgrade diagnostic; (4) expandPromptTemplates on pi.sendUserMessage() recorded as one-line upgrade-path note. Surface re-estimated +270 net (+327/-57) across 6 files; doc diffs 1-2 extended; AC-8 now five documented facts. Stage report: 3 done, 0 skipped, 0 failed. No spike re-run — new claims verified from source or one-line binary check (pi --version prints bare semver 0.85.1)."
+    }
+  ]
+}
