@@ -25,6 +25,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:n315frdw60950kjde4cx017q:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:n315frdw60950kjde4cx017q-ideation-1
+              briefing:
+                id: briefing:n315frdw60950kjde4cx017q:ideation:attempt-1:revision-1
+                digest: sha256:21495f93b61ac4aebb40968429cd7373c2163901410cdaa33edbfa999c772a26
+                room-ref: '@review/ideation/briefing-1'
 started: 2026-09-11T15:48:32Z
 ---
 Problem: a fresh `spacedock pi` launch with no operator task sits silent — the FO never presents the boot summary or workflow stats until the operator types something (and a weak model may never self-boot even then; glm-5.3-flash misreported its own context twice today). The pre-s98 launch greeted at startup; s98's correct argv fix removed the trigger without replacing it.

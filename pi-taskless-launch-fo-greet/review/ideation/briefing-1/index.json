@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:n315frdw60950kjde4cx017q:ideation:attempt-1:revision-1",
+  "question": "Does the design hold — extension-owned real-message bootstrap via sendUserMessage, taskless greet restored, single-owner gate preserved — ready to baseline implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:n315frdw60950kjde4cx017q:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/0951ab783f382e1105041c6b55034d443d9eec76/pi-taskless-launch-fo-greet.md",
+      "rev": "sha256:a25d2c6d0cc50867de3f7ac27a308e22d045aafb9b4a747b5e1b7159bcaf1352",
+      "mediaType": "text/markdown",
+      "summary": "Ideation complete (worker 79eb0de5, commit 0951ab783, pushed). Mechanism (a) selected and spike-verified FIRST: the spacedock pi extension sends FO_BOOTSTRAP_TEXT as a real first-turn user message via pi.sendUserMessage() at session_start, gated on a new env-only frontdoor marker PI_SPACEDOCK_LAUNCH_TASKLESS=1 (set only when no operator task is given) — frontdoor stays argv-and-env-only, AC-3 intact, greet text remains extension-owned; expandPromptTemplates rejected with rationale. Live TUI spike on installed pi 0.85.1: positive arm delivered a persisted first-turn user message and booted the model turn with zero operator input; control arm (no markers) stayed silent (empty session, 0 turns) — single-owner gate preserved. Existing context-hook bootstrap retained as fallback when the send throws (throwing-fake unit case, AC-5); compaction boot-record arm untouched; the once-per-turn request-time-only ephemerality is fixed on the primary path (real message persists). ACs lean per the no-test-infra directive: AC-1 value (taskless launch greets within 60s vs today's 0-turn silent baseline, across wrap/dev-override shapes), AC-2 gate (plain pi receives nothing), proofs = four one-off live launch arms + extensions of the two existing test owners (test/spacedock.test.ts, internal/cli/pi_frontdoor_test.go), no new harness. Surface: 5 files, net +183 (+197/-14), tolerance ±60; semantics declared; bounded edges named (passthrough prompt smuggling, print-mode taskless, weak-model greet quality). Doc diff proposed against adding-a-runtime.md."
+    }
+  ]
+}
