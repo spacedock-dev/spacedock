@@ -91,6 +91,17 @@ gates:
                 id: briefing:s98gb2f779fbz41gn54ja9c3:validation:attempt-2:revision-1
                 digest: sha256:fb690cf422e2a7331cfd28ccf60b41760289fba0b42f4f054c8be7d6f8edcdea
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s98gb2f779fbz41gn54ja9c3:validation:2
+                briefing: briefing:s98gb2f779fbz41gn54ja9c3:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-11T14:13:28.115646Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-09-11 at the cycle-2 validation gate: full-suite scope correction accepted, piruntime fixture root cause and byte-identical extension fix accepted, all eight ACs PASSED on fresh evidence'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-09-11T03:46:14Z
 worktree: .worktrees/spacedock-ensign-pi-contract-bootstrap-single-owner
 mod-block:
