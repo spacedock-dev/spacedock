@@ -1,6 +1,6 @@
 ---
 title: "Pi live E2E runs as an associated, manually-approved PR check"
-status: ideation
+status: implementation
 source: "Captain directive 2026-09-11 at the s98 validation gate: 'approve the pi ci lane' + 'the pi live is simply skipped and we can't manually trigger that check to be really associated with the PR'."
 id: 6v7sdg4pfzwcfnjstt80pvqj
 gates:
@@ -52,7 +52,7 @@ gates:
                 reason: 'Captain approved in chat 2026-09-11 at the attempt-2 presentation: minimal label-gated diff with spillover guard, lean proof per the no-test-infra directive'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-09-11T06:01:40Z
 ---
 ## Problem
