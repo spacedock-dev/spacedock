@@ -18,7 +18,7 @@ The spawn call (fo-dispatch-core.md `## Dispatch Adapter`) is the Agent tool. **
 
 **No pre-dispatch filesystem probe.** Do NOT run any filesystem check against `~/.claude/teams/` before `Agent()`. The auto-team `config.json` is written by Claude Code after the spawn, so a pre-dispatch probe reads nothing. Dispatch directly and let `Agent()` surface any error.
 
-On a zero-exit `spacedock dispatch build` (`host` derived from `CLAUDECODE`; pass `--host claude` only for deliberate tests or cross-host tooling), map the emitted fields to `Agent()` verbatim — `model=output.model` only when non-null, do NOT pass `model=None`:
+On a zero-exit `spacedock dispatch build` (`host` derived from `CLAUDECODE`; pass `--host claude` only for deliberate tests or cross-host tooling), preserve the emitted transport, identity, description and model fields in `Agent()`; keep `output.prompt` intact and optionally append ordinary scope instructions directly — `model=output.model` only when non-null, do NOT pass `model=None`:
 ```
 Agent(
     subagent_type=output.subagent_type,
@@ -26,7 +26,7 @@ Agent(
     run_in_background=output.run_in_background,  // the worker→lead channel; omit when field absent
     description=output.description,             // REQUIRED — Agent tool rejects missing description
     model=output.model,                         // omit when output.model is null
-    prompt=output.prompt                        // ~175 chars; ensign Reads dispatch_file_path on first action
+    prompt=output.prompt                        // intact pointer, optionally followed by scope instructions; ensign Reads it first
 )
 ```
 
@@ -36,7 +36,7 @@ A name-less dispatch forfeits reuse — `name` is the `«addressable-worker»` h
 
 SendMessage(to="{live worker handle from session roster}", message=output.prompt)
 
-`output.prompt` is the reuse-advance pointer message — an `## Advancing to next stage: {stage}` header plus a `Read {dispatch_file_path}` instruction, not the stage section itself. Forward it verbatim; do not paraphrase. The target handle is the FO's own session-roster tracking of the live worker (this file's `## Context Budget`), not a field the helper emits — `--advance` never emits `name`/`team_name`.
+`output.prompt` is the reuse-advance pointer message — an `## Advancing to next stage: {stage}` header plus a `Read {dispatch_file_path}` instruction, not the stage section itself. Keep it intact; ordinary scope instructions may follow it directly in the same message without a scope-notes file or helper roundtrip. The target handle is the FO's own session-roster tracking of the live worker (this file's `## Context Budget`), not a field the helper emits — `--advance` never emits `name`/`team_name`.
 
 **Break-glass reuse-advance (fallback ONLY when `${SPACEDOCK_BIN:-spacedock} dispatch build --advance` exits non-zero or is unavailable):** Do NOT use this template while the helper is working. Report the helper failure to the captain before proceeding. Use this verbatim-section template as a degraded fallback, now carrying the next-stage completion-signal line the built pointer would have pinned:
 

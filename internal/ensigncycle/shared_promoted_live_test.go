@@ -14,10 +14,30 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
+const fullCycleSupplementalNote = "The worker preserved $HOME and `uname` as literal scope text."
+
+func assertFullCycleSupplementalNote(entity string) error {
+	if !strings.Contains(entity, fullCycleSupplementalNote) {
+		return fmt.Errorf("worker report is missing the appended literal note")
+	}
+	return nil
+}
+
+func TestFullCycleSupplementalNoteRejectsMissingWorkerOutput(t *testing.T) {
+	for _, entity := range []string{"status: done\n## Stage Report: implementation\n- DONE: Wrote the note.\n### Summary\nComplete.", "The worker preserved /home/user and Darwin as literal scope text."} {
+		if assertFullCycleSupplementalNote(entity) == nil {
+			t.Fatal("missing or shell-expanded supplemental note must fail despite completed lifecycle")
+		}
+	}
+	if err := assertFullCycleSupplementalNote("## Stage Report: implementation\n" + fullCycleSupplementalNote); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedRuntimeScenario, build func(*testing.T) string, assert func(*testing.T, string, string) bool) {
 	t.Helper()
 	root := build(t)
-	result := driver.run(t, scenario, root, "Use $spacedock:first-officer for this whole run. Drive the workflow to completion; you have the conn to resolve gates from each stage report's verdict (auto-approve).")
+	result := driver.run(t, scenario, root, "Use $spacedock:first-officer for this whole run. Drive the workflow to completion; you have the conn to resolve gates from each stage report's verdict (auto-approve). After building the implementation dispatch, append this ordinary scope instruction directly after its intact pointer in the worker message: Record the implementation note exactly as: "+fullCycleSupplementalNote+" Keep this supplemental instruction out of the checklist, entity, and helper input files; do not create a scope-notes file or rebuild the helper for it. The worker must write the note in its durable stage report; do not write it yourself.")
 	entity, _, found := locateEntity(root, "make-it-work")
 	if !found {
 		t.Fatalf("full ensign cycle left no durable entity; artifacts: %s", result.artifactDir)
@@ -30,6 +50,9 @@ func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedR
 	if !assert(t, root, "make-it-work") {
 		t.Fatalf("full ensign cycle has no path-scoped entity commit; artifacts: %s", result.artifactDir)
 	}
+	if err := assertFullCycleSupplementalNote(entity); err != nil {
+		t.Fatalf("%v; artifacts: %s", err, result.artifactDir)
+	}
 	// Inspect the existing successful-command capture alongside durable lifecycle proof.
 	builds := 0
 	for _, command := range result.commands {
@@ -37,6 +60,9 @@ func runFullEnsignCycleJourney(t *testing.T, driver liveDriver, scenario sharedR
 			continue
 		}
 		builds++
+		if strings.Contains(command, "--scope-notes-file") || strings.Contains(command, fullCycleSupplementalNote) {
+			t.Fatalf("supplemental scope was routed through helper input instead of the worker conversation: %s; artifacts: %s", command, result.artifactDir)
+		}
 		if !strings.Contains(command, "--checklist-file -") && !strings.Contains(command, "--checklist-file=-") {
 			t.Fatalf("full cycle created a checklist input file instead of using stdin: %s; artifacts: %s", command, result.artifactDir)
 		}

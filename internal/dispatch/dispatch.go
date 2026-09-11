@@ -278,7 +278,8 @@ Assignment identifiers and invocation controls are CLI flags.
 
 JSON requests, --print-schema and --validate-only are retired. Put entity,
 stage, host and controls in flags. Pipe checklist lines to --checklist-file -;
-use --scope-notes-file and --feedback-context-file for supporting prose.
+append ordinary scope instructions after the intact helper pointer sent to the worker.
+--scope-notes-file remains optional; use --feedback-context-file for opaque feedback.
 Stdout remains the dispatch JSON envelope.
 
 Missing required assignment flags fail before reading input:

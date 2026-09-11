@@ -111,8 +111,13 @@ Codex:
 
 The Codex `$spacedock:ensign` marker belongs in the outer fresh-worker prompt,
 not inside the dispatch artifact. It loads this shared contract before the
-worker reads the pointer; the artifact supplies the stage-specific assignment.
-When the initial prompt matches either host-specific pattern, the first action
+worker reads the pointer; the artifact supplies the standard stage-specific assignment.
+The FO may append ordinary scope instructions after the intact pointer. Read the
+artifact first, then carry out the assignment together with those supplemental
+instructions. The artifact need not contain all context: appended notes live in
+the worker conversation and do not replace the pointer, transport identity, model
+or lifecycle authority.
+When the initial prompt begins with either host-specific pattern, including when notes follow it, the first action
 after the bootstrap MUST be `Read /tmp/spacedock-dispatch/{name}.md` and treat
 the file's content as the inline assignment. Pi keeps its native pointer
 bootstrap and receives the already-bound contract from its runtime adapter.
@@ -120,7 +125,7 @@ Then proceed with the rest of the operating contract.
 
 If the Read fails (missing, unreadable, empty), do NOT proceed with empty context. Send `DISPATCH_FILE_MISSING: {path} - {error}` to the first officer through your runtime adapter's completion-signal channel and stop.
 
-**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment. A reused Codex worker does not repeat `$spacedock:ensign`; it already holds the shared contract. The fetch-commands bootstrap above applies to the pointer. On Read failure, send `DISPATCH_FILE_MISSING: {path} - {error}` through the same completion-signal channel and stop — the same failure shape as the initial bootstrap.
+**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content, together with any appended FO scope instructions, as your next-stage assignment. Do not discard supplemental instructions when loading the artifact. A reused Codex worker does not repeat `$spacedock:ensign`; it already holds the shared contract. The fetch-commands bootstrap above applies to the pointer. On Read failure, send `DISPATCH_FILE_MISSING: {path} - {error}` through the same completion-signal channel and stop — the same failure shape as the initial bootstrap.
 
 ## Fetch-on-Demand Bootstrap
 

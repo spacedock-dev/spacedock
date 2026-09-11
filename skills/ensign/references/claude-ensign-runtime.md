@@ -4,7 +4,7 @@ How the shared ensign core executes on Claude Code.
 
 ## Agent Surface
 
-The ensign is dispatched by the first officer via the Agent tool. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, workflow location, and checklist.
+The ensign is dispatched by the first officer via the Agent tool. The dispatch pointer leads to the standard assignment: entity, stage, stage definition, workflow location and checklist. Read that artifact first, then follow it together with ordinary FO scope instructions appended to the pointer message. Supplemental notes live in the worker conversation; they do not replace the pointer or change transport identity, model or lifecycle authority.
 
 ## Clarification
 
