@@ -296,11 +296,9 @@ Re-ran every AC's proof from fresh evidence: deterministic suites (bun 4/4 inclu
 - DONE: Both harnesses pass without weakening any bun assertion or AC-4 semantics
   `go test ./internal/piruntime/` ok (both TestSpacedockPiExtension* harnesses PASS; manifest-skip now asserted in Go too, mirroring the bun test); `bun test ./.pi/extensions/spacedock.test.ts` 4 pass / 0 fail, 8 expect() calls, unchanged file.
 - DONE: Full `go test ./...` (CI offline job scope) green except the two named pre-existing internal/cli failures
-  19 packages ok; only internal/cli FAILs, on exactly TestCodexResolveManifestAgainstInstalledHost and TestVersionAmbiguousMarkersExitZero (the run's env has PI_CODING_AGENT set, matching the documented pre-existing failure shape). No extension, piruntime, or cli regressions. No tolerance drift: the only file touched is the piruntime test fixture (+46/−16); extension and bun test untouched.
+  19 packages ok; only internal/cli FAILs, on exactly TestCodexResolveManifestAgainstInstalledHost and TestVersionAmbiguousMarkersExitZero (the run's env has PI_CODING_AGENT set, matching the documented pre-existing failure shape). No extension, piruntime, or cli regressions. No tolerance drift: the only file touched is the piruntime test fixture (+46/−16); extension and bun test untouched. Capacity note (environmental incident during proof, resolved in-run by a clean re-run — not a failed checklist item): the first full-suite attempt aborted with ~20 mid-suite FAILs, all "no space left on device" (macOS Data volume hit 0 during parallel test builds); the clean re-run with `-p 3` completed as reported above, with 9.6 GiB free at completion. Full-suite runs are host-capacity-sensitive (~10+ GiB free needed); the CI offline job runs in a cleaner environment.
 - SKIPPED: none
   —
-- FAILED: first full-suite attempt aborted by host disk exhaustion
-  ~20 mid-suite FAILs all "no space left on device" (macOS Data volume hit 0 during parallel test builds); environmental, not code. Clean re-run with `-p 3` completed as reported above; 9.6 GiB free at completion.
 
 ### Summary
 
