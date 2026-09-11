@@ -1,6 +1,6 @@
 ---
 title: Repair the Pi implementation-worker-not-dispatched conduct (default-headless-gate-stop + auto-continue-after-implementation)
-status: validation
+status: done
 source: "CI run 31747645316 (PR #682, pi-live job) + 2026-08-13-02 Pi debrief; reproduced locally on lunaroute/glm-5.2-vision-background:max"
 score: 0.85
 sprint: pi-live-completeness
@@ -103,11 +103,13 @@ gates:
                     source: '2026-08-24 captain chat (conn for pi-related fixes: correction rounds)'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-08-21T16:13:06Z
 worktree: /home/exedev/spacedock/.worktrees/spacedock-ensign-repair-pi-default-headless-gate-stop
 mod-block:
 pr:
+verdict: PASSED
+completed: 2026-08-29T20:54:49Z
 ---
 
 ## Problem
