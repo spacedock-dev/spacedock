@@ -15,6 +15,17 @@ gates:
                 id: briefing:s98gb2f779fbz41gn54ja9c3:backlog:attempt-1:revision-1
                 digest: sha256:441c6a5c5a88c3812bfe6ec6cb9500c47ce27ec3d3662a00e608762d41ce53e6
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s98gb2f779fbz41gn54ja9c3:backlog:1
+                briefing: briefing:s98gb2f779fbz41gn54ja9c3:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-11T03:45:54.378084Z"
+                decision: approve
+                reason: 'Captain approved in chat 2026-09-11: seed outcome clear, scope bounded, proof named'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Pi sessions receive the FO contract through two channels with unclear ownership, and neither is reliable today. The frontdoor launch prompt (`Use $spacedock:first-officer for this whole Pi session.`, `internal/cli/pi.go:20`) is inert syntax pi cannot expand (`agent-session.js:_expandSkillCommand` only expands `/skill:`), and the extension's session-start contract bootstrap (`FO_BOOTSTRAP_TEXT`, `.pi/extensions/spacedock.ts`) names the skill with the same unexpandable reference plus a relative path that is ENOENT from any workflow cwd. The failure is not delivery — it is resolution: even with both injections landing, an FO outside the package root ends up hunting the filesystem, and a stale visible checkout wins. Nothing in either contract verifies the loaded skill's version against the binary.
