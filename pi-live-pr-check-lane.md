@@ -74,6 +74,8 @@ gates:
                 state: pending
 started: 2026-09-11T06:01:40Z
 worktree: .worktrees/spacedock-ensign-pi-live-pr-check-lane
+mod-block: merge:pr-merge
+pr: "#785"
 ---
 ## Problem
 
