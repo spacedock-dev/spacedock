@@ -1,6 +1,6 @@
 ---
 title: "Pi live E2E runs as an associated, manually-approved PR check"
-status: validation
+status: done
 source: "Captain directive 2026-09-11 at the s98 validation gate: 'approve the pi ci lane' + 'the pi live is simply skipped and we can't manually trigger that check to be really associated with the PR'."
 id: 6v7sdg4pfzwcfnjstt80pvqj
 gates:
@@ -71,11 +71,14 @@ gates:
                 reason: 'Captain approved in chat 2026-09-11 at the validation gate presentation: PASSED verdict accepted; live dogfood deferral to the delivery PR accepted with its delivery-gate condition'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-09-11T06:01:40Z
 worktree: .worktrees/spacedock-ensign-pi-live-pr-check-lane
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:785
+verdict: PASSED
+completed: 2026-09-11T07:17:01Z
+archived: 2026-09-11T07:17:01Z
 ---
 ## Problem
 
