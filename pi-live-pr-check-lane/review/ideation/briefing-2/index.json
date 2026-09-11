@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6v7sdg4pfzwcfnjstt80pvqj:ideation:attempt-2:revision-1",
+  "question": "Does the design hold — minimal label-gated diff with the spillover guard, lean proof per the captain's no-test-infra directive — ready to baseline implementation? (attempt 2 after scanner-exact heading normalization under captain direct-edit grant)",
+  "artifacts": [
+    {
+      "id": "artifact:6v7sdg4pfzwcfnjstt80pvqj:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/d079763ed6e1c5431d8c5641a3f0dd6c0f5598b9/pi-live-pr-check-lane.md",
+      "rev": "sha256:4551ed1fdaa970e4eab739be675654350f3956724c6c5f5fea9f861794698f40",
+      "mediaType": "text/markdown",
+      "summary": "Ideation complete (worker d78a713c, commit efd0f8e1d; attempt 2 after heading normalization under captain direct-edit grant 'fix it'). Minimal three-edit diff to .github/workflows/runtime-live-e2e.yml: widen pull_request triggers with labeled+synchronize, label-gate pi-live via contains(github.event.pull_request.labels.*.name, 'live:pi'), verify the already-declared CI-E2E-PI environment (line 586 — repo-settings check, not new YAML). One necessary addition beyond the seed: a spillover guard (github.event.action != 'labeled') on claude-live, codex-live, journey-delta-comment so adding ANY label does not re-run the paid live lanes — semantics preservation, not a new mechanism. Five lean ACs: AC-1 value (first PR-associated pi-live run vs today's zero baseline, proven by the lane's first real dogfood run on 6v's own PR), AC-2 unlabeled PR opt-in, AC-3 manual dispatch unchanged, AC-4 non-pi label no re-run, AC-5 actionlint validity. Proof per captain directive: actionlint + one live dogfood run; no CI-YAML unit tests. Surface: 1 workflow file ~+9/-4 (tolerance +/-10) + docs/runtime-live-ci.md +1 line with before/after wording. No spike needed (documented Actions labeled trigger + contains() + existing claude/codex pattern). Alternatives (pr_number status shim, scheduled lane) stay rejected. Recurrence fix landed: ideation stage definition now names the scanner-exact heading (commit 4b12ebbd3)."
+    }
+  ]
+}
