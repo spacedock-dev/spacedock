@@ -368,3 +368,23 @@ Implemented the captain-directed scope change from rejected validation attempt 1
 ### Summary
 
 The combined candidate satisfies the expanded scope through literal supplemental instructions that affect the durable worker report, alongside the original stdin and JSON-retirement evidence. Recommend PASSED for validation, with exact spawn arguments unobserved and all required host live CI still pending before merge; no candidate code was changed.
+
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Investigate the actual CI registry failure and propose its materiality, ownership and smallest correction before candidate edits.
+  PR #784 run `34567720645` failed `TestRuntimeLiveRegistryReconciliation` at `live_registry_reconciliation_test.go:222`: live-tagged test "TestFullCycleSupplementalNoteRejectsMissingWorkerOutput" is not a registered common journey, runtime proof, or non-gating experiment. Identical local reproduction: `/tmp/dispatch-amendment-registry-before.log`, exit 1, 0.330s; candidate stayed unchanged until FO fix authorization.
+- DONE: Apply the FO-authorized correction without weakening the negative control or adding a registration, file or harness.
+  `09f123d33` moves the literal-note constant, pure assertion and unchanged missing/expanded-note control into existing offline `shared_scenarios_negative_test.go`. The live journey retains its same assertion call. This corrects placement rather than registering a deterministic control as a new live test.
+- DONE: Run the authorized targeted checks, commit the correction and report, and preserve other work without pushing.
+  Reconciliation passed (0.326s, `/tmp/dispatch-registry-fix-reconciliation.log`); offline negative control passed (0.252s, `/tmp/dispatch-registry-fix-offline.log`); live-tag compilation plus that same control passed (0.268s, `/tmp/dispatch-registry-fix-live-compile.log`). The control still rejects missing and expanded literal output. No live provider or broad suite rerun; formatting and diff check clean, code worktree clean. Combined surface: 46 files, +1106/-1657, net -551, within approved tolerance. No code or state push performed.
+
+### Finding and authorized disposition
+
+Released user/normal workflow: contributors submit this supported dispatch amendment through required offline CI before the host-live jobs. Observable harm: the misplaced deterministic control fails the registry gate and blocks both live workflows. Authority: `contract[docs/runtime-live-ci-registry.md#amendment-discipline]` — live-journey changes must pass reconciliation in the same PR. Trigger evidence: the CI run and identical local diagnostic above.
+
+Materiality: Material required-verification failure. Ownership: task-owned, introduced by `4db65d817`, not the pre-existing baseline failures. Worker proposed moving the control to the existing offline negative-case owner; FO separately authorized that exact fix before any candidate edit. Prior full-suite baseline/disk failures and live visibility limits remain as reported; these targeted green checks do not claim full-suite or provider-CI success.
+
+### Summary
+
+Corrected the task-owned CI placement defect at `09f123d33` and preserved the negative proof unchanged. The candidate is ready for review and authorized CI publication by the FO; no push or gate approval was performed here.
