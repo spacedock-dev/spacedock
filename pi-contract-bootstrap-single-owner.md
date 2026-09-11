@@ -38,6 +38,19 @@ gates:
                 by: agent:first-officer
                 at: "2026-09-11T04:11:02.44722Z"
                 reason: Artifact normalized after prepare (heading renamed to the scanner-exact '## Acceptance criteria' under captain direct-edit grant); bound briefing digest would be stale at record time
+            - id: gate-attempt:s98gb2f779fbz41gn54ja9c3-ideation-2
+              briefing:
+                id: briefing:s98gb2f779fbz41gn54ja9c3:ideation:attempt-2:revision-1
+                digest: sha256:1d472e1deb2c5d90362ff1b8a188cd7df9011b49496dd5a09aa654806a56b3f6
+                room-ref: '@review/ideation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:s98gb2f779fbz41gn54ja9c3:ideation:2
+                briefing: briefing:s98gb2f779fbz41gn54ja9c3:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-11T04:25:39.248881Z"
+                decision: revise
+                reason: 'Captain-directed revision after gate probe, four concrete asks: (1) add AC coverage for the --plugin-dir dev-override arm — PI_SPACEDOCK_LAUNCH present in child env and the gated extension firing, live-probed once against a current checkout; (2) state the duplicate-extension load case deterministically (dev-override --extension plus installed-package extension can both register; dedupe coverage or ready-gate/doctor flag, not emergent behavior); (3) declare the pi-behavior dependency list (context-hook API session_start/session_compact/context, <available_skills> listing with absolute locations, /skill: user-input-only expansion) and pin a pi >= 0.83 version floor enforced in ready-gate/doctor reading ''pi --version'' at binary level — pi''s org moved to @earendil-works (old-org installs flagged, no package-path checks); (4) note expandPromptTemplates on pi.sendUserMessage() as the known upgrade path for programmatic skill expansion. Context: pi 0.83.0-0.85.1 changelog shows no changes to the three load-bearing behaviors; version floor protects the next drift.'
 started: 2026-09-11T03:46:14Z
 ---
 Pi sessions receive the FO contract through two channels with unclear ownership, and neither is reliable today. The frontdoor launch prompt (`Use $spacedock:first-officer for this whole Pi session.`, `internal/cli/pi.go:20`) is inert syntax pi cannot expand (`agent-session.js:_expandSkillCommand` only expands `/skill:`), and the extension's session-start contract bootstrap (`FO_BOOTSTRAP_TEXT`, `.pi/extensions/spacedock.ts`) names the skill with the same unexpandable reference plus a relative path that is ENOENT from any workflow cwd. The failure is not delivery — it is resolution: even with both injections landing, an FO outside the package root ends up hunting the filesystem, and a stale visible checkout wins. Nothing in either contract verifies the loaded skill's version against the binary.
