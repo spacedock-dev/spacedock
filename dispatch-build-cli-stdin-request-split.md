@@ -8,7 +8,7 @@ verdict:
 score: 0.5
 worktree: .worktrees/spacedock-ensign-dispatch-build-cli-stdin-request-split
 issue:
-pr:
+pr: "#784"
 id: 09ptxgq8zma6qnx0h1w8a6wp
 gates:
     version: 1
@@ -104,6 +104,7 @@ review-round:
         id: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-1:revision-1
         digest: sha256:546174f116f05e7785399a05614381173ada0877ee40733b8928a9db3121c5c9
         room-ref: '@review/validation/round-1'
+mod-block: merge:pr-merge
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This design supersedes cycle 1 and includes the captain-directed appended-scope amendment; the combined implementation requires independent validation before delivery.
