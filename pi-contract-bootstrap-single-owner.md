@@ -1,6 +1,6 @@
 ---
 title: "Single-owner FO contract bootstrap on Pi: extension-owned injection, version self-check, resolvable skill trigger"
-status: validation
+status: implementation
 source: "Root-cause follow-up to the 2026-09-10 stale-skill incident in the email-triage-282 FO session: the FO fell back to a stale ~/git/spacedock checkout (release/0.12.1, v0.12.1-3-g8396a6de) after BOTH contract pointers failed to resolve from a workflow cwd ($spacedock:first-officer is not pi-expandable; skills/first-officer/SKILL.md is relative and ENOENT outside the package root). Findings in /tmp/spacedock-fo-stale-skill-findings.md, validated 2026-09-11 with corrections: absence of the bootstrap message in a session log is NOT evidence (context-hook injection is request-time-only, never persisted), and no dev override was in play on that launch. Captain consolidated the derived fixes into one entity."
 sprint:
 id: s98gb2f779fbz41gn54ja9c3
@@ -85,11 +85,11 @@ gates:
                 reason: 'Captain approved in chat 2026-09-11 after surface-drift and contract-comment review: PASSED verdict accepted with fresh falsifiable evidence for all eight ACs; drift adjudicated as revise-cycle test matrix + contract comments (captain-visible note)'
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-09-11T03:46:14Z
 worktree: .worktrees/spacedock-ensign-pi-contract-bootstrap-single-owner
-mod-block: merge:pr-merge
-pr: "#786"
+mod-block:
+pr:
 ---
 Pi sessions receive the FO contract through two channels with unclear ownership, and neither is reliable today. The frontdoor launch prompt (`Use $spacedock:first-officer for this whole Pi session.`, `internal/cli/pi.go:20`) is inert syntax pi cannot expand (`agent-session.js:_expandSkillCommand` only expands `/skill:`), and the extension's session-start contract bootstrap (`FO_BOOTSTRAP_TEXT`, `.pi/extensions/spacedock.ts`) names the skill with the same unexpandable reference plus a relative path that is ENOENT from any workflow cwd. The failure is not delivery — it is resolution: even with both injections landing, an FO outside the package root ends up hunting the filesystem, and a stale visible checkout wins. Nothing in either contract verifies the loaded skill's version against the binary.
 
@@ -288,3 +288,20 @@ Implemented the single-owner FO contract bootstrap end to end and produced every
 ### Summary
 
 Re-ran every AC's proof from fresh evidence: deterministic suites (bun 4/4 including a falsification spot-check; the full entity Go test set green), live probes under /tmp/s98-val (AC-1 baseline leak + gated silence, AC-2 listing/expansion from a foreign cwd, AC-4 dev-override arm both polarities, AC-6 stale-fixture ABORT + PASS control), and real launches (frontdoor green through the new gate, live duplicate warning, live sub-floor refusal, live doctor report). Both pre-existing test failures were re-triaged against pre-entity HEAD and stay deferred. Surface drift past tolerance is real but composed entirely of the revise-cycle's test matrix and contract comments; verdict PASSED with no Material findings.
+
+## Stage Report: implementation (CI-red fix cycle, 2026-09-11)
+
+- DONE: Root-cause the offline piruntime CI-red (TestSpacedockPiExtensionBootstrapBehavior TypeError on `.messages`)
+  The harness fixture, not the extension, was at fault: it staged the extension flat in tmp (breaking the extension's two-level repo-root/manifest resolution), pinned only PI_SUBAGENT_CHILD (leaving PI_SPACEDOCK_LAUNCH to inherit from the host shell), and asserted the pre-change `Load the $spacedock:first-officer skill` wording. The `context` hook correctly returned undefined without the frontdoor marker — the AC-4 gate behaving as specified. Fix commit a4184745a (on b6d1dc073, branch spacedock-ensign/pi-contract-bootstrap-single-owner), internal/piruntime/spacedock_extension_test.go:30-46 (module staged at `<tmp>/.pi/extensions/`, both resources_discover arms asserted incl. manifest-skip), :50-56 (marker pinned, resolvable-wording asserts), :117-120 (child harness pins PI_SPACEDOCK_LAUNCH=1, exemption dominates).
+- DONE: Both harnesses pass without weakening any bun assertion or AC-4 semantics
+  `go test ./internal/piruntime/` ok (both TestSpacedockPiExtension* harnesses PASS; manifest-skip now asserted in Go too, mirroring the bun test); `bun test ./.pi/extensions/spacedock.test.ts` 4 pass / 0 fail, 8 expect() calls, unchanged file.
+- DONE: Full `go test ./...` (CI offline job scope) green except the two named pre-existing internal/cli failures
+  19 packages ok; only internal/cli FAILs, on exactly TestCodexResolveManifestAgainstInstalledHost and TestVersionAmbiguousMarkersExitZero (the run's env has PI_CODING_AGENT set, matching the documented pre-existing failure shape). No extension, piruntime, or cli regressions. No tolerance drift: the only file touched is the piruntime test fixture (+46/−16); extension and bun test untouched.
+- SKIPPED: none
+  —
+- FAILED: first full-suite attempt aborted by host disk exhaustion
+  ~20 mid-suite FAILs all "no space left on device" (macOS Data volume hit 0 during parallel test builds); environmental, not code. Clean re-run with `-p 3` completed as reported above; 9.6 GiB free at completion.
+
+### Summary
+
+Root-caused the PR #786 offline red to a stale piruntime harness fixture that predated the marker gate and resolvable wording, fixed the fixture to represent the real pi contract shape (real package layout, pinned marker env, manifest-skip arm, new wording asserts), and proved the full offline scope green except the two documented pre-existing internal/cli failures. Extension code and bun assertions untouched; commit a4184745a on the assigned branch. Residual risk: the full-suite result is host-capacity-sensitive (needs ~10+ GiB free); the CI offline job runs in a cleaner environment.
