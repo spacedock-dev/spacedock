@@ -80,6 +80,14 @@ gates:
                 at: "2026-09-11T00:30:13.874529Z"
                 decision: revise
                 reason: 'Captain expands this task: permit FO-authored scope instructions appended directly to the helper pointer sent to the ensign; unchanged prompt forwarding is not a requirement. Preserve the pointer optimization and checklist verification. Remove mandatory scope-notes scratch-file usage for ordinary dispatch, retain existing optional file compatibility and feedback transport, update contracts and exercise actual appended-instruction behavior. Re-review the combined implementation before delivery.'
+review-round:
+    id: round:09ptxgq8zma6qnx0h1w8a6wp:validation:1
+    stage: validation
+    cycle: 1
+    briefing:
+        id: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-1:revision-1
+        digest: sha256:546174f116f05e7785399a05614381173ada0877ee40733b8928a9db3121c5c9
+        room-ref: '@review/validation/round-1'
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This design supersedes cycle 1 and includes the captain-directed appended-scope amendment; the combined implementation requires independent validation before delivery.
@@ -307,3 +315,7 @@ AC-1, AC-2 and AC-3 have independent command/state evidence for the approved int
 ### Summary
 
 Implemented the captain-directed scope change from rejected validation attempt 1, briefing digest `546174f116f05e7785399a05614381173ada0877ee40733b8928a9db3121c5c9`; it is not classified as a discovered product defect. The combined candidate preserves the original stdin/JSON-retirement ACs and now exercises direct appended instructions through durable worker output. Ready for independent validation with the prior full-suite limitations and public spawn-payload visibility limit explicitly retained.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — captain-directed scope amendment / validation re-review; surface 45 files/net -552 LOC vs estimate 40 files/net -500 LOC (12.5% files, 10.4% LOC; within declared tolerance); AC expanded: permit direct appended scope instructions with the intact helper pointer, retain checklist verification and optional file compatibility. Captain authorized folding this into the same task; implementation completed at 4db65d817, pending independent re-review.
