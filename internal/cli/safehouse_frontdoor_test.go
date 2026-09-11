@@ -427,8 +427,9 @@ func TestClaudeResumeFamilySuppressesBootstrapPrompt(t *testing.T) {
 
 // AC-3: the launch flourish is gone. Now that `engage` is a real captain-invoked
 // verb, no bootstrap prompt carries the throwaway "Engage." that would collide
-// with it. All three (claude, codex, pi) are covered so a flourish regression on
-// any is caught here, not only by git-diff emptiness (pi de-risks the 7v parity).
+// with it. Claude and Codex keep a bootstrap prompt const; pi's is REMOVED
+// entirely (the pi frontdoor launch prompt is argv-only now — the extension's
+// gated injection owns the contract delivery), so only claude/codex are covered.
 func TestBootstrapPromptsDropEngageFlourish(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -436,7 +437,6 @@ func TestBootstrapPromptsDropEngageFlourish(t *testing.T) {
 	}{
 		{"claude", bootstrapPrompt},
 		{"codex", codexBootstrapPrompt},
-		{"pi", piBootstrapPrompt},
 	} {
 		if strings.Contains(tc.prompt, "Engage.") {
 			t.Errorf("%s bootstrap prompt still carries the Engage. flourish: %q", tc.name, tc.prompt)

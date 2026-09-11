@@ -11,10 +11,13 @@
 // from the package's own `skills/` directory — resolved relative to this
 // extension's location, exactly like the obra/superpowers reference.
 //
-// It also commissions the parent session as Spacedock first officer through
-// Pi's context hook. The launcher keeps only its minimal skill-trigger prompt;
-// this extension owns the durable warm/contract bootstrap because context hooks
-// can re-inject after compaction while launch argv prompts cannot.
+// It also installs the FO contract in the parent session through
+// Pi's context hook. The launcher keeps only its argv-only duties (pass the
+// operator task, suppress the launch prompt on resume); this extension owns
+// the durable contract bootstrap because context hooks can re-inject after
+// compaction while launch argv prompts cannot, and the injection is gated on
+// the PI_SPACEDOCK_LAUNCH=1 marker `spacedock pi` sets on every launch — a
+// plain `pi` session for unrelated work receives no bootstrap.
 //
 // Compaction boundary: PR #738 (force-boot-at-compaction-boundary) established
 // that at compaction the FO re-reads durable state (one «state.boot»()), NOT
@@ -25,10 +28,18 @@
 // #738 rejected.
 
 import { fileURLToPath } from "node:url";
+import * as fs from "node:fs";
 import * as path from "node:path";
 
 const FO_BOOTSTRAP_MARKER = "SPACEDOCK-FO-BOOTSTRAP-v1";
-const FO_BOOTSTRAP_TEXT = `<EXTREMELY_IMPORTANT>\n[${FO_BOOTSTRAP_MARKER}] You are the Spacedock first officer. Load the $spacedock:first-officer skill (skills/first-officer/SKILL.md) and treat it as your operating contract: re-satisfy every load precondition at its trigger (shared core, runtime adapter, write/merge/dispatch cores), re-read durable state before the next workflow effect — the compacted summary is not authoritative. Pi tool mapping: read/write/edit/bash/grep/find/ls; load skills via read; subagent via pi-subagents when available; plans live in plan files / TODO.md.\n</EXTREMELY_IMPORTANT>`;
+// The bootstrap names the RESOLVABLE trigger: the first-officer entry of the
+// session's <available_skills> listing, whose location pi resolves from the
+// registered package root regardless of cwd. No `$spacedock:` syntax (pi
+// expands /skill: on user input only — a launch-injected message is not user
+// input) and no relative SKILL.md path (ENOENT from any workflow cwd — the
+// 2026-09-10 stale-skill incident's failure shape). /skill:first-officer
+// remains the human-invocable form in interactive input.
+const FO_BOOTSTRAP_TEXT = `<EXTREMELY_IMPORTANT>\n[${FO_BOOTSTRAP_MARKER}] You are the Spacedock first officer. Load the first-officer skill's SKILL.md at the exact location listed for it in your available skills (<available_skills>) and treat it as your operating contract: re-satisfy every load precondition at its trigger (shared core, runtime adapter, write/merge/dispatch cores), re-read durable state before the next workflow effect — the compacted summary is not authoritative. Pi tool mapping: read/write/edit/bash/grep/find/ls; load skills via read; subagent via pi-subagents when available; plans live in plan files / TODO.md.\n</EXTREMELY_IMPORTANT>`;
 
 const FO_BOOT_RECORD_MARKER = "[SPACEDOCK-FO-BOOT-v2]";
 const FO_BOOT_RECORD_DIRECTIVE = `${FO_BOOT_RECORD_MARKER} Durable state boot record — re-read before the next workflow effect. The compacted summary is not authoritative. Resume the loop where it stopped; do NOT greet or re-present a session summary. Pi tool mapping: read/write/edit/bash/grep/find/ls; load skills via read; subagent via pi-subagents when available.`;
@@ -37,7 +48,32 @@ const FO_BOOT_RECORD_DIRECTIVE = `${FO_BOOT_RECORD_MARKER} Durable state boot re
 // (src/runs/shared/pi-args.ts); a child is a delegated worker by definition,
 // so commissioning one as first officer would leak the FO contract into
 // ensign boots. Skill discovery still applies; only FO injection is exempt.
-const isPiSubagentChild = process.env.PI_SUBAGENT_CHILD === "1";
+// Both gates are read at handler time so a probe/test can flip them.
+function isPiSubagentChild() {
+	return process.env.PI_SUBAGENT_CHILD === "1";
+}
+
+// isFrontdoorLaunch: the PI_SPACEDOCK_LAUNCH=1 marker `spacedock pi` sets on
+// EVERY launch shape (wrap and non-wrap, installed and dev override). Without
+// it — a plain `pi` session for unrelated work, a user's own project session —
+// the FO bootstrap is NOT injected. This is the single-owner gate: the
+// extension, not the launch prompt, delivers the contract.
+function isFrontdoorLaunch() {
+	return process.env.PI_SPACEDOCK_LAUNCH === "1";
+}
+
+// manifestDeclaredSkillDirs resolves the package manifest's `pi.skills` entries
+// against repoRoot. Each declared dir is a skill-registration route pi already
+// scans — resources_discover returning the same dir again doubles every skill
+// registration (the packages x routes duplicate condition).
+function manifestDeclaredSkillDirs(repoRoot) {
+	try {
+		const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+		return (manifest?.pi?.skills ?? []).map((entry) => path.resolve(repoRoot, entry));
+	} catch {
+		return [];
+	}
+}
 
 function messageText(message) {
 	if (Array.isArray(message?.content)) {
@@ -74,6 +110,14 @@ export default function registerSpacedockExtension(pi) {
 		// .pi/extensions/ -> ../.. -> repo root -> skills/
 		const repoRoot = path.resolve(extDir, "..", "..");
 		const skillsDir = path.join(repoRoot, "skills");
+		if (manifestDeclaredSkillDirs(repoRoot).includes(skillsDir)) {
+			// The package manifest's pi.skills scan already registers this
+			// directory; re-registering it here doubles every skill
+			// registration. Skip it — the manifest route is the one that
+			// counts, and the doctor's route-aware duplicate count shrinks
+			// accordingly.
+			return { skillPaths: [] };
+		}
 		return { skillPaths: [skillsDir] };
 	});
 
@@ -92,7 +136,7 @@ export default function registerSpacedockExtension(pi) {
 	});
 
 	pi.on("context", async (event) => {
-		if (isPiSubagentChild) return;
+		if (isPiSubagentChild() || !isFrontdoorLaunch()) return;
 
 		if (injectBootRecord) {
 			if (event.messages.some(hasBootRecord)) return;

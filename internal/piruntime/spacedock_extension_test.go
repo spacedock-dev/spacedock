@@ -23,14 +23,18 @@ func TestSpacedockPiExtensionBootstrapBehavior(t *testing.T) {
 	}
 
 	tmp := t.TempDir()
-	modulePath := filepath.Join(tmp, "spacedock-extension.mjs")
+	modulePath := filepath.Join(tmp, ".pi", "extensions", "spacedock-extension.mjs")
+	if err := os.MkdirAll(filepath.Dir(modulePath), 0o755); err != nil {
+		t.Fatalf("stage extension dir: %v", err)
+	}
 	if err := os.WriteFile(modulePath, extensionSource, 0o644); err != nil {
 		t.Fatalf("write harness module: %v", err)
 	}
 
 	harnessPath := filepath.Join(tmp, "harness.mjs")
 	harness := `
-import register from './spacedock-extension.mjs';
+import register from './.pi/extensions/spacedock-extension.mjs';
+import * as fs from 'node:fs';
 
 const handlers = new Map();
 const execCalls = [];
@@ -51,15 +55,30 @@ const textOf = (message) => Array.isArray(message?.content)
 const countBootstraps = (messages) => messages.filter((message) => message?.role === 'user' && textOf(message).startsWith('<EXTREMELY_IMPORTANT>') && textOf(message).includes(marker)).length;
 const countBootRecords = (messages) => messages.filter((message) => message?.role === 'user' && textOf(message).includes(bootRecordMarker)).length;
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
+// The real pi contract runs this extension under a frontdoor launch, where
+// the spacedock launcher sets PI_SPACEDOCK_LAUNCH=1 in the child env. Pin it
+// here so an inherited (or absent) marker on the host shell cannot flip the
+// gate.
+assert(process.env.PI_SPACEDOCK_LAUNCH === '1', 'harness must run under the frontdoor launch marker');
 
-const resources = handlers.get('resources_discover')({ type: 'resources_discover', cwd: process.cwd(), reason: 'test' });
-assert(resources.skillPaths.length === 1 && resources.skillPaths[0].endsWith('/skills'), 'resources_discover returns the package skills directory');
+// The real pi contract loads this extension from the registered package root,
+// where package.json declares pi.skills: ["./skills"]. The module is staged
+// bare in tmp, so first exercise the undeclared arm, then stage the manifest
+// and assert the manifest-skip (AC-4: no skillPaths for manifest-declared dirs).
+const manifestPath = new URL('./package.json', import.meta.url).pathname;
+let resources = handlers.get('resources_discover')({ type: 'resources_discover', cwd: process.cwd(), reason: 'test' });
+assert(resources.skillPaths.length === 1 && resources.skillPaths[0].endsWith('/skills'), 'resources_discover returns the package skills directory when the manifest does not declare it');
+fs.writeFileSync(manifestPath, JSON.stringify({ pi: { skills: ['./skills'] } }));
+resources = handlers.get('resources_discover')({ type: 'resources_discover', cwd: process.cwd(), reason: 'test' });
+assert(resources.skillPaths.length === 0, 'resources_discover skips the skills dir the package manifest already declares');
 
 // --- session_start path (AC-3: unchanged) ---
 handlers.get('session_start')({ type: 'session_start' });
 let first = await handlers.get('context')({ messages: [{ role: 'user', content: [{ type: 'text', text: 'hello' }] }] });
 assert(countBootstraps(first.messages) === 1, 'session_start injects exactly one structural bootstrap');
-assert(textOf(first.messages[0]).includes('Load the $spacedock:first-officer skill'), 'bootstrap points at the shipped first-officer contract');
+assert(textOf(first.messages[0]).includes('[SPACEDOCK-FO-BOOTSTRAP-v1]'), 'bootstrap carries the FO bootstrap marker');
+assert(textOf(first.messages[0]).includes('<available_skills>'), 'bootstrap points at the resolvable <available_skills> trigger');
+assert(!textOf(first.messages[0]).includes('$spacedock:'), 'bootstrap uses no unexpandable $spacedock: syntax');
 assert(textOf(first.messages[0]).includes('Pi tool mapping: read/write/edit/bash/grep/find/ls'), 'bootstrap includes the Pi tool mapping');
 
 // --- session_compact path (AC-1 value-measuring, AC-2 mechanism) ---
@@ -75,7 +94,7 @@ assert(afterCompact.messages[0] === compactSummary, 'boot record is inserted aft
 const bootRecordText = textOf(afterCompact.messages[1]);
 assert(bootRecordText.includes('"command":"boot"'), 'compaction injects the boot record (command:boot)');
 assert(!bootRecordText.includes(marker), 'compaction does NOT inject the FO bootstrap marker');
-assert(!bootRecordText.includes('Load the $spacedock:first-officer skill'), 'compaction does NOT inject the contract pointer');
+assert(!bootRecordText.includes('<available_skills>'), 'compaction does NOT inject the contract pointer');
 // AC-2: pi.exec called with the right args
 assert(execCalls.length === 1, 'pi.exec called exactly once for the boot read');
 assert(execCalls[0].command === 'spacedock', 'pi.exec called with spacedock');
@@ -97,10 +116,12 @@ assert(suppressed === undefined, 'agent_end suppresses further injection');
 
 	cmd := exec.Command(node, harnessPath)
 	cmd.Dir = repoRoot
-	// The unset marker run must be genuinely unset: a pi-subagents child shell
-	// exports PI_SUBAGENT_CHILD, and an inherited marker would silently flip the
-	// exemption inside the harness process.
-	cmd.Env = harnessEnv(nil, "PI_SUBAGENT_CHILD")
+	// The unset subagent marker must be genuinely unset: a pi-subagents child
+	// shell exports PI_SUBAGENT_CHILD, and an inherited marker would silently
+	// flip the exemption inside the harness process. The frontdoor launch
+	// marker is pinned ON: the real pi contract runs this extension under a
+	// frontdoor launch, and the injection gate reads it at handler time.
+	cmd.Env = harnessEnv(map[string]string{"PI_SPACEDOCK_LAUNCH": "1"}, "PI_SUBAGENT_CHILD")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("extension behavior harness failed: %v\n%s", err, out)
@@ -110,7 +131,9 @@ assert(suppressed === undefined, 'agent_end suppresses further injection');
 // TestSpacedockPiExtensionChildExemption is the AC-1 child-session half: a
 // pi-subagents child (PI_SUBAGENT_CHILD=1) is a delegated worker, not a first
 // officer, so the context hook must inject zero FO bootstrap across
-// session_start and session_compact. Skill discovery is unaffected.
+// session_start and session_compact. Skill discovery is unaffected. The run
+// pins PI_SPACEDOCK_LAUNCH=1 as well, proving the child exemption dominates
+// the frontdoor marker and that neither marker state is inherited by accident.
 func TestSpacedockPiExtensionChildExemption(t *testing.T) {
 	node, err := exec.LookPath("node")
 	if err != nil {
@@ -123,7 +146,7 @@ func TestSpacedockPiExtensionChildExemption(t *testing.T) {
 
 	harnessPath := filepath.Join(tmp, "harness-child.mjs")
 	harness := `
-import register from './spacedock-extension.mjs';
+import register from './.pi/extensions/spacedock-extension.mjs';
 
 const handlers = new Map();
 const pi = {
@@ -134,6 +157,7 @@ register(pi);
 
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 assert(process.env.PI_SUBAGENT_CHILD === '1', 'harness must run under the subagent-child marker');
+assert(process.env.PI_SPACEDOCK_LAUNCH === '1', 'child harness must pin the frontdoor launch marker');
 
 const resources = handlers.get('resources_discover')({ type: 'resources_discover', cwd: process.cwd(), reason: 'test' });
 assert(resources.skillPaths.length === 1 && resources.skillPaths[0].endsWith('/skills'), 'child sessions still discover the package skills directory');
@@ -152,7 +176,7 @@ assert(afterCompact === undefined, 'PI_SUBAGENT_CHILD=1 session_compact injects 
 
 	cmd := exec.Command(node, harnessPath)
 	cmd.Dir = repoRoot
-	cmd.Env = harnessEnv(map[string]string{"PI_SUBAGENT_CHILD": "1"})
+	cmd.Env = harnessEnv(map[string]string{"PI_SUBAGENT_CHILD": "1", "PI_SPACEDOCK_LAUNCH": "1"})
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("child-exemption harness failed: %v\n%s", err, out)
@@ -160,14 +184,20 @@ assert(afterCompact === undefined, 'PI_SUBAGENT_CHILD=1 session_compact injects 
 }
 
 // copyExtension stages the shipped .pi/extensions/spacedock.ts as a node
-// module next to the harness scripts in tmp.
+// module under tmp at the real package layout (<tmp>/.pi/extensions/), so the
+// extension's repo-root resolution (two levels up from the module) matches the
+// registered-package shape pi actually loads.
 func copyExtension(t *testing.T, repoRoot, tmp string) {
 	t.Helper()
 	extensionSource, err := os.ReadFile(filepath.Join(repoRoot, ".pi", "extensions", "spacedock.ts"))
 	if err != nil {
 		t.Fatalf("read extension: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(tmp, "spacedock-extension.mjs"), extensionSource, 0o644); err != nil {
+	modulePath := filepath.Join(tmp, ".pi", "extensions", "spacedock-extension.mjs")
+	if err := os.MkdirAll(filepath.Dir(modulePath), 0o755); err != nil {
+		t.Fatalf("stage extension dir: %v", err)
+	}
+	if err := os.WriteFile(modulePath, extensionSource, 0o644); err != nil {
 		t.Fatalf("write harness module: %v", err)
 	}
 }

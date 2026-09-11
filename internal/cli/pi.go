@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -17,7 +18,24 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
-const piBootstrapPrompt = "Use $spacedock:first-officer for this whole Pi session."
+// piLaunchMarkerEnv is the frontdoor launch marker: runPi sets it to 1 in the
+// launched child env on every launch shape and the extension gates its
+// FO-bootstrap injection on it. Deliberately NOT SPACEDOCK_BIN (fo-install.md
+// tells users to set that session-scoped). The wrap forwards it via --env-pass.
+const piLaunchMarkerEnv = "PI_SPACEDOCK_LAUNCH"
+
+// piVersionFloor is the declared floor for the load-bearing pi behaviors the
+// FO bootstrap mechanism rests on (context-hook injection; <available_skills>
+// with absolute per-skill locations; /skill: user-input-only expansion).
+// Enforced from the binary's `pi --version` only — never package paths.
+const piVersionFloor = "0.83.0"
+
+// piSkillRoutesPerPackage is the number of skill-registration routes each
+// registered package contributes: the manifest's `pi.skills` scan AND the
+// extension's resources_discover (which historically re-registered the same
+// skills/ directory its own manifest already declares). The duplicate
+// count is route-aware: packages x routes.
+const piSkillRoutesPerPackage = 2
 
 // piSpacedockPackageSource is the published install source for the Spacedock
 // package. `spacedock install --host pi` runs `pi install <source>`, which
@@ -41,6 +59,9 @@ type piRuntimeOps interface {
 	// agentDir is the pi agent directory (~/.pi/agent or PI_CODING_AGENT_DIR);
 	// home is used to resolve ~ entries.
 	SpacedockPackageStatus(agentDir, home string) piPackageStatus
+	// PiVersion runs the pi binary's `pi --version` — the binary-level read
+	// the 0.83.0 floor is enforced from (no package paths); tests fake it.
+	PiVersion() (string, error)
 }
 
 // piPackageStatus is the result of the package-registration + skill-discovery
@@ -50,8 +71,13 @@ type piPackageStatus struct {
 	ensignDiscoverable       bool
 	firstOfficerDiscoverable bool
 	source                   string // the settings.json packages entry for spacedock
-	packageRoot              string // the resolved package root
+	packageRoot              string // the resolved package root (first match wins)
 	subagentsRegistered      bool   // a package named pi-subagents is in settings.json packages
+	// spacedockEntries counts spacedock entries in settings.json (>1 is the
+	// duplicate-registration condition); packageRoots lists every spacedock
+	// root in settings order — the first is the winner (first-match scan).
+	spacedockEntries int
+	packageRoots     []string
 }
 
 type execPiRuntimeOps struct{}
@@ -161,6 +187,11 @@ func (execPiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPackageS
 	return piSpacedockPackageStatus(agentDir, home)
 }
 
+func (execPiRuntimeOps) PiVersion() (string, error) {
+	out, err := exec.Command("pi", "--version").Output()
+	return string(out), err
+}
+
 type piRuntimeConfig struct {
 	repoRoot              string // dev-override only: --plugin-dir / SPACEDOCK_REPO_ROOT
 	packageRoot           string
@@ -189,12 +220,24 @@ type piCheckResult struct {
 	intercomPackageOK         bool
 	intercomSkillOK           bool
 	spacedockPackageOK        bool
-	packageStatus             piPackageStatus
-	packageRoot               string
-	intercomPackageRoot       string
-	repoRoot                  string
-	authPath                  string
-	sessionDir                string
+	// firstOfficerSkillOK / spacedockExtensionOK: the package's first-officer
+	// skill is discoverable (AC-5b) and its .pi/extensions/spacedock.ts exists
+	// (AC-5a — the FO contract delivery path).
+	firstOfficerSkillOK  bool
+	spacedockExtensionOK bool
+	// piVersionOK: `pi --version` parses at the 0.83.0 floor (binary-level).
+	piVersionOK bool
+	piVersion   string
+	// doubleExtensionLoad: repoRoot set (checkout spacedock.ts loads via
+	// --extension) AND a spacedock package registered (installed copy loads
+	// via package discovery).
+	doubleExtensionLoad bool
+	packageStatus       piPackageStatus
+	packageRoot         string
+	intercomPackageRoot string
+	repoRoot            string
+	authPath            string
+	sessionDir          string
 }
 
 func runPi(ctx context.Context, args []string, dir string, env []string, ops piRuntimeOps, stdout, stderr io.Writer) int {
@@ -210,6 +253,11 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		fmt.Fprint(stderr, "spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`\n")
 		printPiDoctorReport(stdout, check)
 		return 1
+	}
+	// Duplicate/double-extension warnings are loud but NON-fatal: resolution
+	// stays deterministic (first-match scan), so the launch proceeds.
+	for _, warning := range piLaunchWarnings(check) {
+		fmt.Fprintf(stderr, "spacedock pi: WARNING %s\n", warning)
 	}
 
 	// Translate the de-prefixed safehouse knobs into the safehouse `extra` slot
@@ -268,14 +316,12 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		}
 	}
 	argv = append(argv, fd.passthrough...)
-	// Suppress the fresh-start bootstrap prompt on a resume, mirroring the
-	// Claude/Codex front door (frontdoor.go containsResume): a resume carries
-	// its own session intent and the FO contract survives in the system prompt
-	// via resources_discover, so re-injecting piBootstrapPrompt would tell the
-	// resumed session to load the contract as if starting fresh. Covers --resume,
-	// --resume=<id>, -r, --continue, -c (the same token set as containsResume).
-	if !containsResume(fd.passthrough) {
-		argv = append(argv, launchPrompt(piBootstrapPrompt, fd))
+	// The launch prompt is argv-only: pass the operator task, suppress on
+	// resume (containsResume). The contract is NOT carried here — pi expands
+	// /skill: on user input only, so no argv-embeddable syntax can deliver it;
+	// the extension's PI_SPACEDOCK_LAUNCH-gated injection owns that.
+	if !containsResume(fd.passthrough) && fd.hasTask {
+		argv = append(argv, fd.task)
 	}
 	// Resolve the fnm per-shell multishell symlink to its stable node-installation
 	// bin so execHost.Launch's stdlib exec.LookPath(<absolute>) hands Node a script
@@ -317,21 +363,21 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 			return 1
 		}
 		// Mirror claude/codex's wrap plumbing (frontdoor.go:345):
-		// launcherBinEnvPassFlags() forwards SPACEDOCK_BIN through the sandbox via
-		// --env-pass (launchEnv sets it on the safehouse process; the flag carries
-		// it through) so the launcher the helper calls resolve survives the
-		// boundary. The pi-specific load-bearing addition is
-		// --safehouse-add-dirs <fnmSandboxDir>: the dir whose node_modules holds
-		// the stable `pi`'s real script + hoisted deps (computed by
-		// fnmStableSandboxDir), which the sandbox cannot see by default. Targeted —
-		// grants pi's actual code+dep tree, not the whole filesystem.
+		// launcherBinEnvPassFlags() forwards SPACEDOCK_BIN via --env-pass. The
+		// pi-specific additions are --safehouse-add-dirs <fnmSandboxDir> (the
+		// stable `pi`'s code+deps, see fnmStableSandboxDir) and --env-pass
+		// PI_SPACEDOCK_LAUNCH so the gated injection fires under wrap too.
 		piExtra := append(launcherBinEnvPassFlags(), extra...)
+		piExtra = append(piExtra, "--env-pass", piLaunchMarkerEnv)
 		if fnmSandboxDir != "" {
 			piExtra = append(piExtra, "--add-dirs="+fnmSandboxDir)
 		}
 		argv = safehouse.Wrap(argv, piExtra)
 	}
-	code, err := ops.Launch(argv, launchEnv(os.Environ()))
+	// PI_SPACEDOCK_LAUNCH=1 on EVERY launch shape: the extension's injection
+	// gate. A plain `pi` session carries no marker and receives no bootstrap.
+	launchEnvList := append(launchEnv(os.Environ()), piLaunchMarkerEnv+"=1")
+	code, err := ops.Launch(argv, launchEnvList)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
 		return 1
@@ -586,6 +632,10 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	status := ops.SpacedockPackageStatus(cfg.agentDir, cfg.home)
 	res.packageStatus = status
 	res.spacedockPackageOK = status.registered && status.ensignDiscoverable
+	// Dev-override double-extension load: a static consequence of runPi's
+	// dev-override argv block (checkout via --extension, installed copy via
+	// package discovery). Flagged, not left to emergent behavior.
+	res.doubleExtensionLoad = cfg.repoRoot != "" && status.registered
 	// Dev override: --plugin-dir / SPACEDOCK_REPO_ROOT points at a local
 	// Spacedock checkout. When the package is not registered in settings.json
 	// (e.g. a fresh pi-home), the dev-override checkout satisfies the gate if
@@ -605,11 +655,83 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 			subagentsRegistered:      res.packageStatus.subagentsRegistered,
 		}
 	}
+	// The package's extension + first-officer skill are the FO contract's
+	// delivery path (AC-5): the ready gate refuses when either is missing.
+	if res.packageStatus.packageRoot != "" {
+		res.spacedockExtensionOK = ops.Stat(filepath.Join(res.packageStatus.packageRoot, ".pi", "extensions", "spacedock.ts")) == nil
+		res.firstOfficerSkillOK = res.packageStatus.firstOfficerDiscoverable
+	}
+	// pi version floor: read at the BINARY level only (`pi --version`; no
+	// package paths). A sub-floor binary fails the same not-ready path — it
+	// IS the stale old-org install signal.
+	if version, err := ops.PiVersion(); err == nil {
+		res.piVersion = strings.TrimSpace(version)
+		res.piVersionOK = piVersionAtLeast(res.piVersion, piVersionFloor)
+	}
 	return res
 }
 
 func piRuntimeLaunchReady(c piCheckResult) bool {
-	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.subagentsIntercomBridgeOK && c.intercomPackageOK && c.intercomSkillOK && c.spacedockPackageOK
+	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.subagentsIntercomBridgeOK && c.intercomPackageOK && c.intercomSkillOK && c.spacedockPackageOK && c.firstOfficerSkillOK && c.spacedockExtensionOK && c.piVersionOK
+}
+
+// piVersionAtLeast reports whether version parses at or above floor (the
+// binary prints a bare semver). Unparseable output fails closed.
+func piVersionAtLeast(version, floor string) bool {
+	parse := func(v string) (int, int, int, bool) {
+		m := regexp.MustCompile(`(\d+)\.(\d+)(?:\.(\d+))?`).FindStringSubmatch(v)
+		if m == nil {
+			return 0, 0, 0, false
+		}
+		major, _ := strconv.Atoi(m[1])
+		minor, _ := strconv.Atoi(m[2])
+		patch := 0
+		if m[3] != "" {
+			patch, _ = strconv.Atoi(m[3])
+		}
+		return major, minor, patch, true
+	}
+	vm, vn, vp, ok := parse(version)
+	if !ok {
+		return false
+	}
+	fm, fn, fp, ok := parse(floor)
+	if !ok {
+		return false
+	}
+	if vm != fm {
+		return vm > fm
+	}
+	if vn != fn {
+		return vn > fn
+	}
+	return vp >= fp
+}
+
+// piLaunchWarnings returns the non-fatal launch warnings for a ready runtime:
+// duplicate spacedock registration (route-aware count) and the dev-override
+// double-extension load, each naming the roots and the `pi remove` remedy.
+func piLaunchWarnings(c piCheckResult) []string {
+	var warnings []string
+	if s := c.packageStatus; s.spacedockEntries > 1 {
+		roots := make([]string, 0, len(s.packageRoots))
+		for i, root := range s.packageRoots {
+			if i == 0 {
+				roots = append(roots, root+" (wins, first match)")
+				continue
+			}
+			roots = append(roots, root)
+		}
+		warnings = append(warnings, fmt.Sprintf(
+			"Spacedock is registered %d times in pi settings.json (%s): route-aware, up to %d skill registrations per skill name — each package registers via the manifest pi.skills scan AND the extension's resources_discover. First match wins: %s. Remedy: `pi remove` the stale entry.",
+			s.spacedockEntries, strings.Join(roots, "; "), s.spacedockEntries*piSkillRoutesPerPackage, s.packageRoot))
+	}
+	if c.doubleExtensionLoad {
+		warnings = append(warnings, fmt.Sprintf(
+			"dev override active (%s) AND a Spacedock package registered (%s): both extension copies load — the checkout's spacedock.ts via --extension, the installed one via package discovery. Remedy: `pi remove` the stale entry or drop the dev override.",
+			c.repoRoot, c.packageStatus.packageRoot))
+	}
+	return warnings
 }
 
 func piDoctorHealthy(c piCheckResult) bool {
@@ -635,6 +757,22 @@ func printPiDoctorReport(w io.Writer, c piCheckResult) {
 	printPiCheck(w, c.intercomPackageOK, "pi-intercom package root", c.intercomPackageRoot, "set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root")
 	printPiCheck(w, c.intercomSkillOK, "pi-intercom skill", filepath.Join(c.intercomPackageRoot, "skills", "pi-intercom"), "install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md")
 	printPiCheck(w, c.spacedockPackageOK, "Spacedock package", piPackageReportPath(c.packageStatus), "run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)")
+	printPiCheck(w, c.spacedockExtensionOK, "Spacedock extension", filepath.Join(piPackageReportPath(c.packageStatus), ".pi", "extensions", "spacedock.ts"), "run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)")
+	printPiCheck(w, c.firstOfficerSkillOK, "Spacedock first-officer skill (package discovery)", filepath.Join(piPackageReportPath(c.packageStatus), "skills", "first-officer"), "run `spacedock install --host pi` to reinstall the Spacedock package")
+	if c.piVersionOK {
+		fmt.Fprintf(w, "OK pi version: %s (floor %s)\n", c.piVersion, piVersionFloor)
+	} else {
+		fmt.Fprintf(w, "MISSING pi version: %s (floor %s)\n", c.piVersion, piVersionFloor)
+		fmt.Fprintln(w, "  remedy: upgrade Pi — `npm install -g @earendil-works/pi-coding-agent` (pi now publishes as @earendil-works; a sub-floor binary is the stale @mariozechner-org install)")
+	}
+	if s := c.packageStatus; s.spacedockEntries > 1 {
+		fmt.Fprintf(w, "WARN duplicate Spacedock registration: %d package entries (%s) — route-aware, up to %d skill registrations per skill name (manifest pi.skills scan + extension resources_discover); first match wins: %s\n", s.spacedockEntries, strings.Join(s.packageRoots, "; "), s.spacedockEntries*piSkillRoutesPerPackage, s.packageRoot)
+		fmt.Fprintln(w, "  remedy: `pi remove` the stale entry")
+	}
+	if c.doubleExtensionLoad {
+		fmt.Fprintf(w, "WARN dev-override double extension: %s loads via --extension AND the registered package's spacedock.ts loads via package discovery (%s)\n", filepath.Join(c.repoRoot, ".pi", "extensions", "spacedock.ts"), c.packageStatus.packageRoot)
+		fmt.Fprintln(w, "  remedy: `pi remove` the stale entry or drop the dev override")
+	}
 	printPiSupervisorTalkbackBoundary(w)
 }
 
@@ -687,12 +825,10 @@ func envMap(env []string) map[string]string {
 }
 
 // piSpacedockPackageStatus replicates the package-registration + skill-discovery
-// contract that pi-subagents' collectSettingsPackageSkillPaths uses: it reads
-// ~/.pi/agent/settings.json `packages`, resolves each entry's package root (via
-// resolveSettingsPackageRoot), reads the package's package.json, and confirms a
-// package named "spacedock" is registered with ensign discoverable under its
-// pi.skills paths. This is the real discovery check — not a Stat of a cwd-derived
-// path — so it holds from a non-repo cwd once the package is installed.
+// contract that pi-subagents' collectSettingsPackageSkillPaths uses over
+// ~/.pi/agent/settings.json `packages` — the real discovery check, not a Stat
+// of a cwd-derived path. It also counts spacedock entries for the
+// route-aware duplicate condition (packages x registration routes).
 func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
 	if agentDir == "" {
 		return piPackageStatus{}
@@ -708,6 +844,7 @@ func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
 		return piPackageStatus{}
 	}
 	var st piPackageStatus
+	var spacedockRoots []string
 	for _, raw := range settings.Packages {
 		src := piPackageSourceFromEntry(raw)
 		if src == "" {
@@ -718,23 +855,30 @@ func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
 			continue
 		}
 		name, skillPaths := readPackagePiSkills(root)
-		if name == "spacedock" && !st.registered {
-			st.registered = true
-			st.source = src
-			st.packageRoot = root
-			for _, sp := range skillPaths {
-				dir := filepath.Join(root, sp)
-				if piSkillFileExists(dir, "ensign") {
-					st.ensignDiscoverable = true
-				}
-				if piSkillFileExists(dir, "first-officer") {
-					st.firstOfficerDiscoverable = true
+		if name == "spacedock" {
+			// First match wins (pi's skill scan is first-match by skill
+			// name); every entry counts toward the duplicate condition.
+			spacedockRoots = append(spacedockRoots, root)
+			if !st.registered {
+				st.registered = true
+				st.source = src
+				st.packageRoot = root
+				for _, sp := range skillPaths {
+					dir := filepath.Join(root, sp)
+					if piSkillFileExists(dir, "ensign") {
+						st.ensignDiscoverable = true
+					}
+					if piSkillFileExists(dir, "first-officer") {
+						st.firstOfficerDiscoverable = true
+					}
 				}
 			}
 		} else if name == "pi-subagents" {
 			st.subagentsRegistered = true
 		}
 	}
+	st.spacedockEntries = len(spacedockRoots)
+	st.packageRoots = spacedockRoots
 	return st
 }
 
