@@ -25,6 +25,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-09-11T06:01:40Z
 ---
 Problem: in `.github/workflows/runtime-live-e2e.yml`, `claude-live` and `codex-live` run on every `pull_request` (behind the `CI-E2E` required-reviewer environment), but `pi-live` is gated `if: workflow_dispatch && inputs.live_cadence == 'pi'` — it never runs on a PR, and a manual `workflow_dispatch` run against a PR branch produces no check run on that PR (the workflow's own journey-delta-comment job notes "a workflow_dispatch run has no PR"). So pi live evidence is neither PR-associated nor manually triggerable per-PR; it only exists as an unassociated manual run or the release-time precondition.
 
