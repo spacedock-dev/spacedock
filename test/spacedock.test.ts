@@ -1,7 +1,8 @@
 // Unit tests for the Spacedock pi extension module (.pi/extensions/spacedock.ts):
-// the PI_SPACEDOCK_LAUNCH injection gate (AC-1/AC-4) and the resources_discover
-// manifest-skip (the intra-package double-registration remedy). Run: bun test
-// ./.pi/extensions/spacedock.test.ts
+// the taskless-launch sendUserMessage delivery path (the single bootstrap
+// delivery arm), the PI_SPACEDOCK_LAUNCH gate for the compaction boot-record
+// arm, and the resources_discover manifest-skip (the intra-package
+// double-registration remedy). Run: bun test test/spacedock.test.ts
 import { describe, expect, test } from "bun:test";
 import registerSpacedockExtension from "../.pi/extensions/spacedock.ts";
 
@@ -9,13 +10,29 @@ type Handler = (event?: any) => any;
 
 function makeFakePi() {
 	const handlers: Record<string, Handler> = {};
-	return {
+	const sent: any[] = [];
+	const fake = {
 		handlers,
+		sent,
 		on(name: string, handler: Handler) {
 			handlers[name] = handler;
 		},
 		exec: async () => ({ code: 0, stdout: "" }),
+		sendUserMessage(content: any) {
+			sent.push(content);
+		},
 	};
+	return fake;
+}
+
+// A fake whose sendUserMessage throws synchronously — the no-crash-on-throw
+// harness for the single delivery path.
+function makeThrowingFakePi() {
+	const fake = makeFakePi();
+	fake.sendUserMessage = () => {
+		throw new Error("send unavailable");
+	};
+	return fake;
 }
 
 function userMessage(text: string) {
@@ -58,34 +75,79 @@ function asParentSession(run: () => void | Promise<void>) {
 	return withEnv("PI_SUBAGENT_CHILD", undefined, run);
 }
 
-describe("spacedock extension FO injection gate", () => {
-	test("plain session (no PI_SPACEDOCK_LAUNCH) receives NO bootstrap", async () => {
+describe("spacedock extension FO delivery gate", () => {
+	test("taskless frontdoor launch delivers the bootstrap as a real first-turn user message via sendUserMessage", async () => {
 		const fake = makeFakePi();
 		registerSpacedockExtension(fake as any);
 		await asParentSession(() =>
-			withEnv("PI_SPACEDOCK_LAUNCH", undefined, async () => {
-				fake.handlers["session_start"]?.();
-				const result = await runContext(fake.handlers["context"], [userMessage("operator task")]);
-				expect(result).toBeUndefined();
-			}),
+			withEnv("PI_SPACEDOCK_LAUNCH", "1", () =>
+				withEnv("PI_SPACEDOCK_LAUNCH_TASKLESS", "1", () => {
+					fake.handlers["session_start"]?.({ type: "session_start", reason: "startup" }, { ui: {} });
+					expect(fake.sent).toHaveLength(1);
+					const text = typeof fake.sent[0] === "string" ? fake.sent[0] : injectedText({ messages: [{ role: "user", content: fake.sent[0] }] });
+					// The extension-owned bootstrap text, resolvable trigger: the
+					// <available_skills> listing, not unexpandable $spacedock: syntax
+					// and not a relative SKILL.md path.
+					expect(text).toContain("SPACEDOCK-FO-BOOTSTRAP-v1");
+					expect(text).toContain("<available_skills>");
+					expect(text).not.toContain("$spacedock:");
+					expect(text).not.toContain("skills/first-officer/SKILL.md");
+				}),
+			),
 		);
 	});
 
-	test("frontdoor launch (PI_SPACEDOCK_LAUNCH=1) injects the bootstrap with the resolvable wording", async () => {
+	test("taskful / resume / plain launches and non-startup session_start reasons send ZERO messages", async () => {
+		const cases: Array<{ name: string; env: Record<string, string | undefined>; reason?: string }> = [
+			{ name: "taskful frontdoor launch (no taskless marker)", env: { PI_SPACEDOCK_LAUNCH: "1", PI_SPACEDOCK_LAUNCH_TASKLESS: "0" } },
+			{ name: "resume frontdoor launch (taskless marker 0)", env: { PI_SPACEDOCK_LAUNCH: "1", PI_SPACEDOCK_LAUNCH_TASKLESS: "0" }, reason: "resume" },
+			{ name: "plain pi session (no markers)", env: { PI_SPACEDOCK_LAUNCH: undefined, PI_SPACEDOCK_LAUNCH_TASKLESS: undefined } },
+			{ name: "reload of a taskless session (reason gate)", env: { PI_SPACEDOCK_LAUNCH: "1", PI_SPACEDOCK_LAUNCH_TASKLESS: "1" }, reason: "reload" },
+		];
+		for (const tc of cases) {
+			const fake = makeFakePi();
+			registerSpacedockExtension(fake as any);
+			await asParentSession(() =>
+				withEnv("PI_SPACEDOCK_LAUNCH", tc.env.PI_SPACEDOCK_LAUNCH, () =>
+					withEnv("PI_SPACEDOCK_LAUNCH_TASKLESS", tc.env.PI_SPACEDOCK_LAUNCH_TASKLESS, () => {
+						fake.handlers["session_start"]?.({ type: "session_start", reason: tc.reason ?? "startup" }, { ui: {} });
+						expect(fake.sent).toHaveLength(0);
+					}),
+				),
+			);
+		}
+	});
+
+	test("a throwing send is caught: no crash, named diagnostic, no bootstrap", async () => {
+		const fake = makeThrowingFakePi();
+		registerSpacedockExtension(fake as any);
+		await asParentSession(() =>
+			withEnv("PI_SPACEDOCK_LAUNCH", "1", () =>
+				withEnv("PI_SPACEDOCK_LAUNCH_TASKLESS", "1", () => {
+					// Must NOT throw — a throwing send leaves the launch running
+					// without a bootstrap.
+					fake.handlers["session_start"]?.({ type: "session_start", reason: "startup" }, { ui: {} });
+					expect(fake.sent).toHaveLength(0);
+				}),
+			),
+		);
+	});
+
+	test("NO context-hook bootstrap arm remains: the context hook injects nothing on a taskless launch's first request", async () => {
 		const fake = makeFakePi();
 		registerSpacedockExtension(fake as any);
 		await asParentSession(() =>
-			withEnv("PI_SPACEDOCK_LAUNCH", "1", async () => {
-				fake.handlers["session_start"]?.();
-				const result = await runContext(fake.handlers["context"], [userMessage("operator task")]);
-				const text = injectedText(result);
-				expect(text).toContain("SPACEDOCK-FO-BOOTSTRAP-v1");
-				// Resolvable trigger: the <available_skills> listing, not unexpandable
-				// $spacedock: syntax and not a relative SKILL.md path.
-				expect(text).toContain("<available_skills>");
-				expect(text).not.toContain("$spacedock:");
-				expect(text).not.toContain("skills/first-officer/SKILL.md");
-			}),
+			withEnv("PI_SPACEDOCK_LAUNCH", "1", () =>
+				withEnv("PI_SPACEDOCK_LAUNCH_TASKLESS", "1", async () => {
+					fake.handlers["session_start"]?.({ type: "session_start", reason: "startup" }, { ui: {} });
+					expect(fake.sent).toHaveLength(1);
+					// The bootstrap went out via sendUserMessage; the context hook
+					// (no compaction) must inject nothing — request-time-only
+					// bootstrap injection is gone.
+					const result = await runContext(fake.handlers["context"], [userMessage("operator task")]);
+					expect(result).toBeUndefined();
+				}),
+			),
 		);
 	});
 
@@ -94,15 +156,16 @@ describe("spacedock extension FO injection gate", () => {
 		registerSpacedockExtension(fake as any);
 		await asParentSession(() =>
 			withEnv("PI_SPACEDOCK_LAUNCH", undefined, async () => {
-				fake.handlers["session_start"]?.();
+				fake.handlers["session_start"]?.({ type: "session_start", reason: "startup" }, { ui: {} });
 				fake.handlers["session_compact"]?.();
 				const result = await runContext(fake.handlers["context"], [userMessage("compaction summary")]);
 				expect(result).toBeUndefined();
+				expect(fake.sent).toHaveLength(0);
 			}),
 		);
 		await asParentSession(() =>
 			withEnv("PI_SPACEDOCK_LAUNCH", "1", async () => {
-				fake.handlers["session_start"]?.();
+				fake.handlers["session_start"]?.({ type: "session_start", reason: "startup" }, { ui: {} });
 				fake.handlers["session_compact"]?.();
 				const result = await runContext(fake.handlers["context"], [userMessage("compaction summary")]);
 				expect(injectedText(result)).toContain("SPACEDOCK-FO-BOOT-v2");
