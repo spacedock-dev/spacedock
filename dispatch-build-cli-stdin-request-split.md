@@ -8,7 +8,7 @@ verdict:
 score: 0.5
 worktree: .worktrees/spacedock-ensign-dispatch-build-cli-stdin-request-split
 issue:
-pr: "#784"
+pr: pr-merge:784
 id: 09ptxgq8zma6qnx0h1w8a6wp
 gates:
     version: 1
