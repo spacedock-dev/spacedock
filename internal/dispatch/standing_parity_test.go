@@ -126,16 +126,10 @@ func TestBuildModsParity(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}

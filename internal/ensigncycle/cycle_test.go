@@ -73,19 +73,10 @@ func stageFixture(t *testing.T) cycleFixture {
 	writeFile(t, entityPath, entityFixture())
 	gitInit(t, root)
 
-	stdin := mustJSON(t, map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- Wire the seam", "- Prove it observably"},
-		"team_name":      "fixture-team",
-		"bare_mode":      false,
-		"host":           "claude",
-	})
+	stdin := "- Wire the seam\n- Prove it observably"
 
 	var stdout, stderr strings.Builder
-	if code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root},
+	if code := dispatch.RunWithLauncher(claudeteam.Probe, "/opt/spacedock/bin/spacedock", []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-", "--host", "claude"},
 		strings.NewReader(stdin), &stdout, &stderr); code != 0 {
 		t.Fatalf("dispatch build exit=%d stderr=%s", code, stderr.String())
 	}
@@ -366,16 +357,6 @@ func appendFile(t *testing.T, path, content string) {
 func readFile(t *testing.T, path string) string {
 	t.Helper()
 	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(b)
-}
-
-// mustJSON marshals v to a JSON string or fails the test.
-func mustJSON(t *testing.T, v any) string {
-	t.Helper()
-	b, err := json.Marshal(v)
 	if err != nil {
 		t.Fatal(err)
 	}

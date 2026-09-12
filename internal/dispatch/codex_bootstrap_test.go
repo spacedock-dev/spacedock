@@ -127,16 +127,9 @@ func newCodexBootstrapFixture(t *testing.T) codexBootstrapFixture {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- run the Codex bootstrap probe"},
-		"bare_mode":      false,
-		"host":           "codex",
-	}, nil)
-	native := runNativePreservingHostEnv(stdin, "build", "--workflow-dir", root)
+	stdin := strings.Join([]string{"- run the Codex bootstrap probe"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex"}
+	native := runNativePreservingHostEnv(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("fixture dispatch build exit=%d stderr=%q", native.exit, native.stderr)
 	}

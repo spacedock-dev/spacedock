@@ -18,7 +18,7 @@ Interpret the scheduler row before mutation. If `current == next`, set `dispatch
 6. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.
 7. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
 
-On exit 0, the next host action MUST be `«worker.spawn»` with every helper-emitted field unchanged.
+On exit 0, the next host action MUST be `«worker.spawn»`. Preserve the helper-emitted pointer and transport, identity, description and model fields; ordinary FO scope instructions may be appended directly to the pointer message.
 Record the returned handle before narration, a file edit, status change, report read, gate action, or wait.
 Do not advance to validation until `«completion-signal»` arrives and the entity-file stage report passes the completion gate.
 A successful dispatch build, narration, direct status change, or self-authored report is not worker evidence.
@@ -42,7 +42,7 @@ Build a numbered checklist of one to three dispatch-specific linchpin signals fr
 When a worker completes:
 
 1. Read the entity file's last `## Stage Report` section, section-scoped per `## Probe and Ideation Discipline` — never the whole body.
-2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
+2. Review it against the retained dispatch checklist and any supplemental instructions; there is no need to reread original input files. For the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
 3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
 
@@ -84,9 +84,9 @@ Advancing a completed worker. The gate-presentation spine is `## Completion and 
 
 ## Same-Stage Conflict Owner Handoff
 
-After `«halt.rebase-conflict»` aborts an owned code-worktree rebase, keep the entity in its current stage and route one opaque reconciliation assignment to the recorded owner. Write a scope-notes file that names the entity, current stage, PR, registered branch/worktree, old base/head, moved base, exact conflict paths, and next owner action. The package is transport only: do not parse, classify, or resolve the conflict, and do not mutate entity frontmatter or Git refs while routing it.
+After `«halt.rebase-conflict»` aborts an owned code-worktree rebase, keep the entity in its current stage and route one opaque reconciliation assignment to the recorded owner. Append ordinary scope instructions naming the entity, current stage, PR, registered branch/worktree, old base/head, moved base, exact conflict paths, and next owner action to the helper pointer sent to the owner. An existing scope-notes file may also be supplied through `--scope-notes-file`. The package is transport only: do not parse, classify, or resolve the conflict, and do not mutate entity frontmatter or Git refs while routing it.
 
-If `«addressable-worker»` exposes a matching live worker, require its entity, stage, branch, and worktree to equal the tuple proven by the original stamped dispatch, then run ordinary `«dispatch.build» --advance` for that same stage with the scope-notes file and forward its emitted prompt through the existing reuse-advance handle. Otherwise run an ordinary fresh dispatch for the same recorded stage with the same scope-notes file and send its emitted spawn envelope through `«worker.spawn»`; do not add `--stamp`, because the registered branch/worktree already exists.
+If `«addressable-worker»` exposes a matching live worker, require its entity, stage, branch, and worktree to equal the tuple proven by the original stamped dispatch, then run ordinary `«dispatch.build» --advance` for that same stage and forward its emitted pointer with the reconciliation instructions through the existing reuse-advance handle. Otherwise run an ordinary fresh dispatch for the same recorded stage and send its emitted spawn envelope with the reconciliation instructions appended to the pointer through `«worker.spawn»`; do not add `--stamp`, because the registered branch/worktree already exists.
 
 The worker identity, stage agent, branch, and worktree are the only routing inputs. The PR author, Git author, and shared Git credential are never owner signals. A missing proven tuple, a cold or unowned checkout, or a split-root state-sync conflict is report-only and does not enter this route. This is a per-entity hold, so unrelated entities may continue after the dispatch.
 
@@ -164,26 +164,28 @@ Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any requ
 
 ## «dispatch.build»(): assemble the initial-dispatch artifact the spawn call consumes
 
-The ONLY initial-dispatch path: route input through `spacedock dispatch build`, forward its output to `«worker.spawn»` verbatim. Manual prompt/`name` assembly is a protocol violation outside the break-glass block.
+The initial-dispatch path is `spacedock dispatch build` followed by `«worker.spawn»`. Keep its emitted pointer intact and preserve transport, identity, description and model fields. You may append ordinary scope instructions directly to the worker message without a scope-notes file or another helper call. Do not replace the pointer with a locally assembled assignment outside the break-glass block.
 
-- **guard:** write fragile inputs (checklist, scope notes, feedback context) to files first — one checklist item per non-empty line — so Markdown/backticks/shell-vars survive shell quoting.
-- **effect:** run the helper, then forward its stdout fields to `«worker.spawn»` unchanged:
+- **guard:** feed checklist text to stdin with --checklist-file - — one item per non-empty line. Use a quoted heredoc delimiter that does not occur as a complete input line, or pass literal stdin bytes through the tool. Append ordinary scope notes directly to the worker message; `--scope-notes-file` remains an optional way to include an existing file in the artifact. Keep opaque feedback context in `--feedback-context-file`. Preserve Markdown, backticks and shell variables literally. An existing checklist file remains supported; do not create one merely to dispatch.
+- **effect:** run the helper, then forward its stdout fields to `«worker.spawn»`, optionally appending scope instructions to `prompt`:
   ```
   ${SPACEDOCK_BIN:-spacedock} dispatch build \
     --workflow-dir {workflow_dir} \
     --entity-path {entity_file_path} \
     --stage {target_stage_name} \
-    --checklist-file {checklist_file} \
+    --checklist-file - \
     [--scope-notes-file {scope_notes_file}] \
     [--feedback-context-file {feedback_context_file}] \
     [--bare-mode] \
     [--feedback-reflow] \
     [--advance] \
-    [--stamp]
+    [--stamp] <<'CHECKLIST'
+  {one_checklist_item_per_nonempty_line}
+  CHECKLIST
   ```
   `host` derives from the runtime (`--host` is for tests/cross-host tooling only). Select the dispatch transport shape only from the already-bound runtime adapter and invoke that shape once; never probe a second shape after a refusal. In particular, Codex fresh dispatch is named and omits `--bare-mode`. `--bare-mode` reads from live team state only when the active adapter calls for it, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no spawn/transport fields (nothing is spawned; the adapter enumerates them) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`. Add `--stamp` for an ordinary (non-reuse) dispatch into a gate-consumed or freshly-advanced entry: it folds the `started`/`worktree=` frontmatter stamps, the state commit+sync, and worktree creation into this same call, before assembly; it refuses (no mutation) unless the entity's status already equals `--stage`, and is incompatible with `--advance` (a reuse advance presupposes an already-stamped live worker).
   Feedback context is opaque transport: preserve the authorized finding, evidence, workflow classification, disposition, workflow-defined correction projection, and assignment bytes.
-- **done-when:** on exit 0, `«worker.spawn»` is called with every helper-emitted field — the spawn/transport fields the adapter enumerates plus `description`/`model`/`prompt` — forwarded unchanged. `description` is REQUIRED. `prompt` is the ~175-char file-pointer the ensign Reads on first action — do not strip or rewrite it. Null `model` is `«worker-identity»`'s per-host case, not a core omit-on-null.
+- **done-when:** on exit 0, `«worker.spawn»` receives the helper-emitted spawn/transport fields the adapter enumerates plus `description`/`model` and the intact `prompt` pointer, with any supplemental scope instructions appended. `description` is REQUIRED. The ensign Reads the pointer on first action. The durable helper artifact is the standard assignment; supplemental notes live in the worker conversation. The pointer avoids FO reading and retransmitting the assembled artifact. Retain your dispatch checklist to verify the report; do not reread the artifact or original input files merely to forward or verify the assignment. Null `model` is `«worker-identity»`'s per-host case, not a core omit-on-null.
 - **block:** on non-zero exit (or missing binary), read stderr FIRST: a `dispatch build --stamp:`-prefixed diagnostic is a stamp/sync failure — no envelope was emitted and no authority burned; remedy the named problem and rerun the same build, never break-glass. Exit 3 is `«halt.rebase-conflict»` — HALT dispatch entirely (shared-core HALT clause); never manually dispatch against a halted or unsynced state tree. Only an assembly failure (nonzero WITHOUT the `--stamp:` prefix, or missing binary) triggers the adapter's Break-Glass Manual Dispatch template.
 - → **shipped**: `` `spacedock dispatch build` `` — invoke it directly per the effect above.
 

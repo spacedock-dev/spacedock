@@ -5,6 +5,8 @@ package dispatch
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -64,50 +66,49 @@ func helpExampleFixture(t *testing.T) (workflowDir string, leaf map[string]strin
 	}
 }
 
-// TestDispatchBuildAdvanceInputMode is AC-2: the reuse-advance form is
-// unambiguous. The accepted flag/file --advance form exits 0 with an advance
-// envelope on stdout and empty stderr; the contradictory stdin-JSON-plus-CLI
-// --advance form (no flag/file trio) exits 2 with the exact trio-required error.
+// TestDispatchBuildAdvanceInputMode exercises file and stdin advance envelopes,
+// while a retired JSON caller fails with the exact migration diagnostic.
 func TestDispatchBuildAdvanceInputMode(t *testing.T) {
-	t.Run("flag/file --advance succeeds", func(t *testing.T) {
-		workflowDir, leaf := helpExampleFixture(t)
-		res := runNative("", "build",
-			"--workflow-dir", workflowDir,
-			"--entity-path", leaf["thing.md"],
-			"--stage", "validation",
-			"--checklist-file", leaf["validation.checklist"],
-			"--advance")
-		if res.exit != 0 {
-			t.Fatalf("flag/file --advance exit=%d, want 0\nstderr=%q", res.exit, res.stderr)
-		}
-		if res.stderr != "" {
-			t.Fatalf("flag/file --advance stderr=%q, want empty", res.stderr)
-		}
-		var env map[string]json.RawMessage
-		if err := json.Unmarshal([]byte(res.stdout), &env); err != nil {
-			t.Fatalf("stdout is not JSON: %v\n%s", err, res.stdout)
-		}
-		for _, want := range []string{"schema_version", "prompt", "model"} {
-			if _, ok := env[want]; !ok {
-				t.Errorf("advance envelope missing %q: %s", want, res.stdout)
+	for _, source := range []string{"file", "stdin"} {
+		t.Run(source, func(t *testing.T) {
+			workflowDir, leaf := helpExampleFixture(t)
+			checklist := leaf["validation.checklist"]
+			if source == "stdin" {
+				checklist = "-"
 			}
-		}
-		for _, banned := range []string{"subagent_type", "name"} {
-			if _, ok := env[banned]; ok {
-				t.Errorf("advance envelope must omit spawn field %q: %s", banned, res.stdout)
+			res := runNative("- verify\n", "build",
+				"--workflow-dir", workflowDir,
+				"--entity-path", leaf["thing.md"],
+				"--stage", "validation",
+				"--checklist-file", checklist,
+				"--advance")
+			if res.exit != 0 {
+				t.Fatalf("flag/file --advance exit=%d, want 0\nstderr=%q", res.exit, res.stderr)
 			}
-		}
-	})
+			if res.stderr != "" {
+				t.Fatalf("flag/file --advance stderr=%q, want empty", res.stderr)
+			}
+			var env map[string]json.RawMessage
+			if err := json.Unmarshal([]byte(res.stdout), &env); err != nil {
+				t.Fatalf("stdout is not JSON: %v\n%s", err, res.stdout)
+			}
+			for _, want := range []string{"schema_version", "prompt", "model"} {
+				if _, ok := env[want]; !ok {
+					t.Errorf("advance envelope missing %q: %s", want, res.stdout)
+				}
+			}
+			for _, banned := range []string{"subagent_type", "name"} {
+				if _, ok := env[banned]; ok {
+					t.Errorf("advance envelope must omit spawn field %q: %s", banned, res.stdout)
+				}
+			}
+		})
+	}
 
 	t.Run("stdin JSON + --advance is rejected", func(t *testing.T) {
 		workflowDir, leaf := helpExampleFixture(t)
-		stdin := mergeStdin(map[string]any{
-			"schema_version": 2,
-			"entity_path":    leaf["thing.md"],
-			"workflow_dir":   workflowDir,
-			"stage":          "validation",
-			"checklist":      []string{"- verify"},
-		}, nil)
+		_ = leaf
+		stdin := `{"schema_version":2,"checklist":["- verify"]}`
 		res := runNative(stdin, "build", "--workflow-dir", workflowDir, "--advance")
 		if res.exit != 2 {
 			t.Fatalf("stdin JSON + --advance exit=%d, want 2\nstdout=%q\nstderr=%q", res.exit, res.stdout, res.stderr)
@@ -115,7 +116,7 @@ func TestDispatchBuildAdvanceInputMode(t *testing.T) {
 		if res.stdout != "" {
 			t.Fatalf("stdin JSON + --advance stdout=%q, want empty", res.stdout)
 		}
-		wantErr := "error: flag/file input requires --entity-path, --stage, and --checklist-file"
+		wantErr := "error: flag/file input requires --entity-path, --stage, and --checklist-file\nJSON request input is retired; pass checklist lines on stdin with --checklist-file -"
 		if strings.TrimSpace(res.stderr) != wantErr {
 			t.Fatalf("stderr=%q, want %q", res.stderr, wantErr)
 		}
@@ -125,7 +126,7 @@ func TestDispatchBuildAdvanceInputMode(t *testing.T) {
 // TestDispatchBuildHelpExamplesParse is AC-3: every positive example printed in
 // the `dispatch build --help` Examples section is run through the real parser
 // against a minimal fixture. Only the leaf path values are rewritten to the
-// fixture's real files — flag names, field names, JSON shape, stage names, and
+// fixture's real files — flags, checklist text, stage names, and
 // --advance presence stay exactly as printed. If any printed example drops a
 // required field, renames a flag, or advertises a stdin+--advance form the parser
 // rejects, the matching run exits non-zero and this test fails.
@@ -156,22 +157,29 @@ func TestDispatchBuildHelpExamplesParse(t *testing.T) {
 	}
 }
 
-// helpExamples returns the positive examples in the help's Examples section: a
-// line beginning `{` is a stdin JSON example, a line beginning `spacedock
-// dispatch build` is a flag/file example. Scoped to the Examples section so the
-// placeholder Usage lines (DIR/FILE/STAGE) are not mistaken for examples.
+// helpExamples returns complete executable examples, including their heredoc bodies.
 func helpExamples(t *testing.T, help string) []string {
 	t.Helper()
 	idx := strings.Index(help, "Examples:")
 	if idx < 0 {
 		t.Fatalf("help has no Examples: section:\n%s", help)
 	}
+	lines := strings.Split(help[idx:], "\n")
 	var out []string
-	for _, line := range strings.Split(help[idx:], "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "{") || strings.HasPrefix(line, "spacedock dispatch build") {
-			out = append(out, line)
+	for i := 0; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+		if !strings.HasPrefix(line, "spacedock dispatch build") {
+			continue
 		}
+		if strings.HasSuffix(line, "<<'CHECKLIST'") {
+			for i++; i < len(lines); i++ {
+				line += "\n" + lines[i]
+				if lines[i] == "CHECKLIST" {
+					break
+				}
+			}
+		}
+		out = append(out, line)
 	}
 	return out
 }
@@ -187,25 +195,14 @@ var pathValueFlags = map[string]bool{
 }
 
 // runHelpExample rewrites the leaf path values in a single rendered example to the
-// fixture's real files, then runs it through the native parser. A stdin JSON
-// example runs in stdin mode; a `spacedock dispatch build` line runs as its
-// flag/file argument vector. Everything except leaf path values is preserved
+// fixture's real files, then runs it through the native parser with the printed
+// heredoc contents supplied as stdin. Everything except leaf paths is preserved
 // verbatim, so a renamed flag or dropped field still fails the parse.
 func runHelpExample(example, workflowDir string, leaf map[string]string) runResult {
-	if strings.HasPrefix(example, "{") {
-		var fields map[string]any
-		if err := json.Unmarshal([]byte(example), &fields); err != nil {
-			return runResult{stderr: "example is not JSON: " + err.Error(), exit: 99}
-		}
-		for _, key := range []string{"entity_path", "workflow_dir"} {
-			if s, ok := fields[key].(string); ok {
-				if real, mapped := leaf[s]; mapped {
-					fields[key] = real
-				}
-			}
-		}
-		raw, _ := json.Marshal(fields)
-		return runNative(string(raw), "build", "--workflow-dir", workflowDir)
+	stdin := ""
+	if i := strings.Index(example, " <<'CHECKLIST'"); i >= 0 {
+		stdin = strings.TrimSuffix(strings.TrimPrefix(example[i+len(" <<'CHECKLIST'"):], "\n"), "CHECKLIST")
+		example = example[:i]
 	}
 
 	tokens := strings.Fields(example)
@@ -219,5 +216,152 @@ func runHelpExample(example, workflowDir string, leaf map[string]string) runResu
 			i++
 		}
 	}
-	return runNative("", args...)
+	return runNative(stdin, args...)
+}
+
+func TestBuildChecklistStdin(t *testing.T) {
+	root, entity := buildHostFixture(t)
+	before, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, input := range []string{"DONE: verify", "\r\n  `ticks` $HOME 雪  \r\n\t\r\nsecond\r\n", strings.Repeat("x", 70000), `{"literal":"JSON"}`} {
+		result := runNative(input, "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-")
+		if result.exit != 0 {
+			t.Fatalf("stdin build exit=%d: %s", result.exit, result.stderr)
+		}
+	}
+	after, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != len(before) {
+		t.Fatal("stdin dispatch added a scratch input file")
+	}
+	path := filepath.Join(root, "existing.checklist")
+	writeFile(t, path, "DONE: verify")
+	result := runNative("", "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", path)
+	files, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.exit != 0 || len(files) != len(before)+1 {
+		t.Fatalf("file baseline requires one checklist input: %+v", result)
+	}
+
+}
+
+func TestBuildRequestControlsRetired(t *testing.T) {
+	for _, flag := range []string{"--print-schema", "--print-schema=true", "--validate-only", "--validate-only=missing.json"} {
+		result := runNative("", "build", flag)
+		if result.exit != 2 || result.stdout != "" || !strings.Contains(result.stderr, "JSON request input and --print-schema/--validate-only are retired") {
+			t.Fatalf("%s: %+v", flag, result)
+		}
+	}
+}
+
+type failedChecklistReader struct{ called bool }
+
+func (r *failedChecklistReader) Read([]byte) (int, error) {
+	r.called = true
+	return 0, fmt.Errorf("reader sentinel")
+}
+
+func TestBuildInputFailuresDoNotReadOrStamp(t *testing.T) {
+	root, entity := buildHostFixture(t)
+	before, _ := os.ReadFile(entity)
+	head := gitOutput(t, root, "rev-parse", "HEAD")
+	artifactPath := filepath.Join(dispatchFileDir, "spacedock-ensign-thing-backlog.md")
+	artifactBefore, artifactErr := os.ReadFile(artifactPath)
+	assertUnchanged := func(t *testing.T) {
+		t.Helper()
+		after, _ := os.ReadFile(entity)
+		artifactAfter, afterErr := os.ReadFile(artifactPath)
+		if string(after) != string(before) || gitOutput(t, root, "rev-parse", "HEAD") != head || string(artifactAfter) != string(artifactBefore) || (artifactErr == nil) != (afterErr == nil) {
+			t.Fatal("input failure mutated entity, commit, or dispatch artifact")
+		}
+	}
+	base := []string{"build", "--host", "claude", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "-", "--stamp"}
+	for _, tc := range []struct {
+		name string
+		args []string
+		read bool
+		code int
+		want string
+	}{
+		{"reader failure", base, true, 1, "failed to read checklist stdin: reader sentinel"},
+		{"file failure", append(append([]string{}, base...), "--checklist-file", filepath.Join(root, "missing")), false, 1, "failed to read checklist file"},
+		{"missing entity", []string{"build", "--workflow-dir", root, "--stage", "backlog", "--checklist-file", "-"}, false, 2, "JSON request input is retired"},
+		{"missing stage", []string{"build", "--workflow-dir", root, "--entity-path", entity, "--checklist-file", "-"}, false, 2, "JSON request input is retired"},
+		{"missing checklist", []string{"build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog"}, false, 2, "JSON request input is retired"},
+		{"required trio", []string{"build", "--workflow-dir", root}, false, 2, "JSON request input is retired"},
+		{"required workflow", []string{"build"}, false, 2, "requires --workflow-dir"},
+		{"stamp advance", append(append([]string{}, base...), "--advance"), false, 2, "--stamp is incompatible with --advance"},
+		{"bare advance", append(append([]string{}, base...), "--bare-mode", "--advance"), false, 2, "--advance is incompatible with --bare-mode"},
+		{"retired equals", []string{"build", "--validate-only=missing"}, false, 2, "are retired"},
+		{"retired schema", []string{"build", "--print-schema"}, false, 2, "are retired"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			reader := &failedChecklistReader{}
+			var out, errout bytes.Buffer
+			code := RunWithLauncher(nil, testWorkflowLauncher, tc.args, reader, &out, &errout)
+			if code != tc.code || out.Len() != 0 || !strings.Contains(errout.String(), tc.want) || reader.called != tc.read {
+				t.Fatalf("exit=%d read=%v stdout=%q stderr=%q", code, reader.called, out.String(), errout.String())
+			}
+			assertUnchanged(t)
+		})
+	}
+	legacy := runNative(`{"schema_version":2,"stage":"backlog","checklist":["retired request"]}`, "build", "--workflow-dir", root)
+	if legacy.exit != 2 || legacy.stdout != "" || !strings.Contains(legacy.stderr, "JSON request input is retired") {
+		t.Fatalf("legacy request: %+v", legacy)
+	}
+	assertUnchanged(t)
+	for _, input := range []string{"", " \t\r\n\n"} {
+		for _, source := range []string{"-", filepath.Join(t.TempDir(), "empty")} {
+			if source != "-" {
+				writeFile(t, source, input)
+			}
+			result := runNative(input, "build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", source)
+			if result.exit != 1 || result.stdout != "" || result.stderr != "error: missing required field 'checklist'\n" {
+				t.Fatalf("empty input: %+v", result)
+			}
+			assertUnchanged(t)
+		}
+	}
+}
+
+func TestChecklistFileDoesNotReadStdin(t *testing.T) {
+	root, entity := buildHostFixture(t)
+	old, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(old)
+	writeFile(t, "-", "DONE: literal dash file\n")
+	reader := &failedChecklistReader{}
+	var out, errout bytes.Buffer
+	args := []string{"build", "--workflow-dir", root, "--entity-path", entity, "--stage", "backlog", "--checklist-file", "./-", "--host", "claude", "--scope-notes-file", "-", "--feedback-context-file", "-"}
+	code := RunWithLauncher(nil, testWorkflowLauncher, args, reader, &out, &errout)
+	if code != 0 || reader.called {
+		t.Fatalf("exit=%d read=%v stderr=%s", code, reader.called, errout.String())
+	}
+	for i, arg := range args {
+		if arg == "--checklist-file" {
+			args[i+1] = "-"
+		}
+	}
+	out.Reset()
+	errout.Reset()
+	code = RunWithLauncher(nil, testWorkflowLauncher, args, strings.NewReader("DONE: actual stdin"), &out, &errout)
+	if code != 0 {
+		t.Fatalf("dash stdin with a false filename sentinel: %s", errout.String())
+	}
+	body := readDispatchBody(t, dispatchFilePathFromStdout(t, out.String()))
+	if !strings.Contains(body, "### Completion checklist\n\nDONE: actual stdin\n\n### Summary") {
+		t.Fatal("dash opened the file named - instead of reading stdin")
+	}
+
 }

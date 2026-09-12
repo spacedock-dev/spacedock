@@ -40,7 +40,7 @@ func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, a
 		if code != 0 {
 			return code
 		}
-		if !opts.PrintSchema && opts.ValidateOnly == "" && opts.WorkflowDir == "" {
+		if opts.WorkflowDir == "" {
 			fmt.Fprintln(stderr, "error: dispatch build requires --workflow-dir")
 			return 2
 		}
@@ -122,13 +122,6 @@ type buildOptions struct {
 	FeedbackReflow      bool
 	Advance             bool
 	Stamp               bool
-	PrintSchema         bool
-	ValidateOnly        string
-	requestFlagProvided bool
-}
-
-func (o buildOptions) hasRequestFlags() bool {
-	return o.requestFlagProvided
 }
 
 func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
@@ -141,10 +134,13 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 		"--checklist-file":        &opts.ChecklistFile,
 		"--scope-notes-file":      &opts.ScopeNotesFile,
 		"--feedback-context-file": &opts.FeedbackContextFile,
-		"--validate-only":         &opts.ValidateOnly,
 	}
 	for i := 0; i < len(args); i++ {
 		a := args[i]
+		if a == "--print-schema" || strings.HasPrefix(a, "--print-schema=") || a == "--validate-only" || strings.HasPrefix(a, "--validate-only=") {
+			fmt.Fprintln(stderr, "error: dispatch build JSON request input and --print-schema/--validate-only are retired; use --entity-path, --stage, and --checklist-file FILE|-")
+			return opts, 2
+		}
 		if a == "--team-name" || strings.HasPrefix(a, "--team-name=") {
 			fmt.Fprintln(stderr, "error: unknown flag --team-name: legacy TeamCreate-registry dispatch mode is retired; omit --team-name, auto-team is the only claude shape")
 			return opts, 2
@@ -153,9 +149,6 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 			name := a[:eq]
 			if dst, ok := valueFlags[name]; ok {
 				*dst = a[eq+1:]
-				if isBuildRequestFlag(name) {
-					opts.requestFlagProvided = true
-				}
 			}
 			continue
 		}
@@ -165,40 +158,21 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 				return opts, 2
 			}
 			*dst = args[i+1]
-			if isBuildRequestFlag(a) {
-				opts.requestFlagProvided = true
-			}
 			i++
 			continue
 		}
 		switch a {
 		case "--bare-mode":
 			opts.BareMode = true
-			opts.requestFlagProvided = true
 		case "--feedback-reflow":
 			opts.FeedbackReflow = true
-			opts.requestFlagProvided = true
 		case "--advance":
 			opts.Advance = true
-			opts.requestFlagProvided = true
 		case "--stamp":
 			opts.Stamp = true
-			opts.requestFlagProvided = true
-		case "--print-schema":
-			opts.PrintSchema = true
 		}
 	}
 	return opts, 0
-}
-
-func isBuildRequestFlag(name string) bool {
-	switch name {
-	case "--entity-path", "--stage", "--checklist-file", "--scope-notes-file",
-		"--feedback-context-file":
-		return true
-	default:
-		return false
-	}
 }
 
 // wantsHelp reports whether args request subcommand help. Stop at -- so future
@@ -286,10 +260,7 @@ func printUsage(w io.Writer) {
 	fmt.Fprint(w, `spacedock dispatch assembles ensign dispatch artifacts.
 
 Usage:
-  spacedock dispatch build --workflow-dir DIR        (stdin JSON -> stdout JSON)
-  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE [--host claude|codex|pi]
-  spacedock dispatch build --print-schema
-  spacedock dispatch build --validate-only FILE
+  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi]
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
   spacedock dispatch trunk --workflow-dir DIR
   spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include lingering,superseded,un-advanced-pr,stale-branch,local-main-drift]
@@ -298,61 +269,48 @@ Usage:
 
 func printBuildUsage(w io.Writer) {
 	fmt.Fprint(w, `Usage:
-  spacedock dispatch build --workflow-dir DIR < request.json                                                   (stdin mode)
-  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE [flags]   (flag/file mode)
-  spacedock dispatch build --print-schema
-  spacedock dispatch build --validate-only FILE
+  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE
+    --checklist-file FILE|- [--scope-notes-file FILE] [--feedback-context-file FILE]
+    [--host claude|codex|pi] [--bare-mode] [--feedback-reflow] [--stamp | --advance]
 
-Build an ensign dispatch artifact and write the JSON envelope to stdout. The
-request comes from a JSON object on stdin OR from flags/files. The two are
-selected by the rule below and never merged.
+Build an ensign dispatch artifact and write the JSON envelope to stdout.
+Assignment identifiers and invocation controls are CLI flags.
 
-Input mode selection:
-  If ANY request flag is present the request is read from flags/files and stdin
-  is IGNORED (flag/file mode); otherwise the request is read as a JSON object on
-  stdin (stdin JSON mode). Request flags:
-    --entity-path  --stage  --checklist-file  --scope-notes-file
-    --feedback-context-file  --bare-mode  --feedback-reflow  --advance  --stamp
-  Flag/file mode requires --entity-path, --stage, and --checklist-file; any
-  request flag with one of the three missing fails:
-    error: flag/file input requires --entity-path, --stage, and --checklist-file
-  Because --advance is a request flag, piping JSON on stdin together with
-  --advance is NOT accepted -- it selects flag/file mode and ignores the piped
-  JSON. Pass a reuse-advance request in flag/file form (see the --advance
-  example below).
+JSON requests, --print-schema and --validate-only are retired. Put entity,
+stage, host and controls in flags. Pipe checklist lines to --checklist-file -;
+append ordinary scope instructions after the intact helper pointer sent to the worker.
+--scope-notes-file remains optional; use --feedback-context-file for opaque feedback.
+Stdout remains the dispatch JSON envelope.
+
+Missing required assignment flags fail before reading input:
+  error: flag/file input requires --entity-path, --stage, and --checklist-file
+  JSON request input is retired; pass checklist lines on stdin with --checklist-file -
 
 Flags:
-  --workflow-dir DIR            Workflow definition directory containing README.md (both modes).
-  --host HOST                   Override the runtime host (claude|codex|pi). Defaults to the detected runtime (both modes).
-  --entity-path FILE            Entity file for this dispatch (flag/file mode).
-  --stage STAGE                 Stage name to dispatch (flag/file mode).
-  --checklist-file FILE         File of checklist lines, one per line (flag/file mode).
-  --scope-notes-file FILE       Optional scope-notes file (flag/file mode).
-  --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow (flag/file mode).
+  --workflow-dir DIR            Workflow definition directory containing README.md.
+  --host HOST                   Override the runtime host (claude|codex|pi). Defaults to the detected runtime.
+  --entity-path FILE            Entity file for this dispatch.
+  --stage STAGE                 Stage name to dispatch.
+  --checklist-file FILE|-       FILE contains one checklist item per non-empty line; use - to read the same format from stdin until EOF. Blank lines are ignored; CRLF and LF are accepted.
+  --scope-notes-file FILE       Optional scope-notes file.
+  --feedback-context-file FILE  Optional feedback-context file; required with --feedback-reflow.
   --bare-mode                   Emit the bare sequential shape (no name, no run_in_background); unsupported on host=codex.
   --feedback-reflow             Route a rejection back to its feedback-to target stage; requires --feedback-context-file.
   --advance                     Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
   --stamp                       Fold the ordinary post-gate dispatch steps (started/worktree frontmatter stamps, state commit+sync, worktree creation) into this build, before assembling the envelope. Refuses (no mutation) unless the entity's status already equals --stage. Incompatible with --advance.
-  --print-schema                Print the stdin request JSON schema and exit.
-  --validate-only FILE          Validate a request JSON file without writing a dispatch; exit 0 on success.
-
-Stdin JSON request fields (stdin JSON mode):
-  schema_version  Dispatch schema version. The current supported value is 2.
-  entity_path     Path to the entity file for this dispatch.
-  workflow_dir    Workflow directory for the dispatch request.
-  stage           Stage name to dispatch.
-  checklist       Array of checklist strings for the dispatched worker.
-  (optional: scope_notes, feedback_context, bare_mode, is_feedback_reflow, advance, host)
 
 Examples:
-  stdin JSON mode:
-  {"schema_version":2,"entity_path":"thing.md","workflow_dir":".","stage":"implementation","checklist":["DONE: run tests"]}
-
-  flag/file mode:
+  existing checklist file:
   spacedock dispatch build --workflow-dir . --entity-path thing.md --stage implementation --checklist-file impl.checklist
 
-  reuse-advance (flag/file mode):
+  reuse-advance:
   spacedock dispatch build --workflow-dir . --entity-path thing.md --stage validation --checklist-file validation.checklist --advance
+
+  reuse-advance with literal checklist stdin:
+  spacedock dispatch build --workflow-dir . --entity-path thing.md --stage validation --checklist-file - --advance <<'CHECKLIST'
+DONE: verify
+CHECKLIST
+
 `)
 }
 

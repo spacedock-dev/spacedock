@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -59,12 +60,13 @@ func entityFM(title, status, worktree string) string {
 // both native and oracle on the same stdin, and asserts three-channel parity
 // (with the fetch line rewritten) plus dispatch-body parity.
 type buildCase struct {
-	name       string
-	splitRoot  bool
-	folder     bool // folder-form {slug}/index.md vs flat {slug}.md
-	worktree   bool // entity has a stamped worktree: value
-	stage      string
-	stdinExtra map[string]any // merged into the base stdin
+	name      string
+	splitRoot bool
+	folder    bool // folder-form {slug}/index.md vs flat {slug}.md
+	worktree  bool // entity has a stamped worktree: value
+	stage     string
+	bare      bool
+	feedback  bool
 }
 
 func TestBuildParityCrossProduct(t *testing.T) {
@@ -77,15 +79,11 @@ func TestBuildParityCrossProduct(t *testing.T) {
 		{name: "split+folder+nonworktree+team", splitRoot: true, folder: true, worktree: false, stage: "backlog"},
 		{
 			name: "single+flat+nonworktree+bare", splitRoot: false, folder: false, worktree: false, stage: "backlog",
-			stdinExtra: map[string]any{"bare_mode": true},
+			bare: true,
 		},
 		{
 			name: "feedback+scope+reflow", splitRoot: false, folder: false, worktree: true, stage: "validation",
-			stdinExtra: map[string]any{
-				"is_feedback_reflow": true,
-				"feedback_context":   "REJECTED: do better.",
-				"scope_notes":        "### Scope\nLimit to module X.",
-			},
+			feedback: true,
 		},
 	}
 
@@ -134,16 +132,19 @@ func TestBuildParityCrossProduct(t *testing.T) {
 				gitAddOrigin(t, stateCheckout)
 			}
 
-			stdin := mergeStdin(map[string]any{
-				"schema_version": 2,
-				"entity_path":    entityPath,
-				"workflow_dir":   workflowDir,
-				"stage":          tc.stage,
-				"checklist":      []string{"- a", "- b"},
-				"bare_mode":      false,
-			}, tc.stdinExtra)
+			stdin := "- a\n- b"
+			stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", tc.stage, "--checklist-file", "-"}
+			if tc.bare {
+				stdinArgs = append(stdinArgs, "--bare-mode")
+			}
+			if tc.feedback {
+				feedback, scope := filepath.Join(t.TempDir(), "feedback.md"), filepath.Join(t.TempDir(), "scope.md")
+				writeFile(t, feedback, "REJECTED: do better.")
+				writeFile(t, scope, "### Scope\nLimit to module X.")
+				stdinArgs = append(stdinArgs, "--feedback-reflow", "--feedback-context-file", feedback, "--scope-notes-file", scope)
+			}
 
-			native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+			native := runNative(stdin, stdinArgs...)
 			nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 			env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
@@ -169,30 +170,15 @@ func TestBuildParityNonASCIITitle(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Segregate Claude — generic split", "backlog", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
 	assertEmDashEscaped(t, native.stdout)
 	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
 	assertGolden(t, "build-nonascii-title", env)
-}
-
-// mergeStdin merges extra into base (extra wins) and returns the JSON string.
-func mergeStdin(base, extra map[string]any) string {
-	for k, v := range extra {
-		base[k] = v
-	}
-	raw, _ := json.Marshal(base)
-	return string(raw)
 }
 
 // dispatchFilePathFromStdout pulls dispatch_file_path out of a build stdout JSON.

@@ -56,18 +56,11 @@ func TestBuildOmitsStandingFetchLineEvenUnderMods(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-		"host":           "claude",
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-", "--host", "claude"}
 
 	var out, errBuf bytes.Buffer
-	if code := RunWithLauncher(claudeteam.Probe, testWorkflowLauncher, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
+	if code := RunWithLauncher(claudeteam.Probe, testWorkflowLauncher, stdinArgs, strings.NewReader(stdin), &out, &errBuf); code != 0 {
 		t.Fatalf("build exit=%d stderr=%q", code, errBuf.String())
 	}
 
@@ -93,18 +86,11 @@ func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-		"host":           "claude",
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-", "--host", "claude"}
 
 	var out, errBuf bytes.Buffer
-	if code := RunWithLauncher(claudeteam.Probe, testWorkflowLauncher, []string{"build", "--workflow-dir", root}, strings.NewReader(stdin), &out, &errBuf); code != 0 {
+	if code := RunWithLauncher(claudeteam.Probe, testWorkflowLauncher, stdinArgs, strings.NewReader(stdin), &out, &errBuf); code != 0 {
 		t.Fatalf("build exit=%d stderr=%q", code, errBuf.String())
 	}
 

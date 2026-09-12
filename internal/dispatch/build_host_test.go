@@ -41,12 +41,12 @@ func TestResolveBuildHostFromMarkers(t *testing.T) {
 			"no-markers",
 			map[string]string{},
 			"",
-			"missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT, or PI_CODING_AGENT_DIR",
+			"missing host source: pass --host or run under CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT, or PI_CODING_AGENT_DIR",
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			host, err := resolveBuildHost("", "", hostEnv(tc.vars))
+			host, err := resolveBuildHost("", hostEnv(tc.vars))
 			if tc.wantErr == "" {
 				if err != nil {
 					t.Fatalf("resolveBuildHost = error %v, want host %q", err, tc.wantHost)
@@ -70,11 +70,11 @@ func TestResolveBuildHostFromMarkers(t *testing.T) {
 // out marker detection entirely — the extraction touched only the marker branch.
 func TestResolveBuildHostExplicitWins(t *testing.T) {
 	env := hostEnv(map[string]string{"CODEX_THREAD_ID": "t1", "CLAUDECODE": "1"})
-	host, err := resolveBuildHost("pi", "", env)
+	host, err := resolveBuildHost("pi", env)
 	if err != nil || host != "pi" {
 		t.Fatalf("resolveBuildHost(--host=pi) = (%q, %v), want (\"pi\", nil) despite ambiguous markers", host, err)
 	}
-	if _, err := resolveBuildHost("bogus", "", env); err == nil || !strings.Contains(err.Error(), "unsupported host") {
+	if _, err := resolveBuildHost("bogus", env); err == nil || !strings.Contains(err.Error(), "unsupported host") {
 		t.Fatalf("resolveBuildHost(--host=bogus) error = %v, want unsupported host", err)
 	}
 }

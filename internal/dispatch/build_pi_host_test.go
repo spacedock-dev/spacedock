@@ -25,17 +25,10 @@ func TestBuildPiHostPromptShape(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-		"host":           "pi",
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}
@@ -86,17 +79,10 @@ func TestBuildPiHostIgnoresModelWithNote(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "stagemodel", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "stagemodel",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-		"host":           "pi",
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "stagemodel", "--checklist-file", "-", "--host", "pi"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	assertGolden(t, "build-host-pi-model-ignored", goldenEnvelope{res: normRun(native, root, home)})
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
@@ -126,17 +112,10 @@ func TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper(t *testin
 	gitInit(t, root)
 
 	checklist := []string{"- keep the builder assignment", "- write the stage report"}
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      checklist,
-		"bare_mode":      true,
-		"host":           "pi",
-	}, nil)
+	stdin := strings.Join(checklist, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi", "--bare-mode"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}
@@ -207,17 +186,10 @@ func TestPiStageDispatchSmokeUsesBuildArtifactThroughWrapper(t *testing.T) {
 	gitInit(t, stateDir)
 
 	checklist := []string{"- run the fixture Pi worker", "- append durable stage report"}
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      checklist,
-		"bare_mode":      true,
-		"host":           "pi",
-	}, nil)
+	stdin := strings.Join(checklist, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi", "--bare-mode"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}
@@ -394,17 +366,10 @@ func TestBuildPiHostPreservesSplitRootEntityPath(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- preserve split-root entity path"},
-		"bare_mode":      false,
-		"host":           "pi",
-	}, nil)
+	stdin := strings.Join([]string{"- preserve split-root entity path"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}
@@ -436,17 +401,10 @@ func TestBuildPiHostEmitsSpawnAgentAndSkill(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-		"host":           "pi",
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}
@@ -490,17 +448,10 @@ func TestBuildPiHostAgentOverrideOmitsSkill(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "implementation",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-		"host":           "pi",
-	}, nil)
+	stdin := strings.Join([]string{"- a"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}
@@ -559,16 +510,10 @@ func TestBuildClaudeHostGoldenByteIdentical(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Thing", "backlog", ""))
 	gitInit(t, root)
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   root,
-		"stage":          "backlog",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      true,
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "backlog", "--checklist-file", "-", "--bare-mode"}
 
-	native := runNative(stdin, "build", "--workflow-dir", root)
+	native := runNative(stdin, stdinArgs...)
 	if native.exit != 0 {
 		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
 	}

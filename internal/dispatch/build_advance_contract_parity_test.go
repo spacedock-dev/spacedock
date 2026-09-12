@@ -51,22 +51,13 @@ func TestBuildAdvanceContentContractParity(t *testing.T) {
 			gitInit(t, root)
 
 			checklist := []string{"- validate the thing", "- confirm no regressions"}
-			stdinFields := map[string]any{
-				"schema_version": 2,
-				"entity_path":    entityPath,
-				"workflow_dir":   root,
-				"stage":          tc.stage,
-				"checklist":      checklist,
-				"bare_mode":      false,
-				"advance":        true,
-			}
+			args := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", tc.stage, "--checklist-file", "-", "--advance"}
 			if tc.feedbackReflow {
-				stdinFields["is_feedback_reflow"] = true
-				stdinFields["feedback_context"] = tc.feedbackContext
+				path := filepath.Join(t.TempDir(), "feedback.md")
+				writeFile(t, path, tc.feedbackContext)
+				args = append(args, "--feedback-reflow", "--feedback-context-file", path)
 			}
-			stdin := mergeStdin(stdinFields, nil)
-
-			native := runNative(stdin, "build", "--workflow-dir", root)
+			native := runNative(strings.Join(checklist, "\n"), args...)
 			if native.exit != 0 {
 				t.Fatalf("advance build exit=%d stderr=%s", native.exit, native.stderr)
 			}

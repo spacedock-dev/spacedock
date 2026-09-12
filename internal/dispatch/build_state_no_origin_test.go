@@ -36,16 +36,10 @@ func buildSplitRootDispatchBody(t *testing.T, withOrigin bool) string {
 		gitAddOrigin(t, root)
 	}
 
-	stdin := mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    entityPath,
-		"workflow_dir":   workflowDir,
-		"stage":          "implementation",
-		"checklist":      []string{"- a", "- b"},
-		"bare_mode":      false,
-	}, nil)
+	stdin := strings.Join([]string{"- a", "- b"}, "\n")
+	stdinArgs := []string{"build", "--workflow-dir", workflowDir, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-"}
 
-	native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+	native := runNative(stdin, stdinArgs...)
 	return readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 }
 

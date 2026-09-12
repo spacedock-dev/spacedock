@@ -73,25 +73,18 @@ func nameFromStdout(t *testing.T, stdout string) string {
 	return out.Name
 }
 
-// buildNameCapStdin writes an id-style: sd-b32 workflow with an entity carrying
+// buildNameCapArgs writes an id-style: sd-b32 workflow with an entity carrying
 // the given sd-b32 id and a (possibly long) slug, then returns the workflow dir
 // and a well-formed build request for the backlog stage. The slug is the flat
 // entity filename stem, so a long slug name overflows the 64-char budget.
-func buildNameCapStdin(t *testing.T, root, idStyle, slug, id string) (workflowDir, stdin string) {
+func buildNameCapArgs(t *testing.T, root, idStyle, slug, id string) []string {
 	t.Helper()
 	wd := root
 	writeFile(t, filepath.Join(wd, "README.md"), readmeIDStyle(idStyle, false))
 	ep := filepath.Join(wd, slug+".md")
 	writeFile(t, ep, entityFMID(id, "Thing", "backlog"))
 	gitInit(t, root)
-	return wd, mergeStdin(map[string]any{
-		"schema_version": 2,
-		"entity_path":    ep,
-		"workflow_dir":   wd,
-		"stage":          "backlog",
-		"checklist":      []string{"- a"},
-		"bare_mode":      false,
-	}, nil)
+	return []string{"build", "--workflow-dir", wd, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-"}
 }
 
 // A real 24-char sd-b32 id (alphabet 0123456789abcdefghjkmnpqrstvwxyz) used by
@@ -112,9 +105,9 @@ func TestBuildNameCapSDB32LongSlug(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
-	wd, stdin := buildNameCapStdin(t, root, "sd-b32", longSlug, idAlpha)
+	args := buildNameCapArgs(t, root, "sd-b32", longSlug, idAlpha)
 
-	native := runNative(stdin, "build", "--workflow-dir", wd)
+	native := runNative("- a", args...)
 	if native.exit != 0 {
 		t.Fatalf("exit native=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 	}
@@ -145,16 +138,16 @@ func TestBuildNameCapDistinctIDs(t *testing.T) {
 	t.Setenv("HOME", home)
 
 	rootA := t.TempDir()
-	wdA, stdinA := buildNameCapStdin(t, rootA, "sd-b32", longSlug, idAlpha)
-	nativeA := runNative(stdinA, "build", "--workflow-dir", wdA)
+	argsA := buildNameCapArgs(t, rootA, "sd-b32", longSlug, idAlpha)
+	nativeA := runNative("- a", argsA...)
 	if nativeA.exit != 0 {
 		t.Fatalf("alpha exit=%d\nstderr:\n%s", nativeA.exit, nativeA.stderr)
 	}
 	nameA := nameFromStdout(t, nativeA.stdout)
 
 	rootB := t.TempDir()
-	wdB, stdinB := buildNameCapStdin(t, rootB, "sd-b32", longSlugShare, idBravo)
-	nativeB := runNative(stdinB, "build", "--workflow-dir", wdB)
+	argsB := buildNameCapArgs(t, rootB, "sd-b32", longSlugShare, idBravo)
+	nativeB := runNative("- a", argsB...)
 	if nativeB.exit != 0 {
 		t.Fatalf("bravo exit=%d\nstderr:\n%s", nativeB.exit, nativeB.stderr)
 	}
@@ -180,9 +173,9 @@ func TestBuildNameCapShortUnchanged(t *testing.T) {
 			} else if idStyle == "slug" {
 				id = ""
 			}
-			wd, stdin := buildNameCapStdin(t, root, idStyle, "thing", id)
+			args := buildNameCapArgs(t, root, idStyle, "thing", id)
 
-			native := runNative(stdin, "build", "--workflow-dir", wd)
+			native := runNative("- a", args...)
 			if native.exit != 0 {
 				t.Fatalf("exit native=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 			}
@@ -201,9 +194,9 @@ func TestBuildNameCapCycleHeadroom(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
-	wd, stdin := buildNameCapStdin(t, root, "sd-b32", longSlug, idAlpha)
+	args := buildNameCapArgs(t, root, "sd-b32", longSlug, idAlpha)
 
-	native := runNative(stdin, "build", "--workflow-dir", wd)
+	native := runNative("- a", args...)
 	if native.exit != 0 {
 		t.Fatalf("exit native=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 	}
@@ -220,9 +213,9 @@ func TestBuildNameCapSlugFallback(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	root := t.TempDir()
-	wd, stdin := buildNameCapStdin(t, root, "slug", longSlug, "")
+	args := buildNameCapArgs(t, root, "slug", longSlug, "")
 
-	native := runNative(stdin, "build", "--workflow-dir", wd)
+	native := runNative("- a", args...)
 	if native.exit != 0 {
 		t.Fatalf("exit native=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 	}
