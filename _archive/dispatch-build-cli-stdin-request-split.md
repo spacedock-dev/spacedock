@@ -1,10 +1,10 @@
 ---
 title: Separate dispatch invocation controls from stdin assignment data
-status: validation
+status: done
 source: Captain discussion of checklist transport and dispatch assembly, 2026-09-10
 started: 2026-09-10T20:26:39Z
-completed:
-verdict:
+completed: 2026-09-12T04:14:05Z
+verdict: PASSED
 score: 0.5
 worktree: .worktrees/spacedock-ensign-dispatch-build-cli-stdin-request-split
 issue:
@@ -95,7 +95,7 @@ gates:
                 reason: 'Captain: approve PR and ci env. Approves validation attempt 2 for PR delivery and required CI environment approval; does not waive required checks.'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 review-round:
     id: round:09ptxgq8zma6qnx0h1w8a6wp:validation:1
     stage: validation
@@ -104,7 +104,8 @@ review-round:
         id: briefing:09ptxgq8zma6qnx0h1w8a6wp:validation:attempt-1:revision-1
         digest: sha256:546174f116f05e7785399a05614381173ada0877ee40733b8928a9db3121c5c9
         room-ref: '@review/validation/round-1'
-mod-block: merge:pr-merge
+mod-block:
+archived: 2026-09-12T04:14:10Z
 ---
 
 Simplify normal FO dispatch to one CLI flag/file interface. The checklist can arrive on stdin through `--checklist-file -`; JSON requests and their schema/validation controls are retired. This design supersedes cycle 1 and includes the captain-directed appended-scope amendment; the combined implementation requires independent validation before delivery.
