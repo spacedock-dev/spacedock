@@ -1,6 +1,6 @@
 ---
 title: "A taskless spacedock pi launch never boots the FO: no first request, silent startup"
-status: validation
+status: done
 source: "Captain observation 2026-09-11 in the wrapped dev-override TUI session: silence at startup was the evidence the FO never booted; manual /first-officer produced the greeting and workflow stats. Diagnosis trail: post-s98 the frontdoor no longer appends any launch task (AC-3 removed the inert $spacedock:first-officer sentence), so a taskless launch sends no first model request; the extension bootstrap (session_start-armed, context-hook injected) is request-time-only and once-per-turn (agent_end disarms), so it never fires. Pre-s98 behavior greeted at startup because the always-appended prompt forced a first request and the old ungated extension injected."
 id: n315frdw60950kjde4cx017q
 gates:
@@ -62,11 +62,14 @@ gates:
                 reason: 'Captain approved in chat 2026-09-11 at the validation gate after live-testing the worktree branch themselves: taskless launch in the triage-282 repo booted and greeted the FO with zero operator input (skill load, binary gate, boot identify observed in-session); PASSED verdict with the two deferred risks and the install-refresh condition accepted'
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-09-11T15:48:32Z
 worktree: .worktrees/spacedock-ensign-pi-taskless-launch-fo-greet
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:787
+verdict: PASSED
+completed: 2026-09-12T00:29:50Z
+archived: 2026-09-12T00:29:50Z
 ---
 Problem: a fresh `spacedock pi` launch with no operator task sits silent — the FO never presents the boot summary or workflow stats until the operator types something (and a weak model may never self-boot even then; glm-5.3-flash misreported its own context twice today). The pre-s98 launch greeted at startup; s98's correct argv fix removed the trigger without replacing it.
 
