@@ -342,3 +342,16 @@ PASSED. Exact public bytes proved XPASS before the owner-only unbind and normal 
 ### Summary
 
 Cycle 2 removes the rejected command-text architecture and uses only existing public Codex lifecycle and durable workflow evidence. Implementation is gated on the filing observer merge and captain approval; the held code and binding commits were not changed.
+
+
+### Additional captain-filed evidence — PR #784 Codex attempt 2
+
+Captain requested this evidence be added to this existing repair task; this records a new failure mode without changing the approved design, stage, or candidate.
+
+- Run: https://github.com/spacedock-dev/spacedock/actions/runs/34568401666/attempts/2 ; Codex job 103174402234; candidate `09f123d33b1d7a5b8d3d2dbc85e536739ba7ea1b`.
+- Artifact ID `10188347210`, created 2026-09-11T07:03:37Z. Evidence member: `live-artifacts/codex/codex-shared-scenarios/smallest-sufficient-mechanism/codex-exec.jsonl`. Local downloaded archive: `/tmp/pr784-codex-attempt2.zip` (temporary convenience, not the durable source).
+- Exact finding: `the FO did not apply the deterministic edit to "ladder-note-alpha.md" in-house — the edit whose content it already held was not made with an in-house Edit`.
+- The parent command_execution instead runs Python over `ladder-note-alpha.md` and `ladder-note-beta.md`, asserts the old line occurs once, and calls `p.write_text(s.replace(old, 'Status: RESOLVED'))`. It also writes `roadmap-strategy.md`, then stages all three files and commits. Observed command output: `[main c411281] Resolve ladder notes and add roadmap strategy`, `3 files changed, 3 insertions(+), 2 deletions(-)`; command succeeds.
+- At the tested candidate, `internal/ensigncycle/shared_smallest_mechanism_test.go` uses `ssmCodexEditVerbRe` to recognize apply_patch, redirects, tee, or sed -i. It does not recognize this successful Python write. The durable commissioned-journey check passed before the edit-recognition assertion failed. Both ready tasks completed; this is a different evidence gap from the older worker-lifecycle correlation problem above.
+- Diagnosis: false negative in recognition of a legitimate in-house edit. Do not repair it by merely adding more command-name regexes: command text alone is not proof of a successful write. Preserve successful result/content attribution and negatives for read-only mentions, failed writes, and delegated edits when evaluating the repair.
+- Follow-up proof: replay the captured event against the existing smallest-mechanism proof owner, with independently verified expected file bytes and parent ownership; falsify by removing or failing the actual edit while retaining the command words. No implementation change or test rerun was performed for this evidence filing.
