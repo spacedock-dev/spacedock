@@ -153,23 +153,23 @@ homebrew_casks:
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
         brew install eugene1g/safehouse/agent-safehouse
-    hooks:
-      # The binary is adhoc/linker-signed only (not notarized), so the cask
-      # download carries com.apple.quarantine and Gatekeeper kills the first
-      # launch. Strip the attribute from the staged binary so the user needs no
-      # manual step. Interim until a Developer ID notarized build lands.
-      #
-      # The cask ships linux URLs too (goreleaser emits them from the linux
-      # archives), so this postflight also runs on a `brew install` on linux —
-      # where `/usr/bin/xattr` does not exist and the hook aborts the install
-      # with exit 127. Guard on OS.mac? so the quarantine strip is a no-op off
-      # macOS (there is no quarantine attribute to strip there anyway).
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr",
-                           args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]
-          end
+    # Homebrew deprecated `postflight` (emitted by hooks.post.install).
+    # GoReleaser does not emit `postflight_steps` yet (goreleaser#6873), so
+    # the quarantine strip lives in custom_block. `{{ "{{staged_path}}" }}`
+    # survives GoReleaser's second template pass. The binary is still
+    # adhoc/linker-signed only (not notarized); drop this once a Developer
+    # ID build lands or hooks.post.install_steps ships. on_macos keeps
+    # Linux brew install off /usr/bin/xattr (exit 127).
+    # Known trade-off: custom_block renders at the TOP of the cask, before
+    # `version`, so `brew style` flags Cask/StanzaOrder. Cosmetic only —
+    # install/reinstall/upgrade do not enforce stanza order, and there is
+    # no other GoReleaser field that emits a postflight_steps stanza.
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ "{{staged_path}}" }}/spacedock"]
+        end
+      end
   # The EDGE cask: `brew install spacedock-dev/tap/spacedock@next` ships the
   # devBranch=next binary that installs the `next` plugin. Its on-demand re-pull
   # cadence rides the unchanged next-publish.yml; goreleaser only emits the cask.
@@ -208,15 +208,14 @@ homebrew_casks:
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
         brew install eugene1g/safehouse/agent-safehouse
-    hooks:
-      # Same quarantine strip as the stable cask, guarded on OS.mac? so the
-      # linux `brew install` path does not abort on the missing /usr/bin/xattr.
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr",
-                           args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]
-          end
+    # Same quarantine strip as the stable cask. See that custom_block
+    # comment for the Homebrew postflight deprecation and the Linux guard.
+    custom_block: |
+      postflight_steps do
+        on_macos do
+          run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ "{{staged_path}}" }}/spacedock"]
+        end
+      end
 
 snapshot:
   # Used by `goreleaser release --snapshot --clean` (the dry-run oracle). The
