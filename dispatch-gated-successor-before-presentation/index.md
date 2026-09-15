@@ -248,3 +248,22 @@ Recommend **PASSED** for the bounded one-file candidate and source fixture AC-2;
 ### Summary
 
 Routine restack includes the lower fixture correction while preserving this task's exact approved wording patch. Both required full suites completed with only the known baseline resolver limitation; existing live validation remains evidence at its recorded prior SHA, and no new live result is claimed for the restacked tip.
+
+## Stage Report: implementation — two-phase parent restack addendum
+
+- DONE: Restack the owned wording patch onto the corrected approved two-phase parent.
+  Final candidate `380bd7bf34b3dd1de07a125d75035c593f5ff930` atop `faef711575c3407a01c4aaa1c87d64d8acabf1bd`; clean one-commit rebase from saved `37d9a6c38`/`71d1f6b1` boundary, range-diff `=`, byte-identical own-layer patch (one file +3/-1), new parent ancestry verified.
+- DONE: Retain superseded normal evidence and honor race hold.
+  Intermediate `37d9a6c38` normal exited 1 with known resolver failure plus new `TestRuntimeLiveRegistryReconciliation` rejection of unregistered `TestSmallestMechanismPhaseMetrics`; `/tmp/spacedock-stack-799-twophase-full/summary.md` retains it. No race ran there; lower owner corrected the test wrapper in `faef711` before final restack.
+- DONE: Run final-tip full normal then sole full race once, sequentially.
+  `go test ./...` and `go test ./... -race` used `GOFLAGS=-p=2`, PATH prepended `/Users/clkao/go/bin`, and unset stale `SPACEDOCK_BIN`/`SPACEDOCK_REPO_ROOT`. Contractlint now passes (0.585s normal/3.769s race); every package except known resolver passes (some Go-cached), and no race findings occurred.
+- FAILED: Full-suite green result.
+  Both final commands exited 1 only on `TestCodexResolveManifestAgainstInstalledHost` with identical stale `0.28.0-pre0` manifest mismatch, matching prior logs and FO-provided independent baseline `2a7b87198` reproduction; no baseline rerun or additional failure.
+- DONE: Required formatting check and exact clean final candidate.
+  `gofmt -w ./cmd ./internal` succeeded; prior byte-identical unrelated release workflow alignment delta was retained as `inherited-gofmt.patch` and excluded under existing authorization. HEAD remains `380bd7bf3`, clean, with no additional candidate edits.
+- DONE: Preserve final evidence and existing validation/gate data.
+  `/tmp/spacedock-stack-799-twophase-final-full/summary.md` links boundary, range-diff, patch, normal/race logs and exits. No code push, CI, new live run, or frontmatter/gate changes; prior live reports retain their original exact-tip attribution.
+
+### Summary
+
+The final restack preserves this task's approved wording while including the corrected two-phase lower layer. Final normal/race suites completed with only the established installed-host resolver limitation; the intermediate registry failure is retained separately and absent from final results.
