@@ -52,7 +52,9 @@ When a worker completes:
 
 If not gated: terminal → merge; else decide reuse-or-fresh.
 
-**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. Only these conditions legitimately halt the turn here: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one, stopping after a completion-only report is a contract violation.
+**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. Only these conditions legitimately halt the turn here: the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one, stopping after a completion-only report is a contract violation.
+
+If the successor is gated, enter and dispatch it under the Gate successor guard; prepare and present its gate only after that stage's completion signal and verified report. Gate routing at completion applies to the completed stage, not an unentered successor.
 
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module, already loaded by the time a completion reaches this point. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
