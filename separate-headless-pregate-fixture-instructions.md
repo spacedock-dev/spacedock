@@ -11,6 +11,17 @@ issue: ""
 pr: ""
 mod-block: ""
 id: 8k3cmcg2gg1e88w0qe6sq3vw
+gates:
+    version: 1
+    records:
+        - id: gate:8k3cmcg2gg1e88w0qe6sq3vw:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:8k3cmcg2gg1e88w0qe6sq3vw-backlog-1
+              briefing:
+                id: briefing:8k3cmcg2gg1e88w0qe6sq3vw:backlog:attempt-1:revision-1
+                digest: sha256:7922fa71be8298f5d1f0c06ae08aa6f4bc4587e1074e8774450b93afc4595f17
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.

@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8k3cmcg2gg1e88w0qe6sq3vw:backlog:attempt-1:revision-1",
+  "question": "Proceed with the captain-requested Codex fix and targeted proof?",
+  "artifacts": [
+    {
+      "id": "artifact:8k3cmcg2gg1e88w0qe6sq3vw:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/149cfc470a90beeda18e7d78c3e3b0d28d678c4f/separate-headless-pregate-fixture-instructions.md",
+      "rev": "sha256:4535501adeac308c6c3de40347cda24b9af5c9507522b5313906ad3190a32d99",
+      "mediaType": "text/markdown",
+      "summary": "Bounded fixture or grader correction for the release failure; retain authority checks and prove the affected Codex journey locally before stacking PRs."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:8k3cmcg2gg1e88w0qe6sq3vw:backlog:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
