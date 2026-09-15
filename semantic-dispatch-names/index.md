@@ -22,6 +22,17 @@ gates:
                 id: briefing:6es505tn1zz2597hetvnqn7y:ideation:attempt-1:revision-1
                 digest: sha256:9b52132f4ba2803e8e48052ffbdd3f114fb56bd5e42e3db6d6c394d5699bd72f
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6es505tn1zz2597hetvnqn7y:ideation:1
+                briefing: briefing:6es505tn1zz2597hetvnqn7y:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T23:04:13.349623Z"
+                decision: approve
+                reason: Captain binding resolution binding-1789513304916529000 explicitly approved naming implementation, estimate340/24 cap450/27, preserving legacy identity and required runtime proof; reviewed document sha256:3e4c7f21b5d53b1abfcc5796d19b7bbe7d90ff2f5c5398415f1e11b245fe9c81.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
