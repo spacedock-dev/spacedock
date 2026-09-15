@@ -2,7 +2,7 @@
 title: Use semantic branch and worker names
 status: ideation
 source: Captain request 2026-09-15; GitHub issue 624
-started:
+started: 2026-09-15T18:27:49Z
 completed:
 verdict:
 score: 0.8
