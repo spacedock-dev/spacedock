@@ -1,6 +1,6 @@
 ---
 title: Prepare the approved gate in the keep-moving live fixture
-status: ideation
+status: implementation
 source: "Captain filing from PR #784 runtime CI attempt 2, Codex job 103174402234"
 id: wvdv5c5mkkd23yhmr9p16czd
 gates:
@@ -46,7 +46,7 @@ gates:
                     source: active thread goal supplied by captain
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-09-15T04:01:46Z
 ---
 
