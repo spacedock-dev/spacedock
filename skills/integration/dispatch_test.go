@@ -210,11 +210,15 @@ Body.
 		t.Fatal(err)
 	}
 	gitInitFixture(t, root)
+	cmd := exec.Command("git", "-C", root, "worktree", "add", "-b", "spacedock-ensign/skill-launcher", worktreePath)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("%s: %v", out, err)
+	}
 
 	res := runBuild(t, stateDir, entityPath, "implementation")
 
 	// AC-4: name and dispatch file use the folder slug, never `index`.
-	wantName := "spacedock-ensign-skill-launcher-implementation"
+	wantName := "skill-launcher-implementation"
 	if res.Name != wantName {
 		t.Errorf("name = %q, want %q (folder slug, not index)", res.Name, wantName)
 	}
@@ -280,7 +284,7 @@ Body.
 
 	res := runBuild(t, root, entityPath, "backlog")
 
-	wantName := "spacedock-ensign-vendor-script-backlog"
+	wantName := "vendor-script-backlog"
 	if res.Name != wantName {
 		t.Errorf("flat-entity name = %q, want %q (stem slug)", res.Name, wantName)
 	}
@@ -294,4 +298,33 @@ func lineContaining(body, substr string) string {
 		}
 	}
 	return ""
+}
+
+func TestSemanticRecoveryNameSource(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), strings.ReplaceAll(splitRootReadme, "state: state-checkout\n", ""))
+	ep := filepath.Join(root, "ci-duration-hints.md")
+	writeFile(t, ep, "---\ntitle: CI hints\nstatus: backlog\n---\n")
+	gitInitFixture(t, root)
+	result := runBuild(t, root, ep, "backlog")
+	if result.Name != "ci-duration-hints-backlog" {
+		t.Fatal(result.Name)
+	}
+	for _, path := range []string{"../first-officer/references/claude-fo-dispatch.md", "../fo-dispatch-recovery/SKILL.md"} {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body := string(data)
+		if strings.Contains(body, "{worker_key}-{slug}-{stage}") || !strings.Contains(body, "canonical") {
+			t.Fatal(path, "stale retry name")
+		}
+		if strings.Contains(path, "SKILL") {
+			for _, required := range []string{"retained validated envelope", "hold this entity", "at most eight characters", "name=\"{canonical_name}\""} {
+				if !strings.Contains(body, required) {
+					t.Fatal(path, required)
+				}
+			}
+		}
+	}
 }

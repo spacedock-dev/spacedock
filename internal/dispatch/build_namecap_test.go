@@ -120,13 +120,13 @@ func TestBuildNameCapSDB32LongSlug(t *testing.T) {
 	}
 	// The capped name carries the id-prefix in place of the slug, keeping the
 	// worker-key prefix and -{stage} suffix verbatim.
-	if !strings.HasPrefix(name, "spacedock-ensign-") {
+	if !strings.HasPrefix(name, "dispatch-") {
 		t.Errorf("name %q lost worker-key prefix", name)
 	}
 	if !strings.HasSuffix(name, "-backlog") {
 		t.Errorf("name %q lost -{stage} suffix", name)
 	}
-	if !strings.Contains(name, idAlpha[:sdB32NameIDPrefixLen]) {
+	if !strings.Contains(name, "-fd1186d1-") {
 		t.Errorf("name %q does not embed the id-prefix %q", name, idAlpha[:sdB32NameIDPrefixLen])
 	}
 }
@@ -180,7 +180,7 @@ func TestBuildNameCapShortUnchanged(t *testing.T) {
 				t.Fatalf("exit native=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
 			}
 			name := nameFromStdout(t, native.stdout)
-			want := "spacedock-ensign-thing-backlog"
+			want := "thing-backlog"
 			if name != want {
 				t.Errorf("short name = %q, want %q (no cap should fire)", name, want)
 			}
@@ -229,7 +229,7 @@ func TestBuildNameCapSlugFallback(t *testing.T) {
 	if len(name+"-cycle3") > 64 {
 		t.Errorf("slug-fallback name+cycle3 %q is %d chars, want ≤64", name+"-cycle3", len(name+"-cycle3"))
 	}
-	if !strings.HasPrefix(name, "spacedock-ensign-") || !strings.HasSuffix(name, "-backlog") {
+	if !strings.HasPrefix(name, "dispatch-") || !strings.HasSuffix(name, "-backlog") {
 		t.Errorf("slug-fallback name %q lost prefix/suffix", name)
 	}
 }

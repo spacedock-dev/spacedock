@@ -2,6 +2,8 @@
 
 The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, the host OS/arch, and release channel, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
 
+`dispatch build` names fresh workers `<slug>-<stage>`. Names reserve room for retry/cycle suffixes; long slugs keep a readable prefix plus a deterministic eight-character suffix. `dispatch build --stamp` creates new code branches named `<slug>` and preserves the branch of an existing registered worktree. An occupied new branch or ambiguous generated worker name is refused before mutation. Choose a distinct task slug to resolve a fresh-name collision. Legacy worker names remain valid for reconciliation and reuse.
+
 ## --version
 
 `spacedock --version` reports the binary version, the host OS/arch, and the release channel the binary drives (`stable` installs `spacedock@spacedock`; `edge` installs `spacedock@spacedock-edge`), and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints three lines:

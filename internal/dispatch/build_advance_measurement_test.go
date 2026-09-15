@@ -6,6 +6,7 @@ package dispatch
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -53,7 +54,9 @@ func buildAdvancePromptFixture(t *testing.T, stageBody string, checklist []strin
 
 	writeFile(t, filepath.Join(root, "README.md"), readmeWithStageBody(stageBody))
 	worktreeRel := ".worktrees/spacedock-ensign-thing"
-	writeFile(t, filepath.Join(root, worktreeRel, ".keep"), "")
+	if err := os.MkdirAll(filepath.Join(root, worktreeRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	entityPath = filepath.Join(root, "thing.md")
 	entityTitle = "Thing"
 	writeFile(t, entityPath, entityFM(entityTitle, "implementation", worktreeRel))

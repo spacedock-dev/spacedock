@@ -462,28 +462,9 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 		subagentType = agent
 	}
 
-	// Derive worker_key, slug, and name (slug-not-stem via EntitySlug). When the
-	// readable {workerKey}-{slug}-{stage} form overflows the Agent-tool 64-char
-	// ceiling, capWorkerName substitutes the entity id (id-first) or truncates the
-	// slug head, preserving the workerKey prefix and -{stage} suffix so the name
-	// still decomposes; short names pass through byte-identical.
-	workerKey := strings.ReplaceAll(subagentType, ":", "-")
-	slug := status.EntitySlug(entityPath)
-	idStyle := readmeFields["id-style"]
-	derivedName := capWorkerName(workerKey, slug, stage, entityFields["id"], idStyle)
-
-	// Rule 7: Name length and safety.
-	if len(derivedName) > nameMaxLen {
-		return buildError(stderr, 1, "derived name '%s' exceeds %d characters", derivedName, nameMaxLen)
-	}
-	if !namePattern.MatchString(derivedName) {
-		return buildError(stderr, 1,
-			"derived name '%s' contains invalid characters: "+
-				"stage name '%s' must match %s (kebab-case "+
-				"lowercase letters, digits, and hyphens only). "+
-				"Run `status --validate` against the workflow to surface the same "+
-				"stage-name error upstream of dispatch.",
-			derivedName, stage, namePattern.String())
+	derivedName, nameErr := validateWorkerName(workflowDir, entityPath, stage)
+	if nameErr != nil {
+		return buildError(stderr, 1, "%v", nameErr)
 	}
 
 	// Preflight this immutable README version before writing a dispatch artifact.
@@ -533,7 +514,10 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	// entity path — never literal {state_checkout}/{entity_path} brace tokens.
 	var worktreeEntityPath string
 	if worktreePath != "" {
-		branch := fmt.Sprintf("%s/%s", workerKey, slug)
+		branch, err := registeredWorktreeBranch(gitRoot, worktreePath)
+		if err != nil {
+			return buildError(stderr, 1, "%v", err)
+		}
 		if splitRoot {
 			parts = append(parts, fmt.Sprintf(
 				"Your working directory for CODE is %s\n"+
@@ -718,16 +702,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, workflowLauncher string, op
 	return emitBuildJSON(stdout, out)
 }
 
-// capWorkerName builds the worker name {workerKey}-{slug}-{stage}, capping it to
-// the Agent-tool 64-char ceiling when the readable form overflows. The cap is
-// id-first: an id-style: sd-b32 entity substitutes a fixed-length prefix of its
-// stored id for the slug component (a stable, decomposition-safe token); a
-// sequential id substitutes the whole numeric id (short, never overflows); an
-// id-less slug workflow truncates the slug head to fit. The workerKey prefix and
-// -{stage} suffix are preserved verbatim in every form so reconcile's decompose()
-// still peels the stage and strips the worker prefix. Short names (≤64) return
-// unchanged — no id substitution, no truncation — so existing readable names and
-// golden fixtures are byte-identical.
+// capWorkerName reproduces historical names for lifecycle reconciliation.
 func capWorkerName(workerKey, slug, stage, id, idStyle string) string {
 	full := fmt.Sprintf("%s-%s-%s", workerKey, slug, stage)
 	if len(full) <= nameAgentMaxLen {

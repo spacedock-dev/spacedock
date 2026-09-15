@@ -3,6 +3,8 @@
 package dispatch
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -118,7 +120,7 @@ func TestStampStagesCommitsAndCreatesWorktree(t *testing.T) {
 				t.Fatalf("--stamp did not create worktree at %s: %v", worktreePath, err)
 			}
 			branch := strings.TrimSpace(gitOutput(t, worktreePath, "rev-parse", "--abbrev-ref", "HEAD"))
-			if branch != "spacedock-ensign/thing" {
+			if branch != "thing" {
 				t.Errorf("worktree branch = %q, want spacedock-ensign/thing", branch)
 			}
 
@@ -580,5 +582,72 @@ func TestStampRefusesWorktreePathOnWrongBranch(t *testing.T) {
 				t.Errorf("refused --stamp mutated the existing worktree's branch: now %q", branch)
 			}
 		})
+	}
+}
+
+func TestSemanticStampIdentity(t *testing.T) {
+	for _, existing := range []bool{false, true} {
+		t.Run(fmt.Sprint(existing), func(t *testing.T) {
+			root, wd, state, ep := stampFixture(t, "implementation", "implementation", false)
+			before := gitOutput(t, state, "rev-parse", "HEAD")
+			if existing {
+				custom := filepath.Join(root, "custom-code")
+				runGitFatal(t, root, "worktree", "add", "-b", "legacy/task", custom)
+				writeFile(t, ep, entityFM("Thing", "implementation", custom))
+			} else {
+				runGitFatal(t, root, "branch", "thing")
+			}
+			result := runNative("- a", buildStampArgs(wd, ep, "implementation", "-")...)
+			if existing {
+				if result.exit != 0 {
+					t.Fatal(result.stderr)
+				}
+				var output buildOutput
+				json.Unmarshal([]byte(result.stdout), &output)
+				body, _ := os.ReadFile(output.DispatchFile)
+				if !strings.Contains(string(body), "legacy/task") || !strings.Contains(string(body), "custom-code") {
+					t.Fatal(string(body))
+				}
+			} else if result.exit == 0 || gitOutput(t, state, "rev-parse", "HEAD") != before || status.ParseFrontmatter(ep)["started"] != "" {
+				t.Fatal("collision mutated state", result)
+			}
+		})
+	}
+}
+
+func TestSemanticStampAmbiguityBeforeMutation(t *testing.T) {
+	root, wd, state, ep := stampFixture(t, "implementation", "implementation", false)
+	writeFile(t, filepath.Join(state, "spacedock-ensign-thing.md"), entityFM("Alias", "implementation", ""))
+	alias := filepath.Join(state, "spacedock-ensign-thing.md")
+	before := gitOutput(t, state, "rev-parse", "HEAD")
+	result := runNative("- a", buildStampArgs(wd, alias, "implementation", "-")...)
+	if result.exit == 0 || !strings.Contains(result.stderr, "ambiguous") || gitOutput(t, state, "rev-parse", "HEAD") != before || status.ParseFrontmatter(alias)["started"] != "" {
+		t.Fatal(result)
+	}
+	custom := filepath.Join(root, "detached-code")
+	runGitFatal(t, root, "worktree", "add", "--detach", custom)
+	writeFile(t, ep, entityFM("Thing", "implementation", custom))
+	result = runNative("- a", buildStampArgs(wd, ep, "implementation", "-")...)
+	if result.exit == 0 || !strings.Contains(result.stderr, "detached") || gitOutput(t, state, "rev-parse", "HEAD") != before {
+		t.Fatal(result)
+	}
+}
+
+func TestSemanticPublicNames(t *testing.T) {
+	root, wd, state, ep := stampFixture(t, "implementation", "implementation", false)
+	named := filepath.Join(state, "ci-duration-hints.md")
+	if err := os.Rename(ep, named); err != nil {
+		t.Fatal(err)
+	}
+	result := runNative("- a", buildStampArgs(wd, named, "implementation", "-")...)
+	if result.exit != 0 {
+		t.Fatal(result.stderr)
+	}
+	if name := nameFromStdout(t, result.stdout); name != "ci-duration-hints-implementation" {
+		t.Fatal(name)
+	}
+	wt := filepath.Join(root, ".worktrees/spacedock-ensign-ci-duration-hints")
+	if branch := strings.TrimSpace(gitOutput(t, wt, "branch", "--show-current")); branch != "ci-duration-hints" || len(branch) != 17 {
+		t.Fatal(branch)
 	}
 }

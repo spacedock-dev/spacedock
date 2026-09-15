@@ -253,7 +253,7 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 		drift = append(drift, classA(ensigns, stageNames, active, archived)...)
 	}
 	if rosterTrusted && opts.include[classSuperseded] {
-		drift = append(drift, classB(ensigns, stageNames)...)
+		drift = append(drift, classB(ensigns, stageNames, active, archived)...)
 	}
 	if rosterTrusted && opts.include[classUnadvancedPR] {
 		drift = append(drift, classC(active, opts.gh)...)
@@ -511,16 +511,11 @@ func resolveSlugToken(token string, active, archived map[string]entityRecord) (s
 func classA(ensigns []claudeteam.ReconcileMember, stages []string, active, archived map[string]entityRecord) []driftItem {
 	var out []driftItem
 	for _, m := range ensigns {
-		d := decompose(m.Name, stages)
+		d := resolveWorker(m.Name, stages, active, archived)
 		if !d.ok {
 			continue
 		}
-		// Resolve the decomposed token to a real slug (exact-slug-first, then
-		// sd-b32 id-prefix). An unresolved token leaves the member unclassified.
-		slug, ok := resolveSlugToken(d.slug, active, archived)
-		if !ok {
-			continue
-		}
+		slug := d.slug
 		// Archived: definitive terminal.
 		if _, ok := archived[slug]; ok {
 			out = append(out, driftItem{
@@ -548,17 +543,17 @@ func classA(ensigns []claudeteam.ReconcileMember, stages []string, active, archi
 // classB flags supersede losers — when multiple ensigns share the same
 // (slug, stage) cohort, the highest cycle wins (or unsuffixed = cycle1). Losers
 // emit one driftItem each pointing at the winner.
-func classB(ensigns []claudeteam.ReconcileMember, stages []string) []driftItem {
+func classB(ensigns []claudeteam.ReconcileMember, stages []string, active, archived map[string]entityRecord) []driftItem {
 	cohorts := map[string][]decomposeResult{}
-	namesByDecomp := map[string]string{}
+	namesByDecomp := map[string][]string{}
 	for _, m := range ensigns {
-		d := decompose(m.Name, stages)
+		d := resolveWorker(m.Name, stages, active, archived)
 		if !d.ok {
 			continue
 		}
 		key := d.slug + "\x00" + d.stage
 		cohorts[key] = append(cohorts[key], d)
-		namesByDecomp[key+"\x00"+d.cycle] = m.Name
+		namesByDecomp[key+"\x00"+d.cycle] = append(namesByDecomp[key+"\x00"+d.cycle], m.Name)
 	}
 	keys := make([]string, 0, len(cohorts))
 	for k := range cohorts {
@@ -572,12 +567,25 @@ func classB(ensigns []claudeteam.ReconcileMember, stages []string) []driftItem {
 			continue
 		}
 		winner := pickCycleWinner(members)
-		winnerName := namesByDecomp[k+"\x00"+winner.cycle]
+		ties := 0
 		for _, c := range members {
-			if c.cycle == winner.cycle {
+			if cycleNumber(c.cycle) == cycleNumber(winner.cycle) {
+				ties++
+			}
+		}
+		if ties != 1 {
+			continue
+		}
+		winnerNames := namesByDecomp[k+"\x00"+winner.cycle]
+		if len(winnerNames) != 1 {
+			continue
+		}
+		winnerName := winnerNames[0]
+		for _, c := range members {
+			if cycleNumber(c.cycle) == cycleNumber(winner.cycle) || len(namesByDecomp[k+"\x00"+c.cycle]) != 1 {
 				continue
 			}
-			loserName := namesByDecomp[k+"\x00"+c.cycle]
+			loserName := namesByDecomp[k+"\x00"+c.cycle][0]
 			out = append(out, driftItem{
 				Class:  classSuperseded,
 				Name:   loserName,
@@ -608,6 +616,9 @@ func pickCycleWinner(members []decomposeResult) decomposeResult {
 // cycleNumber returns the cycle integer for a decomposed cycle suffix. "" is
 // cycle 1 (unsuffixed); "cycleN" or bare digits are the explicit number.
 func cycleNumber(cycle string) int {
+	if cycle == "retry" {
+		return 2
+	}
 	if cycle == "" {
 		return 1
 	}
@@ -823,15 +834,11 @@ func ownedSlugs(rosterTrusted bool, ensigns []claudeteam.ReconcileMember, stages
 		return owned
 	}
 	for _, m := range ensigns {
-		d := decompose(m.Name, stages)
+		d := resolveWorker(m.Name, stages, active, archived)
 		if !d.ok {
 			continue
 		}
-		slug, ok := resolveSlugToken(d.slug, active, archived)
-		if !ok {
-			continue
-		}
-		owned[slug] = true
+		owned[d.slug] = true
 	}
 	return owned
 }
