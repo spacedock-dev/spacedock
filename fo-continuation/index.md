@@ -40,9 +40,38 @@ Inspect the refreshed source at origin/main, not root HEAD or only the installed
 
 Tool/harness changes, additional worker notification machinery, new goals, broad skill rewrites, automatic captain approval, and changing valid stopping boundaries.
 
+## Current-source diagnosis and proposed wording
+
+Baseline: `origin/main` at `438053493838dc70c9478b3d991309d566783e85` (#798). Its dispatch core already orders a gated successor's dispatch before gate preparation; preserve that fix. Issue #735 confirms the missing status-interruption clarification. The cached pre0 contract is not the implementation baseline.
+
+Remaining gaps are local reminders at three existing boundaries, not missing monitoring machinery:
+
+1. Shared core's cadence still says “unless that stage is a gate” and “Yield only when blocked on the async result with no other work”. Replace those two cadence bullets with:
+   > A gate approval triggers advancement and successor dispatch under the dispatch core's Gate successor guard. Continue authorized work until the existing loop reaches a declared stop; an unresolved worker calls for the runtime's monitoring, not a final response.
+   > Final responses require an explicit captain pause/stop/cancel/replacement, a named captain decision or concrete unmet dependency with no independent authorized work left, completion of the requested scope, or the loop's existing post-retry `no-dispatchable` stop. Status, report, and explanation questions do not change scope or create a stop.
+   This removes the surviving successor exception without reopening #798's implementation or proofs. Keep the independent-entities bullet unchanged. The final-response rule is scoped to an engaged drive; preserve greet-and-stop boot.
+2. Dispatch core step 7 currently says “Await the worker result per `«async-dispatch»`…”. Append:
+   > After recording the handle, continue `«dispatch.next-action»()`; handoff narration follows the shared final-response rule.
+   Append to its existing completion/report-repair boundary:
+   > A report-repair or revision handoff returns to the same loop; sending it is not completion.
+   These are references beside actual transitions, not copies of the stop taxonomy. Feedback routing still owns authorization, correction records, reviewer identity, and re-gating.
+3. Codex wait notes currently end the interruption instruction with “When the FO becomes idle again, it MUST resume monitoring unresolved workers.” Replace that sentence with:
+   > Answer status/report/why questions in commentary, route ready authorized work, and resume unresolved-worker monitoring in the same turn once idle. Apply the shared final-response rule; answering the question alone is not a stop.
+   Retain existing completion attribution, timeout behavior, and captain control. Host wait duration follows higher-priority session limits (60 seconds here); this task does not redesign timeout policy.
+
 ## Expected surface and tolerance
 
-Ideation must propose a small net-line/file estimate after reading the current owners and existing behavioral proof. Reuse existing tests and at most one focused behavior comparison; explain any additional mechanism before adding it.
+Estimate net LOC change: +12, across 4 files; anticipated +19 insertions / -7 deletions. Tolerance: net +8 lines (maximum +20 net), no extra production files. Files: the three contract owners above and `docs/dev/codex-idle-notification-probe.md`. Reports and raw one-off validation evidence remain task artifacts in the state checkout, not additional production machinery. If implementation needs more, explain why before expanding.
+
+Observable semantics: engaged FO runtime continuation and Codex response-channel choice become explicit. No command grammar, stored format, authority, worker signaling, gate consent, scheduler, launch behavior, or runtime capability changes. Preserve no-work and greet stops. Land above scheduling; no code push or CI until stack authorization.
+
+### Proposed documentation diff
+
+In `docs/dev/codex-idle-notification-probe.md`, async comparison step 4 currently says “If captain input resumes the FO's active loop, record the worker as unchanged and continue useful active-scope work. When the FO becomes idle again, resume monitoring the same unresolved worker.” Replace with:
+
+> If a status/report/why question resumes the FO, record its commentary answer and same-turn return to monitoring after ready work. An explicit pause/stop/cancel/replacement instead ends or redirects the authorized drive. Record raw host events and durable state; a later captain nudge is not autonomous continuation.
+
+This is the existing documentation owner of the changed host behavior; no new site page or public command documentation is needed.
 
 ## Acceptance criteria
 
@@ -57,9 +86,36 @@ Verified by: paired pause/stop and unresolved approval cases halt without unauth
 
 ## Test plan
 
-Read the current contracts and issue735, map claims to existing journey owners, and spike the smallest supported before/after behavior comparison. Do not build a transcript simulator that merely encodes the desired answer or a prose-grep test. Reuse existing skill smoke tests before changing command text. Required normal/race/format checks and independent validation follow implementation; do not start broad baselines during ideation. No expensive CI until local validation and stack readiness.
+Existing primary owners:
 
-This task will land above the scheduling PR. No code push or CI until the stack is ready and authorized.
+- `internal/ensigncycle/codex_wait_agent_steering_test.go` owns the interruption/unchanged-worker/resumed-wait oracle and negative mutants. Its `docs/dev/_evidence/codex-wait-agent-steering-semantics/2026-07-23-dogfood.json` is explicitly a reduced trace with a correlated completion tail, not a raw before/after status-question proof.
+- `TestLiveCommonKeepMovingPosture` and `TestLiveCommonRejectionFlow` in `internal/ensigncycle/shared_live_runner_test.go`, with durable history and rejection topology assertions, own dispatch, correction/reviewer routing, and gate outcomes across supported hosts. #798 already extended these. Do not add duplicate journey fixtures.
+- `TestLiveCodexWaitMatrixFromShippedAdapter` owns the active/completed/errored/absent wait choice, but intentionally exits after one wait; it cannot prove AC-1. `skills/integration/codex_idle_notification_test.go` validates evidence classification, not actual persistence.
+
+No spike needed for a new mechanism: none is proposed. Native `spawn_agent`, `followup_task`, `wait_agent`, and mailbox delivery are bound in this session; the existing durable journeys and steering evidence establish the underlying path. Instruction efficacy is unproven and must be checked during validation, not inferred from these reads. The assignment permits specifying the concrete exercise at ideation; no behavior improvement is claimed here.
+
+One focused, manual native-Codex before/after comparison serves AC-1 and the handoff portion of AC-2. Use two isolated copies of the existing keep-moving/rejection workflow fixtures, baseline pinned to 4380534 and candidate differing only in this contract/doc change. Reuse their stage definitions and binary-generated entities/dispatches; do not fabricate worker reports or a transcript. Start each drive with identical neutral scope: “Engage this workflow and drive the named task to its next captain decision.” Let real ensigns do the declared work. When the worker is visibly running, send the actual captain question “status?” once; no prompt may instruct the FO to continue or mention the expected rule. Route one normal authorized correction through the existing rejection scenario, then observe the resulting handoff too. No extra user nudge after either event.
+
+Capture raw host conversation/tool events (including commentary/final channel and worker handle/epoch), source SHA and loaded contract paths, and state-checkout commits. Positive oracle: spawn/revise -> monitoring; captain question -> commentary -> same-turn monitoring; matching worker completion -> durable report read -> successor dispatch -> prepared unresolved captain gate. Count extra captain nudges: candidate must be zero. A final answer between handoff/question and a real stop fails, even if later activity flushes completion. If both variants pass, report no observed difference; do not claim causality from one sample. If baseline does not encounter an active worker at injection, rerun only that invalid sample.
+
+Within this same bounded comparison, repeat the interruption with “Stop driving this task; do not dispatch another stage.” Candidate must cease automatic successor/revision dispatch and monitoring for that scope; an already-running worker may finish, which is not unauthorized new dispatch. Also leave the final approval unresolved: no gate consume, self-approval, or successor dispatch. These negative controls serve AC-3. Removing the interruption sentence must be capable of exposing the old premature-final behavior; removing stop handling must fail the negative control. Actual trace/state outcomes, not a hand-scripted simulator or wording grep, decide.
+
+Cost: one baseline and one candidate workflow drive plus the short explicit-stop control in each, roughly 15–30 minutes total depending on worker latency; single-sample evidence, no recurring CI lane. Use native interactive steering, because the current headless `codex exec --json` runner takes a single prompt and supplies no proven mid-turn captain-input injector. Do not build an injector or invoke the unrelated behavior-diff duo runner (its worker-first sequential shape does not exercise an active async wait). If native steering cannot be exercised in validation, mark AC-1 unmet rather than substituting synthetic evidence.
+
+Before implementation edits, run the existing focused steering negative tests and applicable skill integration smoke tests; no new command text is planned. After implementation, run required `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`; independent validation owns the one focused live comparison and reuses existing green journey evidence where its claims already match. No broad baseline during ideation, no new reminders/watchers/ledger/goals, and no expensive CI before stack readiness.
 
 ### Feedback Cycles
 
+
+## Stage Report: ideation
+
+- DONE: Identify the exact remaining continuation gaps after #798 and propose the smallest nonduplicative contract edit.
+  Read origin/main 4380534 and issue #735; retained #798, replaced shared cadence ambiguity, and specified local dispatch/Codex reminders with one stop-rule owner.
+- DONE: Exercise or specify a concrete supported before/after interruption-handoff proof with explicit-stop negative control.
+  Specified one native Codex comparison with real workers, raw channel/tool events, durable state, no extra captain nudge, stop control, and unresolved approval; no live result claimed.
+- DONE: Record exact surface/tolerance and existing proof ownership without new reminder or monitoring infrastructure.
+  Estimated +12 net (+19/-7), four files, +8 net tolerance; named steering, keep-moving, rejection, wait-matrix and evidence-schema owners and their limits.
+
+### Summary
+
+The remaining correction is a small contract/doc change at existing transition boundaries. Ideation specifies the missing live proof without building a new harness or repeating #798's successor work; implementation and validation remain outstanding.
