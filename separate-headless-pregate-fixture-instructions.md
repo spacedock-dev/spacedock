@@ -41,6 +41,20 @@ gates:
                 id: briefing:8k3cmcg2gg1e88w0qe6sq3vw:ideation:attempt-1:revision-1
                 digest: sha256:a51f84f66dd4cf42b45627b2d736df37a4f9ba1e0df6fd2347d30ca901a90c71
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8k3cmcg2gg1e88w0qe6sq3vw:ideation:1
+                briefing: briefing:8k3cmcg2gg1e88w0qe6sq3vw:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T04:07:50.357067Z"
+                decision: approve
+                reason: Current fixture contradiction and coherent control are reproduced; two-file correction preserves worker and human-authority boundaries.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: active thread goal supplied by captain
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.
