@@ -1,6 +1,6 @@
 ---
 title: Use semantic branch and worker names
-status: ideation
+status: implementation
 source: Captain request 2026-09-15; GitHub issue 624
 started: 2026-09-15T18:27:49Z
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: Captain binding resolution binding-1789513304916529000 explicitly approved naming implementation, estimate340/24 cap450/27, preserving legacy identity and required runtime proof; reviewed document sha256:3e4c7f21b5d53b1abfcc5796d19b7bbe7d90ff2f5c5398415f1e11b245fe9c81.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
