@@ -417,3 +417,16 @@ Captain requested this evidence be added to this existing repair task; this reco
 ### Summary
 
 Current release Python edits now require a completed exit-0 parent command, a matching native parent receipt before any spawn, and the exact requested committed/final note bytes; command text alone cannot supply edit credit. The focused layer is committed and ready for the FO's stacked live/full validation; this report does not claim those deferred checks passed.
+
+### Stack verification follow-up — 2026-09-14
+
+- DONE: Rebase only the smallest-mechanism layer onto exact predecessor `5ff85f00bac795ad298cddaca09fc51f27484716`.
+  Clean new stack tip `9029decfcce628ae6ec82cba9461e7589c1ad421`; original layer `e8d39dcd1` preserved in history/report. Lower layers unchanged; no force-push.
+- DONE: Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` sequentially once at the stack tip.
+  Both test commands exit 1 solely on `TestCodexResolveManifestAgainstInstalledHost`; all other packages pass (ensigncycle normal 507.994s, race 443.321s), with no race detector finding. The suites are not green.
+- DONE: Diagnose and establish the baseline for the host-dependent failure without global plugin/auth/config mutation.
+  At exact `2a7b87198` in `/tmp/spacedock-codex-stack-full/baseline-2a7b87198`, the sole focused resolver test also fails with the identical assertion: stable plugin absent but resolver returns installed `spacedock-local/0.28.0-pre0` manifest. Test checks only stable ID; production explicitly prioritizes local ID. FO disposition: keep stack unchanged and record the baseline defect outside this layer.
+- DONE: Preserve exact verification environment and logs.
+  `/tmp/spacedock-codex-stack-full/summary.md`, source-head files, normal/race/baseline logs, exit files, and SHA-256 manifest; PATH prepends `/Users/clkao/go/bin`, `GOFLAGS=-p=2`, stale `SPACEDOCK_BIN`/`SPACEDOCK_REPO_ROOT` unset. Inherited unrelated gofmt field-alignment drift was reported and discarded with FO approval; diff retained as evidence.
+- SKIPPED: Targeted Codex live validation.
+  FO explicitly withheld live execution while the local host-negotiation issue is investigated. No lower-layer product fixes or host configuration changes were made.
