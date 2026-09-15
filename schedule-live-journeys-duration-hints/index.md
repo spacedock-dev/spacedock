@@ -22,6 +22,17 @@ gates:
                 id: briefing:pytyzge5v85mcy8c02t1khqv:ideation:attempt-1:revision-1
                 digest: sha256:2e92e016dc3de77e21db5d699185aa479418ee201509cf38df031db3ba74d947
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pytyzge5v85mcy8c02t1khqv:ideation:1
+                briefing: briefing:pytyzge5v85mcy8c02t1khqv:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T22:40:16.37176Z"
+                decision: approve
+                reason: Binding Subspace resolution binding-1789511305813868000 approved reduced design, cap +150 net/8 files, scheduling as bottom PR; actual Claude overlap remains required before acceptance. Reviewed approval artifact sha256:c5fffcc6f164abd78be095350372d91b0563a628775646f506e7c29c12d339cc.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Reduce live CI completion time by running a committed duration-sorted list of the existing tests through three slots. This task is the **bottom PR**; the other in-flight PRs stack above it.
