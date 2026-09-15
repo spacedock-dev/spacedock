@@ -1,6 +1,6 @@
 ---
 title: Prepare the approved gate in the keep-moving live fixture
-status: validation
+status: done
 source: "Captain filing from PR #784 runtime CI attempt 2, Codex job 103174402234"
 id: wvdv5c5mkkd23yhmr9p16czd
 gates:
@@ -68,11 +68,14 @@ gates:
                     source: active thread goal supplied by captain
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 started: 2026-09-15T04:01:46Z
 worktree: .worktrees/spacedock-ensign-prepare-keep-moving-approved-gate-fixture
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:794
+verdict: PASSED
+completed: 2026-09-15T18:24:00Z
+archived: 2026-09-15T18:24:00Z
 ---
 
 ## Problem statement
