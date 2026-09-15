@@ -6,7 +6,7 @@ started: 2026-09-15T18:21:56Z
 completed:
 verdict:
 score: 0.8
-worktree:
+worktree: .worktrees/spacedock-ensign-schedule-live-journeys-duration-hints
 issue:
 pr:
 mod-block:
