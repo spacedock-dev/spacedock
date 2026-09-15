@@ -94,6 +94,7 @@ Current acceptance criteria:
 
 1. Both captured Python command shapes receive in-house edit credit from successful
    parent execution and independently checked exact note changes in real Git history.
+   The receipt commit must be strictly after the fixture HEAD captured immediately before the run.
 2. Read-only mentions, echoed real receipts, failed/in-progress commands, missing native
    receipts, delegation before the parent commit, wrong/unchanged paths or content, and
    incorrect final file bytes cannot create shell-edit credit.
@@ -103,9 +104,13 @@ Current acceptance criteria:
    local Codex live execution after stacking, then runs full normal/race tests on the
    combined tip. This worker must not spend those runs independently.
 
-Implementation uses the existing correlated parent rollout, public completed exit-0
-command, native commit receipt before the first spawn, and exact commit parent/current
-note bytes plus final files. Shell command words alone no longer establish edits.
+Current corrected approach uses the fixture HEAD captured immediately before the run,
+a successful public parent command, a matching native receipt before the first spawn,
+and a receipt commit strictly descending from that baseline. Exact commit parent/current
+note bytes and final files must agree. Under the isolated-fixture/no-prior-worker boundary,
+this proves a new parent-segment transaction without recognizing shell invocation text.
+The previous candidate at `9029decfc` omitted the baseline and is held pending the
+authorized correction recorded below; its live evidence remains tied to its unchanged SHA.
 Structured file changes must be completed successfully and name the exact file.
 The current surface is four test/fixture files, +183/-23 lines; no CLI or stored formats change.
 The rejected history is preserved at `archive/ssm-rejected-0b809073b-20260914` ->
@@ -430,3 +435,32 @@ Current release Python edits now require a completed exit-0 parent command, a ma
   `/tmp/spacedock-codex-stack-full/summary.md`, source-head files, normal/race/baseline logs, exit files, and SHA-256 manifest; PATH prepends `/Users/clkao/go/bin`, `GOFLAGS=-p=2`, stale `SPACEDOCK_BIN`/`SPACEDOCK_REPO_ROOT` unset. Inherited unrelated gofmt field-alignment drift was reported and discarded with FO approval; diff retained as evidence.
 - SKIPPED: Targeted Codex live validation.
   FO explicitly withheld live execution while the local host-negotiation issue is investigated. No lower-layer product fixes or host configuration changes were made.
+
+
+### Review finding and authorized correction — parent transaction baseline
+
+- Reviewer observation: at exact `9029decfc`, the retained
+  `TestCodexSmallestMechanismParentCommit/heredoc_receipt` control prints a `git commit`
+  line inside a `cat` heredoc while retaining a real existing commit receipt and file
+  bytes. Both edits receive credit. Evidence:
+  `/tmp/spacedock-stack-smallest-live-9029dec-validation/adversarial.log` and
+  `adversarial.diff`; validator owns the detached reproduction.
+- Released user/workflow: smallest-sufficient-mechanism Codex live grading must prove
+  the parent made the deterministic edits during its run.
+- Observable harm: command text in nonexecuted heredoc data counterfeits invocation;
+  the same existing Git commit/receipt can be credited without a current edit.
+- Affected authority: captain-ruling[2026-09-14] — current criterion 2 requires that
+  echoed real receipts cannot create in-house edit credit.
+- Trigger evidence: the detached control fails with both edits `credited=true, want false`.
+- Worker proposal: Material, owned grader evidence defect. Snapshot fixture HEAD before
+  the run; require a strict descendant receipt commit, exact bytes, and native receipt
+  before first spawn. Remove shell invocation matching. The isolated fixture excludes
+  external writers; an existing commit is input state, not a new parent transaction.
+- First-officer authorization: FIX only this baseline/strict-descendant correction,
+  update current approach/proof with no end-value narrowing, retain all native/content
+  boundaries, and add executable positive-after-baseline and old-receipt echo/heredoc
+  controls. No Trace2, framework, controller, or product instrumentation. Expected core
+  change is about 20–35 lines plus focused test changes; report actual surface.
+- Execution hold: candidate bytes remain unchanged until live session `33223` exits and
+  validator releases the worktree. Then focused red-first tests, fix, and commit only;
+  full/live reruns remain FO-scheduled. This entry records authorization, not completion.
