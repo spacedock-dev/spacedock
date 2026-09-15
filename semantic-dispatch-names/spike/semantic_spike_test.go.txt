@@ -1,0 +1,36 @@
+package dispatch
+import (
+ "bytes"
+ "encoding/json"
+ "os"
+ "path/filepath"
+ "testing"
+ "strings"
+ "github.com/spacedock-dev/spacedock/internal/claudeteam"
+)
+func TestSemanticSpike(t *testing.T) {
+ legacy := os.Getenv("SEMANTIC_SPIKE_LEGACY") == "1"
+ wantName,wantBranch := "thing-implementation","thing"
+ if legacy { wantName="spacedock-ensign-thing-implementation"; wantBranch="spacedock-ensign/thing" }
+ t.Setenv("HOME",t.TempDir())
+ root,wd,state,ep := stampFixture(t,"implementation","implementation",false)
+ n:=runNative("- a",buildStampArgs(wd,ep,"implementation","-")...)
+ if n.exit!=0 {t.Fatalf("build: %d %s",n.exit,n.stderr)}
+ name:=nameFromStdout(t,n.stdout)
+ if name!=wantName {t.Fatalf("name %s want %s",name,wantName)}
+ wt:=filepath.Join(root,".worktrees/spacedock-ensign-thing")
+ if got:=strings.TrimSpace(gitOutput(t,wt,"branch","--show-current")); got!=wantBranch {t.Fatalf("branch %q want %q",got,wantBranch)}
+ n=runNative("- a",buildStampArgs(wd,ep,"implementation","-")...)
+ if n.exit!=0 {t.Fatalf("repeat stamp: %s",n.stderr)}
+ writeFile(t,ep,entityFM("Thing","done",".worktrees/spacedock-ensign-thing"))
+ for _,worker:=range []string{name,"spacedock-ensign-thing-implementation"} {
+  team:="semantic-spike"
+  writeFile(t,filepath.Join(os.Getenv("HOME"),".claude","teams",team,"config.json"),teamConfigJSON(team,[]claudeteam.ReconcileMember{{Name:worker,AgentType:"spacedock:ensign"}}))
+  var out,err bytes.Buffer
+  code:=Reconcile(reconcileOpts{workflowDir:wd,repoRoot:root,home:os.Getenv("HOME"),teamName:team,roster:claudeteam.LoadReconcileTeam,include:map[string]bool{classLingering:true},git:gitRunnerExec},&out,&err)
+  var r reconcileResult
+  if code!=0 {t.Fatalf("reconcile: %d %s",code,err.String())}; if e:=json.Unmarshal(out.Bytes(),&r);e!=nil {t.Fatal(e)}
+  if len(r.Drift)!=1 || r.Drift[0].Slug!="thing" || r.Drift[0].Name!=worker {t.Fatalf("wrong drift: %s",out.String())}
+  t.Logf("branch=%s worker=%s terminal drift=%s state=%s",wantBranch,worker,r.Drift[0].Class,state)
+ }
+}

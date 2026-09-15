@@ -1,0 +1,45 @@
+--- a/internal/dispatch/build.go
++++ b/internal/dispatch/build.go
+@@ -470,7 +470,7 @@
+ 	workerKey := strings.ReplaceAll(subagentType, ":", "-")
+ 	slug := status.EntitySlug(entityPath)
+ 	idStyle := readmeFields["id-style"]
+-	derivedName := capWorkerName(workerKey, slug, stage, entityFields["id"], idStyle)
++	derivedName := strings.TrimPrefix(capWorkerName(workerKey, slug, stage, entityFields["id"], idStyle), workerKey+"-")
+ 
+ 	// Rule 7: Name length and safety.
+ 	if len(derivedName) > nameMaxLen {
+@@ -533,7 +533,7 @@
+ 	// entity path — never literal {state_checkout}/{entity_path} brace tokens.
+ 	var worktreeEntityPath string
+ 	if worktreePath != "" {
+-		branch := fmt.Sprintf("%s/%s", workerKey, slug)
++		branch := slug
+ 		if splitRoot {
+ 			parts = append(parts, fmt.Sprintf(
+ 				"Your working directory for CODE is %s\n"+
+--- a/internal/dispatch/stamp.go
++++ b/internal/dispatch/stamp.go
+@@ -140,7 +140,7 @@
+ 
+ 	if stageMeta.Worktree {
+ 		worktreePath := filepath.Join(gitRoot, worktreeRel)
+-		branch := workerKey + "/" + slug
++		branch := slug
+ 		registered, err := worktreeRegisteredForBranch(gitRoot, worktreePath, branch)
+ 		if err != nil {
+ 			return stampError(stderr, 1, "checking existing worktrees failed: %v", err)
+--- a/internal/dispatch/reconcile.go
++++ b/internal/dispatch/reconcile.go
+@@ -413,10 +413,7 @@
+ // An empty slug, missing worker prefix, or unrecognized stage all yield ok=false.
+ func decompose(name string, stageNames []string) decomposeResult {
+ 	const workerKey = "spacedock-ensign-"
+-	if !strings.HasPrefix(name, workerKey) {
+-		return decomposeResult{ok: false}
+-	}
+-	rest := strings.TrimPrefix(name, workerKey)
++		rest := strings.TrimPrefix(name, workerKey)
+ 	if rest == "" {
+ 		return decomposeResult{ok: false}
+ 	}
