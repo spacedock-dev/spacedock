@@ -116,6 +116,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-09-15T16:40:26.678527Z"
                 reason: AC scan still selects historical five-criterion section rather than the approved two-phase criteria; correct canonical task documentation before replacement gate.
+            - id: gate-attempt:bfmczd31ydpp4stqjstf6xwx-validation-4
+              briefing:
+                id: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-4:revision-1
+                digest: sha256:3656bc604499a0d0705f160f4c9e4b54ee1e04ab65ea546d2f5ce560c8280ab7
+                room-ref: '@review/validation/briefing-4'
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 mod-block:
