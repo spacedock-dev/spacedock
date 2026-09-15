@@ -47,6 +47,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:wvdv5c5mkkd23yhmr9p16czd:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:wvdv5c5mkkd23yhmr9p16czd-validation-1
+              briefing:
+                id: briefing:wvdv5c5mkkd23yhmr9p16czd:validation:attempt-1:revision-1
+                digest: sha256:7fb53e4a5d6e91e2a7c1d270fe3045c97254b47c4d84fbe5c014a3c729a52615
+                room-ref: '@review/validation/briefing-1'
 started: 2026-09-15T04:01:46Z
 worktree: .worktrees/spacedock-ensign-prepare-keep-moving-approved-gate-fixture
 ---
