@@ -2,7 +2,7 @@
 title: Make state transitions durable
 status: ideation
 source: Captain-approved combined durability work, 2026-09-15
-started:
+started: 2026-09-15T20:07:01Z
 completed:
 verdict:
 score: 0.95
