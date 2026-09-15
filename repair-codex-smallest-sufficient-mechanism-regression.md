@@ -109,10 +109,14 @@ a successful public parent command, a matching native receipt before the first s
 and a receipt commit strictly descending from that baseline. Exact commit parent/current
 note bytes and final files must agree. Under the isolated-fixture/no-prior-worker boundary,
 this proves a new parent-segment transaction without recognizing shell invocation text.
-The previous candidate at `9029decfc` omitted the baseline and is held pending the
-authorized correction recorded below; its live evidence remains tied to its unchanged SHA.
+The previous candidate at `9029decfc` omitted the baseline; its rejected live evidence
+remains tied to that unchanged SHA. Correction `e52ece67a` supplies the baseline and
+normalizes the two observed native output shapes: legacy result strings and typed
+custom-tool input_text execution results with explicit exit code 0 and a complete
+receipt line in the decoded output field. Prose and metadata cannot supply receipts.
 Structured file changes must be completed successfully and name the exact file.
-The current surface is four test/fixture files, +183/-23 lines; no CLI or stored formats change.
+The corrected smallest-mechanism layer is six test/fixture files, +302/-23 lines
+against predecessor `5ff85f00`; no CLI or stored formats change.
 The rejected history is preserved at `archive/ssm-rejected-0b809073b-20260914` ->
 `0b809073b`; the owned branch was prepared cleanly from `origin/main` `2a7b87198`.
 
@@ -496,3 +500,23 @@ Current release Python edits now require a completed exit-0 parent command, a ma
 REJECTED at exact `9029decfcce628ae6ec82cba9461e7589c1ad421`: the real live workflow completes its edits and workers but the receipt decoder rejects its supported native shape, and a detached heredoc control admits false edit credit. Both findings were preserved and routed before any candidate mutation or retry; this report evaluates only the original candidate and does not certify the producer's subsequent correction.
 
 Validation disposition follow-up: FO authorized the producer to normalize the observed native `custom_tool_call_output` / `input_text` execution-result shape for AC-1, alongside the pre-run HEAD / strict-descendant correction for AC-2. Authorization excludes a broad parser, other-host changes, or another live run; validator awaits a new candidate SHA and explicit review/live grant. Original `9029dec` remains REJECTED.
+
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Repair the owned AC-2 evidence defect with the authorized parent transaction baseline.
+  `e52ece67abdb282ab061c41ee897a8a341b22954` snapshots fixture HEAD before launch, requires a strictly later descendant receipt commit, and removes shell invocation/name matching. Executable echo/heredoc controls reuse real pre-run commits and fail; removing the baseline makes the heredoc and missing-baseline tests fail again.
+- DONE: Repair the separately authorized AC-1 supported native-output false negative.
+  The exact retained custom output envelope now decodes input_text execution-result JSON, requires explicit exit 0, and matches a full receipt line in output. Legacy string output stays supported. Failed/missing-exit, wrong-block/event, metadata-only, and partial-receipt controls reject; reverting normalization breaks the captured-envelope positive.
+- DONE: Preserve exact byte evidence and native parent ordering.
+  Both release command shapes execute real Python edits/commits after the snapshot. Wrong/unchanged/wrong-path/dirty content and a native spawn before the receipt still reject; native lifecycle controls pass unchanged.
+- DONE: Run focused red-first proof, then focused validation and live-adapter compilation without launching a model.
+  `/tmp/ssm-baseline-normalization-red.log` records custom-envelope false negative and heredoc/missing-baseline false positives. Focused smallest/native tests pass in 7.319s; live-tag focused compile/tests pass in 7.207s. Green logs are `/tmp/ssm-baseline-normalization-green.log` and `-live-compile.log`.
+- DONE: Commit bounded correction and current report for independent validation.
+  Correction: five files +160/-41, of which core/carrier/runner +64/-14, executable tests +95/-27, exact native fixture +1. Entire smallest layer versus `5ff85f00`: six files +302/-23. `gofmt` and diff checks complete; previously approved unrelated inherited formatting delta excluded again. Lower layers unchanged.
+- SKIPPED: Full normal/race and targeted live reruns.
+  FO reserves these for scheduling after independent review. The earlier normal/race evidence remains explicitly tied to `9029decfc` and its known baseline resolver failure; the rejected 205.26s live is not presented as evidence for this correction.
+
+### Summary
+
+The isolated pre-run Git boundary now supplies transaction attribution, eliminating shell parsing and old-receipt credit. Typed normalization repairs the actual native output shape from the rejected live run while keeping explicit execution success, full receipts, exact bytes, and pre-spawn parent attribution; candidate `e52ece67a` is ready for independent validation.
