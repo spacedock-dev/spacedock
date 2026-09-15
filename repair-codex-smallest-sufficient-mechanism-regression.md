@@ -520,3 +520,33 @@ Validation disposition follow-up: FO authorized the producer to normalize the ob
 ### Summary
 
 The isolated pre-run Git boundary now supplies transaction attribution, eliminating shell parsing and old-receipt credit. Typed normalization repairs the actual native output shape from the rejected live run while keeping explicit execution success, full receipts, exact bytes, and pre-spawn parent attribution; candidate `e52ece67a` is ready for independent validation.
+
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Verify both authorized AC1/AC2 corrections at e52ece67a preserve exact bytes, baseline ancestry, native receipt success and pre-spawn order; inspect executable negative controls.
+  Clean exact candidate `e52ece67abdb282ab061c41ee897a8a341b22954`; independent review confirms pre-launch HEAD capture, strict descendant/current-history checks, exact committed/final bytes, typed successful custom result receipt, and receipt before first native spawn. No candidate edits.
+- DONE: After independent review finds no material defect, run the exact targeted Codex smallest-mechanism live test once with the proven isolated environment and retain evidence.
+  `TestLiveCommonSmallestSufficientMechanism` PASS normally in 217.15s (package 217.373s), exit 0, no skip/XFAIL/retry. Fresh binary at exact candidate, proven Luna/max shim, cleaned inherited env, isolated existing auth; parent direct commit `1a1f2ec`, both commissioned workers completed.
+- DONE: Report current criteria individually and exact candidate checks honestly; prior full/race results belong to 9029decfc, not this candidate.
+  AC evidence follows. Producer owns fresh full normal/race at `e52ece67a`, logs `/tmp/spacedock-codex-stack-e52-full`; these remain pending at report time. The old `9029decfc` suite failures are not current-tip coverage.
+- DONE: AC-1 — successful Python parent attribution with independently checked exact bytes.
+  New detached `TestValidatorFrozenSmallestRun/actual_original_boundary` replays original failed public/native/state bytes and now credits both notes; removing typed custom output normalization makes this fail. New live passes the complete mechanism and durable journey grader.
+- DONE: AC-2 — reject old or echoed receipt credit while preserving success/content/order controls.
+  The same frozen live bytes reject with baseline equal to receipt commit and baseline later than receipt (`receipt_already_in_input`, `receipt_older_than_input`); removing strict baseline checks makes these fail. Reviewed producer's executed echo/heredoc negatives, failed/missing-exit/wrong-kind/partial/metadata controls, exact-byte and pre-spawn negatives; no repeated producer suite.
+- DONE: AC-3 — native lifecycle and durable commissioned-journey proof unchanged.
+  Correction changes only test observer/carrier/runner, executable controls and native fixture; owner bindings and lifecycle/journey implementation unchanged. New live passes both commissioned worker journeys and parent mechanism assertion.
+- DONE: AC-4 — committed focused proof and serialized current-tip live proof.
+  Producer focused/compile logs record green checks at `e52ece67a`; validator added an independent three-case frozen-artifact replay PASS (0.660s) and one granted exact live PASS. Full-suite ownership remains with FO/producer.
+- SKIPPED: Repeat full normal/race suites or already-owned green checks.
+  Dispatch explicitly reserves fresh full suites to producer and prohibits redundant checks absent new concern. Release completeness still requires recording their current-tip results; this is not a claim that all suites passed.
+- DONE: Preserve evidence and exact execution identity without auth.
+  `/tmp/spacedock-stack-smallest-live-e52ece67-validation/`: frozen-replay.log/exit, standalone validator_frozen_ssm_test.go, detached audit, live.log/exit, setup source-head, three preserved-native sessions, workflow-latest.tar.gz, and evidence.sha256. Live session 50497 and preservation session 8212 exited.
+
+### Reviewer findings
+
+Both prior Material evidence findings are resolved at `e52ece67a`: the actual custom result is typed and success-checked, and old-receipt credit is excluded by the pre-run transaction boundary. Detached replay and current live provide independent behavior evidence; no new material finding or deferred risk was identified within the approved isolated-fixture/no-external-writer boundary.
+
+### Summary
+
+PASSED for the assigned correction re-review and targeted live validation at exact `e52ece67abdb282ab061c41ee897a8a341b22954`. The single current live run passed normally, and the immutable prior failure now passes only with its legitimate starting boundary; fresh full normal/race results remain separately owned and pending.
