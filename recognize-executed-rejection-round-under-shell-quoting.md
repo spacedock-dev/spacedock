@@ -136,3 +136,33 @@ The existing command logger provides the execution fact the shell regexp misses,
 ### Summary
 
 The Codex publication oracle now uses actual successful recorder invocations after shell quoting resolves, preserving repeated calls and recorder failures hidden by a later successful shell command. Focused proof and implementation are committed on stack layer 3; targeted live verification remains explicitly held by the FO.
+
+## Review-finding disposition
+
+- Observation: `TestRejectionRoundPublicationCounter` retains a local Codex transcript-counter closure after the active Codex counter moved to execution logs (5ff85f00b).
+- Released user and normal workflow: maintainers of the Codex rejection-flow test; the live path uses the new logger-backed counter.
+- Observable harm: redundant legacy test maintenance; no demonstrated incorrect acceptance or rejection in the active path.
+- Authority: none: the closure is not AC-1/AC-2 evidence and masks no defect in the separate real-recorder controls.
+- Trigger evidence: the legacy closure runs only in the older table test; `TestRejectionRoundPublicationExecution` calls the active counter with real logger output.
+- Proposal: polish, evidence-maintenance concern; owned by this test surface; decline cleanup for this narrow layer. FO explicitly authorized decline in the validation worker mailbox. No candidate edits made.
+
+## Stage Report: validation
+
+- DONE: Independently verify rejection layer5ff85f00 relative da50d61d uses actual recorder execution and durable state, preserves failure/cardinality/topology, and has meaningful negative controls.
+  Reviewed all three changed files at exact HEAD 5ff85f00bac795ad298cddaca09fc51f27484716; clean code worktree, +96/-17 (net +79), within approved tolerance.
+- DONE: Assess AC-1 — Both successful command forms are recognized exactly once.
+  Existing green `TestRejectionRoundPublicationExecution` executes retained plain/nested shapes through a fresh checkout binary and the logger; both require exactly `[validation/1]`. Returning to transcript/source recognition breaks the positives. No duplicate deterministic rerun per FO instruction.
+- DONE: Assess AC-2 — Nonexecution and invalid publication remain failures.
+  Same executed fixture suite rejects echo-only, recorder failure followed by `true`, duplicate calls, and validation/2; removing exit/count guards breaks those controls. Removing the canonical room after successful execution must fail the durable oracle.
+- DONE: Perform semantic adversarial review of the observation boundary.
+  Traced shell resolution → shim real argv → recorder exit → publication list → independent canonical room/gate/topology checks; empty/failure/repeated/second-round/missing-room variants remain rejected. The shim captures recorder status before outer-shell completion and does not collapse repeat invocations.
+- DONE: Confirm durable validation retains ownership of room correctness.
+  `assertRejectionRecordedRound` still calls `gates.ValidateRoundFile`, checks identity, entry completeness/advisory authority, exactly one room, exact canonical bytes and preserved workflow/candidate bytes; gate preparation and native Codex worker topology remain separate unchanged live assertions.
+- SKIPPED: After FO grants serialized live slot, run targeted local Codex rejection-flow on exact candidate and assess all ACs with retained artifacts, without candidate edits.
+  AC-3 remains pending: FO directed a review-only report while keep-moving/headless occupy the serialized lane; no local live success is claimed. Planned artifact root: /tmp/spacedock-stack-rejection-live.
+- SKIPPED: Repeat already-green deterministic suites and stack-wide checks.
+  FO owns one normal/race/formatted verification at stack tip 9029decfc; no material concern justified redundant runs on this unchanged layer.
+
+### Summary
+
+Independent review found no material outcome or evidence defect in the changed execution-backed oracle. The only polish finding was explicitly declined by the FO; AC-1/AC-2 have implementation-stage behavioral evidence, while AC-3 remains unproven until the serialized exact-checkout live run. Recommendation: keep validation pending live evidence; do not present this report as a complete PASSED stage.
