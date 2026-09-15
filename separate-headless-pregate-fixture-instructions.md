@@ -63,6 +63,20 @@ gates:
                 id: briefing:8k3cmcg2gg1e88w0qe6sq3vw:validation:attempt-1:revision-1
                 digest: sha256:288b3d171d1ef1cd219004bcc1649cc098712dfdf2cf6a7fc28df93e55d0dfac
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8k3cmcg2gg1e88w0qe6sq3vw:validation:1
+                briefing: briefing:8k3cmcg2gg1e88w0qe6sq3vw:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T14:38:59.856009Z"
+                decision: approve
+                reason: Independent reviewer verified AC1–3 within stack474cdb8c5, with separate contractfix dependency explicit and standalone failedrun preserved. Both local target journeys pass and full native validation sequence precedes openunconsumed gate.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: active thread goal plus captain approval of separate contract-fix scope
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.
