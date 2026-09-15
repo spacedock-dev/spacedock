@@ -464,3 +464,33 @@ Current release Python edits now require a completed exit-0 parent command, a ma
 - Execution hold: candidate bytes remain unchanged until live session `33223` exits and
   validator releases the worktree. Then focused red-first tests, fix, and commit only;
   full/live reruns remain FO-scheduled. This entry records authorization, not completion.
+
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently verify the exact smallest-mechanism stack layer against current ACs and adversarial execution/receipt/content controls.
+  Reviewed clean candidate `9029decfcce628ae6ec82cba9461e7589c1ad421`, four-file layer +183/-23; focused smallest/native-lifecycle/observer negative group PASS (3.277s). Detached heredoc control fails on both credited note edits.
+- DONE: Validate targeted Codex live behavior at exact candidate using the serialized FO-provided lane; preserve failures and request disposition before any changes or retries.
+  Exactly one `TestLiveCommonSmallestSufficientMechanism` run at `9029dec`, Luna/max shim and isolated existing auth, FAIL in 205.26s (exit 1), no skip; no retry. FO notified before producer mutation.
+- DONE: Report every AC with evidence, exact candidate and test results; retain the proven baseline resolver failure without treating suites as green.
+  Current AC-1 and AC-2 have material evidence failures below; AC-3 unchanged native/durable journey code and focused controls pass; AC-4 layer/focused/live/full evidence exists but full suites are not green.
+- FAILED: AC-1 — successful Python parent execution receives valid edit credit.
+  Captured release fixture positives pass, but actual live parent commit `45a1610` receives no alpha credit: native receipt uses `custom_tool_call_output` with an array of text blocks; decoder accepts only `function_call_output` with string output. Both committed/final notes independently match exact expected bytes.
+- FAILED: AC-2 — echoed real receipts cannot create shell-edit credit.
+  Detached `TestCodexSmallestMechanismParentCommit/heredoc_receipt` retains real Git/public/native receipt and puts the apparent commit in a `cat` heredoc; both notes incorrectly receive credit. Removing shell-word invocation inference and establishing a pre-run baseline is FO-authorized for the producer.
+- DONE: AC-3 — preserve native lifecycle and durable commissioned-journey proof.
+  Layer changes no lifecycle/commissioned-journey implementation or owner binding; focused lifecycle and observer negatives pass. Original live advances both ready tasks through worker commits and archive; its sole finding is parent-edit attribution.
+- DONE: AC-4 — committed focused proof and FO-serialized verification.
+  Candidate binary built; focused group PASS. FO full normal/race both exit 1 solely on baseline-identical `TestCodexResolveManifestAgainstInstalledHost`, evidence `/tmp/spacedock-codex-stack-full/summary.md`; full suites deliberately not repeated.
+- DONE: Preserve exact failure evidence without auth or candidate edits.
+  `/tmp/spacedock-stack-smallest-live-9029dec-validation/`: focused/live/adversarial logs and exits, adversarial.diff plus detached audit checkout, three preserved-native sessions, workflow-latest.tar.gz, final-workflow, live-diagnosis.txt and evidence.sha256. Parent session `01a0a35e-d7b2-7c92-bf06-001491cba28c`.
+
+### Review-finding disposition
+
+- Material evidence defect, AC-1: released Codex Python-write workflow falsely fails despite exact committed/final content; authority `value-ac[AC-1]` requires successful parent attribution. Trigger: live public commit `45a1610`, native parent zero-based line 38 `custom_tool_call_output` array, first spawn line 76. Decoder drops the supported receipt shape. Owner: this layer; FO consulted, candidate correction authorization belongs to FO.
+- Material evidence defect, AC-2: promised echoed-real-receipt control permits heredoc command text to counterfeit invocation; authority `value-ac[AC-2]` explicitly forbids echo credit. Trigger: retained adversarial.diff/log and real fixture receipt. This is a synthetic observation control like the existing echo test, not an observed malicious live action. FO authorized producer pre-run HEAD/strict-descendant repair; no validator candidate changes or reruns.
+- Baseline defect, outside layer: installed local plugin makes the existing resolver expectation fail identically at `2a7b87198`; FO disposition retains unchanged stack and honest non-green suite status. No race detector finding was reported.
+
+### Summary
+
+REJECTED at exact `9029decfcce628ae6ec82cba9461e7589c1ad421`: the real live workflow completes its edits and workers but the receipt decoder rejects its supported native shape, and a detached heredoc control admits false edit credit. Both findings were preserved and routed before any candidate mutation or retry; this report evaluates only the original candidate and does not certify the producer's subsequent correction.
