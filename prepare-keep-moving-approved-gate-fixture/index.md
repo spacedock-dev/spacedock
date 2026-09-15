@@ -174,3 +174,28 @@ Exact targeted local command from the stack checkout: `SPACEDOCK_BIN=/opt/homebr
 ### Summary
 
 Recommendation: REJECTED for incomplete AC-2 live evidence, held on local runtime infrastructure; AC-1 and AC-3 pass independently, and no fixture defect was found. The live run used a freshly built candidate binary, CI Luna/max shim, isolated local OAuth with inherited API key/required/repo overrides unset, and retained exact source-head, stderr, final message, and process-result artifacts. The harness removed its isolated auth/config and rollout during cleanup; no shared credentials/configuration were changed, and no retry, candidate edit, PR, or merge occurred.
+
+## Stage Report: validation (cycle 2 — authorized local-host recovery)
+
+- DONE: Independently verify real gate setup and no-authority boundaries at layer1 commit 7ca67fdda; inspect focused proof and attack unowned claims without repeating already-green tests gratuitously.
+  Prior independent `TestKeepMovingPreparedGate` passed (3.878s); unchanged candidate and current clean HEAD remain `7ca67fdda5433654b6f67276560b3eb19c0684f6`.
+- DONE: Run the targeted local Codex keep-moving journey with the CI model configuration, preserve artifacts and exact SHA, and assess every AC without changing candidate code.
+  Authorized retry passed `TestLiveCommonKeepMovingPosture` (306.97s; package 307.454s), session 31189 exit 0; `/tmp/spacedock-stack-keep-moving-live/retry-1/test.log` and `_setup/keep-moving-posture/source-head.txt` retain result and exact candidate.
+- DONE: AC-1 — The fixture's stated approval can be consumed through the supported gate lifecycle.
+  Independent deterministic positive/unprepared controls passed; retry also executed real captain `gate record ... --consume` successfully before implementation dispatch.
+- DONE: AC-2 — The live scenario still measures continuation and independent work.
+  Unchanged live grader passed all three ordered dispatch/report/terminal/archive journeys plus overlap and meaningful historically nonterminal questioned correction; removing the approved dispatch still has the existing exact 2/3 negative control.
+- DONE: AC-3 — Approval authority is not bypassed by fixture preparation.
+  Focused proof verifies committed open preparation, no successor history and byte-identical missing-approval refusal; live approval was recorded by the first officer after fixture initialization.
+- DONE: Resolve the local-host evidence defect without candidate changes.
+  FO authorized one isolated tool smoke and one retry on smoke success. Current CLI 0.154.0 Luna/max smoke executed `printf HOST-SMOKE-OK` exit 0 (PID 59772), then the targeted retry passed with the same cleaned outer-session environment.
+- DONE: Preserve diagnosis and recovery evidence.
+  Original failure remains under `/tmp/spacedock-stack-keep-moving-live`; `host-smoke` retains environment-summary, stdout, stderr, result, and rollout; `retry-1` retains live artifacts plus sampled rollouts/workflow history. Isolated auth/config were cleaned; shared auth/config were untouched.
+- SKIPPED: Full normal/race suites and repository-wide formatting.
+  Captain scheduling keeps these at the combined stack tip; no candidate edits, additional live tests, PR, or merge in this worker.
+
+### Summary
+
+Recommendation: PASSED; all three ACs have behavioral evidence, and the prior local-host evidence hold is resolved by the authorized successful retry. No material candidate findings or deferred candidate risks remain. The recovery removes inherited runtime markers as a set; it does not establish which individual marker caused the original negotiation timeout.
+
+Reproduction environment: remove `OPENAI_API_KEY`, `CODEX_AUTH_JSON`, `CODEX_CI`, `CODEX_THREAD_ID`, `CODEX_SESSION_ID`, `NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S`, `SPACEDOCK_CODEX_LIVE_REQUIRED`, and `SPACEDOCK_REPO_ROOT`; use `PATH=/tmp/spacedock-codex-fixes-ci-shim:/Users/clkao/go/bin:$PATH`, `SPACEDOCK_CODEX_REAL_BIN=/opt/homebrew/bin/codex`, `SPACEDOCK_BIN=/tmp/spacedock-stack-keep-moving-live/bin/spacedock` (built from this exact candidate), `SPACEDOCK_LIVE_RUNTIME=codex`, and `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-stack-keep-moving-live/retry-1`. Command: `go test -tags live ./internal/ensigncycle -run '^TestLiveCommonKeepMovingPosture$' -count=1 -v -timeout 15m`. The shim is the verbatim origin/main CI Luna/max wrapper, with its source and local location explicitly supplied by the FO.
