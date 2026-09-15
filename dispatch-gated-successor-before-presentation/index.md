@@ -63,6 +63,20 @@ gates:
                 id: briefing:vcfwr5ptn6pedv32wq7cbsy6:validation:attempt-1:revision-1
                 digest: sha256:b33c2b1691ff037ee6c725e8f3d0607c86bdd1c63ce4cf35418dfc8fb7f12a2a
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vcfwr5ptn6pedv32wq7cbsy6:validation:1
+                briefing: briefing:vcfwr5ptn6pedv32wq7cbsy6:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T14:44:59.739735Z"
+                decision: approve
+                reason: 'All three ACs independently verified at474cdb8c5: both local live journeys pass and full native validation-before-prepare order holds. Fullnormal/race completed with only proven baseline resolverfailure, no races. Stack locally verified before CI.'
+                conn:
+                    quote: approve.
+                    source: Captain approval of separate headless contract fix on 2026-09-15; active goal grants stacked PR and Codex CI authority
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.
