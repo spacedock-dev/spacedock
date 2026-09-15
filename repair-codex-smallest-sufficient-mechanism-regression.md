@@ -107,6 +107,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:bfmczd31ydpp4stqjstf6xwx-validation-3
+              briefing:
+                id: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-3:revision-1
+                digest: sha256:6d82d3d87e11b2e667745e40fdb4a0783758310ac1d6dc981ab3cae856e0e0d0
+                room-ref: '@review/validation/briefing-3'
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 mod-block:
