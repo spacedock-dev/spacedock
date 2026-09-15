@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8k3cmcg2gg1e88w0qe6sq3vw:ideation:attempt-1:revision-1",
+  "question": "Implement this bounded Codex fixture correction and targeted proof?",
+  "artifacts": [
+    {
+      "id": "artifact:8k3cmcg2gg1e88w0qe6sq3vw:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/893c848910680ab9327323193ef1e7c4c2bee136/separate-headless-pregate-fixture-instructions.md",
+      "rev": "sha256:3bc417250c46c95c036107c4f33de744391521fca1b55c57f8b460b01886424f",
+      "mediaType": "text/markdown",
+      "summary": "Concrete spike proves the fixture contradiction and minimal correction. Preserve all runtime authority and lifecycle checks; local targeted proof per layer and combined stack CI."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:8k3cmcg2gg1e88w0qe6sq3vw:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}

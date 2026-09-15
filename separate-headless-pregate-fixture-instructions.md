@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:8k3cmcg2gg1e88w0qe6sq3vw:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:8k3cmcg2gg1e88w0qe6sq3vw-ideation-1
+              briefing:
+                id: briefing:8k3cmcg2gg1e88w0qe6sq3vw:ideation:attempt-1:revision-1
+                digest: sha256:a51f84f66dd4cf42b45627b2d736df37a4f9ba1e0df6fd2347d30ca901a90c71
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.
