@@ -121,6 +121,20 @@ gates:
                 id: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-4:revision-1
                 digest: sha256:3656bc604499a0d0705f160f4c9e4b54ee1e04ab65ea546d2f5ce560c8280ab7
                 room-ref: '@review/validation/briefing-4'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bfmczd31ydpp4stqjstf6xwx:validation:4
+                briefing: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-4:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T16:42:44.262542Z"
+                decision: approve
+                reason: Independent cycle6 review verifies all four captain-approved two-phase criteria at faef711575. Live proof passes at equivalent71d1f6b1; exact combined-tip normal/race have only independently established baseline resolver failure, registry green and no races. Canonical criteria repaired without changing approved semantics.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: Active captain goal, followed by explicit request for both Claude and Codex live CI after rework
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 mod-block:
