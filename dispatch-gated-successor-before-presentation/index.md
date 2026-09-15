@@ -11,6 +11,17 @@ issue:
 pr:
 mod-block:
 id: vcfwr5ptn6pedv32wq7cbsy6
+gates:
+    version: 1
+    records:
+        - id: gate:vcfwr5ptn6pedv32wq7cbsy6:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:vcfwr5ptn6pedv32wq7cbsy6-backlog-1
+              briefing:
+                id: briefing:vcfwr5ptn6pedv32wq7cbsy6:backlog:attempt-1:revision-1
+                digest: sha256:b6057983672d6c156860ec510eeeb522745ea6e009b88a5035a4bab2e4142526
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.

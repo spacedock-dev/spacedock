@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vcfwr5ptn6pedv32wq7cbsy6:backlog:attempt-1:revision-1",
+  "question": "Proceed with the captain-approved separate headless completion contract fix?",
+  "artifacts": [
+    {
+      "id": "artifact:vcfwr5ptn6pedv32wq7cbsy6:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/5e46b9a9c557ed5f231487ee3752f67d469dcd8b/dispatch-gated-successor-before-presentation/index.md",
+      "rev": "sha256:1b66fed6f9e622bafc8c38ee8883342d89f29038a99e9b57fdbb3912c7a74647",
+      "mediaType": "text/markdown",
+      "summary": "Captain approved removal of contradictory gated-successor stop shortcut. Bound scope is shared dispatch contract and existing proof, stacked on e52ece67a. Must pass local headless and gate-ready journeys before CI."
+    }
+  ]
+}
