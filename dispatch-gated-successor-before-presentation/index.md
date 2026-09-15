@@ -6,7 +6,7 @@ started: 2026-09-15T14:19:00Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-dispatch-gated-successor-before-presentation
 issue:
 pr:
 mod-block:
