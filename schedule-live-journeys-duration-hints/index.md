@@ -41,7 +41,7 @@ Why a loop remains: an isolated actual-Go experiment registered 12 parallel subt
 - `0,5,6,1,4,3,9,11,10,8,2,7`
 - `0,5,6,4,3,2,1,9,11,10,8,7`
 
-Sorted registration therefore does not produce useful priority order. The retained native experiment is `/tmp/spacedock-native-order-spike/order_test.go`; reproduction is `go test -v -parallel 3 -count=3 /tmp/spacedock-native-order-spike/order_test.go`. It is a throwaway probe, not a new repository test. The already committed worker spike `72718be3f` shows the small worker loop works. No need to invent another scheduling mechanism or serialize all tests. The contract is sorted admission to three slots; CPU-level host startup order can differ.
+Sorted registration therefore does not produce useful priority order. The native experiment source and outcomes are committed in `SCHEDULE-SPIKE.md` at local spike commit `58a777779`; its executed copy is `/tmp/spacedock-native-order-spike/order_test.go`. Reproduction is `go test -v -parallel 3 -count=3 /tmp/spacedock-native-order-spike/order_test.go`. It is a throwaway probe, not a new repository test. The already committed worker spike `72718be3f` shows the small worker loop works. No need to invent another scheduling mechanism or serialize all tests. The contract is sorted admission to three slots; CPU-level host startup order can differ.
 
 Give merged dispatch its own `<CLAUDE_CONFIG_DIR>/merged-team-mode` child. Common, bare and break-glass scenarios already use their own scenario children. Keep their separate HOME/workflow roots and existing artifact paths. No global auth/config change.
 
