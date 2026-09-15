@@ -63,6 +63,20 @@ gates:
                 id: briefing:82de96hqv8cfwxqagj6ah1k6:validation:attempt-1:revision-1
                 digest: sha256:c6f29d9099e118e60210d7c14b13e1c7d8460a111557332fee3c63624f358a39
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:82de96hqv8cfwxqagj6ah1k6:validation:1
+                briefing: briefing:82de96hqv8cfwxqagj6ah1k6:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T04:42:41.795435Z"
+                decision: approve
+                reason: Independent validation and targeted Codex live run pass all three ACs at 5ff85f00; negative execution and durable-state controls remain enabled.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: active thread goal supplied by captain
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
