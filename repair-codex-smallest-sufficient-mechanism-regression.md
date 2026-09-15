@@ -550,3 +550,14 @@ Both prior Material evidence findings are resolved at `e52ece67a`: the actual cu
 ### Summary
 
 PASSED for the assigned correction re-review and targeted live validation at exact `e52ece67abdb282ab061c41ee897a8a341b22954`. The single current live run passed normally, and the immutable prior failure now passes only with its legitimate starting boundary; fresh full normal/race results remain separately owned and pending.
+
+### Final corrected-tip full-suite evidence — e52ece67a
+
+- DONE: Run full normal then race suites sequentially once at exact `e52ece67abdb282ab061c41ee897a8a341b22954`.
+  `go test ./...` session `21174` exited 1; `go test ./... -race` session `10974` exited 1. Both failed solely on `TestCodexResolveManifestAgainstInstalledHost` at `codex_resolve_test.go:44`; every other package passed. Ensigncycle passed normal in 259.635s and race in 265.386s. No race detector findings.
+- DONE: Preserve exact current-tip evidence and distinguish the known baseline failure.
+  `/tmp/spacedock-codex-stack-e52-full/summary.md`, source-head file, both logs/exit files, and log SHA-256 manifest. The failure is identical to the already reproduced `2a7b87198` baseline: test checks stable installation only while resolver returns installed `spacedock-local/0.28.0-pre0`. No new failures; baseline was not rerun.
+- DONE: Maintain verification scope and candidate integrity.
+  PATH prepended `/Users/clkao/go/bin`, `GOFLAGS=-p=2`, stale launcher/repo overrides unset. Candidate stayed clean and unchanged; no host configuration edits, broad reruns, or live tests by this worker. Gofmt had already run on this candidate, and unrelated inherited formatting drift was not reintroduced. Independent live PASS remains separately documented in validation report `b8e0dc086`.
+- FAILED: Fully green all-package normal/race commands.
+  Both exact commands remain exit 1 solely because of the established baseline resolver expectation defect. This report does not reinterpret those exits as green.
