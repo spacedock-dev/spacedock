@@ -33,6 +33,20 @@ gates:
                 id: briefing:wvdv5c5mkkd23yhmr9p16czd:ideation:attempt-1:revision-1
                 digest: sha256:10a5618ff09104122df3c972d5d2a5df112cc6128e553c98aa7df024b8b36bb1
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wvdv5c5mkkd23yhmr9p16czd:ideation:1
+                briefing: briefing:wvdv5c5mkkd23yhmr9p16czd:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T04:07:04.691315Z"
+                decision: approve
+                reason: Minimal real gate setup is proven; bounded fixture correction retains authority and dispatch proof. Proceed under captain scope through targeted verification and PR stack.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: active thread goal supplied by captain
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-09-15T04:01:46Z
 ---
 
