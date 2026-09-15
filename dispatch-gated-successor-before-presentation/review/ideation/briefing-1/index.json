@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vcfwr5ptn6pedv32wq7cbsy6:ideation:attempt-1:revision-1",
+  "question": "Implement the captain-approved one-file gated-successor clarification and verify the two local journeys?",
+  "artifacts": [
+    {
+      "id": "artifact:vcfwr5ptn6pedv32wq7cbsy6:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7e2b1c6a1ff32e34f1bc23f28d92ec6265c95e8f/dispatch-gated-successor-before-presentation/index.md",
+      "rev": "sha256:cddde49927fcd02dc2614ffa439db132b93b77525b2fc85ce48c12653801d2e1",
+      "mediaType": "text/markdown",
+      "summary": "Exact one-file +2 net correction removes next-stage-gate stop exception, points to existing successor dispatch guard. Existing live journeys plus independent native/report order review establish behavior; no new grader or CLI mechanism. Branch from e52ece67a; CI only when all layers locally verified."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:vcfwr5ptn6pedv32wq7cbsy6:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
