@@ -235,7 +235,13 @@ func scenarioBehaviorResult(scenario sharedRuntimeScenario) journeymetrics.Behav
 	return result
 }
 
-func TestSmallestMechanismPhaseMetrics(t *testing.T) {
+// This is an offline metrics control, like the Pi seed above, not a live journey.
+func FuzzSmallestMechanismPhaseMetrics(f *testing.F) {
+	f.Add("phase-metrics")
+	f.Fuzz(checkSmallestMechanismPhaseMetrics)
+}
+
+func checkSmallestMechanismPhaseMetrics(t *testing.T, scenarioName string) {
 	for _, host := range []string{"claude", "codex", "pi"} {
 		t.Run(host, func(t *testing.T) {
 			dir := t.TempDir()
@@ -246,7 +252,7 @@ func TestSmallestMechanismPhaseMetrics(t *testing.T) {
 			}
 			phase := liveResult{stream: stream, duration: time.Second}
 			result := liveResult{stream: stream + "\n" + stream, duration: 2 * time.Second, phases: []liveResult{phase, phase}}
-			scenario := sharedRuntimeScenario{name: "phase-metrics"}
+			scenario := sharedRuntimeScenario{name: scenarioName}
 			switch host {
 			case "claude":
 				emitClaudeScenarioMetrics(t, scenario, result, "test")
