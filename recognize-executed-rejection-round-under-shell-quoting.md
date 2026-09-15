@@ -47,11 +47,15 @@ The plain equivalent in pre3 run https://github.com/spacedock-dev/spacedock/acti
 
 ## Proposed approach
 
-Grade actual recorder execution and its successful result through the existing command log or correlated execution/result and durable round evidence. Prefer existing authoritative evidence over extending shell-quoting regexes. Preserve checks for exactly the required publication and reject quoted examples, echo-only text, failed commands, and duplicates. Do not change the recorder product or re-open the separate acceptance-scan mismatch.
+For the Codex rejection journey, install the existing `writeRecordedGateLoggingShim` through `withStubPATH` before running the FO. Keep its observer log outside the workflow and retain `command.log` in the scenario artifact directory, following the existing recorded-gate journeys. Read successful `gate record rejection-task --round` executions from this log, after shell quoting has been resolved; use each recorder's exit code rather than the enclosing shell's exit code. Count every successful round id and keep the existing exactly-one-`validation/1` assertion. Reuse the existing entity/round-room validation and complete-log checks without weakening them.
+
+Use a small fixture-specific scan of the existing `exit=0` log rows and argument fields (`--round value` and `--round=value`), not a shell grammar or success-output matcher. Wire only the Codex branch; keep Claude/Pi behavior and native worker-topology grading unchanged. This serves AC-1/2: the simpler output-only alternative admits echo/quoted text and cannot distinguish a failed recorder hidden by a later successful shell command. Durable state alone also misses repeated same-round invocations. Existing logging supplies that missing execution fact without new instrumentation or product changes.
 
 ## Risk evidence
 
-The captured release artifacts above establish the failure trigger. Replay them before implementation; a live runtime claim requires the targeted live AC below, not a prose-presence check.
+Throwaway spike at `/tmp/spacedock-82de96-ideation-spike`, exported from `origin/main` `2a7b87198`, ran `go test ./internal/ensigncycle -run '^TestIdeationRoundLogSpike$' -v -count=1` successfully. It executed both retained commands from `/tmp/spacedock-round-regex-replay.json` through the existing logger and freshly built binary against `writeRejectionWorkflow` fixtures, replacing only the captured fixture-root path. Results: pre3 old recognizer=true, 0.27.3=false; both actual execution counts=1 and existing durable-round oracle=valid. Echo/quoted example generated no logger call; failed recorder followed by `true` added no successful publication; removed round room and duplicate publication list were rejected. This is deterministic mechanism evidence, not a completed live AC.
+
+The release artifact URLs above are the durable source of the captured commands. Implementation must embed their minimal command cases in repository tests; the temporary replay files are diagnostic inputs, not a permanent test dependency. The only newly wired mechanism is the existing command logger; the spike proved it survives the exact failing quotation shape.
 
 ## Out of scope
 
@@ -59,7 +63,9 @@ Unrelated release failures and broader test-harness redesign.
 
 ## Expected surface and tolerance
 
-Existing round-publication grader and adjacent tests in internal/ensigncycle; estimate net +20 to +80 LOC across 2–3 files. No shell parser framework, new instrumentation, product recorder changes, or new CI lane.
+Estimate net LOC change: +60, across 3 files (approximately 90 insertions and 30 deletions). Tolerance: net +20 to +80, at most 3 files: `internal/ensigncycle/shared_round_recording_test.go`, `internal/ensigncycle/claude_live_runner_test.go`, and one adjacent focused test file if needed. Existing helpers are reused, not extended into a framework.
+
+Permitted semantic change: Codex rejection-flow test grading recognizes actual successful recorder executions independently of shell source quoting. Command grammar, stored formats, authority, recorder runtime behavior, skill text, and other hosts are unchanged. No user-facing documentation diff is needed for this test-only oracle correction.
 
 ## Acceptance criteria
 
@@ -74,7 +80,22 @@ Verified by: a targeted local rejection-flow run observes the required round pub
 
 ## Test plan
 
-Add focused failing behavioral cases first. Reuse the existing test owner and captured artifacts, then run the targeted live AC. Before completion run go test ./..., go test ./... -race, and gofmt -w ./cmd ./internal. Report unavailable live execution separately from passing evidence. No prose-grep proof.
+Primary proof owner: `shared_round_recording_test.go` and the existing `TestLiveCommonRejectionFlow` journey. Add focused failing cases before implementation. Embed plain and nested retained command forms, executing them against real fixture state through the existing logger. AC-1 fails if grading returns to shell-source recognition. AC-2 controls cover echo/quoted example, failed recorder followed by successful shell completion, absent durable round, duplicate same-round calls, and a second `validation/2` publication; dropping the logger exit guard, durable check, or invocation count must respectively fail these controls. Reuse existing durable-oracle tests rather than duplicating room validation.
+
+Focused offline command: `go test ./internal/ensigncycle -run 'TestRejection(FlowRound|RoundPublication)' -count=1` (name added cases under these existing prefixes). Cost: seconds, with one local binary build. Targeted live command from the stack layer worktree: `SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -tags live ./internal/ensigncycle -run '^TestLiveCommonRejectionFlow$' -v -count=1`. Cost: one Codex rejection journey, several minutes; require retained command log, valid round, final prepared gate, and unchanged topology assertions. The harness builds its checkout candidate; do not inject the stale inherited binary override.
+
+Per captain-approved stack strategy, run focused offline checks and the targeted live journey per layer; run `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and full CI once at the completed stack tip. No candidate code or live runtime execution is claimed by this ideation stage.
 
 ### Feedback Cycles
 
+
+## Stage Report: ideation
+
+- DONE: Prove the smallest execution-backed round-publication oracle using existing evidence; preserve echo, failed-command, missing-round, and duplicate negatives.
+  Throwaway `TestIdeationRoundLogSpike` passed: exact retained pre3/0.27.3 forms produced one successful logger row plus valid durable state; old recognizer missed 0.27.3; independent controls rejected false success.
+- DONE: Record a bounded implementation plan and targeted Codex rejection-flow command for the approved stack.
+  Plan reuses the logger and durable owner in at most 3 files, net +20–80 LOC; exact focused/live commands and per-layer versus stack-tip verification are recorded above.
+
+### Summary
+
+The existing command logger provides the execution fact the shell regexp misses, and its recorder-level exit code also excludes failures hidden by a successful outer shell. Both retained command forms were exercised against real fixture state without candidate code edits; implementation and the targeted live AC remain subsequent-stage work.
