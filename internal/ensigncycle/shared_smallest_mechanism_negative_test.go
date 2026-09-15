@@ -337,6 +337,8 @@ func TestCodexSmallestMechanismParentCommit(t *testing.T) {
 				writeFile(t, filepath.Join(root, f), ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f]))
 			}
 			gitInit(t, root)
+			// The captured native receipt names main, independent of the host Git default.
+			git(t, root, "branch", "-m", "main")
 			events := strings.Split(strings.TrimSpace(readFile(t, "testdata/codex_smallest_mechanism_python.jsonl")), "\n")
 			index := 0
 			if mutation == "release 0273" {
