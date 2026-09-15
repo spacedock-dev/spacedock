@@ -6,7 +6,7 @@ started: 2026-09-15T18:27:49Z
 completed:
 verdict:
 score: 0.8
-worktree:
+worktree: .worktrees/spacedock-ensign-semantic-dispatch-names
 issue: spacedock-dev/spacedock#624
 pr:
 mod-block:
