@@ -93,6 +93,20 @@ gates:
                 id: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-2:revision-1
                 digest: sha256:777c4122a8a45d76afd0e70744c0e30e9215c0dde2584c3146a2b9e3ac6d2a75
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bfmczd31ydpp4stqjstf6xwx:validation:2
+                briefing: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T14:58:23.801386Z"
+                decision: approve
+                reason: Independent cycle5 validation confirms exactly2 offline fixture lines resolve CI defaultbranch failure; currentmain/master/race controls pass and runtimegrader/assertions unchanged. Restacked fulltip checks still gate publication/CI.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: Active captain goal and instruction to retry CI only on ready locally verified stack
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 mod-block:
