@@ -68,6 +68,9 @@ Replace unconditional step 4 and step 5's reviewer-only precondition with:
 > Otherwise, completed and committed correction work satisfies the review prerequisite. Same-stage feedback alone does not waive declared review requirements.
 > Prepare and present exactly one fresh open gate after every applicable requirement completes. Stop without approving or consuming it.
 
+Update each conditional step's completion condition to match its applicability. An absent obligation completes without manufacturing its evidence.
+Preserve cycle-limit escalation even when no reviewer is declared. Repeated correction cannot bypass the limit by skipping reviewer reruns.
+
 Keep step 1's distinct authorization requirement. A captain's concrete revise instruction supplies correction authority for workflows without a review-finding checkpoint.
 Do not manufacture development-specific classification policy for those workflows.
 
@@ -133,8 +136,9 @@ Codex release-test stack fixes, archive durability (#790), terminal output clari
 Estimate net LOC change: +45, across 3 files; approximately 65 insertions and 20 deletions.
 Tolerance: net +90 LOC maximum and 4 files. Larger scope requires a design reset.
 
-Expected owners: `skills/feedback-rejection-flow/SKILL.md`, the existing shared live rejection fixture/test owner, and its existing result grader.
-Use `internal/ensigncycle/shared_promoted_live_test.go` and the discovered rejection fixture owner after reading their current boundaries.
+Expected owners: `skills/feedback-rejection-flow/SKILL.md`, `internal/ensigncycle/claude_live_runner_test.go`, and `internal/ensigncycle/claude_runtime_helpers_test.go`.
+The existing `runClaudeRejectionFlowScenario` owns the rejection run; `shared_live_runner_test.go` registers it.
+The topology grader lives in `claude_runtime_helpers_test.go`. Registration changes, if needed, fit the existing four-file tolerance.
 No command grammar, persisted format, authorization rule, recorder taxonomy, or runtime adapter changes are planned.
 The observable change is that workflows without round/reviewer obligations can complete same-stage correction and re-gate.
 The exact skill wording above is the documentation diff. No additional command-reference change is needed.
@@ -158,11 +162,14 @@ No new flags, state fields, recorder interpretation, or synthetic reviewer stage
 
 ## Test plan
 
-The existing shared rejection live runner owns agent routing and completion proof. Extend its workflow inputs and durable-state grader, rather than creating another runner.
+`runClaudeRejectionFlowScenario` in `internal/ensigncycle/claude_live_runner_test.go` owns agent routing and completion proof.
+Extend its workflow inputs and the topology grader in `internal/ensigncycle/claude_runtime_helpers_test.go`.
+`internal/ensigncycle/shared_live_runner_test.go` registers the runner. No new runner is planned.
 Before implementation, add the smallest failing self-feedback fixture. Run current and candidate skills through the same serialized local runtime lane.
 A valid paraphrase must pass. Restoring unconditional recorder/reviewer requirements must fail the self-feedback case.
 Removing the required-review condition must fail the separate-reviewer and same-stage-required-review controls.
 Conflating projection absence with round absence must fail a required-round/no-projection control.
+Leaving unconditional completion conditions must fail the self-feedback case. Removing escalation must fail a no-reviewer cycle-limit control.
 Assertions inspect committed plan bytes, dispatch/completion identity, attempt count, resolution absence, and retained required evidence.
 Transcript phrases and instruction substring checks are not behavioral oracles.
 
@@ -192,3 +199,17 @@ The shipped-contract change also requires the existing detached adversarial audi
 
 Existing CLI mechanics already support same-stage correction and fresh open gates. The generic skill imposes reviewer and recorder obligations without checking the workflow.
 The smallest fix makes those obligations conditional while retaining declared review requirements. Ideation stops for captain review.
+
+## Staff review disposition
+
+The independent staff review approved the minimal applicability change with no blocking findings.
+The First Officer authorized these planning corrections; implementation remains unapproved.
+
+- Accepted: correct proof ownership. The rejection runner is `runClaudeRejectionFlowScenario`, registered by `shared_live_runner_test.go`.
+  The design now names its implementation file and topology grader. The three-file estimate and four-file tolerance remain unchanged.
+- Accepted: make completion conditions conditional with their steps. Otherwise absent recorder or reviewer obligations can still block completion.
+  The proposed wording and live control now cover that failure.
+- Accepted: preserve cycle-limit escalation without a reviewer. Skipping a reviewer rerun cannot permit unlimited correction cycles.
+  The design now requires a no-reviewer cycle-limit control.
+
+No shipped files changed. The retained CLI spike was not rerun.
