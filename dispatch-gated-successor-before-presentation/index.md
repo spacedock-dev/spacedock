@@ -1,6 +1,6 @@
 ---
 title: Dispatch a gated successor before presenting its gate
-status: ideation
+status: implementation
 source: Captain approved separate headless contract fix on 2026-09-15
 started: 2026-09-15T14:19:00Z
 completed:
@@ -54,7 +54,7 @@ gates:
                     source: Captain reply approving separate headless contract-fix scope on 2026-09-15; original goal authorizes dispatch and stacked PRs
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.
