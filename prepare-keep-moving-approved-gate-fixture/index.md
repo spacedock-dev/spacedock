@@ -63,5 +63,38 @@ Verified by: inspect and exercise the initialized fixture before the captain dec
 ## Stage-specific test gates
 
 - Ideation: reproduce the seed/consume mismatch with the installed candidate and demonstrate the smallest valid gate setup in a throwaway fixture. Name the existing primary proof owners and expected file/LOC scope.
-- Implementation: add the focused regression before the fixture change; run relevant deterministic tests, full Go tests and race tests, and formatting required by AGENTS.md.
+- Implementation: add the focused regression before the fixture change; run the relevant deterministic tests and format changed Go files. Per captain-approved stack scheduling, full Go/race suites and repository formatting run once at the combined stack tip.
 - Validation: independently verify setup and refusal behavior, then run the targeted Codex scenario. Any remaining live failure must be diagnosed separately from the repaired setup.
+
+## Implementation plan and expected surface
+
+Use the existing single-root `writeKeepMovingWorkflow` fixture. Add one short review Markdown artifact before `gitInit`; after initialization run the real `gate prepare approved-gate --question "Advance to implementation?" --artifact <root>/gate-review.md --summary "Ready to proceed to implementation." --workflow-dir <root>`, then `state commit approved-gate --workflow-dir <root>`. Reuse `buildRecordedGateBinary` and `mustRecordedGate`; no new framework or split-root fixture is needed. The agent still owns recording the captain decision, consuming it, dispatching implementation, and completing the durable journey.
+
+This preparation serves AC-1 and AC-3. Bare status seeding is insufficient because it has no gate record; hand-authored gate YAML would duplicate digest/binding machinery. The supported prepare and state-commit commands are the smallest exercised route to a real committed review package.
+
+Estimate net LOC change: +100, across 3 files (100 insertions, 0 deletions), tolerance +50 net LOC and no additional files. Expected files: `internal/ensigncycle/shared_fixtures_test.go` (about 10 lines), new `internal/ensigncycle/shared_keep_moving_fixture_test.go` (about 80), and `internal/ensigncycle/shared_keep_moving_durable_test.go` (about 10 for an approved-task missing-dispatch control). Changes affect only test fixture initial state and regression coverage; CLI grammar, stored formats, approval authority, production runtime, skills, and durable grader semantics stay outside scope. No user-visible documentation diff is needed.
+
+### Spike evidence and primary proof
+
+At `origin/main` 2a7b8719843e40b79545f0bb4def6609cdd9ebbf, the installed pre3 binary reproduced unprepared `gate record --decision approve --actor person:captain --consume` exiting 1 with `entity has no gates record`. The throwaway `TestKeepMovingIdeationSpike` then proved prepare plus state commit retains `approved-gate/review/review/briefing-1/index.json` in HEAD; the prepared entity remains at review with no started, resolution, or application. Missing-decision consume exits 1, reports ineligible/consumed=false, and leaves entity bytes unchanged. Recording captain approval with consume exits 0 and writes status=implementation/application.state=consumed.
+
+The spike also established that single-root `gate prepare` alone leaves its room uncommitted; `state commit` is required for the committed-fixture requirement. Retained local evidence: `/tmp/keep-moving-ideation-wvdv/internal/ensigncycle/keep_moving_spike_test.go` and `/tmp/keep-moving-gate-spike-wvdv4` (throwaway paths, not dependencies of shipped tests). Final exercised command: `go test ./internal/ensigncycle -run '^TestKeepMovingIdeationSpike$' -count=1 -v` (1.446 seconds, pass).
+
+Primary proof owners are the existing real command helpers in `recorded_gate_lifecycle_test.go`, `TestDurableTaskJourneys`, and `TestLiveCommonKeepMovingPosture` with `assertDurableKeepMoving`. Add the focused `TestKeepMovingPreparedGate` before the fixture edit: verify committed open preparation, unchanged missing-decision refusal, successful captain approval consumption, and the unprepared refusal control. Removing preparation, preconsuming approval, or omitting the state commit must each fail it. Use on-disk parsed state, command exit codes, Git objects, and byte equality; no prose-grep proof.
+
+AC-2 stays with the existing durable journey proof and one missing-approved-dispatch case in its existing test table: suppressing that dispatch must fail while preserving the other two journeys. The live test must still observe all three dispatch/report/terminal journeys and the questioned task's nonterminal correction. Deterministic checks cost seconds plus one binary build; the single Codex live run costs minutes and is scheduled serially by the FO after implementation.
+
+Targeted deterministic command: `go test ./internal/ensigncycle -run '^(TestKeepMovingPreparedGate|TestDurableTaskJourneys|TestDurableKeepMoving.*|TestDurableQuestioned.*|TestRetainedAtomicWorkerJourney)$' -count=1`.
+
+Exact targeted Codex command, from the prepared stack checkout: `SPACEDOCK_BIN=/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -tags live ./internal/ensigncycle -run '^TestLiveCommonKeepMovingPosture$' -count=1 -v -timeout 15m`. This requires Codex on PATH and the existing supported local auth or CI auth input; the harness handles isolation. The candidate changes only Go test fixtures, so the specified pre3 executable is sufficient. FO runs the full normal/race/CI checks once at the combined four-fix stack tip.
+
+## Stage Report: ideation
+
+- DONE: Prove the smallest real prepared-gate fixture setup and preserve the missing-approval refusal.
+  Installed pre3 spike passed: unprepared refusal, real prepare + state commit, committed briefing, unchanged missing-decision refusal, then approval consumption to implementation; dropping state commit failed the Git-object assertion.
+- DONE: Record a concise implementation plan, exact targeted Codex command, primary tests, and bounded surface for the captain-approved stack.
+  Plan above bounds fixture/regression work to +100 net LOC across 3 files (tolerance +50); existing durable checks and serialized targeted Codex run own continuation proof.
+
+### Summary
+
+The fixture needs a real prepared review room and its state commit before the prompt grants approval. The approval decision and continuation remain agent actions; no production authority or grader relaxation is proposed. Live execution and combined-stack full suites remain scheduled after implementation.
