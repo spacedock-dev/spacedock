@@ -7,7 +7,7 @@ score: 0.95
 started: 2026-09-15T04:30:03Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-workflow-owned-same-stage-revision
 pr:
 mod-block:
 id: zz1yqc2w2katp28wpa8nghx2
