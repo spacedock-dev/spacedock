@@ -245,6 +245,12 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		}
 	}
 
+	if rootPath == "" && archiveSlug == "" && !(readRef != "" && isRegularFile(readRef)) {
+		if rc := checkStorageOrExit(roots, asJSON, stdout, stderr); rc != 0 {
+			return rc
+		}
+	}
+
 	// --new atomic create.
 	if newSlug != "" {
 		folderForm := contains(args, "--folder")
@@ -469,7 +475,7 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if rc != 0 {
 			return rc
 		}
-		return runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, resolved.slug, contains(args, "--force"), quiet, asJSON, stdout, stderr)
+		return runArchiveTransaction(roots, resolved.slug, contains(args, "--force"), quiet, asJSON, stdout, stderr)
 	}
 
 	if setResult != nil {
@@ -514,6 +520,9 @@ func contains(s []string, v string) bool {
 // resolveReferenceOrExit resolves a ref in one workflow and prints the resolve
 // line, or fails. Matches resolve_reference_or_exit.
 func resolveReferenceOrExit(roots roots, ref string, includeArchived, asJSON bool, stdout, stderr io.Writer) int {
+	if rc := checkStorageOrExit(roots, asJSON, stdout, stderr); rc != 0 {
+		return rc
+	}
 	idStyle, err := workflowIDStyle(roots.definitionDir)
 	if err != nil {
 		return errExit(stderr, err.Error())
@@ -783,6 +792,9 @@ func resolveFromRootOrExit(rootPath, ref string, includeArchived, asJSON bool, s
 		if err != nil {
 			hardErrors = append(hardErrors, fmt.Sprintf("Error: %s: %s", workflow, err))
 			continue
+		}
+		if rc := checkStorageOrExit(wfRoots, asJSON, stdout, stderr); rc != 0 {
+			return rc
 		}
 		idStyle, err := workflowIDStyle(wfRoots.definitionDir)
 		if err != nil {
