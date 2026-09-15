@@ -28,8 +28,9 @@ recorded here.
   registered journey or runtime-specific proof is orphaned.
 - Runtime-specific proofs cover only behavior unique to one host substrate. They
   do not duplicate common workflow semantics.
-- A live test intentionally excluded from CI is not release evidence and must be
-  listed under **Non-gating live experiments** with a reason.
+- A live test intentionally excluded from CI is not release evidence. Register it
+  under **Non-gating live experiments**, or **Targeted implementation proofs**
+  when its passing result is required for a bounded implementation decision.
 
 ## Supported runtime targets
 
@@ -84,7 +85,8 @@ the host-specific outcome.
 
 ### Keep a live test outside CI
 
-An intentionally unselected live test belongs under **Non-gating live
+For a bounded implementation decision, use **Targeted implementation proofs**.
+Other intentionally unselected live tests belong under **Non-gating live
 experiments**. Record why a negative result is useful data rather than a release
 failure. Otherwise promote it to a registered journey or runtime proof, move its
 deterministic coverage to the default suite, or delete it.
@@ -356,6 +358,20 @@ live CI lane. Each remains live-tagged only for its stated experiment.
 - **Fixture:** `codex/wait-matrix` — four isolated worker-state variants.
 - **Reason unselected:** The four real Codex runs measure host behavior. They do
   not prove a common user journey or block a release.
+
+## Targeted implementation proofs
+
+These tests require explicit local selection for the named implementation task.
+A failed assertion blocks task acceptance; passing does not establish CI or runtime parity.
+Promote common behavior to Common journeys before claiming release coverage.
+
+### `TestLiveSameStageRevision`
+
+- **Task:** #792; same-stage revision follows workflow-declared review and round requirements.
+- **Variants:** plain, required review, separate required review,
+  required round, missing round evidence, and cycle-limit escalation.
+- **Selection:** `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live ./internal/ensigncycle -run '^TestLiveSameStageRevision$' -count=1 -timeout=40m`
+- **Evidence:** Retain corrected state, frozen attempts, native worker completion and selected gate revisions for all six controls.
 
 ## Source binding convention
 

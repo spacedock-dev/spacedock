@@ -206,3 +206,12 @@ func TestLiveCommonZeroDiscovery(t *testing.T) {
 func TestLiveCommonShallowBoot(t *testing.T) {
 	liveJourney(t, "shallow-boot", "boot/held-gate", writeShallowBootWorkflow, nil, runClaudeShallowBootScenario, assertShallowBoot)
 }
+
+func TestLiveSameStageRevision(t *testing.T) {
+	for _, variant := range []string{"plain", "review-required", "separate-review-required", "round-required", "round-missing", "cycle-limit"} {
+		t.Run(variant, func(t *testing.T) {
+			factory, _ := liveDriverForRuntime(t, "rejection-flow")
+			runClaudeRejectionFlowScenario(t, factory(), sharedRuntimeScenario{name: "self-feedback/" + variant}, func(t *testing.T, root string) string { return writeSameStageRevision(t, root, variant) }, nil)
+		})
+	}
+}
