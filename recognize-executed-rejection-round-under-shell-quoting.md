@@ -166,3 +166,26 @@ The Codex publication oracle now uses actual successful recorder invocations aft
 ### Summary
 
 Independent review found no material outcome or evidence defect in the changed execution-backed oracle. The only polish finding was explicitly declined by the FO; AC-1/AC-2 have implementation-stage behavioral evidence, while AC-3 remains unproven until the serialized exact-checkout live run. Recommendation: keep validation pending live evidence; do not present this report as a complete PASSED stage.
+
+## Stage Report: validation (live completion)
+
+- DONE: Independently verify rejection layer5ff85f00 relative da50d61d uses actual recorder execution and durable state, preserves failure/cardinality/topology, and has meaningful negative controls.
+  Review-only report above remains applicable; exact code HEAD 5ff85f00bac795ad298cddaca09fc51f27484716 stayed clean and unchanged through the live run.
+- DONE: After FO grants serialized live slot, run targeted local Codex rejection-flow on exact candidate and assess all ACs with retained artifacts, without candidate edits.
+  `go test -tags live ./internal/ensigncycle -run '^TestLiveCommonRejectionFlow$' -v -count=1` passed (333.65s scenario, exit 0); fresh candidate binary `/tmp/spacedock-stack-rejection-live/bin/spacedock`, exact HEAD retained in `_setup/rejection-flow/source-head.txt`.
+- DONE: AC-1 — Both successful command forms are recognized exactly once.
+  Previously green real-recorder plain/nested fixture evidence remains unchanged; this live run additionally retained exactly one successful `gate record rejection-task --round validation/1` row in `codex-shared-scenarios/rejection-flow/command.log`.
+- DONE: AC-2 — Nonexecution and invalid publication remain failures.
+  Existing executed negatives and canonical-room controls remain as reviewed; the live grader kept publication cardinality, canonical round validation, final gate preparation, cycle-line, and native topology assertions enabled and all passed.
+- DONE: AC-3 — The Codex rejection-flow journey passes live.
+  `/tmp/spacedock-stack-rejection-live/test.log` records PASS; `rejection-topology.tsv` records implementation and validation spawns, then reuse/completion of those same workers for the correction cycle. Removing publication, durable room, gate preparation, or reuse would fail its corresponding unchanged grader.
+- DONE: Retain live evidence before harness cleanup and release the serialized slot.
+  Artifact root `/tmp/spacedock-stack-rejection-live` contains stdout/stderr/process result/final message/command log/topology plus `retained-temp/TestLiveCommonRejectionFlow3645076169/002` fixture/git/round state and three native rollouts under `retained-codex`; no auth.json remains in the artifact tree.
+- DONE: Use the proven local host setup without global credential changes.
+  Removed inherited CODEX markers, API/OAuth override variables and browser-trust marker; used CI shim with `/opt/homebrew/bin/codex` (Luna/max), local OAuth copied by the harness into its isolated home. Reproduction wrapper retained as `run.py`; no retries or candidate edits.
+- SKIPPED: Repeat already-green deterministic suites and stack-wide checks.
+  Per FO, normal/race/format verification belongs to the completed stack tip; this layer required only the serialized targeted live proof after its prior focused checks.
+
+### Summary
+
+Recommendation: PASSED. All three ACs now have behavioral evidence, including an independently run live journey against the exact candidate; no material findings remain, and the legacy test-closure polish disposition remains FO-authorized decline. The live slot was released immediately after the pass.
