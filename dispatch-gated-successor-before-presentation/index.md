@@ -1,6 +1,6 @@
 ---
 title: Dispatch a gated successor before presenting its gate
-status: backlog
+status: ideation
 source: Captain approved separate headless contract fix on 2026-09-15
 started:
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: Captain approved adding the separate headless contract fix; CI only after complete stack individually verified locally.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.
