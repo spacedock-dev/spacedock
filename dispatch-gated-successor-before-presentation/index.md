@@ -1,6 +1,6 @@
 ---
 title: Dispatch a gated successor before presenting its gate
-status: implementation
+status: validation
 source: Captain approved separate headless contract fix on 2026-09-15
 started: 2026-09-15T14:19:00Z
 completed:
