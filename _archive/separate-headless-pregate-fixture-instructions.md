@@ -1,15 +1,15 @@
 ---
 title: "Separate pre-gate dispatch instructions from gate-ready fixture instructions"
-status: validation
+status: done
 source: "Captain filing request; pre3 and 0.27.3 live release failure triage"
 started: 2026-09-15T04:02:22Z
-completed: ""
-verdict: ""
+completed: 2026-09-15T18:24:08Z
+verdict: PASSED
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-separate-headless-pregate-fixture-instructions
 issue: ""
 pr: pr-merge:795
-mod-block: merge:pr-merge
+mod-block:
 id: 8k3cmcg2gg1e88w0qe6sq3vw
 gates:
     version: 1
@@ -76,7 +76,8 @@ gates:
                     source: active thread goal plus captain approval of separate contract-fix scope
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-09-15T18:24:08Z
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.
