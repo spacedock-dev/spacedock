@@ -9,7 +9,7 @@ score: "0.9"
 worktree: .worktrees/spacedock-ensign-recognize-executed-rejection-round-under-shell-quoting
 issue: ""
 pr: ""
-mod-block: ""
+mod-block: merge:pr-merge
 id: 82de96hqv8cfwxqagj6ah1k6
 gates:
     version: 1
