@@ -165,7 +165,7 @@ func TestCommissionOrphanBranchScaffolding(t *testing.T) {
 
 // TestStateInitResumesFreshClone pins B.2/AC-4 + the M-4 spike-replication asserts
 // for Spike (b): a fresh clone of origin has the state path absent
-// (entity_dir_present:false); `state init` fetches the orphan branch and adds the
+// (state-checkout-missing); `state init` fetches the orphan branch and adds the
 // linked worktree so status renders; a 2nd `state init` is a no-op (path-exists
 // guard), NOT a fatal (the spike showed a raw 2nd `worktree add` fatals).
 func TestStateInitResumesFreshClone(t *testing.T) {
@@ -193,13 +193,9 @@ func TestStateInitResumesFreshClone(t *testing.T) {
 		t.Fatalf("fresh clone should NOT have the state path yet (err=%v)", err)
 	}
 
-	// Pre-init boot shows entity_dir_present:false.
-	bootOut := runStatusBoot(t, freshWorkflow)
-	if !strings.Contains(bootOut, "STATE_BACKEND: split-root") {
-		t.Fatalf("pre-init boot should show split-root; got\n%s", bootOut)
-	}
-	if !strings.Contains(bootOut, "present: false") {
-		t.Fatalf("pre-init boot should show present: false; got\n%s", bootOut)
+	// Pre-init boot refuses missing storage; init remains the recovery path.
+	if code, out, errOut := terminalInvoke(t, fresh, "status", "--boot", "--json", "--workflow-dir", freshWorkflow); code != 1 || !strings.Contains(out, `"error":"state-checkout-missing"`) {
+		t.Fatalf("pre-init boot: %d %s %s", code, out, errOut)
 	}
 
 	// state init: fetch + worktree add.
