@@ -11,6 +11,17 @@ issue: ""
 pr: ""
 mod-block: ""
 id: 82de96hqv8cfwxqagj6ah1k6
+gates:
+    version: 1
+    records:
+        - id: gate:82de96hqv8cfwxqagj6ah1k6:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:82de96hqv8cfwxqagj6ah1k6-backlog-1
+              briefing:
+                id: briefing:82de96hqv8cfwxqagj6ah1k6:backlog:attempt-1:revision-1
+                digest: sha256:879d692755c3f9593adae22cf3e3004f7a33e30f047b5ea0e1e0b1dd9940fa63
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
