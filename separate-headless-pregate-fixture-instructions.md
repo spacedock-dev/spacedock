@@ -1,6 +1,6 @@
 ---
 title: "Separate pre-gate dispatch instructions from gate-ready fixture instructions"
-status: implementation
+status: validation
 source: "Captain filing request; pre3 and 0.27.3 live release failure triage"
 started: 2026-09-15T04:02:22Z
 completed: ""
