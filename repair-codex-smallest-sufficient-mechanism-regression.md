@@ -1,6 +1,6 @@
 ---
 title: Repair Codex smallest-sufficient mechanism regression
-status: validation
+status: implementation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
@@ -87,11 +87,11 @@ gates:
                     source: active thread goal supplied by captain
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
-mod-block: merge:pr-merge
-pr: "#797"
+mod-block:
+pr:
 ---
 
 ## Current captain-approved direction — release Python-write attribution (2026-09-14)
