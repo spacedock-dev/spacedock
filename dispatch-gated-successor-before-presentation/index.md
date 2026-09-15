@@ -231,3 +231,20 @@ Completed the required normal/race checks at the exact candidate; the only failu
 ### Summary
 
 Recommend **PASSED** for the bounded one-file candidate and source fixture AC-2; no new material finding or candidate mutation. Full normal/race suites retain the documented installed-host compatibility limitation, so this is not an all-suites-green claim. Detailed review, exact native line/timestamp references, commands, state Git history, and final tracked-state archives are in `/tmp/spacedock-stack-headless-474-live/review.md` and that artifact root; periodic backup directories may retain setup-deleted files, so Git and committed-state archives are authoritative, and no auth is retained.
+
+## Stage Report: implementation — routine restack addendum
+
+- DONE: Restack the owned tip onto the approved lower fixture correction without changing its patch.
+  New candidate `0f5ee4862f42416bda9275ddaeff6dd67c547115` has parent `0fb8dd634d397e59ba169ec81d5d602594b02800`; clean one-commit rebase from `474cdb8c5`/`e52ece67a`, range-diff `=`, own-layer diff byte-identical (one file +3/-1), lower correction included as ancestor.
+- DONE: Run required full normal then race once at the restacked tip.
+  Commands `go test ./...` and `go test ./... -race` ran sequentially with `GOFLAGS=-p=2`, `/Users/clkao/go/bin` prepended to PATH, and stale `SPACEDOCK_BIN`/`SPACEDOCK_REPO_ROOT` unset; all packages except the known resolver owner passed (some Go-cached), with no race findings.
+- FAILED: Full-suite green result.
+  Both exited 1 only on `TestCodexResolveManifestAgainstInstalledHost`, with the identical stale `0.28.0-pre0` manifest mismatch already observed at `474cdb8c5` and independently reproduced at baseline `2a7b87198` per FO evidence; no redundant baseline run or new failure.
+- DONE: Required formatting command and clean exact candidate.
+  `gofmt -w ./cmd ./internal` succeeded; only the previously known unrelated two-line alignment in `internal/release/runtime_live_evidence_workflow_test.go` appeared, retained as `inherited-gofmt.patch` and excluded under existing scope authorization. Candidate HEAD remains `0f5ee4862`, clean, with no new code edits.
+- DONE: Preserve evidence and existing validation/gate state.
+  `/tmp/spacedock-stack-799-restacked-full/summary.md`, `range-diff.txt`, `own-layer.patch`, normal/race logs and exit files retain results; no new live/CI runs, code push, frontmatter changes, or replacement of prior validation evidence.
+
+### Summary
+
+Routine restack includes the lower fixture correction while preserving this task's exact approved wording patch. Both required full suites completed with only the known baseline resolver limitation; existing live validation remains evidence at its recorded prior SHA, and no new live result is claimed for the restacked tip.
