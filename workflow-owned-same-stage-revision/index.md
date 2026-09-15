@@ -41,6 +41,17 @@ gates:
                 id: briefing:zz1yqc2w2katp28wpa8nghx2:ideation:attempt-1:revision-1
                 digest: sha256:2641e880a198f5610f18f87c23b7c5ecb8fc87f393f2d2ed67f276bf3c5c3a7b
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zz1yqc2w2katp28wpa8nghx2:ideation:1
+                briefing: briefing:zz1yqc2w2katp28wpa8nghx2:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T15:51:58.903625Z"
+                decision: approve
+                reason: 'Captain approved the returned design and independent review in chat: consider it approve. Implement conditional workflow-owned correction/review obligations with existing guards and live proof.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Make same-stage gate revision follow the declared workflow while preserving independent review where it is required.
