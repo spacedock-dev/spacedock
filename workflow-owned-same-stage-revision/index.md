@@ -22,6 +22,17 @@ gates:
                 id: briefing:zz1yqc2w2katp28wpa8nghx2:backlog:attempt-1:revision-1
                 digest: sha256:ea21af7990ca6e4a52dac540a434ad088b3bbecca35dcb03cbd1c70d39950ea6
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zz1yqc2w2katp28wpa8nghx2:backlog:1
+                briefing: briefing:zz1yqc2w2katp28wpa8nghx2:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T04:29:46.231251Z"
+                decision: approve
+                reason: Captain explicitly requested local filing and ideation dispatch to spike actual same-stage revision and inspect all related Roborev settings/history.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Make same-stage gate revision follow the declared workflow while preserving independent review where it is required.
