@@ -142,3 +142,35 @@ The fixture needs a real prepared review room and its state commit before the pr
 The fixture now supplies a real committed review package while approval consumption, implementation dispatch, and completion remain agent actions. Production gate guards and durable grader semantics are unchanged; this is stack layer 1, ready for independent validation.
 
 Exact targeted local command from the stack checkout: `SPACEDOCK_BIN=/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -tags live ./internal/ensigncycle -run '^TestLiveCommonKeepMovingPosture$' -count=1 -v -timeout 15m`.
+
+## Review-finding disposition
+
+### Validation observation: local Codex command-host negotiation
+
+- Released user and normal workflow: captain-requested local Codex Luna/max keep-moving validation through the supported isolated OAuth harness, exact candidate `7ca67fdda5433654b6f67276560b3eb19c0684f6`.
+- Observable harm: all three executable tool calls timed out before reading instructions or workflow state; no journey ran, so this attempt cannot establish continuation behavior.
+- Authority: value-ac[AC-2] targeted live evidence must observe all three durable journeys and questioned-task correction.
+- Trigger evidence: Codex CLI `0.154.0`, thread `01a0a347-39a3-7241-b187-af7fec8cce5b`; `codex-exec.stderr.txt` records negotiation timeouts at 04:16:29, 04:17:01, and 04:17:37 UTC on 2026-09-15; test failed 0/3 after 120.546 seconds.
+- Validator proposal: material evidence defect; ownership is local runtime infrastructure, outside this fixture-only candidate; hold AC-2 evidence and recover the host through an isolated tool smoke before a separately authorized rerun. No product or grader change is proposed.
+- FO consultation: FO agreed this is runtime infrastructure and authorized non-mutating diagnosis, with no retry while the run remained live. The run is now terminal; recovery/rerun disposition remains with FO.
+
+## Stage Report: validation
+
+- DONE: Independently verify real gate setup and no-authority boundaries at layer1 commit 7ca67fdda; inspect focused proof and attack unowned claims without repeating already-green tests gratuitously.
+  Clean exact HEAD; `go test ./internal/ensigncycle -run '^TestKeepMovingPreparedGate$' -count=1 -v` passed (3.878s), exercising committed preparation, unchanged refusal, and real approval consumption.
+- FAILED: Run the targeted local Codex keep-moving journey with the CI model configuration, preserve artifacts and exact SHA, and assess every AC without changing candidate code.
+  Session 79626 terminated with test exit 1, no skip; three command-host negotiation timeouts yielded 0/3 journeys before any gate command. Artifacts: `/tmp/spacedock-stack-keep-moving-live`.
+- DONE: AC-1 — The fixture's stated approval can be consumed through the supported gate lifecycle.
+  Independent focused execution consumed captain approval to implementation; unprepared control refused unchanged. Removing preparation fails the same test before consumption.
+- FAILED: AC-2 — The live scenario still measures continuation and independent work.
+  Existing missing-approved-dispatch control retains exact 2/3 grading; unchanged live grader still requires three ordered journeys, overlap, and meaningful nonterminal correction, but this runtime attempt could not execute them.
+- DONE: AC-3 — Approval authority is not bypassed by fixture preparation.
+  Focused execution proved one open review attempt, committed briefing/entity, no started/successor history, and byte-identical missing-approval refusal; preconsumption or omitting state commit would fail.
+- DONE: Semantic adversarial pass and scope review.
+  Matrix covered unprepared, prepared/open, missing approval, consumed approval, and missing approved dispatch; production guards and grader unchanged. Real command parsing, Git objects, byte equality, exact actor/target, and ordered history provide independent assertions. No changed hot-path scaling risk.
+- SKIPPED: Full normal/race suites and repository-wide formatting.
+  Captain-approved scheduling assigns these once to the combined stack tip; candidate remains unchanged at 3 files, +73 net LOC.
+
+### Summary
+
+Recommendation: REJECTED for incomplete AC-2 live evidence, held on local runtime infrastructure; AC-1 and AC-3 pass independently, and no fixture defect was found. The live run used a freshly built candidate binary, CI Luna/max shim, isolated local OAuth with inherited API key/required/repo overrides unset, and retained exact source-head, stderr, final message, and process-result artifacts. The harness removed its isolated auth/config and rollout during cleanup; no shared credentials/configuration were changed, and no retry, candidate edit, PR, or merge occurred.
