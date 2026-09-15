@@ -154,3 +154,21 @@ Retained evidence: `/tmp/spacedock-stack-headless-live/finding.md`, `commands-su
 ### Summary
 
 Specified the exact correction and reduced the expected surface to one file because existing tests own the failing journey. Recorded the automation's validation-worker gap explicitly and assigned full-sequence evidence review to independent validation; no live success or wording causality is claimed.
+
+## Stage Report: implementation
+
+- DONE: Apply exact approved one-file completion clarification on committed stack parent e52ece67a, preserving lower layers and existing guards.
+  Candidate `474cdb8c515ffe0ad36c9aeb3b65b3b7cecf3f80` has parent `e52ece67abdb282ab061c41ee897a8a341b22954`; exact approved shared-reference change is +3/-1, with Completion step 4 and Gate successor guard unchanged.
+- DONE: Run existing focused checks before and after editing, preserve exact diff and evidence; no prose-grep or new mechanism.
+  Both named commands in Test plan passed before/after (dispatch: 1.014s/0.467s; lifecycle: 4.013s/4.103s); logs and `candidate.patch` are retained under `/tmp/vcfwr5ptn6-implementation-evidence/`.
+  Dispatch controls detect wrong split-root/worktree paths or entity slugs; lifecycle/gate controls reject skipped, early, or uncorrelated completion and unauthorized gate application; they do not prove model compliance with wording.
+- DONE: Commit candidate and complete report for independent targeted live validation; no CI or live runs by implementation.
+  Candidate is committed and owned worktree clean; independent validation owns both targeted Codex journeys and full native-event/state ordering review required by AC-1.
+- DONE: Run gofmt and preserve the bounded candidate surface.
+  `gofmt -w ./cmd ./internal` succeeded; only inherited unrelated alignment in `internal/release/runtime_live_evidence_workflow_test.go` was excluded, with exact diff saved as `inherited-gofmt.patch` in the evidence root.
+- SKIPPED: Full normal/race checks during candidate preparation.
+  FO assigned one sequential final-tip normal/race run at `474cdb8c5` after this implementation handoff; results will follow in an addendum. No full-suite or live success is claimed here.
+
+### Summary
+
+Removed the contradictory next-stage gate halt exception and explicitly required gated successor dispatch and verified completion before gate preparation. The approved wording-only candidate is ready for independent validation; live behavioral acceptance and final-tip full-suite results remain pending with their assigned owners.
