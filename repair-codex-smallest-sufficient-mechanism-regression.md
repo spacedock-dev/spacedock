@@ -717,3 +717,82 @@ remain identical. The passing live evidence stays attributed to `71d1f6b1c`.
 The normal run continues at the frozen original SHA before the authorized edit. The
 other observed failure is the already independently reproduced installed-host resolver
 baseline; it is recorded separately and is not used to waive this new owned failure.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Implement the captain-approved two-phase outcome proof.
+  Candidate `faef711575c3407a01c4aaa1c87d64d8acabf1bd` contains outcome implementation
+  `71d1f6b1c9e36fb02b26aeb781cdcf7a0885a722` and the separate offline test-registration
+  correction. Phase 1 starts from known notes, verifies exact expected files and a real
+  committed strategy document, and rejects native worker spawns. Phase 2 uses the
+  existing commissioned durable/scope-trace assertion unchanged and verifies final bytes.
+  No editing-tool, shell-write, public receipt, native receipt or structured-file-change
+  path grants outcome credit. The old receipt fixtures and baseline/receipt parser are
+  removed. The remaining edit-word helper belongs only to the unrelated FO write guard.
+- DONE: Preserve shared-host behavior through existing runner calls and honest metrics.
+  Claude, Codex and Pi take the same two ordinary phases; no runtime proxy, hook or
+  polling layer was added. Typed no-spawn controls cover Claude Agent/Task, Codex native
+  function_call spawn_agent and Pi toolCall subagent, including output-only negatives.
+  Both launch artifacts and durations are retained. Claude measured tokens/cost/turns
+  and each host's existing measured quantities sum per phase. Codex remains explicitly
+  characterized and Pi retains its prior unmeasured token semantics, as FO authorized;
+  no new token parser was introduced. Existing commissioned proof is durable
+  dispatch/report/terminal/archive history plus scope traces, not a newly added native
+  lifecycle grader.
+- DONE: Exercise falsifiable controls before and after implementation.
+  `/tmp/spacedock-smallest-outcomes-local/ssm-outcomes-red.log` records missing/wrong
+  bytes, delegation and final-drift controls failing stub assertions. Removing exact
+  file checks would admit these controls; ignoring native spawns would admit each
+  host's worker negative. `ssm-phase-metrics-red.log` records lost first-phase Claude
+  usage and duplicate Codex tool-call IDs. Focused live-tagged controls pass in 2.512s;
+  focused race plus the unchanged durable-journey matrix pass in 66.629s, exit 0 with
+  no race finding (`focused-race.log/exit`). An early overbroad live-tagged name selector
+  also selected the real live entry point without SPACEDOCK_LIVE_RUNTIME; the corrected
+  focused selector excludes live entries and is the reported passing check.
+- DONE: Run one targeted local Codex proof at exact outcome implementation `71d1f6b1c`.
+  `TestLiveCommonSmallestSufficientMechanism` passes in 213.45s, session 58511 exit 0,
+  with no skip or retry. Direct launch 49.428819291s plus commissioned launch
+  162.983227875s yields combined metric 212412ms. Artifacts under
+  `/tmp/spacedock-smallest-outcomes-local/live-artifacts/codex-shared-scenarios/smallest-sufficient-mechanism/`
+  identify `direct` and `commissioned`; direct native evidence and observed file bytes
+  are retained. The exact checkout binary, Codex 0.154.0, proven CI model shim and
+  isolated harness OAuth were used with stale parent overrides removed.
+- DONE: Run normal package checks and diagnose each observed failure separately.
+  `go test ./...` at frozen `71d1f6b1c` exited 1 (session 14558). Every other package
+  passed, including ensigncycle in 302.040s. The two failures were the known
+  `TestCodexResolveManifestAgainstInstalledHost` baseline and the newly owned
+  `TestRuntimeLiveRegistryReconciliation` registration defect. The resolver failure
+  exactly matches the prior `2a7b87198` baseline: stable plugin absent while the resolver
+  selects installed spacedock-local/0.28.0-pre0. No global plugin/auth/config mutation
+  or repeated baseline run was performed. This full suite was not green.
+- DONE: Correct the owned registration defect with distinct FO authorization.
+  After the normal run exited, commit `faef711575` changed only the new offline metrics
+  control to the existing seeded Fuzz pattern, +8/-2 lines in one test file. Every
+  deterministic host-total assertion and all runtime/grader/metric implementation bytes
+  remain identical. The exact seed passes in 0.371s (`metrics-seed-green.log/exit`), and
+  exact registry reconciliation passes in 0.343s (`registry-green.log/exit`). No registry
+  exemption, fake live journey, or fresh live claim was introduced. The four-field
+  finding and authorized disposition are recorded immediately above.
+- DONE: Format and commit the owned layer without changing lower layers.
+  `gofmt -w ./cmd ./internal` ran; the previously authorized inherited release-test
+  alignment-only delta was discarded. The final wrapper file was formatted separately;
+  `git diff --check` passes. Outcome commit surface versus `0fb8dd634`: nine test/fixture
+  files, +283/-374; correction adds +8/-2 in one of those files. No product code changed.
+  Branch is clean, and the corrected SHA was sent to FO and the #798 owner for restacking.
+- SKIPPED: A separate lower-tip full race suite, repeated broad normal suite, and live rerun.
+  FO explicitly delegated final full normal/race to the #798 owner's combined tip after
+  restacking onto `faef711575`. These checks are pending that owner; the focused race
+  pass is not a full-race pass. A second live run was explicitly unnecessary for the
+  wrapper-only correction; passing live evidence remains tied to `71d1f6b1c`.
+- SKIPPED: Code/state push and CI trigger by this worker.
+  FO owns publication, independent validation, restacking and final Claude plus Codex
+  live CI. Evidence command summary and exact exits are in
+  `/tmp/spacedock-smallest-outcomes-local/checks.md` and adjacent logs.
+
+### Summary
+
+The candidate grades expected file outcomes at a synchronous parent-only phase boundary,
+then preserves the commissioned proof and checks final bytes. Local Codex live and focused
+race pass at `71d1f6b1c`; final candidate `faef711575` additionally fixes the discovered
+registration issue with a wrapper-only change and targeted green proof. The complete
+stack's normal/race checks and independent validation remain with their assigned owners.
