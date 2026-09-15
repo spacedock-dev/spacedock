@@ -6,7 +6,7 @@ started: 2026-09-15T20:07:01Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-state-durability
 issue: spacedock-dev/spacedock#689
 pr:
 mod-block:
