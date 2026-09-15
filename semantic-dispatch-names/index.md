@@ -11,6 +11,17 @@ issue: spacedock-dev/spacedock#624
 pr:
 mod-block:
 id: 6es505tn1zz2597hetvnqn7y
+gates:
+    version: 1
+    records:
+        - id: gate:6es505tn1zz2597hetvnqn7y:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:6es505tn1zz2597hetvnqn7y-ideation-1
+              briefing:
+                id: briefing:6es505tn1zz2597hetvnqn7y:ideation:attempt-1:revision-1
+                digest: sha256:9b52132f4ba2803e8e48052ffbdd3f114fb56bd5e42e3db6d6c394d5699bd72f
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
