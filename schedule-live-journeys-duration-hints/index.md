@@ -198,3 +198,28 @@ Selected a three-worker Go test wrapper with a single duration-ordered queue, re
 ### Summary
 
 Reduced the design from +330 to +120 estimated net lines by removing the broad new proof suite and retaining existing registry/gotestsum ownership. Sorted native registration demonstrably reorders work, so the design retains only a short three-worker loop to consume the sorted list. No implementation, full-suite rerun, push or CI action occurred; another binding review is required.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved minimal sorted-list runner and shared three-slot cap using existing test bodies and one focused ordering check.
+  Commit `4ce49f1ea` adds the literal 17-common/3-Claude table, descending hint/lexical ordering, three synchronous worker slots, common nested-parallel suppression and merged config child; existing exported test bodies remain intact.
+- FAILED: Prove actual Claude overlap and isolation locally; preserve failure propagation, coverage and artifacts without duplicate scaffolding.
+  The bounded real-host attempt skipped merged dispatch, break-glass and shallow boot for unavailable live auth before any host launch; actual intervals, session/config isolation and both break-glass variants remain unproven. Existing registry/gotestsum checks pass; no auth denial bypass or duplicate proof framework.
+- DONE: Commit the minimal candidate with focused and required checks, exact surface count, and a self-contained report for independent validation.
+  Candidate `4ce49f1ea` on `spacedock-ensign/schedule-live-journeys-duration-hints`, based on `438053493`: 8 files, +178/-32, net +146 (21.7% above +120 estimate, within +150/8 ceiling); no code push or CI.
+
+### Proof and limitations
+
+- `go test ./internal/ensigncycle -run '^TestLiveScheduleOrder$'` passed after an initial missing-helper compile failure: independently expects long/a/z/short; reversing hint or equal-hint comparison fails it.
+- `go test ./internal/contractlint -run 'TestRuntimeLive(RegistryReconciliation|CommonSuiteTimeouts|CommonFailFastPolicy)$'` passed: omitted/duplicated or misnamed callables and incorrect canonical selectors fail; existing fixture/assertion/TODO/XFAIL reconciliation remains active.
+- `go test ./internal/release -run '^TestLiveCIStep' -count=1` passed: existing controls exercise clean summary, retained JSON, one execution and underlying failure exit; losing detail or swallowing a failing process exit fails them. The existing named-evidence workflow control also passed.
+- `gofmt -w ./cmd ./internal` ran; unrelated pre-existing whitespace in `internal/release/runtime_live_evidence_workflow_test.go` was restored. `git diff --check` passed.
+- `go test ./...` and then `go test ./... -race` each exited 1 solely at `TestCodexResolveManifestAgainstInstalledHost`: stable `spacedock@spacedock` absent while resolver returned the installed `spacedock-local/.../0.28.0-pre0/.codex-plugin/plugin.json`. All other packages passed; no race reports. Full logs: worktree `.local/schedule-proof/go-test.log` and `go-test-race.log`.
+- Resolver disposition: observed user/workflow is local developer repository verification; harm is a failing installed-host check; authority `none: unchanged resolver behavior does not affect a scheduling value AC`; trigger is the exact installed-local/absent-stable mismatch above. Worker proposed Deferred risk/outside scheduling scope; FO explicitly DECLINED a scheduling fix after matching retained independent baseline evidence. No broader green-suite claim.
+- The live attempt used the current candidate binary built with `go build -o .local/schedule-proof/spacedock ./cmd/spacedock`; exported `SPACEDOCK_BIN` and `SPACEDOCK_REPO_ROOT` point to that binary and this worktree, and artifact/config roots are isolated beneath `.local/schedule-proof/`.
+- Exact live command: `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 15m -parallel 3 -run '^TestLiveScheduled$/^slot-[0-2]$/^(TestLiveMergedTeamModeDispatch|TestLiveBreakGlassShimRecovery|TestLiveCommonShallowBoot)$' ./internal/ensigncycle -json`.
+- Retained `.local/schedule-proof/overlap.jsonl` records all three selected tests as `skip`, with `no live auth available: set ~/.claude/benchmark-token (operator/OAuth) or ANTHROPIC_API_KEY (CI)`. Exit 0 is not host proof. With an authorized readable credential, rerun that bounded command and retain actual overlapping host intervals, distinct paths and original durable assertions before AC-2 acceptance.
+
+### Summary
+
+The minimal scheduled candidate is committed and ready for independent code/fixture validation, with the canonical Claude and Codex invocations sharing their existing evidence owners and Pi unchanged. Actual Claude overlap remains an explicit acceptance blocker; required broad checks also retain the independently confirmed local resolver failure, which the FO declined to fix in this task. No provider/auth policy, global configuration or runtime assertions were changed.
