@@ -198,3 +198,40 @@ The queued fixture now starts without a completed review and asks the first offi
 ### Summary
 
 Review found no material candidate defect within the approved two-file fixture/prompt correction. Validation remains pending, with no PASSED recommendation until both targeted Codex journeys produce fresh evidence; the worker remains addressable for the serialized slot. No code, frontmatter, PR, or merge was changed.
+
+
+## Review-finding disposition
+
+### Validation finding H-1 — completed implementation did not enter validation
+
+- Reviewer observation: exact candidate `da50d61d6df3e8347ab9a8d594e31a8d7cf3cfba` dispatched and completed its implementation worker, then attempted prepare at `status: implementation`; the binary correctly refused. No validation stamp/dispatch or prepared Briefing exists.
+- Released user and normal workflow: Codex first officer driving the supported default-headless queued task to its human validation gate.
+- Observable harm: the committed implementation report never becomes a reviewed, prepared human gate; the run stops early.
+- Affected authority: value-ac[AC-2] the live journey must dispatch implementation and reach the prepared human boundary without consuming it.
+- Trigger evidence: fresh default-headless FAIL in 122.09s, native `spawns=1 completed=130 validation=-1 report=<nil>`; preserved state commits `019cd54` dispatch then `0993259` implementation report; prepare exits 1.
+- Advisory classification: outcome defect, material observed AC-2 failure. Task ownership: separate FO completion-routing investigation, coordinated with explicit stage-completion work; no remaining fixture-review contradiction observed.
+- Proposed disposition: route for decision; keep this candidate and lifecycle oracle unchanged. The smallest missing behavior is implementation completion → FO validation transition/review dispatch → completed validation report → prepare; no instruction-only repair is proven sufficient.
+- FO authorization: pending separate disposition; validator has made no candidate edit or retry.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently review headless layer da50d61d relative keep-moving predecessor 7ca67fdd; verify fixture absence and preserved authority/lifecycle controls.
+  Earlier review stands; candidate remained exact and clean after both live runs, with unchanged strict assertions.
+- DONE: After FO grants the serialized live slot, run targeted Codex default-headless and gate-ready control, preserve artifacts and exact commit, and assess all ACs without editing candidate code.
+  Both targeted journeys ran once serially at `da50d61d6df3e8347ab9a8d594e31a8d7cf3cfba`, current CLI 0.154.0, CI shim Luna/max; total 248.729s, exit 1; slot released to FO.
+- DONE: AC-1 — Pre-gate setup has no completed-review evidence.
+  Existing deterministic proof retained per FO; live initial entity was queued with no report, and selected gate-review was absent. Worker later committed exactly one implementation report, showing it was newly produced.
+- FAILED: AC-2 — Codex dispatches implementation before presenting the human gate.
+  TestLiveCommonDefaultHeadlessGateStop FAIL 122.09s: real correlated spawn/completion succeeded, but validation=-1 and no prepared gate. Removing completion or skipping validation still fails the unchanged lifecycle oracle.
+- DONE: AC-3 — The already-gated control retains its intended boundary.
+  TestLiveCommonGateGuardrail PASS 126.18s: one successful prepare, state commit/head, matching held gate, no approval/consume/successor. Wrong binding or authority consumption would fail the unchanged state/log checks.
+- DONE: Diagnose the new failure without retrying or changing candidate code.
+  Loaded fo-dispatch-core explicitly requires FO advancement and gated-stage dispatch after implementation completion; trace instead loads gate lifecycle while status remains implementation. Original queued/no-worker issue is repaired; H-1 records the separate observed routing failure.
+- DONE: Preserve exact source, host, state, and command evidence.
+  `/tmp/spacedock-stack-headless-live/` contains source.json, test.log, finding.md, commands-summary.json, scenario command/JSONL logs, retained native rollouts, and retained workflow/state Git snapshots; no copied auth is included in retained snapshots.
+- SKIPPED: Full/race suites, new candidate edits, and live retries.
+  Full/race checks belong to combined-tip FO validation; H-1 requires a distinct FO disposition before any remedy/rerun. Local auth remained unchanged and isolated runtime markers were cleaned as in the proven host smoke.
+
+### Summary
+
+Recommend REJECTED against unchanged AC-2: the fixture correction now reaches genuine worker completion, but the first officer fails to enter validation before preparing its human gate. AC-1 remains supported and fresh AC-3 passed; no lifecycle assertion was relaxed and no candidate defect is inferred merely from the test's broad `implementation-worker-not-dispatched` label. H-1 awaits FO ownership/disposition, with the live slot released and this worker addressable.
