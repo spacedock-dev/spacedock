@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -419,11 +420,15 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	workflowRoot := t.TempDir()
 	entityPath := build(t, workflowRoot)
 
+	commandLog := filepath.Join(t.TempDir(), "command.log")
+	if _, ok := runner.(codexAsLiveDriver); ok {
+		writeFile(t, commandLog, "")
+		runner = runner.withStubPATH(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog))
+	}
+
 	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot)+"\n"+rejectionHostRealization(runner))
 	after := readFile(t, entityPath)
 	recordedRound := claudeRecordedRejectionRound(result.stream)
-	// The publication counter reads the same run stream, so it grades the FO
-	// behavior that was observed, not the wording of the skill that produced it.
 	publications := claudeRejectionRoundPublications(result.stream)
 	// Worker topology comes from each host's NATIVE transcript: the Claude
 	// stream-json spawns/notifications, and for Codex the parent rollout, because the
@@ -431,8 +436,10 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	// topology at all.
 	routes, branch := claudeRejectionRoutes(result.stream)
 	if _, ok := runner.(codexAsLiveDriver); ok {
-		recordedRound = codexRecordedRejectionRound(result.stream)
-		publications = codexRejectionRoundPublications(result.stream)
+		log := readFile(t, commandLog)
+		writeFile(t, filepath.Join(result.artifactDir, "command.log"), log)
+		publications = codexRejectionRoundPublications(log)
+		recordedRound = slices.Contains(publications, "validation/1")
 		routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
 	}
 	if _, ok := runner.(piSharedLiveDriver); ok {
