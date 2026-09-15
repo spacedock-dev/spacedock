@@ -308,8 +308,9 @@ Focused registry/suite-policy checks, stale/unrelated selected-revision falsifie
 - DONE: Exercise focused falsifiers and final registry checks.
   Worker tests reject absent/duplicate completion and self-review; selected-plan tests reject premature and unrelated revisions while accepting the exact corrected plan as artifact or canonical context Reference; removing those guards makes the negatives fail.
   Final registry checks reject missing entry registration or suite-policy drift; the targeted entry compiles and is discoverable. It is mandatory local task acceptance, without a normal-CI or all-runtime parity claim.
-- FAILED: Obtain entirely green normal and race suites in the installed local environment.
-  `go test ./...` and `go test ./... -race` each fail only pre-existing `TestCodexResolveManifestAgainstInstalledHost`: spacedock@spacedock is absent while the resolver finds the spacedock-local manifest. All other packages pass; no final timeouts or data-race reports. See [normal](artifacts/implementation/final-normal.log) and [race](artifacts/implementation/final-race.log).
+- DONE: Perform required normal and race validation and report their exact outcomes.
+  `go test ./...` and `go test ./... -race` each exit 1, solely for pre-existing `TestCodexResolveManifestAgainstInstalledHost`: spacedock@spacedock is absent while the resolver finds the spacedock-local manifest. All other packages pass; no final timeouts or data-race reports. These suites are not wholly green; see unchanged [normal](artifacts/implementation/final-normal.log) and [race](artifacts/implementation/final-race.log).
+  Resolver finding disposition: DECLINED by FO as pre-existing and outside this task’s scope; disposition is resolved by that prior decline. An entirely green installed environment was not an assigned acceptance promise. This reporting correction preserves the failure evidence and does not waive any new regression.
 - DONE: Preserve and resolve the earlier verification uncertainty without changing unrelated code.
   Earlier cumulative package timeouts and four 250ms quiet-budget failures are retained; every affected check passed serial isolation, then final reserved-lane suites had no recurrence. Formatting and whitespace checks are clean.
 - SKIPPED: Perform independent validation or publish code.
