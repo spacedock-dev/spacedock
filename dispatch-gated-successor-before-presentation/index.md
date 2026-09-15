@@ -185,3 +185,27 @@ Removed the contradictory next-stage gate halt exception and explicitly required
 ### Summary
 
 Completed the required normal/race checks at the exact candidate; the only failure matches the independently reproduced baseline installed-host resolver defect. No candidate edits, retries, or live/CI runs were performed by this worker; full-suite success is not claimed.
+
+## Stage Report: validation
+
+- DONE: Independently verify exact474cdb8c5 has only approved one-file contract change and preserves lower layers, completed-stage gate ownership and freshness.
+  Exact candidate `474cdb8c515ffe0ad36c9aeb3b65b3b7cecf3f80`, parent `e52ece67abdb282ab061c41ee897a8a341b22954`; +3/-1 in shared dispatch reference only, with existing Completion step 4, successor guard, authority and freshness rules unchanged; no CLI/schema/grader change.
+- DONE: Run targeted local Codex headless and gate-ready journeys once serially; inspect native worker completions and durable report order before gate preparation, beyond automated assertions.
+  Exact candidate-built binary, Codex 0.154.0 Luna/max, isolated local OAuth, REQUIRED unset: headless PASS 307.57s, gate-ready PASS 127.00s, total 434.840s, exit 0/no SKIP; no retry/CI/global auth changes.
+- DONE: Report AC1–3 with exact evidence and source fixture AC2 disposition; no CI, candidate changes or retries without diagnosis. Full suites owned by implementation worker.
+  AC-1/AC-2 and source fixture AC-2 pass from this new run; focused AC-3 controls pass; final full-suite baseline limitation is recorded below and in implementation's addendum.
+- DONE: AC-1 — Headless completion enters and completes the gated successor before presenting its gate.
+  Implementation report `adc8b3df` + native completion 14:30:32.120Z → validation status 14:30:48.225Z/stamp `63aa6761` → separate fresh validation report `f0001501` + native completion 14:32:32.564Z → prepare 14:32:58.341Z/final gate commit `4bd499c9`.
+  Parent `01a0a578-2d41…` correlates distinct implementation `01a0a579-5d1d…` and validation `01a0a57a-7db2…` session identities; each worker appends only its own body report. No borrowed report, skipped validator, early prepare, approval/application, or handoff.
+- DONE: AC-2 — A gate-ready workflow still stops without spending captain authority.
+  GateGuardrail parent `01a0a57c-e1e1…` has zero worker spawn/dispatch/status mutation, one prepare/state commit `f367d0ec`; final validation entity has one open briefing and no resolution/application or handoff.
+- DONE: AC-3 — The correction preserves existing worker authority and delivery semantics.
+  Independent dispatch controls passed 0.537s and fixture/lifecycle/gate controls 4.424s; wrong state/worktree/slug, skipped/early/uncorrelated completion, or post-prepare authority mutation falsify them. Full normal/race results: both exited 1 solely at known `TestCodexResolveManifestAgainstInstalledHost`; all other packages passed, no race warning (`/tmp/spacedock-codex-stack-474-full/{normal,race}.log`); implementation owns the full-suite addendum.
+- DONE: Reassess source fixture `separate-headless-pregate-fixture-instructions` AC-2 without editing its prior report.
+  Recommend PASSED for the exact missing validation-transition boundary using the full same-run order above; original reviewer owns reconciliation. A single fresh pass supports this intervention but does not establish unique wording causality.
+- DONE: Semantic adversarial pass and scoped runtime limitation.
+  Ungated completion→gated successor and completed-gated→hold both exercised; terminal/blocker/freshness branches unchanged. Validation's unavailable `gate validate` invocation (exit 2, unknown subcommand) is honestly retained in its report and human package; FO scoped it as observed friction outside this task's proven order/hold ACs.
+
+### Summary
+
+Recommend **PASSED** for the bounded one-file candidate and source fixture AC-2; no new material finding or candidate mutation. Full normal/race suites retain the documented installed-host compatibility limitation, so this is not an all-suites-green claim. Detailed review, exact native line/timestamp references, commands, state Git history, and final tracked-state archives are in `/tmp/spacedock-stack-headless-474-live/review.md` and that artifact root; periodic backup directories may retain setup-deleted files, so Git and committed-state archives are authoritative, and no auth is retained.
