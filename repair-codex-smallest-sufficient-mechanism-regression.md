@@ -139,8 +139,11 @@ normalizes the two observed native output shapes: legacy result strings and type
 custom-tool input_text execution results with explicit exit code 0 and a complete
 receipt line in the decoded output field. Prose and metadata cannot supply receipts.
 Structured file changes must be completed successfully and name the exact file.
+The executable captured-output test now explicitly names its scratch branch `main`
+to match the immutable native receipt, instead of inheriting the host Git default.
+Strict full-receipt matching and all acceptance criteria remain unchanged.
 The corrected smallest-mechanism layer is six test/fixture files, +302/-23 lines
-against predecessor `5ff85f00`; no CLI or stored formats change.
+against predecessor `5ff85f00` before the later two-line portability correction; no CLI or stored formats change.
 The rejected history is preserved at `archive/ssm-rejected-0b809073b-20260914` ->
 `0b809073b`; the owned branch was prepared cleanly from `origin/main` `2a7b87198`.
 
@@ -585,3 +588,21 @@ PASSED for the assigned correction re-review and targeted live validation at exa
   PATH prepended `/Users/clkao/go/bin`, `GOFLAGS=-p=2`, stale launcher/repo overrides unset. Candidate stayed clean and unchanged; no host configuration edits, broad reruns, or live tests by this worker. Gofmt had already run on this candidate, and unrelated inherited formatting drift was not reintroduced. Independent live PASS remains separately documented in validation report `b8e0dc086`.
 - FAILED: Fully green all-package normal/race commands.
   Both exact commands remain exit 1 solely because of the established baseline resolver expectation defect. This report does not reinterpret those exits as green.
+
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Investigate the new offline CI failure without changing the candidate before authorization.
+  Published tip `474cdb8c5`, run `34984126222`, job `104431734992`, failed only `TestCodexSmallestMechanismParentCommit/custom_output` (both note edits false). The owned test/grader/fixture bytes match `e52ece67a`; job log retained at `/tmp/ssm-ci-34984126222-failed.log`.
+- DONE: Establish and record the owned Material fixture-portability finding and separate FO FIX authorization.
+  Supported workflow: offline CI replays the exact native-output positive. Harm: host default branch changes the real receipt to `master` while captured receipt remains `main`. Authority: value-ac[AC-1] — the captured supported-output positive must pass independently of host Git defaults. Trigger: per-process `init.defaultBranch=master` reproduces the exact failure, while `main` passes on unchanged code. FO authorized only explicit scratch branch `main` plus comment; no grader/runtime/contract/assertion change or criteria narrowing.
+- DONE: Apply the smallest authorized test setup correction and commit it.
+  `0fb8dd634d397e59ba169ec81d5d602594b02800` atop `e52ece67a`: one test file, two added lines directly after `gitInit`; full receipt comparison stays strict. Removing the pin reproduces the master-default failure.
+- DONE: Verify this layer locally before any CI retry.
+  Full parent matrix under process-local master passes in 8.964s; all focused smallest/native controls under main pass in 8.860s; the same focused controls with `-race` under master pass in 10.367s with no race findings. `gofmt` on the only changed file and `git diff --check` pass. Red differential logs: `/tmp/ssm-ci-default-branch-{master,main}.log`; green logs/exits: `/tmp/ssm-ci-branch-fix/`.
+- SKIPPED: Push, CI retry, live test, and broad full-suite reruns.
+  FO explicitly withheld delivery/CI/live pending independent validation. This two-line test setup correction changes no runtime or grader behavior. Code and this state report are committed locally for the FO; no push performed by this worker.
+
+### Summary
+
+The captured native envelope legitimately names `main`; the scratch test repository now makes that premise explicit instead of depending on developer Git configuration. Both main/master environment controls and focused race checks pass on `0fb8dd634`, with strict receipt semantics and every existing negative unchanged.
