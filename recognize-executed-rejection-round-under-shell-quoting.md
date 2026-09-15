@@ -22,6 +22,17 @@ gates:
                 id: briefing:82de96hqv8cfwxqagj6ah1k6:backlog:attempt-1:revision-1
                 digest: sha256:879d692755c3f9593adae22cf3e3004f7a33e30f047b5ea0e1e0b1dd9940fa63
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:82de96hqv8cfwxqagj6ah1k6:backlog:1
+                briefing: briefing:82de96hqv8cfwxqagj6ah1k6:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T04:02:39.792196Z"
+                decision: approve
+                reason: Captain requested dispatch of the Codex live failure tasks, targeted local verification, and stacked PRs.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
