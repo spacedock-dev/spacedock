@@ -308,28 +308,35 @@ func assertCodexSmallestSufficientMechanism(jsonl string, edits, commissioned []
 	return gradeSmallestSufficientMechanism(codexMechanismTrace(jsonl, edits, commissioned), edits, commissioned)
 }
 
-func codexMechanismTraceWithRepo(public, native, root string, edits, commissioned []string) mechanismTrace {
+func codexMechanismTraceWithRepo(public, native, root, baseline string, edits, commissioned []string) mechanismTrace {
 	tr := codexMechanismTrace(public, edits, commissioned)
 	// Shell writes have no structured file_change item. Credit their landed commit
-	// only from a successful parent command, before any native worker could edit.
+	// only from a new transaction after the pre-run snapshot, before any worker.
+	// The fixture is isolated; preexisting commits are inputs, not parent edits.
 	for _, line := range strings.Split(public, "\n") {
 		var event codexCommandItem
 		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" || event.Item.Type != "command_execution" || event.Item.Status != "completed" || event.Item.ExitCode == nil || *event.Item.ExitCode != 0 {
 			continue
 		}
-		// Require an invoked commit, not a read or an echoed command/receipt.
-		if !regexp.MustCompile(`(?:^|[\n;&])\s*git(?:\s+-C\s+\S+)?\s+commit\b`).MatchString(event.Item.Command) {
-			continue
-		}
-		receipts := regexp.MustCompile(`(?m)^\[[^ \]\n]+ ([0-9a-f]{7,40})\] `).FindAllStringSubmatch(event.Item.AggregatedOutput, -1)
+		receipts := regexp.MustCompile(`(?m)^\[[^ \]\n]+ ([0-9a-f]{7,40})\] [^\r\n]+$`).FindAllStringSubmatch(event.Item.AggregatedOutput, -1)
 		if len(receipts) != 1 {
 			continue
 		}
 		hash := receipts[0][1]
+		commit, err := gitOutput(root, "rev-parse", hash+"^{commit}")
+		if err != nil || baseline == "" || strings.TrimSpace(commit) == baseline {
+			continue
+		}
+		if _, err := gitOutput(root, "merge-base", "--is-ancestor", baseline, hash); err != nil {
+			continue
+		}
 		parentReceipt := false
 		for _, nativeLine := range strings.Split(native, "\n") {
 			var record struct {
-				Payload struct{ Type, Name, Output string }
+				Payload struct {
+					Type, Name string
+					Output     json.RawMessage
+				}
 			}
 			if json.Unmarshal([]byte(nativeLine), &record) != nil {
 				continue
@@ -338,7 +345,7 @@ func codexMechanismTraceWithRepo(public, native, root string, edits, commissione
 			if p.Type == "function_call" && (p.Name == "spawn_agent" || strings.HasSuffix(p.Name, ".spawn_agent")) {
 				break
 			}
-			if p.Type == "function_call_output" && strings.Contains(p.Output, receipts[0][0]) {
+			if codexNativeCommitReceipt(p.Type, p.Output, receipts[0][0]) {
 				parentReceipt = true
 				break
 			}
@@ -350,9 +357,6 @@ func codexMechanismTraceWithRepo(public, native, root string, edits, commissione
 			continue
 		}
 		for _, f := range edits {
-			if !strings.Contains(event.Item.Command, f) {
-				continue
-			}
 			before, err := gitOutput(root, "show", hash+"^:"+f)
 			if err != nil {
 				continue
@@ -374,4 +378,41 @@ func codexMechanismTraceWithRepo(public, native, root string, edits, commissione
 		}
 	}
 	return tr
+}
+
+// Accept the two observed native result envelopes without searching serialized
+// JSON or treating prose/metadata as execution output.
+func codexNativeCommitReceipt(kind string, raw json.RawMessage, receipt string) bool {
+	containsLine := func(text string) bool {
+		for _, line := range strings.Split(text, "\n") {
+			if line == receipt {
+				return true
+			}
+		}
+		return false
+	}
+	if kind == "function_call_output" {
+		var text string
+		return json.Unmarshal(raw, &text) == nil && containsLine(text)
+	}
+	if kind != "custom_tool_call_output" {
+		return false
+	}
+	var blocks []streamContentBlock
+	if json.Unmarshal(raw, &blocks) != nil {
+		return false
+	}
+	for _, block := range blocks {
+		if block.Type != "input_text" {
+			continue
+		}
+		var result struct {
+			ExitCode *int   `json:"exit_code"`
+			Output   string `json:"output"`
+		}
+		if json.Unmarshal([]byte(block.Text), &result) == nil && result.ExitCode != nil && *result.ExitCode == 0 && containsLine(result.Output) {
+			return true
+		}
+	}
+	return false
 }

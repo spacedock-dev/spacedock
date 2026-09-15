@@ -107,6 +107,7 @@ type liveDriver interface {
 // finalMessage is the headless stream's result/success event and stream is its
 // stream-json transcript.
 type liveResult struct {
+	initialHead  string // fixture snapshot before a smallest-mechanism Codex run
 	finalMessage string
 	stream       string
 	commands     []string

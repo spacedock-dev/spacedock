@@ -2,6 +2,7 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -326,31 +327,16 @@ func TestSmallestMechanismTraceSelectsCodexDialect(t *testing.T) {
 	}
 }
 
-// A real Git delta is independent of the recorded command's claimed effects.
+// Snapshot the fixture immediately before executing each candidate parent action.
+// Echo/heredoc controls have real old commits, but make no new transaction.
 func TestCodexSmallestMechanismParentCommit(t *testing.T) {
-	for _, mutation := range []string{"", "release 0273", "read-only", "echo real receipt", "failed", "started", "missing native receipt", "delegated before commit", "wrong content", "unchanged", "wrong path", "dirty final"} {
+	for _, mutation := range []string{"", "release 0273", "custom output", "custom failed", "custom wrong block", "custom metadata only", "custom missing exit", "custom partial receipt", "custom wrong event", "read-only", "echo real receipt", "heredoc receipt", "older receipt", "failed", "started", "missing native receipt", "delegated before commit", "wrong content", "unchanged", "wrong path", "dirty final", "missing baseline"} {
 		t.Run(mutation, func(t *testing.T) {
 			root := t.TempDir()
 			for _, f := range ssmEditFiles() {
 				writeFile(t, filepath.Join(root, f), ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f]))
 			}
 			gitInit(t, root)
-			for _, f := range ssmEditFiles() {
-				after := strings.Replace(ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f]), "Status: PLACEHOLDER (the prompt hands the FO the exact replacement).", "Status: RESOLVED", 1)
-				if mutation == "wrong content" {
-					after += "unrequested\n"
-				}
-				if mutation == "unchanged" {
-					after = ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f])
-				}
-				if mutation == "wrong path" {
-					f += ".bak"
-				}
-				writeFile(t, filepath.Join(root, f), after)
-			}
-			git(t, root, "add", ".")
-			receipt := git(t, root, "commit", "--allow-empty", "-m", "Resolve notes")
-			// Replay the exact release parent command; only the real fixture Git receipt varies.
 			events := strings.Split(strings.TrimSpace(readFile(t, "testdata/codex_smallest_mechanism_python.jsonl")), "\n")
 			index := 0
 			if mutation == "release 0273" {
@@ -361,24 +347,106 @@ func TestCodexSmallestMechanismParentCommit(t *testing.T) {
 				t.Fatal(err)
 			}
 			command := release.Item.Command
-			status, exit := "completed", 0
-			if mutation == "read-only" {
-				command = "cat ladder-note-alpha.md ladder-note-beta.md"
+			run := func(command string) (string, int) {
+				cmd := exec.Command("/bin/sh", "-c", command)
+				cmd.Dir = root
+				out, err := cmd.CombinedOutput()
+				if err == nil {
+					return string(out), 0
+				}
+				if ee, ok := err.(*exec.ExitError); ok {
+					return string(out), ee.ExitCode()
+				}
+				t.Fatal(err)
+				return "", -1
 			}
-			if mutation == "echo real receipt" {
-				command = "echo 'git commit -m Resolve notes; ladder-note-alpha.md ladder-note-beta.md'"
+			if mutation == "read-only" || mutation == "echo real receipt" || mutation == "heredoc receipt" || mutation == "older receipt" {
+				old, code := run(command)
+				if code != 0 {
+					t.Fatalf("prepare old transaction: %s", old)
+				}
+				switch mutation {
+				case "read-only":
+					command = "cat ladder-note-alpha.md ladder-note-beta.md"
+				case "echo real receipt":
+					command = "printf '%s' " + shellQuote(old)
+				case "heredoc receipt", "older receipt":
+					command = "cat <<'EOF'\ngit commit -m Resolve -- ladder-note-alpha.md ladder-note-beta.md\n" + old + "EOF\n"
+					if mutation == "older receipt" {
+						git(t, root, "commit", "--allow-empty", "-m", "Later pre-run commit")
+					}
+				}
+			}
+			if mutation == "wrong content" {
+				command = strings.ReplaceAll(command, "Status: RESOLVED", "Status: WRONG")
+			}
+			if mutation == "unchanged" {
+				command = "git commit --allow-empty -m 'No edits'"
+			}
+			if mutation == "wrong path" {
+				for _, f := range ssmEditFiles() {
+					command = strings.ReplaceAll(command, f, f+".bak")
+				}
+				command = "cp ladder-note-alpha.md ladder-note-alpha.md.bak; cp ladder-note-beta.md ladder-note-beta.md.bak; " + command
 			}
 			if mutation == "failed" {
-				exit = 1
+				command += "\nexit 1"
 			}
+			baseline := strings.TrimSpace(git(t, root, "rev-parse", "HEAD"))
+			if mutation == "missing baseline" {
+				baseline = ""
+			}
+			receipt, code := run(command)
+			if code != 0 && mutation != "failed" {
+				t.Fatalf("execute fixture action: %s", receipt)
+			}
+			status := "completed"
 			if mutation == "started" {
 				status = "in_progress"
 			}
-			nativeEvent := func(kind, name, output string) string {
+			nativeEvent := func(kind, name string, output any) string {
 				b, _ := json.Marshal(map[string]any{"payload": map[string]any{"type": kind, "name": name, "output": output}})
 				return string(b)
 			}
 			native := nativeEvent("function_call_output", "", receipt)
+			if strings.HasPrefix(mutation, "custom") {
+				hash := strings.TrimSpace(git(t, root, "rev-parse", "--short", "HEAD"))
+				native = strings.ReplaceAll(readFile(t, "testdata/codex_smallest_mechanism_native_output.jsonl"), "45a1610", hash)
+				if mutation != "custom output" {
+					var event struct {
+						Payload struct {
+							Type   string
+							Output []struct{ Type, Text string }
+						}
+					}
+					if err := json.Unmarshal([]byte(native), &event); err != nil {
+						t.Fatal(err)
+					}
+					var result map[string]any
+					if err := json.Unmarshal([]byte(event.Payload.Output[1].Text), &result); err != nil {
+						t.Fatal(err)
+					}
+					switch mutation {
+					case "custom failed":
+						result["exit_code"] = 1
+					case "custom wrong block":
+						event.Payload.Output[1].Type = "image"
+					case "custom missing exit":
+						delete(result, "exit_code")
+					case "custom partial receipt":
+						result["output"] = strings.ReplaceAll(result["output"].(string), "Resolve ladder notes and add roadmap strategy", "Resolve")
+					case "custom wrong event":
+						event.Payload.Type = "agent_message"
+					case "custom metadata only":
+						result["metadata"] = result["output"]
+						result["output"] = ""
+					}
+					encoded, _ := json.Marshal(result)
+					event.Payload.Output[1].Text = string(encoded)
+					encoded, _ = json.Marshal(event)
+					native = string(encoded)
+				}
+			}
 			spawn := nativeEvent("function_call", "spawn_agent", "")
 			if mutation == "missing native receipt" {
 				native = ""
@@ -392,9 +460,9 @@ func TestCodexSmallestMechanismParentCommit(t *testing.T) {
 					writeFile(t, filepath.Join(root, f), "wrong\n")
 				}
 			}
-			tr := codexMechanismTraceWithRepo(codexCommandOutput(command, receipt, exit, status), native, root, ssmEditFiles(), nil)
+			tr := codexMechanismTraceWithRepo(codexCommandOutput(command, receipt, code, status), native, root, baseline, ssmEditFiles(), nil)
 			for _, f := range ssmEditFiles() {
-				want := mutation == "" || mutation == "release 0273"
+				want := mutation == "" || mutation == "release 0273" || mutation == "custom output"
 				if tr.editedInHouse[f] != want {
 					t.Errorf("edit %s credited=%v, want %v", f, tr.editedInHouse[f], want)
 				}
