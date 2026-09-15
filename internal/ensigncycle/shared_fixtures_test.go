@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
+	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
 // Shared scenario fixtures and prompts. These are host-neutral: each writes a
@@ -42,13 +43,24 @@ func writePreGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	gitCommitPathScoped(t, fixture.root, "README.md", "queue coherent workflow definition")
 	writeFile(t, fixture.entity, strings.Replace(strings.Split(recordedGateEntity(), "\n## Stage Report: validation\n")[0]+"\n", "status: validation", "status: queued", 1))
 	writeFile(t, fixture.references[0], "# Entity snapshot\n\nThe retained package is ready for implementation.\n")
-	git(t, fixture.stateRoot, "add", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md")
-	git(t, fixture.stateRoot, "commit", "-q", "-m", "queue coherent implementation", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md")
+	if err := os.Remove(fixture.gateReview); err != nil {
+		t.Fatal(err)
+	}
+	git(t, fixture.stateRoot, "add", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md", "recorded-gate-task/selected/gate-review.md")
+	git(t, fixture.stateRoot, "commit", "-q", "-m", "queue coherent implementation", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md", "recorded-gate-task/selected/gate-review.md")
 	return fixture
 }
 
 func TestPreGateWorkflowIsStageCoherent(t *testing.T) {
 	fixture := writePreGateWorkflow(t, t.TempDir())
+	if _, err := os.Stat(fixture.gateReview); !os.IsNotExist(err) {
+		t.Fatalf("queued fixture retained completed gate review; stat err=%v", err)
+	}
+	for _, stage := range []string{"implementation", "validation"} {
+		if spans, err := statuspkg.FindSectionSpans([]byte(readFile(t, fixture.entity)), []string{"Stage Report: " + stage}); err == nil || len(spans) != 0 {
+			t.Fatalf("queued entity retained parsed %s stage report: %+v", stage, spans)
+		}
+	}
 	if body := readFile(t, fixture.entity); strings.Contains(body, "\ngates:") || strings.Contains(body, "## Stage Report: implementation") || strings.Contains(body, "## Stage Report: validation") || strings.Contains(readFile(t, fixture.references[0]), "Stage Report is complete") {
 		t.Fatal("queued entity retained selected gate or completed stage report")
 	}
@@ -66,6 +78,14 @@ func TestPreGateWorkflowIsStageCoherent(t *testing.T) {
 }
 func gateReadme() string { return recordedGateReadme() }
 func gateEntity() string { return recordedGateEntity() }
+
+func preGatePrompt(workflowRoot string) string {
+	return fmt.Sprintf("%s\n\n%s\n\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: "+workflowRoot,
+		"Engage only `recorded-gate-task`. Drive its current work through implementation to the human decision boundary and stop there.",
+	)
+}
 
 func gatePrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s",

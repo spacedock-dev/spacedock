@@ -260,7 +260,11 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	shimDir := writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog)
 	runner = runner.withStubPATH(shimDir)
 
-	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
+	prompt := gatePrompt(workflowRoot)
+	if scenario.name == "default-headless-gate-stop" {
+		prompt = preGatePrompt(workflowRoot)
+	}
+	result := runner.run(t, scenario, workflowRoot, prompt)
 	writeFile(t, filepath.Join(result.artifactDir, "command.log"), readFile(t, commandLog))
 	if _, err := os.Stat(filepath.Join(fixture.stateRoot, "_archive", "recorded-gate-task", "index.md")); !os.IsNotExist(err) {
 		t.Fatalf("recorded-gate-task was archived while waiting at the gate; stat err=%v", err)
