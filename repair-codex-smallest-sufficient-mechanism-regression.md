@@ -109,8 +109,8 @@ gates:
                 state: pending
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
-mod-block:
-pr:
+mod-block: merge:pr-merge
+pr: "#797"
 ---
 
 ## Current captain-approved direction — release Python-write attribution (2026-09-14)
