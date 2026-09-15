@@ -1,6 +1,6 @@
 ---
 title: "Separate pre-gate dispatch instructions from gate-ready fixture instructions"
-status: "backlog"
+status: ideation
 source: "Captain filing request; pre3 and 0.27.3 live release failure triage"
 started: ""
 completed: ""
@@ -32,7 +32,7 @@ gates:
                 reason: Captain requested dispatch of the Codex live failure tasks, targeted local verification, and stacked PRs.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.
