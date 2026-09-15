@@ -41,6 +41,20 @@ gates:
                 id: briefing:vcfwr5ptn6pedv32wq7cbsy6:ideation:attempt-1:revision-1
                 digest: sha256:239ad8e6ead865fdd7e23be6ce8053a4b7988179e495b91d49c9641ef4ea586f
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vcfwr5ptn6pedv32wq7cbsy6:ideation:1
+                briefing: briefing:vcfwr5ptn6pedv32wq7cbsy6:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T14:23:15.974746Z"
+                decision: approve
+                reason: Captain approved this separate contract fix. Exact bounded one-file change removes conflicting stop exception; existing local live and independent sequence proof covers all criteria, no new mechanism.
+                conn:
+                    quote: approve.
+                    source: Captain reply approving separate headless contract-fix scope on 2026-09-15; original goal authorizes dispatch and stacked PRs
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.
