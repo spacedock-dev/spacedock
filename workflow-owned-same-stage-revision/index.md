@@ -11,6 +11,17 @@ worktree:
 pr:
 mod-block:
 id: zz1yqc2w2katp28wpa8nghx2
+gates:
+    version: 1
+    records:
+        - id: gate:zz1yqc2w2katp28wpa8nghx2:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:zz1yqc2w2katp28wpa8nghx2-backlog-1
+              briefing:
+                id: briefing:zz1yqc2w2katp28wpa8nghx2:backlog:attempt-1:revision-1
+                digest: sha256:ea21af7990ca6e4a52dac540a434ad088b3bbecca35dcb03cbd1c70d39950ea6
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 Make same-stage gate revision follow the declared workflow while preserving independent review where it is required.
