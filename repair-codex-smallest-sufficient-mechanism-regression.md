@@ -138,20 +138,20 @@ not expose a synchronous pre-spawn filesystem boundary: taking a snapshot after 
 asynchronous spawn event can already include child edits. The authorized alternative
 uses two existing runner launches, with no interception or new runtime machinery.
 
-Current acceptance criteria and proof:
+## Acceptance criteria
 
-1. Phase 1 begins with known notes and naturally requests their exact replacements and
+- **AC-1:** Phase 1 begins with known notes and naturally requests their exact replacements and
    the directly committed roadmap document. Exact filesystem bytes and the committed
    document must match, and native evidence must contain zero worker spawns. Tool choice,
    shell syntax, receipts and structured file-change events cannot grant edit credit.
-2. Phase 2 introduces the two ready entities and runs the ordinary commissioned request.
+- **AC-2:** Phase 2 introduces the two ready entities and runs the ordinary commissioned request.
    Preserve the existing durable dispatch/report/terminal/archive and scope-trace checks,
    then verify all three final files again. FO explicitly confirmed that this preserves
    the current commissioned assertion; it does not add a new native lifecycle grader.
-3. Controls reject missing/wrong bytes, an uncommitted roadmap, native phase-1 delegation,
+- **AC-3:** Controls reject missing/wrong bytes, an uncommitted roadmap, native phase-1 delegation,
    output-only impersonation, incomplete commissioned work and final drift. Codex,
    Claude and Pi use the same phase boundary, with host-specific native spawn controls.
-4. Retain both launch artifacts and include both durations and measured usage in the
+- **AC-4:** Retain both launch artifacts and include both durations and measured usage in the
    combined metric. Run focused proof, one local targeted Codex run, and normal/race/format
    checks at the committed candidate; then independent validation. FO owns restacking and
    final Claude plus Codex live CI. This worker does not push or trigger CI.
@@ -180,7 +180,7 @@ release false-negative repair through the first officer's implementation dispatc
   `internal/ensigncycle/testdata/codex_smallest_mechanism_python.jsonl`, SHA-256
   `f7a5642736eb926b6b3205516e3f5605d20a869abca0f4c24342f33d22687be8`.
 
-Current acceptance criteria:
+Historical acceptance criteria — superseded release-attribution design:
 
 1. Both captured Python command shapes receive in-house edit credit from successful
    parent execution and independently checked exact note changes in real Git history.
@@ -313,7 +313,9 @@ successful `echo spacedock dispatch build ...` from a spawn. Using durable state
 cannot prove the required native dispatch boundary. The correlated lifecycle plus
 durable identity is the smallest existing public-behavior proof serving AC-1 and AC-2.
 
-## Acceptance criteria
+## Historical acceptance criteria — superseded single-run design
+
+The AC-1–AC-5 below belong only to the superseded single-run design. Their historical evidence and reports are not evidence for the current two-phase criteria.
 
 - **AC-1 (VALUE):** One supported Codex run produces exactly two complete, unambiguous
   lifecycle-plus-durable bundles for `ready-one/ready` and `ready-two/ready`, zero
