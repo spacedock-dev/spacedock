@@ -250,3 +250,29 @@ Hypothesis: the next-stage stop exception offers an immediate gate-presentation 
 Smallest proposed separate routing-fix wording: delete `the next stage is gate: true (present the gate and wait)` from the Completion paragraph's exceptions and append: “If the successor is gated, enter and dispatch it under the Gate successor guard; prepare and present its gate only after that stage's completion signal and verified report. Gate routing at completion applies to the completed stage, not an unentered successor.” Preserve the existing completed-stage gate check, successor guard, and authority/lifecycle assertions. No binary feature, host-adapter change, or fixture-scope expansion is proposed.
 
 This clarifies H-1's proposed separate owner to the shared FO completion contract. It does not change the outcome/material classification, candidate bytes, or REJECTED recommendation against AC-2. FO scope/disposition remains required before any source edit or live rerun.
+
+
+## Stage Report: validation (cycle 3 — final-stack reconciliation)
+
+- DONE: Independently review headless layer da50d61d relative keep-moving predecessor 7ca67fdd; verify fixture absence and preserved authority/lifecycle controls.
+  Original bounded review stands. Fixture candidate `da50d61d6df3e8347ab9a8d594e31a8d7cf3cfba` is now verified within stack `474cdb8c515ffe0ad36c9aeb3b65b3b7cecf3f80`, dependent on the separately approved completion-contract correction; no standalone da50d61d success is claimed.
+- DONE: After FO grants the serialized live slot, run targeted Codex default-headless and gate-ready control, preserve artifacts and exact commit, and assess all ACs without editing candidate code.
+  Reused independent validator `vcfwr5ptn6_validation` evidence: both serial journeys PASS, exit 0, no SKIP, total 434.840s; this reconciliation launched no run and changed no candidate or assertion.
+- DONE: AC-1 — Pre-gate setup has no completed-review evidence.
+  Prior deterministic/on-disk proof remains valid; final tracked headless state retains no selected gate-review, and implementation/validation reports are separately produced in commits `adc8b3df` and `f0001501`, after the clean queued seed.
+- DONE: AC-2 — Codex dispatches implementation before presenting the human gate.
+  TestLiveCommonDefaultHeadlessGateStop PASS 307.57s; retained parent trace records implementation completion line 105, validation stamp line 121, separate validation completion line 158, then prepare line 181. Git order is implementation report → validation dispatch `63aa6761` → validation report → gate commit `4bd499c9`, with one open, unconsumed validation gate and no handoff report.
+- DONE: AC-3 — The already-gated control retains its intended boundary.
+  TestLiveCommonGateGuardrail PASS 127.00s; committed state `f367d0ec` holds the matching open gate, with zero worker dispatches or status changes. Existing identity/authority checks would reject a wrong binding, approval/consume, or successor dispatch.
+- DONE: Inspect bounded outcome evidence beyond pass labels.
+  Read source.json, exit-code.txt, test.log, native-evidence.json, correlated parent completion events, scenario command logs, retained Git history, and exact committed-state tar members under `/tmp/spacedock-stack-headless-474-live/`; merged periodic copies are not treated as authoritative file-absence evidence.
+- DONE: Reconcile H-1 through its separately authorized owner.
+  H-1 is resolved for the combined stack by `dispatch-gated-successor-before-presentation` (`vcfwr5ptn6`, contract fix `474cdb8c5`): the skipped validation transition/worker/report now occurs before prepare. Historical da50d61d failure, classification, and raw evidence remain intact; no fixture scope expansion occurred.
+- DONE: Preserve the human decision boundary despite the inner review outcome.
+  The live validation worker disclosed an unavailable `gate validate` command and the FO presented a reject recommendation; the fixture ACs require reaching an open human gate, not obtaining an approving review. No approval was fabricated or consumed.
+- SKIPPED: New live runs, repeated deterministic/full/race suites, or source edits during reconciliation.
+  FO explicitly assigned evidence reuse and source-entity-only changes; combined-tip suite results remain with their existing owner.
+
+### Summary
+
+Recommend PASSED for AC-1–3 with fixture candidate da50d61d verified as part of final stack 474cdb8c5, including its separate completion-contract dependency. Independent retained lifecycle and committed-state evidence resolves H-1 in that stack while preserving the earlier standalone failure. No candidate, frontmatter, lifecycle oracle, or approval authority was changed by this reconciliation.
