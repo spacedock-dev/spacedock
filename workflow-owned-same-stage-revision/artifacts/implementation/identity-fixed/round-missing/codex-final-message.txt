@@ -1,0 +1,5 @@
+Corrected and committed `selected/plan.md`: keep message A, delete message B. Verification passed.
+
+Stopped at the unmet prerequisite: recording `validation/1` failed because `inputs/briefing.review.jsonl` is missing. The [workflow README](README.md) prohibits the worker or first officer from authoring it.
+
+No new gate was prepared or consumed; no successor was dispatched.

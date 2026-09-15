@@ -153,7 +153,12 @@ Codex release-test stack fixes, archive durability (#790), terminal output clari
 ## Expected surface and tolerance
 
 Estimate net LOC change: +45, across 3 files; approximately 65 insertions and 20 deletions.
-Tolerance: net +90 LOC maximum and 4 files. Larger scope requires a design reset.
+Original tolerance: net +90 LOC maximum and 4 files.
+Earlier amended tolerance: net +200 LOC maximum and 4 files, explicitly approved by the captain on 2026-09-15 to cover the complete behavioral matrix. The original +45 LOC estimate remains planning history; scope and acceptance criteria are unchanged.
+
+Earlier final tolerance: net +220 LOC maximum and 4 files, explicitly approved by the captain on 2026-09-15 after the complete proof matrix and authorized fixture fixes.
+
+Current approved tolerance: net +236 LOC maximum and 5 files, bound by resolution:binding-1789513304916529000; the added owner is `docs/runtime-live-ci-registry.md` for explicit targeted-proof policy.
 
 Expected owners: `skills/feedback-rejection-flow/SKILL.md`, `internal/ensigncycle/claude_live_runner_test.go`, and `internal/ensigncycle/claude_runtime_helpers_test.go`.
 The existing `runClaudeRejectionFlowScenario` owns the rejection run; `shared_live_runner_test.go` registers it.
@@ -232,3 +237,84 @@ The First Officer authorized these planning corrections; implementation remains 
   The design now requires a no-reviewer cycle-limit control.
 
 No shipped files changed. The retained CLI spike was not rerun.
+
+## Implementation proof findings and FO authorizations
+
+All four findings below were proposed as Material, owned by this task, with disposition FIX. The First Officer sent a distinct FIX authorization before each remedy. No skill semantic expansion resulted.
+
+- **Selected revision proof:** Normal workflow: a same-stage correction followed by gate preparation. Harm: checking the latest plan and a fresh attempt independently can accept a gate prepared before the correction. Authority: value-ac[AC-1] the fresh gate must represent the committed correction. Trigger: the focused old-current-file rule returned success for a stale selected revision and an unrelated selected artifact. FO authorized checking the exact intended plan source with existing canonical Git helpers, then explicitly allowed canonical context References as well as artifacts. The fixed test rejects stale/unrelated selections and accepts both valid selection forms; retained after-run Reference pins corrected bytes at `31902baa85ecca70a76ae02d4768a6d205fb0587`.
+- **Fixture identity:** Normal workflow: a required canonical correction round. Harm: a fixture without explicit identity stops at setup rather than exercising its round obligation. Authority: value-ac[AC-2] required round evidence must be meaningfully exercised. Trigger: the first round-required drive returned `entity has no identity for correction round`. FO authorized adding `id: recorded-gate-task` before seed commits and rerunning affected round controls. The revised fixture passes focused real preparation/recording setup tests.
+- **Projection false rejection:** Normal workflow: a worker reports a legitimate hold without an optional projection. Harm: an ordinary sentence was misreported as an invented projection. Authority: value-ac[AC-2] absence of optional machinery must be evaluated from actual workflow state. Trigger: `No Feedback Cycles projection or finding classifications were invented.` matched a broad prose substring despite no corresponding heading. FO authorized using existing Markdown heading matching and retaining that sentence as a focused negative; both the focused negative and retained cycle-limit heading regrade pass.
+
+### Final tolerance and fixture alignment authorization — 2026-09-15
+
+The captain explicitly approved +220 net lines across four files, superseding the earlier +200 tolerance while preserving the original estimate as history. FO authorized FIX for the owned AC-1 fixture-alignment finding.
+
+- Materiality: Material; normal required-round re-entry selected reports and omitted the intended corrected plan.
+- Ownership: Owned fixture defect.
+- Harm: An inherited successor-dispatch acceptance criterion directs review away from the actual plan correction.
+- Authority and trigger: value-ac[AC-1]; retained identity-fixed round-required evidence omitted the plan and recommended rejection against the unrelated successor criterion.
+- Disposition: FIX, distinctly authorized by FO after captain approval; replace that acceptance criterion with plan-versus-frozen-input acceptance and explicitly declare selected/plan.md as the intended review source. Preserve all skill, gate-policy and unique falsifier semantics. Rerun only the affected required-round live control.
+
+### Pending registration finding — 2026-09-15
+
+- Normal workflow: running the required full normal and race suites on the frozen candidate.
+- Harm: the new standalone live test is absent from the live registry and both suites reject it.
+- Authority: repository live-test registration contract and the implementation checklist requiring local validation.
+- Trigger: both suites fail TestRuntimeLiveRegistryReconciliation because TestLiveCommonSameStageRevision lacks an adjacent registered live-journey binding.
+- Classification: Material, owned; proposed FIX awaits a distinct FO disposition. Move the six variants into the existing registered TestLiveCommonRejectionFlow while retaining its canonical liveJourney call, runner and every assertion. This avoids a fifth registry file and reduces the delta. A name-only exemption would still violate the standalone registration contract and is not proposed.
+- Current evidence: the final required-round live run passes in 172.33 seconds; both full suites otherwise fail only the baseline installed-host resolver. All processes have completed. Public logs and the passing live bundle are retained under artifacts/implementation. No code edits occurred during checks.
+
+### Registry FIX disposition and scheduling consequence — 2026-09-15
+
+FO distinctly authorized integrating all six variants into the registered rejection-flow journey, preserving its canonical liveJourney call and every assertion. The implementation moves only the wrapper: fixtures, runner calls and assertions remain byte-identical. The final source delta is +217 net lines across four files, within the captain-approved +220 cap.
+
+Runtime applicability was checked before editing: liveDriverForRuntime selects Claude, Codex or Pi from SPACEDOCK_LIVE_RUNTIME, and the runner chooses the corresponding native lifecycle extractor. No Codex-specific invocation is added to Claude/Pi. The unchanged canonical liveJourney calls parent t.Parallel once and checks its builder/assertion counters before the six synchronous child t.Run calls. The children add no t.Parallel and each owns a fresh fixture and driver.
+
+The six controls now run in normal rejection-flow CI selection on each applicable runtime; local Codex evidence implies approximately 20–25 added serialized minutes, besides roughly nine minutes for the conventional case. Claude/Pi timing is unmeasured. Existing suite limits remain 90 minutes for Claude, 40 for Codex and 50 for Pi; this change consumes more of that budget and does not change those limits. Targeting a child subtest still executes the canonical parent-level drive first. The existing Pi XFAIL remains attached to the canonical call; no new exemptions or local-only classifications were added.
+
+Focused registry reconciliation, timeout, fail-fast and gap-binding contract checks pass; the live-tagged entry point compiles and is discovered as TestLiveCommonRejectionFlow. Prior per-control live evidence is retained because only the wrapper moved. Full normal/race checks are rerunning against the frozen final wrapper.
+
+### CI cost hold and proposed registration surface — 2026-09-15
+
+FO paused the integrated wrapper after the +20–25-minute per-runtime cost was reported. The wrapper move had already occurred under the earlier FIX authorization; no CI, new live drive or code/state commit occurred. The current normal/race lane is only local verification.
+
+Read-only registry inspection found no existing targeted acceptance-proof category: common behavior requires all runtime lanes, host-specific proofs cannot cover common semantics, and non-gating experiments cannot be release evidence. A name-only exemption or experiment relabel would misstate the proof.
+
+Proposed minimal alternative, pending explicit policy/surface authorization: restore the standalone wrapper as TestLiveSameStageRevision; add a Targeted implementation proofs section in docs/runtime-live-ci-registry.md and clarify its distinction from release evidence. This adds a fifth file and 16 net documentation lines, for +236 net lines across five files. Passing controls remain mandatory for this bounded task; no all-runtime or CI coverage is claimed. Promote to the common registry before any release-coverage claim. No unsupported source annotation, runtime machinery, or CI selector change is proposed.
+
+### Held-candidate local verification outcome — 2026-09-15
+
+The local normal/race lane is finished; both exit 1. Registry reconciliation and suite-policy checks pass. Both suites retain the known installed-host resolver failure and reach cumulative ten-minute package timeouts in internal/cli and internal/ensigncycle. The race run additionally fails TestCodexProcessActivityResetsQuietBudget, TestCodexProcessQuietTimeoutPreservesFaultEvidence, TestCodexProcessRecognizesTerminalTurnBeforeOSExit and TestCodexProcessRequiresFinalMessageForTerminalTurn against 250ms no-progress budgets. These new failures are undiagnosed and are not waived; the earlier complete suites had only the resolver and subsequently fixed registry omission. Logs: artifacts/implementation/held-integrated-normal.log and held-integrated-race.log. All processes are stopped. No new live drives or CI were run, and no code/state commits have been made. The held wrapper remains +217 net/four files; the +236/five-file policy alternative is unapplied.
+
+### Binding targeted-proof approval and final implementation — 2026-09-15
+
+Captain approval resolution:binding-1789513304916529000 binds /private/tmp/inflight-implementation-decisions.md at sha256:3e4c7f21b5d53b1abfcc5796d19b7bbe7d90ff2f5c5398415f1e11b245fe9c81. It explicitly approves the targeted implementation-proof registry policy and +236 net lines across five files. FO separately authorized restoring the standalone wrapper and adding the minimal policy documentation, with no CI/all-runtime parity claim. This supersedes the earlier +220/four-file tolerance and the held +217/four-file integrated wrapper; earlier estimates remain history.
+
+The final candidate is exactly +236 net lines across five files: skill net0; live runner+87; fixture/grader helpers+124; standalone registration+9; registry documentation+16. The held expensive common-journey expansion is removed. TestLiveSameStageRevision retains all six controls with unchanged fixtures, runtime selection and assertions; the existing common rejection-flow entry point is restored exactly. Targeted passing evidence is mandatory task acceptance, explicitly selected locally, and does not establish normal-CI or all-runtime parity.
+
+Focused registry/suite-policy checks, stale/unrelated selected-revision falsifiers, worker-completion obligations and live entry-point compilation/discovery pass. The FO reserved the broad verification lane for sequential final normal/race checks. Prior live controls are reused under explicit FO authorization because wrapper relocation changes no fixture, selected runtime or grading behavior. No restacking, code push or CI is authorized or performed.
+
+## Stage Report: implementation
+
+- DONE: Make correction-round recording, independent-review steps, and completion conditions conditional on workflow requirements, preserving authorization and cycle limits.
+  Candidate `5e04442a9c89ef644135721522dbf9bfcc8b7de0` changes generic skill applicability only; concrete captain authorization, declared review/round obligations and cycle-3 escalation remain required.
+- DONE: Prove same-stage correction with an actual workflow drive and meaningful required-review, missing-evidence, and cycle-limit controls; retain existing Roborev behavior.
+  [Proof index](artifacts/implementation/proof-index.md) retains same-launcher before/after: baseline completes correction but stalls on an absent round; candidate commits the frozen-input correction and selects it in one fresh unresolved/unconsumed gate without a reviewer or round.
+  Required-review and separate-review controls hold on missing evidence; required-round publishes all four entries without projection, while missing-round refuses publication; weakening a declared obligation makes these controls fail.
+  Cycle-limit retained-state regrade proves escalation after three frozen attempts without a fourth; conventional re-review preserves four entries and a fresh gate; existing canonical-round tests preserve Roborev's five entries and unchanged stage.
+- DONE: Commit the smallest approved implementation, run required local validation, and report exact candidate and acceptance evidence for independent review.
+  Five-file candidate is +236 net (247 insertions/11 deletions), within binding approval `resolution:binding-1789513304916529000`; assigned branch is clean, with no restack, code push or CI.
+- DONE: Exercise focused falsifiers and final registry checks.
+  Worker tests reject absent/duplicate completion and self-review; selected-plan tests reject premature and unrelated revisions while accepting the exact corrected plan as artifact or canonical context Reference; removing those guards makes the negatives fail.
+  Final registry checks reject missing entry registration or suite-policy drift; the targeted entry compiles and is discoverable. It is mandatory local task acceptance, without a normal-CI or all-runtime parity claim.
+- FAILED: Obtain entirely green normal and race suites in the installed local environment.
+  `go test ./...` and `go test ./... -race` each fail only pre-existing `TestCodexResolveManifestAgainstInstalledHost`: spacedock@spacedock is absent while the resolver finds the spacedock-local manifest. All other packages pass; no final timeouts or data-race reports. See [normal](artifacts/implementation/final-normal.log) and [race](artifacts/implementation/final-race.log).
+- DONE: Preserve and resolve the earlier verification uncertainty without changing unrelated code.
+  Earlier cumulative package timeouts and four 250ms quiet-budget failures are retained; every affected check passed serial isolation, then final reserved-lane suites had no recurrence. Formatting and whitespace checks are clean.
+- SKIPPED: Perform independent validation or publish code.
+  FO explicitly owns the next independent validation dispatch and later stack delivery; implementation performs neither. Only the path-scoped state report/evidence is published.
+
+### Summary
+
+Workflow-declared same-stage revision now completes without invented reviewer or round machinery, while declared obligations and frozen gate authority remain enforced. The approved targeted-proof registry policy keeps all six controls mandatory for task acceptance without expanding normal CI; the committed candidate is ready for independent validation with the sole known local resolver baseline documented.

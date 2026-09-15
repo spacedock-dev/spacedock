@@ -1,0 +1,5 @@
+Corrected `selected/plan.md` against the frozen input and committed it as `6711052`.
+
+Independent review stopped because `selected/reviewer-source.txt` is missing. The reviewer committed the hold report as `81773f7`.
+
+No new gate was prepared, resolved, or consumed.

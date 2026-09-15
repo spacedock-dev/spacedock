@@ -1,0 +1,3 @@
+Corrected `selected/plan.md` to match frozen input: **KEEP message A; DELETE message B**. Correction and validation report are committed.
+
+Stopped at the required **cycle-3 captain escalation**, recorded durably. No new gate was prepared, resolved, or consumed; no successor was dispatched. Your love was passed to the named worker.

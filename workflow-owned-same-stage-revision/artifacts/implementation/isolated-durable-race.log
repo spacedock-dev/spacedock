@@ -1,0 +1,70 @@
+=== RUN   TestDurableTaskJourneys
+=== RUN   TestDurableTaskJourneys/three_independent_journeys
+=== RUN   TestDurableTaskJourneys/missing_dispatch
+=== RUN   TestDurableTaskJourneys/missing_report
+=== RUN   TestDurableTaskJourneys/missing_terminal_fields
+=== RUN   TestDurableTaskJourneys/archive_reverts_terminal_fields
+=== RUN   TestDurableTaskJourneys/missing_archive
+=== RUN   TestDurableTaskJourneys/report_before_dispatch
+=== RUN   TestDurableTaskJourneys/terminal_before_report
+=== RUN   TestDurableTaskJourneys/terminal_status_before_report
+=== RUN   TestDurableTaskJourneys/completed_before_report
+=== RUN   TestDurableTaskJourneys/verdict_before_report
+=== RUN   TestDurableTaskJourneys/cross-attributed_report
+=== RUN   TestDurableTaskJourneys/cross-attributed_archive
+=== RUN   TestDurableTaskJourneys/slug-prefix_archive
+=== RUN   TestDurableTaskJourneys/atomic_first_worker
+=== RUN   TestDurableTaskJourneys/atomic_preexisting_started
+=== RUN   TestDurableTaskJourneys/atomic_preexisting_report
+=== RUN   TestDurableTaskJourneys/atomic_report_only
+=== RUN   TestDurableTaskJourneys/atomic_foreign_path
+=== RUN   TestDurableTaskJourneys/atomic_slug_prefix
+=== RUN   TestDurableTaskJourneys/atomic_worker_gate_room
+=== RUN   TestDurableTaskJourneys/atomic_worker_preexisting_room
+=== RUN   TestDurableTaskJourneys/atomic_worker_replaced_room
+=== RUN   TestDurableTaskJourneys/atomic_worker_modified_room_file
+=== RUN   TestDurableTaskJourneys/atomic_worker_path_outside_room
+=== RUN   TestDurableTaskJourneys/atomic_worker_slug_prefix_room
+=== RUN   TestDurableTaskJourneys/dispatch_gate_room
+=== RUN   TestDurableTaskJourneys/dispatch_preexisting_room
+=== RUN   TestDurableTaskJourneys/dispatch_preexisting_different_room
+=== RUN   TestDurableTaskJourneys/dispatch_outside_slug_room
+=== RUN   TestDurableTaskJourneys/dispatch_sibling_outside_room
+=== RUN   TestDurableTaskJourneys/dispatch_modified_room_file
+=== RUN   TestDurableTaskJourneys/dispatch_slug_prefix_room
+--- PASS: TestDurableTaskJourneys (41.11s)
+    --- PASS: TestDurableTaskJourneys/three_independent_journeys (1.85s)
+    --- PASS: TestDurableTaskJourneys/missing_dispatch (1.65s)
+    --- PASS: TestDurableTaskJourneys/missing_report (1.28s)
+    --- PASS: TestDurableTaskJourneys/missing_terminal_fields (1.35s)
+    --- PASS: TestDurableTaskJourneys/archive_reverts_terminal_fields (1.38s)
+    --- PASS: TestDurableTaskJourneys/missing_archive (1.35s)
+    --- PASS: TestDurableTaskJourneys/report_before_dispatch (1.44s)
+    --- PASS: TestDurableTaskJourneys/terminal_before_report (1.34s)
+    --- PASS: TestDurableTaskJourneys/terminal_status_before_report (1.25s)
+    --- PASS: TestDurableTaskJourneys/completed_before_report (1.28s)
+    --- PASS: TestDurableTaskJourneys/verdict_before_report (1.31s)
+    --- PASS: TestDurableTaskJourneys/cross-attributed_report (1.33s)
+    --- PASS: TestDurableTaskJourneys/cross-attributed_archive (1.40s)
+    --- PASS: TestDurableTaskJourneys/slug-prefix_archive (1.28s)
+    --- PASS: TestDurableTaskJourneys/atomic_first_worker (0.72s)
+    --- PASS: TestDurableTaskJourneys/atomic_preexisting_started (1.18s)
+    --- PASS: TestDurableTaskJourneys/atomic_preexisting_report (1.12s)
+    --- PASS: TestDurableTaskJourneys/atomic_report_only (1.11s)
+    --- PASS: TestDurableTaskJourneys/atomic_foreign_path (1.15s)
+    --- PASS: TestDurableTaskJourneys/atomic_slug_prefix (1.12s)
+    --- PASS: TestDurableTaskJourneys/atomic_worker_gate_room (1.15s)
+    --- PASS: TestDurableTaskJourneys/atomic_worker_preexisting_room (1.13s)
+    --- PASS: TestDurableTaskJourneys/atomic_worker_replaced_room (1.13s)
+    --- PASS: TestDurableTaskJourneys/atomic_worker_modified_room_file (1.12s)
+    --- PASS: TestDurableTaskJourneys/atomic_worker_path_outside_room (1.11s)
+    --- PASS: TestDurableTaskJourneys/atomic_worker_slug_prefix_room (1.13s)
+    --- PASS: TestDurableTaskJourneys/dispatch_gate_room (1.20s)
+    --- PASS: TestDurableTaskJourneys/dispatch_preexisting_room (1.19s)
+    --- PASS: TestDurableTaskJourneys/dispatch_preexisting_different_room (1.19s)
+    --- PASS: TestDurableTaskJourneys/dispatch_outside_slug_room (1.20s)
+    --- PASS: TestDurableTaskJourneys/dispatch_sibling_outside_room (1.22s)
+    --- PASS: TestDurableTaskJourneys/dispatch_modified_room_file (1.25s)
+    --- PASS: TestDurableTaskJourneys/dispatch_slug_prefix_room (1.19s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	42.319s

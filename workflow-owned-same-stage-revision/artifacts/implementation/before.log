@@ -1,0 +1,19 @@
+=== RUN   TestLiveCommonSameStageRevision
+=== RUN   TestLiveCommonSameStageRevision/plain
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-before-live/codex-shared-scenarios/self-feedback/plain/rejection-topology.tsv:
+        branch	reuse
+        0	129	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	165	done	validation	spacedock_ensign_recorded_gate_task_validation
+    shared_live_runner_test.go:213: FAIL /self-feedback/plain owner= observed=[self-feedback-obligations]
+        Findings:
+          self-feedback-obligations: attempt count: want 2, got [{gate:recorded-gate-task:validation validation [{gate-attempt:recorded-gate-task-validation-1 {briefing:recorded-gate-task:validation:attempt-1:revision-1 sha256:fcd3a19e563528dd9309ae82fa7fb9d5af108dca905e586db21937e8ff22c455  @review/validation/briefing-1} <nil> 0x754bc9d52630 <nil>}]}]
+        Final message:
+        Corrected and committed `selected/plan.md`: `KEEP message A; DELETE message B`. Worker verification: 2 done, 0 skipped, 0 failed.
+        
+        Stopped at an unmet prerequisite: the workflow declares no canonical correction round or review log, but [feedback-rejection-flow](/private/tmp/same-stage-before-live/codex-shared-scenarios/_codex-home/codex-home-3637388649/plugins/cache/spacedock-local/spacedock/0.28.0-pre3/skills/feedback-rejection-flow/SKILL.md) requires “Record this round” before reviewer re-run. No new gate was prepared, resolved, or consumed.
+        Artifacts: /tmp/same-stage-before-live/codex-shared-scenarios/self-feedback/plain
+--- FAIL: TestLiveCommonSameStageRevision (163.69s)
+    --- FAIL: TestLiveCommonSameStageRevision/plain (163.69s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	163.866s
+FAIL

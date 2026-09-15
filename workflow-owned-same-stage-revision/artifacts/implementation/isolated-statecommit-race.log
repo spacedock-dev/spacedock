@@ -1,0 +1,10 @@
+=== RUN   TestStateCommitRefusesDirtyArchivedEntityBeforePublication
+=== RUN   TestStateCommitRefusesDirtyArchivedEntityBeforePublication/staged
+=== RUN   TestStateCommitRefusesDirtyArchivedEntityBeforePublication/unstaged
+=== RUN   TestStateCommitRefusesDirtyArchivedEntityBeforePublication/untracked
+--- PASS: TestStateCommitRefusesDirtyArchivedEntityBeforePublication (4.62s)
+    --- PASS: TestStateCommitRefusesDirtyArchivedEntityBeforePublication/staged (1.52s)
+    --- PASS: TestStateCommitRefusesDirtyArchivedEntityBeforePublication/unstaged (1.52s)
+    --- PASS: TestStateCommitRefusesDirtyArchivedEntityBeforePublication/untracked (1.58s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/cli	5.897s

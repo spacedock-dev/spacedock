@@ -1,0 +1,6 @@
+--- FAIL: TestSameStageSelectedPlanRejectsPrematureGate (0.61s)
+    claude_runtime_helpers_test.go:849: selected git-root://state/c2ad66c0d4b9d42ccd682e8c7981197bc8f57db5/recorded-gate-task/selected/plan.md: <nil>
+    claude_runtime_helpers_test.go:849: selected git-root://state/dc53d45664341b7cda8af50b85030c12b0ebb868/unrelated.md: <nil>
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.928s
+FAIL

@@ -1,0 +1,6 @@
+=== RUN   TestCodexResolveManifestAgainstInstalledHost
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (0.59s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.762s
+FAIL

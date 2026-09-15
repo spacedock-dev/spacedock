@@ -1,0 +1,70 @@
+=== RUN   TestLiveCommonRejectionFlow
+=== PAUSE TestLiveCommonRejectionFlow
+=== RUN   TestLiveCommonSameStageRevision
+=== RUN   TestLiveCommonSameStageRevision/review-required
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-controls-live/codex-shared-scenarios/self-feedback/review-required/rejection-topology.tsv:
+        branch	reuse
+        0	148	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	187	done	validation	spacedock_ensign_recorded_gate_task_validation
+=== RUN   TestLiveCommonSameStageRevision/separate-review-required
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-controls-live/codex-shared-scenarios/self-feedback/separate-review-required/rejection-topology.tsv:
+        branch	reuse
+        0	131	spawn	implementation	spacedock_ensign_recorded_gate_task_implementation
+        1	159	done	implementation	spacedock_ensign_recorded_gate_task_implementation
+        2	178	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        3	195	done	validation	spacedock_ensign_recorded_gate_task_validation
+=== RUN   TestLiveCommonSameStageRevision/round-required
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-controls-live/codex-shared-scenarios/self-feedback/round-required/rejection-topology.tsv:
+        branch	reuse
+        0	132	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	160	done	validation	spacedock_ensign_recorded_gate_task_validation
+    shared_live_runner_test.go:213: open /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLiveCommonSameStageRevisionround-required436944996/002/.spacedock-state/recorded-gate-task/review/validation/round-1/briefing.review.jsonl: no such file or directory
+=== RUN   TestLiveCommonSameStageRevision/round-missing
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-controls-live/codex-shared-scenarios/self-feedback/round-missing/rejection-topology.tsv:
+        branch	reuse
+        0	115	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	146	done	validation	spacedock_ensign_recorded_gate_task_validation
+    shared_live_runner_test.go:213: FAIL /self-feedback/round-missing owner= observed=[self-feedback-obligations]
+        Findings:
+          self-feedback-obligations: undeclared projection created
+        Final message:
+        Corrected and committed `selected/plan.md`; the worker verified it exactly matches the frozen input.
+        
+        Stopped at an unmet prerequisite: the round recorder refused with `entity has no identity for correction round`. The required reviewer log is also missing.
+        
+        No new gate was prepared, resolved, or consumed.
+        Artifacts: /tmp/same-stage-controls-live/codex-shared-scenarios/self-feedback/round-missing
+=== RUN   TestLiveCommonSameStageRevision/cycle-limit
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-controls-live/codex-shared-scenarios/self-feedback/cycle-limit/rejection-topology.tsv:
+        branch	reuse
+        0	133	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	190	done	validation	spacedock_ensign_recorded_gate_task_validation
+    shared_live_runner_test.go:213: FAIL /self-feedback/cycle-limit owner= observed=[self-feedback-obligations]
+        Findings:
+          self-feedback-obligations: undeclared projection created
+        Final message:
+        Corrected `selected/plan.md` to match frozen input: **KEEP message A; DELETE message B**. Correction and validation report are committed.
+        
+        Stopped at the required **cycle-3 captain escalation**, recorded durably. No new gate was prepared, resolved, or consumed; no successor was dispatched. Your love was passed to the named worker.
+        Artifacts: /tmp/same-stage-controls-live/codex-shared-scenarios/self-feedback/cycle-limit
+--- FAIL: TestLiveCommonSameStageRevision (1102.80s)
+    --- PASS: TestLiveCommonSameStageRevision/review-required (171.26s)
+    --- PASS: TestLiveCommonSameStageRevision/separate-review-required (296.04s)
+    --- FAIL: TestLiveCommonSameStageRevision/round-required (174.93s)
+    --- FAIL: TestLiveCommonSameStageRevision/round-missing (200.39s)
+    --- FAIL: TestLiveCommonSameStageRevision/cycle-limit (260.17s)
+=== CONT  TestLiveCommonRejectionFlow
+    shared_live_runner_test.go:114: rejection topology digest /tmp/same-stage-controls-live/codex-shared-scenarios/rejection-flow/rejection-topology.tsv:
+        branch	reuse
+        0	188	spawn	implementation	spacedock_ensign_rejection_task_implementation
+        1	227	done	implementation	spacedock_ensign_rejection_task_implementation
+        2	243	spawn	validation	spacedock_ensign_rejection_task_validation
+        3	276	done	validation	spacedock_ensign_rejection_task_validation
+        4	307	reuse	implementation	spacedock_ensign_rejection_task_implementation
+        5	333	done	implementation	spacedock_ensign_rejection_task_implementation
+        6	354	reuse	validation	spacedock_ensign_rejection_task_validation
+        7	380	done	validation	spacedock_ensign_rejection_task_validation
+--- PASS: TestLiveCommonRejectionFlow (529.73s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	1632.850s
+FAIL

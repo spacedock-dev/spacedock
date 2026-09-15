@@ -1,0 +1,10 @@
+=== RUN   TestLiveCommonSameStageRevision
+=== RUN   TestLiveCommonSameStageRevision/plain
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-after-live/codex-shared-scenarios/self-feedback/plain/rejection-topology.tsv:
+        branch	reuse
+        0	127	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	158	done	validation	spacedock_ensign_recorded_gate_task_validation
+--- PASS: TestLiveCommonSameStageRevision (184.27s)
+    --- PASS: TestLiveCommonSameStageRevision/plain (184.27s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	184.580s

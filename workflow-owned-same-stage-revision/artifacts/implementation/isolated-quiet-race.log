@@ -1,0 +1,10 @@
+=== RUN   TestCodexProcessActivityResetsQuietBudget
+--- PASS: TestCodexProcessActivityResetsQuietBudget (1.70s)
+=== RUN   TestCodexProcessQuietTimeoutPreservesFaultEvidence
+--- PASS: TestCodexProcessQuietTimeoutPreservesFaultEvidence (0.70s)
+=== RUN   TestCodexProcessRecognizesTerminalTurnBeforeOSExit
+--- PASS: TestCodexProcessRecognizesTerminalTurnBeforeOSExit (0.29s)
+=== RUN   TestCodexProcessRequiresFinalMessageForTerminalTurn
+--- PASS: TestCodexProcessRequiresFinalMessageForTerminalTurn (0.30s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	4.304s

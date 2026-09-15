@@ -1,0 +1,4 @@
+=== RUN   TestFreshBoxInstallSucceeds
+--- PASS: TestFreshBoxInstallSucceeds (1.84s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/cli	2.141s

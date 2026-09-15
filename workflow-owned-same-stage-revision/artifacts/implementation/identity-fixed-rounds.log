@@ -1,0 +1,33 @@
+=== RUN   TestLiveCommonSameStageRevision
+=== RUN   TestLiveCommonSameStageRevision/round-required
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-rounds-fixed-live/codex-shared-scenarios/self-feedback/round-required/rejection-topology.tsv:
+        branch	reuse
+        0	144	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	168	done	validation	spacedock_ensign_recorded_gate_task_validation
+    shared_live_runner_test.go:213: FAIL /self-feedback/round-required owner= observed=[self-feedback-obligations]
+        Findings:
+          self-feedback-obligations: fresh gate omitted the intended plan artifact
+        Final message:
+        ### Gate review: Recorded Gate Task — validation
+        
+        Recommend **reject**: AC-1, “Successor dispatch requires consumed approval,” lacks cited evidence.
+        
+        - Plan corrected to match frozen input; worker verification passed.
+        - Correction and report committed.
+        - Canonical round `validation/1` recorded with all four entries.
+        
+        Reviewed snapshot: `briefing:recorded-gate-task:validation:attempt-2:revision-1`, digest `a2d0dbc68e0be`.
+        
+        Decision pending: approve to authorize handoff, or revise to address the evidence gap. The new gate remains open, unresolved, and unconsumed.
+        Artifacts: /tmp/same-stage-rounds-fixed-live/codex-shared-scenarios/self-feedback/round-required
+=== RUN   TestLiveCommonSameStageRevision/round-missing
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-rounds-fixed-live/codex-shared-scenarios/self-feedback/round-missing/rejection-topology.tsv:
+        branch	reuse
+        0	144	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	192	done	validation	spacedock_ensign_recorded_gate_task_validation
+--- FAIL: TestLiveCommonSameStageRevision (431.87s)
+    --- FAIL: TestLiveCommonSameStageRevision/round-required (230.59s)
+    --- PASS: TestLiveCommonSameStageRevision/round-missing (201.28s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	432.172s
+FAIL

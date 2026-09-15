@@ -1,0 +1,11 @@
+### Gate review: Recorded Gate Task — validation
+
+Recommend **reject**: the correction passed, but AC-1 lacks cited evidence that successor dispatch requires consumed approval.
+
+- Plan now matches frozen input: `KEEP message A; DELETE message B`.
+- Correction and validation report committed; both checklist items completed.
+- Reviewed snapshot: attempt 2, revision 1; digest `3073dc5e4c64`.
+
+Decision pending: approve to authorize handoff, or revise to address missing evidence.
+
+The new gate is **open and unconsumed**. Stopped after this correction cycle.

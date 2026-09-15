@@ -1,0 +1,4 @@
+=== RUN   TestDurableKeepMovingRequiresOverlappingJourneys
+--- PASS: TestDurableKeepMovingRequiresOverlappingJourneys (7.32s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	7.565s

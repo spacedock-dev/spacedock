@@ -1,0 +1,5 @@
+Corrected and committed `selected/plan.md`; the worker verified it exactly matches the frozen input.
+
+Stopped at an unmet prerequisite: the round recorder refused with `entity has no identity for correction round`. The required reviewer log is also missing.
+
+No new gate was prepared, resolved, or consumed.

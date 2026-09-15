@@ -1,0 +1,9 @@
+branch	reuse
+0	188	spawn	implementation	spacedock_ensign_rejection_task_implementation
+1	227	done	implementation	spacedock_ensign_rejection_task_implementation
+2	243	spawn	validation	spacedock_ensign_rejection_task_validation
+3	276	done	validation	spacedock_ensign_rejection_task_validation
+4	307	reuse	implementation	spacedock_ensign_rejection_task_implementation
+5	333	done	implementation	spacedock_ensign_rejection_task_implementation
+6	354	reuse	validation	spacedock_ensign_rejection_task_validation
+7	380	done	validation	spacedock_ensign_rejection_task_validation

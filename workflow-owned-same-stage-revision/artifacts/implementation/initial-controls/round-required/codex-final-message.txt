@@ -1,0 +1,5 @@
+Correction committed and verified: `selected/plan.md` matches the frozen input. Report: 2 done, 0 skipped, 0 failed.
+
+Stopped at the required round recording: `entity has no identity for correction round`.
+
+No new gate was prepared, resolved, or consumed.

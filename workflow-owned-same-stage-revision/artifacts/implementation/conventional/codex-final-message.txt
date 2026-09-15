@@ -1,0 +1,13 @@
+### Gate review: Rejection Task — validation
+
+**Recommend approve:** the prescribed correction passed independent re-validation.
+
+- Validation 1: **REJECTED** — fix marker absent.
+- Validation 2: **PASSED** — exact marker present.
+- Correction evidence recorded with all four review-log entries.
+
+Snapshot: `briefing:rejection-task:validation:attempt-1:revision-1`, digest `f9bdcaaa4f08`.
+
+The fresh gate is **open and unresolved**; the task remains in validation. Approval would authorize terminal completion. Stopped here as requested.
+
+The fixture has no Acceptance criteria section, so its AC scan returned an error; the evidence above uses its declared validation requirement.

@@ -1,0 +1,11 @@
+### Gate review: Recorded Gate Task — validation
+
+Recommend **reject**: AC-1, “Successor dispatch requires consumed approval,” lacks cited evidence.
+
+- Plan corrected to match frozen input; worker verification passed.
+- Correction and report committed.
+- Canonical round `validation/1` recorded with all four entries.
+
+Reviewed snapshot: `briefing:recorded-gate-task:validation:attempt-2:revision-1`, digest `a2d0dbc68e0be`.
+
+Decision pending: approve to authorize handoff, or revise to address the evidence gap. The new gate remains open, unresolved, and unconsumed.

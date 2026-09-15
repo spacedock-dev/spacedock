@@ -1,0 +1,3 @@
+Corrected and committed `selected/plan.md`: **KEEP message A; DELETE message B**. Worker verification confirmed byte equality with frozen input: **2 done, 0 skipped, 0 failed**.
+
+Stopped at the unmet prerequisite: `selected/reviewer-source.txt` is missing, so independent review remains pending. No new gate was prepared or consumed; no successor was dispatched.

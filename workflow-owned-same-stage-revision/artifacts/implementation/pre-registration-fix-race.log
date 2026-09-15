@@ -1,0 +1,29 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	2.148s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	1.673s
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (1.39s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	181.293s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	5.038s
+--- FAIL: TestRuntimeLiveRegistryReconciliation (0.47s)
+    live_registry_reconciliation_test.go:435: TestLiveCommonSameStageRevision lacks adjacent live-journey annotation
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/contractlint	4.335s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	70.211s
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	261.340s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	66.610s
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	9.119s
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	3.567s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	1.824s
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	7.079s
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	3.007s
+ok  	github.com/spacedock-dev/spacedock/internal/release	35.818s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	1.388s
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	1.364s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	9.456s
+ok  	github.com/spacedock-dev/spacedock/internal/status	81.695s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	2.465s
+ok  	github.com/spacedock-dev/spacedock/skills/integration	10.082s
+FAIL
