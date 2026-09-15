@@ -2,7 +2,7 @@
 title: "Recognize successful rejection-round recording under nested shell quoting"
 status: ideation
 source: "Captain filing request; pre3 and 0.27.3 live release failure triage"
-started: ""
+started: 2026-09-15T04:02:58Z
 completed: ""
 verdict: ""
 score: "0.9"
