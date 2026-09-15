@@ -716,7 +716,14 @@ func writeKeepMovingWorkflow(t *testing.T, root string) string {
 	writeFile(t, filepath.Join(root, kmReadyOne+".md"), keepMovingReadyEntity(kmReadyOne, "Ready One"))
 	writeFile(t, filepath.Join(root, kmReadyTwo+".md"), keepMovingReadyEntity(kmReadyTwo, "Ready Two"))
 	writeFile(t, filepath.Join(root, kmQuestioned+".md"), keepMovingQuestionedEntity())
+	artifact := filepath.Join(root, "gate-review.md")
+	writeFile(t, artifact, "# Review\n\nReady to proceed to implementation.\n")
 	gitInit(t, root)
+	binary := buildRecordedGateBinary(t)
+	mustRecordedGate(t, binary, root, "gate", "prepare", kmApprovedGate,
+		"--question", "Advance to implementation?", "--artifact", artifact,
+		"--summary", "Ready to proceed to implementation.", "--workflow-dir", root)
+	mustRecordedGate(t, binary, root, "state", "commit", kmApprovedGate, "--workflow-dir", root)
 	return root
 }
 
