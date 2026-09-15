@@ -11,6 +11,17 @@ issue: spacedock-dev/spacedock#689
 pr:
 mod-block:
 id: 3tzfv0rrctdb066xt942zjbd
+gates:
+    version: 1
+    records:
+        - id: gate:3tzfv0rrctdb066xt942zjbd:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:3tzfv0rrctdb066xt942zjbd-ideation-1
+              briefing:
+                id: briefing:3tzfv0rrctdb066xt942zjbd:ideation:attempt-1:revision-1
+                digest: sha256:fb08cb93e8003d48d0b6521799735e48cba11cb33e6b547559d938e83ade3e8d
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Prevent false completion and silent loss of workflow state. One task covers GitHub issues #689, #790 and #630 with separate behavioral acceptance criteria.

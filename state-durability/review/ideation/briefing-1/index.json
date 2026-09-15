@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3tzfv0rrctdb066xt942zjbd:ideation:attempt-1:revision-1",
+  "question": "Approve the combined state durability implementation for issues 689, 790 and 630?",
+  "artifacts": [
+    {
+      "id": "artifact:3tzfv0rrctdb066xt942zjbd:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/cb85df5c2a9222c1590ccf69906454599ef50ef9/state-durability/index.md",
+      "rev": "sha256:317e052e1a97b6e157fb57c7d7a849ec242141a7be6181a6f12b77264cd2b1e4",
+      "mediaType": "text/markdown",
+      "summary": "Captain binding resolution binding-1789513304916529000 approves one combined task, estimate +560 net/15 files cap +800/18; reuse existing transaction owners and preserve rebase recovery, sentinel checks and truthful publication."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:3tzfv0rrctdb066xt942zjbd:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
