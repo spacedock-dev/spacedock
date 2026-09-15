@@ -55,6 +55,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:82de96hqv8cfwxqagj6ah1k6:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:82de96hqv8cfwxqagj6ah1k6-validation-1
+              briefing:
+                id: briefing:82de96hqv8cfwxqagj6ah1k6:validation:attempt-1:revision-1
+                digest: sha256:c6f29d9099e118e60210d7c14b13e1c7d8460a111557332fee3c63624f358a39
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
