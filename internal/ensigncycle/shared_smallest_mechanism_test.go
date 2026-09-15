@@ -3,6 +3,8 @@ package ensigncycle
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -30,56 +32,40 @@ func ssmCommissioned() []string { return []string{ssmCommissionedA, ssmCommissio
 // but alongside the in-house Edit, never a commissioned dispatch) is not miscounted.
 var ssmGateJustificationRe = regexp.MustCompile(`(?i)smallest[ -]sufficient|cheaper rung|why the cheaper`)
 
-// ssmPRCreateRe / ssmGitCommitRe are the publication-rung trace markers: a `gh pr
-// create` is the climb the convention-direct doc must refuse; a `git commit` is the
-// direct landing it takes instead.
+// ssmPRCreateRe marks the publication climb the convention-direct doc must refuse.
 var ssmPRCreateRe = regexp.MustCompile(`gh\s+pr\s+create`)
-var ssmGitCommitRe = regexp.MustCompile(`git(\s+-C\s+\S+)?\s+commit`)
 
-// ssmCodexEditVerbRe distinguishes a command that EDITS a file (apply_patch or a shell
-// write) from one that merely NAMES it (`cat`/`ls`), so reading a file is not mistaken
-// for editing it on the Codex command stream.
+// ssmCodexEditVerbRe remains a conservative command warning for the FO write guard;
+// it is not positive proof of a smallest-mechanism edit.
 var ssmCodexEditVerbRe = regexp.MustCompile(`apply_patch|applypatch|>>?\s|tee\b|sed -i`)
 
 // mechanismTrace is the host-neutral view of the FO's tool-call trace the grader
 // consumes. Each host extractor fills it from its own transcript dialect.
 type mechanismTrace struct {
-	editedInHouse      map[string]bool // deterministic edit files the FO applied itself
 	dispatchedForEdit  bool            // a worker was dispatched to do the deterministic edits
 	prOpened           bool            // gh pr create for the convention-direct doc
-	committedDirectly  bool            // a direct git commit landed the doc
 	engaged            map[string]bool // commissioned entities the FO dispatched (engage fired)
 	justifiedPerEntity map[string]bool // commissioned dispatches wrapped in a gate justification
 }
 
 func newMechanismTrace() mechanismTrace {
 	return mechanismTrace{
-		editedInHouse:      map[string]bool{},
 		engaged:            map[string]bool{},
 		justifiedPerEntity: map[string]bool{},
 	}
 }
 
-// gradeSmallestSufficientMechanism is host-neutral: it grades the FO's trace in BOTH
-// directions of the ladder. Over-orchestration is refused when the deterministic edits
-// are FO-authored (no worker dispatch for them) and the strategy doc is a direct commit
-// (no PR). The commissioned engage segment is the scope guard: every ready entity must
+// gradeSmallestSufficientMechanism grades delegation and publication traces. Direct
+// file outcomes and the strategy commit are checked separately at the phase boundary.
+// The commissioned engage segment is the scope guard: every ready entity must
 // be dispatched (the gate must not suppress a standing dispatch) AND none may carry a
 // per-entity gate justification (the gate must stay silent through engage).
 func gradeSmallestSufficientMechanism(tr mechanismTrace, edits, commissioned []string) error {
-	for _, f := range edits {
-		if !tr.editedInHouse[f] {
-			return fmt.Errorf("the FO did not apply the deterministic edit to %q in-house — the edit whose content it already held was not made with an in-house Edit", f)
-		}
-	}
 	if tr.dispatchedForEdit {
 		return fmt.Errorf("the FO dispatched a worker to apply the deterministic edits it already held — over-orchestration above the in-house-Edit rung")
 	}
 	if tr.prOpened {
 		return fmt.Errorf("the FO opened a PR for the convention-direct strategy doc — a roadmap doc commits directly, never via a PR")
-	}
-	if !tr.committedDirectly {
-		return fmt.Errorf("the FO did not land the strategy doc with a direct git commit")
 	}
 	for _, e := range commissioned {
 		if !tr.engaged[e] {
@@ -138,18 +124,9 @@ func claudeMechanismTrace(stream string, edits, commissioned []string) mechanism
 				continue
 			}
 			switch block.Name {
-			case "Edit", "Write":
-				for _, f := range edits {
-					if strings.Contains(block.Input.FilePath, f) {
-						tr.editedInHouse[f] = true
-					}
-				}
 			case "Bash":
 				if ssmPRCreateRe.MatchString(block.Input.Command) {
 					tr.prOpened = true
-				}
-				if ssmGitCommitRe.MatchString(block.Input.Command) {
-					tr.committedDirectly = true
 				}
 			case "Agent", "Task":
 				target := block.Input.Prompt + "\n" + block.Input.Description
@@ -175,7 +152,9 @@ func claudeMechanismTrace(stream string, edits, commissioned []string) mechanism
 // command_execution — so the edit evidence is a structured item type, read directly
 // rather than regexed out of a command string.
 type codexFileChangeItem struct {
+	Type string `json:"type"`
 	Item struct {
+		Status  string `json:"status"`
 		Type    string `json:"type"`
 		Changes []struct {
 			Path string `json:"path"`
@@ -206,8 +185,8 @@ func ssmAdvancesToDone(command string) bool {
 
 // codexMechanismTrace extracts the trace from a `codex exec --json` transcript, reading
 // STRUCTURED item types wherever it can (the codex event shapes drift between releases):
-// in-house edits from `file_change` items (0.142.5) OR an apply_patch command_execution
-// (older/heredoc); the engage surface from a `status --set … status=done` advance (the real
+// in-house edits from `file_change` items (shell edits additionally require the
+// repository-backed parent commit proof below); the engage surface from a `status --set … status=done` advance (the real
 // standing-dispatch surface) OR a spawn_agent whose prompt names the entity (multi-agent
 // codex); over-orchestration from a spawn_agent naming an edit file; and the per-entity gate
 // justification from an `agent_message` (the FO's own narration) OR a spawn_agent prompt
@@ -225,30 +204,10 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 			if ssmPRCreateRe.MatchString(c) {
 				tr.prOpened = true
 			}
-			if ssmGitCommitRe.MatchString(c) {
-				tr.committedDirectly = true
-			}
-			if ssmCodexEditVerbRe.MatchString(c) {
-				for _, f := range edits {
-					if strings.Contains(c, f) {
-						tr.editedInHouse[f] = true
-					}
-				}
-			}
 			if ssmAdvancesToDone(c) {
 				for _, e := range commissioned {
 					if strings.Contains(c, e) {
 						tr.engaged[e] = true
-					}
-				}
-			}
-		}
-		var fc codexFileChangeItem
-		if err := json.Unmarshal([]byte(line), &fc); err == nil && fc.Item.Type == "file_change" {
-			for _, ch := range fc.Item.Changes {
-				for _, f := range edits {
-					if strings.Contains(ch.Path, f) {
-						tr.editedInHouse[f] = true
 					}
 				}
 			}
@@ -310,4 +269,55 @@ func assertClaudeSmallestSufficientMechanism(stream string, edits, commissioned 
 // host-neutral ladder the Claude assertion feeds.
 func assertCodexSmallestSufficientMechanism(jsonl string, edits, commissioned []string) error {
 	return gradeSmallestSufficientMechanism(codexMechanismTrace(jsonl, edits, commissioned), edits, commissioned)
+}
+
+// Direct work is graded from the known files, without attributing editing tools.
+func assertSmallestMechanismFiles(root string) error {
+	for file, want := range map[string]string{
+		ssmEditFileA:   "# Ladder Note Alpha\n\nStatus: RESOLVED\n",
+		ssmEditFileB:   "# Ladder Note Beta\n\nStatus: RESOLVED\n",
+		ssmStrategyDoc: "# Roadmap Strategy\n",
+	} {
+		got, err := os.ReadFile(filepath.Join(root, file))
+		if err != nil || string(got) != want {
+			return fmt.Errorf("%s does not contain the expected result (read error: %v)", file, err)
+		}
+	}
+	return nil
+}
+
+func assertSmallestMechanismDirect(root, native string) error {
+	if smallestMechanismHasWorker(native) {
+		return fmt.Errorf("direct work spawned a worker")
+	}
+	if err := assertSmallestMechanismFiles(root); err != nil {
+		return err
+	}
+	committed, err := gitOutput(root, "show", "HEAD:"+ssmStrategyDoc)
+	if err != nil || committed != "# Roadmap Strategy\n" {
+		return fmt.Errorf("strategy document was not committed directly: %v", err)
+	}
+	return nil
+}
+
+func smallestMechanismHasWorker(native string) bool {
+	for _, line := range strings.Split(native, "\n") {
+		var event struct {
+			Payload struct{ Type, Name string }
+			Message struct{ Content []struct{ Type, Name string } }
+		}
+		if json.Unmarshal([]byte(line), &event) != nil {
+			continue
+		}
+		p := event.Payload
+		if p.Type == "function_call" && (p.Name == "spawn_agent" || strings.HasSuffix(p.Name, ".spawn_agent")) {
+			return true
+		}
+		for _, block := range event.Message.Content {
+			if block.Type == "tool_use" && (block.Name == "Agent" || block.Name == "Task") || block.Type == "toolCall" && block.Name == "subagent" {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/gates"
+	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
 // Shared scenario fixtures and prompts. These are host-neutral: each writes a
@@ -42,13 +43,24 @@ func writePreGateWorkflow(t *testing.T, root string) recordedGateFixture {
 	gitCommitPathScoped(t, fixture.root, "README.md", "queue coherent workflow definition")
 	writeFile(t, fixture.entity, strings.Replace(strings.Split(recordedGateEntity(), "\n## Stage Report: validation\n")[0]+"\n", "status: validation", "status: queued", 1))
 	writeFile(t, fixture.references[0], "# Entity snapshot\n\nThe retained package is ready for implementation.\n")
-	git(t, fixture.stateRoot, "add", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md")
-	git(t, fixture.stateRoot, "commit", "-q", "-m", "queue coherent implementation", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md")
+	if err := os.Remove(fixture.gateReview); err != nil {
+		t.Fatal(err)
+	}
+	git(t, fixture.stateRoot, "add", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md", "recorded-gate-task/selected/gate-review.md")
+	git(t, fixture.stateRoot, "commit", "-q", "-m", "queue coherent implementation", "--", "recorded-gate-task/index.md", "recorded-gate-task/selected/entity-snapshot.md", "recorded-gate-task/selected/gate-review.md")
 	return fixture
 }
 
 func TestPreGateWorkflowIsStageCoherent(t *testing.T) {
 	fixture := writePreGateWorkflow(t, t.TempDir())
+	if _, err := os.Stat(fixture.gateReview); !os.IsNotExist(err) {
+		t.Fatalf("queued fixture retained completed gate review; stat err=%v", err)
+	}
+	for _, stage := range []string{"implementation", "validation"} {
+		if spans, err := statuspkg.FindSectionSpans([]byte(readFile(t, fixture.entity)), []string{"Stage Report: " + stage}); err == nil || len(spans) != 0 {
+			t.Fatalf("queued entity retained parsed %s stage report: %+v", stage, spans)
+		}
+	}
 	if body := readFile(t, fixture.entity); strings.Contains(body, "\ngates:") || strings.Contains(body, "## Stage Report: implementation") || strings.Contains(body, "## Stage Report: validation") || strings.Contains(readFile(t, fixture.references[0]), "Stage Report is complete") {
 		t.Fatal("queued entity retained selected gate or completed stage report")
 	}
@@ -66,6 +78,14 @@ func TestPreGateWorkflowIsStageCoherent(t *testing.T) {
 }
 func gateReadme() string { return recordedGateReadme() }
 func gateEntity() string { return recordedGateEntity() }
+
+func preGatePrompt(workflowRoot string) string {
+	return fmt.Sprintf("%s\n\n%s\n\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: "+workflowRoot,
+		"Engage only `recorded-gate-task`. Drive its current work through implementation to the human decision boundary and stop there.",
+	)
+}
 
 func gatePrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n\n%s\n\n%s",
@@ -631,20 +651,14 @@ func mergeTriagePrompt(workflowRoot string) string {
 	)
 }
 
-// writeSmallestMechanismWorkflow writes the smallest-sufficient-mechanism fixture: a
-// commissioned workflow with two READY entities to engage via the standing dispatch
-// loop, PLUS two plain deterministic-edit notes (no entity frontmatter, so the engage
-// loop ignores them) whose content the prompt hands the FO verbatim. The run bundles a
-// discretionary ad-hoc task (apply the two known edits in-house; commit a
-// convention-direct strategy doc directly) with commissioned durable journeys.
+// writeSmallestMechanismWorkflow starts with known notes. Commissioned entities
+// are added only after the direct-work outcome has been checked.
 // The writer stays default-tagged for offline controls.
 //
 //spacedock:live-fixture id=mechanism-choice/mixed-authority
 func writeSmallestMechanismWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), smallestMechanismReadme())
-	writeFile(t, filepath.Join(root, ssmCommissionedA+".md"), smallestMechanismReadyEntity(ssmCommissionedA, "Ready One"))
-	writeFile(t, filepath.Join(root, ssmCommissionedB+".md"), smallestMechanismReadyEntity(ssmCommissionedB, "Ready Two"))
 	writeFile(t, filepath.Join(root, ssmEditFileA), ladderNote("Ladder Note Alpha"))
 	writeFile(t, filepath.Join(root, ssmEditFileB), ladderNote("Ladder Note Beta"))
 	gitInit(t, root)
@@ -694,15 +708,22 @@ func ladderNote(title string) string {
 		"Status: PLACEHOLDER (the prompt hands the FO the exact replacement).\n"
 }
 
-func smallestMechanismPrompt(workflowRoot string) string {
-	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s\n%s",
-		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: "+workflowRoot,
-		"Three tasks, in order. (1) In `"+ssmEditFileA+"` and `"+ssmEditFileB+"`, replace the line `Status: PLACEHOLDER (the prompt hands the FO the exact replacement).` with exactly `Status: RESOLVED`. You already have the exact content — apply it directly.",
-		"(2) Create `"+ssmStrategyDoc+"` with a one-line body `# Roadmap Strategy` and commit it directly to this repo. It is convention-direct roadmap prose, not code — do not open a PR.",
-		"(3) Engage this commissioned workflow's ready entities (`"+ssmCommissionedA+"`, `"+ssmCommissionedB+"`) via the standing dispatch loop.",
-		"Do the two edits and the commit yourself in-house — do NOT dispatch a worker or open a PR for them. Your final response must confirm the edits, the direct commit, and that the ready entities were engaged.",
-	)
+func smallestMechanismDirectPrompt(root string) string {
+	return "Use $spacedock:first-officer. Workflow directory: " + root + "\n" +
+		"In ladder-note-alpha.md and ladder-note-beta.md, replace the line `Status: PLACEHOLDER (the prompt hands the FO the exact replacement).` with `Status: RESOLVED`.\n" +
+		"Create roadmap-strategy.md containing the one-line body `# Roadmap Strategy` and commit this roadmap document directly to the repository."
+}
+
+func prepareSmallestMechanismCommissioned(t *testing.T, root string) {
+	writeFile(t, filepath.Join(root, ssmCommissionedA+".md"), smallestMechanismReadyEntity(ssmCommissionedA, "Ready One"))
+	writeFile(t, filepath.Join(root, ssmCommissionedB+".md"), smallestMechanismReadyEntity(ssmCommissionedB, "Ready Two"))
+
+	git(t, root, "add", "--", ssmCommissionedA+".md", ssmCommissionedB+".md")
+	git(t, root, "commit", "-m", "Commission ready work")
+}
+
+func smallestMechanismCommissionedPrompt(root string) string {
+	return "Use $spacedock:first-officer. Workflow directory: " + root + "\nEngage this commissioned workflow's ready entities (ready-one and ready-two) via the standing dispatch loop."
 }
 
 // writeKeepMovingWorkflow writes three independently completable tasks plus one
@@ -716,7 +737,14 @@ func writeKeepMovingWorkflow(t *testing.T, root string) string {
 	writeFile(t, filepath.Join(root, kmReadyOne+".md"), keepMovingReadyEntity(kmReadyOne, "Ready One"))
 	writeFile(t, filepath.Join(root, kmReadyTwo+".md"), keepMovingReadyEntity(kmReadyTwo, "Ready Two"))
 	writeFile(t, filepath.Join(root, kmQuestioned+".md"), keepMovingQuestionedEntity())
+	artifact := filepath.Join(root, "gate-review.md")
+	writeFile(t, artifact, "# Review\n\nReady to proceed to implementation.\n")
 	gitInit(t, root)
+	binary := buildRecordedGateBinary(t)
+	mustRecordedGate(t, binary, root, "gate", "prepare", kmApprovedGate,
+		"--question", "Advance to implementation?", "--artifact", artifact,
+		"--summary", "Ready to proceed to implementation.", "--workflow-dir", root)
+	mustRecordedGate(t, binary, root, "state", "commit", kmApprovedGate, "--workflow-dir", root)
 	return root
 }
 

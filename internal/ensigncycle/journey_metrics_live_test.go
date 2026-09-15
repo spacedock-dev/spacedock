@@ -53,6 +53,32 @@ func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, res
 		t.Fatalf("parse Claude journey metrics for %s: %v", scenario.name, err)
 	}
 	observation := parsed.Observation
+	if len(result.phases) > 0 {
+		// Each launch has independent IDs and terminal usage totals.
+		observation = journeymetrics.Observation{MetricsState: observation.MetricsState, ClaudeCodeVersion: observation.ClaudeCodeVersion, ResolvedModel: observation.ResolvedModel, ToolCallsByName: map[string]int{}, ModelUsage: map[string]journeymetrics.ModelUsage{}}
+		for _, phase := range result.phases {
+			parsed, err := journeymetrics.ParseClaudeJSONL([]byte(phase.stream))
+			if err != nil {
+				t.Fatal(err)
+			}
+			o := parsed.Observation
+			observation.Turns += o.Turns
+			observation.ToolCalls += o.ToolCalls
+			observation.StatusReadCalls += o.StatusReadCalls
+			observation.ScopedReadCalls += o.ScopedReadCalls
+			observation.Tokens = sumPhaseTokens(observation.Tokens, o.Tokens)
+			observation.TotalCostUSD += o.TotalCostUSD
+			for name, count := range o.ToolCallsByName {
+				observation.ToolCallsByName[name] += count
+			}
+			for name, usage := range o.ModelUsage {
+				prior := observation.ModelUsage[name]
+				prior.Tokens = sumPhaseTokens(prior.Tokens, usage.Tokens)
+				prior.CostUSD += usage.CostUSD
+				observation.ModelUsage[name] = prior
+			}
+		}
+	}
 	observation.Duration = result.duration
 	// Fold the dispatched-ensign sub-agent transcripts' --read adoption onto the FO
 	// front-door counts: `status --read` adoption is principally an ensign behavior,
@@ -85,6 +111,13 @@ func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, res
 // did not record a config dir / cwd / session id (e.g. the pty transport), so the
 // fold no-ops to FO-front-door counts.
 func ensignTranscripts(result liveResult) [][]byte {
+	if len(result.phases) > 0 {
+		var transcripts [][]byte
+		for _, phase := range result.phases {
+			transcripts = append(transcripts, ensignTranscripts(phase)...)
+		}
+		return transcripts
+	}
 	if result.configDir == "" || result.cwd == "" {
 		return nil
 	}
@@ -129,7 +162,7 @@ func emitShallowBootWindowMetrics(t *testing.T, stream string, model string) {
 	}
 }
 
-func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result codexScenarioResult) {
+func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result codexScenarioResult, phases ...liveResult) {
 	t.Helper()
 	dir := os.Getenv("SPACEDOCK_JOURNEY_METRICS_DIR")
 	if dir == "" {
@@ -138,6 +171,22 @@ func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, resu
 	characterization, err := journeymetrics.CharacterizeCodexExecJSONL([]byte(result.jsonl))
 	if err != nil {
 		t.Fatalf("characterize Codex journey metrics for %s: %v", scenario.name, err)
+	}
+	if len(phases) > 0 {
+		characterization.ToolCalls = 0
+		characterization.StatusReadCalls = 0
+		characterization.ToolCallsByName = map[string]int{}
+		for _, phase := range phases {
+			part, err := journeymetrics.CharacterizeCodexExecJSONL([]byte(phase.stream))
+			if err != nil {
+				t.Fatal(err)
+			}
+			characterization.ToolCalls += part.ToolCalls
+			characterization.StatusReadCalls += part.StatusReadCalls
+			for name, count := range part.ToolCallsByName {
+				characterization.ToolCallsByName[name] += count
+			}
+		}
 	}
 	record := journeymetrics.CodexCharacterizedRecord(journeymetrics.JourneySpec{
 		ScenarioID: scenario.name,
@@ -184,4 +233,59 @@ func scenarioBehaviorResult(scenario sharedRuntimeScenario) journeymetrics.Behav
 		result.Outcome = &journeymetrics.Outcome{Status: scenario.grade.status, Owner: scenario.gap.owner, FailureCodes: scenario.grade.codes}
 	}
 	return result
+}
+
+// This is an offline metrics control, like the Pi seed above, not a live journey.
+func FuzzSmallestMechanismPhaseMetrics(f *testing.F) {
+	f.Add("phase-metrics")
+	f.Fuzz(checkSmallestMechanismPhaseMetrics)
+}
+
+func checkSmallestMechanismPhaseMetrics(t *testing.T, scenarioName string) {
+	for _, host := range []string{"claude", "codex", "pi"} {
+		t.Run(host, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Setenv("SPACEDOCK_JOURNEY_METRICS_DIR", dir)
+			stream := `{"type":"assistant","message":{"id":"same-id","content":[{"type":"tool_use","id":"same-tool","name":"Read"}]}}` + "\n" + `{"type":"result","usage":{"input_tokens":10,"output_tokens":2},"total_cost_usd":0.5}`
+			if host == "codex" {
+				stream = `{"type":"tool_call.started","call_id":"same-tool","name":"exec_command"}`
+			}
+			phase := liveResult{stream: stream, duration: time.Second}
+			result := liveResult{stream: stream + "\n" + stream, duration: 2 * time.Second, phases: []liveResult{phase, phase}}
+			scenario := sharedRuntimeScenario{name: scenarioName}
+			switch host {
+			case "claude":
+				emitClaudeScenarioMetrics(t, scenario, result, "test")
+			case "codex":
+				(codexAsLiveDriver{}).emitMetrics(t, scenario, result)
+			case "pi":
+				emitPiScenarioMetrics(t, scenario, result, "test")
+			}
+			paths, _ := filepath.Glob(filepath.Join(dir, "shared-scenarios", "*.json"))
+			if len(paths) != 1 {
+				t.Fatalf("metric paths: %v", paths)
+			}
+			data, err := os.ReadFile(paths[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			var record journeymetrics.Record
+			if err := json.Unmarshal(data, &record); err != nil {
+				t.Fatal(err)
+			}
+			if record.DurationMS != 2000 {
+				t.Fatalf("duration: %d", record.DurationMS)
+			}
+			if host != "pi" && record.ToolCalls != 2 {
+				t.Errorf("tool calls = %d, want 2", record.ToolCalls)
+			}
+			if host == "claude" && (record.Tokens.Total != 24 || record.TotalCostUSD != 1 || record.Turns != 2) {
+				t.Errorf("combined usage: %+v", record)
+			}
+		})
+	}
+}
+
+func sumPhaseTokens(a, b journeymetrics.TokenTotals) journeymetrics.TokenTotals {
+	return journeymetrics.TokenTotals{Input: a.Input + b.Input, Output: a.Output + b.Output, CacheCreation: a.CacheCreation + b.CacheCreation, CacheRead: a.CacheRead + b.CacheRead, Total: a.Total + b.Total}
 }

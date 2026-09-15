@@ -233,13 +233,22 @@ func codexRecordedRejectionRound(jsonl string) bool {
 	return false
 }
 
-// codexRejectionRoundPublications is the Codex half of the publication counter:
-// the round id of every round-recorder call that exited 0, in stream order.
-func codexRejectionRoundPublications(jsonl string) []string {
-	rounds := []string{}
-	for _, entry := range codexCompletedCommands(jsonl) {
-		if entry.Item.ExitCode != nil && *entry.Item.ExitCode == 0 {
-			rounds = append(rounds, rejectionRoundPublications(entry.Item.Command)...)
+// codexRejectionRoundPublications reads resolved argv from the existing logger.
+// Recorder exit status is independent of the enclosing shell's eventual status.
+func codexRejectionRoundPublications(log string) []string {
+	var rounds []string
+	for _, line := range strings.Split(log, "\n") {
+		if !strings.HasPrefix(line, "exit=0\tgate record rejection-task ") {
+			continue
+		}
+		args := strings.Fields(line)
+		for i, arg := range args {
+			if arg == "--round" && i+1 < len(args) {
+				rounds = append(rounds, args[i+1])
+			}
+			if strings.HasPrefix(arg, "--round=") {
+				rounds = append(rounds, strings.TrimPrefix(arg, "--round="))
+			}
 		}
 	}
 	return rounds
@@ -722,11 +731,8 @@ func TestRejectionFlowRoundInvocationExtractors(t *testing.T) {
 }
 
 // TestRejectionRoundPublicationCounter pins the counter that grades AC-2's
-// invocation half on both hosts. The claim is "exactly one publication, at
-// validation/1", so the cases that must FAIL are the ones the retired flow
-// produced: the second call at validation/2, and — on Codex, whose failure was a
-// dropped tail — no call at all. A publication chained into one shell command is
-// counted separately, because Codex reaches the recorder that way.
+// invocation half: exactly one publication at validation/1. Codex execution
+// evidence is covered by TestRejectionRoundPublicationExecution.
 func TestRejectionRoundPublicationCounter(t *testing.T) {
 	roundCommand := func(round string) string {
 		return `${SPACEDOCK_BIN:-spacedock} gate record rejection-task --workflow-dir . --round ` + round +
@@ -788,7 +794,15 @@ func TestRejectionRoundPublicationCounter(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			for host, got := range map[string]error{
 				"claude": assertSingleRejectionRoundPublication(claudeRejectionRoundPublications(tc.claude)),
-				"codex":  assertSingleRejectionRoundPublication(codexRejectionRoundPublications(tc.codex)),
+				"codex transcript legacy": assertSingleRejectionRoundPublication(func() []string {
+					var rounds []string
+					for _, entry := range codexCompletedCommands(tc.codex) {
+						if entry.Item.ExitCode != nil && *entry.Item.ExitCode == 0 {
+							rounds = append(rounds, rejectionRoundPublications(entry.Item.Command)...)
+						}
+					}
+					return rounds
+				}()),
 			} {
 				switch {
 				case tc.want == "" && got != nil:

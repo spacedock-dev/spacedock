@@ -420,6 +420,7 @@ func TestDurableTaskJourneys(t *testing.T) {
 	}{
 		{"three independent journeys", "", "", ""},
 		{"missing dispatch", "missing-dispatch", "ready-one", "dispatch entry"},
+		{"missing approved dispatch", "missing-approved-dispatch", kmApprovedGate, "dispatch entry"},
 		{"missing report", "missing-report", "ready-one", "worker report"},
 		{"missing terminal fields", "missing-terminal", "ready-one", "terminal fields"},
 		{"archive reverts terminal fields", "archive-reverts-terminal", "ready-one", "terminal fields"},
@@ -519,7 +520,9 @@ func durableJourneyFixture(t *testing.T, mutation string) string {
 			durableAppendReport(t, root, slug)
 			gitCommitPathScoped(t, root, slug+".md", "worker: stale "+slug)
 		}
-		if mutation != "parallel-dispatch" && !atomic && (mutation != "missing-dispatch" || slug != "ready-one") {
+		missingDispatch := mutation == "missing-dispatch" && slug == kmReadyOne ||
+			mutation == "missing-approved-dispatch" && slug == kmApprovedGate
+		if mutation != "parallel-dispatch" && !atomic && !missingDispatch {
 			path := filepath.Join(root, slug+".md")
 			content := strings.Replace(readFile(t, path), "started: ", "started: 2026-07-31T00:00:00Z", 1)
 			if roomDispatch && mutation != "dispatch-room-preexisting" {

@@ -22,10 +22,6 @@ import (
 // doc directly, engaged both commissioned entities, and gated none of them.
 func ssmCorrectTrace() mechanismTrace {
 	tr := newMechanismTrace()
-	for _, f := range ssmEditFiles() {
-		tr.editedInHouse[f] = true
-	}
-	tr.committedDirectly = true
 	for _, e := range ssmCommissioned() {
 		tr.engaged[e] = true
 	}
@@ -39,14 +35,6 @@ func TestGradeSmallestSufficientMechanism(t *testing.T) {
 	// Positive: the correct both-directions trace passes.
 	if err := gradeSmallestSufficientMechanism(ssmCorrectTrace(), edits, commissioned); err != nil {
 		t.Fatalf("the correct smallest-sufficient trace must pass: %v", err)
-	}
-
-	// Negative: a deterministic edit the FO never applied in-house (it was left to a
-	// worker) reds on the in-house-edit half of the over-orchestration check.
-	notInHouse := ssmCorrectTrace()
-	notInHouse.editedInHouse[ssmEditFileA] = false
-	if err := gradeSmallestSufficientMechanism(notInHouse, edits, commissioned); err == nil {
-		t.Fatal("expected a deterministic edit not applied in-house to fail")
 	}
 
 	// Negative (isolating): the FO edited in-house but ALSO dispatched a worker for the
@@ -63,13 +51,6 @@ func TestGradeSmallestSufficientMechanism(t *testing.T) {
 	pr.prOpened = true
 	if err := gradeSmallestSufficientMechanism(pr, edits, commissioned); err == nil {
 		t.Fatal("expected a PR for the convention-direct strategy doc to fail")
-	}
-
-	// Negative (isolating): the strategy doc was never committed directly.
-	noCommit := ssmCorrectTrace()
-	noCommit.committedDirectly = false
-	if err := gradeSmallestSufficientMechanism(noCommit, edits, commissioned); err == nil {
-		t.Fatal("expected a missing direct commit of the strategy doc to fail")
 	}
 
 	// Negative (isolating): the gate wrongly suppressed a commissioned engage dispatch.
@@ -146,15 +127,6 @@ func TestAssertClaudeSmallestSufficientMechanism(t *testing.T) {
 		t.Fatal("expected a `gh pr create` for the strategy doc to fail the Claude assertion")
 	}
 
-	// Negative: no direct commit of the strategy doc.
-	noCommit := claudeToolUse("Edit", `{"file_path":"`+ssmEditFileA+`"}`) + "\n" +
-		claudeToolUse("Edit", `{"file_path":"`+ssmEditFileB+`"}`) + "\n" +
-		claudeToolUse("Agent", `{"prompt":"Engage `+ssmCommissionedA+`."}`) + "\n" +
-		claudeToolUse("Agent", `{"prompt":"Engage `+ssmCommissionedB+`."}`)
-	if err := assertClaudeSmallestSufficientMechanism(noCommit, edits, commissioned); err == nil {
-		t.Fatal("expected a stream with no direct commit to fail the Claude assertion")
-	}
-
 	// Negative: the gate suppressed a commissioned dispatch (ready-two never engaged).
 	suppressed := claudeToolUse("Edit", `{"file_path":"`+ssmEditFileA+`"}`) + "\n" +
 		claudeToolUse("Edit", `{"file_path":"`+ssmEditFileB+`"}`) + "\n" +
@@ -182,8 +154,8 @@ func TestAssertClaudeSmallestSufficientMechanism(t *testing.T) {
 // commissioned entity.
 func ssmCodexCorrectStream() string {
 	lines := []string{
-		codexCommand("apply_patch " + ssmEditFileA),
-		codexCommand("apply_patch " + ssmEditFileB),
+		codexFileChange(ssmEditFileA),
+		codexFileChange(ssmEditFileB),
 		codexCommand("git commit -m note -- " + ssmStrategyDoc),
 		codexSpawn("Engage " + ssmCommissionedA + " via the dispatch loop."),
 		codexSpawn("Engage " + ssmCommissionedB + " via the dispatch loop."),
@@ -201,7 +173,7 @@ func codexSpawn(prompt string) string {
 // command).
 func codexFileChange(paths ...string) string {
 	var b strings.Builder
-	b.WriteString(`{"type":"item.completed","item":{"type":"file_change","changes":[`)
+	b.WriteString(`{"type":"item.completed","item":{"type":"file_change","status":"completed","changes":[`)
 	for i, p := range paths {
 		if i > 0 {
 			b.WriteString(",")
@@ -268,8 +240,8 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 	}
 
 	// Negative: the gate suppressed a commissioned dispatch (ready-two never engaged).
-	suppressed := codexCommand("apply_patch "+ssmEditFileA) + "\n" +
-		codexCommand("apply_patch "+ssmEditFileB) + "\n" +
+	suppressed := codexFileChange(ssmEditFileA) + "\n" +
+		codexFileChange(ssmEditFileB) + "\n" +
 		codexCommand("git commit -m note -- "+ssmStrategyDoc) + "\n" +
 		codexSpawn("Engage "+ssmCommissionedA+".")
 	if err := assertCodexSmallestSufficientMechanism(suppressed, edits, commissioned); err == nil {
@@ -277,8 +249,8 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 	}
 
 	// Negative: a per-entity justification in the spawn prompt during engage.
-	perEntity := codexCommand("apply_patch "+ssmEditFileA) + "\n" +
-		codexCommand("apply_patch "+ssmEditFileB) + "\n" +
+	perEntity := codexFileChange(ssmEditFileA) + "\n" +
+		codexFileChange(ssmEditFileB) + "\n" +
 		codexCommand("git commit -m note -- "+ssmStrategyDoc) + "\n" +
 		codexSpawn("Smallest sufficient mechanism check: dispatching "+ssmCommissionedA+".") + "\n" +
 		codexSpawn("Engage "+ssmCommissionedB+".")
@@ -289,8 +261,7 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 	// Positive (regression guard for the cycle-1 false negative): the codex-cli 0.142.5
 	// correct-run dialect the validator recorded — file_change edits + a direct commit +
 	// `status --set … done` advances, plus a contract-read command carrying the gate
-	// vocabulary. The extractor must grade editedInHouse=true (from file_change, not
-	// apply_patch), engage the entities (from the advances, not spawn_agent), and NOT
+	// vocabulary. The extractor must recognize entity advances and NOT
 	// false-positive the scope guard on the contract read.
 	if err := assertCodexSmallestSufficientMechanism(ssmCodexRealDialectStream(), edits, commissioned); err != nil {
 		t.Fatalf("the codex 0.142.5 file_change + status-set dialect must pass (cycle-1 false-negative regression): %v", err)
