@@ -121,3 +121,24 @@ Exact targeted Codex command, from the prepared stack checkout: `SPACEDOCK_BIN=/
 ### Summary
 
 The fixture needs a real prepared review room and its state commit before the prompt grants approval. The approval decision and continuation remain agent actions; no production authority or grader relaxation is proposed. Live execution and combined-stack full suites remain scheduled after implementation.
+
+## Stage Report: implementation
+
+- DONE: Implement the real prepared and committed review gate fixture with focused positive and missing-authority regressions, preserving agent-owned consume and continuation.
+  Commit `7ca67fdda5433654b6f67276560b3eb19c0684f6` adds real prepare + state commit; the initial regression failed with `entity has no gates record` before the fixture change.
+- DONE: Commit the bounded layer from current origin/main and report focused test evidence and the exact targeted local Codex command.
+  Branch starts at `2a7b8719843e40b79545f0bb4def6609cdd9ebbf`; 3 files, 74 additions/1 deletion (+73 net), within the approved +100/+50 estimate.
+- DONE: Verify preparation, authority refusal, and successful consumption through real commands and durable state.
+  `TestKeepMovingPreparedGate` asserts an open bound attempt, committed briefing/entity, no successor work in history, unchanged missing-decision and unprepared refusals, and captain approval consumed to implementation; removing preparation/commit or preconsuming approval makes it fail.
+- DONE: Preserve approved-task dispatch proof.
+  `TestDurableTaskJourneys/missing_approved_dispatch` suppresses only that task's dispatch and requires exactly 2/3 journeys and one approved-task failure; accepting its absent dispatch makes the control fail.
+- DONE: Run the relevant deterministic tests and format changed Go files.
+  `go test ./internal/ensigncycle -run '^(TestKeepMovingPreparedGate|TestDurableTaskJourneys|TestDurableKeepMoving.*|TestDurableQuestioned.*|TestRetainedAtomicWorkerJourney)$' -count=1` passed (162.906s); changed Go files formatted and `git diff --check` passed.
+- SKIPPED: Run targeted live Codex and full normal/race suites in this worker.
+  Captain-approved scheduling assigns serialized live validation and combined-stack full suites to the FO; no live run, code push, or PR was initiated here.
+
+### Summary
+
+The fixture now supplies a real committed review package while approval consumption, implementation dispatch, and completion remain agent actions. Production gate guards and durable grader semantics are unchanged; this is stack layer 1, ready for independent validation.
+
+Exact targeted local command from the stack checkout: `SPACEDOCK_BIN=/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -tags live ./internal/ensigncycle -run '^TestLiveCommonKeepMovingPosture$' -count=1 -v -timeout 15m`.
