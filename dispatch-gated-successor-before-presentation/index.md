@@ -9,7 +9,7 @@ score: 0.95
 worktree: .worktrees/spacedock-ensign-dispatch-gated-successor-before-presentation
 issue:
 pr:
-mod-block:
+mod-block: merge:pr-merge
 id: vcfwr5ptn6pedv32wq7cbsy6
 gates:
     version: 1
