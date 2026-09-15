@@ -1,15 +1,15 @@
 ---
 title: Dispatch a gated successor before presenting its gate
-status: validation
+status: done
 source: Captain approved separate headless contract fix on 2026-09-15
 started: 2026-09-15T14:19:00Z
-completed:
-verdict:
+completed: 2026-09-15T18:24:32Z
+verdict: PASSED
 score: 0.95
 worktree: .worktrees/spacedock-ensign-dispatch-gated-successor-before-presentation
 issue:
 pr: pr-merge:798
-mod-block: merge:pr-merge
+mod-block:
 id: vcfwr5ptn6pedv32wq7cbsy6
 gates:
     version: 1
@@ -76,7 +76,8 @@ gates:
                     source: Captain approval of separate headless contract fix on 2026-09-15; active goal grants stacked PR and Codex CI authority
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-09-15T18:24:32Z
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.
