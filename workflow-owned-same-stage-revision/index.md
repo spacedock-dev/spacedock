@@ -4,7 +4,7 @@ status: ideation
 source: Captain request after email-triage FO issue 792
 issue: spacedock-dev/spacedock#792
 score: 0.95
-started:
+started: 2026-09-15T04:30:03Z
 completed:
 verdict:
 worktree:
