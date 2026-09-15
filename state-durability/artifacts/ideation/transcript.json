@@ -1,0 +1,1867 @@
+[
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "<binary>",
+      "status",
+      "--workflow-dir",
+      "<fixture-root>/missing/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "ID     SLUG                           STATUS               TITLE                          SCORE\n--     ----                           ------               -----                          -----\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "<binary>",
+      "status",
+      "--json",
+      "--workflow-dir",
+      "<fixture-root>/missing/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "{\"command\":\"status\",\"entities\":[],\"pagination\":{\"page\":\"1\",\"limit\":\"0\",\"total\":\"0\",\"start\":\"0\",\"end\":\"0\",\"has_next\":\"false\"}}\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "<binary>",
+      "new",
+      "unsafe",
+      "--workflow-dir",
+      "<fixture-root>/missing/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "created: <fixture-root>/missing/docs/dev/.spacedock-state/unsafe.md id=unsafe\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "git",
+      "check-ignore",
+      "<fixture-root>/missing/docs/dev/.spacedock-state/unsafe.md"
+    ],
+    "rc": 0,
+    "stdout": "<fixture-root>/missing/docs/dev/.spacedock-state/unsafe.md\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/missing",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "unsafe",
+      "--workflow-dir",
+      "<fixture-root>/missing/docs/dev"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": "spacedock state commit: state-sync preflight failed: state checkout must be the exact Git toplevel: configured <fixture-root>/missing/docs/dev/.spacedock-state, observed <fixture-root>/missing; point the workflow state: field at its dedicated linked worktree\n"
+  },
+  {
+    "cwd": "<fixture-root>/invalid",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/invalid",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/invalid",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/invalid",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/invalid",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/invalid",
+    "argv": [
+      "<binary>",
+      "status",
+      "--json",
+      "--workflow-dir",
+      "<fixture-root>/invalid/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "{\"command\":\"status\",\"entities\":[],\"pagination\":{\"page\":\"1\",\"limit\":\"0\",\"total\":\"0\",\"start\":\"0\",\"end\":\"0\",\"has_next\":\"false\"}}\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/invalid",
+    "argv": [
+      "<binary>",
+      "new",
+      "unsafe",
+      "--workflow-dir",
+      "<fixture-root>/invalid/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "created: <fixture-root>/invalid/docs/dev/.spacedock-state/unsafe.md id=unsafe\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/valid/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/valid/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/valid/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "<binary>",
+      "status",
+      "--json",
+      "--workflow-dir",
+      "<fixture-root>/valid/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "{\"command\":\"status\",\"entities\":[],\"pagination\":{\"page\":\"1\",\"limit\":\"0\",\"total\":\"0\",\"start\":\"0\",\"end\":\"0\",\"has_next\":\"false\"}}\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "<binary>",
+      "new",
+      "safe",
+      "--workflow-dir",
+      "<fixture-root>/valid/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "created: <fixture-root>/valid/docs/dev/.spacedock-state/safe.md id=safe\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "safe",
+      "--workflow-dir",
+      "<fixture-root>/valid/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed safe locally; no origin remote \u2014 state is local-only until an origin is configured.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/valid/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "ls-files",
+      "--error-unmatch",
+      "safe.md"
+    ],
+    "rc": 0,
+    "stdout": "safe.md\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatFalse/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/archive-flatFalse/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/archive-flatFalse/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatFalse/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed task locally; no origin remote \u2014 state is local-only until an origin is configured.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "1ab5a4e9eabacad20fe6f81d0c0bf6c27689b490\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "<binary>",
+      "status",
+      "--archive",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatFalse/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "archived: <fixture-root>/archive-flatFalse/docs/dev/.spacedock-state/_archive/task.md\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatFalse/docs/dev"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": "spacedock state commit: archived entity \"task\" is dirty; archived scope is publish-only and will not stage or commit it:\nD task.md\n D task/evidence.txt\n?? _archive/task.md\n?? _archive/task/evidence.txt\n"
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "1ab5a4e9eabacad20fe6f81d0c0bf6c27689b490\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatFalse/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "rc": 0,
+    "stdout": " D task.md\n D task/evidence.txt\n?? _archive/\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatTrue/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/archive-flatTrue/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/archive-flatTrue/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "--bare",
+      "<fixture-root>/archive-flatTrue.git"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "git",
+      "remote",
+      "add",
+      "origin",
+      "<fixture-root>/archive-flatTrue.git"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "push",
+      "-q",
+      "-u",
+      "origin",
+      "spacedock-state/dev"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatTrue/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed and pushed task to spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "f44ce26a0bb442db101bb1834ae32dcce649f890\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "<binary>",
+      "status",
+      "--archive",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatTrue/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "archived: <fixture-root>/archive-flatTrue/docs/dev/.spacedock-state/_archive/task.md\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-flatTrue/docs/dev"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": "spacedock state commit: archived entity \"task\" is dirty; archived scope is publish-only and will not stage or commit it:\nD task.md\n D task/evidence.txt\n?? _archive/task.md\n?? _archive/task/evidence.txt\n"
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "f44ce26a0bb442db101bb1834ae32dcce649f890\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-flatTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "rc": 0,
+    "stdout": " D task.md\n D task/evidence.txt\n?? _archive/\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderFalse/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/archive-folderFalse/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/archive-folderFalse/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderFalse/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed task locally; no origin remote \u2014 state is local-only until an origin is configured.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "80ca712d8154de60621190eed9fcb1b5d10ee0ee\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "<binary>",
+      "status",
+      "--archive",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderFalse/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "archived: <fixture-root>/archive-folderFalse/docs/dev/.spacedock-state/_archive/task\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderFalse/docs/dev"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": "spacedock state commit: archived entity \"task\" is dirty; archived scope is publish-only and will not stage or commit it:\nD task/evidence.txt\n D task/index.md\n?? _archive/task/evidence.txt\n?? _archive/task/index.md\n"
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "80ca712d8154de60621190eed9fcb1b5d10ee0ee\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderFalse/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "rc": 0,
+    "stdout": " D task/evidence.txt\n D task/index.md\n?? _archive/\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderTrue/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/archive-folderTrue/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/archive-folderTrue/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "--bare",
+      "<fixture-root>/archive-folderTrue.git"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "git",
+      "remote",
+      "add",
+      "origin",
+      "<fixture-root>/archive-folderTrue.git"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "push",
+      "-q",
+      "-u",
+      "origin",
+      "spacedock-state/dev"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderTrue/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed and pushed task to spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "f341f534659378cfbd3f8f7ea73ce70cb2df72de\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "<binary>",
+      "status",
+      "--archive",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderTrue/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "archived: <fixture-root>/archive-folderTrue/docs/dev/.spacedock-state/_archive/task\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/archive-folderTrue/docs/dev"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": "spacedock state commit: archived entity \"task\" is dirty; archived scope is publish-only and will not stage or commit it:\nD task/evidence.txt\n D task/index.md\n?? _archive/task/evidence.txt\n?? _archive/task/index.md\n"
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "f341f534659378cfbd3f8f7ea73ce70cb2df72de\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/archive-folderTrue/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "rc": 0,
+    "stdout": " D task/evidence.txt\n D task/index.md\n?? _archive/\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/delivery-True/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/delivery-True/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/delivery-True/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "worktree",
+      "add",
+      "-q",
+      "-b",
+      "task",
+      "<fixture-root>/delivery-True-worktree"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True-worktree",
+    "argv": [
+      "git",
+      "add",
+      "delivery.txt"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True-worktree",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "deliver task"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True-worktree",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "08fcd598cc32b7c758f92a5ac87397e1de3c66c0\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "add",
+      "delivery.txt"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "conflict"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "add",
+      "docs/dev/gate-review.md"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "review"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/delivery-True/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed task locally; no origin remote \u2014 state is local-only until an origin is configured.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "<binary>",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Advance?",
+      "--artifact",
+      "<fixture-root>/delivery-True/docs/dev/gate-review.md",
+      "--summary",
+      "Reproduction.",
+      "--workflow-dir",
+      "<fixture-root>/delivery-True/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "room=<fixture-root>/delivery-True/docs/dev/.spacedock-state/task/review/validation/briefing-1\nbriefing=briefing:task:validation:attempt-1:revision-1\ndigest=sha256:5d8c80082af62114ba092ad0c66cf78f913a43f4c22849d5077b291d101c1bf9\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "<binary>",
+      "gate",
+      "record",
+      "task",
+      "--decision",
+      "approve",
+      "--actor",
+      "person:captain",
+      "--workflow-dir",
+      "<fixture-root>/delivery-True/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "recorded gate=gate:task:validation attempt=gate-attempt:task-validation-1 state=closed briefing=briefing:task:validation:attempt-1:revision-1 resolution=resolution:spacedock:task:validation:1 decision=approve\nsync=local-only phase=record\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "<binary>",
+      "gate",
+      "consume",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/delivery-True/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "gate=gate:task:validation attempt=gate-attempt:task-validation-1 application=advance/pending condition=approved-pending eligible=true consumed=false target-stage=done route=approved-awaiting-merge\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "<binary>",
+      "merge",
+      "guard",
+      "task",
+      "--verdict",
+      "passed",
+      "--workflow-dir",
+      "<fixture-root>/delivery-True/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "finalized: task -> done (verdict passed), archived. State durability: local-only (no origin remote).\nNext: push; remove the worktree (`git worktree remove <fixture-root>/delivery-True-worktree`, no --force \u2014 if it refuses on untracked files, audit them with the operator before any --force); delete the local branch (`git branch -d`); keep the remote branch while a PR references it; tear down the entity's workers per your runtime adapter.\nno merge hook registered \u2014 merge task onto main with --no-ff if not already merged.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "merge",
+      "--no-ff",
+      "task",
+      "-m",
+      "deliver"
+    ],
+    "rc": 1,
+    "stdout": "Auto-merging delivery.txt\nCONFLICT (content): Merge conflict in delivery.txt\nAutomatic merge failed; fix conflicts and then commit the result.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "08fcd598cc32b7c758f92a5ac87397e1de3c66c0",
+      "HEAD"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-True",
+    "argv": [
+      "git",
+      "merge",
+      "--abort"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/delivery-False/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/delivery-False/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/delivery-False/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "worktree",
+      "add",
+      "-q",
+      "-b",
+      "task",
+      "<fixture-root>/delivery-False-worktree"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False-worktree",
+    "argv": [
+      "git",
+      "add",
+      "delivery.txt"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False-worktree",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "deliver task"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False-worktree",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "7c737969f79023fdb83c353858ed2b16042a8647\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "add",
+      "docs/dev/gate-review.md"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "review"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/delivery-False/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed task locally; no origin remote \u2014 state is local-only until an origin is configured.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "<binary>",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Advance?",
+      "--artifact",
+      "<fixture-root>/delivery-False/docs/dev/gate-review.md",
+      "--summary",
+      "Reproduction.",
+      "--workflow-dir",
+      "<fixture-root>/delivery-False/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "room=<fixture-root>/delivery-False/docs/dev/.spacedock-state/task/review/validation/briefing-1\nbriefing=briefing:task:validation:attempt-1:revision-1\ndigest=sha256:b44d7619d52aad587fe453177331dcfaee7cf280ec0d5a744a60b05d59713177\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "<binary>",
+      "gate",
+      "record",
+      "task",
+      "--decision",
+      "approve",
+      "--actor",
+      "person:captain",
+      "--workflow-dir",
+      "<fixture-root>/delivery-False/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "recorded gate=gate:task:validation attempt=gate-attempt:task-validation-1 state=closed briefing=briefing:task:validation:attempt-1:revision-1 resolution=resolution:spacedock:task:validation:1 decision=approve\nsync=local-only phase=record\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "<binary>",
+      "gate",
+      "consume",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/delivery-False/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "gate=gate:task:validation attempt=gate-attempt:task-validation-1 application=advance/pending condition=approved-pending eligible=true consumed=false target-stage=done route=approved-awaiting-merge\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "<binary>",
+      "merge",
+      "guard",
+      "task",
+      "--verdict",
+      "passed",
+      "--workflow-dir",
+      "<fixture-root>/delivery-False/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "finalized: task -> done (verdict passed), archived. State durability: local-only (no origin remote).\nNext: push; remove the worktree (`git worktree remove <fixture-root>/delivery-False-worktree`, no --force \u2014 if it refuses on untracked files, audit them with the operator before any --force); delete the local branch (`git branch -d`); keep the remote branch while a PR references it; tear down the entity's workers per your runtime adapter.\nno merge hook registered \u2014 merge task onto main with --no-ff if not already merged.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "merge",
+      "--no-ff",
+      "task",
+      "-m",
+      "deliver"
+    ],
+    "rc": 0,
+    "stdout": "Merge made by the 'ort' strategy.\n delivery.txt | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-False",
+    "argv": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "7c737969f79023fdb83c353858ed2b16042a8647",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "init",
+      "-q",
+      "-b",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "config",
+      "user.name",
+      "Repro"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "config",
+      "user.email",
+      "repro@example.test"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "add",
+      "."
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "seed"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "<binary>",
+      "state",
+      "new",
+      "--workflow-dir",
+      "<fixture-root>/delivery-first/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Birthed split-root state at <fixture-root>/delivery-first/docs/dev/.spacedock-state (branch spacedock-state/dev).\nNext: commit the .gitignore edit on your code branch (git add .gitignore && git commit).\nWarning: could not push spacedock-state/dev to origin (no remote or push failed). Push the orphan branch later to share state: git -C <fixture-root>/delivery-first/docs/dev/.spacedock-state push origin spacedock-state/dev.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "worktree",
+      "add",
+      "-q",
+      "-b",
+      "task",
+      "<fixture-root>/delivery-first-worktree"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first-worktree",
+    "argv": [
+      "git",
+      "add",
+      "delivery.txt"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first-worktree",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "task"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "add",
+      "docs/dev/gate-review.md"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "commit",
+      "-qm",
+      "review"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "<binary>",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "<fixture-root>/delivery-first/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "Committed task locally; no origin remote \u2014 state is local-only until an origin is configured.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "<binary>",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Advance?",
+      "--artifact",
+      "<fixture-root>/delivery-first/docs/dev/gate-review.md",
+      "--summary",
+      "Ordered recovery.",
+      "--workflow-dir",
+      "<fixture-root>/delivery-first/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "room=<fixture-root>/delivery-first/docs/dev/.spacedock-state/task/review/validation/briefing-1\nbriefing=briefing:task:validation:attempt-1:revision-1\ndigest=sha256:e3c693fd10326bf52cfca16168934b16700f1b445da8c1ce87be6b4336782ce0\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "<binary>",
+      "gate",
+      "record",
+      "task",
+      "--decision",
+      "approve",
+      "--actor",
+      "person:captain",
+      "--workflow-dir",
+      "<fixture-root>/delivery-first/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "recorded gate=gate:task:validation attempt=gate-attempt:task-validation-1 state=closed briefing=briefing:task:validation:attempt-1:revision-1 resolution=resolution:spacedock:task:validation:1 decision=approve\nsync=local-only phase=record\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "merge",
+      "--no-ff",
+      "task",
+      "-m",
+      "delivery"
+    ],
+    "rc": 0,
+    "stdout": "Merge made by the 'ort' strategy.\n delivery.txt | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "bd1f1dc2ffc10c5b326cc735ffdc0539f3a4551e\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first-worktree",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "3fa7bcd6034d70c539fbaf74af3be18308be5684\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "3fa7bcd6034d70c539fbaf74af3be18308be5684",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "git",
+      "merge-base",
+      "--is-ancestor",
+      "bd1f1dc2ffc10c5b326cc735ffdc0539f3a4551e",
+      "main"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "<binary>",
+      "status",
+      "--set",
+      "task",
+      "pr=local-merge:bd1f1dc2ffc10c5b326cc735ffdc0539f3a4551e",
+      "--workflow-dir",
+      "<fixture-root>/delivery-first/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "pr:  -> local-merge:bd1f1dc2ffc10c5b326cc735ffdc0539f3a4551e\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "<binary>",
+      "merge",
+      "guard",
+      "task",
+      "--verdict",
+      "passed",
+      "--workflow-dir",
+      "<fixture-root>/delivery-first/docs/dev"
+    ],
+    "rc": 0,
+    "stdout": "finalized: task -> done (verdict passed), archived. State durability: local-only (no origin remote).\nNext: push; remove the worktree (`git worktree remove <fixture-root>/delivery-first-worktree`, no --force \u2014 if it refuses on untracked files, audit them with the operator before any --force); delete the local branch (`git branch -d`); keep the remote branch while a PR references it; tear down the entity's workers per your runtime adapter.\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "a95606571875db79758fc36c88485d58af6b3b19\n",
+    "stderr": ""
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first",
+    "argv": [
+      "<binary>",
+      "merge",
+      "guard",
+      "task",
+      "--verdict",
+      "passed",
+      "--workflow-dir",
+      "<fixture-root>/delivery-first/docs/dev"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": "Error: archived entity is read-only: task\nscope=archived slug=task id=task display=task path=<fixture-root>/delivery-first/docs/dev/.spacedock-state/_archive/task.md\n"
+  },
+  {
+    "cwd": "<fixture-root>/delivery-first/docs/dev/.spacedock-state",
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "rc": 0,
+    "stdout": "a95606571875db79758fc36c88485d58af6b3b19\n",
+    "stderr": ""
+  }
+]
