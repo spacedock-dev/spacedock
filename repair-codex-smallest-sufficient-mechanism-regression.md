@@ -796,3 +796,35 @@ then preserves the commissioned proof and checks final bytes. Local Codex live a
 race pass at `71d1f6b1c`; final candidate `faef711575` additionally fixes the discovered
 registration issue with a wrapper-only change and targeted green proof. The complete
 stack's normal/race checks and independent validation remain with their assigned owners.
+
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Independently verify the approved two-phase outcome design, removal of receipt/tool-based credit, phase-1 native no-spawn checks, and preservation of commissioned durable/scope-trace proof.
+  Reviewed clean exact `faef711575c3407a01c4aaa1c87d64d8acabf1bd` against captain binding `resolution:binding-1789488159492666000`. Direct phase checks exact filesystem bytes and committed strategy before ready entities exist; native worker calls reject. Receipt/tool/structured-edit credit is removed. Phase 2 retains the actual durable/scope-trace owner and rechecks all final bytes.
+- DONE: Audit the exact retained local live and focused/race evidence, including both phase artifacts and measured totals, without repeating owned passing runs; confirm wrapper-only correction preserves evidence applicability.
+  Actual live at `71d1f6b1c9e36fb02b26aeb781cdcf7a0885a722` passes in 213.45s, exit 0, no skip/retry. Retained direct native stream has 73 events and zero spawn calls; all three direct outcome files match exact bytes. Both public phases finish with turn.completed; commissioned artifacts record both completed/archived ready entities.
+- DONE: Report acceptance criteria and findings at exact faef711575, incorporating the combined-tip full normal/race results from its owner before recommending final approval; do not edit code or trigger CI.
+  PASSED for this repair. Confirmed `faef711575` is ancestor of tested combined tip `380bd7bf34b3dd1de07a125d75035c593f5ff930`; owner completed normal and race, each exit 1 solely on established installed-host resolver baseline. All other packages pass; no race detector finding. No validator code changes, code push, CI or duplicate tests.
+- DONE: AC-1 — direct expected results and native no-spawn proof, independent of editing mechanism.
+  Direct artifacts show exact alpha/beta/strategy bytes and strategy commit `20df29e`; runner verifies HEAD strategy bytes before preparing commissioned entities. Native zero-spawn audit and host-typed worker negatives establish attribution. Removing exact file checks admits wrong/missing/structured-event-without-result controls; removing worker checks admits Claude Agent/Task, Codex spawn_agent and Pi subagent controls.
+- DONE: AC-2 — ordinary commissioned work and preserved final results.
+  Same shared driver runs phase 2 only after direct assertions; unchanged `assertDurableSmallestMechanism` still grades dispatch/report/terminal/archive history and scope trace. Both ready journeys complete in retained live; final-file assertion rejects the explicit final-drift control. No new native commissioned-lifecycle grader is claimed or added.
+- DONE: AC-3 — fail-closed outcome, commit, delegation and scope controls across supported hosts.
+  Reviewed focused controls for missing/wrong notes, wrong/uncommitted strategy, native delegation, output-only impostors, incomplete durable journeys and final drift. Focused race plus durable matrix passes in 66.629s, exit 0; native no-spawn reads use existing host evidence boundaries. Claude/Codex/Pi share the same phase boundary; only Codex has new local live evidence.
+- DONE: AC-4 — phase artifacts, honest metrics, focused/live/full verification and formatting.
+  Both retained durations (49.428819291s and 162.983227875s) sum to emitted 212412ms. Claude independently parsed phases sum measured tokens/cost/turns and counts; repeated-ID control requires 24 tokens, cost 1, two turns/calls. Codex remains characterized and Pi unmeasured as authorized. Final seeded metrics test passes 0.371s and registry reconciliation 0.343s.
+- DONE: Verify wrapper correction leaves live evidence applicable without relabeling its SHA.
+  Exact `71d1f6b1c` to `faef711575` delta is only +8/-2 in the metrics test wrapper: existing seeded Fuzz pattern, same deterministic assertions. Runtime/grader/metrics implementations and live path are byte-identical; no new live run is claimed at `faef711575`.
+- FAILED: Fully green combined-tip normal/race suites.
+  Both commands at `380bd7bf` exit 1 solely on `TestCodexResolveManifestAgainstInstalledHost`, identical established stale-pre0 local-host baseline. Contractlint passes normal 0.585s/race 3.769s; ensigncycle race passes 234.497s. This known outside-layer failure remains explicit and was not reproduced again.
+- SKIPPED: Duplicate live/focused/full runs, code edits, publication and CI.
+  FO assigns publication and final Claude/Codex live CI; existing owned runs fully answer this review without another test launch. Only this entity body/report was committed and synced.
+
+### Reviewer findings
+
+No new material finding remains within the approved two-phase design. The design deliberately stops proving mixed-prompt selection and adds a second ordinary launch; this is captain-approved scope, not silent criterion narrowing. The offline metrics registration defect is resolved without exemption or assertion weakening; both combined-tip registry runs pass. The baseline resolver failure remains outside this repair under the existing FO disposition.
+
+### Summary
+
+PASSED at exact `faef711575c3407a01c4aaa1c87d64d8acabf1bd`, including the completed combined-tip verification. Evidence: `/tmp/spacedock-smallest-outcomes-local/` (actual direct/commissioned live artifacts, native/outcome files, phase metrics, focused/race/seed logs) and `/tmp/spacedock-stack-799-twophase-final-full/` (exact combined-tip normal/race logs and exits). Full suites are not green solely because of the established resolver baseline; final Claude/Codex CI remains FO-owned.
