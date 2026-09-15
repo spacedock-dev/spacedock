@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zz1yqc2w2katp28wpa8nghx2:ideation:attempt-1:revision-1",
+  "question": "Approve the workflow-conditional same-stage revision skill fix and behavioral proof plan?",
+  "artifacts": [
+    {
+      "id": "artifact:zz1yqc2w2katp28wpa8nghx2:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b8049b1c656ecad2d5cb53e7a1819ad1f378a36b/workflow-owned-same-stage-revision/index.md",
+      "rev": "sha256:4dc5bdd9ec2ee73bad535a3d6a3344a9948dc15498c8fa366145098baa2c89bd",
+      "mediaType": "text/markdown",
+      "summary": "Existing CLI supports self-feedback correction and a fresh gate. Make round publication and independent review conditional on workflow requirements, preserving required review, frozen authority, and escalation. Independent staff review approves; manual CLI spike passed mechanics, live compliance remains implementation proof. Estimate net +45 lines across 3 files, tolerance +90 and 4 files."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zz1yqc2w2katp28wpa8nghx2:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
