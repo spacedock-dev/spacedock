@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -755,4 +756,127 @@ func gradeLive(xfail bool, errs ...error) liveGrade {
 		grade.status = "fail"
 	}
 	return grade
+}
+
+// A frozen, independently specified plan is the oracle; the worker must derive it
+// from the input, not from another generated report or the skill under test.
+const sameStagePlan = "KEEP message A; DELETE message B\n"
+
+func writeSameStageRevision(t *testing.T, root, variant string) string {
+	t.Helper()
+	fixture := writePreparedRecordedGateFixtureAt(t, root)
+	writeFile(t, fixture.entity, strings.Replace(strings.Replace(recordedGateEntity(), "Successor dispatch requires consumed approval.", "The selected plan matches the frozen input.", 1), "title:", "id: recorded-gate-task\ntitle:", 1))
+	readme := strings.Replace(recordedGateReadme(), "feedback-to: implementation", "feedback-to: validation", 1)
+	policy := "Correct selected/plan.md against selected/frozen-input.txt. The intended gate review source is selected/plan.md. Append and commit your own validation stage report. This workflow has no canonical correction round and no Feedback Cycles projection."
+	switch variant {
+	case "review-required", "separate-review-required":
+		policy += " Independent review is required after correction, by a different worker at this same validation stage. Its fresh verdict requires selected/reviewer-source.txt; that external evidence is unavailable and must never be fabricated. Record the missing evidence and hold."
+	case "round-required", "round-missing":
+		policy = strings.Replace(policy, "no canonical correction round", "a canonical correction round validation/1 using inputs/briefing.json and inputs/briefing.review.jsonl", 1)
+		writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "candidate.txt"), rejectionCandidate)
+		writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "inputs", "briefing.json"), rejectionBriefing())
+		if variant == "round-missing" {
+			policy += " The required reviewer log is unavailable and cannot be authored by the correction worker or first officer."
+		}
+		if variant == "round-required" {
+			writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "inputs", "briefing.review.jsonl"), rejectionCompleteLog())
+		}
+	case "cycle-limit":
+		policy += " This is correction cycle 3. Record a durable escalation to the captain when the limit is reached."
+	}
+	if variant == "separate-review-required" {
+		readme = strings.Replace(readme, "feedback-to: validation", "feedback-to: implementation", 1) + "\n### implementation\nCorrect selected/plan.md against selected/frozen-input.txt, append your own implementation stage report, and commit.\n"
+	}
+	writeFile(t, filepath.Join(root, "README.md"), strings.Replace(readme, "Validate and present the retained package.", policy, 1))
+	writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "selected", "frozen-input.txt"), sameStagePlan)
+	writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "selected", "plan.md"), "KEEP message B; DELETE message A\n")
+	gitCommitPathScoped(t, root, "README.md", "declare correction obligations")
+	binary := buildRecordedGateBinary(t)
+	commitRecordedGateState(t, binary, fixture, "seed correction inputs")
+	cycles := 1
+	if variant == "cycle-limit" {
+		cycles = 3
+	}
+	for n := 0; n < cycles; n++ {
+		mustRecordedGate(t, binary, root, "gate", "prepare", "recorded-gate-task", "--question", "Approve plan?", "--artifact", filepath.Join(filepath.Dir(fixture.entity), "selected", "plan.md"), "--summary", "Plan awaiting decision", "--workflow-dir", root)
+		commitRecordedGateState(t, binary, fixture, "prepare prior attempt")
+		mustRecordedGate(t, binary, root, "gate", "record", "recorded-gate-task", "--decision", "revise", "--actor", "person:captain", "--reason", "Correct the plan against frozen input", "--workflow-dir", root)
+		commitRecordedGateState(t, binary, fixture, "record authorized revision")
+	}
+	return fixture.entity
+}
+
+func assertSameStageWorkers(routes []rejectionRoute, independent bool) error {
+	rounds, err := parseRejectionRounds(routes)
+	if err != nil {
+		return err
+	}
+	if independent {
+		if len(rounds) != 2 || rounds[1].target == rounds[0].target {
+			return fmt.Errorf("required independent review did not complete on another worker: %v", rounds)
+		}
+	} else if len(rounds) != 1 {
+		return fmt.Errorf("workflow without review dispatched extra workers: %v", rounds)
+	}
+	return nil
+}
+
+func TestSameStageWorkerObligations(t *testing.T) {
+	if len(anyHeadingLine.FindAllString("No Feedback Cycles projection or finding classifications were invented.", -1)) != 0 {
+		t.Fatal("a prose mention is not a workflow projection heading")
+	}
+	correction := []rejectionRoute{{event: routeSpawn, stage: "validation", target: "fix"}, {event: routeDone, stage: "validation", target: "fix"}}
+	review := append(append([]rejectionRoute{}, correction...), rejectionRoute{event: routeSpawn, stage: "validation", target: "review"}, rejectionRoute{event: routeDone, stage: "validation", target: "review"})
+	for _, tc := range []struct {
+		routes            []rejectionRoute
+		independent, pass bool
+	}{{correction, false, true}, {correction, true, false}, {correction[:1], false, false}, {review, true, true}, {review, false, false}, {append(append([]rejectionRoute{}, correction...), correction...), true, false}} {
+		if err := assertSameStageWorkers(tc.routes, tc.independent); (err == nil) != tc.pass {
+			t.Fatalf("routes=%v independent=%v: %v", tc.routes, tc.independent, err)
+		}
+	}
+}
+
+func assertSameStageSelectedPlan(roots gitsource.Roots, briefing []byte) error {
+	var room struct {
+		Artifacts, Context []struct{ Type, URI, Rev string }
+	}
+	if err := json.Unmarshal(briefing, &room); err != nil {
+		return err
+	}
+	for i, selected := range append(room.Artifacts, room.Context...) {
+		if (i < len(room.Artifacts) || selected.Type == "Reference") && strings.HasPrefix(selected.URI, "git-root://state/") && strings.HasSuffix(selected.URI, "/recorded-gate-task/selected/plan.md") {
+			content, err := gitsource.Resolve(roots, selected.URI, selected.Rev)
+			if err != nil || string(content) != sameStagePlan {
+				return fmt.Errorf("selected plan is not the correction: %v", err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("fresh gate omitted the intended plan artifact")
+}
+
+func TestSameStageSelectedPlanRejectsPrematureGate(t *testing.T) {
+	entity := writeSameStageRevision(t, t.TempDir(), "plain")
+	state := filepath.Dir(filepath.Dir(entity))
+	roots := gitsource.Roots{Main: filepath.Dir(state), State: state}
+	plan := filepath.Join(filepath.Dir(entity), "selected/plan.md")
+	stale := readFile(t, filepath.Join(filepath.Dir(entity), "review/validation/briefing-1/index.json"))
+	writeFile(t, plan, sameStagePlan)
+	unrelated := filepath.Join(filepath.Dir(entity), "unrelated.md")
+	writeFile(t, unrelated, sameStagePlan)
+	gitCommitPathScoped(t, state, "recorded-gate-task", "correct plan after premature gate")
+	for i, path := range []string{"", unrelated, plan, plan} {
+		briefing := []byte(stale)
+		if path != "" {
+			source, _ := gitsource.Inspect(roots, path)
+			briefing, _ = json.Marshal(map[string]any{"artifacts": []gitsource.Source{source}})
+			if i == 3 {
+				briefing, _ = json.Marshal(map[string]any{"context": []map[string]string{{"type": "Reference", "uri": source.URI, "rev": source.Rev}}})
+			}
+		}
+		if err := assertSameStageSelectedPlan(roots, briefing); (err == nil) != (i >= 2) {
+			t.Errorf("selected %q: %v", path, err)
+		}
+	}
 }
