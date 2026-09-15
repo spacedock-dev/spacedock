@@ -13,48 +13,57 @@ mod-block:
 id: pytyzge5v85mcy8c02t1khqv
 ---
 
-Reduce live CI completion time with committed per-runtime duration hints and one bounded queue for common journeys and Claude substrate proofs.
+Reduce live CI completion time by running a committed duration-sorted list of the existing tests through three slots. This task is the **bottom PR**; the other in-flight PRs stack above it.
 
 ## Problem
 
-CI run 34996910090 tested 380bd7bf34b3dd1de07a125d75035c593f5ff930 (PR #798). Its tree is identical to main 438053493838dc70c9478b3d991309d566783e85 after PRs #794–#798 merged. Common journeys use three slots without duration ordering; Claude then runs three substrate tests serially. Observed package elapsed: Codex common 945.863s; Claude common 1334.022s plus substrate 520.586s = 1854.608s.
+Run 34996910090 tested 380bd7bf34b3dd1de07a125d75035c593f5ff930, whose tree matches merged main 438053493838dc70c9478b3d991309d566783e85. Codex common journeys took 945.863s. Claude common journeys took 1334.022s, then three serial substrate tests added 520.586s. Committed hints can put longer work first and let those Claude proofs use the same three slots.
 
-## Selected design
+## Binding feedback and revision
 
-Add one live test entry point, `TestLiveScheduled`, for Claude and Codex. It selects a small literal table of existing test functions with their names and rounded second hints. Claude selects the 17 common journeys plus merged dispatch, bare dispatch and the whole break-glass test; Codex selects the 17 common journeys. Both break-glass variants and all existing sequential journey variants stay inside their original test bodies. Pi keeps its current selector and concurrency policy.
+Captain review `resolution:binding-1789503968390265000`, artifact digest `sha256:1d756f6a0d260bbdabb84bdf915477f6bc2c3b89f5b66ae6b9e430f6f9cab935`, returned **REVISE**:
 
-Sort selected jobs by descending committed hint, then exact exported test name ascending. Three worker subtests call `t.Parallel()` once each, take the next job under one mutex, and run its existing function in a synchronous child `t.Run`. This uses Go's test lifecycle and native failure propagation. Workers continue after a failing child; CI must not pass `-failfast`. No separate process launcher, queue service, dependency, or remote history is needed.
+> this feels a lot of code. are you adding unnecessary tests to the scheduler? just run the tests in sorted order.
 
-The guarantee is deterministic queue admission order, not nanosecond ordering of host process startup across three CPUs. Emit each admitted ordinal and exact job name in the existing test log. A freed slot takes the next longest remaining job. The suite has at most three occupied worker slots even with `-parallel 8`; `-parallel 1` may reduce concurrency. There is no second substrate pool.
+Before: +330 net lines across 8 files, with dedicated queue/capacity/lifecycle controls, a frozen timing-replay fixture, extended callable/priority checks, and fresh failure/timeout exercises.
 
-`liveJourney` suppresses its existing `t.Parallel()` only when `t.Name()` begins with `TestLiveScheduled/`, so a worker owns the slot until that whole job and its subtests finish. Existing exported direct selectors keep their behavior. This one ancestry check avoids rewriting 17 wrappers or introducing an environment flag that could alter unrelated runs. Register the new suite as orchestration, while retaining every existing journey/proof registration and assertion.
+After: **+120 net lines across the same 8 files**, one literal hint/function list, one small ordering check, and a short three-worker loop that calls the existing test bodies. No frozen replay fixture, new failure/timeout/cancellation suite, parallel-ancestor AST guard, generic scheduler API, generic AST interpreter, process launcher or new runtime flag. Existing registry and gotestsum tests retain their jobs. The prior spike evidence remains useful; it does not need a permanent copy of every experiment.
 
-Common Claude scenarios, bare dispatch, and each break-glass variant already put config under `<CLAUDE_CONFIG_DIR>/<scenario-name>`. Merged dispatch currently uses the parent config root directly. Give it `<CLAUDE_CONFIG_DIR>/merged-team-mode`, including its metadata reader and reconcile subprocess. Every test already receives a separate HOME and workflow root; existing scenario artifact paths and Codex setup paths remain in use. Do not mutate process-wide environment or global auth/config in scheduled jobs.
+## Smallest supported design
 
-Claude's existing gotestsum common step becomes the single 20-job scheduled run. Remove the later serial substrate step. Keep the 90-minute suite backstop, all existing per-runner liveness budgets, the same clean summary output, and `always()` artifact upload. The separate 20-minute substrate-package timeout disappears because the proofs now belong to the combined suite; this is an explicit runtime change. Its event content moves into `live-e2e-detail.jsonl`; stream files, metadata, metrics, config projects and candidate provenance remain retained. Codex keeps its 40-minute backstop and current detail filename with the new selector.
+Add the exact live selector `^TestLiveScheduled$` for Claude and Codex. A literal table has the 17 existing common test functions and their rounded Claude/Codex hints. For Claude, append the three existing substrate functions. Keep the whole break-glass test together, including both sequential variants. Pi is unchanged.
 
-Hints are positive integer seconds in the literal scheduling table, keyed by runtime and exact exported test name. Round initial whole-test Go elapsed times to the nearest 10 seconds; do not add nested variant elapsed again. Sonnet measurements seed both Claude cadences; these are priorities, not timeout budgets. Missing, duplicate or nonpositive entries fail reconciliation before live execution. A new journey requires an explicit conservative hint in the same change. Update hints manually only when sustained whole-test timings would change useful ordering. Merged dispatch lacks a journey metric today, so use Go JSON terminal events for it. Scheduled whole-test event names are nested under `TestLiveScheduled/slot-N/<exported-name>`; exclude their deeper variant events when measuring.
+Sort the selected list by descending hint and exact test-name ties. Use three native Go worker subtests, each calling `t.Parallel()` once and taking the next item from the shared sorted list before a synchronous `t.Run`. Protect the next index with a mutex. This is a short loop local to this test suite, not a reusable scheduler. The common runner suppresses its nested `t.Parallel()` only beneath `TestLiveScheduled/`; standalone exported tests retain their existing behavior. Scheduled test bodies and their variants must remain synchronous beneath each worker.
 
-## Mechanism necessity
+Why a loop remains: an isolated actual-Go experiment registered 12 parallel subtests in order `0..11` with `-parallel 3`. The three runs started in orders:
 
-- The literal hint table serves AC-1. Source declaration order cannot differ by runtime, and Go's `t.Parallel()` resumption order is not a priority contract. A parsed JSON manifest would add a format and parser without improving this small checked-in table.
-- Three workers plus one sorted queue serve AC-1/AC-2. Three static longest-first lanes are smaller conceptually but strand capacity when observed durations differ from hints. One shared dynamic queue reuses a freed slot. A semaphore around arbitrary parallel test starts limits concurrency but does not preserve priority and can deadlock if higher-priority tests cannot obtain Go's parallel slots.
-- The ancestry check serves AC-2. Reusing unmodified `t.Parallel()` children would return worker capacity early; rewriting each test into a second callable body expands the surface. Direct tests stay available for diagnosis.
-- The merged config child serves AC-2/AC-3. Merely retaining distinct working directories leaves shared Claude settings and metadata under the same config root.
-- Registry-to-scheduled-function equality serves AC-3. Hint rows alone cannot prove the scheduled suite still covers all registered tests. Extend the current AST reconciliation rather than create another registry.
+- `0,5,6,4,3,2,1,9,11,10,8,7`
+- `0,5,6,1,4,3,9,11,10,8,2,7`
+- `0,5,6,4,3,2,1,9,11,10,8,7`
 
-## Risk evidence
+Sorted registration therefore does not produce useful priority order. The retained native experiment is `/tmp/spacedock-native-order-spike/order_test.go`; reproduction is `go test -v -parallel 3 -count=3 /tmp/spacedock-native-order-spike/order_test.go`. It is a throwaway probe, not a new repository test. The already committed worker spike `72718be3f` shows the small worker loop works. No need to invent another scheduling mechanism or serialize all tests. The contract is sorted admission to three slots; CPU-level host startup order can differ.
 
-The isolated spike is committed locally at `72718be3f` in `/tmp/spacedock-schedule-ideation`, based on candidate `380bd7bf`; no product branch changed. `SCHEDULE-SPIKE.md` in that commit records runnable commands. This is a local throwaway commit, not a pushed prerequisite; implementation must copy its behavioral proof into ordinary repository tests.
+Give merged dispatch its own `<CLAUDE_CONFIG_DIR>/merged-team-mode` child. Common, bare and break-glass scenarios already use their own scenario children. Keep their separate HOME/workflow roots and existing artifact paths. No global auth/config change.
 
-- Actual Go worker/subtest exercise: peak 3 and all 8 jobs completed; race run repeated 20 times passed. An injected `t.Fatal` in job 2 returned exit 1 while all 8 jobs completed.
-- Hint-order mutant admitted `7,6,5,4,3,2,1,0` instead of the fixed independent expectation `0,1,2,3,4,5,6,7`; the admission-order oracle rejected it. Four-worker mutant with `-parallel 8` failed the peak=3 assertion. Restore was completed before the spike commit.
-- Actual gotestsum failure run retained 74 JSON events, 8 terminal job events and package failure; exit 1. Forced 200ms suite timeout retained 128 events and package failure; exit 1. This proves retained partial evidence, not completion or descendant cleanup after cancellation.
-- Three simultaneous shell subprocesses using the existing environment helpers retained distinct HOME, config/projects and workflow markers under race. This proves filesystem/environment separation only; the test models the existing scenario suffix and proposed merged suffix, so it does not independently prove actual runner selection.
-- Existing `TestDecideClaudeEnv`, `TestResolveClaudeConfigDir`, `TestIsolatedClaudeEnv*`, and `TestLiveCIStep*` controls passed.
-- Actual `TestLiveScheduled` overlap attempt selected merged dispatch, bare dispatch and common shallow boot. All three SKIPPED before host launch: API-key/OAuth environment absent and the OS denied access to `~/.claude/benchmark-token`. No access bypass, global auth change or provider claim was made. **Actual Claude overlap remains unproven and is required before implementation acceptance.**
+Claude uses one gotestsum invocation for all 20 tests, writing `live-e2e-detail.jsonl`; remove its later serial substrate invocation. Keep `always()` artifact upload, streams, metrics, config projects and candidate provenance. Its existing 90-minute suite backstop now covers all 20 tests; the separate 20-minute substrate-package backstop disappears. Codex keeps its 40-minute timeout and detail filename. Do not pass `-failfast` to either scheduled suite. Existing runner assertions, liveness and cleanup stay unchanged.
 
-Retained Go JSON was analyzed locally from `/tmp/ci-schedule-34996910090`; these paths are evidence locations, not scheduler inputs. Frozen whole-test seconds and independently rounded priorities are recorded below so the deterministic regression can be recreated without downloads. Common rows abbreviate the `TestLiveCommon` prefix; substrate rows use their full names.
+Keep the original exported tests for targeted diagnosis. The three-slot/exactly-once promise applies to the canonical anchored scheduled selector. Broad selectors such as `-run TestLive` would select both the wrapper and original tests, duplicating work and possibly artifact names; document the exact selector instead of adding a runtime flag or suppression layer.
+
+## What remains, and why
+
+- **Literal hints and ordering helper (AC-1):** needed to order differently per runtime. One focused test supplies a few unsorted jobs, including an equal-hint pair, and checks the exact independently expected order. Reversing the comparison or tie order fails it. No captured-duration fixture or timing threshold in CI.
+- **Three-worker loop and nested-parallel suppression (AC-2):** needed because native sorted registration does not control admission. Reuse the retained spike's evidence for three occupied slots, synchronous completion and continued execution after a failing child; do not copy its separate mutation/failure/timeout experiments into a new test suite.
+- **Merged config child (AC-2):** needed before overlap; distinct working directories alone do not isolate the shared Claude config root. Actual host overlap remains the acceptance proof.
+- **Small adaptation of existing registry reconciliation (AC-3):** accept the new canonical selector and orchestration entry, and reconcile the literal function references with the current 17 common/3 Claude proof declarations. Check each row's name matches its callable and detect omission/duplication while retaining current assertion/fixture/TODO/XFAIL checks. Do this inside the existing parser walk; no second registry or generalized parser. Compiler/runtime selection and the literal append make Claude-only membership reviewable. Do not add a separate speculative hint-schema or future parallel-call checker.
+- **Existing gotestsum controls (AC-3):** keep their ownership of summary, archive and exit-code behavior. No additional permanent failure/cancellation controls are needed for unchanged gotestsum/native `t.Run` behavior.
+
+## Risk evidence and remaining proof
+
+Retained local spike commit `72718be3f` at `/tmp/spacedock-schedule-ideation` is an experiment, not a product branch. It observed peak 3, all 8 fake jobs complete, 20 race repetitions passing, and all 8 complete with exit 1 after injected `t.Fatal`. The reverse-order and fourth-worker mutations were rejected. Gotestsum failure and timeout runs retained JSON detail with nonzero exits. Existing environment and `TestLiveCIStep*` controls passed. These are already-run evidence, not instructions to build a parallel proof suite.
+
+Three concurrent shell subprocesses retained distinct HOME, config/projects and workflow markers. This models the intended path separation and is **not** real Claude isolation proof. The attempted actual merged/bare/shallow-boot overlap skipped all three tests before launch: no API-key/OAuth environment and the OS denied access to `~/.claude/benchmark-token`. Do not bypass the denial or treat skipped tests as passing evidence. Before implementation acceptance, run one bounded real overlap of merged dispatch, break-glass (both sequential variants) and common shallow boot; require overlapping host intervals, distinct actual config/workflow/session paths, durable assertions and retained artifacts.
+
+The measurements below are design evidence for the hints, not a new test-data file or a future remote dependency. Round whole-test terminal durations to the nearest 10 seconds; do not add nested variant elapsed again. Sonnet measurements seed both Claude cadences. Update hints manually if sustained timings change useful ordering. No automatic updater or performance gate.
 
 | Test | Codex observed / hint | Claude observed / hint |
 |---|---:|---:|
@@ -83,52 +92,43 @@ Rounded-priority replay gives Codex 817.88s (127.983s below the 945.863s observe
 
 ## Acceptance criteria
 
-**AC-1 — Committed priorities reduce predicted completion time and release freed capacity without external state.** The frozen independent durations above complete within 830s for Codex and 1400s for pooled Claude at three slots, against observed baselines of 945.863s and 1854.608s. Every selected job is admitted exactly once in descending hint order with lexical ties; a short actual job releases capacity while another long job is still active. Proof: deterministic scheduler/subtest exercise plus independent duration replay. Reversing the comparator fails both thresholds; changing only the tie comparator fails the equal-hint case. No wallclock timing gate or remote lookup enters CI.
+**AC-1 — Longer hinted tests are admitted first from a committed per-runtime list.** The single ordering check proves descending hints with lexical ties against an independent expected list. The retained measurements predict 817.88s Codex versus 945.863s observed, and 1363.72s pooled Claude versus 1854.608s observed; these quantify the intended value without promising provider wallclock gains or adding a timing fixture. No remote reads or automatic hint writes occur.
 
-**AC-2 — Common journeys and Claude substrate proofs share one cap of three occupied tests with isolated host state.** Proof: barrier-controlled jobs with `-parallel 8` never exceed three, cover mixed common/substrate labels, and hold capacity through sequential variants and cleanup. Separately, one bounded local real Claude overlap runs merged dispatch, break-glass (both sequential variants) and common shallow boot with shared archive root and distinct config/workflow/HOME state; inspect transcript session IDs, durable fixture output, and artifact paths. A fourth worker, early slot release, or removal of the merged suffix must fail its corresponding check. Fixture evidence and auth skips cannot satisfy the real-host claim.
+**AC-2 — Claude common and substrate tests use one three-slot queue with isolated host state.** The short worker loop retains a slot through synchronous `t.Run` and cleanup, including sequential variants; `-parallel 1` can reduce concurrency. Use the existing bounded spike evidence for queue behavior and complete the one real overlap described above before acceptance. A fixture pass or auth skip cannot close this criterion. Existing exported direct tests remain usable with exact selectors.
 
-**AC-3 — Scheduled CI retains the complete registered coverage and failure evidence.** Claude schedules 20 existing exported tests, Codex 17; Pi retains its current surface. Original assertions, TODO/XFAIL classification, all variant counts, runner cleanup and metrics stay intact. Proof: existing AST registry reconciliation extended to compare scheduled function references with registered common/proof functions, plus actual gotestsum runs with injected failure and timeout. An omitted/duplicate callable, swallowed failure, skipped later job, or missing detail archive fails its corresponding check. A canceled/timed-out suite may leave jobs unrun but must report failure and retain available evidence; the task must not claim canceled work completed.
+**AC-3 — The canonical scheduled invocation preserves all existing tests, assertions and evidence.** Claude runs the existing 20 functions and Codex the existing 17; Pi is unchanged. Existing registry reconciliation checks the literal scheduled callables and canonical selectors. Existing gotestsum tests own clean summary, JSON detail and failure exit behavior; ordinary test failure still allows queued jobs to finish, whereas timeout/cancellation may leave unrun jobs and retain only available detail. No new cancellation or process-cleanup guarantee is introduced.
 
 ## Expected surface and tolerance
 
-Estimate net LOC change: +330, across 8 files. Estimated insertions +370, deletions -40. Tolerance: at most +100 additional net lines and 2 additional files (ceiling +430 net / 10 files); fewer lines/files are welcome. A new scheduler service, process supervisor, runtime flag or production CLI package exceeds the design regardless of line count.
+Estimate net LOC change: **+120, across 8 files**. Estimated insertions +155, deletions -35. Tolerance: **+30 net lines, no additional files**; ceiling **+150 net / 8 files**. This is a 64% reduction from the original +330 estimate. If the concise adaptation cannot fit, report the concrete reason instead of adding scaffolding.
 
-1. `internal/ensigncycle/live_schedule_test.go` (new): small queue helper plus offline behavioral tests and frozen baseline literals.
-2. `internal/ensigncycle/scheduled_live_test.go` (new): literal hint/function table and suite entry point.
-3. `internal/ensigncycle/shared_live_runner_test.go`: scheduled ancestry guard only.
+1. `internal/ensigncycle/live_schedule_test.go` (new): small row type/order helper and one focused independent-order test.
+2. `internal/ensigncycle/scheduled_live_test.go` (new): literal hint/function table, runtime selection and short three-worker loop.
+3. `internal/ensigncycle/shared_live_runner_test.go`: scheduled ancestry guard.
 4. `internal/ensigncycle/merged_team_mode_live_test.go`: merged config child.
-5. `internal/contractlint/live_registry_reconciliation_test.go`: scheduled membership and selector reconciliation.
-6. `.github/workflows/runtime-live-e2e.yml`: Claude combined run, Codex selector, artifact entry/comment updates.
-7. `docs/runtime-live-ci.md`: canonical commands, concurrency, hint maintenance and combined evidence location.
-8. `docs/runtime-live-ci-registry.md`: orchestration entry, retaining all journey/proof identities.
+5. `internal/contractlint/live_registry_reconciliation_test.go`: concise callable/selector adaptation inside existing reconciliation.
+6. `.github/workflows/runtime-live-e2e.yml`: combined Claude command and Codex selector; remove obsolete serial step/artifact entry.
+7. `docs/runtime-live-ci.md`: canonical commands, hints and combined evidence location.
+8. `docs/runtime-live-ci-registry.md`: orchestration entry; existing journey/proof identities retained.
 
-Allowed observable changes: internal Go test selector and nested test event names, test admission order, Claude substrate/common overlap, merged config location, combined Claude JSON detail file, and replacement of the separate substrate 20-minute package timeout by the existing 90-minute combined-suite timeout. No spacedock command grammar, durable workflow format, FO/ensign authority, assertion semantics, Pi behavior, auth policy or provider settings change.
+Allowed semantics: test selector/nested event names, admission order, Claude overlap, merged config location, combined Claude JSON detail, and the explicit timeout consolidation. No spacedock CLI grammar, durable state format, authority, assertions, Pi behavior, auth policy or provider settings change. Staffing remains one implementation owner and one independent validator; one additional reviewer only for a distinct uncovered claim. Scheduling is the bottom PR, with other in-flight PRs above it. No implementation before the revised binding gate; no push or CI.
 
-Expected staffing: one ideation/implementation owner and one independent validator/auditor; tolerance one extra reviewer only for a distinct uncovered claim. Deliver as a separate PR above merged main or the forthcoming Claude repair; no old stack branch mutation. No push or CI until the captain's stack-ready authorization covers it.
+## Minimal proof plan
 
-## Test plan
-
-The current proof owners are the 17 exported live journeys and three Claude substrate tests for runtime behavior; `TestRuntimeLiveRegistryReconciliation` for coverage; and `internal/release/cilog_clean_output_test.go` for gotestsum summary/detail/exit semantics. The queue itself has no existing proof owner, so add focused tests before implementation.
-
-1. Write queue/admission and capacity tests first (subsecond deterministic jobs; no provider). A reverse comparator, unstable tie, fourth slot, duplicate pop, early slot release or fixed partition with a slow lane must produce an observable failure. Use barriers instead of elapsed-time races for the cap/continued-admission assertions. The frozen replay is separate from real job timing.
-2. Extend existing registry reconciliation before changing selectors. Compare real callable references, exact names, counts, positive hints and per-runtime membership, retaining all existing AST journey/assertion checks. Deleting a row or referencing the wrong function must fail; parsing only a label is insufficient. Keep this within the current test file.
-3. Use the existing gotestsum proof owner plus one queue failure/timeout subprocess exercise (seconds). Keep later jobs running after `t.Fatal`, assert every expected terminal event, nonzero exit, and retained failure/partial-timeout detail. Reuse standard Go/runner teardown; do not build a cancellation framework. Existing cleanup assertions remain; if actual overlap exposes descendant leaks, report a scope decision rather than silently adding a supervisor.
-4. Finish the required bounded local Claude overlap once authorized readable credentials exist (three occupied tests maximum; 15-minute local cap). Use the real merged, break-glass and shallow-boot bodies with all assertions; no provider/model mutation and no full-suite burn. Record skipped runs distinctly. Any failure must be attributed before treating it as scheduling evidence.
-5. Run focused changed-package checks, `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` before implementation completion. Run an independent adversarial audit of registry/CI wiring. Reserve full Claude/Codex stack-tip CI for the ready stack.
+1. Before implementation, add the one ordering check with a small independent expected sequence and equal-hint pair. No timing sleeps, replay fixture or scheduler test framework.
+2. Adapt and run the existing registry reconciliation and gotestsum proof owners. Preserve exact callable coverage and use anchored selectors. The retained worker/failure spike is sufficient design evidence for the few lines of native worker glue; review that glue directly instead of introducing new permanent lifecycle/cancellation controls.
+3. Complete one bounded local real Claude overlap (merged, break-glass, shallow boot; maximum three occupied tests, 15-minute local cap) with readable authorized credentials. Record actual intervals/paths and original assertions; skipped execution remains outstanding.
+4. Implementation still owes repo-required `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`. No full suite is being rerun for this ideation revision. Independent validation reviews the small diff and existing checks; full live CI waits for the ready stack.
 
 ## Proposed documentation diff
 
-In `docs/runtime-live-ci.md`, replace:
+In `docs/runtime-live-ci.md`, replace “Runtime-specific substrate proofs stay separate because they verify host boundaries rather than workflow semantics” with:
 
-> Runtime-specific substrate proofs stay separate because they verify host boundaries rather than workflow semantics.
+> Claude's three substrate proofs retain their separate assertions and share the common journeys' three-slot queue.
 
-with:
+Replace the common scheduling paragraph and separate Claude substrate command with:
 
-> Runtime-specific substrate proofs retain separate assertions. Claude schedules its three substrate tests alongside the 17 common journeys in one queue.
-
-Replace the local paragraph beginning “Run the common journeys by selecting one transport” through the separate Claude substrate command with:
-
-> Claude and Codex use committed whole-test duration hints to admit longer tests first. Each scheduled suite has one three-slot queue and continues after a test failure. Claude runs the 17 common journeys and three substrate tests together; Codex runs the 17 common journeys. The hints are priorities, not timeout budgets. The Claude suite has a 90-minute backstop. Existing exported test names remain available for targeted diagnosis.
+> Claude and Codex run longer hinted tests first from a committed list, using three slots and continuing after a test failure. Claude includes its 17 common journeys and three substrate tests. Use the exact scheduled selector below; broad selectors such as `TestLive` also select the original tests and duplicate work. Exact original test names remain available for diagnosis.
 >
 > `SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveScheduled$' -parallel 3 ./internal/ensigncycle -v`
 
@@ -136,17 +136,19 @@ Replace the canonical Codex command with:
 
 > `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveScheduled$' -parallel 3 ./internal/ensigncycle -v`
 
-Add after those commands:
+Add:
 
-> Update the rounded second hints in `internal/ensigncycle/scheduled_live_test.go` manually when sustained whole-test timings change useful ordering. Use the terminal event for `TestLiveScheduled/slot-N/<exported-test-name>`; do not add its nested variant times again. Claude CI keeps common and substrate events in `live-e2e-detail.jsonl`. Runtime streams, journey metrics and per-scenario config projects remain in the uploaded artifact. Scheduling does not read remote metrics or rewrite hints.
+> Update the rounded hints in `internal/ensigncycle/scheduled_live_test.go` manually when sustained whole-test timings change useful ordering. Use the terminal `TestLiveScheduled/slot-N/<exported-name>` event without adding its nested variants. Hints are priorities, not timeout budgets. Claude keeps all test events in `live-e2e-detail.jsonl` under one 90-minute suite backstop; streams, metrics and config projects remain archived. Scheduling reads no remote history.
 
-In `docs/runtime-live-ci-registry.md`, add the orchestration entry without changing the existing 20 identities:
+In `docs/runtime-live-ci-registry.md`, add:
 
 > ### `TestLiveScheduled`
 >
-> Scheduling entry point for Claude and Codex. It invokes the existing registered tests once each, using committed duration priorities and one three-slot queue. It adds no journey or substrate assertion.
+> Claude/Codex scheduling wrapper for the existing registered test functions; adds no journey or substrate assertion.
 
 ### Feedback Cycles
+
+Cycle 1: binding REVISE recorded above. The prior independent review accepted the architecture but recommended extra proof controls; the captain's subsequent binding feedback supersedes those additions. The selected revision keeps only the small ordering check and existing proof owners. Await another binding review before implementation.
 
 ## Stage Report: ideation
 
@@ -160,3 +162,17 @@ In `docs/runtime-live-ci-registry.md`, add the orchestration entry without chang
 ### Summary
 
 Selected a three-worker Go test wrapper with a single duration-ordered queue, reusing all existing test bodies and gotestsum evidence. Deterministic scheduling and failure behavior were exercised in an isolated committed spike; live host overlap remains an explicit unmet proof because the available credential path was denied by the OS. No product branch, global auth/config, push or CI mutation was performed.
+
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Prove the smallest scheduler orders by committed hints and enforces one three-slot cap without remote state.
+  Native sorted registration was exercised in three tiny runs and reordered jobs; retained worker spike 72718be3f proves the minimal three-slot alternative. Only one permanent order check is proposed.
+- FAILED: Establish actual substrate/common isolation and preserve test coverage, failure propagation, and artifacts.
+  Prior environment/failure/artifact evidence stands; actual Claude overlap remains unproven because readable credentials are unavailable, and remains required before acceptance.
+- DONE: Record a minimal design, exact surface/tolerance, and targeted local proof plan for a separate stack PR.
+  Binding feedback recorded; revised +120 net (+155/-35), 8 files, ceiling +150 net / 8 files; scheduling is the bottom PR and duplicate proof scaffolding is removed.
+
+### Summary
+
+Reduced the design from +330 to +120 estimated net lines by removing the broad new proof suite and retaining existing registry/gotestsum ownership. Sorted native registration demonstrably reorders work, so the design retains only a short three-worker loop to consume the sorted list. No implementation, full-suite rerun, push or CI action occurred; another binding review is required.
