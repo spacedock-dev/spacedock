@@ -1,6 +1,6 @@
 ---
 title: Honor workflow-declared same-stage revision without mandatory reviewer machinery
-status: backlog
+status: ideation
 source: Captain request after email-triage FO issue 792
 issue: spacedock-dev/spacedock#792
 score: 0.95
@@ -32,7 +32,7 @@ gates:
                 reason: Captain explicitly requested local filing and ideation dispatch to spike actual same-stage revision and inspect all related Roborev settings/history.
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 Make same-stage gate revision follow the declared workflow while preserving independent review where it is required.
