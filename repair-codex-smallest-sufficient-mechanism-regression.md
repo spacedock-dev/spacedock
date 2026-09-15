@@ -606,3 +606,31 @@ PASSED for the assigned correction re-review and targeted live validation at exa
 ### Summary
 
 The captured native envelope legitimately names `main`; the scratch test repository now makes that premise explicit instead of depending on developer Git configuration. Both main/master environment controls and focused race checks pass on `0fb8dd634`, with strict receipt semantics and every existing negative unchanged.
+
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Independently verify the exact two-line scratch-branch correction0fb8dd634 against CI failure34984126222 and process-local main/master differential evidence.
+  Clean exact `0fb8dd634d397e59ba169ec81d5d602594b02800` adds only a comment and scratch `git branch -m main` after `gitInit`; retained CI log and pre-fix master-default reproduction show the identical two false edit assertions, while pre-fix main passes.
+- DONE: Confirm runtime, grader, assertions and lower layers unchanged; assess existing passing live evidence applicability without another live run.
+  Complete diff versus `e52ece67abdb282ab061c41ee897a8a341b22954` is one offline test file, +2/-0; strict full-receipt comparison and every negative remain unchanged. The prior 217.15s live PASS applies to unchanged runtime/grader behavior, but remains an `e52ece67a` run, not a new live run at `0fb8dd634`.
+- DONE: Record PASSED or material findings with exact candidate and current criterion evidence; no code edits, CI or broad reruns.
+  PASSED. Reviewed all retained differential/green logs and exit files; no unowned claim required another branch-default probe. Validator ran only read-only source/evidence inspection and diff checks, then wrote this state report.
+- DONE: AC-1 — captured successful parent edits receive credit independently of host Git defaults.
+  The immutable native receipt names main; explicit scratch branch main makes the real transaction receipt agree without weakening matching. Current parent matrix under master passes (8.964s), focused main passes (8.860s), and focused master race passes (10.367s); deleting the pin restores the recorded CI-equivalent false negative.
+- DONE: AC-2 — unsuccessful, old/echoed, delegated, or wrong-content evidence remains rejected.
+  Producer's passing full parent matrix includes every existing execution, receipt, baseline, content, path and pre-spawn negative. Only setup branch identity changed; old-receipt and strict native receipt assertions are unchanged, so the pin cannot turn an invalid receipt into credit by weakening the grader.
+- DONE: AC-3 — native lifecycle and durable commissioned proof unchanged.
+  Exact one-file diff excludes runtime, observer/grader, live runner, lifecycle, owner binding and lower-layer changes. Existing `e52ece67a` live proof remains applicable to those identical bytes.
+- DONE: AC-4 — narrow committed layer with focused proof and correctly attributed prior verification.
+  Current-tip main/master normal and master race focused checks pass. Existing `e52ece67a` full normal/race each exit 1 solely on the established baseline resolver expectation; no new all-package or live run is claimed at `0fb8dd634`.
+- SKIPPED: Duplicate branch probes, live/full suites, code push, and CI retry.
+  FO explicitly requested bounded review of already-owned deterministic evidence; no new concern justified repetition. State report alone is path-scoped committed and synced.
+
+### Reviewer findings
+
+The owned Material AC-1 fixture-portability evidence defect is resolved by the authorized scratch-branch pin. CI run `34984126222` / job `104431734992` is matched by `/tmp/ssm-ci-default-branch-master.log`, contrasted with `-main.log`; current green logs and exits are in `/tmp/ssm-ci-branch-fix/`. No criteria narrowing, assertion weakening, new material finding, or deferred risk was identified.
+
+### Summary
+
+PASSED at exact `0fb8dd634d397e59ba169ec81d5d602594b02800`. The two-line fixture correction removes host branch-default dependence while preserving all runtime and evidence semantics; prior live/full-suite results retain their original SHA and outcome labels.
