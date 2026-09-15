@@ -235,3 +235,18 @@ Review found no material candidate defect within the approved two-file fixture/p
 ### Summary
 
 Recommend REJECTED against unchanged AC-2: the fixture correction now reaches genuine worker completion, but the first officer fails to enter validation before preparing its human gate. AC-1 remains supported and fresh AC-3 passed; no lifecycle assertion was relaxed and no candidate defect is inferred merely from the test's broad `implementation-worker-not-dispatched` label. H-1 awaits FO ownership/disposition, with the live slot released and this worker addressable.
+
+
+## H-1 follow-up: contradictory completion shortcut (read-only)
+
+The exact failed-run loaded `fo-dispatch-core.md` was retained in `commands-summary.json` row 10; its full contents match the candidate file. The same conflicting paragraph is present in the local `origin/main` reference.
+
+- Completion step 4 correctly asks whether the **completed stage** is gated.
+- The following paragraph nevertheless lists **the next stage** being `gate: true` as a stop exception: “present the gate and wait”.
+- The subsequent Gate successor guard requires `status={next_stage} started`, dispatch of that gated stage, and its completion signal/report before gate lifecycle.
+
+Hypothesis: the next-stage stop exception offers an immediate gate-presentation shortcut that competes with the explicit successor guard. The observed transition from implementation completion directly to gate preparation is consistent with taking that shortcut. This is a real contradiction in loaded instructions, but the trace does not prove which wording caused the model choice; no live rerun or intervention has tested causality.
+
+Smallest proposed separate routing-fix wording: delete `the next stage is gate: true (present the gate and wait)` from the Completion paragraph's exceptions and append: “If the successor is gated, enter and dispatch it under the Gate successor guard; prepare and present its gate only after that stage's completion signal and verified report. Gate routing at completion applies to the completed stage, not an unentered successor.” Preserve the existing completed-stage gate check, successor guard, and authority/lifecycle assertions. No binary feature, host-adapter change, or fixture-scope expansion is proposed.
+
+This clarifies H-1's proposed separate owner to the shared FO completion contract. It does not change the outcome/material classification, candidate bytes, or REJECTED recommendation against AC-2. FO scope/disposition remains required before any source edit or live rerun.
