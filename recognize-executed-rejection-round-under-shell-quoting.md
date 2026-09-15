@@ -121,3 +121,18 @@ Per captain-approved stack strategy, run focused offline checks and the targeted
 ### Summary
 
 The existing command logger provides the execution fact the shell regexp misses, and its recorder-level exit code also excludes failures hidden by a successful outer shell. Both retained command forms were exercised against real fixture state without candidate code edits; implementation and the targeted live AC remain subsequent-stage work.
+
+## Stage Report: implementation
+
+- DONE: Use the existing command logger and durable round oracle to recognize real nested-shell recording without adding command-source parsing.
+  Commit 5ff85f00b wires Codex rejection-flow to recorder exit rows and retains command.log; durable room, complete log, gate, and topology checks remain unchanged.
+- DONE: Commit focused positive and nonexecution, failure, missing-round, duplicate regressions and prepare the exact targeted live rejection-flow run.
+  TestRejectionRoundPublicationExecution runs minimal retained pre3/0.27.3 shell forms against a built recorder; restoring source recognition fails both positives. Echo, masked recorder failure, duplicates, validation/2, and removed room fail acceptance; dropping exit/count/durable checks breaks the corresponding controls.
+- DONE: Focused offline verification and stack placement.
+  `go test ./internal/ensigncycle -run 'TestRejection(FlowRound|RoundPublication)' -count=1` passed, also with `-tags live` to compile live wiring; layer is based on da50d61d, 3 files +96/-17 (net +79), formatted and clean.
+- SKIPPED: Targeted live AC-3 and stack-wide checks.
+  FO explicitly held live/full suite/PR work pending the stacked focused commit; no live pass is claimed. Prepared command: `env -u SPACEDOCK_BIN SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_CODEX_LIVE_REQUIRED=1 go test -tags live ./internal/ensigncycle -run '^TestLiveCommonRejectionFlow$' -v -count=1` from the assigned worktree.
+
+### Summary
+
+The Codex publication oracle now uses actual successful recorder invocations after shell quoting resolves, preserving repeated calls and recorder failures hidden by a later successful shell command. Focused proof and implementation are committed on stack layer 3; targeted live verification remains explicitly held by the FO.
