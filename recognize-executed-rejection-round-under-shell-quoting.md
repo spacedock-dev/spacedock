@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:82de96hqv8cfwxqagj6ah1k6:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:82de96hqv8cfwxqagj6ah1k6-ideation-1
+              briefing:
+                id: briefing:82de96hqv8cfwxqagj6ah1k6:ideation:attempt-1:revision-1
+                digest: sha256:539e67ba626efb17ef5c4e1eb43dd9abc2aedacb48af53f511239ae019caaa66
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
