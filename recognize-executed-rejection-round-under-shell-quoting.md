@@ -6,7 +6,7 @@ started: 2026-09-15T04:02:58Z
 completed: ""
 verdict: ""
 score: "0.9"
-worktree: ""
+worktree: .worktrees/spacedock-ensign-recognize-executed-rejection-round-under-shell-quoting
 issue: ""
 pr: ""
 mod-block: ""
