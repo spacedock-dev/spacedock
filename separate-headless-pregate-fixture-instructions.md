@@ -6,7 +6,7 @@ started: 2026-09-15T04:02:22Z
 completed: ""
 verdict: ""
 score: "0.9"
-worktree: ""
+worktree: .worktrees/spacedock-ensign-separate-headless-pregate-fixture-instructions
 issue: ""
 pr: ""
 mod-block: ""
