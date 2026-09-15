@@ -70,6 +70,49 @@ started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 ---
 
+## Current captain-approved direction — release Python-write attribution (2026-09-14)
+
+This section supersedes the historical candidate, scope estimates, acceptance criteria,
+and implementation ladder below for the current repair. Prior reports remain as history;
+the rejected commits are not part of this candidate. The captain authorized the current
+release false-negative repair through the first officer's implementation dispatch.
+
+- Released workflow: the smallest-sufficient-mechanism live Codex scenario directly
+  resolves the two ladder notes, adds the strategy doc, commits, then dispatches ready work.
+- Observable harm: pre3 and 0.27.3 reject successful Python parent edits because
+  `ssmCodexEditVerbRe` recognizes shell word patterns instead of successful file changes.
+- Authority: captain-ruling[2026-09-14] — repair successful parent attribution with real
+  content evidence; preserve native worker proof and reject read-only, failed, or delegated edits.
+- Trigger evidence: `/tmp/spacedock-pre3-codex-live.zip` and
+  `/tmp/spacedock-0273-codex-live.zip`, smallest-mechanism public events `item_10`/`item_8`,
+  successful original receipts `809aebc`/`4ea22cd` (all three requested files committed).
+  Exact two public events are now durable fixture
+  `internal/ensigncycle/testdata/codex_smallest_mechanism_python.jsonl`, SHA-256
+  `f7a5642736eb926b6b3205516e3f5605d20a869abca0f4c24342f33d22687be8`.
+
+Current acceptance criteria:
+
+1. Both captured Python command shapes receive in-house edit credit from successful
+   parent execution and independently checked exact note changes in real Git history.
+2. Read-only mentions, echoed real receipts, failed/in-progress commands, missing native
+   receipts, delegation before the parent commit, wrong/unchanged paths or content, and
+   incorrect final file bytes cannot create shell-edit credit.
+3. Existing native lifecycle and durable commissioned-journey proof stays unchanged;
+   no product instrumentation, new observer framework, or owner binding changes.
+4. The narrow layer is committed with focused offline proof. The FO serializes targeted
+   local Codex live execution after stacking, then runs full normal/race tests on the
+   combined tip. This worker must not spend those runs independently.
+
+Implementation uses the existing correlated parent rollout, public completed exit-0
+command, native commit receipt before the first spawn, and exact commit parent/current
+note bytes plus final files. Shell command words alone no longer establish edits.
+Structured file changes must be completed successfully and name the exact file.
+The current surface is four test/fixture files, +183/-23 lines; no CLI or stored formats change.
+The rejected history is preserved at `archive/ssm-rejected-0b809073b-20260914` ->
+`0b809073b`; the owned branch was prepared cleanly from `origin/main` `2a7b87198`.
+
+## Historical design and reports (superseded where conflicting)
+
 ## Problem statement
 
 PR #679 run `31728107636`, Codex job `94541783359`, reported
@@ -355,3 +398,22 @@ Captain requested this evidence be added to this existing repair task; this reco
 - At the tested candidate, `internal/ensigncycle/shared_smallest_mechanism_test.go` uses `ssmCodexEditVerbRe` to recognize apply_patch, redirects, tee, or sed -i. It does not recognize this successful Python write. The durable commissioned-journey check passed before the edit-recognition assertion failed. Both ready tasks completed; this is a different evidence gap from the older worker-lifecycle correlation problem above.
 - Diagnosis: false negative in recognition of a legitimate in-house edit. Do not repair it by merely adding more command-name regexes: command text alone is not proof of a successful write. Preserve successful result/content attribution and negatives for read-only mentions, failed writes, and delegated edits when evaluating the repair.
 - Follow-up proof: replay the captured event against the existing smallest-mechanism proof owner, with independently verified expected file bytes and parent ownership; falsify by removing or failing the actual edit while retaining the command words. No implementation change or test rerun was performed for this evidence filing.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Reproduce the release Python-write false negative against current origin/main and repair parent edit attribution with successful execution plus durable content evidence, preserving negative controls and existing native worker proof.
+  Commit `e8d39dcd1`; both exact release commands fail against `2a7b87198` and pass when replayed with real fixture commits and matching native parent receipts. Original artifact receipts are preserved in the fixture; regression replay substitutes the freshly created Git receipt, not fabricated commit bytes.
+- DONE: Commit the narrow current fix and focused offline regression evidence as a stack layer; prepare the exact targeted Codex smallest-mechanism local run for FO scheduling.
+  Four files +183/-23; the current approval/evidence section replaces stale directions explicitly. No owner registry/binding, product implementation, or commissioned lifecycle code changed.
+- DONE: Preserve rejected historical work before preparing the current candidate.
+  Backup `archive/ssm-rejected-0b809073b-20260914` points to `0b809073b` including `c8108260b`; owned branch reset to `2a7b87198` before this new layer, without force-push.
+- DONE: Exercise the focused falsifiable regression controls.
+  `go test ./internal/ensigncycle -run 'Test(.*Smallest.*|CodexNativeLifecycle.*|ImplementationLifecycleAndObserverNegativeControls)$' -count=1` passes: omitting the byte comparison admits wrong content; ignoring successful completion admits failed writes; ignoring native spawn order admits delegated-before-parent commits; command-only credit admits read-only/echo receipts. Structured failed/started/wrong-path edits also reject.
+- DONE: Verify the live adapter compiles without launching a model.
+  `go test -tags live ./internal/ensigncycle -run 'Test(CodexSmallestMechanism.*|AssertCodexSmallestSufficientMechanism|SmallestMechanismTraceSelectsCodexDialect)$' -count=1` passes. `gofmt -w ./cmd ./internal` ran; unrelated pre-existing formatting drift was excluded; `git diff --check` passes.
+- SKIPPED: Full normal/race suites and targeted live execution.
+  FO explicitly owns serialized live validation and full normal/race at the combined tip. Reserved exact target: `SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommonSmallestSufficientMechanism$' ./internal/ensigncycle -v`; use FO-provided CI model shim and predecessor tip.
+
+### Summary
+
+Current release Python edits now require a completed exit-0 parent command, a matching native parent receipt before any spawn, and the exact requested committed/final note bytes; command text alone cannot supply edit credit. The focused layer is committed and ready for the FO's stacked live/full validation; this report does not claim those deferred checks passed.
