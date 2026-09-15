@@ -55,6 +55,20 @@ gates:
                 id: briefing:wvdv5c5mkkd23yhmr9p16czd:validation:attempt-1:revision-1
                 digest: sha256:7fb53e4a5d6e91e2a7c1d270fe3045c97254b47c4d84fbe5c014a3c729a52615
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wvdv5c5mkkd23yhmr9p16czd:validation:1
+                briefing: briefing:wvdv5c5mkkd23yhmr9p16czd:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T04:33:19.834871Z"
+                decision: approve
+                reason: Independent targeted local Codex and real gate controls satisfy all layer ACs at7ca67fdda. Captain authorized opening the verified stack; full-stack CI and final merge remain separate.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: active thread goal supplied by captain
+              application:
+                target-stage: done
+                state: pending
 started: 2026-09-15T04:01:46Z
 worktree: .worktrees/spacedock-ensign-prepare-keep-moving-approved-gate-fixture
 ---
