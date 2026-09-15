@@ -6,7 +6,7 @@ started: 2026-09-15T22:39:21Z
 completed:
 verdict:
 score: 0.95
-worktree:
+worktree: .worktrees/spacedock-ensign-fo-continuation
 issue: spacedock-dev/spacedock#735
 pr:
 mod-block:
