@@ -8,7 +8,7 @@ verdict: ""
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-separate-headless-pregate-fixture-instructions
 issue: ""
-pr: ""
+pr: "#795"
 mod-block: merge:pr-merge
 id: 8k3cmcg2gg1e88w0qe6sq3vw
 gates:
