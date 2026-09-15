@@ -113,7 +113,45 @@ mod-block:
 pr:
 ---
 
-## Current captain-approved direction — release Python-write attribution (2026-09-14)
+## Current captain-approved direction — two-phase outcomes (2026-09-15)
+
+Captain approved the two-phase amendment through binding resolution
+`resolution:binding-1789488159492666000` (approve), reviewed artifact
+`/private/tmp/pr797-outcome-verification-review.md`, SHA-256
+`27407bd7b85d001dd6e4d0652b4059a749076ea03dec5151ed187ba93ae53b78`.
+FO classified the owned issue Material and authorized FIX in the implementation dispatch.
+This section supersedes conflicting criteria and receipt-based direction below; all
+historical evidence remains attributed to its original candidate.
+
+The concern is that recognizing editing commands and commit receipts ties successful
+file outcomes to incidental execution syntax. Existing post-run transcript readers do
+not expose a synchronous pre-spawn filesystem boundary: taking a snapshot after an
+asynchronous spawn event can already include child edits. The authorized alternative
+uses two existing runner launches, with no interception or new runtime machinery.
+
+Current acceptance criteria and proof:
+
+1. Phase 1 begins with known notes and naturally requests their exact replacements and
+   the directly committed roadmap document. Exact filesystem bytes and the committed
+   document must match, and native evidence must contain zero worker spawns. Tool choice,
+   shell syntax, receipts and structured file-change events cannot grant edit credit.
+2. Phase 2 introduces the two ready entities and runs the ordinary commissioned request.
+   Preserve the existing durable dispatch/report/terminal/archive and scope-trace checks,
+   then verify all three final files again. FO explicitly confirmed that this preserves
+   the current commissioned assertion; it does not add a new native lifecycle grader.
+3. Controls reject missing/wrong bytes, an uncommitted roadmap, native phase-1 delegation,
+   output-only impersonation, incomplete commissioned work and final drift. Codex,
+   Claude and Pi use the same phase boundary, with host-specific native spawn controls.
+4. Retain both launch artifacts and include both durations and measured usage in the
+   combined metric. Run focused proof, one local targeted Codex run, and normal/race/format
+   checks at the committed candidate; then independent validation. FO owns restacking and
+   final Claude plus Codex live CI. This worker does not push or trigger CI.
+
+This is an explicit captain-authorized criterion change: the scenario no longer proves
+selection between both work kinds in one mixed prompt. It proves direct outcomes before
+commissioned work and preserved final outcomes across two ordinary host launches.
+
+## Historical approved direction — release Python-write attribution (2026-09-14)
 
 This section supersedes the historical candidate, scope estimates, acceptance criteria,
 and implementation ladder below for the current repair. Prior reports remain as history;
