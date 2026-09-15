@@ -172,3 +172,16 @@ Specified the exact correction and reduced the expected surface to one file beca
 ### Summary
 
 Removed the contradictory next-stage gate halt exception and explicitly required gated successor dispatch and verified completion before gate preparation. The approved wording-only candidate is ready for independent validation; live behavioral acceptance and final-tip full-suite results remain pending with their assigned owners.
+
+## Stage Report: implementation — final-tip full-suite addendum
+
+- DONE: Run final-tip full normal and race suites once, sequentially.
+  Exact clean candidate `474cdb8c515ffe0ad36c9aeb3b65b3b7cecf3f80`; `go test ./...` then `go test ./... -race` used `GOFLAGS=-p=2`, `/Users/clkao/go/bin` prepended to PATH, and unset `SPACEDOCK_BIN`/`SPACEDOCK_REPO_ROOT`.
+- FAILED: Full-suite green result.
+  Both commands exited 1 solely on `TestCodexResolveManifestAgainstInstalledHost`: installed-host detection disagreed with resolver returning the stale `0.28.0-pre0` manifest; FO supplied independent baseline reproduction at `2a7b87198`, so no redundant baseline run was made.
+- DONE: Preserve complete current-tip evidence and candidate.
+  `/tmp/spacedock-codex-stack-474-full/summary.md` links sibling `normal.log`, `normal.exit`, `race.log`, and `race.exit`; all other packages passed, no race detector findings, and candidate HEAD/worktree remained unchanged and clean.
+
+### Summary
+
+Completed the required normal/race checks at the exact candidate; the only failure matches the independently reproduced baseline installed-host resolver defect. No candidate edits, retries, or live/CI runs were performed by this worker; full-suite success is not claimed.
