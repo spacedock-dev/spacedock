@@ -99,7 +99,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	if rc := mergeRootsGuard(workflowDir, roots, dir, stderr); rc != 0 {
 		return rc
 	}
-	if rc := preflightMergeState(roots, slug, asJSON, stdout, stderr); rc != 0 {
+	if rc := preflightArchiveState(roots, slug, "merge guard", asJSON, stdout, stderr); rc != 0 {
 		return rc
 	}
 
@@ -117,7 +117,8 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	// typo) fails fast before any mutation. The classifier below no longer branches
 	// on the policy — auto-arm and the merge-sentinel finalize apply under both
 	// merge: local and merge: pr — but the parse still guards the config error.
-	if _, perr := resolveMergePolicy(roots.definitionDir); perr != nil {
+	policy, perr := resolveMergePolicy(roots.definitionDir)
+	if perr != nil {
 		return errExit(stderr, perr.Error())
 	}
 
@@ -138,6 +139,12 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 
 	if rework {
 		return reworkDelivery(roots, slug, entityPath, fields, quiet, asJSON, stdout, stderr)
+	}
+
+	if verdict == "passed" && policy == mergeLocal && !hookRegistered {
+		if err := verifyLocalDelivery(roots.definitionDir, pr, worktree); err != nil {
+			return errExit(stderr, fmt.Sprintf("merge guard: local delivery not proven: %v. Merge onto %s first, record pr=local-merge:<merge SHA> with status --set %s, then retry; approval remains unspent", err, resolveMergeTrunk(roots.definitionDir), slug))
+		}
 	}
 
 	// State-delta classifier (the one genuinely-new logic): a pure read of
@@ -229,10 +236,10 @@ func mergeRootsGuard(workflowDirSpelling string, roots roots, dir string, stderr
 	return 0
 }
 
-// preflightMergeState runs before entity resolution or mutation so a process
+// preflightArchiveState runs before entity resolution or mutation so a process
 // restart with Git already mid-rebase cannot terminalize against an unmerged
 // index. Inline workflows have no separate state branch to preflight.
-func preflightMergeState(roots roots, slug string, asJSON bool, stdout, stderr io.Writer) int {
+func preflightArchiveState(roots roots, slug, caller string, asJSON bool, stdout, stderr io.Writer) int {
 	mode, _, err := ClassifyState(ParseFrontmatter(filepath.Join(roots.definitionDir, "README.md"))["state"])
 	if err != nil {
 		return errExit(stderr, err.Error())
@@ -246,10 +253,10 @@ func preflightMergeState(roots roots, slug string, asJSON bool, stdout, stderr i
 	}
 	outcome := statesync.Preflight(roots.entityDir, branch)
 	if outcome.Result == statesync.ResultHalted {
-		return signalMergeStateHalt(slug, branch, outcome, asJSON, stdout, stderr)
+		return signalArchiveStateHalt(slug, branch, caller, outcome, asJSON, stdout, stderr)
 	}
 	if outcome.Result == statesync.ResultFailed {
-		return errExit(stderr, "merge guard: state-sync preflight failed: "+outcome.Detail)
+		return errExit(stderr, caller+": state-sync preflight failed: "+outcome.Detail)
 	}
 	return 0
 }
@@ -463,7 +470,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 	if rc := runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, slug, false, true, false, io.Discard, stderr); rc != 0 {
 		return rc
 	}
-	if rc := commitArchiveMove(roots.entityDir, slug, snapshot, stderr); rc != 0 {
+	if rc := commitArchiveMove(roots.entityDir, slug, snapshot, "merge guard", stderr); rc != 0 {
 		if rbErr := rollbackArchive(roots.entityDir, slug, snapshot); rbErr != nil {
 			// The commit failed AND the rollback could not fully restore the
 			// pre-finalize state — the entity may be half-mutated with a partial archive
@@ -477,7 +484,7 @@ func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookReg
 		}
 		return rc
 	}
-	durability, syncOutcome, rc := publishMergeArchive(roots, slug, stdout, stderr)
+	durability, syncOutcome, rc := publishArchive(roots, slug, "merge guard", stdout, stderr)
 	if durability == "" {
 		durability = "unpublished"
 	}
@@ -626,7 +633,7 @@ func terminalTargetSuccessor(workflowDir, current, target string) bool {
 	return false
 }
 
-func publishMergeArchive(roots roots, slug string, stdout, stderr io.Writer) (string, statesync.Outcome, int) {
+func publishArchive(roots roots, slug, caller string, stdout, stderr io.Writer) (string, statesync.Outcome, int) {
 	mode, _, err := ClassifyState(ParseFrontmatter(filepath.Join(roots.definitionDir, "README.md"))["state"])
 	if err != nil {
 		return "", statesync.Outcome{}, errExit(stderr, err.Error())
@@ -645,25 +652,25 @@ func publishMergeArchive(roots roots, slug string, stdout, stderr io.Writer) (st
 	case statesync.ResultLocalOnly:
 		return "local-only", outcome, 0
 	case statesync.ResultHalted:
-		return "halted", outcome, signalMergeStateHalt(slug, branch, outcome, false, stdout, stderr)
+		return "halted", outcome, signalArchiveStateHalt(slug, branch, caller, outcome, false, stdout, stderr)
 	case statesync.ResultFailed:
 		fmt.Fprintf(stderr,
-			"merge guard: archive commit for %s is durable locally, but split-root publication failed:\n%s\n"+
+			caller+": archive commit for %s is durable locally, but split-root publication failed:\n%s\n"+
 				"Settle unrelated state-checkout dirt if Git refused rebase, then resume with `spacedock state commit %s --workflow-dir %s`; archived resume publishes the existing commit without creating another archive commit.\n",
 			slug, outcome.Detail, slug, roots.definitionDir)
 		return "unpublished", outcome, 1
 	default:
-		fmt.Fprintf(stderr, "merge guard: archive commit for %s was not published (unexpected state-sync result %s)\n", slug, outcome.Result)
+		fmt.Fprintf(stderr, caller+": archive commit for %s was not published (unexpected state-sync result %s)\n", slug, outcome.Result)
 		return "unpublished", outcome, 1
 	}
 }
 
-func signalMergeStateHalt(slug, branch string, outcome statesync.Outcome, asJSON bool, stdout, stderr io.Writer) int {
+func signalArchiveStateHalt(slug, branch, caller string, outcome statesync.Outcome, asJSON bool, stdout, stderr io.Writer) int {
 	paths := strings.Join(outcome.ConflictingPaths, ", ")
 	if paths == "" {
 		paths = "none reported by Git"
 	}
-	fmt.Fprintf(stderr, "merge guard: HALT — same-entity rebase conflict on %s.\n", branch)
+	fmt.Fprintf(stderr, caller+": HALT — same-entity rebase conflict on %s.\n", branch)
 	fmt.Fprintf(stderr, "Conflicting path(s): %s\n", paths)
 	if outcome.PeerCommit != "" {
 		fmt.Fprintf(stderr, "Peer commit: %s (origin/%s)\n", outcome.PeerCommit, branch)
@@ -672,7 +679,7 @@ func signalMergeStateHalt(slug, branch string, outcome statesync.Outcome, asJSON
 	fmt.Fprintln(stderr, "Next: HALT dispatch — surface the conflicting paths and peer commit to the operator; never force-push or auto-resolve.")
 	if asJSON {
 		emitJSON(stdout, newJSONObj().
-			set("command", "merge-guard").set("slug", slug).set("signal", "halted").
+			set("command", strings.ReplaceAll(caller, " ", "-")).set("slug", slug).set("signal", "halted").
 			set("result", "halted").set("state_branch", branch).
 			setValue("conflicting_paths", jsonStrArr(outcome.ConflictingPaths)).set("peer_commit", outcome.PeerCommit).
 			set("reason", "HALT: rebase aborted; manual conflict resolution required."))
@@ -805,7 +812,7 @@ func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
 // retains a tracked-but-deleted flat companion as a source-only pathspec. When the
 // entity root is not under a git work tree the move is a plain on-disk archive and
 // the commit is skipped (no error). A real git failure exits 1 with stderr.
-func commitArchiveMove(entityDir, slug string, snapshot archiveSnapshot, stderr io.Writer) int {
+func commitArchiveMove(entityDir, slug string, snapshot archiveSnapshot, caller string, stderr io.Writer) int {
 	gitRoot := FindGitRoot(entityDir)
 	if !hasGitEntry(gitRoot) {
 		return 0
@@ -827,11 +834,11 @@ func commitArchiveMove(entityDir, slug string, snapshot archiveSnapshot, stderr 
 	}
 	addArgs := append([]string{"add", "--"}, pathspecs...)
 	if _, err := runGitCmd(gitRoot, addArgs...); err != nil {
-		return errExit(stderr, fmt.Sprintf("merge guard: failed to stage archive move for %s: %v", slug, err))
+		return errExit(stderr, fmt.Sprintf(caller+": failed to stage archive move for %s: %v", slug, err))
 	}
-	commitArgs := append([]string{"commit", "-q", "-m", "archive " + slug + " (merge guard)", "--"}, pathspecs...)
+	commitArgs := append([]string{"commit", "-q", "-m", "archive " + slug + " (" + caller + ")", "--"}, pathspecs...)
 	if _, err := runGitCmd(gitRoot, commitArgs...); err != nil {
-		return errExit(stderr, fmt.Sprintf("merge guard: failed to commit archive move for %s: %v", slug, err))
+		return errExit(stderr, fmt.Sprintf(caller+": failed to commit archive move for %s: %v", slug, err))
 	}
 	return 0
 }
@@ -1046,4 +1053,35 @@ func abbrevRefHead(worktree string) (ref string, ok bool) {
 	}
 	ref = strings.TrimSpace(out)
 	return ref, ref != ""
+}
+
+// verifyLocalDelivery reads Git proof in the definition's code repository before
+// either finalization path can consume approval or move the entity.
+func verifyLocalDelivery(definitionDir, pr, worktree string) error {
+	if !strings.HasPrefix(pr, "local-merge:") || !prIndicatesMerged(pr) {
+		return fmt.Errorf("missing local-merge:<SHA> sentinel")
+	}
+	repo := FindGitRoot(definitionDir)
+	trunk := resolveMergeTrunk(definitionDir)
+	trunkCommit, err := runGitCmd(repo, "rev-parse", "--verify", "refs/heads/"+trunk+"^{commit}")
+	if err != nil {
+		return fmt.Errorf("cannot resolve trunk %s: %w", trunk, err)
+	}
+	sha := strings.TrimPrefix(pr, "local-merge:")
+	if _, err := runGitCmd(repo, "merge-base", "--is-ancestor", sha, strings.TrimSpace(trunkCommit)); err != nil {
+		return fmt.Errorf("recorded commit %s is not reachable from %s", sha, trunk)
+	}
+	if worktree != "" {
+		if !filepath.IsAbs(worktree) {
+			worktree = filepath.Join(repo, worktree)
+		}
+		head, err := runGitCmd(worktree, "rev-parse", "--verify", "HEAD^{commit}")
+		if err != nil {
+			return fmt.Errorf("cannot read worktree HEAD at %s: %w", worktree, err)
+		}
+		if _, err := runGitCmd(repo, "merge-base", "--is-ancestor", strings.TrimSpace(head), strings.TrimSpace(trunkCommit)); err != nil {
+			return fmt.Errorf("worktree HEAD at %s is not reachable from %s", worktree, trunk)
+		}
+	}
+	return nil
 }
