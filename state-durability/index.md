@@ -22,6 +22,17 @@ gates:
                 id: briefing:3tzfv0rrctdb066xt942zjbd:ideation:attempt-1:revision-1
                 digest: sha256:fb08cb93e8003d48d0b6521799735e48cba11cb33e6b547559d938e83ade3e8d
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3tzfv0rrctdb066xt942zjbd:ideation:1
+                briefing: briefing:3tzfv0rrctdb066xt942zjbd:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T23:05:17.88169Z"
+                decision: approve
+                reason: Captain binding resolution binding-1789513304916529000 explicitly approved combined durability implementation for689/790/630, estimate560/15 cap800/18; document sha256:3e4c7f21b5d53b1abfcc5796d19b7bbe7d90ff2f5c5398415f1e11b245fe9c81.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Prevent false completion and silent loss of workflow state. One task covers GitHub issues #689, #790 and #630 with separate behavioral acceptance criteria.
