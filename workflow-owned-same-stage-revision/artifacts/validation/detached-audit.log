@@ -1,0 +1,36 @@
+=== RUN   TestDetachedSameStageRetainedState
+=== RUN   TestDetachedSameStageRetainedState/before
+=== RUN   TestDetachedSameStageRetainedState/after
+=== RUN   TestDetachedSameStageRetainedState/initial-controls-review-required
+=== RUN   TestDetachedSameStageRetainedState/initial-controls-separate-review-required
+=== RUN   TestDetachedSameStageRetainedState/initial-controls-cycle-limit
+=== RUN   TestDetachedSameStageRetainedState/identity-fixed-round-missing
+=== RUN   TestDetachedSameStageRetainedState/round-final
+--- PASS: TestDetachedSameStageRetainedState (0.17s)
+    --- PASS: TestDetachedSameStageRetainedState/before (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/after (0.09s)
+    --- PASS: TestDetachedSameStageRetainedState/initial-controls-review-required (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/initial-controls-separate-review-required (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/initial-controls-cycle-limit (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/identity-fixed-round-missing (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/round-final (0.07s)
+=== RUN   TestDetachedSameStageSelectionBoundaries
+=== RUN   TestDetachedSameStageSelectionBoundaries/canonical-artifact
+=== RUN   TestDetachedSameStageSelectionBoundaries/canonical-reference
+=== RUN   TestDetachedSameStageSelectionBoundaries/wrong-type
+=== RUN   TestDetachedSameStageSelectionBoundaries/wrong-revision
+=== RUN   TestDetachedSameStageSelectionBoundaries/wrong-identity
+=== RUN   TestDetachedSameStageSelectionBoundaries/unicode-identity
+=== RUN   TestDetachedSameStageSelectionBoundaries/empty
+--- PASS: TestDetachedSameStageSelectionBoundaries (0.54s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/canonical-artifact (0.07s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/canonical-reference (0.07s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/wrong-type (0.00s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/wrong-revision (0.06s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/wrong-identity (0.00s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/unicode-identity (0.00s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/empty (0.00s)
+=== RUN   TestDetachedSameStageWorkerEventOrder
+--- PASS: TestDetachedSameStageWorkerEventOrder (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	1.104s

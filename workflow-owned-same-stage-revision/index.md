@@ -319,3 +319,35 @@ Focused registry/suite-policy checks, stale/unrelated selected-revision falsifie
 ### Summary
 
 Workflow-declared same-stage revision now completes without invented reviewer or round machinery, while declared obligations and frozen gate authority remain enforced. The approved targeted-proof registry policy keeps all six controls mandatory for task acceptance without expanding normal CI; the committed candidate is ready for independent validation with the sole known local resolver baseline documented.
+
+## Review-finding disposition
+
+### V1 — Missing retained native worker lifecycle evidence (validation, 2026-09-15)
+
+- Exact observation: public `codex-exec.jsonl` omits native spawn/completion; `rejection-topology.tsv` retains only derived rows. Producer confirms isolated-home cleanup deleted the correlated parent rollouts. Native call-ID pairing, returned task-name identity, and author-attributed `FINAL_ANSWER`/`Done:` cannot be independently replayed.
+- Released user and normal workflow: the approved targeted implementation proof requires native worker completion retained for all six same-stage controls; this validation is the intended evidence consumer.
+- Observable harm: independently reproduced state outcomes cannot establish native worker ownership/completion or reviewer independence from surviving source bytes; the promised proof cannot be completely audited.
+- Affected authority: value-ac[AC-1] live same-stage worker completion must be established; the current retained evidence cannot independently replay that native claim (AC-2 reviewer identity is also limited).
+- Trigger evidence: [audit](artifacts/validation/audit.md), seven retained bundle regrades, public after stream's four empty wait results, and producer confirmation that all five original isolated-home roots are empty.
+- Reviewer recommendation: **evidence defect / Material**, task-owned observation retention; **FIX proposed, not authorized**. No workflow outcome defect is alleged. Existing `nativeLifecycleStream` can retain already-read source bytes before cleanup; estimated one retention line plus 15–25 focused test lines exceeds the current exact +236 cap, so captain tolerance decision is required before repair.
+- Proposed bounded replacement: six mandated candidate variants plus causal baseline; include the conventional re-review run for independently replayable AC-2 attribution (eight total). Retain public/native stream, exact task/call identity, attributed completion, bundle, and topology; no new lifecycle framework or broad/all-runtime rerun is proposed.
+- FO disposition: pending; candidate remains unchanged. No automatic correction cycle or reviewer rerun is authorized by this report.
+
+## Stage Report: validation
+
+- DONE: Independently assess all three acceptance criteria against committed candidate and retained causal/native control evidence; do not duplicate owned green runs.
+  AC-1: bundle regrade confirms exact committed correction, immutable frozen input/old gate, exactly one fresh open gate; native completion provenance remains unmet under V1. AC-1 is not fully validated.
+  AC-2: required-review/missing-round hold state, canonical four-entry no-projection round, cycle-3 limit, and existing five-entry Roborev/lifecycle tests pass; native independent-review attribution remains limited by V1.
+  AC-3: five-file/+236 committed diff changes only generic applicability plus test/registry proof; before/after state supports the causal outcome, with no new flags, persisted fields, recorder policy, or synthetic stage. Latest approved targeted-proof policy is reflected.
+- DONE: Perform the required detached adversarial audit of skill authority and gate-selected artifact/reviewer/round controls, preserving exact findings and scope.
+  [Audit](artifacts/validation/audit.md) and [temporary test](artifacts/validation/detached_validation_audit_test.go) preserve seven bundle regrades, exact selection identity/revision/type/EOF and worker order/ownership negatives; [results](artifacts/validation/detached-audit.log) pass. Weakening exact source or completion checks makes negatives fail.
+  [Canonical round controls](artifacts/validation/canonical-round-audit.log) refuse incomplete/dangling logs without publication and preserve complete Roborev entries/status; accepting incomplete rounds makes them fail. V1 records missing native source evidence separately from state outcomes.
+- DONE: Report PASSED or REJECTED with per-AC evidence and resolver baseline limitation; do not approve gates or push code/CI.
+  **REJECTED — evidence defect V1**; no observed product outcome defect. FO/captain disposition is required before bounded repair because current approved tolerance is exact.
+  Retained final `go test ./...` and `go test ./... -race` each exit 1 solely on the pre-existing installed-host resolver failure; prior FO decline remains valid, and neither suite is claimed wholly green. No expensive/full/live runs duplicated; no code mutation, gate approval or CI/code push.
+- SKIPPED: Candidate repairs and replacement live proof.
+  Validator has observation/recommendation authority only; minimal repair and bounded rerun proposal are recorded in V1. No deferred-risk or polish finding is substituted for the material retention gap.
+
+### Summary
+
+The candidate's durable behavior and detached adversarial state checks pass, but required native worker evidence was deleted after grading and cannot be independently replayed. Validation recommends REJECTED for that evidence defect, with a small existing-observer retention repair and bounded evidence replacement proposed; candidate bytes remain unchanged.

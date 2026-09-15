@@ -1,0 +1,32 @@
+=== RUN   TestRoundRecordNeutralReplayAndRefusalsAreByteClean
+--- PASS: TestRoundRecordNeutralReplayAndRefusalsAreByteClean (0.04s)
+=== RUN   TestRoundNoFindingsAndPreflightRefusals
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/no_findings_is_structurally_valid_and_has_no_projection
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/bad_artifact_digest
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/self-referential_mutable_entity_artifact
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/occupied_target
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/lock_contention
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/cross_briefing_log
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/malformed_artifact_URI
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/log_ends_at_the_reviewer's_revise_verdict
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/log_ends_at_a_dangling_disposition_annotation
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/log_ends_at_a_hold_verdict
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/open-log_refusal_leaves_a_recordable_round
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/stage_taxonomy_permits_historical_backfill
+=== RUN   TestRoundNoFindingsAndPreflightRefusals/unknown_workflow_stage
+--- PASS: TestRoundNoFindingsAndPreflightRefusals (0.14s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/no_findings_is_structurally_valid_and_has_no_projection (0.02s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/bad_artifact_digest (0.00s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/self-referential_mutable_entity_artifact (0.00s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/occupied_target (0.01s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/lock_contention (0.00s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/cross_briefing_log (0.00s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/malformed_artifact_URI (0.00s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/log_ends_at_the_reviewer's_revise_verdict (0.01s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/log_ends_at_a_dangling_disposition_annotation (0.00s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/log_ends_at_a_hold_verdict (0.01s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/open-log_refusal_leaves_a_recordable_round (0.03s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/stage_taxonomy_permits_historical_backfill (0.03s)
+    --- PASS: TestRoundNoFindingsAndPreflightRefusals/unknown_workflow_stage (0.01s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/gates	0.544s
