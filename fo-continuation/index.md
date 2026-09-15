@@ -160,3 +160,39 @@ Native baseline/candidate interruption, correction-handoff, explicit-stop, and u
 ### Summary
 
 The engaged-drive stop rule now has one shared owner, with short dispatch/repair and Codex same-turn monitoring reminders and the approved raw-event probe instructions. The deliverable is committed for independent validation within the four-file cap; both required broad checks ran but are not green because of the recorded installed-host resolver failure, and the native comparison remains required.
+
+
+## Review-finding disposition
+
+### V1 — Native continuation efficacy remains unproven
+
+- Observation: the reduced steering oracle validates supplied event identity/order and report correlation, not candidate instruction efficacy. Its event schema has no assistant channel/turn boundary, so a premature final followed by a later nudge can escape this observation boundary. Native before/after and stop-control events were not captured.
+- Defect kind / release scope: **evidence defect / Material**; no candidate outcome regression observed. Released user and normal workflow: a captain asks for status while an authorized Codex ensign is active. Observable harm: the promised autonomous same-turn continuation cannot be established by the available evidence.
+- Authority: `value-ac[AC-1]` requires actual status input, same-turn monitoring, completion and successor dispatch without another captain nudge. Trigger evidence: candidate changes instructions only; the green reduced fixture is independent of those instructions, and `codex exec --help` exposes an initial prompt and resume/fork, not a proven mid-turn captain-input route.
+- Worker proposal: validation owns the missing interactive prerequisite; HOLD the efficacy claim and route for captain decision. No automatic producer repair, new controller, PTY injector, or substitute trace.
+- FO authorization: direct worker message on 2026-09-15: “HOLD native efficacy claim / route for captain decision”; finish detached audit and report, preserve candidate, no broad reruns. This records the received authorization, not a worker-issued disposition.
+
+## Stage Report: validation
+
+- DONE: Assess all three ACs against committed candidate and latest captain feedback, distinguishing native instruction efficacy from existing observer tests.
+  Assessed `184feb67b` on `4ce49f1ea`: four files, +11/-10, net +1; latest feedback forbids fabricated native proof, broader fixes, code push and CI. Per-AC evidence follows.
+- DONE: Perform the required detached semantic audit and the smallest supported native comparison; retain raw events and mark any unavailable native comparison unmet without inventing a harness.
+  Detached audit completed at `/tmp/fo-continuation-validation-184feb67b`; native comparison assessed but unavailable, so the required runtime proof is unmet. No native exercise ran and no raw native trace exists to retain; CLI help and original suite logs are retained in `/tmp/fo-continuation-validation-evidence/`.
+- DONE: Report PASSED or REJECTED with per-AC evidence and exact resolver baseline limitation, reusing green owned checks and proposing findings before candidate changes.
+  **REJECTED** for Material evidence gap V1, FO-authorized HOLD / captain decision; candidate unchanged. No code defect or native regression is asserted.
+
+**AC-1 — A status question does not terminate an authorized async workflow: UNMET.** Existing green `TestCodexWaitAgentSteering*` checks reject missing resumed wait, worker replacement/cancellation, stale completion epoch and missing durable report in the reduced fixture. Removing candidate continuation wording leaves their fixture inputs unchanged; these tests cannot falsify instruction efficacy or same-turn commentary versus final behavior.
+
+**AC-2 — Dispatch and correction handoffs continue to the declared stopping condition: PARTIAL / UNMET native claim.** Existing keep-moving/rejection owners cover durable routing and gate topology, and source inspection preserves their mechanisms. They are `//go:build live`; ordinary/race package passes do not establish that those live journeys ran. No candidate native spawn/revise-to-monitoring trace proves absence of an intervening final. Reuse their existing evidence only for its original routing claim.
+
+**AC-3 — Explicit stop and captain-decision boundaries remain effective: UNMET paired native control.** The unchanged approval owner and shared explicit pause/stop/cancel/replacement exception remain compatible by inspection. No paired actual captain-stop/unresolved-approval run was performed; textual preservation cannot prove obedience.
+
+Detached semantic audit matrix (contract consistency only): active worker + empty scheduler -> qualified wait; status/report/why -> commentary and same-turn return after ready work; timeout -> same epoch wait; matching completion -> exact report check then successor; missing report -> one repair and monitoring; stale/duplicate completion -> existing identity/epoch owner; explicit stop -> cease that scope; unresolved gate -> no self-approval; independent entity -> continue; absent/completed/errored roster -> existing post-retry stop; unengaged boot -> existing greeting behavior. No new contradiction found. The shared final-response taxonomy, local dispatch/repair references and Codex reminder preserve authority and event ordering; no new parser, allocation, I/O or scaling path warrants an over-limit test. `git diff --check` and detached clean-state checks passed.
+
+Smallest unmet exercise: an operator drives isolated baseline/candidate native Codex sessions with identical neutral task scope and existing fixture stage work; ask actual “status?” while a real worker is visibly active, observe normal authorized correction and successor through the next unresolved gate, then perform the explicit-stop control. Retain raw channel/tool/turn events, worker handle/epoch, loaded contract paths/SHAs and state commits before cleanup; candidate requires zero extra nudges. Use a common source base with only the continuation diff varied: direct `4380534` versus `184feb67b` also includes the scheduling-base change and would confound attribution. The current parent session's explicit user continuation instruction is not candidate causal evidence. Minimal prerequisite is operator access to that interactive pair and raw event export; no new harness is proposed.
+
+Required checks reused: implementation ran `go test ./...`, `go test ./... -race`, focused steering tests, skill integration and `gofmt -w ./cmd ./internal`. Both full suites exited 1 solely at `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: `spacedock@spacedock not installed in codex`, but resolver returned `/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json`. This is the FO-confirmed pre-existing installed-host mismatch, whose fix FO declined as out of scope; it is not an all-green result. Both ensigncycle/integration packages passed and no race diagnostic appeared. No broad rerun, new test suite, code push, CI, or candidate mutation.
+
+### Summary
+
+The detached audit found no new contract consistency defect, but the approved value claims still lack the required native comparison and controls. Validation recommends REJECTED on evidence grounds with the candidate held unchanged for captain decision; observer tests and the installed-host baseline limitation are reported without overstating their coverage.
