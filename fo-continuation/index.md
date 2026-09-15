@@ -22,6 +22,17 @@ gates:
                 id: briefing:ad242krer2tckgx7150cyb7d:ideation:attempt-1:revision-1
                 digest: sha256:4bcd7ba842757abf40653c51fcc102aa8b043d60e9c7306557ff1f3e6de48a18
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ad242krer2tckgx7150cyb7d:ideation:1
+                briefing: briefing:ad242krer2tckgx7150cyb7d:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T23:10:07.962105Z"
+                decision: approve
+                reason: 'Prepared-room binding resolution binding-1789513783661268000 approves focused continuation change cap20net/four files. Captain asks why pre0 was read: session catalog pins cachedpre0, while implementation baseline is currentmain4380534 including798. Native behavior proof remains required.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Make the existing FO continue authorized work without a user reminder or /goal. Put the next-action rule at dispatch, completion, revision-routing and user-interruption boundaries.
