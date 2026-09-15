@@ -150,12 +150,12 @@ The remaining correction is a small contract/doc change at existing transition b
   Before edits, `go test ./internal/ensigncycle -run '^TestCodexWaitAgentSteering' -count=1` and `go test ./skills/integration -count=1` passed; steering rerun passed after edits. Reduced-trace mutants reject cancellation/replacement/missing resumption, while integration rejects false idle-wake classification; neither proves candidate instruction efficacy.
 - DONE: Commit within cap20net/four files with required checks and report for independent validation.
   Task-only diff from `4ce49f1ea`: four files, +11/-10, net +1; clean committed worktree and `git diff --check` pass. Required normal/race suites and `gofmt -w ./cmd ./internal` ran; suite failures are recorded below.
-- FAILED: Required full-suite green result.
-  Both `go test ./...` and `go test ./... -race` exited 1 solely at `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: `spacedock@spacedock not installed in codex`, but resolver returned cached `spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json`; FO reports an independently matching baseline. No candidate fix authorized or made.
-- DONE: Preserve scope and verification boundaries.
-  Both full runs passed ensigncycle (normal 404.709s/race 384.848s) and integration; no race diagnostics. Gofmt's unrelated pre-existing alignment change in `internal/release/runtime_live_evidence_workflow_test.go` was restored to preserve the approved scope. No code push or CI.
-- SKIPPED: Native baseline/candidate interruption, correction-handoff, explicit-stop, and unresolved-gate comparison during implementation.
-  Independent validation owns the approved native exercise; AC-1 efficacy and live AC-2/AC-3 remain unproven here. No synthetic trace, current-session causality claim, or substitute harness was added.
+
+Required checks executed (DONE), not wholly green: both `go test ./...` and `go test ./... -race` exited 1 solely at `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: `spacedock@spacedock not installed in codex`, but resolver returned cached `spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json`; FO independently matched the observed pre-existing installed-host mismatch and authorized DECLINE of its fix as outside this task; this disposition does not waive any new regression. Exact run logs remain `/tmp/fo-continuation-go-test.log` and `/tmp/fo-continuation-go-test-race.log`.
+
+Both full runs passed ensigncycle (normal 404.709s/race 384.848s) and integration; no race diagnostics. Gofmt's unrelated pre-existing alignment change in `internal/release/runtime_live_evidence_workflow_test.go` was restored to preserve the approved scope. No code push or CI.
+
+Native baseline/candidate interruption, correction-handoff, explicit-stop, and unresolved-gate comparison remains next-stage independent validation work; AC-1 efficacy and live AC-2/AC-3 remain unproven here. No synthetic trace, current-session causality claim, or substitute harness was added.
 
 ### Summary
 
