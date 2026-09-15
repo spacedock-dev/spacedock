@@ -48,6 +48,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-09-15T04:01:46Z
+worktree: .worktrees/spacedock-ensign-prepare-keep-moving-approved-gate-fixture
 ---
 
 ## Problem statement
