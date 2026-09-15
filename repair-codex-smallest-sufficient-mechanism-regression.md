@@ -1,6 +1,6 @@
 ---
 title: Repair Codex smallest-sufficient mechanism regression
-status: implementation
+status: validation
 source: PR #679 run 31728107636, Codex job 94541783359
 sprint: test-behavior-completeness
 sprint-readiness: ready
