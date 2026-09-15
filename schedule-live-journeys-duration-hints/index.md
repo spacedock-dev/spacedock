@@ -11,6 +11,17 @@ issue:
 pr:
 mod-block:
 id: pytyzge5v85mcy8c02t1khqv
+gates:
+    version: 1
+    records:
+        - id: gate:pytyzge5v85mcy8c02t1khqv:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:pytyzge5v85mcy8c02t1khqv-ideation-1
+              briefing:
+                id: briefing:pytyzge5v85mcy8c02t1khqv:ideation:attempt-1:revision-1
+                digest: sha256:2e92e016dc3de77e21db5d699185aa479418ee201509cf38df031db3ba74d947
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Reduce live CI completion time by running a committed duration-sorted list of the existing tests through three slots. This task is the **bottom PR**; the other in-flight PRs stack above it.

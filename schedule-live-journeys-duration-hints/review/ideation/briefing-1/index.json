@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:pytyzge5v85mcy8c02t1khqv:ideation:attempt-1:revision-1",
+  "question": "Approve the reduced scheduling implementation as the next stack base?",
+  "artifacts": [
+    {
+      "id": "artifact:pytyzge5v85mcy8c02t1khqv:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d9fbe5b238e23d2a8109ee4ff7273ce7aeee9799/schedule-live-journeys-duration-hints/index.md",
+      "rev": "sha256:dd891dc17e50577bfe2ae24b8524b5a81ced67a3c166704542916f683e191bdf",
+      "mediaType": "text/markdown",
+      "summary": "Captain approved the reduced +120 net/8-file design, cap +150/8, in binding resolution binding-1789511305813868000. Actual Claude overlap remains required before implementation acceptance."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:pytyzge5v85mcy8c02t1khqv:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
