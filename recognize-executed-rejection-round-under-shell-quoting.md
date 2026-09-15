@@ -1,6 +1,6 @@
 ---
 title: "Recognize successful rejection-round recording under nested shell quoting"
-status: ideation
+status: implementation
 source: "Captain filing request; pre3 and 0.27.3 live release failure triage"
 started: 2026-09-15T04:02:58Z
 completed: ""
@@ -54,7 +54,7 @@ gates:
                     source: active thread goal supplied by captain
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
