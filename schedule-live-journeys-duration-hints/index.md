@@ -1,6 +1,6 @@
 ---
 title: Schedule live journeys with committed duration hints
-status: ideation
+status: implementation
 source: Captain request 2026-09-15; CI run 34996910090
 started: 2026-09-15T18:21:56Z
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: Binding Subspace resolution binding-1789511305813868000 approved reduced design, cap +150 net/8 files, scheduling as bottom PR; actual Claude overlap remains required before acceptance. Reviewed approval artifact sha256:c5fffcc6f164abd78be095350372d91b0563a628775646f506e7c29c12d339cc.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Reduce live CI completion time by running a committed duration-sorted list of the existing tests through three slots. This task is the **bottom PR**; the other in-flight PRs stack above it.
