@@ -193,6 +193,7 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 
 	fset := token.NewFileSet()
 	found := map[string]bool{}
+	scheduled := map[string]int{}
 	dir := filepath.Join(repo, "internal", "ensigncycle")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -212,6 +213,24 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if entry.Name() == "scheduled_live_test.go" {
+			ast.Inspect(file, func(node ast.Node) bool {
+				row, ok := node.(*ast.CompositeLit)
+				if !ok || len(row.Elts) < 3 {
+					return true
+				}
+				literal, ok := row.Elts[0].(*ast.BasicLit)
+				if !ok || literal.Kind != token.STRING {
+					return true
+				}
+				name := stringLiteral(t, literal)
+				if name != exprName(row.Elts[len(row.Elts)-1]) {
+					t.Errorf("scheduled name/callable mismatch: %s", name)
+				}
+				scheduled[name]++
+				return true
+			})
+		}
 		for _, declaration := range file.Decls {
 			function, ok := declaration.(*ast.FuncDecl)
 			if !ok || !strings.HasPrefix(function.Name.Name, "Test") {
@@ -223,6 +242,19 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 			}
 		}
 	}
+	for name := range found {
+		want := strings.HasPrefix(name, "TestLiveCommon") || name == "TestLiveBareReachable" || name == "TestLiveBreakGlassShimRecovery" || name == "TestLiveMergedTeamModeDispatch"
+		if want && scheduled[name] != 1 {
+			t.Errorf("scheduled callable %s appears %d times, want 1", name, scheduled[name])
+		}
+		if want {
+			delete(scheduled, name)
+		}
+	}
+	if len(scheduled) != 0 {
+		t.Errorf("unexpected scheduled callables: %v", scheduled)
+	}
+
 	for test := range registered {
 		if !found[test] {
 			t.Errorf("registered live test %q has no live-tagged declaration", test)
@@ -298,7 +330,7 @@ func docsLiveCommonCommand(t *testing.T, docs, runtime string) string {
 	var matches []string
 	for _, line := range strings.Split(docs, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, prefix) && strings.Contains(line, "-run '^TestLiveCommon'") {
+		if strings.HasPrefix(line, prefix) && strings.Contains(line, liveSuiteSelector(runtime)) {
 			matches = append(matches, line)
 		}
 	}
@@ -344,7 +376,7 @@ func runtimeLiveCommonCommand(t *testing.T, workflow, runtime string) string {
 	prefix := "SPACEDOCK_LIVE_RUNTIME=" + runtime + " gotestsum "
 	for _, line := range strings.Split(workflow, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, prefix) && strings.Contains(line, "-run '^TestLiveCommon'") {
+		if strings.HasPrefix(line, prefix) && strings.Contains(line, liveSuiteSelector(runtime)) {
 			return line
 		}
 	}
@@ -620,4 +652,11 @@ func readRegistryFixtureUnion(t *testing.T, path string) map[string]bool {
 		}
 	}
 	return out
+}
+
+func liveSuiteSelector(runtime string) string {
+	if runtime == "pi" {
+		return "-run '^TestLiveCommon'"
+	}
+	return "-run '^TestLiveScheduled$'"
 }

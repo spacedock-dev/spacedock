@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -41,7 +42,7 @@ func liveJourney[Builder, Assertion any](t *testing.T, id, fixtureID string, bui
 			}
 		}
 	}
-	if liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME")) {
+	if liveRuntimeRunsParallel(os.Getenv("SPACEDOCK_LIVE_RUNTIME")) && !strings.HasPrefix(t.Name(), "TestLiveScheduled/") {
 		t.Parallel()
 	}
 	driver := newDriver()
