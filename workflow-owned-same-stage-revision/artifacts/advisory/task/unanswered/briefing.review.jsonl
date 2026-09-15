@@ -1,0 +1,3 @@
+{"type":"Annotation","id":"annotation:job-592","briefing":"briefing:3j:implementation:round-1","by":"software:roborev","at":"2026-07-20T01:00:00Z","target":"artifact:candidate-90aea55","kind":"comment","body":"job 592: duplicate-member handling can be generalized"}
+{"type":"Annotation","id":"annotation:job-594","briefing":"briefing:3j:implementation:round-1","by":"software:roborev","at":"2026-07-20T01:01:00Z","target":"artifact:candidate-90aea55","kind":"comment","body":"job 594: duplicate-member handling can be generalized"}
+{"type":"Resolution","id":"resolution:roborev-3j-round-1","briefing":"briefing:3j:implementation:round-1","by":"software:roborev","at":"2026-07-20T01:02:00Z","decision":"revise","includes":["annotation:job-592","annotation:job-594"]}

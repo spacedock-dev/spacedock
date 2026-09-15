@@ -1,0 +1,26 @@
+exec(open('/tmp/spacedock-same-stage-evidence-zz1y/spike.py').read().split("w=ROOT/'self'")[0]); log=json.loads((ROOT/'commands.json').read_text())
+import shutil
+w=ROOT/'advisory'
+def sd(*a,expect=0):return run([BIN,*a,'--workflow-dir',str(w)],w,expect)
+full=(w/'task/inputs/briefing.review.jsonl').read_text()
+for case,content in [('missing',None),('unanswered','\n'.join(full.splitlines()[:3])+'\n')]:
+ d=w/'task'/case;d.mkdir(exist_ok=True);shutil.copy(w/'task/inputs/briefing.json',d/'briefing.json')
+ if content:(d/'briefing.review.jsonl').write_text(content)
+ sd('gate','record','task','--round','implementation/2','--briefing',str(d/'briefing.json'),'--log',str(d/'briefing.review.jsonl'),expect=1)
+w=ROOT/'separate';w.mkdir(exist_ok=True)
+(w/'README.md').write_text('---\ncommissioned-by: spacedock@0.28.0-pre3\nid-style: slug\nstages:\n  states:\n    - name: implementation\n      initial: true\n    - name: validation\n      gate: true\n      fresh: true\n      feedback-to: implementation\n    - name: done\n      terminal: true\n---\n# Dev topology control\n### `implementation`\nCorrect plan and commit.\n### `validation`\nIndependent validator compares plan with frozen input and commits verdict before re-gating.\n')
+(w/'task').mkdir(exist_ok=True);(w/'task/index.md').write_text('---\nid: task\ntitle: Separate reviewer control\nstatus: validation\n---\n# Task\n\n## Stage Report: validation\n- DONE: Review initial plan\n### Summary\nREJECTED: plan conflicts with frozen input.\n');(w/'task/plan.md').write_text('wrong\n');(w/'task/frozen-input.txt').write_text('correct\n')
+for a in [['git','init','-q'],['git','config','user.email','spike@example.invalid'],['git','config','user.name','Ideation spike'],['git','add','.'],['git','commit','-qm','seed separate reviewer fixture']]:run(a,w)
+sd('gate','prepare','task','--question','Approve?','--artifact',str(w/'task/plan.md'),'--summary','rejected review');sd('state','commit','task');sd('gate','record','task','--decision','revise','--actor','person:captain','--reason','Synthetic correction')
+sd('dispatch','build','--entity-path',str(w/'task/index.md'),'--stage','implementation','--host','codex','--checklist-file',str(ROOT/'checklist.txt'),'--feedback-context-file',str(ROOT/'feedback.txt'),'--feedback-reflow')
+(w/'task/plan.md').write_text('correct\n')
+with (w/'task/index.md').open('a') as f:f.write('\n## Stage Report: implementation\n- DONE: Correct plan\n### Summary\nCorrected.\n')
+run(['git','add','task'],w);run(['git','commit','-qm','correct producer output'],w)
+# This intentionally probes whether the binary enforces independent-review prose.
+sd('gate','prepare','task','--question','Premature review?','--artifact',str(w/'task/plan.md'),'--summary','no fresh validator yet',expect=None)
+sd('gate','withdraw','task','--reason','Negative probe completed; require fresh validator')
+sd('dispatch','build','--entity-path',str(w/'task/index.md'),'--stage','validation','--host','codex','--checklist-file',str(ROOT/'checklist.txt'))
+assert (w/'task/plan.md').read_bytes()==(w/'task/frozen-input.txt').read_bytes()
+with (w/'task/index.md').open('a') as f:f.write('\n## Stage Report: validation (cycle 2)\n- DONE: Compare committed plan against frozen input\n### Summary\nPASSED by manual independent-control check; no live reviewer spawned.\n')
+run(['git','add','task'],w);run(['git','commit','-qm','record validator control outcome'],w)
+sd('gate','prepare','task','--question','Approve corrected reviewed plan?','--artifact',str(w/'task/plan.md'),'--summary','fresh control review');sd('state','commit','task');sd('status','--next','--json')

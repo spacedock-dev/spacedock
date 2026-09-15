@@ -1,0 +1,746 @@
+[
+  {
+    "args": [
+      "git",
+      "init",
+      "-q"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "config",
+      "user.email",
+      "spike@example.invalid"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "config",
+      "user.name",
+      "Ideation spike"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "add",
+      "."
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "commit",
+      "-qm",
+      "seed frozen input and incorrect plan"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Approve local plan?",
+      "--artifact",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self/task/plan.md",
+      "--summary",
+      "initial incorrect plan",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "room=/tmp/spacedock-same-stage-evidence-zz1y/self/task/review/plan/briefing-1\nbriefing=briefing:task:plan:attempt-1:revision-1\ndigest=sha256:356ab9ef466970abdbea583d6e0a78000b3d6dd88435644183f9d4fbaa79ba6b\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "Committed task in the inline workflow repository; nothing pushed.\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--decision",
+      "revise",
+      "--actor",
+      "person:captain",
+      "--reason",
+      "Synthetic spike authority: align plan with frozen input",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "recorded gate=gate:task:plan attempt=gate-attempt:task-plan-1 state=closed briefing=briefing:task:plan:attempt-1:revision-1 resolution=resolution:spacedock:task:plan:1 decision=revise\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "consume",
+      "task",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 1,
+    "stdout": "gate=gate:task:plan attempt=gate-attempt:task-plan-1 application=/ condition=feedback-pending eligible=false consumed=false target-stage=\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "dispatch",
+      "build",
+      "--entity-path",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self/task/index.md",
+      "--stage",
+      "plan",
+      "--host",
+      "codex",
+      "--checklist-file",
+      "/tmp/spacedock-same-stage-evidence-zz1y/checklist.txt",
+      "--feedback-context-file",
+      "/tmp/spacedock-same-stage-evidence-zz1y/feedback.txt",
+      "--feedback-reflow",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "{\n  \"schema_version\": 2,\n  \"subagent_type\": \"spacedock:ensign\",\n  \"description\": \"Same-stage plan: plan\",\n  \"fetch_commands\": [\n    \"/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock dispatch show-stage-def --workflow-dir /tmp/spacedock-same-stage-evidence-zz1y/self --stage plan\"\n  ],\n  \"dispatch_file_path\": \"/tmp/spacedock-dispatch/spacedock-ensign-task-plan.md\",\n  \"prompt\": \"$spacedock:ensign; then Read /tmp/spacedock-dispatch/spacedock-ensign-task-plan.md and treat its content as your assignment.\",\n  \"model\": null,\n  \"name\": \"spacedock-ensign-task-plan\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "add",
+      "task"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "commit",
+      "-qm",
+      "correct plan and commit completion report"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--decision",
+      "approve",
+      "--actor",
+      "person:captain",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Error: attempt gate-attempt:task-plan-1 is frozen closed\n"
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Approve corrected local plan?",
+      "--artifact",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self/task/plan.md",
+      "--summary",
+      "corrected plan",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "room=/tmp/spacedock-same-stage-evidence-zz1y/self/task/review/plan/briefing-2\nbriefing=briefing:task:plan:attempt-2:revision-1\ndigest=sha256:d822a57c9cd93d523b971e6b5ed4bcbc2962485a13ae519c2da9b3cf0c4216f1\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "Committed task in the inline workflow repository; nothing pushed.\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "status",
+      "--next",
+      "--json",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/self"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "{\"command\":\"next\",\"dispatchable\":[],\"ready_gates\":[{\"id\":\"task\",\"slug\":\"task\",\"current\":\"plan\",\"readiness\":\"awaiting-captain\"}]}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "log",
+      "--oneline"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "7d9d772 state: update task\na8d4a6a correct plan and commit completion report\nba97fb4 state: update task\n231eff5 seed frozen input and incorrect plan\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/self",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "init",
+      "-q"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "config",
+      "user.email",
+      "spike@example.invalid"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "config",
+      "user.name",
+      "Ideation spike"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "add",
+      "."
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "commit",
+      "-qm",
+      "seed advisory fixture"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--round",
+      "implementation/1",
+      "--briefing",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/inputs/briefing.json",
+      "--log",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/inputs/missing.jsonl",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Error: --round inputs must name briefing.json and briefing.review.jsonl\n"
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--round",
+      "implementation/1",
+      "--briefing",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/inputs/briefing.json",
+      "--log",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/inputs/incomplete.jsonl",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Error: --round inputs must name briefing.json and briefing.review.jsonl\n"
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--round",
+      "implementation/1",
+      "--briefing",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/inputs/briefing.json",
+      "--log",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/inputs/briefing.review.jsonl",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "round=round:task:implementation:1 stage=implementation cycle=1 briefing=briefing:3j:implementation:round-1 entries=5\nentry=annotation:job-592 type=Annotation advisory=false decision=\nentry=annotation:job-594 type=Annotation advisory=false decision=\nentry=resolution:roborev-3j-round-1 type=Resolution advisory=true decision=revise\nentry=annotation:decline-duplicate-member type=Annotation advisory=false decision=\nentry=resolution:ensign-3j-round-1 type=Resolution advisory=true decision=revise\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "Committed task in the inline workflow repository; nothing pushed.\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "status",
+      "--validate",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "VALID\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "log",
+      "--oneline"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 0,
+    "stdout": "9dc8aee state: update task\ndc41ec2 seed advisory fixture\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--round",
+      "implementation/2",
+      "--briefing",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/missing/briefing.json",
+      "--log",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/missing/briefing.review.jsonl",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Error: open /tmp/spacedock-same-stage-evidence-zz1y/advisory/task/missing/briefing.review.jsonl: no such file or directory\n"
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--round",
+      "implementation/2",
+      "--briefing",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/unanswered/briefing.json",
+      "--log",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory/task/unanswered/briefing.review.jsonl",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/advisory"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/advisory",
+    "exit": 1,
+    "stdout": "",
+    "stderr": "Error: round implementation/2 is not closed: it ends at the reviewer's revise Resolution resolution:roborev-3j-round-1. Nothing was recorded; the room is immutable, so an open log would truncate the record permanently. Route the correction, append that round's entries to the review log (its disposition Annotations and a closing Resolution), then record the round\n"
+  },
+  {
+    "args": [
+      "git",
+      "init",
+      "-q"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "config",
+      "user.email",
+      "spike@example.invalid"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "config",
+      "user.name",
+      "Ideation spike"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "add",
+      "."
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "commit",
+      "-qm",
+      "seed separate reviewer fixture"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Approve?",
+      "--artifact",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate/task/plan.md",
+      "--summary",
+      "rejected review",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "room=/tmp/spacedock-same-stage-evidence-zz1y/separate/task/review/validation/briefing-1\nbriefing=briefing:task:validation:attempt-1:revision-1\ndigest=sha256:709e2c1a1b2793fffb3c041ca4be7f900027f7ac8db8ccf2f5f9b968319b12b4\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "Committed task in the inline workflow repository; nothing pushed.\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "record",
+      "task",
+      "--decision",
+      "revise",
+      "--actor",
+      "person:captain",
+      "--reason",
+      "Synthetic correction",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "recorded gate=gate:task:validation attempt=gate-attempt:task-validation-1 state=closed briefing=briefing:task:validation:attempt-1:revision-1 resolution=resolution:spacedock:task:validation:1 decision=revise\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "dispatch",
+      "build",
+      "--entity-path",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate/task/index.md",
+      "--stage",
+      "implementation",
+      "--host",
+      "codex",
+      "--checklist-file",
+      "/tmp/spacedock-same-stage-evidence-zz1y/checklist.txt",
+      "--feedback-context-file",
+      "/tmp/spacedock-same-stage-evidence-zz1y/feedback.txt",
+      "--feedback-reflow",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "{\n  \"schema_version\": 2,\n  \"subagent_type\": \"spacedock:ensign\",\n  \"description\": \"Separate reviewer control: implementation\",\n  \"fetch_commands\": [\n    \"/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock dispatch show-stage-def --workflow-dir /tmp/spacedock-same-stage-evidence-zz1y/separate --stage implementation\"\n  ],\n  \"dispatch_file_path\": \"/tmp/spacedock-dispatch/spacedock-ensign-task-implementation.md\",\n  \"prompt\": \"$spacedock:ensign; then Read /tmp/spacedock-dispatch/spacedock-ensign-task-implementation.md and treat its content as your assignment.\",\n  \"model\": null,\n  \"name\": \"spacedock-ensign-task-implementation\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "add",
+      "task"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "commit",
+      "-qm",
+      "correct producer output"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Premature review?",
+      "--artifact",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate/task/plan.md",
+      "--summary",
+      "no fresh validator yet",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "room=/tmp/spacedock-same-stage-evidence-zz1y/separate/task/review/validation/briefing-2\nbriefing=briefing:task:validation:attempt-2:revision-1\ndigest=sha256:11b805931b70df743b3cea6c13d827b257472b61f972b88b74e6827d4d4d8348\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "withdraw",
+      "task",
+      "--reason",
+      "Negative probe completed; require fresh validator",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "withdrawn gate=gate:task:validation attempt=gate-attempt:task-validation-2 state=withdrawn briefing=briefing:task:validation:attempt-2:revision-1\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "dispatch",
+      "build",
+      "--entity-path",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate/task/index.md",
+      "--stage",
+      "validation",
+      "--host",
+      "codex",
+      "--checklist-file",
+      "/tmp/spacedock-same-stage-evidence-zz1y/checklist.txt",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "{\n  \"schema_version\": 2,\n  \"subagent_type\": \"spacedock:ensign\",\n  \"description\": \"Separate reviewer control: validation\",\n  \"fetch_commands\": [\n    \"/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock dispatch show-stage-def --workflow-dir /tmp/spacedock-same-stage-evidence-zz1y/separate --stage validation\"\n  ],\n  \"dispatch_file_path\": \"/tmp/spacedock-dispatch/spacedock-ensign-task-validation.md\",\n  \"prompt\": \"$spacedock:ensign; then Read /tmp/spacedock-dispatch/spacedock-ensign-task-validation.md and treat its content as your assignment.\",\n  \"model\": null,\n  \"name\": \"spacedock-ensign-task-validation\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "add",
+      "task"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "git",
+      "commit",
+      "-qm",
+      "record validator control outcome"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "gate",
+      "prepare",
+      "task",
+      "--question",
+      "Approve corrected reviewed plan?",
+      "--artifact",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate/task/plan.md",
+      "--summary",
+      "fresh control review",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "room=/tmp/spacedock-same-stage-evidence-zz1y/separate/task/review/validation/briefing-3\nbriefing=briefing:task:validation:attempt-3:revision-1\ndigest=sha256:50166f29050b7af956219d4620f6bad9ccaa235504809b4ad03d152bc89f0e27\nstate=open\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "state",
+      "commit",
+      "task",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "Committed task in the inline workflow repository; nothing pushed.\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+      "status",
+      "--next",
+      "--json",
+      "--workflow-dir",
+      "/tmp/spacedock-same-stage-evidence-zz1y/separate"
+    ],
+    "cwd": "/tmp/spacedock-same-stage-evidence-zz1y/separate",
+    "exit": 0,
+    "stdout": "{\"command\":\"next\",\"dispatchable\":[],\"ready_gates\":[{\"id\":\"task\",\"slug\":\"task\",\"current\":\"validation\",\"readiness\":\"awaiting-captain\"}]}\n",
+    "stderr": ""
+  }
+]

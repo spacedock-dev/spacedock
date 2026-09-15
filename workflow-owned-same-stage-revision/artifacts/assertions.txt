@@ -1,0 +1,1 @@
+PASS: frozen input and old briefing bytes unchanged; corrected plan equals independently seeded frozen input; old closed revise refused approve and consume; exactly one fresh open gate shown by status; no new approve or consume called. Operator completion, not live subagent proof.

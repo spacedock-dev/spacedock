@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:task:validation:attempt-2:revision-1",
+  "question": "Premature review?",
+  "artifacts": [
+    {
+      "id": "artifact:task:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://main/180b6a528df949ca2186c5628bcc7d2fc55d9220/task/plan.md",
+      "rev": "sha256:844cd17a64dffb0b93be849979ecbc677a8e98a1b595a402ec08ce1b4f683166",
+      "mediaType": "text/markdown",
+      "summary": "no fresh validator yet"
+    }
+  ]
+}

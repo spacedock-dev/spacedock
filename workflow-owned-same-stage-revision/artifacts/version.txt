@@ -1,0 +1,6 @@
+spacedock 0.28.0-pre3
+OS: darwin/arm64
+Channel: edge (spacedock@spacedock-edge)
+Runtime: codex (CODEX_THREAD_ID)
+Sandbox: agent-safehouse
+contract 3
