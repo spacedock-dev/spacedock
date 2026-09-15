@@ -74,6 +74,20 @@ gates:
                 id: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-1:revision-1
                 digest: sha256:4910a1560360b6f864931523b771a1a6b47a700d135499f41b20465269e1088e
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:bfmczd31ydpp4stqjstf6xwx:validation:1
+                briefing: briefing:bfmczd31ydpp4stqjstf6xwx:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T05:10:02.847126Z"
+                decision: approve
+                reason: Independent replay and exact e52ece67a targeted Codex live pass current four release-attribution criteria. Full normal/race completed with only identical independently reproduced baseline resolver defect; other packages pass and no race findings. Superseded historical criteria do not redefine current approved scope.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: active thread goal supplied by captain
+              application:
+                target-stage: done
+                state: pending
 started: 2026-08-13T22:06:12Z
 worktree: .worktrees/spacedock-ensign-repair-codex-smallest-sufficient-mechanism-regression
 ---
