@@ -22,6 +22,17 @@ gates:
                 id: briefing:8k3cmcg2gg1e88w0qe6sq3vw:backlog:attempt-1:revision-1
                 digest: sha256:7922fa71be8298f5d1f0c06ae08aa6f4bc4587e1074e8774450b93afc4595f17
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:8k3cmcg2gg1e88w0qe6sq3vw:backlog:1
+                briefing: briefing:8k3cmcg2gg1e88w0qe6sq3vw:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T04:02:07.367243Z"
+                decision: approve
+                reason: Captain requested dispatch of the Codex live failure tasks, targeted local verification, and stacked PRs.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.
