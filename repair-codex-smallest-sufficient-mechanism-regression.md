@@ -494,3 +494,5 @@ Current release Python edits now require a completed exit-0 parent command, a ma
 ### Summary
 
 REJECTED at exact `9029decfcce628ae6ec82cba9461e7589c1ad421`: the real live workflow completes its edits and workers but the receipt decoder rejects its supported native shape, and a detached heredoc control admits false edit credit. Both findings were preserved and routed before any candidate mutation or retry; this report evaluates only the original candidate and does not certify the producer's subsequent correction.
+
+Validation disposition follow-up: FO authorized the producer to normalize the observed native `custom_tool_call_output` / `input_text` execution-result shape for AC-1, alongside the pre-run HEAD / strict-descendant correction for AC-2. Authorization excludes a broad parser, other-host changes, or another live run; validator awaits a new candidate SHA and explicit review/live grant. Original `9029dec` remains REJECTED.
