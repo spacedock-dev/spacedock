@@ -1,0 +1,27 @@
+# Independent durability design review
+
+Recommendation: proceed with the combined task as designed. No blocking design finding. The three repairs address demonstrated failures and reuse the existing authority, archive, and state-sync boundaries; a new framework or delivery ledger is unnecessary. This is a read-only design review, not implementation validation.
+
+## Evidence inspected
+
+Read the entity, the complete reproduction script, all 146 transcript rows structurally, relevant transcript outcomes, and the current merge classifier/finalizer, archive transaction helpers, raw archive primitive, roots/status dispatch, cross-workflow resolution, and statesync preflight/publication implementation. No tests, reproductions, CI, or source/state/remote mutations were run. The debugging skill's root-cause and existing-pattern review informed this review.
+
+The transcript contains 146 commands: 138 exit 0 and eight exit 1. Rows 100–102 show successful terminalization/archive followed by an actual merge conflict and failed task-HEAD ancestry. Rows 120–121 show the success control still delivers after terminalization. All four retirement cases leave deletions/untracked archive targets, with state commit correctly refusing at exit 1. Missing and valid-empty JSON are identical. Rows 137–146 establish the existing delivery-first sentinel path and read-only refusal on the second guard. The script asserts consumed/pending frontmatter, entity placement, unchanged archive HEAD, and companion retention in addition to recording command output. This supports necessity; it does not pretend to validate the proposed future behavior.
+
+## Soundness and implementation constraints
+
+1. AC-1 is appropriately narrow. Check the no-hook, local, passed path before either the existing sentinel shortcut or default finalizer can mutate anything. A check only in the default switch arm would leave the existing SHA-shaped sentinel shortcut open. Resolve trunk in the definition's code repository, not the split-root state checkout or invocation cwd. Use existing trunk resolution. Reachability of both recorded commit and declared worktree HEAD is enough for the stated committed-delivery contract. Preserve rejected verdicts, registered-hook semantics, and the existing approval writer. Add the distinct wrong-but-reachable-old-trunk sentinel plus undelivered worktree-HEAD case; the second reachability check should be independently necessary.
+
+2. AC-2 should remain a small explicit-archive wrapper. Existing captureArchiveState, commitArchiveMove, rollbackArchive, and publishMergeArchive contain the needed mechanics. Avoid a generalized transaction API or relaxing archived state commit into a staging command. Keep the inline branch on today's raw archive primitive. The reused helpers currently emit `merge guard` labels and a `(merge guard)` commit subject; neutralize or minimally parameterize those labels so explicit retirement does not claim delivered completion. Preserve ordinary archive gates and force behavior.
+
+3. AC-3 has one extraction trap: Preflight deliberately handles an in-progress rebase before symbolic-ref branch validation. Git detaches HEAD during a rebase. Do not mechanically put a combined root/branch read-only check at the front of Preflight, or put it ahead of the archive mutation preflight: that would turn the existing recoverable HALT/abort flow into an invalid-checkout refusal. Pure reads/new should use the nonmutating check; existing mutation/sync operations retain their existing ordering. This is already required by the design's preservation clauses and needs a focused compatibility assertion, not a wider recovery framework.
+
+4. Missing storage must be checked at actual entity-use boundaries. A universal resolveRoots check would also break the expressly preserved definition reads and initialization/discovery routes. Cross-workflow resolution must validate each contributing workflow before interpreting a missing checkout as no match. The existing dispatcher and resolveFromRootOrExit provide bounded insertion points.
+
+5. Existing rollback restores the working file bytes and resets affected index paths to HEAD; it does not preserve preexisting staged versions of the same entity. The design only promises untouched unrelated index/files plus restored active state. Keep that scope explicit: do not silently claim byte-identical restoration of the entire preexisting index or add a full-index transaction system to satisfy a stronger accidental claim. Staged sibling preservation remains required.
+
+## Size and validation assessment
+
+The proposed six production owners, seven proof owners, and two documentation owners are credible. +560 net lines is plausible with substantial reuse, though the large real-Git failure/recovery matrix can consume the test budget quickly. The +800 net / 18-file limit is a review threshold, not a target. Relocating existing archive helpers may increase gross churn without adding value; keep the new wrapper small and move only what readability warrants.
+
+Do not rerun the already-green baseline checks during ideation. Implementation should add focused failing regressions first, then the required repository checks. Independent validation should exercise the newly changed claims (checked sentinel refusal, archive commit/publication failure recovery, nonmutating missing/invalid checkout refusal), rather than repeat the historical harness as if it proves the fix.

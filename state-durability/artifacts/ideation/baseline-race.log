@@ -1,0 +1,260 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	5.889s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	5.619s
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (3.64s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+panic: test timed out after 10m0s
+	running tests:
+		TestLaunchExitCodePropagation (2s)
+		TestLaunchExitCodePropagation/clean_exit_0 (2s)
+
+goroutine 1502 [running]:
+testing.(*M).startAlarm.func1()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2802 +0x498
+created by time.goFunc
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/time/sleep.go:215 +0x44
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0xc0000d4488, {0x102cdb55a, 0x1d}, 0x103054ca0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2109 +0x7dc
+testing.runTests.func1(0xc0000d4488)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2585 +0x78
+testing.tRunner(0xc0000d4488, 0xc00002b958)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0x168
+testing.runTests({0x102ce0110, 0x22}, {0x102cec1a4, 0x2f}, 0xc000010360, {0x103090aa0, 0x161, 0x161}, {0x20?, 0x103039d40?, ...})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2583 +0x7a4
+testing.(*M).Run(0xc0001995e0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2443 +0xb3c
+github.com/spacedock-dev/spacedock/internal/cli.TestMain(0xc0001995e0)
+	/private/tmp/state-durability-ideation-4380534/internal/cli/host_launch_test.go:58 +0x30c
+main.main()
+	_testmain.go:752 +0x108
+
+goroutine 1501 [syscall]:
+syscall.syscalln(0x10293c1e0, {0xc0004efb58, 0x6, 0x6})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/sys_darwin.go:38 +0x20
+syscall.syscall6(0x10293c1e0, 0x4c51, 0xc0004efc28, 0x0, 0xc0005ae090, 0x0, 0x0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_darwin.go:407 +0xb4
+syscall.wait4(0x4c51, 0xc0004efc28, 0x0, 0xc0005ae090)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/zsyscall_darwin_arm64.go:44 +0x60
+syscall.Wait4(0x4c51, 0xc0004efc80, 0x0, 0xc0005ae090)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_bsd.go:144 +0x48
+os.(*Process).pidWait.func1(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:64
+os.ignoringEINTR2[...](...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file_posix.go:273
+os.(*Process).pidWait(0xc0005aa040)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:63 +0xe8
+os.(*Process).wait(0xc0005aa040)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:28 +0x44
+os.(*Process).Wait(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec.go:346
+os/exec.(*Cmd).Wait(0xc0005b0000)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:930 +0x74
+github.com/spacedock-dev/spacedock/internal/cli.TestLaunchExitCodePropagation.func1(0xc0005ac248)
+	/private/tmp/state-durability-ideation-4380534/internal/cli/host_launch_test.go:420 +0xd0
+testing.tRunner(0xc0005ac248, 0xc0004a0120)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0x168
+created by testing.(*T).Run in goroutine 1500
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2101 +0x7c0
+
+goroutine 1886 [syscall]:
+os/signal.signal_recv()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/sigqueue.go:149 +0x108
+os/signal.loop()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/signal/signal_unix.go:23 +0x24
+created by os/signal.Notify.func1.1 in goroutine 1802
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/signal/signal.go:152 +0x50
+
+goroutine 1500 [chan receive]:
+testing.(*T).Run(0xc0005ac008, {0x102ccfcf7, 0xc}, 0xc0004a0120)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2109 +0x7dc
+github.com/spacedock-dev/spacedock/internal/cli.TestLaunchExitCodePropagation(0xc0005ac008)
+	/private/tmp/state-durability-ideation-4380534/internal/cli/host_launch_test.go:414 +0x208
+testing.tRunner(0xc0005ac008, 0x103054ca0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0x168
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2101 +0x7c0
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	600.549s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	6.229s
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	36.907s
+--- FAIL: TestBuildModsParity (0.78s)
+    standing_parity_test.go:136: build-mods: dispatch body mismatch
+        --- native ---
+        ## First action
+        
+        Before anything else, invoke your operating contract:
+        
+            Skill(skill="spacedock:ensign")
+        
+        This loads the shared ensign discipline (stage-report format, background-task polling, worktree ownership, completion signal protocol). The call is safe to call more than once; if the agent-definition preload ever starts working, calling it again is a no-op (the skill content is re-loaded but has no behavioral effect). Do not paraphrase; call the tool.
+        
+        You are working on: Thing
+        
+        Stage: backlog
+        
+        Read the entity file at /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestBuildNameCapShortUnchangedslug4097837864/002/thing.md for the current spec.
+        
+        ### Completion checklist
+        
+        - a
+        
+        ### Summary
+        {brief description of what was accomplished}
+        
+        ### Fetch commands
+        
+            /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestBuildNameCapShortUnchangedslug4097837864/002 --stage backlog
+        
+        
+        ### Completion Signal
+        
+        When you finish (after all commits and stage report writes are done), your last action MUST be:
+        
+            SendMessage(to="team-lead", message="Done: Thing completed backlog. Report written to /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestBuildNameCapShortUnchangedslug4097837864/002/thing.md.")
+        
+        **If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+        --- golden ---
+        ## First action
+        
+        Before anything else, invoke your operating contract:
+        
+            Skill(skill="spacedock:ensign")
+        
+        This loads the shared ensign discipline (stage-report format, background-task polling, worktree ownership, completion signal protocol). The call is safe to call more than once; if the agent-definition preload ever starts working, calling it again is a no-op (the skill content is re-loaded but has no behavioral effect). Do not paraphrase; call the tool.
+        
+        You are working on: Thing
+        
+        Stage: backlog
+        
+        Read the entity file at <ROOT>/thing.md for the current spec.
+        
+        ### Completion checklist
+        
+        - a
+        - b
+        
+        ### Summary
+        {brief description of what was accomplished}
+        
+        ### Fetch commands
+        
+            /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage backlog
+        
+        
+        ### Completion Signal
+        
+        When you finish (after all commits and stage report writes are done), your last action MUST be:
+        
+            SendMessage(to="team-lead", message="Done: Thing completed backlog. Report written to <ROOT>/thing.md.")
+        
+        **If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	274.323s
+panic: test timed out after 10m0s
+	running tests:
+		TestRecordedGateCommittedBeforeDispatchResolutionPaths (1s)
+
+goroutine 1771 [running]:
+testing.(*M).startAlarm.func1()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2802 +0x498
+created by time.goFunc
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/time/sleep.go:215 +0x44
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0xc0002ac008, {0x104c3b588, 0x36}, 0x104fa19d8)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2109 +0x7dc
+testing.runTests.func1(0xc0002ac008)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2585 +0x78
+testing.tRunner(0xc0002ac008, 0xc00029fab8)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0x168
+testing.runTests({0x104c2b24a, 0x22}, {0x104c3bf09, 0x37}, 0xc000010288, {0x104fe5580, 0xe2, 0xe2}, {0xc0000153c0?, 0xc000082b80?, ...})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2583 +0x7a4
+testing.(*M).Run(0xc0000ded20)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2443 +0xb3c
+main.main()
+	_testmain.go:496 +0x104
+
+goroutine 1769 [syscall]:
+syscall.syscalln(0x1048c2f00, {0xc00055f588, 0x6, 0x6})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/sys_darwin.go:38 +0x20
+syscall.syscall6(0x1048c2f00, 0x50dc, 0xc00055f658, 0x0, 0xc0004e82d0, 0x0, 0x0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_darwin.go:407 +0xb4
+syscall.wait4(0x50dc, 0xc00055f658, 0x0, 0xc0004e82d0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/zsyscall_darwin_arm64.go:44 +0x60
+syscall.Wait4(0x50dc, 0xc00055f6b0, 0x0, 0xc0004e82d0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_bsd.go:144 +0x48
+os.(*Process).pidWait.func1(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:64
+os.ignoringEINTR2[...](...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file_posix.go:273
+os.(*Process).pidWait(0xc000195000)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:63 +0xe8
+os.(*Process).wait(0xc000195000)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:28 +0x44
+os.(*Process).Wait(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec.go:346
+os/exec.(*Cmd).Wait(0xc0001b5a00)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:930 +0x74
+os/exec.(*Cmd).Run(0xc0001b5a00)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:632 +0x58
+os/exec.(*Cmd).CombinedOutput(0xc0001b5a00)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:1047 +0x1fc
+github.com/spacedock-dev/spacedock/internal/ensigncycle.buildRecordedGateBinary(0xc0004dfd48)
+	/private/tmp/state-durability-ideation-4380534/internal/ensigncycle/recorded_gate_lifecycle_test.go:1398 +0x180
+github.com/spacedock-dev/spacedock/internal/ensigncycle.TestRecordedGateCommittedBeforeDispatchResolutionPaths(0xc0004dfd48)
+	/private/tmp/state-durability-ideation-4380534/internal/ensigncycle/recorded_gate_lifecycle_test.go:1139 +0x34
+testing.tRunner(0xc0004dfd48, 0x104fa19d8)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0x168
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2101 +0x7c0
+
+goroutine 1770 [IO wait]:
+internal/poll.runtime_pollWait(0x11430c600, 0x72)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/netpoll.go:351 +0xa0
+internal/poll.(*pollDesc).wait(0xc0004f2020, 0x72, 0x1)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_poll_runtime.go:84 +0xb8
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0xc0004f2000, {0xc000393200, 0x200, 0x200})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_unix.go:165 +0x34c
+os.(*File).read(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file_posix.go:30
+os.(*File).Read(0xc000780898, {0xc000393200, 0x200, 0x200})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:144 +0xb0
+bytes.(*Buffer).ReadFrom(0xc0004c2600, {0x104fa6988, 0xc000780898})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/bytes/buffer.go:229 +0xf0
+io.copyBuffer({0x104fa6ba0, 0xc0004c2600}, {0x104fa6988, 0xc000780898}, {0x0, 0x0, 0x0})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:415 +0x1c0
+io.Copy(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:388
+os.genericWriteTo(0xc000780898, {0x104fa6ba0, 0xc0004c2600})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:295 +0x50
+os.(*File).WriteTo(0xc000780898, {0x104fa6ba0, 0xc0004c2600})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:273 +0x90
+io.copyBuffer({0x104fa6ba0, 0xc0004c2600}, {0x104fa6a80, 0xc000780898}, {0x0, 0x0, 0x0})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:411 +0xac
+io.Copy(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:388
+os/exec.(*Cmd).writerDescriptor.func1()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:602 +0x5c
+os/exec.(*Cmd).Start.func2(0xc000083b80)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:757 +0x3c
+created by os/exec.(*Cmd).Start in goroutine 1769
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:756 +0xb20
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	604.160s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	251.293s
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	40.912s
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	4.781s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	4.151s
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	18.012s
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	3.581s
+ok  	github.com/spacedock-dev/spacedock/internal/release	204.741s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	1.510s
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	2.090s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	33.454s
+ok  	github.com/spacedock-dev/spacedock/internal/status	363.191s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	5.228s
+ok  	github.com/spacedock-dev/spacedock/skills/integration	35.363s
+FAIL
