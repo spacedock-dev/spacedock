@@ -71,6 +71,8 @@ gates:
                 state: pending
 started: 2026-09-15T04:01:46Z
 worktree: .worktrees/spacedock-ensign-prepare-keep-moving-approved-gate-fixture
+mod-block: merge:pr-merge
+pr: "#794"
 ---
 
 ## Problem statement
