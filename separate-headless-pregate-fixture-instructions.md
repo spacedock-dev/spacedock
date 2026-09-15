@@ -172,3 +172,29 @@ SPACEDOCK_BIN=/tmp/8k3cmcg2gg-candidate-spacedock SPACEDOCK_LIVE_RUNTIME=codex S
 ### Summary
 
 The queued fixture now starts without a completed review and asks the first officer to drive current implementation work to the human boundary. Gate-ready prompts and strict authority/lifecycle checks retain their previous behavior; fresh Codex evidence is intentionally pending FO scheduling on the combined stack.
+
+
+## Stage Report: validation
+
+- DONE: Independently review headless layer da50d61d relative keep-moving predecessor 7ca67fdd; verify fixture absence and preserved authority/lifecycle controls.
+  Reviewed exact `da50d61d6df3e8347ab9a8d594e31a8d7cf3cfba` against `7ca67fdda5433654b6f67276560b3eb19c0684f6`: two test files, +27/-3, clean candidate; no product or assertion weakening.
+- DONE: Assess AC-1 — Pre-gate setup has no completed-review evidence.
+  Reviewed existing green implementation proof without rerunning per FO: TestPreGateWorkflowIsStageCoherent checks disk absence, parsed/raw report absence, and real boot queued → implementation with zero ready gates; restoring the review fails os.Stat, while a completed report fails the heading checks.
+- DONE: Perform the bounded semantic adversarial review.
+  Pre-gate alone deletes the selected review and receives current-work instructions; ready and withdrawn fixtures retain their review and original prompt. Removal is committed path-scoped, and missing deletion fails setup rather than silently retaining stale evidence.
+- DONE: Verify preserved negative lifecycle and authority invariants.
+  Unchanged held-state checks reject wrong gate/briefing/attempt/digest, approval/application, verdict, and successor status; command-log checks reject repeated prepare, consume, successor dispatch, withdrawal, or post-prepare status mutation. Native lifecycle checks require a correlated completion before validation and one parsed DONE report.
+- SKIPPED: After FO grants the serialized live slot, run targeted Codex default-headless and gate-ready control, preserve artifacts and exact commit, and assess all ACs without editing candidate code.
+  FO withheld slot after the preceding keep-moving run hit local Codex 0.154 code-mode negotiation failure before gate commands; minimal isolated host smoke is pending. This validator launched no live run and attributes no candidate defect from that sibling failure.
+- SKIPPED: AC-2 — Codex dispatches implementation before presenting the human gate.
+  Fresh runtime evidence remains pending; unchanged assertions and prior labels alone do not establish worker dispatch/completion, gate preparation order, and the final unconsumed boundary.
+- SKIPPED: AC-3 — The already-gated control retains its intended boundary (fresh live portion).
+  Deterministic control proof and unchanged boundaries were reviewed; TestLiveCommonGateGuardrail must still run alongside the default-headless scenario after the host smoke and slot grant.
+- DONE: Prepare exact-candidate execution without candidate changes.
+  `go build -o /tmp/spacedock-headless-da50d61d ./cmd/spacedock` succeeded; `git diff --check` passed and HEAD stayed exact/clean. Scheduled artifacts: `/tmp/spacedock-stack-headless-live`; mandated CI model shim and isolated copied local OAuth will be used.
+- SKIPPED: Repeat deterministic/full/race suites.
+  FO explicitly retained existing green focused evidence and assigned full/race/format checks once at the combined tip; no new test concern justified repetition here.
+
+### Summary
+
+Review found no material candidate defect within the approved two-file fixture/prompt correction. Validation remains pending, with no PASSED recommendation until both targeted Codex journeys produce fresh evidence; the worker remains addressable for the serialized slot. No code, frontmatter, PR, or merge was changed.
