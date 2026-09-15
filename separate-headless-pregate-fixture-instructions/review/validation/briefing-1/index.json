@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:8k3cmcg2gg1e88w0qe6sq3vw:validation:attempt-1:revision-1",
+  "question": "Approve the pre-gate fixture layer as part of the locally verified stack?",
+  "artifacts": [
+    {
+      "id": "artifact:8k3cmcg2gg1e88w0qe6sq3vw:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/8b980bda87da657bbf6637f39430adfbd5d81a5b/separate-headless-pregate-fixture-instructions.md",
+      "rev": "sha256:3a528c9244cc3a3139299bcd2f00c82cd6f2de33aee0c1869367bafb322157b6",
+      "mediaType": "text/markdown",
+      "summary": "Independent reviewer reconciled all three ACs at final stack474cdb8c5. Headless and gate-ready live pass307.57s/127s with native validation completion before one open unconsumed gate. Fixture da50d61d6 depends on separate contractfix474; standalone historical failure preserved, not claimed passing."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:8k3cmcg2gg1e88w0qe6sq3vw:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}

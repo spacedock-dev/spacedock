@@ -55,6 +55,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:8k3cmcg2gg1e88w0qe6sq3vw:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:8k3cmcg2gg1e88w0qe6sq3vw-validation-1
+              briefing:
+                id: briefing:8k3cmcg2gg1e88w0qe6sq3vw:validation:attempt-1:revision-1
+                digest: sha256:288b3d171d1ef1cd219004bcc1649cc098712dfdf2cf6a7fc28df93e55d0dfac
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Separate pre-gate dispatch instructions from gate-ready fixture instructions.
