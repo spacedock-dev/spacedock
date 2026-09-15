@@ -691,3 +691,29 @@ The owned Material AC-1 fixture-portability evidence defect is resolved by the a
 ### Summary
 
 PASSED at exact `0fb8dd634d397e59ba169ec81d5d602594b02800`. The two-line fixture correction removes host branch-default dependence while preserving all runtime and evidence semantics; prior live/full-suite results retain their original SHA and outcome labels.
+
+## Review-finding disposition — offline metrics control registration (2026-09-15)
+
+- Released user and normal workflow: contributors run the required `go test ./...`
+  before delivering the smallest-mechanism test layer.
+- Observable harm: the new offline metrics control is in a live-tagged file and its
+  `TestSmallestMechanismPhaseMetrics` name causes the normal registry reconciliation
+  to reject the candidate as an unregistered live journey.
+- Affected value: `value-ac[AC-4]` — the current approved layer must pass applicable
+  local checks before independent validation and combined-stack delivery.
+- Trigger evidence: exact candidate `71d1f6b1c9e36fb02b26aeb781cdcf7a0885a722`,
+  `/tmp/spacedock-smallest-outcomes-local/normal.log`,
+  `TestRuntimeLiveRegistryReconciliation`, `live_registry_reconciliation_test.go:222`:
+  `live-tagged test "TestSmallestMechanismPhaseMetrics" is not a registered common journey, runtime proof, or non-gating experiment`.
+
+Worker proposal: Material; owned by this layer's new metrics control; FIX by using the
+existing seeded Fuzz control pattern in `journey_metrics_live_test.go`, preserving
+all deterministic host-total assertions. This is an offline harness control, so a fake
+live journey or registry exemption would misclassify it. FO separately authorized FIX
+through the addressable worker mailbox on 2026-09-15, directing seed and exact registry
+reconciliation proof, a separate commit, and no new live run when implementation bytes
+remain identical. The passing live evidence stays attributed to `71d1f6b1c`.
+
+The normal run continues at the frozen original SHA before the authorized edit. The
+other observed failure is the already independently reproduced installed-host resolver
+baseline; it is recorded separately and is not used to waive this new owned failure.
