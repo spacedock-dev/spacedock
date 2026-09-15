@@ -55,6 +55,7 @@ func TestRunDefaultsToNativeRunner(t *testing.T) {
 	if err := os.MkdirAll(state, 0o755); err != nil {
 		t.Fatal(err)
 	}
+	git(t, state, "init", "-q", "-b", "spacedock-state/"+filepath.Base(def))
 	writeFile(t, filepath.Join(state, "add-login.md"), "---\nstatus: backlog\n---\n")
 
 	// Guard: the state subdir has no README of its own — the native runner must

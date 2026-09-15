@@ -119,7 +119,10 @@ A folder-form entity driven through the launcher.
 	if err := os.WriteFile(entityPath, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	writeFile(t, filepath.Join(defDir, ".gitignore"), ".spacedock-state/\n")
 	gitInitFixture(t, defDir)
+	gitInitFixture(t, stateDir)
+	git(t, stateDir, "branch", "-M", "spacedock-state/"+filepath.Base(defDir))
 	return defDir, stateDir, slug
 }
 
