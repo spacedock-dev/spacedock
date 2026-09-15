@@ -22,6 +22,17 @@ gates:
                 id: briefing:vcfwr5ptn6pedv32wq7cbsy6:backlog:attempt-1:revision-1
                 digest: sha256:b6057983672d6c156860ec510eeeb522745ea6e009b88a5035a4bab2e4142526
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:vcfwr5ptn6pedv32wq7cbsy6:backlog:1
+                briefing: briefing:vcfwr5ptn6pedv32wq7cbsy6:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T14:18:52.714103Z"
+                decision: approve
+                reason: Captain approved adding the separate headless contract fix; CI only after complete stack individually verified locally.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.
