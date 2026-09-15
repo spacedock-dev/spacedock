@@ -2,7 +2,7 @@
 title: Schedule live journeys with committed duration hints
 status: ideation
 source: Captain request 2026-09-15; CI run 34996910090
-started:
+started: 2026-09-15T18:21:56Z
 completed:
 verdict:
 score: 0.8
