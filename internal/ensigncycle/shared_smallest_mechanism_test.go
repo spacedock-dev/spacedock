@@ -3,6 +3,8 @@ package ensigncycle
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -36,9 +38,8 @@ var ssmGateJustificationRe = regexp.MustCompile(`(?i)smallest[ -]sufficient|chea
 var ssmPRCreateRe = regexp.MustCompile(`gh\s+pr\s+create`)
 var ssmGitCommitRe = regexp.MustCompile(`git(\s+-C\s+\S+)?\s+commit`)
 
-// ssmCodexEditVerbRe distinguishes a command that EDITS a file (apply_patch or a shell
-// write) from one that merely NAMES it (`cat`/`ls`), so reading a file is not mistaken
-// for editing it on the Codex command stream.
+// ssmCodexEditVerbRe remains a conservative command warning for the FO write guard;
+// it is not positive proof of a smallest-mechanism edit.
 var ssmCodexEditVerbRe = regexp.MustCompile(`apply_patch|applypatch|>>?\s|tee\b|sed -i`)
 
 // mechanismTrace is the host-neutral view of the FO's tool-call trace the grader
@@ -175,7 +176,9 @@ func claudeMechanismTrace(stream string, edits, commissioned []string) mechanism
 // command_execution — so the edit evidence is a structured item type, read directly
 // rather than regexed out of a command string.
 type codexFileChangeItem struct {
+	Type string `json:"type"`
 	Item struct {
+		Status  string `json:"status"`
 		Type    string `json:"type"`
 		Changes []struct {
 			Path string `json:"path"`
@@ -206,8 +209,8 @@ func ssmAdvancesToDone(command string) bool {
 
 // codexMechanismTrace extracts the trace from a `codex exec --json` transcript, reading
 // STRUCTURED item types wherever it can (the codex event shapes drift between releases):
-// in-house edits from `file_change` items (0.142.5) OR an apply_patch command_execution
-// (older/heredoc); the engage surface from a `status --set … status=done` advance (the real
+// in-house edits from `file_change` items (shell edits additionally require the
+// repository-backed parent commit proof below); the engage surface from a `status --set … status=done` advance (the real
 // standing-dispatch surface) OR a spawn_agent whose prompt names the entity (multi-agent
 // codex); over-orchestration from a spawn_agent naming an edit file; and the per-entity gate
 // justification from an `agent_message` (the FO's own narration) OR a spawn_agent prompt
@@ -228,13 +231,6 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 			if ssmGitCommitRe.MatchString(c) {
 				tr.committedDirectly = true
 			}
-			if ssmCodexEditVerbRe.MatchString(c) {
-				for _, f := range edits {
-					if strings.Contains(c, f) {
-						tr.editedInHouse[f] = true
-					}
-				}
-			}
 			if ssmAdvancesToDone(c) {
 				for _, e := range commissioned {
 					if strings.Contains(c, e) {
@@ -244,10 +240,10 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 			}
 		}
 		var fc codexFileChangeItem
-		if err := json.Unmarshal([]byte(line), &fc); err == nil && fc.Item.Type == "file_change" {
+		if err := json.Unmarshal([]byte(line), &fc); err == nil && fc.Type == "item.completed" && fc.Item.Type == "file_change" && fc.Item.Status == "completed" {
 			for _, ch := range fc.Item.Changes {
 				for _, f := range edits {
-					if strings.Contains(ch.Path, f) {
+					if filepath.Base(ch.Path) == f {
 						tr.editedInHouse[f] = true
 					}
 				}
@@ -310,4 +306,72 @@ func assertClaudeSmallestSufficientMechanism(stream string, edits, commissioned 
 // host-neutral ladder the Claude assertion feeds.
 func assertCodexSmallestSufficientMechanism(jsonl string, edits, commissioned []string) error {
 	return gradeSmallestSufficientMechanism(codexMechanismTrace(jsonl, edits, commissioned), edits, commissioned)
+}
+
+func codexMechanismTraceWithRepo(public, native, root string, edits, commissioned []string) mechanismTrace {
+	tr := codexMechanismTrace(public, edits, commissioned)
+	// Shell writes have no structured file_change item. Credit their landed commit
+	// only from a successful parent command, before any native worker could edit.
+	for _, line := range strings.Split(public, "\n") {
+		var event codexCommandItem
+		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" || event.Item.Type != "command_execution" || event.Item.Status != "completed" || event.Item.ExitCode == nil || *event.Item.ExitCode != 0 {
+			continue
+		}
+		// Require an invoked commit, not a read or an echoed command/receipt.
+		if !regexp.MustCompile(`(?:^|[\n;&])\s*git(?:\s+-C\s+\S+)?\s+commit\b`).MatchString(event.Item.Command) {
+			continue
+		}
+		receipts := regexp.MustCompile(`(?m)^\[[^ \]\n]+ ([0-9a-f]{7,40})\] `).FindAllStringSubmatch(event.Item.AggregatedOutput, -1)
+		if len(receipts) != 1 {
+			continue
+		}
+		hash := receipts[0][1]
+		parentReceipt := false
+		for _, nativeLine := range strings.Split(native, "\n") {
+			var record struct {
+				Payload struct{ Type, Name, Output string }
+			}
+			if json.Unmarshal([]byte(nativeLine), &record) != nil {
+				continue
+			}
+			p := record.Payload
+			if p.Type == "function_call" && (p.Name == "spawn_agent" || strings.HasSuffix(p.Name, ".spawn_agent")) {
+				break
+			}
+			if p.Type == "function_call_output" && strings.Contains(p.Output, receipts[0][0]) {
+				parentReceipt = true
+				break
+			}
+		}
+		if !parentReceipt {
+			continue
+		}
+		if _, err := gitOutput(root, "merge-base", "--is-ancestor", hash, "HEAD"); err != nil {
+			continue
+		}
+		for _, f := range edits {
+			if !strings.Contains(event.Item.Command, f) {
+				continue
+			}
+			before, err := gitOutput(root, "show", hash+"^:"+f)
+			if err != nil {
+				continue
+			}
+			old := "Status: PLACEHOLDER (the prompt hands the FO the exact replacement)."
+			title := map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f]
+			if title == "" || before != ladderNote(title) {
+				continue
+			}
+			want := strings.Replace(before, old, "Status: RESOLVED", 1)
+			after, err := gitOutput(root, "show", hash+":"+f)
+			if err != nil || after != want {
+				continue
+			}
+			final, err := os.ReadFile(filepath.Join(root, f))
+			if err == nil && string(final) == want {
+				tr.editedInHouse[f] = true
+			}
+		}
+	}
+	return tr
 }

@@ -1,6 +1,8 @@
 package ensigncycle
 
 import (
+	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -182,8 +184,8 @@ func TestAssertClaudeSmallestSufficientMechanism(t *testing.T) {
 // commissioned entity.
 func ssmCodexCorrectStream() string {
 	lines := []string{
-		codexCommand("apply_patch " + ssmEditFileA),
-		codexCommand("apply_patch " + ssmEditFileB),
+		codexFileChange(ssmEditFileA),
+		codexFileChange(ssmEditFileB),
 		codexCommand("git commit -m note -- " + ssmStrategyDoc),
 		codexSpawn("Engage " + ssmCommissionedA + " via the dispatch loop."),
 		codexSpawn("Engage " + ssmCommissionedB + " via the dispatch loop."),
@@ -201,7 +203,7 @@ func codexSpawn(prompt string) string {
 // command).
 func codexFileChange(paths ...string) string {
 	var b strings.Builder
-	b.WriteString(`{"type":"item.completed","item":{"type":"file_change","changes":[`)
+	b.WriteString(`{"type":"item.completed","item":{"type":"file_change","status":"completed","changes":[`)
 	for i, p := range paths {
 		if i > 0 {
 			b.WriteString(",")
@@ -268,8 +270,8 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 	}
 
 	// Negative: the gate suppressed a commissioned dispatch (ready-two never engaged).
-	suppressed := codexCommand("apply_patch "+ssmEditFileA) + "\n" +
-		codexCommand("apply_patch "+ssmEditFileB) + "\n" +
+	suppressed := codexFileChange(ssmEditFileA) + "\n" +
+		codexFileChange(ssmEditFileB) + "\n" +
 		codexCommand("git commit -m note -- "+ssmStrategyDoc) + "\n" +
 		codexSpawn("Engage "+ssmCommissionedA+".")
 	if err := assertCodexSmallestSufficientMechanism(suppressed, edits, commissioned); err == nil {
@@ -277,8 +279,8 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 	}
 
 	// Negative: a per-entity justification in the spawn prompt during engage.
-	perEntity := codexCommand("apply_patch "+ssmEditFileA) + "\n" +
-		codexCommand("apply_patch "+ssmEditFileB) + "\n" +
+	perEntity := codexFileChange(ssmEditFileA) + "\n" +
+		codexFileChange(ssmEditFileB) + "\n" +
 		codexCommand("git commit -m note -- "+ssmStrategyDoc) + "\n" +
 		codexSpawn("Smallest sufficient mechanism check: dispatching "+ssmCommissionedA+".") + "\n" +
 		codexSpawn("Engage "+ssmCommissionedB+".")
@@ -321,5 +323,97 @@ func TestSmallestMechanismTraceSelectsCodexDialect(t *testing.T) {
 	trace := smallestMechanismTraceForDialect("codex", ssmCodexRealDialectStream(), ssmEditFiles(), ssmCommissioned())
 	if err := gradeSmallestSufficientMechanism(trace, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("Codex dialect selection failed: %v", err)
+	}
+}
+
+// A real Git delta is independent of the recorded command's claimed effects.
+func TestCodexSmallestMechanismParentCommit(t *testing.T) {
+	for _, mutation := range []string{"", "release 0273", "read-only", "echo real receipt", "failed", "started", "missing native receipt", "delegated before commit", "wrong content", "unchanged", "wrong path", "dirty final"} {
+		t.Run(mutation, func(t *testing.T) {
+			root := t.TempDir()
+			for _, f := range ssmEditFiles() {
+				writeFile(t, filepath.Join(root, f), ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f]))
+			}
+			gitInit(t, root)
+			for _, f := range ssmEditFiles() {
+				after := strings.Replace(ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f]), "Status: PLACEHOLDER (the prompt hands the FO the exact replacement).", "Status: RESOLVED", 1)
+				if mutation == "wrong content" {
+					after += "unrequested\n"
+				}
+				if mutation == "unchanged" {
+					after = ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f])
+				}
+				if mutation == "wrong path" {
+					f += ".bak"
+				}
+				writeFile(t, filepath.Join(root, f), after)
+			}
+			git(t, root, "add", ".")
+			receipt := git(t, root, "commit", "--allow-empty", "-m", "Resolve notes")
+			// Replay the exact release parent command; only the real fixture Git receipt varies.
+			events := strings.Split(strings.TrimSpace(readFile(t, "testdata/codex_smallest_mechanism_python.jsonl")), "\n")
+			index := 0
+			if mutation == "release 0273" {
+				index = 1
+			}
+			var release codexCommandItem
+			if err := json.Unmarshal([]byte(events[index]), &release); err != nil {
+				t.Fatal(err)
+			}
+			command := release.Item.Command
+			status, exit := "completed", 0
+			if mutation == "read-only" {
+				command = "cat ladder-note-alpha.md ladder-note-beta.md"
+			}
+			if mutation == "echo real receipt" {
+				command = "echo 'git commit -m Resolve notes; ladder-note-alpha.md ladder-note-beta.md'"
+			}
+			if mutation == "failed" {
+				exit = 1
+			}
+			if mutation == "started" {
+				status = "in_progress"
+			}
+			nativeEvent := func(kind, name, output string) string {
+				b, _ := json.Marshal(map[string]any{"payload": map[string]any{"type": kind, "name": name, "output": output}})
+				return string(b)
+			}
+			native := nativeEvent("function_call_output", "", receipt)
+			spawn := nativeEvent("function_call", "spawn_agent", "")
+			if mutation == "missing native receipt" {
+				native = ""
+			}
+			if mutation == "delegated before commit" {
+				native = spawn + "\n" + native
+			}
+			native += "\n" + spawn
+			if mutation == "dirty final" {
+				for _, f := range ssmEditFiles() {
+					writeFile(t, filepath.Join(root, f), "wrong\n")
+				}
+			}
+			tr := codexMechanismTraceWithRepo(codexCommandOutput(command, receipt, exit, status), native, root, ssmEditFiles(), nil)
+			for _, f := range ssmEditFiles() {
+				want := mutation == "" || mutation == "release 0273"
+				if tr.editedInHouse[f] != want {
+					t.Errorf("edit %s credited=%v, want %v", f, tr.editedInHouse[f], want)
+				}
+			}
+		})
+	}
+}
+
+func TestCodexSmallestMechanismFileChangeResult(t *testing.T) {
+	good := codexFileChange(ssmEditFileA)
+	for name, stream := range map[string]string{
+		"failed":     strings.Replace(good, `"status":"completed"`, `"status":"failed"`, 1),
+		"started":    strings.Replace(good, `"type":"item.completed"`, `"type":"item.started"`, 1),
+		"wrong path": codexFileChange(ssmEditFileA + ".bak"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if codexMechanismTrace(stream, ssmEditFiles(), nil).editedInHouse[ssmEditFileA] {
+				t.Fatal("unsuccessful or wrong-file edit credited")
+			}
+		})
 	}
 }
