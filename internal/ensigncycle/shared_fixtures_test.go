@@ -651,20 +651,14 @@ func mergeTriagePrompt(workflowRoot string) string {
 	)
 }
 
-// writeSmallestMechanismWorkflow writes the smallest-sufficient-mechanism fixture: a
-// commissioned workflow with two READY entities to engage via the standing dispatch
-// loop, PLUS two plain deterministic-edit notes (no entity frontmatter, so the engage
-// loop ignores them) whose content the prompt hands the FO verbatim. The run bundles a
-// discretionary ad-hoc task (apply the two known edits in-house; commit a
-// convention-direct strategy doc directly) with commissioned durable journeys.
+// writeSmallestMechanismWorkflow starts with known notes. Commissioned entities
+// are added only after the direct-work outcome has been checked.
 // The writer stays default-tagged for offline controls.
 //
 //spacedock:live-fixture id=mechanism-choice/mixed-authority
 func writeSmallestMechanismWorkflow(t *testing.T, root string) string {
 	t.Helper()
 	writeFile(t, filepath.Join(root, "README.md"), smallestMechanismReadme())
-	writeFile(t, filepath.Join(root, ssmCommissionedA+".md"), smallestMechanismReadyEntity(ssmCommissionedA, "Ready One"))
-	writeFile(t, filepath.Join(root, ssmCommissionedB+".md"), smallestMechanismReadyEntity(ssmCommissionedB, "Ready Two"))
 	writeFile(t, filepath.Join(root, ssmEditFileA), ladderNote("Ladder Note Alpha"))
 	writeFile(t, filepath.Join(root, ssmEditFileB), ladderNote("Ladder Note Beta"))
 	gitInit(t, root)
@@ -714,15 +708,22 @@ func ladderNote(title string) string {
 		"Status: PLACEHOLDER (the prompt hands the FO the exact replacement).\n"
 }
 
-func smallestMechanismPrompt(workflowRoot string) string {
-	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s\n%s",
-		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: "+workflowRoot,
-		"Three tasks, in order. (1) In `"+ssmEditFileA+"` and `"+ssmEditFileB+"`, replace the line `Status: PLACEHOLDER (the prompt hands the FO the exact replacement).` with exactly `Status: RESOLVED`. You already have the exact content — apply it directly.",
-		"(2) Create `"+ssmStrategyDoc+"` with a one-line body `# Roadmap Strategy` and commit it directly to this repo. It is convention-direct roadmap prose, not code — do not open a PR.",
-		"(3) Engage this commissioned workflow's ready entities (`"+ssmCommissionedA+"`, `"+ssmCommissionedB+"`) via the standing dispatch loop.",
-		"Do the two edits and the commit yourself in-house — do NOT dispatch a worker or open a PR for them. Your final response must confirm the edits, the direct commit, and that the ready entities were engaged.",
-	)
+func smallestMechanismDirectPrompt(root string) string {
+	return "Use $spacedock:first-officer. Workflow directory: " + root + "\n" +
+		"In ladder-note-alpha.md and ladder-note-beta.md, replace the line `Status: PLACEHOLDER (the prompt hands the FO the exact replacement).` with `Status: RESOLVED`.\n" +
+		"Create roadmap-strategy.md containing the one-line body `# Roadmap Strategy` and commit this roadmap document directly to the repository."
+}
+
+func prepareSmallestMechanismCommissioned(t *testing.T, root string) {
+	writeFile(t, filepath.Join(root, ssmCommissionedA+".md"), smallestMechanismReadyEntity(ssmCommissionedA, "Ready One"))
+	writeFile(t, filepath.Join(root, ssmCommissionedB+".md"), smallestMechanismReadyEntity(ssmCommissionedB, "Ready Two"))
+
+	git(t, root, "add", "--", ssmCommissionedA+".md", ssmCommissionedB+".md")
+	git(t, root, "commit", "-m", "Commission ready work")
+}
+
+func smallestMechanismCommissionedPrompt(root string) string {
+	return "Use $spacedock:first-officer. Workflow directory: " + root + "\nEngage this commissioned workflow's ready entities (ready-one and ready-two) via the standing dispatch loop."
 }
 
 // writeKeepMovingWorkflow writes three independently completable tasks plus one

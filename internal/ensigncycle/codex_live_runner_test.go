@@ -33,14 +33,6 @@ type codexAsLiveDriver struct {
 }
 
 func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, prompt string) liveResult {
-	var initialHead string
-	if scenario.name == "smallest-sufficient-mechanism" {
-		head, err := gitOutput(root, "rev-parse", "HEAD")
-		if err != nil {
-			t.Fatalf("snapshot smallest-mechanism fixture: %v", err)
-		}
-		initialHead = strings.TrimSpace(head)
-	}
 	result, err := d.runner.run(t, scenario, root, prompt)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
@@ -55,10 +47,10 @@ func (d codexAsLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, roo
 			commands = []string{command}
 		}
 	}
-	return liveResult{initialHead: initialHead, cwd: root, finalMessage: result.finalMessage, stream: result.jsonl, commands: commands, artifactDir: result.artifactDir, duration: result.duration}
+	return liveResult{cwd: root, finalMessage: result.finalMessage, stream: result.jsonl, commands: commands, artifactDir: result.artifactDir, duration: result.duration}
 }
 func (d codexAsLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult) {
-	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration})
+	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{finalMessage: result.finalMessage, jsonl: result.stream, artifactDir: result.artifactDir, duration: result.duration}, result.phases...)
 }
 func (d codexAsLiveDriver) gradeShallowBootObservation(*testing.T, liveResult) {}
 
@@ -74,7 +66,7 @@ func (d codexAsLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liv
 func (d codexAsLiveDriver) model() string { return envOr("SPACEDOCK_CODEX_LIVE_MODEL", "codex") }
 func (d codexAsLiveDriver) home() string  { return d.runner.codexHome }
 func (d codexAsLiveDriver) smallestMechanismTrace(result liveResult, edits, commissioned []string) mechanismTrace {
-	return codexMechanismTraceWithRepo(result.stream, d.lifecycleStream(d.t, result), result.cwd, result.initialHead, edits, commissioned)
+	return codexMechanismTrace(result.stream, edits, commissioned)
 }
 func (d codexAsLiveDriver) withStubPATH(dir string) liveDriver {
 	d.runner = d.runner.withStubPATH(d.t, dir)

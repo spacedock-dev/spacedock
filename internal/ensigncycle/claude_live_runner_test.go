@@ -107,7 +107,7 @@ type liveDriver interface {
 // finalMessage is the headless stream's result/success event and stream is its
 // stream-json transcript.
 type liveResult struct {
-	initialHead  string // fixture snapshot before a smallest-mechanism Codex run
+	phases       []liveResult // ordinary launches contributing to a two-phase scenario
 	finalMessage string
 	stream       string
 	commands     []string
@@ -520,22 +520,42 @@ func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, s
 	runner.emitMetrics(t, scenario, result)
 }
 
-// runClaudeSmallestSufficientMechanismScenario drives the real FO against the
-// smallest-sufficient-mechanism fixture (a commissioned workflow with two ready
-// entities plus two plain deterministic-edit notes whose content the prompt hands the
-// FO) and grades the FO's tool-call STREAM in both directions of the ladder: the
-// deterministic edits are FO-authored with a direct commit and NO worker/PR climb, and
-// the commissioned ready entities are engaged via the standing dispatch loop WITHOUT a
-// per-entity justification. The trace is graded, not the durable end-state, which is
-// identical whether the FO climbed or not.
+// Two ordinary launches make the parent-only outcome boundary synchronous.
 func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(*testing.T, string, mechanismTrace, []string, []string) error) {
 	t.Helper()
-	workflowRoot := build(t, t.TempDir())
-
-	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot))
+	root := build(t, t.TempDir())
+	directScenario := scenario
+	directScenario.name += "/direct"
+	direct := runner.run(t, directScenario, root, smallestMechanismDirectPrompt(root))
+	native := runner.lifecycleStream(t, direct)
+	writeFile(t, filepath.Join(direct.artifactDir, "native-worker-evidence.jsonl"), native)
+	directErr := assertSmallestMechanismDirect(root, native)
+	directTrace := runner.smallestMechanismTrace(direct, nil, nil)
+	if directTrace.prOpened {
+		directErr = fmt.Errorf("direct work opened a PR")
+	}
+	if directErr != nil {
+		// Call the registered assertion even on a first-phase failure.
+		finishLiveScenario(t, runner, scenario, direct, durableSemantic("smallest-mechanism-violation", directErr), durableSemantic("smallest-mechanism-violation", assert(t, root, directTrace, nil, ssmCommissioned())))
+		return
+	}
+	for _, file := range append(ssmEditFiles(), ssmStrategyDoc) {
+		writeFile(t, filepath.Join(direct.artifactDir, "outcomes", file), readFile(t, filepath.Join(root, file)))
+	}
+	prepareSmallestMechanismCommissioned(t, root)
+	commissionedScenario := scenario
+	commissionedScenario.name += "/commissioned"
+	result := runner.run(t, commissionedScenario, root, smallestMechanismCommissionedPrompt(root))
 	trace := runner.smallestMechanismTrace(result, ssmEditFiles(), ssmCommissioned())
+	result.phases = []liveResult{direct, result}
+	result.duration += direct.duration
+	result.stream = direct.stream + "\n" + result.stream
+	result.commands = append(direct.commands, result.commands...)
+	result.artifactDir = filepath.Dir(result.artifactDir)
+	writeFile(t, filepath.Join(result.artifactDir, "phases.txt"), fmt.Sprintf("launches: 2\ndirect: %s (%s)\ncommissioned: %s (%s)\n", direct.artifactDir, direct.duration, result.phases[1].artifactDir, result.phases[1].duration))
 	finishLiveScenario(t, runner, scenario, result,
-		durableSemantic("smallest-mechanism-violation", assert(t, workflowRoot, trace, ssmEditFiles(), ssmCommissioned())))
+		durableSemantic("smallest-mechanism-violation", assertSmallestMechanismFiles(root)),
+		durableSemantic("smallest-mechanism-violation", assert(t, root, trace, ssmEditFiles(), ssmCommissioned())))
 }
 
 // runClaudeKeepMovingScenario grades each completed task from its own ordered,

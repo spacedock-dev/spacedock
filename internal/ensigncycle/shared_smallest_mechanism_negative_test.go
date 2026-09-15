@@ -1,9 +1,6 @@
 package ensigncycle
 
 import (
-	"encoding/json"
-	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -25,10 +22,6 @@ import (
 // doc directly, engaged both commissioned entities, and gated none of them.
 func ssmCorrectTrace() mechanismTrace {
 	tr := newMechanismTrace()
-	for _, f := range ssmEditFiles() {
-		tr.editedInHouse[f] = true
-	}
-	tr.committedDirectly = true
 	for _, e := range ssmCommissioned() {
 		tr.engaged[e] = true
 	}
@@ -42,14 +35,6 @@ func TestGradeSmallestSufficientMechanism(t *testing.T) {
 	// Positive: the correct both-directions trace passes.
 	if err := gradeSmallestSufficientMechanism(ssmCorrectTrace(), edits, commissioned); err != nil {
 		t.Fatalf("the correct smallest-sufficient trace must pass: %v", err)
-	}
-
-	// Negative: a deterministic edit the FO never applied in-house (it was left to a
-	// worker) reds on the in-house-edit half of the over-orchestration check.
-	notInHouse := ssmCorrectTrace()
-	notInHouse.editedInHouse[ssmEditFileA] = false
-	if err := gradeSmallestSufficientMechanism(notInHouse, edits, commissioned); err == nil {
-		t.Fatal("expected a deterministic edit not applied in-house to fail")
 	}
 
 	// Negative (isolating): the FO edited in-house but ALSO dispatched a worker for the
@@ -66,13 +51,6 @@ func TestGradeSmallestSufficientMechanism(t *testing.T) {
 	pr.prOpened = true
 	if err := gradeSmallestSufficientMechanism(pr, edits, commissioned); err == nil {
 		t.Fatal("expected a PR for the convention-direct strategy doc to fail")
-	}
-
-	// Negative (isolating): the strategy doc was never committed directly.
-	noCommit := ssmCorrectTrace()
-	noCommit.committedDirectly = false
-	if err := gradeSmallestSufficientMechanism(noCommit, edits, commissioned); err == nil {
-		t.Fatal("expected a missing direct commit of the strategy doc to fail")
 	}
 
 	// Negative (isolating): the gate wrongly suppressed a commissioned engage dispatch.
@@ -147,15 +125,6 @@ func TestAssertClaudeSmallestSufficientMechanism(t *testing.T) {
 		claudeToolUse("Bash", `{"command":"gh pr create --title note"}`)
 	if err := assertClaudeSmallestSufficientMechanism(pr, edits, commissioned); err == nil {
 		t.Fatal("expected a `gh pr create` for the strategy doc to fail the Claude assertion")
-	}
-
-	// Negative: no direct commit of the strategy doc.
-	noCommit := claudeToolUse("Edit", `{"file_path":"`+ssmEditFileA+`"}`) + "\n" +
-		claudeToolUse("Edit", `{"file_path":"`+ssmEditFileB+`"}`) + "\n" +
-		claudeToolUse("Agent", `{"prompt":"Engage `+ssmCommissionedA+`."}`) + "\n" +
-		claudeToolUse("Agent", `{"prompt":"Engage `+ssmCommissionedB+`."}`)
-	if err := assertClaudeSmallestSufficientMechanism(noCommit, edits, commissioned); err == nil {
-		t.Fatal("expected a stream with no direct commit to fail the Claude assertion")
 	}
 
 	// Negative: the gate suppressed a commissioned dispatch (ready-two never engaged).
@@ -292,8 +261,7 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 	// Positive (regression guard for the cycle-1 false negative): the codex-cli 0.142.5
 	// correct-run dialect the validator recorded — file_change edits + a direct commit +
 	// `status --set … done` advances, plus a contract-read command carrying the gate
-	// vocabulary. The extractor must grade editedInHouse=true (from file_change, not
-	// apply_patch), engage the entities (from the advances, not spawn_agent), and NOT
+	// vocabulary. The extractor must recognize entity advances and NOT
 	// false-positive the scope guard on the contract read.
 	if err := assertCodexSmallestSufficientMechanism(ssmCodexRealDialectStream(), edits, commissioned); err != nil {
 		t.Fatalf("the codex 0.142.5 file_change + status-set dialect must pass (cycle-1 false-negative regression): %v", err)
@@ -324,166 +292,5 @@ func TestSmallestMechanismTraceSelectsCodexDialect(t *testing.T) {
 	trace := smallestMechanismTraceForDialect("codex", ssmCodexRealDialectStream(), ssmEditFiles(), ssmCommissioned())
 	if err := gradeSmallestSufficientMechanism(trace, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("Codex dialect selection failed: %v", err)
-	}
-}
-
-// Snapshot the fixture immediately before executing each candidate parent action.
-// Echo/heredoc controls have real old commits, but make no new transaction.
-func TestCodexSmallestMechanismParentCommit(t *testing.T) {
-	for _, mutation := range []string{"", "release 0273", "custom output", "custom failed", "custom wrong block", "custom metadata only", "custom missing exit", "custom partial receipt", "custom wrong event", "read-only", "echo real receipt", "heredoc receipt", "older receipt", "failed", "started", "missing native receipt", "delegated before commit", "wrong content", "unchanged", "wrong path", "dirty final", "missing baseline"} {
-		t.Run(mutation, func(t *testing.T) {
-			root := t.TempDir()
-			for _, f := range ssmEditFiles() {
-				writeFile(t, filepath.Join(root, f), ladderNote(map[string]string{ssmEditFileA: "Ladder Note Alpha", ssmEditFileB: "Ladder Note Beta"}[f]))
-			}
-			gitInit(t, root)
-			// The captured native receipt names main, independent of the host Git default.
-			git(t, root, "branch", "-m", "main")
-			events := strings.Split(strings.TrimSpace(readFile(t, "testdata/codex_smallest_mechanism_python.jsonl")), "\n")
-			index := 0
-			if mutation == "release 0273" {
-				index = 1
-			}
-			var release codexCommandItem
-			if err := json.Unmarshal([]byte(events[index]), &release); err != nil {
-				t.Fatal(err)
-			}
-			command := release.Item.Command
-			run := func(command string) (string, int) {
-				cmd := exec.Command("/bin/sh", "-c", command)
-				cmd.Dir = root
-				out, err := cmd.CombinedOutput()
-				if err == nil {
-					return string(out), 0
-				}
-				if ee, ok := err.(*exec.ExitError); ok {
-					return string(out), ee.ExitCode()
-				}
-				t.Fatal(err)
-				return "", -1
-			}
-			if mutation == "read-only" || mutation == "echo real receipt" || mutation == "heredoc receipt" || mutation == "older receipt" {
-				old, code := run(command)
-				if code != 0 {
-					t.Fatalf("prepare old transaction: %s", old)
-				}
-				switch mutation {
-				case "read-only":
-					command = "cat ladder-note-alpha.md ladder-note-beta.md"
-				case "echo real receipt":
-					command = "printf '%s' " + shellQuote(old)
-				case "heredoc receipt", "older receipt":
-					command = "cat <<'EOF'\ngit commit -m Resolve -- ladder-note-alpha.md ladder-note-beta.md\n" + old + "EOF\n"
-					if mutation == "older receipt" {
-						git(t, root, "commit", "--allow-empty", "-m", "Later pre-run commit")
-					}
-				}
-			}
-			if mutation == "wrong content" {
-				command = strings.ReplaceAll(command, "Status: RESOLVED", "Status: WRONG")
-			}
-			if mutation == "unchanged" {
-				command = "git commit --allow-empty -m 'No edits'"
-			}
-			if mutation == "wrong path" {
-				for _, f := range ssmEditFiles() {
-					command = strings.ReplaceAll(command, f, f+".bak")
-				}
-				command = "cp ladder-note-alpha.md ladder-note-alpha.md.bak; cp ladder-note-beta.md ladder-note-beta.md.bak; " + command
-			}
-			if mutation == "failed" {
-				command += "\nexit 1"
-			}
-			baseline := strings.TrimSpace(git(t, root, "rev-parse", "HEAD"))
-			if mutation == "missing baseline" {
-				baseline = ""
-			}
-			receipt, code := run(command)
-			if code != 0 && mutation != "failed" {
-				t.Fatalf("execute fixture action: %s", receipt)
-			}
-			status := "completed"
-			if mutation == "started" {
-				status = "in_progress"
-			}
-			nativeEvent := func(kind, name string, output any) string {
-				b, _ := json.Marshal(map[string]any{"payload": map[string]any{"type": kind, "name": name, "output": output}})
-				return string(b)
-			}
-			native := nativeEvent("function_call_output", "", receipt)
-			if strings.HasPrefix(mutation, "custom") {
-				hash := strings.TrimSpace(git(t, root, "rev-parse", "--short", "HEAD"))
-				native = strings.ReplaceAll(readFile(t, "testdata/codex_smallest_mechanism_native_output.jsonl"), "45a1610", hash)
-				if mutation != "custom output" {
-					var event struct {
-						Payload struct {
-							Type   string
-							Output []struct{ Type, Text string }
-						}
-					}
-					if err := json.Unmarshal([]byte(native), &event); err != nil {
-						t.Fatal(err)
-					}
-					var result map[string]any
-					if err := json.Unmarshal([]byte(event.Payload.Output[1].Text), &result); err != nil {
-						t.Fatal(err)
-					}
-					switch mutation {
-					case "custom failed":
-						result["exit_code"] = 1
-					case "custom wrong block":
-						event.Payload.Output[1].Type = "image"
-					case "custom missing exit":
-						delete(result, "exit_code")
-					case "custom partial receipt":
-						result["output"] = strings.ReplaceAll(result["output"].(string), "Resolve ladder notes and add roadmap strategy", "Resolve")
-					case "custom wrong event":
-						event.Payload.Type = "agent_message"
-					case "custom metadata only":
-						result["metadata"] = result["output"]
-						result["output"] = ""
-					}
-					encoded, _ := json.Marshal(result)
-					event.Payload.Output[1].Text = string(encoded)
-					encoded, _ = json.Marshal(event)
-					native = string(encoded)
-				}
-			}
-			spawn := nativeEvent("function_call", "spawn_agent", "")
-			if mutation == "missing native receipt" {
-				native = ""
-			}
-			if mutation == "delegated before commit" {
-				native = spawn + "\n" + native
-			}
-			native += "\n" + spawn
-			if mutation == "dirty final" {
-				for _, f := range ssmEditFiles() {
-					writeFile(t, filepath.Join(root, f), "wrong\n")
-				}
-			}
-			tr := codexMechanismTraceWithRepo(codexCommandOutput(command, receipt, code, status), native, root, baseline, ssmEditFiles(), nil)
-			for _, f := range ssmEditFiles() {
-				want := mutation == "" || mutation == "release 0273" || mutation == "custom output"
-				if tr.editedInHouse[f] != want {
-					t.Errorf("edit %s credited=%v, want %v", f, tr.editedInHouse[f], want)
-				}
-			}
-		})
-	}
-}
-
-func TestCodexSmallestMechanismFileChangeResult(t *testing.T) {
-	good := codexFileChange(ssmEditFileA)
-	for name, stream := range map[string]string{
-		"failed":     strings.Replace(good, `"status":"completed"`, `"status":"failed"`, 1),
-		"started":    strings.Replace(good, `"type":"item.completed"`, `"type":"item.started"`, 1),
-		"wrong path": codexFileChange(ssmEditFileA + ".bak"),
-	} {
-		t.Run(name, func(t *testing.T) {
-			if codexMechanismTrace(stream, ssmEditFiles(), nil).editedInHouse[ssmEditFileA] {
-				t.Fatal("unsuccessful or wrong-file edit credited")
-			}
-		})
 	}
 }
