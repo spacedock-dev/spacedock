@@ -140,3 +140,35 @@ The release runs linked above remain the captured runtime baseline. Captured pay
 ### Summary
 
 The current fixture test passes while the queued entity retains a 346-byte completed review; the real binary correctly refuses premature gate preparation. The plan removes that contradiction without changing product authority or lifecycle assertions, and keeps any newly observed native lifecycle issue separate.
+
+## Stage Report: implementation
+
+- DONE: Remove completed review cues from pre-gate setup and select a distinct current-work prompt, preserving gate-ready controls and strict lifecycle assertions.
+  Commit `9e4c43ceff6fb9f6c500cd602f4fb18cc5eaae3b` removes and commits the seeded review deletion; only default-headless-gate-stop selects preGatePrompt. Two files, +27/-3 (net +24), within approved tolerance.
+- DONE: Commit the bounded two-file change with focused regression proof and prepare the exact targeted local Codex run for FO scheduling.
+  Clean branch rebased onto approved `origin/main` `2a7b8719843e40b79545f0bb4def6609cdd9ebbf`; focused command below passed in 5.767s, and live-tag deterministic compilation/control run passed in 4.353s.
+- DONE: Replay captured release evidence before implementation.
+  Temporary `TestReplay8k3CapturedPreGateFailure` applied unchanged assertRecordedGateHoldLog to command.log from both supplied release ZIPs; both rejected with no successful gate prepare recorded. Temporary test removed after replay.
+- DONE: Prove the fixture regression before the fix.
+  TestPreGateWorkflowIsStageCoherent failed with retained gate-review stat err=<nil>; after deletion it verifies absent review, parsed stage-report absence, and real boot queued → implementation with zero ready gates. Restoring seeded review fails its on-disk check.
+- DONE: Preserve gate-ready authority controls.
+  TestAssertGateHeld, TestAssertGateHeldAcceptsPreparedFixtureBinding, and TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle pass; approval/consume mutants remain rejected. No lifecycle assertion changed.
+- SKIPPED: Fresh targeted Codex run and stack-wide normal/race/format checks in this worker turn.
+  FO explicitly serializes live execution and schedules the full/race/format checks once at combined tip; no live success is claimed and AC-2 remains pending that run.
+
+### Focused proof and scheduled live command
+
+`go test ./internal/ensigncycle -run 'Test(PreGateWorkflowIsStageCoherent|AssertGateHeld|AssertGateHeldAcceptsPreparedFixtureBinding)$' -count=1`
+
+`go test -tags live ./internal/ensigncycle -run 'Test(PreGateWorkflowIsStageCoherent|AssertGateHeld|AssertGateHeldAcceptsPreparedFixtureBinding|AssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle)$' -count=1`
+
+Both edited files were gofmt formatted; `git diff --check` passed. From the approved stack checkout after FO schedules:
+
+```bash
+go build -o /tmp/8k3cmcg2gg-candidate-spacedock ./cmd/spacedock
+SPACEDOCK_BIN=/tmp/8k3cmcg2gg-candidate-spacedock SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_CODEX_LIVE_REQUIRED=1 SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/8k3cmcg2gg-codex-live go test -tags live ./internal/ensigncycle -run '^TestLiveCommon(DefaultHeadlessGateStop|GateGuardrail)$' -count=1 -parallel=1 -timeout=20m -v
+```
+
+### Summary
+
+The queued fixture now starts without a completed review and asks the first officer to drive current implementation work to the human boundary. Gate-ready prompts and strict authority/lifecycle checks retain their previous behavior; fresh Codex evidence is intentionally pending FO scheduling on the combined stack.
