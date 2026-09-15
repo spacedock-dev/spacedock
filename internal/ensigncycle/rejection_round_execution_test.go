@@ -16,7 +16,7 @@ func TestRejectionRoundPublicationExecution(t *testing.T) {
 	nested := `/bin/bash -lc "cat <<'PY'
 retained heredoc
 PY
-\\\""'${SPACEDOCK_BIN:-spacedock}\" gate record rejection-task --round=validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl'`
+\""'${SPACEDOCK_BIN:-spacedock}" gate record rejection-task --round validation/1 --briefing rejection-task/inputs/briefing.json --log rejection-task/inputs/briefing.review.jsonl'`
 	for name, command := range map[string]string{
 		"pre3":                          "/bin/bash -lc '" + plain + "'",
 		"0273":                          nested,
