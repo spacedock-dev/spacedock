@@ -93,10 +93,10 @@ After implementation, FO schedules one serialized local Codex run per affected j
 
 ```bash
 go build -o /tmp/vcfwr5ptn6-candidate-spacedock ./cmd/spacedock
-SPACEDOCK_BIN=/tmp/vcfwr5ptn6-candidate-spacedock SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_CODEX_LIVE_REQUIRED=1 SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/vcfwr5ptn6-codex-live go test -tags live ./internal/ensigncycle -run '^TestLiveCommon(DefaultHeadlessGateStop|GateGuardrail)$' -count=1 -parallel=1 -timeout=20m -v
+SPACEDOCK_BIN=/tmp/vcfwr5ptn6-candidate-spacedock SPACEDOCK_LIVE_RUNTIME=codex SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/vcfwr5ptn6-codex-live go test -tags live ./internal/ensigncycle -run '^TestLiveCommon(DefaultHeadlessGateStop|GateGuardrail)$' -count=1 -parallel=1 -timeout=20m -v
 ```
 
-Use the existing isolated-home/auth harness and runtime setup documented by the source task; record Codex version, exact candidate SHA, exit status, artifact root, and durable state commits. Read `docs/runtime-support.md` and its assume-it-already-works operating prompt before treating first-contact setup failures as host limitations. Independent validation must also reassess source task `separate-headless-pregate-fixture-instructions.md` AC-2 from this run. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` at final stack tip before claiming implementation complete, distinguishing any reproduced baseline failure.
+Keep `SPACEDOCK_CODEX_LIVE_REQUIRED` unset. Use the proven environment/shim retained under `/tmp/spacedock-stack-headless-live` and the existing isolated-home/auth harness documented by the source task. Require observed execution with no SKIP; record Codex version, exact candidate SHA, exit status, artifact root, and durable state commits. Read `docs/runtime-support.md` and its assume-it-already-works operating prompt before treating first-contact setup failures as host limitations. Independent validation must also reassess source task `separate-headless-pregate-fixture-instructions.md` AC-2 from this run. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` at final stack tip before claiming implementation complete, distinguishing any reproduced baseline failure.
 
 ## Exact instruction and documentation change
 
