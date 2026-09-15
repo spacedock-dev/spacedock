@@ -141,3 +141,22 @@ Before implementation edits, run the existing focused steering negative tests an
 ### Summary
 
 The remaining correction is a small contract/doc change at existing transition boundaries. Ideation specifies the missing live proof without building a new harness or repeating #798's successor work; implementation and validation remain outstanding.
+
+## Stage Report: implementation
+
+- DONE: Apply the approved small continuation reminders to current source, preserving798 and one shared stopping taxonomy.
+  Commit `184feb67b` atop scheduling base `4ce49f1ea` changes only the three approved contract owners and existing probe documentation; #798 successor guard and independent-entities cadence remain intact.
+- DONE: Use existing focused proof owners and retain honest native interruption/stop evidence requirements without adding infrastructure.
+  Before edits, `go test ./internal/ensigncycle -run '^TestCodexWaitAgentSteering' -count=1` and `go test ./skills/integration -count=1` passed; steering rerun passed after edits. Reduced-trace mutants reject cancellation/replacement/missing resumption, while integration rejects false idle-wake classification; neither proves candidate instruction efficacy.
+- DONE: Commit within cap20net/four files with required checks and report for independent validation.
+  Task-only diff from `4ce49f1ea`: four files, +11/-10, net +1; clean committed worktree and `git diff --check` pass. Required normal/race suites and `gofmt -w ./cmd ./internal` ran; suite failures are recorded below.
+- FAILED: Required full-suite green result.
+  Both `go test ./...` and `go test ./... -race` exited 1 solely at `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: `spacedock@spacedock not installed in codex`, but resolver returned cached `spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json`; FO reports an independently matching baseline. No candidate fix authorized or made.
+- DONE: Preserve scope and verification boundaries.
+  Both full runs passed ensigncycle (normal 404.709s/race 384.848s) and integration; no race diagnostics. Gofmt's unrelated pre-existing alignment change in `internal/release/runtime_live_evidence_workflow_test.go` was restored to preserve the approved scope. No code push or CI.
+- SKIPPED: Native baseline/candidate interruption, correction-handoff, explicit-stop, and unresolved-gate comparison during implementation.
+  Independent validation owns the approved native exercise; AC-1 efficacy and live AC-2/AC-3 remain unproven here. No synthetic trace, current-session causality claim, or substitute harness was added.
+
+### Summary
+
+The engaged-drive stop rule now has one shared owner, with short dispatch/repair and Codex same-turn monitoring reminders and the approved raw-event probe instructions. The deliverable is committed for independent validation within the four-file cap; both required broad checks ran but are not green because of the recorded installed-host resolver failure, and the native comparison remains required.
