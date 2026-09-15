@@ -32,6 +32,7 @@ stages:
 		t.Fatal(err)
 	}
 	gitInit(t, root)
+	initStateFixture(t, def, state)
 	return def, state
 }
 
@@ -128,9 +129,9 @@ func TestValidateReportsUntrackedBlankIDFlatAndFolderEntities(t *testing.T) {
 func TestValidateKeepsTrackedStagedCommittedEntitiesWhileFailingBadUntracked(t *testing.T) {
 	def, state := splitRootValidationFixture(t)
 	writeFile(t, filepath.Join(state, "committed.md"), ent(`"001"`, "backlog"))
-	commitAll(t, filepath.Dir(filepath.Dir(def)), "committed state entity")
+	commitAll(t, state, "committed state entity")
 	writeFile(t, filepath.Join(state, "staged.md"), ent(`"002"`, "backlog"))
-	cmd := exec.Command("git", "-C", filepath.Dir(filepath.Dir(def)), "add", filepath.Join(state, "staged.md"))
+	cmd := exec.Command("git", "-C", state, "add", filepath.Join(state, "staged.md"))
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git add staged entity: %v\n%s", err, out)
 	}

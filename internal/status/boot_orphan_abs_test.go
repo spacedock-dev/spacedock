@@ -137,7 +137,7 @@ func buildSplitRootWorktreeFixture(t *testing.T) (defDir, wtDir string) {
 	// The state checkout is a real linked worktree, so it carries a .git pointer
 	// file rather than a .git directory — matching the live split-root topology.
 	stateDir := filepath.Join(defDir, ".spacedock-state")
-	gitC(t, coderoot, "worktree", "add", "--detach", stateDir)
+	gitC(t, coderoot, "worktree", "add", "-b", "spacedock-state/dev", stateDir)
 	writeFile(t, filepath.Join(stateDir, "feature", "index.md"),
 		"---\nstatus: build\nworktree: .worktrees/feature-wt\n---\n")
 
