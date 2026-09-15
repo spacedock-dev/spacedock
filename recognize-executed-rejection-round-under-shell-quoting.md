@@ -41,6 +41,20 @@ gates:
                 id: briefing:82de96hqv8cfwxqagj6ah1k6:ideation:attempt-1:revision-1
                 digest: sha256:539e67ba626efb17ef5c4e1eb43dd9abc2aedacb48af53f511239ae019caaa66
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:82de96hqv8cfwxqagj6ah1k6:ideation:1
+                briefing: briefing:82de96hqv8cfwxqagj6ah1k6:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-09-15T04:12:12.560253Z"
+                decision: approve
+                reason: Existing logger plus durable round validation passed both exact command forms and negative controls; narrow test-only correction is ready.
+                conn:
+                    quote: dispatch codex live test failure tasks, verify locally for targeted failure, and open PR as stack, then trigger codex ci on stack tip.
+                    source: active thread goal supplied by captain
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
