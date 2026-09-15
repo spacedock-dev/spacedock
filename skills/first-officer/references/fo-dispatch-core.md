@@ -16,7 +16,7 @@ Interpret the scheduler row before mutation. If `current == next`, set `dispatch
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
 5. For a gate-consumed entry, `status` already equals `dispatch_stage`. Run `«dispatch.build» --stamp --stage {dispatch_stage}` immediately. Do not add a status write, state commit, or plain dispatch build between consume and this command. The exact `dispatch: {slug} entering {dispatch_stage}` commit must contain that status and a nonempty `started` field. The command also stamps `worktree=`, syncs state, creates the declared worktree, and emits the envelope. For a non-gated entry, first advance with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={dispatch_stage} started`, then run the same `--stamp --stage {dispatch_stage}` build.
 6. Dispatch the worker via `«dispatch.build»` → `«worker.spawn»` (`--feedback-context-file` when the stage has `feedback-to`). On rejection reflow, that file carries the already-authorized package and concrete revise assignment with workflow labels unchanged; it never asks the target worker to classify again.
-7. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case.
+7. Await the worker result per `«async-dispatch»` before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»`, with the entity-file stage report as the gate in every case. After recording the handle, continue `«dispatch.next-action»()`; handoff narration follows the shared final-response rule.
 
 On exit 0, the next host action MUST be `«worker.spawn»`. Preserve the helper-emitted pointer and transport, identity, description and model fields; ordinary FO scope instructions may be appended directly to the pointer message.
 Record the returned handle before narration, a file edit, status change, report read, gate action, or wait.
@@ -43,7 +43,7 @@ When a worker completes:
 
 1. Read the entity file's last `## Stage Report` section, section-scoped per `## Probe and Ideation Discipline` — never the whole body.
 2. Review it against the retained dispatch checklist and any supplemental instructions; there is no need to reread original input files. For the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
-3. If items are missing, send the worker back once to repair the report.
+3. If items are missing, send the worker back once to repair the report. A report-repair or revision handoff returns to the same loop; sending it is not completion.
 4. Check whether the completed stage is gated.
 
 **AC coverage cross-check.** At every gate, `«gate.ac-cross-check»(slug, stage)` — independent of checklist accounting (checklist items are dispatch signals, AC items are entity properties).
