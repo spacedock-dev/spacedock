@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:vcfwr5ptn6pedv32wq7cbsy6:validation:attempt-1:revision-1",
+  "question": "Approve the locally verified one-file completion fix for final stack delivery?",
+  "artifacts": [
+    {
+      "id": "artifact:vcfwr5ptn6pedv32wq7cbsy6:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/04d319180d0c9682b0ffa92ce18b661dbe67e04e/dispatch-gated-successor-before-presentation/index.md",
+      "rev": "sha256:9e063331fc80dfa39219eaf6e00dd5a375ffca5ce9fe9f934cf1503221321c20",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation PASSED AC1–3 at474cdb8c5. Headless307.57s and gatecontrol127s passed with separate validationworker/report completion before an openunconsumed gate. Exact +3/-1 one-file change. Fullnormal/race completed: only identical baseline resolverfailure, everyotherpackagepass, no races. All layers locallyverified; ready to publish stack then triggerCodexCI."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:vcfwr5ptn6pedv32wq7cbsy6:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}

@@ -55,6 +55,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:vcfwr5ptn6pedv32wq7cbsy6:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:vcfwr5ptn6pedv32wq7cbsy6-validation-1
+              briefing:
+                id: briefing:vcfwr5ptn6pedv32wq7cbsy6:validation:attempt-1:revision-1
+                digest: sha256:b33c2b1691ff037ee6c725e8f3d0607c86bdd1c63ce4cf35418dfc8fb7f12a2a
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Remove the contradictory completion shortcut so a headless first officer runs a gated successor before preparing its review.
