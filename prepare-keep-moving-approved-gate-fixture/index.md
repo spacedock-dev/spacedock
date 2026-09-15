@@ -14,6 +14,17 @@ gates:
                 id: briefing:wvdv5c5mkkd23yhmr9p16czd:backlog:attempt-1:revision-1
                 digest: sha256:4267b265607a4a9ccf99397d80bb759eafbd76382dfeb268c97d9cce9ad97e4c
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:wvdv5c5mkkd23yhmr9p16czd:backlog:1
+                briefing: briefing:wvdv5c5mkkd23yhmr9p16czd:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-15T04:01:30.288629Z"
+                decision: approve
+                reason: Captain requested dispatch of the Codex live failure tasks, targeted local verification, and stacked PRs.
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem statement
