@@ -11,6 +11,17 @@ issue: spacedock-dev/spacedock#735
 pr:
 mod-block:
 id: ad242krer2tckgx7150cyb7d
+gates:
+    version: 1
+    records:
+        - id: gate:ad242krer2tckgx7150cyb7d:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:ad242krer2tckgx7150cyb7d-ideation-1
+              briefing:
+                id: briefing:ad242krer2tckgx7150cyb7d:ideation:attempt-1:revision-1
+                digest: sha256:4bcd7ba842757abf40653c51fcc102aa8b043d60e9c7306557ff1f3e6de48a18
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Make the existing FO continue authorized work without a user reminder or /goal. Put the next-action rule at dispatch, completion, revision-routing and user-interruption boundaries.
