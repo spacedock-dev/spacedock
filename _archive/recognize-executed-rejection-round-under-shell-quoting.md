@@ -1,15 +1,15 @@
 ---
 title: "Recognize successful rejection-round recording under nested shell quoting"
-status: validation
+status: done
 source: "Captain filing request; pre3 and 0.27.3 live release failure triage"
 started: 2026-09-15T04:02:58Z
-completed: ""
-verdict: ""
+completed: 2026-09-15T18:24:15Z
+verdict: PASSED
 score: "0.9"
 worktree: .worktrees/spacedock-ensign-recognize-executed-rejection-round-under-shell-quoting
 issue: ""
 pr: pr-merge:796
-mod-block: merge:pr-merge
+mod-block:
 id: 82de96hqv8cfwxqagj6ah1k6
 gates:
     version: 1
@@ -76,7 +76,8 @@ gates:
                     source: active thread goal supplied by captain
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-09-15T18:24:15Z
 ---
 
 Recognize successful rejection-round recording under nested shell quoting.
