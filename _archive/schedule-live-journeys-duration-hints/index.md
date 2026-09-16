@@ -1,15 +1,15 @@
 ---
 title: Schedule live journeys with committed duration hints
-status: validation
+status: done
 source: Captain request 2026-09-15; CI run 34996910090
 started: 2026-09-15T18:21:56Z
-completed:
-verdict:
+completed: 2026-09-16T20:47:59Z
+verdict: PASSED
 score: 0.8
 worktree: .worktrees/spacedock-ensign-schedule-live-journeys-duration-hints
 issue:
 pr: pr-merge:800
-mod-block: merge:pr-merge
+mod-block:
 id: pytyzge5v85mcy8c02t1khqv
 gates:
     version: 1
@@ -51,7 +51,8 @@ gates:
                 reason: Captain approved validation in Subspace resolution:binding-1789533522567170000; local validation accepted and real Claude overlap/isolation remains required at stack-tip CI before delivery.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-09-16T20:47:59Z
 ---
 
 Reduce live CI completion time by running a committed duration-sorted list of the existing tests through three slots. This task is the **bottom PR**; the other in-flight PRs stack above it.
