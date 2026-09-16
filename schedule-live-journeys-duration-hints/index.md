@@ -8,7 +8,7 @@ verdict:
 score: 0.8
 worktree: .worktrees/spacedock-ensign-schedule-live-journeys-duration-hints
 issue:
-pr: "#800"
+pr: pr-merge:800
 mod-block: merge:pr-merge
 id: pytyzge5v85mcy8c02t1khqv
 gates:
