@@ -1,0 +1,20 @@
+commit ba8e6eeb4e28e310b17897a0a8b12e151366b8f9
+Author:     CL Kao <clkao@users.noreply.github.com>
+AuthorDate: Wed Sep 16 10:21:40 2026 -0700
+Commit:     CL Kao <clkao@users.noreply.github.com>
+CommitDate: Wed Sep 16 10:21:40 2026 -0700
+
+    test(ensigncycle): correlate native Pi completion evidence
+
+2	2	internal/ensigncycle/auto_continue_fixtures_test.go
+1	1	internal/ensigncycle/claude_live_runner_test.go
+11	4	internal/ensigncycle/claude_runtime_helpers_test.go
+167	1	internal/ensigncycle/pi_auto_continue_double_dispatch_replay_test.go
+150	0	internal/ensigncycle/pi_native_completion_test.go
+18	2	internal/ensigncycle/pi_rejection_extractors_test.go
+1	1	internal/ensigncycle/shared_promoted_live_test.go
+4	0	internal/ensigncycle/testdata/pi_native_completion/auto-child.jsonl
+7	0	internal/ensigncycle/testdata/pi_native_completion/auto-parent.jsonl
+4	0	internal/ensigncycle/testdata/pi_native_completion/default-child.jsonl
+5	0	internal/ensigncycle/testdata/pi_native_completion/default-parent.jsonl
+54	0	internal/ensigncycle/testdata/pi_native_completion/provenance.json

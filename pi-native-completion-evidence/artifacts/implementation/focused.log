@@ -1,0 +1,113 @@
+=== RUN   TestAutoContinueBypassRedsOnEveryHost
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude/terminal_done_end_state
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude/validation_gate_resolved
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude/conforming_open_gate_control
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex/terminal_done_end_state
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex/validation_gate_resolved
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex/conforming_open_gate_control
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi/terminal_done_end_state
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi/validation_gate_resolved
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi/conforming_open_gate_control
+--- PASS: TestAutoContinueBypassRedsOnEveryHost (1.16s)
+    --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude (0.28s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude/terminal_done_end_state (0.00s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude/validation_gate_resolved (0.14s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude/conforming_open_gate_control (0.14s)
+    --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex (0.29s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex/terminal_done_end_state (0.00s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex/validation_gate_resolved (0.13s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex/conforming_open_gate_control (0.16s)
+    --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi (0.59s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi/terminal_done_end_state (0.00s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi/validation_gate_resolved (0.28s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi/conforming_open_gate_control (0.30s)
+=== RUN   TestAutoContinueBypassRedsWithFOAttributedConnCitation
+--- PASS: TestAutoContinueBypassRedsWithFOAttributedConnCitation (0.20s)
+=== RUN   TestAutoContinueBypassCodeSurvivesTheScenarioRunner
+--- PASS: TestAutoContinueBypassCodeSurvivesTheScenarioRunner (0.00s)
+=== RUN   TestAutoContinueReplayRealClaudeStream
+--- PASS: TestAutoContinueReplayRealClaudeStream (0.01s)
+=== RUN   TestAutoContinueReplayRealStreamThroughDispatchEvidence
+=== RUN   TestAutoContinueReplayRealStreamThroughDispatchEvidence/single-root
+=== RUN   TestAutoContinueReplayRealStreamThroughDispatchEvidence/split-root
+--- PASS: TestAutoContinueReplayRealStreamThroughDispatchEvidence (0.76s)
+    --- PASS: TestAutoContinueReplayRealStreamThroughDispatchEvidence/single-root (0.28s)
+    --- PASS: TestAutoContinueReplayRealStreamThroughDispatchEvidence/split-root (0.48s)
+=== RUN   TestAutoContinueReplayFixtureIsTheCapturedArtifact
+--- PASS: TestAutoContinueReplayFixtureIsTheCapturedArtifact (0.00s)
+=== RUN   TestImplementationLifecycleAndObserverNegativeControls
+--- PASS: TestImplementationLifecycleAndObserverNegativeControls (0.00s)
+=== RUN   TestCodexNativeLifecycleUsesCorrelatedSessionHandle
+--- PASS: TestCodexNativeLifecycleUsesCorrelatedSessionHandle (0.01s)
+=== RUN   TestCodexNativeLifecycleParentRolloutLookupFailsClosed
+--- PASS: TestCodexNativeLifecycleParentRolloutLookupFailsClosed (0.00s)
+=== RUN   TestPiAutoContinueReplayDoubleDispatch
+--- PASS: TestPiAutoContinueReplayDoubleDispatch (0.02s)
+=== RUN   TestPiNativeCompletionCapturedReplay
+=== RUN   TestPiNativeCompletionCapturedReplay/default
+=== RUN   TestPiNativeCompletionCapturedReplay/auto
+    pi_auto_continue_double_dispatch_replay_test.go:114: captured downstream failure preserved: entity has no gates record
+--- PASS: TestPiNativeCompletionCapturedReplay (0.61s)
+    --- PASS: TestPiNativeCompletionCapturedReplay/default (0.00s)
+    --- PASS: TestPiNativeCompletionCapturedReplay/auto (0.60s)
+=== RUN   TestPiNativeCompletionAttributionAndOrdering
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/run
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/agent
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/epoch
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/task
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/cwd
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/missing-child
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/symlink
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/external
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/sibling
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/traversal
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/missing-parent
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/parent-identity
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/failed-spawn
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/wrong-result
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/missing-run
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/no-stop
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/error-stop
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/late-child
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/early-child
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/before-spawn
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/after-boundary
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/duplicate
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/ambiguous-identity
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/ambiguous-locator
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/no-user
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/conflicting-epoch
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/conflicting-identities
+--- PASS: TestPiNativeCompletionAttributionAndOrdering (0.07s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/run (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/agent (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/epoch (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/task (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/cwd (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/missing-child (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/symlink (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/external (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/sibling (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/traversal (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/missing-parent (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/parent-identity (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/failed-spawn (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/wrong-result (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/missing-run (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/no-stop (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/error-stop (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/late-child (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/early-child (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/before-spawn (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/after-boundary (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/duplicate (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/ambiguous-identity (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/ambiguous-locator (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/no-user (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/conflicting-epoch (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/conflicting-identities (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	3.158s

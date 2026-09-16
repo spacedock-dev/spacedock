@@ -54,3 +54,26 @@ Start with the exact captured failure replay through existing lifecycle test own
 
 ### Feedback Cycles
 
+
+## Stage Report: implementation
+
+- DONE: Credit the captured native Pi completions only after matching the dispatched worker, child evidence and parent event ordering; wrong or missing evidence fails.
+  Commit `ba8e6eeb4e28e310b17897a0a8b12e151366b8f9`: captured default implementation and auto validation replay pass; 27 negatives reject run/agent/epoch/task/cwd, missing/error evidence, escaped/symlink locators and ordering/duplicate conflicts. Removing correlation admits wrong workers; ignoring conflicting epochs reproduced a red test before its authorized fix.
+- DONE: Preserve downstream gate failure and historical Pi/Claude/Codex behavior through existing replay and negative controls.
+  Full retained auto lifecycle now passes; captured absent-gate reconstruction still returns `entity has no gates record`. Existing Git check rejects an uncommitted report; bypassing either durable check breaks the replay. Historical Pi status/wait, Claude replay, Codex lifecycle and cross-host bypass controls pass (`artifacts/implementation/focused.log`).
+- DONE: Deliver a minimal committed correction with required local checks and clear tip-CI deferral.
+  Code committed locally on the registered branch; focused tests, live-tag compile-only check and formatting completed. Final normal/race ran sequentially; ensigncycle passed in 354.805s / 335.058s. Native host lanes remain explicitly deferred below.
+- FAILED: `go test ./...` and `go test ./... -race` complete suite verdicts.
+  Both exit 1 only at the anticipated `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: `spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"`. All other packages pass; no race diagnostic. Exact final/initial logs are in `artifacts/implementation/`.
+- DONE: Compile the modified live callers without model execution.
+  `go test -tags live ./internal/ensigncycle -run '^$'` passes; it selects no tests. Removing artifactDir propagation from either existing call site would leave that live journey unable to credit native notices.
+- SKIPPED: Final tip PR/native host CI and independent validation.
+  FO owns these after implementation handback; no local native/model, network-auth, PR, push, CI or rebase was performed. The original auto gate-path typo is retained as an outcome failure, not fixed or declared green. AC-3 remains pending final tip CI.
+
+### Summary
+
+One 150-line Pi helper correlates the parent dispatch result with the notification-referenced child’s exact assignment and run/epoch, and credits completion at the native parent position. Both existing callers pass optional retained-artifact roots; existing parsers and independent Git/report/gate checks remain authoritative, with no synthetic event, child-call concatenation or second commit parser.
+
+Actual surface is 12 files, +424/-11, within the proposed helper/test estimate: seven Go harness/test files plus four projected JSONL fixtures and provenance (14,818 bytes). Exact paths/numstat are in `artifacts/implementation/surface.txt`; they are `internal/ensigncycle/{claude_runtime_helpers_test.go,pi_native_completion_test.go,pi_rejection_extractors_test.go,auto_continue_fixtures_test.go,claude_live_runner_test.go,shared_promoted_live_test.go,pi_auto_continue_double_dispatch_replay_test.go}` and `internal/ensigncycle/testdata/pi_native_completion/{default-parent.jsonl,default-child.jsonl,auto-parent.jsonl,auto-child.jsonl,provenance.json}`.
+
+Both pre-edit reproductions, separate FO FIX authorizations (G1 and conflicting epoch), command details and final/initial logs are retained under `artifacts/implementation/`. The captured fixture records are field projections with source SHA-256/line provenance; the Git end state is explicitly reconstructed because no original Git repository was retained. `gofmt -w ./cmd ./internal` ran, final touched files were formatted again, and the unrelated baseline release-test spacing change was restored; code worktree is clean. State report synchronization is left to the FO under the dispatch’s explicit no-push direction.
