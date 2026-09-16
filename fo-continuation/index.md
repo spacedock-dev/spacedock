@@ -41,6 +41,17 @@ gates:
                 id: briefing:ad242krer2tckgx7150cyb7d:validation:attempt-1:revision-1
                 digest: sha256:2dc4a07b379ef5e8b6aeb88275553b6a39a8afd977953fa9f763ad67d274acfd
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ad242krer2tckgx7150cyb7d:validation:1
+                briefing: briefing:ad242krer2tckgx7150cyb7d:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-16T04:29:28.405303Z"
+                decision: approve
+                reason: Captain approved validation in Subspace resolution:binding-1789532937315836000; accepts the observed native outcomes and disclosed both-pass limitation.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the existing FO continue authorized work without a user reminder or /goal. Put the next-action rule at dispatch, completion, revision-routing and user-interruption boundaries.
