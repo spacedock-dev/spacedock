@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:3tzfv0rrctdb066xt942zjbd:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:3tzfv0rrctdb066xt942zjbd-validation-1
+              briefing:
+                id: briefing:3tzfv0rrctdb066xt942zjbd:validation:attempt-1:revision-1
+                digest: sha256:915c4b04e406a2be016583d9792fb2282009909d6f7c731586e00754f2f9d987
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Prevent false completion and silent loss of workflow state. One task covers GitHub issues #689, #790 and #630 with separate behavioral acceptance criteria.
