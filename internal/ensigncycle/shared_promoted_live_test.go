@@ -171,7 +171,7 @@ func runAutoContinueJourney(t *testing.T, driver liveDriver, scenario sharedRunt
 			semantic = append(semantic, durableSemantic("auto-continue-state", err))
 		}
 		semantic = append(semantic, durableSemantic("validation-worker-lifecycle",
-			assertAutoContinueDispatchEvidence(t, driver.lifecycleStream(t, result), stateRoot, entityPath)))
+			assertAutoContinueDispatchEvidence(t, driver.lifecycleStream(t, result), stateRoot, entityPath, result.artifactDir)))
 		finishLiveScenario(t, driver, fixtureScenario, result, semantic...)
 	}
 }

@@ -243,7 +243,7 @@ func autoContinueWorktreeDir(body string) string {
 // the offline per-host table (auto_continue_negative_test.go) exercise it with no
 // model spend; only the stream argument is dialect-shaped, and each driver supplies
 // it through liveDriver.lifecycleStream.
-func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityPath string) error {
+func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityPath string, artifactDir ...string) error {
 	t.Helper()
 	reportEntity := entityPath
 	if body, err := os.ReadFile(entityPath); err == nil {
@@ -258,7 +258,7 @@ func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityP
 	if err != nil {
 		return err
 	}
-	if err := assertWorkerLifecycle(stream, string(report), "validation", "gate prepare"); err != nil {
+	if err := assertWorkerLifecycle(stream, string(report), "validation", "gate prepare", artifactDir...); err != nil {
 		return err
 	}
 	reportRepo := strings.TrimSpace(git(t, filepath.Dir(reportEntity), "rev-parse", "--show-toplevel"))
