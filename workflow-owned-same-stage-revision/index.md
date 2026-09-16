@@ -8,8 +8,8 @@ started: 2026-09-15T04:30:03Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-workflow-owned-same-stage-revision
-pr:
-mod-block:
+pr: "#801"
+mod-block: merge:pr-merge
 id: zz1yqc2w2katp28wpa8nghx2
 gates:
     version: 1
