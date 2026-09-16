@@ -179,3 +179,27 @@ Prefix-free names passed a reproducible dispatch/stamp/reconcile spike while leg
 ### Summary
 
 The targeted review gap is covered without adding naming configuration, a ledger, a new runtime driver, or another live lane. Recovery consumes a canonical semantic envelope or holds the affected named assignment when none is available; the design and ACs now make all compatibility edge cases explicit.
+
+
+## Stage Report: implementation
+
+- DONE: Implement semantic branch and worker names while preserving registered active branches and legacy lifecycle identity.
+  Code commits `23b8732dc` and `1b3b70508`: fresh slug branches and readable SHA-256-shortened workers; registered custom/legacy branches persist, ambiguous identities refuse, mixed-generation cohorts retain original handles.
+- DONE: Prove collision, shortening, retry/recovery and actual native dispatch behavior through existing proof owners.
+  Focused dispatch/CLI/feedback/registry/skill tests pass; literal legacy identities, stage-boundary/cross-generation collisions, equal-cycle ties, branch collisions, detached paths and sync-failure retries fail independently if their guards regress.
+- DONE: Commit minimal candidate and complete checks/report within approved scope for independent validation.
+  Scheduling base `4ce49f1ea` to `1b3b70508`: exactly 46 files, +615/-185 (+430 net), within the amended 46-file/450-net ceiling; captain resolution `resolution:binding-1789516131152632000` (artifact SHA-256 `ab235343c7cb33a1fd870b527728f761ecd606c194e3245910cb8a659d17c932`).
+- DONE: Exercise native Codex semantic dispatch and same-handle advance.
+  `TestLiveSemanticNamesCodex` passed in 109.67s: spawn `ci_duration_hints_ideation`, follow-up `/root/ci_duration_hints_ideation`, body-only fixture commits `5c9057416c344afc9eb904d01ea5554d7342303a` and `21354d633b08a59979d36dce5c891e9e062f5ffd`, unchanged frontmatter and clean state.
+- DONE: Preserve falsifiable native and instruction evidence.
+  `/tmp/semantic-native-evidence-v2/codex-shared-scenarios/semantic-names-codex/` retains native lifecycle, entity and state log; offline replay rejects altered prefix/handle with markers retained. Final live-tag compilation passes; replay does not claim another live run. Skill checks prove canonical envelope/slot compatibility, not live Claude compliance.
+- DONE: Run detached adversarial checks and formatting.
+  Detached edits restoring the prefix, accepting ambiguous ownership, reconstructing a branch, restoring the recovery template, or changing the legacy cap each fail intended assertions; `/tmp/semantic-detached-audit.log`, `/tmp/semantic-legacy-cap-audit.log`, `/tmp/semantic-native-negative-controls.log`. `gofmt -w ./cmd ./internal` ran; unrelated baseline formatting was kept outside this diff.
+- FAILED: Full normal and race suite results.
+  Both `go test ./...` and `go test ./... -race` exit 1 solely at unchanged `TestCodexResolveManifestAgainstInstalledHost`, `internal/cli/codex_resolve_test.go:44`: resolver returns `/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json` although `spacedock@spacedock` is not installed. FO declined this baseline fix outside scope; every other package passes and race emits no data-race diagnostic. Logs: `/tmp/semantic-full-normal.log`, `/tmp/semantic-full-race.log`.
+- SKIPPED: Code push and CI execution.
+  Explicit FO restriction; both code commits remain local. The targeted proof registry entry uses the category authorized by #792 and must be combined with that policy during restacking.
+
+### Summary
+
+Semantic public names now preserve task meaning while existing registered branches and worker handles retain their identities. Native Codex spawn/reuse, conservative collision behavior and literal historical-name compatibility are exercised, with the final candidate inside the amended scope. Required broad checks were executed and retain one explicitly declined resolver baseline failure; no full-suite-green claim is made.
