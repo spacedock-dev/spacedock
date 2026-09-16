@@ -513,3 +513,22 @@ FO separately authorized FIX: the producer will observe actual callable identity
 Both task-owned coverage evidence defects were fixed under distinct FO authorization using the existing checker. Final correction is 133 insertions / 89 deletions = +44 net in one existing file; full task layer is +437 net across seven files. There is no new maintained harness file, scheduler framework, AST interpreter or coverage exception. The evidence boundary is executable scheduler dispatch plus declared YAML run commands with comment exclusion; it does not claim to interpret arbitrary shell programs.
 
 Logs and exact command/duration metadata are under artifacts/implementation-ci-selection. Prior full normal/race results belong to candidate `bf64ebeca`, each with only the known FO-declined resolver baseline; they are not new-head full-suite results. FO explicitly authorized changed-package normal/race verification now and will run the required full commands once on the final combined local tip before final delivery. Final live evidence still belongs to updated stack-tip CI. Retained independent validation is pending; this producer does not validate its own work or advance state.
+
+### V2a/V2b independent correction recheck — 2026-09-16
+
+Both findings are **satisfied** at `342edfa8903e0e822ec545d2ee45401352eb6c60` under the recorded distinct FO FIX. The unchanged detached mutation driver now gets actual reconciliation failure for Codex runtime omission and the commented Claude command; baseline passes and all prior negative controls still fail. [Recheck evidence](artifacts/validation-ci-selection/audit.md) preserves exact source, outputs and limits. No new finding or candidate change occurred.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify all six same-stage variants are selected by routine lanes exactly once with preserved assertions and no targeted-only exception.
+  Candidate `342edfa8903e0e822ec545d2ee45401352eb6c60` changes only the checker; prior six-variant assertion/fixture preservation and conventional byte-equivalence evidence remain valid. Actual scheduler callback counts establish one selection per Claude/Codex lane; parsed Pi common selector covers the common entry. Three explicit experiments remain unchanged; expanded host execution still needs new tip CI.
+- DONE: Attack the existing coverage checker with missing selectors, wrong runtime membership, unclassified tests and invalid exemptions; require actual failures.
+  [Exact unchanged mutation matrix](artifacts/validation-ci-selection/results.json) now passes expectations: baseline exit0; missing selector/row, runtime filter, commented command, unclassified entry and missing exemption reason all exit1. V2a reports same-stage selected0 in Codex; V2b reports selected0 in Claude. Existing duplicate/explicit-exemption controls remain intact.
+  Counts come from executed exact scheduler/ordering code invoking declaration-derived callback stubs, not synthetic registry membership; no runtime/model driver enters the probe. YAML jobs.steps.run parsing excludes the demonstrated shell-comment command. V2a/V2b are satisfied with no new finding.
+- DONE: Assess local checks and scope against the captain amendment, preserving explicit pending live tip CI and any findings.
+  **PASSED for this bounded correction.** Changed-package actual normal/race checks pass; reused prior full normal/race belong to bf64ebeca and retain only the FO-declined installed-manifest resolver baseline. Required final combined-tip full suites and new tip host CI remain pending with FO; neither old CI nor local native evidence proves promoted runtime coverage.
+  Correction is +44net in one existing checker file, without a new framework or coverage exception. No candidate/frontmatter edits, new model/native drives, duplicate suites, code push or CI; prior authority and finding history preserved.
+
+### Summary
+
+The checker now rejects both demonstrated omission paths using actual scheduler callback execution and parsed workflow commands. Validation recommends PASSED for the correction while explicitly leaving final combined-tip checks and promoted host CI outstanding; no new material finding remains.

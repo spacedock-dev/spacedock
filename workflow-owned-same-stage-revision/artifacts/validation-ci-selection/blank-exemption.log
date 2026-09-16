@@ -1,0 +1,9 @@
+--- FAIL: TestRuntimeLiveRegistryReconciliation (0.83s)
+    live_registry_reconciliation_test.go:200: offline claude scheduler: 419.389125ms
+    live_registry_reconciliation_test.go:200: offline codex scheduler: 279.57025ms
+    live_registry_reconciliation_test.go:204: TestLiveHaikuLoopSpike has no explicit exemption reason
+    live_registry_reconciliation_test.go:97: derived common gap xfail/claude-sonnet=1
+    live_registry_reconciliation_test.go:97: derived common gap xfail/pi=4
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/contractlint	1.010s
+FAIL
