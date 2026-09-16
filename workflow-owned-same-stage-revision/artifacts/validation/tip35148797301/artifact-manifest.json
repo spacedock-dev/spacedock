@@ -1,0 +1,57 @@
+[
+  {
+    "host": "claude",
+    "member": "spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/claude-final-message.txt",
+    "sha256": "aab04e53908bdcda76c2df60649aae82ad07aba9f362269a462f12bc7a44b84d"
+  },
+  {
+    "host": "claude",
+    "member": "spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/rejection-topology.tsv",
+    "sha256": "255903efa5fbb2128919bd7ce8d9f8b65511db3bbe1704944a40bc98fd22b30c"
+  },
+  {
+    "host": "claude",
+    "member": "spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/state.bundle",
+    "sha256": "c102819a0fee15bb0f66c68f38ec583f9391348faaee8d7874bd88db72c1f4eb"
+  },
+  {
+    "host": "claude",
+    "member": "spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/claude-stream.jsonl",
+    "sha256": "52b92e4696fcca35aa52559699dcf4efb3abed339ae78133447fe8e795987188"
+  },
+  {
+    "host": "codex",
+    "member": "live-artifacts/codex/codex-shared-scenarios/self-feedback/cycle-limit/codex-exec.jsonl",
+    "sha256": "03a62ecc5340dce406844ff63a03ccaeddfc53330a339c6ff2e2182074fb6705"
+  },
+  {
+    "host": "codex",
+    "member": "live-artifacts/codex/codex-shared-scenarios/self-feedback/cycle-limit/codex-exec.stderr.txt",
+    "sha256": "420d308d72f9d8af580e652ed96ce26ae0aa2b3a4f956589e473b94c6be4f83d"
+  },
+  {
+    "host": "codex",
+    "member": "live-artifacts/codex/codex-shared-scenarios/self-feedback/cycle-limit/codex-final-message.txt",
+    "sha256": "2e732bc8293ed6de574c7bccad16c7b077fa00ba763d2eaba135802f5c75e2ae"
+  },
+  {
+    "host": "codex",
+    "member": "live-artifacts/codex/codex-shared-scenarios/self-feedback/cycle-limit/codex-native-lifecycle.jsonl",
+    "sha256": "dcc25bed0f7fd509c7179bbf7001be6a25d6ec4c9ee2d7b40b4e49cc0839acbe"
+  },
+  {
+    "host": "codex",
+    "member": "live-artifacts/codex/codex-shared-scenarios/self-feedback/cycle-limit/codex-process-result.txt",
+    "sha256": "9dd5dcdb0f73d1da2a29096cdbe480744b5321a70cc31800bd9e9e19e3d44965"
+  },
+  {
+    "host": "codex",
+    "member": "live-artifacts/codex/codex-shared-scenarios/self-feedback/cycle-limit/rejection-topology.tsv",
+    "sha256": "36005dd11f03c696398e32021a3112761a8d7432a55dffc1c8dec552f0bade64"
+  },
+  {
+    "host": "codex",
+    "member": "live-artifacts/codex/codex-shared-scenarios/self-feedback/cycle-limit/state.bundle",
+    "sha256": "d6350be958e214bcf73faeaa96018c551ea1bf993f7086e4675fec0aa55116b9"
+  }
+]

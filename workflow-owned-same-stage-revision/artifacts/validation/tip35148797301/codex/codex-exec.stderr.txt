@@ -1,0 +1,8 @@
+Installed codex plugin from /tmp/spacedock-live-plugin-1230592039 as spacedock@spacedock-local.
+Removed other Spacedock Codex channels so $spacedock:* resolves from this install.
+version-masquerade advisory: the reported version reflects the checkout's checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.
+spacedock 0.28.0-pre3+dev · launching codex as your first officer
+Workflow: docs/dev
+Sandbox: not wrapping this launch (no .safehouse profile)
+codex is your first officer — ask it for the queue and next steps.
+Reading additional input from stdin...

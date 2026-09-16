@@ -1,0 +1,8 @@
+This correction cycle for **recorded-gate-task** is complete through the point where it hits an unmet prerequisite, and I'm stopping there per the assignment:
+
+1. **Correction delivered** — routed the captain-authorized revise assignment (correct `selected/plan.md` against `selected/frozen-input.txt`) to the `validation` feedback-to worker via feedback-reflow dispatch. It corrected `plan.md` to "KEEP message A; DELETE message B" (now byte-matching frozen-input.txt) and committed (`98756ad`).
+2. **No canonical round / Feedback Cycles projection** — the README explicitly declares neither applies to this workflow, so step 2 of the rejection flow was correctly skipped.
+3. **Committed** — `spacedock state commit` confirmed the correction was already durable (no-op).
+4. **Independent review attempted, blocked** — dispatched a second, distinct worker (fresh identity, not the correction worker) to render the required independent verdict. It confirmed `selected/reviewer-source.txt` does not exist, refused to fabricate a verdict, and instead recorded the missing evidence explicitly in a new `## Stage Report: validation` entry, committed at `ccc7609`.
+
+**Stopping here**, as instructed: the review prerequisite is unmet (missing external evidence), so I have not re-entered the gate, resolved anything, or consumed the new gate. Both dispatched workers have been shut down since nothing further is currently routable — the flow holds until the captain supplies `selected/reviewer-source.txt` or otherwise directs the next step.

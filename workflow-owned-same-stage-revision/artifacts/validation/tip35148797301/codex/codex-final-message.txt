@@ -1,0 +1,3 @@
+Corrected and committed `selected/plan.md`; it matches the frozen input byte for byte.
+
+Cycle 3 reached the workflow limit. Durable escalation is committed as `794eb95`, and work has stopped for your direction. No new gate was prepared, resolved, or consumed.

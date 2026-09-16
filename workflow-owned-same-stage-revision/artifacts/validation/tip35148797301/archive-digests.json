@@ -1,0 +1,10 @@
+[
+  {
+    "host": "claude",
+    "archive_sha256": "fc880741bf4fe056d3d43862fae3f28e81ebf2f7ed5e9f9317cad528d6cdf6a3"
+  },
+  {
+    "host": "codex",
+    "archive_sha256": "7ac9a712cb3b05d351c0d91773a7c7e1f05160ee66b8fb950554ab5458014097"
+  }
+]

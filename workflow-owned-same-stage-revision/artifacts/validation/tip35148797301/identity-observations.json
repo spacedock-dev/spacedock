@@ -1,0 +1,29 @@
+{
+  "claude": {
+    "semantic_name": "recorded-gate-task-validation",
+    "correction": {
+      "spawn_index_zero_based": 94,
+      "tool_use_id": "toolu_013tQCCE4kV67J8wWfYJttpV",
+      "native_task_id": "a891653619c5fb829",
+      "completion_index_zero_based": 166,
+      "commit": "98756ad"
+    },
+    "reviewer": {
+      "spawn_index_zero_based": 274,
+      "tool_use_id": "toolu_012HxAjBzxemi3YCjWsCFFCt",
+      "native_task_id": "a6f8a511fd35edfb4",
+      "completion_index_zero_based": 331,
+      "commit": "ccc7609"
+    }
+  },
+  "codex": {
+    "native_task_path": "/root/recorded_gate_task_validation",
+    "spawn_call_id": "call_V8lU1VVXKqm3vlGDc2ij2X9Y",
+    "spawn_result_index_zero_based": 112,
+    "completion_index_zero_based": 136,
+    "followup_call_id": "call_pH4Ubx6bZQiWNEhnC8iNLwkL",
+    "followup_index_zero_based": 151,
+    "followup_completion_index_zero_based": 163,
+    "escalation_commit": "794eb95"
+  }
+}

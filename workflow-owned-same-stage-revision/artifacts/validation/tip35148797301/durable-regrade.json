@@ -1,0 +1,26 @@
+[
+  {
+    "host": "claude",
+    "head": "ccc760935e6dacfcc8804307e3989c26a5db7723",
+    "frozen_paths_byte_unchanged": [
+      "recorded-gate-task/review/validation/briefing-1/index.json",
+      "recorded-gate-task/selected/frozen-input.txt"
+    ],
+    "attempts": 1,
+    "canonical_rounds": 0,
+    "plan_bytes": "KEEP message A; DELETE message B\\n"
+  },
+  {
+    "host": "codex",
+    "head": "794eb95f3f817a0383f83c4180cf0f9c24cb143d",
+    "frozen_paths_byte_unchanged": [
+      "recorded-gate-task/review/validation/briefing-1/index.json",
+      "recorded-gate-task/review/validation/briefing-2/index.json",
+      "recorded-gate-task/review/validation/briefing-3/index.json",
+      "recorded-gate-task/selected/frozen-input.txt"
+    ],
+    "attempts": 3,
+    "canonical_rounds": 0,
+    "plan_bytes": "KEEP message A; DELETE message B\\n"
+  }
+]
