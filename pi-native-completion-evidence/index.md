@@ -22,6 +22,17 @@ gates:
                 id: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-1:revision-1
                 digest: sha256:5ff3627d7887abcb5cd217b4fa43e91af634041417b147048da3308f562e96b1
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:cpx5q07b7wqmd6xv6wc7khvd:validation:1
+                briefing: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-16T18:44:54.981178Z"
+                decision: approve
+                reason: Captain binding resolution:binding-1789584263853542000 approves validated candidate ba8e6eeb for PR delivery and final tip CI; merge remains unauthorized.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Recognize Pi native completion notifications so valid worker lifecycles are graded correctly without accepting another worker or hiding downstream failures.
