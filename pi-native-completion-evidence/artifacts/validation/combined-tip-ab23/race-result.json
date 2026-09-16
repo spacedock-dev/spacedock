@@ -1,0 +1,8 @@
+{
+  "command": "go test ./... -race",
+  "head_before": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b",
+  "head_after": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b",
+  "started": "2026-09-16T19:40:35.906423+00:00",
+  "finished": "2026-09-16T19:47:02.738537+00:00",
+  "exit_code": 1
+}

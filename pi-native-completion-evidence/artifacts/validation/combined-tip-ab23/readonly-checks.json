@@ -1,0 +1,14 @@
+[
+  {
+    "command": "gofmt -l ./cmd ./internal",
+    "exit_code": 0,
+    "stdout": "internal/release/runtime_live_evidence_workflow_test.go\n",
+    "stderr": ""
+  },
+  {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]

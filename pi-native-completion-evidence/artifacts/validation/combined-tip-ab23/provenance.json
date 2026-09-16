@@ -1,0 +1,19 @@
+{
+  "head": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b",
+  "tree": "2b9d2c77a69b72659c4fe3cf2298f9913c25a70a",
+  "branch": "spacedock-ensign/pi-native-completion-evidence",
+  "cwd": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence",
+  "started": "2026-09-16T19:35:50.993339+00:00",
+  "status_porcelain": "",
+  "recent_log": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b test(ensigncycle): correlate native Pi completion evidence\na45d6ff6a4fc623bb30bf4ef8b843bbd18de922d fix(skills): continue FO drive across handoffs and status questions\n39f601c738f42a2820cc1ddcd541f6efd888e502 test(state): persist identity for archive smoke fixture\n7eef8365edd3055112a678af3ac7be2ca9882ebd test(state): use shared Git scaffold for native fixture\nbd0ff4edca3050c4adf72070d028734fe359dbb8 test(state): align split-root fixtures with storage refusal\n3ab81033e4625c86df7a3cff75d7508d5a4b709c fix(state): prove local delivery and make retirement durable\n7535aad706e1d0ae88cad8bd45f5ebf4eadf96b8 Run semantic Codex proof routinely and move owner checks offline\n2b95b689faa854df88d6e38aa1bb20e801d24ab2 Accept semantic Pi dispatch handles and check current artifact paths\na4f6a80f3e50194a82bff5aea51cb57839b6e4d4 Preserve authoritative identity in stamped owner dispatch\n8680a9517f868b5728b40615d7bbf110938b5936 Pass semantic proof artifact directory to lifecycle retention\n2ac7a99d15a1eeb901926693e71162f4e0dc3ec0 Update semantic dispatch fixtures and register targeted native proof\nd1e2fe08aa23bcf56fbc63667e062bebd5dcbf41 Implement semantic dispatch names with legacy identity preservation\n342edfa8903e0e822ec545d2ee45401352eb6c60 Verify live scheduler coverage through offline execution\nbf64ebeca949667c2d60e40a9c595ebdf62375b2 Register all same-stage revision variants in routine live CI\nc7568815b541158348227b911e2192fab8fef6b7 Retain correlated Codex lifecycle evidence before cleanup\n0933eba7e78bcc97d28d55c40f1c2a2e5669b5a7 Honor workflow-owned same-stage revision requirements\n4ce49f1ea34502380d892c1f96ea5c8f3f22e07e test: schedule live journeys by duration hints\n438053493838dc70c9478b3d991309d566783e85 Merge pull request #798 from spacedock-dev/spacedock-ensign/dispatch-gated-successor-before-presentation\n380bd7bf34b3dd1de07a125d75035c593f5ff930 fix(skills): dispatch gated successor before gate presentation\nfaef711575c3407a01c4aaa1c87d64d8acabf1bd Run offline phase metrics control through the seeded harness\n71d1f6b1c9e36fb02b26aeb781cdcf7a0885a722 Verify smallest mechanism outcomes across direct and commissioned phases\n0fb8dd634d397e59ba169ec81d5d602594b02800 test: pin captured Codex receipt fixture branch\ne52ece67abdb282ab061c41ee897a8a341b22954 test: bind Codex edits to the current parent transaction\n9029decfcce628ae6ec82cba9461e7589c1ad421 test: prove Codex parent shell edits from committed bytes\n5ff85f00bac795ad298cddaca09fc51f27484716 test: grade Codex rejection rounds from actual recorder exits",
+  "sources": {
+    "342edfa": {
+      "commit": "342edfa8903e0e822ec545d2ee45401352eb6c60",
+      "ancestor_of_candidate": true
+    },
+    "7535aad": {
+      "commit": "7535aad706e1d0ae88cad8bd45f5ebf4eadf96b8",
+      "ancestor_of_candidate": true
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "command": "go test ./...",
+  "head_before": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b",
+  "head_after": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b",
+  "started": "2026-09-16T19:35:51.067174+00:00",
+  "finished": "2026-09-16T19:39:34.325478+00:00",
+  "exit_code": 1
+}

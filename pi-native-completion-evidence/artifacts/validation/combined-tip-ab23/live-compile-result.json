@@ -1,0 +1,9 @@
+{
+  "command": "go test -tags live ./internal/ensigncycle -run '^$'",
+  "started": "2026-09-16T19:47:43.737644+00:00",
+  "finished": "2026-09-16T19:47:45.423445+00:00",
+  "exit_code": 0,
+  "head_before": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b",
+  "head_after": "ab23dafeb1bcd5aa6021218e950383f67ff20c0b",
+  "selects_tests": false
+}
