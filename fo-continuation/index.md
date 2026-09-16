@@ -1,6 +1,6 @@
 ---
 title: Keep the FO running across handoffs and status questions
-status: validation
+status: implementation
 source: Captain-approved continuation correction, 2026-09-15
 started: 2026-09-15T22:39:21Z
 completed:
@@ -8,8 +8,8 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-fo-continuation
 issue: spacedock-dev/spacedock#735
-pr: "#804"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: ad242krer2tckgx7150cyb7d
 gates:
     version: 1
@@ -51,7 +51,7 @@ gates:
                 reason: Captain approved validation in Subspace resolution:binding-1789532937315836000; accepts the observed native outcomes and disclosed both-pass limitation.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Make the existing FO continue authorized work without a user reminder or /goal. Put the next-action rule at dispatch, completion, revision-routing and user-interruption boundaries.
