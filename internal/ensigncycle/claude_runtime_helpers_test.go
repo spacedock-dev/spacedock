@@ -762,6 +762,7 @@ func gradeLive(xfail bool, errs ...error) liveGrade {
 // from the input, not from another generated report or the skill under test.
 const sameStagePlan = "KEEP message A; DELETE message B\n"
 
+//spacedock:live-fixture id=rejection/self-feedback-plain,rejection/self-feedback-review-required,rejection/self-feedback-separate-review-required,rejection/self-feedback-round-required,rejection/self-feedback-round-missing,rejection/self-feedback-cycle-limit
 func writeSameStageRevision(t *testing.T, root, variant string) string {
 	t.Helper()
 	fixture := writePreparedRecordedGateFixtureAt(t, root)

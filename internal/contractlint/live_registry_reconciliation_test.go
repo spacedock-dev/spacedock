@@ -194,6 +194,7 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 	fset := token.NewFileSet()
 	found := map[string]bool{}
 	scheduled := map[string]int{}
+	scheduledLanes := map[string]map[string]int{}
 	dir := filepath.Join(repo, "internal", "ensigncycle")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -214,6 +215,29 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 			t.Fatal(err)
 		}
 		if entry.Name() == "scheduled_live_test.go" {
+			runtimeRows := map[token.Pos]string{}
+			ast.Inspect(file, func(node ast.Node) bool {
+				branch, ok := node.(*ast.IfStmt)
+				if !ok {
+					return true
+				}
+				condition, ok := branch.Cond.(*ast.BinaryExpr)
+				if !ok || condition.Op != token.EQL || exprName(condition.X) != "runtime" {
+					return true
+				}
+				literal, ok := condition.Y.(*ast.BasicLit)
+				if !ok || literal.Kind != token.STRING {
+					return true
+				}
+				lane := stringLiteral(t, literal) + "-live"
+				ast.Inspect(branch.Body, func(node ast.Node) bool {
+					if row, ok := node.(*ast.CompositeLit); ok {
+						runtimeRows[row.Pos()] = lane
+					}
+					return true
+				})
+				return true
+			})
 			ast.Inspect(file, func(node ast.Node) bool {
 				row, ok := node.(*ast.CompositeLit)
 				if !ok || len(row.Elts) < 3 {
@@ -228,6 +252,12 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 					t.Errorf("scheduled name/callable mismatch: %s", name)
 				}
 				scheduled[name]++
+				scheduledLanes[name] = map[string]int{}
+				if len(row.Elts) == 4 {
+					scheduledLanes[name]["claude-live"], scheduledLanes[name]["codex-live"] = 1, 1
+				} else if lane := runtimeRows[row.Pos()]; lane != "" {
+					scheduledLanes[name][lane] = 1
+				}
 				return true
 			})
 		}
@@ -242,14 +272,15 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 			}
 		}
 	}
+	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
 	for name := range found {
-		want := strings.HasPrefix(name, "TestLiveCommon") || name == "TestLiveBareReachable" || name == "TestLiveBreakGlassShimRecovery" || name == "TestLiveMergedTeamModeDispatch" || name == "TestLiveSemanticNamesCodex"
-		if want && scheduled[name] != 1 {
-			t.Errorf("scheduled callable %s appears %d times, want 1", name, scheduled[name])
+		if err := liveTestCoverageError(name, registry, workflow, scheduledLanes); err != nil {
+			t.Error(err)
 		}
-		if want {
-			delete(scheduled, name)
+		if scheduled[name] > 1 {
+			t.Errorf("scheduled callable %s appears %d times", name, scheduled[name])
 		}
+		delete(scheduled, name)
 	}
 	if len(scheduled) != 0 {
 		t.Errorf("unexpected scheduled callables: %v", scheduled)
@@ -659,4 +690,109 @@ func liveSuiteSelector(runtime string) string {
 		return "-run '^TestLiveCommon'"
 	}
 	return "-run '^TestLiveScheduled$'"
+}
+
+func TestLiveCoverageRequiresSelectionOrExplicitExemption(t *testing.T) {
+	registry := "## Common journeys\n### `sample`\n- **Entry point:** `TestLiveCommonSample`\n"
+	workflow := "  claude-live:\n    run: go test -tags live -run '^TestLiveScheduled$' ./internal/ensigncycle\n  codex-live:\n    run: go test -tags live -run '^TestLiveScheduled$' ./internal/ensigncycle\n  pi-live:\n    run: go test -tags live -run '^TestLiveCommon' ./internal/ensigncycle\n"
+	scheduled := map[string]map[string]int{"TestLiveCommonSample": {"claude-live": 1, "codex-live": 1}}
+	for _, tc := range []struct {
+		name, registry, workflow string
+		valid                    bool
+	}{
+		{"selected", registry, workflow, true},
+		{"missing-membership", registry, workflow, false},
+		{"duplicate-selection", registry, workflow + "    run: go test -tags live -run '^TestLiveCommon' ./internal/ensigncycle\n", false},
+		{"missing-selector", registry, strings.ReplaceAll(workflow, "^TestLiveScheduled$", "^Other$"), false},
+		{"unclassified", strings.ReplaceAll(registry, "Common journeys", "Targeted implementation proofs"), workflow, false},
+		{"explicit-exemption", "## Non-gating live experiments\n### `TestLiveCommonSample`\n- **Reason unselected:** Measures an experimental host.\n", "", true},
+		{"blank-reason", "## Non-gating live experiments\n### `TestLiveCommonSample`\n- **Reason unselected:**   \n", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			membership := scheduled
+			if tc.name == "missing-membership" {
+				membership = nil
+			}
+			if err := liveTestCoverageError("TestLiveCommonSample", tc.registry, tc.workflow, membership); (err == nil) != tc.valid {
+				t.Fatalf("coverage error = %v, valid=%t", err, tc.valid)
+			}
+		})
+	}
+}
+
+var registryLane = regexp.MustCompile("(?m)^- \\*\\*Lane:\\*\\* `([^`]+)`$")
+
+func liveRegistryEntry(name, registry string) (string, string) {
+	section, blockSection, block, current := "", "", "", ""
+	for _, line := range strings.Split(registry, "\n") {
+		if strings.HasPrefix(line, "## ") {
+			section = strings.TrimPrefix(line, "## ")
+			current = ""
+		}
+		if registryHeading.MatchString(line) {
+			current = line + "\n"
+		} else {
+			current += line + "\n"
+		}
+		heading := registryTestHeading.FindStringSubmatch(current)
+		entry := registryEntryPoint.FindStringSubmatch(current)
+		if (heading != nil && heading[1] == name) || (entry != nil && entry[1] == name) {
+			block, blockSection = current, section
+		}
+	}
+	return blockSection, block
+}
+
+func liveTestCoverageError(name, registry, workflow string, scheduled map[string]map[string]int) error {
+	blockSection, block := liveRegistryEntry(name, registry)
+	lanes := []string{}
+	switch blockSection {
+	case "Common journeys":
+		lanes = []string{"claude-live", "codex-live", "pi-live"}
+	case "Suite orchestration":
+		lanes = []string{"claude-live", "codex-live"}
+	case "Runtime-specific live proofs":
+		match := registryLane.FindStringSubmatch(block)
+		if match != nil {
+			lanes = []string{match[1]}
+		}
+	case "Non-gating live experiments":
+		if regexp.MustCompile(`(?m)^- \*\*Reason unselected:\*\*[^\S\n]*\S[^\n]*$`).MatchString(block) {
+			return nil
+		}
+		return fmt.Errorf("%s has no explicit exemption reason", name)
+	}
+	if len(lanes) == 0 {
+		return fmt.Errorf("%s has no recognized live coverage classification", name)
+	}
+	selections := map[string]int{}
+	lane := ""
+	for _, line := range strings.Split(workflow, "\n") {
+		if match := regexp.MustCompile(`^  ([a-z][a-z0-9-]*):$`).FindStringSubmatch(line); match != nil {
+			lane = match[1]
+		}
+		if !strings.Contains(line, "-tags live") || !strings.Contains(line, "./internal/ensigncycle") {
+			continue
+		}
+		match := regexp.MustCompile(`-run\s+['"]?([^'"\s]+)`).FindStringSubmatch(line)
+		if match == nil {
+			return fmt.Errorf("live command has no explicit selector: %s", line)
+		}
+		selector, err := regexp.Compile(match[1])
+		if err != nil {
+			return err
+		}
+		if selector.MatchString(name) {
+			selections[lane]++
+		}
+		if name != "TestLiveScheduled" && selector.MatchString("TestLiveScheduled") {
+			selections[lane] += scheduled[name][lane]
+		}
+	}
+	for _, lane := range lanes {
+		if selections[lane] != 1 {
+			return fmt.Errorf("%s selected %d times in %s, want 1", name, selections[lane], lane)
+		}
+	}
+	return nil
 }

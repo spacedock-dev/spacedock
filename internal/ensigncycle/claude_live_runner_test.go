@@ -412,95 +412,103 @@ func writeRejectionTopologyDigest(t *testing.T, artifactDir string, branch rejec
 	t.Logf("rejection topology digest %s:\n%s", path, digest)
 }
 
+func runSameStageRevisionJourney(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string, string) string, assert func([]rejectionRoute, bool) error) {
+	t.Helper()
+	for _, variant := range []string{"plain", "review-required", "separate-review-required", "round-required", "round-missing", "cycle-limit"} {
+		t.Run(variant, func(t *testing.T) {
+			workflowRoot := t.TempDir()
+			entityPath := build(t, workflowRoot, variant)
+			scenario.name = "self-feedback/" + variant
+
+			before, _, err := gates.Read(entityPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			frozen := recordedGateTreeSnapshot(t, filepath.Join(filepath.Dir(entityPath), "review"))
+			policy := readFile(t, filepath.Join(workflowRoot, "README.md"))
+			prompt := fmt.Sprintf("Use $spacedock:first-officer and $spacedock:feedback-rejection-flow. Workflow directory: %s. Captain authorizes revising recorded-gate-task: correct selected/plan.md against frozen-input.txt. Route this concrete assignment to the feedback-to worker, await completion, and handle this single correction cycle according to the workflow. Stop at its next decision boundary or an unmet prerequisite; do not resolve or consume the new gate. Use named workers. %s", workflowRoot, rejectionHostRealization(runner))
+			result := runner.run(t, scenario, workflowRoot, prompt)
+			routes, branch := claudeRejectionRoutes(result.stream)
+			if _, ok := runner.(codexAsLiveDriver); ok {
+				routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
+			}
+			if _, ok := runner.(piSharedLiveDriver); ok {
+				routes, branch = piRejectionRoutes(result.stream)
+			}
+			writeRejectionTopologyDigest(t, result.artifactDir, branch, routes)
+			after, _, err := gates.Read(entityPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			requiresReview := strings.HasSuffix(variant, "review-required")
+			// Missing evidence may stop before a reviewer is dispatched; any review
+			// that does run must still complete independently of the correction.
+			checks := []error{durableSemantic("self-feedback-obligations", assert(routes, requiresReview && len(routes) > 2))}
+			check := func(ok bool, why string) {
+				if !ok {
+					checks = append(checks, durableSemantic("self-feedback-obligations", fmt.Errorf("%s", why)))
+				}
+			}
+			stage := "validation"
+			if variant == "separate-review-required" {
+				stage = "implementation"
+			}
+			check(len(routes) > 0 && routes[0].stage == stage, "correction did not reach declared feedback-to")
+			blocked := strings.HasSuffix(variant, "review-required") || variant == "round-missing" || variant == "cycle-limit"
+			old := before.Records[0].Attempts
+			want := len(old) + 1
+			if blocked {
+				want--
+			}
+			if len(after.Records) != 1 || len(after.Records[0].Attempts) != want {
+				check(false, fmt.Sprintf("attempt count: want %d, got %v", want, after.Records))
+			} else {
+				check(reflect.DeepEqual(old, after.Records[0].Attempts[:len(old)]), "rejected attempts changed")
+				if !blocked {
+					current := after.Records[0].Attempts[want-1]
+					check(current.Resolution == nil && current.Application == nil && current.Withdrawal == nil, "fresh attempt is not open")
+					room, err := gates.ResolveRoomRef(entityPath, current.Briefing.RoomRef)
+					if err != nil {
+						t.Fatal(err)
+					}
+					checks = append(checks, durableSemantic("self-feedback-obligations", assertSameStageSelectedPlan(gitsource.Roots{Main: workflowRoot, State: filepath.Dir(filepath.Dir(entityPath))}, []byte(readFile(t, filepath.Join(room, "index.json"))))))
+				}
+			}
+			for path, content := range frozen {
+				check(readFile(t, filepath.Join(filepath.Dir(entityPath), "review", path)) == content, "frozen room changed: "+path)
+			}
+			check(readFile(t, filepath.Join(filepath.Dir(entityPath), "selected", "plan.md")) == sameStagePlan && readFile(t, filepath.Join(filepath.Dir(entityPath), "selected", "frozen-input.txt")) == sameStagePlan, "plan or frozen input differs from independent expectation")
+			check(readFile(t, filepath.Join(workflowRoot, "README.md")) == policy, "workflow policy changed")
+			stateRoot := filepath.Dir(filepath.Dir(entityPath))
+			check(git(t, stateRoot, "status", "--porcelain", "--", "recorded-gate-task") == "" && git(t, stateRoot, "show", "HEAD:recorded-gate-task/selected/plan.md") == sameStagePlan, "corrected plan/entity not durably committed")
+			body := readFile(t, entityPath)
+			git(t, stateRoot, "bundle", "create", filepath.Join(result.artifactDir, "state.bundle"), "--all")
+			check(!requiresReview || strings.Contains(body, "reviewer-source.txt"), "missing required review evidence was not recorded")
+			rooms, _ := filepath.Glob(filepath.Join(filepath.Dir(entityPath), "review", "*", "round-*"))
+			expectedRooms := map[string]int{"round-required": 1}[variant]
+			check(len(rooms) == expectedRooms, "canonical round count violates workflow requirements")
+			room := filepath.Join(filepath.Dir(entityPath), "review", "validation", "round-1")
+			if variant == "round-required" {
+				summary, err := gates.ValidateRoundFile(entityPath, "validation/1")
+				check(err == nil && len(summary.Entries) == 4, fmt.Sprintf("required canonical round invalid: %v", err))
+				check(readFile(t, filepath.Join(room, "briefing.review.jsonl")) == rejectionCompleteLog(), "required round entries lost without projection")
+			} else {
+				check(!strings.Contains(body, "review-round:"), "absent or incomplete round obligation manufactured a publication")
+			}
+			for _, heading := range anyHeadingLine.FindAllString(body, -1) {
+				check(strings.TrimLeft(heading, "# \t") != "Feedback Cycles", "undeclared projection created")
+			}
+			check(variant != "cycle-limit" || strings.Contains(strings.ToLower(body), "escalat"), "cycle 3 escalation not durably recorded")
+			check(strings.Contains(body, "status: validation"), "stage changed")
+			finishLiveScenario(t, runner, scenario, result, checks...)
+		})
+	}
+}
+
 func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, build func(*testing.T, string) string, assert func(string, string) error) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := build(t, workflowRoot)
-	if strings.HasPrefix(scenario.name, "self-feedback/") {
-		variant := strings.TrimPrefix(scenario.name, "self-feedback/")
-		before, _, err := gates.Read(entityPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		frozen := recordedGateTreeSnapshot(t, filepath.Join(filepath.Dir(entityPath), "review"))
-		policy := readFile(t, filepath.Join(workflowRoot, "README.md"))
-		prompt := fmt.Sprintf("Use $spacedock:first-officer and $spacedock:feedback-rejection-flow. Workflow directory: %s. Captain authorizes revising recorded-gate-task: correct selected/plan.md against frozen-input.txt. Route this concrete assignment to the feedback-to worker, await completion, and handle this single correction cycle according to the workflow. Stop at its next decision boundary or an unmet prerequisite; do not resolve or consume the new gate. Use named workers. %s", workflowRoot, rejectionHostRealization(runner))
-		result := runner.run(t, scenario, workflowRoot, prompt)
-		routes, branch := claudeRejectionRoutes(result.stream)
-		if _, ok := runner.(codexAsLiveDriver); ok {
-			routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
-		}
-		if _, ok := runner.(piSharedLiveDriver); ok {
-			routes, branch = piRejectionRoutes(result.stream)
-		}
-		writeRejectionTopologyDigest(t, result.artifactDir, branch, routes)
-		after, _, err := gates.Read(entityPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		requiresReview := strings.HasSuffix(variant, "review-required")
-		// Missing evidence may stop before a reviewer is dispatched; any review
-		// that does run must still complete independently of the correction.
-		checks := []error{durableSemantic("self-feedback-obligations", assertSameStageWorkers(routes, requiresReview && len(routes) > 2))}
-		check := func(ok bool, why string) {
-			if !ok {
-				checks = append(checks, durableSemantic("self-feedback-obligations", fmt.Errorf("%s", why)))
-			}
-		}
-		stage := "validation"
-		if variant == "separate-review-required" {
-			stage = "implementation"
-		}
-		check(len(routes) > 0 && routes[0].stage == stage, "correction did not reach declared feedback-to")
-		blocked := strings.HasSuffix(variant, "review-required") || variant == "round-missing" || variant == "cycle-limit"
-		old := before.Records[0].Attempts
-		want := len(old) + 1
-		if blocked {
-			want--
-		}
-		if len(after.Records) != 1 || len(after.Records[0].Attempts) != want {
-			check(false, fmt.Sprintf("attempt count: want %d, got %v", want, after.Records))
-		} else {
-			check(reflect.DeepEqual(old, after.Records[0].Attempts[:len(old)]), "rejected attempts changed")
-			if !blocked {
-				current := after.Records[0].Attempts[want-1]
-				check(current.Resolution == nil && current.Application == nil && current.Withdrawal == nil, "fresh attempt is not open")
-				room, err := gates.ResolveRoomRef(entityPath, current.Briefing.RoomRef)
-				if err != nil {
-					t.Fatal(err)
-				}
-				checks = append(checks, durableSemantic("self-feedback-obligations", assertSameStageSelectedPlan(gitsource.Roots{Main: workflowRoot, State: filepath.Dir(filepath.Dir(entityPath))}, []byte(readFile(t, filepath.Join(room, "index.json"))))))
-			}
-		}
-		for path, content := range frozen {
-			check(readFile(t, filepath.Join(filepath.Dir(entityPath), "review", path)) == content, "frozen room changed: "+path)
-		}
-		check(readFile(t, filepath.Join(filepath.Dir(entityPath), "selected", "plan.md")) == sameStagePlan && readFile(t, filepath.Join(filepath.Dir(entityPath), "selected", "frozen-input.txt")) == sameStagePlan, "plan or frozen input differs from independent expectation")
-		check(readFile(t, filepath.Join(workflowRoot, "README.md")) == policy, "workflow policy changed")
-		stateRoot := filepath.Dir(filepath.Dir(entityPath))
-		check(git(t, stateRoot, "status", "--porcelain", "--", "recorded-gate-task") == "" && git(t, stateRoot, "show", "HEAD:recorded-gate-task/selected/plan.md") == sameStagePlan, "corrected plan/entity not durably committed")
-		body := readFile(t, entityPath)
-		git(t, stateRoot, "bundle", "create", filepath.Join(result.artifactDir, "state.bundle"), "--all")
-		check(!requiresReview || strings.Contains(body, "reviewer-source.txt"), "missing required review evidence was not recorded")
-		rooms, _ := filepath.Glob(filepath.Join(filepath.Dir(entityPath), "review", "*", "round-*"))
-		expectedRooms := map[string]int{"round-required": 1}[variant]
-		check(len(rooms) == expectedRooms, "canonical round count violates workflow requirements")
-		room := filepath.Join(filepath.Dir(entityPath), "review", "validation", "round-1")
-		if variant == "round-required" {
-			summary, err := gates.ValidateRoundFile(entityPath, "validation/1")
-			check(err == nil && len(summary.Entries) == 4, fmt.Sprintf("required canonical round invalid: %v", err))
-			check(readFile(t, filepath.Join(room, "briefing.review.jsonl")) == rejectionCompleteLog(), "required round entries lost without projection")
-		} else {
-			check(!strings.Contains(body, "review-round:"), "absent or incomplete round obligation manufactured a publication")
-		}
-		for _, heading := range anyHeadingLine.FindAllString(body, -1) {
-			check(strings.TrimLeft(heading, "# \t") != "Feedback Cycles", "undeclared projection created")
-		}
-		check(variant != "cycle-limit" || strings.Contains(strings.ToLower(body), "escalat"), "cycle 3 escalation not durably recorded")
-		check(strings.Contains(body, "status: validation"), "stage changed")
-		finishLiveScenario(t, runner, scenario, result, checks...)
-		return
-	}
 
 	commandLog := filepath.Join(t.TempDir(), "command.log")
 	if _, ok := runner.(codexAsLiveDriver); ok {
