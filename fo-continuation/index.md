@@ -247,3 +247,21 @@ Checks reused unchanged: focused steering and integration green; required normal
 ### Summary
 
 The native comparison now supplies the missing positive continuation sequence and actual stop/open-gate controls. Both variants succeeded, so validation recommends PASSED under the approved both-pass interpretation without claiming causality, a measured improvement, or complete stochastic reliability from one sample.
+
+
+## Captain-approved scope amendment — 2026-09-16
+
+Binding resolution `binding-1789587674534469000`, approved at `2026-09-16T19:41:14.534472Z`, authorizes the exact shorter shutdown suffix and adjacent comment in `internal/ensigncycle/claude_live_runner_test.go`. Source: `/tmp/claude-stop-boundary-review.md`, revision `sha256:7101100791ac274496390024aa130f1a6cbb472d2c6f459220e62b691c04e5a9`. The overall task surface is now five files; no callers, assertions, fixtures, budgets, flags, or enforcement machinery are changed. Approval includes independent validation and final-tip CI, not merge or waiver of either observed Claude failure.
+
+## Stage Report: implementation
+
+- DONE: Replace only the approved shutdown suffix and adjacent comment, preserving all callers and strict assertions.
+  Code commit `b9fd371e4edb99f3c5496ecbba1b57f871336b1d` on prior tip `a45d6ff6a4fc623bb30bf4ef8b843bbd18de922d` installs the exact approved literal; its diff touches only that constant/comment, leaving all three callers and unauthorized-approval/rejection-topology assertions unchanged.
+- DONE: Verify the bounded diff and applicable compilation, preserving existing evidence and deferring behavioral efficacy to final tip CI.
+  Live-tag compilation (`go test -tags live ./internal/ensigncycle -run '^$'`, then `-count=1`) passed before/after; existing `TestKeepMovingPreparedGate` and `TestRejectionFlowNegativeSingleCycle` passed (4.266s), exercising open-gate setup and rejection of truncated correction topology. These controls do not prove instruction efficacy; final-tip Claude CI remains pending.
+- DONE: Commit the exact correction and canonical report with approval provenance, scope and honest validation limits.
+  Approval is recorded above; correction +6/-12 in one file, overall task +17/-22 across five files versus `39f601c73`. Touched-file gofmt and `git diff --check` passed; no code/state push, rebase, broad rerun, or model run. FO owns publication; prior full suites at `184feb67b` exited 1 solely on the documented resolver mismatch, and FO's combined normal/race verification on prior tip `ab23` is separate provenance, not a result claimed for this commit.
+
+### Summary
+
+The Claude suffix now defers to declared stopping conditions and expressly grants no gate approval authority. Earlier native Codex evidence remains intact, while behavioral efficacy of this Claude correction and both observed Claude failures remain for retained independent validation and final-tip CI; no causal improvement or all-green claim is made.
