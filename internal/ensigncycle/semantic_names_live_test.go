@@ -11,18 +11,10 @@ import (
 	"testing"
 )
 
-// Targeted implementation proof: semantic naming AC-4; explicit local selection.
+//spacedock:live-proof id=codex-semantic-worker-handles lane=codex-live
 func TestLiveSemanticNamesCodex(t *testing.T) {
 	runner := newCodexLiveRunner(t)
-	root := t.TempDir()
-	state := filepath.Join(root, "state")
-	ep := filepath.Join(state, "ci-duration-hints.md")
-	readme := "---\nentity-type: task\nid-style: slug\nstate: state\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: validation\n    - name: done\n      terminal: true\n---\n\n### ideation\n\nAppend the assigned marker report and commit only the entity body.\n\n### validation\n\nAppend the assigned marker report and commit only the entity body.\n\n### done\n\nFinished.\n"
-	writeFile(t, filepath.Join(root, "README.md"), readme)
-	gitInit(t, root)
-	seed := "---\ntitle: CI duration hints\nstatus: ideation\n---\n\nFixture.\n"
-	writeFile(t, ep, seed)
-	gitInit(t, state)
+	root, state, ep, seed := writeSemanticNamesFixture(t)
 	before := strings.TrimSpace(git(t, state, "rev-parse", "HEAD"))
 	build := func(stage string, advance bool) string {
 		args := []string{"dispatch", "build", "--host", "codex", "--workflow-dir", root, "--entity-path", ep, "--stage", stage, "--checklist-file", "-"}
@@ -140,4 +132,18 @@ func semanticLifecycle(stream string) error {
 		return fmt.Errorf("spawn/reuse mismatch: spawns=%d handle=%q follow=%q", spawns, handle, follow)
 	}
 	return nil
+}
+
+//spacedock:live-fixture id=semantic-names/split-root
+func writeSemanticNamesFixture(t *testing.T) (root, state, ep, seed string) {
+	root = t.TempDir()
+	state = filepath.Join(root, "state")
+	ep = filepath.Join(state, "ci-duration-hints.md")
+	readme := "---\nentity-type: task\nid-style: slug\nstate: state\nstages:\n  states:\n    - name: ideation\n      initial: true\n    - name: validation\n    - name: done\n      terminal: true\n---\n\n### ideation\n\nAppend the assigned marker report and commit only the entity body.\n\n### validation\n\nAppend the assigned marker report and commit only the entity body.\n\n### done\n\nFinished.\n"
+	writeFile(t, filepath.Join(root, "README.md"), readme)
+	gitInit(t, root)
+	seed = "---\ntitle: CI duration hints\nstatus: ideation\n---\n\nFixture.\n"
+	writeFile(t, ep, seed)
+	gitInit(t, state)
+	return
 }

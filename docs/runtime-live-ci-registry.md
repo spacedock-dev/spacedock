@@ -320,6 +320,13 @@ limited to the named runtime boundary.
 - **Fixture:** `pi/split-root-smoke` — a current-checkout Pi environment and
   split-root workflow with one child-dispatchable member.
 
+### `codex-semantic-worker-handles`
+
+- **Entry point:** `TestLiveSemanticNamesCodex`
+- **Lane:** `codex-live`
+- **Required outcome:** Codex spawns the semantic task name and reuses its returned native handle; two body-only report commits preserve frontmatter and clean state. Altered names or follow-up handles fail.
+- **Fixture:** `semantic-names/split-root` — generated semantic dispatch and advance in an isolated split-root workflow.
+
 ## Non-gating live experiments
 
 These tests are intentionally not release evidence and are not selected by a
@@ -349,18 +356,6 @@ live CI lane. Each remains live-tagged only for its stated experiment.
 - **Fixture:** `codex/wait-matrix` — four isolated worker-state variants.
 - **Reason unselected:** The four real Codex runs measure host behavior. They do
   not prove a common user journey or block a release.
-
-### `TestLiveSemanticNamesCodex`
-
-- **Task:** #624; semantic worker naming with legacy identity preservation. A failed assertion blocks task acceptance; passing does not establish CI or runtime parity.
-- **Selection:** `go test -tags live ./internal/ensigncycle -run '^TestLiveSemanticNamesCodex$' -count=1 -v -timeout=10m`
-- **Evidence:** Native semantic spawn and same-handle advance, two body-only report commits, unchanged frontmatter, clean state, and rejection of altered-name/handle traces. Explicit local selection; no CI lane change.
-
-### `TestConflictOwnerStampedIdentity`
-
-- **Task:** #624; deterministic stamped-owner identity check using the real build and adapter boundary, with no model execution.
-- **Selection:** `go test -tags live ./internal/ensigncycle -run '^TestConflictOwnerStampedIdentity$' -count=1`
-- **Evidence:** Canonical entity/stage and literal semantic worker/branch identities. Explicit local selection only; no CI lane or native-proof claim.
 
 ## Source binding convention
 
