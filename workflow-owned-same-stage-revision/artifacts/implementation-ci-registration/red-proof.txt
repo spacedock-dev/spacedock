@@ -1,0 +1,9 @@
+Observed pre-promotion command (output excerpt transcribed from tool result):
+
+go test ./internal/contractlint -run 'TestLiveCoverageRequiresSelectionOrExplicitExemption|TestRuntimeLiveRegistryReconciliation' -count=1
+
+exit 1
+--- FAIL: TestRuntimeLiveRegistryReconciliation (0.08s)
+    live_registry_reconciliation_test.go:253: TestLiveSameStageRevision has no recognized live coverage classification
+
+The actual reconciliation checker rejected the old targeted-only entry before it was promoted. No native process was invoked. Final green logs are focused-registry.log and focused-runtime.log.

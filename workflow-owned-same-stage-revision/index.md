@@ -185,11 +185,11 @@ Earlier amended tolerance: net +200 LOC maximum and 4 files, explicitly approved
 
 Earlier final tolerance: net +220 LOC maximum and 4 files, explicitly approved by the captain on 2026-09-15 after the complete proof matrix and authorized fixture fixes.
 
-Earlier targeted-proof tolerance: net +236 LOC maximum and 5 files, bound by resolution:binding-1789513304916529000; the added owner is `docs/runtime-live-ci-registry.md` for explicit targeted-proof policy.
+Historical targeted-proof tolerance: net +236 LOC maximum and 5 files, bound by resolution:binding-1789513304916529000. The captain revoked that coverage exemption on 2026-09-16; it is not current acceptance policy.
 
 Expected owners: `skills/feedback-rejection-flow/SKILL.md`, `internal/ensigncycle/claude_live_runner_test.go`, and `internal/ensigncycle/claude_runtime_helpers_test.go`.
-The existing `runClaudeRejectionFlowScenario` owns the rejection run; `shared_live_runner_test.go` registers it.
-The topology grader lives in `claude_runtime_helpers_test.go`. Registration changes, if needed, fit the existing four-file tolerance.
+The conventional rejection runner remains unchanged. `runSameStageRevisionJourney` owns the six same-stage variants through the existing common-journey architecture.
+Current authorized owners also include `shared_live_runner_test.go`, `scheduled_live_test.go`, `docs/runtime-live-ci-registry.md`, and `internal/contractlint/live_registry_reconciliation_test.go`. The 2026-09-16 captain correction authorizes routine registration and an existing-checker coverage guard: seven total layer files, estimated +100–150 correction net lines above the retained +252 candidate. Current correction is +141 net; total layer is +393 net.
 No command grammar, persisted format, authorization rule, recorder taxonomy, or runtime adapter changes are planned.
 The observable change is that workflows without round/reviewer obligations can complete same-stage correction and re-gate.
 The exact skill wording above is the documentation diff. No additional command-reference change is needed.
@@ -209,6 +209,7 @@ The current dev/Roborev advisory control preserves its required review entries a
 **AC-3 — The fix changes only generic routing applicability.**
 Verified by: before/after live runs differ on the no-reviewer self-feedback outcome while required-review controls remain strict.
 The existing CLI guards continue to refuse stale authority and incomplete canonical rounds.
+All six same-stage variants must be registered for routine supported-runtime CI. Prior local evidence remains historical evidence; final live acceptance comes from updated stack-tip CI. A targeted implementation-only category cannot exempt a test from selection. Intentional non-gating experiments require an explicit reason.
 No new flags, state fields, recorder interpretation, or synthetic reviewer stage are introduced.
 
 ## Test plan
@@ -425,3 +426,36 @@ V1 is **satisfied** by candidate `d46f74245c1c18c8a376e9a6d2a508c774e32759` afte
 ### Summary
 
 All three acceptance criteria now have replayable behavioral evidence, and V1 is satisfied within the captain-approved surface. Validation recommends PASSED with the existing resolver baseline and unexplained timing discrepancy explicitly preserved; candidate and gate authority remain unchanged.
+
+
+## Captain correction: routine live coverage — 2026-09-16
+
+The captain directed: "no live test should be targeted implementation proof only," then asked how omission could require an explicit choice. FO authorized common-journey registration for all six variants and coverage enforcement in the existing reconciliation owner. This supersedes the targeted-proof exemption and release-acceptance statements in earlier reports. Those reports and logs remain historical records, not the current policy.
+
+`TestLiveCommonSameStageRevision` now binds six fixture IDs to the real builder and worker assertion. Its existing driver runs plain, review-required, separate-review-required, round-required, round-missing, and cycle-limit serially. Each has a separate workflow and artifact path. The canonical conventional rejection journey remains unchanged. Claude and Codex select the journey once through the existing scheduler; Pi selects it once through the common-suite selector. No skip/XFAIL is added. Existing scheduler parallel suppression applies, so serial child tests introduce no nested parallel completion boundary.
+
+The scheduler hint is 1,400 seconds for the six Codex variants, rounded from retained timings, and a conservative 1,800-second Claude estimate. These are ordering hints, not new timeouts or measured Claude evidence. Routine CI now incurs these six native drives per supported runtime target. There are no local native/model reruns in this correction; final runtime outcomes belong to updated stack-tip CI.
+
+The registry no longer admits Targeted implementation proofs. Reconciliation now requires each live declaration to have an actual routine lane selection, including actual scheduler membership, or an explicit Non-gating live experiments entry with a nonblank reason. Missing selector, missing membership, duplicate selection, unclassified/targeted category and blank reason fixtures exercise the same checker. The actual repository first failed on its old standalone same-stage entry, then passed after promotion. The three existing experiments are unchanged. Upper-layer #802 promotion remains its owner's work: Codex semantic handles must become a runtime proof, and deterministic stamped identity belongs offline. This branch does not claim those upper edits are already incorporated.
+
+All moved scenario grading statements compare identically after whitespace normalization and the counted assertion-parameter rename. Frozen attempts, corrected selected revision, unrelated/premature selection negatives, required round cardinality, native byte retention and write-failure/parser checks remain intact. Retained local native evidence is preserved without a new all-runtime claim.
+
+Verification completed: focused registry and live-tagged deterministic checks pass. Required normal/race suites each exit 1 solely for the known installed-host resolver baseline; all other packages pass. Logs and exact command timestamps are under artifacts/implementation-ci-registration. No code push, CI trigger or workflow-frontmatter/gate mutation occurred.
+
+
+## Stage Report: implementation (routine CI correction)
+
+### Results
+
+- DONE: Register every same-stage variant in routine supported-runtime CI and remove the targeted-only exception.
+  Code commit `bf64ebeca949667c2d60e40a9c595ebdf62375b2` registers all six fixtures through `TestLiveCommonSameStageRevision`, one scheduler row, and the existing runtime adapters. Original assertions and unique falsifiers remain intact. The three explicit experiments are unchanged; #802 owns its separate promotions after restack.
+- DONE: Require actual lane coverage or explicit exemption through the existing reconciliation checker.
+  Real pre-promotion reconciliation failed on the old targeted entry. Focused checks now pass and reject missing selectors, missing scheduler membership, duplicate selection, unknown/targeted classification, and blank exemption reasons. Runtime-specific obligations come from the registry Lane and actual conditional scheduler rows, without a hardcoded test-name exception.
+- DONE: Perform required local verification, retain honest limitations, and commit the correction for independent review.
+  `go test ./...` and `go test ./... -race` each exit 1 only at `TestCodexResolveManifestAgainstInstalledHost`: the named marketplace plugin is absent but resolves to installed spacedock-local/pre0. This is the existing FO-declined out-of-scope baseline, disposition resolved; neither suite is claimed wholly green. `internal/ensigncycle` passes in 356.523s and 356.418s respectively. Focused registry and live-tagged deterministic checks pass. `gofmt -w ./cmd ./internal` and diff-check completed; unrelated existing formatting was preserved.
+
+### Scope and evidence
+
+Correction: 256 insertions / 115 deletions = +141 net across six modified files. Full task layer above `4ce49f1ea`: 416 insertions / 23 deletions = +393 net across seven files, within the FO-authorized +100–150 correction estimate and seven-file scope. This is a test-registration/enforcement correction; production code, skill behavior and workflow authority are unchanged.
+
+Evidence: `artifacts/implementation-ci-registration/red-proof.txt`, `focused-registry.log`, `focused-runtime.log`, `normal.log`, `race.log`, `checks.json`, and `scope-and-preservation.txt`. Earlier native/state evidence remains unchanged. No local native/model run establishes this expanded runtime coverage; updated stack-tip CI is required for final live acceptance. The retained independent validator owns review. FO owns publication/restacking; no code/state push, CI trigger, gate decision or independent self-validation occurred.

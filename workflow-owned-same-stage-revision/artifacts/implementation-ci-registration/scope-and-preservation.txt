@@ -1,0 +1,7 @@
+Correction against c7568815b: 256 insertions / 115 deletions = +141 net, six modified files.
+Full task layer against 4ce49f1ea: 416 insertions / 23 deletions = +393 net, seven files.
+Moved grading statements compared equal after whitespace normalization and assertSameStageWorkers -> bound assert rename.
+Three existing Non-gating live experiments entries compared byte-identical.
+Gofmt ran for ./cmd ./internal; unrelated existing release-file alignment restored.
+No local native/model drives, code push, CI, rebase, or frontmatter/gate edits.
+Code commit: bf64ebeca949667c2d60e40a9c595ebdf62375b2
