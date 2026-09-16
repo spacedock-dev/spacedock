@@ -265,3 +265,17 @@ Binding resolution `binding-1789587674534469000`, approved at `2026-09-16T19:41:
 ### Summary
 
 The Claude suffix now defers to declared stopping conditions and expressly grants no gate approval authority. Earlier native Codex evidence remains intact, while behavioral efficacy of this Claude correction and both observed Claude failures remain for retained independent validation and final-tip CI; no causal improvement or all-green claim is made.
+
+
+## Stage Report: validation (approved Claude suffix correction)
+
+- DONE: Verify the approved suffix correction preserves callers and strict unauthorized-approval and worker-topology checks.
+  Independent diff review of `b9fd371e4edb99f3c5496ecbba1b57f871336b1d` against `a45d6ff6a4fc623bb30bf4ef8b843bbd18de922d` confirms the exact captain-approved literal/comment only; all three callers and strict assertions are unchanged. [Bounded report](artifacts/validation/suffix-b9fd371/report.md).
+- DONE: Assess exact local evidence and prior live failures without claiming wording or compilation proves behavior.
+  Compile-only/focused green checks are attributed to the canonical implementation report; original logs were not supplied and checks were not repeated. Combined `ab23` suites exclude this suffix and retain their sole resolver failure. Earlier native Codex AC evidence is not recast as current Claude proof.
+- DONE: Report independent bounded validation with any material findings and final-tip Claude/Codex CI explicitly pending.
+  **PASSED for approved correction scope**, no new material finding in that diff. Latest Claude unauthorized gate closure and needless no-op dispatch remain unresolved live observations; strict grades and FO dispositions stand. Final-tip Claude/Codex CI is pending, so no behavior-efficacy, causal-improvement, all-green, merge-readiness or failure-waiver claim.
+
+### Summary
+
+The approved suffix correction preserves continuation across handoffs while deferring to declared stops, with no caller or grader changes. Independent bounded validation is complete; final-tip Claude/Codex CI must supply the remaining current-tip behavior evidence.
