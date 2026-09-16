@@ -41,6 +41,17 @@ gates:
                 id: briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-1:revision-1
                 digest: sha256:d6cc8df5fdeec4debb3be23db3579531d776a172da56b35e292d658489b6bb12
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6es505tn1zz2597hetvnqn7y:validation:1
+                briefing: briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-16T02:13:00.181176Z"
+                decision: approve
+                reason: Captain approved validation in Subspace resolution:binding-1789524348826001000; accepts direction and presented evidence.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
