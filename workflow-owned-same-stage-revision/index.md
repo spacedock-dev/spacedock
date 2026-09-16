@@ -1,6 +1,6 @@
 ---
 title: Honor workflow-declared same-stage revision without mandatory reviewer machinery
-status: validation
+status: implementation
 source: Captain request after email-triage FO issue 792
 issue: spacedock-dev/spacedock#792
 score: 0.95
@@ -8,8 +8,8 @@ started: 2026-09-15T04:30:03Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-workflow-owned-same-stage-revision
-pr: "#801"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: zz1yqc2w2katp28wpa8nghx2
 gates:
     version: 1
@@ -70,7 +70,7 @@ gates:
                 reason: Captain approved validation in Subspace resolution:binding-1789524384326931000; accepts direction and presented evidence.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
     stage: validation
