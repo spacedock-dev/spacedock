@@ -452,7 +452,7 @@ Verification completed: focused registry and live-tagged deterministic checks pa
 - DONE: Perform required local verification, retain honest limitations, and commit the correction for independent review.
   `go test ./...` and `go test ./... -race` each exit 1 only at `TestCodexResolveManifestAgainstInstalledHost`: the named marketplace plugin is absent but resolves to installed spacedock-local/pre0. This is the existing FO-declined out-of-scope baseline, disposition resolved; neither suite is claimed wholly green. `internal/ensigncycle` passes in 356.523s and 356.418s respectively. Focused registry and live-tagged deterministic checks pass. `gofmt -w ./cmd ./internal` and diff-check completed; unrelated existing formatting was preserved.
 
-### Scope and evidence
+### Summary
 
 Correction: 256 insertions / 115 deletions = +141 net across six modified files. Full task layer above `4ce49f1ea`: 416 insertions / 23 deletions = +393 net across seven files, within the FO-authorized +100–150 correction estimate and seven-file scope. This is a test-registration/enforcement correction; production code, skill behavior and workflow authority are unchanged.
 
