@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:6es505tn1zz2597hetvnqn7y:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:6es505tn1zz2597hetvnqn7y-validation-1
+              briefing:
+                id: briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-1:revision-1
+                digest: sha256:d6cc8df5fdeec4debb3be23db3579531d776a172da56b35e292d658489b6bb12
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.

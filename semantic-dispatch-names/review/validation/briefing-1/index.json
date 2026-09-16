@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-1:revision-1",
+  "question": "Approve the validated semantic naming candidate for delivery through the planned stack?",
+  "artifacts": [
+    {
+      "id": "artifact:6es505tn1zz2597hetvnqn7y:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/cdc4b15b2ad01a9a47d48070f3992ac16db3cb1a/semantic-dispatch-names/index.md",
+      "rev": "sha256:d7a516b441baf577aa652d831ab55a5513da821413a2a2d019f324dc9793312a",
+      "mediaType": "text/markdown",
+      "summary": "Recommend approve: AC1–4 validated at 1b3b70508; 46 files/+430 net. Exact naming, legacy ownership, collision guards and native same-handle reuse pass independent audit. Normal/race have only declined installed-host resolver baseline. Delivery still requires scheduling base, #792 policy dependency, stack assembly and required CI; no push or CI until stack is ready."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6es505tn1zz2597hetvnqn7y:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/0b9941f2dc2f47cd1e9f27ef5b2bc521a5631dfd/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
