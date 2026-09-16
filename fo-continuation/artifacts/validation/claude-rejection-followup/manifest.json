@@ -1,0 +1,16 @@
+[
+  {
+    "source": "/tmp/spacedock-tip-ci/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/rejection-flow/claude-stream.jsonl",
+    "sha256": "59db41df3b3ac3fbae944671d97e2f20172b90d26b3b9ca8bbfcaae34de3dcb9",
+    "bytes": 490333,
+    "lines": 294,
+    "retention": "Original retained in /tmp; selected exact lines copied here, no interpretation substituted."
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/claude/_temp/spacedock-claude-config/claude-sonnet-5/rejection-flow/projects/-tmp-TestLiveScheduledslot-2TestLiveCommonRejectionFlow3795307379-003/3e347c0e-62c7-4014-a95e-100ace3c2c0f/subagents/agent-a7959d70f8be6029b.jsonl",
+    "sha256": "c2a1bf4da0453ac3df01e1e563594a56a32247a591ab471de299e3708b8377e0",
+    "bytes": 294778,
+    "lines": 118,
+    "retention": "Original retained in /tmp; selected exact lines copied here, no interpretation substituted."
+  }
+]
