@@ -71,6 +71,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:zz1yqc2w2katp28wpa8nghx2-validation-2
+              briefing:
+                id: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-2:revision-1
+                digest: sha256:fe9a4b043e5dcff6c02c64cc4758d2acdbf88d16837f72e2621b1fb22996e232
+                room-ref: '@review/validation/briefing-2'
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
     stage: validation
