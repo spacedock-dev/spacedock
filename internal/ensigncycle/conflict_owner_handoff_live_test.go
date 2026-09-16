@@ -146,8 +146,8 @@ func stampConflictOwner(t *testing.T, binary, root, entity string) conflictOwner
 	worktreePath := filepath.Join(root, worktree)
 	branch := strings.TrimSpace(git(t, worktreePath, "branch", "--show-current"))
 	owner := conflictOwnerTuple{
-		Entity:       spawn.Identity.Slug,
-		Stage:        spawn.Identity.Stage,
+		Entity:       status.EntitySlug(entity),
+		Stage:        fields["status"],
 		WorkerName:   spawn.Identity.Name,
 		Branch:       branch,
 		Worktree:     worktree,
@@ -245,4 +245,16 @@ func conflictOwnerEntity() string {
 		"        target-stage: implementation\n" +
 		"        state: consumed\n" +
 		"---\n\nOwned moving-target conflict fixture.\n"
+}
+
+func TestConflictOwnerStampedIdentity(t *testing.T) {
+	root := t.TempDir()
+	entity := filepath.Join(root, "conflict-owner.md")
+	writeFile(t, filepath.Join(root, "README.md"), conflictOwnerWorkflow())
+	writeFile(t, entity, conflictOwnerEntity())
+	gitInit(t, root)
+	owner := stampConflictOwner(t, spacedockBinary(t), root, entity)
+	if owner.Entity != "conflict-owner" || owner.Stage != "implementation" || owner.WorkerName != "conflict-owner-implementation" || owner.Branch != "conflict-owner" {
+		t.Fatalf("stamped owner identity = %#v", owner)
+	}
 }
