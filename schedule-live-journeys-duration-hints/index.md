@@ -223,3 +223,9 @@ Reduced the design from +330 to +120 estimated net lines by removing the broad n
 ### Summary
 
 The minimal scheduled candidate is committed and ready for independent code/fixture validation, with the canonical Claude and Codex invocations sharing their existing evidence owners and Pi unchanged. Actual Claude overlap remains an explicit acceptance blocker; required broad checks also retain the independently confirmed local resolver failure, which the FO declined to fix in this task. No provider/auth policy, global configuration or runtime assertions were changed.
+
+### Credential availability recheck — 2026-09-15
+
+`claude auth status` exited successfully with `loggedIn: true`, `authMethod: claude.ai`, first-party provider and team subscription. Both `ANTHROPIC_API_KEY` and `CLAUDE_CODE_OAUTH_TOKEN` are unset. The existing `decideClaudeEnv` accepts only a readable `$HOME/.claude/benchmark-token` or `ANTHROPIC_API_KEY`; native login alone cannot pass its isolated-harness gate. The previously denied token path was not retried, and no keychain extraction, global auth mutation, candidate edit or redundant live/broad run occurred.
+
+AC-2 still requires an authorized API key in the test process or an approved readable benchmark-token at a harness-compatible HOME. Candidate remains `4ce49f1ea`; after credentials are available, rerun only the recorded bounded overlap proof and retain original assertions and actual overlapping host/path evidence. This recheck does not close the FAILED checklist item or authorize stage advancement.
