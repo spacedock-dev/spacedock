@@ -52,6 +52,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:ad242krer2tckgx7150cyb7d-validation-2
+              briefing:
+                id: briefing:ad242krer2tckgx7150cyb7d:validation:attempt-2:revision-1
+                digest: sha256:5874f0846f98bb632dc176a5e3a4bbb486d883852b795951a6ce2d0450709b1a
+                room-ref: '@review/validation/briefing-2'
 ---
 
 Make the existing FO continue authorized work without a user reminder or /goal. Put the next-action rule at dispatch, completion, revision-routing and user-interruption boundaries.
