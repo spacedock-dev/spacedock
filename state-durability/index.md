@@ -1,6 +1,6 @@
 ---
 title: Make state transitions durable
-status: implementation
+status: validation
 source: Captain-approved combined durability work, 2026-09-15
 started: 2026-09-15T20:07:01Z
 completed:
