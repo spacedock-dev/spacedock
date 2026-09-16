@@ -205,3 +205,28 @@ Both `go test ./...` and `go test ./... -race` exit 1 solely at unchanged `TestC
 ### Summary
 
 Semantic public names now preserve task meaning while existing registered branches and worker handles retain their identities. Native Codex spawn/reuse, conservative collision behavior and literal historical-name compatibility are exercised, with the final candidate inside the amended scope. Required broad checks were executed and are not wholly green: the unchanged resolver baseline failure has a resolved FO-authorized DECLINE disposition.
+
+## Stage Report: validation
+
+- DONE: Assess every AC against exact committed naming candidate, retained raw native spawn/reuse evidence and legacy compatibility; reuse owned green checks.
+  Reviewed `1b3b70508` against scheduling base `4ce49f1ea`; independently confirmed 46 files, +615/-185 (+430 net), within the captain-amended 46/450 ceiling.
+- DONE: Perform an independent detached semantic audit of identity, collision, shortening and retry/recovery claims, reporting proposed findings before candidate changes.
+  Detached audit passed in 4.179s; artifacts under `validation-audit/` include runnable test source, output and failing prefix/ambiguous-owner mutation controls. Candidate bytes and HEAD stayed unchanged; no new material finding.
+- DONE: Report PASSED or REJECTED with per-AC evidence, exact scope and resolver baseline limitation; preserve pending stack policy dependency and no code push or CI.
+  Recommendation: PASSED for the naming candidate, subject to the recorded delivery dependencies; broad-suite baseline remains an explicit failure, not a green claim.
+- DONE: AC-1 — Fresh public names expose the task meaning with less irrelevant text.
+  Independent `TestValidationAuditExactPublic` executes ideation dispatch/stamp and checks exact 26-character worker, actual 17-character Git branch and assignment branch agreement; restoring the prefix fails.
+- DONE: AC-2 — Long and ambiguous names remain readable, bounded, and distinguishable.
+  Independent matrix covers short/long/single-character slugs, three stages, five suffixes, invalid/Unicode input, over-budget suffix and 1,000 entities; existing semantic tests cover literal legacy caps, sibling digests, collision seam and no-mutation stamp refusal. Accepting ambiguous ownership fails the negative control.
+- DONE: AC-3 — Legacy and new workers retain correct lifecycle ownership.
+  Reused owned advance/reconcile/ownership/stamp checks plus detached semantic cohort tests: registered legacy/custom paths survive; literal historical caps resolve; mixed-generation ties retain handles. Recovery smoke proves canonical output and instruction slots only, not live Claude execution; stale template/digest controls remain independently falsifiable.
+- DONE: AC-4 — A native Codex dispatch and reuse complete under the semantic namespace.
+  Raw native call IDs independently link one `ci_duration_hints_ideation` spawn to `/root/ci_duration_hints_ideation` and one followup to that same handle. Retained entity/log show two marker commits touching only the fixture entity; owned live run passed in 109.67s. Encrypted message bodies limit independent verbatim-prompt inspection.
+- DONE: Reuse required broad checks and formatting evidence without competing for the broad-suite slot.
+  Normal/race logs fail solely at unchanged `TestCodexResolveManifestAgainstInstalledHost`, line 44 (FO-authorized DECLINE); all other packages pass, no race diagnostic. Implementation ran gofmt; detached `git diff --check` passes.
+- SKIPPED: Code push and CI execution.
+  Explicit restriction. Targeted registry categorization still requires #792 policy during future restacking; scheduling remains the base PR. No normal-CI claim.
+
+### Summary
+
+PASSED: exact public names, conservative ownership, legacy compatibility and native same-handle reuse satisfy AC-1 through AC-4 on the committed candidate. Independent detached checks found no new material or deferred finding; the known resolver baseline failure and future policy-stack dependency remain explicit limitations. Native call identity is independently attributable, while encrypted prompt contents rely on the owned live proof rather than independent byte-level inspection.

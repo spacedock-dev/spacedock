@@ -1,0 +1,22 @@
+package dispatch
+import("testing"; "fmt"; "strings"; "os"; "path/filepath"; "encoding/json")
+func TestValidationAuditMatrix(t *testing.T){
+ for _, slug := range []string{"a","ci-duration-hints",strings.Repeat("abc-",40)+"end"}{for _, stage := range []string{"a","ideation","review-2"}{
+ name,err:=semanticName(slug,stage); if err!=nil || len(name)>56 {t.Fatal(name,err)}
+ for _, suffix:=range []string{"","-retry","-cycle2","-cycle10","-2"}{ d:=resolveWorker(name+suffix,[]string{stage},map[string]entityRecord{slug:{slug:slug}});if !d.ok||d.slug!=slug||d.stage!=stage {t.Fatal(name,suffix,d)}}
+ if resolveWorker(name+"-cycle100",[]string{stage},map[string]entityRecord{slug:{slug:slug}}).ok{t.Fatal("over budget owned")}
+ }}
+ for _, slug:=range []string{"", "café", "ends-", "two_words", "a\n"}{if _,err:=semanticName(slug,"done");err==nil{t.Fatal(slug)}}
+ entities:=map[string]entityRecord{};for i:=0;i<1000;i++{s:=fmt.Sprintf("task-%04d",i);entities[s]=entityRecord{slug:s}}
+ for _, target:=range []string{"task-0000","task-0999"}{d:=resolveWorker(target+"-done-cycle2",[]string{"ideation","review","done"},entities);if !d.ok||d.slug!=target{t.Fatal(d)}}
+}
+func TestValidationAuditExactPublic(t *testing.T){
+ root,wd,state,ep:=stampFixture(t,"ideation","ideation",false)
+ data,_:=os.ReadFile(filepath.Join(wd,"README.md"));writeFile(t,filepath.Join(wd,"README.md"),strings.ReplaceAll(string(data),"implementation","ideation"))
+ named:=filepath.Join(state,"ci-duration-hints.md");if err:=os.Rename(ep,named);err!=nil{t.Fatal(err)}
+ result:=runNative("- a",buildStampArgs(wd,named,"ideation","-")...);if result.exit!=0{t.Fatal(result.stderr)}
+ var out buildOutput;if err:=json.Unmarshal([]byte(result.stdout),&out);err!=nil{t.Fatal(err)}
+ if out.Name==nil || *out.Name!="ci-duration-hints-ideation"{t.Fatal(out.Name)}
+ wt:=filepath.Join(root,".worktrees/spacedock-ensign-ci-duration-hints");if b:=strings.TrimSpace(gitOutput(t,wt,"branch","--show-current"));b!="ci-duration-hints"{t.Fatal(b)}
+ body,_:=os.ReadFile(out.DispatchFile);if !strings.Contains(string(body),"Your git branch for CODE is ci-duration-hints."){t.Fatal(string(body))}
+}

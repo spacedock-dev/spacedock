@@ -1,0 +1,22 @@
+=== RUN   TestSemanticStampIdentity
+=== RUN   TestSemanticStampIdentity/false
+=== RUN   TestSemanticStampIdentity/true
+--- PASS: TestSemanticStampIdentity (1.32s)
+    --- PASS: TestSemanticStampIdentity/false (0.47s)
+    --- PASS: TestSemanticStampIdentity/true (0.85s)
+=== RUN   TestSemanticStampAmbiguityBeforeMutation
+--- PASS: TestSemanticStampAmbiguityBeforeMutation (0.51s)
+=== RUN   TestSemanticPublicNames
+--- PASS: TestSemanticPublicNames (0.97s)
+=== RUN   TestSemanticNames
+--- PASS: TestSemanticNames (0.00s)
+=== RUN   TestSemanticCohorts
+--- PASS: TestSemanticCohorts (0.00s)
+=== RUN   TestSemanticCandidateCollision
+--- PASS: TestSemanticCandidateCollision (0.00s)
+=== RUN   TestValidationAuditMatrix
+--- PASS: TestValidationAuditMatrix (0.01s)
+=== RUN   TestValidationAuditExactPublic
+--- PASS: TestValidationAuditExactPublic (1.01s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	4.179s

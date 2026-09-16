@@ -1,0 +1,17 @@
+prefix exit=1
+--- FAIL: TestSemanticNames (0.00s)
+    names_test.go:11: single-character slug: "spacedock-ensign-a-done" <nil>
+--- FAIL: TestValidationAuditMatrix (0.00s)
+    validation_audit_test.go:11: {   false}
+--- FAIL: TestValidationAuditExactPublic (0.69s)
+    validation_audit_test.go:19: 0x109ccfb3e1a0
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	1.037s
+FAIL
+
+ambiguous-owner exit=1
+--- FAIL: TestSemanticNames (0.00s)
+    names_test.go:30: ambiguous alpha-review-done
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	1.072s
+FAIL
