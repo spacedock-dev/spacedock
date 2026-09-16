@@ -443,9 +443,7 @@ All moved scenario grading statements compare identically after whitespace norma
 Verification completed: focused registry and live-tagged deterministic checks pass. Required normal/race suites each exit 1 solely for the known installed-host resolver baseline; all other packages pass. Logs and exact command timestamps are under artifacts/implementation-ci-registration. No code push, CI trigger or workflow-frontmatter/gate mutation occurred.
 
 
-## Stage Report: implementation (routine CI correction)
-
-### Results
+## Stage Report: implementation
 
 - DONE: Register every same-stage variant in routine supported-runtime CI and remove the targeted-only exception.
   Code commit `bf64ebeca949667c2d60e40a9c595ebdf62375b2` registers all six fixtures through `TestLiveCommonSameStageRevision`, one scheduler row, and the existing runtime adapters. Original assertions and unique falsifiers remain intact. The three explicit experiments are unchanged; #802 owns its separate promotions after restack.
