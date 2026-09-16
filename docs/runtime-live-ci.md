@@ -12,8 +12,8 @@ There is no scenario table or runtime runner registry.
 
 The helper selects only the Claude, Codex, or Pi transport from
 `SPACEDOCK_LIVE_RUNTIME`. The selected transport launches the current checkout;
-the exercise and durable grade are shared. Runtime-specific substrate proofs stay
-separate because they verify host boundaries rather than workflow semantics.
+the exercise and durable grade are shared. Claude's three substrate proofs retain
+their separate assertions and share the common journeys' three-slot queue.
 
 ### Registry reconciliation
 
@@ -62,26 +62,27 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the common journeys by selecting one transport. Claude and Codex run at most
-three common journeys at one time. Pi runs at most two. Codex setup artifacts are
-isolated under `codex-shared-scenarios/_setup/<journey-id>/`. The Claude and Pi
-commands keep `-failfast`, but Go can start queued parallel journeys after a
-failure. The suite timeouts remain loose runaway backstops:
+Claude and Codex run longer hinted tests first from a committed list, using
+three slots and continuing after a test failure. Claude includes its 17 common
+journeys and three substrate tests. Use the exact scheduled selector below;
+broad selectors such as `TestLive` also select the original tests and duplicate
+work. Exact original test names remain available for diagnosis.
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=claude go test -tags live -count=1 -timeout 90m -run '^TestLiveScheduled$' -parallel 3 ./internal/ensigncycle -v
 ```
 
-Run all three current Claude substrate proofs with one 20-minute backstop:
-
-```bash
-go test -tags live -count=1 -timeout 20m -run 'TestLiveMergedTeamModeDispatch|TestLiveBareReachable|TestLiveBreakGlassShimRecovery' ./internal/ensigncycle -v
-```
+Update the rounded hints in `internal/ensigncycle/scheduled_live_test.go` manually
+when sustained whole-test timings change useful ordering. Use the terminal
+`TestLiveScheduled/slot-N/<exported-name>` event without adding nested variants.
+Hints are priorities, not timeout budgets. Claude keeps all test events in
+`live-e2e-detail.jsonl` under one 90-minute suite backstop; streams, metrics and
+config projects remain archived. Scheduling reads no remote history.
 
 For Codex, install and authenticate the CLI (or set `OPENAI_API_KEY`), then run:
 
 ```bash
-SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle -v
+SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^TestLiveScheduled$' -parallel 3 ./internal/ensigncycle -v
 ```
 
 Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI_API_KEY` is set, the harness copies `~/.codex/auth.json` into an isolated `CODEX_HOME`; if the variable is already set, run `unset SPACEDOCK_CODEX_LIVE_REQUIRED` first.

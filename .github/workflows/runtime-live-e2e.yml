@@ -285,19 +285,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle/
-
-      # Current Claude substrate proofs. Each exact test name owns one claim:
-      # merged named-Agent dispatch, explicit bare dispatch, or break-glass recovery
-      # after a real helper failure. They share one command and one detail artifact.
-      # The 20-minute timeout is the approved total backstop for each matrix leg.
-      - name: Run live Claude substrate proofs
-        if: ${{ !cancelled() }}
-        env:
-          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
-        run: |
-          set -o pipefail
-          gotestsum --jsonfile claude-substrate-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 20m -run 'TestLiveMergedTeamModeDispatch|TestLiveBareReachable|TestLiveBreakGlassShimRecovery' ./internal/ensigncycle/
+          SPACEDOCK_LIVE_RUNTIME=claude gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 90m -run '^TestLiveScheduled$' -parallel 3 ./internal/ensigncycle/
 
       - name: Upload live artifacts
         if: always()
@@ -307,7 +295,6 @@ jobs:
           path: |
             ${{ runner.temp }}/spacedock-live-bin/spacedock
             ./live-e2e-detail.jsonl
-            ./claude-substrate-detail.jsonl
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/*/projects
             live-artifacts/claude/**
@@ -566,7 +553,7 @@ jobs:
       - name: Run live Codex shared scenarios
         run: |
           set -o pipefail
-          SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveCommon' -parallel 3 ./internal/ensigncycle
+          SPACEDOCK_LIVE_RUNTIME=codex gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run '^TestLiveScheduled$' -parallel 3 ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()

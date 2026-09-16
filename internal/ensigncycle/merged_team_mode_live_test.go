@@ -69,6 +69,8 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	env := isolatedClaudeEnv(t, os.Getenv("HOME"))
 	env = withBinaryOnPath(env, binary)
 	configDir, _ := envValue(env, "CLAUDE_CONFIG_DIR")
+	configDir = filepath.Join(configDir, "merged-team-mode")
+	env = withClaudeConfigDir(env, configDir)
 	homeDir, _ := envValue(env, "HOME")
 	effectiveConfigDir := configDir
 	if effectiveConfigDir == "" {

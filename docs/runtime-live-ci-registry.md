@@ -89,6 +89,13 @@ experiments**. Record why a negative result is useful data rather than a release
 failure. Otherwise promote it to a registered journey or runtime proof, move its
 deterministic coverage to the default suite, or delete it.
 
+## Suite orchestration
+
+### `TestLiveScheduled`
+
+Claude/Codex scheduling wrapper for the existing registered test functions;
+adds no journey or substrate assertion.
+
 ## Common journeys
 
 ### `full-ensign-cycle`
