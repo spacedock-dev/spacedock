@@ -1,0 +1,30 @@
+[
+  {
+    "Time": "2026-09-16T20:57:36.394863508Z",
+    "Action": "fail",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-1/TestLiveCommonRejectionFlow",
+    "Elapsed": 394.13
+  },
+  {
+    "Time": "2026-09-16T20:58:34.630065386Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveCommonAutoContinueAfterImplementation",
+    "Elapsed": 452.36
+  },
+  {
+    "Time": "2026-09-16T21:08:36.652456819Z",
+    "Action": "fail",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-1/TestLiveCommonSmallestSufficientMechanism",
+    "Elapsed": 116.86
+  },
+  {
+    "Time": "2026-09-16T21:12:30.233189672Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-1/TestLiveCommonDefaultHeadlessGateStop",
+    "Elapsed": 233.58
+  }
+]

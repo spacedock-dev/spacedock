@@ -1,0 +1,28 @@
+[
+  {
+    "path": "/tmp/spacedock-tip-ci/35148797301/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/rejection-flow/claude-stream.jsonl",
+    "sha256": "263cb62e1f9ae153b60b253ab4ac09b7a84985fda6baad0bb3379f02d125288b",
+    "selected": [
+      269,
+      270,
+      357,
+      358
+    ]
+  },
+  {
+    "path": "/tmp/spacedock-tip-ci/35148797301/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/smallest-sufficient-mechanism/direct/claude-stream.jsonl",
+    "sha256": "d675f057c0012369639951e650591962974a610ede24bd0751def12282b8c750",
+    "selected": [
+      41,
+      109
+    ]
+  },
+  {
+    "path": "/tmp/spacedock-tip-ci/35148797301/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/rejection-flow/state.bundle",
+    "sha256": "a63ee7632691d5f8c24b62b4d90a95a0ee04ad108aea5a9ad06843dc3b437cb4"
+  },
+  {
+    "path": "/tmp/spacedock-tip-ci/35148797301/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/rejection-flow/rejection-topology.tsv",
+    "sha256": "8c1bacb26434339006f8d6fa89e31dba0eaebd383ceb86ab5f054bf61b2e688e"
+  }
+]
