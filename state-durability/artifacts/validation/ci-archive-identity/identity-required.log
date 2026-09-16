@@ -1,0 +1,7 @@
+=== RUN   TestLauncherListSetArchive
+    launcher_smoke_test.go:178: --archive exit 1:
+        Error: retirement: failed to commit archive move for pilot-entity: exit status 128
+--- FAIL: TestLauncherListSetArchive (0.95s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/skills/integration	1.156s
+FAIL

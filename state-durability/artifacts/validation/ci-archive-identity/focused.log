@@ -1,0 +1,4 @@
+=== RUN   TestLauncherListSetArchive
+--- PASS: TestLauncherListSetArchive (1.16s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/skills/integration	1.485s
