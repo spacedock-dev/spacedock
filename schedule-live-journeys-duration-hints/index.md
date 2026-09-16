@@ -253,3 +253,35 @@ The captain's “that can be in ci” moves real overlap verification to the sin
 ### Summary
 
 Ready for independent local validation of the committed minimal candidate and its deterministic evidence. Captain-authorized CI deferral replaces the former local overlap blocker without closing AC-2: final delivery still requires the real overlap/isolation proof at the full stack tip, and neither auth skips nor the local resolver failures are called green.
+
+
+## Stage Report: validation
+
+- DONE: Assess the minimal scheduling candidate and completed deterministic evidence against AC-1 and AC-3 and the captain-amended CI proof boundary for AC-2.
+  Local PASSED for candidate `4ce49f1ea34502380d892c1f96ea5c8f3f22e07e` on parent `438053493`; AC-1/AC-3 supported, AC-2 actual-host proof explicitly remains open until stack-tip CI.
+- DONE: Perform the required detached adversarial audit of ordering, shared three-slot queue, isolation wiring and evidence preservation without repeating owned green suites or launching live hosts.
+  Detached checkout `/tmp/schedule-validation-detached-4ce49f1`; seven minimal mutants failed existing owners, restored checkout has no diff, and live-tag compilation with `-run '^$'` passed without executing hosts.
+- DONE: Report local PASSED or REJECTED with explicit unresolved CI overlap proof, exact eight-file/150-net scope, and the known resolver failure limitation.
+  Exact scope is 8 files, +178/-32 = +146 net, within the +150-net/8-file ceiling; no candidate edits, new standing tests, broad reruns, live launch, PR or CI action.
+
+### Acceptance evidence and adversarial pass
+
+- AC-1 — Longer hinted tests are admitted first from a committed per-runtime list: reused green `TestLiveScheduleOrder`; detached reversal of hint comparison failed with `[short a z long]`, and reversal of lexical ties failed with `[long z a short]`, both against independent `[long a z short]`.
+- Independently compared all 17 literal common-runtime hint pairs with the entity's measurement table: exact match; Claude-only 110/270/140 hints match the three listed substrate measurements. Sorting is local O(n log n) on at most 20 entries; no external read, automatic update, unbounded allocation or new blocking I/O.
+- AC-2 — Claude common and substrate tests use one three-slot queue with isolated host state: source trace confirms one sorted list, mutex-protected exactly-once index admission, three parallel workers and synchronous child `t.Run`; queued jobs continue after ordinary child failure. Reused committed spike `72718be3f` documents peak 3, eight completions, race success and all eight completions after injected Fatal; no duplicate queue suite.
+- Queue variant matrix reviewed: empty/exhausted queue returns unlocked; equal hints use lexical ties; Claude selects 20 and Codex 17; other runtimes skip wrapper; `-parallel 1` reduces active workers; child failure returns to next job; timeout/cancellation may leave work unrun. Common nested parallelism is suppressed only under scheduled ancestry; both break-glass variants remain synchronous and retain cleanup before releasing their slot. CPU host-start order need not equal mutex admission order.
+- Isolation wiring traced from fresh HOME and workflow temp roots to scenario config children, launch env and session-based project readers: merged now uses `merged-team-mode`; bare/common and both break-glass variants retain distinct scenario children. The same merged config child reaches launch and reconciliation. This is wiring review, not actual Claude isolation proof.
+- AC-2 outstanding: existing full 20-function Claude `TestLiveScheduled` at the complete stack tip must show actual common/substrate host interval overlap, no more than three occupied tests, distinct config/workflow/session paths, original durable assertions including both sequential break-glass variants, and retained artifacts. Auth skips and shell-marker fixtures cannot close it; no local credential action is needed under the captain amendment.
+- AC-3 — The canonical scheduled invocation preserves all existing tests, assertions and evidence: retained green registry proof reconciles 17 common and three Claude callable identities; detached omission, duplication and name/callable mismatch each failed `TestRuntimeLiveRegistryReconciliation` at the exact defective row.
+- Detached unanchored Claude selector failed `TestRuntimeLiveCommonSuiteTimeouts`; inserting `-failfast` failed `TestRuntimeLiveCommonFailFastPolicy`. Canonical anchored invocation runs originals through the wrapper once; broad selectors remain explicitly unsupported for exactly-once scheduling. Original exported bodies, assertions and Pi invocation are unchanged.
+- Evidence trace: both runtime commands retain one gotestsum execution and original detail filenames; Claude substrate events move into `live-e2e-detail.jsonl`; `always()` uploads retain binary provenance, child config/projects, streams and metrics. Reused green `TestLiveCIStep*` controls exercise actual clean summary, failing exit and JSON retention; removing JSON output or swallowing the process exit violates those owners. Existing named-evidence control establishes step ownership only, not real host coverage.
+- Audit command pattern: `go test ./internal/ensigncycle -run '^TestLiveScheduleOrder$' -count=1` for the two comparison mutants; `go test ./internal/contractlint -run '^TestRuntimeLiveRegistryReconciliation$' -count=1` for row mutants; analogous exact timeout/failfast owners for the two workflow mutants. Each mutant exited 1 with its expected assertion; `/tmp/schedule-validation-<mutation>.log` retains output. Detached `go test -tags live ./internal/ensigncycle -run '^$' -count=1` exited 0.
+- Required implementation normal/race logs were inspected and reused: both exit 1 solely at `TestCodexResolveManifestAgainstInstalledHost` (stable marketplace manifest absent; installed local manifest selected), with no race report. Formatting and diff checks were already completed; this validation does not call those broad suites green or repeat them.
+
+### Findings and limitations
+
+No new material outcome/evidence defect, deferred risk or polish finding is proposed; the detached audit refuted nothing material. The already FO-declined resolver baseline remains outside this scheduling change. Actual-host AC-2 proof is an explicit captain-authorized pending delivery condition, not a waived criterion or a local validation rejection.
+
+### Summary
+
+Local PASSED: the minimal candidate and its existing deterministic evidence satisfy AC-1 and AC-3, and independent detached mutation checks rejected the targeted regressions. Candidate bytes and HEAD remain unchanged; final delivery remains conditional on full stack-tip CI satisfying AC-2, with the known resolver failure recorded separately.
