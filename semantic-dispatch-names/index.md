@@ -195,11 +195,13 @@ The targeted review gap is covered without adding naming configuration, a ledger
   `/tmp/semantic-native-evidence-v2/codex-shared-scenarios/semantic-names-codex/` retains native lifecycle, entity and state log; offline replay rejects altered prefix/handle with markers retained. Final live-tag compilation passes; replay does not claim another live run. Skill checks prove canonical envelope/slot compatibility, not live Claude compliance.
 - DONE: Run detached adversarial checks and formatting.
   Detached edits restoring the prefix, accepting ambiguous ownership, reconstructing a branch, restoring the recovery template, or changing the legacy cap each fail intended assertions; `/tmp/semantic-detached-audit.log`, `/tmp/semantic-legacy-cap-audit.log`, `/tmp/semantic-native-negative-controls.log`. `gofmt -w ./cmd ./internal` ran; unrelated baseline formatting was kept outside this diff.
-- FAILED: Full normal and race suite results.
-  Both `go test ./...` and `go test ./... -race` exit 1 solely at unchanged `TestCodexResolveManifestAgainstInstalledHost`, `internal/cli/codex_resolve_test.go:44`: resolver returns `/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json` although `spacedock@spacedock` is not installed. FO declined this baseline fix outside scope; every other package passes and race emits no data-race diagnostic. Logs: `/tmp/semantic-full-normal.log`, `/tmp/semantic-full-race.log`.
 - SKIPPED: Code push and CI execution.
   Explicit FO restriction; both code commits remain local. The targeted proof registry entry uses the category authorized by #792 and must be combined with that policy during restacking.
 
+### Executed-checks limitation (resolved disposition)
+
+Both `go test ./...` and `go test ./... -race` exit 1 solely at unchanged `TestCodexResolveManifestAgainstInstalledHost`, `internal/cli/codex_resolve_test.go:44`: resolver returns `/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json` although `spacedock@spacedock` is not installed. Disposition: FO-authorized DECLINE, resolved; repair of this unchanged baseline is outside this task. The suites are not wholly green. Every other package passes and race emits no data-race diagnostic. This disposition does not waive any new regression. Logs: `/tmp/semantic-full-normal.log`, `/tmp/semantic-full-race.log`.
+
 ### Summary
 
-Semantic public names now preserve task meaning while existing registered branches and worker handles retain their identities. Native Codex spawn/reuse, conservative collision behavior and literal historical-name compatibility are exercised, with the final candidate inside the amended scope. Required broad checks were executed and retain one explicitly declined resolver baseline failure; no full-suite-green claim is made.
+Semantic public names now preserve task meaning while existing registered branches and worker handles retain their identities. Native Codex spawn/reuse, conservative collision behavior and literal historical-name compatibility are exercised, with the final candidate inside the amended scope. Required broad checks were executed and are not wholly green: the unchanged resolver baseline failure has a resolved FO-authorized DECLINE disposition.
