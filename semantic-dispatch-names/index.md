@@ -254,8 +254,11 @@ PASSED: exact public names, conservative ownership, legacy compatibility and nat
 ## Stage Report: implementation
 
 - DONE: Reconcile naming branch onto the same-stage CI promotion while preserving lower coverage and the strict checker.
+  Tested head `844fad458` descends from `bf64ebeca`; FO clean-restacked it onto `342edfa89` as current head `7535aad706`. Artifact `8d7d0cc5e` records the preserved six-variant coverage and explicit experiments.
 - DONE: Promote native naming into the Codex lane, move deterministic identity proof offline, and fix exact branch membership with rejecting negative controls.
+  Artifact `8d7d0cc5e` records default-suite discovery/execution, missing Codex scheduling-row rejection, actual handoff-grader red-to-green replay, and wrong/missing/extra branch negatives; actual scope is 55 files and +463 net lines.
 - DONE: Run applicable local checks and record exact candidate, scope and evidence, leaving native verification to final-tip CI.
+  On `844fad458`, focused checks and live-tag compilation passed; normal/race each exited 1 solely at the verified resolver baseline, with no data-race diagnostic. Artifact `8d7d0cc5e` retains logs; rebased-head full checks and final-tip CI are not claimed.
 
 ### Summary
 
