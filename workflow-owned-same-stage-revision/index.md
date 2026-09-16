@@ -383,3 +383,26 @@ Captain resolution:binding-1789517330520748000 (artifact sha256:32821e2071d9c315
 ### Summary
 
 V1 is repaired at the existing retention seam without a controller or workflow-semantic change. All approved replacement drives now preserve source-level native attribution and matching state; the committed correction and completed producer round are ready for independent validation, with original failed evidence retained unchanged. No code push, CI, restacking, gate approval or frontmatter mutation occurred.
+
+### V1 independent correction recheck — 2026-09-16
+
+V1 is **satisfied** by candidate `d46f74245c1c18c8a376e9a6d2a508c774e32759` after captain amendment `resolution:binding-1789517330520748000` and distinct FO FIX. The existing observer now retains correlated source bytes before cleanup, fails on write failure, and all eight approved replacement drives retain replayable native attribution and matching state. [Independent detached audit](artifacts/validation-cycle-1/audit.md) reproduces every topology row and rejects deleted completion events; no new finding, candidate mutation or second round publication occurred.
+
+## Stage Report: validation (cycle 1)
+
+- DONE: Independently assess all three acceptance criteria against committed candidate and retained causal/native control evidence; do not duplicate owned green runs.
+  **AC-1 PASSED:** baseline/after raw native completion replays against corresponding bundles; exact committed frozen-input correction moves from one rejected attempt to one fresh open attempt without reviewer/round, resolution, application or successor. Gate-selected Git revision/digest resolves the corrected plan.
+  **AC-2 PASSED:** both required-review controls hold with missing evidence; distinct correction/reviewer owners replay where review runs. Required-round publishes four canonical entries without projection; missing-round and cycle-3 hold. Conventional eight-event re-review and four-entry round regrade pass; prior Roborev five-entry/status controls remain valid.
+  **AC-3 PASSED:** same launcher/fixture causal pair differs in skill bytes and observed re-gating outcome; retained CLI stale-authority/incomplete-round checks remain valid. Final approved +252/five-file surface adds evidence retention to generic routing applicability, without new flags/state schema/recorder policy/synthetic reviewer.
+- DONE: Perform the required detached adversarial audit of skill authority and gate-selected artifact/reviewer/round controls, preserving exact findings and scope.
+  [Detached replay](artifacts/validation-cycle-1/detached-replay.log) passes eight raw/public parent-ID correlations and exact TSV route replay, seven selected-state regrades, conventional round/gate checks, source-selection and worker-order negatives. Deleting native completion records invalidates all eight traces; stale/wrong selected bytes fail.
+  Prior authority/canonical-round audit is reused; retained focused proof exercises write failure and exact byte replay after deleting source home. V1 is closed by evidence, with no new material/deferred-risk/polish finding.
+- DONE: Report PASSED or REJECTED with per-AC evidence and resolver baseline limitation; do not approve gates or push code/CI.
+  **PASSED.** Independent native provenance now meets the previously unmet requirement. Final prior normal/race each exit1 only for the FO-declined installed-host resolver baseline; neither is described as wholly green. No new full/native runs, candidate edits, gate approval or code/CI push.
+  Timing retained truthfully: eight unique drives/no retries, 30m42.17s summed cases versus 75m56.96s wall; 2541.502s wall/package discrepancy in round-missing remains unexplained. Local targeted proof establishes no all-runtime/CI parity.
+- SKIPPED: Publish another correction round or repeat owned green suites.
+  FO already recorded validation/1 with exactly ten entries; reviewer recheck does not republish it. Only local detached artifact replay ran.
+
+### Summary
+
+All three acceptance criteria now have replayable behavioral evidence, and V1 is satisfied within the captain-approved surface. Validation recommends PASSED with the existing resolver baseline and unexplained timing discrepancy explicitly preserved; candidate and gate authority remain unchanged.

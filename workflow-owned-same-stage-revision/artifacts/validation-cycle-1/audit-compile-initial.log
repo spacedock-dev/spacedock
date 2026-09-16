@@ -1,0 +1,6 @@
+# github.com/spacedock-dev/spacedock/internal/ensigncycle [github.com/spacedock-dev/spacedock/internal/ensigncycle.test]
+internal/ensigncycle/detached_native_replay_test.go:44:4: undefined: writeRejectionTopologyDigest
+internal/ensigncycle/detached_native_replay_test.go:44:41: undefined: codexRejectionBranch
+internal/ensigncycle/detached_native_replay_test.go:49:45: undefined: codexRejectionBranch
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle [build failed]
+FAIL

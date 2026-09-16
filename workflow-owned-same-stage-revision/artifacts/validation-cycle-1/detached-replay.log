@@ -1,0 +1,102 @@
+=== RUN   TestDetachedEightNativeReplays
+=== RUN   TestDetachedEightNativeReplays/before
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplaysbefore3751032705/001/rejection-topology.tsv:
+        branch	reuse
+        0	104	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	142	done	validation	spacedock_ensign_recorded_gate_task_validation
+    detached_native_replay_test.go:91: thread=01a0a790-0087-7cb2-a4d1-ef6fbbb4fb79 exact routes=2 native source replay PASS
+=== RUN   TestDetachedEightNativeReplays/after
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplaysafter1373037751/001/rejection-topology.tsv:
+        branch	reuse
+        0	126	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	162	done	validation	spacedock_ensign_recorded_gate_task_validation
+    detached_native_replay_test.go:91: thread=01a0a792-cd6c-7692-ba96-e07a4f59acaf exact routes=2 native source replay PASS
+=== RUN   TestDetachedEightNativeReplays/review-required
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplaysreview-required3274412116/001/rejection-topology.tsv:
+        branch	reuse
+        0	122	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	160	done	validation	spacedock_ensign_recorded_gate_task_validation
+    detached_native_replay_test.go:91: thread=01a0a796-5d1c-7490-9c63-7d4bf1edc6b4 exact routes=2 native source replay PASS
+=== RUN   TestDetachedEightNativeReplays/separate-review-required
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplaysseparate-review-required4056212174/001/rejection-topology.tsv:
+        branch	reuse
+        0	123	spawn	implementation	spacedock_ensign_recorded_gate_task_implementation
+        1	147	done	implementation	spacedock_ensign_recorded_gate_task_implementation
+        2	168	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        3	185	done	validation	spacedock_ensign_recorded_gate_task_validation
+    detached_native_replay_test.go:91: thread=01a0a798-82df-7312-9ea8-ca9c9094d2c5 exact routes=4 native source replay PASS
+=== RUN   TestDetachedEightNativeReplays/round-required
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplaysround-required485802624/001/rejection-topology.tsv:
+        branch	reuse
+        0	166	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	207	done	validation	spacedock_ensign_recorded_gate_task_validation
+    detached_native_replay_test.go:91: thread=01a0a79c-b954-7920-abd8-415122102c38 exact routes=2 native source replay PASS
+=== RUN   TestDetachedEightNativeReplays/round-missing
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplaysround-missing485481381/001/rejection-topology.tsv:
+        branch	reuse
+        0	123	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	159	done	validation	spacedock_ensign_recorded_gate_task_validation
+    detached_native_replay_test.go:91: thread=01a0a7a0-3264-7071-9505-662411667705 exact routes=2 native source replay PASS
+=== RUN   TestDetachedEightNativeReplays/cycle-limit
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplayscycle-limit4017753642/001/rejection-topology.tsv:
+        branch	reuse
+        0	112	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	124	done	validation	spacedock_ensign_recorded_gate_task_validation
+    detached_native_replay_test.go:91: thread=01a0a7ce-9781-79a2-985c-b6cdccdd9eeb exact routes=2 native source replay PASS
+=== RUN   TestDetachedEightNativeReplays/conventional
+    detached_native_replay_test.go:44: rejection topology digest /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestDetachedEightNativeReplaysconventional227347504/001/rejection-topology.tsv:
+        branch	reuse
+        0	168	spawn	implementation	spacedock_ensign_rejection_task_implementation
+        1	189	done	implementation	spacedock_ensign_rejection_task_implementation
+        2	200	spawn	validation	spacedock_ensign_rejection_task_validation
+        3	214	done	validation	spacedock_ensign_rejection_task_validation
+        4	239	reuse	implementation	spacedock_ensign_rejection_task_implementation
+        5	251	done	implementation	spacedock_ensign_rejection_task_implementation
+        6	267	reuse	validation	spacedock_ensign_rejection_task_validation
+        7	281	done	validation	spacedock_ensign_rejection_task_validation
+    detached_native_replay_test.go:91: thread=01a0a7d0-e7d5-7bf2-a205-e17eea028c1f exact routes=8 native source replay PASS
+--- PASS: TestDetachedEightNativeReplays (0.16s)
+    --- PASS: TestDetachedEightNativeReplays/before (0.02s)
+    --- PASS: TestDetachedEightNativeReplays/after (0.02s)
+    --- PASS: TestDetachedEightNativeReplays/review-required (0.02s)
+    --- PASS: TestDetachedEightNativeReplays/separate-review-required (0.02s)
+    --- PASS: TestDetachedEightNativeReplays/round-required (0.02s)
+    --- PASS: TestDetachedEightNativeReplays/round-missing (0.02s)
+    --- PASS: TestDetachedEightNativeReplays/cycle-limit (0.02s)
+    --- PASS: TestDetachedEightNativeReplays/conventional (0.03s)
+=== RUN   TestDetachedSameStageRetainedState
+=== RUN   TestDetachedSameStageRetainedState/before
+=== RUN   TestDetachedSameStageRetainedState/after
+=== RUN   TestDetachedSameStageRetainedState/review-required
+=== RUN   TestDetachedSameStageRetainedState/separate-review-required
+=== RUN   TestDetachedSameStageRetainedState/cycle-limit
+=== RUN   TestDetachedSameStageRetainedState/round-missing
+=== RUN   TestDetachedSameStageRetainedState/round-required
+--- PASS: TestDetachedSameStageRetainedState (0.12s)
+    --- PASS: TestDetachedSameStageRetainedState/before (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/after (0.05s)
+    --- PASS: TestDetachedSameStageRetainedState/review-required (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/separate-review-required (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/cycle-limit (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/round-missing (0.00s)
+    --- PASS: TestDetachedSameStageRetainedState/round-required (0.06s)
+=== RUN   TestDetachedSameStageSelectionBoundaries
+=== RUN   TestDetachedSameStageSelectionBoundaries/canonical-artifact
+=== RUN   TestDetachedSameStageSelectionBoundaries/canonical-reference
+=== RUN   TestDetachedSameStageSelectionBoundaries/wrong-type
+=== RUN   TestDetachedSameStageSelectionBoundaries/wrong-revision
+=== RUN   TestDetachedSameStageSelectionBoundaries/wrong-identity
+=== RUN   TestDetachedSameStageSelectionBoundaries/unicode-identity
+=== RUN   TestDetachedSameStageSelectionBoundaries/empty
+--- PASS: TestDetachedSameStageSelectionBoundaries (0.39s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/canonical-artifact (0.05s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/canonical-reference (0.05s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/wrong-type (0.00s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/wrong-revision (0.05s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/wrong-identity (0.00s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/unicode-identity (0.00s)
+    --- PASS: TestDetachedSameStageSelectionBoundaries/empty (0.00s)
+=== RUN   TestDetachedSameStageWorkerEventOrder
+--- PASS: TestDetachedSameStageWorkerEventOrder (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	1.124s
