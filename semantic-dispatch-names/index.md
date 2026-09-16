@@ -249,3 +249,20 @@ Semantic public names now preserve task meaning while existing registered branch
 ### Summary
 
 PASSED: exact public names, conservative ownership, legacy compatibility and native same-handle reuse satisfy AC-1 through AC-4 on the committed candidate. Independent detached checks found no new material or deferred finding; the known resolver baseline failure and future policy-stack dependency remain explicit limitations. Native call identity is independently attributable, while encrypted prompt contents rely on the owned live proof rather than independent byte-level inspection.
+
+
+## Stage Report: implementation
+
+- DONE: Reconcile naming branch onto the same-stage CI promotion while preserving lower coverage and the strict checker.
+- DONE: Promote native naming into the Codex lane, move deterministic identity proof offline, and fix exact branch membership with rejecting negative controls.
+- DONE: Run applicable local checks and record exact candidate, scope and evidence, leaving native verification to final-tip CI.
+
+### Summary
+
+The tested implementation is `844fad458` on parent `bf64ebeca`. FO subsequently clean-restacked it onto coverage-checker repair `342edfa89`; the current candidate is `7535aad706e1d0ae88cad8bd45f5ebf4eadf96b8`. No new full-suite result is claimed for that rebased head. Actual naming scope is 55 files, +817/-354 (+463 net), reflecting the captain's amended coverage requirement and authorized branch-inventory correction.
+
+The existing Codex scheduled lane now selects the native semantic-name/same-handle proof. The stamped-owner identity check runs in the default offline suite using a freshly built checkout binary. The earlier targeted-only exemption is superseded by the captain's coverage correction; the three explicit experiments remain unchanged. Legacy identity claims retain their offline proof, and earlier raw native evidence is preserved.
+
+The actual handoff grader rejected `["conflict-owner" "main"]` before correction and passed the deterministic full-fixture replay afterward. Exact membership retains the two-branch limit and rejects wrong, missing and extra branches. Default test discovery/execution, legacy and collision controls, live-tag compilation, and registry checks pass on the tested head. Removing the Codex scheduling row makes its checker fail. Detailed evidence is committed in `8d7d0cc5e`, [routine-coverage-and-branch-inventory.md](validation-audit/routine-coverage-and-branch-inventory.md).
+
+On `844fad458`, both `go test ./...` and `go test ./... -race` exited 1 solely at `TestCodexResolveManifestAgainstInstalledHost`, `internal/cli/codex_resolve_test.go:44`: `spacedock@spacedock` is not installed, but the resolver returned `/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json`. All other packages passed; no data-race diagnostic appeared. Logs: `/tmp/semantic-promotion-full-normal.log` and `/tmp/semantic-promotion-full-race.log`. Required checks were executed and are not wholly green. The existing FO-authorized baseline DECLINE is resolved and does not waive new failures. Independent validation and final-tip CI remain pending; no local model run or new CI result is claimed.
