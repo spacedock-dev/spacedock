@@ -76,6 +76,17 @@ gates:
                 id: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-2:revision-1
                 digest: sha256:fe9a4b043e5dcff6c02c64cc4758d2acdbf88d16837f72e2621b1fb22996e232
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zz1yqc2w2katp28wpa8nghx2:validation:2
+                briefing: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-16T20:44:34.918799Z"
+                decision: approve
+                reason: Captain binding resolution binding-1789591360273000000 approves all three named corrected validation snapshots in /tmp/stack-corrections-review.md for stack publication and final-tip CI. Restack preserves all patches and tree. No merge authority or live failure waiver.
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
     stage: validation
