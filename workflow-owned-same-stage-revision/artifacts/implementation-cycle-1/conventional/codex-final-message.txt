@@ -1,0 +1,11 @@
+Rejection Task — validation gate. **Recommend approval** based on the corrected marker.
+
+- First validation: **REJECTED** — marker absent.
+- Second validation: **PASSED** — marker present; review log preserved.
+- Two separate workers handled implementation and review, both reused for cycle 2.
+
+Snapshot: `briefing:rejection-task:validation:attempt-1:revision-1`, digest `07c890994cbc`.
+
+The fresh gate is committed and **open**, awaiting the captain’s decision. Approval would authorize completion; no decision was recorded and the task remains in validation.
+
+The fixture has no Acceptance criteria section, so its AC scan could not run.

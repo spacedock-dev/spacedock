@@ -1,0 +1,10 @@
+=== RUN   TestLiveSameStageRevision
+=== RUN   TestLiveSameStageRevision/round-required
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-retained-round-required-v1/codex-shared-scenarios/self-feedback/round-required/rejection-topology.tsv:
+        branch	reuse
+        0	166	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	207	done	validation	spacedock_ensign_recorded_gate_task_validation
+--- PASS: TestLiveSameStageRevision (214.97s)
+    --- PASS: TestLiveSameStageRevision/round-required (214.97s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	215.286s

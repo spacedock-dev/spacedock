@@ -1,0 +1,10 @@
+=== RUN   TestLiveSameStageRevision
+=== RUN   TestLiveSameStageRevision/cycle-limit
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-retained-cycle-limit-v1/codex-shared-scenarios/self-feedback/cycle-limit/rejection-topology.tsv:
+        branch	reuse
+        0	112	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	124	done	validation	spacedock_ensign_recorded_gate_task_validation
+--- PASS: TestLiveSameStageRevision (169.07s)
+    --- PASS: TestLiveSameStageRevision/cycle-limit (169.07s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	169.845s

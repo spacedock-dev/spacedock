@@ -1,0 +1,6 @@
+started: 2026-09-16T00:27:40.676406Z
+exit_code: -1
+terminal: true
+timed_out: false
+duration: 3m32.568238333s
+last_event: {"type":"turn.completed","usage":{"input_tokens":1223377,"cached_input_tokens":1171584,"cache_write_input_tokens":0,"output_tokens":2917,"reasoning_output_tokens":147}}

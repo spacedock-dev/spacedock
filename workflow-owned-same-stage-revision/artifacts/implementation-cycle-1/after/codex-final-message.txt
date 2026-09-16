@@ -1,0 +1,7 @@
+Gate review: **recorded-gate-task — validation**
+
+Recommend **approve**. The committed plan now keeps A and deletes B. The worker verified byte equality with frozen input, satisfying AC-1; both checklist items are DONE.
+
+Reviewed snapshot: attempt 2, revision 1 (`3c88d23b2b35`).
+
+Decision pending: approve to enter handoff, or revise for further correction. The new gate remains **open and unconsumed**. Stopped at this boundary.

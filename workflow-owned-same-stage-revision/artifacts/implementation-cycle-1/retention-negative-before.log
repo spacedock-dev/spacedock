@@ -1,0 +1,5 @@
+--- FAIL: TestCodexNativeLifecycleUsesCorrelatedSessionHandle (0.00s)
+    claude_runtime_helpers_test.go:347: failed lifecycle retention passed
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.375s
+FAIL

@@ -1,0 +1,5 @@
+Corrected and committed `selected/plan.md`; exact comparison with `frozen-input.txt` passed.
+
+Stopped at an unmet prerequisite: recording `validation/1` failed because `inputs/briefing.review.jsonl` is missing. The workflow forbids the correction worker and first officer from authoring it.
+
+No new gate was prepared, resolved, or consumed.

@@ -1,0 +1,7 @@
+Gate review: **recorded-gate-task — validation**
+
+Recommend **approve**. The committed plan now says `KEEP message A; DELETE message B` and exactly matches the frozen input. Both checklist items passed; AC-1 is evidenced. Canonical round `validation/1` recorded all four entries.
+
+Reviewed snapshot: `briefing:recorded-gate-task:validation:attempt-2:revision-1`, digest `4b200604f5fa`.
+
+Decision: approve to enter handoff, or revise for further correction. The new gate remains **open and unconsumed**, as requested.

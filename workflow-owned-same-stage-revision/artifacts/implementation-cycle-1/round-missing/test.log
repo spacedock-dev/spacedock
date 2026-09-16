@@ -1,0 +1,10 @@
+=== RUN   TestLiveSameStageRevision
+=== RUN   TestLiveSameStageRevision/round-missing
+    shared_live_runner_test.go:213: rejection topology digest /tmp/same-stage-retained-round-missing-v1/codex-shared-scenarios/self-feedback/round-missing/rejection-topology.tsv:
+        branch	reuse
+        0	123	spawn	validation	spacedock_ensign_recorded_gate_task_validation
+        1	159	done	validation	spacedock_ensign_recorded_gate_task_validation
+--- PASS: TestLiveSameStageRevision (489.71s)
+    --- PASS: TestLiveSameStageRevision/round-missing (489.71s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	490.232s

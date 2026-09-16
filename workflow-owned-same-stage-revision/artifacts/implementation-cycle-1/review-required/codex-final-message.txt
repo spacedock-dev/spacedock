@@ -1,0 +1,3 @@
+Corrected and committed `selected/plan.md`; it exactly matches the frozen input.
+
+Stopped at the unmet review prerequisite: `selected/reviewer-source.txt` is missing. No new gate was prepared, resolved, or consumed. Your love was passed along to the worker.

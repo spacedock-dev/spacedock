@@ -1,0 +1,21 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zz1yqc2w2katp28wpa8nghx2:implementation:round-1",
+  "question": "Does the authorized V1 retention correction provide replayable native worker attribution without changing workflow outcomes?",
+  "artifacts": [
+    {
+      "id": "artifact:zz1yqc2w2k-v1-audit",
+      "uri": "git-root://state/4bc9550726c0ef2822d2b86cddf6d9bdf9abf404/workflow-owned-same-stage-revision/artifacts/validation/audit.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:822e4495157415315b696badeaa8f7b9234a9733d98c3c8e60811a4f628152a1"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zz1yqc2w2k-retention-approval",
+      "label": "Captain resolution:binding-1789517330520748000; artifact sha256:32821e2071d9c315c7a6dfc09ba4c80c14e034bb07bb75958c136abd3a35bf30; FO authorized FIX at +252 net/five files and eight bounded local Codex runs."
+    }
+  ]
+}

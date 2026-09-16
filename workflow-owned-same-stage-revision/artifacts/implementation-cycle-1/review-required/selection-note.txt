@@ -1,0 +1,1 @@
+The suffix selector review-required$ matched this case and separate-review-required in one Go test invocation. Both completed PASS. The outer queue wrapper was paused and terminated only after the Go child exited, preventing a later duplicate. No native child was interrupted; this is one of the eight approved unique drives.

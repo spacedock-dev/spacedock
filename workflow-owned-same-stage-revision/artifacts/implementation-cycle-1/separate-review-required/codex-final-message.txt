@@ -1,0 +1,7 @@
+`recorded-gate-task` is corrected and committed (`138afd4`): the plan matches the frozen input.
+
+Independent review recorded HOLD (`7026175`) because `selected/reviewer-source.txt` is missing. Review accounting: 1 done, 0 skipped, 1 failed.
+
+Stopped at this unmet prerequisite. No new gate was prepared, resolved, or consumed.
+
+The [feedback-rejection-flow skill](/private/tmp/same-stage-retained-review-required-v1/codex-shared-scenarios/_codex-home/codex-home-3069131551/plugins/cache/spacedock-local/spacedock/0.28.0-pre3/skills/feedback-rejection-flow/SKILL.md) requires “every required fresh reviewer verdict” before gate re-entry; the missing evidence prevents that verdict.

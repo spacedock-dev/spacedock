@@ -1,0 +1,286 @@
+[
+  {
+    "run": "before",
+    "public_thread_id": "01a0a790-0087-7cb2-a4d1-ef6fbbb4fb79",
+    "native_sha256": "1da81e3982b6bf4a50d45af4c264b56b81a021d21f2cdfa0e51d5a6dca93486d",
+    "public_sha256": "883be091199be4ed91a47c731f19d36a93ce5dfcf8f96cd842972e90ca8c574a",
+    "bundle_sha256": "c061f7a8397a58d5f27ea252ef97ca51bd9b1751f18ee956407739d0af5509f7",
+    "state_head": "db4d5694bd00c0ff5879148f884954aa3aa28fb9",
+    "native_routes": [
+      [
+        "0",
+        "104",
+        "spawn",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ],
+      [
+        "1",
+        "142",
+        "done",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ]
+    ],
+    "gate_attempts": 1,
+    "canonical_rounds": 0,
+    "selected_plan": []
+  },
+  {
+    "run": "after",
+    "public_thread_id": "01a0a792-cd6c-7692-ba96-e07a4f59acaf",
+    "native_sha256": "de16e47821d53d89cc45c2847195140f7ed3662f551ebc29474bb035877b92b6",
+    "public_sha256": "19570fe615350ecc789b8d4e0ffdfe1ba13d8cf4e3b9e13385250e5d094c308d",
+    "bundle_sha256": "88e278469d2a06d1632d869c347b1d3ed3f7ea8c9f021c9aa3702484a32bdf69",
+    "state_head": "d01f34dba70e2f06c025503f59b2894225a05ed3",
+    "native_routes": [
+      [
+        "0",
+        "126",
+        "spawn",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ],
+      [
+        "1",
+        "162",
+        "done",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ]
+    ],
+    "gate_attempts": 2,
+    "canonical_rounds": 0,
+    "selected_plan": [
+      {
+        "kind": "artifacts",
+        "uri": "git-root://state/b31bb14b9f5f656d03742c227a69c895fc40b991/recorded-gate-task/selected/plan.md",
+        "rev": "sha256:9c9f788375c0bd7caf0b764702f68cd519c4dbfe70a721f84b172ec2572ce898"
+      }
+    ]
+  },
+  {
+    "run": "review-required",
+    "public_thread_id": "01a0a796-5d1c-7490-9c63-7d4bf1edc6b4",
+    "native_sha256": "8b068ac895864a6e39293d3d724fe9275d91474f4db3a178b97add77f599c600",
+    "public_sha256": "3f79434d1f6cd881d9ed94d5272d782960715a3516fd8ac884282aad1e3ca280",
+    "bundle_sha256": "14f233ade73b95bf83f28efb120294bf2c19568c37b6d1a5b6bdbed7bb8cd961",
+    "state_head": "11cec1fa4e5e931beb22fe23b18778df74a8a8cc",
+    "native_routes": [
+      [
+        "0",
+        "122",
+        "spawn",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ],
+      [
+        "1",
+        "160",
+        "done",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ]
+    ],
+    "gate_attempts": 1,
+    "canonical_rounds": 0,
+    "selected_plan": []
+  },
+  {
+    "run": "separate-review-required",
+    "public_thread_id": "01a0a798-82df-7312-9ea8-ca9c9094d2c5",
+    "native_sha256": "44ddbecd0b6f62a6cc448e366c2a31ce40096e1e1917200829e758e8a0c781b8",
+    "public_sha256": "0ae4215c9f1c4326ff751b09df11d42c0539e932fbc037dc44e7c6f40c802af6",
+    "bundle_sha256": "2f5521246ab6a4140c7d7c750acb953deb617ecf6ee33f719fae3dd778601208",
+    "state_head": "702617534ed532f350ece5778c8a59ab3a7e85ae",
+    "native_routes": [
+      [
+        "0",
+        "123",
+        "spawn",
+        "implementation",
+        "spacedock_ensign_recorded_gate_task_implementation"
+      ],
+      [
+        "1",
+        "147",
+        "done",
+        "implementation",
+        "spacedock_ensign_recorded_gate_task_implementation"
+      ],
+      [
+        "2",
+        "168",
+        "spawn",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ],
+      [
+        "3",
+        "185",
+        "done",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ]
+    ],
+    "gate_attempts": 1,
+    "canonical_rounds": 0,
+    "selected_plan": []
+  },
+  {
+    "run": "round-required",
+    "public_thread_id": "01a0a79c-b954-7920-abd8-415122102c38",
+    "native_sha256": "5afba0000606c6d85378660bba9d5341e1083d6f26d469a3f7d5b1dbd7e27800",
+    "public_sha256": "eb0249939fe736ab881bdc99df4cc40f744e867fb1ce0aca2f3e069f832250bb",
+    "bundle_sha256": "cfe6d30adc16683006133b17652d69b59dce49f58e04025a9717ec7635ca82da",
+    "state_head": "c82f2ddc48f4f2bdf7b5eef9280a2929dd625bf5",
+    "native_routes": [
+      [
+        "0",
+        "166",
+        "spawn",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ],
+      [
+        "1",
+        "207",
+        "done",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ]
+    ],
+    "gate_attempts": 2,
+    "canonical_rounds": 1,
+    "selected_plan": [
+      {
+        "kind": "artifacts",
+        "uri": "git-root://state/4b450fa019850ab2545c362419961cec953924f9/recorded-gate-task/selected/plan.md",
+        "rev": "sha256:9c9f788375c0bd7caf0b764702f68cd519c4dbfe70a721f84b172ec2572ce898"
+      }
+    ]
+  },
+  {
+    "run": "round-missing",
+    "public_thread_id": "01a0a7a0-3264-7071-9505-662411667705",
+    "native_sha256": "c83b1af032bf1b65d8e5d3e48ff0992c958a1cae65555d9048c6f88d673a94aa",
+    "public_sha256": "54f18652515dcae4fcb65686b8435cce86213a589582c8c1f150ed5999c6a866",
+    "bundle_sha256": "4096533bdd6a0c763540461572f760185660a39bb541938e787bb9613183c22e",
+    "state_head": "e2b1b2f9edeeb2014d4838323aa74a0f30a2e360",
+    "native_routes": [
+      [
+        "0",
+        "123",
+        "spawn",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ],
+      [
+        "1",
+        "159",
+        "done",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ]
+    ],
+    "gate_attempts": 1,
+    "canonical_rounds": 0,
+    "selected_plan": []
+  },
+  {
+    "run": "cycle-limit",
+    "public_thread_id": "01a0a7ce-9781-79a2-985c-b6cdccdd9eeb",
+    "native_sha256": "381784f58cbea8acbc09cac7ec55fe95c1c521ef523a923fec84c92b928d6937",
+    "public_sha256": "4070dd09f50a6c44c7bce3a4dc89bcf1790f2ce69dfeefd2270593a2c8710e7c",
+    "bundle_sha256": "f319be7f72abb9c45a031a173c4d1c029ae7dc243db15677f77bf24fd2e34305",
+    "state_head": "35ea2c7af47977e95d94e14ea9423ad590cfe06e",
+    "native_routes": [
+      [
+        "0",
+        "112",
+        "spawn",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ],
+      [
+        "1",
+        "124",
+        "done",
+        "validation",
+        "spacedock_ensign_recorded_gate_task_validation"
+      ]
+    ],
+    "gate_attempts": 3,
+    "canonical_rounds": 0,
+    "selected_plan": []
+  },
+  {
+    "run": "conventional",
+    "public_thread_id": "01a0a7d0-e7d5-7bf2-a205-e17eea028c1f",
+    "native_sha256": "03034ab84c19acd1c573be2347ea42ac830fda00a1510fcbf99f4cbc4293e38f",
+    "public_sha256": "59d0e8c5439688d2c0b712e332a5b192da6dede6f21101610fd258e131366837",
+    "bundle_sha256": "b16b8b1a16e37ca58a4d90fe0f79162360bc694e4b4ff1834d13af2dea2cd59c",
+    "state_head": "034a6aabef93511e3b6f4aef246dc42d52d31797",
+    "native_routes": [
+      [
+        "0",
+        "168",
+        "spawn",
+        "implementation",
+        "spacedock_ensign_rejection_task_implementation"
+      ],
+      [
+        "1",
+        "189",
+        "done",
+        "implementation",
+        "spacedock_ensign_rejection_task_implementation"
+      ],
+      [
+        "2",
+        "200",
+        "spawn",
+        "validation",
+        "spacedock_ensign_rejection_task_validation"
+      ],
+      [
+        "3",
+        "214",
+        "done",
+        "validation",
+        "spacedock_ensign_rejection_task_validation"
+      ],
+      [
+        "4",
+        "239",
+        "reuse",
+        "implementation",
+        "spacedock_ensign_rejection_task_implementation"
+      ],
+      [
+        "5",
+        "251",
+        "done",
+        "implementation",
+        "spacedock_ensign_rejection_task_implementation"
+      ],
+      [
+        "6",
+        "267",
+        "reuse",
+        "validation",
+        "spacedock_ensign_rejection_task_validation"
+      ],
+      [
+        "7",
+        "281",
+        "done",
+        "validation",
+        "spacedock_ensign_rejection_task_validation"
+      ]
+    ],
+    "gate_attempts": 1,
+    "canonical_rounds": 1,
+    "round_entries": 4
+  }
+]

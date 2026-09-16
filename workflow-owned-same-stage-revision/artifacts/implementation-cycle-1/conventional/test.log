@@ -1,0 +1,16 @@
+=== RUN   TestLiveCommonRejectionFlow
+=== PAUSE TestLiveCommonRejectionFlow
+=== CONT  TestLiveCommonRejectionFlow
+    shared_live_runner_test.go:114: rejection topology digest /tmp/same-stage-retained-conventional-v1/codex-shared-scenarios/rejection-flow/rejection-topology.tsv:
+        branch	reuse
+        0	168	spawn	implementation	spacedock_ensign_rejection_task_implementation
+        1	189	done	implementation	spacedock_ensign_rejection_task_implementation
+        2	200	spawn	validation	spacedock_ensign_rejection_task_validation
+        3	214	done	validation	spacedock_ensign_rejection_task_validation
+        4	239	reuse	implementation	spacedock_ensign_rejection_task_implementation
+        5	251	done	implementation	spacedock_ensign_rejection_task_implementation
+        6	267	reuse	validation	spacedock_ensign_rejection_task_validation
+        7	281	done	validation	spacedock_ensign_rejection_task_validation
+--- PASS: TestLiveCommonRejectionFlow (301.12s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	301.584s

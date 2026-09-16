@@ -1,0 +1,22 @@
+{
+  "launcher": "/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock",
+  "skill_source": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-workflow-owned-same-stage-revision/skills/feedback-rejection-flow/SKILL.md",
+  "skill_sha256": "cf43979ac026c3a3964956853f122d93b5dbc18aa3d0b478f094024a97cdd75d",
+  "command": [
+    "go",
+    "test",
+    "-tags",
+    "live",
+    "./internal/ensigncycle",
+    "-run",
+    "^TestLiveSameStageRevision$/^cycle-limit$",
+    "-count=1",
+    "-timeout=20m",
+    "-v"
+  ],
+  "harness_sha256": {
+    "internal/ensigncycle/claude_live_runner_test.go": "b19bcc96243c44c40ea667ac0711ce4557be410e8dd3df1a0e63137539c6307f",
+    "internal/ensigncycle/claude_runtime_helpers_test.go": "2ff3ede17e3bd7c5964eea16911b514231afc888aca437560a3a5463b828ce45",
+    "internal/ensigncycle/shared_live_runner_test.go": "23899e9a8802b1e7ddcb52739a2a00e2343c1a6596dc68129bf0f657d8a6ffa2"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "source": "Existing metadata/test-log filesystem timestamps and Go package elapsed output; no profiling run.",
+  "groups": [
+    {
+      "command_group": "before",
+      "start_epoch": 1789517623.8537915,
+      "end_epoch": 1789517771.7923877,
+      "wall_seconds": 147.9385962486267,
+      "reported_package_seconds": 147.065,
+      "wall_minus_package_seconds": 0.8735962486267113
+    },
+    {
+      "command_group": "after",
+      "start_epoch": 1789517807.6449304,
+      "end_epoch": 1789517972.8179443,
+      "wall_seconds": 165.17301392555237,
+      "reported_package_seconds": 164.766,
+      "wall_minus_package_seconds": 0.40701392555237703
+    },
+    {
+      "command_group": "review-required",
+      "start_epoch": 1789518040.2371905,
+      "end_epoch": 1789518397.7491899,
+      "wall_seconds": 357.5119993686676,
+      "reported_package_seconds": 356.173,
+      "wall_minus_package_seconds": 1.3389993686676007
+    },
+    {
+      "command_group": "round-required",
+      "start_epoch": 1789518457.4618092,
+      "end_epoch": 1789518673.5954838,
+      "wall_seconds": 216.13367462158203,
+      "reported_package_seconds": 215.286,
+      "wall_minus_package_seconds": 0.8476746215820299
+    },
+    {
+      "command_group": "round-missing",
+      "start_epoch": 1789518673.627646,
+      "end_epoch": 1789521705.3617558,
+      "wall_seconds": 3031.73410987854,
+      "reported_package_seconds": 490.232,
+      "wall_minus_package_seconds": 2541.50210987854
+    },
+    {
+      "command_group": "cycle-limit",
+      "start_epoch": 1789521705.4284406,
+      "end_epoch": 1789521877.8884482,
+      "wall_seconds": 172.4600076675415,
+      "reported_package_seconds": 169.845,
+      "wall_minus_package_seconds": 2.615007667541505
+    },
+    {
+      "command_group": "conventional",
+      "start_epoch": 1789521877.9341762,
+      "end_epoch": 1789522180.81832,
+      "wall_seconds": 302.8841438293457,
+      "reported_package_seconds": 301.584,
+      "wall_minus_package_seconds": 1.3001438293457
+    }
+  ],
+  "total_wall_seconds": 4556.964528560638,
+  "summed_package_seconds": 1844.951,
+  "intercommand_gaps_seconds": [
+    35.85254263877869,
+    67.41924619674683,
+    59.71261930465698,
+    0.03216218948364258,
+    0.06668472290039062,
+    0.04572796821594238
+  ],
+  "summed_case_seconds": 1842.17,
+  "largest_native_event_wall_gap": {
+    "run": "round-missing",
+    "seconds": 2799.295,
+    "from": "2026-09-16T00:33:13.881Z",
+    "to": "2026-09-16T01:19:53.176Z"
+  },
+  "interpretation": "A roughly42-minute wall/monotonic discrepancy is localized to round-missing; cause is not established from retained timestamps. Do not label this all tooling overhead or model time."
+}

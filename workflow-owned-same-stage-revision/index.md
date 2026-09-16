@@ -158,7 +158,7 @@ Earlier amended tolerance: net +200 LOC maximum and 4 files, explicitly approved
 
 Earlier final tolerance: net +220 LOC maximum and 4 files, explicitly approved by the captain on 2026-09-15 after the complete proof matrix and authorized fixture fixes.
 
-Current approved tolerance: net +236 LOC maximum and 5 files, bound by resolution:binding-1789513304916529000; the added owner is `docs/runtime-live-ci-registry.md` for explicit targeted-proof policy.
+Earlier targeted-proof tolerance: net +236 LOC maximum and 5 files, bound by resolution:binding-1789513304916529000; the added owner is `docs/runtime-live-ci-registry.md` for explicit targeted-proof policy.
 
 Expected owners: `skills/feedback-rejection-flow/SKILL.md`, `internal/ensigncycle/claude_live_runner_test.go`, and `internal/ensigncycle/claude_runtime_helpers_test.go`.
 The existing `runClaudeRejectionFlowScenario` owns the rejection run; `shared_live_runner_test.go` registers it.
@@ -351,3 +351,25 @@ Workflow-declared same-stage revision now completes without invented reviewer or
 ### Summary
 
 The candidate's durable behavior and detached adversarial state checks pass, but required native worker evidence was deleted after grading and cannot be independently replayed. Validation recommends REJECTED for that evidence defect, with a small existing-observer retention repair and bounded evidence replacement proposed; candidate bytes remain unchanged.
+
+### V1 correction authorization and bounded implementation — 2026-09-16
+
+Captain resolution:binding-1789517330520748000 (artifact sha256:32821e2071d9c315c7a6dfc09ba4c80c14e034bb07bb75958c136abd3a35bf30) approves final +252 net lines/five files and eight serialized native evidence replacements. FO separately authorized FIX. The proposal adds no lifecycle controller: existing correlated stream loading persists exact source bytes before cleanup and fails on write failure. Focused red was observed before persistence; byte replay after cleanup and existing parser negatives now pass. The earlier candidate and evidence remain history. Canonical advisory round sources are artifacts/implementation-cycle-1/briefing.json and briefing.review.jsonl; producer completion will be appended after all approved proof is complete. FO owns projection/publication and the retained validator owns independent review.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Persist exact correlated lifecycle bytes and prove retention/write-failure/parser controls within252net/5files.
+  Candidate `d46f74245c1c18c8a376e9a6d2a508c774e32759` retains the existing correlated public/native stream before cleanup, refuses write failure and retains conventional matching Git state; final task delta is +252net/five files under `resolution:binding-1789517330520748000`.
+  Focused red first exposed missing persistence failure handling; green replay deletes the source home, requires exact byte equality and exercises existing missing-completion/wrong-owner negatives. Omitting persistence, accepting write failure or misattributing completion makes these controls fail.
+- DONE: Replace the eight approved native evidence runs with matching retained raw/state and exact regrade, preserving old evidence.
+  [Correction proof index](artifacts/implementation-cycle-1/proof-index.md) retains expected baseline red, six candidate PASS variants and conventional PASS. Same launcher/fixture/harness causal pair differs only in skill bytes; all eight source streams reproduce exact topology and correlate public parent identity.
+  [Native/state manifest](artifacts/implementation-cycle-1/native-state-regrade.json) pins every raw/public/bundle digest and state HEAD; bundle regrades preserve corrected frozen-input plans, intended selected revisions, exact gate/round cardinalities and conventional reviewer independence/reuse. Old evidence is unchanged.
+  Exactly8unique drives, no retries/duplicates:1842.17s summed test runtime versus4556.9645s wall; [timing](artifacts/implementation-cycle-1/timing.json) localizes2541.502s unexplained wall/package discrepancy to round-missing. Existing timeout limits were preserved.
+- DONE: Commit correction, complete canonical correction round producer entries, and report for retained independent validator.
+  Code committed as `d46f74245c1c18c8a376e9a6d2a508c774e32759`; canonical sources are [Briefing](artifacts/implementation-cycle-1/briefing.json) and [review log](artifacts/implementation-cycle-1/briefing.review.jsonl), including reviewer V1, producer proposal, distinct FO authorizations and producer completion/closing advisory Resolution.
+- SKIPPED: Repeat broad suites, publish the neutral round, or independently validate the correction.
+  FO explicitly limits replacement to focused retention checks and eight native drives, owns projection/publication, and will dispatch the retained validator. Prior final normal/race logs each exit1 only for the FO-declined out-of-scope resolver baseline; no wholly green-suite claim is made.
+
+### Summary
+
+V1 is repaired at the existing retention seam without a controller or workflow-semantic change. All approved replacement drives now preserve source-level native attribution and matching state; the committed correction and completed producer round are ready for independent validation, with original failed evidence retained unchanged. No code push, CI, restacking, gate approval or frontmatter mutation occurred.
