@@ -1,6 +1,6 @@
 ---
 title: Keep the FO running across handoffs and status questions
-status: implementation
+status: validation
 source: Captain-approved continuation correction, 2026-09-15
 started: 2026-09-15T22:39:21Z
 completed:
