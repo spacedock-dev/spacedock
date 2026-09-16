@@ -1,0 +1,8 @@
+=== RUN   TestValidationRetirementRollbackExactCompanions
+=== RUN   TestValidationRetirementRollbackExactCompanions/flat
+=== RUN   TestValidationRetirementRollbackExactCompanions/folder
+--- PASS: TestValidationRetirementRollbackExactCompanions (3.28s)
+    --- PASS: TestValidationRetirementRollbackExactCompanions/flat (1.97s)
+    --- PASS: TestValidationRetirementRollbackExactCompanions/folder (1.31s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/cli	3.632s

@@ -1,0 +1,4 @@
+=== RUN   TestValidationDeliveryAncestryConflictAndRecovery
+--- PASS: TestValidationDeliveryAncestryConflictAndRecovery (1.04s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/status	1.431s

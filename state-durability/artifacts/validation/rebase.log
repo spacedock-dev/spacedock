@@ -1,0 +1,4 @@
+=== RUN   TestReadCheckPreservesRebaseWhilePreflightHalts
+--- PASS: TestReadCheckPreservesRebaseWhilePreflightHalts (0.62s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	0.843s

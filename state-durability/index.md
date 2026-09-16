@@ -151,3 +151,18 @@ The combined repair remains justified on current main, with the dirty-archive ex
 ### Summary
 
 The three repairs use existing delivery, archive and state-sync owners and are ready for independent validation. Positive storage fixtures now use valid checkouts; missing-storage fixtures retain explicit refusal and initialization recovery evidence. No code push or CI ran.
+
+## Stage Report: validation
+
+- DONE: Independently assess all three ACs against committed candidate and retained real CLI/Git failure/recovery evidence, reusing owned green checks.
+  AC-1 PASSED: retained `TestLocalDeliveryProofBeforeTerminalSpend` proves real conflict refusal with pending approval and unchanged active bytes, both ancestry checks, successful delivery and exactly-once archival; `TestStateOnlyLocalDeliveryAndRetirementKeepDistinctAuthority` proves delivery consumes while retirement preserves pending authority/status. Detached `TestValidationDeliveryAncestryConflictAndRecovery` independently passed actual-conflict/relative-worktree/ref/recovery checks; removing worktree ancestry makes old-trunk proof pass incorrectly.
+  AC-2 PASSED: retained `TestRetirementCommitsCompleteMove`, `TestRetirementFailureRecovery`, and `TestRetirementSameEntityRebaseHalts` prove four shape/publication combinations, fresh remote state, rollback, failed-push durability, archived publication recovery and conflict HALT. New detached flat/folder probe additionally passed binary/EOF bytes, tracked-deleted companion, staged plus unstaged sibling preservation and recovery; bare-index commit or incomplete rollback breaks it.
+  AC-3 PASSED: retained `TestStateStorageRefusalAndRecovery` exercises default/JSON/boot status and both filing paths across missing/invalid/valid-empty storage with unchanged snapshots and state-new/init recovery. Detached `TestReadCheckPreservesRebaseWhilePreflightHalts` passed real conflicted-rebase index/HEAD preservation and mutation abort/HALT; replacing pure check with mutating preflight breaks this invariant.
+- DONE: Perform detached adversarial audit of delivery-before-terminalization, complete retirement transaction, storage refusal and rebase safety; report proposed material findings before candidate changes.
+  [Audit matrix, reproducible sources and logs](artifacts/validation/audit.md) cover authority, exact bytes, path identity, source/destination completeness, terminal state, repeated calls and cleanup. No material findings or deferred risks identified; no candidate changes. Two new focused probes and one existing narrow rebase test passed on detached `9454cf3d2`; retained green tests were reused as directed.
+- DONE: Report PASSED or REJECTED with exact per-AC evidence,22-file/800-net scope and sole resolver baseline limitation; no code push or CI.
+  Recommend PASSED on `9454cf3d2` above `4ce49f1ea`: 22 files, 631 insertions / 44 deletions, +587 net, inside captain-amended 22-file/+800-net cap. Required normal/race runs each exited 1 solely at installed-host `TestCodexResolveManifestAgainstInstalledHost`; FO declined this existing environment-dependent resolver fix. All other tests/packages passed with no data-race report; implementation gofmt and strict docs build evidence reused. No broad reruns, live agent lane, code push or CI.
+
+### Summary
+
+All three acceptance criteria have behavioral failure and recovery evidence, and the independent detached audit found no blocking defect. PASSED is bounded by the explicitly retained installed-host resolver failure; it does not claim wholly green normal/race suites. Candidate bytes and HEAD remain unchanged.
