@@ -1,0 +1,54 @@
+{
+  "run": 35058669297,
+  "projection": "Selected original records in original order. Omitted reasoning/signatures, provider/usage metadata and unrelated result details. Retained identity, task, cwd, timestamps, tool calls, terminal reason and notification text unchanged. Parent/child streams remain separate. Git end-state is reconstructed by tests, not claimed as a retained repository.",
+  "sources": [
+    {
+      "fixture": "default-parent.jsonl",
+      "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl",
+      "source_sha256": "7e898cfbea25d0534233320970e05dd7a8e99bd441c3b6a5e8422e3e1ba90f3a",
+      "source_lines": [
+        1,
+        39,
+        40,
+        43,
+        48
+      ]
+    },
+    {
+      "fixture": "default-child.jsonl",
+      "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/22943409-f624-4946-bdb2-7aff5c3f9f6a/run-0/session.jsonl",
+      "source_sha256": "e07a4ff4a80f5ce4f1552be0c2db07398823fd1fc87b72df328fb65c0580d8cf",
+      "source_lines": [
+        1,
+        4,
+        5,
+        39
+      ]
+    },
+    {
+      "fixture": "auto-parent.jsonl",
+      "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c.jsonl",
+      "source_sha256": "f3cae66a083d233e5870f8641d57201fdf5f63e8346380e1f3480972981f197d",
+      "source_lines": [
+        1,
+        37,
+        38,
+        41,
+        48,
+        101,
+        102
+      ]
+    },
+    {
+      "fixture": "auto-child.jsonl",
+      "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c/4c1a88ae-3f7b-4ce8-8539-c922c068d407/run-0/session.jsonl",
+      "source_sha256": "57ae129602415c7e5a5039a5f47af41d07247280069f3a5a26f34cd7b05225db",
+      "source_lines": [
+        1,
+        4,
+        5,
+        33
+      ]
+    }
+  ]
+}

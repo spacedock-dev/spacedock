@@ -121,8 +121,8 @@ func assertRecordedGateHoldLog(log string) error {
 	return nil
 }
 
-func assertImplementationWorkerLifecycle(stream, entity string) error {
-	return assertWorkerLifecycle(stream, entity, "implementation", "status=validation")
+func assertImplementationWorkerLifecycle(stream, entity string, artifactDir ...string) error {
+	return assertWorkerLifecycle(stream, entity, "implementation", "status=validation", artifactDir...)
 }
 
 // claudeDispatchPointer matches the dispatch pointer the FO passes to a spawned
@@ -163,7 +163,11 @@ func claudeSpawnIsForStage(description, prompt, stage string) bool {
 	return false
 }
 
-func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
+func assertWorkerLifecycle(stream, entity, stage, nextSignal string, artifactDir ...string) error {
+	nativeCompletion, err := piNativeCompletion(stream, stage, artifactDir...)
+	if err != nil {
+		return &gradedErr{code: stage + "-worker-not-dispatched", msg: err.Error()}
+	}
 	type block struct {
 		Type  string `json:"type"`
 		Name  string `json:"name"`
@@ -184,7 +188,7 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 			Content                       json.RawMessage
 		}
 	}
-	spawnID, codexSpawnCall, codexWorker, spawns, completed, validation := "", "", "", 0, -1, -1
+	spawnID, codexSpawnCall, codexWorker, spawns, completed, validation := "", "", "", 0, nativeCompletion, -1
 	piRunID := ""
 	for i, line := range strings.Split(stream, "\n") {
 		var event row
@@ -320,6 +324,9 @@ func TestImplementationLifecycleAndObserverNegativeControls(t *testing.T) {
 {"type":"message","message":{"toolName":"subagent","content":[{"type":"text","text":"Run: run-1\nState: complete\nSession: /tmp/session.jsonl"}]}}
 {"type":"message","message":{"content":[{"type":"toolCall","name":"bash","arguments":{"command":"spacedock status --set task status=validation"}}]}}`
 	requireRecordedGate(t, assertImplementationWorkerLifecycle(pi, entity) == nil, "complete Pi lifecycle rejected")
+	wait := strings.Replace(pi, `"toolName":"subagent","content":[{"type":"text","text":"Run: run-1\nState: complete\nSession: /tmp/session.jsonl"}]`, `"toolName":"subagent_wait","content":[{"type":"text","text":"Wait for run \"run-1\" done complete"}]`, 1)
+	requireRecordedGate(t, assertImplementationWorkerLifecycle(wait, entity) == nil, "historical Pi wait rejected")
+	requireRecordedGate(t, assertImplementationWorkerLifecycle(strings.Replace(wait, `for run \"run-1\"`, `for run \"other-run\"`, 1), entity) != nil, "wrong Pi wait run passed")
 	requireRecordedGate(t, assertImplementationWorkerLifecycle(strings.Replace(pi, "State: complete", "State: running", 1), entity) != nil, "Pi lifecycle without completion passed")
 	root := t.TempDir()
 	if assertObserverOutsideWorkflow(root, filepath.Join(root, "evidence", "command.log")) == nil {

@@ -56,6 +56,9 @@ type piToolCallBlock struct {
 // piToolCallArgs holds the argument fields the extractors read, parsed from the
 // `arguments` raw JSON of a toolCall block.
 type piToolCallArgs struct {
+	Agent   string `json:"agent"`
+	Cwd     string `json:"cwd"`
+	Context string `json:"context"`
 	Command string `json:"command"`
 	Task    string `json:"task"`
 	Action  string `json:"action"`
@@ -83,6 +86,13 @@ func piTextContent(raw json.RawMessage) string {
 
 // piSessionMessage is the `message` field of a Pi session JSONL record.
 type piSessionMessage struct {
+	StopReason string `json:"stopReason"`
+	Details    struct {
+		RunID   string `json:"runId"`
+		Mission struct {
+			OwnerSessionID string `json:"ownerSessionId"`
+		} `json:"mission"`
+	} `json:"details"`
 	Role       string          `json:"role"`
 	ToolCallID string          `json:"toolCallId"`
 	ToolName   string          `json:"toolName"`
@@ -92,8 +102,14 @@ type piSessionMessage struct {
 
 // piSessionRecord is one line of a Pi session JSONL file.
 type piSessionRecord struct {
-	Type    string           `json:"type"`
-	Message piSessionMessage `json:"message"`
+	ID         string           `json:"id"`
+	Timestamp  string           `json:"timestamp"`
+	Cwd        string           `json:"cwd"`
+	Name       string           `json:"name"`
+	CustomType string           `json:"customType"`
+	Content    string           `json:"content"`
+	Type       string           `json:"type"`
+	Message    piSessionMessage `json:"message"`
 }
 
 // piBashCommands extracts every bash/shell toolCall id→command pair from a Pi session
