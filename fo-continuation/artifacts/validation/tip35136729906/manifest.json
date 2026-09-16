@@ -1,0 +1,74 @@
+[
+  {
+    "source": "/tmp/spacedock-tip-ci/35136729906/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/rejection-flow/claude-stream.jsonl",
+    "sha256": "ffce52795f94d1188bfacc0d94cc7b22487cc0071981f82a2fcb32171a2bed52",
+    "bytes": 791893,
+    "lines": 526,
+    "selected_lines": [
+      72,
+      90,
+      93,
+      104,
+      107,
+      111,
+      114,
+      118,
+      128,
+      129,
+      134,
+      138,
+      163,
+      230,
+      304,
+      375,
+      416,
+      481,
+      500,
+      501
+    ]
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/35136729906/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/auto-continue-after-implementation--auto-continue/split-root/claude-stream.jsonl",
+    "sha256": "e1f77c5bccc8a032c2a57792df7f2db321e66e96c6381cbf814492e2a89ab12c",
+    "bytes": 428309,
+    "lines": 247,
+    "selected_lines": [
+      13,
+      14,
+      42,
+      152,
+      173,
+      174,
+      176,
+      177,
+      178,
+      179,
+      180,
+      187,
+      188,
+      189,
+      231,
+      246
+    ]
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/35136729906/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/rejection-flow/state.bundle",
+    "retained": "rejection-state.bundle",
+    "sha256": "16758f3ee8ed3194206a2f3b29e834f22ee55bb42c550645e8003884d401a586"
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/35136729906/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/rejection-flow/rejection-topology.tsv",
+    "retained": "rejection-topology.tsv",
+    "sha256": "911dd1ad83c7e377d0d195512f9eac4bc12bd81313f8ce105c6108e0a7e2f5f2"
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/35136729906/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/auto-continue-after-implementation--auto-continue/split-root/claude-final-message.txt",
+    "retained": "auto-split-final.txt",
+    "sha256": "47bcccc3e4483f3394654f1508877dad385b6edc136c6410f057e111580651a2"
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/claude-35136729906-job.log",
+    "sha256": "c36bae4d9cb9a21183f04cdcfbc2867d4f1c05de0177072aa286373d5d3051ca",
+    "selected_lines": "452-529"
+  }
+]

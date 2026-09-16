@@ -1,0 +1,13 @@
+branch	fresh
+0	71	spawn	implementation	rejection-task-implementation
+1	89	spawn		
+2	106	done		
+3	117	spawn		
+4	127	done		
+5	137	done	implementation	rejection-task-implementation
+6	162	spawn	validation	rejection-task-validation
+7	229	done	validation	rejection-task-validation
+8	303	spawn	implementation	rejection-task-implementation
+9	374	done	implementation	rejection-task-implementation
+10	415	spawn	validation	rejection-task-validation
+11	480	done	validation	rejection-task-validation
