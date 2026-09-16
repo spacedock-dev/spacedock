@@ -28,10 +28,10 @@ const piRejectionBranch = rejectionBranchFresh
 
 // piDispatchFileInTask extracts the worker handle from the dispatch file path in a
 // subagent spawn task. The FO dispatches via `spacedock dispatch build`, whose emitted
-// prompt points at `/tmp/spacedock-dispatch/spacedock-ensign-{slug}-{stage}.md`; the
+// prompt points at `/tmp/spacedock-dispatch/{generated-name}.md`; the
 // handle is the filename stem, the same (slug, stage)-derived identity Claude's Agent
 // `name` and Codex's task path carry.
-var piDispatchFileInTask = regexp.MustCompile(`spacedock-dispatch/(spacedock-ensign-[a-z0-9-]+-(?:implementation|validation))\.md`)
+var piDispatchFileInTask = regexp.MustCompile(`spacedock-dispatch/([a-z0-9-]+-(?:implementation|validation))\.md`)
 
 // piAsyncRunID extracts the async run id a subagent spawn result returns. Pi's
 // `subagent(... async: true)` result text carries "Async workflow [run-id]"; the FO
