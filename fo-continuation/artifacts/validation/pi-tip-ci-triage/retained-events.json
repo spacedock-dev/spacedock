@@ -1,0 +1,498 @@
+[
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl",
+    "line": 1,
+    "event": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0a8ac-6c68-77ef-8d90-279835984ba4",
+      "timestamp": "2026-09-16T05:24:27.368Z",
+      "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop335368489/004"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl",
+    "line": 40,
+    "event": {
+      "type": "message",
+      "id": "d0650679",
+      "parentId": "0590accc",
+      "timestamp": "2026-09-16T05:25:50.357Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_CddM3PjF8KHcJLMJchXw1Xf7|fc_04f951136e72376e016aaa285afa3487d1a208880273498a55",
+        "toolName": "subagent",
+        "content": [
+          {
+            "type": "text",
+            "text": "Run fan-out: 1/64 used, 63 remaining\nAsync: worker [c7f1d5e7-ef00-4235-a860-790fda66500a]\n\nThe async run is detached. Do not run sleep timers or polling loops just to wait for it.\nThis is a non-interactive run: Pi auto-drains current-session subagent work at agent_end so detached children are not abandoned. Use bg_wait only when this turn must receive provider, detached, or other background-work results that have no native completion notification.\nUse subagent({ action: \"status\", id: \"...\" }) when you need a one-shot status/result or to inspect a blocked/stale run; do not poll in a loop.\nMission: 43bf2ce1-8c57-4d7d-92a0-875b4e66dd2e (active)"
+          }
+        ],
+        "details": {
+          "mode": "single",
+          "runId": "c7f1d5e7-ef00-4235-a860-790fda66500a",
+          "results": [],
+          "asyncId": "c7f1d5e7-ef00-4235-a860-790fda66500a",
+          "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/c7f1d5e7-ef00-4235-a860-790fda66500a",
+          "launchContractDigest": "5bfb16e7cf1c74991ad078cc138db6addc69c669102c4cac54f9d025347778ed",
+          "launchResolvedExtensions": {
+            "version": 1,
+            "source": "launch-resolved",
+            "disableAmbientExtensions": false,
+            "runtime": [
+              "sha256:918c74589726e55e"
+            ],
+            "configured": [],
+            "effective": [
+              "sha256:918c74589726e55e"
+            ],
+            "omitted": {
+              "runtime": 0,
+              "configured": 0,
+              "effective": 0
+            }
+          },
+          "context": "fresh",
+          "timeoutMs": 1800000,
+          "deadlineAt": 1789538150338,
+          "runFanoutBudget": {
+            "used": 1,
+            "limit": 64,
+            "remaining": 63
+          },
+          "missionId": "43bf2ce1-8c57-4d7d-92a0-875b4e66dd2e",
+          "missionPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop335368489/001/missions/projects/7dfde623bdc458d36f0bf0fd6430ab5fc63ef8d2254c4a7b11ec73a39e3646bd/43bf2ce1-8c57-4d7d-92a0-875b4e66dd2e.json",
+          "mission": {
+            "schemaVersion": 1,
+            "id": "43bf2ce1-8c57-4d7d-92a0-875b4e66dd2e",
+            "title": "[prompt redacted]",
+            "objective": "[prompt redacted]",
+            "status": "active",
+            "createdAt": "2026-09-16T05:25:50.330Z",
+            "updatedAt": "2026-09-16T05:25:50.355Z",
+            "runs": [
+              {
+                "runId": "c7f1d5e7-ef00-4235-a860-790fda66500a",
+                "mode": "single",
+                "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/c7f1d5e7-ef00-4235-a860-790fda66500a",
+                "status": "active",
+                "startedAt": "2026-09-16T05:25:50.355Z"
+              }
+            ],
+            "workflowChildren": [],
+            "decisions": [],
+            "artifacts": [
+              {
+                "kind": "status",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/c7f1d5e7-ef00-4235-a860-790fda66500a/status.json"
+              },
+              {
+                "kind": "other",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/c7f1d5e7-ef00-4235-a860-790fda66500a/events.jsonl",
+                "description": "Lifecycle events"
+              }
+            ],
+            "receipts": [],
+            "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop335368489/004",
+            "ownerSessionId": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl"
+          }
+        },
+        "isError": false,
+        "timestamp": 1789536350357
+      }
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl",
+    "line": 43,
+    "event": {
+      "type": "custom_message",
+      "customType": "subagent-notify",
+      "content": "Background task completed: **worker**\n\nworker:\nImplemented the implementation-stage report.\nChanged files: `.spacedock-state/recorded-gate-task/index.md`\nValidation: Exactly one report section; committed as `43c5ba0`; no staged files.\n\nSession file: /home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/22943409-f624-4946-bdb2-7aff5c3f9f6a/run-0/session.jsonl",
+      "display": false,
+      "id": "aa5fa613",
+      "parentId": "d4900951",
+      "timestamp": "2026-09-16T05:26:53.116Z"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl",
+    "line": 53,
+    "event": {
+      "type": "message",
+      "id": "0e48c98a",
+      "parentId": "f5acd6d4",
+      "timestamp": "2026-09-16T05:27:35.962Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_4nVAQVpqppeMD7VDUe9AfCu9|fc_04f951136e72376e016aaa28c6764887d195088ae359525cb9",
+        "toolName": "subagent",
+        "content": [
+          {
+            "type": "text",
+            "text": "Run fan-out: 1/64 used, 63 remaining\nAsync: worker [fbe89c19-4218-4448-abb0-a9ebf10ebb6c]\n\nThe async run is detached. Do not run sleep timers or polling loops just to wait for it.\nThis is a non-interactive run: Pi auto-drains current-session subagent work at agent_end so detached children are not abandoned. Use bg_wait only when this turn must receive provider, detached, or other background-work results that have no native completion notification.\nUse subagent({ action: \"status\", id: \"...\" }) when you need a one-shot status/result or to inspect a blocked/stale run; do not poll in a loop.\nMission: 096bb5d6-28d6-4809-b0f2-7137da0aa414 (active)"
+          }
+        ],
+        "details": {
+          "mode": "single",
+          "runId": "fbe89c19-4218-4448-abb0-a9ebf10ebb6c",
+          "results": [],
+          "asyncId": "fbe89c19-4218-4448-abb0-a9ebf10ebb6c",
+          "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/fbe89c19-4218-4448-abb0-a9ebf10ebb6c",
+          "launchContractDigest": "99ab8a2d7fbd5bc18fedffde688d7d427fe9142f1af6cf079cfdfae0678892e9",
+          "launchResolvedExtensions": {
+            "version": 1,
+            "source": "launch-resolved",
+            "disableAmbientExtensions": false,
+            "runtime": [
+              "sha256:918c74589726e55e"
+            ],
+            "configured": [],
+            "effective": [
+              "sha256:918c74589726e55e"
+            ],
+            "omitted": {
+              "runtime": 0,
+              "configured": 0,
+              "effective": 0
+            }
+          },
+          "context": "fresh",
+          "timeoutMs": 1800000,
+          "deadlineAt": 1789538255953,
+          "runFanoutBudget": {
+            "used": 1,
+            "limit": 64,
+            "remaining": 63
+          },
+          "missionId": "096bb5d6-28d6-4809-b0f2-7137da0aa414",
+          "missionPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop335368489/001/missions/projects/7dfde623bdc458d36f0bf0fd6430ab5fc63ef8d2254c4a7b11ec73a39e3646bd/096bb5d6-28d6-4809-b0f2-7137da0aa414.json",
+          "mission": {
+            "schemaVersion": 1,
+            "id": "096bb5d6-28d6-4809-b0f2-7137da0aa414",
+            "title": "[prompt redacted]",
+            "objective": "[prompt redacted]",
+            "status": "active",
+            "createdAt": "2026-09-16T05:27:35.950Z",
+            "updatedAt": "2026-09-16T05:27:35.961Z",
+            "runs": [
+              {
+                "runId": "fbe89c19-4218-4448-abb0-a9ebf10ebb6c",
+                "mode": "single",
+                "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/fbe89c19-4218-4448-abb0-a9ebf10ebb6c",
+                "status": "active",
+                "startedAt": "2026-09-16T05:27:35.961Z"
+              }
+            ],
+            "workflowChildren": [],
+            "decisions": [],
+            "artifacts": [
+              {
+                "kind": "status",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/fbe89c19-4218-4448-abb0-a9ebf10ebb6c/status.json"
+              },
+              {
+                "kind": "other",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/fbe89c19-4218-4448-abb0-a9ebf10ebb6c/events.jsonl",
+                "description": "Lifecycle events"
+              }
+            ],
+            "receipts": [],
+            "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop335368489/004",
+            "ownerSessionId": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl"
+          }
+        },
+        "isError": false,
+        "timestamp": 1789536455962
+      }
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4.jsonl",
+    "line": 56,
+    "event": {
+      "type": "custom_message",
+      "customType": "subagent-notify",
+      "content": "Background task completed: **worker**\n\nworker:\nImplemented validation report for the retained package.\nChanged files: `.spacedock-state/recorded-gate-task/index.md`\nValidation: Confirmed no dispatchable successor before consumed approval; committed as `305bd81`.\n\nSession file: /home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/cd9a7854-9e56-497f-b9f8-6a61d46dbc63/run-0/session.jsonl",
+      "display": false,
+      "id": "0ec09538",
+      "parentId": "9aefcb2e",
+      "timestamp": "2026-09-16T05:30:15.487Z"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/22943409-f624-4946-bdb2-7aff5c3f9f6a/run-0/session.jsonl",
+    "line": 1,
+    "event": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0a8ad-b48f-745b-8496-1908b4b33800",
+      "timestamp": "2026-09-16T05:25:51.375Z",
+      "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop335368489/004"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/22943409-f624-4946-bdb2-7aff5c3f9f6a/run-0/session.jsonl",
+    "line": 4,
+    "event": {
+      "type": "session_info",
+      "id": "ef608262",
+      "parentId": "8f7deac7",
+      "timestamp": "2026-09-16T05:25:51.381Z",
+      "name": "subagent-worker-c7f1d5e7-ef00-4235-a860-790fda66500a-1"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/22943409-f624-4946-bdb2-7aff5c3f9f6a/run-0/session.jsonl",
+    "line": 34,
+    "event": {
+      "type": "message",
+      "id": "53d8e496",
+      "parentId": "ad4866d7",
+      "timestamp": "2026-09-16T05:26:32.163Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_3HizDNZ7RMXLHObtw07TPrvg|fc_00113d28317c8597016aaa2886509487d18aecd2ff09f79e01",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "[spacedock-state/004 43c5ba0] record implementation stage report\n 1 file changed, 9 insertions(+)\n## spacedock-state/004\n?? dirty-sibling.md\n43c5ba0 record implementation stage report\n recorded-gate-task/index.md | 9 +++++++++\n 1 file changed, 9 insertions(+)\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789536392163
+      }
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/cd9a7854-9e56-497f-b9f8-6a61d46dbc63/run-0/session.jsonl",
+    "line": 1,
+    "event": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0a8af-5125-725f-9200-2a5de00e08cb",
+      "timestamp": "2026-09-16T05:27:36.998Z",
+      "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop335368489/004"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/cd9a7854-9e56-497f-b9f8-6a61d46dbc63/run-0/session.jsonl",
+    "line": 4,
+    "event": {
+      "type": "session_info",
+      "id": "474ee821",
+      "parentId": "2f3a7a7c",
+      "timestamp": "2026-09-16T05:27:37.004Z",
+      "name": "subagent-worker-fbe89c19-4218-4448-abb0-a9ebf10ebb6c-1"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T05-24-27-368Z_01a0a8ac-6c68-77ef-8d90-279835984ba4/cd9a7854-9e56-497f-b9f8-6a61d46dbc63/run-0/session.jsonl",
+    "line": 76,
+    "event": {
+      "type": "message",
+      "id": "8d1a7c5e",
+      "parentId": "d893c233",
+      "timestamp": "2026-09-16T05:30:03.945Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_krin9mWeRgPMSR9KYpFG8mqn|fc_0765d8921080a447016aaa295bdca887d19ab6898975782531",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "305bd81 record validation stage report\n recorded-gate-task/index.md | 11 +++++++++++\n 1 file changed, 11 insertions(+)\n## Stage Report: implementation\n\n- DONE: Append exactly one `## Stage Report: implementation`, then return completion.\n  Added this single implementation report to the retained entity package.\n\n### Summary\n\nRecorded the implementation-stage completion for the retained package. No source-code changes were required by the stage definition.\n\n## Stage Report: validation\n\n- DONE: Validate and present the retained package.\n  The implementation report is present in commit `43c5ba0`; the retained entity snapshot and recorder contract remain available.\n- DONE: Verify that successor dispatch is conditional on consumed approval.\n  `status --next --json` returned `dispatchable:[]` and `ready_gates:[]` while validation had no consumed approval, so no successor was dispatched prematurely.\n\n### Summary\n\nValidated the retained package and its implementation-stage evidence. The current gated validation state is correctly quiescent until an approval is consumed; only then may the handoff successor become dispatchable.\n\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789536603945
+      }
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c.jsonl",
+    "line": 1,
+    "event": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0a8ae-6504-7238-98a1-3ce857ca485c",
+      "timestamp": "2026-09-16T05:26:36.549Z",
+      "cwd": "/tmp/TestLiveCommonAutoContinueAfterImplementation131399588/004"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c.jsonl",
+    "line": 38,
+    "event": {
+      "type": "message",
+      "id": "e0d14ef6",
+      "parentId": "40c6d3dd",
+      "timestamp": "2026-09-16T05:28:36.456Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_9NdcwTfLh1X6fAtR3VdM0kUz|fc_0e6727a8bf73ef80016aaa2903e9e087d1ba68cbbd38c92730",
+        "toolName": "subagent",
+        "content": [
+          {
+            "type": "text",
+            "text": "Run fan-out: 1/64 used, 63 remaining\nAsync: worker [f4560401-c862-462b-9594-522cbc325a40]\n\nThe async run is detached. Do not run sleep timers or polling loops just to wait for it.\nThis is a non-interactive run: Pi auto-drains current-session subagent work at agent_end so detached children are not abandoned. Use bg_wait only when this turn must receive provider, detached, or other background-work results that have no native completion notification.\nUse subagent({ action: \"status\", id: \"...\" }) when you need a one-shot status/result or to inspect a blocked/stale run; do not poll in a loop.\nMission: 19b9156b-61ff-40b0-a79e-f8009419f42a (active)"
+          }
+        ],
+        "details": {
+          "mode": "single",
+          "runId": "f4560401-c862-462b-9594-522cbc325a40",
+          "results": [],
+          "asyncId": "f4560401-c862-462b-9594-522cbc325a40",
+          "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/f4560401-c862-462b-9594-522cbc325a40",
+          "launchContractDigest": "418278cc258fd0e8076ec72f43aa75ade9dd6356dd4a1726fc7f4986bf7c00b4",
+          "launchResolvedExtensions": {
+            "version": 1,
+            "source": "launch-resolved",
+            "disableAmbientExtensions": false,
+            "runtime": [
+              "sha256:918c74589726e55e"
+            ],
+            "configured": [],
+            "effective": [
+              "sha256:918c74589726e55e"
+            ],
+            "omitted": {
+              "runtime": 0,
+              "configured": 0,
+              "effective": 0
+            }
+          },
+          "context": "fresh",
+          "timeoutMs": 1800000,
+          "deadlineAt": 1789538316439,
+          "runFanoutBudget": {
+            "used": 1,
+            "limit": 64,
+            "remaining": 63
+          },
+          "missionId": "19b9156b-61ff-40b0-a79e-f8009419f42a",
+          "missionPath": "/tmp/TestLiveCommonAutoContinueAfterImplementation131399588/001/missions/projects/a77adf8d694d3644d401661182b8d9c5f92ffb6ae831e5ad64b0cd626595baec/19b9156b-61ff-40b0-a79e-f8009419f42a.json",
+          "mission": {
+            "schemaVersion": 1,
+            "id": "19b9156b-61ff-40b0-a79e-f8009419f42a",
+            "title": "[prompt redacted]",
+            "objective": "[prompt redacted]",
+            "status": "active",
+            "createdAt": "2026-09-16T05:28:36.432Z",
+            "updatedAt": "2026-09-16T05:28:36.455Z",
+            "runs": [
+              {
+                "runId": "f4560401-c862-462b-9594-522cbc325a40",
+                "mode": "single",
+                "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/f4560401-c862-462b-9594-522cbc325a40",
+                "status": "active",
+                "startedAt": "2026-09-16T05:28:36.455Z"
+              }
+            ],
+            "workflowChildren": [],
+            "decisions": [],
+            "artifacts": [
+              {
+                "kind": "status",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/f4560401-c862-462b-9594-522cbc325a40/status.json"
+              },
+              {
+                "kind": "other",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/f4560401-c862-462b-9594-522cbc325a40/events.jsonl",
+                "description": "Lifecycle events"
+              }
+            ],
+            "receipts": [],
+            "cwd": "/tmp/TestLiveCommonAutoContinueAfterImplementation131399588/004",
+            "ownerSessionId": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c.jsonl"
+          }
+        },
+        "isError": false,
+        "timestamp": 1789536516456
+      }
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c.jsonl",
+    "line": 41,
+    "event": {
+      "type": "custom_message",
+      "customType": "subagent-notify",
+      "content": "Background task completed: **worker**\n\nworker:\nImplemented validation for Auto Continue Task.\nChanged files: `auto-continue-task.md`\nValidation: AC-1 passed; committed as `120a280`.\nOpen risks/questions: None.\n\nSession file: /home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c/4c1a88ae-3f7b-4ce8-8539-c922c068d407/run-0/session.jsonl",
+      "display": false,
+      "id": "5173dcde",
+      "parentId": "2f3754f5",
+      "timestamp": "2026-09-16T05:30:01.460Z"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c.jsonl",
+    "line": 102,
+    "event": {
+      "type": "message",
+      "id": "843b559e",
+      "parentId": "a215e228",
+      "timestamp": "2026-09-16T05:34:38.647Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_VGeMrUU04Zwb8qZwy52L8DDn|fc_0e6727a8bf73ef80016aaa2a6c62a087d1b33b7f41f6485da4",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: --reference /tmp/TestLiveCommonAuto-ContinueAfterImplementation131399588/004/README.md: selected source must be a readable non-symlink regular file: lstat /tmp/TestLiveCommonAuto-ContinueAfterImplementation131399588/004/README.md: no such file or directory\n\n\nCommand exited with code 1"
+          }
+        ],
+        "details": {},
+        "isError": true,
+        "timestamp": 1789536878647
+      }
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c/4c1a88ae-3f7b-4ce8-8539-c922c068d407/run-0/session.jsonl",
+    "line": 1,
+    "event": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0a8b0-3d52-766c-9dfa-c88532f9685e",
+      "timestamp": "2026-09-16T05:28:37.458Z",
+      "cwd": "/tmp/TestLiveCommonAutoContinueAfterImplementation131399588/004"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c/4c1a88ae-3f7b-4ce8-8539-c922c068d407/run-0/session.jsonl",
+    "line": 4,
+    "event": {
+      "type": "session_info",
+      "id": "6711fbcc",
+      "parentId": "342bb6a0",
+      "timestamp": "2026-09-16T05:28:37.465Z",
+      "name": "subagent-worker-f4560401-c862-462b-9594-522cbc325a40-1"
+    }
+  },
+  {
+    "source": "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-16T05-26-36-549Z_01a0a8ae-6504-7238-98a1-3ce857ca485c/4c1a88ae-3f7b-4ce8-8539-c922c068d407/run-0/session.jsonl",
+    "line": 29,
+    "event": {
+      "type": "message",
+      "id": "fd124f2f",
+      "parentId": "c704212b",
+      "timestamp": "2026-09-16T05:29:22.104Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_2f31fUeCvIvChD0CkZbTXyJz|fc_03b08c81054a2281016aaa292f7bfc87d1951713b5f8caad42",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "diff --git a/auto-continue-task.md b/auto-continue-task.md\nindex fce45ed..e3cc40a 100644\n--- a/auto-continue-task.md\n+++ b/auto-continue-task.md\n@@ -24,3 +24,12 @@ Verified by: the implementation stage report below plus a validation pass.\n ### Summary\n \n Implementation is complete. The first officer must advance to validation and dispatch a fresh validator.\n+\n+## Stage Report: validation\n+\n+- DONE: Verify the implementation deliverable exists and is committed, satisfying AC-1.\n+  The implementation stage report is present and records that the deliverable is committed; commit 4843197 contains the implementation deliverable and report. Recommendation: PASSED.\n+\n+### Summary\n+\n+Validation confirmed the implementation report is present and explicitly records a committed deliverable. The implementation commit is present in the worktree history, so AC-1 passes.\n[auto-continue-task 120a280] validation: approve auto-continue-task\n 1 file changed, 9 insertions(+)\n## auto-continue-task\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789536562103
+      }
+    }
+  }
+]
