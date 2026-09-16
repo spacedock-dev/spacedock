@@ -77,3 +77,21 @@ One 150-line Pi helper correlates the parent dispatch result with the notificati
 Actual surface is 12 files, +424/-11, within the proposed helper/test estimate: seven Go harness/test files plus four projected JSONL fixtures and provenance (14,818 bytes). Exact paths/numstat are in `artifacts/implementation/surface.txt`; they are `internal/ensigncycle/{claude_runtime_helpers_test.go,pi_native_completion_test.go,pi_rejection_extractors_test.go,auto_continue_fixtures_test.go,claude_live_runner_test.go,shared_promoted_live_test.go,pi_auto_continue_double_dispatch_replay_test.go}` and `internal/ensigncycle/testdata/pi_native_completion/{default-parent.jsonl,default-child.jsonl,auto-parent.jsonl,auto-child.jsonl,provenance.json}`.
 
 Both pre-edit reproductions, separate FO FIX authorizations (G1 and conflicting epoch), command details and final/initial logs are retained under `artifacts/implementation/`. The captured fixture records are field projections with source SHA-256/line provenance; the Git end state is explicitly reconstructed because no original Git repository was retained. `gofmt -w ./cmd ./internal` ran, final touched files were formatted again, and the unrelated baseline release-test spacing change was restored; code worktree is clean. State report synchronization is left to the FO under the dispatch’s explicit no-push direction.
+
+
+## Stage Report: validation
+
+- DONE: Verify captured native completion and wrong-worker/order negatives at the actual grader boundary without accepting completion prose alone.
+  Candidate `ba8e6eeb4e28e310b17897a0a8b12e151366b8f9`: both captured/full retained parents pass, 27 existing negatives plus seven independent overlay probes pass; removing identity correlation makes the wrong-run test fail (artifacts/validation/).
+- DONE: Confirm downstream gate and commit checks still fail correctly, and historical Pi/Claude/Codex controls remain valid.
+  Existing replay preserves `entity has no gates record` and uncommitted-report rejection; bypassing either check makes its test fail. Historical status/wait, Claude replay, Codex lifecycle and cross-host gate controls pass in focused.log.
+- DONE: Audit exact diff and local checks against every AC; record honest tip-CI deferral and any findings before recommending delivery.
+  AC-1/AC-2 pass locally; source hashes/projections independently match all four originals. AC-3 remains partial: final normal/race logs each exit 1 only at the FO-declined installed-manifest defect; exact 12-file +424/-11 diff, formatting and candidate cleanliness checked.
+- SKIPPED: Final tip PR/native host CI for AC-3.
+  Explicitly deferred by dispatch to FO after independent validation; no model/native run, CI, PR, push or rebase. No skipped or unrun check is represented as green.
+
+### Summary
+
+Recommend PASSED for local validation of `ba8e6eeb4e28e310b17897a0a8b12e151366b8f9`, with final live/tip CI explicitly pending. Checklist: 3 DONE, 1 SKIPPED, 0 FAILED; no new material, deferred-risk or polish finding. Approval/scoping, per-AC evidence, commands, source verification, seven independent probes and three falsifying mutation logs are recorded in `artifacts/validation/review.md` and adjacent files.
+
+Candidate and frontmatter remained unchanged. Existing final normal/race logs were reused, preserving their actual exit-1 installed-manifest failure and FO DECLINED disposition; state report/artifacts are committed locally, with synchronization left to FO under the explicit no-push dispatch.

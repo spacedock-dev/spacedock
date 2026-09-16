@@ -1,0 +1,4 @@
+default-parent.jsonl: source SHA-256 and 5 projected records match original source positions [1, 39, 40, 43, 48]
+default-child.jsonl: source SHA-256 and 4 projected records match original source positions [1, 4, 5, 39]
+auto-parent.jsonl: source SHA-256 and 7 projected records match original source positions [1, 37, 38, 41, 48, 101, 102]
+auto-child.jsonl: source SHA-256 and 4 projected records match original source positions [1, 4, 5, 33]

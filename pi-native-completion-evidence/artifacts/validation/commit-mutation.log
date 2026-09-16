@@ -1,0 +1,12 @@
+Deliberate detached Go overlay mutation; candidate unchanged. Expected exit 1.
+=== RUN   TestPiNativeCompletionCapturedReplay
+=== RUN   TestPiNativeCompletionCapturedReplay/auto
+    pi_auto_continue_double_dispatch_replay_test.go:114: captured downstream failure preserved: entity has no gates record
+    pi_auto_continue_double_dispatch_replay_test.go:122: uncommitted report passed: <nil>
+--- FAIL: TestPiNativeCompletionCapturedReplay (0.24s)
+    --- FAIL: TestPiNativeCompletionCapturedReplay/auto (0.24s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.489s
+FAIL
+
+Exit: 1

@@ -1,0 +1,11 @@
+Deliberate detached Go overlay mutation; candidate unchanged. Expected exit 1.
+=== RUN   TestPiNativeCompletionCapturedReplay
+=== RUN   TestPiNativeCompletionCapturedReplay/auto
+    pi_auto_continue_double_dispatch_replay_test.go:112: captured missing gate must still fail: <nil>
+--- FAIL: TestPiNativeCompletionCapturedReplay (0.15s)
+    --- FAIL: TestPiNativeCompletionCapturedReplay/auto (0.15s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.404s
+FAIL
+
+Exit: 1

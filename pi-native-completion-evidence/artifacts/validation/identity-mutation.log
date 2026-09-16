@@ -1,0 +1,13 @@
+Deliberate detached Go overlay mutation; candidate unchanged. Expected exit 1.
+=== RUN   TestPiNativeCompletionAttributionAndOrdering
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/run
+    pi_auto_continue_double_dispatch_replay_test.go:213: invalid completion passed
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/missing-run
+--- FAIL: TestPiNativeCompletionAttributionAndOrdering (0.00s)
+    --- FAIL: TestPiNativeCompletionAttributionAndOrdering/run (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/missing-run (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.247s
+FAIL
+
+Exit: 1

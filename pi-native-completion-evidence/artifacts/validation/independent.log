@@ -1,0 +1,18 @@
+=== RUN   TestIndependentNativeBoundary
+=== RUN   TestIndependentNativeBoundary/index
+=== RUN   TestIndependentNativeBoundary/prose-is-irrelevant
+=== RUN   TestIndependentNativeBoundary/stale-after-redispatch
+=== RUN   TestIndependentNativeBoundary/before-result
+=== RUN   TestIndependentNativeBoundary/malformed-child
+=== RUN   TestIndependentNativeBoundary/full-default
+=== RUN   TestIndependentNativeBoundary/padding-1000
+--- PASS: TestIndependentNativeBoundary (0.02s)
+    --- PASS: TestIndependentNativeBoundary/index (0.00s)
+    --- PASS: TestIndependentNativeBoundary/prose-is-irrelevant (0.00s)
+    --- PASS: TestIndependentNativeBoundary/stale-after-redispatch (0.00s)
+    --- PASS: TestIndependentNativeBoundary/before-result (0.00s)
+    --- PASS: TestIndependentNativeBoundary/malformed-child (0.00s)
+    --- PASS: TestIndependentNativeBoundary/full-default (0.01s)
+    --- PASS: TestIndependentNativeBoundary/padding-1000 (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.317s

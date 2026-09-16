@@ -1,0 +1,35 @@
+
+func TestIndependentNativeBoundary(t *testing.T) {
+ for _, mode := range []string{"index", "prose-is-irrelevant", "stale-after-redispatch", "before-result", "malformed-child", "full-default", "padding-1000"} {
+  t.Run(mode, func(t *testing.T) {
+   stream, artifacts, child := capturedPiCompletion(t, "default")
+   lines := strings.Split(strings.TrimSpace(stream), "\n")
+   positive := mode == "index" || mode == "prose-is-irrelevant" || mode == "full-default" || mode == "padding-1000"
+   switch mode {
+   case "index":
+    idx, err := piNativeCompletion(stream, "implementation", artifacts)
+    if err != nil || idx != 3 { t.Fatalf("native position=%d error=%v", idx, err) }
+   case "prose-is-irrelevant":
+    var rec piSessionRecord
+    if err := json.Unmarshal([]byte(lines[3]), &rec); err != nil { t.Fatal(err) }
+    rec.Content = "Session file: " + strings.Split(rec.Content, "Session file: ")[1]
+    b, _ := json.Marshal(rec); lines[3] = string(b); stream = strings.Join(lines, "\n")
+   case "stale-after-redispatch":
+    lines = []string{lines[0],lines[1],lines[2],lines[3],lines[1],lines[4]}; stream = strings.Join(lines,"\n")
+   case "before-result":
+    lines[2],lines[3] = lines[3],lines[2]; stream = strings.Join(lines,"\n")
+   case "malformed-child":
+    writeFile(t,child,readFile(t,child)+"{broken\n")
+   case "full-default":
+    artifacts = "/tmp/spacedock-tip-ci/pi/live-artifacts/pi/pi-common/default-headless-gate-stop"
+    parents, err := filepath.Glob(filepath.Join(artifacts,"sessions","*.jsonl")); if err != nil || len(parents)!=1 { t.Fatal("retained source missing") }
+    stream = readFile(t,filepath.Join(artifacts,"pi-stdout.txt"))+"\n"+readFile(t,filepath.Join(artifacts,"pi-stderr.txt"))+"\n"+readFile(t,parents[0])
+   case "padding-1000":
+    stream = lines[0]+"\n"+strings.Repeat(`{"type":"message","message":{"role":"assistant","content":[]}}`+"\n",1000)+strings.Join(lines[1:],"\n")
+    idx,err := piNativeCompletion(stream,"implementation",artifacts); if err != nil || idx != 1003 { t.Fatalf("padded position=%d error=%v",idx,err) }
+   }
+   err := assertImplementationWorkerLifecycle(stream,"## Stage Report: implementation\n- DONE: work\n",artifacts)
+   if (err == nil) != positive { t.Fatalf("positive=%v got %v",positive,err) }
+  })
+ }
+}
