@@ -1,0 +1,18 @@
+--- FAIL: TestRuntimeLiveRegistryReconciliation (0.22s)
+    live_registry_reconciliation_test.go:278: TestLiveCommonOwnedConflictOwnerHandoff has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonShallowBoot has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonAutoContinueAfterImplementation has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonKeepMovingPosture has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonMergeHookGuardrail has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonSelfEvidenceMergeTriage has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonZeroDiscovery has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonSmallestSufficientMechanism has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonACValueReanchor has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonFeedbackThreeCycleEscalation has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonFiling has no recognized live coverage classification
+    live_registry_reconciliation_test.go:278: TestLiveCommonSameStageRevision has no recognized live coverage classification
+    live_registry_reconciliation_test.go:92: derived common gap xfail/claude-sonnet=1
+    live_registry_reconciliation_test.go:92: derived common gap xfail/pi=4
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/contractlint	0.417s
+FAIL

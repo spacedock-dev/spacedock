@@ -1,0 +1,82 @@
+=== RUN   TestLiveScheduled
+=== RUN   TestLiveScheduled/slot-0
+=== PAUSE TestLiveScheduled/slot-0
+=== RUN   TestLiveScheduled/slot-1
+=== PAUSE TestLiveScheduled/slot-1
+=== RUN   TestLiveScheduled/slot-2
+=== PAUSE TestLiveScheduled/slot-2
+=== CONT  TestLiveScheduled/slot-0
+=== RUN   TestLiveScheduled/slot-0/TestLiveCommonAutoContinueAfterImplementation
+=== CONT  TestLiveScheduled/slot-2
+=== RUN   TestLiveScheduled/slot-2/TestLiveCommonRejectionFlow
+=== CONT  TestLiveScheduled/slot-1
+=== NAME  TestLiveScheduled/slot-0/TestLiveCommonAutoContinueAfterImplementation
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonAutoContinueAfterImplementation
+=== RUN   TestLiveScheduled/slot-1/TestLiveCommonDefaultHeadlessGateStop
+=== RUN   TestLiveScheduled/slot-0/TestLiveCommonKeepMovingPosture
+=== NAME  TestLiveScheduled/slot-2/TestLiveCommonRejectionFlow
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonRejectionFlow
+=== NAME  TestLiveScheduled/slot-1/TestLiveCommonDefaultHeadlessGateStop
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonDefaultHeadlessGateStop
+=== RUN   TestLiveScheduled/slot-2/TestLiveCommonSmallestSufficientMechanism
+=== RUN   TestLiveScheduled/slot-1/TestLiveCommonRecordedGateLifecycle
+=== NAME  TestLiveScheduled/slot-2/TestLiveCommonSmallestSufficientMechanism
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonSmallestSufficientMechanism
+=== NAME  TestLiveScheduled/slot-0/TestLiveCommonKeepMovingPosture
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonKeepMovingPosture
+=== NAME  TestLiveScheduled/slot-1/TestLiveCommonRecordedGateLifecycle
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonRecordedGateLifecycle
+=== RUN   TestLiveScheduled/slot-2/TestLiveCommonOwnedConflictOwnerHandoff
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonOwnedConflictOwnerHandoff
+=== RUN   TestLiveScheduled/slot-1/TestLiveCommonFullEnsignCycle
+=== RUN   TestLiveScheduled/slot-0/TestLiveCommonACValueReanchor
+=== RUN   TestLiveScheduled/slot-2/TestLiveCommonGateGuardrail
+=== NAME  TestLiveScheduled/slot-0/TestLiveCommonACValueReanchor
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonACValueReanchor
+=== NAME  TestLiveScheduled/slot-2/TestLiveCommonGateGuardrail
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonGateGuardrail
+=== NAME  TestLiveScheduled/slot-1/TestLiveCommonFullEnsignCycle
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonFullEnsignCycle
+=== RUN   TestLiveScheduled/slot-2/TestLiveCommonFeedbackThreeCycleEscalation
+=== RUN   TestLiveScheduled/slot-1/TestLiveCommonSelfEvidenceMergeTriage
+=== NAME  TestLiveScheduled/slot-2/TestLiveCommonFeedbackThreeCycleEscalation
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonFeedbackThreeCycleEscalation
+=== NAME  TestLiveScheduled/slot-1/TestLiveCommonSelfEvidenceMergeTriage
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonSelfEvidenceMergeTriage
+=== RUN   TestLiveScheduled/slot-2/TestLiveCommonMergeHookGuardrail
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonMergeHookGuardrail
+=== RUN   TestLiveScheduled/slot-1/TestLiveCommonFiling
+=== RUN   TestLiveScheduled/slot-2/TestLiveCommonZeroDiscovery
+=== NAME  TestLiveScheduled/slot-1/TestLiveCommonFiling
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonFiling
+=== NAME  TestLiveScheduled/slot-2/TestLiveCommonZeroDiscovery
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonZeroDiscovery
+=== RUN   TestLiveScheduled/slot-1/TestLiveCommonShallowBoot
+=== RUN   TestLiveScheduled/slot-0/TestLiveCommonWithdrawnGateRecovery
+=== NAME  TestLiveScheduled/slot-1/TestLiveCommonShallowBoot
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonShallowBoot
+=== NAME  TestLiveScheduled/slot-0/TestLiveCommonWithdrawnGateRecovery
+    scheduled_live_test.go:50: AUDIT_SELECTED TestLiveCommonWithdrawnGateRecovery
+--- PASS: TestLiveScheduled (0.00s)
+    --- PASS: TestLiveScheduled/slot-2 (0.00s)
+        --- PASS: TestLiveScheduled/slot-2/TestLiveCommonRejectionFlow (0.00s)
+        --- PASS: TestLiveScheduled/slot-2/TestLiveCommonSmallestSufficientMechanism (0.00s)
+        --- PASS: TestLiveScheduled/slot-2/TestLiveCommonOwnedConflictOwnerHandoff (0.00s)
+        --- PASS: TestLiveScheduled/slot-2/TestLiveCommonGateGuardrail (0.00s)
+        --- PASS: TestLiveScheduled/slot-2/TestLiveCommonFeedbackThreeCycleEscalation (0.00s)
+        --- PASS: TestLiveScheduled/slot-2/TestLiveCommonMergeHookGuardrail (0.00s)
+        --- PASS: TestLiveScheduled/slot-2/TestLiveCommonZeroDiscovery (0.00s)
+    --- PASS: TestLiveScheduled/slot-1 (0.00s)
+        --- PASS: TestLiveScheduled/slot-1/TestLiveCommonDefaultHeadlessGateStop (0.00s)
+        --- PASS: TestLiveScheduled/slot-1/TestLiveCommonRecordedGateLifecycle (0.00s)
+        --- PASS: TestLiveScheduled/slot-1/TestLiveCommonFullEnsignCycle (0.00s)
+        --- PASS: TestLiveScheduled/slot-1/TestLiveCommonSelfEvidenceMergeTriage (0.00s)
+        --- PASS: TestLiveScheduled/slot-1/TestLiveCommonFiling (0.00s)
+        --- PASS: TestLiveScheduled/slot-1/TestLiveCommonShallowBoot (0.00s)
+    --- PASS: TestLiveScheduled/slot-0 (0.00s)
+        --- PASS: TestLiveScheduled/slot-0/TestLiveCommonAutoContinueAfterImplementation (0.00s)
+        --- PASS: TestLiveScheduled/slot-0/TestLiveCommonKeepMovingPosture (0.00s)
+        --- PASS: TestLiveScheduled/slot-0/TestLiveCommonACValueReanchor (0.00s)
+        --- PASS: TestLiveScheduled/slot-0/TestLiveCommonWithdrawnGateRecovery (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.355s

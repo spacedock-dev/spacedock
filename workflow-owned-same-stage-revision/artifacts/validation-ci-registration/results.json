@@ -1,0 +1,37 @@
+[
+  {
+    "case": "baseline",
+    "exit": 0,
+    "expected": 0
+  },
+  {
+    "case": "missing-selector",
+    "exit": 1,
+    "expected": 1
+  },
+  {
+    "case": "missing-membership",
+    "exit": 1,
+    "expected": 1
+  },
+  {
+    "case": "wrong-runtime-filter",
+    "exit": 0,
+    "expected": 1
+  },
+  {
+    "case": "commented-selector",
+    "exit": 0,
+    "expected": 1
+  },
+  {
+    "case": "unclassified",
+    "exit": 1,
+    "expected": 1
+  },
+  {
+    "case": "blank-exemption",
+    "exit": 1,
+    "expected": 1
+  }
+]

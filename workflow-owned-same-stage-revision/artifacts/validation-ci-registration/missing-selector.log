@@ -1,0 +1,28 @@
+--- FAIL: TestRuntimeLiveRegistryReconciliation (0.20s)
+    live_registry_reconciliation_test.go:278: TestLiveCommonFullEnsignCycle selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonACValueReanchor selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonFeedbackThreeCycleEscalation selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonZeroDiscovery selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonSelfEvidenceMergeTriage selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonShallowBoot selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveBareReachable selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonRejectionFlow selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonAutoContinueAfterImplementation selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonKeepMovingPosture selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonGateGuardrail selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonMergeHookGuardrail selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonSameStageRevision selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveBreakGlassShimRecovery selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonOwnedConflictOwnerHandoff selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonDefaultHeadlessGateStop selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonSmallestSufficientMechanism selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonWithdrawnGateRecovery selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonFiling selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveMergedTeamModeDispatch selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveScheduled selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:278: TestLiveCommonRecordedGateLifecycle selected 0 times in claude-live, want 1
+    live_registry_reconciliation_test.go:92: derived common gap xfail/claude-sonnet=1
+    live_registry_reconciliation_test.go:92: derived common gap xfail/pi=4
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/contractlint	0.465s
+FAIL

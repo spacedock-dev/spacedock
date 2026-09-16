@@ -457,3 +457,43 @@ Verification completed: focused registry and live-tagged deterministic checks pa
 Correction: 256 insertions / 115 deletions = +141 net across six modified files. Full task layer above `4ce49f1ea`: 416 insertions / 23 deletions = +393 net across seven files, within the FO-authorized +100–150 correction estimate and seven-file scope. This is a test-registration/enforcement correction; production code, skill behavior and workflow authority are unchanged.
 
 Evidence: `artifacts/implementation-ci-registration/red-proof.txt`, `focused-registry.log`, `focused-runtime.log`, `normal.log`, `race.log`, `checks.json`, and `scope-and-preservation.txt`. Earlier native/state evidence remains unchanged. No local native/model run establishes this expanded runtime coverage; updated stack-tip CI is required for final live acceptance. The retained independent validator owns review. FO owns publication/restacking; no code/state push, CI trigger, gate decision or independent self-validation occurred.
+
+## Review-finding disposition — routine CI correction
+
+### V2a — Scheduler membership checker accepts an omitted runtime journey
+
+- Exact evidence: [wrong-runtime-filter.log](artifacts/validation-ci-registration/wrong-runtime-filter.log) exits0 after filtering TestLiveCommonSameStageRevision from Codex's row-to-jobs loop. Actual scheduler execution with logging-only callable stubs changes from one invocation to zero; [baseline](artifacts/validation-ci-registration/offline-schedule-baseline.log), [omission](artifacts/validation-ci-registration/offline-schedule-codex-omission.log). No native host was launched.
+- Released user and normal workflow: maintainers rely on reconciliation to reject routine-lane omissions unless explicitly exempted; runtime filtering is an ordinary scheduler change.
+- Observable harm: declared row literals satisfy the guard while executable membership omits all six variants for Codex, without an exemption.
+- Affected authority: captain-ruling[2026-09-16] omission from routine live coverage must require an explicit choice; actual selection must be enforced.
+- Trigger: four-field AST rows are counted as both-host membership independently of the executed row-to-jobs filter.
+- Proposal: **Material / evidence-enforcement defect / task-owned / FIX recommended**. Observe actual scheduler callback selection through existing scheduler/checker owners with non-native stubs; do not add a general Go interpreter. FO disposition required before candidate repair.
+
+### V2b — Commented live command still satisfies coverage
+
+- Exact evidence: [commented-selector.log](artifacts/validation-ci-registration/commented-selector.log) exits0 after prefixing the actual Claude gotestsum scheduler command with `#`; [reproduction](artifacts/validation-ci-registration/checker-audit.py).
+- Released user and normal workflow: maintainers can comment out a routine workflow command while editing CI; coverage reconciliation is supposed to detect omission.
+- Observable harm: no shell invocation remains for that command, but the lane is reported selected without exemption.
+- Affected authority: captain-ruling[2026-09-16] missing routine live execution requires an explicit exemption rather than dead selector text.
+- Trigger: liveTestCoverageError scans raw YAML lines and counts selector text in shell comments as execution.
+- Proposal: **Material / evidence-enforcement defect / task-owned / FIX recommended**. Reuse existing yaml.v3/mappingValue workflow parsing and ignore shell-comment lines in jobs.steps.run. FO disposition required before candidate repair.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify all six same-stage variants are selected by routine lanes exactly once with preserved assertions and no targeted-only exception.
+  Candidate bf64ebeca has one Claude/Codex scheduler row, Pi common selector, six serial variants and no new skip/XFAIL. Moved grading is semantically identical and conventional rejection body byte-identical; three named exemptions remain unchanged. Existing native/state proof remains valid, but updated required-host tip CI is pending.
+- DONE: Attack the existing coverage checker with missing selectors, wrong runtime membership, unclassified tests and invalid exemptions; require actual failures.
+  [Detached mutation matrix](artifacts/validation-ci-registration/audit.md) confirms missing selector/row, unclassified targeted category and missing exemption reason fail. Wrong runtime filtering and a commented command incorrectly pass; V2a/V2b preserve exact actual failures of enforcement.
+- DONE: Assess local checks and scope against the captain amendment, preserving explicit pending live tip CI and any findings.
+  **REJECTED** for V2a/V2b. Proposed bounded existing-owner corrections require distinct FO disposition; candidate remains unchanged. Earlier PASSED reports do not supersede this new captain-required enforcement scope.
+  Required actual normal/race results each exit1 solely on known FO-declined installed-host resolver; neither is wholly green. +141 correction/six files and +393 full task/seven files match producer scope. No duplicate broad/native/model runs, upper-layer edits, code push, PR or CI.
+- SKIPPED: Claim final live acceptance or repair candidate.
+  New stack-tip CI must execute the promoted journey; old tip and retained local Codex evidence cannot establish expanded runtime coverage. Validator records findings only.
+
+### Summary
+
+Routine registration preserves all six behavioral controls and the conventional journey, but its new omission checker has two demonstrated false greens. Validation recommends REJECTED until actual runtime omission and commented-command controls fail as required, with new tip live CI still pending.
+
+### V2a/V2b FO disposition — 2026-09-16
+
+FO separately authorized FIX: the producer will observe actual callable identity/count by executing exact scheduler and ordering source offline with logging stubs, and parse existing YAML steps.run while discarding comments. Scope is one checker file plus report, with no models or new framework. Validator preserves the above findings and waits for producer completion before correction recheck; no self-repair is authorized.
