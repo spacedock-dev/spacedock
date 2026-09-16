@@ -57,6 +57,17 @@ gates:
                 id: briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-2:revision-1
                 digest: sha256:87f64cf46c42a95fc6be16f609be0b7d3c58c9a4aa3d5838595e11e94dc93615
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6es505tn1zz2597hetvnqn7y:validation:2
+                briefing: briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-16T20:44:39.48535Z"
+                decision: approve
+                reason: Captain binding resolution binding-1789591360273000000 approves all three named corrected validation snapshots in /tmp/stack-corrections-review.md for stack publication and final-tip CI. Restack preserves all patches and tree. No merge authority or live failure waiver.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
