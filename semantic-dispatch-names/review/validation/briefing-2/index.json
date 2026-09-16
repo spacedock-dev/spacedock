@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-2:revision-1",
+  "question": "Approve the independently validated naming coverage and branch-inventory correction for stack publication and final-tip CI?",
+  "artifacts": [
+    {
+      "id": "artifact:6es505tn1zz2597hetvnqn7y:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/72e3bf518c90442d30e9b9c8d2bb259879cc0e8b/semantic-dispatch-names/index.md",
+      "rev": "sha256:e9bbd805410f48fdaf6abcc245291cbcfd0452d798cf7444ef0da0e314a40b67",
+      "mediaType": "text/markdown",
+      "summary": "Native naming is selected in routine Codex CI; deterministic stamped identity runs offline. Real grader replay proves exact semantic/legacy branch membership independent of listing order and rejects wrong/missing/extra branches. Independent local validation passed; native tip CI pending. Scope 55 files +463 net."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6es505tn1zz2597hetvnqn7y:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/438053493838dc70c9478b3d991309d566783e85/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}
