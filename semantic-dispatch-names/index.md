@@ -1,6 +1,6 @@
 ---
 title: Use semantic branch and worker names
-status: validation
+status: implementation
 source: Captain request 2026-09-15; GitHub issue 624
 started: 2026-09-15T18:27:49Z
 completed:
@@ -8,8 +8,8 @@ verdict:
 score: 0.8
 worktree: .worktrees/spacedock-ensign-semantic-dispatch-names
 issue: spacedock-dev/spacedock#624
-pr: "#802"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: 6es505tn1zz2597hetvnqn7y
 gates:
     version: 1
@@ -51,7 +51,7 @@ gates:
                 reason: Captain approved validation in Subspace resolution:binding-1789524348826001000; accepts direction and presented evidence.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
