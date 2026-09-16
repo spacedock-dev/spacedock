@@ -1,0 +1,25 @@
+//go:build live
+package ensigncycle
+import("testing";"strings")
+func TestValidationRealHandoffGrader(t *testing.T){
+ t.Setenv("SPACEDOCK_BIN",buildRecordedGateBinary(t))
+ for _, mode:=range []string{"semantic","legacy-branch","missing-main","wrong-main","extra"}{t.Run(mode,func(t *testing.T){
+ f:=writeConflictOwnerFixture(t)
+ gitAsCaptain(t,f.worktree,"rebase","--abort")
+ writeFile(t,f.marker,"runtime-worker-owner\n")
+ gitAsCaptain(t,f.worktree,"add","owner-handoff.marker")
+ gitAsCaptain(t,f.worktree,"commit","-qm","owner marker")
+ switch mode{
+ case "legacy-branch":gitAsCaptain(t,f.worktree,"branch","-m","spacedock-ensign/conflict-owner");f.owner.Branch="spacedock-ensign/conflict-owner"
+ case "missing-main":gitAsCaptain(t,f.root,"checkout","--detach");gitAsCaptain(t,f.root,"branch","-D","main")
+ case "wrong-main":gitAsCaptain(t,f.root,"branch","-m","main","wrong")
+ case "extra":gitAsCaptain(t,f.root,"branch","extra")
+ }
+ err:=assertConflictOwnerHandoff(t,f,liveResult{})
+ valid:=mode=="semantic"||mode=="legacy-branch"
+ if (err==nil)!=valid{t.Fatalf("mode=%s err=%v",mode,err)}
+ if !valid && !strings.Contains(err.Error(),"branch inventory"){t.Fatalf("wrong failure boundary: %v",err)}
+ t.Logf("%s: %v",mode,err)
+ })}
+ for _,bs:=range [][]string{nil,{"main"},{"conflict-owner"},{"main","wrong"},{"main","conflict-owner","extra"},{"main","main"}}{if exactOwnerBranches(bs,"conflict-owner"){t.Fatal(bs)}}
+}

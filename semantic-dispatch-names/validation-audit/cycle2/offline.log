@@ -1,0 +1,4 @@
+=== RUN   TestConflictOwnerStampedIdentity
+--- PASS: TestConflictOwnerStampedIdentity (1.23s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	1.772s

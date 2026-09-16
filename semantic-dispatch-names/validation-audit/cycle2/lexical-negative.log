@@ -1,0 +1,8 @@
+=== RUN   TestValidationRealHandoffGrader
+=== RUN   TestValidationRealHandoffGrader/semantic
+    validation_cycle2_test.go:20: mode=semantic err=branch inventory = ["conflict-owner" "main"], want only main and stamped owner branch
+--- FAIL: TestValidationRealHandoffGrader (1.43s)
+    --- FAIL: TestValidationRealHandoffGrader/semantic (0.89s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	1.765s
+FAIL

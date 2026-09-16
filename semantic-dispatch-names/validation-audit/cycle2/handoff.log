@@ -1,0 +1,19 @@
+=== RUN   TestValidationRealHandoffGrader
+=== RUN   TestValidationRealHandoffGrader/semantic
+    validation_cycle2_test.go:22: semantic: <nil>
+=== RUN   TestValidationRealHandoffGrader/legacy-branch
+    validation_cycle2_test.go:22: legacy-branch: <nil>
+=== RUN   TestValidationRealHandoffGrader/missing-main
+    validation_cycle2_test.go:22: missing-main: branch inventory = ["(HEAD" "detached" "at" "8b1a97c)" "conflict-owner"], want only main and stamped owner branch
+=== RUN   TestValidationRealHandoffGrader/wrong-main
+    validation_cycle2_test.go:22: wrong-main: branch inventory = ["conflict-owner" "wrong"], want only main and stamped owner branch
+=== RUN   TestValidationRealHandoffGrader/extra
+    validation_cycle2_test.go:22: extra: branch inventory = ["conflict-owner" "extra" "main"], want only main and stamped owner branch
+--- PASS: TestValidationRealHandoffGrader (5.30s)
+    --- PASS: TestValidationRealHandoffGrader/semantic (1.17s)
+    --- PASS: TestValidationRealHandoffGrader/legacy-branch (0.92s)
+    --- PASS: TestValidationRealHandoffGrader/missing-main (0.89s)
+    --- PASS: TestValidationRealHandoffGrader/wrong-main (0.86s)
+    --- PASS: TestValidationRealHandoffGrader/extra (0.83s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	5.654s

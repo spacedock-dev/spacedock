@@ -1,0 +1,8 @@
+=== RUN   TestRuntimeLiveRegistryReconciliation
+    live_registry_reconciliation_test.go:200: offline claude scheduler: 544.718875ms
+    live_registry_reconciliation_test.go:200: offline codex scheduler: 470.394542ms
+    live_registry_reconciliation_test.go:97: derived common gap xfail/claude-sonnet=1
+    live_registry_reconciliation_test.go:97: derived common gap xfail/pi=4
+--- PASS: TestRuntimeLiveRegistryReconciliation (1.23s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	1.521s
