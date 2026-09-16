@@ -60,6 +60,17 @@ gates:
                 id: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-1:revision-1
                 digest: sha256:24ad88ebe6562841eea4aab4abaa54b1be456a6c4dc0c6408bbe3f446215b4bd
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zz1yqc2w2katp28wpa8nghx2:validation:1
+                briefing: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-16T02:13:15.314105Z"
+                decision: approve
+                reason: Captain approved validation in Subspace resolution:binding-1789524384326931000; accepts direction and presented evidence.
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
     stage: validation
