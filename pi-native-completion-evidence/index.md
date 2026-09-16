@@ -63,14 +63,14 @@ Start with the exact captured failure replay through existing lifecycle test own
   Full retained auto lifecycle now passes; captured absent-gate reconstruction still returns `entity has no gates record`. Existing Git check rejects an uncommitted report; bypassing either durable check breaks the replay. Historical Pi status/wait, Claude replay, Codex lifecycle and cross-host bypass controls pass (`artifacts/implementation/focused.log`).
 - DONE: Deliver a minimal committed correction with required local checks and clear tip-CI deferral.
   Code committed locally on the registered branch; focused tests, live-tag compile-only check and formatting completed. Final normal/race ran sequentially; ensigncycle passed in 354.805s / 335.058s. Native host lanes remain explicitly deferred below.
-- FAILED: `go test ./...` and `go test ./... -race` complete suite verdicts.
-  Both exit 1 only at the anticipated `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: `spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"`. All other packages pass; no race diagnostic. Exact final/initial logs are in `artifacts/implementation/`.
-- DONE: Compile the modified live callers without model execution.
-  `go test -tags live ./internal/ensigncycle -run '^$'` passes; it selects no tests. Removing artifactDir propagation from either existing call site would leave that live journey unable to credit native notices.
-- SKIPPED: Final tip PR/native host CI and independent validation.
-  FO owns these after implementation handback; no local native/model, network-auth, PR, push, CI or rebase was performed. The original auto gate-path typo is retained as an outcome failure, not fixed or declared green. AC-3 remains pending final tip CI.
 
 ### Summary
+
+`go test ./...` and `go test ./... -race` did not pass. Both exit 1 only at the anticipated `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: `spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"`. All other packages pass; no race diagnostic. Exact final/initial logs are in `artifacts/implementation/`. The FO explicitly DECLINED the exact pre-existing installed-manifest resolver defect for this task, as anticipated in the assignment; it is not an unresolved correction finding. This disposition does not change either exit-1 result or waive new failures.
+
+`go test -tags live ./internal/ensigncycle -run '^$'` passes; it selects no tests. Removing artifactDir propagation from either existing call site would leave that live journey unable to credit native notices.
+
+Final tip PR/native host CI and independent validation remain deferred, not passed. FO owns these after implementation handback; no local native/model, network-auth, PR, push, CI or rebase was performed. The original auto gate-path typo is retained as an outcome failure, not fixed or declared green. AC-3 remains pending final tip CI.
 
 One 150-line Pi helper correlates the parent dispatch result with the notification-referenced child’s exact assignment and run/epoch, and credits completion at the native parent position. Both existing callers pass optional retained-artifact roots; existing parsers and independent Git/report/gate checks remain authoritative, with no synthetic event, child-call concatenation or second commit parser.
 
