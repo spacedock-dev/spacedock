@@ -57,6 +57,17 @@ gates:
                 id: briefing:ad242krer2tckgx7150cyb7d:validation:attempt-2:revision-1
                 digest: sha256:5874f0846f98bb632dc176a5e3a4bbb486d883852b795951a6ce2d0450709b1a
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ad242krer2tckgx7150cyb7d:validation:2
+                briefing: briefing:ad242krer2tckgx7150cyb7d:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-16T20:44:44.504788Z"
+                decision: approve
+                reason: Captain binding resolution binding-1789591360273000000 approves all three named corrected validation snapshots in /tmp/stack-corrections-review.md for stack publication and final-tip CI. Restack preserves all patches and tree. No merge authority or live failure waiver.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Make the existing FO continue authorized work without a user reminder or /goal. Put the next-action rule at dispatch, completion, revision-routing and user-interruption boundaries.
