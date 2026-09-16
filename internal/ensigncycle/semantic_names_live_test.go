@@ -50,7 +50,7 @@ func TestLiveSemanticNamesCodex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v; artifacts %s", err, result.artifactDir)
 	}
-	stream, err := codexNativeLifecycleStream(runner.codexHome, result.jsonl)
+	stream, err := codexNativeLifecycleStream(runner.codexHome, result.jsonl, result.artifactDir)
 	if err != nil {
 		t.Fatal(err)
 	}
