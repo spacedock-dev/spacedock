@@ -41,6 +41,17 @@ gates:
                 id: briefing:pytyzge5v85mcy8c02t1khqv:validation:attempt-1:revision-1
                 digest: sha256:8bab61d8e05fc594a993ff91cfe44702447171af4a99f98c29a242ed827fba98
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:pytyzge5v85mcy8c02t1khqv:validation:1
+                briefing: briefing:pytyzge5v85mcy8c02t1khqv:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-16T04:39:58.914631Z"
+                decision: approve
+                reason: Captain approved validation in Subspace resolution:binding-1789533522567170000; local validation accepted and real Claude overlap/isolation remains required at stack-tip CI before delivery.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Reduce live CI completion time by running a committed duration-sorted list of the existing tests through three slots. This task is the **bottom PR**; the other in-flight PRs stack above it.
