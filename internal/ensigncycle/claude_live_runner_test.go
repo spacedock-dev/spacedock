@@ -530,6 +530,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 		routes, branch = piRejectionRoutes(result.stream)
 	}
 	writeRejectionTopologyDigest(t, result.artifactDir, branch, routes)
+	git(t, workflowRoot, "bundle", "create", filepath.Join(result.artifactDir, "state.bundle"), "--all")
 	// Every check below is host-neutral. The gate-prepared check in particular was
 	// wired Codex-only, which made FO residual mode 1 (ends without `gate prepare`)
 	// invisible on Claude and Pi even though it grades durable on-disk state.
