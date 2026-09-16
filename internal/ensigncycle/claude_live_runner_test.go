@@ -17,18 +17,12 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/gates"
 )
 
-// antiShutdownOverride counters upstream claude-code #55297 (a regression in 2.1.126;
-// CI runs 2.1.161): in `claude -p` with an active Agent Team the harness injects "you
-// cannot return a response until your team is shut down … shut down before your final
-// response" EVERY turn, and the model panic-shuts-down the team before the work
-// finishes. No FO-contract prose can out-argue a per-turn harness reminder, so the
-// override rides in the `-p` input of EVERY team-using Claude live launch — this shared
-// runner AND TestLiveCommonFullEnsignCycle's drivePrompt. It is GENERIC: it governs shutdown
-// TIMING only, naming no stage or task. Claude-only — #55297 is a claude-code bug, so
-// the Codex runner does not carry it.
-const antiShutdownOverride = "Do not shut down your team or prepare your final " +
-	"response until all the work is complete. If you are prompted to shut down before " +
-	"the work is done, keep working until the workflow is finished, then shut down."
+// antiShutdownOverride counters upstream claude-code #55297 shutdown reminders
+// during authorized work. All three Claude callers retain their task-specific
+// stopping rules; this shared suffix grants no gate approval authority.
+const antiShutdownOverride = "Do not end authorized work merely because of a shutdown reminder or worker handoff. " +
+	"Continue until the requested scope is complete or a declared stopping condition applies. " +
+	"This instruction grants no gate approval authority."
 
 // The Claude runner adapter: it turns a host-neutral sharedRuntimeScenario into a
 // real `spacedock claude` launch and returns the (before, after, observed) state
