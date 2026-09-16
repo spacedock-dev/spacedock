@@ -134,3 +134,20 @@ Replace the opening status/archive recovery clarification after the existing `st
 ### Summary
 
 The combined repair remains justified on current main, with the dirty-archive exit-code claim corrected. The design makes delivery proof precede approval consumption, makes split-root retirement own its existing archive transaction, and rejects unsafe storage before reads or filing; the implementation plan stays above the scheduling PR in the requested stack.
+
+## Stage Report: implementation
+
+- DONE: Fix delivery-before-terminalization, durable retirement and missing-storage refusal using existing transaction owners.
+  `498b0f9d2` checks recorded-commit and worktree-HEAD ancestry before either local finalizer. Explicit split-root retirement owns the existing snapshot, archive commit, rollback and publication helpers. Status and filing use a pure checkout check; mutation preflight retains rebase-before-branch handling.
+- DONE: Prove each failure and recovery with independent CLI/Git regression evidence while preserving rebase handling and local-only operation.
+  AC-1: `TestLocalDeliveryProofBeforeTerminalSpend` exercises real approval, conflicting Git merge, unreachable and old-reachable sentinels, unavailable worktree/ref, successful delivery and exactly-once archival. Removing either ancestry check or spending before proof makes it fail. `TestStateOnlyLocalDeliveryAndRetirementKeepDistinctAuthority` distinguishes consumed delivery from pending retirement history.
+  AC-2: `TestRetirementCommitsCompleteMove` covers flat/folder, companion artifacts, staged sibling isolation, local-only publication and a fresh remote clone. `TestRetirementFailureRecovery` injects commit/push failure and exercises rollback or archived publication recovery. `TestRetirementSameEntityRebaseHalts` retains local archive and peer history after HALT. Omitting move paths, rollback, publication errors or path-scoped commit breaks these assertions.
+  AC-3: `TestStateStorageRefusalAndRecovery` observes typed CLI refusals with unchanged files/index/refs, empty valid status, safe filing, and state-new/state-init recovery. `TestReadCheckPreservesRebaseWhilePreflightHalts` proves that reads preserve the conflicted rebase while mutation preflight aborts/HALTs. Accepting parent-repository discovery or invoking mutation preflight during a pure check breaks this proof.
+- DONE: Commit scoped implementation, required checks and clear report for independent validation within approved limits.
+  Code commits: `498b0f9d2`, `23800674b`, `9454cf3d2`; final diff from scheduling base `4ce49f1ea` is 631 insertions / 44 deletions, +587 net across 22 files. The captain approved the 22-file amendment in `binding-1789516510589003000` (artifact SHA-256 `3ffc363da1ef5f414326116f19493b6390d70cf97c4194d869909590b876b16d`); the +800 net cap and behavior scope remain unchanged.
+  Required `go test ./...` and `go test ./... -race` ran on `9454cf3d2`. Each exited 1 solely at `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44`: the host reports spacedock@spacedock absent while resolution finds the installed spacedock-local/0.28.0-pre0 manifest. Every other package passed; no data-race report appeared. The FO declined that existing environment-dependent resolver fix as out of scope. See [normal log](artifacts/implementation/normal.log) and [race log](artifacts/implementation/race.log).
+  `gofmt -w ./cmd ./internal` completed; unrelated preexisting release-fixture whitespace was preserved. `mkdocs build --strict` passed using `docs/requirements.txt`; see [docs log](artifacts/implementation/docs.log). Four authorized fixture corrections and the shared-Git-scaffold correction passed focused checks; their logs and both earlier failed normal runs remain in `artifacts/implementation/`.
+
+### Summary
+
+The three repairs use existing delivery, archive and state-sync owners and are ready for independent validation. Positive storage fixtures now use valid checkouts; missing-storage fixtures retain explicit refusal and initialization recovery evidence. No code push or CI ran.

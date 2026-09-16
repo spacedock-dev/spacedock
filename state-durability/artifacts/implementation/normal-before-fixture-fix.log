@@ -1,0 +1,37 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	1.536s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	0.519s
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (1.07s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+--- FAIL: TestRunDefaultsToNativeRunner (0.06s)
+    native_status_test.go:69: Run status exit=1 stderr="Error: state-checkout-invalid: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestRunDefaultsToNativeRunner3246818147/001/.spacedock-state; expected branch spacedock-state/001; state checkout is not a Git worktree: fatal: not a git repository (or any of the parent directories): .git\n"
+--- FAIL: TestStateInitResumesFreshClone (0.64s)
+    state_init_test.go:197: status --boot exit=1 stderr="Error: state-checkout-missing: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestStateInitResumesFreshClone3966381178/007/fresh/docs/dev/.spacedock-state; expected branch spacedock-state/dev; run spacedock state init (or state new for a newly declared workflow)\n"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	217.799s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	1.779s
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	1.226s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	69.205s
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	301.516s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	63.239s
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	10.315s
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	1.593s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	1.765s
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	5.799s
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	2.349s
+ok  	github.com/spacedock-dev/spacedock/internal/release	38.935s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	1.345s
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	1.398s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	11.130s
+ok  	github.com/spacedock-dev/spacedock/internal/status	95.490s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	1.607s
+--- FAIL: TestDebriefAbsentCheckoutHalts (0.23s)
+    debrief_split_root_test.go:387: spacedock status --boot --json: exit status 1
+        stderr=
+--- FAIL: TestLauncherListSetArchive (0.20s)
+    launcher_smoke_test.go:157: list exit 1:
+        Error: state-checkout-invalid: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLauncherListSetArchive2576811175/001/.spacedock-state; expected branch spacedock-state/001; state checkout must be the exact Git toplevel: configured /private/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLauncherListSetArchive2576811175/001/.spacedock-state, observed /private/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestLauncherListSetArchive2576811175/001; point the workflow state: field at its dedicated linked worktree
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/skills/integration	9.990s
+FAIL

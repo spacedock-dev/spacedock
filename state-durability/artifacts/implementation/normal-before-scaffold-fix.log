@@ -1,0 +1,30 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	(cached)
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (0.60s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	111.253s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	(cached)
+--- FAIL: TestNoHandRolledGitInitOutsideTestgit (0.11s)
+    git_scaffold_guard_test.go:34: internal/cli/native_status_test.go:58 hand-rolls a git init scaffold -- use testgit.InitRepo instead so identity is always persisted (see internal/testgit)
+    git_scaffold_guard_test.go:37: git-scaffold guard: 1 non-bare `git init` site(s) outside testgit.InitRepo; the count must be zero
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/contractlint	0.764s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/gates	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	0.486s
+ok  	github.com/spacedock-dev/spacedock/internal/release	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/status	42.496s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	(cached)
+ok  	github.com/spacedock-dev/spacedock/skills/integration	3.917s
+FAIL
