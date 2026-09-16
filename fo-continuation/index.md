@@ -9,7 +9,7 @@ score: 0.95
 worktree: .worktrees/spacedock-ensign-fo-continuation
 issue: spacedock-dev/spacedock#735
 pr:
-mod-block:
+mod-block: merge:pr-merge
 id: ad242krer2tckgx7150cyb7d
 gates:
     version: 1
