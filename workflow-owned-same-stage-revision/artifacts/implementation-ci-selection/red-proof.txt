@@ -1,0 +1,5 @@
+Prior-to-remedy local reproduction:
+go test ./internal/contractlint -run '^TestLiveCoverageRequiresSelectionOrExplicitExemption$/commented-selector$' -count=1
+Exit 1: commented-selector returned coverage error <nil>, valid=false.
+
+Independent exact scheduler-filter and actual workflow-comment false-green reproductions are retained in ../validation-ci-registration at state commit 8b2489a3f. The final TestLiveSelectionMutationsAreObservable executes both exact mutations against the same current scheduler and coverage checker.

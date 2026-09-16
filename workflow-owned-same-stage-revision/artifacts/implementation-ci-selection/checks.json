@@ -1,0 +1,23 @@
+[
+  {
+    "command": [
+      "go",
+      "test",
+      "./internal/contractlint",
+      "-count=1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 2.9956913751084358
+  },
+  {
+    "command": [
+      "go",
+      "test",
+      "./internal/contractlint",
+      "-race",
+      "-count=1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 9.67499320791103
+  }
+]

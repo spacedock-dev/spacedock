@@ -1,0 +1,30 @@
+=== RUN   TestRuntimeLiveRegistryReconciliation
+    live_registry_reconciliation_test.go:200: offline claude scheduler: 556.018166ms
+    live_registry_reconciliation_test.go:200: offline codex scheduler: 401.031583ms
+    live_registry_reconciliation_test.go:97: derived common gap xfail/claude-sonnet=1
+    live_registry_reconciliation_test.go:97: derived common gap xfail/pi=4
+--- PASS: TestRuntimeLiveRegistryReconciliation (1.16s)
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/selected
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/missing-membership
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/duplicate-selection
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/commented-selector
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/missing-selector
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/unclassified
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/explicit-exemption
+=== RUN   TestLiveCoverageRequiresSelectionOrExplicitExemption/blank-reason
+--- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/selected (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/missing-membership (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/duplicate-selection (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/commented-selector (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/missing-selector (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/unclassified (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/explicit-exemption (0.00s)
+    --- PASS: TestLiveCoverageRequiresSelectionOrExplicitExemption/blank-reason (0.00s)
+=== RUN   TestLiveSelectionMutationsAreObservable
+    live_registry_reconciliation_test.go:822: offline claude scheduler: 551.679083ms
+    live_registry_reconciliation_test.go:822: offline codex scheduler: 399.109417ms
+--- PASS: TestLiveSelectionMutationsAreObservable (0.97s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	2.447s

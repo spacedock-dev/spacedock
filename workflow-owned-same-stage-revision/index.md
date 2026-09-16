@@ -497,3 +497,19 @@ Routine registration preserves all six behavioral controls and the conventional 
 ### V2a/V2b FO disposition — 2026-09-16
 
 FO separately authorized FIX: the producer will observe actual callable identity/count by executing exact scheduler and ordering source offline with logging stubs, and parse existing YAML steps.run while discarding comments. Scope is one checker file plus report, with no models or new framework. Validator preserves the above findings and waits for producer completion before correction recheck; no self-repair is authorized.
+
+
+## Stage Report: implementation
+
+- DONE: Repair V2a with executed scheduler selection, not inferred row membership.
+  Commit `342edfa8903e0e822ec545d2ee45401352eb6c60` runs the exact current scheduler and ordering source in a temporary, self-contained Go test, replacing only discovered live callable bodies with logging stubs. The actual rows-to-jobs filtering, slot loop and dispatch produce callable identity/count evidence. Reconciliation runs this once per Claude/Codex runtime, then reuses that inventory for all entries. Each subprocess has a one-minute timeout. No repository runtime adapters, auth setup or model drivers enter the temporary program.
+- DONE: Repair V2b and retain both demonstrated mutation controls.
+  Workflow selectors now come from yaml.v3-parsed jobs.steps.run scalars; shell-comment lines do not count. The retained runtime-continue mutation executes and observes Claude=1/Codex=0 for same-stage revision, which coverage rejects. The actual Claude command is then commented in the parsed workflow and the same unaffected filing inventory proves that coverage rejects it. Original missing-selector, membership, duplicate, classification and exemption controls remain. Validator red evidence is retained under artifacts/validation-ci-registration; the comment case was also reproduced locally before the remedy.
+- DONE: Verify the changed package and commit the bounded correction for retained independent review.
+  `go test ./internal/contractlint -count=1` passes in 2.632s; `go test ./internal/contractlint -race -count=1` passes in 8.696s. Focused checks pass in 2.447s. Current baseline reconciliation takes 1.16s, including offline scheduler calls of 0.556s and 0.401s; the two-mutation control takes 0.97s with 0.552s and 0.399s probes. Metadata fixtures reuse inventory and do not launch probes individually. Changed file is gofmt-clean and diff-check passes. No local model/native workflow, full-suite rerun, CI trigger, push, rebase or authority mutation occurred.
+
+### Summary
+
+Both task-owned coverage evidence defects were fixed under distinct FO authorization using the existing checker. Final correction is 133 insertions / 89 deletions = +44 net in one existing file; full task layer is +437 net across seven files. There is no new maintained harness file, scheduler framework, AST interpreter or coverage exception. The evidence boundary is executable scheduler dispatch plus declared YAML run commands with comment exclusion; it does not claim to interpret arbitrary shell programs.
+
+Logs and exact command/duration metadata are under artifacts/implementation-ci-selection. Prior full normal/race results belong to candidate `bf64ebeca`, each with only the known FO-declined resolver baseline; they are not new-head full-suite results. FO explicitly authorized changed-package normal/race verification now and will run the required full commands once on the final combined local tip before final delivery. Final live evidence still belongs to updated stack-tip CI. Retained independent validation is pending; this producer does not validate its own work or advance state.
