@@ -82,6 +82,7 @@ func stageReflowFixture(t *testing.T, reflow bool, feedbackContext string) reflo
 		t.Fatal(err)
 	}
 	gitInit(t, root)
+	git(t, root, "worktree", "add", "-b", "spacedock-ensign/fix-the-thing", filepath.Join(root, worktreeRel))
 
 	args := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "claude"}
 	if reflow {

@@ -350,6 +350,12 @@ live CI lane. Each remains live-tagged only for its stated experiment.
 - **Reason unselected:** The four real Codex runs measure host behavior. They do
   not prove a common user journey or block a release.
 
+### `TestLiveSemanticNamesCodex`
+
+- **Task:** #624; semantic worker naming with legacy identity preservation. A failed assertion blocks task acceptance; passing does not establish CI or runtime parity.
+- **Selection:** `go test -tags live ./internal/ensigncycle -run '^TestLiveSemanticNamesCodex$' -count=1 -v -timeout=10m`
+- **Evidence:** Native semantic spawn and same-handle advance, two body-only report commits, unchanged frontmatter, clean state, and rejection of altered-name/handle traces. Explicit local selection; no CI lane change.
+
 ## Source binding convention
 
 Each exported `TestLiveCommon...` declaration carries an immediately adjacent
