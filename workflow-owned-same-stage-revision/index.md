@@ -52,6 +52,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+review-round:
+    id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
+    stage: validation
+    cycle: 1
+    briefing:
+        id: briefing:zz1yqc2w2katp28wpa8nghx2:implementation:round-1
+        digest: sha256:cffdb429dbee76cb829c1603afe3fb976c3d0bf4a0c0910864f759801856a4f7
+        room-ref: '@review/validation/round-1'
 ---
 
 Make same-stage gate revision follow the declared workflow while preserving independent review where it is required.
@@ -205,6 +213,8 @@ Implementation runs focused checks, `go test ./...`, `go test ./... -race`, and 
 The shipped-contract change also requires the existing detached adversarial audit.
 
 ### Feedback Cycles
+
+- Cycle 1: REJECTED — V1 evidence defect / retained validator; surface 5 files / +252 net LOC vs estimate 3 files / +45 net LOC (460%); AC unchanged. Captain approved amended +252/five ceiling and eight replacement drives in resolution:binding-1789517330520748000; producer correction d46f74245 is complete, independent re-review pending.
 
 ## Stage Report: ideation
 
