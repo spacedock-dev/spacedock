@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-workflow-owned-same-stage-revision
 pr:
-mod-block:
+mod-block: merge:pr-merge
 id: zz1yqc2w2katp28wpa8nghx2
 gates:
     version: 1
