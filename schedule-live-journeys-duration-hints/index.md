@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:pytyzge5v85mcy8c02t1khqv:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:pytyzge5v85mcy8c02t1khqv-validation-1
+              briefing:
+                id: briefing:pytyzge5v85mcy8c02t1khqv:validation:attempt-1:revision-1
+                digest: sha256:8bab61d8e05fc594a993ff91cfe44702447171af4a99f98c29a242ed827fba98
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Reduce live CI completion time by running a committed duration-sorted list of the existing tests through three slots. This task is the **bottom PR**; the other in-flight PRs stack above it.
