@@ -11,6 +11,17 @@ issue:
 pr:
 mod-block:
 id: cpx5q07b7wqmd6xv6wc7khvd
+gates:
+    version: 1
+    records:
+        - id: gate:cpx5q07b7wqmd6xv6wc7khvd:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:cpx5q07b7wqmd6xv6wc7khvd-validation-1
+              briefing:
+                id: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-1:revision-1
+                digest: sha256:5ff3627d7887abcb5cd217b4fa43e91af634041417b147048da3308f562e96b1
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Recognize Pi native completion notifications so valid worker lifecycles are graded correctly without accepting another worker or hiding downstream failures.
