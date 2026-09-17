@@ -69,3 +69,7 @@ Classification remains Material evidence-observer gap with an unresolved evidenc
 4. Trigger evidence: parent89 inventoryComplete=false/children=[], parent94 absent referenced receipt plus truncated Return JSON, and child4/41 distinct linked run epochs. These are observed retained artifacts, not a hypothetical runtime schema.
 
 Even a complete future extraction must leave this original plain journey FAIL: report repair terminal47 is an error (“Codex error: Unable to verify Daybreak Blue access. Please try again.”), the committed report omits its second checklist item, and the retained state bundle contains no replacement open gate. No authentication root cause is inferred. The accepted 7c63 bounded deterministic result, all prior real CI failures and five unstarted Pi variants remain unchanged.
+
+## Bounded downloaded-root follow-up
+
+At FO request, enumerated only `/tmp/spacedock-tip-35238049892/pi`: 173 retained files, zero `workflow-receipt.json` files anywhere in that downloaded root, zero archives, and no named inventory/manifest files. In particular, the exact referenced e50172d2-7e00-49f9-be6c-f78a814092c8 receipt was not retained there. `root-receipt-inventory.json` records this check. No host-wide search, instrumentation, test or candidate edit was performed. The missing receipt remains the precise blocker; the adapter proposal remains conditional.
