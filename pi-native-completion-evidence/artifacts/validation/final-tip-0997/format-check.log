@@ -1,0 +1,4 @@
+$ gofmt -l ./cmd ./internal
+internal/release/runtime_live_evidence_workflow_test.go
+
+Exit: 0

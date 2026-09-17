@@ -1,0 +1,234 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	(cached)
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (10.70s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+panic: test timed out after 10m0s
+	running tests:
+		TestStateCommitFromRootResolves (14s)
+
+goroutine 5018 [running]:
+testing.(*M).startAlarm.func1()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2802 +0x2cc
+created by time.goFunc
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/time/sleep.go:215 +0x38
+
+goroutine 1 [chan receive]:
+testing.(*T).Run(0x4925b8d7c488, {0x1027f6a2d?, 0x1f34e828025f2670?}, 0x102b093a0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2109 +0x3bc
+testing.runTests.func1(0x4925b8d7c488)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2585 +0x40
+testing.tRunner(0x4925b8d7c488, 0x4925b8c81b08)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0xc4
+testing.runTests({0x1027f991f, 0x22}, {0x102805cc3, 0x2f}, 0x4925b8d1e288, {0x102b3e380, 0x167, 0x167}, {0x4925b8c81ba8?, 0x1024fa46c?, ...})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2583 +0x3f0
+testing.(*M).Run(0x4925b8e10960)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2443 +0x578
+github.com/spacedock-dev/spacedock/internal/cli.TestMain(0x4925b8e10960)
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/cli/host_launch_test.go:58 +0x230
+main.main()
+	_testmain.go:764 +0x88
+
+goroutine 4970 [syscall]:
+syscall.syscalln(0x10258c6b0, {0x4925b8d67958, 0x6, 0x6})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/sys_darwin.go:38 +0x20
+syscall.syscall6(0x1b8d12830?, 0x14b968f08?, 0x104c07ac8?, 0x90?, 0x4925b8cbb008?, 0x4925b90165a0?, 0x4925b8d679f8?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_darwin.go:407 +0x28
+syscall.wait4(0x4925b8d67a28?, 0x1025a66cc?, 0x90?, 0x102afcd20?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/zsyscall_darwin_arm64.go:44 +0x4c
+syscall.Wait4(0x4925b8dd6930?, 0x4925b8d67a64, 0x4925b8d12830?, 0x4925b8dd6850?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_bsd.go:144 +0x28
+os.(*Process).pidWait.func1(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:64
+os.ignoringEINTR2[...](...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file_posix.go:273
+os.(*Process).pidWait(0x4925b8d34580)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:63 +0x9c
+os.(*Process).wait(0x104c07ac8?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:28 +0x24
+os.(*Process).Wait(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec.go:346
+os/exec.(*Cmd).Wait(0x4925b8e04d00)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:930 +0x38
+os/exec.(*Cmd).Run(0x4925b8e04d00)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:632 +0x38
+os/exec.(*Cmd).CombinedOutput(0x4925b8e04d00)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:1047 +0x7c
+github.com/spacedock-dev/spacedock/internal/cli.git(0x4925b8f1a008, {0x4925b8e1c540, 0x5e}, {0x4925b8d34500, 0x4, 0x4})
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/cli/state_init_test.go:42 +0x1b0
+github.com/spacedock-dev/spacedock/internal/cli.twoHostStateWorkflow(0x4925b8f1a008)
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/cli/state_commit_test.go:40 +0x3ac
+github.com/spacedock-dev/spacedock/internal/cli.TestStateCommitFromRootResolves(0x4925b8f1a008)
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/cli/state_from_root_test.go:79 +0x28
+testing.tRunner(0x4925b8f1a008, 0x102b093a0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0xc4
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2101 +0x3a8
+
+goroutine 1887 [syscall, 7 minutes]:
+os/signal.signal_recv()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/sigqueue.go:149 +0x108
+os/signal.loop()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/signal/signal_unix.go:23 +0x1c
+created by os/signal.Notify.func1.1 in goroutine 1884
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/signal/signal.go:152 +0x28
+
+goroutine 5017 [IO wait]:
+internal/poll.runtime_pollWait(0x14b918a00, 0x72)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/netpoll.go:351 +0xa0
+internal/poll.(*pollDesc).wait(0x4925b8d38c00?, 0x4925b8e9a800?, 0x1)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x4925b8d38c00, {0x4925b8e9a800, 0x200, 0x200})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_unix.go:165 +0x234
+os.(*File).read(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file_posix.go:30
+os.(*File).Read(0x4925b904c108, {0x4925b8e9a800?, 0x4925b8cbb808?, 0x0?})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:144 +0x68
+bytes.(*Buffer).ReadFrom(0x4925b903d1d0, {0x102b0d038, 0x4925b904c108})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/bytes/buffer.go:229 +0x90
+io.copyBuffer({0x102b0d1c0, 0x4925b903d1d0}, {0x102b0d038, 0x4925b904c108}, {0x0, 0x0, 0x0})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:415 +0x14c
+io.Copy(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:388
+os.genericWriteTo(0x4925b8e89698?, {0x102b0d1c0?, 0x4925b903d1d0?})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:295 +0x44
+os.(*File).WriteTo(0x4925b8e89698?, {0x102b0d1c0?, 0x4925b903d1d0?})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:273 +0x5c
+io.copyBuffer({0x102b0d1c0, 0x4925b903d1d0}, {0x102b0d120, 0x4925b904c108}, {0x0, 0x0, 0x0})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:411 +0x98
+io.Copy(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:388
+os/exec.(*Cmd).writerDescriptor.func1()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:602 +0x40
+os/exec.(*Cmd).Start.func2(0x4925b91cc008?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:757 +0x30
+created by os/exec.(*Cmd).Start in goroutine 4970
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:756 +0x6c8
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	601.295s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	10.558s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	142.850s
+panic: test timed out after 10m0s
+	running tests:
+		TestDurableTaskJourneys (5m24s)
+		TestDurableTaskJourneys/atomic_first_worker (13s)
+
+goroutine 3822 [running]:
+testing.(*M).startAlarm.func1()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2802 +0x2cc
+created by time.goFunc
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/time/sleep.go:215 +0x38
+
+goroutine 1 [chan receive, 5 minutes]:
+testing.(*T).Run(0x7960ec7f2488, {0x100676719?, 0x1aede7d80048f510?}, 0x10099adf8)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2109 +0x3bc
+testing.runTests.func1(0x7960ec7f2488)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2585 +0x40
+testing.tRunner(0x7960ec7f2488, 0x7960ec88fc48)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0xc4
+testing.runTests({0x100680932, 0x22}, {0x1006923eb, 0x37}, 0x7960ec72c360, {0x1009d6e60, 0xee, 0xee}, {0x8080803543473165?, 0x10067069a?, ...})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2583 +0x3f0
+testing.(*M).Run(0x7960ec8715e0)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2443 +0x578
+main.main()
+	_testmain.go:520 +0x80
+
+goroutine 2232 [chan receive]:
+testing.(*T).Run(0x7960ecafe488, {0x10067378c?, 0x8?}, 0x7960ec750960)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2109 +0x3bc
+github.com/spacedock-dev/spacedock/internal/ensigncycle.TestDurableTaskJourneys(0x7960ecafe488)
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/shared_keep_moving_durable_test.go:457 +0x88
+testing.tRunner(0x7960ecafe488, 0x10099adf8)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0xc4
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2101 +0x3a8
+
+goroutine 3814 [syscall]:
+syscall.syscalln(0x10042b450, {0x7960ecbbd0f8, 0x6, 0x6})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/sys_darwin.go:38 +0x20
+syscall.syscall6(0x1ecc21770?, 0x1297a6260?, 0x102a8c108?, 0x90?, 0x7960ec9d4808?, 0x7960ecbc7050?, 0x7960ecbbd198?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_darwin.go:407 +0x28
+syscall.wait4(0x7960ecbbd1c8?, 0x1004460cc?, 0x90?, 0x10098ef80?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/zsyscall_darwin_arm64.go:44 +0x4c
+syscall.Wait4(0x7960ecb260e0?, 0x7960ecbbd204, 0x7960ecc21770?, 0x7960ecb26070?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/syscall/syscall_bsd.go:144 +0x28
+os.(*Process).pidWait.func1(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:64
+os.ignoringEINTR2[...](...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file_posix.go:273
+os.(*Process).pidWait(0x7960ec730f80)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:63 +0x9c
+os.(*Process).wait(0x102a8c108?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec_unix.go:28 +0x24
+os.(*Process).Wait(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec.go:346
+os/exec.(*Cmd).Wait(0x7960ec8eeb60)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:930 +0x38
+os/exec.(*Cmd).Run(0x7960ec8eeb60)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:632 +0x38
+os/exec.(*Cmd).CombinedOutput(0x7960ec8eeb60)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:1047 +0x7c
+github.com/spacedock-dev/spacedock/internal/ensigncycle.git(0x7960ecafe008, {0x7960ec8d2460, 0x69}, {0x7960ec8d5440, 0x6, 0x6})
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/cycle_test.go:325 +0x120
+github.com/spacedock-dev/spacedock/internal/ensigncycle.gitCommitPathScoped(0x7960ecafe008, {0x7960ec8d2460, 0x69}, {0x7960ecb24a10, 0xc}, {0x7960ec738f30, 0x11})
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/cycle_test.go:309 +0x160
+github.com/spacedock-dev/spacedock/internal/ensigncycle.durableJourneyFixture(0x7960ecafe008, {0x10066f4b9, 0xd})
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/shared_keep_moving_durable_test.go:599 +0x2254
+github.com/spacedock-dev/spacedock/internal/ensigncycle.TestDurableTaskJourneys.func1(0x7960ecafe008)
+	/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/shared_keep_moving_durable_test.go:458 +0x30
+testing.tRunner(0x7960ecafe008, 0x7960ec750960)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2036 +0xc4
+created by testing.(*T).Run in goroutine 2232
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/testing/testing.go:2101 +0x3a8
+
+goroutine 3821 [IO wait]:
+internal/poll.runtime_pollWait(0x102b52600, 0x72)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/runtime/netpoll.go:351 +0xa0
+internal/poll.(*pollDesc).wait(0x7960ec8d5500?, 0x7960ec99dc00?, 0x1)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_poll_runtime.go:84 +0x28
+internal/poll.(*pollDesc).waitRead(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_poll_runtime.go:89
+internal/poll.(*FD).Read(0x7960ec8d5500, {0x7960ec99dc00, 0x200, 0x200})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/internal/poll/fd_unix.go:165 +0x234
+os.(*File).read(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file_posix.go:30
+os.(*File).Read(0x7960ec9d6648, {0x7960ec99dc00?, 0x7960ec94ecf8?, 0x0?})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:144 +0x68
+bytes.(*Buffer).ReadFrom(0x7960ecb8e720, {0x10099fd18, 0x7960ec9d6648})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/bytes/buffer.go:229 +0x90
+io.copyBuffer({0x10099ff20, 0x7960ecb8e720}, {0x10099fd18, 0x7960ec9d6648}, {0x0, 0x0, 0x0})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:415 +0x14c
+io.Copy(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:388
+os.genericWriteTo(0x7960ec94ee98?, {0x10099ff20?, 0x7960ecb8e720?})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:295 +0x44
+os.(*File).WriteTo(0x7960ec94ee98?, {0x10099ff20?, 0x7960ecb8e720?})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/file.go:273 +0x5c
+io.copyBuffer({0x10099ff20, 0x7960ecb8e720}, {0x10099fe00, 0x7960ec9d6648}, {0x0, 0x0, 0x0})
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:411 +0x98
+io.Copy(...)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/io/io.go:388
+os/exec.(*Cmd).writerDescriptor.func1()
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:602 +0x40
+os/exec.(*Cmd).Start.func2(0x0?)
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:757 +0x30
+created by os/exec.(*Cmd).Start in goroutine 3814
+	/opt/homebrew/Cellar/go/1.26.7/libexec/src/os/exec/exec.go:756 +0x6c8
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	600.501s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	2.073s
+ok  	github.com/spacedock-dev/spacedock/internal/release	78.623s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/status	170.152s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	(cached)
+ok  	github.com/spacedock-dev/spacedock/skills/integration	(cached)
+FAIL

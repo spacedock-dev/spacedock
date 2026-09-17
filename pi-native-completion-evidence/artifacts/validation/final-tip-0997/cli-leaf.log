@@ -1,0 +1,4 @@
+=== RUN   TestStateCommitFromRootResolves
+--- PASS: TestStateCommitFromRootResolves (18.62s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/cli	19.858s

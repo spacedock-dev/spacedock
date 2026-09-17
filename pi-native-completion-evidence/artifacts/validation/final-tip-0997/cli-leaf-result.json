@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./internal/cli",
+    "-run",
+    "^TestStateCommitFromRootResolves$",
+    "-count=1",
+    "-v"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 34.99343166593462,
+  "started": "2026-09-17T04:15:01.317077+00:00",
+  "finished": "2026-09-17T04:15:36.310356+00:00",
+  "head_before": "0997b6b7590a5a89ba979194238e93f7f47d94e4",
+  "head_after": "0997b6b7590a5a89ba979194238e93f7f47d94e4"
+}

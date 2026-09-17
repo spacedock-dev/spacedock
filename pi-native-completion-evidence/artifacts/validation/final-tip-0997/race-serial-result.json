@@ -1,0 +1,19 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-race",
+    "-p",
+    "1",
+    "-timeout",
+    "30m"
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 708.3608111250214,
+  "started": "2026-09-17T04:35:49.548349+00:00",
+  "finished": "2026-09-17T04:47:37.922944+00:00",
+  "head_before": "0997b6b7590a5a89ba979194238e93f7f47d94e4",
+  "head_after": "0997b6b7590a5a89ba979194238e93f7f47d94e4",
+  "authorization": "FO authorized exactly one serial race with30m observation budget; no native/model runs or assertion changes"
+}

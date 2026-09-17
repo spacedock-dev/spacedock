@@ -1,0 +1,18 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p",
+    "1",
+    "-timeout",
+    "30m"
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 1080.283490583999,
+  "started": "2026-09-17T04:17:32.188113+00:00",
+  "finished": "2026-09-17T04:35:32.604268+00:00",
+  "head_before": "0997b6b7590a5a89ba979194238e93f7f47d94e4",
+  "head_after": "0997b6b7590a5a89ba979194238e93f7f47d94e4",
+  "authorization": "FO authorized exactly one normal rerun then one race, -p1 -timeout30m, measured approximately3x slowdown; original timeout retained"
+}

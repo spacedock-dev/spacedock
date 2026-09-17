@@ -1,0 +1,22 @@
+[
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/workflow-owned-same-stage-revision/artifacts/validation-native-identity/review.md",
+    "sha256": "e3394f80e92de0013559ab62b72df04077041a11c62f3fe0c7e72f9849758a55"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/workflow-owned-same-stage-revision/artifacts/validation-native-identity/falsifiers.log",
+    "sha256": "7464b8a9669dc7ad3b5cb3712ef61e7deb81ca7d886419dc51efc67b696c8213"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/pi-native-completion-evidence/artifacts/implementation/reconciliation/focused-normal.log",
+    "sha256": "3aae7cf0d5afec3bc348914a5034ed2f5aff7af803f28eb0f110af39f659e9d9"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/pi-native-completion-evidence/artifacts/implementation/reconciliation/live-compile.log",
+    "sha256": "60d9d8b87b62bb6e19d0b2d423478872792ffd9ee62518cd05bb8c0ce5ceca19"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/fo-continuation/artifacts/validation/tip35148797301/report.md",
+    "sha256": "d3dc42e03c871848ea1057d14a66f4ba2317122c46d0454f03322c13df676a92"
+  }
+]

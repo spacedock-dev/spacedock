@@ -157,3 +157,19 @@ The focused identity/reuse tests reject missing or wrong native completion ident
 `gofmt -w ./cmd ./internal` completed with exit 0. Only the unrelated pre-existing `internal/release/runtime_live_evidence_workflow_test.go` spacing changed; its exact HEAD bytes were restored. `git diff --check` passes and the code worktree is clean. No broad normal/race suite, native/model run, CI or push was performed during this reconciliation. Independent validation owns the final combined normal/race commands; this report does not claim those suites passed. The prior full-suite exit-1 installed-manifest resolver failure and FO DECLINED disposition remain unchanged in the earlier report.
 
 Final tip CI and all six same-stage native variants remain owed: `plain` previously failed; `review-required`, `separate-review-required`, `round-required`, `round-missing`, and `cycle-limit` were unstarted, not passed. AC-3 remains pending. State synchronization is left to the FO under the explicit no-push assignment.
+
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify Pi sync and async-route completion at the captured failure boundaries, retaining strict identity/order/error and incomplete-outcome controls.
+  Frozen `0997b6b7590a5a89ba979194238e93f7f47d94e4`: full retained streams prove sync65/66, validation80/81 and async112/116; ten detached subtests reject cross-worker/stale/order/assignment/artifact failures. Existing missing-report/gate/Git controls remain authoritative; see `artifacts/validation/final-tip-0997/`.
+- DONE: Verify the reconciled shared runner preserves #801 controls and run final combined normal and race suites on the frozen stack tip.
+  Reused #801 independent evidence; exact runner diff preserves native spawn count and actual recorder exit. Original normal exit1 includes two10m timeouts; FO-authorized isolated probes pass, then serial normal/race `-p 1 -timeout 30m` each finish exit1 only for the exact declined resolver defect; no race diagnostic.
+- DONE: Report exact candidate, per-AC evidence, scope and findings, with native CI pending and no skipped or failed check described as green.
+  Canonical `final-tip-0997/report.md` records AC-1/AC-2 local proof, actual red exits, timeout finding/dispositions, source hashes, unchanged candidate and the cross-stack roadmap-authorization HOLD. AC-3 final native acceptance remains pending.
+
+### Summary
+
+Recommend PASSED for deterministic #806 correction and #801 shared-runner reconciliation at `0997b6b7590a5a89ba979194238e93f7f47d94e4` atop `c572d62f05ae57d643dbaab5ecfb7de4a2ccff31`; checklist 3 DONE, 0 SKIPPED, 0 FAILED counts completed validation work, not green commands. Both completed broad serial commands remain exit1 for the exact FO-declined installed-manifest failure; original default-timeout failure is prominently retained, with cumulative slowdown supported and isolated persistent deadlock refuted.
+
+Final tip native CI must execute all six same-stage variants on each host; previously unstarted variants are not passed. Claude's retained roadmap-authorization outcome failure remains HOLD/route for decision with its strict case unchanged and no waiver. No candidate/frontmatter, push/rebase/CI/PR/gate action or local native/model run occurred; current-head compile-only and owned green checks were reused, and state evidence is committed locally for FO synchronization.

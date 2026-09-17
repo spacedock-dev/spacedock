@@ -1,0 +1,28 @@
+=== RUN   TestDetachedPiFullRetainedObservers
+=== RUN   TestDetachedPiFullRetainedObservers/default-headless-gate-stop
+=== RUN   TestDetachedPiFullRetainedObservers/self-feedback/plain
+--- PASS: TestDetachedPiFullRetainedObservers (0.13s)
+    --- PASS: TestDetachedPiFullRetainedObservers/default-headless-gate-stop (0.05s)
+    --- PASS: TestDetachedPiFullRetainedObservers/self-feedback/plain (0.08s)
+=== RUN   TestDetachedPiSynchronousCrossEvidence
+=== RUN   TestDetachedPiSynchronousCrossEvidence/retained-parent-cwd
+=== RUN   TestDetachedPiSynchronousCrossEvidence/unicode-assignment
+=== RUN   TestDetachedPiSynchronousCrossEvidence/terminal-not-last
+=== RUN   TestDetachedPiSynchronousCrossEvidence/stale-second-dispatch
+=== RUN   TestDetachedPiSynchronousCrossEvidence/cross-worker-call
+=== RUN   TestDetachedPiSynchronousCrossEvidence/cross-worker-run
+=== RUN   TestDetachedPiSynchronousCrossEvidence/after-boundary-with-false-clock
+=== RUN   TestDetachedPiSynchronousCrossEvidence/eof-no-newline
+--- PASS: TestDetachedPiSynchronousCrossEvidence (0.07s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/retained-parent-cwd (0.01s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/unicode-assignment (0.00s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/terminal-not-last (0.01s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/stale-second-dispatch (0.01s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/cross-worker-call (0.01s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/cross-worker-run (0.01s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/after-boundary-with-false-clock (0.01s)
+    --- PASS: TestDetachedPiSynchronousCrossEvidence/eof-no-newline (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.952s
+
+Exit: 0

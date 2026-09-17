@@ -1,0 +1,26 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	8.310s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	5.992s
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (1.24s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	501.720s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	0.834s
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	2.435s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	43.602s
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	280.959s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	41.237s
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	4.388s
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	0.310s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	0.273s
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	1.458s
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	0.335s
+ok  	github.com/spacedock-dev/spacedock/internal/release	18.758s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	0.264s
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	0.257s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	4.489s
+ok  	github.com/spacedock-dev/spacedock/internal/status	67.415s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	0.507s
+ok  	github.com/spacedock-dev/spacedock/skills/integration	5.874s
+FAIL

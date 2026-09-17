@@ -1,0 +1,6 @@
+=== RUN   TestDurableTaskJourneys
+=== RUN   TestDurableTaskJourneys/atomic_first_worker
+--- PASS: TestDurableTaskJourneys (18.98s)
+    --- PASS: TestDurableTaskJourneys/atomic_first_worker (18.98s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	19.827s

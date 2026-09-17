@@ -1,0 +1,10 @@
+{
+  "head": "0997b6b7590a5a89ba979194238e93f7f47d94e4",
+  "tree": "2b5fd3fa31f735ee1f227310a30222200985d898",
+  "parent_stack": "c572d62f05ae57d643dbaab5ecfb7de4a2ccff31",
+  "branch": "spacedock-ensign/pi-native-completion-evidence",
+  "worktree": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence",
+  "status_before": "",
+  "independent_checkout": "detached local shared clone at exact candidate, removed after successful probes",
+  "go_version": "go version go1.26.7 darwin/arm64"
+}
