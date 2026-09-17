@@ -117,3 +117,23 @@ Both pre-edit reproductions, separate FO FIX authorizations (G1 and conflicting 
 Recommend PASSED for local validation of `ba8e6eeb4e28e310b17897a0a8b12e151366b8f9`, with final live/tip CI explicitly pending. Checklist: 3 DONE, 1 SKIPPED, 0 FAILED; no new material, deferred-risk or polish finding. Approval/scoping, per-AC evidence, commands, source verification, seven independent probes and three falsifying mutation logs are recorded in `artifacts/validation/review.md` and adjacent files.
 
 Candidate and frontmatter remained unchanged. Existing final normal/race logs were reused, preserving their actual exit-1 installed-manifest failure and FO DECLINED disposition; state report/artifacts are committed locally, with synchronization left to FO under the explicit no-push dispatch.
+
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Credit verified synchronous Pi completion at its real tool-result boundary and verified async completion in the existing rejection-route observer.
+  Code `8fca2b12b3ed272f59ea6ea465ed3ac4d574c7ae`: shared child verification credits sync index66 before advancement73 and exact async spawn112/done116 before gate135. Both captured tests exercise lifecycle and route boundaries; removing the sync branch or native route integration restores their captured failures.
+- DONE: Reproduce both captured false failures before fixing; preserve identity/order/error and durable gate/commit negative controls afterward.
+  `artifacts/implementation/p1p2/red.log` retains both pre-edit reds. Final tests preserve 27 native negatives, add 21 sync negatives and nine same-stage cases; accepting missing exit, stale result, another worker’s notice or completion after advancement/gate breaks the negative controls. Original absent-gate and uncommitted-report checks still reject through independent existing owners.
+- DONE: Report exact scope and focused normal/race evidence, leaving combined full suites and all six native variants for final tip CI.
+  Focused normal/race pass in 5.146s / 7.647s; live-tag compile-only check passes, with no model invocation. Exact logs, commands, provenance and surface are in `artifacts/implementation/p1p2/`; full suites/native coverage remain deferred below, not passed.
+
+### Summary
+
+P1/P2 were FO-authorized Material task-owned AC-1 fixes from `artifacts/validation/tip35149242496/report.md`. One shared native-child verifier now supplies per-dispatch completion identities and indexes to both observers. Sync requires a unique correlated result, explicit success/exit0 and matching run/owner/agent/task/cwd/epoch/terminal stop; fresh same-stage route identities include the exact dispatch call so an earlier correction cannot complete a later reviewer. Existing Git/report/gate checks and legacy Pi status/wait plus Claude/Codex controls remain in place.
+
+Scope is five existing Go test/harness files (`pi_native_completion_test.go`, `pi_rejection_extractors_test.go`, `claude_live_runner_test.go`, `pi_auto_continue_double_dispatch_replay_test.go`, `pi_rejection_extractors_test_test.go`, all under `internal/ensigncycle`) and five new files in `testdata/pi_native_completion` (`sync-parent.jsonl`, `sync-child.jsonl`, `route-parent.jsonl`, `route-child.jsonl`, `tip35149242496-provenance.json`). Total +700/-83 across ten files includes 162 blank parent-record placeholders preserving exact indexes; fixtures/provenance total 13,513 bytes. The existing helper grows from 150 to 235 lines, below the proposed +100–140-line estimate. Exact numstat is retained in `surface.txt`; no skill, CLI, workflow or recorder policy changed.
+
+Source head `d0a6f413af32fa69ac9da4af2c74c0086fcca812` and CI merge `3f23437d91c98bcf4cba93e52d0f1da2761d2cb1` share full tree `717d412d4b2b0f2ede3246c6f25f8a49d8d8d252`; raw source hashes and selected record positions accompany the fixtures. Original default durability remains transcript/shim evidence without a Git bundle; the same-stage bundle and its independent checks remain retained in the validation artifacts. This correction does not reclassify CI 35149242496 as green.
+
+Exact `gofmt -w ./cmd ./internal` ran; the unrelated pre-existing release-test spacing was restored and final touched files formatted. `git diff --check` passes. Full `go test ./...` and race suites are deliberately deferred to the FO’s combined final tip after #801; this worker did not run them, touch #801, rebase or push. All six same-stage native variants remain pending final tip CI: `plain` previously failed; `review-required`, `separate-review-required`, `round-required`, `round-missing`, and `cycle-limit` were unstarted (not skipped or passed). Independent validation and final native CI are still owed; no frontend/outcome threshold was relaxed.

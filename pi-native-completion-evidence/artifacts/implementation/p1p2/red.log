@@ -1,0 +1,9 @@
+=== RUN   TestPiNativeSynchronousCapturedReplay
+    pi_auto_continue_double_dispatch_replay_test.go:270: implementation lifecycle incomplete: spawns=1 completed=-1 validation=73 report=<nil>
+--- FAIL: TestPiNativeSynchronousCapturedReplay (0.00s)
+=== RUN   TestPiNativeSameStageCapturedRoutes
+    pi_rejection_extractors_test_test.go:252: captured correction ended before gate135: the spawn/validation dispatch at position 0 is never completed, so the run ends mid-round; routes=[{112 spawn validation recorded-gate-task-validation}]
+--- FAIL: TestPiNativeSameStageCapturedRoutes (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.314s
+FAIL

@@ -1,0 +1,18 @@
+commit 8fca2b12b3ed272f59ea6ea465ed3ac4d574c7ae
+Author:     CL Kao <clkao@users.noreply.github.com>
+AuthorDate: Wed Sep 16 20:16:20 2026 -0700
+Commit:     CL Kao <clkao@users.noreply.github.com>
+CommitDate: Wed Sep 16 20:16:20 2026 -0700
+
+    test(ensigncycle): observe synchronous and routed Pi completions
+
+6	3	internal/ensigncycle/claude_live_runner_test.go
+146	0	internal/ensigncycle/pi_auto_continue_double_dispatch_replay_test.go
+152	67	internal/ensigncycle/pi_native_completion_test.go
+57	9	internal/ensigncycle/pi_rejection_extractors_test.go
+102	4	internal/ensigncycle/pi_rejection_extractors_test_test.go
+4	0	internal/ensigncycle/testdata/pi_native_completion/route-child.jsonl
+117	0	internal/ensigncycle/testdata/pi_native_completion/route-parent.jsonl
+4	0	internal/ensigncycle/testdata/pi_native_completion/sync-child.jsonl
+54	0	internal/ensigncycle/testdata/pi_native_completion/sync-parent.jsonl
+58	0	internal/ensigncycle/testdata/pi_native_completion/tip35149242496-provenance.json

@@ -1,0 +1,265 @@
+=== RUN   TestAutoContinueFixtureIsDiscoverable
+--- PASS: TestAutoContinueFixtureIsDiscoverable (0.00s)
+=== RUN   TestAutoContinueNegativeStoppedAfterImplementation
+--- PASS: TestAutoContinueNegativeStoppedAfterImplementation (0.00s)
+=== RUN   TestAutoContinueBypassRedsOnEveryHost
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude/terminal_done_end_state
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude/validation_gate_resolved
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/claude/conforming_open_gate_control
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex/terminal_done_end_state
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex/validation_gate_resolved
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/codex/conforming_open_gate_control
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi/terminal_done_end_state
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi/validation_gate_resolved
+=== RUN   TestAutoContinueBypassRedsOnEveryHost/pi/conforming_open_gate_control
+--- PASS: TestAutoContinueBypassRedsOnEveryHost (1.07s)
+    --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude (0.31s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude/terminal_done_end_state (0.00s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude/validation_gate_resolved (0.15s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/claude/conforming_open_gate_control (0.16s)
+    --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex (0.30s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex/terminal_done_end_state (0.00s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex/validation_gate_resolved (0.15s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/codex/conforming_open_gate_control (0.15s)
+    --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi (0.46s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi/terminal_done_end_state (0.00s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi/validation_gate_resolved (0.23s)
+        --- PASS: TestAutoContinueBypassRedsOnEveryHost/pi/conforming_open_gate_control (0.23s)
+=== RUN   TestAutoContinueBypassRedsWithFOAttributedConnCitation
+--- PASS: TestAutoContinueBypassRedsWithFOAttributedConnCitation (0.15s)
+=== RUN   TestAutoContinueBypassCodeSurvivesTheScenarioRunner
+--- PASS: TestAutoContinueBypassCodeSurvivesTheScenarioRunner (0.00s)
+=== RUN   TestAutoContinueReplayRealClaudeStream
+--- PASS: TestAutoContinueReplayRealClaudeStream (0.04s)
+=== RUN   TestAutoContinueReplayRealStreamThroughDispatchEvidence
+=== RUN   TestAutoContinueReplayRealStreamThroughDispatchEvidence/single-root
+=== RUN   TestAutoContinueReplayRealStreamThroughDispatchEvidence/split-root
+--- PASS: TestAutoContinueReplayRealStreamThroughDispatchEvidence (0.39s)
+    --- PASS: TestAutoContinueReplayRealStreamThroughDispatchEvidence/single-root (0.15s)
+    --- PASS: TestAutoContinueReplayRealStreamThroughDispatchEvidence/split-root (0.24s)
+=== RUN   TestAutoContinueReplayFixtureIsTheCapturedArtifact
+--- PASS: TestAutoContinueReplayFixtureIsTheCapturedArtifact (0.00s)
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/base-only
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/base-only/open_gate_grades_green
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/base-only/resolved_gate_still_reds
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/worktree-both
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/worktree-both/open_gate_grades_green
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/worktree-both/resolved_gate_still_reds
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/split-report-worktree-gate-base
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/split-report-worktree-gate-base/open_gate_grades_green
+=== RUN   TestAutoContinueGateStateAcrossEntityCopyPlacements/split-report-worktree-gate-base/resolved_gate_still_reds
+--- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements (0.91s)
+    --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/base-only (0.31s)
+        --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/base-only/open_gate_grades_green (0.16s)
+        --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/base-only/resolved_gate_still_reds (0.15s)
+    --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/worktree-both (0.30s)
+        --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/worktree-both/open_gate_grades_green (0.15s)
+        --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/worktree-both/resolved_gate_still_reds (0.15s)
+    --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/split-report-worktree-gate-base (0.31s)
+        --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/split-report-worktree-gate-base/open_gate_grades_green (0.15s)
+        --- PASS: TestAutoContinueGateStateAcrossEntityCopyPlacements/split-report-worktree-gate-base/resolved_gate_still_reds (0.16s)
+=== RUN   TestAutoContinueGateStateVocabulary
+=== RUN   TestAutoContinueGateStateVocabulary/open
+=== RUN   TestAutoContinueGateStateVocabulary/closed_beside_open
+=== RUN   TestAutoContinueGateStateVocabulary/withdrawn_beside_open
+=== RUN   TestAutoContinueGateStateVocabulary/withdrawn_only
+=== RUN   TestAutoContinueGateStateVocabulary/invalid_beside_open
+=== RUN   TestAutoContinueGateStateVocabulary/no_record_anywhere
+--- PASS: TestAutoContinueGateStateVocabulary (0.90s)
+    --- PASS: TestAutoContinueGateStateVocabulary/open (0.15s)
+    --- PASS: TestAutoContinueGateStateVocabulary/closed_beside_open (0.15s)
+    --- PASS: TestAutoContinueGateStateVocabulary/withdrawn_beside_open (0.15s)
+    --- PASS: TestAutoContinueGateStateVocabulary/withdrawn_only (0.15s)
+    --- PASS: TestAutoContinueGateStateVocabulary/invalid_beside_open (0.15s)
+    --- PASS: TestAutoContinueGateStateVocabulary/no_record_anywhere (0.15s)
+=== RUN   TestAutoContinueGateFixturesParseAsIntended
+=== RUN   TestAutoContinueGateFixturesParseAsIntended/open
+=== RUN   TestAutoContinueGateFixturesParseAsIntended/closed
+=== RUN   TestAutoContinueGateFixturesParseAsIntended/withdrawn
+=== RUN   TestAutoContinueGateFixturesParseAsIntended/invalid
+--- PASS: TestAutoContinueGateFixturesParseAsIntended (0.01s)
+    --- PASS: TestAutoContinueGateFixturesParseAsIntended/open (0.00s)
+    --- PASS: TestAutoContinueGateFixturesParseAsIntended/closed (0.00s)
+    --- PASS: TestAutoContinueGateFixturesParseAsIntended/withdrawn (0.00s)
+    --- PASS: TestAutoContinueGateFixturesParseAsIntended/invalid (0.00s)
+=== RUN   TestAutoContinueRevalidateStreamCountsBothValidators
+--- PASS: TestAutoContinueRevalidateStreamCountsBothValidators (0.02s)
+=== RUN   TestImplementationLifecycleAndObserverNegativeControls
+--- PASS: TestImplementationLifecycleAndObserverNegativeControls (0.00s)
+=== RUN   TestCodexNativeLifecycleUsesCorrelatedSessionHandle
+--- PASS: TestCodexNativeLifecycleUsesCorrelatedSessionHandle (0.00s)
+=== RUN   TestCodexNativeLifecycleParentRolloutLookupFailsClosed
+--- PASS: TestCodexNativeLifecycleParentRolloutLookupFailsClosed (0.00s)
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/decision
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/consume
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/withdraw
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/status_repair
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/successor_build
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/duplicate_prepare
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/retired_bind
+=== RUN   TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/missing_commit
+--- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/decision (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/consume (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/withdraw (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/status_repair (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/successor_build (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/duplicate_prepare (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/retired_bind (0.00s)
+    --- PASS: TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle/missing_commit (0.00s)
+=== RUN   TestSameStageWorkerObligations
+--- PASS: TestSameStageWorkerObligations (0.00s)
+=== RUN   TestSameStageSelectedPlanRejectsPrematureGate
+--- PASS: TestSameStageSelectedPlanRejectsPrematureGate (2.41s)
+=== RUN   TestPiNativeCompletionCapturedReplay
+=== RUN   TestPiNativeCompletionCapturedReplay/default
+=== RUN   TestPiNativeCompletionCapturedReplay/auto
+    pi_auto_continue_double_dispatch_replay_test.go:114: captured downstream failure preserved: entity has no gates record
+--- PASS: TestPiNativeCompletionCapturedReplay (0.25s)
+    --- PASS: TestPiNativeCompletionCapturedReplay/default (0.00s)
+    --- PASS: TestPiNativeCompletionCapturedReplay/auto (0.24s)
+=== RUN   TestPiNativeCompletionAttributionAndOrdering
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/run
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/agent
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/epoch
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/task
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/cwd
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/missing-child
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/symlink
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/external
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/sibling
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/traversal
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/missing-parent
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/parent-identity
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/failed-spawn
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/wrong-result
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/missing-run
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/no-stop
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/error-stop
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/late-child
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/early-child
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/before-spawn
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/after-boundary
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/duplicate
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/ambiguous-identity
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/ambiguous-locator
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/no-user
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/conflicting-epoch
+=== RUN   TestPiNativeCompletionAttributionAndOrdering/conflicting-identities
+--- PASS: TestPiNativeCompletionAttributionAndOrdering (0.05s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/run (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/agent (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/epoch (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/task (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/cwd (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/missing-child (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/symlink (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/external (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/sibling (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/traversal (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/missing-parent (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/parent-identity (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/failed-spawn (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/wrong-result (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/missing-run (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/no-stop (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/error-stop (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/late-child (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/early-child (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/before-spawn (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/after-boundary (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/duplicate (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/ambiguous-identity (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/ambiguous-locator (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/no-user (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/conflicting-epoch (0.00s)
+    --- PASS: TestPiNativeCompletionAttributionAndOrdering/conflicting-identities (0.00s)
+=== RUN   TestPiNativeSynchronousCapturedReplay
+--- PASS: TestPiNativeSynchronousCapturedReplay (0.00s)
+=== RUN   TestPiNativeSynchronousNegativeControls
+=== RUN   TestPiNativeSynchronousNegativeControls/wrong-call
+=== RUN   TestPiNativeSynchronousNegativeControls/wrong-run
+=== RUN   TestPiNativeSynchronousNegativeControls/wrong-agent
+=== RUN   TestPiNativeSynchronousNegativeControls/wrong-owner
+=== RUN   TestPiNativeSynchronousNegativeControls/missing-results
+=== RUN   TestPiNativeSynchronousNegativeControls/multiple-results
+=== RUN   TestPiNativeSynchronousNegativeControls/missing-exit
+=== RUN   TestPiNativeSynchronousNegativeControls/nonzero-exit
+=== RUN   TestPiNativeSynchronousNegativeControls/missing-success
+=== RUN   TestPiNativeSynchronousNegativeControls/error-result
+=== RUN   TestPiNativeSynchronousNegativeControls/missing-output
+=== RUN   TestPiNativeSynchronousNegativeControls/missing-locator
+=== RUN   TestPiNativeSynchronousNegativeControls/missing-child
+=== RUN   TestPiNativeSynchronousNegativeControls/task
+=== RUN   TestPiNativeSynchronousNegativeControls/cwd
+=== RUN   TestPiNativeSynchronousNegativeControls/epoch
+=== RUN   TestPiNativeSynchronousNegativeControls/error-stop
+=== RUN   TestPiNativeSynchronousNegativeControls/late-stop
+=== RUN   TestPiNativeSynchronousNegativeControls/result-before-spawn
+=== RUN   TestPiNativeSynchronousNegativeControls/result-after-advance
+=== RUN   TestPiNativeSynchronousNegativeControls/duplicate-result
+--- PASS: TestPiNativeSynchronousNegativeControls (0.05s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/wrong-call (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/wrong-run (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/wrong-agent (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/wrong-owner (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/missing-results (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/multiple-results (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/missing-exit (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/nonzero-exit (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/missing-success (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/error-result (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/missing-output (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/missing-locator (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/missing-child (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/task (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/cwd (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/epoch (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/error-stop (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/late-stop (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/result-before-spawn (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/result-after-advance (0.00s)
+    --- PASS: TestPiNativeSynchronousNegativeControls/duplicate-result (0.00s)
+=== RUN   TestPiRecordedRejectionRound
+--- PASS: TestPiRecordedRejectionRound (0.00s)
+=== RUN   TestPiRejectionRoundPublications
+--- PASS: TestPiRejectionRoundPublications (0.00s)
+=== RUN   TestPiRejectionRoutesFreshChain
+=== RUN   TestPiRejectionRoutesFreshChain/prefix=spacedock-ensign-
+=== RUN   TestPiRejectionRoutesFreshChain/prefix=
+--- PASS: TestPiRejectionRoutesFreshChain (0.00s)
+    --- PASS: TestPiRejectionRoutesFreshChain/prefix=spacedock-ensign- (0.00s)
+    --- PASS: TestPiRejectionRoutesFreshChain/prefix= (0.00s)
+=== RUN   TestPiRejectionRoutesHandleCorrelation
+--- PASS: TestPiRejectionRoutesHandleCorrelation (0.00s)
+=== RUN   TestPiRejectionRoutesRunIDCorrelation
+--- PASS: TestPiRejectionRoutesRunIDCorrelation (0.00s)
+=== RUN   TestPiNativeSameStageCapturedRoutes
+--- PASS: TestPiNativeSameStageCapturedRoutes (0.00s)
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/independent-review
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/missing-review-completion
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/earlier-worker-notice
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/reused-run
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/after-gate
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/wrong-call
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/missing-child
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/error-child
+=== RUN   TestPiNativeRoutesKeepSameStageDispatchesDistinct/stale-result
+--- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct (0.03s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/independent-review (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/missing-review-completion (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/earlier-worker-notice (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/reused-run (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/after-gate (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/wrong-call (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/missing-child (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/error-child (0.00s)
+    --- PASS: TestPiNativeRoutesKeepSameStageDispatchesDistinct/stale-result (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	7.647s
