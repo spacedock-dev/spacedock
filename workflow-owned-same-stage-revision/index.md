@@ -1,6 +1,6 @@
 ---
 title: Honor workflow-declared same-stage revision without mandatory reviewer machinery
-status: validation
+status: implementation
 source: Captain request after email-triage FO issue 792
 issue: spacedock-dev/spacedock#792
 score: 0.95
@@ -8,8 +8,8 @@ started: 2026-09-15T04:30:03Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-workflow-owned-same-stage-revision
-pr: "#801"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: zz1yqc2w2katp28wpa8nghx2
 gates:
     version: 1
@@ -102,7 +102,7 @@ gates:
                 reason: Captain binding resolution:binding-1789657416015652000 approves validation attempt 3 and candidate 67c68536 for corrected-stack publication and full tip CI. Reviewed artifact sha256:090f392bf3872fe4169655453f82ff67e908d3c287051a65df70a7be0c2247ac. Merge and failure waiver remain unauthorized.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
     stage: validation
