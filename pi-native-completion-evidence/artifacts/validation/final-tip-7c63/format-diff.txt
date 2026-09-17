@@ -1,0 +1,13 @@
+--- /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/release/runtime_live_evidence_workflow_test.go
++++ gofmt
+@@ -16,8 +16,8 @@
+ 	On struct {
+ 		WorkflowDispatch struct {
+ 			Inputs map[string]struct {
+-				Default  string   `yaml:"default"`
+-				Options  []string `yaml:"options"`
++				Default string   `yaml:"default"`
++				Options []string `yaml:"options"`
+ 			} `yaml:"inputs"`
+ 		} `yaml:"workflow_dispatch"`
+ 	} `yaml:"on"`

@@ -1,0 +1,22 @@
+--- internal/ensigncycle/pi_native_completion_test.go
++++ withdrawal
+@@ -64,9 +64,7 @@
+ 	fail := func(reason string) (int, int, error) { return -1, -1, fmt.Errorf("Pi gate chronology: %s", reason) }
+ 	for i, line := range strings.Split(stream, "\n") {
+ 		if d := workers[i]; d != nil {
+-			if active != "" {
+-				return fail("repair dispatched before successful gate withdrawal")
+-			}
++			
+ 			worker = d
+ 		}
+ 		var rec piSessionRecord
+@@ -119,7 +117,7 @@
+ 			}
+ 			prior, active = active, ""
+ 		} else {
+-			if active != "" || briefing == prior || fields["state"] != "open" {
++			if briefing == prior || fields["state"] != "open" {
+ 				return fail("replacement gate lacks withdrawn predecessor or new identity")
+ 			}
+ 			if prior != "" && !strings.HasPrefix(prior, strings.Join(parts[:3], ":")+":") {

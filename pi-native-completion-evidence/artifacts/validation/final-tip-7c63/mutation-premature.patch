@@ -1,0 +1,11 @@
+--- internal/ensigncycle/pi_native_completion_test.go
++++ premature
+@@ -85,7 +85,7 @@
+ 				if !prepare && !withdraw {
+ 					continue
+ 				}
+-				if prepare && (worker == nil || worker.completed < 0 || worker.completed >= i) {
++				if prepare && (worker == nil || worker.completed < 0) {
+ 					return fail("gate precedes its worker completion")
+ 				}
+ 				if b.ID == "" || calls[b.ID].index != 0 || prepare && withdraw {

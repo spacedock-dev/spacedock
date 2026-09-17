@@ -209,3 +209,17 @@ The required commands were `go test -p 1 -timeout 30m ./...` then `go test -p 1 
 Actual scope is eight files, +438/-7, including 144 blank parent records preserving original event indices. Existing Go owners are `internal/ensigncycle/{pi_native_completion_test.go,claude_runtime_helpers_test.go,auto_continue_fixtures_test.go,pi_auto_continue_double_dispatch_replay_test.go}`; compact additions are `testdata/pi_native_completion/{repair-parent.jsonl,repair-child-1.jsonl,repair-child-2.jsonl,repair-provenance.json}` under the same package. The native helper grows by101 net lines, below the proposed90–130 helper-line estimate; four fixture/provenance files total14,698 bytes, below the proposed15–25KB. Raw parent/child source hashes accompany projections. No continuation Git bundle existed; tests reconstruct durable state through the existing fixture/Git owners rather than claiming original objects were replayed.
 
 `gofmt -w ./cmd ./internal` completed; unrelated pre-existing release-test spacing was restored exactly. `git diff --check` passes and the committed code worktree is clean. No local native/model run, CI, YAML edit, rebase, push, merge or entity-frontmatter mutation was performed. Independent validation and final integration/native CI remain owed. CI35238049892 is not regraded green: Pi plain remains incomplete, five later same-stage variants were unstarted, and workflowScript/runs.run/revival support, fixture host wording and Claude recording/recovery findings remain HOLD outside this patch. FO owns the separate fail-fast coverage correction and later integration; AC-3/full live acceptance remains pending.
+
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently verify per-attempt native completion and current committed report without forcing a new worker for unchanged-report gate re-preparation.
+  See `artifacts/validation/final-tip-7c63/report.md`: three independent fault-injection overlays prove early-gate, withdrawal and current-report durability controls discriminate; existing two positives and identity/error negatives are reused and covered by combined suites.
+- DONE: Verify exact combined tip integration and required normal/race/format checks, retaining genuine failures and reusing already-owned coverage evidence.
+  Exact 7c63ad87: sequential normal/race exit1 solely for the retained resolver failure; ensigncycle passes 330.118s/246.778s. gofmt ran; unrelated baseline spacing restored exactly; independent #801 selection audit reused.
+- DONE: Record bounded recommendation, all AC evidence/limits and unresolved live outcomes without approval, push or CI.
+  AC-1/AC-2 deterministic proof recorded; AC-3 native host acceptance pending. Original Pi/Claude held outcomes and five unstarted Pi variants remain explicit.
+
+### Summary
+
+Recommend PASSED for this bounded deterministic correction and integration review; no new finding. Both full suites remain exit1 for the exact FO-declined resolver defect. Final native host runs and all six same-stage variants per host are still owed. Candidate/frontmatter remain unchanged; report and artifacts are committed locally for FO synchronization and fresh-gate handling.

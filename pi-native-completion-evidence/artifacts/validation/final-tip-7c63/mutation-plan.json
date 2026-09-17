@@ -1,0 +1,6 @@
+{
+  "premature": "Remove completion-before-prepare comparison; existing first/repair premature controls must fail",
+  "withdrawal": "Remove active-gate rejection at new worker and prepare; existing omitted-withdrawal controls must fail",
+  "durable": "Remove current-report section comparison; existing uncommitted-repair must fail",
+  "overlay_dir": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/.validation-7c63-overlays"
+}

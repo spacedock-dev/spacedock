@@ -1,0 +1,14 @@
+{
+  "command": [
+    "gofmt",
+    "-w",
+    "./cmd",
+    "./internal"
+  ],
+  "exit": 0,
+  "changed_and_restored_exactly": [
+    "internal/release/runtime_live_evidence_workflow_test.go"
+  ],
+  "stdout": "",
+  "stderr": ""
+}

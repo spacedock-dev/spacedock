@@ -1,0 +1,11 @@
+=== RUN   TestPiNativeRepairedGateChronology
+=== RUN   TestPiNativeRepairedGateChronology/reprepare-without-withdrawal
+    pi_auto_continue_double_dispatch_replay_test.go:466: invalid repair chronology/evidence accepted
+=== RUN   TestPiNativeRepairedGateChronology/omitted-withdrawal
+    pi_auto_continue_double_dispatch_replay_test.go:466: invalid repair chronology/evidence accepted
+--- FAIL: TestPiNativeRepairedGateChronology (0.92s)
+    --- FAIL: TestPiNativeRepairedGateChronology/reprepare-without-withdrawal (0.44s)
+    --- FAIL: TestPiNativeRepairedGateChronology/omitted-withdrawal (0.47s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	1.356s
+FAIL

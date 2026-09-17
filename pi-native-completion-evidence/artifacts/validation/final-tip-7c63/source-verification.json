@@ -1,0 +1,25 @@
+[
+  {
+    "source": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-17T15-28-55-890Z_01a0affc-3251-7468-b97d-5a46f9d90fd3.jsonl",
+    "expected": "5b4516bef26e1bcd345fda7e8c82644fce920d069f3d7151b5bc601ae0b0018d",
+    "actual": "5b4516bef26e1bcd345fda7e8c82644fce920d069f3d7151b5bc601ae0b0018d",
+    "matches": true
+  },
+  {
+    "source": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-17T15-28-55-890Z_01a0affc-3251-7468-b97d-5a46f9d90fd3/4f69bb19-86f8-4231-97fc-b51c60b42d77/run-0/session.jsonl",
+    "expected": "83673af1571e97fc7f4ae09c0550eb7ffdf2be9828b863959ec83f12bf015a54",
+    "actual": "83673af1571e97fc7f4ae09c0550eb7ffdf2be9828b863959ec83f12bf015a54",
+    "matches": true
+  },
+  {
+    "source": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-17T15-28-55-890Z_01a0affc-3251-7468-b97d-5a46f9d90fd3/5e7e751f-f882-49ad-9bc7-8dd6ad4084a8/run-0/session.jsonl",
+    "expected": "bc715e5cec4e2d49778c0f9ecbf65872d23457fa57e18c566ca0792e49aad99c",
+    "actual": "bc715e5cec4e2d49778c0f9ecbf65872d23457fa57e18c566ca0792e49aad99c",
+    "matches": true
+  },
+  {
+    "command": "git diff 02ef599d..HEAD --stat",
+    "exit": 0,
+    "stdout": " .github/workflows/runtime-live-e2e.yml                     | 2 +-\n docs/runtime-live-ci.md                                    | 2 +-\n internal/contractlint/live_registry_reconciliation_test.go | 5 +----\n 3 files changed, 3 insertions(+), 6 deletions(-)\n"
+  }
+]

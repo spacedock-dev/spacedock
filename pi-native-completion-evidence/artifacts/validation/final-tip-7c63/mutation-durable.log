@@ -1,0 +1,8 @@
+=== RUN   TestPiNativeRepairedGateChronology
+=== RUN   TestPiNativeRepairedGateChronology/uncommitted-repair
+    pi_auto_continue_double_dispatch_replay_test.go:466: invalid repair chronology/evidence accepted
+--- FAIL: TestPiNativeRepairedGateChronology (0.38s)
+    --- FAIL: TestPiNativeRepairedGateChronology/uncommitted-repair (0.38s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.861s
+FAIL

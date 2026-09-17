@@ -1,0 +1,10 @@
+=== RUN   TestPiNativeRepairedGateChronology
+=== RUN   TestPiNativeRepairedGateChronology/first-gate-premature
+    pi_auto_continue_double_dispatch_replay_test.go:466: invalid repair chronology/evidence accepted
+=== RUN   TestPiNativeRepairedGateChronology/repair-gate-premature
+--- FAIL: TestPiNativeRepairedGateChronology (0.83s)
+    --- FAIL: TestPiNativeRepairedGateChronology/first-gate-premature (0.47s)
+    --- PASS: TestPiNativeRepairedGateChronology/repair-gate-premature (0.35s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	1.355s
+FAIL

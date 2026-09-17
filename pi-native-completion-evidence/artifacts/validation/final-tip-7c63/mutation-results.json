@@ -1,0 +1,47 @@
+[
+  {
+    "mutation": "premature",
+    "command": [
+      "go",
+      "test",
+      "-overlay",
+      "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/.validation-7c63-overlays/premature.json",
+      "./internal/ensigncycle",
+      "-run",
+      "^TestPiNativeRepairedGateChronology$/^(first-gate-premature|repair-gate-premature)$",
+      "-v"
+    ],
+    "exit": 1,
+    "duration_seconds": 4.996767044067383
+  },
+  {
+    "mutation": "withdrawal",
+    "command": [
+      "go",
+      "test",
+      "-overlay",
+      "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/.validation-7c63-overlays/withdrawal.json",
+      "./internal/ensigncycle",
+      "-run",
+      "^TestPiNativeRepairedGateChronology$/^(omitted-withdrawal|reprepare-without-withdrawal)$",
+      "-v"
+    ],
+    "exit": 1,
+    "duration_seconds": 3.9520299434661865
+  },
+  {
+    "mutation": "durable",
+    "command": [
+      "go",
+      "test",
+      "-overlay",
+      "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/.validation-7c63-overlays/durable.json",
+      "./internal/ensigncycle",
+      "-run",
+      "^TestPiNativeRepairedGateChronology$/^(uncommitted-repair)$",
+      "-v"
+    ],
+    "exit": 1,
+    "duration_seconds": 3.423133373260498
+  }
+]
