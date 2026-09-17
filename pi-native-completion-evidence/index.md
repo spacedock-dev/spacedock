@@ -1,6 +1,6 @@
 ---
 title: Recognize native Pi worker completion evidence
-status: implementation
+status: validation
 source: Captain binding resolution:binding-1789576723761874000; tip CI 35058669297
 started: 2026-09-16T17:00:12Z
 completed:
