@@ -1,0 +1,43 @@
+{
+  "sources": [
+    {
+      "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-17T15-16-08-310Z_01a0aff0-7bf5-76e8-b01f-7eaf97428d76.jsonl",
+      "sha256": "fbc9a872080dbc09844fb5fbd2eb79cfc310cff0d54539c61fc1e6a875296b99"
+    },
+    {
+      "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-17T15-16-08-310Z_01a0aff0-7bf5-76e8-b01f-7eaf97428d76/b3599276-b994-4ffb-89c7-7c04d9ec110a/run-0/session.jsonl",
+      "sha256": "2cd967aff004c574837d3cfccc66cbe1100909b31afd5ed7d73eb869a2fbf075"
+    }
+  ],
+  "files": [
+    "model.txt",
+    "rejection-topology.tsv",
+    "pi-stderr.txt",
+    "process-status.txt",
+    "duration.txt",
+    "state.bundle",
+    "pi-stdout.txt",
+    "sessions/2026-09-17T15-16-08-310Z_01a0aff0-7bf5-76e8-b01f-7eaf97428d76.jsonl",
+    "sessions/2026-09-17T15-16-08-310Z_01a0aff0-7bf5-76e8-b01f-7eaf97428d76/b3599276-b994-4ffb-89c7-7c04d9ec110a/run-0/session.jsonl"
+  ],
+  "inventory": {
+    "version": 1,
+    "parentToolCallId": "call_GjyNyJvXzAaY4hFNy0d6634G|fc_0cd657dfdee45bd8016aac052beb2c87d1ab533ad6129c829c",
+    "workflowRunId": "e50172d2-7e00-49f9-be6c-f78a814092c8",
+    "inventoryComplete": false,
+    "workflowState": "running",
+    "children": []
+  },
+  "notification_return_parse": {
+    "complete_json": false,
+    "error": "Invalid control character at: line 25 column 78 (char 1019)",
+    "offset": 1019,
+    "near_error": "sessionName\": \"worker: Read /tmp/spacedock-dispatch Trace: 2 event(s).\n\nChild outputs:\n- key=recorded-gate-task-validation run=5a2756d7-4e57-4aa7-a9a4-7b70a909d545 status"
+  },
+  "first_terminal_id": "8a3b378a",
+  "revival_parent_id": "8a3b378a",
+  "revival_links_previous_terminal": true,
+  "fresh_epoch_name": "subagent-worker-5a2756d7-4e57-4aa7-a9a4-7b70a909d545-1",
+  "revival_epoch_name": "subagent-worker-27266d0c-c89a-4409-afeb-c459cc794e44-1",
+  "revival_terminal": "error"
+}
