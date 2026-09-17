@@ -812,12 +812,28 @@ func assertSameStageWorkers(routes []rejectionRoute, independent bool) error {
 	if err != nil {
 		return err
 	}
-	if independent {
-		if len(rounds) != 2 || rounds[1].target == rounds[0].target {
-			return fmt.Errorf("required independent review did not complete on another worker: %v", rounds)
+	var workers []rejectionRound
+	seen := map[string]bool{}
+	for _, round := range rounds {
+		if round.target == "" {
+			return fmt.Errorf("worker has no native identity")
 		}
-	} else if len(rounds) != 1 {
-		return fmt.Errorf("workflow without review dispatched extra workers: %v", rounds)
+		if round.dispatch == routeSpawn {
+			if seen[round.target] {
+				return fmt.Errorf("fresh dispatch repeats native identity %q", round.target)
+			}
+			seen[round.target] = true
+			workers = append(workers, round)
+		} else if round.dispatch != routeReuse || len(workers) == 0 || round.target != workers[len(workers)-1].target || round.stage != workers[len(workers)-1].stage {
+			return fmt.Errorf("reuse does not continue the current worker: %v", round)
+		}
+	}
+	want := 1
+	if independent {
+		want = 2
+	}
+	if len(workers) != want {
+		return fmt.Errorf("completed %d native workers, want %d: %v", len(workers), want, workers)
 	}
 	return nil
 }
@@ -880,4 +896,65 @@ func TestSameStageSelectedPlanRejectsPrematureGate(t *testing.T) {
 			t.Errorf("selected %q: %v", path, err)
 		}
 	}
+}
+
+// Native identities retained from tip CI35148797301 review-required (Claude)
+// and cycle-limit (Codex); only non-identity payload text is omitted here.
+func TestSameStageNativeIdentityAndReuse(t *testing.T) {
+	claude := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_013tQCCE4kV67J8wWfYJttpV","input":{"name":"recorded-gate-task-validation"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_013tQCCE4kV67J8wWfYJttpV","content":[{"type":"text","text":"agentId: a891653619c5fb829"}]}]}}
+{"type":"system","subtype":"task_notification","task_id":"a891653619c5fb829","tool_use_id":"toolu_013tQCCE4kV67J8wWfYJttpV","status":"completed"}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_012HxAjBzxemi3YCjWsCFFCt","input":{"name":"recorded-gate-task-validation"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_012HxAjBzxemi3YCjWsCFFCt","content":[{"type":"text","text":"agentId: a6f8a511fd35edfb4"}]}]}}
+{"type":"system","subtype":"task_notification","task_id":"a6f8a511fd35edfb4","tool_use_id":"toolu_012HxAjBzxemi3YCjWsCFFCt","status":"completed"}`
+	t.Run("fresh native IDs sharing display name", func(t *testing.T) {
+		routes, _ := claudeRejectionRoutes(claude)
+		if err := assertSameStageWorkers(routes, true); err != nil {
+			t.Fatal(err)
+		}
+	})
+	for name, stream := range map[string]string{
+		"missing completion":                 strings.Split(claude, `{"type":"system","subtype":"task_notification","task_id":"a6`)[0],
+		"wrong completion":                   strings.Replace(claude, `"task_id":"a6f8a511fd35edfb4","tool_use_id":"toolu_012HxAjBzxemi3YCjWsCFFCt"`, `"task_id":"a6f8a511fd35edfb4","tool_use_id":"wrong"`, 1),
+		"wrong task owner":                   strings.Replace(claude, `"task_id":"a6f8a511fd35edfb4"`, `"task_id":"a000000"`, 1),
+		"same task under another tool ID":    strings.ReplaceAll(claude, "a6f8a511fd35edfb4", "a891653619c5fb829"),
+		"same native identity changed label": strings.ReplaceAll(strings.Replace(claude, `"name":"recorded-gate-task-validation"`, `"name":"renamed-validation"`, 1), "toolu_012HxAjBzxemi3YCjWsCFFCt", "toolu_013tQCCE4kV67J8wWfYJttpV"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			routes, _ := claudeRejectionRoutes(stream)
+			if assertSameStageWorkers(routes, true) == nil {
+				t.Fatal("invalid identity/completion passed")
+			}
+		})
+	}
+	codex := `{"payload":{"type":"function_call","name":"spawn_agent","call_id":"call_V8lU1VVXKqm3vlGDc2ij2X9Y"}}
+{"payload":{"type":"function_call_output","call_id":"call_V8lU1VVXKqm3vlGDc2ij2X9Y","output":"{\"task_name\":\"/root/recorded_gate_task_validation\"}"}}
+{"payload":{"type":"agent_message","author":"/root/recorded_gate_task_validation","content":"Message Type: FINAL_ANSWER Done:"}}
+{"payload":{"type":"function_call","name":"followup_task","call_id":"call_pH4Ubx6bZQiWNEhnC8iNLwkL","arguments":"{\"target\":\"/root/recorded_gate_task_validation\"}"}}
+{"payload":{"type":"agent_message","author":"/root/recorded_gate_task_validation","content":"Message Type: FINAL_ANSWER Done:"}}`
+
+	for name, stream := range map[string]string{
+		"missing followup completion": codex[:strings.LastIndex(codex, "\n")],
+		"wrong followup owner":        codex[:strings.LastIndex(codex, "\n")] + strings.Replace(codex[strings.LastIndex(codex, "\n"):], "/root/recorded_gate_task_validation", "/root/other_validation", 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if assertSameStageWorkers(codexRejectionRoutes(stream), false) == nil {
+				t.Fatal("unfinished followup passed")
+			}
+		})
+	}
+	t.Run("completed same-worker followup", func(t *testing.T) {
+		routes := codexRejectionRoutes(codex)
+		if err := assertSameStageWorkers(routes, false); err != nil {
+			t.Fatal(err)
+		}
+		for _, bad := range [][]rejectionRoute{routes[:3], append(append([]rejectionRoute{}, routes...), rejectionRoute{event: routeSpawn, stage: "validation", target: "extra"}, rejectionRoute{event: routeDone, stage: "validation", target: "extra"})} {
+			if assertSameStageWorkers(bad, false) == nil {
+				t.Fatal("unfinished reuse or extra fresh worker passed")
+			}
+		}
+		if assertSameStageWorkers(routes, true) == nil {
+			t.Fatal("self-review passed")
+		}
+	})
 }

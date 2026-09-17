@@ -443,7 +443,7 @@ func runSameStageRevisionJourney(t *testing.T, runner liveDriver, scenario share
 			requiresReview := strings.HasSuffix(variant, "review-required")
 			// Missing evidence may stop before a reviewer is dispatched; any review
 			// that does run must still complete independently of the correction.
-			checks := []error{durableSemantic("self-feedback-obligations", assert(routes, requiresReview && len(routes) > 2))}
+			checks := []error{durableSemantic("self-feedback-obligations", assert(routes, requiresReview && countRouteEvents(routes, routeSpawn) > 1))}
 			check := func(ok bool, why string) {
 				if !ok {
 					checks = append(checks, durableSemantic("self-feedback-obligations", fmt.Errorf("%s", why)))
@@ -511,25 +511,27 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	entityPath := build(t, workflowRoot)
 
 	commandLog := filepath.Join(t.TempDir(), "command.log")
-	if _, ok := runner.(codexAsLiveDriver); ok {
+	if _, pi := runner.(piSharedLiveDriver); !pi {
 		writeFile(t, commandLog, "")
 		runner = runner.withStubPATH(writeRecordedGateLoggingShim(t, buildRecordedGateBinary(t), commandLog))
 	}
 
 	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot)+"\n"+rejectionHostRealization(runner))
 	after := readFile(t, entityPath)
-	recordedRound := claudeRecordedRejectionRound(result.stream)
-	publications := claudeRejectionRoundPublications(result.stream)
+	recordedRound := false
+	var publications []string
 	// Worker topology comes from each host's NATIVE transcript: the Claude
 	// stream-json spawns/notifications, and for Codex the parent rollout, because the
 	// public `codex exec --json` stream carries only `wait` collab items and no
 	// topology at all.
 	routes, branch := claudeRejectionRoutes(result.stream)
-	if _, ok := runner.(codexAsLiveDriver); ok {
+	if _, pi := runner.(piSharedLiveDriver); !pi {
 		log := readFile(t, commandLog)
 		writeFile(t, filepath.Join(result.artifactDir, "command.log"), log)
-		publications = codexRejectionRoundPublications(log)
+		publications = recorderRejectionRoundPublications(log)
 		recordedRound = slices.Contains(publications, "validation/1")
+	}
+	if _, ok := runner.(codexAsLiveDriver); ok {
 		routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
 	}
 	if _, ok := runner.(piSharedLiveDriver); ok {
