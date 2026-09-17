@@ -33,6 +33,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:cpx5q07b7wqmd6xv6wc7khvd-validation-2
+              briefing:
+                id: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-2:revision-1
+                digest: sha256:7d3dcc2c5e07cd29556669324a638df3224bb4ec963cecf0b6b539ec1351f156
+                room-ref: '@review/validation/briefing-2'
 ---
 
 Recognize Pi native completion notifications so valid worker lifecycles are graded correctly without accepting another worker or hiding downstream failures.

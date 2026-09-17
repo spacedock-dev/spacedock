@@ -1,0 +1,31 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-2:revision-1",
+  "question": "Approve the independently validated Pi completion correction and reconciled stack tip for PR #806 publication and full tip CI, with merge and final native acceptance pending?",
+  "artifacts": [
+    {
+      "id": "artifact:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/fd761619f6c513f843b5d86bc405c30debaa94d2/pi-native-completion-evidence/index.md",
+      "rev": "sha256:cf9fa777ac5b99267f6b87efada2a1b35c01db2d9b488f94ba3ee564b38c5f80",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation passes native sync and async attribution at frozen tip 0997b6b7. Completed serial normal/race runs retain only the exact declined resolver failure; original timeouts remain recorded. All-host live CI and the unchanged Claude roadmap case remain pending, without waiver or merge approval."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://main/438053493838dc70c9478b3d991309d566783e85/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://state/fd761619f6c513f843b5d86bc405c30debaa94d2/pi-native-completion-evidence/artifacts/validation/final-tip-0997/report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:65218b13221fbe59de445118a9be91ffc225a36101d4ecc976c41bc12abfa741"
+    }
+  ]
+}
