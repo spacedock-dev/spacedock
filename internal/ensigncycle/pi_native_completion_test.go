@@ -20,17 +20,118 @@ type piNativeDispatch struct {
 }
 
 func piNativeCompletion(stream, stage string, artifactDirs ...string) (int, error) {
+	completed, _, err := piNativeLifecycle(stream, stage, "", artifactDirs...)
+	return completed, err
+}
+
+// A repaired gate must follow its own worker. Join actual prepare/withdraw
+// results by tool-call ID, and retain every earlier attempt's ordering checks.
+func piNativeLifecycle(stream, stage, nextSignal string, artifactDirs ...string) (int, int, error) {
 	dispatches, err := piNativeCompletions(stream, artifactDirs...)
 	if err != nil {
-		return -1, err
+		return -1, -1, err
 	}
-	completed, latest := -1, -1
+	completed, latest, count := -1, -1, 0
+	workers := map[int]*piNativeDispatch{}
 	for _, d := range dispatches {
-		if stageToken(d.args.Task, stage) && d.index > latest {
-			latest, completed = d.index, d.completed
+		if stageToken(d.args.Task, stage) {
+			workers[d.index] = d
+			count++
+			if d.index > latest {
+				latest, completed = d.index, d.completed
+			}
 		}
 	}
-	return completed, nil
+	prepares := 0
+	for _, call := range piBashCommands(stream) {
+		if strings.Contains(call.command, "gate prepare") {
+			prepares++
+		}
+	}
+	// Withdrawal permits re-preparing the same validated work; it does not
+	// itself require another worker. Still check every replacement attempt.
+	if count == 0 || count < 2 && prepares < 2 || nextSignal != "gate prepare" {
+		return completed, -1, nil
+	}
+	type gateCall struct {
+		index    int
+		withdraw bool
+	}
+	calls := map[string]gateCall{}
+	active, prior := "", ""
+	boundary := -1
+	var worker *piNativeDispatch
+	fail := func(reason string) (int, int, error) { return -1, -1, fmt.Errorf("Pi gate chronology: %s", reason) }
+	for i, line := range strings.Split(stream, "\n") {
+		if d := workers[i]; d != nil {
+			if active != "" {
+				return fail("repair dispatched before successful gate withdrawal")
+			}
+			worker = d
+		}
+		var rec piSessionRecord
+		if json.Unmarshal([]byte(line), &rec) != nil {
+			continue
+		}
+		if rec.Message.Role == "assistant" {
+			var blocks []piToolCallBlock
+			_ = json.Unmarshal(rec.Message.Content, &blocks)
+			for _, b := range blocks {
+				var args piToolCallArgs
+				if b.Type != "toolCall" || b.Name != "bash" || json.Unmarshal(b.Arguments, &args) != nil {
+					continue
+				}
+				prepare, withdraw := strings.Contains(args.Command, "gate prepare"), strings.Contains(args.Command, "gate withdraw")
+				if !prepare && !withdraw {
+					continue
+				}
+				if prepare && (worker == nil || worker.completed < 0 || worker.completed >= i) {
+					return fail("gate precedes its worker completion")
+				}
+				if b.ID == "" || calls[b.ID].index != 0 || prepare && withdraw {
+					return fail("ambiguous gate call")
+				}
+				calls[b.ID] = gateCall{index: i, withdraw: withdraw}
+			}
+		}
+		call, ok := calls[rec.Message.ToolCallID]
+		if !ok || rec.Message.Role != "toolResult" || rec.Message.ToolName != "bash" {
+			continue
+		}
+		delete(calls, rec.Message.ToolCallID)
+		if rec.Message.IsError == nil || *rec.Message.IsError {
+			return fail("gate call lacks successful result")
+		}
+		fields := map[string]string{}
+		for _, field := range strings.Fields(piTextContent(rec.Message.Content)) {
+			if key, value, ok := strings.Cut(field, "="); ok {
+				fields[key] = value
+			}
+		}
+		briefing := fields["briefing"]
+		parts := strings.Split(briefing, ":")
+		if len(parts) != 5 || parts[0] != "briefing" || parts[2] != stage {
+			return fail("gate result lacks matching briefing identity")
+		}
+		if call.withdraw {
+			if active == "" || briefing != active || fields["state"] != "withdrawn" {
+				return fail("withdrawal does not match open attempt")
+			}
+			prior, active = active, ""
+		} else {
+			if active != "" || briefing == prior || fields["state"] != "open" {
+				return fail("replacement gate lacks withdrawn predecessor or new identity")
+			}
+			if prior != "" && !strings.HasPrefix(prior, strings.Join(parts[:3], ":")+":") {
+				return fail("replacement gate belongs to another entity")
+			}
+			active, boundary = briefing, call.index
+		}
+	}
+	if len(calls) != 0 || active == "" || boundary < latest || completed >= boundary {
+		return fail("current gate is incomplete or precedes repair")
+	}
+	return completed, boundary, nil
 }
 
 // Native sync results and async notices are observed at their original parent

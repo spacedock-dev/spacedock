@@ -164,7 +164,7 @@ func claudeSpawnIsForStage(description, prompt, stage string) bool {
 }
 
 func assertWorkerLifecycle(stream, entity, stage, nextSignal string, artifactDir ...string) error {
-	nativeCompletion, err := piNativeCompletion(stream, stage, artifactDir...)
+	nativeCompletion, nativeBoundary, err := piNativeLifecycle(stream, stage, nextSignal, artifactDir...)
 	if err != nil {
 		return &gradedErr{code: stage + "-worker-not-dispatched", msg: err.Error()}
 	}
@@ -188,7 +188,7 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string, artifactDir
 			Content                       json.RawMessage
 		}
 	}
-	spawnID, codexSpawnCall, codexWorker, spawns, completed, validation := "", "", "", 0, nativeCompletion, -1
+	spawnID, codexSpawnCall, codexWorker, spawns, completed, validation := "", "", "", 0, nativeCompletion, nativeBoundary
 	piRunID := ""
 	for i, line := range strings.Split(stream, "\n") {
 		var event row
