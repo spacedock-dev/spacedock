@@ -1,0 +1,8 @@
+9	0	internal/ensigncycle/auto_continue_fixtures_test.go
+2	2	internal/ensigncycle/claude_runtime_helpers_test.go
+109	0	internal/ensigncycle/pi_auto_continue_double_dispatch_replay_test.go
+106	5	internal/ensigncycle/pi_native_completion_test.go
+4	0	internal/ensigncycle/testdata/pi_native_completion/repair-child-1.jsonl (new; 2044 bytes)
+4	0	internal/ensigncycle/testdata/pi_native_completion/repair-child-2.jsonl (new; 2593 bytes)
+157	0	internal/ensigncycle/testdata/pi_native_completion/repair-parent.jsonl (new; 8023 bytes)
+47	0	internal/ensigncycle/testdata/pi_native_completion/repair-provenance.json (new; 2038 bytes)

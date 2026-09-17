@@ -1,0 +1,6 @@
+--- FAIL: TestPiNativeRepairedGateChronology (3.06s)
+    --- FAIL: TestPiNativeRepairedGateChronology/reprepare-without-withdrawal (0.18s)
+        pi_auto_continue_double_dispatch_replay_test.go:466: invalid repair chronology/evidence accepted
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	3.402s
+FAIL

@@ -1,0 +1,5 @@
+--- FAIL: TestPiNativeRepairedGateChronology (0.09s)
+    pi_auto_continue_double_dispatch_replay_test.go:391: captured withdrawn/repaired gate chronology: validation lifecycle incomplete: spawns=2 completed=141 validation=99 report=<nil>
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.428s
+FAIL
