@@ -361,3 +361,112 @@ func TestPiNativeSynchronousNegativeControls(t *testing.T) {
 		})
 	}
 }
+
+// CI 35238049892 withdrew attempt 1 before dispatching report repair. The
+// projection retains completion 141 and replacement gate 144 (old boundary 99).
+func capturedPiGateRepair(t *testing.T) (string, string) {
+	t.Helper()
+	base := filepath.Join("testdata", "pi_native_completion")
+	stream := readFile(t, filepath.Join(base, "repair-parent.jsonl"))
+	var provenance struct {
+		Source   string
+		Children []struct{ Fixture, Relative string }
+	}
+	if err := json.Unmarshal([]byte(readFile(t, filepath.Join(base, "repair-provenance.json"))), &provenance); err != nil {
+		t.Fatal(err)
+	}
+	artifacts := t.TempDir()
+	parent := filepath.Base(provenance.Source)
+	writeFile(t, filepath.Join(artifacts, "sessions", parent), strings.TrimLeft(stream, "\n"))
+	for _, child := range provenance.Children {
+		writeFile(t, filepath.Join(artifacts, "sessions", strings.TrimSuffix(parent, ".jsonl"), child.Relative), readFile(t, filepath.Join(base, child.Fixture)))
+	}
+	return stream, artifacts
+}
+
+func TestPiNativeRepairedGateChronology(t *testing.T) {
+	for _, name := range []string{"captured", "unchanged-report-reprepare", "reprepare-without-withdrawal", "no-validators", "first-gate-premature", "repair-gate-premature", "omitted-withdrawal", "failed-withdrawal", "wrong-withdrawal", "missing-first-completion", "missing-repair-completion", "wrong-repair-call", "wrong-repair-run", "wrong-repair-owner", "error-completion", "missing-prepare-result", "missing-report", "uncommitted-repair"} {
+		t.Run(name, func(t *testing.T) {
+			stream, artifacts := capturedPiGateRepair(t)
+			root, entity := stageAutoContinueEndState(t, false, false)
+			// Reconstruct the two-attempt durable state using the existing gate fixture.
+			// The original continuation retained no Git bundle; no captured commit is invented.
+			body := readFile(t, entity)
+			_, attempt, _ := strings.Cut(autoContinueGateFrontmatter(false), "          attempts:\n")
+			second := strings.NewReplacer("validation-1", "validation-2", "attempt-1", "attempt-2", "briefing-1", "briefing-2").Replace(attempt)
+			body = strings.Replace(body, autoContinueGateFrontmatter(false), autoContinueWithdrawnGateFrontmatter()+second, 1)
+			if name != "unchanged-report-reprepare" {
+				body += "\n  Repaired checklist evidence.\n"
+			}
+			writeFile(t, entity, body)
+			if name != "uncommitted-repair" {
+				gitCommitPathScoped(t, root, filepath.Base(entity), "reconstruct repaired report and replacement gate")
+			}
+			rows := strings.Split(stream, "\n")
+			switch name {
+			case "unchanged-report-reprepare", "reprepare-without-withdrawal", "no-validators":
+				rows[135], rows[136], rows[141] = "", "", ""
+				if name == "reprepare-without-withdrawal" {
+					rows[127], rows[128] = "", ""
+				}
+				if name == "no-validators" {
+					rows[62], rows[63], rows[68] = "", "", ""
+				}
+			case "first-gate-premature":
+				rows[67], rows[99] = rows[99], ""
+			case "repair-gate-premature":
+				rows[140], rows[144] = rows[144], ""
+			case "omitted-withdrawal":
+				rows[127], rows[128] = "", ""
+			case "failed-withdrawal":
+				rows[128] = strings.Replace(rows[128], `"isError":false`, `"isError":true`, 1)
+			case "wrong-withdrawal":
+				rows[128] = strings.ReplaceAll(rows[128], "attempt-1", "attempt-9")
+			case "missing-first-completion":
+				rows[68] = ""
+			case "missing-repair-completion":
+				rows[141] = ""
+			case "wrong-repair-call", "wrong-repair-run", "wrong-repair-owner":
+				var result piSessionRecord
+				if err := json.Unmarshal([]byte(rows[136]), &result); err != nil {
+					t.Fatal(err)
+				}
+				switch name {
+				case "wrong-repair-call":
+					result.Message.ToolCallID = "other"
+				case "wrong-repair-run":
+					result.Message.Details.RunID = "other"
+				case "wrong-repair-owner":
+					result.Message.Details.Mission.OwnerSessionID = "/outside/owner.jsonl"
+				}
+				raw, err := json.Marshal(result)
+				if err != nil {
+					t.Fatal(err)
+				}
+				rows[136] = string(raw)
+			case "error-completion":
+				children, err := filepath.Glob(filepath.Join(artifacts, "sessions", "*", "*", "run-0", "session.jsonl"))
+				if err != nil || len(children) != 2 {
+					t.Fatalf("child fixtures: %v %v", children, err)
+				}
+				for _, child := range children {
+					writeFile(t, child, strings.ReplaceAll(readFile(t, child), `"stopReason":"stop"`, `"stopReason":"error"`))
+				}
+			case "missing-prepare-result":
+				rows[145] = ""
+			case "missing-report":
+				writeFile(t, entity, strings.Split(body, "## Stage Report: validation")[0])
+			}
+			err := assertAutoContinueDispatchEvidence(t, strings.Join(rows, "\n"), root, entity, artifacts)
+			if name == "captured" || name == "unchanged-report-reprepare" {
+				if err != nil {
+					t.Fatalf("captured withdrawn/repaired gate chronology: %v", err)
+				}
+			} else if err == nil {
+				t.Fatal("invalid repair chronology/evidence accepted")
+			} else if name == "uncommitted-repair" && !strings.Contains(err.Error(), "no durable commit") {
+				t.Fatalf("uncommitted repair failed at wrong owner: %v", err)
+			}
+		})
+	}
+}
