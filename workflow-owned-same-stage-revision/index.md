@@ -92,6 +92,17 @@ gates:
                 id: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-3:revision-1
                 digest: sha256:b24f90d366e513f50c50fab7ba6db4745284410ba8232f33818adde5797add84
                 room-ref: '@review/validation/briefing-3'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zz1yqc2w2katp28wpa8nghx2:validation:3
+                briefing: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-09-17T15:04:35.671918Z"
+                decision: approve
+                reason: Captain binding resolution:binding-1789657416015652000 approves validation attempt 3 and candidate 67c68536 for corrected-stack publication and full tip CI. Reviewed artifact sha256:090f392bf3872fe4169655453f82ff67e908d3c287051a65df70a7be0c2247ac. Merge and failure waiver remain unauthorized.
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
     stage: validation
