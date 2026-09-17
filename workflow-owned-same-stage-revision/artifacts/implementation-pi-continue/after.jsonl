@@ -1,0 +1,39 @@
+{"Time":"2026-09-17T11:49:10.408701-07:00","Action":"start","Package":"command-line-arguments"}
+{"Time":"2026-09-17T11:49:10.684242-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants"}
+{"Time":"2026-09-17T11:49:10.684804-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants","Output":"=== RUN   TestVariants\n"}
+{"Time":"2026-09-17T11:49:10.684844-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants/plain"}
+{"Time":"2026-09-17T11:49:10.684847-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"=== RUN   TestVariants/plain\n"}
+{"Time":"2026-09-17T11:49:10.684863-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"    variants_test.go:5: EXECUTED plain\n"}
+{"Time":"2026-09-17T11:49:10.684875-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"    variants_test.go:5: intentional first-variant failure\n"}
+{"Time":"2026-09-17T11:49:10.684887-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"--- FAIL: TestVariants/plain (0.00s)\n"}
+{"Time":"2026-09-17T11:49:10.68489-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestVariants/plain","Elapsed":0}
+{"Time":"2026-09-17T11:49:10.684896-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants/review-required"}
+{"Time":"2026-09-17T11:49:10.684898-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/review-required","Output":"=== RUN   TestVariants/review-required\n"}
+{"Time":"2026-09-17T11:49:10.6849-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/review-required","Output":"    variants_test.go:5: EXECUTED review-required\n"}
+{"Time":"2026-09-17T11:49:10.684903-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/review-required","Output":"--- PASS: TestVariants/review-required (0.00s)\n"}
+{"Time":"2026-09-17T11:49:10.684905-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestVariants/review-required","Elapsed":0}
+{"Time":"2026-09-17T11:49:10.684914-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants/separate-review-required"}
+{"Time":"2026-09-17T11:49:10.684916-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/separate-review-required","Output":"=== RUN   TestVariants/separate-review-required\n"}
+{"Time":"2026-09-17T11:49:10.684918-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/separate-review-required","Output":"    variants_test.go:5: EXECUTED separate-review-required\n"}
+{"Time":"2026-09-17T11:49:10.684925-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/separate-review-required","Output":"--- PASS: TestVariants/separate-review-required (0.00s)\n"}
+{"Time":"2026-09-17T11:49:10.684927-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestVariants/separate-review-required","Elapsed":0}
+{"Time":"2026-09-17T11:49:10.684929-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants/round-required"}
+{"Time":"2026-09-17T11:49:10.684931-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/round-required","Output":"=== RUN   TestVariants/round-required\n"}
+{"Time":"2026-09-17T11:49:10.684933-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/round-required","Output":"    variants_test.go:5: EXECUTED round-required\n"}
+{"Time":"2026-09-17T11:49:10.684935-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/round-required","Output":"--- PASS: TestVariants/round-required (0.00s)\n"}
+{"Time":"2026-09-17T11:49:10.684943-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestVariants/round-required","Elapsed":0}
+{"Time":"2026-09-17T11:49:10.684945-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants/round-missing"}
+{"Time":"2026-09-17T11:49:10.684947-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/round-missing","Output":"=== RUN   TestVariants/round-missing\n"}
+{"Time":"2026-09-17T11:49:10.68495-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/round-missing","Output":"    variants_test.go:5: EXECUTED round-missing\n"}
+{"Time":"2026-09-17T11:49:10.684952-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/round-missing","Output":"--- PASS: TestVariants/round-missing (0.00s)\n"}
+{"Time":"2026-09-17T11:49:10.684954-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestVariants/round-missing","Elapsed":0}
+{"Time":"2026-09-17T11:49:10.684956-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants/cycle-limit"}
+{"Time":"2026-09-17T11:49:10.684958-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/cycle-limit","Output":"=== RUN   TestVariants/cycle-limit\n"}
+{"Time":"2026-09-17T11:49:10.68496-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/cycle-limit","Output":"    variants_test.go:5: EXECUTED cycle-limit\n"}
+{"Time":"2026-09-17T11:49:10.684962-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/cycle-limit","Output":"--- PASS: TestVariants/cycle-limit (0.00s)\n"}
+{"Time":"2026-09-17T11:49:10.684963-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestVariants/cycle-limit","Elapsed":0}
+{"Time":"2026-09-17T11:49:10.684966-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants","Output":"--- FAIL: TestVariants (0.00s)\n"}
+{"Time":"2026-09-17T11:49:10.684968-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestVariants","Elapsed":0}
+{"Time":"2026-09-17T11:49:10.68497-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\n"}
+{"Time":"2026-09-17T11:49:10.685537-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\tcommand-line-arguments\t0.276s\n"}
+{"Time":"2026-09-17T11:49:10.685563-07:00","Action":"fail","Package":"command-line-arguments","Elapsed":0.277}

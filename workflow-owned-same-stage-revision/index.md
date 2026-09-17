@@ -594,3 +594,17 @@ Evidence is in artifacts/implementation-native-identity: captured-regrade.log, c
 ### Summary
 
 The corrected evidence layer distinguishes native workers from display names and completed turns, and counts recorder success from the actual intercepted process. Validation recommends PASSED for this bounded correction while final combined suites and host CI remain pending; prior findings and failed-run evidence are preserved.
+
+
+## Stage Report: implementation
+
+- DONE: Allow later Pi same-stage variants to execute after an earlier failure.
+  Code `7508a773bb7eb42b981016ae9480263941a6047c` removes only the existing Pi common-journey `-failfast` argument. Model, auth, timeout, parallelism, scheduler, grader and other-host commands are unchanged. The existing runner still loops over all six variants; failures still make the lane fail.
+- DONE: Prove sibling execution and preserved failure without a model run or new standing harness.
+  A temporary standard Go test used the six variant names and failed only plain. With `-failfast`, plain was the only child started; without it, all six children started. Both commands exited 1. The temporary test was removed. Exact JSON event outputs and exit/count inventory are retained under artifacts/implementation-pi-continue; no model or CI run was started.
+- DONE: Update matching existing wiring owners, run targeted checks and commit local evidence.
+  Read-only inspection found the documented Pi command and existing test explicitly required the removed flag. Distinct FO authorization expanded the surface to exactly `.github/workflows/runtime-live-e2e.yml`, `docs/runtime-live-ci.md`, and `internal/contractlint/live_registry_reconciliation_test.go`. The existing no-failfast loop now includes Pi and its contrary assertion is removed. `go test ./internal/contractlint -run '^(TestRuntimeLiveCommonSuiteTimeouts|TestRuntimeLiveCommonFailFastPolicy|TestRuntimeLiveRegistryReconciliation)$' -count=1` passes in 1.664s. Diff-check passes. No new check, harness, policy machinery, push, rebase or merge was introduced.
+
+### Summary
+
+The correction is three insertions and six deletions across the three explicitly authorized existing files. It fixes the observed Pi coverage omission from CI 35238049892 while preserving nonzero failure status and every other command flag. Existing Claude missing-source, naming/recovery and other runtime findings remain unresolved by this change. Required combined `go test ./...`, `go test ./... -race` and `gofmt -w ./cmd ./internal` obligations remain for the final restacked tip; full suites were not run here while the #806 owner was verifying its correction. Final live CI and publication remain FO-owned. The retained validator owns independent review.

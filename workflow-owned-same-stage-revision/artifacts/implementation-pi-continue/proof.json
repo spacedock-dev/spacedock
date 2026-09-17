@@ -1,0 +1,25 @@
+[
+  {
+    "case": "before",
+    "flags": [
+      "-failfast"
+    ],
+    "exit_code": 1,
+    "ran": [
+      "TestVariants/plain"
+    ]
+  },
+  {
+    "case": "after",
+    "flags": [],
+    "exit_code": 1,
+    "ran": [
+      "TestVariants/plain",
+      "TestVariants/review-required",
+      "TestVariants/separate-review-required",
+      "TestVariants/round-required",
+      "TestVariants/round-missing",
+      "TestVariants/cycle-limit"
+    ]
+  }
+]

@@ -1,0 +1,14 @@
+{"Time":"2026-09-17T11:49:09.319453-07:00","Action":"start","Package":"command-line-arguments"}
+{"Time":"2026-09-17T11:49:09.765045-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants"}
+{"Time":"2026-09-17T11:49:09.765112-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants","Output":"=== RUN   TestVariants\n"}
+{"Time":"2026-09-17T11:49:09.76514-07:00","Action":"run","Package":"command-line-arguments","Test":"TestVariants/plain"}
+{"Time":"2026-09-17T11:49:09.765143-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"=== RUN   TestVariants/plain\n"}
+{"Time":"2026-09-17T11:49:09.765156-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"    variants_test.go:5: EXECUTED plain\n"}
+{"Time":"2026-09-17T11:49:09.765164-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"    variants_test.go:5: intentional first-variant failure\n"}
+{"Time":"2026-09-17T11:49:09.765175-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants/plain","Output":"--- FAIL: TestVariants/plain (0.00s)\n"}
+{"Time":"2026-09-17T11:49:09.765179-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestVariants/plain","Elapsed":0}
+{"Time":"2026-09-17T11:49:09.765184-07:00","Action":"output","Package":"command-line-arguments","Test":"TestVariants","Output":"--- FAIL: TestVariants (0.00s)\n"}
+{"Time":"2026-09-17T11:49:09.765186-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestVariants","Elapsed":0}
+{"Time":"2026-09-17T11:49:09.765188-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\n"}
+{"Time":"2026-09-17T11:49:09.766594-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\tcommand-line-arguments\t0.447s\n"}
+{"Time":"2026-09-17T11:49:09.76663-07:00","Action":"fail","Package":"command-line-arguments","Elapsed":0.447}
