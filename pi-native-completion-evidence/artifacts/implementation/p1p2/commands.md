@@ -1,6 +1,6 @@
 # P1/P2 focused correction verification
 
-FO FIX authorization for both Material task-owned AC-1 observer findings was supplied in the advance dispatch. Scope: existing native Pi correlation helper, route extractor and two live callers, required focused tests and captured fixtures. P1/P2 findings and original durable bundle/shim evidence remain in `../../../validation/tip35149242496/`.
+FO FIX authorization for both Material task-owned AC-1 observer findings was supplied in the advance dispatch. Scope: existing native Pi correlation helper, route extractor and two live callers, required focused tests and captured fixtures. P1/P2 findings and original durable bundle/shim evidence remain in `../../validation/tip35149242496/`.
 
 Source head: d0a6f413af32fa69ac9da4af2c74c0086fcca812. CI merge: 3f23437d91c98bcf4cba93e52d0f1da2761d2cb1, parents 85bd948e626f3522869fb577d8139330f73f176b and d0a6f413af32fa69ac9da4af2c74c0086fcca812. Both source and tested merge have full tree 717d412d4b2b0f2ede3246c6f25f8a49d8d8d252; local source tree was checked again with git rev-parse. No assumption that a merge parent is main. Original record SHA-256 hashes and projection/line offsets accompany the committed fixtures in tip35149242496-provenance.json.
 
