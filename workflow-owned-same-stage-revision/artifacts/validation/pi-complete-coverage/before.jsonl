@@ -1,0 +1,18 @@
+{"Time":"2026-09-17T11:54:03.799854-07:00","Action":"start","Package":"command-line-arguments"}
+{"Time":"2026-09-17T11:54:04.087704-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision"}
+{"Time":"2026-09-17T11:54:04.08777-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"=== RUN   TestLiveCommonSameStageRevision\n"}
+{"Time":"2026-09-17T11:54:04.087799-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"=== PAUSE TestLiveCommonSameStageRevision\n"}
+{"Time":"2026-09-17T11:54:04.087807-07:00","Action":"pause","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision"}
+{"Time":"2026-09-17T11:54:04.087811-07:00","Action":"cont","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision"}
+{"Time":"2026-09-17T11:54:04.087812-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"=== CONT  TestLiveCommonSameStageRevision\n"}
+{"Time":"2026-09-17T11:54:04.087814-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain"}
+{"Time":"2026-09-17T11:54:04.087815-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"=== RUN   TestLiveCommonSameStageRevision/plain\n"}
+{"Time":"2026-09-17T11:54:04.087822-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"    variants_test.go:7: ACTUAL CHILD plain\n"}
+{"Time":"2026-09-17T11:54:04.087823-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"    variants_test.go:8: intentional fatal child failure\n"}
+{"Time":"2026-09-17T11:54:04.087828-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"--- FAIL: TestLiveCommonSameStageRevision/plain (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.08783-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.087837-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"--- FAIL: TestLiveCommonSameStageRevision (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.087839-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.087841-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\n"}
+{"Time":"2026-09-17T11:54:04.088253-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\tcommand-line-arguments\t0.288s\n"}
+{"Time":"2026-09-17T11:54:04.088265-07:00","Action":"fail","Package":"command-line-arguments","Elapsed":0.288}

@@ -1,0 +1,106 @@
+[
+  {
+    "case": "before",
+    "command": [
+      "gotestsum",
+      "--jsonfile",
+      "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/workflow-owned-same-stage-revision/artifacts/validation/pi-complete-coverage/before.jsonl",
+      "--format",
+      "pkgname",
+      "--",
+      "-tags",
+      "live",
+      "-count=1",
+      "-timeout",
+      "50m",
+      "-run",
+      "^TestLiveCommon",
+      "-failfast",
+      "-parallel",
+      "4",
+      "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/pi-coverage-review-4dqmo9th/variants_test.go"
+    ],
+    "exit": 1,
+    "starts": [
+      "TestLiveCommonSameStageRevision/plain"
+    ],
+    "statuses": [
+      {
+        "test": "TestLiveCommonSameStageRevision/plain",
+        "action": "fail"
+      },
+      {
+        "test": "TestLiveCommonSameStageRevision",
+        "action": "fail"
+      },
+      {
+        "test": "package",
+        "action": "fail"
+      }
+    ]
+  },
+  {
+    "case": "after",
+    "command": [
+      "gotestsum",
+      "--jsonfile",
+      "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/workflow-owned-same-stage-revision/artifacts/validation/pi-complete-coverage/after.jsonl",
+      "--format",
+      "pkgname",
+      "--",
+      "-tags",
+      "live",
+      "-count=1",
+      "-timeout",
+      "50m",
+      "-run",
+      "^TestLiveCommon",
+      "-parallel",
+      "4",
+      "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/pi-coverage-review-4dqmo9th/variants_test.go"
+    ],
+    "exit": 1,
+    "starts": [
+      "TestLiveCommonSameStageRevision/plain",
+      "TestLiveCommonSameStageRevision/review-required",
+      "TestLiveCommonSameStageRevision/separate-review-required",
+      "TestLiveCommonSameStageRevision/round-required",
+      "TestLiveCommonSameStageRevision/round-missing",
+      "TestLiveCommonSameStageRevision/cycle-limit"
+    ],
+    "statuses": [
+      {
+        "test": "TestLiveCommonSameStageRevision/plain",
+        "action": "fail"
+      },
+      {
+        "test": "TestLiveCommonSameStageRevision/review-required",
+        "action": "pass"
+      },
+      {
+        "test": "TestLiveCommonSameStageRevision/separate-review-required",
+        "action": "pass"
+      },
+      {
+        "test": "TestLiveCommonSameStageRevision/round-required",
+        "action": "pass"
+      },
+      {
+        "test": "TestLiveCommonSameStageRevision/round-missing",
+        "action": "pass"
+      },
+      {
+        "test": "TestLiveCommonSameStageRevision/cycle-limit",
+        "action": "pass"
+      },
+      {
+        "test": "TestLiveCommonSameStageRevision",
+        "action": "fail"
+      },
+      {
+        "test": "package",
+        "action": "fail"
+      }
+    ]
+  }
+]

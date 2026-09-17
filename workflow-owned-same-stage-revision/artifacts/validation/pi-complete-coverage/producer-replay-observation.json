@@ -1,0 +1,21 @@
+[
+  {
+    "case": "before",
+    "starts": [
+      "TestVariants/plain"
+    ],
+    "source_sha256": "e2772e4542ac41bdb75fb9f31425bfdfc5be04193be956543ed0ed5b5088f827"
+  },
+  {
+    "case": "after",
+    "starts": [
+      "TestVariants/plain",
+      "TestVariants/review-required",
+      "TestVariants/separate-review-required",
+      "TestVariants/round-required",
+      "TestVariants/round-missing",
+      "TestVariants/cycle-limit"
+    ],
+    "source_sha256": "4f37abe04371135f7f786b1e65d8aa452f70450dd3f4d535f2f9bb047b33a963"
+  }
+]

@@ -1,0 +1,11 @@
+package audit
+import "testing"
+func TestLiveCommonSameStageRevision(t *testing.T) {
+ t.Parallel()
+ for _, variant := range []string{"plain", "review-required", "separate-review-required", "round-required", "round-missing", "cycle-limit"} {
+  t.Run(variant, func(t *testing.T) {
+   t.Log("ACTUAL CHILD", variant)
+   if variant == "plain" { t.Fatal("intentional fatal child failure") }
+  })
+ }
+}

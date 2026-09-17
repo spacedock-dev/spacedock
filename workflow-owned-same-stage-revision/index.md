@@ -608,3 +608,17 @@ The corrected evidence layer distinguishes native workers from display names and
 ### Summary
 
 The correction is three insertions and six deletions across the three explicitly authorized existing files. It fixes the observed Pi coverage omission from CI 35238049892 while preserving nonzero failure status and every other command flag. Existing Claude missing-source, naming/recovery and other runtime findings remain unresolved by this change. Required combined `go test ./...`, `go test ./... -race` and `gofmt -w ./cmd ./internal` obligations remain for the final restacked tip; full suites were not run here while the #806 owner was verifying its correction. Final live CI and publication remain FO-owned. The retained validator owns independent review.
+
+
+## Stage Report: validation (Pi coverage correction)
+
+- DONE: Verify the three-file correction removes only Pi fail-fast wiring and preserves failure status, other flags, and all-six subtest selection.
+  Candidate `7508a773bb7eb42b981016ae9480263941a6047c` is exactly three files +3/-6: Pi command flag removal, matching documentation and existing assertion. Selector, timeout, parallelism, failure handling and six-child runner remain unchanged; no skip/XFAIL change.
+- DONE: Adversarially assess the claimed coverage behavior using existing evidence and owners, without duplicating green tests or adding a harness.
+  [Detached evidence](artifacts/validation/pi-complete-coverage/review.md) tests the remaining fatal-child/parallel-parent/gotestsum boundary: restoring failfast starts only plain; removing it starts all six once, while both commands exit1 with zero skips. Producer nonfatal proof and existing checks PASS1.664s are retained, not rerun. Temporary source was removed; no standing harness or model execution.
+- DONE: Record bounded validation, exact candidate/evidence and pending combined full-suite/live acceptance obligations with all prior unresolved findings retained.
+  **PASSED for this bounded correction; no new material finding.** AC-3 command omission is resolved; actual final-tip all-six execution per supported host remains pending. AC-1/AC-2 historical evidence is unchanged. FO-deferred final combined normal/race/gofmt remains owed; no old full-suite result is claimed for this head. Claude recording ambiguity, roadmap failure and naming/recovery conflict from `66bf2a4b0` remain HOLD; #806 remains independently owned.
+
+### Summary
+
+Removing Pi failfast permits later siblings after a fatal child failure and preserves lane failure. Validation recommends PASSED for this correction only, with final combined verification and live acceptance still pending; no candidate/frontmatter edits, model runs, pushes or CI occurred.

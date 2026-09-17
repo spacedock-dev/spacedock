@@ -1,0 +1,13 @@
+{
+  "candidate": "7508a773bb7eb42b981016ae9480263941a6047c",
+  "go": "go version go1.26.7 darwin/arm64",
+  "source_hashes": {
+    ".github/workflows/runtime-live-e2e.yml": "7a27e9a5368adbabc20df4618ae2bb0a8510670072b8aaa6d2762b6fa411ba87",
+    "docs/runtime-live-ci.md": "a9833d069112a25799c74d42cbb5db3c63c8af88c506e48ee1ddb34d3be374d4",
+    "internal/contractlint/live_registry_reconciliation_test.go": "5f92d27d3b4c1510954c155a00e37765b717474f7bef6a3626fc05bd6e366646",
+    "internal/ensigncycle/claude_live_runner_test.go": "85244dff6f0af9497755aded518083aaa1a06d378a23eac0dab164e789d84296",
+    "internal/ensigncycle/shared_live_runner_test.go": "a2d86184e6c359b8c619198accb0c12ba060642403cd3401721d5833925e003a"
+  },
+  "detached_source_sha256": "a823deb84e4a9452028664f0b23258032be500b342b7722be67a7b5914bf9463",
+  "boundary": "Standard Go testing and installed gotestsum only; literal variant inventory extracted from exact candidate. Child body replaced with intentional Fatal. No Pi/model execution or product grader replay."
+}

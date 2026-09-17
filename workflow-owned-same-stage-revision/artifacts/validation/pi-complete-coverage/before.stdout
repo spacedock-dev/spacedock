@@ -1,0 +1,10 @@
+✖  command-line-arguments (288ms)
+
+=== Failed
+=== FAIL: command-line-arguments TestLiveCommonSameStageRevision/plain (0.00s)
+    variants_test.go:7: ACTUAL CHILD plain
+    variants_test.go:8: intentional fatal child failure
+
+=== FAIL: command-line-arguments TestLiveCommonSameStageRevision (0.00s)
+
+DONE 2 tests, 2 failures in 0.288s

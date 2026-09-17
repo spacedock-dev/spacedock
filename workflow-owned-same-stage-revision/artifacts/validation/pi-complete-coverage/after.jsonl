@@ -1,0 +1,43 @@
+{"Time":"2026-09-17T11:54:04.291527-07:00","Action":"start","Package":"command-line-arguments"}
+{"Time":"2026-09-17T11:54:04.522349-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision"}
+{"Time":"2026-09-17T11:54:04.522467-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"=== RUN   TestLiveCommonSameStageRevision\n"}
+{"Time":"2026-09-17T11:54:04.522501-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"=== PAUSE TestLiveCommonSameStageRevision\n"}
+{"Time":"2026-09-17T11:54:04.522505-07:00","Action":"pause","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision"}
+{"Time":"2026-09-17T11:54:04.522507-07:00","Action":"cont","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision"}
+{"Time":"2026-09-17T11:54:04.522526-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"=== CONT  TestLiveCommonSameStageRevision\n"}
+{"Time":"2026-09-17T11:54:04.52254-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain"}
+{"Time":"2026-09-17T11:54:04.522543-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"=== RUN   TestLiveCommonSameStageRevision/plain\n"}
+{"Time":"2026-09-17T11:54:04.522551-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"    variants_test.go:7: ACTUAL CHILD plain\n"}
+{"Time":"2026-09-17T11:54:04.522554-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"    variants_test.go:8: intentional fatal child failure\n"}
+{"Time":"2026-09-17T11:54:04.522577-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Output":"--- FAIL: TestLiveCommonSameStageRevision/plain (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.522581-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/plain","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.522592-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/review-required"}
+{"Time":"2026-09-17T11:54:04.522594-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/review-required","Output":"=== RUN   TestLiveCommonSameStageRevision/review-required\n"}
+{"Time":"2026-09-17T11:54:04.52261-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/review-required","Output":"    variants_test.go:7: ACTUAL CHILD review-required\n"}
+{"Time":"2026-09-17T11:54:04.522614-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/review-required","Output":"--- PASS: TestLiveCommonSameStageRevision/review-required (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.522624-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/review-required","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.522633-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/separate-review-required"}
+{"Time":"2026-09-17T11:54:04.522636-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/separate-review-required","Output":"=== RUN   TestLiveCommonSameStageRevision/separate-review-required\n"}
+{"Time":"2026-09-17T11:54:04.522638-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/separate-review-required","Output":"    variants_test.go:7: ACTUAL CHILD separate-review-required\n"}
+{"Time":"2026-09-17T11:54:04.522645-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/separate-review-required","Output":"--- PASS: TestLiveCommonSameStageRevision/separate-review-required (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.522647-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/separate-review-required","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.522649-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-required"}
+{"Time":"2026-09-17T11:54:04.522651-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-required","Output":"=== RUN   TestLiveCommonSameStageRevision/round-required\n"}
+{"Time":"2026-09-17T11:54:04.522653-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-required","Output":"    variants_test.go:7: ACTUAL CHILD round-required\n"}
+{"Time":"2026-09-17T11:54:04.522657-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-required","Output":"--- PASS: TestLiveCommonSameStageRevision/round-required (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.522659-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-required","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.522662-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-missing"}
+{"Time":"2026-09-17T11:54:04.522663-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-missing","Output":"=== RUN   TestLiveCommonSameStageRevision/round-missing\n"}
+{"Time":"2026-09-17T11:54:04.522666-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-missing","Output":"    variants_test.go:7: ACTUAL CHILD round-missing\n"}
+{"Time":"2026-09-17T11:54:04.522668-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-missing","Output":"--- PASS: TestLiveCommonSameStageRevision/round-missing (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.52267-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/round-missing","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.522678-07:00","Action":"run","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/cycle-limit"}
+{"Time":"2026-09-17T11:54:04.522681-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/cycle-limit","Output":"=== RUN   TestLiveCommonSameStageRevision/cycle-limit\n"}
+{"Time":"2026-09-17T11:54:04.522683-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/cycle-limit","Output":"    variants_test.go:7: ACTUAL CHILD cycle-limit\n"}
+{"Time":"2026-09-17T11:54:04.522686-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/cycle-limit","Output":"--- PASS: TestLiveCommonSameStageRevision/cycle-limit (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.522688-07:00","Action":"pass","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision/cycle-limit","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.52269-07:00","Action":"output","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Output":"--- FAIL: TestLiveCommonSameStageRevision (0.00s)\n"}
+{"Time":"2026-09-17T11:54:04.522693-07:00","Action":"fail","Package":"command-line-arguments","Test":"TestLiveCommonSameStageRevision","Elapsed":0}
+{"Time":"2026-09-17T11:54:04.522695-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\n"}
+{"Time":"2026-09-17T11:54:04.523072-07:00","Action":"output","Package":"command-line-arguments","Output":"FAIL\tcommand-line-arguments\t0.231s\n"}
+{"Time":"2026-09-17T11:54:04.523083-07:00","Action":"fail","Package":"command-line-arguments","Elapsed":0.232}
