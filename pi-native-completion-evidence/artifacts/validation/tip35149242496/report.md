@@ -4,6 +4,12 @@ Recommendation: REJECTED as current observer evidence; propose two Material evid
 
 Source candidate is `d0a6f413af32fa69ac9da4af2c74c0086fcca812`; the CI log records checkout `3f23437`, the PR merge of that source into `85bd948e626f3522869fb577d8139330f73f176b`. Current assigned worktree matches source d0a6f413 and is clean. Downloaded only artifact `runtime-live-e2e-pi-live`, ID 10471612473, for the two assigned failures and selection inventory. Source file hashes and exact projected record positions are in source-manifest.json; native-evidence.json contains executable identity/chronology assertion results. No candidate, entity/frontmatter, PR/ref, recorder or CI changes were made.
 
+## Exact CI merge provenance
+
+Two bounded read-only GitHub commit API responses are retained in ci-merge-provenance.json (no fetch/ref change). Commit `85bd948e626f3522869fb577d8139330f73f176b` is itself a merge with parents `7224b33722305dc970740e33e3142598624955c7` and published #804 head `b0a3119cb06d6b675cea6a5eb4a7522615b76788`; its message is “Merge b0a3119cb06d6b675cea6a5eb4a7522615b76788 into 7224b33722305dc970740e33e3142598624955c7”. No claim that this is main is made.
+
+Tested merge `3f23437d91c98bcf4cba93e52d0f1da2761d2cb1` has parents `[85bd948e626f3522869fb577d8139330f73f176b, d0a6f413af32fa69ac9da4af2c74c0086fcca812]`. Its full tree is `717d412d4b2b0f2ede3246c6f25f8a49d8d8d252`, exactly equal to the local PR head d0a6f413 full tree. The checked-out observer/fixture content therefore does not differ from the candidate; this conclusion is from tree identity, not a branch-name assumption.
+
 ## Finding P1: synchronous result is not observed
 
 Default-headless-gate-stop dispatched `async:false`. Parent line 46 (joined stream index 65) calls subagent; line 47 (index 66) is the successful synchronous toolResult. This is not an async notification and no custom_message/subagent-notify is emitted for the run.
