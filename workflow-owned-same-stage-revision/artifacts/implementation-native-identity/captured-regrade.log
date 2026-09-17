@@ -1,0 +1,10 @@
+=== RUN   TestRetainedV3NativeRegrade
+=== RUN   TestRetainedV3NativeRegrade/Claude_required_independent_review
+    retained_v3_replay_test.go:10: accepted native routes: [{index:94 event:spawn stage:validation target:a891653619c5fb829} {index:166 event:done stage:validation target:a891653619c5fb829} {index:274 event:spawn stage:validation target:a6f8a511fd35edfb4} {index:331 event:done stage:validation target:a6f8a511fd35edfb4}]
+=== RUN   TestRetainedV3NativeRegrade/Codex_same_worker_followup
+    retained_v3_replay_test.go:10: accepted native routes: [{index:112 event:spawn stage:validation target:recorded_gate_task_validation} {index:136 event:done stage:validation target:recorded_gate_task_validation} {index:151 event:reuse stage:validation target:recorded_gate_task_validation} {index:163 event:done stage:validation target:recorded_gate_task_validation}]
+--- PASS: TestRetainedV3NativeRegrade (0.02s)
+    --- PASS: TestRetainedV3NativeRegrade/Claude_required_independent_review (0.00s)
+    --- PASS: TestRetainedV3NativeRegrade/Codex_same_worker_followup (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.676s

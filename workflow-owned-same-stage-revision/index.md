@@ -1,6 +1,6 @@
 ---
 title: Honor workflow-declared same-stage revision without mandatory reviewer machinery
-status: validation
+status: implementation
 source: Captain request after email-triage FO issue 792
 issue: spacedock-dev/spacedock#792
 score: 0.95
@@ -8,8 +8,8 @@ started: 2026-09-15T04:30:03Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-workflow-owned-same-stage-revision
-pr: "#801"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: zz1yqc2w2katp28wpa8nghx2
 gates:
     version: 1
@@ -86,7 +86,7 @@ gates:
                 reason: Captain binding resolution binding-1789591360273000000 approves all three named corrected validation snapshots in /tmp/stack-corrections-review.md for stack publication and final-tip CI. Restack preserves all patches and tree. No merge authority or live failure waiver.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:1
     stage: validation
@@ -548,3 +548,19 @@ Both findings are **satisfied** at `342edfa8903e0e822ec545d2ee45401352eb6c60` un
 ### Summary
 
 The checker now rejects both demonstrated omission paths using actual scheduler callback execution and parsed workflow commands. Validation recommends PASSED for the correction while explicitly leaving final combined-tip checks and promoted host CI outstanding; no new material finding remains.
+
+
+## Stage Report: implementation
+
+- DONE: Correct V3a/V3b at the native identity and completed-turn grading boundary.
+  Candidate `67c68536fd6a49461624f1c6d86081d22bef4811` correlates Claude Agent tool IDs with returned native task IDs using the existing native metadata parser. Names remain routing/display labels, not independent-worker identity. Completion must match the opened tool and, when available, native task owner. The grader preserves ordered dispatch/completion pairing and allows completed reuse only of the current worker; fresh duplicate identities or extra workers fail. The caller infers reviewer presence from fresh spawns rather than completed turns. Focused controls first failed on both captured shapes and label-based self-review, then passed after correction. Full retained streams regrade at the actual grader: Claude workers at94/166 and274/331 are distinct; Codex spawn112/completion136 and followup151/completion163 share one native worker. Missing/wrong-owner completions, same native identity under changed labels or tool IDs, incomplete followup, self-review, and extra fresh workers remain rejected. Existing invalid selected-gate revision controls remain unchanged and pass.
+- DONE: Repair adjacent AC-2 publication evidence using actual recorder argv/exit observations.
+  Under separate FO FIX authorization, conventional Claude now uses the same existing observer shim and neutral-named recorder publication parser as Codex. Pi remains on its existing path. A focused test first reproduced the false count of two publications, then proves the actual launcher pins its binary and the existing shell startup shim restores interception inside a non-model Claude stand-in. An incomplete round exits1 under a successful shell wrapper; the corrected round exits0 under another successful shell wrapper; only one successful publication counts. Existing echo-only/zero, missing-round-room, duplicate real success and second-round success negatives remain rejected. Absent recorder observations fail closed. No model-authored exit echo or shell success flag supplies recorder truth. The premature first recorder call remains observed conduct; this fix does not claim perfect model compliance.
+- DONE: Complete applicable local verification, retain prior evidence and report for independent review.
+  Focused live-tagged normal checks pass7.003s, race checks pass8.092s, and registry reconciliation passes1.005s. Checks cover native identity/reuse, reviewer topology, same-stage gate selection, actual recorder execution, and shell startup interception. Full captured native streams pass the actual extractor/grader in a temporary replay test; source hashes and output are retained. Gofmt and diff-check pass; unrelated existing formatting was preserved. No local model/native workflow, broad full-suite rerun, code/state push, CI trigger, rebase, gate decision or frontmatter mutation occurred. FO directed full normal/race verification once on the final combined tip and owns the final live CI run.
+
+### Summary
+
+V3a/V3b and the separately authorized publication-count evidence defect are corrected in existing owners. This correction is161 additions/27 deletions = +134 net across five existing files: +93 for native identity/reuse and controls, +41 for actual recorder interception/publication proof. FO explicitly accepted +41 against the approximate20–40 estimate. Cumulative layer above4ce49f1ea is +571 net across10 files; the three additional existing evidence owners are shared_reviewer_reuse_test.go, rejection_round_execution_test.go and shared_round_recording_test.go. No skill, CLI, fixture-outcome, workflow policy, controller or logging framework changed.
+
+Evidence is in artifacts/implementation-native-identity: captured-regrade.log, captured-sources.json, red-proof.txt, normal.log, race.log, registry.log and checks.json. Prior failures and raw/state bundles are unchanged. Earlier full normal/race results apply tobf64, not this new head; the known resolver baseline remains explicitly limited to those earlier runs. Current local results establish the deterministic correction only. Final combined-tip broad verification and live CI remain pending FO coordination, and the retained independent validator owns the review recommendation.

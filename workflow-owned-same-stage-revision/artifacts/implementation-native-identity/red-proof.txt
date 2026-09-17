@@ -1,0 +1,9 @@
+Observed BEFORE native identity/grader changes:
+go test ./internal/ensigncycle -run '^TestSameStageNativeIdentityAndReuse$' -count=1
+Exit 1. Fresh Claude native IDs sharing one display name falsely failed independence; a repeated native tool identity under changed labels falsely passed; completed Codex same-worker followup falsely failed as extra worker.
+
+Observed BEFORE recorder observation change:
+go test ./internal/ensigncycle -run '^TestRejectionRecorderThroughClaudeLauncher$' -count=1
+Exit 1: rejection cycle made 2 successful gate record --round invocations [validation/1 validation/1], want exactly 1. The test had already verified actual interception of recorder exit1 then exit0 through the real launcher/host stand-in.
+
+These are tool-result excerpts; the final permanent tests and focused green logs are retained in code and this folder. Original CI failures remain under ../validation/tip35148797301 and the FO continuation investigation.
