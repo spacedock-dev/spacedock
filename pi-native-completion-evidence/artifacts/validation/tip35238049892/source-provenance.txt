@@ -1,0 +1,5 @@
+pi-live	Run actions/checkout@v5	2026-09-17T15:08:25.1315997Z HEAD is now at d5b3190 Merge 0997b6b7590a5a89ba979194238e93f7f47d94e4 into 1b2fa6b7a98e0ffb2c76966d50364c151f95dfc8
+pi-live	Run live Pi common journeys	2026-09-17T15:46:15.5480673Z           self-feedback-obligations: the run routed no workers at all — the journey owes a candidate, a review, a routed rework and a re-review
+pi-live	Run live Pi common journeys	2026-09-17T15:46:15.5489097Z           validation-worker-not-dispatched: validation lifecycle incomplete: spawns=2 completed=141 validation=99 report=<nil>
+Local candidate: 0997b6b7590a5a89ba979194238e93f7f47d94e4
+CI merge d5b3190 unavailable in validator local object store. FO separately verified API full SHA d5b3190b36b824f521d276b11d04ef6ce5b3f2f5, parents 1b2fa6b7a98e0ffb2c76966d50364c151f95dfc8 and 0997b6b7590a5a89ba979194238e93f7f47d94e4; tree 2b5fd3fa31f735ee1f227310a30222200985d898 equals FO local candidate tree. Attributed FO evidence; no validator fetch/API performed.

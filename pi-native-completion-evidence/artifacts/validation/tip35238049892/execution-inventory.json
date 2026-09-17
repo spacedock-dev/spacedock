@@ -1,0 +1,316 @@
+[
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602368814Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonOwnedConflictOwnerHandoff"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602441216Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonRejectionFlow"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602476964Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonAutoContinueAfterImplementation"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602507671Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonKeepMovingPosture"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602537416Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonDefaultHeadlessGateStop"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602565137Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSmallestSufficientMechanism"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602597314Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonRecordedGateLifecycle"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602633032Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonFullEnsignCycle"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602670055Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonACValueReanchor"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602696409Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonWithdrawnGateRecovery"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602732052Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonGateGuardrail"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602741432Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonFeedbackThreeCycleEscalation"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602792362Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSelfEvidenceMergeTriage"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602812167Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonMergeHookGuardrail"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602820792Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonFiling"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602831506Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonZeroDiscovery"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602840182Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonShallowBoot"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:09:17.602874063Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSameStageRevision"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:11:08.644432713Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonFiling",
+    "Elapsed": 111.04
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:12:07.04585289Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonMergeHookGuardrail",
+    "Elapsed": 58.4
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:13:11.002571954Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonWithdrawnGateRecovery",
+    "Elapsed": 233.4
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:14:41.768325762Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonFeedbackThreeCycleEscalation",
+    "Elapsed": 90.77
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:15:20.787901879Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSelfEvidenceMergeTriage",
+    "Elapsed": 193.74
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:16:07.393153709Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonShallowBoot",
+    "Elapsed": 46.61
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:16:07.393382986Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSameStageRevision/plain"
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:18:22.75697845Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonOwnedConflictOwnerHandoff",
+    "Elapsed": 545.15
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:20:44.477961755Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSmallestSufficientMechanism",
+    "Elapsed": 686.87
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:21:17.303757421Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonGateGuardrail",
+    "Elapsed": 395.54
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:23:37.786313921Z",
+    "Action": "fail",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSameStageRevision/plain",
+    "Elapsed": 450.39
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:23:37.786583649Z",
+    "Action": "fail",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonSameStageRevision",
+    "Elapsed": 450.39
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:28:05.823949194Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonACValueReanchor",
+    "Elapsed": 268.04
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:28:32.250494378Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonZeroDiscovery",
+    "Elapsed": 26.43
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:28:55.452134476Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonDefaultHeadlessGateStop",
+    "Elapsed": 490.97
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:30:18.094319165Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonFullEnsignCycle",
+    "Elapsed": 540.79
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:33:06.484596918Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonKeepMovingPosture",
+    "Elapsed": 850.92
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:39:00.382545985Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonRecordedGateLifecycle",
+    "Elapsed": 274.23
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:46:15.527956226Z",
+    "Action": "fail",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonAutoContinueAfterImplementation",
+    "Elapsed": 604.93
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:46:15.540935599Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveCommonRejectionFlow",
+    "Elapsed": 957.45
+  },
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "Time": "2026-09-17T15:46:15.541629768Z",
+    "Action": "fail",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Elapsed": 2217.942
+  },
+  {
+    "source": "pi-front-door-smoke-detail.jsonl",
+    "Time": "2026-09-17T15:46:15.822976566Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLivePiFrontDoorSmoke"
+  },
+  {
+    "source": "pi-front-door-smoke-detail.jsonl",
+    "Time": "2026-09-17T15:48:54.040625704Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLivePiFrontDoorSmoke",
+    "Elapsed": 158.22
+  },
+  {
+    "source": "pi-front-door-smoke-detail.jsonl",
+    "Time": "2026-09-17T15:48:54.040926438Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Elapsed": 158.22
+  }
+]

@@ -1,0 +1,59 @@
+[
+  {
+    "command": [
+      "git",
+      "--git-dir=/tmp/pi35238049892-state.git",
+      "fsck",
+      "--full"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "--git-dir=/tmp/pi35238049892-state.git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "exit": 0,
+    "stdout": "e6495fe040584f41325f1e92aa9eac653b6b0a10\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "--git-dir=/tmp/pi35238049892-state.git",
+      "log",
+      "--format=%H %s",
+      "-8"
+    ],
+    "exit": 0,
+    "stdout": "e6495fe040584f41325f1e92aa9eac653b6b0a10 correct recorded gate validation plan\nbc37e6308882a04708797081cfebe946dd472b74 dispatch: recorded-gate-task entering validation\n6e2c12b6f2b1252d6c742ae9ab61fb5a96d51350 gate: record recorded-gate-task validation revise\n241a92075401350fea80fc4bbdb1a980aa78cabc prepare prior attempt\n69b9d922279d4db85b9300fc564f01ea590bbf07 seed correction inputs\n6918b6d2173bbe3c2ceafcb4c6c0cc6d1416803d init\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "--git-dir=/tmp/pi35238049892-state.git",
+      "show",
+      "HEAD:recorded-gate-task/index.md"
+    ],
+    "exit": 0,
+    "stdout": "---\nid: recorded-gate-task\ntitle: Recorded Gate Task\nstatus: validation\ncompleted:\nverdict:\nworktree:\ngates:\n    version: 1\n    records:\n        - id: gate:recorded-gate-task:validation\n          stage: validation\n          attempts:\n            - id: gate-attempt:recorded-gate-task-validation-1\n              briefing:\n                id: briefing:recorded-gate-task:validation:attempt-1:revision-1\n                digest: sha256:98623d62b923c5d082b19a0efca7f7efba1ee3e957196c3c4a790201d6c52479\n                room-ref: '@review/validation/briefing-1'\n              resolution:\n                type: Resolution\n                id: resolution:spacedock:recorded-gate-task:validation:1\n                briefing: briefing:recorded-gate-task:validation:attempt-1:revision-1\n                by: person:captain\n                at: \"2026-09-17T15:16:07.79469425Z\"\n                decision: revise\n                reason: Correct the plan against frozen input\nstarted: 2026-09-17T15:19:55Z\n---\n# Recorded Gate Task\n\n## Acceptance criteria\n\n**AC-1** The selected plan matches the frozen input.\n\n## Stage Report: validation\n\n- DONE: Replayed retained evidence\n  The real command fixture is green.\n\n### Summary\n\nReady for the recorded decision gate.\n\n## Stage Report: validation (cycle 2)\n\n- DONE: Correct selected/plan.md so it matches selected/frozen-input.txt.\n  `cmp -s selected/plan.md selected/frozen-input.txt` passed; the plan now preserves the frozen KEEP/DELETE classifications exactly.\n\n### Summary\n\nCorrected `selected/plan.md` from the prior reversed classification so it is byte-identical to `selected/frozen-input.txt`. Validation was limited to comparison of the corrected plan and frozen input; no gate decision or authorization was consumed.\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "--git-dir=/tmp/pi35238049892-state.git",
+      "diff",
+      "HEAD:recorded-gate-task/selected/plan.md",
+      "HEAD:recorded-gate-task/selected/frozen-input.txt"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]

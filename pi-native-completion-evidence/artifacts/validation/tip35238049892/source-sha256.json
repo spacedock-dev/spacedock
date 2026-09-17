@@ -1,0 +1,98 @@
+[
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/model.txt",
+    "sha256": "44f52a6014103c3ae8a40ee2611802a799999f11a7dd6c7fbf69b9c52502cc98"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/rejection-topology.tsv",
+    "sha256": "2460c2db6e0d5c192a9940e9d755cd1c8bc1af444b840e8bd4879458779ddcf4"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/pi-stderr.txt",
+    "sha256": "0cf156c9b04c0f7dd0f97b8864e77c1b8be09ecb1b3c0af13e5257a2c324eafa"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/process-status.txt",
+    "sha256": "be09dfccec0be67a242e0c3e67aba883168ee5e508354667dae8035ce1d2cc83"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/duration.txt",
+    "sha256": "a94397c557ab33a1d8579f5ba41ea5dd371276e33fc3ee8732c9b71e0b5095e8"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/state.bundle",
+    "sha256": "84b52116864cfcf62be227f1954496304bbae42e31d4f80f01778d044402683f"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/pi-stdout.txt",
+    "sha256": "546463428439f71c24ac2657b81e79360051791205fa8f7e80c1173b3e8e8b79"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-17T15-16-08-310Z_01a0aff0-7bf5-76e8-b01f-7eaf97428d76.jsonl",
+    "sha256": "fbc9a872080dbc09844fb5fbd2eb79cfc310cff0d54539c61fc1e6a875296b99"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-17T15-16-08-310Z_01a0aff0-7bf5-76e8-b01f-7eaf97428d76/b3599276-b994-4ffb-89c7-7c04d9ec110a/run-0/session.jsonl",
+    "sha256": "2cd967aff004c574837d3cfccc66cbe1100909b31afd5ed7d73eb869a2fbf075"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/model.txt",
+    "sha256": "44f52a6014103c3ae8a40ee2611802a799999f11a7dd6c7fbf69b9c52502cc98"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/pi-stderr.txt",
+    "sha256": "b968a700567076408d745f66f4d71c28ffe58da68894ffe75976c86edaf5d649"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/process-status.txt",
+    "sha256": "be09dfccec0be67a242e0c3e67aba883168ee5e508354667dae8035ce1d2cc83"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/duration.txt",
+    "sha256": "cbe821e519f005158a35a16a5218364b7bfafd26f0860f99052a800c32ed2ca7"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/pi-stdout.txt",
+    "sha256": "54300ef52b43827bee9fe0f03cb439d29c07bfbdee5ae392d0878199c8720e05"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-17T15-28-55-890Z_01a0affc-3251-7468-b97d-5a46f9d90fd3.jsonl",
+    "sha256": "5b4516bef26e1bcd345fda7e8c82644fce920d069f3d7151b5bc601ae0b0018d"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-17T15-28-55-890Z_01a0affc-3251-7468-b97d-5a46f9d90fd3/5e7e751f-f882-49ad-9bc7-8dd6ad4084a8/run-0/session.jsonl",
+    "sha256": "bc715e5cec4e2d49778c0f9ecbf65872d23457fa57e18c566ca0792e49aad99c"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/live-artifacts/pi/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-09-17T15-28-55-890Z_01a0affc-3251-7468-b97d-5a46f9d90fd3/4f69bb19-86f8-4231-97fc-b51c60b42d77/run-0/session.jsonl",
+    "sha256": "83673af1571e97fc7f4ae09c0550eb7ffdf2be9828b863959ec83f12bf015a54"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/pi-coverage-detail.jsonl",
+    "sha256": "0519a906dd4778dcca4c7d1b07e7880daba4786a78357a113d741a22dee85ca1"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892/pi/pi-front-door-smoke-detail.jsonl",
+    "sha256": "fe95dc5c71a3274f65f741f01fee5ea246141d50d8c5222ec1271c9419e59b95"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/pi_native_completion_test.go",
+    "sha256": "8e35a6ffe5cf3aa5117012f4fbc6b395f49fe9a5f6696ad5863c1eefc91409fd"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/pi_rejection_extractors_test.go",
+    "sha256": "3241ac080762950950c941ec8eef24e4aad1b234069fd16d40d9976646a0593d"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/claude_runtime_helpers_test.go",
+    "sha256": "e5483f65c0dd8b284b3f8b7e893f4d3f3545f86d7898bd706de812922c6c62a2"
+  },
+  {
+    "path": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence/internal/ensigncycle/claude_live_runner_test.go",
+    "sha256": "43331b93e1bf43676271c2834953b20721751b1790e743533f3e52762f59bcf7"
+  },
+  {
+    "path": "/tmp/spacedock-tip-35238049892-pi.log",
+    "sha256": "661873e1dbea5bdc42880b72f155fcf89515287e918cd02c0aab63d8e5b19e0e"
+  }
+]
