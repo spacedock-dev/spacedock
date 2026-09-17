@@ -398,14 +398,11 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 
 func TestRuntimeLiveCommonFailFastPolicy(t *testing.T) {
 	workflow := string(mustRead(t, filepath.Join(repoRoot(t), ".github", "workflows", "runtime-live-e2e.yml")))
-	for _, runtime := range []string{"claude", "codex"} {
+	for _, runtime := range []string{"claude", "codex", "pi"} {
 		command := runtimeLiveCommonCommand(t, workflow, runtime)
 		if strings.Contains(command, " -failfast") {
 			t.Errorf("%s common journeys must all run before the job reports failure", runtime)
 		}
-	}
-	if command := runtimeLiveCommonCommand(t, workflow, "pi"); !strings.Contains(command, " -failfast") {
-		t.Error("Pi common journeys must retain -failfast")
 	}
 }
 
