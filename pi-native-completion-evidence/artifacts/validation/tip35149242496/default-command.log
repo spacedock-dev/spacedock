@@ -1,0 +1,60 @@
+begin	--version
+exit=0	--version
+begin	status --boot --identify --json
+exit=0	status --boot --identify --json
+begin	state ready
+exit=0	state ready
+begin	state sweep
+exit=0	state sweep
+begin	--help
+exit=0	--help
+begin	status --next --json
+exit=0	status --next --json
+begin	status --read recorded-gate-task --json
+begin	dispatch show-stage-def --help
+exit=0	dispatch show-stage-def --help
+exit=0	status --read recorded-gate-task --json
+begin	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage implementation
+exit=0	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage implementation
+begin	status --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --set recorded-gate-task status=implementation started
+exit=0	status --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --set recorded-gate-task status=implementation started
+begin	dispatch build --help
+dispatch-head	021228f5adfa0a361642ee9a53fc8ed01eb79c49
+exit=0	dispatch build --help
+begin	dispatch build --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --entity-path /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --stage implementation --checklist-file - --host pi --stamp
+dispatch-head	021228f5adfa0a361642ee9a53fc8ed01eb79c49
+exit=0	dispatch build --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --entity-path /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --stage implementation --checklist-file - --host pi --stamp
+begin	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage implementation
+exit=0	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage implementation
+begin	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+exit=0	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+begin	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+exit=0	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+begin	status --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --set recorded-gate-task status=validation started
+exit=0	status --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --set recorded-gate-task status=validation started
+begin	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage validation
+exit=0	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage validation
+begin	dispatch build --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --entity-path /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --stage validation --checklist-file - --host pi --stamp
+dispatch-head	17307b82f0526b8e3e18f994a8595a6e63049a77
+exit=0	dispatch build --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --entity-path /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --stage validation --checklist-file - --host pi --stamp
+begin	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage validation
+exit=0	dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage validation
+begin	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+exit=0	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+begin	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+exit=0	status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json
+begin	status --next --json
+exit=0	status --next --json
+begin	status --read recorded-gate-task --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+exit=0	status --read recorded-gate-task --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+begin	gate prepare recorded-gate-task --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --question Approve the validated retained package for handoff? --artifact /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --summary Validation passed: the entity is parseable, contains exactly one implementation report, and committed state and repository integrity checks passed. The handoff successor must be dispatched only after approval is consumed. --reference /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/README.md
+exit=0	gate prepare recorded-gate-task --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --question Approve the validated retained package for handoff? --artifact /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --summary Validation passed: the entity is parseable, contains exactly one implementation report, and committed state and repository integrity checks passed. The handoff successor must be dispatched only after approval is consumed. --reference /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/README.md
+begin	state commit recorded-gate-task --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+exit=0	state commit recorded-gate-task --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+state-head	3e94fa10255ecc28392d6690ca284596e613a9c5
+begin	status --read recorded-gate-task --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+exit=0	status --read recorded-gate-task --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+begin	status --read recorded-gate-task --checklist --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+exit=0	status --read recorded-gate-task --checklist --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+begin	status --read recorded-gate-task --ac-scan --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004
+exit=0	status --read recorded-gate-task --ac-scan --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004

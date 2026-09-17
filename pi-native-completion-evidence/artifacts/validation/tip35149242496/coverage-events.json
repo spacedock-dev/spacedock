@@ -1,0 +1,232 @@
+[
+  {
+    "source": "pi-coverage-detail.jsonl",
+    "events": [
+      {
+        "Time": "2026-09-16T21:47:05.359292367Z",
+        "Action": "run",
+        "Test": "TestLiveCommonOwnedConflictOwnerHandoff"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359425035Z",
+        "Action": "run",
+        "Test": "TestLiveCommonRejectionFlow"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359452246Z",
+        "Action": "run",
+        "Test": "TestLiveCommonAutoContinueAfterImplementation"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359485388Z",
+        "Action": "run",
+        "Test": "TestLiveCommonKeepMovingPosture"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359524651Z",
+        "Action": "run",
+        "Test": "TestLiveCommonDefaultHeadlessGateStop"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.35956669Z",
+        "Action": "run",
+        "Test": "TestLiveCommonSmallestSufficientMechanism"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359592237Z",
+        "Action": "run",
+        "Test": "TestLiveCommonRecordedGateLifecycle"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359655726Z",
+        "Action": "run",
+        "Test": "TestLiveCommonFullEnsignCycle"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359685963Z",
+        "Action": "run",
+        "Test": "TestLiveCommonACValueReanchor"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359760011Z",
+        "Action": "run",
+        "Test": "TestLiveCommonWithdrawnGateRecovery"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359814243Z",
+        "Action": "run",
+        "Test": "TestLiveCommonGateGuardrail"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359865428Z",
+        "Action": "run",
+        "Test": "TestLiveCommonFeedbackThreeCycleEscalation"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359905643Z",
+        "Action": "run",
+        "Test": "TestLiveCommonSelfEvidenceMergeTriage"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359928165Z",
+        "Action": "run",
+        "Test": "TestLiveCommonMergeHookGuardrail"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359955807Z",
+        "Action": "run",
+        "Test": "TestLiveCommonFiling"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.359993458Z",
+        "Action": "run",
+        "Test": "TestLiveCommonZeroDiscovery"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.360039424Z",
+        "Action": "run",
+        "Test": "TestLiveCommonShallowBoot"
+      },
+      {
+        "Time": "2026-09-16T21:47:05.360249045Z",
+        "Action": "run",
+        "Test": "TestLiveCommonSameStageRevision"
+      },
+      {
+        "Time": "2026-09-16T21:51:58.045572853Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonWithdrawnGateRecovery",
+        "Elapsed": 292.69
+      },
+      {
+        "Time": "2026-09-16T21:53:41.228606204Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonSmallestSufficientMechanism",
+        "Elapsed": 395.87
+      },
+      {
+        "Time": "2026-09-16T21:56:05.40400043Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonKeepMovingPosture",
+        "Elapsed": 540.04
+      },
+      {
+        "Time": "2026-09-16T22:00:21.796999562Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonFullEnsignCycle",
+        "Elapsed": 256.39
+      },
+      {
+        "Time": "2026-09-16T22:03:41.184361764Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonACValueReanchor",
+        "Elapsed": 199.39
+      },
+      {
+        "Time": "2026-09-16T22:05:08.216215362Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonAutoContinueAfterImplementation",
+        "Elapsed": 790.17
+      },
+      {
+        "Time": "2026-09-16T22:05:37.251932846Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonRejectionFlow",
+        "Elapsed": 716.02
+      },
+      {
+        "Time": "2026-09-16T22:07:11.903909686Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonFiling",
+        "Elapsed": 94.65
+      },
+      {
+        "Time": "2026-09-16T22:07:11.904287762Z",
+        "Action": "run",
+        "Test": "TestLiveCommonSameStageRevision/plain"
+      },
+      {
+        "Time": "2026-09-16T22:09:26.892716778Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonRecordedGateLifecycle",
+        "Elapsed": 345.71
+      },
+      {
+        "Time": "2026-09-16T22:10:45.193741288Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonShallowBoot",
+        "Elapsed": 78.3
+      },
+      {
+        "Time": "2026-09-16T22:11:08.222475488Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonZeroDiscovery",
+        "Elapsed": 23.03
+      },
+      {
+        "Time": "2026-09-16T22:12:54.853244581Z",
+        "Action": "fail",
+        "Test": "TestLiveCommonDefaultHeadlessGateStop",
+        "Elapsed": 466.64
+      },
+      {
+        "Time": "2026-09-16T22:13:53.300936387Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonMergeHookGuardrail",
+        "Elapsed": 58.45
+      },
+      {
+        "Time": "2026-09-16T22:15:39.750613017Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonFeedbackThreeCycleEscalation",
+        "Elapsed": 106.45
+      },
+      {
+        "Time": "2026-09-16T22:15:51.226635541Z",
+        "Action": "fail",
+        "Test": "TestLiveCommonSameStageRevision/plain",
+        "Elapsed": 519.32
+      },
+      {
+        "Time": "2026-09-16T22:15:53.587460985Z",
+        "Action": "fail",
+        "Test": "TestLiveCommonSameStageRevision",
+        "Elapsed": 519.32
+      },
+      {
+        "Time": "2026-09-16T22:16:53.680655177Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonOwnedConflictOwnerHandoff",
+        "Elapsed": 1728.23
+      },
+      {
+        "Time": "2026-09-16T22:18:50.401133056Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonSelfEvidenceMergeTriage",
+        "Elapsed": 345.46
+      },
+      {
+        "Time": "2026-09-16T22:18:50.401174604Z",
+        "Action": "pass",
+        "Test": "TestLiveCommonGateGuardrail",
+        "Elapsed": 190.65
+      }
+    ]
+  },
+  {
+    "source": "pi-front-door-smoke-detail.jsonl",
+    "events": [
+      {
+        "Time": "2026-09-16T22:18:50.833341405Z",
+        "Action": "run",
+        "Test": "TestLivePiFrontDoorSmoke"
+      },
+      {
+        "Time": "2026-09-16T22:20:41.271361759Z",
+        "Action": "pass",
+        "Test": "TestLivePiFrontDoorSmoke",
+        "Elapsed": 110.44
+      }
+    ]
+  }
+]

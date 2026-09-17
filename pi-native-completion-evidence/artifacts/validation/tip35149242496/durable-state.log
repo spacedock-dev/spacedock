@@ -1,0 +1,130 @@
+$ git fsck --full
+
+$ git log -7 --format=%H %s
+6ac84e7b51acd7d30baf22277d0a65dbbbb596e1 state: update recorded-gate-task
+d2177a4aff0bb034f49874d26fcece9aa37c5987 Record validation correction commit
+02641c0f1844733ef5223ce43ea02987114b7ae9 Correct recorded gate validation plan
+564eb5fee6fa5ee7ea6a5cf90516923d4668d31f dispatch: recorded-gate-task entering validation
+0b07538711fe3c2af230172a61180b1da709a8a3 gate: record recorded-gate-task validation revise
+35182532c2c6a16f6c479f5594b33fdc4655e04b prepare prior attempt
+8e3573f3e95382077a456eaee18100c297534d4a seed correction inputs
+
+$ git show --format=fuller --stat 02641c0
+commit 02641c0f1844733ef5223ce43ea02987114b7ae9
+Author:     Spacedock Test <spacedock@example.invalid>
+AuthorDate: Wed Sep 16 22:12:28 2026 +0000
+Commit:     Spacedock Test <spacedock@example.invalid>
+CommitDate: Wed Sep 16 22:12:28 2026 +0000
+
+    Correct recorded gate validation plan
+
+ recorded-gate-task/index.md         | 11 +++++++++++
+ recorded-gate-task/selected/plan.md |  2 +-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+$ git show --format=fuller --stat d2177a4
+commit d2177a4aff0bb034f49874d26fcece9aa37c5987
+Author:     Spacedock Test <spacedock@example.invalid>
+AuthorDate: Wed Sep 16 22:12:40 2026 +0000
+Commit:     Spacedock Test <spacedock@example.invalid>
+CommitDate: Wed Sep 16 22:12:40 2026 +0000
+
+    Record validation correction commit
+
+ recorded-gate-task/index.md | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+$ git show HEAD:recorded-gate-task/index.md
+---
+id: recorded-gate-task
+title: Recorded Gate Task
+status: validation
+completed:
+verdict:
+worktree:
+gates:
+    version: 1
+    records:
+        - id: gate:recorded-gate-task:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:recorded-gate-task-validation-1
+              briefing:
+                id: briefing:recorded-gate-task:validation:attempt-1:revision-1
+                digest: sha256:6a9b0dbf7db695666d0070c90b5a003d1058bac20ce5434684b58449e5ee0d19
+                room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:recorded-gate-task:validation:1
+                briefing: briefing:recorded-gate-task:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-16T22:07:12.296025825Z"
+                decision: revise
+                reason: Correct the plan against frozen input
+            - id: gate-attempt:recorded-gate-task-validation-2
+              briefing:
+                id: briefing:recorded-gate-task:validation:attempt-2:revision-1
+                digest: sha256:6bed0413e36752b009624c429a1db8ed0d7f470cd038cbf15ae5b9abf386090e
+                room-ref: '@review/validation/briefing-2'
+started: 2026-09-16T22:11:16Z
+---
+# Recorded Gate Task
+
+## Acceptance criteria
+
+**AC-1** The selected plan matches the frozen input.
+
+## Stage Report: validation
+
+- DONE: Replayed retained evidence
+  The real command fixture is green.
+
+### Summary
+
+Ready for the recorded decision gate.
+
+## Stage Report: validation (cycle 1)
+
+- DONE: Correct selected/plan.md so it exactly matches selected/frozen-input.txt
+  Byte comparison passed; the corrected plan is in commit 02641c0f1844733ef5223ce43ea02987114b7ae9.
+- DONE: Append a new validation stage report documenting the correction and commit the corrected entity and selected plan path-scoped
+  The corrected plan and cycle report are committed path-scoped in 02641c0f1844733ef5223ce43ea02987114b7ae9.
+
+### Summary
+
+Corrected the selected plan to retain message A and delete message B, matching the frozen input exactly. Recorded this validation correction cycle without changing the frozen review room or workflow policy.
+
+$ git show HEAD:recorded-gate-task/review/validation/briefing-2/index.json
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:recorded-gate-task:validation:attempt-2:revision-1",
+  "question": "Does the corrected validation result show that selected/plan.md matches frozen-input.txt, and should the entity advance?",
+  "artifacts": [
+    {
+      "id": "artifact:recorded-gate-task:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/d2177a4aff0bb034f49874d26fcece9aa37c5987/recorded-gate-task/selected/plan.md",
+      "rev": "sha256:9c9f788375c0bd7caf0b764702f68cd519c4dbfe70a721f84b172ec2572ce898",
+      "mediaType": "text/markdown",
+      "summary": "Validation correction complete: selected/plan.md now byte-matches frozen-input.txt, the correction report is committed path-scoped, and no canonical correction round or Feedback Cycles projection applies. Ready for the captain's decision."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:recorded-gate-task:validation:attempt-2:revision-1:item-2",
+      "uri": "git-root://state/d2177a4aff0bb034f49874d26fcece9aa37c5987/recorded-gate-task/selected/entity-snapshot.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:d0b7f253981af8c2f2bb376a90e4436c644ab5ccca6d6bcea883f18ae0f961c1"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:recorded-gate-task:validation:attempt-2:revision-1:item-3",
+      "uri": "git-root://main/4bad2d06fabd22f6850608d402c535e7c4b3e841/recorder-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:84c576392265aac71ee4f5767c9e60998f4f3a1428614d139639ccf037929926"
+    }
+  ]
+}
+
+Exact plan/frozen/independent expectation byte comparison: PASS

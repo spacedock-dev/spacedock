@@ -1,0 +1,56 @@
+[
+  {
+    "scenario": "default-headless-gate-stop",
+    "parent_id": "01a0ac40-965d-7626-af4f-a8921b872122",
+    "run_id": "6b3a7071-a2eb-48ba-8235-e1d0352bad43",
+    "tool_call_id": "call_Wu9CDrU1EfyyVSvmyolN6cDx|fc_0338675cc6427aa3016aab130e85e487d1bf7f50bd4f771b9b",
+    "owner_session": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "child_locator": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+    "child_session_id": "01a0ac42-76c6-7626-af4f-a895e4aa4030",
+    "child_name": "subagent-worker-6b3a7071-a2eb-48ba-8235-e1d0352bad43-1",
+    "assignment_exact": true,
+    "cwd_exact": true,
+    "fresh_epoch": 1,
+    "completion_form": "synchronous subagent toolResult",
+    "parent_line": 47,
+    "stream_index": 66,
+    "spawn_stream_index": 65,
+    "advance_stream_index": 73,
+    "chronology": {
+      "spawn": "2026-09-16T22:07:12.007Z",
+      "child_start": "2026-09-16T22:07:12.070Z",
+      "child_stop": "2026-09-16T22:07:58.294Z",
+      "completion_observed": "2026-09-16T22:07:58.319Z",
+      "advance": "2026-09-16T22:08:25.848Z"
+    },
+    "child_terminal_stop": "stop",
+    "identity_and_chronology_assertions": "passed"
+  },
+  {
+    "scenario": "self-feedback/plain",
+    "parent_id": "01a0ac42-7a39-7739-bc31-a2d6d76b310e",
+    "run_id": "52dad98d-24bb-43e4-9bbc-c60eb12247e8",
+    "tool_call_id": "call_VgQ8aK0YivCSBESIoM037uEV|fc_0bf0dfa5882fda62016aab140af72487d1ac0a8d5549572042",
+    "owner_session": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "child_locator": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "child_session_id": "01a0ac46-52ec-73b3-8a07-695a626f1e27",
+    "child_name": "subagent-worker-52dad98d-24bb-43e4-9bbc-c60eb12247e8-1",
+    "assignment_exact": true,
+    "cwd_exact": true,
+    "fresh_epoch": 1,
+    "completion_form": "async native notification",
+    "parent_line": 98,
+    "stream_index": 116,
+    "spawn_stream_index": 112,
+    "advance_stream_index": 135,
+    "chronology": {
+      "spawn": "2026-09-16T22:11:23.902Z",
+      "child_start": "2026-09-16T22:11:25.037Z",
+      "child_stop": "2026-09-16T22:13:05.677Z",
+      "completion_observed": "2026-09-16T22:13:05.875Z",
+      "advance": "2026-09-16T22:14:18.074Z"
+    },
+    "child_terminal_stop": "stop",
+    "identity_and_chronology_assertions": "passed"
+  }
+]

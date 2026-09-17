@@ -1,0 +1,9 @@
+pi-live	UNKNOWN STEP	2026-09-16T21:46:20.6291199Z HEAD is now at 3f23437 Merge d0a6f413af32fa69ac9da4af2c74c0086fcca812 into 85bd948e626f3522869fb577d8139330f73f176b
+pi-live	UNKNOWN STEP	2026-09-16T21:47:03.2909206Z ^[[36;1mSPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 50m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle^[[0m
+pi-live	UNKNOWN STEP	2026-09-16T22:18:50.4128369Z     shared_live_runner_test.go:130: FAIL /default-headless-gate-stop owner= observed=[implementation-worker-not-dispatched]
+pi-live	UNKNOWN STEP	2026-09-16T22:18:50.4133224Z           implementation-worker-not-dispatched: implementation lifecycle incomplete: spawns=1 completed=-1 validation=73 report=<nil>
+pi-live	UNKNOWN STEP	2026-09-16T22:18:50.4151727Z     claude_live_runner_test.go:503: FAIL /self-feedback/plain owner= observed=[self-feedback-obligations]
+pi-live	UNKNOWN STEP	2026-09-16T22:18:50.4153666Z           self-feedback-obligations: the spawn/validation dispatch at position 0 is never completed, so the run ends mid-round
+pi-live	UNKNOWN STEP	2026-09-16T22:18:50.4164135Z DONE 19 tests, 3 failures in 1905.046s
+pi-live	UNKNOWN STEP	2026-09-16T22:20:41.2790724Z DONE 1 tests in 110.442s
+pi-live	UNKNOWN STEP	2026-09-16T22:20:42.7361641Z Artifact runtime-live-e2e-pi-live.zip successfully finalized. Artifact ID 10471612473

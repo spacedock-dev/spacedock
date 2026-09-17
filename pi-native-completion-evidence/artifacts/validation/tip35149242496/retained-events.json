@@ -1,0 +1,2146 @@
+[
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 1,
+    "record": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0ac40-965d-7626-af4f-a8921b872122",
+      "timestamp": "2026-09-16T22:05:09.086Z",
+      "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004"
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 46,
+    "record": {
+      "type": "message",
+      "id": "b9592fce",
+      "parentId": "f1fbac37",
+      "timestamp": "2026-09-16T22:07:12.007Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_Wu9CDrU1EfyyVSvmyolN6cDx|fc_0338675cc6427aa3016aab130e85e487d1bf7f50bd4f771b9b",
+            "name": "subagent",
+            "arguments": {
+              "agent": "worker",
+              "task": "Read /tmp/spacedock-dispatch/recorded-gate-task-implementation.md and treat its content as your assignment.\n\nWork only on recorded-gate-task at the implementation stage. Follow the assignment's completion contract and stop after returning completion.",
+              "context": "fresh",
+              "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004",
+              "skill": "ensign",
+              "async": false
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596398028,
+        "responseId": "resp_0338675cc6427aa3016aab12ee699887d1b9af16db4461a93d",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 47,
+    "record": {
+      "type": "message",
+      "id": "b2c49baa",
+      "parentId": "b9592fce",
+      "timestamp": "2026-09-16T22:07:58.319Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_Wu9CDrU1EfyyVSvmyolN6cDx|fc_0338675cc6427aa3016aab130e85e487d1bf7f50bd4f771b9b",
+        "toolName": "subagent",
+        "content": [
+          {
+            "type": "text",
+            "text": "Run fan-out: 1/64 used, 63 remaining\nImplemented recorded-gate-task implementation stage report.  \nChanged files: `.spacedock-state/recorded-gate-task/index.md`  \nValidation: committed as `17307b8`; exactly one implementation report; no staged files.\nMission: ab509dce-e95d-45f3-a942-496f982e4a88 (completed)"
+          }
+        ],
+        "details": {
+          "mode": "single",
+          "runId": "6b3a7071-a2eb-48ba-8235-e1d0352bad43",
+          "timeoutMs": 1800000,
+          "results": [
+            {
+              "index": 0,
+              "agent": "worker",
+              "task": "[prompt redacted]",
+              "sessionName": "worker: Read /tmp/spacedock-dispatch/recorded-gate-task-implement...",
+              "launchContractDigest": "e24f46fedb3d91e4bfd2c950ac43be150edfab9fbfd485901c02073568bdac09",
+              "launchResolvedExtensions": {
+                "version": 1,
+                "source": "launch-resolved",
+                "disableAmbientExtensions": true,
+                "runtime": [
+                  "sha256:918c74589726e55e"
+                ],
+                "configured": [],
+                "effective": [
+                  "sha256:918c74589726e55e"
+                ],
+                "omitted": {
+                  "runtime": 0,
+                  "configured": 0,
+                  "effective": 0
+                }
+              },
+              "exitCode": 0,
+              "outputState": "present",
+              "model": "openai-codex/gpt-5.6-luna:high",
+              "artifactPaths": {
+                "inputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_input.md",
+                "outputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_output.md",
+                "jsonlPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0.jsonl",
+                "transcriptPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_transcript.jsonl",
+                "metadataPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_meta.json"
+              },
+              "transcriptPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_transcript.jsonl",
+              "skills": [
+                "ensign"
+              ],
+              "context": "fresh",
+              "progressSummary": {
+                "sessionName": "worker: Read /tmp/spacedock-dispatch/recorded-gate-task-implement...",
+                "toolCount": 11,
+                "tokens": 28090,
+                "durationMs": 46251
+              },
+              "effects": {
+                "fileMutation": {
+                  "status": "not-applicable",
+                  "expected": false,
+                  "attempted": true,
+                  "evidence": {
+                    "source": "tracked-files",
+                    "trackedOnly": true,
+                    "changedFiles": [],
+                    "attemptedMutation": false
+                  }
+                }
+              },
+              "outputMode": "inline",
+              "finalOutput": "Implemented recorded-gate-task implementation stage report.  \nChanged files: `.spacedock-state/recorded-gate-task/index.md`  \nValidation: committed as `17307b8`; exactly one implementation report; no staged files.",
+              "attemptedModels": [
+                "openai-codex/gpt-5.6-luna:high"
+              ],
+              "modelAttempts": [
+                {
+                  "model": "openai-codex/gpt-5.6-luna:high",
+                  "success": true,
+                  "exitCode": 0
+                }
+              ],
+              "sessionFile": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+              "acceptance": {
+                "status": "checked",
+                "evidenceStatus": "checked",
+                "explicit": false,
+                "effectiveAcceptance": {
+                  "level": "checked",
+                  "explicit": false,
+                  "inferredReason": [
+                    "write-capable worker/task"
+                  ],
+                  "criteria": [
+                    {
+                      "id": "criterion-1",
+                      "must": "Implement the requested change without widening scope",
+                      "evidence": [
+                        "changed-files",
+                        "tests-added",
+                        "commands-run",
+                        "residual-risks",
+                        "no-staged-files"
+                      ],
+                      "severity": "required"
+                    }
+                  ],
+                  "evidence": [
+                    "changed-files",
+                    "tests-added",
+                    "commands-run",
+                    "residual-risks",
+                    "no-staged-files"
+                  ],
+                  "verify": [],
+                  "stopRules": []
+                },
+                "inferredReason": [
+                  "write-capable worker/task"
+                ],
+                "criteria": [
+                  {
+                    "id": "criterion-1",
+                    "must": "Implement the requested change without widening scope",
+                    "evidence": [
+                      "changed-files",
+                      "tests-added",
+                      "commands-run",
+                      "residual-risks",
+                      "no-staged-files"
+                    ],
+                    "severity": "required"
+                  }
+                ],
+                "runtimeChecks": [
+                  {
+                    "id": "criterion:criterion-1",
+                    "status": "passed",
+                    "message": "Required criterion 'criterion-1' satisfied."
+                  },
+                  {
+                    "id": "evidence:changed-files",
+                    "status": "passed",
+                    "message": "changed-files evidence present."
+                  },
+                  {
+                    "id": "evidence:tests-added",
+                    "status": "not-applicable",
+                    "message": "tests-added evidence explicitly reported as not applicable."
+                  },
+                  {
+                    "id": "evidence:commands-run",
+                    "status": "passed",
+                    "message": "commands-run evidence present."
+                  },
+                  {
+                    "id": "evidence:residual-risks",
+                    "status": "passed",
+                    "message": "residual-risks evidence present."
+                  },
+                  {
+                    "id": "evidence:no-staged-files",
+                    "status": "passed",
+                    "message": "no-staged-files evidence present."
+                  },
+                  {
+                    "id": "no-staged-files",
+                    "status": "passed",
+                    "message": "No staged files detected."
+                  }
+                ],
+                "verifyRuns": [],
+                "childReport": {
+                  "criteriaSatisfied": [
+                    {
+                      "id": "criterion-1",
+                      "status": "satisfied",
+                      "evidence": "Implementation stage completed with the required single stage report."
+                    }
+                  ],
+                  "changedFiles": [
+                    ".spacedock-state/recorded-gate-task/index.md"
+                  ],
+                  "testsAddedOrUpdated": [],
+                  "commandsRun": [
+                    {
+                      "command": "spacedock dispatch show-stage-def ...",
+                      "result": "passed",
+                      "summary": "Confirmed implementation stage contract."
+                    },
+                    {
+                      "command": "grep count, spacedock status --read, git diff --cached --quiet",
+                      "result": "passed",
+                      "summary": "Verified one report, valid entity state, and no staged files."
+                    }
+                  ],
+                  "validationOutput": [
+                    "Entity contains exactly one ## Stage Report: implementation."
+                  ],
+                  "residualRisks": [],
+                  "noStagedFiles": true,
+                  "diffSummary": "Appended the implementation stage report.",
+                  "reviewFindings": [
+                    "no blockers"
+                  ],
+                  "manualNotes": "Committed path-scoped state change as 17307b8."
+                }
+              },
+              "toolCalls": [
+                {
+                  "text": "read /tmp/spacedock-dispatch/recorded-gate-task-implementation.md",
+                  "expandedText": "read /tmp/spacedock-dispatch/recorded-gate-task-implementation.md"
+                },
+                {
+                  "text": "read /home/runner/work/spacedock/spacedock/skills/ensign/SKILL.md",
+                  "expandedText": "read /home/runner/work/spacedock/spacedock/skills/ensign/SKILL.md"
+                },
+                {
+                  "text": "$ printf 'CLAUDECODE=%s CODEX_THREAD_ID=%s PI_CODING_AGENT_...",
+                  "expandedText": "$ printf 'CLAUDECODE=%s CODEX_THREAD_ID=%s PI_CODING_AGENT_DIR=%s\\n' \"$CLAUDECODE\" \"$CODEX_THREAD_ID\" \"$PI_CODING_AGENT_DIR\""
+                },
+                {
+                  "text": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/ensign-shared-core.md",
+                  "expandedText": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/ensign-shared-core.md"
+                },
+                {
+                  "text": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/pi-ensign-runtime.md",
+                  "expandedText": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/pi-ensign-runtime.md"
+                },
+                {
+                  "text": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+                  "expandedText": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md"
+                },
+                {
+                  "text": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/...",
+                  "expandedText": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/spacedock dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage implementation"
+                },
+                {
+                  "text": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state status --short && /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/spacedock status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/..."
+                },
+                {
+                  "text": "edit /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+                  "expandedText": "edit /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md"
+                },
+                {
+                  "text": "$ state=/tmp/TestLiveCommonDefaultHeadlessGateStop295886408...",
+                  "expandedText": "$ state=/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state; entity=\"$state/recorded-gate-task/index.md\"; git -C \"$state\" add \"$entity\" && git -C \"$state\" commit -m \"Record implementation stage completion\" -- \"$entity..."
+                },
+                {
+                  "text": "$ entity=/tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ entity=/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md; test \"$(grep -c '^## Stage Report: implementation$' \"$entity\")\" -eq 1; /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007..."
+                }
+              ]
+            }
+          ],
+          "artifacts": {
+            "dir": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts",
+            "files": [
+              {
+                "inputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_input.md",
+                "outputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_output.md",
+                "jsonlPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0.jsonl",
+                "transcriptPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_transcript.jsonl",
+                "metadataPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_meta.json"
+              }
+            ]
+          },
+          "context": "fresh",
+          "runFanoutBudget": {
+            "used": 1,
+            "limit": 64,
+            "remaining": 63
+          },
+          "missionId": "ab509dce-e95d-45f3-a942-496f982e4a88",
+          "missionPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/001/missions/projects/8b8f3274bc7c05eb670edd9082f3e2a0928c6f8069e0295d27c8bdb4a43732d3/ab509dce-e95d-45f3-a942-496f982e4a88.json",
+          "mission": {
+            "schemaVersion": 1,
+            "id": "ab509dce-e95d-45f3-a942-496f982e4a88",
+            "title": "[prompt redacted]",
+            "objective": "[prompt redacted]",
+            "status": "completed",
+            "createdAt": "2026-09-16T22:07:12.021Z",
+            "updatedAt": "2026-09-16T22:07:58.317Z",
+            "runs": [
+              {
+                "runId": "6b3a7071-a2eb-48ba-8235-e1d0352bad43",
+                "mode": "single",
+                "agent": "worker",
+                "status": "completed",
+                "startedAt": "2026-09-16T22:07:58.316Z",
+                "completedAt": "2026-09-16T22:07:58.316Z"
+              }
+            ],
+            "workflowChildren": [],
+            "decisions": [],
+            "artifacts": [
+              {
+                "kind": "output",
+                "path": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_output.md"
+              },
+              {
+                "kind": "other",
+                "path": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/6b3a7071-a2eb-48ba-8235-e1d0352bad43_worker_0_transcript.jsonl",
+                "description": "Child transcript"
+              }
+            ],
+            "receipts": [],
+            "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004",
+            "ownerSessionId": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+            "summary": "Run fan-out: 1/64 used, 63 remaining\nImplemented recorded-gate-task implementation stage report.  \nChanged files: `.spacedock-state/recorded-gate-task/index.md`  \nValidation: committed as `17307b8`; exactly one implementation report; no staged files.",
+            "acceptance": {
+              "status": "checked",
+              "evidenceStatus": "checked",
+              "explicit": false,
+              "effectiveAcceptance": {
+                "level": "checked",
+                "explicit": false,
+                "inferredReason": [
+                  "write-capable worker/task"
+                ],
+                "criteria": [
+                  {
+                    "id": "criterion-1",
+                    "must": "Implement the requested change without widening scope",
+                    "evidence": [
+                      "changed-files",
+                      "tests-added",
+                      "commands-run",
+                      "residual-risks",
+                      "no-staged-files"
+                    ],
+                    "severity": "required"
+                  }
+                ],
+                "evidence": [
+                  "changed-files",
+                  "tests-added",
+                  "commands-run",
+                  "residual-risks",
+                  "no-staged-files"
+                ],
+                "verify": [],
+                "stopRules": []
+              },
+              "inferredReason": [
+                "write-capable worker/task"
+              ],
+              "criteria": [
+                {
+                  "id": "criterion-1",
+                  "must": "Implement the requested change without widening scope",
+                  "evidence": [
+                    "changed-files",
+                    "tests-added",
+                    "commands-run",
+                    "residual-risks",
+                    "no-staged-files"
+                  ],
+                  "severity": "required"
+                }
+              ],
+              "runtimeChecks": [
+                {
+                  "id": "criterion:criterion-1",
+                  "status": "passed",
+                  "message": "Required criterion 'criterion-1' satisfied."
+                },
+                {
+                  "id": "evidence:changed-files",
+                  "status": "passed",
+                  "message": "changed-files evidence present."
+                },
+                {
+                  "id": "evidence:tests-added",
+                  "status": "not-applicable",
+                  "message": "tests-added evidence explicitly reported as not applicable."
+                },
+                {
+                  "id": "evidence:commands-run",
+                  "status": "passed",
+                  "message": "commands-run evidence present."
+                },
+                {
+                  "id": "evidence:residual-risks",
+                  "status": "passed",
+                  "message": "residual-risks evidence present."
+                },
+                {
+                  "id": "evidence:no-staged-files",
+                  "status": "passed",
+                  "message": "no-staged-files evidence present."
+                },
+                {
+                  "id": "no-staged-files",
+                  "status": "passed",
+                  "message": "No staged files detected."
+                }
+              ],
+              "verifyRuns": [],
+              "childReport": {
+                "criteriaSatisfied": [
+                  {
+                    "id": "criterion-1",
+                    "status": "satisfied",
+                    "evidence": "Implementation stage completed with the required single stage report."
+                  }
+                ],
+                "changedFiles": [
+                  ".spacedock-state/recorded-gate-task/index.md"
+                ],
+                "testsAddedOrUpdated": [],
+                "commandsRun": [
+                  {
+                    "command": "spacedock dispatch show-stage-def ...",
+                    "result": "passed",
+                    "summary": "Confirmed implementation stage contract."
+                  },
+                  {
+                    "command": "grep count, spacedock status --read, git diff --cached --quiet",
+                    "result": "passed",
+                    "summary": "Verified one report, valid entity state, and no staged files."
+                  }
+                ],
+                "validationOutput": [
+                  "Entity contains exactly one ## Stage Report: implementation."
+                ],
+                "residualRisks": [],
+                "noStagedFiles": true,
+                "diffSummary": "Appended the implementation stage report.",
+                "reviewFindings": [
+                  "no blockers"
+                ],
+                "manualNotes": "Committed path-scoped state change as 17307b8."
+              }
+            }
+          }
+        },
+        "isError": false,
+        "timestamp": 1789596478319
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 48,
+    "record": {
+      "type": "message",
+      "id": "f5f7341e",
+      "parentId": "b2c49baa",
+      "timestamp": "2026-09-16T22:08:03.976Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_oaNlpWx4VU9aGbUtzay8YTOS|fc_0338675cc6427aa3016aab134344dc87d1b5703f38fd687c7c",
+            "name": "bash",
+            "arguments": {
+              "command": "grep -n '^## Stage Report' /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596478321,
+        "responseId": "resp_0338675cc6427aa3016aab133eb5e087d184fe639e395fb20d",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 49,
+    "record": {
+      "type": "message",
+      "id": "d8964d55",
+      "parentId": "f5f7341e",
+      "timestamp": "2026-09-16T22:08:03.982Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_oaNlpWx4VU9aGbUtzay8YTOS|fc_0338675cc6427aa3016aab134344dc87d1b5703f38fd687c7c",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "15:## Stage Report: implementation\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596483982
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 50,
+    "record": {
+      "type": "message",
+      "id": "1a6ee670",
+      "parentId": "d8964d55",
+      "timestamp": "2026-09-16T22:08:06.642Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_QNVwGjPkmIifzYnaGkZSdrrm|fc_0338675cc6427aa3016aab1345bf2c87d1bd4d551fcfa9c2d4",
+            "name": "read",
+            "arguments": {
+              "path": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+              "offset": 15,
+              "limit": 40
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596483983,
+        "responseId": "resp_0338675cc6427aa3016aab13446d7087d1b9875897ad654914",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 51,
+    "record": {
+      "type": "message",
+      "id": "58bfbe60",
+      "parentId": "1a6ee670",
+      "timestamp": "2026-09-16T22:08:06.643Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_QNVwGjPkmIifzYnaGkZSdrrm|fc_0338675cc6427aa3016aab1345bf2c87d1bd4d551fcfa9c2d4",
+        "toolName": "read",
+        "content": [
+          {
+            "type": "text",
+            "text": "## Stage Report: implementation\n\n- DONE: Append exactly one `## Stage Report: implementation`, then return completion.\n  Stage report appended to the entity file as required by the implementation stage definition.\n\n### Summary\n\nImplementation-stage completion recorded for the recorded gate task. No source-code change was specified by the stage definition; the required entity stage report was appended.\n\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596486643
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 54,
+    "record": {
+      "type": "message",
+      "id": "77325996",
+      "parentId": "2ea511fb",
+      "timestamp": "2026-09-16T22:08:25.848Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_zLoGjvJqSp6dH60VAPrN55wO|fc_0338675cc6427aa3016aab1359022c87d18d33ad75dadd8db5",
+            "name": "bash",
+            "arguments": {
+              "command": "\"${SPACEDOCK_BIN:-spacedock}\" status --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --set recorded-gate-task status=validation started",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596501930,
+        "responseId": "resp_0338675cc6427aa3016aab135696e487d194dd0ddc517c28b6",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 55,
+    "record": {
+      "type": "message",
+      "id": "9b95806e",
+      "parentId": "77325996",
+      "timestamp": "2026-09-16T22:08:25.863Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_zLoGjvJqSp6dH60VAPrN55wO|fc_0338675cc6427aa3016aab1359022c87d18d33ad75dadd8db5",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "status: implementation -> validation\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596505863
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 61,
+    "record": {
+      "type": "message",
+      "id": "3da718df",
+      "parentId": "99f96b38",
+      "timestamp": "2026-09-16T22:08:49.789Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_s6kaUXiR2SBAWkqC7lO3J65j|fc_0338675cc6427aa3016aab137043fc87d1b6e8c3fe833878ed",
+            "name": "subagent",
+            "arguments": {
+              "agent": "worker",
+              "task": "Read /tmp/spacedock-dispatch/recorded-gate-task-validation.md and treat its content as your assignment.\n\nWork only on recorded-gate-task at the validation stage. Follow the assignment's completion contract and stop after returning completion.",
+              "context": "fresh",
+              "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004",
+              "skill": "ensign",
+              "async": false
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596525186,
+        "responseId": "resp_0338675cc6427aa3016aab136d996087d19f2555bccab6adf9",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 62,
+    "record": {
+      "type": "message",
+      "id": "95c8aed1",
+      "parentId": "3da718df",
+      "timestamp": "2026-09-16T22:10:13.272Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_s6kaUXiR2SBAWkqC7lO3J65j|fc_0338675cc6427aa3016aab137043fc87d1b6e8c3fe833878ed",
+        "toolName": "subagent",
+        "content": [
+          {
+            "type": "text",
+            "text": "Run fan-out: 1/64 used, 63 remaining\nImplemented validation stage for Recorded Gate Task.  \nChanged files: `.spacedock-state/recorded-gate-task/index.md`  \nValidation: entity parsing, report counts, clean entity state, and `git fsck` passed. Commit: `83ad0bf`.\nMission: 069adf24-0b66-46dd-a69b-99d8ec24bdde (completed)"
+          }
+        ],
+        "details": {
+          "mode": "single",
+          "runId": "0d818ec0-105e-48f5-b20b-b0ef31aaa5a4",
+          "timeoutMs": 1800000,
+          "results": [
+            {
+              "index": 0,
+              "agent": "worker",
+              "task": "[prompt redacted]",
+              "sessionName": "worker: Read /tmp/spacedock-dispatch/recorded-gate-task-validatio...",
+              "launchContractDigest": "8e39d23a474b5299759e810e68058ea5dc463321ae208234510289ea7a541be0",
+              "launchResolvedExtensions": {
+                "version": 1,
+                "source": "launch-resolved",
+                "disableAmbientExtensions": true,
+                "runtime": [
+                  "sha256:918c74589726e55e"
+                ],
+                "configured": [],
+                "effective": [
+                  "sha256:918c74589726e55e"
+                ],
+                "omitted": {
+                  "runtime": 0,
+                  "configured": 0,
+                  "effective": 0
+                }
+              },
+              "exitCode": 0,
+              "outputState": "present",
+              "model": "openai-codex/gpt-5.6-luna:high",
+              "artifactPaths": {
+                "inputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_input.md",
+                "outputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_output.md",
+                "jsonlPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0.jsonl",
+                "transcriptPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_transcript.jsonl",
+                "metadataPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_meta.json"
+              },
+              "transcriptPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_transcript.jsonl",
+              "skills": [
+                "ensign"
+              ],
+              "context": "fresh",
+              "progressSummary": {
+                "sessionName": "worker: Read /tmp/spacedock-dispatch/recorded-gate-task-validatio...",
+                "toolCount": 27,
+                "tokens": 33251,
+                "durationMs": 83450
+              },
+              "effects": {
+                "fileMutation": {
+                  "status": "not-applicable",
+                  "expected": false,
+                  "attempted": true,
+                  "evidence": {
+                    "source": "tracked-files",
+                    "trackedOnly": true,
+                    "changedFiles": [],
+                    "attemptedMutation": false
+                  }
+                }
+              },
+              "outputMode": "inline",
+              "finalOutput": "Implemented validation stage for Recorded Gate Task.  \nChanged files: `.spacedock-state/recorded-gate-task/index.md`  \nValidation: entity parsing, report counts, clean entity state, and `git fsck` passed. Commit: `83ad0bf`.",
+              "attemptedModels": [
+                "openai-codex/gpt-5.6-luna:high"
+              ],
+              "modelAttempts": [
+                {
+                  "model": "openai-codex/gpt-5.6-luna:high",
+                  "success": true,
+                  "exitCode": 0
+                }
+              ],
+              "sessionFile": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4/run-0/session.jsonl",
+              "acceptance": {
+                "status": "checked",
+                "evidenceStatus": "checked",
+                "explicit": false,
+                "effectiveAcceptance": {
+                  "level": "checked",
+                  "explicit": false,
+                  "inferredReason": [
+                    "write-capable worker/task"
+                  ],
+                  "criteria": [
+                    {
+                      "id": "criterion-1",
+                      "must": "Implement the requested change without widening scope",
+                      "evidence": [
+                        "changed-files",
+                        "tests-added",
+                        "commands-run",
+                        "residual-risks",
+                        "no-staged-files"
+                      ],
+                      "severity": "required"
+                    }
+                  ],
+                  "evidence": [
+                    "changed-files",
+                    "tests-added",
+                    "commands-run",
+                    "residual-risks",
+                    "no-staged-files"
+                  ],
+                  "verify": [],
+                  "stopRules": []
+                },
+                "inferredReason": [
+                  "write-capable worker/task"
+                ],
+                "criteria": [
+                  {
+                    "id": "criterion-1",
+                    "must": "Implement the requested change without widening scope",
+                    "evidence": [
+                      "changed-files",
+                      "tests-added",
+                      "commands-run",
+                      "residual-risks",
+                      "no-staged-files"
+                    ],
+                    "severity": "required"
+                  }
+                ],
+                "runtimeChecks": [
+                  {
+                    "id": "criterion:criterion-1",
+                    "status": "passed",
+                    "message": "Required criterion 'criterion-1' satisfied."
+                  },
+                  {
+                    "id": "evidence:changed-files",
+                    "status": "passed",
+                    "message": "changed-files evidence present."
+                  },
+                  {
+                    "id": "evidence:tests-added",
+                    "status": "not-applicable",
+                    "message": "tests-added evidence explicitly reported as not applicable."
+                  },
+                  {
+                    "id": "evidence:commands-run",
+                    "status": "passed",
+                    "message": "commands-run evidence present."
+                  },
+                  {
+                    "id": "evidence:residual-risks",
+                    "status": "passed",
+                    "message": "residual-risks evidence present."
+                  },
+                  {
+                    "id": "evidence:no-staged-files",
+                    "status": "passed",
+                    "message": "no-staged-files evidence present."
+                  },
+                  {
+                    "id": "no-staged-files",
+                    "status": "passed",
+                    "message": "No staged files detected."
+                  }
+                ],
+                "verifyRuns": [],
+                "childReport": {
+                  "criteriaSatisfied": [
+                    {
+                      "id": "criterion-1",
+                      "status": "satisfied",
+                      "evidence": "Validation report appended without widening scope."
+                    }
+                  ],
+                  "changedFiles": [
+                    ".spacedock-state/recorded-gate-task/index.md"
+                  ],
+                  "testsAddedOrUpdated": [],
+                  "commandsRun": [
+                    {
+                      "command": "spacedock status --read ... --json",
+                      "result": "passed",
+                      "summary": "Entity parsed successfully."
+                    },
+                    {
+                      "command": "git fsck --no-progress --full",
+                      "result": "passed",
+                      "summary": "Repository integrity verified."
+                    }
+                  ],
+                  "validationOutput": [
+                    "Exactly one implementation and one validation report present.",
+                    "No staged files remain."
+                  ],
+                  "residualRisks": [
+                    "Untracked concurrent dirty-sibling.md preserved."
+                  ],
+                  "noStagedFiles": true,
+                  "diffSummary": "Appended validation stage report.",
+                  "reviewFindings": [
+                    "no blockers"
+                  ],
+                  "manualNotes": "Retained package is ready for handoff."
+                }
+              },
+              "toolCalls": [
+                {
+                  "text": "read /tmp/spacedock-dispatch/recorded-gate-task-validation.md",
+                  "expandedText": "read /tmp/spacedock-dispatch/recorded-gate-task-validation.md"
+                },
+                {
+                  "text": "read /home/runner/work/spacedock/spacedock/skills/ensign/SKILL.md",
+                  "expandedText": "read /home/runner/work/spacedock/spacedock/skills/ensign/SKILL.md"
+                },
+                {
+                  "text": "$ printf 'CLAUDE=%s CODEX=%s PI=%s\\n' \"$CLAUDECODE\" \"$CODEX...",
+                  "expandedText": "$ printf 'CLAUDE=%s CODEX=%s PI=%s\\n' \"$CLAUDECODE\" \"$CODEX_THREAD_ID\" \"$PI_CODING_AGENT_DIR\"; ls /home/runner/work/spacedock/spacedock/skills/ensign/references"
+                },
+                {
+                  "text": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/ensign-shared-core.md",
+                  "expandedText": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/ensign-shared-core.md"
+                },
+                {
+                  "text": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/pi-ensign-runtime.md",
+                  "expandedText": "read /home/runner/work/spacedock/spacedock/skills/ensign/references/pi-ensign-runtime.md"
+                },
+                {
+                  "text": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+                  "expandedText": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md"
+                },
+                {
+                  "text": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/...",
+                  "expandedText": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/spacedock dispatch show-stage-def --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 --stage validation"
+                },
+                {
+                  "text": "$ git status --short; printf '\\n--- recent commits ---\\n'; ...",
+                  "expandedText": "$ git status --short; printf '\\n--- recent commits ---\\n'; git log --oneline -8"
+                },
+                {
+                  "text": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state status --short; printf '\\n--- state log ---\\n'; git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state log --oneline -8 -- recorde..."
+                },
+                {
+                  "text": "find {\"path\":\".\",\"pattern\":\"*\",\"limit\":200}",
+                  "expandedText": "find {\"path\":\".\",\"pattern\":\"*\",\"limit\":200}"
+                },
+                {
+                  "text": "ls {\"path\":\".\",\"limit\":200}",
+                  "expandedText": "ls {\"path\":\".\",\"limit\":200}"
+                },
+                {
+                  "text": "ls {\"path\":\"/tmp/TestLiveCommonDefaultHe...",
+                  "expandedText": "ls {\"path\":\"/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state\",\"limit\":200}"
+                },
+                {
+                  "text": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+                  "expandedText": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md"
+                },
+                {
+                  "text": "$ git show --stat --oneline 3736156; git show --stat --onel...",
+                  "expandedText": "$ git show --stat --oneline 3736156; git show --stat --oneline a8a92e9; git show --stat --oneline 021228f; git show --stat --oneline 17307b8"
+                },
+                {
+                  "text": "read README.md",
+                  "expandedText": "read README.md"
+                },
+                {
+                  "text": "read recorder-contract.md",
+                  "expandedText": "read recorder-contract.md"
+                },
+                {
+                  "text": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/dirty-sibling.md",
+                  "expandedText": "read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/dirty-sibling.md"
+                },
+                {
+                  "text": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state show --stat --oneline 17307b8; git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state show --stat --oneline 021228e; git -C /tmp/T..."
+                },
+                {
+                  "text": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/...",
+                  "expandedText": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/spacedock status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json"
+                },
+                {
+                  "text": "$ test \"$(grep -c '^## Stage Report: implementation$' /tmp/...",
+                  "expandedText": "$ test \"$(grep -c '^## Stage Report: implementation$' /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md)\" -eq 1 && echo 'implementation report count: 1'; test -f /tmp/TestLiveCommonDefaul..."
+                },
+                {
+                  "text": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state fsck --no-progress --full"
+                },
+                {
+                  "text": "edit /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+                  "expandedText": "edit /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md"
+                },
+                {
+                  "text": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state diff -- recorded-gate-task/index.md && git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state status --short"
+                },
+                {
+                  "text": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state add /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md && git -C /tmp/TestLiveCommonDefaultHeadlessGateSt..."
+                },
+                {
+                  "text": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/...",
+                  "expandedText": "$ /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/007/spacedock status --read /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md --json"
+                },
+                {
+                  "text": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop29588640...",
+                  "expandedText": "$ git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state status --short; git -C /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state diff --cached --quiet; printf 'cached-diff-exit=%s\\n' \"$?\";..."
+                },
+                {
+                  "text": "$ test \"$(grep -c '^## Stage Report: implementation$' /tmp/...",
+                  "expandedText": "$ test \"$(grep -c '^## Stage Report: implementation$' /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md)\" -eq 1 && test \"$(grep -c '^## Stage Report: validation$' /tmp/TestLiveCommonDefau..."
+                }
+              ]
+            }
+          ],
+          "artifacts": {
+            "dir": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts",
+            "files": [
+              {
+                "inputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_input.md",
+                "outputPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_output.md",
+                "jsonlPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0.jsonl",
+                "transcriptPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_transcript.jsonl",
+                "metadataPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_meta.json"
+              }
+            ]
+          },
+          "context": "fresh",
+          "runFanoutBudget": {
+            "used": 1,
+            "limit": 64,
+            "remaining": 63
+          },
+          "missionId": "069adf24-0b66-46dd-a69b-99d8ec24bdde",
+          "missionPath": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/001/missions/projects/8b8f3274bc7c05eb670edd9082f3e2a0928c6f8069e0295d27c8bdb4a43732d3/069adf24-0b66-46dd-a69b-99d8ec24bdde.json",
+          "mission": {
+            "schemaVersion": 1,
+            "id": "069adf24-0b66-46dd-a69b-99d8ec24bdde",
+            "title": "[prompt redacted]",
+            "objective": "[prompt redacted]",
+            "status": "completed",
+            "createdAt": "2026-09-16T22:08:49.799Z",
+            "updatedAt": "2026-09-16T22:10:13.271Z",
+            "runs": [
+              {
+                "runId": "0d818ec0-105e-48f5-b20b-b0ef31aaa5a4",
+                "mode": "single",
+                "agent": "worker",
+                "status": "completed",
+                "startedAt": "2026-09-16T22:10:13.271Z",
+                "completedAt": "2026-09-16T22:10:13.271Z"
+              }
+            ],
+            "workflowChildren": [],
+            "decisions": [],
+            "artifacts": [
+              {
+                "kind": "output",
+                "path": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_output.md"
+              },
+              {
+                "kind": "other",
+                "path": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.pi/subagents/artifacts/0d818ec0-105e-48f5-b20b-b0ef31aaa5a4_worker_0_transcript.jsonl",
+                "description": "Child transcript"
+              }
+            ],
+            "receipts": [],
+            "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004",
+            "ownerSessionId": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+            "summary": "Run fan-out: 1/64 used, 63 remaining\nImplemented validation stage for Recorded Gate Task.  \nChanged files: `.spacedock-state/recorded-gate-task/index.md`  \nValidation: entity parsing, report counts, clean entity state, and `git fsck` passed. Commit: `83ad0bf`.",
+            "acceptance": {
+              "status": "checked",
+              "evidenceStatus": "checked",
+              "explicit": false,
+              "effectiveAcceptance": {
+                "level": "checked",
+                "explicit": false,
+                "inferredReason": [
+                  "write-capable worker/task"
+                ],
+                "criteria": [
+                  {
+                    "id": "criterion-1",
+                    "must": "Implement the requested change without widening scope",
+                    "evidence": [
+                      "changed-files",
+                      "tests-added",
+                      "commands-run",
+                      "residual-risks",
+                      "no-staged-files"
+                    ],
+                    "severity": "required"
+                  }
+                ],
+                "evidence": [
+                  "changed-files",
+                  "tests-added",
+                  "commands-run",
+                  "residual-risks",
+                  "no-staged-files"
+                ],
+                "verify": [],
+                "stopRules": []
+              },
+              "inferredReason": [
+                "write-capable worker/task"
+              ],
+              "criteria": [
+                {
+                  "id": "criterion-1",
+                  "must": "Implement the requested change without widening scope",
+                  "evidence": [
+                    "changed-files",
+                    "tests-added",
+                    "commands-run",
+                    "residual-risks",
+                    "no-staged-files"
+                  ],
+                  "severity": "required"
+                }
+              ],
+              "runtimeChecks": [
+                {
+                  "id": "criterion:criterion-1",
+                  "status": "passed",
+                  "message": "Required criterion 'criterion-1' satisfied."
+                },
+                {
+                  "id": "evidence:changed-files",
+                  "status": "passed",
+                  "message": "changed-files evidence present."
+                },
+                {
+                  "id": "evidence:tests-added",
+                  "status": "not-applicable",
+                  "message": "tests-added evidence explicitly reported as not applicable."
+                },
+                {
+                  "id": "evidence:commands-run",
+                  "status": "passed",
+                  "message": "commands-run evidence present."
+                },
+                {
+                  "id": "evidence:residual-risks",
+                  "status": "passed",
+                  "message": "residual-risks evidence present."
+                },
+                {
+                  "id": "evidence:no-staged-files",
+                  "status": "passed",
+                  "message": "no-staged-files evidence present."
+                },
+                {
+                  "id": "no-staged-files",
+                  "status": "passed",
+                  "message": "No staged files detected."
+                }
+              ],
+              "verifyRuns": [],
+              "childReport": {
+                "criteriaSatisfied": [
+                  {
+                    "id": "criterion-1",
+                    "status": "satisfied",
+                    "evidence": "Validation report appended without widening scope."
+                  }
+                ],
+                "changedFiles": [
+                  ".spacedock-state/recorded-gate-task/index.md"
+                ],
+                "testsAddedOrUpdated": [],
+                "commandsRun": [
+                  {
+                    "command": "spacedock status --read ... --json",
+                    "result": "passed",
+                    "summary": "Entity parsed successfully."
+                  },
+                  {
+                    "command": "git fsck --no-progress --full",
+                    "result": "passed",
+                    "summary": "Repository integrity verified."
+                  }
+                ],
+                "validationOutput": [
+                  "Exactly one implementation and one validation report present.",
+                  "No staged files remain."
+                ],
+                "residualRisks": [
+                  "Untracked concurrent dirty-sibling.md preserved."
+                ],
+                "noStagedFiles": true,
+                "diffSummary": "Appended validation stage report.",
+                "reviewFindings": [
+                  "no blockers"
+                ],
+                "manualNotes": "Retained package is ready for handoff."
+              }
+            }
+          }
+        },
+        "isError": false,
+        "timestamp": 1789596613272
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 63,
+    "record": {
+      "type": "message",
+      "id": "625b4a11",
+      "parentId": "95c8aed1",
+      "timestamp": "2026-09-16T22:10:16.694Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_e198kYtvOiSXbFPlP2QjG9sH|fc_0338675cc6427aa3016aab13c7f38c87d1917b2f30b142ab01",
+            "name": "bash",
+            "arguments": {
+              "command": "grep -n '^## Stage Report' /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596613274,
+        "responseId": "resp_0338675cc6427aa3016aab13c5d57487d189fbab94cb75a013",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 64,
+    "record": {
+      "type": "message",
+      "id": "8d86ba96",
+      "parentId": "625b4a11",
+      "timestamp": "2026-09-16T22:10:16.702Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_e198kYtvOiSXbFPlP2QjG9sH|fc_0338675cc6427aa3016aab13c7f38c87d1917b2f30b142ab01",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "15:## Stage Report: implementation\n24:## Stage Report: validation\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596616701
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 65,
+    "record": {
+      "type": "message",
+      "id": "dc4c13d2",
+      "parentId": "8d86ba96",
+      "timestamp": "2026-09-16T22:10:21.332Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_iZGZNJ9oj52fijEnLhcuIZgR|fc_0338675cc6427aa3016aab13cbfc8087d19cb055a0335875c7",
+            "name": "read",
+            "arguments": {
+              "path": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md",
+              "offset": 24,
+              "limit": 80
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596616703,
+        "responseId": "resp_0338675cc6427aa3016aab13c90c8c87d1aa08b6980cb934b9",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 66,
+    "record": {
+      "type": "message",
+      "id": "16099c4f",
+      "parentId": "dc4c13d2",
+      "timestamp": "2026-09-16T22:10:21.333Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_iZGZNJ9oj52fijEnLhcuIZgR|fc_0338675cc6427aa3016aab13cbfc8087d19cb055a0335875c7",
+        "toolName": "read",
+        "content": [
+          {
+            "type": "text",
+            "text": "## Stage Report: validation\n\n- DONE: Validate and present the retained package.\n  Entity parsing, implementation-report cardinality, retained commit state, and repository object integrity were exercised successfully; retained package is ready for handoff.\n\n### Summary\n\nValidated the retained package without changing source files. The entity is structurally readable, has exactly one implementation report, and its committed state is clean; Git object integrity also passed.\n\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596621333
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 77,
+    "record": {
+      "type": "message",
+      "id": "3829962f",
+      "parentId": "be6b2e1a",
+      "timestamp": "2026-09-16T22:11:25.351Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_gsCPeTF4Dmm22Gx9IkopGYnx|fc_0338675cc6427aa3016aab140aa6e087d1942be5d02e108e3d",
+            "name": "bash",
+            "arguments": {
+              "command": "\"${SPACEDOCK_BIN:-spacedock}\" gate prepare recorded-gate-task \\\n  --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004 \\\n  --question \"Approve the validated retained package for handoff?\" \\\n  --artifact /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md \\\n  --summary \"Validation passed: the entity is parseable, contains exactly one implementation report, and committed state and repository integrity checks passed. The handoff successor must be dispatched only after approval is consumed.\" \\\n  --reference /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/README.md",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596666759,
+        "responseId": "resp_0338675cc6427aa3016aab13fb0f6487d197fa8052f9128da8",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 78,
+    "record": {
+      "type": "message",
+      "id": "b9fa6842",
+      "parentId": "3829962f",
+      "timestamp": "2026-09-16T22:11:25.393Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_gsCPeTF4Dmm22Gx9IkopGYnx|fc_0338675cc6427aa3016aab140aa6e087d1942be5d02e108e3d",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "room=/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/review/validation/briefing-1\nbriefing=briefing:recorded-gate-task:validation:attempt-1:revision-1\ndigest=sha256:52bbbba85da2ce79d85063ff8ed3d88e245fda3601f15ea9018ff1109e57ea12\nstate=open\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596685393
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 79,
+    "record": {
+      "type": "message",
+      "id": "bfa2483f",
+      "parentId": "b9fa6842",
+      "timestamp": "2026-09-16T22:11:30.531Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_Jq6Okjp74mx5XHXj2ifVqXnA|fc_0338675cc6427aa3016aab1411602887d19719e325f71ef0ac",
+            "name": "bash",
+            "arguments": {
+              "command": "\"${SPACEDOCK_BIN:-spacedock}\" state commit recorded-gate-task --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596685394,
+        "responseId": "resp_0338675cc6427aa3016aab140e51a487d193bf54f74b2cd1b4",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 80,
+    "record": {
+      "type": "message",
+      "id": "79b08cda",
+      "parentId": "bfa2483f",
+      "timestamp": "2026-09-16T22:11:30.569Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_Jq6Okjp74mx5XHXj2ifVqXnA|fc_0338675cc6427aa3016aab1411602887d19719e325f71ef0ac",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "Committed recorded-gate-task locally; no origin remote \u2014 state is local-only until an origin is configured.\nstate-head\t3e94fa10255ecc28392d6690ca284596e613a9c5\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596690569
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 81,
+    "record": {
+      "type": "message",
+      "id": "12c0558b",
+      "parentId": "79b08cda",
+      "timestamp": "2026-09-16T22:11:38.671Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_IJgHKvMCCjb1XFSV3hQogetT|fc_0338675cc6427aa3016aab1419d08887d1b2aa0e435a4937a7",
+            "name": "bash",
+            "arguments": {
+              "command": "\"${SPACEDOCK_BIN:-spacedock}\" status --read recorded-gate-task --json --workflow-dir /tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596690570,
+        "responseId": "resp_0338675cc6427aa3016aab1412ed1887d1bec9392576d87279",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+    "line": 82,
+    "record": {
+      "type": "message",
+      "id": "926d2954",
+      "parentId": "12c0558b",
+      "timestamp": "2026-09-16T22:11:38.684Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_IJgHKvMCCjb1XFSV3hQogetT|fc_0338675cc6427aa3016aab1419d08887d1b2aa0e435a4937a7",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"command\":\"read\",\"path\":\"/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004/.spacedock-state/recorded-gate-task/index.md\",\"total_lines\":\"43\",\"frontmatter\":{\"completed\":\"\",\"gates\":\"\",\"started\":\"2026-09-16T22:06:17Z\",\"status\":\"validation\",\"title\":\"Recorded Gate Task\",\"verdict\":\"\",\"worktree\":\"\"},\"headings\":[{\"text\":\"Recorded Gate Task\",\"level\":\"1\",\"offset\":\"20\",\"lines\":\"24\"},{\"text\":\"Acceptance criteria\",\"level\":\"2\",\"offset\":\"22\",\"lines\":\"4\"},{\"text\":\"Stage Report: implementation\",\"level\":\"2\",\"offset\":\"26\",\"lines\":\"9\"},{\"text\":\"Summary\",\"level\":\"3\",\"offset\":\"31\",\"lines\":\"4\"},{\"text\":\"Stage Report: validation\",\"level\":\"2\",\"offset\":\"35\",\"lines\":\"9\"},{\"text\":\"Summary\",\"level\":\"3\",\"offset\":\"40\",\"lines\":\"4\"}]}\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596698684
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+    "line": 1,
+    "record": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0ac42-76c6-7626-af4f-a895e4aa4030",
+      "timestamp": "2026-09-16T22:07:12.070Z",
+      "cwd": "/tmp/TestLiveCommonDefaultHeadlessGateStop2958864088/004"
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+    "line": 4,
+    "record": {
+      "type": "session_info",
+      "id": "3bd2a10b",
+      "parentId": "c802d67a",
+      "timestamp": "2026-09-16T22:07:12.072Z",
+      "name": "subagent-worker-6b3a7071-a2eb-48ba-8235-e1d0352bad43-1"
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+    "line": 5,
+    "record": {
+      "type": "message",
+      "id": "f8c7f57f",
+      "parentId": "3bd2a10b",
+      "timestamp": "2026-09-16T22:07:12.075Z",
+      "message": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "Task: Read /tmp/spacedock-dispatch/recorded-gate-task-implementation.md and treat its content as your assignment.\n\nWork only on recorded-gate-task at the implementation stage. Follow the assignment's completion contract and stop after returning completion."
+          }
+        ],
+        "timestamp": 1789596432072
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+    "line": 23,
+    "record": {
+      "type": "message",
+      "id": "2bd008e1",
+      "parentId": "aebb2e29",
+      "timestamp": "2026-09-16T22:07:44.746Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_KzHeJS7siIFMjfCTUzwUQCBr|fc_0b4ae0d071c09c39016aab132ef3c487d198593909f0a3032d",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "[spacedock-state/004 17307b8] Record implementation stage completion\n 1 file changed, 9 insertions(+)\n?? dirty-sibling.md\n17307b8 Record implementation stage completion\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596464746
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+    "line": 26,
+    "record": {
+      "type": "message",
+      "id": "a837e57d",
+      "parentId": "d97fe1a9",
+      "timestamp": "2026-09-16T22:07:58.294Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "Implemented recorded-gate-task implementation stage report.  \nChanged files: `.spacedock-state/recorded-gate-task/index.md`  \nValidation: committed as `17307b8`; exactly one implementation report; no staged files.\n\n```acceptance-report\n{\n  \"criteriaSatisfied\": [\n    {\n      \"id\": \"criterion-1\",\n      \"status\": \"satisfied\",\n      \"evidence\": \"Implementation stage completed with the required single stage report.\"\n    }\n  ],\n  \"changedFiles\": [\n    \".spacedock-state/recorded-gate-task/index.md\"\n  ],\n  \"testsAddedOrUpdated\": [],\n  \"commandsRun\": [\n    {\n      \"command\": \"spacedock dispatch show-stage-def ...\",\n      \"result\": \"passed\",\n      \"summary\": \"Confirmed implementation stage contract.\"\n    },\n    {\n      \"command\": \"grep count, spacedock status --read, git diff --cached --quiet\",\n      \"result\": \"passed\",\n      \"summary\": \"Verified one report, valid entity state, and no staged files.\"\n    }\n  ],\n  \"validationOutput\": [\n    \"Entity contains exactly one ## Stage Report: implementation.\"\n  ],\n  \"residualRisks\": [],\n  \"noStagedFiles\": true,\n  \"diffSummary\": \"Appended the implementation stage report.\",\n  \"reviewFindings\": [\n    \"no blockers\"\n  ],\n  \"manualNotes\": \"Committed path-scoped state change as 17307b8.\"\n}\n```",
+            "textSignature": "{\"v\":1,\"id\":\"msg_0b4ae0d071c09c39016aab1339a38087d19dad4404b737491f\",\"phase\":\"final_answer\"}"
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "stop",
+        "timestamp": 1789596469044,
+        "responseId": "resp_0b4ae0d071c09c39016aab1335708087d1a9541f4d3a1167d0",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 1,
+    "record": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0ac42-7a39-7739-bc31-a2d6d76b310e",
+      "timestamp": "2026-09-16T22:07:12.954Z",
+      "cwd": "/tmp/TestLiveCommonSameStageRevisionplain943901139/001"
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 94,
+    "record": {
+      "type": "message",
+      "id": "63c5f2d5",
+      "parentId": "29c7c878",
+      "timestamp": "2026-09-16T22:11:23.902Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_VgQ8aK0YivCSBESIoM037uEV|fc_0bf0dfa5882fda62016aab140af72487d1ac0a8d5549572042",
+            "name": "subagent",
+            "arguments": {
+              "agent": "worker",
+              "task": "Read /tmp/spacedock-dispatch/recorded-gate-task-validation.md and treat its content as your assignment.",
+              "context": "fresh",
+              "cwd": "/tmp/TestLiveCommonSameStageRevisionplain943901139/001",
+              "async": true,
+              "skill": "ensign",
+              "artifacts": true
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596676468,
+        "responseId": "resp_0bf0dfa5882fda62016aab1404d53887d19852a5739c2bd913",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 95,
+    "record": {
+      "type": "message",
+      "id": "7f548bb6",
+      "parentId": "63c5f2d5",
+      "timestamp": "2026-09-16T22:11:23.941Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_VgQ8aK0YivCSBESIoM037uEV|fc_0bf0dfa5882fda62016aab140af72487d1ac0a8d5549572042",
+        "toolName": "subagent",
+        "content": [
+          {
+            "type": "text",
+            "text": "Run fan-out: 1/64 used, 63 remaining\nAsync: worker [52dad98d-24bb-43e4-9bbc-c60eb12247e8]\n\nThe async run is detached. Do not run sleep timers or polling loops just to wait for it.\nThis is a non-interactive run: Pi auto-drains current-session subagent work at agent_end so detached children are not abandoned. Use bg_wait only when this turn must receive provider, detached, or other background-work results that have no native completion notification.\nUse subagent({ action: \"status\", id: \"...\" }) when you need a one-shot status/result or to inspect a blocked/stale run; do not poll in a loop.\nMission: 9da8522f-f6bf-481d-83bc-e32c9b16f80d (active)"
+          }
+        ],
+        "details": {
+          "mode": "single",
+          "runId": "52dad98d-24bb-43e4-9bbc-c60eb12247e8",
+          "results": [],
+          "asyncId": "52dad98d-24bb-43e4-9bbc-c60eb12247e8",
+          "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/52dad98d-24bb-43e4-9bbc-c60eb12247e8",
+          "launchContractDigest": "99ab8a2d7fbd5bc18fedffde688d7d427fe9142f1af6cf079cfdfae0678892e9",
+          "launchResolvedExtensions": {
+            "version": 1,
+            "source": "launch-resolved",
+            "disableAmbientExtensions": false,
+            "runtime": [
+              "sha256:918c74589726e55e"
+            ],
+            "configured": [],
+            "effective": [
+              "sha256:918c74589726e55e"
+            ],
+            "omitted": {
+              "runtime": 0,
+              "configured": 0,
+              "effective": 0
+            }
+          },
+          "context": "fresh",
+          "timeoutMs": 1800000,
+          "deadlineAt": 1789598483920,
+          "runFanoutBudget": {
+            "used": 1,
+            "limit": 64,
+            "remaining": 63
+          },
+          "missionId": "9da8522f-f6bf-481d-83bc-e32c9b16f80d",
+          "missionPath": "/tmp/TestLiveCommonSameStageRevision26070266/001/missions/projects/27892c11d9907258f061ce798fa1665e9094c1513a837cc8427e2923b9bf8f3e/9da8522f-f6bf-481d-83bc-e32c9b16f80d.json",
+          "mission": {
+            "schemaVersion": 1,
+            "id": "9da8522f-f6bf-481d-83bc-e32c9b16f80d",
+            "title": "[prompt redacted]",
+            "objective": "[prompt redacted]",
+            "status": "active",
+            "createdAt": "2026-09-16T22:11:23.913Z",
+            "updatedAt": "2026-09-16T22:11:23.940Z",
+            "runs": [
+              {
+                "runId": "52dad98d-24bb-43e4-9bbc-c60eb12247e8",
+                "mode": "single",
+                "asyncDir": "/tmp/pi-subagents-uid-1001/async-subagent-runs/52dad98d-24bb-43e4-9bbc-c60eb12247e8",
+                "status": "active",
+                "startedAt": "2026-09-16T22:11:23.939Z"
+              }
+            ],
+            "workflowChildren": [],
+            "decisions": [],
+            "artifacts": [
+              {
+                "kind": "status",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/52dad98d-24bb-43e4-9bbc-c60eb12247e8/status.json"
+              },
+              {
+                "kind": "other",
+                "path": "/tmp/pi-subagents-uid-1001/async-subagent-runs/52dad98d-24bb-43e4-9bbc-c60eb12247e8/events.jsonl",
+                "description": "Lifecycle events"
+              }
+            ],
+            "receipts": [],
+            "cwd": "/tmp/TestLiveCommonSameStageRevisionplain943901139/001",
+            "ownerSessionId": "/home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl"
+          }
+        },
+        "isError": false,
+        "timestamp": 1789596683941
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 98,
+    "record": {
+      "type": "custom_message",
+      "customType": "subagent-notify",
+      "content": "Background task completed: **worker**\n\nworker:\nImplemented the validation correction.\n\nChanged files: `selected/plan.md`, `index.md`  \nValidation: Plan byte-matches frozen input; path-scoped commits created.  \nOpen risks/questions: Pre-existing untracked `dirty-sibling.md` untouched.\n\nSession file: /home/runner/work/spacedock/spacedock/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+      "display": false,
+      "id": "ea1e35dd",
+      "parentId": "81fbb06a",
+      "timestamp": "2026-09-16T22:13:05.875Z"
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 99,
+    "record": {
+      "type": "message",
+      "id": "6855aa42",
+      "parentId": "ea1e35dd",
+      "timestamp": "2026-09-16T22:13:11.347Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_qVXzyWL83HPIBk4GrRGfSw0S|fc_0bf0dfa5882fda62016aab1476a98c87d1845b8bd9bb1cfc7f",
+            "name": "bash",
+            "arguments": {
+              "command": "grep -nE '^## Stage Report' .spacedock-state/recorded-gate-task/index.md; git -C .spacedock-state status --short --branch; git -C .spacedock-state log --oneline -5 -- recorded-gate-task",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596785877,
+        "responseId": "resp_0bf0dfa5882fda62016aab1472247c87d18cb5aee24410e971",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 100,
+    "record": {
+      "type": "message",
+      "id": "1e7fca68",
+      "parentId": "6855aa42",
+      "timestamp": "2026-09-16T22:13:11.357Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_qVXzyWL83HPIBk4GrRGfSw0S|fc_0bf0dfa5882fda62016aab1476a98c87d1845b8bd9bb1cfc7f",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "35:## Stage Report: validation\n44:## Stage Report: validation (cycle 1)\n## spacedock-state/001\n?? dirty-sibling.md\nd2177a4 Record validation correction commit\n02641c0 Correct recorded gate validation plan\n564eb5f dispatch: recorded-gate-task entering validation\n0b07538 gate: record recorded-gate-task validation revise\n3518253 prepare prior attempt\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596791357
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 101,
+    "record": {
+      "type": "message",
+      "id": "d5f56a97",
+      "parentId": "1e7fca68",
+      "timestamp": "2026-09-16T22:13:14.206Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_2s3UeYH1ZqjFW9MqJZCyohx5|fc_0bf0dfa5882fda62016aab1479972487d1aa6a31364ce4915a",
+            "name": "read",
+            "arguments": {
+              "path": "/tmp/TestLiveCommonSameStageRevisionplain943901139/001/.spacedock-state/recorded-gate-task/index.md",
+              "offset": 44,
+              "limit": 40
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596791359,
+        "responseId": "resp_0bf0dfa5882fda62016aab1478255487d1829308904d1ab304",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 102,
+    "record": {
+      "type": "message",
+      "id": "87c42cab",
+      "parentId": "d5f56a97",
+      "timestamp": "2026-09-16T22:13:14.208Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_2s3UeYH1ZqjFW9MqJZCyohx5|fc_0bf0dfa5882fda62016aab1479972487d1aa6a31364ce4915a",
+        "toolName": "read",
+        "content": [
+          {
+            "type": "text",
+            "text": "## Stage Report: validation (cycle 1)\n\n- DONE: Correct selected/plan.md so it exactly matches selected/frozen-input.txt\n  Byte comparison passed; the corrected plan is in commit 02641c0f1844733ef5223ce43ea02987114b7ae9.\n- DONE: Append a new validation stage report documenting the correction and commit the corrected entity and selected plan path-scoped\n  The corrected plan and cycle report are committed path-scoped in 02641c0f1844733ef5223ce43ea02987114b7ae9.\n\n### Summary\n\nCorrected the selected plan to retain message A and delete message B, matching the frozen input exactly. Recorded this validation correction cycle without changing the frozen review room or workflow policy.\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596794208
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 117,
+    "record": {
+      "type": "message",
+      "id": "d0721655",
+      "parentId": "8ef8f875",
+      "timestamp": "2026-09-16T22:14:18.074Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_xldrKOxqiOHhaQbTXcbTeH7B|fc_0bf0dfa5882fda62016aab14b5f1c887d191e7645d9df00a64",
+            "name": "bash",
+            "arguments": {
+              "command": "\"${SPACEDOCK_BIN:-spacedock}\" gate prepare recorded-gate-task \\\n  --question \"Does the corrected validation result show that selected/plan.md matches frozen-input.txt, and should the entity advance?\" \\\n  --artifact \"/tmp/TestLiveCommonSameStageRevisionplain943901139/001/.spacedock-state/recorded-gate-task/selected/plan.md\" \\\n  --summary \"Validation correction complete: selected/plan.md now byte-matches frozen-input.txt, the correction report is committed path-scoped, and no canonical correction round or Feedback Cycles projection applies. Ready for the captain's decision.\" \\\n  --reference \"/tmp/TestLiveCommonSameStageRevisionplain943901139/001/.spacedock-state/recorded-gate-task/selected/entity-snapshot.md\" \\\n  --reference \"/tmp/TestLiveCommonSameStageRevisionplain943901139/001/recorder-contract.md\" \\\n  --workflow-dir \"/tmp/TestLiveCommonSameStageRevisionplain943901139/001\"",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596850622,
+        "responseId": "resp_0bf0dfa5882fda62016aab14b2e0f087d1bd702fdd50788fe4",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 118,
+    "record": {
+      "type": "message",
+      "id": "67d1e034",
+      "parentId": "d0721655",
+      "timestamp": "2026-09-16T22:14:18.136Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_xldrKOxqiOHhaQbTXcbTeH7B|fc_0bf0dfa5882fda62016aab14b5f1c887d191e7645d9df00a64",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "room=/tmp/TestLiveCommonSameStageRevisionplain943901139/001/.spacedock-state/recorded-gate-task/review/validation/briefing-2\nbriefing=briefing:recorded-gate-task:validation:attempt-2:revision-1\ndigest=sha256:6bed0413e36752b009624c429a1db8ed0d7f470cd038cbf15ae5b9abf386090e\nstate=open\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596858136
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 119,
+    "record": {
+      "type": "message",
+      "id": "dbd0d7a7",
+      "parentId": "67d1e034",
+      "timestamp": "2026-09-16T22:14:21.068Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_5u5DUencgimUJlaZeNo1iHOb|fc_0bf0dfa5882fda62016aab14bc420087d1acbd4798e5a95a53",
+            "name": "bash",
+            "arguments": {
+              "command": "\"${SPACEDOCK_BIN:-spacedock}\" state commit recorded-gate-task --workflow-dir \"/tmp/TestLiveCommonSameStageRevisionplain943901139/001\"",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596858137,
+        "responseId": "resp_0bf0dfa5882fda62016aab14ba6e5087d1bf38a51b22562a49",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 120,
+    "record": {
+      "type": "message",
+      "id": "d1709a41",
+      "parentId": "dbd0d7a7",
+      "timestamp": "2026-09-16T22:14:21.100Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_5u5DUencgimUJlaZeNo1iHOb|fc_0bf0dfa5882fda62016aab14bc420087d1acbd4798e5a95a53",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "Committed recorded-gate-task locally; no origin remote \u2014 state is local-only until an origin is configured.\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596861100
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 135,
+    "record": {
+      "type": "message",
+      "id": "1487dbe9",
+      "parentId": "ef50b7d1",
+      "timestamp": "2026-09-16T22:15:31.228Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_Nvc38JvWdUjj8I6jDudjnFPl|fc_0bf0dfa5882fda62016aab1501bb3087d1971d9875e37be1ae",
+            "name": "bash",
+            "arguments": {
+              "command": "cmp --silent \"/tmp/TestLiveCommonSameStageRevisionplain943901139/001/.spacedock-state/recorded-gate-task/selected/plan.md\" \"/tmp/TestLiveCommonSameStageRevisionplain943901139/001/.spacedock-state/recorded-gate-task/selected/frozen-input.txt\" && printf '%s\\n' 'plan_vs_frozen=identical'",
+              "timeout": 120
+            }
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "toolUse",
+        "timestamp": 1789596921981,
+        "responseId": "resp_0bf0dfa5882fda62016aab14fa457087d185435bac8fef0a8d",
+        "rawStopReason": "completed"
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+    "line": 136,
+    "record": {
+      "type": "message",
+      "id": "1affffc6",
+      "parentId": "1487dbe9",
+      "timestamp": "2026-09-16T22:15:31.233Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_Nvc38JvWdUjj8I6jDudjnFPl|fc_0bf0dfa5882fda62016aab1501bb3087d1971d9875e37be1ae",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "plan_vs_frozen=identical\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596931233
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "line": 1,
+    "record": {
+      "type": "session",
+      "version": 3,
+      "id": "01a0ac46-52ec-73b3-8a07-695a626f1e27",
+      "timestamp": "2026-09-16T22:11:25.037Z",
+      "cwd": "/tmp/TestLiveCommonSameStageRevisionplain943901139/001"
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "line": 4,
+    "record": {
+      "type": "session_info",
+      "id": "cc98e682",
+      "parentId": "e13319ab",
+      "timestamp": "2026-09-16T22:11:25.045Z",
+      "name": "subagent-worker-52dad98d-24bb-43e4-9bbc-c60eb12247e8-1"
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "line": 5,
+    "record": {
+      "type": "message",
+      "id": "a72c9cc7",
+      "parentId": "cc98e682",
+      "timestamp": "2026-09-16T22:11:25.050Z",
+      "message": {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "Task: Read /tmp/spacedock-dispatch/recorded-gate-task-validation.md and treat its content as your assignment."
+          }
+        ],
+        "timestamp": 1789596685045
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "line": 31,
+    "record": {
+      "type": "message",
+      "id": "d8eb4e00",
+      "parentId": "ddaaf5a9",
+      "timestamp": "2026-09-16T22:12:22.545Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_QYnCtQEWHAoF7FKGNvtJObS7|fc_0565532ef682ac4b016aab1443cd6487d198e9993f1b1e0de0",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "cmp: identical\n\nDiff stat:\n recorded-gate-task/index.md         | 11 +++++++++++\n recorded-gate-task/selected/plan.md |  2 +-\n 2 files changed, 12 insertions(+), 1 deletion(-)\n\nStatus:\n M recorded-gate-task/index.md\n M recorded-gate-task/selected/plan.md\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596742545
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "line": 33,
+    "record": {
+      "type": "message",
+      "id": "64f21162",
+      "parentId": "decf525c",
+      "timestamp": "2026-09-16T22:12:28.353Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_DwJc7wjeIf7VzuTOcTtXOwBn|fc_0565532ef682ac4b016aab144918fc87d1b3b1de0f3843edb6",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "[spacedock-state/001 02641c0] Correct recorded gate validation plan\n 2 files changed, 12 insertions(+), 1 deletion(-)\n02641c0f1844733ef5223ce43ea02987114b7ae9 Correct recorded gate validation plan\n?? dirty-sibling.md\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596748353
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "line": 37,
+    "record": {
+      "type": "message",
+      "id": "5006b0a6",
+      "parentId": "54b68de4",
+      "timestamp": "2026-09-16T22:12:40.183Z",
+      "message": {
+        "role": "toolResult",
+        "toolCallId": "call_YZwYPEsbzd85Yf5vWa1t6bYj|fc_0565532ef682ac4b016aab1455c2a487d1a87819e817e23c1e",
+        "toolName": "bash",
+        "content": [
+          {
+            "type": "text",
+            "text": "[spacedock-state/001 d2177a4] Record validation correction commit\n 1 file changed, 2 insertions(+), 2 deletions(-)\nd2177a4aff0bb034f49874d26fcece9aa37c5987 Record validation correction commit\n02641c0f1844733ef5223ce43ea02987114b7ae9 Correct recorded gate validation plan\n?? dirty-sibling.md\n"
+          }
+        ],
+        "isError": false,
+        "timestamp": 1789596760182
+      }
+    }
+  },
+  {
+    "source": "live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+    "line": 40,
+    "record": {
+      "type": "message",
+      "id": "5ec81b6c",
+      "parentId": "d847a9d0",
+      "timestamp": "2026-09-16T22:13:05.677Z",
+      "message": {
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "Implemented the validation correction.\n\nChanged files: `selected/plan.md`, `index.md`  \nValidation: Plan byte-matches frozen input; path-scoped commits created.  \nOpen risks/questions: Pre-existing untracked `dirty-sibling.md` untouched.\n\n```acceptance-report\n{\n  \"criteriaSatisfied\": [\n    {\n      \"id\": \"criterion-1\",\n      \"status\": \"satisfied\",\n      \"evidence\": \"Plan corrected to exactly match frozen input.\"\n    },\n    {\n      \"id\": \"criterion-2\",\n      \"status\": \"satisfied\",\n      \"evidence\": \"Cycle 1 validation report appended with DONE evidence and commits 02641c0 and d2177a4.\"\n    }\n  ],\n  \"changedFiles\": [\n    \".spacedock-state/recorded-gate-task/selected/plan.md\",\n    \".spacedock-state/recorded-gate-task/index.md\"\n  ],\n  \"testsAddedOrUpdated\": [],\n  \"commandsRun\": [\n    {\n      \"command\": \"spacedock dispatch show-stage-def ... --stage validation\",\n      \"result\": \"passed\",\n      \"summary\": \"Loaded validation stage definition.\"\n    },\n    {\n      \"command\": \"cmp -s selected/plan.md selected/frozen-input.txt\",\n      \"result\": \"passed\",\n      \"summary\": \"Files are byte-identical.\"\n    },\n    {\n      \"command\": \"git diff --cached --name-only\",\n      \"result\": \"passed\",\n      \"summary\": \"No staged files remain.\"\n    }\n  ],\n  \"validationOutput\": [\n    \"plan-vs-frozen: identical\"\n  ],\n  \"residualRisks\": [\n    \"Pre-existing untracked dirty-sibling.md was not modified.\"\n  ],\n  \"noStagedFiles\": true,\n  \"diffSummary\": \"Corrected selected plan and appended validation correction-cycle report.\",\n  \"reviewFindings\": [\n    \"no blockers\"\n  ],\n  \"manualNotes\": \"State changes were committed path-scoped.\"\n}\n```",
+            "textSignature": "{\"v\":1,\"id\":\"msg_0565532ef682ac4b016aab146a6a5487d1a4b9e0fad06b43cf\",\"phase\":\"final_answer\"}"
+          }
+        ],
+        "api": "openai-codex-responses",
+        "provider": "openai-codex",
+        "model": "gpt-5.6-luna",
+        "stopReason": "stop",
+        "timestamp": 1789596769226,
+        "responseId": "resp_0565532ef682ac4b016aab1461f08087d1a0e0e6764f9f15a7",
+        "rawStopReason": "completed"
+      }
+    }
+  }
+]

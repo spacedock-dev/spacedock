@@ -1,0 +1,100 @@
+{
+  "run": 35149242496,
+  "artifact_id": 10471612473,
+  "source_head": "d0a6f413af32fa69ac9da4af2c74c0086fcca812",
+  "ci_checkout": "3f23437 Merge d0a6f413af32fa69ac9da4af2c74c0086fcca812 into 85bd948e626f3522869fb577d8139330f73f176b",
+  "projection": "Selected original records; thinking/signatures and usage removed. Original source line positions retained. No completion events invented.",
+  "sources": [
+    {
+      "path": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+      "sha256": "5db94f1f52a73a0a060735dcd8dc831cf3e4ee6074ece10b6ffb538915bb4a7e",
+      "retained_lines": [
+        1,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54,
+        55,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82
+      ]
+    },
+    {
+      "path": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+      "sha256": "d951dc5702ac6cd585347d45b91afcbb8f446dda16b27d74b4fc6610e4ee78f0",
+      "retained_lines": [
+        1,
+        4,
+        5,
+        23,
+        26
+      ]
+    },
+    {
+      "path": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+      "sha256": "b2115b7a4549a0453b24a8ba8df8bd018c661808d82d22f0302dffd8a768a732",
+      "retained_lines": [
+        1,
+        94,
+        95,
+        98,
+        99,
+        100,
+        101,
+        102,
+        117,
+        118,
+        119,
+        120,
+        135,
+        136
+      ]
+    },
+    {
+      "path": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+      "sha256": "47ba89d85988d78357be9959e17125fb8561d0d862f476ca3c7f7f9983b7acd1",
+      "retained_lines": [
+        1,
+        4,
+        5,
+        31,
+        33,
+        37,
+        40
+      ]
+    },
+    {
+      "path": "/tmp/spacedock-tip35149242496-pi/pi-coverage-detail.jsonl",
+      "sha256": "d191c4d8ee928756e03bad60a66ebfcf52fec074855e372a784b132dd459a65a"
+    },
+    {
+      "path": "/tmp/spacedock-tip35149242496-pi/pi-front-door-smoke-detail.jsonl",
+      "sha256": "f0397c5ede40f3776d04551694af770985823b3d3220e4acda7249fb50ad9001"
+    },
+    {
+      "path": "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/pi-native-completion-evidence/artifacts/validation/tip35149242496/self-feedback-state.bundle",
+      "sha256": "4d3ab8b13f2db9459c1257f8f39086282a192c0b6f0595ca90b50959f7f52b7b"
+    },
+    {
+      "path": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/default-headless-gate-stop/command.log",
+      "sha256": "ec53d4a41dee596155e72164cd61eacc955e2e3062fd196867102b197d5dded8"
+    },
+    {
+      "path": "/tmp/spacedock-tip-35149242496-pi-failures.log",
+      "sha256": "bc95b81a152703d070ff0ed301a4df77efa36acd7261037b365780f0645e75ec"
+    }
+  ]
+}
