@@ -1,0 +1,58 @@
+{
+  "run": 35149242496,
+  "source_head": "d0a6f413af32fa69ac9da4af2c74c0086fcca812",
+  "ci_merge": "3f23437d91c98bcf4cba93e52d0f1da2761d2cb1",
+  "equal_source_and_merge_tree": "717d412d4b2b0f2ede3246c6f25f8a49d8d8d252",
+  "projection": "Selected original fields/records; omitted parent records remain blank lines to preserve native positions. Prefix blank lines preserve joined stdout/stderr offset. No completion events invented; child and parent remain separate. Omitted model reasoning/signatures/usage and unrelated result details.",
+  "sources": [
+    {
+      "fixture": "sync-parent.jsonl",
+      "source": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122.jsonl",
+      "source_sha256": "5db94f1f52a73a0a060735dcd8dc831cf3e4ee6074ece10b6ffb538915bb4a7e",
+      "source_lines": [
+        1,
+        46,
+        47,
+        54
+      ],
+      "stream_prefix_lines": 20
+    },
+    {
+      "fixture": "sync-child.jsonl",
+      "source": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/default-headless-gate-stop/sessions/2026-09-16T22-05-09-086Z_01a0ac40-965d-7626-af4f-a8921b872122/6b3a7071-a2eb-48ba-8235-e1d0352bad43/run-0/session.jsonl",
+      "source_sha256": "d951dc5702ac6cd585347d45b91afcbb8f446dda16b27d74b4fc6610e4ee78f0",
+      "source_lines": [
+        1,
+        4,
+        5,
+        26
+      ],
+      "stream_prefix_lines": 0
+    },
+    {
+      "fixture": "route-parent.jsonl",
+      "source": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e.jsonl",
+      "source_sha256": "b2115b7a4549a0453b24a8ba8df8bd018c661808d82d22f0302dffd8a768a732",
+      "source_lines": [
+        1,
+        94,
+        95,
+        98,
+        117
+      ],
+      "stream_prefix_lines": 19
+    },
+    {
+      "fixture": "route-child.jsonl",
+      "source": "/tmp/spacedock-tip35149242496-pi/live-artifacts/pi/pi-common/self-feedback/plain/sessions/2026-09-16T22-07-12-954Z_01a0ac42-7a39-7739-bc31-a2d6d76b310e/5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d/run-0/session.jsonl",
+      "source_sha256": "47ba89d85988d78357be9959e17125fb8561d0d862f476ca3c7f7f9983b7acd1",
+      "source_lines": [
+        1,
+        4,
+        5,
+        40
+      ],
+      "stream_prefix_lines": 0
+    }
+  ]
+}

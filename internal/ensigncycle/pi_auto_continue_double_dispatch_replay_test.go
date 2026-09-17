@@ -215,3 +215,149 @@ func TestPiNativeCompletionAttributionAndOrdering(t *testing.T) {
 		})
 	}
 }
+
+func capturedPiTipCompletion(t *testing.T, name string) (stream, artifacts, childPath string) {
+	t.Helper()
+	parent := readFile(t, filepath.Join("testdata", "pi_native_completion", name+"-parent.jsonl"))
+	child := readFile(t, filepath.Join("testdata", "pi_native_completion", name+"-child.jsonl"))
+	offset, resultLine, notifyLine := 20, 46, -1
+	if name == "route" {
+		offset, resultLine, notifyLine = 19, 94, 97
+	}
+	lines := strings.Split(parent, "\n")
+	var result piSessionRecord
+	if err := json.Unmarshal([]byte(lines[resultLine]), &result); err != nil {
+		t.Fatal(err)
+	}
+	owner := result.Message.Details.Mission.OwnerSessionID
+	var locator string
+	if notifyLine >= 0 {
+		var notice piSessionRecord
+		if err := json.Unmarshal([]byte(lines[notifyLine]), &notice); err != nil {
+			t.Fatal(err)
+		}
+		locator = strings.Split(notice.Content, "Session file: ")[1]
+	} else {
+		var record struct {
+			Message struct {
+				Details struct {
+					Results []struct {
+						SessionFile string `json:"sessionFile"`
+					} `json:"results"`
+				}
+			}
+		}
+		if err := json.Unmarshal([]byte(lines[resultLine]), &record); err != nil {
+			t.Fatal(err)
+		}
+		locator = record.Message.Details.Results[0].SessionFile
+	}
+	rel, err := filepath.Rel(strings.TrimSuffix(owner, ".jsonl"), locator)
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifacts = t.TempDir()
+	writeFile(t, filepath.Join(artifacts, "sessions", filepath.Base(owner)), parent)
+	childPath = filepath.Join(artifacts, "sessions", strings.TrimSuffix(filepath.Base(owner), ".jsonl"), rel)
+	writeFile(t, childPath, child)
+	return strings.Repeat("\n", offset) + parent, artifacts, childPath
+}
+
+func TestPiNativeSynchronousCapturedReplay(t *testing.T) {
+	stream, artifacts, _ := capturedPiTipCompletion(t, "sync")
+	report := "## Stage Report: implementation\n- DONE: retained report\n"
+	if err := assertImplementationWorkerLifecycle(stream, report, artifacts); err != nil {
+		t.Fatal(err)
+	}
+	routes, _, routeErr := piRejectionRoutes(stream, artifacts)
+	if routeErr != nil || len(routes) != 2 || routes[0].index != 65 || routes[1].index != 66 {
+		t.Fatalf("sync route boundary: %v %v", routes, routeErr)
+	}
+	completed, err := piNativeCompletion(stream, "implementation", artifacts)
+	if err != nil || completed != 66 {
+		t.Fatalf("completion=%d want 66 before boundary 73: %v", completed, err)
+	}
+}
+
+// The synchronous boundary must have explicit native success, never missing
+// fields defaulting to exit zero or completion prose standing in for a child.
+func TestPiNativeSynchronousNegativeControls(t *testing.T) {
+	for _, name := range []string{"wrong-call", "wrong-run", "wrong-agent", "wrong-owner", "missing-results", "multiple-results", "missing-exit", "nonzero-exit", "missing-success", "error-result", "missing-output", "missing-locator", "missing-child", "task", "cwd", "epoch", "error-stop", "late-stop", "result-before-spawn", "result-after-advance", "duplicate-result"} {
+		t.Run(name, func(t *testing.T) {
+			stream, artifacts, path := capturedPiTipCompletion(t, "sync")
+			rows := strings.Split(stream, "\n")
+			var result piSessionRecord
+			if err := json.Unmarshal([]byte(rows[66]), &result); err != nil {
+				t.Fatal(err)
+			}
+			child := readFile(t, path)
+			switch name {
+			case "wrong-call":
+				result.Message.ToolCallID = "other"
+			case "wrong-run":
+				result.Message.Details.RunID = "other"
+			case "wrong-agent":
+				result.Message.Details.Results[0].Agent = "other"
+			case "wrong-owner":
+				result.Message.Details.Mission.OwnerSessionID = "/outside/other.jsonl"
+			case "missing-results":
+				result.Message.Details.Results = nil
+			case "multiple-results":
+				result.Message.Details.Results = append(result.Message.Details.Results, result.Message.Details.Results[0])
+			case "missing-exit":
+				result.Message.Details.Results[0].ExitCode = nil
+			case "nonzero-exit":
+				n := 1
+				result.Message.Details.Results[0].ExitCode = &n
+			case "missing-success":
+				result.Message.IsError = nil
+			case "error-result":
+				b := true
+				result.Message.IsError = &b
+			case "missing-output":
+				result.Message.Details.Results[0].OutputState = ""
+			case "missing-locator":
+				result.Message.Details.Results[0].SessionFile = ""
+			case "missing-child":
+				if err := os.Remove(path); err != nil {
+					t.Fatal(err)
+				}
+			case "task":
+				child = strings.ReplaceAll(child, "recorded-gate-task-implementation.md", "other-task-implementation.md")
+			case "cwd":
+				child = strings.ReplaceAll(child, "2958864088/004", "2958864088/005")
+			case "epoch":
+				child = strings.ReplaceAll(child, "6b3a7071-a2eb-48ba-8235-e1d0352bad43-1", "6b3a7071-a2eb-48ba-8235-e1d0352bad43-2")
+			case "error-stop":
+				child = strings.ReplaceAll(child, `"stopReason":"stop"`, `"stopReason":"error"`)
+			case "late-stop":
+				child = strings.ReplaceAll(child, "22:07:58.294Z", "22:08:58.294Z")
+			}
+			raw, err := json.Marshal(result)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rows[66] = string(raw)
+			switch name {
+			case "result-before-spawn":
+				rows[64], rows[66] = rows[66], rows[64]
+			case "result-after-advance":
+				rows = append(rows, rows[66])
+				rows[66] = ""
+			case "duplicate-result":
+				rows = append(rows, rows[66])
+			}
+			if name != "missing-child" {
+				writeFile(t, path, child)
+			}
+			stream = strings.Join(rows, "\n")
+			if err := assertImplementationWorkerLifecycle(stream, "## Stage Report: implementation\n- DONE: report\n", artifacts); err == nil {
+				t.Fatal("invalid sync completion accepted")
+			}
+			routes, _, err := piRejectionRoutes(stream, artifacts)
+			if err == nil && assertSameStageWorkers(routes, false) == nil {
+				t.Fatal("invalid sync evidence accepted by route observer")
+			}
+		})
+	}
+}

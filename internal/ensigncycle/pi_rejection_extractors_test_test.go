@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -123,7 +124,10 @@ func TestPiRejectionRoutesFreshChain(t *testing.T) {
 	for _, prefix := range []string{"spacedock-ensign-", ""} {
 		t.Run("prefix="+prefix, func(t *testing.T) {
 			session := strings.ReplaceAll(piFreshChainSession(t), "spacedock-ensign-", prefix)
-			routes, branch := piRejectionRoutes(session)
+			routes, branch, err := piRejectionRoutes(session)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if branch != rejectionBranchFresh {
 				t.Fatalf("Pi branch = %q, want %q", branch, rejectionBranchFresh)
 			}
@@ -158,7 +162,10 @@ func TestPiRejectionRoutesFreshChain(t *testing.T) {
 
 			// Falsifier: a chain missing the final completion reds.
 			truncated := strings.Join(strings.Split(session, "\n")[:len(strings.Split(session, "\n"))-2], "\n")
-			truncRoutes, _ := piRejectionRoutes(truncated)
+			truncRoutes, _, err := piRejectionRoutes(truncated)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if err := assertRejectionWorkerTopology(rejectionBranchFresh, truncRoutes); err == nil {
 				t.Fatal("a truncated chain missing the final completion graded green")
 			}
@@ -196,7 +203,10 @@ func piFreshChainSession(t *testing.T) string {
 // check (validation worker ≠ implementation worker) holds on the derived handles.
 func TestPiRejectionRoutesHandleCorrelation(t *testing.T) {
 	session := piFreshChainSession(t)
-	routes, _ := piRejectionRoutes(session)
+	routes, _, err := piRejectionRoutes(session)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if routes[0].target != piImplHandle {
 		t.Fatalf("route 0 target = %q, want %q", routes[0].target, piImplHandle)
 	}
@@ -232,7 +242,10 @@ func TestPiRejectionRoutesRunIDCorrelation(t *testing.T) {
 		piToolResultLine("status-a", "subagent", "Run: run-a\n1. worker completed, exit 0, accept", false),
 	}
 	session := strings.Join(lines, "\n")
-	routes, _ := piRejectionRoutes(session)
+	routes, _, err := piRejectionRoutes(session)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(routes) != 4 {
 		t.Fatalf("interleaved session produced %d routes, want 4: %s", len(routes), rejectionTopologySummary(routes))
 	}
@@ -242,5 +255,90 @@ func TestPiRejectionRoutesRunIDCorrelation(t *testing.T) {
 	}
 	if routes[3].stage != "implementation" || routes[3].event != routeDone {
 		t.Fatalf("route 3 = %s/%s, want done/implementation: %s", routes[3].event, routes[3].stage, rejectionTopologySummary(routes))
+	}
+}
+
+func TestPiNativeSameStageCapturedRoutes(t *testing.T) {
+	stream, artifacts, _ := capturedPiTipCompletion(t, "route")
+	if err := assertWorkerLifecycle(stream, "## Stage Report: validation\n- DONE: work\n", "validation", "gate prepare", artifacts); err != nil {
+		t.Fatal(err)
+	}
+	routes, _, err := piRejectionRoutes(stream, artifacts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := assertSameStageWorkers(routes, false); err != nil {
+		t.Fatalf("captured correction ended before gate135: %v; routes=%v", err, routes)
+	}
+	if len(routes) != 2 || routes[0].index != 112 || routes[1].index != 116 || routes[0].target != routes[1].target {
+		t.Fatalf("want exact spawn112/done116 before gate135: %v", routes)
+	}
+}
+
+func TestPiNativeRoutesKeepSameStageDispatchesDistinct(t *testing.T) {
+	for _, name := range []string{"independent-review", "missing-review-completion", "earlier-worker-notice", "reused-run", "after-gate", "wrong-call", "missing-child", "error-child", "stale-result"} {
+		t.Run(name, func(t *testing.T) {
+			stream, artifacts, path := capturedPiTipCompletion(t, "route")
+			rows := strings.Split(stream, "\n")
+			// Derive a second fresh native dispatch from the captured shape. This is an
+			// adversarial control, not another claimed capture. Same stage/task, new run.
+			var spawn, result, notice piSessionRecord
+			for _, v := range []struct {
+				n int
+				p *piSessionRecord
+			}{{112, &spawn}, {113, &result}, {116, &notice}} {
+				if err := json.Unmarshal([]byte(rows[v.n]), v.p); err != nil {
+					t.Fatal(err)
+				}
+			}
+			oldRun := result.Message.Details.RunID
+			oldCall := result.Message.ToolCallID
+			second := []string{strings.ReplaceAll(rows[112], oldCall, "review-call"), strings.ReplaceAll(strings.ReplaceAll(rows[113], oldCall, "review-call"), oldRun, "review-run"), strings.ReplaceAll(rows[116], "5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d", "review-child")}
+			child := strings.ReplaceAll(readFile(t, path), oldRun, "review-run")
+			otherPath := strings.ReplaceAll(path, "5ea1a86d-7b4e-4ca2-9148-2b8bb5d1ba2d", "review-child")
+			// Keep each dispatch/child/result chronology valid while placing reviewer
+			// events after the correction and before the captured gate.
+			second[0] = strings.ReplaceAll(second[0], "22:11:23.902Z", "22:13:06.000Z")
+			second[1] = strings.ReplaceAll(second[1], result.Timestamp, "2026-09-16T22:13:06.100Z")
+			child = strings.ReplaceAll(child, "22:11:25.037Z", "22:13:07.000Z")
+			child = strings.ReplaceAll(child, "22:13:05.677Z", "22:13:08.000Z")
+			second[2] = strings.ReplaceAll(second[2], "22:13:05.875Z", "22:13:09.000Z")
+			switch name {
+			case "stale-result":
+				second[1] = strings.ReplaceAll(second[1], "22:13:06.100Z", "22:11:06.100Z")
+			case "missing-review-completion":
+				second[2] = ""
+			case "earlier-worker-notice":
+				second[2] = rows[116]
+			case "reused-run":
+				second[1] = strings.ReplaceAll(second[1], "review-run", oldRun)
+			case "wrong-call":
+				second[1] = strings.ReplaceAll(second[1], "review-call", "wrong-call")
+			case "error-child":
+				child = strings.ReplaceAll(child, `"stopReason":"stop"`, `"stopReason":"error"`)
+			}
+			if name != "missing-child" {
+				writeFile(t, otherPath, child)
+			}
+			rows[120], rows[121], rows[122] = second[0], second[1], second[2]
+			if name == "after-gate" {
+				rows = append(rows, rows[122])
+				rows[122] = ""
+			}
+			routes, _, err := piRejectionRoutes(strings.Join(rows, "\n"), artifacts)
+			if name == "independent-review" {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := assertSameStageWorkers(routes, true); err != nil {
+					t.Fatal(err)
+				}
+				if len(routes) != 4 || routes[0].target == routes[2].target || routes[0].target != routes[1].target || routes[2].target != routes[3].target || routes[3].index != 122 {
+					t.Fatalf("dispatch correlation lost: %v", routes)
+				}
+			} else if err == nil && assertSameStageWorkers(routes, true) == nil {
+				t.Fatalf("%s incorrectly completed reviewer: %v", name, routes)
+			}
+		})
 	}
 }
