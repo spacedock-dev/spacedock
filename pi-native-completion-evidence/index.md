@@ -137,3 +137,23 @@ Scope is five existing Go test/harness files (`pi_native_completion_test.go`, `p
 Source head `d0a6f413af32fa69ac9da4af2c74c0086fcca812` and CI merge `3f23437d91c98bcf4cba93e52d0f1da2761d2cb1` share full tree `717d412d4b2b0f2ede3246c6f25f8a49d8d8d252`; raw source hashes and selected record positions accompany the fixtures. Original default durability remains transcript/shim evidence without a Git bundle; the same-stage bundle and its independent checks remain retained in the validation artifacts. This correction does not reclassify CI 35149242496 as green.
 
 Exact `gofmt -w ./cmd ./internal` ran; the unrelated pre-existing release-test spacing was restored and final touched files formatted. `git diff --check` passes. Full `go test ./...` and race suites are deliberately deferred to the FO’s combined final tip after #801; this worker did not run them, touch #801, rebase or push. All six same-stage native variants remain pending final tip CI: `plain` previously failed; `review-required`, `separate-review-required`, `round-required`, `round-missing`, and `cycle-limit` were unstarted (not skipped or passed). Independent validation and final native CI are still owed; no frontend/outcome threshold was relaxed.
+
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Reconcile the owned runner conflict while preserving both independently validated #801 semantics and Pi native completion routing.
+  Rebased head `0997b6b7590a5a89ba979194238e93f7f47d94e4` preserves native spawn counting and actual recorder exit interception alongside Pi artifact-root routing; the two-hunk range diff is retained in `artifacts/implementation/reconciliation/range-diff.txt`.
+- DONE: Verify the affected observers and live-tag compilation without broad or native model runs.
+  Focused normal checks pass (exit 0, 322.229s), including native identity/reuse, recorder exit controls, Pi sync/async attribution/order and downstream gate checks; live-tag compile-only passes (exit 0, 1.168s, no tests selected). Logs and exact selector are retained in `artifacts/implementation/reconciliation/`.
+- DONE: Report exact rebased head, scope, focused evidence and remaining combined validation obligations.
+  Old head `8fca2b12b3ed272f59ea6ea465ed3ac4d574c7ae` is reconciled onto `c572d62f05ae57d643dbaab5ecfb7de4a2ccff31`; rewritten commits are `d91dcc9dada97779546082f2ee4cb962881c94df` and `0997b6b7590a5a89ba979194238e93f7f47d94e4`. Combined validation and CI remain pending below.
+
+### Summary
+
+The first Pi commit applied unchanged. The second conflicted only in `internal/ensigncycle/claude_live_runner_test.go`: the same-stage check retains #801's `countRouteEvents(routes, routeSpawn) > 1` predicate with Pi `routeErr` propagation; rejection routing retains #801's non-Pi actual command-log/recorder-exit interception with Pi artifact-root completion routing. No new mechanism, relaxed control or unrelated code change was introduced; `conflict.diff`, `range-diff.txt`, `surface.txt` and `commands.txt` retain the reconciliation evidence.
+
+The focused identity/reuse tests reject missing or wrong native completion identity; accepting a shared display name as worker identity would break those controls. Recorder execution and the launcher test verify actual successful publication and reject echo-only, failed-inner-recorder, duplicate and second-round calls; the launcher test uses a temporary stub host, with no model invocation. Pi sync/async negatives still reject wrong dispatch, run, epoch, missing child or late completion, and the original absent-gate/uncommitted-report controls still reject independently; crediting completion prose or bypassing durable checks would break these controls.
+
+`gofmt -w ./cmd ./internal` completed with exit 0. Only the unrelated pre-existing `internal/release/runtime_live_evidence_workflow_test.go` spacing changed; its exact HEAD bytes were restored. `git diff --check` passes and the code worktree is clean. No broad normal/race suite, native/model run, CI or push was performed during this reconciliation. Independent validation owns the final combined normal/race commands; this report does not claim those suites passed. The prior full-suite exit-1 installed-manifest resolver failure and FO DECLINED disposition remain unchanged in the earlier report.
+
+Final tip CI and all six same-stage native variants remain owed: `plain` previously failed; `review-required`, `separate-review-required`, `round-required`, `round-missing`, and `cycle-limit` were unstarted, not passed. AC-3 remains pending. State synchronization is left to the FO under the explicit no-push assignment.

@@ -1,0 +1,22 @@
+1:  d0a6f413a = 1:  d91dcc9da test(ensigncycle): correlate native Pi completion evidence
+2:  8fca2b12b ! 2:  0997b6b75 test(ensigncycle): observe synchronous and routed Pi completions
+    @@ internal/ensigncycle/claude_live_runner_test.go: func runSameStageRevisionJourne
+      			requiresReview := strings.HasSuffix(variant, "review-required")
+      			// Missing evidence may stop before a reviewer is dispatched; any review
+      			// that does run must still complete independently of the correction.
+    --			checks := []error{durableSemantic("self-feedback-obligations", assert(routes, requiresReview && len(routes) > 2))}
+    -+			checks := []error{durableSemantic("self-feedback-obligations", routeErr), durableSemantic("self-feedback-obligations", assert(routes, requiresReview && len(routes) > 2))}
+    +-			checks := []error{durableSemantic("self-feedback-obligations", assert(routes, requiresReview && countRouteEvents(routes, routeSpawn) > 1))}
+    ++			checks := []error{durableSemantic("self-feedback-obligations", routeErr), durableSemantic("self-feedback-obligations", assert(routes, requiresReview && countRouteEvents(routes, routeSpawn) > 1))}
+      			check := func(ok bool, why string) {
+      				if !ok {
+      					checks = append(checks, durableSemantic("self-feedback-obligations", fmt.Errorf("%s", why)))
+    @@ internal/ensigncycle/claude_live_runner_test.go: func runClaudeRejectionFlowScen
+      	// topology at all.
+      	routes, branch := claudeRejectionRoutes(result.stream)
+     +	var routeErr error
+    - 	if _, ok := runner.(codexAsLiveDriver); ok {
+    + 	if _, pi := runner.(piSharedLiveDriver); !pi {
+      		log := readFile(t, commandLog)
+      		writeFile(t, filepath.Join(result.artifactDir, "command.log"), log)
+     @@ internal/ensigncycle/claude_live_runner_test.go: func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh

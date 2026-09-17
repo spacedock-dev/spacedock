@@ -1,0 +1,19 @@
+ .../ensigncycle/auto_continue_fixtures_test.go     |   4 +-
+ internal/ensigncycle/claude_live_runner_test.go    |  11 +-
+ .../ensigncycle/claude_runtime_helpers_test.go     |  15 +-
+ ...pi_auto_continue_double_dispatch_replay_test.go | 314 ++++++++++++++++++++-
+ internal/ensigncycle/pi_native_completion_test.go  | 235 +++++++++++++++
+ .../ensigncycle/pi_rejection_extractors_test.go    |  86 +++++-
+ .../pi_rejection_extractors_test_test.go           | 106 ++++++-
+ internal/ensigncycle/shared_promoted_live_test.go  |   2 +-
+ .../testdata/pi_native_completion/auto-child.jsonl |   4 +
+ .../pi_native_completion/auto-parent.jsonl         |   7 +
+ .../pi_native_completion/default-child.jsonl       |   4 +
+ .../pi_native_completion/default-parent.jsonl      |   5 +
+ .../testdata/pi_native_completion/provenance.json  |  54 ++++
+ .../pi_native_completion/route-child.jsonl         |   4 +
+ .../pi_native_completion/route-parent.jsonl        | 117 ++++++++
+ .../testdata/pi_native_completion/sync-child.jsonl |   4 +
+ .../pi_native_completion/sync-parent.jsonl         |  54 ++++
+ .../tip35149242496-provenance.json                 |  58 ++++
+ 18 files changed, 1057 insertions(+), 27 deletions(-)

@@ -1,0 +1,36 @@
+diff --cc internal/ensigncycle/claude_live_runner_test.go
+index d4cac2431,520a284b3..000000000
+--- a/internal/ensigncycle/claude_live_runner_test.go
++++ b/internal/ensigncycle/claude_live_runner_test.go
+@@@ -443,7 -444,7 +444,11 @@@ func runSameStageRevisionJourney(t *tes
+  			requiresReview := strings.HasSuffix(variant, "review-required")
+  			// Missing evidence may stop before a reviewer is dispatched; any review
+  			// that does run must still complete independently of the correction.
+++<<<<<<< HEAD
+ +			checks := []error{durableSemantic("self-feedback-obligations", assert(routes, requiresReview && countRouteEvents(routes, routeSpawn) > 1))}
+++=======
++ 			checks := []error{durableSemantic("self-feedback-obligations", routeErr), durableSemantic("self-feedback-obligations", assert(routes, requiresReview && len(routes) > 2))}
+++>>>>>>> 8fca2b12b (test(ensigncycle): observe synchronous and routed Pi completions)
+  			check := func(ok bool, why string) {
+  				if !ok {
+  					checks = append(checks, durableSemantic("self-feedback-obligations", fmt.Errorf("%s", why)))
+@@@ -525,13 -526,12 +530,18 @@@ func runClaudeRejectionFlowScenario(t *
+  	// public `codex exec --json` stream carries only `wait` collab items and no
+  	// topology at all.
+  	routes, branch := claudeRejectionRoutes(result.stream)
+++<<<<<<< HEAD
+ +	if _, pi := runner.(piSharedLiveDriver); !pi {
+++=======
++ 	var routeErr error
++ 	if _, ok := runner.(codexAsLiveDriver); ok {
+++>>>>>>> 8fca2b12b (test(ensigncycle): observe synchronous and routed Pi completions)
+  		log := readFile(t, commandLog)
+  		writeFile(t, filepath.Join(result.artifactDir, "command.log"), log)
+ -		publications = codexRejectionRoundPublications(log)
+ +		publications = recorderRejectionRoundPublications(log)
+  		recordedRound = slices.Contains(publications, "validation/1")
+ +	}
+ +	if _, ok := runner.(codexAsLiveDriver); ok {
+  		routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
+  	}
+  	if _, ok := runner.(piSharedLiveDriver); ok {

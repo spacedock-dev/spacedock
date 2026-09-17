@@ -1,0 +1,30 @@
+Code worktree: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-native-completion-evidence
+Old parent: b0a3119cb06d6b675cea6a5eb4a7522615b76788
+Old head: 8fca2b12b3ed272f59ea6ea465ed3ac4d574c7ae
+New parent: c572d62f05ae57d643dbaab5ecfb7de4a2ccff31
+New commits: d91dcc9dada97779546082f2ee4cb962881c94df, 0997b6b7590a5a89ba979194238e93f7f47d94e4
+
+git rebase --onto c572d62f05ae57d643dbaab5ecfb7de4a2ccff31 b0a3119cb06d6b675cea6a5eb4a7522615b76788
+First commit applied unchanged; second conflicted only in internal/ensigncycle/claude_live_runner_test.go.
+Two conflicts resolved: preserve countRouteEvents(routes, routeSpawn) > 1 with routeErr check; preserve non-Pi actual recorder log interception with Pi routeErr declaration and artifactDir routing.
+gofmt -w internal/ensigncycle/claude_live_runner_test.go
+git diff --check
+git add internal/ensigncycle/claude_live_runner_test.go
+GIT_EDITOR=true git rebase --continue
+Rebase exit 0.
+git range-diff b0a3119cb06d6b675cea6a5eb4a7522615b76788..8fca2b12b3ed272f59ea6ea465ed3ac4d574c7ae c572d62f05ae57d643dbaab5ecfb7de4a2ccff31..HEAD
+Range diff retained in range-diff.txt.
+gofmt -w ./cmd ./internal
+Exit 0; only unrelated pre-existing Default/Options spacing in internal/release/runtime_live_evidence_workflow_test.go changed. Restored exact HEAD bytes using git show HEAD:path > path.
+git diff --check
+Exit 0; git status --porcelain empty.
+
+Focused selector:
+TestSameStage|TestRejectionRoundPublicationExecution|TestRejectionRecorderThroughClaudeLauncher|TestRejectionFlowRoundInvocationExtractors|TestRejectionRoundPublicationCounter|TestPiNative|TestPiRejection|TestPiRecorded|TestImplementationLifecycleAndObserverNegativeControls|TestCodexNativeLifecycle|TestAutoContinueReplay|TestAutoContinueBypass|TestAssertRecordedGateHoldLog
+
+go test ./internal/ensigncycle -run '<Focused selector above>'
+Exit 0; ensigncycle 322.229s. Full output in focused-normal.log.
+
+go test -tags live ./internal/ensigncycle -run '^$'
+Exit 0; ensigncycle 1.168s [no tests to run]. Full output in live-compile.log.
+No broad suite, race suite, model/native run, CI or push performed in this reconciliation.
