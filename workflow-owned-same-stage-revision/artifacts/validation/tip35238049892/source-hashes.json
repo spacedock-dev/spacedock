@@ -1,0 +1,78 @@
+{
+  "candidate": "0997b6b7590a5a89ba979194238e93f7f47d94e4",
+  "sources": {
+    "skills/fo-dispatch-recovery/SKILL.md": {
+      "sha256": "10648cac85fb4a2a8e18718c767631aec239b9a24abbc0993cdfd825246f706c"
+    },
+    "skills/first-officer/references/fo-write-core.md": {
+      "sha256": "668088dcefd85899ac23a3f00193925370f9293c991d6b0a591f4f7dcb1e2fe1"
+    },
+    "skills/feedback-rejection-flow/SKILL.md": {
+      "sha256": "cf43979ac026c3a3964956853f122d93b5dbc18aa3d0b478f094024a97cdd75d"
+    },
+    "internal/ensigncycle/dispatch_recovery_live_test.go": {
+      "sha256": "0f4a74f7f8d8e24de2541281a3b5caf004d3302682221f6ed10816a904c1ebaf"
+    },
+    "internal/ensigncycle/shared_fixtures_test.go": {
+      "sha256": "d3cdd3612f0d909dc01adae33aa6d3350d36eb37ff1565e7035d3262305242a9"
+    },
+    "internal/ensigncycle/claude_live_runner_test.go": {
+      "sha256": "43331b93e1bf43676271c2834953b20721751b1790e743533f3e52762f59bcf7"
+    },
+    "internal/ensigncycle/claude_runtime_helpers_test.go": {
+      "sha256": "e5483f65c0dd8b284b3f8b7e893f4d3f3545f86d7898bd706de812922c6c62a2"
+    }
+  },
+  "artifacts": [
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/claude-stream.jsonl",
+      "retained": "self-feedback/review-required/claude-stream.jsonl",
+      "sha256": "9029d4a77ffae1a97dd2b012e2187ce656ae0169e19b974e26516bb4255a23e7"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/claude-final-message.txt",
+      "retained": "self-feedback/review-required/claude-final-message.txt",
+      "sha256": "fb556a53194e74e92b4a63871634c60f1ef5ab5db468e80ac46e04f8ff6b7ba3"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/rejection-topology.tsv",
+      "retained": "self-feedback/review-required/rejection-topology.tsv",
+      "sha256": "49188977d5c516f587a8f1baab5ed74734af0f6f72f98a75a801040a85706f04"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/review-required/state.bundle",
+      "retained": "self-feedback/review-required/state.bundle",
+      "sha256": "3a466421dbab2d16de3a86398cec9354f3ab96d6d8d6248bbee586e35954c66c"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/smallest-sufficient-mechanism/direct/claude-stream.jsonl",
+      "retained": "smallest-sufficient-mechanism/direct/claude-stream.jsonl",
+      "sha256": "ceee3085377bf75e690459a391d4e540e5bca92450707629ce311277b7ce7bd7"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/smallest-sufficient-mechanism/direct/claude-final-message.txt",
+      "retained": "smallest-sufficient-mechanism/direct/claude-final-message.txt",
+      "sha256": "a85fe2633858bb8362d7dc5446a409eee463e4bd3ce6abf568b3d234fe8aa4ea"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/break-glass-shim-selected-team/claude-stream.jsonl",
+      "retained": "break-glass-shim-selected-team/claude-stream.jsonl",
+      "sha256": "23ac9387b4bcaf9b96e60422d353b5887b90846ad40ad785b3fe734408464c3e"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/break-glass-shim-selected-team/claude-final-message.txt",
+      "retained": "break-glass-shim-selected-team/claude-final-message.txt",
+      "sha256": "6e84380de644242b86e2fd43de7dd088877c116cdec7cb008a0d9ae8d1796279"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/claude/spacedock/spacedock/live-e2e-detail.jsonl",
+      "sha256": "89be55b664f46f1be39faf1314fb3f8d325069fe5f0f697f81a6b31d51464d97",
+      "retained": "claude-outcomes.json (selected records)"
+    },
+    {
+      "source": "/tmp/spacedock-tip-35238049892/codex/codex-shared-scenarios-detail.jsonl",
+      "sha256": "941f387183965903e8043cbec4b8fb0cd97149d6ffa96210a3b2eb338111c38c",
+      "retained": "codex-outcomes.json (selected records)"
+    }
+  ]
+}

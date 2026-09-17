@@ -1,0 +1,17 @@
+## Outcome: Dispatch held — break-glass recovery could not produce a safe worker name
+
+**What happened:**
+
+1. Boot/converge succeeded (`state ready`, `state sweep`, standing-teammate injection — none declared). `status --next` identified exactly one dispatchable entity: **widget-task** (implementation stage, non-gated, initial→terminal in one hop).
+2. Followed the non-gated dispatch procedure: stamped `status=implementation started=...`, then invoked `spacedock dispatch build --workflow-dir . --entity-path widget-task.md --stage implementation --stamp` with the checklist on stdin.
+3. It failed: `stub: spacedock dispatch build unavailable (break-glass-shim scenario)`, exit 1, no `--stamp:`-prefixed diagnostic — an assembly failure, not a stamp/sync failure. Confirmed it's a hard, universal stub by retrying without `--stamp` — identical failure. This is a genuine helper outage, not a flag issue, so per contract I did not probe further flag/shape variations.
+4. Per contract this routes to Break-Glass Manual Dispatch. Loaded `spacedock:fo-dispatch-recovery`. The session has team mode selected (SendMessage/background Agent available, and you mandated it) and the dispatch mode selected before `dispatch build` is authoritative — I could not fall back to bare mode to sidestep the problem below.
+5. The team-mode break-glass template requires `name="{canonical_name}"` where the contract is explicit: this must be **"the canonical semantic name from a successful dispatch envelope for this entity/stage"** — current or retained — and the template comment confirms it must be **helper-emitted**. It further explicitly bans FO-side derivation ("Do not derive a name from the old worker handle, duplicate shortening logic"). Since `dispatch build` never once succeeded for this entity/stage (verified above) and no earlier envelope exists to retain, no canonical name is obtainable. The contract's own fallback for exactly this case is: **"hold this entity and report the missing canonical name"** — not fabricate one.
+6. No `Agent()` was ever called — nothing was dispatched, so there is no worker to await and nothing to shut down.
+7. Cleaned up: reverted the provisional `started` stamp (`git checkout -- widget-task.md`); working tree is byte-identical to HEAD (`git status --short` empty, no stray commits).
+
+**Current state:** `widget-task` remains at `status: implementation`, un-dispatched, untouched otherwise.
+
+**Why I'm stopping here rather than fabricating a name:** the contract's ban on FO-derived worker names is explicit and unconditional, and it names this exact outcome ("hold ... and report the missing canonical name") as the correct terminal action when the helper is unavailable and no prior envelope exists. I did not give up passively — I ran the failure-confirmation, loaded the recovery skill, and worked the documented break-glass path to its documented conclusion.
+
+**No stage report exists to confirm**, because no worker ran. To unblock: either fix/restore `spacedock dispatch build` for this entity/stage, or explicitly authorize bare-mode dispatch for this run (a change of dispatch mode, which requires your direction, not mine).

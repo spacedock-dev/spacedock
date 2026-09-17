@@ -1,0 +1,158 @@
+[
+  {
+    "Time": "2026-09-17T15:09:00.999914024Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision"
+  },
+  {
+    "Time": "2026-09-17T15:09:00.999939392Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveCommonAutoContinueAfterImplementation"
+  },
+  {
+    "Time": "2026-09-17T15:09:01.00023983Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-1/TestLiveCommonRejectionFlow"
+  },
+  {
+    "Time": "2026-09-17T15:09:01.101654161Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/plain"
+  },
+  {
+    "Time": "2026-09-17T15:12:01.406817646Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/plain",
+    "Elapsed": 180.3
+  },
+  {
+    "Time": "2026-09-17T15:12:01.40682692Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/review-required"
+  },
+  {
+    "Time": "2026-09-17T15:13:56.428961788Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveCommonAutoContinueAfterImplementation",
+    "Elapsed": 295.43
+  },
+  {
+    "Time": "2026-09-17T15:13:56.42897657Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveCommonDefaultHeadlessGateStop"
+  },
+  {
+    "Time": "2026-09-17T15:14:30.910653956Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-1/TestLiveCommonRejectionFlow",
+    "Elapsed": 329.91
+  },
+  {
+    "Time": "2026-09-17T15:15:13.875590654Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/review-required",
+    "Elapsed": 192.47
+  },
+  {
+    "Time": "2026-09-17T15:15:13.875602302Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/separate-review-required"
+  },
+  {
+    "Time": "2026-09-17T15:18:56.726170387Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveCommonDefaultHeadlessGateStop",
+    "Elapsed": 300.3
+  },
+  {
+    "Time": "2026-09-17T15:18:56.726197668Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveCommonSmallestSufficientMechanism"
+  },
+  {
+    "Time": "2026-09-17T15:19:10.535312584Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/separate-review-required",
+    "Elapsed": 236.66
+  },
+  {
+    "Time": "2026-09-17T15:19:10.535327647Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/round-required"
+  },
+  {
+    "Time": "2026-09-17T15:23:32.925195659Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/round-required",
+    "Elapsed": 262.39
+  },
+  {
+    "Time": "2026-09-17T15:23:32.925207096Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/round-missing"
+  },
+  {
+    "Time": "2026-09-17T15:26:03.618508915Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveCommonSmallestSufficientMechanism",
+    "Elapsed": 426.89
+  },
+  {
+    "Time": "2026-09-17T15:26:03.618518289Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveSemanticNamesCodex"
+  },
+  {
+    "Time": "2026-09-17T15:27:45.385881901Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/round-missing",
+    "Elapsed": 252.46
+  },
+  {
+    "Time": "2026-09-17T15:27:45.38589426Z",
+    "Action": "run",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/cycle-limit"
+  },
+  {
+    "Time": "2026-09-17T15:28:17.236436903Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-2/TestLiveSemanticNamesCodex",
+    "Elapsed": 133.62
+  },
+  {
+    "Time": "2026-09-17T15:31:08.462054129Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision/cycle-limit",
+    "Elapsed": 203.08
+  },
+  {
+    "Time": "2026-09-17T15:31:08.480216676Z",
+    "Action": "pass",
+    "Package": "github.com/spacedock-dev/spacedock/internal/ensigncycle",
+    "Test": "TestLiveScheduled/slot-0/TestLiveCommonSameStageRevision",
+    "Elapsed": 1327.48
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "head": "ffa017a2403cb1dc0d3252a4591b8300a24cff8c",
+  "missing_source_exists": false,
+  "missing_source_mentioned_in_entity": false,
+  "plan": "KEEP message A; DELETE message B\n",
+  "frozen": "KEEP message A; DELETE message B\n",
+  "attempt_count": 1,
+  "canonical_rounds": 0
+}

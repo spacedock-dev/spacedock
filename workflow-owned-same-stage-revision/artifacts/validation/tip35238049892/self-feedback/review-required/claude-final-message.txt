@@ -1,0 +1,11 @@
+Correction cycle for `recorded-gate-task` is handled through this session's decision boundary:
+
+1. **Routed the authorized correction.** Dispatched named background worker `recorded-gate-task-validation` to the `validation` stage (its own `feedback-to` target, same-stage revision) carrying the captain-authorized package: correct `selected/plan.md` against `selected/frozen-input.txt`.
+2. **Awaited and verified completion.** Worker corrected `plan.md` to `"KEEP message A; DELETE message B"` (now byte-identical to frozen input), and appended+committed `## Stage Report: validation (revision 1)` with both checklist items DONE (2/2, 0 skipped, 0 failed). AC-1 cross-check passes — plan now matches frozen input.
+3. **Correction-round bookkeeping:** workflow declares no canonical correction round and no Feedback Cycles projection for this entity — correctly skipped, nothing fabricated.
+4. **Committed:** `state commit recorded-gate-task` confirms the state checkout is already clean/synced (worker's commit `ffa017a` is durable).
+5. **Review requirement — held here.** This is cycle 1 (not cycle 3, no escalation). The workflow requires a fresh, independent reviewer verdict at this same `validation` stage, and that verdict must be sourced from `selected/reviewer-source.txt` — which does not exist in `selected/`. That evidence must never be fabricated, so I'm not fresh-dispatching a reviewer and not entering gate re-entry (`fo-gate-lifecycle`); the gate is not being resolved or consumed.
+
+Shut down the correction worker (no longer needed for further routing on this held cycle).
+
+**Stopping condition:** unmet prerequisite — missing `selected/reviewer-source.txt` for the required independent review. This blocks step 4/5 of the feedback-rejection-flow. Awaiting either that evidence to appear or a captain decision on how to proceed; no gate action taken.

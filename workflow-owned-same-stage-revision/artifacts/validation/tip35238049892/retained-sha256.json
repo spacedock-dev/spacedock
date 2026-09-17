@@ -1,0 +1,19 @@
+{
+  "break-glass-shim-selected-team/claude-final-message.txt": "6e84380de644242b86e2fd43de7dd088877c116cdec7cb008a0d9ae8d1796279",
+  "break-glass-shim-selected-team/claude-stream.jsonl": "23ac9387b4bcaf9b96e60422d353b5887b90846ad40ad785b3fe734408464c3e",
+  "claude-outcomes.json": "2677dc843b1bbd25ea92566e0401170ca065d9cc0fca2b1066321501b8a76d4d",
+  "codex-outcomes.json": "eed8535a7536fdad7a5c2a83c130b4c9e52bd2015e537320eb5da19ef23791fa",
+  "durable-review-observation.json": "aaebbf0dd884d0f495724c7a132cf826084469d3b7d1301e5289c68967b05b03",
+  "feedback-rejection-flow-SKILL.md": "cf43979ac026c3a3964956853f122d93b5dbc18aa3d0b478f094024a97cdd75d",
+  "fo-dispatch-recovery-SKILL.md": "10648cac85fb4a2a8e18718c767631aec239b9a24abbc0993cdfd825246f706c",
+  "references-fo-write-core.md": "668088dcefd85899ac23a3f00193925370f9293c991d6b0a591f4f7dcb1e2fe1",
+  "report.md": "99ee31b20cb304e0e293857539c64fffb41b429bb01036723cc4a055a6f5f2a7",
+  "self-feedback/review-required/claude-final-message.txt": "fb556a53194e74e92b4a63871634c60f1ef5ab5db468e80ac46e04f8ff6b7ba3",
+  "self-feedback/review-required/claude-stream.jsonl": "9029d4a77ffae1a97dd2b012e2187ce656ae0169e19b974e26516bb4255a23e7",
+  "self-feedback/review-required/entity-snapshot.md": "775a7959c985b6da8ee81e003f16f475c6ea116f414983f731b64e5a732b97cd",
+  "self-feedback/review-required/rejection-topology.tsv": "49188977d5c516f587a8f1baab5ed74734af0f6f72f98a75a801040a85706f04",
+  "self-feedback/review-required/state.bundle": "3a466421dbab2d16de3a86398cec9354f3ab96d6d8d6248bbee586e35954c66c",
+  "smallest-sufficient-mechanism/direct/claude-final-message.txt": "a85fe2633858bb8362d7dc5446a409eee463e4bd3ce6abf568b3d234fe8aa4ea",
+  "smallest-sufficient-mechanism/direct/claude-stream.jsonl": "ceee3085377bf75e690459a391d4e540e5bca92450707629ce311277b7ce7bd7",
+  "source-hashes.json": "5ae7a8c7b864fa2671b2d739587998598af272bed7bef8568cca47e9327ba0d9"
+}
