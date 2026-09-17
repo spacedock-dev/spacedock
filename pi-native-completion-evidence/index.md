@@ -1,6 +1,6 @@
 ---
 title: Recognize native Pi worker completion evidence
-status: validation
+status: implementation
 source: Captain binding resolution:binding-1789576723761874000; tip CI 35058669297
 started: 2026-09-16T17:00:12Z
 completed:
@@ -8,8 +8,8 @@ verdict:
 score: 0.95
 worktree: .worktrees/spacedock-ensign-pi-native-completion-evidence
 issue:
-pr: "#806"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: cpx5q07b7wqmd6xv6wc7khvd
 gates:
     version: 1
@@ -48,7 +48,7 @@ gates:
                 reason: Captain binding resolution:binding-1789657416015652000 approves validation attempt 2 and combined tip 0997b6b7 for corrected-stack publication and full tip CI. Reviewed artifact sha256:090f392bf3872fe4169655453f82ff67e908d3c287051a65df70a7be0c2247ac. Merge and failure waiver remain unauthorized.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Recognize Pi native completion notifications so valid worker lifecycles are graded correctly without accepting another worker or hiding downstream failures.
