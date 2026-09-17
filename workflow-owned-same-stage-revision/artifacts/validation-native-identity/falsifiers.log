@@ -1,0 +1,16 @@
+=== RUN   TestDetachedCapturedIdentityFalsifiers
+--- PASS: TestDetachedCapturedIdentityFalsifiers (0.01s)
+=== RUN   TestDetachedRecorderEvidenceMatrix
+=== RUN   TestDetachedRecorderEvidenceMatrix/duplicate
+=== RUN   TestDetachedRecorderEvidenceMatrix/absent
+=== RUN   TestDetachedRecorderEvidenceMatrix/failed-masked
+=== RUN   TestDetachedRecorderEvidenceMatrix/wrong-command
+=== RUN   TestDetachedRecorderEvidenceMatrix/wrong-entity
+--- PASS: TestDetachedRecorderEvidenceMatrix (0.00s)
+    --- PASS: TestDetachedRecorderEvidenceMatrix/duplicate (0.00s)
+    --- PASS: TestDetachedRecorderEvidenceMatrix/absent (0.00s)
+    --- PASS: TestDetachedRecorderEvidenceMatrix/failed-masked (0.00s)
+    --- PASS: TestDetachedRecorderEvidenceMatrix/wrong-command (0.00s)
+    --- PASS: TestDetachedRecorderEvidenceMatrix/wrong-entity (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	0.317s
