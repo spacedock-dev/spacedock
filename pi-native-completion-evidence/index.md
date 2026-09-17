@@ -38,6 +38,17 @@ gates:
                 id: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-2:revision-1
                 digest: sha256:7d3dcc2c5e07cd29556669324a638df3224bb4ec963cecf0b6b539ec1351f156
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:cpx5q07b7wqmd6xv6wc7khvd:validation:2
+                briefing: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-09-17T15:04:54.800792Z"
+                decision: approve
+                reason: Captain binding resolution:binding-1789657416015652000 approves validation attempt 2 and combined tip 0997b6b7 for corrected-stack publication and full tip CI. Reviewed artifact sha256:090f392bf3872fe4169655453f82ff67e908d3c287051a65df70a7be0c2247ac. Merge and failure waiver remain unauthorized.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Recognize Pi native completion notifications so valid worker lifecycles are graded correctly without accepting another worker or hiding downstream failures.
