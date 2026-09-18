@@ -1,0 +1,46 @@
+=== RUN   TestSameStageWorkerObligations
+--- PASS: TestSameStageWorkerObligations (0.00s)
+=== RUN   TestSameStageSelectedPlanRejectsPrematureGate
+--- PASS: TestSameStageSelectedPlanRejectsPrematureGate (2.08s)
+=== RUN   TestSameStageNativeIdentityAndReuse
+=== RUN   TestSameStageNativeIdentityAndReuse/fresh_native_IDs_sharing_display_name
+=== RUN   TestSameStageNativeIdentityAndReuse/missing_completion
+=== RUN   TestSameStageNativeIdentityAndReuse/wrong_completion
+=== RUN   TestSameStageNativeIdentityAndReuse/wrong_task_owner
+=== RUN   TestSameStageNativeIdentityAndReuse/same_task_under_another_tool_ID
+=== RUN   TestSameStageNativeIdentityAndReuse/same_native_identity_changed_label
+=== RUN   TestSameStageNativeIdentityAndReuse/missing_followup_completion
+=== RUN   TestSameStageNativeIdentityAndReuse/wrong_followup_owner
+=== RUN   TestSameStageNativeIdentityAndReuse/completed_same-worker_followup
+--- PASS: TestSameStageNativeIdentityAndReuse (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/fresh_native_IDs_sharing_display_name (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/missing_completion (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/wrong_completion (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/wrong_task_owner (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/same_task_under_another_tool_ID (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/same_native_identity_changed_label (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/missing_followup_completion (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/wrong_followup_owner (0.00s)
+    --- PASS: TestSameStageNativeIdentityAndReuse/completed_same-worker_followup (0.00s)
+=== RUN   TestSameStageCommittedReviewHold
+=== RUN   TestSameStageCommittedReviewHold/committed
+=== RUN   TestSameStageCommittedReviewHold/wrapped_wording
+=== RUN   TestSameStageCommittedReviewHold/not_provided
+=== RUN   TestSameStageCommittedReviewHold/unrelated_absence
+=== RUN   TestSameStageCommittedReviewHold/absent_reason
+=== RUN   TestSameStageCommittedReviewHold/uncommitted_reason
+=== RUN   TestSameStageCommittedReviewHold/fabricated_source
+=== RUN   TestSameStageCommittedReviewHold/advanced_gate
+=== RUN   TestSameStageCommittedReviewHold/advanced_stage
+--- PASS: TestSameStageCommittedReviewHold (15.24s)
+    --- PASS: TestSameStageCommittedReviewHold/committed (1.69s)
+    --- PASS: TestSameStageCommittedReviewHold/wrapped_wording (1.70s)
+    --- PASS: TestSameStageCommittedReviewHold/not_provided (1.70s)
+    --- PASS: TestSameStageCommittedReviewHold/unrelated_absence (1.68s)
+    --- PASS: TestSameStageCommittedReviewHold/absent_reason (1.70s)
+    --- PASS: TestSameStageCommittedReviewHold/uncommitted_reason (1.67s)
+    --- PASS: TestSameStageCommittedReviewHold/fabricated_source (1.69s)
+    --- PASS: TestSameStageCommittedReviewHold/advanced_gate (1.70s)
+    --- PASS: TestSameStageCommittedReviewHold/advanced_stage (1.71s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	18.609s

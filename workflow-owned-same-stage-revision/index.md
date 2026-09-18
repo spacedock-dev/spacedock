@@ -655,3 +655,15 @@ Committed state, source absence and held authority checks improve the observatio
 ### H1 FO disposition — 2026-09-18
 
 FO separately authorized **FIX**: Material task-owned evidence defect under captain-ruling2026-09-18. The existing producer must relate the named source to its absence reason within one note unit, support ordinary “not been provided” wording and wrapping, and preserve durable-state controls. No NLP framework or mandatory exact sentence. Reviewer owns evidence only and remains available for correction recheck.
+
+
+## Stage Report: implementation
+
+- DONE: Correct H1's unrelated-note false positive and ordinary-phrasing false negative without weakening durable hold checks.
+  Code `1f9220634fe198388ac041b54f308032e1c8e5c2` requires the source name and absence wording within one blank-line-delimited paragraph, permits wrapped lines and “has not been provided”. Exact reviewer cases fail before remedy and pass afterward. All existing absent/uncommitted reason, fabricated source, changed gate and advanced status negatives remain; live caller, corrected plan and clean-tree checks are unchanged. One existing file: 18 insertions / 3 deletions (+15 net), within the two-file authorized surface.
+- DONE: Complete the canonical correction package with producer proposal and evidence closure, retaining focused proof and acceptance limits.
+  [Package and evidence](artifacts/implementation/hold-reason-h1/evidence.md) preserve original briefing and four reviewer/FO entries, then append actual actor:ensign proposal and correction entries. Red exits1 in 3.915s; focused normal passes in 17.309s and race in 18.609s. Formatting and diff checks pass. FO retains round 2 publication and Cycle authority; no gate/frontmatter edits or independent self-validation.
+
+### Summary
+
+H1's demonstrated cases are corrected by a bounded paragraph association, not general semantic parsing or an exact required sentence. The prior body-wide keyword test is removed. Native evidence is unchanged; combined full normal/race/gofmt and final-tip all-six-per-host acceptance remain pending. Known resolver and other Claude/Pi findings remain recorded. No native/model run, broad suite, push, CI or rebase occurred. Retained independent review follows FO publication of the complete package.

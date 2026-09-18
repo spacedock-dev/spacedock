@@ -1,0 +1,11 @@
+=== RUN   TestSameStageCommittedReviewHold
+=== RUN   TestSameStageCommittedReviewHold/not_provided
+    claude_runtime_helpers_test.go:1007: hold error=committed entity body lacks the missing review source reason; valid=true
+=== RUN   TestSameStageCommittedReviewHold/unrelated_absence
+    claude_runtime_helpers_test.go:1007: hold error=<nil>; valid=false
+--- FAIL: TestSameStageCommittedReviewHold (3.60s)
+    --- FAIL: TestSameStageCommittedReviewHold/not_provided (1.88s)
+    --- FAIL: TestSameStageCommittedReviewHold/unrelated_absence (1.72s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	3.915s
+FAIL

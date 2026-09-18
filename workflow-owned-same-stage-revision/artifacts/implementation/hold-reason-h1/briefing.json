@@ -1,0 +1,21 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zz1yqc2w2katp28wpa8nghx2:validation:round-2",
+  "question": "Does the committed review hold reason name the absent source and explain the hold while preserving source absence and held authority?",
+  "artifacts": [
+    {
+      "id": "artifact:zz1yqc2w2k-h1-review",
+      "uri": "git-root://state/aed6d4fe5897bad79b8ee3f0b1efefaf1823fb99/workflow-owned-same-stage-revision/artifacts/validation/committed-hold-reason/review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:3e530e31b3d18d5ddd1db30010887c7576635f99ad6ad48c90cfce06190840c8"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zz1yqc2w2k-h1-captain",
+      "label": "Captain 2026-09-18 both yes: committed task-body missing-review reason is required. Code candidate9a614522dc1c1c162bc6b99fe11e5739f66c611b. Existing canonical validation/1 retained; proposed next round validation/2, publication owned by FO."
+    }
+  ]
+}
