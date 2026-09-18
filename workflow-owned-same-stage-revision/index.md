@@ -669,3 +669,15 @@ FO separately authorized **FIX**: Material task-owned evidence defect under capt
 ### Summary
 
 H1's demonstrated cases are corrected by a bounded paragraph association, not general semantic parsing or an exact required sentence. The prior body-wide keyword test is removed. Native evidence is unchanged; combined full normal/race/gofmt and final-tip all-six-per-host acceptance remain pending. Known resolver and other Claude/Pi findings remain recorded. No native/model run, broad suite, push, CI or rebase occurred. Retained independent review follows FO publication of the complete package.
+
+
+## Stage Report: validation (H1 correction recheck)
+
+- DONE: Independently attack whether the correction proves a committed missing-evidence reason and preserves held authority without imposing brittle wording or hiding an incomplete outcome.
+  **PASSED for the bounded correction; H1 closed** at `1f9220634fe198388ac041b54f308032e1c8e5c2`. [Unchanged independent Git-backed cases](artifacts/validation/committed-hold-reason-recheck/review.md) now pass5.033s: unrelated paragraph rejects, ordinary not-been-provided reason and baseline accept. Source/committed-status/gate-document controls are unchanged; no new finding or general NLP claim.
+- DONE: Verify bounded scope and existing focused evidence, recording remaining live/full-stack obligations and any concrete finding before repair.
+  One file18insert/3delete(+15), cumulative committed-hold two files+79. Reused owned normal17.309s/race18.609s confirms existing absent/uncommitted/fabricated/gate/stage negatives and wrapping. Eight-entry recorded validation/2 equals producer package; no second publication. Final restacked normal/race/gofmt and actual all-six-per-host native evidence remain pending; known resolver and other Claude/Pi outcomes remain unresolved.
+
+### Summary
+
+H1's demonstrated false acceptance and false rejection are corrected within the existing paragraph-based helper. Validation recommends PASSED for this bounded repair only; prior evidence is preserved and no candidate/frontmatter mutation, model/CI run or round publication occurred.

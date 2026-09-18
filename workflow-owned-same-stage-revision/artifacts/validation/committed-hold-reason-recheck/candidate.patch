@@ -1,0 +1,59 @@
+commit 1f9220634fe198388ac041b54f308032e1c8e5c2
+Author: CL Kao <clkao@users.noreply.github.com>
+Date:   Fri Sep 18 01:15:20 2026 -0700
+
+    fix: bind review hold reason to one paragraph
+
+diff --git a/internal/ensigncycle/claude_runtime_helpers_test.go b/internal/ensigncycle/claude_runtime_helpers_test.go
+index b246aeccb..969f94690 100644
+--- a/internal/ensigncycle/claude_runtime_helpers_test.go
++++ b/internal/ensigncycle/claude_runtime_helpers_test.go
+@@ -962,7 +962,7 @@ func TestSameStageNativeIdentityAndReuse(t *testing.T) {
+ }
+ 
+ func TestSameStageCommittedReviewHold(t *testing.T) {
+-	for _, name := range []string{"committed", "wrapped wording", "absent reason", "uncommitted reason", "fabricated source", "advanced gate", "advanced stage"} {
++	for _, name := range []string{"committed", "wrapped wording", "not provided", "unrelated absence", "absent reason", "uncommitted reason", "fabricated source", "advanced gate", "advanced stage"} {
+ 		t.Run(name, func(t *testing.T) {
+ 			entity := writeSameStageRevision(t, t.TempDir(), "review-required")
+ 			root := filepath.Dir(filepath.Dir(entity))
+@@ -974,6 +974,12 @@ func TestSameStageCommittedReviewHold(t *testing.T) {
+ 			if name == "wrapped wording" {
+ 				note = "\nAwaiting external evidence:\nselected/reviewer-source.txt. Review remains held.\n"
+ 			}
++			if name == "not provided" {
++				note = "\nReview is on hold because selected/reviewer-source.txt has not been provided.\n"
++			}
++			if name == "unrelated absence" {
++				note = "\nArtifact inventory: selected/reviewer-source.txt.\n\nImplementation report: an unrelated optional screenshot is missing. Ready for re-review.\n"
++			}
+ 			if name != "absent reason" {
+ 				writeFile(t, entity, readFile(t, entity)+note)
+ 			}
+@@ -996,7 +1002,7 @@ func TestSameStageCommittedReviewHold(t *testing.T) {
+ 			}
+ 			committed := git(t, root, "show", "HEAD:recorded-gate-task/index.md")
+ 			err = assertSameStageReviewHold(entity, committed, before, after)
+-			valid := name == "committed" || name == "wrapped wording"
++			valid := name == "committed" || name == "wrapped wording" || name == "not provided"
+ 			if (err == nil) != valid {
+ 				t.Fatalf("hold error=%v; valid=%v", err, valid)
+ 			}
+@@ -1006,7 +1012,16 @@ func TestSameStageCommittedReviewHold(t *testing.T) {
+ 
+ func assertSameStageReviewHold(entityPath, committed string, before, after *gates.Document) error {
+ 	_, body, ok := strings.Cut(strings.TrimPrefix(committed, "---\n"), "\n---\n")
+-	if !ok || !strings.Contains(body, "reviewer-source.txt") || !regexp.MustCompile(`(?i)missing|unavailable|absent|awaiting|not available|not present|not supplied`).MatchString(body) {
++	// A paragraph is one note unit; line wrapping does not separate its reason.
++	absence := regexp.MustCompile(`(?i)\b(missing|unavailable|absent|awaiting|not\s+(available|present|supplied|(been\s+)?provided))\b`)
++	hasReason := false
++	for _, note := range regexp.MustCompile(`\n[\t ]*\n`).Split(body, -1) {
++		if strings.Contains(note, "reviewer-source.txt") && absence.MatchString(note) {
++			hasReason = true
++			break
++		}
++	}
++	if !ok || !hasReason {
+ 		return fmt.Errorf("committed entity body lacks the missing review source reason")
+ 	}
+ 	if _, err := os.Lstat(filepath.Join(filepath.Dir(entityPath), "selected/reviewer-source.txt")); !os.IsNotExist(err) {

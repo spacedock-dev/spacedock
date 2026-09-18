@@ -1,0 +1,15 @@
+# H1 correction recheck
+
+**PASSED for the bounded correction. H1 closed** at `1f9220634fe198388ac041b54f308032e1c8e5c2` under the distinct FO FIX. No new finding in this scoped recheck. This is not whole-task or native acceptance.
+
+The original independent Git-backed test source from `../committed-hold-reason/detached-test-source.txt` was reused byte-for-byte in a temporary archive of the exact candidate. It invokes the actual fixture, Git commit and helper, with unchanged held authority and actual source absence. Actual exit0, package5.033s: baseline accepts; incidental filename plus a separate paragraph's missing screenshot rejects; ordinary “has not been provided” accepts. `audit.json` records argv and source hash; `audit.log` retains observations. The temporary archive was removed. No model or live driver ran, and no green owned suite was duplicated.
+
+Exact correction is one existing helper/test file,18 insertions/3 deletions(+15 net). Total committed-hold correction remains two files,+79 net. The helper now associates filename and absence wording within one blank-line-delimited paragraph; wrapped lines remain one unit and ordinary provided wording is supported. Permanent regressions preserve both H1 inputs. This is bounded paragraph recognition, not general semantic interpretation or an exact sentence requirement.
+
+The source-absence check, committed validation status and complete before/after gate-document comparison are unchanged. The live caller still supplies HEAD body and independently enforces clean tree, committed corrected plan and frozen input. Existing absent/uncommitted reason, fabricated source, gate alteration and stage advancement negatives remain. Producer focused normal17.309s/race18.609s logs pass all these cases and wrapped wording; reused rather than rerun. The earlier red3.915s remains retained. See hashed owned log references in `retained-evidence.json`.
+
+Canonical `review/validation/round-2` Briefing/log bytes exactly match producer `artifacts/implementation/hold-reason-h1`, with eight entries. Existing FO publication and Cycle2 stand; no recorder call, extra round or gate decision occurred during recheck. Prior H1 red evidence and original reviewer package remain unchanged.
+
+AC limits: AC-1 historical native correction evidence is unchanged. AC-2's clarified committed missing-reason requirement is now supported by this bounded positive/negative proof plus unchanged source/gate/commit controls; no reviewer dispatch is demanded while source is absent. AC-3 routine all-six registration remains unchanged, with no skip/XFAIL/targeted-only exemption. Actual final-tip all-six-per-host native evidence remains pending.
+
+Required full combined normal/race/gofmt remains FO-deferred until final restack. Prior combined7c63 results (only known resolver failure) do not establish this candidate's final combined result. Missing Pi wrapper receipt, actual-error/incomplete outcomes and Claude roadmap remain unresolved. Independent #802 validation is not re-reviewed or claimed here. No candidate/frontmatter changes, model, CI, push, rebase or new agents.

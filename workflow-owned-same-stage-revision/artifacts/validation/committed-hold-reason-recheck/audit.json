@@ -1,0 +1,17 @@
+{
+  "candidate": "1f9220634fe198388ac041b54f308032e1c8e5c2",
+  "command": [
+    "go",
+    "test",
+    "-tags",
+    "live",
+    "./internal/ensigncycle",
+    "-run",
+    "^TestReviewHoldIndependentSemantics$",
+    "-count=1",
+    "-v"
+  ],
+  "exit": 0,
+  "unchanged_test_source": "/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/workflow-owned-same-stage-revision/artifacts/validation/committed-hold-reason/detached-test-source.txt",
+  "source_sha256": "fab15532066584cf08883f81d67ed8ec292729ea1a2c319d7054af492db71836"
+}

@@ -1,0 +1,16 @@
+{
+  "briefing.json": {
+    "identical": true,
+    "sha256": "3c4f21e2d6cc910207e209acbe5c4d2c0b14c435a9b19379775e65f42786cba9"
+  },
+  "briefing.review.jsonl": {
+    "identical": true,
+    "sha256": "04a0637ccc8f7bbaee47176bfa4f93c386ddeb122c1a5f396787c8c6b088038f"
+  },
+  "entries": 8,
+  "owned_logs": {
+    "normal.log": "0ff08bf202b83633b3f00f1deae2464cf9457cd269b53eb345b36d7761906c09",
+    "race.log": "15250dbb2c129a3fb6367adb5df06251ea3f8f5f75c52ee16a16fc54f05921e6",
+    "red.log": "7dc40c066dd6a53c547313f533e49a738b3cc9d201b010994506b3189ac74467"
+  }
+}
