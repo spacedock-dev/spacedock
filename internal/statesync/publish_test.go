@@ -157,3 +157,32 @@ func TestPreflightLeavesWrongBranchRebaseUntouched(t *testing.T) {
 		t.Fatalf("preflight aborted wrong-branch rebase: %v", err)
 	}
 }
+
+func TestReadCheckPreservesRebaseWhilePreflightHalts(t *testing.T) {
+	repo, _, branch := publishedRepo(t)
+	base := git(t, repo, "rev-parse", "HEAD")
+	git(t, repo, "checkout", "-qb", "peer")
+	os.WriteFile(filepath.Join(repo, "task.md"), []byte("peer\n"), 0644)
+	git(t, repo, "commit", "-qam", "peer")
+	git(t, repo, "checkout", "-q", branch)
+	os.WriteFile(filepath.Join(repo, "task.md"), []byte("local\n"), 0644)
+	git(t, repo, "commit", "-qam", "local")
+	if base == git(t, repo, "rev-parse", "HEAD") {
+		t.Fatal("no local change")
+	}
+	cmd := exec.Command("git", "-C", repo, "rebase", "peer")
+	if out, err := cmd.CombinedOutput(); err == nil {
+		t.Fatalf("expected conflict %s", out)
+	}
+	head := git(t, repo, "rev-parse", "HEAD")
+	index := git(t, repo, "ls-files", "--stage")
+	if outcome := CheckCheckout(repo, branch); outcome.Result != ResultFailed || !strings.Contains(outcome.Detail, "detached HEAD") {
+		t.Fatalf("read check: %#v", outcome)
+	}
+	if !rebaseInProgress(repo) || head != git(t, repo, "rev-parse", "HEAD") || index != git(t, repo, "ls-files", "--stage") {
+		t.Fatal("read check mutated rebase")
+	}
+	if outcome := Preflight(repo, branch); outcome.Result != ResultHalted || rebaseInProgress(repo) {
+		t.Fatalf("mutation preflight must abort/HALT before branch check: %#v", outcome)
+	}
+}

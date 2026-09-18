@@ -23,6 +23,8 @@ func TestStatusHelpRendersQuerySynopsisNotEntityListing(t *testing.T) {
 	}
 	out := stdout.String()
 	for _, want := range []string{
+		"--archive SLUG",
+		"commits and publishes",
 		"THE entity query",
 		"Repeat --where to AND clauses",
 		"id, slug, status, title, score, source, worktree, pr, started, completed,\nverdict, mod-block, archived, issue",

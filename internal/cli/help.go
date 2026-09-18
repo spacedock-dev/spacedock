@@ -204,6 +204,10 @@ Query flags:
   --resolve REF        Resolve slug/id/prefix     --next-id     Preview the next id
   --validate           Check workflow state       --json        Machine-readable output
 
+Retirement:
+  --archive SLUG       Retire an entity; split-root commits and publishes the move
+                      Publication failure: retry with spacedock state commit SLUG
+
 Operators (one clause per flag):
   field=value   equals             field!=value  not equals
   field=        field is empty     field!=       field is non-empty

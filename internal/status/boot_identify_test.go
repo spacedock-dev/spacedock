@@ -455,6 +455,7 @@ func buildWorkflowUnder(t *testing.T, root, name string) {
 		t.Fatal(err)
 	}
 	writeFile(t, filepath.Join(def, "README.md"), identifyPRReadme)
+	initStateFixture(t, def, filepath.Join(def, ".spacedock-state"))
 }
 
 // identifyDiscovery runs `--boot --identify --json` at root (no --workflow-dir) and

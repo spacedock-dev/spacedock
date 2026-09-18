@@ -5,6 +5,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1255,5 +1256,133 @@ func TestStateCommitInlineCommitsWhateverTheWorkflowDepth(t *testing.T) {
 				t.Fatalf("commit does not contain %s; it contains:\n%s", entityRel, files)
 			}
 		})
+	}
+}
+
+func TestRetirementCommitsCompleteMove(t *testing.T) {
+	for _, folder := range []bool{false, true} {
+		for _, remote := range []bool{false, true} {
+			t.Run(fmt.Sprintf("folder=%t/remote=%t", folder, remote), func(t *testing.T) {
+				bare, wf, _, branch := twoHostStateWorkflow(t)
+				checkout := filepath.Join(wf, ".spacedock-state")
+				if !remote {
+					git(t, checkout, "remote", "remove", "origin")
+				}
+				entityRel := "retire.md"
+				if folder {
+					entityRel = "retire/index.md"
+				}
+				body := "---\nstatus: ideation\n---\n# Retired without delivery\n"
+				writeFileWithDirs(t, filepath.Join(checkout, entityRel), body)
+				writeFileWithDirs(t, filepath.Join(checkout, "retire", "artifact.txt"), "artifact\n")
+				git(t, checkout, "add", ".")
+				git(t, checkout, "commit", "-qm", "seed retirement")
+				writeFile(t, filepath.Join(checkout, "sibling.md"), "staged sibling\n")
+				git(t, checkout, "add", "sibling.md")
+				sibling := git(t, checkout, "ls-files", "--stage", "sibling.md")
+				c, o, e := terminalInvoke(t, wf, "status", "--workflow-dir", wf, "--archive", "retire", "--json")
+				result := "local-only"
+				if remote {
+					result = "pushed"
+				}
+				if c != 0 || !strings.Contains(o, `"result":"`+result+`"`) {
+					t.Fatalf("archive: %d %s %s", c, o, e)
+				}
+				if got := git(t, checkout, "show", "HEAD:_archive/"+entityRel); !strings.Contains(got, "status: ideation") || !strings.Contains(got, "# Retired without delivery") {
+					t.Fatalf("retirement changed entity: %s", got)
+				}
+				if got := git(t, checkout, "show", "HEAD:_archive/retire/artifact.txt"); strings.TrimSpace(got) != "artifact" {
+					t.Fatal(got)
+				}
+				if _, err := os.Stat(filepath.Join(checkout, entityRel)); !os.IsNotExist(err) {
+					t.Fatal("active entity remains")
+				}
+				if git(t, checkout, "ls-files", "--stage", "sibling.md") != sibling {
+					t.Fatal("sibling index changed")
+				}
+				if strings.Contains(git(t, checkout, "ls-tree", "-r", "--name-only", "HEAD"), "sibling.md") {
+					t.Fatal("sibling committed")
+				}
+				if remote {
+					clone := filepath.Join(t.TempDir(), "fresh")
+					git(t, bare, "clone", "-q", "-b", branch, bare, clone)
+					got, err := os.ReadFile(filepath.Join(clone, "_archive", entityRel))
+					if err != nil || !strings.Contains(string(got), "status: ideation") {
+						t.Fatalf("remote archive: %s %v", got, err)
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestRetirementFailureRecovery(t *testing.T) {
+	for _, failure := range []string{"commit", "push"} {
+		t.Run(failure, func(t *testing.T) {
+			bare, wf, _, branch := twoHostStateWorkflow(t)
+			checkout := filepath.Join(wf, ".spacedock-state")
+			before, _ := os.ReadFile(filepath.Join(checkout, "first-task.md"))
+			head := git(t, checkout, "rev-parse", "HEAD")
+			hooks := t.TempDir()
+			hook := "pre-commit"
+			if failure == "push" {
+				hook = "pre-push"
+			}
+			writeFile(t, filepath.Join(hooks, hook), "#!/bin/sh\nexit 1\n")
+			os.Chmod(filepath.Join(hooks, hook), 0755)
+			git(t, checkout, "config", "core.hooksPath", hooks)
+			c, o, e := terminalInvoke(t, wf, "status", "--workflow-dir", wf, "--archive", "first-task", "--json")
+			if c != 1 {
+				t.Fatalf("injected %s: %d %s %s", failure, c, o, e)
+			}
+			if failure == "commit" {
+				after, err := os.ReadFile(filepath.Join(checkout, "first-task.md"))
+				if err != nil || string(after) != string(before) || git(t, checkout, "rev-parse", "HEAD") != head {
+					t.Fatal("commit failure did not restore active state")
+				}
+				if git(t, checkout, "status", "--porcelain") != "" {
+					t.Fatal("rollback left dirt")
+				}
+			} else {
+				if git(t, checkout, "rev-parse", "HEAD") == head || !strings.Contains(o, `"result":"unpublished"`) {
+					t.Fatalf("local durability missing: %s", o)
+				}
+			}
+			git(t, checkout, "config", "--unset", "core.hooksPath")
+			if failure == "commit" {
+				c, o, e = terminalInvoke(t, wf, "status", "--workflow-dir", wf, "--archive", "first-task")
+			} else {
+				c, o, e = runStateCommitCmd(t, wf, wf, "first-task")
+			}
+			if c != 0 {
+				t.Fatalf("recovery: %d %s %s", c, o, e)
+			}
+			if got := git(t, bare, "show", branch+":_archive/first-task.md"); !strings.Contains(got, "status: ideation") {
+				t.Fatal("recovery failed to publish unchanged retirement")
+			}
+		})
+	}
+}
+
+func TestRetirementSameEntityRebaseHalts(t *testing.T) {
+	bare, a, b, branch := twoHostStateWorkflow(t)
+	writeEntity(t, a, "first-task", "---\nstatus: ideation\n---\n# Peer change\n")
+	if c, o, e := runStateCommitCmd(t, a, a, "first-task"); c != 0 {
+		t.Fatalf("peer push %d %s %s", c, o, e)
+	}
+	writeEntity(t, b, "first-task", "---\nstatus: ideation\n---\n# Local change\n")
+	c, o, e := terminalInvoke(t, b, "status", "--workflow-dir", b, "--archive", "first-task", "--json")
+	if c != 3 || !strings.Contains(o, `"result":"halted"`) || !strings.Contains(e, "first-task.md") {
+		t.Fatalf("archive HALT %d %s %s", c, o, e)
+	}
+	checkout := filepath.Join(b, ".spacedock-state")
+	if git(t, checkout, "status", "--porcelain") != "" {
+		t.Fatal("rebase not aborted")
+	}
+	if !strings.Contains(git(t, bare, "show", branch+":first-task.md"), "Peer change") {
+		t.Fatal("peer lost")
+	}
+	if !strings.Contains(git(t, checkout, "show", "HEAD:_archive/first-task.md"), "Local change") {
+		t.Fatal("local archive lost")
 	}
 }
