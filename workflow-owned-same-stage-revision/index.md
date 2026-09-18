@@ -235,6 +235,7 @@ The independent baseline is the frozen input, not the generated plan or instruct
 
 **AC-2 — Declared review and round obligations remain enforced independently of stage equality or projection presence.**
 Verified by: conventional separate-reviewer and same-stage-with-review controls stop when required evidence is missing.
+When required review evidence is absent, the committed entity body must identify the missing source and explain the hold. Verify actual source absence and unchanged held gate/stage authority. Source absence does not require a reviewer dispatch.
 A required round without Feedback Cycles still records. An absent round contract never creates recorder artifacts.
 The current dev/Roborev advisory control preserves its required review entries and unchanged stage.
 
@@ -252,6 +253,7 @@ Extend its workflow inputs and the topology grader in `internal/ensigncycle/clau
 Before implementation, add the smallest failing self-feedback fixture. Run current and candidate skills through the same serialized local runtime lane.
 A valid paraphrase must pass. Restoring unconditional recorder/reviewer requirements must fail the self-feedback case.
 Removing the required-review condition must fail the separate-reviewer and same-stage-required-review controls.
+For missing review evidence, inspect the committed entity body for a reason tied to the named absent source, and verify source absence and unchanged held authority. Accept ordinary wording and wrapped lines; reject absent or uncommitted reasons, unrelated-note absence, fabricated evidence, and gate or stage advancement. Do not require reviewer dispatch while its source is absent.
 Conflating projection absence with round absence must fail a required-round/no-projection control.
 Leaving unconditional completion conditions must fail the self-feedback case. Removing escalation must fail a no-reviewer cycle-limit control.
 Assertions inspect committed plan bytes, dispatch/completion identity, attempt count, resolution absence, and retained required evidence.
