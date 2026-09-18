@@ -23,13 +23,13 @@ Agent(
 ```
 
 For selected team mode, use this named background call. Omit `team_name`; retain the completion message to the single `team-lead` target:
-Use the canonical semantic name from a successful dispatch envelope for this entity/stage. When build is unavailable, use a retained validated envelope for that same assignment; if none exists, hold this entity and report the missing canonical name. Do not derive a name from the old worker handle, duplicate shortening logic, or change dispatch mode. A replacement appends only its existing `-retry` or `-cycleN` suffix, at most eight characters; refuse over-budget or already-occupied final names before spawn.
+Use the canonical semantic name from a successful dispatch envelope for this entity/stage. When build fails, use a retained validated envelope for that same assignment if available. Otherwise run `${SPACEDOCK_BIN:-spacedock} dispatch name --workflow-dir {workflow_dir} --entity-path {entity_file_path} --stage {stage}` once and use its stdout as `{canonical_name}`. This read-only query uses canonical naming validation without building or stamping; it works when the build route fails on the first dispatch. If the query fails or the executable is unavailable, report that dependency failure; never treat the hold as completed recovery. Do not retry the failed build to obtain a name. Do not derive a name from the old worker handle, duplicate shortening logic, or change dispatch mode. A replacement appends only its existing `-retry` or `-cycleN` suffix, at most eight characters; refuse over-budget or already-occupied final names before spawn.
 
 ```
 Agent(
     subagent_type="spacedock:ensign",  // override with the stage's agent: field when the workflow README names one
     description="{entity title}: {stage}",
-    name="{canonical_name}",  // helper-emitted semantic base name for this exact entity/stage
+    name="{canonical_name}",  // canonical base from the validated envelope or dispatch name for this entity/stage
     run_in_background=true,
     model="{effective_model}",
     prompt="## First action\n\nBefore anything else, invoke your operating contract:\n\n    Skill(skill=\"spacedock:ensign\")\n\nThis loads the shared ensign discipline (stage-report format, background-task polling, worktree ownership, completion signal protocol). Do not paraphrase; call the tool.\n\nYou are working on: {entity title}\n\nStage: {stage}\n\n### Stage definition:\n\n{copy stage subsection from README verbatim}\n\nRead the entity file at {entity_file_path}.\n\n### Completion checklist\n\n{numbered checklist}\n\n### Summary\n{brief description of what was accomplished}\n\n### Stage report\n\nAppend a Stage Report section at the end of the entity file (per the shared-core Stage Report Protocol). Use the title `Stage Report: {stage}`. Account for every checklist item above with a `- DONE:` / `- SKIPPED:` / `- FAILED:` entry. Use the checklist item text verbatim when possible.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done: {entity title} completed {stage}. Report written to {entity_file_path}.\")"

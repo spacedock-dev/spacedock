@@ -2,6 +2,8 @@ package dispatch
 
 import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -70,5 +72,83 @@ func TestSemanticCandidateCollision(t *testing.T) {
 	candidates := map[decomposeResult]bool{{slug: "long-alpha", stage: "done", ok: true}: true, {slug: "long-bravo", stage: "done", ok: true}: true}
 	if uniqueWorker(candidates).ok {
 		t.Fatal("digest collision acquired an owner")
+	}
+}
+
+func TestDispatchNameReadOnly(t *testing.T) {
+	for _, slug := range []string{"ci-duration-hints", longSlug, longSlugShare} {
+		t.Run(slug, func(t *testing.T) {
+			root := t.TempDir()
+			writeFile(t, filepath.Join(root, "README.md"), readmeIDStyle("slug", false))
+			ep := filepath.Join(root, slug+".md")
+			writeFile(t, ep, entityFMID(idAlpha, "Naming", "backlog"))
+			gitInit(t, root)
+			args := []string{"name", "--workflow-dir", root, "--entity-path", ep, "--stage", "backlog"}
+			got := runNative("", args...)
+			if got.exit != 0 {
+				t.Fatal(got.stderr)
+			}
+			name := strings.TrimSpace(got.stdout)
+			if slug == "ci-duration-hints" && name != "ci-duration-hints-backlog" {
+				t.Fatal(name)
+			}
+			if len(name) > 56 || !strings.HasSuffix(name, "-backlog") {
+				t.Fatal(name)
+			}
+			if gitOutput(t, root, "status", "--porcelain") != "" {
+				t.Fatal("name query mutated fixture")
+			}
+			built := runNative("- work", "build", "--workflow-dir", root, "--entity-path", ep, "--stage", "backlog", "--checklist-file", "-")
+			if built.exit != 0 || nameFromStdout(t, built.stdout) != name {
+				t.Fatal("name/build disagree", got, built)
+			}
+		})
+	}
+}
+
+func TestDispatchNameRefusesUnsafeIdentity(t *testing.T) {
+	for _, kind := range []string{"missing-entity", "missing-workflow", "unknown-stage", "invalid", "ambiguous", "budget", "worktree", "missing-flag", "unknown-flag"} {
+		t.Run(kind, func(t *testing.T) {
+			root, ep := buildHostFixture(t)
+			stage := "backlog"
+			switch kind {
+			case "missing-entity":
+				ep = filepath.Join(root, "absent.md")
+			case "missing-workflow":
+				os.Remove(filepath.Join(root, "README.md"))
+			case "unknown-stage":
+				stage = "absent"
+			case "invalid":
+				ep = filepath.Join(root, "Bad.md")
+				writeFile(t, ep, entityFM("Bad", "backlog", ""))
+			case "ambiguous":
+				ep = filepath.Join(root, "spacedock-ensign-thing.md")
+				writeFile(t, ep, entityFM("Alias", "backlog", ""))
+			case "budget":
+				stage = strings.Repeat("x", 40)
+				writeFile(t, filepath.Join(root, "README.md"), strings.ReplaceAll(readmeIDStyle("slug", false), "backlog", stage))
+				ep = filepath.Join(root, longSlug+".md")
+				writeFile(t, ep, entityFM("Long", stage, ""))
+			case "worktree":
+				ep = filepath.Join(root, ".worktrees", "copy", "thing.md")
+				writeFile(t, ep, entityFM("Copy", "backlog", ""))
+			}
+			args := []string{"name", "--workflow-dir", root, "--entity-path", ep, "--stage", stage}
+			if kind == "missing-flag" {
+				args = args[:len(args)-2]
+			}
+			if kind == "unknown-flag" {
+				args = append(args, "--stamp")
+			}
+			before := gitOutput(t, root, "status", "--porcelain")
+			head := gitOutput(t, root, "rev-parse", "HEAD")
+			got := runNative("", args...)
+			if got.exit == 0 || got.stdout != "" || got.stderr == "" {
+				t.Fatal("unsafe query accepted", got)
+			}
+			if gitOutput(t, root, "status", "--porcelain") != before || gitOutput(t, root, "rev-parse", "HEAD") != head {
+				t.Fatal("refusal mutated fixture")
+			}
+		})
 	}
 }

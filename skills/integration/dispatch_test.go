@@ -320,11 +320,56 @@ func TestSemanticRecoveryNameSource(t *testing.T) {
 			t.Fatal(path, "stale retry name")
 		}
 		if strings.Contains(path, "SKILL") {
-			for _, required := range []string{"retained validated envelope", "hold this entity", "at most eight characters", "name=\"{canonical_name}\""} {
+			for _, required := range []string{"retained validated envelope", "dispatch name --workflow-dir", "never treat the hold as completed recovery", "at most eight characters", "name=\"{canonical_name}\""} {
 				if !strings.Contains(body, required) {
 					t.Fatal(path, required)
 				}
 			}
 		}
+	}
+}
+
+func TestFirstOutageCanonicalName(t *testing.T) {
+	t.Setenv("CLAUDE_CODE_SESSION_ID", "")
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), strings.ReplaceAll(splitRootReadme, "state: state-checkout\n", ""))
+	ep := filepath.Join(root, "uncached-recovery.md")
+	writeFile(t, ep, "---\ntitle: Recovery\nstatus: backlog\n---\n")
+	gitInitFixture(t, root)
+	shim := filepath.Join(t.TempDir(), "spacedock")
+	script := "#!/bin/sh\nif [ \"$1\" = dispatch ] && [ \"$2\" = build ]; then echo first-outage >&2; exit 1; fi\nexec " + spacedockBinary(t) + " \"$@\"\n"
+	if err := os.WriteFile(shim, []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(ep)
+	if err != nil {
+		t.Fatal(err)
+	}
+	headBefore, _ := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
+	artifact := "/tmp/spacedock-dispatch/uncached-recovery-backlog.md"
+	artifactBefore, artifactErr := os.ReadFile(artifact)
+	for _, command := range []string{"build", "name", "build"} {
+		args := []string{"dispatch", command, "--workflow-dir", root, "--entity-path", ep, "--stage", "backlog"}
+		cmd := exec.Command(shim, args...)
+		out, err := cmd.CombinedOutput()
+		if command == "build" {
+			if err == nil {
+				t.Fatal("outage bypassed")
+			}
+			continue
+		}
+		if err != nil || string(out) != "uncached-recovery-backlog\n" {
+			t.Fatalf("identity query: %v %s", err, out)
+		}
+	}
+	artifactAfter, afterErr := os.ReadFile(artifact)
+	headAfter, _ := exec.Command("git", "-C", root, "rev-parse", "HEAD").Output()
+	if !bytes.Equal(headBefore, headAfter) || !bytes.Equal(artifactBefore, artifactAfter) || (artifactErr == nil) != (afterErr == nil) {
+		t.Fatal("query changed commit or dispatch artifact")
+	}
+	after, _ := os.ReadFile(ep)
+	status, err := exec.Command("git", "-C", root, "status", "--porcelain").CombinedOutput()
+	if err != nil || !bytes.Equal(before, after) || len(status) != 0 {
+		t.Fatal("query mutated entity or checkout")
 	}
 }

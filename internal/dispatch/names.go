@@ -2,7 +2,10 @@ package dispatch
 
 import (
 	"crypto/sha256"
+	"flag"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -93,4 +96,52 @@ func validateWorkerName(workflowDir, entityPath, stage string) (string, error) {
 		return "", fmt.Errorf("ambiguous generated worker name %q; choose a distinct task slug", name)
 	}
 	return name, nil
+}
+
+// runName exposes canonical identity without build, artifact or stamp effects.
+func runName(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("dispatch name", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	wd := flags.String("workflow-dir", "", "workflow definition directory")
+	ep := flags.String("entity-path", "", "canonical entity file")
+	stage := flags.String("stage", "", "declared workflow stage")
+	if err := flags.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return 0
+		}
+		return 2
+	}
+	if flags.NArg() != 0 || *wd == "" || *ep == "" || *stage == "" {
+		return buildError(stderr, 2, "dispatch name requires --workflow-dir, --entity-path and --stage, with no positional arguments")
+	}
+	entityPath, err := filepath.Abs(*ep)
+	if err != nil {
+		return buildError(stderr, 1, "%v", err)
+	}
+	if strings.Contains(filepath.ToSlash(entityPath), "/.worktrees/") {
+		return buildError(stderr, 1, "entity_path must refer to the project-root entity, not a worktree copy")
+	}
+	if _, err := os.ReadFile(entityPath); err != nil {
+		return buildError(stderr, 1, "entity file not readable: %v", err)
+	}
+	readme, err := os.ReadFile(filepath.Join(*wd, "README.md"))
+	if err != nil {
+		return buildError(stderr, 1, "workflow README not readable: %v", err)
+	}
+	stages, _ := status.ParseStagesWithDefaultsData(readme)
+	declared := false
+	for _, s := range stages {
+		if s.Name == *stage {
+			declared = true
+		}
+	}
+	if !declared {
+		return buildError(stderr, 1, "stage %q not declared in workflow", *stage)
+	}
+	name, err := validateWorkerName(*wd, entityPath, *stage)
+	if err != nil {
+		return buildError(stderr, 1, "%v", err)
+	}
+	fmt.Fprintln(stdout, name)
+	return 0
 }
