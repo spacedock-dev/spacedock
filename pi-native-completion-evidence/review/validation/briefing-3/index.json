@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-3:revision-1",
+  "question": "Approve publication of corrected stack tip 1a28b4fa2 and its full supported-host CI, retaining unresolved native failures and withholding merge approval?",
+  "artifacts": [
+    {
+      "id": "artifact:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/addbe430a55d4ef0c0a477fbe6e637c5a18f4b42/pi-native-completion-evidence/index.md",
+      "rev": "sha256:aceb215635fb7a7063940b77376f8dd74345bd67edb841108264f156ad57ca4f",
+      "mediaType": "text/markdown",
+      "summary": "Independent correction evidence and final combined checks completed on clean patch-equivalent stack. Normal and race each fail only exact retained installed-plugin resolver. Native all-six-per-host acceptance remains pending; missing Pi wrapper receipt, incomplete Pi repair and Claude roadmap refusal remain unresolved. Approve publication and full tip CI only."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/438053493838dc70c9478b3d991309d566783e85/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-3:revision-1:item-3",
+      "uri": "git-root://state/addbe430a55d4ef0c0a477fbe6e637c5a18f4b42/pi-native-completion-evidence/artifacts/validation/final-tip-1a28/report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:51220688e7423c573a18fa29c52a3e3675c5f625cc7ec140f408a3c81b6e539f"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-3:revision-1:item-4",
+      "uri": "git-root://state/addbe430a55d4ef0c0a477fbe6e637c5a18f4b42/pi-native-completion-evidence/artifacts/validation/wrapper-boundary/report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:5c47797df0ef26ef0ccbf0ae65bed4b8f5da159c5cbdb86153c979353e46d1f2"
+    }
+  ]
+}
