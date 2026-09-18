@@ -264,7 +264,7 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 	return nil
 }
 
-func codexNativeLifecycleStream(codexHome, publicStream string) (string, error) {
+func codexNativeLifecycleStream(codexHome, publicStream, artifactDir string) (string, error) {
 	var threadIDs []string
 	for _, line := range strings.Split(publicStream, "\n") {
 		var started struct {
@@ -289,7 +289,11 @@ func codexNativeLifecycleStream(codexHome, publicStream string) (string, error) 
 	if err != nil {
 		return "", fmt.Errorf("read Codex parent rollout %s: %w", paths[0], err)
 	}
-	return publicStream + "\n" + string(rollout), nil
+	stream := publicStream + "\n" + string(rollout)
+	if err := os.WriteFile(filepath.Join(artifactDir, "codex-native-lifecycle.jsonl"), []byte(stream), 0o600); err != nil {
+		return "", fmt.Errorf("retain Codex native lifecycle: %w", err)
+	}
+	return stream, nil
 }
 
 func assertObserverOutsideWorkflow(workflowRoot, observer string) error {
@@ -337,9 +341,20 @@ func TestCodexNativeLifecycleUsesCorrelatedSessionHandle(t *testing.T) {
 	if err := assertImplementationWorkerLifecycle(public, entity); err == nil {
 		t.Fatal("public Codex stdout without native spawn/completion evidence passed")
 	}
-	combined, err := codexNativeLifecycleStream(home, public)
+	artifactDir := t.TempDir()
+	combined, err := codexNativeLifecycleStream(home, public, artifactDir)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if _, err := codexNativeLifecycleStream(home, public, filepath.Join(artifactDir, "missing")); err == nil {
+		t.Fatal("failed lifecycle retention passed")
+	}
+	if err := os.RemoveAll(home); err != nil {
+		t.Fatal(err)
+	}
+	combined = readFile(t, filepath.Join(artifactDir, "codex-native-lifecycle.jsonl"))
+	if combined != public+"\n"+rollout {
+		t.Fatal("retained lifecycle bytes differ after isolated-home cleanup")
 	}
 	if err := assertImplementationWorkerLifecycle(combined, entity); err != nil {
 		t.Fatalf("correlated parent rollout rejected: %v", err)
@@ -364,7 +379,7 @@ func TestCodexNativeLifecycleUsesCorrelatedSessionHandle(t *testing.T) {
 
 func TestCodexNativeLifecycleParentRolloutLookupFailsClosed(t *testing.T) {
 	public := readFile(t, filepath.Join("testdata", "codex_native_lifecycle", "public.jsonl"))
-	if _, err := codexNativeLifecycleStream(t.TempDir(), public); err == nil {
+	if _, err := codexNativeLifecycleStream(t.TempDir(), public, t.TempDir()); err == nil {
 		t.Fatal("missing parent rollout passed")
 	}
 	home := t.TempDir()
@@ -375,7 +390,7 @@ func TestCodexNativeLifecycleParentRolloutLookupFailsClosed(t *testing.T) {
 		}
 		writeFile(t, path, "{}\n")
 	}
-	if _, err := codexNativeLifecycleStream(home, public); err == nil {
+	if _, err := codexNativeLifecycleStream(home, public, t.TempDir()); err == nil {
 		t.Fatal("ambiguous parent rollouts passed")
 	}
 }
