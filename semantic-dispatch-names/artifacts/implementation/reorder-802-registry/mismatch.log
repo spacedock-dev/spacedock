@@ -1,0 +1,7 @@
+--- FAIL: TestRuntimeLiveRegistryReconciliation (0.07s)
+    live_registry_reconciliation_test.go:228: scheduled name/callable mismatch: TestLiveSemanticNamesCodex
+    live_registry_reconciliation_test.go:92: derived common gap xfail/claude-sonnet=1
+    live_registry_reconciliation_test.go:92: derived common gap xfail/pi=4
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/contractlint	0.314s
+FAIL
