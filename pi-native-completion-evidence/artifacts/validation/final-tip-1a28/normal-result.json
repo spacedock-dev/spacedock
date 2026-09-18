@@ -1,0 +1,14 @@
+{
+  "command": [
+    "go",
+    "test",
+    "./...",
+    "-p",
+    "1",
+    "-timeout",
+    "30m"
+  ],
+  "head": "1a28b4fa2bce041569e93f9327bc8f35447e7954",
+  "exit": 1,
+  "duration_seconds": 437.3386650085449
+}

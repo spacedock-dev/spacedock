@@ -223,3 +223,15 @@ Actual scope is eight files, +438/-7, including 144 blank parent records preserv
 ### Summary
 
 Recommend PASSED for this bounded deterministic correction and integration review; no new finding. Both full suites remain exit1 for the exact FO-declined resolver defect. Final native host runs and all six same-stage variants per host are still owed. Candidate/frontmatter remain unchanged; report and artifacts are committed locally for FO synchronization and fresh-gate handling.
+
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Run the required combined normal, race and formatting checks once on exact final local tip1a28b4fa2, preserving actual exits and distinguishing any new failure from retained evidence.
+  Normal 437.339s/race 478.932s each exit 1 solely at the exact known resolver; ensigncycle 205.619s/224.174s passes. Formatting ran once, only exact known baseline diff restored; final candidate clean and unchanged.
+- DONE: Record exact integrated candidate and reuse independent correction proofs, with all unresolved native acceptance and publication limits explicit.
+  See artifacts/validation/final-tip-1a28/report.md; #801 H1 and #802 uncached recovery independent proofs reused, no duplicate focused checks. AC-3 all-six-per-host native acceptance and held receipt/plain-error/roadmap outcomes remain explicit.
+
+### Summary
+
+Recommend PASSED for bounded final local integration verification at 1a28b4fa2bce041569e93f9327bc8f35447e7954: 2 DONE, 0 SKIPPED, 0 FAILED work items. Both full commands remain exit 1 for the exact previously declined resolver defect; all other packages pass, with no race/timeout or new defect. No native acceptance, publication or merge clearance is implied. Candidate/frontmatter unchanged; state report/artifacts committed locally for FO synchronization.

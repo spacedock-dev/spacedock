@@ -1,0 +1,53 @@
+{
+  "head": {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "exit": 0,
+    "stdout": "1a28b4fa2bce041569e93f9327bc8f35447e7954\n",
+    "stderr": ""
+  },
+  "status": {
+    "command": [
+      "git",
+      "status",
+      "--short"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "diff_check": {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "chain": {
+    "command": [
+      "git",
+      "log",
+      "-6",
+      "--format=%H %s"
+    ],
+    "exit": 0,
+    "stdout": "1a28b4fa2bce041569e93f9327bc8f35447e7954 test(ensigncycle): associate Pi completion with current gate attempt\neafd2ea358ea87a3b352bf29d5a05f1ba6abaf04 test(ensigncycle): observe synchronous and routed Pi completions\n8fcfa35f6a5944b45c61658144c38fa7ef6100bb test(ensigncycle): correlate native Pi completion evidence\n2e69fbef8c14bfda08618ca98e0f2632e932e139 fix(test): respect declared stops in Claude shutdown suffix\n31983c63350adaa36a4b15814a551a366922e5c6 fix(skills): continue FO drive across handoffs and status questions\n56d77c77f010c6103ba6d0e048891ed07a8a1df2 test(state): persist identity for archive smoke fixture\n",
+    "stderr": ""
+  },
+  "reused_reviews": [
+    {
+      "path": "workflow-owned-same-stage-revision/artifacts/validation/committed-hold-reason-recheck/review.md",
+      "sha256": "03a898809506b24fc92b07c7546b5bdcded9ee3e4471fea77b1022537c1723db"
+    },
+    {
+      "path": "semantic-dispatch-names/artifacts/validation/first-outage-recovery/report.md",
+      "sha256": "42ad2345ca229805211b730f082f235ce50e04ba350440071ea6a878b4286b99"
+    }
+  ]
+}

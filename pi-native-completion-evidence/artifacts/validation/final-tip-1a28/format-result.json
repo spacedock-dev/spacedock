@@ -1,0 +1,18 @@
+{
+  "command": [
+    "gofmt",
+    "-w",
+    "./cmd",
+    "./internal"
+  ],
+  "exit": 0,
+  "changed": [
+    "internal/release/runtime_live_evidence_workflow_test.go"
+  ],
+  "matches_exact_retained_baseline_diff": true,
+  "restored_exact_precommand_bytes": true,
+  "stdout": "",
+  "stderr": "",
+  "wrapper_wall_time_seconds": 0.030738792,
+  "timing_scope": "Tool-reported whole formatting wrapper, including snapshots, gofmt, diff comparison and exact restoration; separate gofmt-only duration was not instrumented."
+}
