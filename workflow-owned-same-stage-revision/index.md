@@ -108,6 +108,17 @@ gates:
                 id: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-4:revision-1
                 digest: sha256:81c4151b10e6560564673b1dcd28da91b195c2e617222df2dbebf3c676620754
                 room-ref: '@review/validation/briefing-4'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:zz1yqc2w2katp28wpa8nghx2:validation:4
+                briefing: briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-4:revision-1
+                by: person:captain
+                at: "2026-09-18T14:14:50.282151Z"
+                decision: approve
+                reason: Captain binding resolution:binding-1789740686905676000 approves the three exact validation snapshots in /tmp/stack-1a28-publication-review.md, artifact sha256:ba1fb20cd596da07e49a367fd2576d59cee71c2e9df7c5495c502cb4c6f4580c, for publication of corrected stack tip1a28b4fa2 and full supported-host tip CI. Merge and failure waiver remain unauthorized.
+              application:
+                target-stage: done
+                state: pending
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:2
     stage: validation
