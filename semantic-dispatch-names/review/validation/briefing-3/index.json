@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-3:revision-1",
+  "question": "Approve first-outage canonical naming recovery at e0a250460 for corrected-stack publication and full tip CI, with native acceptance and merge still pending?",
+  "artifacts": [
+    {
+      "id": "artifact:6es505tn1zz2597hetvnqn7y:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/09a8c7079939f7098cead134258ce7255a2ca48b/semantic-dispatch-names/index.md",
+      "rev": "sha256:d21089a81738201f47a07109b3c879f941d19fd96110c4bd0f28bc5b9f37abfd",
+      "mediaType": "text/markdown",
+      "summary": "Read-only dispatch name shares canonical validation and enables build-only first-outage recovery without cache. Independent actual-binary mutation and collision controls passed. Final combined checks retain sole resolver failure; native recovered-worker/report proof remains owed. No merge or failure waiver."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:6es505tn1zz2597hetvnqn7y:validation:attempt-3:revision-1:item-2",
+      "uri": "git-root://main/438053493838dc70c9478b3d991309d566783e85/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:6es505tn1zz2597hetvnqn7y:validation:attempt-3:revision-1:item-3",
+      "uri": "git-root://state/09a8c7079939f7098cead134258ce7255a2ca48b/semantic-dispatch-names/artifacts/validation/first-outage-recovery/report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:42ad2345ca229805211b730f082f235ce50e04ba350440071ea6a878b4286b99"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:6es505tn1zz2597hetvnqn7y:validation:attempt-3:revision-1:item-4",
+      "uri": "git-root://state/09a8c7079939f7098cead134258ce7255a2ca48b/pi-native-completion-evidence/artifacts/validation/final-tip-1a28/report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:51220688e7423c573a18fa29c52a3e3675c5f625cc7ec140f408a3c81b6e539f"
+    }
+  ]
+}
