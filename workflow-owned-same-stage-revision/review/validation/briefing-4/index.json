@@ -1,0 +1,38 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zz1yqc2w2katp28wpa8nghx2:validation:attempt-4:revision-1",
+  "question": "Approve the validated committed-hold correction at 1f9220634 for corrected-stack publication and full tip CI, with native acceptance and merge still pending?",
+  "artifacts": [
+    {
+      "id": "artifact:zz1yqc2w2katp28wpa8nghx2:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/ffdfee87af4a7d41bdedbd6d62e20df9e7471e78/workflow-owned-same-stage-revision/index.md",
+      "rev": "sha256:3551ea9c1189de20c80b56f1d695fe823b2c18f7dcbfe728e0d819b3e8ccc8a5",
+      "mediaType": "text/markdown",
+      "summary": "Captain-required committed hold reason implemented; H1 independently closed; Pi fail-fast removed. Combined tip 1a28 local normal/race each fail only retained resolver. All-six-per-host native acceptance remains owed; no merge or failure waiver."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zz1yqc2w2katp28wpa8nghx2:validation:attempt-4:revision-1:item-2",
+      "uri": "git-root://main/438053493838dc70c9478b3d991309d566783e85/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:zz1yqc2w2katp28wpa8nghx2:validation:attempt-4:revision-1:item-3",
+      "uri": "git-root://state/ffdfee87af4a7d41bdedbd6d62e20df9e7471e78/workflow-owned-same-stage-revision/artifacts/validation/committed-hold-reason-recheck/review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:03a898809506b24fc92b07c7546b5bdcded9ee3e4471fea77b1022537c1723db"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:zz1yqc2w2katp28wpa8nghx2:validation:attempt-4:revision-1:item-4",
+      "uri": "git-root://state/ffdfee87af4a7d41bdedbd6d62e20df9e7471e78/pi-native-completion-evidence/artifacts/validation/final-tip-1a28/report.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:51220688e7423c573a18fa29c52a3e3675c5f625cc7ec140f408a3c81b6e539f"
+    }
+  ]
+}
