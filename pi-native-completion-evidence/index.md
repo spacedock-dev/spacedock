@@ -54,6 +54,17 @@ gates:
                 id: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-3:revision-1
                 digest: sha256:9bc1bd708fd6c99076eb5219412346f6c9f328065d2dae65afc6efbf458a5a22
                 room-ref: '@review/validation/briefing-3'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:cpx5q07b7wqmd6xv6wc7khvd:validation:3
+                briefing: briefing:cpx5q07b7wqmd6xv6wc7khvd:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-09-18T14:15:44.625413Z"
+                decision: approve
+                reason: Captain binding resolution:binding-1789740686905676000 approves exact validation snapshot and combined tip1a28b4fa2 in /tmp/stack-1a28-publication-review.md, artifact sha256:ba1fb20cd596da07e49a367fd2576d59cee71c2e9df7c5495c502cb4c6f4580c, for corrected-stack publication and full supported-host CI. Merge and failure waiver remain unauthorized.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Recognize Pi native completion notifications so valid worker lifecycles are graded correctly without accepting another worker or hiding downstream failures.
