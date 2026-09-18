@@ -634,3 +634,24 @@ Removing Pi failfast permits later siblings after a fatal child failure and pres
 ### Summary
 
 The missing-review reason is now an explicit durable task-body obligation backed by committed state, source absence and held authority. Evidence is under artifacts/implementation/committed-hold-reason: red-proof.txt, normal.log, race.log, registry.log and checks.json. These are deterministic local checks, not a live acceptance claim. The known resolver failure, other Claude failures and Pi missing-receipt/incomplete outcomes remain recorded and unresolved by this change. Required combined full normal/race and whole-tree formatting remain deferred to the final restacked tip. FO owns publication and live CI; the retained independent validator owns the next recommendation.
+
+
+## Review-finding disposition — committed hold reason H1
+
+Reviewer proposal at `9a614522dc1c1c162bc6b99fe11e5739f66c611b`: **Material / evidence defect / task-owned / FIX recommended**, pending distinct FO authorization. Supported workflow: a required-review correction commits its missing-source hold reason. Harm: an unrelated missing screenshot plus incidental review-source filename passes, while “review is on hold because ... has not been provided” fails. Authority: **captain-ruling[2026-09-18]** — the task body must commit the missing-review reason. Trigger: [exact detached Git-backed helper execution](artifacts/validation/committed-hold-reason/review.md) reproduces both errors with held authority and actual source absence; baseline passes. Candidate unchanged. Smallest proposal binds absence meaning to its named source in an existing reason unit, allows wrapped/ordinary phrasing, and retains all existing negatives; no NLP framework or exact prose requirement.
+
+## Stage Report: validation (committed hold reason)
+
+- DONE: Independently attack whether the correction proves a committed missing-evidence reason and preserves held authority without imposing brittle wording or hiding an incomplete outcome.
+  **REJECTED for H1.** Detached actual Git-backed fixture/helper proof exits1 (7.723s): incidental filename plus unrelated absence falsely passes; ordinary “has not been provided” hold reason falsely fails; valid baseline passes. [Evidence and proposal](artifacts/validation/committed-hold-reason/review.md) preserve exact inputs/source/results.
+- DONE: Verify bounded scope and existing focused evidence, recording remaining live/full-stack obligations and any concrete finding before repair.
+  Exact candidate `9a614522dc1c1c162bc6b99fe11e5739f66c611b` is two files77insert/13delete(+64). Existing absent/uncommitted/fabricated/altered-gate/advanced-stage negatives remain; owned normal32.098s/race30.968s/registry1.487s are reused. No duplicate green suites or candidate edits. Final combined normal/race/gofmt and actual all-six-per-host native acceptance remain pending; resolver and other Claude/Pi findings are preserved.
+
+### Summary
+
+Committed state, source absence and held authority checks improve the observation boundary, but the missing-reason recognition has a demonstrated false positive and false negative. Validation recommends REJECTED with task-owned FIX proposal awaiting FO disposition; no candidate repair or live acceptance is claimed.
+
+
+### H1 FO disposition — 2026-09-18
+
+FO separately authorized **FIX**: Material task-owned evidence defect under captain-ruling2026-09-18. The existing producer must relate the named source to its absence reason within one note unit, support ordinary “not been provided” wording and wrapping, and preserve durable-state controls. No NLP framework or mandatory exact sentence. Reviewer owns evidence only and remains available for correction recheck.

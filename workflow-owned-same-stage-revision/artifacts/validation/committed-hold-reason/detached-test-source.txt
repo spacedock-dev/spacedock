@@ -1,0 +1,24 @@
+package ensigncycle
+import (
+ "testing"
+ "path/filepath"
+ "github.com/spacedock-dev/spacedock/internal/gates"
+)
+func TestReviewHoldIndependentSemantics(t *testing.T) {
+ for _, tc := range []struct {name, note string; valid bool}{
+  {"valid baseline", "Review held: selected/reviewer-source.txt is unavailable.", true},
+  {"incidental unrelated absence", "Artifact inventory: selected/reviewer-source.txt.\n\nImplementation report: an unrelated optional screenshot is missing. Ready for re-review.", false},
+  {"normal not provided wording", "Review is on hold because selected/reviewer-source.txt has not been provided.", true},
+ } {t.Run(tc.name,func(t *testing.T){
+  entity:=writeSameStageRevision(t,t.TempDir(),"review-required")
+  root:=filepath.Dir(filepath.Dir(entity))
+  before,_,err:=gates.Read(entity);if err!=nil {t.Fatal(err)}
+  writeFile(t,entity,readFile(t,entity)+"\n"+tc.note+"\n")
+  git(t,root,"add","recorded-gate-task");git(t,root,"commit","-m","independent hold reason")
+  after,_,err:=gates.Read(entity);if err!=nil {t.Fatal(err)}
+  committed:=git(t,root,"show","HEAD:recorded-gate-task/index.md")
+  err=assertSameStageReviewHold(entity,committed,before,after)
+  t.Logf("valid=%v observed_error=%v",tc.valid,err)
+  if (err==nil)!=tc.valid {t.Fatalf("reason semantics mismatch: valid=%v, error=%v",tc.valid,err)}
+ })}
+}

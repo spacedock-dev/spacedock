@@ -1,0 +1,16 @@
+=== RUN   TestReviewHoldIndependentSemantics
+=== RUN   TestReviewHoldIndependentSemantics/valid_baseline
+    reviewer_hold_audit_test.go:21: valid=true observed_error=<nil>
+=== RUN   TestReviewHoldIndependentSemantics/incidental_unrelated_absence
+    reviewer_hold_audit_test.go:21: valid=false observed_error=<nil>
+    reviewer_hold_audit_test.go:22: reason semantics mismatch: valid=false, error=<nil>
+=== RUN   TestReviewHoldIndependentSemantics/normal_not_provided_wording
+    reviewer_hold_audit_test.go:21: valid=true observed_error=committed entity body lacks the missing review source reason
+    reviewer_hold_audit_test.go:22: reason semantics mismatch: valid=true, error=committed entity body lacks the missing review source reason
+--- FAIL: TestReviewHoldIndependentSemantics (7.21s)
+    --- PASS: TestReviewHoldIndependentSemantics/valid_baseline (2.70s)
+    --- FAIL: TestReviewHoldIndependentSemantics/incidental_unrelated_absence (2.21s)
+    --- FAIL: TestReviewHoldIndependentSemantics/normal_not_provided_wording (2.30s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	7.723s
+FAIL
