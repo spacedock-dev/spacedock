@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "go",
+    "test",
+    "./...",
+    "-p",
+    "1",
+    "-timeout",
+    "30m"
+  ],
+  "head_before": "3952164f97272b295206c95bec9c99ccebce5571",
+  "head_after": "3952164f97272b295206c95bec9c99ccebce5571",
+  "start_epoch": 1789760779.741555,
+  "end_epoch": 1789761200.560014,
+  "exit": 1
+}

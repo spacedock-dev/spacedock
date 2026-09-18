@@ -1,0 +1,31 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	0.657s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	0.230s
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (0.47s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	127.435s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	0.890s
+--- FAIL: TestRuntimeLiveRegistryReconciliation (0.07s)
+    live_registry_reconciliation_test.go:255: unexpected scheduled callables: map[TestLiveSemanticNamesCodex:1]
+    live_registry_reconciliation_test.go:92: derived common gap xfail/claude-sonnet=1
+    live_registry_reconciliation_test.go:92: derived common gap xfail/pi=4
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/contractlint	0.916s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	30.772s
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	152.754s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	20.852s
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	2.449s
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	0.269s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	0.238s
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	0.924s
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	0.379s
+ok  	github.com/spacedock-dev/spacedock/internal/release	18.334s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	0.232s
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	0.222s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	2.933s
+ok  	github.com/spacedock-dev/spacedock/internal/status	36.984s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	0.443s
+ok  	github.com/spacedock-dev/spacedock/skills/integration	4.009s
+FAIL

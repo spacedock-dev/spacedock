@@ -1,0 +1,11 @@
+1:  31983c633 = 1:  20cdf8469 fix(skills): continue FO drive across handoffs and status questions
+2:  2e69fbef8 ! 2:  3952164f9 fix(test): respect declared stops in Claude shutdown suffix
+    @@ Commit message
+     
+      ## internal/ensigncycle/claude_live_runner_test.go ##
+     @@ internal/ensigncycle/claude_live_runner_test.go: import (
+    - 	"github.com/spacedock-dev/spacedock/internal/gitsource"
+    + 	"github.com/spacedock-dev/spacedock/internal/gates"
+      )
+      
+     -// antiShutdownOverride counters upstream claude-code #55297 (a regression in 2.1.126;
