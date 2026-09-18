@@ -1,0 +1,45 @@
+--- FAIL: TestDispatchNameReadOnly (1.61s)
+    --- FAIL: TestDispatchNameReadOnly/ci-duration-hints (0.67s)
+        names_test.go:89: error: unknown dispatch subcommand: name
+            spacedock dispatch assembles ensign dispatch artifacts.
+            
+            Usage:
+              spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi]
+              spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
+              spacedock dispatch trunk --workflow-dir DIR
+              spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include lingering,superseded,un-advanced-pr,stale-branch,local-main-drift]
+            
+    --- FAIL: TestDispatchNameReadOnly/dispatch-reconcile-deconflate-repo-hygiene-and-name-overflow (0.54s)
+        names_test.go:89: error: unknown dispatch subcommand: name
+            spacedock dispatch assembles ensign dispatch artifacts.
+            
+            Usage:
+              spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi]
+              spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
+              spacedock dispatch trunk --workflow-dir DIR
+              spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include lingering,superseded,un-advanced-pr,stale-branch,local-main-drift]
+            
+    --- FAIL: TestDispatchNameReadOnly/dispatch-reconcile-deconflate-repo-hygiene-and-name-sibling (0.40s)
+        names_test.go:89: error: unknown dispatch subcommand: name
+            spacedock dispatch assembles ensign dispatch artifacts.
+            
+            Usage:
+              spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi]
+              spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
+              spacedock dispatch trunk --workflow-dir DIR
+              spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include lingering,superseded,un-advanced-pr,stale-branch,local-main-drift]
+            
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	5.719s
+--- FAIL: TestFirstOutageCanonicalName (2.99s)
+    dispatch_test.go:358: identity query: exit status 2 error: unknown dispatch subcommand: name
+        spacedock dispatch assembles ensign dispatch artifacts.
+        
+        Usage:
+          spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi]
+          spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
+          spacedock dispatch trunk --workflow-dir DIR
+          spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include lingering,superseded,un-advanced-pr,stale-branch,local-main-drift]
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/skills/integration	3.865s
+FAIL

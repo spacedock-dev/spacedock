@@ -1,8 +1,8 @@
 # First-outage recovery proposal
 
-Captain ruling, 2026-09-18: “both yes” requires preserving first-dispatch recovery when no cached worker identity exists. This supersedes naming approach 5 / AC-3's cached-envelope-or-hold rule for the observed build-only outage. The captain approved the behavior; the concrete interface below awaits a distinct FO disposition through `need_decision`.
+Captain ruling, 2026-09-18: “both yes” requires preserving first-dispatch recovery when no cached worker identity exists. This supersedes naming approach 5 / AC-3's cached-envelope-or-hold rule for the observed build-only outage. The captain approved the behavior; FO subsequently authorized the exact seven-path read-only interface via FIX before candidate mutation.
 
-Candidate remains unchanged at `f5af7282dda9151771ff9888dd246553e38afa82`.
+Proposal baseline: `f5af7282dda9151771ff9888dd246553e38afa82`. Implementation and results are recorded in `results.md`.
 
 ## Finding and evidence
 
@@ -11,7 +11,7 @@ Candidate remains unchanged at `f5af7282dda9151771ff9888dd246553e38afa82`.
 - Authority: captain-ruling[2026-09-18] preserve first-dispatch recovery, selected mode, safe identity, one worker and committed report without a cached identity.
 - Trigger: finding 3 in `workflow-owned-same-stage-revision/artifacts/validation/tip35238049892/report.md` records two real build failures and zero Agent calls. The fixture shim rejects every `dispatch build` but forwards other commands. The runtime followed the old hold rule; this is a naming/recovery contract conflict, not proof of model disobedience.
 
-Classification: Material. Ownership: semantic-dispatch-names and its recovery integration. Proposed disposition: FIX after the concrete mechanism is authorized. No existing failed live outcome is waived.
+Classification: Material. Ownership: semantic-dispatch-names and its recovery integration. Disposition: FIX authorized for the concrete mechanism and implemented. No existing failed live outcome is waived.
 
 ## Smallest proposed mechanism
 

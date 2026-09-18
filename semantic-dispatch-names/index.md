@@ -298,3 +298,17 @@ On `844fad458`, both `go test ./...` and `go test ./... -race` exited 1 solely a
 ### Summary
 
 The rebased naming candidate satisfies the amended routine-selection requirement and preserves strict ownership checks; the independent actual-grader replay confirms that the branch-order correction fixes the observed false failure without relaxing branch membership. Local validation is PASSED, while final combined-tip checks and native host CI remain explicitly pending. Earlier native spawn/reuse evidence is retained as historical evidence and is not presented as a new run.
+
+
+## Stage Report: implementation
+
+- DONE: Identify the smallest canonical-identity path that preserves first-dispatch named recovery without a cached envelope, with focused falsifiable evidence.
+  Evidence: [proposal and disposition](artifacts/implementation/first-outage-recovery/proposal.md) assesses existing surfaces; initial tests fail without the query, and detached wrong-name/collision mutants fail independently in [results](artifacts/implementation/first-outage-recovery/results.md).
+- DONE: After distinct FO approval of the concrete mechanism, implement and verify recovery preserving one worker, selected mode, safe identity, and committed report.
+  Evidence: FO FIX authorized the exact seven paths; code `bfc97adbd` is +186/-4 (+182 net). Focused dispatch/integration/recovery controls exited 0, including the real build-only outage shim, selected-mode controls, duplicate-worker refusal and complete-report grading. No new live outcome is claimed.
+
+### Summary
+
+The captain's first-outage recovery ruling supersedes the earlier cached-envelope-or-hold fallback for a build-only outage. The new read-only `dispatch name` route reuses canonical validation, and selected named recovery calls it once when no validated envelope exists. Exact code, red-to-green commands, rejecting overlays and retained logs are in [first-outage recovery results](artifacts/implementation/first-outage-recovery/results.md). Complete executable absence remains an unavailable dependency outside this repair.
+
+Candidate `bfc97adbd` is based on `f5af7282dda9151771ff9888dd246553e38afa82`; seven existing files changed, +182 net lines. Focused checks and changed-file formatting pass. Independent validation, final combined normal/race/full-tree formatting and native CI remain pending. The offline proof does not establish a new worker completion or committed live report; retained failures remain visible. No push, rebase, model or broad test run occurred.

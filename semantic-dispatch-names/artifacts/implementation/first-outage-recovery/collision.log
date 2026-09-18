@@ -1,0 +1,7 @@
+--- FAIL: TestDispatchNameRefusesUnsafeIdentity (0.19s)
+    --- FAIL: TestDispatchNameRefusesUnsafeIdentity/ambiguous (0.18s)
+        names_test.go:147: unsafe query accepted {spacedock-ensign-thing-backlog
+              0}
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	0.510s
+FAIL

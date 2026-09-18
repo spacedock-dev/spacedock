@@ -1,0 +1,3 @@
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	10.877s
+ok  	github.com/spacedock-dev/spacedock/skills/integration	2.347s
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	3.178s

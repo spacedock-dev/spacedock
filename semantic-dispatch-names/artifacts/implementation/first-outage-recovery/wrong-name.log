@@ -1,0 +1,6 @@
+--- FAIL: TestDispatchNameReadOnly (0.14s)
+    --- FAIL: TestDispatchNameReadOnly/ci-duration-hints (0.14s)
+        names_test.go:93: wrong-ci-duration-hints-backlog
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	0.526s
+FAIL
