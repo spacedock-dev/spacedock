@@ -1,0 +1,4 @@
+1:  c82ec894b = 1:  40a117cf5 fix(state): prove local delivery and make retirement durable
+2:  7a0d5976b = 2:  7d5a0ec4a test(state): align split-root fixtures with storage refusal
+3:  27da9265c = 3:  a51a08d2c test(state): use shared Git scaffold for native fixture
+4:  56d77c77f = 4:  0dee00c21 test(state): persist identity for archive smoke fixture

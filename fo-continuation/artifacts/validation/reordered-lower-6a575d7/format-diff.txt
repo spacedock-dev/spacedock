@@ -1,0 +1,15 @@
+diff --git a/internal/release/runtime_live_evidence_workflow_test.go b/internal/release/runtime_live_evidence_workflow_test.go
+index 01643dde0..b790cff62 100644
+--- a/internal/release/runtime_live_evidence_workflow_test.go
++++ b/internal/release/runtime_live_evidence_workflow_test.go
+@@ -16,8 +16,8 @@ type liveCadenceWorkflow struct {
+ 	On struct {
+ 		WorkflowDispatch struct {
+ 			Inputs map[string]struct {
+-				Default  string   `yaml:"default"`
+-				Options  []string `yaml:"options"`
++				Default string   `yaml:"default"`
++				Options []string `yaml:"options"`
+ 			} `yaml:"inputs"`
+ 		} `yaml:"workflow_dispatch"`
+ 	} `yaml:"on"`

@@ -1,0 +1,15 @@
+6a575d7ae fix(test): respect declared stops in Claude shutdown suffix
+d1a332955 fix(skills): continue FO drive across handoffs and status questions
+0dee00c21 test(state): persist identity for archive smoke fixture
+a51a08d2c test(state): use shared Git scaffold for native fixture
+7d5a0ec4a test(state): align split-root fixtures with storage refusal
+40a117cf5 fix(state): prove local delivery and make retirement durable
+1bcee3400 test: require scheduled semantic naming proof in base registry checker
+6419b10bf test: move native lifecycle retention prerequisite below same-stage proof
+6eee6ab4a fix(dispatch): expose canonical name for first-outage recovery
+520f08454 Run semantic Codex proof routinely and move owner checks offline
+bfe1041bc Accept semantic Pi dispatch handles and check current artifact paths
+b1faca579 Preserve authoritative identity in stamped owner dispatch
+b463fbf58 Pass semantic proof artifact directory to lifecycle retention
+da1215a93 Update semantic dispatch fixtures and register targeted native proof
+fe0fe4401 Implement semantic dispatch names with legacy identity preservation

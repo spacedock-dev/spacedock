@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "gofmt",
+    "-w",
+    "./cmd",
+    "./internal"
+  ],
+  "head_before": "6a575d7ae140f3bbf8dd99b59da37f6ac981ae82",
+  "head_after": "6a575d7ae140f3bbf8dd99b59da37f6ac981ae82",
+  "start_epoch": 1789762409.854869,
+  "end_epoch": 1789762409.983319,
+  "exit": 0,
+  "changed_paths": [
+    "internal/release/runtime_live_evidence_workflow_test.go"
+  ],
+  "matched_known_baseline_and_restored": true,
+  "before_sha256": "e492701aefb985516a541d16a902f9cabfae67280aa190b20abd7e985bea0051",
+  "formatted_sha256": "ca4414edcc6e09bc8ed65a50a65a5d6eed55263d8ae1f42997e13b57b3931f7c",
+  "final_status": ""
+}
