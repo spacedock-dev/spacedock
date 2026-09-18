@@ -1,6 +1,6 @@
 ---
 title: Use semantic branch and worker names
-status: validation
+status: implementation
 source: Captain request 2026-09-15; GitHub issue 624
 started: 2026-09-15T18:27:49Z
 completed:
@@ -8,8 +8,8 @@ verdict:
 score: 0.8
 worktree: .worktrees/spacedock-ensign-semantic-dispatch-names
 issue: spacedock-dev/spacedock#624
-pr: "#802"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: 6es505tn1zz2597hetvnqn7y
 gates:
     version: 1
@@ -67,7 +67,7 @@ gates:
                 reason: Captain binding resolution binding-1789591360273000000 approves all three named corrected validation snapshots in /tmp/stack-corrections-review.md for stack publication and final-tip CI. Restack preserves all patches and tree. No merge authority or live failure waiver.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
