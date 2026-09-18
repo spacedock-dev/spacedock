@@ -1,6 +1,6 @@
 ---
 title: Use semantic branch and worker names
-status: implementation
+status: validation
 source: Captain request 2026-09-15; GitHub issue 624
 started: 2026-09-15T18:27:49Z
 completed:
