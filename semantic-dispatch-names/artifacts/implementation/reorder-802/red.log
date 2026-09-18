@@ -1,0 +1,6 @@
+# github.com/spacedock-dev/spacedock/internal/ensigncycle [github.com/spacedock-dev/spacedock/internal/ensigncycle.test]
+internal/ensigncycle/semantic_names_live_test.go:45:76: too many arguments in call to codexNativeLifecycleStream
+	have (string, string, string)
+	want (string, string)
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle [build failed]
+FAIL
