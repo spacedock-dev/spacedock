@@ -460,18 +460,20 @@ func runSameStageRevisionJourney(t *testing.T, runner liveDriver, scenario share
 			if blocked {
 				want--
 			}
-			if len(after.Records) != 1 || len(after.Records[0].Attempts) != want {
-				check(false, fmt.Sprintf("attempt count: want %d, got %v", want, after.Records))
-			} else {
-				check(reflect.DeepEqual(old, after.Records[0].Attempts[:len(old)]), "rejected attempts changed")
-				if !blocked {
-					current := after.Records[0].Attempts[want-1]
-					check(current.Resolution == nil && current.Application == nil && current.Withdrawal == nil, "fresh attempt is not open")
-					room, err := gates.ResolveRoomRef(entityPath, current.Briefing.RoomRef)
-					if err != nil {
-						t.Fatal(err)
+			if !requiresReview {
+				if len(after.Records) != 1 || len(after.Records[0].Attempts) != want {
+					check(false, fmt.Sprintf("attempt count: want %d, got %v", want, after.Records))
+				} else {
+					check(reflect.DeepEqual(old, after.Records[0].Attempts[:len(old)]), "rejected attempts changed")
+					if !blocked {
+						current := after.Records[0].Attempts[want-1]
+						check(current.Resolution == nil && current.Application == nil && current.Withdrawal == nil, "fresh attempt is not open")
+						room, err := gates.ResolveRoomRef(entityPath, current.Briefing.RoomRef)
+						if err != nil {
+							t.Fatal(err)
+						}
+						checks = append(checks, durableSemantic("self-feedback-obligations", assertSameStageSelectedPlan(gitsource.Roots{Main: workflowRoot, State: filepath.Dir(filepath.Dir(entityPath))}, []byte(readFile(t, filepath.Join(room, "index.json"))))))
 					}
-					checks = append(checks, durableSemantic("self-feedback-obligations", assertSameStageSelectedPlan(gitsource.Roots{Main: workflowRoot, State: filepath.Dir(filepath.Dir(entityPath))}, []byte(readFile(t, filepath.Join(room, "index.json"))))))
 				}
 			}
 			for path, content := range frozen {
@@ -483,7 +485,10 @@ func runSameStageRevisionJourney(t *testing.T, runner liveDriver, scenario share
 			check(git(t, stateRoot, "status", "--porcelain", "--", "recorded-gate-task") == "" && git(t, stateRoot, "show", "HEAD:recorded-gate-task/selected/plan.md") == sameStagePlan, "corrected plan/entity not durably committed")
 			body := readFile(t, entityPath)
 			git(t, stateRoot, "bundle", "create", filepath.Join(result.artifactDir, "state.bundle"), "--all")
-			check(!requiresReview || strings.Contains(body, "reviewer-source.txt"), "missing required review evidence was not recorded")
+			if requiresReview {
+				committed := git(t, stateRoot, "show", "HEAD:recorded-gate-task/index.md")
+				checks = append(checks, durableSemantic("self-feedback-obligations", assertSameStageReviewHold(entityPath, committed, before, after)))
+			}
 			rooms, _ := filepath.Glob(filepath.Join(filepath.Dir(entityPath), "review", "*", "round-*"))
 			expectedRooms := map[string]int{"round-required": 1}[variant]
 			check(len(rooms) == expectedRooms, "canonical round count violates workflow requirements")

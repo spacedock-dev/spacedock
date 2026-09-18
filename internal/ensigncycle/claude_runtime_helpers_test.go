@@ -7,12 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/gates"
 	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
@@ -771,7 +773,7 @@ func writeSameStageRevision(t *testing.T, root, variant string) string {
 	policy := "Correct selected/plan.md against selected/frozen-input.txt. The intended gate review source is selected/plan.md. Append and commit your own validation stage report. This workflow has no canonical correction round and no Feedback Cycles projection."
 	switch variant {
 	case "review-required", "separate-review-required":
-		policy += " Independent review is required after correction, by a different worker at this same validation stage. Its fresh verdict requires selected/reviewer-source.txt; that external evidence is unavailable and must never be fabricated. Record the missing evidence and hold."
+		policy += " Independent review is required after correction, by a different worker at this same validation stage. Its fresh verdict requires selected/reviewer-source.txt; that external evidence is unavailable and must never be fabricated. Record in the entity body which review source is missing and why review is held, commit that hold reason, and keep the gate held."
 	case "round-required", "round-missing":
 		policy = strings.Replace(policy, "no canonical correction round", "a canonical correction round validation/1 using inputs/briefing.json and inputs/briefing.review.jsonl", 1)
 		writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "candidate.txt"), rejectionCandidate)
@@ -957,4 +959,61 @@ func TestSameStageNativeIdentityAndReuse(t *testing.T) {
 			t.Fatal("self-review passed")
 		}
 	})
+}
+
+func TestSameStageCommittedReviewHold(t *testing.T) {
+	for _, name := range []string{"committed", "wrapped wording", "absent reason", "uncommitted reason", "fabricated source", "advanced gate", "advanced stage"} {
+		t.Run(name, func(t *testing.T) {
+			entity := writeSameStageRevision(t, t.TempDir(), "review-required")
+			root := filepath.Dir(filepath.Dir(entity))
+			before, _, err := gates.Read(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			note := "\nReview held: selected/reviewer-source.txt is unavailable.\n"
+			if name == "wrapped wording" {
+				note = "\nAwaiting external evidence:\nselected/reviewer-source.txt. Review remains held.\n"
+			}
+			if name != "absent reason" {
+				writeFile(t, entity, readFile(t, entity)+note)
+			}
+			if name == "fabricated source" {
+				writeFile(t, filepath.Join(filepath.Dir(entity), "selected/reviewer-source.txt"), "invented")
+			}
+			if name == "advanced stage" {
+				writeFile(t, entity, strings.Replace(readFile(t, entity), "status: validation", "status: done", 1))
+			}
+			if name == "advanced gate" {
+				writeFile(t, entity, strings.Replace(readFile(t, entity), "decision: revise", "decision: approve", 1))
+			}
+			if name != "uncommitted reason" {
+				git(t, root, "add", "recorded-gate-task")
+				git(t, root, "commit", "--allow-empty", "-m", "record hold")
+			}
+			after, _, err := gates.Read(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			committed := git(t, root, "show", "HEAD:recorded-gate-task/index.md")
+			err = assertSameStageReviewHold(entity, committed, before, after)
+			valid := name == "committed" || name == "wrapped wording"
+			if (err == nil) != valid {
+				t.Fatalf("hold error=%v; valid=%v", err, valid)
+			}
+		})
+	}
+}
+
+func assertSameStageReviewHold(entityPath, committed string, before, after *gates.Document) error {
+	_, body, ok := strings.Cut(strings.TrimPrefix(committed, "---\n"), "\n---\n")
+	if !ok || !strings.Contains(body, "reviewer-source.txt") || !regexp.MustCompile(`(?i)missing|unavailable|absent|awaiting|not available|not present|not supplied`).MatchString(body) {
+		return fmt.Errorf("committed entity body lacks the missing review source reason")
+	}
+	if _, err := os.Lstat(filepath.Join(filepath.Dir(entityPath), "selected/reviewer-source.txt")); !os.IsNotExist(err) {
+		return fmt.Errorf("required external review source is not absent: %v", err)
+	}
+	if !reflect.DeepEqual(before, after) || statuspkg.ParseFrontmatterData([]byte(committed))["status"] != "validation" {
+		return fmt.Errorf("missing-source review advanced or changed gate authority")
+	}
+	return nil
 }
