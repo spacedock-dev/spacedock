@@ -312,3 +312,14 @@ The rebased naming candidate satisfies the amended routine-selection requirement
 The captain's first-outage recovery ruling supersedes the earlier cached-envelope-or-hold fallback for a build-only outage. The new read-only `dispatch name` route reuses canonical validation, and selected named recovery calls it once when no validated envelope exists. Exact code, red-to-green commands, rejecting overlays and retained logs are in [first-outage recovery results](artifacts/implementation/first-outage-recovery/results.md). Complete executable absence remains an unavailable dependency outside this repair.
 
 Candidate `bfc97adbd` is based on `f5af7282dda9151771ff9888dd246553e38afa82`; seven existing files changed, +182 net lines. Focused checks and changed-file formatting pass. Independent validation, final combined normal/race/full-tree formatting and native CI remain pending. The offline proof does not establish a new worker completion or committed live report; retained failures remain visible. No push, rebase, model or broad test run occurred.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently verify read-only canonical naming enables build-only first-outage recovery while preserving naming ambiguity, selected-mode, and one-worker/report boundaries.
+  Independent actual-binary split-root probe passes: uncached short/long queries survive unconditional build failures, preserve all fixture/Git file bytes and exactly match subsequent builds; malformed/missing/colliding requests refuse. Producer mode/one-worker/committed-report controls and negative mutants are reused; this establishes identity availability, not native completion. [Evidence](artifacts/validation/first-outage-recovery/report.md).
+- DONE: Review exact scope, evidence and documentation against the captain ruling, retaining final combined and native obligations.
+  Clean candidate `bfc97adbda716201f7420fefa3759965788252f3` on `f5af7282`: seven files, +186/-4 (+182 net), within authorized scope. Docs preserve one query, selected mode, occupancy/suffix checks and explicit dependency failure rather than HOLD-as-pass. AC-1–4 mapping and limitations are recorded; combined normal/race/full-tree formatting and native CI remain pending.
+
+### Summary
+
+PASSED for this bounded first-outage correction: canonical naming is independently available without a cached envelope while the build route remains unavailable, and invalid identity requests produce no name or fixture mutation. Native first-outage recovery with exactly one worker and a committed report remains an outstanding obligation; earlier resolver and native failures are not waived. No candidate/frontmatter changes, models, broad runs, CI, push or rebase occurred.

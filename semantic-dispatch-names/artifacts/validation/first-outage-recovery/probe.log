@@ -1,0 +1,69 @@
+{
+  "fixture": "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/semantic-outage-audit-dqzq9b3k",
+  "results": [
+    {
+      "case": "uncached-split-root-short",
+      "build_exits": [
+        73,
+        73
+      ],
+      "name": "validation-first-outage-backlog",
+      "snapshot_files": 61,
+      "unchanged": true
+    },
+    {
+      "case": "uncached-split-root-long",
+      "build_exits": [
+        73,
+        73
+      ],
+      "name": "validation-first-outage-readable-long-t-b04804b3-backlog",
+      "snapshot_files": 61,
+      "unchanged": true
+    },
+    {
+      "case": "missing",
+      "exit": 1,
+      "no_stdout": true,
+      "unchanged": true
+    },
+    {
+      "case": "undeclared",
+      "exit": 1,
+      "no_stdout": true,
+      "unchanged": true
+    },
+    {
+      "case": "positional",
+      "exit": 2,
+      "no_stdout": true,
+      "unchanged": true
+    },
+    {
+      "case": "malformed-option",
+      "exit": 2,
+      "no_stdout": true,
+      "unchanged": true
+    },
+    {
+      "case": "split-root-cross-generation-collision",
+      "exit": 1,
+      "unchanged": true
+    },
+    {
+      "case": "malformed-workflow",
+      "exit": 1,
+      "unchanged": true
+    },
+    {
+      "case": "post-outage-build-equivalence",
+      "name": "validation-first-outage-backlog",
+      "exact": true
+    },
+    {
+      "case": "post-outage-build-equivalence",
+      "name": "validation-first-outage-readable-long-t-b04804b3-backlog",
+      "exact": true
+    }
+  ]
+}
