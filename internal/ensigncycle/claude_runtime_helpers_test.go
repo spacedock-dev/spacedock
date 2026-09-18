@@ -962,7 +962,7 @@ func TestSameStageNativeIdentityAndReuse(t *testing.T) {
 }
 
 func TestSameStageCommittedReviewHold(t *testing.T) {
-	for _, name := range []string{"committed", "wrapped wording", "absent reason", "uncommitted reason", "fabricated source", "advanced gate", "advanced stage"} {
+	for _, name := range []string{"committed", "wrapped wording", "not provided", "unrelated absence", "absent reason", "uncommitted reason", "fabricated source", "advanced gate", "advanced stage"} {
 		t.Run(name, func(t *testing.T) {
 			entity := writeSameStageRevision(t, t.TempDir(), "review-required")
 			root := filepath.Dir(filepath.Dir(entity))
@@ -973,6 +973,12 @@ func TestSameStageCommittedReviewHold(t *testing.T) {
 			note := "\nReview held: selected/reviewer-source.txt is unavailable.\n"
 			if name == "wrapped wording" {
 				note = "\nAwaiting external evidence:\nselected/reviewer-source.txt. Review remains held.\n"
+			}
+			if name == "not provided" {
+				note = "\nReview is on hold because selected/reviewer-source.txt has not been provided.\n"
+			}
+			if name == "unrelated absence" {
+				note = "\nArtifact inventory: selected/reviewer-source.txt.\n\nImplementation report: an unrelated optional screenshot is missing. Ready for re-review.\n"
 			}
 			if name != "absent reason" {
 				writeFile(t, entity, readFile(t, entity)+note)
@@ -996,7 +1002,7 @@ func TestSameStageCommittedReviewHold(t *testing.T) {
 			}
 			committed := git(t, root, "show", "HEAD:recorded-gate-task/index.md")
 			err = assertSameStageReviewHold(entity, committed, before, after)
-			valid := name == "committed" || name == "wrapped wording"
+			valid := name == "committed" || name == "wrapped wording" || name == "not provided"
 			if (err == nil) != valid {
 				t.Fatalf("hold error=%v; valid=%v", err, valid)
 			}
@@ -1006,7 +1012,16 @@ func TestSameStageCommittedReviewHold(t *testing.T) {
 
 func assertSameStageReviewHold(entityPath, committed string, before, after *gates.Document) error {
 	_, body, ok := strings.Cut(strings.TrimPrefix(committed, "---\n"), "\n---\n")
-	if !ok || !strings.Contains(body, "reviewer-source.txt") || !regexp.MustCompile(`(?i)missing|unavailable|absent|awaiting|not available|not present|not supplied`).MatchString(body) {
+	// A paragraph is one note unit; line wrapping does not separate its reason.
+	absence := regexp.MustCompile(`(?i)\b(missing|unavailable|absent|awaiting|not\s+(available|present|supplied|(been\s+)?provided))\b`)
+	hasReason := false
+	for _, note := range regexp.MustCompile(`\n[\t ]*\n`).Split(body, -1) {
+		if strings.Contains(note, "reviewer-source.txt") && absence.MatchString(note) {
+			hasReason = true
+			break
+		}
+	}
+	if !ok || !hasReason {
 		return fmt.Errorf("committed entity body lacks the missing review source reason")
 	}
 	if _, err := os.Lstat(filepath.Join(filepath.Dir(entityPath), "selected/reviewer-source.txt")); !os.IsNotExist(err) {
