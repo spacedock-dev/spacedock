@@ -73,6 +73,17 @@ gates:
                 id: briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-3:revision-1
                 digest: sha256:39d63add335705b856dc0dbcecd9dbb07b65c8606a68d636bf099752ed0ce7ab
                 room-ref: '@review/validation/briefing-3'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6es505tn1zz2597hetvnqn7y:validation:3
+                briefing: briefing:6es505tn1zz2597hetvnqn7y:validation:attempt-3:revision-1
+                by: person:captain
+                at: "2026-09-18T14:15:21.581146Z"
+                decision: approve
+                reason: Captain binding resolution:binding-1789740686905676000 approves exact validation snapshot in /tmp/stack-1a28-publication-review.md, artifact sha256:ba1fb20cd596da07e49a367fd2576d59cee71c2e9df7c5495c502cb4c6f4580c, corrected-stack publication and full tip CI. Merge and failure waiver remain unauthorized.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Use short, readable task names for public branches and dispatched workers. Keep descriptive detail in titles.
