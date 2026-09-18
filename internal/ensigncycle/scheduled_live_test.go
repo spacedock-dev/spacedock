@@ -53,6 +53,9 @@ func TestLiveScheduled(t *testing.T) {
 			liveScheduledTest{"TestLiveMergedTeamModeDispatch", 140, TestLiveMergedTeamModeDispatch},
 		)
 	}
+	if runtime == "codex" {
+		jobs = append(jobs, liveScheduledTest{"TestLiveSemanticNamesCodex", 110, TestLiveSemanticNamesCodex})
+	}
 	orderLiveTests(jobs)
 	var mu sync.Mutex
 	next := 0

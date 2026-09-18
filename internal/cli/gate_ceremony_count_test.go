@@ -198,8 +198,12 @@ func assertGateCeremonyEndState(t *testing.T, label, hostClone, workflowDir, ent
 	if info, err := os.Stat(worktreePath); err != nil || !info.IsDir() {
 		t.Fatalf("%s: worktree missing at %s: %v", label, worktreePath, err)
 	}
-	if branch := strings.TrimSpace(git(t, worktreePath, "rev-parse", "--abbrev-ref", "HEAD")); branch != gateCeremonyWorkerKey+"/"+slug {
-		t.Errorf("%s: worktree branch = %q, want %s", label, branch, gateCeremonyWorkerKey+"/"+slug)
+	wantBranch := slug
+	if label == "before" {
+		wantBranch = gateCeremonyWorkerKey + "/" + slug
+	}
+	if branch := strings.TrimSpace(git(t, worktreePath, "rev-parse", "--abbrev-ref", "HEAD")); branch != wantBranch {
+		t.Errorf("%s: worktree branch = %q, want %s", label, branch, wantBranch)
 	}
 
 	if !strings.Contains(envelope, `"schema_version"`) {

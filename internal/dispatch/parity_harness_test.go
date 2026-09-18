@@ -110,6 +110,14 @@ func gitInit(t *testing.T, dir string) {
 			t.Fatalf("git %v: %v\n%s", args, err, out)
 		}
 	}
+	// Positive build fixtures declare legacy worktrees before initializing Git.
+	paths, _ := filepath.Glob(filepath.Join(dir, ".worktrees", "spacedock-ensign-*"))
+	for _, path := range paths {
+		if entries, _ := os.ReadDir(path); len(entries) == 0 {
+			runGitFatal(t, dir, "worktree", "add", "-b", "spacedock-ensign/"+strings.TrimPrefix(filepath.Base(path), "spacedock-ensign-"), path)
+		}
+	}
+
 }
 
 // gitInitBare initializes a git repo at dir with no seed commit — enough for a

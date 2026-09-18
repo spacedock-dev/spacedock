@@ -134,7 +134,7 @@ func TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper(t *testin
 	if out.Description != "Canonical Stage: implementation" {
 		t.Fatalf("description = %q", out.Description)
 	}
-	if !strings.Contains(out.DispatchFile, "spacedock-ensign-canonical-stage-implementation.md") {
+	if !strings.Contains(out.DispatchFile, "canonical-stage-implementation.md") {
 		t.Fatalf("dispatch file path does not carry builder-derived slug/stage: %q", out.DispatchFile)
 	}
 
@@ -183,6 +183,7 @@ func TestPiStageDispatchSmokeUsesBuildArtifactThroughWrapper(t *testing.T) {
 	}
 	entityPath := filepath.Join(stateDir, "smoke-stage", "index.md")
 	writeFile(t, entityPath, entityFM("Smoke Stage", "implementation", worktreeRel))
+	gitInit(t, root)
 	gitInit(t, stateDir)
 
 	checklist := []string{"- run the fixture Pi worker", "- append durable stage report"}
@@ -400,6 +401,9 @@ func TestBuildPiHostEmitsSpawnAgentAndSkill(t *testing.T) {
 	entityPath := filepath.Join(root, "thing.md")
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
+	if worktreeRel == ".worktrees/spacedock-satellite-thing" {
+		runGitFatal(t, root, "worktree", "add", "-b", "spacedock-satellite/thing", filepath.Join(root, worktreeRel))
+	}
 
 	stdin := strings.Join([]string{"- a"}, "\n")
 	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi"}
@@ -447,6 +451,9 @@ func TestBuildPiHostAgentOverrideOmitsSkill(t *testing.T) {
 	entityPath := filepath.Join(root, "thing.md")
 	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
 	gitInit(t, root)
+	if worktreeRel == ".worktrees/spacedock-satellite-thing" {
+		runGitFatal(t, root, "worktree", "add", "-b", "spacedock-satellite/thing", filepath.Join(root, worktreeRel))
+	}
 
 	stdin := strings.Join([]string{"- a"}, "\n")
 	stdinArgs := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "pi"}

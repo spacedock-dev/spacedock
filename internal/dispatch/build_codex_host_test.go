@@ -71,7 +71,7 @@ func TestBuildCodexHostRejectsBareModeBeforeArtifactCreation(t *testing.T) {
 	entityPath := filepath.Join(root, "f02codexbare.md")
 	writeFile(t, entityPath, entityFM("Codex Bare", "implementation", ""))
 	gitInit(t, root)
-	artifactPath := filepath.Join(dispatchFileDir, "spacedock-ensign-f02codexbare-implementation.md")
+	artifactPath := filepath.Join(dispatchFileDir, "f02codexbare-implementation.md")
 	_ = os.Remove(artifactPath)
 	t.Cleanup(func() { _ = os.Remove(artifactPath) })
 	args := []string{"build", "--workflow-dir", root, "--entity-path", entityPath, "--stage", "implementation", "--checklist-file", "-", "--host", "codex"}

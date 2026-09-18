@@ -320,6 +320,13 @@ limited to the named runtime boundary.
 - **Fixture:** `pi/split-root-smoke` — a current-checkout Pi environment and
   split-root workflow with one child-dispatchable member.
 
+### `codex-semantic-worker-handles`
+
+- **Entry point:** `TestLiveSemanticNamesCodex`
+- **Lane:** `codex-live`
+- **Required outcome:** Codex spawns the semantic task name and reuses its returned native handle; two body-only report commits preserve frontmatter and clean state. Altered names or follow-up handles fail.
+- **Fixture:** `semantic-names/split-root` — generated semantic dispatch and advance in an isolated split-root workflow.
+
 ## Non-gating live experiments
 
 These tests are intentionally not release evidence and are not selected by a

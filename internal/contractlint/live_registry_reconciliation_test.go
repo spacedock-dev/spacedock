@@ -243,7 +243,7 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 		}
 	}
 	for name := range found {
-		want := strings.HasPrefix(name, "TestLiveCommon") || name == "TestLiveBareReachable" || name == "TestLiveBreakGlassShimRecovery" || name == "TestLiveMergedTeamModeDispatch"
+		want := strings.HasPrefix(name, "TestLiveCommon") || name == "TestLiveBareReachable" || name == "TestLiveBreakGlassShimRecovery" || name == "TestLiveMergedTeamModeDispatch" || name == "TestLiveSemanticNamesCodex"
 		if want && scheduled[name] != 1 {
 			t.Errorf("scheduled callable %s appears %d times, want 1", name, scheduled[name])
 		}

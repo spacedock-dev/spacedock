@@ -55,6 +55,8 @@ stdout with one LF. The outer fresh or reuse-advance prompt remains a file point
 
 An entity lives as a flat file `{slug}.md`, or a folder `{slug}/index.md` when reports and artifacts accumulate beside it. A workflow that wants every entity in folder form says so with `entity-form: folder` in its README frontmatter, and gate preparation then refuses to open a review room beside a flat entity, because that room's references break if the entity is later moved into a folder. Without that line a workflow accepts either shape. The body is the human-readable record: the problem, the approach, the acceptance criteria, and the stage reports. On top sits YAML frontmatter, the machine-readable state: the item's id, its current stage, its outcome. The [frontmatter contract](../reference/frontmatter-contract.md) has the fields and the schemas that define them.
 
+Choose a short, readable slug, such as `ci-duration-hints`; put descriptive detail in the title. New code branches use the slug. New worker names use `<slug>-<stage>`; Codex displays underscores in place of hyphens. Long worker names retain a readable slug prefix and a deterministic suffix. Existing branches and worker handles keep their names.
+
 ## Keep workflow state off your code branch
 
 A workflow can keep its mutable state in a separate state checkout, so routine stage transitions never churn your code branch or collide with a feature PR. The README opts in with one field, and you can ask the first officer to change the setting:

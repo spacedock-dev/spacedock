@@ -198,7 +198,7 @@ func TestBuildStrEErrors(t *testing.T) {
 		// open()/WriteFile cannot write a regular file there. Clear any leftover
 		// regular file other fixtures wrote at this same path first. No team_name
 		// or session id in this stdin, so the path is the bare derived name.
-		derived := "spacedock-ensign-thing-backlog"
+		derived := "thing-backlog"
 		target := filepath.Join(dispatchFileDir, derived+".md")
 		if err := os.RemoveAll(target); err != nil {
 			t.Fatal(err)

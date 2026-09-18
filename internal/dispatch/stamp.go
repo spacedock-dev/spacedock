@@ -98,6 +98,33 @@ func runStamp(opts buildOptions, fields map[string]json.RawMessage, stderr io.Wr
 	workerKey := strings.ReplaceAll(subagentType, ":", "-")
 	worktreeRel := filepath.Join(".worktrees", workerKey+"-"+slug)
 
+	if _, err := validateWorkerName(workflowDir, entityPath, stage); err != nil {
+		return stampError(stderr, 1, "%v", err)
+	}
+	gitRoot := status.FindGitRoot(workflowDir)
+	existing := entityFields["worktree"] != ""
+	if existing {
+		worktreeRel = entityFields["worktree"]
+	}
+	worktreePath := status.PyJoin(gitRoot, worktreeRel)
+	if stageMeta.Worktree || existing {
+		if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
+			existing = false
+		}
+		if existing {
+			if _, err := registeredWorktreeBranch(gitRoot, worktreePath); err != nil {
+				return stampError(stderr, 1, "%v", err)
+			}
+		} else {
+			if _, err := os.Stat(worktreePath); err == nil {
+				return stampError(stderr, 1, "worktree path %q already exists", worktreePath)
+			}
+			if err := exec.Command("git", "-C", gitRoot, "show-ref", "--verify", "--quiet", "refs/heads/"+slug).Run(); err == nil {
+				return stampError(stderr, 1, "new branch refs/heads/%s already exists", slug)
+			}
+		}
+	}
+
 	needStarted := entityFields["started"] == ""
 	needWorktreeStamp := stageMeta.Worktree && entityFields["worktree"] == ""
 
@@ -106,7 +133,6 @@ func runStamp(opts buildOptions, fields map[string]json.RawMessage, stderr io.Wr
 			return code
 		}
 	}
-	gitRoot := status.FindGitRoot(workflowDir)
 
 	// Commit unconditionally (not only when this call itself stamped
 	// something): a retried --stamp after an earlier sync=failed/halted
@@ -138,29 +164,13 @@ func runStamp(opts buildOptions, fields map[string]json.RawMessage, stderr io.Wr
 		}
 	}
 
-	if stageMeta.Worktree {
-		worktreePath := filepath.Join(gitRoot, worktreeRel)
-		branch := workerKey + "/" + slug
-		registered, err := worktreeRegisteredForBranch(gitRoot, worktreePath, branch)
-		if err != nil {
-			return stampError(stderr, 1, "checking existing worktrees failed: %v", err)
-		}
-		if !registered {
-			// A path can exist without being OUR registered worktree (a stray
-			// directory, or a worktree checked out on the wrong branch) — an
-			// idempotent skip must never be silently backed by the wrong
-			// checkout, so anything already occupying the path is an error, not
-			// a skip.
-			if _, statErr := os.Stat(worktreePath); statErr == nil {
-				return stampError(stderr, 1,
-					"worktree path '%s' exists but is not a registered worktree on branch %s", worktreePath, branch)
-			}
-			cmd := exec.Command("git", "-C", gitRoot, "worktree", "add", "-b", branch, worktreePath)
-			if out, err := cmd.CombinedOutput(); err != nil {
-				return stampError(stderr, 1, "git worktree add %s failed: %s", worktreePath, strings.TrimSpace(string(out)))
-			}
+	if stageMeta.Worktree && !existing {
+		cmd := exec.Command("git", "-C", gitRoot, "worktree", "add", "-b", slug, worktreePath)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return stampError(stderr, 1, "git worktree add %s failed: %s", worktreePath, strings.TrimSpace(string(out)))
 		}
 	}
+
 	return 0
 }
 
@@ -264,36 +274,22 @@ func commitAndPublishEntity(checkout, branch, entityPath, msg string) (committed
 	return true, statesync.Publish(checkout, branch), nil
 }
 
-// worktreeRegisteredForBranch reports whether worktreePath is a real linked
-// worktree of the gitRoot repository checked out on exactly branch — parsed
-// from `git worktree list --porcelain` rather than a bare path existence
-// check, so a stray directory or a worktree left on the wrong branch is never
-// mistaken for the one this dispatch expects.
-func worktreeRegisteredForBranch(gitRoot, worktreePath, branch string) (bool, error) {
+// registeredWorktreeBranch uses registration, preserving custom paths and legacy heads.
+func registeredWorktreeBranch(gitRoot, worktreePath string) (string, error) {
 	out, err := exec.Command("git", "-C", gitRoot, "worktree", "list", "--porcelain").Output()
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	wantPath, err := filepath.EvalSymlinks(worktreePath)
-	if err != nil {
-		wantPath = filepath.Clean(worktreePath)
-	}
-	wantRef := "branch refs/heads/" + branch
-	var currentPath string
+	var current string
 	for _, line := range strings.Split(string(out), "\n") {
-		switch {
-		case strings.HasPrefix(line, "worktree "):
-			currentPath = strings.TrimSpace(strings.TrimPrefix(line, "worktree "))
-			if resolved, err := filepath.EvalSymlinks(currentPath); err == nil {
-				currentPath = resolved
-			} else {
-				currentPath = filepath.Clean(currentPath)
-			}
-		case line == wantRef && currentPath == wantPath:
-			return true, nil
+		if strings.HasPrefix(line, "worktree ") {
+			current = strings.TrimPrefix(line, "worktree ")
+		}
+		if strings.HasPrefix(line, "branch refs/heads/") && sameFile(current, worktreePath) {
+			return strings.TrimPrefix(line, "branch refs/heads/"), nil
 		}
 	}
-	return false, nil
+	return "", fmt.Errorf("worktree path %q is unregistered or detached", worktreePath)
 }
 
 // sameFile reports whether a and b name the same file once symlinks are
