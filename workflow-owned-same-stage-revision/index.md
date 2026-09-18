@@ -622,3 +622,15 @@ The correction is three insertions and six deletions across the three explicitly
 ### Summary
 
 Removing Pi failfast permits later siblings after a fatal child failure and preserves lane failure. Validation recommends PASSED for this correction only, with final combined verification and live acceptance still pending; no candidate/frontmatter edits, model runs, pushes or CI occurred.
+
+
+## Stage Report: implementation
+
+- DONE: Require and demonstrate a committed entity-body missing-evidence reason while preserving the held gate and absent source.
+  Captain ruling on 2026-09-18 ("both yes") explicitly requires the committed task-body reason. This supersedes Finding 1's recording-location ambiguity from artifacts/validation/tip35238049892/report.md; the observed safe hold remains real, but its missing entity-body reason is not accepted. Code `9a614522dc1c1c162bc6b99fe11e5739f66c611b` states the obligation in the existing review-required fixture, without requiring another reviewer dispatch. The existing outcome owner reads the committed entity body, checks the named missing source and flexible absence wording, verifies actual source absence and unchanged canonical gate authority/status, and reuses existing clean-tree and corrected-plan checks. Tests operate on real Git-backed fixture state. The old working-body filename check first falsely accepted uncommitted reason, fabricated evidence and altered gate authority. Corrected positives accept different wording and line wrapping; negatives reject absent/uncommitted reasons, fabricated source, changed gate decision and stage advancement.
+- DONE: Preserve routine coverage and strict outcomes; retain focused evidence and remaining full-stack obligations.
+  `go test -tags live ./internal/ensigncycle -run '^TestSameStage' -count=1` passes in 32.098s; the matching race run passes in 30.968s. Existing runtime registry reconciliation passes in 1.487s. Both changed Go files are gofmt-clean and diff-check passes. The change is 77 insertions / 13 deletions = +64 net across the two authorized existing files: claude_runtime_helpers_test.go and claude_live_runner_test.go. All six variants remain routine CI obligations. No recovery/naming, skill, CLI, metadata schema, alternate ledger, standing lint or other outcome policy changed. No model/local live run, push, CI, rebase, new agent or frontmatter edit was performed.
+
+### Summary
+
+The missing-review reason is now an explicit durable task-body obligation backed by committed state, source absence and held authority. Evidence is under artifacts/implementation/committed-hold-reason: red-proof.txt, normal.log, race.log, registry.log and checks.json. These are deterministic local checks, not a live acceptance claim. The known resolver failure, other Claude failures and Pi missing-receipt/incomplete outcomes remain recorded and unresolved by this change. Required combined full normal/race and whole-tree formatting remain deferred to the final restacked tip. FO owns publication and live CI; the retained independent validator owns the next recommendation.

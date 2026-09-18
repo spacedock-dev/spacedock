@@ -1,0 +1,2 @@
+Before remedy, the old working-body filename predicate was extracted unchanged and evaluated against real committed fixture state. Command: go test ./internal/ensigncycle -run '^TestSameStageCommittedReviewHold$' -count=1
+Exit 1: uncommitted_reason, fabricated_source and advanced_gate each returned nil; expected rejection. Package19.201s. An initial unused-import build failure preceded this behavioral red and is not claimed as proof.

@@ -1,0 +1,29 @@
+[
+  {
+    "command": [
+      "go",
+      "test",
+      "-tags",
+      "live",
+      "./internal/ensigncycle",
+      "-run",
+      "^TestSameStage",
+      "-race",
+      "-count=1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 34.92621749988757
+  },
+  {
+    "command": [
+      "go",
+      "test",
+      "./internal/contractlint",
+      "-run",
+      "^TestRuntimeLiveRegistryReconciliation$",
+      "-count=1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 1.7662656670436263
+  }
+]

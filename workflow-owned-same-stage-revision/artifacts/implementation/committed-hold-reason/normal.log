@@ -1,0 +1,3 @@
+Command: go test -tags live ./internal/ensigncycle -run '^TestSameStage' -count=1
+Exit 0
+ok github.com/spacedock-dev/spacedock/internal/ensigncycle 32.098s
