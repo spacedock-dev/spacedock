@@ -243,7 +243,7 @@ func autoContinueWorktreeDir(body string) string {
 // the offline per-host table (auto_continue_negative_test.go) exercise it with no
 // model spend; only the stream argument is dialect-shaped, and each driver supplies
 // it through liveDriver.lifecycleStream.
-func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityPath string) error {
+func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityPath string, artifactDir ...string) error {
 	t.Helper()
 	reportEntity := entityPath
 	if body, err := os.ReadFile(entityPath); err == nil {
@@ -258,13 +258,22 @@ func assertAutoContinueDispatchEvidence(t *testing.T, stream, stateRoot, entityP
 	if err != nil {
 		return err
 	}
-	if err := assertWorkerLifecycle(stream, string(report), "validation", "gate prepare"); err != nil {
+	if err := assertWorkerLifecycle(stream, string(report), "validation", "gate prepare", artifactDir...); err != nil {
 		return err
 	}
 	reportRepo := strings.TrimSpace(git(t, filepath.Dir(reportEntity), "rev-parse", "--show-toplevel"))
 	rel, _ := filepath.Rel(reportRepo, reportEntity)
 	if strings.TrimSpace(git(t, reportRepo, "log", "-1", "--format=%H", "-S## Stage Report: validation", "--", rel)) == "" {
 		return fmt.Errorf("validation report has no durable commit")
+	}
+	// The current report must be committed, not just an earlier version that
+	// introduced its heading. Gate/frontmatter mutations can live in another copy.
+	committed := git(t, reportRepo, "show", "HEAD:"+filepath.ToSlash(rel))
+	currentSpans, currentErr := status.FindSectionSpans(report, []string{"Stage Report: validation"})
+	committedSpans, committedErr := status.FindSectionSpans([]byte(committed), []string{"Stage Report: validation"})
+	if currentErr != nil || committedErr != nil || len(currentSpans) != 1 || len(committedSpans) != 1 ||
+		strings.TrimSpace(string(report[currentSpans[0].Start:currentSpans[0].End])) != strings.TrimSpace(committed[committedSpans[0].Start:committedSpans[0].End]) {
+		return fmt.Errorf("current validation report has no durable commit")
 	}
 	// The gate record and the validation report do not reliably live in the same
 	// copy of a worktree-backed entity, and the placement differs by host: codex

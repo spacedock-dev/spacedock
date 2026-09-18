@@ -278,7 +278,7 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 	}
 	semantic = append(semantic, assertRecordedGateHoldLog(readFile(t, commandLog)))
 	if scenario.name == "default-headless-gate-stop" {
-		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after))
+		semantic = append(semantic, assertImplementationWorkerLifecycle(nativeLifecycleStream(t, runner, result), after, result.artifactDir))
 	}
 	finishLiveScenario(t, runner, scenario, result, semantic...)
 }
@@ -429,11 +429,12 @@ func runSameStageRevisionJourney(t *testing.T, runner liveDriver, scenario share
 			prompt := fmt.Sprintf("Use $spacedock:first-officer and $spacedock:feedback-rejection-flow. Workflow directory: %s. Captain authorizes revising recorded-gate-task: correct selected/plan.md against frozen-input.txt. Route this concrete assignment to the feedback-to worker, await completion, and handle this single correction cycle according to the workflow. Stop at its next decision boundary or an unmet prerequisite; do not resolve or consume the new gate. Use named workers. %s", workflowRoot, rejectionHostRealization(runner))
 			result := runner.run(t, scenario, workflowRoot, prompt)
 			routes, branch := claudeRejectionRoutes(result.stream)
+			var routeErr error
 			if _, ok := runner.(codexAsLiveDriver); ok {
 				routes, branch = codexRejectionRoutes(nativeLifecycleStream(t, runner, result)), codexRejectionBranch
 			}
 			if _, ok := runner.(piSharedLiveDriver); ok {
-				routes, branch = piRejectionRoutes(result.stream)
+				routes, branch, routeErr = piRejectionRoutes(result.stream, result.artifactDir)
 			}
 			writeRejectionTopologyDigest(t, result.artifactDir, branch, routes)
 			after, _, err := gates.Read(entityPath)
@@ -443,7 +444,7 @@ func runSameStageRevisionJourney(t *testing.T, runner liveDriver, scenario share
 			requiresReview := strings.HasSuffix(variant, "review-required")
 			// Missing evidence may stop before a reviewer is dispatched; any review
 			// that does run must still complete independently of the correction.
-			checks := []error{durableSemantic("self-feedback-obligations", assert(routes, requiresReview && countRouteEvents(routes, routeSpawn) > 1))}
+			checks := []error{durableSemantic("self-feedback-obligations", routeErr), durableSemantic("self-feedback-obligations", assert(routes, requiresReview && countRouteEvents(routes, routeSpawn) > 1))}
 			check := func(ok bool, why string) {
 				if !ok {
 					checks = append(checks, durableSemantic("self-feedback-obligations", fmt.Errorf("%s", why)))
@@ -530,6 +531,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	// public `codex exec --json` stream carries only `wait` collab items and no
 	// topology at all.
 	routes, branch := claudeRejectionRoutes(result.stream)
+	var routeErr error
 	if _, pi := runner.(piSharedLiveDriver); !pi {
 		log := readFile(t, commandLog)
 		writeFile(t, filepath.Join(result.artifactDir, "command.log"), log)
@@ -542,7 +544,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	if _, ok := runner.(piSharedLiveDriver); ok {
 		recordedRound = piRecordedRejectionRound(result.stream)
 		publications = piRejectionRoundPublications(result.stream)
-		routes, branch = piRejectionRoutes(result.stream)
+		routes, branch, routeErr = piRejectionRoutes(result.stream, result.artifactDir)
 	}
 	writeRejectionTopologyDigest(t, result.artifactDir, branch, routes)
 	git(t, workflowRoot, "bundle", "create", filepath.Join(result.artifactDir, "state.bundle"), "--all")
@@ -555,6 +557,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 		durableSemantic("rejection-round-publication-count", assertSingleRejectionRoundPublication(publications)),
 		durableSemantic("rejection-gate-not-prepared", assertRejectionGatePrepared(entityPath)),
 		durableSemantic("rejection-cycle-line", assertRejectionCycleLine(entityPath)),
+		durableSemantic("rejection-worker-topology", routeErr),
 		durableSemantic("rejection-worker-topology", assertRejectionWorkerTopology(branch, routes)))
 }
 
