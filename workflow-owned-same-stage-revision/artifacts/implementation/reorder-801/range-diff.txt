@@ -1,0 +1,17 @@
+1:  696db869d = 1:  32508fd79 Honor workflow-owned same-stage revision requirements
+2:  ac8b72993 = 2:  0b768e7a8 Retain correlated Codex lifecycle evidence before cleanup
+3:  98a9750d9 ! 3:  7ea6fcd4b Register all same-stage revision variants in routine live CI
+    @@ internal/contractlint/live_registry_reconciliation_test.go: func reconcileRegist
+      	}
+     +	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
+      	for name := range found {
+    --		want := strings.HasPrefix(name, "TestLiveCommon") || name == "TestLiveBareReachable" || name == "TestLiveBreakGlassShimRecovery" || name == "TestLiveMergedTeamModeDispatch"
+    +-		want := strings.HasPrefix(name, "TestLiveCommon") || name == "TestLiveBareReachable" || name == "TestLiveBreakGlassShimRecovery" || name == "TestLiveMergedTeamModeDispatch" || name == "TestLiveSemanticNamesCodex"
+     -		if want && scheduled[name] != 1 {
+     -			t.Errorf("scheduled callable %s appears %d times, want 1", name, scheduled[name])
+     +		if err := liveTestCoverageError(name, registry, workflow, scheduledLanes); err != nil {
+4:  f3da58563 = 4:  cbc38ce95 Verify live scheduler coverage through offline execution
+5:  ed660202f = 5:  21decf2f8 Grade native worker identity and actual recorder completion
+6:  96c3622d1 = 6:  4d952ead6 Run remaining Pi live variants after an earlier failure
+7:  2fd95b2c4 = 7:  57f5f8f54 Require a committed missing-review-evidence hold reason
+8:  f498e0ead = 8:  581ed16de fix: bind review hold reason to one paragraph
