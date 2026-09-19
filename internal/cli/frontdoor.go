@@ -101,13 +101,34 @@ func withAgentTeams(env []string) []string {
 }
 
 func hasEnv(env []string, key string) bool {
+	_, ok := envValueOf(env, key)
+	return ok
+}
+
+// subprocessEnvScrubEnv is Claude Code's own subprocess credential-scrubbing
+// hardening var. When set truthy, Claude Code forces the launched session's
+// permission mode back to "default" unless --allowedTools is declared
+// explicitly — see warnSubprocessEnvScrub (runClaude) and envScrubDoctorNote
+// (spacedock doctor).
+const subprocessEnvScrubEnv = "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB"
+
+// subprocessEnvScrubActive reports whether subprocessEnvScrubEnv is present in
+// env and set to a truthy value (non-empty, not "0").
+func subprocessEnvScrubActive(env []string) bool {
+	v, ok := envValueOf(env, subprocessEnvScrubEnv)
+	return ok && v != "" && v != "0"
+}
+
+// envValueOf looks up key's value in an env slice ("KEY=value" entries) —
+// the production env scanner used by hasEnv and subprocessEnvScrubActive.
+func envValueOf(env []string, key string) (string, bool) {
 	prefix := key + "="
 	for _, entry := range env {
 		if strings.HasPrefix(entry, prefix) {
-			return true
+			return strings.TrimPrefix(entry, prefix), true
 		}
 	}
-	return false
+	return "", false
 }
 
 // launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
@@ -457,6 +478,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		}
 	}
 	warnStrayPromptAfterDash(fd, "spacedock claude", stderr)
+	warnSubprocessEnvScrub(os.Environ(), fd.passthrough, "spacedock claude", stderr)
 
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
@@ -521,6 +543,43 @@ func warnStrayPromptAfterDash(fd frontDoorArgs, name string, stderr io.Writer) {
 			"the spacedock launch prompt was NOT prepended to it. "+
 			"To make it the launch prompt, put it BEFORE `--`: `%s %q -- …`\n",
 		name, pos, name, pos)
+}
+
+// warnSubprocessEnvScrub prints a spacedock-attributed advisory when Claude
+// Code's subprocess credential-scrubbing hardening is active in the launching
+// environment. Claude Code forces the launched session's permission mode back
+// to "default" whenever subprocessEnvScrubEnv is set truthy and no
+// --allowedTools is declared, regardless of what --permission-mode spacedock
+// or the operator requests, and regardless of the wrap/!wrap launch posture —
+// there is no evidence --dangerously-skip-permissions is exempt from the
+// hardening, so this fires on both paths. Suppressed only when the operator
+// already declared --allowedTools/--allowed-tools themselves (the documented
+// workaround), mirroring the "operator wins" suppression passthroughHasFlag
+// backs elsewhere in this file.
+func warnSubprocessEnvScrub(env []string, passthrough []string, name string, w io.Writer) {
+	if !subprocessEnvScrubActive(env) {
+		return
+	}
+	if passthroughHasFlag(passthrough, "--allowedTools", "--allowed-tools") {
+		return
+	}
+	fmt.Fprintf(w,
+		"%s: warning: %s is set — Claude Code will force this session's permission mode back to \"default\" unless --allowedTools is declared explicitly. "+
+			"Declare --allowedTools yourself (see `claude --help`), or unset %s for this launch to keep the requested permission mode.\n",
+		name, subprocessEnvScrubEnv, subprocessEnvScrubEnv)
+}
+
+// envScrubDoctorNote returns the advisory spacedock doctor prints when Claude
+// Code's subprocess credential-scrubbing hardening is active in the operator's
+// environment, or "" when it is not. Informational only — it must never affect
+// doctor's exit code, which stays governed solely by contract.ManifestVerdict.
+func envScrubDoctorNote(env []string) string {
+	if !subprocessEnvScrubActive(env) {
+		return ""
+	}
+	return fmt.Sprintf(
+		"note: %s is set in this environment — `spacedock claude` launches will warn that Claude Code forces permission mode back to \"default\" unless --allowedTools is declared explicitly. See `spacedock claude --help`, or unset the var to avoid this.\n",
+		subprocessEnvScrubEnv)
 }
 
 // launchPrompt returns the inner-argv launch prompt: `base + " " + task` when the
