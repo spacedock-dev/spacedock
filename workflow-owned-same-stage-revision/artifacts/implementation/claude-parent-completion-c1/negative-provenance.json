@@ -1,0 +1,12 @@
+{
+  "missing-completion": {
+    "reviewer_source": "docs/dev/.spacedock-state/workflow-owned-same-stage-revision/artifacts/validation/claude-parent-completion/missing-completion.jsonl",
+    "sha256": "b562b787d4740b06ed687a57a26bac57607b8905bdbf298be5538a46e130baf1",
+    "transform": "none; byte-identical reviewer mutation"
+  },
+  "wrong-worker-completion": {
+    "reviewer_source": "docs/dev/.spacedock-state/workflow-owned-same-stage-revision/artifacts/validation/claude-parent-completion/wrong-worker-completion.jsonl",
+    "sha256": "6f40bc5f3549d0140e70085949aa2e4444aa96e9c105c9900a1f8c1dc930a106",
+    "transform": "none; byte-identical reviewer mutation"
+  }
+}

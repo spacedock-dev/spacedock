@@ -1,0 +1,12 @@
+=== RUN   TestBuildMergedModeCompletionSignal
+=== RUN   TestBuildMergedModeCompletionSignal/original
+=== RUN   TestBuildMergedModeCompletionSignal/missing_completion
+=== RUN   TestBuildMergedModeCompletionSignal/wrong_worker_without_successful_send
+    build_merged_mode_test.go:154: captured delivery/completion=true, want false
+--- FAIL: TestBuildMergedModeCompletionSignal (0.20s)
+    --- PASS: TestBuildMergedModeCompletionSignal/original (0.00s)
+    --- PASS: TestBuildMergedModeCompletionSignal/missing_completion (0.00s)
+    --- FAIL: TestBuildMergedModeCompletionSignal/wrong_worker_without_successful_send (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	0.567s
+FAIL

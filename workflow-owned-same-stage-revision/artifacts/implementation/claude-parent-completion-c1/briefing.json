@@ -1,0 +1,21 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:zz1yqc2w2katp28wpa8nghx2:validation:round-3",
+  "question": "Does the generated Claude main route require successful delivery and completion from the same parent worker?",
+  "artifacts": [
+    {
+      "id": "artifact:zz1yqc2w2k-c1-review",
+      "uri": "git-root://state/5f6681ddd94b915d2e86b656bb9830282d815269/workflow-owned-same-stage-revision/artifacts/validation/claude-parent-completion/review.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:25a599892c165f8fdce1c8879fd2d60d0de61e2c252ce709ba3b54376d63b641"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:zz1yqc2w2k-c1-candidate",
+      "label": "Candidate a34274756ff34fab2cf91c0c32cd701dbac92a8b; C1 exact cross-worker capture is retained next to review. Existing validation/2 and Cycle2 remain unchanged; next proposed publication validation/3 belongs to FO."
+    }
+  ]
+}

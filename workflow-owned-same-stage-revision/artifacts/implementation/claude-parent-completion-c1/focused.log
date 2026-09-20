@@ -1,0 +1,10 @@
+=== RUN   TestBuildMergedModeCompletionSignal
+=== RUN   TestBuildMergedModeCompletionSignal/original
+=== RUN   TestBuildMergedModeCompletionSignal/missing_completion
+=== RUN   TestBuildMergedModeCompletionSignal/wrong_worker_without_successful_send
+--- PASS: TestBuildMergedModeCompletionSignal (0.19s)
+    --- PASS: TestBuildMergedModeCompletionSignal/original (0.00s)
+    --- PASS: TestBuildMergedModeCompletionSignal/missing_completion (0.00s)
+    --- PASS: TestBuildMergedModeCompletionSignal/wrong_worker_without_successful_send (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	0.657s

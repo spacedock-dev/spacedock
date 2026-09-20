@@ -734,3 +734,15 @@ The supported main route is established by real host bytes and the binding chang
 ### C1 FO disposition — 2026-09-20
 
 FO separately authorized **FIX** for this Material owned evidence defect in the existing completion regression only. Preserve the exact falsifying mutation; producer must correlate send/result/parent worker identity, then retained reviewer reruns this exact mutant. No new observer or model runs, no further audit expansion, and no reviewer candidate edits.
+
+
+## Stage Report: implementation
+
+- DONE: Correct captured-delivery proof to require the same successfully delivered worker to complete and reject the exact reviewer mutant.
+  Code `1b39a96d928739c362d40837a74d8e6c825c0312` retains successful delivery by send ID with matching result parent, then requires subsequent completion for that same parent. The existing generated-route test replays original, absent-completion and exact wrong-worker/no-success captures. Red before fix exits 1 in 0.567s on the false-positive case; after fix all three pass in 0.657s. Original native capture and product main route remain unchanged.
+- DONE: Commit bounded correction and actual producer round closure with focused evidence, preserving native CI acceptance requirements.
+  Dispatch package normal passes 73.898s and race passes 74.732s. Formatting/diff checks pass. Three files change: existing test and two byte-identical reviewer negatives, 83 insertions / 54 deletions (+29 net). [Evidence and canonical package](artifacts/implementation/claude-parent-completion-c1/evidence.md) preserve reviewer/FO records and append actual proposal/closure. Prior full suites on a34274756 are reused for unchanged production code with their known resolver limitation; no new full-suite result is claimed. FO owns round3 publication, Cycle projection and captain escalation; retained reviewer owns independent recheck.
+
+### Summary
+
+C1's cross-worker false positive is corrected in the existing regression test without changing routing or live outcome policy. Exact send/result/parent correlation and completion ordering replace recipient-only joining. No model run, push, CI, gate or frontmatter mutation occurred. Final corrected-tip Claude cycle-limit and all-six routine native acceptance remain required; prior broad results and unrelated findings remain preserved.
