@@ -1,6 +1,6 @@
 ---
 title: Honor workflow-declared same-stage revision without mandatory reviewer machinery
-status: validation
+status: implementation
 source: Captain request after email-triage FO issue 792
 issue: spacedock-dev/spacedock#792
 score: 0.95
