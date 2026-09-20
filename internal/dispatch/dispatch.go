@@ -31,6 +31,8 @@ func RunWithLauncher(probe claudeteam.TeamStateProbe, workflowLauncher string, a
 	}
 
 	switch args[0] {
+	case "name":
+		return runName(args[1:], stdout, stderr)
 	case "build":
 		if wantsHelp(args[1:]) {
 			printBuildUsage(stdout)
@@ -261,6 +263,7 @@ func printUsage(w io.Writer) {
 
 Usage:
   spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE|- [--host claude|codex|pi]
+  spacedock dispatch name --workflow-dir DIR --entity-path FILE --stage STAGE
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
   spacedock dispatch trunk --workflow-dir DIR
   spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include lingering,superseded,un-advanced-pr,stale-branch,local-main-drift]

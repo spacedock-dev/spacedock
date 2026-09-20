@@ -271,7 +271,7 @@ func TestBuildInputFailuresDoNotReadOrStamp(t *testing.T) {
 	root, entity := buildHostFixture(t)
 	before, _ := os.ReadFile(entity)
 	head := gitOutput(t, root, "rev-parse", "HEAD")
-	artifactPath := filepath.Join(dispatchFileDir, "spacedock-ensign-thing-backlog.md")
+	artifactPath := filepath.Join(dispatchFileDir, "thing-backlog.md")
 	artifactBefore, artifactErr := os.ReadFile(artifactPath)
 	assertUnchanged := func(t *testing.T) {
 		t.Helper()

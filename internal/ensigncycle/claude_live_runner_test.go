@@ -289,7 +289,7 @@ func runGateStopScenario(t *testing.T, runner liveDriver, scenario sharedRuntime
 
 func nativeLifecycleStream(t *testing.T, runner liveDriver, result liveResult) string {
 	t.Helper()
-	stream, err := codexNativeLifecycleStream(runner.home(), result.stream)
+	stream, err := codexNativeLifecycleStream(runner.home(), result.stream, result.artifactDir)
 	if err != nil {
 		t.Fatal(err)
 	}

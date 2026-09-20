@@ -120,45 +120,52 @@ func TestPiRejectionRoundPublications(t *testing.T) {
 // Falsifiable: a chain missing the final completion, and a chain graded under the wrong
 // branch, both red.
 func TestPiRejectionRoutesFreshChain(t *testing.T) {
-	session := piFreshChainSession(t)
-	routes, branch := piRejectionRoutes(session)
-	if branch != rejectionBranchFresh {
-		t.Fatalf("Pi branch = %q, want %q", branch, rejectionBranchFresh)
-	}
-	want := []struct{ event, stage string }{
-		{routeSpawn, "implementation"},
-		{routeDone, "implementation"},
-		{routeSpawn, "validation"},
-		{routeDone, "validation"},
-		{routeSpawn, "implementation"},
-		{routeDone, "implementation"},
-		{routeSpawn, "validation"},
-		{routeDone, "validation"},
-	}
-	if len(routes) != len(want) {
-		t.Fatalf("Pi routes produced %d events, want %d: %s",
-			len(routes), len(want), rejectionTopologySummary(routes))
-	}
-	for i, expected := range want {
-		if routes[i].event != expected.event || routes[i].stage != expected.stage {
-			t.Fatalf("Pi route %d = %s/%s, want %s/%s: %s",
-				i, routes[i].event, routes[i].stage, expected.event, expected.stage, rejectionTopologySummary(routes))
-		}
-	}
-	// The fresh chain must grade green on its own branch.
-	if err := assertRejectionWorkerTopology(branch, routes); err != nil {
-		t.Fatalf("conforming Pi fresh chain graded red: %v\n%s", err, rejectionTopologySummary(routes))
-	}
-	// The fresh chain must NOT pass under the reuse branch.
-	if err := assertRejectionWorkerTopology(rejectionBranchReuse, routes); err == nil {
-		t.Fatal("the Pi fresh chain passed under the REUSE branch's expectations")
-	}
+	for _, prefix := range []string{"spacedock-ensign-", ""} {
+		t.Run("prefix="+prefix, func(t *testing.T) {
+			session := strings.ReplaceAll(piFreshChainSession(t), "spacedock-ensign-", prefix)
+			routes, branch := piRejectionRoutes(session)
+			if branch != rejectionBranchFresh {
+				t.Fatalf("Pi branch = %q, want %q", branch, rejectionBranchFresh)
+			}
+			want := []struct{ event, stage string }{
+				{routeSpawn, "implementation"},
+				{routeDone, "implementation"},
+				{routeSpawn, "validation"},
+				{routeDone, "validation"},
+				{routeSpawn, "implementation"},
+				{routeDone, "implementation"},
+				{routeSpawn, "validation"},
+				{routeDone, "validation"},
+			}
+			if len(routes) != len(want) {
+				t.Fatalf("Pi routes produced %d events, want %d: %s",
+					len(routes), len(want), rejectionTopologySummary(routes))
+			}
+			for i, expected := range want {
+				if routes[i].event != expected.event || routes[i].stage != expected.stage {
+					t.Fatalf("Pi route %d = %s/%s, want %s/%s: %s",
+						i, routes[i].event, routes[i].stage, expected.event, expected.stage, rejectionTopologySummary(routes))
+				}
+			}
+			// The fresh chain must grade green on its own branch.
+			if err := assertRejectionWorkerTopology(branch, routes); err != nil {
+				t.Fatalf("conforming Pi fresh chain graded red: %v\n%s", err, rejectionTopologySummary(routes))
+			}
+			// The fresh chain must NOT pass under the reuse branch.
+			if err := assertRejectionWorkerTopology(rejectionBranchReuse, routes); err == nil {
+				t.Fatal("the Pi fresh chain passed under the REUSE branch's expectations")
+			}
 
-	// Falsifier: a chain missing the final completion reds.
-	truncated := strings.Join(strings.Split(session, "\n")[:len(strings.Split(session, "\n"))-2], "\n")
-	truncRoutes, _ := piRejectionRoutes(truncated)
-	if err := assertRejectionWorkerTopology(rejectionBranchFresh, truncRoutes); err == nil {
-		t.Fatal("a truncated chain missing the final completion graded green")
+			// Falsifier: a chain missing the final completion reds.
+			truncated := strings.Join(strings.Split(session, "\n")[:len(strings.Split(session, "\n"))-2], "\n")
+			truncRoutes, _ := piRejectionRoutes(truncated)
+			if err := assertRejectionWorkerTopology(rejectionBranchFresh, truncRoutes); err == nil {
+				t.Fatal("a truncated chain missing the final completion graded green")
+			}
+			if routes[0].target != prefix+"rejection-task-implementation" {
+				t.Fatal("worker handle changed", routes[0].target)
+			}
+		})
 	}
 }
 

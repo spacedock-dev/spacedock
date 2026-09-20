@@ -83,7 +83,7 @@ func TestBuildWithoutResolvedLauncherFailsBeforeWritingArtifact(t *testing.T) {
 	writeFile(t, entityPath, entityFM("Unique", "implementation", ""))
 	gitInit(t, root)
 	checklist := "- fail closed"
-	path := filepath.Join(dispatchFileDir, "spacedock-ensign-unique-no-launcher-implementation.md")
+	path := filepath.Join(dispatchFileDir, "unique-no-launcher-implementation.md")
 	if _, err := os.Stat(path); !os.IsNotExist(err) {
 		t.Fatalf("test artifact already exists: %s", path)
 	}

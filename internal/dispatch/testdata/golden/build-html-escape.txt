@@ -8,10 +8,10 @@
   "fetch_commands": [
     "/opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
   ],
-  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-validation.md",
-  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-thing-validation.md and treat its content as your assignment.",
+  "dispatch_file_path": "/tmp/spacedock-dispatch/thing-validation.md",
+  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/thing-validation.md and treat its content as your assignment.",
   "model": null,
-  "name": "spacedock-ensign-thing-validation",
+  "name": "thing-validation",
   "run_in_background": true
 }
 
