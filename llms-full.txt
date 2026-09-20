@@ -435,6 +435,8 @@ stages:
 
 An entity lives as a flat file `{slug}.md`, or a folder `{slug}/index.md` when reports and artifacts accumulate beside it. A workflow that wants every entity in folder form says so with `entity-form: folder` in its README frontmatter, and gate preparation then refuses to open a review room beside a flat entity, because that room's references break if the entity is later moved into a folder. Without that line a workflow accepts either shape. The body is the human-readable record: the problem, the approach, the acceptance criteria, and the stage reports. On top sits YAML frontmatter, the machine-readable state: the item's id, its current stage, its outcome. The [frontmatter contract](../../reference/frontmatter-contract/) has the fields and the schemas that define them.
 
+Choose a short, readable slug, such as `ci-duration-hints`; put descriptive detail in the title. New code branches use the slug. New worker names use `<slug>-<stage>`; Codex displays underscores in place of hyphens. Long worker names retain a readable slug prefix and a deterministic suffix. Existing branches and worker handles keep their names.
+
 ## Keep workflow state off your code branch
 
 A workflow can keep its mutable state in a separate state checkout, so routine stage transitions never churn your code branch or collide with a feature PR. The README opts in with one field, and you can ask the first officer to change the setting:
@@ -577,6 +579,10 @@ The agents follow the commit and sync discipline that keeps concurrent writers f
 # Command reference
 
 The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, the host OS/arch, and release channel, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+
+`dispatch build` names fresh workers `<slug>-<stage>`. Names reserve room for retry/cycle suffixes; long slugs keep a readable prefix plus a deterministic eight-character suffix. `dispatch build --stamp` creates new code branches named `<slug>` and preserves the branch of an existing registered worktree. An occupied new branch or ambiguous generated worker name is refused before mutation. Choose a distinct task slug to resolve a fresh-name collision. Legacy worker names remain valid for reconciliation and reuse.
+
+`spacedock dispatch name --workflow-dir DIR --entity-path FILE --stage STAGE` prints the same validated canonical base name without a checklist, assignment artifact, stamp, commit or worktree change. It rejects missing inputs, undeclared stages and unsafe or ambiguous names. Use it for selected named recovery when build fails before any envelope exists. It requires the executable and readable workflow/entity files; it does not repair complete executable absence. Existing suffix-budget and occupied-name checks still apply before spawn.
 
 ## --version
 

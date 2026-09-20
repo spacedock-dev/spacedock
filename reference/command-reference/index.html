@@ -71,7 +71,7 @@
         "headline": "Command reference",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/command-reference/",
-        "dateModified": "2026-09-16 19:00:03",
+        "dateModified": "2026-09-20 08:32:37",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1320,6 +1320,8 @@
 
 <h1 id="command-reference">Command reference<a class="headerlink" href="#command-reference" title="Permanent link">&para;</a></h1>
 <p>The <code>spacedock</code> binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level <code>spacedock --version</code> (the binary version, the host OS/arch, and release channel, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run <code>spacedock &lt;command&gt; --help</code>, the always-current source of truth; <code>spacedock</code> with no arguments prints the grouped help.</p>
+<p><code>dispatch build</code> names fresh workers <code>&lt;slug&gt;-&lt;stage&gt;</code>. Names reserve room for retry/cycle suffixes; long slugs keep a readable prefix plus a deterministic eight-character suffix. <code>dispatch build --stamp</code> creates new code branches named <code>&lt;slug&gt;</code> and preserves the branch of an existing registered worktree. An occupied new branch or ambiguous generated worker name is refused before mutation. Choose a distinct task slug to resolve a fresh-name collision. Legacy worker names remain valid for reconciliation and reuse.</p>
+<p><code>spacedock dispatch name --workflow-dir DIR --entity-path FILE --stage STAGE</code> prints the same validated canonical base name without a checklist, assignment artifact, stamp, commit or worktree change. It rejects missing inputs, undeclared stages and unsafe or ambiguous names. Use it for selected named recovery when build fails before any envelope exists. It requires the executable and readable workflow/entity files; it does not repair complete executable absence. Existing suffix-budget and occupied-name checks still apply before spawn.</p>
 <h2 id="-version">--version<a class="headerlink" href="#-version" title="Permanent link">&para;</a></h2>
 <p><code>spacedock --version</code> reports the binary version, the host OS/arch, and the release channel the binary drives (<code>stable</code> installs <code>spacedock@spacedock</code>; <code>edge</code> installs <code>spacedock@spacedock-edge</code>), and — when it is running inside an agent session — that session's runtime and sandbox state. Outside any session it prints three lines:</p>
 <pre class="highlight"><code>spacedock 0.26.0
@@ -1505,7 +1507,7 @@ locally but could not push, regardless of which command wrote it.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="September 16, 2026 19:00:03 UTC">2026-09-16 19:00:03</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="September 20, 2026 08:32:37 UTC">2026-09-20 08:32:37</span>
   </span>
 
     

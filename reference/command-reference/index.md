@@ -2,12 +2,16 @@
 title: "Command reference"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-09-16 19:00:03"
+last_updated: "2026-09-20 08:32:37"
 ---
 
 # Command reference
 
 The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version, the host OS/arch, and release channel, and — inside an agent session — that session's runtime and sandbox state). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
+
+`dispatch build` names fresh workers `<slug>-<stage>`. Names reserve room for retry/cycle suffixes; long slugs keep a readable prefix plus a deterministic eight-character suffix. `dispatch build --stamp` creates new code branches named `<slug>` and preserves the branch of an existing registered worktree. An occupied new branch or ambiguous generated worker name is refused before mutation. Choose a distinct task slug to resolve a fresh-name collision. Legacy worker names remain valid for reconciliation and reuse.
+
+`spacedock dispatch name --workflow-dir DIR --entity-path FILE --stage STAGE` prints the same validated canonical base name without a checklist, assignment artifact, stamp, commit or worktree change. It rejects missing inputs, undeclared stages and unsafe or ambiguous names. Use it for selected named recovery when build fails before any envelope exists. It requires the executable and readable workflow/entity files; it does not repair complete executable absence. Existing suffix-budget and occupied-name checks still apply before spawn.
 
 ## --version
 
