@@ -1,0 +1,6 @@
+=== RUN   TestBuildMergedModeCompletionSignal
+    build_merged_mode_test.go:142: generated recipient "main" has no successful captured delivery and parent completion
+--- FAIL: TestBuildMergedModeCompletionSignal (0.18s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	0.505s
+FAIL

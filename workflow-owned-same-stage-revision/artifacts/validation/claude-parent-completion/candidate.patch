@@ -1,0 +1,467 @@
+commit a34274756ff34fab2cf91c0c32cd701dbac92a8b
+Author: CL Kao <clkao@users.noreply.github.com>
+Date:   Sun Sep 20 02:04:32 2026 -0700
+
+    fix: route Claude worker completion to main conversation
+
+diff --git a/internal/dispatch/build.go b/internal/dispatch/build.go
+index 037b1ed15..aec31ed19 100644
+--- a/internal/dispatch/build.go
++++ b/internal/dispatch/build.go
+@@ -841,12 +841,12 @@ func completionSignalBlock(host, entityTitle, stage, entityFileRef string) strin
+ 		"\n\n### Completion Signal\n\n"+
+ 			"When you finish (after all commits and stage report writes are done), "+
+ 			"your last action MUST be:\n\n"+
+-			"    SendMessage(to=\"team-lead\", message=\"Done: %s completed "+
++			"    SendMessage(to=\"main\", message=\"Done: %s completed "+
+ 			"%s. Report written to %s.\")\n\n"+
+ 			"**If you are the first officer forwarding this prompt to Agent():** copy "+
+ 			"the entire block above into `Agent(prompt=...)` character-for-character. "+
+-			"Do NOT paraphrase `SendMessage(to=\"team-lead\", ...)` as \"SendMessage with "+
+-			"to='team-lead'\" or any other English rewrite — the parenthesis-equals "+
++			"Do NOT paraphrase `SendMessage(to=\"main\", ...)` as \"SendMessage with "+
++			"to='main'\" or any other English rewrite — the parenthesis-equals "+
+ 			"syntax is the literal call the ensign must emit, not a description of one.",
+ 		entityTitle, stage, entityFileRef)
+ }
+diff --git a/internal/dispatch/build_merged_mode_test.go b/internal/dispatch/build_merged_mode_test.go
+index 13c9d9560..d897686dc 100644
+--- a/internal/dispatch/build_merged_mode_test.go
++++ b/internal/dispatch/build_merged_mode_test.go
+@@ -4,7 +4,9 @@ package dispatch
+ 
+ import (
+ 	"encoding/json"
++	"os"
+ 	"path/filepath"
++	"regexp"
+ 	"strings"
+ 	"testing"
+ )
+@@ -61,30 +63,83 @@ func TestBuildMergedModeEmission(t *testing.T) {
+ 	}
+ }
+ 
+-// TestBuildMergedModeCompletionSignal is AC-6's fixture: the merged dispatch
+-// body carries the completion-signal block pinned to the single worker→lead
+-// target "team-lead" (matching the ensign runtime), not "main", and not absent.
++// TestBuildMergedModeCompletionSignal replays the successful native handoff from
++// CI35355801918 separate-review-required, including the failed recipient first.
+ func TestBuildMergedModeCompletionSignal(t *testing.T) {
+-	home := t.TempDir()
+-	t.Setenv("HOME", home)
+-	root := t.TempDir()
+-	stdinArgs := mergedBuildArgs(t, root, "backlog")
+-	stdin := "- a"
+-
+-	native := runNative(stdin, stdinArgs...)
++	t.Setenv("HOME", t.TempDir())
++	native := runNative("- a", mergedBuildArgs(t, t.TempDir(), "backlog")...)
+ 	if native.exit != 0 {
+-		t.Fatalf("merged build exit=%d, want 0\nstderr:\n%s", native.exit, native.stderr)
++		t.Fatal(native.stderr)
+ 	}
+ 	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
+-
+-	if !strings.Contains(body, "### Completion Signal") {
+-		t.Fatalf("merged dispatch body must carry a completion-signal block (the worker→lead signal):\n%s", body)
+-	}
+-	if !strings.Contains(body, `SendMessage(to="team-lead"`) {
+-		t.Errorf("merged completion signal must target the pinned single reply name \"team-lead\":\n%s", body)
+-	}
+-	if strings.Contains(body, `SendMessage(to="main"`) {
+-		t.Errorf("merged completion signal must pin ONE target — \"main\" must not appear alongside \"team-lead\":\n%s", body)
++	call := regexp.MustCompile(`SendMessage\(to="([^"]+)", message="Done:`).FindStringSubmatch(body)
++	if len(call) != 2 {
++		t.Fatal("missing completion call")
++	}
++	capture, err := os.ReadFile("testdata/claude-completion-route.jsonl")
++	if err != nil {
++		t.Fatal(err)
++	}
++	recipients := map[string]string{}
++	parents := map[string]string{}
++	delivered := map[string]bool{}
++	completed := map[string]bool{}
++	for _, line := range strings.Split(string(capture), "\n") {
++		if line == "" {
++			continue
++		}
++		var e struct {
++			Parent  string `json:"parent_tool_use_id"`
++			Type    string `json:"type"`
++			Subtype string `json:"subtype"`
++			Status  string `json:"status"`
++			ToolID  string `json:"tool_use_id"`
++			Message struct {
++				Content []struct {
++					ID     string `json:"id"`
++					ToolID string `json:"tool_use_id"`
++					Name   string `json:"name"`
++					Input  struct {
++						To string `json:"to"`
++					} `json:"input"`
++					Content []struct {
++						Text string `json:"text"`
++					} `json:"content"`
++				} `json:"content"`
++			} `json:"message"`
++		}
++		if err := json.Unmarshal([]byte(line), &e); err != nil {
++			t.Fatal(err)
++		}
++		for _, block := range e.Message.Content {
++			if block.Name == "SendMessage" {
++				recipients[block.ID], parents[block.ID] = block.Input.To, e.Parent
++			}
++			for _, content := range block.Content {
++				var result struct {
++					Success bool `json:"success"`
++				}
++				if err := json.Unmarshal([]byte(content.Text), &result); err != nil {
++					t.Fatal(err)
++				}
++				if result.Success && parents[block.ToolID] == e.Parent && e.Parent != "" {
++					delivered[recipients[block.ToolID]] = true
++				}
++			}
++		}
++		if e.Type == "system" && e.Subtype == "task_notification" && e.Status == "completed" {
++			for id, parent := range parents {
++				if parent == e.ToolID {
++					completed[recipients[id]] = true
++				}
++			}
++		}
++	}
++	if delivered["team-lead"] {
++		t.Fatal("captured unreachable recipient counted as delivered")
++	}
++	if !delivered[call[1]] || !completed[call[1]] {
++		t.Fatalf("generated recipient %q has no successful captured delivery and parent completion", call[1])
+ 	}
+ }
+ 
+diff --git a/internal/dispatch/testdata/claude-completion-route.jsonl b/internal/dispatch/testdata/claude-completion-route.jsonl
+new file mode 100644
+index 000000000..f5bd8a2a7
+--- /dev/null
++++ b/internal/dispatch/testdata/claude-completion-route.jsonl
+@@ -0,0 +1,5 @@
++{"type":"assistant","message":{"model":"claude-sonnet-5","id":"msg_011CfB5YVkdMDmertfJiyRiz","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01QP8m1an4vqQ7cYsKYdJPim","name":"SendMessage","input":{"to":"team-lead","message":"Done: Recorded Gate Task completed validation. Report written to /tmp/TestLiveScheduledslot-0TestLiveCommonSameStageRevisionseparate-review-required1854381101/001/.spacedock-state/recorded-gate-task/index.md.","type":"message","recipient":"team-lead","content":"Done: Recorded Gate Task completed validation. Re…"},"caller":{"type":"direct"}}],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2,"cache_creation_input_tokens":2915,"cache_read_input_tokens":29505,"cache_creation":{"ephemeral_5m_input_tokens":2915,"ephemeral_1h_input_tokens":0},"output_tokens":17,"service_tier":"standard","inference_geo":"global"},"input_transformations":[],"diagnostics":null,"context_management":null},"parent_tool_use_id":"toolu_017EqNbekU7sexR5jyJKxn6b","session_id":"2169a38f-c293-4935-94b4-4745c17ebc49","uuid":"3d05924b-9c0c-4e2c-95fe-2cdd1224d2ce","timestamp":"2026-09-18T14:40:59.101Z","request_id":"req_011CfB5YVM4PfmvxaGWr43Bu","subagent_type":"spacedock:ensign","task_description":"Recorded Gate Task: validation review"}
++{"type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01QP8m1an4vqQ7cYsKYdJPim","type":"tool_result","content":[{"type":"text","text":"{\"success\":false,\"message\":\"No agent named 'team-lead' is reachable.\\nCheck the spelling, or use the agent ID from a background agent's spawn result.\"}"}]}]},"parent_tool_use_id":"toolu_017EqNbekU7sexR5jyJKxn6b","session_id":"2169a38f-c293-4935-94b4-4745c17ebc49","uuid":"4244196d-21a5-4219-8263-738af36a89df","timestamp":"2026-09-18T14:40:59.106Z","subagent_type":"spacedock:ensign","task_description":"Recorded Gate Task: validation review"}
++{"type":"assistant","message":{"model":"claude-sonnet-5","id":"msg_011CfB5YiByspUhAJUo2otUk","type":"message","role":"assistant","content":[{"type":"tool_use","id":"toolu_01PkvdtCkcJppMYApzEGMUKr","name":"SendMessage","input":{"to":"main","message":"Done: Recorded Gate Task completed validation. Report written to /tmp/TestLiveScheduledslot-0TestLiveCommonSameStageRevisionseparate-review-required1854381101/001/.spacedock-state/recorded-gate-task/index.md.","type":"message","recipient":"main","content":"Done: Recorded Gate Task completed validation. Re…"},"caller":{"type":"direct"}}],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2,"cache_creation_input_tokens":262,"cache_read_input_tokens":32420,"cache_creation":{"ephemeral_5m_input_tokens":262,"ephemeral_1h_input_tokens":0},"output_tokens":2,"service_tier":"standard","inference_geo":"global"},"input_transformations":[],"diagnostics":null,"context_management":null},"parent_tool_use_id":"toolu_017EqNbekU7sexR5jyJKxn6b","session_id":"2169a38f-c293-4935-94b4-4745c17ebc49","uuid":"4b7e07dc-ff9c-4cca-a4cc-91ecc92aad29","timestamp":"2026-09-18T14:41:01.933Z","request_id":"req_011CfB5YhkBijRdhPQQsyeHf","subagent_type":"spacedock:ensign","task_description":"Recorded Gate Task: validation review"}
++{"type":"user","message":{"role":"user","content":[{"tool_use_id":"toolu_01PkvdtCkcJppMYApzEGMUKr","type":"tool_result","content":[{"type":"text","text":"{\"success\":true,\"message\":\"Message queued for the main conversation's next turn.\"}"}]}]},"parent_tool_use_id":"toolu_017EqNbekU7sexR5jyJKxn6b","session_id":"2169a38f-c293-4935-94b4-4745c17ebc49","uuid":"0c303d61-f5cf-4401-81c9-db0bf30d0bbe","timestamp":"2026-09-18T14:41:01.937Z","subagent_type":"spacedock:ensign","task_description":"Recorded Gate Task: validation review"}
++{"type":"system","subtype":"task_notification","task_id":"aab5ced63617ee2b2","tool_use_id":"toolu_017EqNbekU7sexR5jyJKxn6b","status":"completed","output_file":"/tmp/claude-1001/-tmp-TestLiveScheduledslot-0TestLiveCommonSameStageRevisionseparate-review-required1854381101-001/2169a38f-c293-4935-94b4-4745c17ebc49/tasks/aab5ced63617ee2b2.output","summary":"Validation stage work complete. Summary:\n\n- Verified `selected/plan.md` now matches `selected/frozen-input.txt` exactly (both read \"KEEP message A; DELETE message B\"), confirming the implementation-stage correction landed.\n- Checked for `selected/reviewer-source.txt` (the file the stage definition designates as the required fresh-verdict evidence for independent review) — it does not exist anywhere under the entity directory (`/tmp/TestLiveScheduledslot-0TestLiveCommonSameStageRevisionseparate-review-required1854381101/001/.spacedock-state/recorded-gate-task/`).\n- Per the stage definition, did not fabricate a verdict from the plan/frozen-input comparison alone. Instead appended `## Stage Report: validation (cycle 2)` to the entity file recording the missing review source and the hold rationale, leaving the gate held.\n- Committed path-scoped to the state checkout (`git -C .../.spacedock-state add recorded-gate-task/index.md && commit ... -- recorded-gate-task/index.md`), commit `201e8f6`. The state checkout has no `origin` remote, so per the no-origin carve-out no push/pull was performed.\n\nRelevant path: `/tmp/TestLiveScheduledslot-0TestLiveCommonSameStageRevisionseparate-review-required1854381101/001/.spacedock-state/recorded-gate-task/index.md`\n\nCompletion signal sent to `main` (no `team-lead` agent was reachable in this session; the active peers were `main` and `recorded-gate-task-implementation`).","usage":{"total_tokens":33523,"tool_uses":17,"duration_ms":60480},"uuid":"3909cec4-544a-4ef0-9fc0-1e969aefb0bf","session_id":"2169a38f-c293-4935-94b4-4745c17ebc49"}
+diff --git a/internal/dispatch/testdata/golden/build-abs-worktree.txt b/internal/dispatch/testdata/golden/build-abs-worktree.txt
+index 4cc02592f..8666ea49e 100644
+--- a/internal/dispatch/testdata/golden/build-abs-worktree.txt
++++ b/internal/dispatch/testdata/golden/build-abs-worktree.txt
+@@ -52,6 +52,6 @@ Read the entity file at <ROOT>/.worktrees/spacedock-ensign-thing/thing.md for th
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-advance-feedback-reflow.txt b/internal/dispatch/testdata/golden/build-advance-feedback-reflow.txt
+index eca8699c6..2e83ad8e1 100644
+--- a/internal/dispatch/testdata/golden/build-advance-feedback-reflow.txt
++++ b/internal/dispatch/testdata/golden/build-advance-feedback-reflow.txt
+@@ -46,6 +46,6 @@ REJECTED: do better.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-advance-plain.txt b/internal/dispatch/testdata/golden/build-advance-plain.txt
+index b37183651..4053c2335 100644
+--- a/internal/dispatch/testdata/golden/build-advance-plain.txt
++++ b/internal/dispatch/testdata/golden/build-advance-plain.txt
+@@ -42,6 +42,6 @@ Continue working on the entity at <ROOT>/.worktrees/spacedock-ensign-thing/thing
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed validation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed validation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-advance-split-root.txt b/internal/dispatch/testdata/golden/build-advance-split-root.txt
+index ff334e908..852c8a6f0 100644
+--- a/internal/dispatch/testdata/golden/build-advance-split-root.txt
++++ b/internal/dispatch/testdata/golden/build-advance-split-root.txt
+@@ -43,6 +43,6 @@ Continue working on the entity at <ROOT>/state-checkout/thing.md.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed validation. Report written to <ROOT>/state-checkout/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed validation. Report written to <ROOT>/state-checkout/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-crossproduct-feedback+scope+reflow.txt b/internal/dispatch/testdata/golden/build-crossproduct-feedback+scope+reflow.txt
+index 645f8f083..a1d829d55 100644
+--- a/internal/dispatch/testdata/golden/build-crossproduct-feedback+scope+reflow.txt
++++ b/internal/dispatch/testdata/golden/build-crossproduct-feedback+scope+reflow.txt
+@@ -60,6 +60,6 @@ Limit to module X.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed validation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed validation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-crossproduct-single+flat+nonworktree+team.txt b/internal/dispatch/testdata/golden/build-crossproduct-single+flat+nonworktree+team.txt
+index e11bec821..6dc713717 100644
+--- a/internal/dispatch/testdata/golden/build-crossproduct-single+flat+nonworktree+team.txt
++++ b/internal/dispatch/testdata/golden/build-crossproduct-single+flat+nonworktree+team.txt
+@@ -49,6 +49,6 @@ Read the entity file at <ROOT>/thing.md for the current spec.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed backlog. Report written to <ROOT>/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed backlog. Report written to <ROOT>/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-crossproduct-single+flat+worktree+team.txt b/internal/dispatch/testdata/golden/build-crossproduct-single+flat+worktree+team.txt
+index bd8a9477e..eb74c0e17 100644
+--- a/internal/dispatch/testdata/golden/build-crossproduct-single+flat+worktree+team.txt
++++ b/internal/dispatch/testdata/golden/build-crossproduct-single+flat+worktree+team.txt
+@@ -53,6 +53,6 @@ Read the entity file at <ROOT>/.worktrees/spacedock-ensign-thing/thing.md for th
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-crossproduct-single+folder+worktree+team.txt b/internal/dispatch/testdata/golden/build-crossproduct-single+folder+worktree+team.txt
+index 4e21ecb53..8f24a2c85 100644
+--- a/internal/dispatch/testdata/golden/build-crossproduct-single+folder+worktree+team.txt
++++ b/internal/dispatch/testdata/golden/build-crossproduct-single+folder+worktree+team.txt
+@@ -53,6 +53,6 @@ Read the entity file at <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md.")
++    SendMessage(to="main", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-crossproduct-split+flat+worktree+team.txt b/internal/dispatch/testdata/golden/build-crossproduct-split+flat+worktree+team.txt
+index cc791f785..aebbaa53c 100644
+--- a/internal/dispatch/testdata/golden/build-crossproduct-split+flat+worktree+team.txt
++++ b/internal/dispatch/testdata/golden/build-crossproduct-split+flat+worktree+team.txt
+@@ -54,6 +54,6 @@ Read the entity file at <ROOT>/state-checkout/thing.md for the current spec.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/state-checkout/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed implementation. Report written to <ROOT>/state-checkout/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-crossproduct-split+folder+nonworktree+team.txt b/internal/dispatch/testdata/golden/build-crossproduct-split+folder+nonworktree+team.txt
+index 2c5e95854..1ad40d24e 100644
+--- a/internal/dispatch/testdata/golden/build-crossproduct-split+folder+nonworktree+team.txt
++++ b/internal/dispatch/testdata/golden/build-crossproduct-split+folder+nonworktree+team.txt
+@@ -51,6 +51,6 @@ Read the entity file at <ROOT>/state-checkout/thing/index.md for the current spe
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed backlog. Report written to <ROOT>/state-checkout/thing/index.md.")
++    SendMessage(to="main", message="Done: Thing completed backlog. Report written to <ROOT>/state-checkout/thing/index.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-crossproduct-split+folder+worktree+team.txt b/internal/dispatch/testdata/golden/build-crossproduct-split+folder+worktree+team.txt
+index 4aa7df815..c0e2fad6f 100644
+--- a/internal/dispatch/testdata/golden/build-crossproduct-split+folder+worktree+team.txt
++++ b/internal/dispatch/testdata/golden/build-crossproduct-split+folder+worktree+team.txt
+@@ -54,6 +54,6 @@ Read the entity file at <ROOT>/state-checkout/thing/index.md for the current spe
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/state-checkout/thing/index.md.")
++    SendMessage(to="main", message="Done: Thing completed implementation. Report written to <ROOT>/state-checkout/thing/index.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-html-escape.txt b/internal/dispatch/testdata/golden/build-html-escape.txt
+index df3d5e2c9..a3224b0d3 100644
+--- a/internal/dispatch/testdata/golden/build-html-escape.txt
++++ b/internal/dispatch/testdata/golden/build-html-escape.txt
+@@ -57,6 +57,6 @@ compare a < b && c > d in <Tag> & raw &amp; ampersand
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Compare a < b && c > d in <Tag> completed validation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
++    SendMessage(to="main", message="Done: Compare a < b && c > d in <Tag> completed validation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-mods.txt b/internal/dispatch/testdata/golden/build-mods.txt
+index e11bec821..6dc713717 100644
+--- a/internal/dispatch/testdata/golden/build-mods.txt
++++ b/internal/dispatch/testdata/golden/build-mods.txt
+@@ -49,6 +49,6 @@ Read the entity file at <ROOT>/thing.md for the current spec.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed backlog. Report written to <ROOT>/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed backlog. Report written to <ROOT>/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-nonascii-title.txt b/internal/dispatch/testdata/golden/build-nonascii-title.txt
+index bb7f35520..a7be0d70e 100644
+--- a/internal/dispatch/testdata/golden/build-nonascii-title.txt
++++ b/internal/dispatch/testdata/golden/build-nonascii-title.txt
+@@ -49,6 +49,6 @@ Read the entity file at <ROOT>/thing.md for the current spec.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Segregate Claude — generic split completed backlog. Report written to <ROOT>/thing.md.")
++    SendMessage(to="main", message="Done: Segregate Claude — generic split completed backlog. Report written to <ROOT>/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/dispatch/testdata/golden/build-space-path.txt b/internal/dispatch/testdata/golden/build-space-path.txt
+index fbd1ed382..2df10d252 100644
+--- a/internal/dispatch/testdata/golden/build-space-path.txt
++++ b/internal/dispatch/testdata/golden/build-space-path.txt
+@@ -48,6 +48,6 @@ Read the entity file at <ROOT>/work dir/thing.md for the current spec.
+ 
+ When you finish (after all commits and stage report writes are done), your last action MUST be:
+ 
+-    SendMessage(to="team-lead", message="Done: Thing completed backlog. Report written to <ROOT>/work dir/thing.md.")
++    SendMessage(to="main", message="Done: Thing completed backlog. Report written to <ROOT>/work dir/thing.md.")
+ 
+-**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
++**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+\ No newline at end of file
+diff --git a/internal/ensigncycle/cycle_test.go b/internal/ensigncycle/cycle_test.go
+index 3101be9a5..36f63a2a6 100644
+--- a/internal/ensigncycle/cycle_test.go
++++ b/internal/ensigncycle/cycle_test.go
+@@ -34,7 +34,7 @@ var (
+ 	// completionEmit anchors the completion-signal emit line at its four-space
+ 	// indentation. The bare prose warning ("Do NOT paraphrase SendMessage(...)")
+ 	// is NOT four-space-indented and cannot satisfy this regex.
+-	completionEmit = regexp.MustCompile(`(?m)^    SendMessage\(to="team-lead", message="Done: `)
++	completionEmit = regexp.MustCompile(`(?m)^    SendMessage\(to="main", message="Done: `)
+ 	// stageReportHeading anchors the appended stage-report section heading.
+ 	stageReportHeading = regexp.MustCompile(`(?m)^## Stage Report: backlog$`)
+ 	// doneMarker anchors a DONE checklist-accounting marker.
+@@ -204,14 +204,14 @@ func TestEnsignCycleGoesRedOnBrokenOutput(t *testing.T) {
+ 	t.Run("regressed_emit_line_renamed_to_Notify", func(t *testing.T) {
+ 		f := stageFixture(t)
+ 		regressed := strings.Replace(f.body,
+-			`    SendMessage(to="team-lead", message="Done: `,
+-			`    Notify(to="team-lead", message="Done: `, 1)
++			`    SendMessage(to="main", message="Done: `,
++			`    Notify(to="main", message="Done: `, 1)
+ 
+ 		if completionEmit.MatchString(regressed) {
+ 			t.Fatal("anchored emit regex must NOT match the regressed body")
+ 		}
+ 		// Demonstrate the trap: a bare Contains is fooled by the prose warning.
+-		if !strings.Contains(regressed, `SendMessage(to="team-lead"`) {
++		if !strings.Contains(regressed, `SendMessage(to="main"`) {
+ 			t.Fatal("bare Contains expected to be fooled by the prose warning line " +
+ 				"(this is the prose-grep trap the anchored regex avoids)")
+ 		}
+diff --git a/skills/ensign/references/claude-ensign-runtime.md b/skills/ensign/references/claude-ensign-runtime.md
+index 80d889506..79a208dae 100644
+--- a/skills/ensign/references/claude-ensign-runtime.md
++++ b/skills/ensign/references/claude-ensign-runtime.md
+@@ -8,23 +8,25 @@ The ensign is dispatched by the first officer via the Agent tool. The dispatch p
+ 
+ ## Clarification
+ 
+-If requirements are unclear or ambiguous, ask for clarification via `SendMessage(to="team-lead")` rather than guessing. Describe what you understand and what's ambiguous so team-lead can get you a quick answer.
++If requirements are unclear or ambiguous, ask for clarification via `SendMessage(to="main")` rather than guessing. Describe what you understand and what's ambiguous so main can get you a quick answer.
+ 
+ ## Captain Communication
+ 
+-When dispatched for a stage that involves direct interaction with the captain (brainstorming, discussion, ideation review), communicate with the captain via direct text output, not SendMessage. In the Claude Code team model, your text output is visible to the captain when they switch to your agent via Shift+Up/Down. Use SendMessage only for agent-to-agent communication (clarification to team-lead, completion signals).
++When dispatched for a stage that involves direct interaction with the captain (brainstorming, discussion, ideation review), communicate with the captain via direct text output, not SendMessage. In the Claude Code team model, your text output is visible to the captain when they switch to your agent via Shift+Up/Down. Use SendMessage only for agent-to-agent communication (clarification to main, completion signals).
+ 
+ ## Completion Signal
+ 
+ When your work is done, send a minimal completion message:
+ 
+ ```
+-SendMessage(to="team-lead", message="Done: {entity title} completed {stage}. Report written to {entity_file_path}.")
++SendMessage(to="main", message="Done: {entity title} completed {stage}. Report written to {entity_file_path}.")
+ ```
+ 
++After the tool confirms delivery, finish your turn so the parent receives the native completion notification. A failed send is not completion.
++
+ The entity file is the artifact. Do not include the checklist or summary in the message. Plain text only. Never send JSON.
+ 
+-This SendMessage route is the completion-signal channel the shared core's failure signals use too — e.g. `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")`.
++This SendMessage route is the completion-signal channel the shared core's failure signals use too — e.g. `SendMessage(to="main", message="DISPATCH_FILE_MISSING: {path} - {error}")`.
+ 
+ ## Background Task Surface
+ 
+diff --git a/skills/first-officer/references/claude-fo-dispatch.md b/skills/first-officer/references/claude-fo-dispatch.md
+index 3eb46d7f2..68cf7fc7c 100644
+--- a/skills/first-officer/references/claude-fo-dispatch.md
++++ b/skills/first-officer/references/claude-fo-dispatch.md
+@@ -30,7 +30,7 @@ Agent(
+ )
+ ```
+ 
+-A name-less dispatch forfeits reuse — `name` is the `«addressable-worker»` handle `SendMessage(to=name)` addresses. The worker→lead **completion** target is pinned to the single name **`team-lead`** — the build helper emits `SendMessage(to="team-lead", …)` in the dispatch's completion-signal block, matching the ensign runtime's completion contract. Do not also accept `to="main"` as the completion signal; pin one name.
++A name-less dispatch forfeits reuse — `name` is the `«addressable-worker»` handle `SendMessage(to=name)` addresses. The worker→lead **completion** target is pinned to the single name **`main`** — the build helper emits `SendMessage(to="main", …)` in the dispatch's completion-signal block, matching the ensign runtime's completion contract. Require successful delivery and the correlated native completion notification; an attempted send is not completion.
+ 
+ **Reuse-advance handle (SendMessage):** When advancing a reused ensign (fo-dispatch-core.md `## Reuse and Fresh Dispatch`, "If reuse"), run `${SPACEDOCK_BIN:-spacedock} dispatch build --advance` (the same helper, advance mode: `--workflow-dir`, `--entity-path`, `--stage {next_stage}`, `--checklist-file -` with literal checklist lines on stdin; an existing checklist file is also accepted; `--feedback-context-file` + `--feedback-reflow` when routing rejection findings). On a zero-exit run, send:
+ 
+@@ -40,7 +40,7 @@ SendMessage(to="{live worker handle from session roster}", message=output.prompt
+ 
+ **Break-glass reuse-advance (fallback ONLY when `${SPACEDOCK_BIN:-spacedock} dispatch build --advance` exits non-zero or is unavailable):** Do NOT use this template while the helper is working. Report the helper failure to the captain before proceeding. Use this verbatim-section template as a degraded fallback, now carrying the next-stage completion-signal line the built pointer would have pinned:
+ 
+-SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next stage: {next_stage_name}\n\n### Stage definition:\n\n[STAGE_DEFINITION — copy the full ### stage subsection from the README verbatim]\n\n### Completion checklist\n\n[CHECKLIST — output of «dispatch.checklist»(entity, stage)]\n\nContinue working on {entity title} at {entity_file_path}. Commit before sending your completion message.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done: {entity title} completed {next_stage_name}. Report written to {entity_file_path}.\")")
++SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next stage: {next_stage_name}\n\n### Stage definition:\n\n[STAGE_DEFINITION — copy the full ### stage subsection from the README verbatim]\n\n### Completion checklist\n\n[CHECKLIST — output of «dispatch.checklist»(entity, stage)]\n\nContinue working on {entity title} at {entity_file_path}. Commit before sending your completion message.\n\n### Completion Signal\n\nSendMessage(to=\"main\", message=\"Done: {entity title} completed {next_stage_name}. Report written to {entity_file_path}.\")")
+ 
+ **Break-Glass Manual Dispatch (ONLY when `spacedock dispatch build` exits non-zero or is unavailable):** first action, report the helper failure (command, exit code, stderr) to the captain. Then `Skill(skill="spacedock:fo-dispatch-recovery")` and fill its `## Break-Glass Manual Dispatch` template; the conditional `model=` slot draws from the canonical enum in `## Context Budget` below.
+ 

@@ -713,3 +713,24 @@ H1's demonstrated false acceptance and false rejection are corrected within the 
 ### Summary
 
 Claude completion now addresses the parent route observed in the supported host. The correction is +62 net lines (125 insertions / 63 deletions) across 21 files: five existing source/test/adapter owners, fifteen mechanical goldens and one five-event native capture. [Evidence](artifacts/implementation/claude-parent-completion/verification-notes.md) distinguishes original red results, authorized compatibility alignment, final suites and limits. The branch was first reconciled to origin735446bf8 with exact prior-tree equivalence. Final independent review and corrected-tip Claude cycle-limit CI acceptance remain pending; no prior partial completion is promoted to success. All six routine variants and unrelated Pi/roadmap findings remain unchanged.
+
+
+## Review-finding disposition — Claude completion C1
+
+Reviewer proposes **Material / evidence defect / task-owned / FIX** at `a34274756ff34fab2cf91c0c32cd701dbac92a8b`, pending distinct FO authorization. Normal workflow: named background workers share main recipient. Harm: new proof joins workerA successful delivery with workerB completion and falsely accepts. Authority: **contract[skills/ensign/references/claude-ensign-runtime.md#completion-signal]** — confirmed delivery and native completion must belong to the same worker. Trigger: [detached captured-event mutation](artifacts/validation/claude-parent-completion/review.md) passes with no completion for delivered worker; absent-completion control fails. Smallest proposal: correlate success/result and subsequent completion by exact send/parent identity in existing test, preserving strict negatives. Candidate unchanged.
+
+## Stage Report: validation (Claude parent completion)
+
+- DONE: Verify the Claude completion correction against retained real host failure/success and exact final candidate, with strict completion and same-stage semantics preserved.
+  Actual five-event capture matches retained source bytes/hashes: team-lead fails, main succeeds, same worker completes. Candidate `a34274756ff34fab2cf91c0c32cd701dbac92a8b` aligns generated ordinary/advance and adapter clarification/failure/completion routes; same-stage/report/gate/cycle guards unchanged. C1 reveals proof correlation weakness, not false original host evidence.
+- DONE: Audit the existing proof on a detached checkout using the smallest claim-breaking edit; reuse completed broad suites and report remaining live-CI acceptance honestly.
+  **REJECTED for C1.** Existing captured-handoff test baseline passes0.768s and missing-completion fails0.505s, but cross-worker completion falsely passes0.497s. [Exact evidence/proposal](artifacts/validation/claude-parent-completion/review.md). Reused final normal/race each fail solely known resolver, other packages pass; no duplicate broad suites. Corrected-tip native cycle-limit and all six routine variants remain required before full801 acceptance.
+
+### Summary
+
+The supported main route is established by real host bytes and the binding changes preserve existing outcome guards. The new regression test nevertheless loses worker identity when combining delivery and completion; validation recommends REJECTED pending bounded owner correction, with no new model/CI run or candidate change.
+
+
+### C1 FO disposition — 2026-09-20
+
+FO separately authorized **FIX** for this Material owned evidence defect in the existing completion regression only. Preserve the exact falsifying mutation; producer must correlate send/result/parent worker identity, then retained reviewer reruns this exact mutant. No new observer or model runs, no further audit expansion, and no reviewer candidate edits.

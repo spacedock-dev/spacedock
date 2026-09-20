@@ -1,0 +1,23 @@
+{
+  "source_available": true,
+  "source_sha256": "bea1d6eb9633378f860352fdf8a83eee1c35820cd6029935326b09d1105438d3",
+  "source_hash_matches": true,
+  "selected_sha256": "20ddf56641b13adac444542714b07b989a4e2849d452ea5077638889901b41f0",
+  "capture_matches": true,
+  "final_suite_logs": {
+    "final-normal.log": "0c93b2dc9979ac81d5a83cff226b9cabfa48c776f7f172bae738f9dec5ad878c",
+    "final-race.log": "30fab7fe4e4c0c746a603b12f98072d6bb5cf43f4c3e157884c9f7a69cde70af"
+  },
+  "final-normal.log": [
+    "--- FAIL: TestCodexResolveManifestAgainstInstalledHost (0.92s)",
+    "FAIL",
+    "FAIL\tgithub.com/spacedock-dev/spacedock/internal/cli\t230.267s",
+    "FAIL"
+  ],
+  "final-race.log": [
+    "--- FAIL: TestCodexResolveManifestAgainstInstalledHost (1.76s)",
+    "FAIL",
+    "FAIL\tgithub.com/spacedock-dev/spacedock/internal/cli\t304.921s",
+    "FAIL"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "candidate": "a34274756ff34fab2cf91c0c32cd701dbac92a8b",
+  "results": [
+    {
+      "case": "baseline",
+      "exit": 0,
+      "command": [
+        "go",
+        "test",
+        "./internal/dispatch",
+        "-run",
+        "^TestBuildMergedModeCompletionSignal$",
+        "-count=1",
+        "-v"
+      ],
+      "sha256": "20ddf56641b13adac444542714b07b989a4e2849d452ea5077638889901b41f0"
+    },
+    {
+      "case": "missing-completion",
+      "exit": 1,
+      "command": [
+        "go",
+        "test",
+        "./internal/dispatch",
+        "-run",
+        "^TestBuildMergedModeCompletionSignal$",
+        "-count=1",
+        "-v"
+      ],
+      "sha256": "b562b787d4740b06ed687a57a26bac57607b8905bdbf298be5538a46e130baf1"
+    },
+    {
+      "case": "wrong-worker-completion",
+      "exit": 0,
+      "command": [
+        "go",
+        "test",
+        "./internal/dispatch",
+        "-run",
+        "^TestBuildMergedModeCompletionSignal$",
+        "-count=1",
+        "-v"
+      ],
+      "sha256": "6f40bc5f3549d0140e70085949aa2e4444aa96e9c105c9900a1f8c1dc930a106"
+    }
+  ]
+}

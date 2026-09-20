@@ -1,0 +1,4 @@
+=== RUN   TestBuildMergedModeCompletionSignal
+--- PASS: TestBuildMergedModeCompletionSignal (0.23s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	0.768s
