@@ -120,13 +120,13 @@ gates:
                 target-stage: done
                 state: superseded
 review-round:
-    id: round:zz1yqc2w2katp28wpa8nghx2:validation:2
+    id: round:zz1yqc2w2katp28wpa8nghx2:validation:3
     stage: validation
-    cycle: 2
+    cycle: 3
     briefing:
-        id: briefing:zz1yqc2w2katp28wpa8nghx2:validation:round-2
-        digest: sha256:c2bb31747a81485ce03bc1d75052b0fb0a5682995be59373afded1d0fd1924e4
-        room-ref: '@review/validation/round-2'
+        id: briefing:zz1yqc2w2katp28wpa8nghx2:validation:round-3
+        digest: sha256:3b5fa8946e63f6a49bf5f8a8b41f3c5d07ef39dcccf1379ceefd62e7bb55f05a
+        room-ref: '@review/validation/round-3'
 ---
 
 Make same-stage gate revision follow the declared workflow while preserving independent review where it is required.
@@ -287,6 +287,8 @@ The shipped-contract change also requires the existing detached adversarial audi
 - Cycle 2: REJECTED — H1 missing-reason association / retained validator; surface 14 files / +793 net LOC (+876/-83) vs historical estimate 3 files / +45 net LOC (1662%); AC unchanged. This main-merge-base comparison includes previously approved coverage and stacked changes; current captain-approved committed-hold correction is 2 files / +79 net LOC, including H1 repair +15/one file. Captain ruling 2026-09-18 “both yes” authorizes committed task-body hold reasons; FO authorized the bounded correction and H1 repair. Producer 1f9220634 complete; retained independent recheck pending.
 
 - Cycle 1: REJECTED — V1 evidence defect / retained validator; surface 5 files / +252 net LOC vs estimate 3 files / +45 net LOC (460%); AC unchanged. Captain approved amended +252/five ceiling and eight replacement drives in resolution:binding-1789517330520748000; producer correction d46f74245 is complete, independent re-review pending.
+
+- Cycle 3: REJECTED — C1 Material evidence defect / retained validator; surface 99 files / +2115 net LOC (+2681/-566) vs historical estimate 3 files / +45 net LOC (4600%); AC unchanged. Main-merge-base totals include approved stack work. Captain request 2026-09-20 “fix 801’s claude issue” authorizes the parent-route correction; FO separately authorized C1 identity-test repair. Producer 1b39a96d9 completes the repair with passing focused normal/race and preserved native CI obligations. Escalated at the three-round boundary: captain decision required before retained reviewer recheck and corrected-tip CI.
 
 ## Stage Report: ideation
 
