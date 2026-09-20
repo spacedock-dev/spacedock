@@ -8,7 +8,7 @@ verdict:
 score: 0.8
 worktree: .worktrees/spacedock-ensign-semantic-dispatch-names
 issue: spacedock-dev/spacedock#624
-pr: "#807"
+pr: pr-merge:807
 mod-block: merge:pr-merge
 id: 6es505tn1zz2597hetvnqn7y
 gates:
