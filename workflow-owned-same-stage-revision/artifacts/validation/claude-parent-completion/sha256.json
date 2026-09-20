@@ -1,12 +1,15 @@
 {
   "baseline.jsonl": "20ddf56641b13adac444542714b07b989a4e2849d452ea5077638889901b41f0",
   "baseline.log": "b2add20c59bc218b1566af86536405039e66b1134b4c1c1aac7d04e38084a730",
+  "briefing.json": "64f95f63496d1d234b6d9dc3f0b6d80ee9befc026c63e530c72f441cf9ae69f0",
+  "briefing.review.jsonl": "6e48bd50575771fcd2d2c008c257376ec5f3704a2c56af13abb1d0ab9ab6a882",
   "candidate.patch": "5e8f395b8c68ccb3edb9ab729c032942e3dd84dce3a83b9a101f11c316f7889d",
   "missing-completion.jsonl": "b562b787d4740b06ed687a57a26bac57607b8905bdbf298be5538a46e130baf1",
   "missing-completion.log": "d7dae6feb8769455673b5b37ab744b36f8652c920685b3e3a4ce4172dd10fee5",
   "provenance-check.json": "3dd611e3631c690ddd010936df24cfb17b20a33c87be0b31bb6b14cb70ee9827",
   "results.json": "517e6e6fbc4cc4f9fe26183b8c7f597958f21c7e6dee62c810dd95cce3fa823a",
   "review.md": "25a599892c165f8fdce1c8879fd2d60d0de61e2c252ce709ba3b54376d63b641",
+  "round-handoff.md": "da36df83842bc0752e30216008af73c6ec17fd38e6755def2197ba17f2aff89f",
   "wrong-worker-completion.jsonl": "6f40bc5f3549d0140e70085949aa2e4444aa96e9c105c9900a1f8c1dc930a106",
   "wrong-worker-completion.log": "c3cc933be44b5974f338d94af1b25de743d39ab7d060467520543dcddb3532db"
 }
