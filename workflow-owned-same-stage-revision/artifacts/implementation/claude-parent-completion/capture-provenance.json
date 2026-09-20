@@ -1,0 +1,18 @@
+{
+  "source": "/tmp/spacedock-tip-35355801918/claude/spacedock/spacedock/live-artifacts/claude/claude-sonnet-5/claude-shared-scenarios/self-feedback/separate-review-required/claude-stream.jsonl",
+  "source_sha256": "bea1d6eb9633378f860352fdf8a83eee1c35820cd6029935326b09d1105438d3",
+  "fixture": "internal/dispatch/testdata/claude-completion-route.jsonl",
+  "fixture_sha256": "20ddf56641b13adac444542714b07b989a4e2849d452ea5077638889901b41f0",
+  "source_line_numbers": [
+    368,
+    370,
+    372,
+    374,
+    386
+  ],
+  "transform": "None; five selected complete native events copied byte-for-byte, in original order.",
+  "ci_run": "35355801918",
+  "session": "2169a38f-c293-4935-94b4-4745c17ebc49",
+  "parent_tool_use_id": "toolu_017EqNbekU7sexR5jyJKxn6b",
+  "agent_id": "aab5ced63617ee2b2"
+}

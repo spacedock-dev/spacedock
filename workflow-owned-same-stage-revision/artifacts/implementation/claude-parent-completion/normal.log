@@ -1,0 +1,66 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	0.915s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	0.489s
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (13.25s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	184.950s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	2.766s
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	6.453s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	(cached)
+--- FAIL: TestEnsignCycleMechanicalOutputs (0.18s)
+    cycle_test.go:157: dispatch body missing anchored completion-signal emit line
+        ## First action
+        
+        Before anything else, invoke your operating contract:
+        
+            Skill(skill="spacedock:ensign")
+        
+        This loads the shared ensign discipline (stage-report format, background-task polling, worktree ownership, completion signal protocol). The call is safe to call more than once; if the agent-definition preload ever starts working, calling it again is a no-op (the skill content is re-loaded but has no behavioral effect). Do not paraphrase; call the tool.
+        
+        You are working on: Make It Work
+        
+        Stage: backlog
+        
+        Read the entity file at /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestEnsignCycleMechanicalOutputs942102948/002/make-it-work.md for the current spec.
+        
+        ### Completion checklist
+        
+        - Wire the seam
+        - Prove it observably
+        
+        ### Summary
+        {brief description of what was accomplished}
+        
+        ### Fetch commands
+        
+            /opt/spacedock/bin/spacedock dispatch show-stage-def --workflow-dir /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestEnsignCycleMechanicalOutputs942102948/002 --stage backlog
+        
+        
+        ### Completion Signal
+        
+        When you finish (after all commits and stage report writes are done), your last action MUST be:
+        
+            SendMessage(to="main", message="Done: Make It Work completed backlog. Report written to /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestEnsignCycleMechanicalOutputs942102948/002/make-it-work.md.")
+        
+        **If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="main", ...)` as "SendMessage with to='main'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.
+--- FAIL: TestEnsignCycleGoesRedOnBrokenOutput (0.28s)
+    --- FAIL: TestEnsignCycleGoesRedOnBrokenOutput/regressed_emit_line_renamed_to_Notify (0.12s)
+        cycle_test.go:215: bare Contains expected to be fooled by the prose warning line (this is the prose-grep trap the anchored regex avoids)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/ensigncycle	256.381s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	50.389s
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	8.140s
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	1.430s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	1.640s
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	3.720s
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	2.192s
+ok  	github.com/spacedock-dev/spacedock/internal/release	39.876s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	0.809s
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	1.006s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	8.609s
+ok  	github.com/spacedock-dev/spacedock/internal/status	73.335s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	1.921s
+ok  	github.com/spacedock-dev/spacedock/skills/integration	12.577s
+FAIL

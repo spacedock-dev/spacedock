@@ -1,6 +1,6 @@
 ---
 title: Honor workflow-declared same-stage revision without mandatory reviewer machinery
-status: validation
+status: implementation
 source: Captain request after email-triage FO issue 792
 issue: spacedock-dev/spacedock#792
 score: 0.95
@@ -8,8 +8,8 @@ started: 2026-09-15T04:30:03Z
 completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-workflow-owned-same-stage-revision
-pr: "#801"
-mod-block: merge:pr-merge
+pr:
+mod-block:
 id: zz1yqc2w2katp28wpa8nghx2
 gates:
     version: 1
@@ -118,7 +118,7 @@ gates:
                 reason: Captain binding resolution:binding-1789740686905676000 approves the three exact validation snapshots in /tmp/stack-1a28-publication-review.md, artifact sha256:ba1fb20cd596da07e49a367fd2576d59cee71c2e9df7c5495c502cb4c6f4580c, for publication of corrected stack tip1a28b4fa2 and full supported-host tip CI. Merge and failure waiver remain unauthorized.
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 review-round:
     id: round:zz1yqc2w2katp28wpa8nghx2:validation:2
     stage: validation
@@ -699,3 +699,17 @@ H1's demonstrated cases are corrected by a bounded paragraph association, not ge
 ### Summary
 
 H1's demonstrated false acceptance and false rejection are corrected within the existing paragraph-based helper. Validation recommends PASSED for this bounded repair only; prior evidence is preserved and no candidate/frontmatter mutation, model/CI run or round publication occurred.
+
+
+## Stage Report: implementation
+
+- DONE: Identify the supported Claude completion route and reproduce the observed unreachable-recipient failure without model calls.
+  The generated team-lead target failed against retained native handoff evidence before implementation (0.500s). CI 35355801918's same validation worker first received success:false for team-lead, then success:true for main and a correlated completed notification. Five original raw events are retained in dispatch testdata, with source hashes and line numbers in the evidence package. The installed host schema and existing FO opening binding also identify main as the background-worker parent route. This is a Material product outcome defect under the existing Claude completion contract, with distinct FO FIX authority under the captain's request.
+- DONE: Implement the authorized binding correction and preserve existing behavioral positive/negative proof and completion identity.
+  Code `a34274756ff34fab2cf91c0c32cd701dbac92a8b` aligns the generated completion call and Claude ensign/FO bindings with main. It requires confirmed delivery and turn completion; report, native identity, gate and cycle-limit assertions remain unchanged. The generated-target test checks actual captured call/result correlation and parent completion rather than a preferred string alone. Focused dispatch/contractlint pass (30.782s / 2.081s), and all TestSameStage controls pass (18.031s), including missing/wrong completion and durable hold negatives. Full normal initially exposed two stale cycle-test expectations; distinct FO FIX aligned only four recipient literals, preserving the anchored-call and Notify/prose-trap negative. That focused owner passes in 0.586s.
+- DONE: Commit the correction and retain exact required checks and remaining CI proof.
+  Final normal and race both exit 1 solely for the known TestCodexResolveManifestAgainstInstalledHost baseline. Final ensigncycle passes 344.096s normal / 427.043s race; dispatch passes 85.349s / 125.327s; contractlint passes 5.693s / 25.456s. Other packages pass or use cached passing results. The prior FO decline resolves disposition of the unrelated resolver finding without erasing its failure. Required gofmt ran; only unrelated release-test alignment was restored, and changed files/diff checks are clean. The first obsolete race was interrupted by FO instruction and is retained as incomplete. No local model, push, CI, gate or frontmatter mutation occurred.
+
+### Summary
+
+Claude completion now addresses the parent route observed in the supported host. The correction is +62 net lines (125 insertions / 63 deletions) across 21 files: five existing source/test/adapter owners, fifteen mechanical goldens and one five-event native capture. [Evidence](artifacts/implementation/claude-parent-completion/verification-notes.md) distinguishes original red results, authorized compatibility alignment, final suites and limits. The branch was first reconciled to origin735446bf8 with exact prior-tree equivalence. Final independent review and corrected-tip Claude cycle-limit CI acceptance remain pending; no prior partial completion is promoted to success. All six routine variants and unrelated Pi/roadmap findings remain unchanged.

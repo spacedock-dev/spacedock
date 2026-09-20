@@ -1,0 +1,6 @@
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	2.602s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	1.542s
+signal: interrupt
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	24.429s

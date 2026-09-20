@@ -1,0 +1,5 @@
+--- FAIL: TestBuildMergedModeCompletionSignal (0.10s)
+    build_merged_mode_test.go:142: generated recipient "team-lead" has no successful captured delivery and parent completion
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/dispatch	0.500s
+FAIL
