@@ -1,0 +1,7 @@
+Agent Safehouse 0.12.0
+help: --append-profile PATH and --append-profile=PATH available
+policy: project,A,B,B; CLI paths use cwd; punctuation survives
+error: ['--append-profile=']: exit 1: Appended profile path cannot be empty.
+error: ['--append-profile=missing.sb']: exit 1: Appended profile path does not exist: missing.sb
+error: ['--append-profile=project']: exit 1: Appended profile path is not a regular file: project
+error: ['--append-profile']: exit 1: Missing value for --append-profile
