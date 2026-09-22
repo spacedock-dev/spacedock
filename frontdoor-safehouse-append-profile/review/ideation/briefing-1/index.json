@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9cbmcq3yyfjynhms1yd12drh:ideation:attempt-1:revision-1",
+  "question": "Approve the minimal append-profile pass-through for all three front doors?",
+  "artifacts": [
+    {
+      "id": "artifact:9cbmcq3yyfjynhms1yd12drh:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/7d9184488aa9f9065c74b0678e58bae39063189f/frontdoor-safehouse-append-profile/index.md",
+      "rev": "sha256:a0deaec6cce9aa34747d22fc34fded7c5b20923563396527dde097468c64f8ca",
+      "mediaType": "text/markdown",
+      "summary": "Add one repeatable Safehouse profile flag using existing parsers and translation; preserve literal paths/order and host boundaries. Real upstream policy probe passed. Estimate +195 net LOC across 9 files, tolerance +120 to +270 across 8 to 10 files. Approve to implement in an isolated worktree."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:9cbmcq3yyfjynhms1yd12drh:ideation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/438053493838dc70c9478b3d991309d566783e85/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}

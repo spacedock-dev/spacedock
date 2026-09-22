@@ -11,6 +11,17 @@ issue:
 pr:
 mod-block:
 id: 9cbmcq3yyfjynhms1yd12drh
+gates:
+    version: 1
+    records:
+        - id: gate:9cbmcq3yyfjynhms1yd12drh:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:9cbmcq3yyfjynhms1yd12drh-ideation-1
+              briefing:
+                id: briefing:9cbmcq3yyfjynhms1yd12drh:ideation:attempt-1:revision-1
+                digest: sha256:c3bf30c9d2d181a9bf249de314ac8d2e9010eff21d1ba935866a9cdaedce2414
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 Support `--safehouse-append-profile=file.sb` on `spacedock claude`, `spacedock codex`, and `spacedock pi`.
