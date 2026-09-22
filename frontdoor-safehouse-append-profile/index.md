@@ -186,3 +186,35 @@ Append a safehouse policy file; repeatable; relative paths use the launch direct
 ### Summary
 
 The smallest design extends existing StringArray parsing and Safehouse translation for Claude, Codex, and Pi. A real Safehouse policy probe establishes literal path forwarding, caller-relative paths, repetition order, and composition with project profiles. The task includes acceptance criteria, concrete documentation wording, and an implementation estimate; no product files or frontmatter changed.
+
+
+## Stage Report: implementation
+
+- DONE: Implement the approved literal repeatable append-profile option across Claude, Codex and Pi using existing parsing and translation owners, within approved surface.
+  Code commit `83b356c1c`, based on clean rebase to `9a6765fa8`; 9 files, 172 insertions/9 deletions (+163 net), within +120..+270 and 8..10 tolerance.
+- DONE: Prove argv, path/order, delimiter and failure behavior with existing tests written red before implementation; apply approved help and doc changes.
+  Focused tests first failed for unregistered flag, missing translation, and absent help; the same cases passed after implementation, normally and under `-race`.
+- DONE: Commit the finished implementation and canonical report with required normal/race/format evidence and explicit limitations.
+  Product committed on `spacedock-ensign/frontdoor-safehouse-append-profile`; this report is committed path-scoped in the shared state checkout; full-check failures are recorded below.
+- DONE: AC-1/AC-3 launch proof for all three hosts.
+  `TestAppendProfileLaunchContract` compares complete argv/env with the existing sandbox launch and counts Launch calls; dropping profiles, changing host flags/prompt/env, suppressing inside wrapping, or retrying after exit 23 fails it.
+- DONE: AC-2 literal and composition proof.
+  `TestAppendProfileLiteralParsing` and `TestTranslateFlags` assert both forms, relative/absolute and shell-like paths, punctuation, empty/dash values, duplicates, and grouped knob order; splitting, rebasing, evaluation, or deduplication fails exact comparisons.
+- DONE: AC-3 argument-boundary and error proof.
+  Launch fixtures assert missing terminal values and unavailable Safehouse produce no Launch, empty values remain present, and post-delimiter values go to the unwrapped host; swallowing a value, fallback, or delimiter leakage fails them.
+- DONE: AC-4 advertised option and documentation.
+  `TestFrontDoorHelpCarriesDetail` and `TestPiHelpCarriesSafehouseDetail` require the flag and repeatability/path description; missing Pi's separate help registration fails; sandbox reference uses the approved example and contract text.
+- DONE: Independent Safehouse policy probe.
+  Re-ran committed `probe.py` against upstream `e376993ee8e15c4e4b3aa3a2ee282f15f6e3c680` standalone script: project/A/B/B order and caller-relative punctuation paths passed; empty, missing, directory, and absent values exited 1 as expected.
+- FAILED: `go test ./...` and `go test ./... -race`.
+  Both completed exit 1 solely at existing `TestCodexResolveManifestAgainstInstalledHost` (`codex_resolve_test.go:44`): stable ID absent while resolver returns local `spacedock-local/spacedock/0.28.0-pre0` manifest; all other packages passed, with no race report.
+- DONE: `gofmt -w ./cmd ./internal` and owned-file format verification.
+  Required formatter ran; it touched two pre-existing unrelated struct-field spacing lines in `internal/release/runtime_live_evidence_workflow_test.go`; FO explicitly declined cleanup, so only those formatter-induced bytes were restored. All eight owned Go files pass `gofmt -l`; `git diff --check` is clean.
+- SKIPPED: Unrelated installed-host resolver repair.
+  FO explicitly declined: previously observed mismatch, outside append-profile ownership; deferred for this task, promote when stable/local install resolution is assigned; no append-profile AC harm established.
+- SKIPPED: Installed Safehouse, nested Seatbelt execution, local model sessions, CI, and pushes.
+  Installed Safehouse was denied in ideation; pinned policy rendering and deterministic launch seams prove the assigned claim, not installed-version compatibility or nested execution. Captain's no-push constraint applies to code and state.
+
+### Summary
+
+The existing StringArray parsers and translator now forward each profile literally before Safehouse's delimiter and select the existing sandbox path. The bounded implementation, help, and documentation are committed; focused normal/race and independent policy evidence passed. Both required full suites completed with the known installed-Codex resolver mismatch, which the first officer explicitly declined to repair in this task.
