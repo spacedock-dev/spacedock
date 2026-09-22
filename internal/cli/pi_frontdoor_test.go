@@ -19,6 +19,7 @@ type fakePiRuntimeOps struct {
 	statOK        map[string]bool
 	launched      []string
 	launchedEnv   []string
+	launchCalls   int
 	launchCode    int      // host exit code Launch returns (default 0)
 	piInstalls    []string // sources captured by PiInstall
 	piInstallOut  string
@@ -47,6 +48,7 @@ func (f *fakePiRuntimeOps) Stat(path string) error {
 }
 
 func (f *fakePiRuntimeOps) Launch(argv []string, env []string) (int, error) {
+	f.launchCalls++
 	f.launched = append([]string(nil), argv...)
 	f.launchedEnv = append([]string(nil), env...)
 	return f.launchCode, nil
@@ -1077,6 +1079,8 @@ func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 		"--safehouse-enable",
 		"--safehouse-add-dirs",
 		"--safehouse-add-dirs-ro",
+		"--safehouse-append-profile",
+		"Append a safehouse policy file; repeatable; relative paths use the launch directory",
 		"--plugin-dir",
 		"--safehouse-add-dirs ~/scratch",
 		"forward verbatim",

@@ -54,6 +54,8 @@ func TranslateFlags(deprefixed []string) (extra []string, err error) {
 			extra = append(extra, "--add-dirs="+value)
 		case "add-dirs-ro":
 			extra = append(extra, "--add-dirs-ro="+value)
+		case "append-profile":
+			extra = append(extra, "--append-profile="+value)
 		default:
 			return nil, fmt.Errorf("safehouse: unknown flag --safehouse-%s", key)
 		}

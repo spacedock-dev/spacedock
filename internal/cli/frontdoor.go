@@ -891,20 +891,21 @@ type frontDoorArgs struct {
 }
 
 // frontDoorFlags binds the spacedock-owned front-door flags onto a pflag.FlagSet
-// so cobra owns their vocabulary natively: the three value-taking safehouse knobs
+// so cobra owns their vocabulary natively: the value-taking safehouse knobs
 // are StringArray (accept both `--flag value` and `--flag=value`, accumulate on
 // repeat), and the bare `--safehouse`/`--skip-compat-check` are Bool. The
 // returned pointers are read back by parseFrontDoorArgs after Parse. The same
 // binding feeds the per-command cobra help (AC-4), so the help and the parser
 // never drift.
 type frontDoorFlags struct {
-	safehouse *bool
-	skipCheck *bool
-	noInstall *bool
-	enable    *[]string
-	addDirs   *[]string
-	addDirsRO *[]string
-	pluginDir *[]string
+	safehouse     *bool
+	skipCheck     *bool
+	noInstall     *bool
+	enable        *[]string
+	addDirs       *[]string
+	addDirsRO     *[]string
+	appendProfile *[]string
+	pluginDir     *[]string
 }
 
 func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
@@ -921,6 +922,8 @@ func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 			"Grant safehouse read-write access to a directory; repeatable"),
 		addDirsRO: fs.StringArray("safehouse-add-dirs-ro", nil,
 			"Grant safehouse read-only access to a directory; repeatable"),
+		appendProfile: fs.StringArray("safehouse-append-profile", nil,
+			"Append a safehouse policy file; repeatable; relative paths use the launch directory"),
 		pluginDir: fs.StringArray("plugin-dir", nil,
 			"Select a local Spacedock checkout before -- (relaxes the version gate); repeatable"),
 	}
@@ -956,6 +959,10 @@ func parseFrontDoorArgs(args []string) (fd frontDoorArgs, err error) {
 	}
 	for _, v := range *flags.addDirsRO {
 		fd.safehouseFlags = append(fd.safehouseFlags, "add-dirs-ro="+v)
+	}
+
+	for _, v := range *flags.appendProfile {
+		fd.safehouseFlags = append(fd.safehouseFlags, "append-profile="+v)
 	}
 
 	// ArgsLenAtDash is the count of positionals seen before `--` (or -1 when no
