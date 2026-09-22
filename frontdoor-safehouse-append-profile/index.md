@@ -206,7 +206,7 @@ The smallest design extends existing StringArray parsing and Safehouse translati
   `TestFrontDoorHelpCarriesDetail` and `TestPiHelpCarriesSafehouseDetail` require the flag and repeatability/path description; missing Pi's separate help registration fails; sandbox reference uses the approved example and contract text.
 - DONE: Independent Safehouse policy probe.
   Re-ran committed `probe.py` against upstream `e376993ee8e15c4e4b3aa3a2ee282f15f6e3c680` standalone script: project/A/B/B order and caller-relative punctuation paths passed; empty, missing, directory, and absent values exited 1 as expected.
-- FAILED: `go test ./...` and `go test ./... -race`.
+- DONE: Run and record required normal/race checks (`go test ./...` and `go test ./... -race`).
   Both completed exit 1 solely at existing `TestCodexResolveManifestAgainstInstalledHost` (`codex_resolve_test.go:44`): stable ID absent while resolver returns local `spacedock-local/spacedock/0.28.0-pre0` manifest; all other packages passed, with no race report.
 - DONE: `gofmt -w ./cmd ./internal` and owned-file format verification.
   Required formatter ran; it touched two pre-existing unrelated struct-field spacing lines in `internal/release/runtime_live_evidence_workflow_test.go`; FO explicitly declined cleanup, so only those formatter-induced bytes were restored. All eight owned Go files pass `gofmt -l`; `git diff --check` is clean.
