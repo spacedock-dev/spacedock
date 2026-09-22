@@ -1,6 +1,6 @@
 ---
 title: Forward appended Safehouse profiles through the front door
-status: implementation
+status: validation
 source: Captain request 2026-09-22
 started: 2026-09-22T15:38:57Z
 completed:
