@@ -6,7 +6,7 @@ started: 2026-09-22T15:38:57Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-frontdoor-safehouse-append-profile
 issue:
 pr:
 mod-block:
