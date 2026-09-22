@@ -218,3 +218,39 @@ The smallest design extends existing StringArray parsing and Safehouse translati
 ### Summary
 
 The existing StringArray parsers and translator now forward each profile literally before Safehouse's delimiter and select the existing sandbox path. The bounded implementation, help, and documentation are committed; focused normal/race and independent policy evidence passed. Both required full suites completed with the known installed-Codex resolver mismatch, which the first officer explicitly declined to repair in this task.
+
+
+## Review-finding disposition
+
+Validation recommends **PASSED** for `83b356c1c8dae9fd359fd9f99081ab0e47139c20`. No new material, deferred-risk, or polish findings arose. The previously recorded installed-Codex resolver mismatch remains outside append-profile ownership under the FO's explicit DECLINE; it is a failed repository check, not unfinished validation work. Installed-version compatibility and nested Seatbelt execution remain unproven boundaries already excluded by the approved scope.
+
+## Stage Report: validation
+
+- DONE: Independently verify all four ACs and approved surface against exact committed implementation, reusing completed tests and real Safehouse policy evidence.
+  `83b356c1c` against `9a6765fa8`: exactly the nine approved files, 172 insertions/9 deletions (+163 net), within tolerance; candidate HEAD and bytes stayed unchanged and clean.
+- DONE: AC-1 — All three front doors deliver each requested profile to Safehouse without losing host arguments.
+  Detached `TestAppendProfileLaunchContract` passed for Claude/Codex/Pi, comparing ordered profiles before the wrapper delimiter plus complete remaining argv/env and one Launch; removing translator emission made all three fail.
+- DONE: AC-2 — Profile values retain their path and composition meaning.
+  Detached `TestAppendProfileLiteralParsing`/`TestTranslateFlags` passed both forms, punctuation, shell-like/absolute/relative/empty/dash paths, duplicates, and interleaved knobs; deliberately reversing shared occurrence order failed exact parser and launch comparisons.
+- DONE: AC-2 independent policy composition and CWD evidence.
+  Re-executed committed `probe.py` against verified upstream `e376993ee8e15c4e4b3aa3a2ee282f15f6e3c680`: project/A/B/B and caller-relative punctuation paths passed; detached actual `/bin/sh` child through shared `execHost.Launch` observed inherited physical CWD. Pi delegates to that unchanged launch owner; front doors do not change CWD.
+- DONE: AC-3 — Malformed input fails without an unprofiled fallback, and argument boundaries stay compatible.
+  Launch fixtures passed no-Launch terminal-value/unavailable-binary cases, literal empty forwarding, exit 23 with exactly one Launch, host-only post-delimiter tokens, and unchanged wrapping with inside markers; `TestLaunchExitCodePropagation` passed the actual child exit boundary.
+- DONE: AC-3 external errors and nested boundary.
+  Real Safehouse probe returned exit 1 for empty, missing, directory, and absent paths; launcher fixtures establish nonzero propagation without retry. Already-inside behavior still requests the outer wrapper; no claim of relaxing the parent or proving nested execution is made.
+- DONE: AC-4 — Each front door advertises the option and its repeatability.
+  Actual rendered-help tests `TestFrontDoorHelpCarriesDetail`/`TestPiHelpCarriesSafehouseDetail` passed; deleting only Pi's help registration failed its output assertions. Sandbox reference matches approved examples and the observed path/order contract; this AC tests advertised text, not policy enforcement.
+- DONE: Run bounded detached adversarial audit of profile forwarding/path/boundary/failure claims; report actual verdict and limitations without broad duplicate suites.
+  Detached checkout at the candidate ran existing focused tests with `-count=1`; temporary Unicode/newline path variants and actual-child CWD check passed. Translator-drop, occurrence-reorder, and Pi-help-omission mutations each exited 1 as expected; mutations and throwaway checkout were removed.
+- DONE: Inspect lifecycle and scaling boundaries.
+  Values flow StringArray → grouped prefixed strings → first-equals translation → existing Wrap → unchanged Launch; no filesystem I/O, shell evaluation, new size limit, or multiplicative hot path was added. Exact-byte/cardinality/order and failure matrices above cover the changed surface without a new framework.
+- DONE: Reuse completed required normal/race/format evidence and preserve failure outcomes.
+  Inspected `/tmp/append-profile-normal.txt` and `/tmp/append-profile-race.txt`: both completed exit 1 solely at `TestCodexResolveManifestAgainstInstalledHost`, `codex_resolve_test.go:44` (stable ID absent, local pre0 manifest returned); no race warning. Producer recorded required gofmt execution; independent owned-file `gofmt -l` and `git diff --check` were clean.
+- SKIPPED: Broad suite repetition, unrelated resolver repair, and unrelated formatting cleanup.
+  Existing completed evidence is reused and the FO explicitly declined the unrelated changes; no all-green repository claim is made.
+- SKIPPED: Installed Safehouse compatibility, nested Seatbelt execution, model sessions, CI, and pushes.
+  Approved policy-only/launch-seam scope and captain's no-push instruction apply; neither code nor state was pushed.
+
+### Summary
+
+**PASSED recommended:** all four approved ACs have exercised, falsifiable evidence, and the detached audit found no new defect. Required full normal/race execution remains completed with the explicitly declined installed-Codex baseline failure; validation does not convert those results into passes. Only this report was committed; the product candidate remains unchanged for FO review.
