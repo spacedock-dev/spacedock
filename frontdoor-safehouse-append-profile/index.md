@@ -1,6 +1,6 @@
 ---
 title: Forward appended Safehouse profiles through the front door
-status: ideation
+status: implementation
 source: Captain request 2026-09-22
 started: 2026-09-22T15:38:57Z
 completed:
@@ -32,7 +32,7 @@ gates:
                 reason: Captain approved the prepared ideation design in binding Subspace review resolution:binding-1790095375131026000.
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 ---
 
 Support `--safehouse-append-profile=file.sb` on `spacedock claude`, `spacedock codex`, and `spacedock pi`.
