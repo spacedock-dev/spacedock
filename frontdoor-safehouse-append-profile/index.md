@@ -41,6 +41,17 @@ gates:
                 id: briefing:9cbmcq3yyfjynhms1yd12drh:validation:attempt-1:revision-1
                 digest: sha256:eec3f8afd86e01c28f9f1bab6a09904f7a8f2cc21eeffbe99594be3382bf52c5
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9cbmcq3yyfjynhms1yd12drh:validation:1
+                briefing: briefing:9cbmcq3yyfjynhms1yd12drh:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-22T17:10:26.954652Z"
+                decision: approve
+                reason: Captain approved validated implementation in binding Subspace resolution:binding-1790097013389634000, including recorded test limitations.
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Support `--safehouse-append-profile=file.sb` on `spacedock claude`, `spacedock codex`, and `spacedock pi`.
