@@ -33,6 +33,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:9cbmcq3yyfjynhms1yd12drh:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:9cbmcq3yyfjynhms1yd12drh-validation-1
+              briefing:
+                id: briefing:9cbmcq3yyfjynhms1yd12drh:validation:attempt-1:revision-1
+                digest: sha256:eec3f8afd86e01c28f9f1bab6a09904f7a8f2cc21eeffbe99594be3382bf52c5
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Support `--safehouse-append-profile=file.sb` on `spacedock claude`, `spacedock codex`, and `spacedock pi`.
