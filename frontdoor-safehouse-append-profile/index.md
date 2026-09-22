@@ -22,6 +22,17 @@ gates:
                 id: briefing:9cbmcq3yyfjynhms1yd12drh:ideation:attempt-1:revision-1
                 digest: sha256:c3bf30c9d2d181a9bf249de314ac8d2e9010eff21d1ba935866a9cdaedce2414
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9cbmcq3yyfjynhms1yd12drh:ideation:1
+                briefing: briefing:9cbmcq3yyfjynhms1yd12drh:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-09-22T16:43:11.951568Z"
+                decision: approve
+                reason: Captain approved the prepared ideation design in binding Subspace review resolution:binding-1790095375131026000.
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 Support `--safehouse-append-profile=file.sb` on `spacedock claude`, `spacedock codex`, and `spacedock pi`.
