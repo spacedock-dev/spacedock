@@ -69,7 +69,7 @@
         "headline": "Supported sandboxes",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/reference/sandbox/",
-        "dateModified": "2026-09-20 08:32:37",
+        "dateModified": "2026-09-23 05:56:02",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1090,6 +1090,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Supported sandboxes
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1101,6 +1114,34 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#additional-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additional profiles
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1157,6 +1198,23 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#additional-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additional profiles
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1187,10 +1245,39 @@
 <tr>
 <td><a href="https://agent-safehouse.dev/"><code>safehouse</code></a></td>
 <td>macOS</td>
-<td>A <code>.safehouse</code> profile in the working directory, or the <code>--safehouse</code> flag</td>
+<td>A <code>.safehouse</code> profile in the working directory, <code>--safehouse</code>, or any <code>--safehouse-*</code> option</td>
 </tr>
 </tbody>
 </table>
+<h2 id="additional-profiles">Additional profiles<a class="headerlink" href="#additional-profiles" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--safehouse-append-profile PATH</code></td>
+<td>Optional, repeatable path</td>
+<td>Append a safehouse policy file for this launch.</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<pre class="highlight"><code class="language-bash">spacedock claude --safehouse-append-profile=file.sb
+spacedock codex --safehouse-append-profile="profiles/local rules.sb"
+spacedock pi --safehouse-append-profile=first.sb --safehouse-append-profile=second.sb</code></pre>
+<p>Both <code>--safehouse-append-profile=PATH</code> and <code>--safehouse-append-profile PATH</code> select safehouse.
+Place the option before <code>--</code>; tokens after <code>--</code> go to the coding agent.
+Relative paths start in the directory where you launch Spacedock.
+Each occurrence supplies one path; repeats retain their order.
+Safehouse loads project-config profiles before these profiles, then applies its final write protections.
+Safehouse reports invalid profile paths or content, and Spacedock returns the failure.
+An existing sandbox stays active; this option still requests a safehouse launch and cannot relax the parent sandbox.</p>
 
 
 
@@ -1211,7 +1298,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="September 20, 2026 08:32:37 UTC">2026-09-20 08:32:37</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="September 23, 2026 05:56:02 UTC">2026-09-23 05:56:02</span>
   </span>
 
     
