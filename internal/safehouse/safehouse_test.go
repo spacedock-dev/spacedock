@@ -217,6 +217,7 @@ func TestTranslateFlags(t *testing.T) {
 		want []string
 	}{
 		{"empty", nil, nil},
+		{"profiles-literal-ordered", []string{"append-profile=a,b:=c.sb", "append-profile=", "append-profile=a,b:=c.sb"}, []string{"--append-profile=a,b:=c.sb", "--append-profile=", "--append-profile=a,b:=c.sb"}},
 		{"enable-single", []string{"enable=docker"}, []string{"--enable=docker"}},
 		{"enable-comma-split", []string{"enable=ssh,docker"}, []string{"--enable=ssh", "--enable=docker"}},
 		{"add-dirs", []string{"add-dirs=/a"}, []string{"--add-dirs=/a"}},

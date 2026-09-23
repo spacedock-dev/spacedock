@@ -105,6 +105,7 @@ func setPiHelp(cmd *cobra.Command, w io.Writer) {
 	cmd.Flags().StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
 	cmd.Flags().StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")
 	cmd.Flags().StringArray("safehouse-add-dirs-ro", nil, "Grant safehouse read-only access to a directory; repeatable")
+	cmd.Flags().StringArray("safehouse-append-profile", nil, "Append a safehouse policy file; repeatable; relative paths use the launch directory")
 	cmd.SetHelpFunc(func(c *cobra.Command, _ []string) {
 		fmt.Fprint(w, tagline+`
 

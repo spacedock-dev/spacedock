@@ -494,6 +494,7 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	enable := fs.StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
 	addDirs := fs.StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")
 	addDirsRO := fs.StringArray("safehouse-add-dirs-ro", nil, "Grant safehouse read-only access to a directory; repeatable")
+	appendProfile := fs.StringArray("safehouse-append-profile", nil, "Append a safehouse policy file; repeatable; relative paths use the launch directory")
 	if err := fs.Parse(args); err != nil {
 		return frontDoorArgs{}, nil, err
 	}
@@ -506,6 +507,9 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	}
 	for _, v := range *addDirsRO {
 		fd.safehouseFlags = append(fd.safehouseFlags, "add-dirs-ro="+v)
+	}
+	for _, v := range *appendProfile {
+		fd.safehouseFlags = append(fd.safehouseFlags, "append-profile="+v)
 	}
 	positionals := fs.Args()
 	dash := fs.ArgsLenAtDash()
