@@ -206,3 +206,8 @@ func TestLiveCommonZeroDiscovery(t *testing.T) {
 func TestLiveCommonShallowBoot(t *testing.T) {
 	liveJourney(t, "shallow-boot", "boot/held-gate", writeShallowBootWorkflow, nil, runClaudeShallowBootScenario, assertShallowBoot)
 }
+
+//spacedock:live-journey id=same-stage-revision fixture=rejection/self-feedback-plain,rejection/self-feedback-review-required,rejection/self-feedback-separate-review-required,rejection/self-feedback-round-required,rejection/self-feedback-round-missing,rejection/self-feedback-cycle-limit
+func TestLiveCommonSameStageRevision(t *testing.T) {
+	liveJourney(t, "same-stage-revision", "rejection/self-feedback-plain,rejection/self-feedback-review-required,rejection/self-feedback-separate-review-required,rejection/self-feedback-round-required,rejection/self-feedback-round-missing,rejection/self-feedback-cycle-limit", writeSameStageRevision, nil, runSameStageRevisionJourney, assertSameStageWorkers)
+}

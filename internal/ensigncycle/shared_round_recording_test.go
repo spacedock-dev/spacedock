@@ -233,9 +233,9 @@ func codexRecordedRejectionRound(jsonl string) bool {
 	return false
 }
 
-// codexRejectionRoundPublications reads resolved argv from the existing logger.
+// recorderRejectionRoundPublications reads resolved argv from the existing logger.
 // Recorder exit status is independent of the enclosing shell's eventual status.
-func codexRejectionRoundPublications(log string) []string {
+func recorderRejectionRoundPublications(log string) []string {
 	var rounds []string
 	for _, line := range strings.Split(log, "\n") {
 		if !strings.HasPrefix(line, "exit=0\tgate record rejection-task ") {
