@@ -8,7 +8,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-frontdoor-safehouse-append-profile
 issue:
-pr: "#810"
+pr: pr-merge:810
 mod-block: merge:pr-merge
 id: 9cbmcq3yyfjynhms1yd12drh
 gates:
