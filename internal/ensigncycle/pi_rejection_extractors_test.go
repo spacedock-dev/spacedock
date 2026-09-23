@@ -2,6 +2,7 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -56,6 +57,10 @@ type piToolCallBlock struct {
 // piToolCallArgs holds the argument fields the extractors read, parsed from the
 // `arguments` raw JSON of a toolCall block.
 type piToolCallArgs struct {
+	Async   *bool  `json:"async"`
+	Agent   string `json:"agent"`
+	Cwd     string `json:"cwd"`
+	Context string `json:"context"`
 	Command string `json:"command"`
 	Task    string `json:"task"`
 	Action  string `json:"action"`
@@ -83,6 +88,19 @@ func piTextContent(raw json.RawMessage) string {
 
 // piSessionMessage is the `message` field of a Pi session JSONL record.
 type piSessionMessage struct {
+	StopReason string `json:"stopReason"`
+	Details    struct {
+		Results []struct {
+			Agent       string `json:"agent"`
+			ExitCode    *int   `json:"exitCode"`
+			OutputState string `json:"outputState"`
+			SessionFile string `json:"sessionFile"`
+		} `json:"results"`
+		RunID   string `json:"runId"`
+		Mission struct {
+			OwnerSessionID string `json:"ownerSessionId"`
+		} `json:"mission"`
+	} `json:"details"`
 	Role       string          `json:"role"`
 	ToolCallID string          `json:"toolCallId"`
 	ToolName   string          `json:"toolName"`
@@ -92,8 +110,14 @@ type piSessionMessage struct {
 
 // piSessionRecord is one line of a Pi session JSONL file.
 type piSessionRecord struct {
-	Type    string           `json:"type"`
-	Message piSessionMessage `json:"message"`
+	ID         string           `json:"id"`
+	Timestamp  string           `json:"timestamp"`
+	Cwd        string           `json:"cwd"`
+	Name       string           `json:"name"`
+	CustomType string           `json:"customType"`
+	Content    string           `json:"content"`
+	Type       string           `json:"type"`
+	Message    piSessionMessage `json:"message"`
 }
 
 // piBashCommands extracts every bash/shell toolCall id→command pair from a Pi session
@@ -212,13 +236,24 @@ type piSubagentSpawn struct {
 }
 
 // piRejectionRoutes extracts the ordered worker topology from a Pi session JSONL.
-// Pi's FO spawns workers via `subagent(... async: true)` (a toolCall with a `task`
-// argument), polls `subagent({action:"status", id})`, and reads the status result
-// to detect completion. Worker identity is derived from the dispatch file path in the
-// spawn task — the same (slug, stage)-derived handle Claude's Agent `name` carries.
+// Retained native sync/async evidence credits the exact dispatch call at its
+// completion boundary. Native targets include that fresh call identity, so two
+// workers at the same stage remain independent. Historical status polling keeps
+// the dispatch-pointer handle when retained native evidence is unavailable.
 // The branch is always FRESH on Pi because reuse-advance is deferred (see
 // piRejectionBranch).
-func piRejectionRoutes(session string) ([]rejectionRoute, rejectionBranch) {
+func piRejectionRoutes(session string, artifactDirs ...string) ([]rejectionRoute, rejectionBranch, error) {
+	native, err := piNativeCompletions(session, artifactDirs...)
+	if err != nil {
+		return nil, piRejectionBranch, err
+	}
+	doneAt := map[int]string{}
+	for call, d := range native {
+		if d.completed >= 0 {
+			doneAt[d.completed] = call
+		}
+	}
+	completedCalls := map[string]bool{}
 	var routes []rejectionRoute
 	// spawnByRunID maps the async run id (from the spawn result text) back to the
 	// (handle, stage) the spawn opened. The FO polls status with that run id.
@@ -236,6 +271,13 @@ func piRejectionRoutes(session string) ([]rejectionRoute, rejectionBranch) {
 			continue
 		}
 
+		if call := doneAt[i]; call != "" {
+			if spawn, ok := spawnByToolCallID[call]; ok {
+				routes = append(routes, rejectionRoute{index: i, event: routeDone, stage: spawn.stage, target: spawn.handle})
+				completedCalls[call] = true
+			}
+		}
+
 		// Assistant messages carry toolCall blocks — subagent spawns and status polls.
 		if rec.Message.Role == "assistant" {
 			var blocks []piToolCallBlock
@@ -243,7 +285,20 @@ func piRejectionRoutes(session string) ([]rejectionRoute, rejectionBranch) {
 				continue
 			}
 			for _, b := range blocks {
-				if b.Type != "toolCall" || b.Name != "subagent" {
+				if b.Type != "toolCall" {
+					continue
+				}
+				if b.Name == "bash" {
+					var args piToolCallArgs
+					_ = json.Unmarshal(b.Arguments, &args)
+					for _, d := range native {
+						boundary := strings.Contains(args.Command, "gate prepare") || stageToken(d.args.Task, "implementation") && strings.Contains(args.Command, "status=validation")
+						if boundary && d.index < i && d.completed >= i {
+							return nil, piRejectionBranch, fmt.Errorf("Pi completion after advancement/gate preparation")
+						}
+					}
+				}
+				if b.Name != "subagent" {
 					continue
 				}
 				var args piToolCallArgs
@@ -256,10 +311,14 @@ func piRejectionRoutes(session string) ([]rejectionRoute, rejectionBranch) {
 					if handle == "" {
 						continue
 					}
+					stage := rejectionStageOfHandle(handle)
+					if native[b.ID] != nil {
+						handle += "@" + b.ID
+					}
 					spawn := piSubagentSpawn{
 						toolCallID: b.ID,
 						handle:     handle,
-						stage:      rejectionStageOfHandle(handle),
+						stage:      stage,
 					}
 					spawnByToolCallID[b.ID] = spawn
 					pendingSpawn = &spawn
@@ -285,16 +344,21 @@ func piRejectionRoutes(session string) ([]rejectionRoute, rejectionBranch) {
 		}
 		text := piTextContent(rec.Message.Content)
 		spawn, isSpawn := spawnByToolCallID[rec.Message.ToolCallID]
-		if !isSpawn {
+		if !isSpawn || completedCalls[spawn.toolCallID] {
 			continue
 		}
 		// A spawn result carries the async run id; record it for status correlation.
+		if rec.Message.Details.RunID != "" {
+			spawnByRunID[rec.Message.Details.RunID] = spawn
+			continue
+		}
 		if m := piAsyncRunID.FindStringSubmatch(text); m != nil {
 			spawnByRunID[m[1]] = spawn
 			continue
 		}
 		// A status result showing completion closes the pending spawn.
 		if piStatusCompleted.MatchString(text) {
+			completedCalls[spawn.toolCallID] = true
 			routes = append(routes, rejectionRoute{
 				index: i, event: routeDone, stage: spawn.stage, target: spawn.handle,
 			})
@@ -308,7 +372,7 @@ func piRejectionRoutes(session string) ([]rejectionRoute, rejectionBranch) {
 	// correlation without dead-code warnings; the run-id correlation above is the
 	// primary path.
 	_ = pendingSpawn
-	return routes, piRejectionBranch
+	return routes, piRejectionBranch, nil
 }
 
 // piHandleFromTask extracts the worker handle from the dispatch file path in a
