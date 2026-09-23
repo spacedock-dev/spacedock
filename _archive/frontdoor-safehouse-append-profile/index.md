@@ -1,15 +1,15 @@
 ---
 title: Forward appended Safehouse profiles through the front door
-status: validation
+status: done
 source: Captain request 2026-09-22
 started: 2026-09-22T15:38:57Z
-completed:
-verdict:
+completed: 2026-09-23T05:56:39Z
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-frontdoor-safehouse-append-profile
 issue:
 pr: pr-merge:810
-mod-block: merge:pr-merge
+mod-block:
 id: 9cbmcq3yyfjynhms1yd12drh
 gates:
     version: 1
@@ -51,7 +51,8 @@ gates:
                 reason: Captain approved validated implementation in binding Subspace resolution:binding-1790097013389634000, including recorded test limitations.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
+archived: 2026-09-23T05:56:39Z
 ---
 
 Support `--safehouse-append-profile=file.sb` on `spacedock claude`, `spacedock codex`, and `spacedock pi`.
