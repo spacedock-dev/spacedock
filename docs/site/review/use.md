@@ -2,7 +2,7 @@
 
 Review your agent's work, fix the lines that need fixing, and send your comments back, all without leaving your session.
 
-You need Review installed. See Install Review [link: install.md].
+You need Review installed. See [Install Review](../start.md).
 
 ## Comment on the work
 
@@ -63,5 +63,5 @@ Some calls need someone who knows the area better than you do. Send the review t
 
 ## Next
 
-- What connects today [link: ../start-with-one.md#what-connects-today]: decide a call [Workflow](../index.md) holds for you in Review, instead of in chat.
+- [What connects today](../start.md): decide a call [Workflow](../workflow/index.md) holds for you in Review, instead of in chat.
 - [Review reference](reference.md): every command and key.

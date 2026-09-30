@@ -64,12 +64,16 @@ plugins:
         evidenced decision at each gate. This index links the product docs;
         llms-full.txt is every page concatenated into one file for a single fetch.
       sections:
+        Overview:
+          - index.md
+          - start.md
         Review:
           - review/*.md
         Compass:
           - compass/*.md
+        Workflow:
+          - workflow/*.md
         Get started:
-          - index.md
           - get-started/*.md
         Concepts:
           - concepts/*.md
@@ -81,6 +85,9 @@ plugins:
           - reference/*.md
 
 nav:
+  - Overview:
+      - Overview: index.md
+      - Get Started: start.md
   - Review:
       - What it is: review/index.md
       - Use it: review/use.md
@@ -89,32 +96,33 @@ nav:
       - What it is: compass/index.md
       - Use it: compass/use.md
       - Reference: compass/reference.md
-  - Get started:
-      - Welcome: index.md
-      - Install: get-started/install.md
-      - Survey your project: get-started/survey.md
-      - Your first workflow: get-started/first-workflow.md
-  - Concepts:
-      - The operating model: concepts/operating-model.md
-      - Workflows & entities: concepts/workflows-and-entities.md
-      - The stage lifecycle: concepts/stage-lifecycle.md
-      - Gates & decisions: concepts/gates-and-decisions.md
-  - Running workflows:
-      - Commission a workflow: running-workflows/commission.md
-      - Operate a workflow: running-workflows/operating.md
-      - Debrief a session: running-workflows/debrief.md
-  - Advanced topics:
-      - Mods & standing teammates: advanced/mods-and-standing-teammates.md
-      - Multiple workflows: advanced/multi-workflow.md
-      - Split-root state: advanced/split-root-state.md
-      - Bridge an external tracker: advanced/external-tracker.md
-      - Refit a workflow: advanced/refit.md
-  - Reference:
-      - Command reference: reference/command-reference.md
-      - Frontmatter contract: reference/frontmatter-contract.md
-      - Glossary: reference/glossary.md
-      - Supported sandboxes: reference/sandbox.md
-      - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
+  - Workflow:
+      - What it is: workflow/index.md
+      - Get started:
+          - Install: get-started/install.md
+          - Survey your project: get-started/survey.md
+          - Your first workflow: get-started/first-workflow.md
+      - Concepts:
+          - The operating model: concepts/operating-model.md
+          - Workflows & entities: concepts/workflows-and-entities.md
+          - The stage lifecycle: concepts/stage-lifecycle.md
+          - Gates & decisions: concepts/gates-and-decisions.md
+      - Running workflows:
+          - Commission a workflow: running-workflows/commission.md
+          - Operate a workflow: running-workflows/operating.md
+          - Debrief a session: running-workflows/debrief.md
+      - Advanced topics:
+          - Mods & standing teammates: advanced/mods-and-standing-teammates.md
+          - Multiple workflows: advanced/multi-workflow.md
+          - Split-root state: advanced/split-root-state.md
+          - Bridge an external tracker: advanced/external-tracker.md
+          - Refit a workflow: advanced/refit.md
+      - Reference:
+          - Command reference: reference/command-reference.md
+          - Frontmatter contract: reference/frontmatter-contract.md
+          - Glossary: reference/glossary.md
+          - Supported sandboxes: reference/sandbox.md
+          - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
 
 hooks:
   # Enriches the per-page .md mirrors emitted by mkdocs-llmstxt with YAML

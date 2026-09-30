@@ -22,7 +22,7 @@ If you start the review [with questions turned on](use.md#ask-the-agent-while-yo
 
 ## In the terminal or the browser
 
-Review works the same way in both, so you use whichever suits the moment. In the terminal, it opens beside your agent session in the terminal you already use [link: install.md#terminals]: Zellij, tmux, CMUX, Herdr, Ghostty or Apple Terminal. It works in Claude Code and Codex.
+Review works the same way in both, so you use whichever suits the moment. In the terminal, it opens beside your agent session in [the terminal you already use](../start.md): Zellij, tmux, CMUX, Herdr, Ghostty or Apple Terminal. It works in Claude Code and Codex.
 
 > **[Screenshots to take, side by side:** the same review in the terminal and in the browser, with the same comment on the same line in both, so the reader sees it's one experience.**]**
 
@@ -46,6 +46,6 @@ You can ask for a second opinion from the terminal or the browser. The browser i
 
 ## Next
 
-- Install Review [link: install.md], then [use it on its own](use.md).
-- **Then Workflow.** When you find yourself reviewing the same kind of work again and again, at different steps along the way, there's a workflow under it. [Spacedock Workflow](../index.md) can [run that process](../get-started/survey.md), and bring you only the calls that need you. You can still decide those calls in Review [link: ../start-with-one.md#what-connects-today].
+- [Install Review](../start.md), then [use it on its own](use.md).
+- **Then Workflow.** When you find yourself reviewing the same kind of work again and again, at different steps along the way, there's a workflow under it. [Spacedock Workflow](../workflow/index.md) can [run that process](../get-started/survey.md), and bring you only the calls that need you. You can still [decide those calls in Review](../start.md).
 - **Or Compass.** If your comments keep saying "this isn't what we agreed", you're catching drift after the work is done. [Spacedock Compass](../compass/index.md) catches it while the work is still running.
