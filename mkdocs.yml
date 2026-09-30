@@ -1,5 +1,5 @@
 site_name: Spacedock
-site_description: A multi-agent orchestrator where nothing ships without a decision.
+site_description: Your agents are waiting on you. Spacedock brings you the calls that need you, keeps your agents on the goal, and lets you decide in one place.
 site_url: https://spacedock.md/docs/
 repo_url: https://github.com/spacedock-dev/spacedock
 repo_name: spacedock-dev/spacedock
@@ -58,11 +58,13 @@ plugins:
   - llmstxt:
       full_output: llms-full.txt
       markdown_description: >-
-        Documentation for Spacedock, a multi-agent orchestrator where nothing
-        ships without a decision. It lives within your existing coding harness
-        (Claude Code, Codex, or Pi), breaks work into stages, and surfaces an
-        evidenced decision at each gate. This index links the product docs;
-        llms-full.txt is every page concatenated into one file for a single fetch.
+        Documentation for Spacedock, which runs inside your existing coding
+        agent (Claude Code, Codex, or Pi) and has three features. Spacedock
+        Review puts your agent's work in front of you and sends your comments
+        back. Spacedock Compass shows whether your agents are still on the goal.
+        Spacedock Workflow breaks work into stages and surfaces an evidenced
+        decision at each gate. This index links the product docs; llms-full.txt
+        is every page concatenated into one file for a single fetch.
       sections:
         Overview:
           - index.md
