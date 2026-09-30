@@ -8,6 +8,8 @@
 brew install spacedock-dev/tap/spacedock [TBD]
 ```
 
+Until one install ships, install Workflow on its own: see [Install](get-started/install.md).
+
 ## Open a feature
 
 - **Spacedock Review:** `[command TBD]`. See [Review](review/index.md).

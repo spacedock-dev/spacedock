@@ -71,14 +71,13 @@ plugins:
           - review/*.md
         Compass:
           - compass/*.md
-        Workflow:
+        Workflow, what it is:
           - workflow/*.md
-        Get started:
+        Workflow, use it:
           - get-started/*.md
+          - running-workflows/*.md
         Concepts:
           - concepts/*.md
-        Running workflows:
-          - running-workflows/*.md
         Advanced topics:
           - advanced/*.md
         Reference:
@@ -98,19 +97,18 @@ nav:
       - Reference: compass/reference.md
   - Workflow:
       - What it is: workflow/index.md
-      - Get started:
+      - Use it:
           - Install: get-started/install.md
           - Survey your project: get-started/survey.md
           - Your first workflow: get-started/first-workflow.md
+          - Commission a workflow: running-workflows/commission.md
+          - Operate a workflow: running-workflows/operating.md
+          - Debrief a session: running-workflows/debrief.md
       - Concepts:
           - The operating model: concepts/operating-model.md
           - Workflows & entities: concepts/workflows-and-entities.md
           - The stage lifecycle: concepts/stage-lifecycle.md
           - Gates & decisions: concepts/gates-and-decisions.md
-      - Running workflows:
-          - Commission a workflow: running-workflows/commission.md
-          - Operate a workflow: running-workflows/operating.md
-          - Debrief a session: running-workflows/debrief.md
       - Advanced topics:
           - Mods & standing teammates: advanced/mods-and-standing-teammates.md
           - Multiple workflows: advanced/multi-workflow.md
