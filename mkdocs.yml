@@ -64,6 +64,10 @@ plugins:
         evidenced decision at each gate. This index links the product docs;
         llms-full.txt is every page concatenated into one file for a single fetch.
       sections:
+        Review:
+          - review/*.md
+        Compass:
+          - compass/*.md
         Get started:
           - index.md
           - get-started/*.md
@@ -77,6 +81,14 @@ plugins:
           - reference/*.md
 
 nav:
+  - Review:
+      - What it is: review/index.md
+      - Use it: review/use.md
+      - Reference: review/reference.md
+  - Compass:
+      - What it is: compass/index.md
+      - Use it: compass/use.md
+      - Reference: compass/reference.md
   - Get started:
       - Welcome: index.md
       - Install: get-started/install.md
