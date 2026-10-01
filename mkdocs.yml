@@ -87,7 +87,7 @@ plugins:
 
 nav:
   - Overview:
-      - Overview: index.md
+      - Welcome: index.md
       - Get Started: start.md
   - Review:
       - What it is: review/index.md

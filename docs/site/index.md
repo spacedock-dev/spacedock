@@ -1,4 +1,4 @@
-# Overview
+# Welcome
 
 Your agents finish work faster than you can judge it. **Your judgment is the bottleneck, and Spacedock is built around it.**
 
