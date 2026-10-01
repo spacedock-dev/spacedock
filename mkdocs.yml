@@ -68,7 +68,6 @@ plugins:
       sections:
         Overview:
           - index.md
-          - start.md
         Review:
           - review/*.md
         Compass:
@@ -88,7 +87,6 @@ plugins:
 nav:
   - Overview:
       - Welcome: index.md
-      - Get Started: start.md
   - Review:
       - What it is: review/index.md
       - Use it: review/use.md
