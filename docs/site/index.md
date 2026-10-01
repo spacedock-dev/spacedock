@@ -14,8 +14,6 @@ One command installs Spacedock.
 brew install spacedock-dev/tap/spacedock [TBD]
 ```
 
-Until one install ships, install Workflow on its own: see [Install](get-started/install.md).
-
 ## One problem, three places
 
 The bottleneck shows up in three places. Each Spacedock feature takes one.
