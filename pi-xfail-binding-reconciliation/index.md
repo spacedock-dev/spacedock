@@ -4,6 +4,9 @@ status: backlog
 score: 0.7
 source: "pi-ux carve review, 2026-10-03: live Pi bindings name an archived owner, one binding cannot XPASS in code, and one real Pi FAIL carries no binding."
 id: d525n1p5zgnz99hmtjq16z57
+sprint: pi-ux
+group: tooling
+sprint-readiness: ready
 ---
 
 The live Pi XFAIL registry does not state the truth. Some bindings name owners that no
