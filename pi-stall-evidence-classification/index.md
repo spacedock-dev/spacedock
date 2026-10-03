@@ -18,6 +18,20 @@ gates:
                 id: briefing:z6eb1krpyfmr01dwyb7703hx:backlog:attempt-1:revision-1
                 digest: sha256:df46fdbb84739f3ffc3e48e5b644510c514be915e658607aebeb62c54152990d
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:z6eb1krpyfmr01dwyb7703hx:backlog:1
+                briefing: briefing:z6eb1krpyfmr01dwyb7703hx:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T04:04:28.754736Z"
+                decision: approve
+                reason: Covers classifying a Pi stall from already-archived artifacts; capture is explicitly not the gap.
+                conn:
+                    quote: i already said dispatch to ideation, but don't present the ideation gate until staff review finishes
+                    source: captain instruction, this session, 2026-10-03
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A stalled Pi live run leaves artifacts that nobody classifies. The operator cannot
