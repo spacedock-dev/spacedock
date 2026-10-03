@@ -17,7 +17,7 @@ missing, it asks before installing it.
 ## Turn the report into a workflow
 
 Survey ends with an offer, not an action. It can turn what it found into a
-Spacedock [workflow](../concepts/workflows-and-entities.md): the repeated loop
+Spacedock Workflow [workflow](../concepts/workflows-and-entities.md): the repeated loop
 becomes the stages, the workstreams become the work items, and the undecided
 forks become [approval gates](../concepts/gates-and-decisions.md). Nothing
 changes in your project until you say yes; on a no, the survey stands on its

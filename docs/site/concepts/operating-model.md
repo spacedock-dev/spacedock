@@ -1,6 +1,6 @@
 # The operating model
 
-Spacedock runs on three roles and one division of labor: you shape the work and make the calls; the agents drive each item through its stages and bring decisions back to you with evidence.
+Spacedock Workflow runs on three roles and one division of labor: you shape the work and make the calls; the agents drive each item through its stages and bring decisions back to you with evidence.
 
 ## Roles
 

@@ -1,6 +1,6 @@
 # Glossary
 
-The core Spacedock terms, in one place. Each links to where the concept is covered in depth.
+The core Spacedock Workflow terms, in one place. Each links to where the concept is covered in depth.
 
 ## Workflow
 
