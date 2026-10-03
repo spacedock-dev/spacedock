@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9w59t6m1qc46hccd54p04z2j:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation baseline and advance to implementation: restore the Pi recorded-gate grade and demonstrate repeated presentation-through-successor dispatch under a delegated conn?",
+  "artifacts": [
+    {
+      "id": "artifact:9w59t6m1qc46hccd54p04z2j:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3c1a0a3d4a9ab4030f4fdc7d6250c908abd2d5a7/pi-delegated-gate-continuation-reliability.md",
+      "rev": "sha256:7100c9cccf7f6bd4797b1fa10e83d1ce632f1f1dc1a1bd0681705ee5a8eb2cd1",
+      "mediaType": "text/markdown",
+      "summary": "Restores the Pi grade in the Pi driver only, leaving the shared grader untouched, and requires a declared batch of three fresh Pi delegated recorded-gate journeys at one exact tip, counting every attempt and skip. The value criterion binds the exact bound Briefing identifier and digest as authority, never an invented value, while permitting a compact prefix in rendered prose under the current present-gate contract. Two restatements are proposed: AC-1 moves the exactness requirement to what the officer reads and records, and AC-4 verifies the active registry instead of reintroducing a removed TODO. Its named dependencies are explicit: the two failing journeys now owned by repair-pi-worker-lifecycle-observation, and recorded-gate routing owner gc only if the stronger proof exposes recorded-gate conduct. The task forbids repairing conduct inside itself. Risk evidence: the retained exact-tip runs are preserved as testdata; the completion surface the lane credits is itself the subject of the new observer task, so this promise is conditionally reachable and the condition is named rather than hidden."
+    }
+  ]
+}
