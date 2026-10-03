@@ -23,6 +23,20 @@ gates:
                 id: briefing:ekw79nn8z9829d77dw7y9353:backlog:attempt-1:revision-1
                 digest: sha256:6c48049df2276ebd29429675eec4a44c1c35107ff9a5a198fa0def74cb6d0e7a
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:ekw79nn8z9829d77dw7y9353:backlog:1
+                briefing: briefing:ekw79nn8z9829d77dw7y9353:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T04:04:17.666431Z"
+                decision: approve
+                reason: Covers scoping the Pi install-gate sentinel to the real session identity; live env evidence contradicts the current marker table.
+                conn:
+                    quote: i already said dispatch to ideation, but don't present the ideation gate until staff review finishes
+                    source: captain instruction, this session, 2026-10-03
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The runtimehost marker table marks both pi rows with `identity: ""`, so every pi consumer of session identity (starting with the FO install-gate's one-attempt sentinel in `fo-install-gate.md`, D-3) must fall back to a project/cwd-hash scope. Live evidence from 2026-07-31 shows pi DOES inject a session-scoped identity variable: `PI_SUBAGENT_PARENT_SESSION`, set in the session's own tool shells (not just nested subagent shells) to the session's own id. Mapping it as pi's identity lets the install-gate sentinel be truly session-scoped on pi, removing the admitted over-reach where a failed install in session N suppresses the install offer in session N+1 of the same project until tmp cleanup. Follow-up to `fo-boot-install-hint-linux-direct-sandbox` (D-3).
