@@ -233,6 +233,24 @@ plus a candidate-versus-base diff audit of these boundaries. Named falsifying ed
 `TestNode24ActionsPinnedAtMinimum` and the boundary audit fail. Any unauthorized
 other-lane version change must also fail the diff audit, even if still above a floor.
 
+### Folded scope — isolated-home Pi discovery (M1)
+
+This task also carries the M1 isolated-home discovery fold: one isolated-home
+setup contract (`seedPiIsolatedHome`/`seedPiDefaultExtensions`), a non-live
+helper seam, both substrate npm registrations in the isolated home's settings,
+the Spacedock package as one absolute checkout path, independent explicit
+overrides, and no substrate extension path supplied by the harness in default
+discovery. Keep the negative control: both root symlinks present, both npm
+registrations removed, both substrate tools disappear.
+
+**AC-6 (VALUE) — an isolated-home Pi run with BOTH `PI_SUBAGENTS_PACKAGE_ROOT` and `PI_INTERCOM_PACKAGE_ROOT` unset resolves both required extensions through Pi's own package discovery, with no substrate extension path supplied by the harness, and with the Spacedock package and ensign skill still loaded.** A successful explicit fallback is NOT evidence for this criterion. Proof: the authorized `TestLivePiFrontDoorSmoke` run with both variables unset, whose `assertPiEnsignBootContract` grading still requires the Spacedock/ensign boot contract plus both substrate tools. Named falsifying edit **remove-registration-seeding**: delete the isolated settings' npm registrations (or the seeded symlinks); the run loses the substrate tools.
+
+**AC-7 — discovery reads the real installed location, never a hard-coded path.** `settings.json` `packages` entries resolve through the agentDir npm path (`<agentDir>/npm/node_modules/<name>`), and local sources match by `package.json` name. The isolated home's settings must register BOTH `npm:pi-subagents` and `npm:pi-intercom`, and the Spacedock package must stay exactly one absolute checkout-path entry, never a `file:` entry. Proof: deterministic `internal/ensigncycle` tests (`TestPiDefaultExtensionRoots…`, `TestPiIsolatedHomeRegistersBothSubstratesAndAbsoluteSpacedock`). Named falsifying edits **point-settings-elsewhere**: point settings at another directory and require that directory; **write-file-prefix**: write `file:`+path and require zero extensions loaded.
+
+**AC-8 — each explicit override still wins independently when set, and the other package still discovers normally.** In default mode both package-root variables are scrubbed from the child env and are not re-added, not even as empty assignments. Proof: `TestPiLiveEnvHonorsIndependentOverrides` and `TestPiLiveEnvDefaultScrubsPackageRoots`, plus the retained `TestPiLiveEnvDropsForeignRuntimeMarkers`. Named falsifying edits **set-one-override**: set one override and require its precedence while the other variable stays absent; **re-add-empty**: re-add either variable as an empty assignment in default mode.
+
+**AC-9 — ordinary non-live helper tests plus gofmt, live-tagged vet and build, and the authorized front-door smoke pass with both variables unset, with durable entity report and commit evidence.** The helper seam must NOT carry a live build constraint, because a live-tagged definition is invisible to ordinary Go tests. Proof: `internal/ensigncycle/pi_default_extensions_test.go` has no build constraint; `gofmt -w ./cmd ./internal`, `go vet -tags live ./internal/ensigncycle`, and `go build -tags live ./internal/ensigncycle` pass; the smoke run carries durable entity report/commit evidence. Named falsifying edit **live-tag-the-helper**: define the helper under the live tag and watch the ordinary tests fail to see it.
+
 ## Out of scope
 
 Doctor resolution (`mc`), the harness Node-runtime task (`3g8`), claude-live/codex-live
@@ -356,3 +374,49 @@ Command: `/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock status --r
 ### Summary
 
 Committed the bounded three-file Pi 1.0 refresh, with independently registry-verified pins, manifest-driven assertions at both checkpoints, and a 34-negative-case structural guard. Local install, manifest/integrity experiments, compatibility import, release checks, reconciliation, and build pass; full suites reproduce baseline failures and live acceptance remains blocked by the unchanged doctor probes. Local raw validation logs are under `/tmp/pi-live-pin-refresh.TRTQoZ/`; the copied temporary auth file was removed, and no launcher/journey/grading changes are included.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Implement the folded isolated-home setup contract for the required pi-subagents and pi-intercom extensions: one setup contract, a non-live helper seam, both npm registrations in the isolated home's settings, the Spacedock package as one absolute checkout path, independent explicit overrides, and no substrate extension path in default discovery. Keep the negative control from the scope note.
+  Code commit `115e37fad`: `seedPiIsolatedHome`/`seedPiDefaultExtensions` in non-live `pi_default_extensions_test.go`; isolated settings = `["npm:pi-subagents","npm:pi-intercom",repo]` (never `file:`); both live fixtures call it; `piLiveEnv` scrubs both root vars by default and forwards only nonempty explicit overrides. The removed `.ts` source assertion was replaced by root discovery, not restored.
+- DONE: AC-7 (discovery reads the real installed location) — deterministic proof.
+  `TestPiDefaultExtensionRootsReadsRealInstalledLocation` points settings at a custom agentDir and requires that agentDir's npm path; `TestPiDefaultExtensionRootsMatchesLocalSourceByPackageName` requires the package.json-named local source and rejects a same-named decoy; falsifiers point-settings-elsewhere and write-file-prefix.
+- DONE: AC-8 (independent explicit overrides) — deterministic proof.
+  `TestPiLiveEnvHonorsIndependentOverrides` covers subagents-only/intercom-only/both; `TestPiLiveEnvDefaultScrubsPackageRoots` requires neither variable present (not even empty) in default mode; falsifiers set-one-override and re-add-empty.
+- DONE: AC-6 negative control + deterministic preconditions.
+  `TestPiIsolatedHomeNegativeControlDropsSubstrateRegistrations`: both root symlinks present, both npm registrations removed, both substrates disappear from discovery; the isolated home otherwise links both roots and registers both so default discovery can supply both tools (AC-6/AC-7).
+- DONE: Record the folded scope and the four criteria in the task body, and cite each criterion in the stage report. Record the disposition of every live Pi binding (cleared, kept, or re-anchored) with the evidence that decided it.
+  Body `### Folded scope — isolated-home Pi discovery (M1)` adds AC-6..AC-9 under the existing numbering, each with its own falsifying edit; all four are cited above and in the binding section below.
+- DONE: AC-1 through AC-5 carried forward unchanged from the implementation cycle-1 report.
+  AC-1 lane pins, AC-2 manifest-derived assertions at both setup checkpoints, AC-3 verified integrity pins, AC-4 doc/comment agreement, and AC-5 bounded non-Pi behavior remain as committed (`094e06ff7`); this cycle neither narrows nor renumbers them.
+- SKIPPED: AC-6/AC-9 authorized front-door smoke (`TestLivePiFrontDoorSmoke`) with both package-root variables unset.
+  Not run this cycle: it is a live, model-auth, multi-minute run outside the FO's bounded-proof budget; its default-discovery value and durable report/commit evidence remain owed by the live lane.
+- DONE: AC-9 non-live half — ordinary helper tests plus formatting and live-tagged vet/build.
+  `go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIntercomPackageRootDiscoversIndependently|TestPiIsolatedHome|TestPiLiveEnv' -count=1` passed; `gofmt -w ./internal/ensigncycle`, `go vet -tags live ./internal/ensigncycle`, `go build -tags live ./internal/ensigncycle` passed; falsifier live-tag-the-helper is contradicted by the helper file carrying no build constraint.
+- SKIPPED: Repository-wide `go test ./...` / `go test ./... -race` (the prior cycle's FAILED item), resolved with bounded evidence.
+  `TestCodexResolveManifestAgainstInstalledHost` + `TestVersionAmbiguousMarkersExitZero` (`internal/cli`) and `TestSurveyCodexPresenceThroughSync` (`skills/integration`) fail identically on this tree at `115e37fad` and on base `1f41f289f` (`/tmp/spacedock-base`): local codex plugin cache, ambient `PI_CODING_AGENT`, and `blank_cwd=0`. Pre-existing, so the item is skipped; full/race runs were not repeated per the budget rule.
+
+### Live Pi binding disposition
+
+Four Pi XFAILs in `internal/ensigncycle/shared_live_runner_test.go`; no XFAIL added, no selector narrowed.
+
+- re-anchored: `TestLiveCommonRejectionFlow` -> `6h3teccccn3qh71yqcmjbjx4` (was `p17swb3375rt525fn7f8xt7e`). Evidence: commit `b4ef3a90f`; the prior owner was the archived timeout repair, while `6h3teccccn3qh71yqcmjbjx4` owns the live Pi rejection-worker topology fault.
+- kept: `TestLiveCommonOwnedConflictOwnerHandoff` -> `fe7bfjz9sb8wyckmnnm3ncjx`.
+- kept: `TestLiveCommonKeepMovingPosture` -> `x02375wsg6q61xek7p0t36j2`.
+- kept: `TestLiveCommonSmallestSufficientMechanism` -> `h30c9jrfcf21fdh2qs5z58sd`.
+- cleared: none. Evidence: staff-review M1 outcome row ``d52`` records "Four retained bindings, one re-anchor, zero clearances", and this cycle's diff does not touch shared_live_runner_test.go's binding owners.
+
+### Summary
+
+Folded the M1 isolated-home discovery contract into the pi-live lane: one setup contract now links and registers both substrate packages in the isolated home (Spacedock kept as one absolute checkout path), discovery reads the real installed roots from the agentDir settings, and explicit overrides stay independent while default mode scrubs both package-root variables. Deterministic non-live tests, gofmt, live-tagged vet/build, and the retained negative control pass; AC-6/AC-9's live front-door run and the full/race suites remain unclaimed. The prior cycle's FAILED suite item is resolved as skipped on bounded cross-tree evidence.
+
+### AC scan evidence
+
+Command: `/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock status --read /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/pi-live-lane-pin-refresh/index.md --ac-scan --json --workflow-dir docs/dev`.
+
+| AC | Body line | Falsifier | Cited in report |
+| --- | --- | --- | --- |
+| AC-6 | 246 | remove-registration-seeding | implementation (cycle 2), AC-6 negative control + SKIPPED smoke |
+| AC-7 | 248 | point-settings-elsewhere / write-file-prefix | implementation (cycle 2), AC-7 line |
+| AC-8 | 250 | set-one-override / re-add-empty | implementation (cycle 2), AC-8 line |
+| AC-9 | 252 | live-tag-the-helper | implementation (cycle 2), AC-9 line + SKIPPED smoke |
