@@ -671,6 +671,32 @@ jobs:
           NODE
           test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
           test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
+
+          # Register both substrate packages in the real agent directory's
+          # settings.json so Pi's own package discovery loads them. The root
+          # symlinks above are not enough: settings registration is what makes
+          # the resources visible (see the retained negative control).
+          # Create-or-merge: preserve any existing packages and unrelated keys.
+          settings_path="$HOME/.pi/agent/settings.json"
+          node - "$settings_path" <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const settingsPath = process.argv[2];
+          let settings = {};
+          try {
+            settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+          } catch (error) {
+            if (error.code !== 'ENOENT') throw error;
+          }
+          const packages = Array.isArray(settings.packages) ? settings.packages.filter((entry) => typeof entry === 'string') : [];
+          for (const source of ['npm:pi-subagents', 'npm:pi-intercom']) {
+            if (!packages.includes(source)) packages.push(source);
+          }
+          settings.packages = packages;
+          fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+          console.log('registered ' + packages.join(', ') + ' in ' + settingsPath);
+          NODE
           # Do NOT export PI_SUBAGENTS_PACKAGE_ROOT / PI_INTERCOM_PACKAGE_ROOT here:
           # the live smoke must exercise Pi's own package discovery with both
           # variables absent. The explicit-override path is exercised locally in

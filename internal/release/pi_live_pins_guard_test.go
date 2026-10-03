@@ -93,6 +93,32 @@ func assertPiLivePinsAndSubstrateAssertions(workflow string) error {
 			return err
 		}
 	}
+	// The install step must register both substrate packages in the real agent
+	// directory's settings.json so Pi's own discovery resolves both roots with
+	// neither package-root override exported. Root symlinks alone do not register
+	// resources, so the registration is load-bearing, not cosmetic.
+	install := steps[piLiveCheckpoints[0].name]
+	for _, command := range []string{
+		`settings_path="$HOME/.pi/agent/settings.json"`,
+		`node - "$settings_path" <<'NODE'`,
+	} {
+		if err := require(command); err != nil {
+			return err
+		}
+	}
+	for _, source := range []string{`'npm:pi-subagents'`, `'npm:pi-intercom'`} {
+		if !strings.Contains(install.run, source) {
+			return fmt.Errorf("pi-live install step does not register %s in the agent settings", source)
+		}
+	}
+	for _, command := range commands {
+		if !strings.Contains(command, "PI_SUBAGENTS_PACKAGE_ROOT") && !strings.Contains(command, "PI_INTERCOM_PACKAGE_ROOT") {
+			continue
+		}
+		if strings.Contains(command, "GITHUB_ENV") || strings.Contains(command, "export") {
+			return fmt.Errorf("pi-live install step must not export package-root overrides: %s", command)
+		}
+	}
 	return nil
 }
 
@@ -112,6 +138,12 @@ func TestPiLivePinsAndSubstrateAssertionsRejectMutations(t *testing.T) {
 		{"agent-install-bypass", `npm install -g "$pi_coding_agent_tgz"`, `npm install -g @earendil-works/pi-coding-agent`},
 		{"substrate-install-bypass", `"$pi_subagents_tgz" \`, `pi-subagents \`},
 		{"intercom-install-bypass", `"$pi_intercom_tgz" \`, `pi-intercom \`},
+		{"settings-registration-removed", `node - "$settings_path" <<'NODE'`, `# node - "$settings_path" <<'NODE'`},
+		{"settings-path-not-agent-dir", `settings_path="$HOME/.pi/agent/settings.json"`, `settings_path="$RUNNER_TEMP/settings.json"`},
+		{"settings-registration-subagents-missing", `for (const source of ['npm:pi-subagents', 'npm:pi-intercom']) {`, `for (const source of ['npm:pi-intercom']) {`},
+		{"settings-registration-intercom-missing", `for (const source of ['npm:pi-subagents', 'npm:pi-intercom']) {`, `for (const source of ['npm:pi-subagents']) {`},
+		{"re-export-subagents-root", `test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"`, `test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"` + "\n          echo \"PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents\" >> \"$GITHUB_ENV\""},
+		{"re-export-intercom-root", `test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"`, `test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"` + "\n          export PI_INTERCOM_PACKAGE_ROOT=\"$pi_npm_root/node_modules/pi-intercom\""},
 	}
 	oldHashes := []string{
 		"sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ==",
