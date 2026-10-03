@@ -106,6 +106,89 @@ baseline. A stderr-only keyword label is smaller but mistakes quoted errors for
 runtime diagnostics and cannot identify an unmatched tool call. No second
 supervisor, state store, background monitor, or capture mechanism is needed.
 
+### Operator artifact contract (M3 fold; proposed for the captain's gate)
+
+These are proposed AC-1/AC-2 interface and edge-case clarifications, not new
+classifications or causal claims. Minimal input: an immutable snapshot of the
+four archived sources (stdout, stderr, process status, and the immediate
+`sessions/*.jsonl` candidates), each carrying artifact-relative path and either
+bytes or an explicit missing/read-error state; directory-listing errors are
+inputs too. The pure classifier returns one result, never a parse/read exception.
+The runner alone performs I/O. No live process inspection or external lookup is
+part of the contract. Process status must contain one unambiguous `timeout=true`
+flag in the existing `error=... timeout=...` record; missing, false, malformed, or
+contradictory timeout evidence makes the result `inconclusive`. Process error text
+is not a classification signal. Stdout/stderr are context only: unavailable
+context is cited as a gap, never synthesized into structured evidence.
+
+Concrete output (illustrative archived root filename and line):
+
+```json
+{
+  "classification": "assistant-error-observed",
+  "evidence": [
+    {"path": "process-status.txt", "line": 1, "field": "timeout", "detail": "timeout=true"},
+    {"path": "sessions/root.jsonl", "line": 6, "field": "message.stopReason", "detail": "final assistant stopReason=error; nonempty message.errorMessage"}
+  ],
+  "limits": [
+    "Archived Pi diagnostics do not establish whether this stall was transient weather, a CLI retry-loop defect, or a hang."
+  ]
+}
+```
+
+Field domains: `classification` is exactly one of the three labels above;
+`evidence` is a nonempty array of objects with required nonempty strings `path`
+and `detail`, optional positive integer `line` (1-based physical JSONL/text line),
+optional nonempty string `field` (source field path), and optional nonempty string
+`toolCallId` (the exact unmatched ID). Paths are relative to `artifactDir`, never
+absolute or traversing `..`; `sessions/` denotes a listing/selection gap. Omit
+inapplicable optional fields, rather than emitting nulls or invented locations.
+`detail` is a bounded explanation of the observation or missing/invalid input,
+not copied error prose, raw content, or OS errors containing host paths/secrets.
+`limits` is a nonempty array of nonempty strings, always containing the exact
+causal-limit sentence above plus any applicable shape/evidence limitations.
+Every unmatched call ID is cited. The result remains the same for the same input;
+use artifact-path/line order for evidence and fixed ordering for limits.
+
+Root selection and supported shapes:
+
+- Inspect only immediate regular `sessions/*.jsonl` files. Do not follow symlinks,
+  recurse into child archives, pick newest/largest, or merge files. Zero candidates,
+  multiple candidates, a listing/read error, or a non-regular candidate is
+  `inconclusive`, citing the gap or all candidate paths. A lone candidate must
+  begin with a valid `type:"session"` header and must not declare `parentSession`;
+  a declared fork/child is unsupported even when it is the only file.
+- Support a single linear history: when entry IDs/`parentId` links are present,
+  IDs must be unique and each entry must link to the preceding entry (first
+  entry's parent is null). Reject broken/forward links, cycles, repeated IDs,
+  multiple roots, branches, and mixed linked/unlinked entries. Legacy wholly
+  unlinked records can use physical order if their message/tool shapes suffice;
+  absent newer error fields still do not become fabricated assistant errors.
+- `branch_summary`, `compaction`, or other history-changing/unknown record shapes
+  are unsupported, not flattened into a guessed active branch. Known metadata
+  (`model_change`, `thinking_level_change`, `session_info`, `label`, `custom`)
+  may be non-message context but still participates in link validation. Unknown
+  message roles or malformed classification-relevant fields are inconclusive.
+  No branch reconstruction or summary interpretation is added.
+- Validate every nonblank JSONL record, including records after an apparent
+  positive signal. A malformed/truncated record makes the entire result
+  `inconclusive` and cites its physical line; never skip it and classify the
+  remaining records. Blank lines may be ignored without renumbering. A complete
+  final JSON object without a trailing newline is valid; an incomplete object is
+  not. An empty/header-only file lacks qualifying evidence. Reader/size-limit
+  failures, if encountered, are explicit gaps, not silent partial parses.
+
+Proposed AC-1/AC-3 recording-failure clarification: make one best-effort summary
+write before the existing timeout fatal. If serialization, create, write, or
+close fails, report a sanitized diagnostic-write warning naming the summary path,
+then execute the original timeout failure, with its existing cap and artifact
+location. Do not fatal/return early from the summary helper, claim a summary was
+recorded, retry the journey, or turn a failed write into a passing/inconclusive
+journey outcome. An unwritable destination is an explicit exception to AC-1's
+persisted-file guarantee, not an exception to the timeout failure guarantee.
+Existing archive-write behavior is unchanged; this clarification covers the new
+diagnostic write, not an archive-layer rewrite.
+
 ## Risk evidence and dependency
 
 A bounded, local-only format spike on Pi **1.0.0** exercised `pi --print` against
@@ -145,6 +228,14 @@ Tolerance: +/-80 net LOC, +/-1 file.
 - `internal/ensigncycle/pi_stall_classification_test.go`: deterministic artifact
   fixtures and negative cases; a live-tagged wiring check can live in the runner.
 - `docs/runtime-live-ci.md`: the small operator-facing documentation addition below.
+
+**M3 proposed surface clarification for the captain's gate:** also touch
+`internal/ensigncycle/pi_live_runner_test.go` solely to attach the deterministic
+wiring subtest to its existing registered owner, as specified below. This brings
+the planned surface to 5 files (the existing +1-file tolerance); retain the
+original +220 net LOC estimate and +/-80 tolerance as the proposed baseline.
+No registry or CI-selector change is proposed. Re-estimate at implementation if
+the strict parsing/fixtures cannot fit; do not silently widen the tolerance.
 
 Declared observable changes: one diagnostic JSON artifact on common Pi per-run
 timeouts. No CLI grammar, entity format, authority, runtime lifecycle, journey
@@ -194,6 +285,13 @@ wiring cases plus suite and diff review. Removing the timeout guard must fail th
 no-artifact cases; swallowing the original timeout must fail AC-1's exit assertion.
 The operator documentation contains the minimal classification contract below.
 
+**M3 proposed AC clarifications for the captain's gate:** AC-1/AC-2 include the
+operator artifact contract, root selection, and strict parsing rules above;
+AC-1's file guarantee applies when the diagnostic destination is writable.
+AC-3 includes preserving the original timeout even when diagnostic writing
+fails. All original labels, evidence limits, baseline, and live-proof dependency
+remain unchanged. These clarifications await captain approval.
+
 ## Test plan
 
 Primary proof owner: the existing common Pi runner
@@ -207,6 +305,34 @@ run-timeout override; do not introduce a second production deadline mechanism.
 so budget roughly 60 seconds for the deterministic timeout wiring case and run
 its expected `t.Fatalf` in an isolated test subprocess. Cost: small Go fixture
 suite, moderate wiring coverage, no new dependency.
+
+**M3 proposed proof placement for the captain's gate:** place the wiring helper
+in `pi_shared_live_runner_test.go`, invoked by a `stall-classification-wiring`
+subtest of the existing registered `TestLivePiFrontDoorSmoke` in
+`pi_live_runner_test.go`. Place the existing paid smoke body in a sibling subtest,
+with Pi/auth/package setup inside that sibling, so the deterministic selector
+`go test -tags live ./internal/ensigncycle -run '^TestLivePiFrontDoorSmoke$/^stall-classification-wiring$' -count=1 -timeout=3m`
+needs no Pi installation, auth, or provider. Keep the existing smoke assertions
+and full-test selection behavior. The wiring helper drives `piSharedLiveDriver.run`
+with the stub binary and an isolated expected-failure test subprocess; helper
+functions are not new exported `Test...` entries. The registry reconciler in
+`internal/contractlint/live_registry_reconciliation_test.go` rejects **every**
+new live-tagged top-level `Test...` declaration without registration, including
+deterministic tests. Reusing the `pi-front-door-subagent-dispatch` owner in
+`docs/runtime-live-ci-registry.md` avoids an unaccounted registry file or new
+journey. Run `go test ./internal/contractlint/...` to check that invariant.
+
+Proposed additional fixtures under AC-2 cover candidate enumeration (including
+child directories, symlinks, and forks), linked/legacy linear records, branching,
+unknown records, and malformed JSONL before/after a qualifying record. Positive
+controls with irrelevant metadata and a complete final line lacking a newline
+prevent blanket rejection from passing. Fixed expected artifact fields assert
+schema domains and sanitized details; accepting a skipped malformed line or
+selecting one of multiple roots must turn a negative case RED. Under AC-1/AC-3,
+make the diagnostic destination a directory for a deterministic write failure
+(no permission/root-user dependence); assert the diagnostic warning AND original
+timeout fatal, not merely nonzero exit. Returning early/fataling in the summary
+writer must fail that assertion. Keep the existing readable-write 0-to-1 proof.
 
 One live lane run confirms the classification on a **real stall**, after
 `pi-live-lane-pin-refresh`; if a normal lane never stalls, deliberately shorten the
@@ -235,6 +361,23 @@ removed):
 > evidence and its limits; none of these labels establishes transient weather,
 > a CLI retry-loop defect, or a hang. Older Pi diagnostics may only support
 > `inconclusive`. The original timeout still fails the journey.
+
+**M3 proposed documentation addition for the captain's gate:** append to that
+insertion (and include the concrete JSON example above immediately after it):
+
+> The JSON object has `classification` (one of those three strings), `evidence`
+> (a nonempty array of objects with artifact-relative `path`, readable `detail`,
+> and optional 1-based `line`, source `field`, and unmatched `toolCallId`), and
+> `limits` (a nonempty string array including the explicit causal limit).
+> Evidence details do not copy raw transcripts or error messages. Classification
+> reads the existing stdout, stderr, process status, and immediate
+> `sessions/*.jsonl` candidates; stdout/stderr words are never decisive. A unique,
+> readable, non-fork root and consistent `timeout=true` are required for a
+> positive label. Multiple roots, unsupported branches/history shapes, or any
+> malformed nonblank JSONL record yield `inconclusive`, with a cited gap; records
+> are not silently skipped. Failure to write the summary emits a diagnostic
+> warning and preserves the original timeout failure; it does not promise a
+> readable summary when its destination is unwritable.
 
 ## Out of scope
 
@@ -277,3 +420,26 @@ Fleshed out one evidence-bounded, pure artifact classifier and its timeout-path 
 ```json
 {"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"156","unevidenced":"false","citations":[{"line":"253","text":"  AC-1 measures 0 recorded summaries at cdfa462d1d426febb2391733507c7fde2143fb0a versus 1 after an induced runner timeout, retaining failure; removing the pre-fatal write falsifies it."},{"line":"256","text":"- DONE: AC-1 proof plan."}]},{"id":"AC-2","line":"169","unevidenced":"false","citations":[{"line":"251","text":"  AC-2 binds the location and three evidence rules above; missing/ambiguous/older diagnostics default to inconclusive, never a causal weather/retry/hang verdict."},{"line":"258","text":"- DONE: AC-2 proof plan and diagnostic-format spike."}]},{"id":"AC-3","line":"189","unevidenced":"false","citations":[{"line":"260","text":"- DONE: AC-3 proof plan."}]}]}
 ```
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Give the classification artifact one concrete output example with field domains, plus a minimal input/result contract, because it is an operator-facing interface and not a private helper.
+  Proposed M3 operator contract defines snapshot inputs, JSON fields, sanitized evidence, and deterministic result; Python parsed the example and checked its domains and exact causal limit.
+- DONE: Define root-selection rules, unsupported-branch rules, malformed-JSONL handling that does not silently skip records, and the behavior when writing the diagnostic fails; preserve the original timeout failure rather than letting a summary failure disguise it.
+  Proposed AC-1/AC-2/AC-3 clarifications define immediate unique root selection, linear/legacy shapes, strict all-record parsing, and warning-before-original-timeout behavior, including the unwritable-destination exception.
+- DONE: Name where the deterministic live-tagged wiring check resides, noting that the registry rejects every new live-tagged test without registration, and use an existing registered owner or explicitly account for that surface.
+  Proposed helper in pi_shared_live_runner_test.go is selected through TestLivePiFrontDoorSmoke/stall-classification-wiring; pi_live_runner_test.go is the explicit fifth file within the existing tolerance, with no registry/CI change.
+- DONE: Preserve the existing design and mark acceptance-criteria or scope changes as proposed for the captain's gate.
+  Original body/report lines were verified preserved in order and frontmatter byte-equivalent; classifications, causal limits, baseline, and pin-refresh dependency are unchanged from the retained 9b3d1ec4b design.
+- DONE: Validate registry assumptions and scanner compatibility.
+  go test ./internal/contractlint/... -run '^Test.*Registry.*$' -count=1 -timeout=60s -v passed, including TestRuntimeLiveRegistryReconciliation (unregistered live Test declarations fail); selected-binary --ac-scan reports all three ACs unevidenced=false.
+- DONE: Run formatting and diff checks without broadening the ideation edit.
+  gofmt -w ./cmd ./internal completed; its pre-existing formatting-only change to internal/release/runtime_live_evidence_workflow_test.go was restored. git diff --check passed; no code changes retained.
+- FAILED: Full repository validation completed within the local budgets.
+  go test ./... and go test ./... -race each exceeded a 120s subprocess budget and were terminated; neither is claimed green. The prior report's timeout evidence remains intact.
+- SKIPPED: Implement and execute classifier/wiring fixtures or a live stall.
+  Ideation-only M3 fold: fixtures are proposed, not implemented; real-Pi stall proof still follows pi-live-lane-pin-refresh. No new runtime-support claim or spike is made.
+
+### Summary
+
+Added only the staff-review contract and failure/selection details missing from the retained design, plus explicit registered wiring ownership and a concrete documentation extension. All acceptance and surface clarifications remain proposed for the captain's gate; classifier behavior, causal limits, and the deferred real-stall proof are preserved.
