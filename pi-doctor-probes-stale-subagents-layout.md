@@ -65,6 +65,7 @@ gates:
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
+pr: "#817"
 ---
 
 ## Problem
