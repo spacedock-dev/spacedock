@@ -246,3 +246,22 @@ cross-host execution without separately authorized live evidence.
 ### Summary
 
 Designed removal of the machine-wide attempt file for claude, codex and Pi without a replacement marker, preserving the one-shot fallback and all install commands. Corrected stale-worktree assumptions against HEAD 4436ec14c with FO approval; no current test exercises the offer flow, so the design explicitly limits proof to shipped instructions and existing no-regression checks. Only this state-checkout body/report changed in ideation; product implementation awaits the review gate.
+
+## Stage Report: implementation
+
+- DONE: Delete the sentinel from `skills/first-officer/references/fo-install.md` — the existence check, the write before install, and every word naming `${TMPDIR:-/tmp}/spacedock-install-attempted`, including the `rm` re-enables-the-offer sentence.
+  Five numbered steps replaced by four; `+4/-5` lines (net -1). No replacement marker and no session key added.
+- DONE: Keep the one-attempt termination, offer question, decline behaviour, convergence step and version re-check exactly as they are.
+  Offer/decline text carried verbatim; approval still "run the command exactly once"; convergence body byte-identical (only its step number 4→3 changed); terminal fallback keeps the manual hint, stale-`SPACEDOCK_BIN` advice and no-retry rule.
+- DONE: Add no replacement marker or session key; change no install command, channel classifier, sandbox rule or cask.
+  Diff against `4436ec14c` confirms lines 1-27 byte-identical (classifier, per-OS commands, both casks, sandbox arm).
+- DONE: Search the product checkout for the sentinel path and report the no-match result.
+  `git grep -n -I -F spacedock-install-attempted` in the worktree tracked tree exits 1 (no matches); plain `grep -rn` across the checkout likewise no matches.
+- DONE: Run the focused checks that read `fo-install.md`.
+  `go test ./internal/contractlint -run '^(TestVersionGateDeferredTrigger|TestVersionGateSandboxRegistry|TestInstallHintNoDrift)$' -count=1` → ok. `go test ./skills/integration -short -run '^(TestChannelClassifierTable|TestStableHintMatchesPublishedDoc|TestEdgeHintDeliversChannelToScript|TestContractCasks)$' -count=1 -v` → three passed; `TestContractCasks` SKIPPED under `-short` (tap resolution needs Homebrew + tap), reported as skipped, not passed.
+- SKIPPED: Live install-offer observation, repository-wide suite, race suite.
+  Explicitly prohibited. No check on HEAD exercises the install-offer flow, so the offer behaviour (cross-session offer after failure, one-attempt stop) stays unobserved — a residual limit, not proven evidence.
+
+### Summary
+
+Removed the machine-wide install-attempt latch from the shared FO install reference (one instruction file, `+4/-5`, net -1) for claude, codex and Pi, with no replacement marker and no session key. Byte-preserved lines 1-27 (classifier, per-OS commands, both casks, sandbox arm) and the convergence/version re-check body. Sentinel-path search returns no matches; focused contractlint and integration checks green (cask resolution skipped under `-short`). The install-offer behaviour remains unproven because no HEAD check exercises it.
