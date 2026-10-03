@@ -285,6 +285,40 @@ these checks. Do not advertise the current no-op path as providing them.
 - If Pi-only grading cannot satisfy these obligations without shared changes,
   stop and report the proof gap; do not change other runtimes' oracles.
 
+## External dependency handoff (M2, proposed for captain's gate)
+
+This staff-review fold supplements, rather than replaces, the proof-owner and
+AC restatements in `a95ecf5dd` and `5436dde75`. **Proposed for captain approval:**
+this task cannot repair conduct. AC-1's unchanged **3/3 at one exact candidate
+tip** depends on conduct repair owned by `repair-pi-recorded-gate-lifecycle`
+(`gcmfwfjd9735b58sbzw7xsb8`, gc), in **pi-live-completeness**, outside this sprint.
+Coordinate that repair against this task's restored grade; retain red evidence
+and route failures to gc, never attempt the repair here or hide it with a binding.
+
+The presentation dependency on `reliable-exact-digest-in-gate-review`
+(`w5bfnrvpcphw857nzz93340c`, w5) is discharged for this task by evidence under
+the approved compact-prefix contract: the FO reads and binds the exact canonical
+Briefing ID/full digest before decision, while the captain-facing prose may
+render a matching compact digest prefix. The restored grade and its controls
+must accept that rendering and reject invented or vague snapshot references;
+the unchanged live batch must prove the complete transaction. This does not
+import w5's older full-displayed-digest requirement, claim w5 is closed, or
+commission w5 inside this sprint. Any remaining presentation conduct failure
+needs an external owner handoff, not an in-scope repair.
+
+Before Commander acceptance and **before any merge requiring a green Pi lane**
+(including earlier launcher merges, not just this task), the external handoff
+must record accepted code SHAs, the responsible repair owner, candidate and owner
+availability, and retrievable exact-tip closure evidence. That evidence must
+show the unbound Pi recorded-gate failure repaired and presentation satisfied
+under the compact-prefix distinction above, coordinated with the restored grade;
+required green-lane evidence and this task's declared three-run batch remain due.
+No accepted repair SHAs, availability, or closure evidence are supplied by this
+fold: the dependency remains open, not implicitly commissioned or satisfied.
+If the handoff is unavailable, stop and escalate for the captain to revise scope
+or the promised outcome; do not accept grade-only work as reliability or add
+replacement runs to the declared batch.
+
 ## Retained evidence and portability
 
 Artifacts are **absent from this checkout's root `live-artifacts/` path**, but
@@ -345,3 +379,24 @@ Shaped the task into a proposed Pi-only proof restoration after finding the curr
 ```json
 {"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"119","unevidenced":"false","citations":[{"line":"320","text":"  Proposed Pi-only grade restoration at the existing callback; AC-1–4 each name proof and mutants, with no production/scaffolding changes."},{"line":"325","text":"  AC-1 requires 3/3 complete live transactions against the inspected 0/2 retained baseline; line 39's invented digest precedes canonical read at 42, and retry ends with zero children."},{"line":"335","text":"  This stage defines the proof; no candidate grade exists yet, and offline checks do not establish live conduct or satisfy AC-1."}]},{"id":"AC-2","line":"138","unevidenced":"false","citations":[{"line":"321","text":"  AC-2 proof plan: exact diff audit, existing real-CLI/provenance tests, and replay with different retained canonical values preserve provider-neutral authority; `trust-presenter` must fail, and detached audit rejects shared-runner or other-runtime grade changes."}]},{"id":"AC-3","line":"150","unevidenced":"false","citations":[{"line":"322","text":"  AC-3 proof plan: retained wrong-digest/early-stop runs and single-obligation role/order, model, completion, and report-read controls must reject their named mutants; a real current passing trace supplies the positive control, including canonical compact presentation."}]},{"id":"AC-4","line":"167","unevidenced":"false","citations":[{"line":"323","text":"  AC-4 proof plan: registry reconciliation rejects `quarantine-pi`; retain exact candidate SHA, all three focused live runs, registered Pi common package and front-door smoke results/artifacts, while Claude/Codex lanes and deterministic gate tests remain active and unchanged."}]}]}
 ```
+
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Record that this task cannot repair conduct: its 3/3 requirement depends on conduct repair owned outside the sprint, and the task must not attempt it.
+  Proposed M2 handoff section names gc in pi-live-completeness as external conduct owner; existing proof-only scope, ACs, and three-run batch are unchanged.
+- DONE: Record how the presentation dependency is discharged under the approved compact-prefix contract, distinguishing canonical authority exactness from rendered prose.
+  M2 section requires exact canonical ID/full digest authority and matching compact-prefix rendering, with restored-grade controls and live proof; it neither imports w5's older display rule nor claims w5 closure.
+- DONE: Name the external handoff requirement in the body: accepted code SHAs, responsible owner, availability, and closure evidence before any merge that requires a green Pi lane.
+  M2 section requires all four before Commander acceptance and any green-Pi-lane merge, including earlier launcher merges; absent handoff remains an explicit open dependency for captain escalation.
+- SKIPPED: Repair conduct or execute the candidate live batch.
+  This is only the M2 ideation fold; no conduct implementation is authorized and no live result is claimed.
+- DONE: Check the planning artifact without claiming conduct proof.
+  Reader/AC scan checks AC-1, AC-2, AC-3, and AC-4; exact comparison preserves all original text and frontmatter, allowing only the M2 section and this report; git diff --check passes.
+  Standing proof plans from 5436dde75: AC-1 remains the 3/3 live threshold; AC-2 retains the trust-presenter/diff audit; AC-3 retains semantic negative controls and a real positive trace; AC-4 retains quarantine-pi and exact-tip lane evidence. None is newly proven by this fold.
+- FAILED: Complete repository-wide regression checks during this documentation-only fold.
+  go test ./... and go test ./... -race each exceeded the 240-second tool budget; no pass claimed. gofmt completed; its unrelated pre-existing formatting delta was restored.
+
+### Summary
+
+Added only the proposed M2 external-dependency, compact-prefix, and handoff clarification for the captain's gate. The committed proof-owner restoration and AC restatements stand unchanged; external repair acceptance and closure evidence remain outstanding.
