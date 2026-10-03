@@ -41,6 +41,20 @@ gates:
                 id: briefing:9w59t6m1qc46hccd54p04z2j:ideation:attempt-1:revision-1
                 digest: sha256:0ce8fcbb90a800c492647523f030f156c7595b4d83a2820ade0962b05ab2e5d7
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9w59t6m1qc46hccd54p04z2j:ideation:1
+                briefing: briefing:9w59t6m1qc46hccd54p04z2j:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T18:48:34.03925Z"
+                decision: approve
+                reason: 'Approve the ideation baseline and advance to implementation. This task measures a fault it does not repair: it restores the Pi recorded-gate grade and demonstrates repeated presentation-through-successor dispatch at one exact tip. The conduct repair belongs to gcmfwfjd9735b58sbzw7xsb8 (repair-pi-recorded-gate-lifecycle), outside this sprint; the captain directive is to build the measurement on 271''s branch.'
+                conn:
+                    quote: make this work
+                    source: captain, pi session 2026-10-03
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-10-03T04:04:50Z
 ---
 
