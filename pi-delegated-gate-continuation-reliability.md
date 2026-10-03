@@ -19,6 +19,20 @@ gates:
                 id: briefing:9w59t6m1qc46hccd54p04z2j:backlog:attempt-1:revision-1
                 digest: sha256:7e4248e69210ba2f494ada2ed8e817d47694c8e53f6ddc9013493fcb20ff9bf6
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9w59t6m1qc46hccd54p04z2j:backlog:1
+                briefing: briefing:9w59t6m1qc46hccd54p04z2j:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T04:04:11.958238Z"
+                decision: approve
+                reason: Covers pi delegated gate continuation through successor dispatch; the retained exact-tip run proves a real reliability defect with a stated proof path.
+                conn:
+                    quote: i already said dispatch to ideation, but don't present the ideation gate until staff review finishes
+                    source: captain instruction, this session, 2026-10-03
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
