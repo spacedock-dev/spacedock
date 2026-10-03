@@ -1,6 +1,6 @@
 ---
 title: Classify a stalled Pi live run from the artifacts the runner already archives
-status: backlog
+status: ideation
 score: 0.7
 source: "pi-ux carve review, 2026-10-03: stall classification has no Pi implementation owner once the Claude-only capture task stays out of the sprint."
 id: z6eb1krpyfmr01dwyb7703hx
@@ -31,7 +31,7 @@ gates:
                     source: captain instruction, this session, 2026-10-03
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A stalled Pi live run leaves artifacts that nobody classifies. The operator cannot
