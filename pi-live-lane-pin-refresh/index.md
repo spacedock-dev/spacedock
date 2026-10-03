@@ -29,6 +29,14 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+        - id: gate:mh698y3ht6ydmr6ethaw9hg9:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:mh698y3ht6ydmr6ethaw9hg9-ideation-1
+              briefing:
+                id: briefing:mh698y3ht6ydmr6ethaw9hg9:ideation:attempt-1:revision-1
+                digest: sha256:67395f0bd45e31a6c2842ca0be396b50f674b3dce43940f7af9728518f69f6f8
+                room-ref: '@review/ideation/briefing-1'
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready

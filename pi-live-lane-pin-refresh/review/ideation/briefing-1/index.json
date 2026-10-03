@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mh698y3ht6ydmr6ethaw9hg9:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation baseline and advance to implementation: refresh the three pins to the published Pi family and replace all four hardcoded TypeScript layout assertions?",
+  "artifacts": [
+    {
+      "id": "artifact:mh698y3ht6ydmr6ethaw9hg9:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/e561bf5da9b0885b738109a362243bdb6faaf27b/pi-live-lane-pin-refresh/index.md",
+      "rev": "sha256:39ac115247743e7f8b9df1f1b1efe9639bd67f1620f25453bf9fdb646ce65358",
+      "mediaType": "text/markdown",
+      "summary": "Three pins change to the published family (pi-coding-agent 1.0.0, pi-subagents 0.75.0, pi-intercom 0.16.0) with verified sha512 integrity values. The four hardcoded TypeScript assertions at lines 669, 671, 777, and 779 are replaced by assertions derived from the installed package's own declarations. Scope stays the pi-live lane and its docs; no launcher change, and mc keeps entry resolution."
+    }
+  ]
+}
