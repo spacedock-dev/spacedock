@@ -671,8 +671,10 @@ jobs:
           NODE
           test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
           test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
-          echo "PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents" >> "$GITHUB_ENV"
-          echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"
+          # Do NOT export PI_SUBAGENTS_PACKAGE_ROOT / PI_INTERCOM_PACKAGE_ROOT here:
+          # the live smoke must exercise Pi's own package discovery with both
+          # variables absent. The explicit-override path is exercised locally in
+          # the current-checkout setup step below.
 
       - name: Guard Pi substrate compatibility
         run: |
@@ -771,6 +773,12 @@ jobs:
 
       - name: Verify Pi current-checkout setup
         run: |
+          # Deliberately exercise the explicit-override path locally (shell-scoped,
+          # never exported) so the manifest checks below run against the installed
+          # package while the smoke step sees neither variable.
+          pi_npm_root="$HOME/.pi/agent/npm"
+          PI_SUBAGENTS_PACKAGE_ROOT="$pi_npm_root/node_modules/pi-subagents"
+          PI_INTERCOM_PACKAGE_ROOT="$pi_npm_root/node_modules/pi-intercom"
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
           spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE" | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/pi-doctor.txt"
           test -f "$GITHUB_WORKSPACE/skills/first-officer/references/pi-first-officer-runtime.md"

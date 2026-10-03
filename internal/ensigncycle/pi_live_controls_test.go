@@ -28,6 +28,8 @@ An initial-dispatch artifact was assembled for the entity with `+"`spacedock dis
 
 Use the pi-subagents subagent(...) tool exactly once with those fields verbatim (context must be "fresh", working directory %[2]s). Do not use or mention Claude Agent, SendMessage, TeamCreate, or TeamDelete tools. Do not paraphrase, re-order, or extend the task string.
 
+Also call the intercom tool exactly once as intercom({action:"list"}) so the isolated-home run records both extension tools (subagent and intercom); name that call in your final message.
+
 After subagent(...) returns, you as first officer must verify the entity file %[4]s contains %[8]s and verify the state checkout %[3]s git log contains 'ensign: pi live smoke' over pi-live-smoke/index.md. The stage report must use the exact heading '## Stage Report: implementation' — confirm that too. Exit successfully only after those durable checks pass; your final message names the agent and skill values you passed to subagent(...) and the child's run id.
 
 Reference paths: ensign contract at %[1]s/skills/ensign/SKILL.md; Pi ensign adapter at %[1]s/skills/ensign/references/pi-ensign-runtime.md (the worker's dispatch artifact already points at them).`,
