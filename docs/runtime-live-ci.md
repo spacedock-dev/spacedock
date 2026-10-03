@@ -90,8 +90,8 @@ Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI
 Run the Pi live proofs locally with the same package versions pinned in CI:
 
 ```bash
-npm install -g @earendil-works/pi-coding-agent@0.80.10
-npm install --prefix "$HOME/.pi/agent/npm" pi-subagents@0.35.1 pi-intercom@0.6.0
+npm install -g @earendil-works/pi-coding-agent@1.0.0
+npm install --prefix "$HOME/.pi/agent/npm" pi-subagents@0.75.0 pi-intercom@0.16.0
 export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
 export PI_INTERCOM_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-intercom"
 ```

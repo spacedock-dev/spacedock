@@ -105,14 +105,16 @@ func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
 	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
-// The pi XFAIL below is registered because the Pi rejection-flow target times out
-// before completing the expected stop (registered owner p17swb3375rt525fn7f8xt7e).
-// Pi-dialect extractors now exist (piRecordedRejectionRound, etc.) so the XFAIL
-// can XPASS once the timeout repair lets the FO complete the two-validation cycle.
+// The pi XFAIL below is registered for the Pi rejection-worker topology fault,
+// a separate semantic from the timeout repair that archived
+// finish-pi-rejection-flow already passed (registered owner
+// 6h3teccccn3qh71yqcmjbjx4). Pi-dialect extractors now exist
+// (piRecordedRejectionRound, etc.) so the XFAIL can XPASS once the topology fault
+// is repaired.
 //
 //spacedock:live-journey id=rejection-flow fixture=rejection/before-validation-1
 func TestLiveCommonRejectionFlow(t *testing.T) {
-	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "p17swb3375rt525fn7f8xt7e")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
+	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
