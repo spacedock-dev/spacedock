@@ -3,7 +3,7 @@ id: ekw79nn8z9829d77dw7y9353
 title: "Pi session identity via PI_SUBAGENT_PARENT_SESSION — runtimehost identity column + install-gate sentinel key"
 status: ideation
 source: "Live env evidence, 2026-07-31: both the captain's shell and the FO's own root-session tool shell carried PI_SUBAGENT_PARENT_SESSION equal to the running pi session's own id (019fb5d1-85af-73f6-bb07-20bfc04004db). The runtimehost marker table (internal/runtimehost/runtimehost.go:23-24) claims pi exposes no identity env var — the code is stale about pi's actual env surface."
-started:
+started: 2026-10-03T04:04:53Z
 completed:
 verdict:
 score:
