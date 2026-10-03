@@ -29,6 +29,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:271f46crset81jwf2rgast0c:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:271f46crset81jwf2rgast0c-validation-1
+              briefing:
+                id: briefing:271f46crset81jwf2rgast0c:validation:attempt-1:revision-1
+                digest: sha256:70a55a4411f9dfb37582cc4d8dc536072920b89f840bbcbd0823f47f15c5a558
+                room-ref: '@review/validation/briefing-1'
 worktree: .worktrees/spacedock-ensign-remove-pi-install-attempt-sentinel
 ---
 

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:271f46crset81jwf2rgast0c:validation:attempt-1:revision-1",
+  "question": "Approve the validation result and deliver: the install-attempt file is removed from the shared install instruction, with the cross-session behaviour recorded as an unobserved deferred risk?",
+  "artifacts": [
+    {
+      "id": "artifact:271f46crset81jwf2rgast0c:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/ba6b360d96225a2f2a689dcccaca5ae9332fcd85/remove-pi-install-attempt-sentinel.md",
+      "rev": "sha256:9ed5932ff8e0f9962b31bd88b5a42e62b71f9098ccd2ff61c322e9b1c50125eb",
+      "mediaType": "text/markdown",
+      "summary": "Validation passed at instruction-only scope, with no product edits. The change is one file and one deletion: skills/first-officer/references/fo-install.md loses the install-attempt file - the existence gate, the write before the install, the one-attempt latch, and the sentence that says removing the file re-enables the offer. The diff is four insertions and five deletions. Lines 1 through 27 are byte-identical to the base commit, so the channel classifier, the per-OS install commands, both casks and the sandbox arm do not change. The convergence body is identical except that its step number moved from 4 to 3. The offer question, the decline behaviour, the one-attempt termination and the version re-check all survive, and there is no retry language and no proceed-without-the-re-check language. Checks: three contractlint checks and three integration checks passed. The cask check is skipped under -short because tap resolution needs Homebrew, and the report calls it skipped, not passed. The search for the attempt path in the product checkout returns no match. Deferred risk, authorized by the first officer and recorded with this result: the cross-session offer behaviour is unobserved, because no check on HEAD exercises the install-offer flow. Its trigger is a live First Officer run after a forced failed install, then a fresh session in each of claude, codex and Pi with the same TMPDIR and a retained legacy sentinel. It is promoted to material if any release-facing text claims the behavioural outcome, so the shipped claim stays one sentence: the file is gone and nothing consults it. The changed file is loaded by all three hosts and the wording stayed host-neutral. Delivery state: branch spacedock-ensign/remove-pi-install-attempt-sentinel holds one changed file, four insertions and five deletions. No pull request is open yet."
+    }
+  ]
+}
