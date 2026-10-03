@@ -33,7 +33,7 @@ func TestLivePiFrontDoorSmoke(t *testing.T) {
 		"--session-dir", filepath.Join(artifactDir, "sessions"),
 	)
 	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
-	assertPiEnsignBootContract(t, workflowRoot, envelope, artifactDir)
+	assertPiEnsignBootContract(t, workflowRoot, envelope, artifactDir, env)
 }
 
 func newPiLiveSmokeFixture(t *testing.T, name, repo, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string, model string) {
@@ -315,9 +315,12 @@ func piLiveArtifactDir(t *testing.T, name string) string {
 // .pi-subagents/artifacts records and proves the spawned worker (a) was
 // dispatched with the build artifact's agent/skill fields, (b) read
 // skills/ensign/SKILL.md among its first five read-type tool calls, and
-// (c) never read any path naming first-officer. A graded summary JSON is
-// written next to the run artifacts as the durable acceptance trail.
-func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSmokeEnvelope, artifactDir string) {
+// (c) never read any path naming first-officer. It also requires the run's
+// recorded tool inventory to carry both extension tools (subagent, intercom)
+// and the child environment to carry neither package-root override. A graded
+// summary JSON is written next to the run artifacts as the durable acceptance
+// trail.
+func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSmokeEnvelope, artifactDir string, childEnv []string) {
 	t.Helper()
 	artifactsDir := filepath.Join(workflowRoot, ".pi", "subagents", "artifacts")
 	metaPaths, err := filepath.Glob(filepath.Join(artifactsDir, "*_meta.json"))
@@ -395,6 +398,11 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 
 	rootSession := onePiSession(t, filepath.Join(artifactDir, "sessions", "*.jsonl"), "root")
 	childSession := onePiSession(t, filepath.Join(artifactDir, "sessions", "*", "*", "run-*", "session.jsonl"), "child")
+
+	// The recorded toolCalls are the tool inventory the run actually loaded and
+	// used: the parent FO records subagent (and intercom when the smoke asks it
+	// to exercise both extension tools), the child records its own calls.
+	tools := recordedPiToolInventory(t, rootSession, meta.TranscriptPath)
 	// pi-subagents 0.53.0+ redacts meta.Task ("[prompt redacted]"), so the
 	// dispatch-file pointer is recovered from the parent transcript's spawn
 	// toolCall, not meta.Task. Reuse the parent-transcript check above.
@@ -413,6 +421,8 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 		EnsignSkillReadRank:   ensignRank,
 		FirstOfficerReads:     foReads,
 		Transcript:            meta.TranscriptPath,
+		Tools:                 tools,
+		ChildEnv:              childEnv,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -534,4 +544,47 @@ func headStrings(s []string, n int) []string {
 		return s[:n]
 	}
 	return s
+}
+
+// recordedPiToolInventory returns the distinct tool names the named session
+// transcripts record, in first-seen order. A Pi session records each tool call
+// as a `toolCall` content block, so the recorded names are the tool inventory
+// the run actually loaded and used — the observation the isolated-home value
+// criterion needs, rather than a file-layout inference.
+func recordedPiToolInventory(t *testing.T, transcriptPaths ...string) []string {
+	t.Helper()
+	seen := map[string]bool{}
+	var tools []string
+	for _, transcriptPath := range transcriptPaths {
+		if transcriptPath == "" {
+			continue
+		}
+		for lineNo, line := range strings.Split(readFile(t, transcriptPath), "\n") {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			var record struct {
+				Message struct {
+					Content json.RawMessage `json:"content"`
+				} `json:"message"`
+			}
+			if err := json.Unmarshal([]byte(line), &record); err != nil {
+				t.Fatalf("transcript %s line %d is not JSON: %v", transcriptPath, lineNo+1, err)
+			}
+			var blocks []struct {
+				Type string `json:"type"`
+				Name string `json:"name"`
+			}
+			if err := json.Unmarshal(record.Message.Content, &blocks); err != nil {
+				continue
+			}
+			for _, b := range blocks {
+				if b.Type == "toolCall" && b.Name != "" && !seen[b.Name] {
+					seen[b.Name] = true
+					tools = append(tools, b.Name)
+				}
+			}
+		}
+	}
+	return tools
 }
