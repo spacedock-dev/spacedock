@@ -1,6 +1,6 @@
 ---
 title: "Make Pi delegated gate approval continue reliably through successor dispatch"
-status: backlog
+status: ideation
 source: "se0 exact-tip Pi recorded-gate proof on 2026-07-28: one run invented the Briefing digest before reading it; the single retry presented the correct bound gate but stopped before recording or consuming the delegated approval."
 score: 0.9
 sprint: pi-ux
@@ -32,7 +32,7 @@ gates:
                     source: captain instruction, this session, 2026-10-03
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
