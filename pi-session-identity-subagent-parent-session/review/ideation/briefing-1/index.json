@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ekw79nn8z9829d77dw7y9353:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation baseline and advance to implementation with the seed premise replaced: session-scoped install identity from the Pi extension's own current-session context?",
+  "artifacts": [
+    {
+      "id": "artifact:ekw79nn8z9829d77dw7y9353:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/3c1a0a3d4a9ab4030f4fdc7d6250c908abd2d5a7/pi-session-identity-subagent-parent-session.md",
+      "rev": "sha256:b02c445d4da56bda73526185f30b45779ebe9467ea61de4f2c5acb020f3a01cc",
+      "mediaType": "text/markdown",
+      "summary": "The seed claimed the runtimehost identity column was stale about a Pi session variable. That claim is disproved: no root identity variable exists, and PI_SUBAGENT_PARENT_SESSION is published only for detached children by design, because several sessions can share a host. The folded design instead reads the extension's own current-session context and keys a hashed per-session path under the temp directory. Risk evidence: a root Pi 1.0.0 RPC spike with stripped environment and no model calls matched the observed session identifiers against independent get_state output across a new session, and a temp-file simulation showed the legacy global sentinel suppressing the second session while the scoped path allowed it. Limits stated: this is an API and path spike, not an end-to-end offer proof, so a bounded First Officer trace is mandatory for acceptance. Surface note: the change also edits the shared fo-install instructions, so the shared surface requires the affected host lanes, not only Pi fixtures. Proof per criterion: AC-1 the scope follows the current session context and bounds custom identifiers; AC-2 a failed install in one session leaves the next session eligible while the failed one cannot retry; AC-3 a missing identity produces the manual command and an explicit reason with no sentinel; AC-4 approval, ordering and non-Pi behaviour are preserved."
+    }
+  ]
+}
