@@ -1,6 +1,6 @@
 ---
 title: Pi doctor probes a pi-subagents source layout the package no longer ships
-status: backlog
+status: ideation
 source: "Captain ran `spacedock doctor --host pi` against pi-subagents 0.74.0, 2026-10-01, and reported the two MISSING lines."
 score:
 started:
@@ -30,7 +30,7 @@ gates:
                 reason: 'Captain directed dispatch of the seed: the defect, scope, and the ACs pinning the probe''s proof owner are stated.'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 ## Problem
