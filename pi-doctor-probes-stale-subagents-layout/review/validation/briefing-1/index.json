@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mc0ajnpb4wh5nhd2p4q0vx9n:validation:attempt-1:revision-1",
+  "question": "Approve the validation result and route the task to its terminal stage?",
+  "artifacts": [
+    {
+      "id": "artifact:mc0ajnpb4wh5nhd2p4q0vx9n:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b368e8631306348135cdbea19264165d66c4c146/pi-doctor-probes-stale-subagents-layout.md",
+      "rev": "sha256:02578c5b533d353b0bc2c8d189a231935cfbc0112b8ea46f17102d88cd8310e8",
+      "mediaType": "text/markdown",
+      "summary": "Independent validation PASSED. The validator reproduced AC-1 through AC-4 and made every named falsifier fail at its intended boundary: both stale-.ts overlays turn the compiled subtest red at its line assertion, removing a probe's own declared target reds only that probe, accepting an unrelated package.json reds its removal subtest, and deleting the manifest write reds it. The launcher's actual ready gate accepts compiled output, and both printed remedies reproduce in a disposable home. Candidate bytes and HEAD were untouched. Two report items are not green: a repo-wide regression command affected by this environment, and a skipped real-model session check that a path-resolution claim does not require. State note for the decision: PR #817 is already merged to main, which was my error and not the task's; the merge ceremony will therefore find its delivery already landed."
+    }
+  ]
+}
