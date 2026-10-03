@@ -1,6 +1,6 @@
 ---
 title: The Pi install offer is suppressed in every session after one failed attempt
-status: implementation
+status: validation
 score: 0.8
 source: "FO review of task ekw, 2026-10-03: the install-attempt sentinel has no session key, and its only measured effect is to suppress the offer."
 sprint: pi-ux
