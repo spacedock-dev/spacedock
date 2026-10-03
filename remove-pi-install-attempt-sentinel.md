@@ -37,6 +37,20 @@ gates:
                 id: briefing:271f46crset81jwf2rgast0c:validation:attempt-1:revision-1
                 digest: sha256:70a55a4411f9dfb37582cc4d8dc536072920b89f840bbcbd0823f47f15c5a558
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:271f46crset81jwf2rgast0c:validation:1
+                briefing: briefing:271f46crset81jwf2rgast0c:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T18:42:49.040489Z"
+                decision: approve
+                reason: 'Approve validation: the install-attempt file is removed from skills/first-officer/references/fo-install.md (4 insertions, 5 deletions); shipped claim is one sentence, the file is gone and nothing consults it. Deferred risk recorded: no check on HEAD exercises the install-offer flow, so the cross-session offer behaviour is unobserved.'
+                conn:
+                    quote: make this work
+                    source: captain, pi session 2026-10-03
+              application:
+                target-stage: done
+                state: pending
 worktree: .worktrees/spacedock-ensign-remove-pi-install-attempt-sentinel
 ---
 
