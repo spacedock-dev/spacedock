@@ -520,3 +520,29 @@ The grade now observes two facts it previously did not, and both are falsified b
 ### Summary
 
 Implemented the review-V2 evidence-gap fix at the existing grade boundary: the smoke now requires both extension tools in the recorded inventory and requires both package-root overrides absent from the child environment, and the workflow no longer exports those overrides. Focused tests plus live-tagged vet/build pass; the live model smoke and the full/race suites were not run per the FO budget. Code commit `32049bdbd`.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Restore native package-root discovery for the Pi live lane: in the "Install Pi CLI and substrates" step of .github/workflows/runtime-live-e2e.yml, after installing to $pi_npm_root, create-or-merge $HOME/.pi/agent/settings.json registering packages ["npm:pi-subagents","npm:pi-intercom"], so internal/ensigncycle/pi_default_extensions_test.go's piDefaultExtensionRoots resolves both roots from the real agent dir with neither PI_SUBAGENTS_PACKAGE_ROOT nor PI_INTERCOM_PACKAGE_ROOT set. Keep both variables unexported.
+  Code commit `7e13e49b4`: the install step now writes `<agentDir>/settings.json` via a node create-or-merge block after the substrate install, appending `npm:pi-subagents` and `npm:pi-intercom` to `packages` while preserving any existing packages/keys. agentDir is `$HOME/.pi/agent`, so `piDefaultExtensionRoots` resolves `npm:pi-subagents` -> `$HOME/.pi/agent/npm/node_modules/pi-subagents` (the same tree `$pi_npm_root` installs into). Removing it is the falsifier `remove-registration-seeding`.
+- DONE: Add a deterministic guard that the registration cannot be dropped: extend internal/release/pi_live_pins_guard_test.go's workflow-structure check to require the install step writes the settings.json registration and still does not export the two root variables.
+  `assertPiLivePinsAndSubstrateAssertions` now requires the executable commands `settings_path="$HOME/.pi/agent/settings.json"` and `node - "$settings_path" <<'NODE'`, requires both `'npm:pi-subagents'`/`'npm:pi-intercom'` literals in the install step run, and rejects any executable install command carrying either root variable with `GITHUB_ENV` or `export`. Six new negative mutations fail the guard: `settings-registration-removed`, `settings-path-not-agent-dir`, `settings-registration-subagents-missing`, `settings-registration-intercom-missing`, `re-export-subagents-root` (GITHUB_ENV echo), `re-export-intercom-root` (`export`).
+- DONE: Bounded proof, no live model: go test ./internal/release/... -run TestPiLivePinsAndSubstrateAssertions, go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIsolatedHome|TestPiLiveEnv|TestPiIntercomPackageRoot' -count=1, gofmt on changed Go files, go build ./..., and one go test ./... in the worktree.
+  All bounded commands pass. `go test ./...` exit 1 with ONLY the pre-existing failures this dispatch named: internal/cli `TestCodexResolveManifestAgainstInstalledHost` + `TestVersionAmbiguousMarkersExitZero`, and skills/integration `TestSurveyCodexPresenceThroughSync`. `internal/release`, `internal/ensigncycle` (243.7s, no timeout), `internal/contractlint`, and `go build ./...` are green. Result: the workflow now reproduces exactly the settings/root-symlink layout the deterministic tests encode, so discovery no longer resolves nothing.
+- DONE: Commit on spacedock-ensign/pi-live-lane-pin-refresh and push; touch nothing outside the pi-live workflow install step and that guard.
+  Pushed `32049bdbd..7e13e49b4`. Diff is two files, +58/-0: 26 lines in the install step, 32 lines in the guard. No other lane, pin, guard assertion, docs file, or ensigncycle test was touched.
+
+### Independent checks
+
+- The extracted node registration block was run directly in a temp HOME: fresh create wrote `{"packages":["npm:pi-subagents","npm:pi-intercom"]}`; merging into `{"theme":"dark","packages":["npm:other"]}` preserved both the unrelated key and the existing package while appending the two registrations. This is the create-or-merge behavior the guard pins.
+- Falsification: reverting the registration, pointing settings outside the agent dir, dropping either package literal, or re-adding either root variable as an export/GITHUB_ENV echo each makes `TestPiLivePinsAndSubstrateAssertions` fail (6 new subtests, all pass on the candidate).
+
+### Summary
+
+Fixed the live-lane setup failure at its real cause: commit `32049bdbd` stopped exporting the two package-root variables but never registered the substrates in the real agent dir, so isolated-home discovery resolved nothing. The install step now create-or-merges `$HOME/.pi/agent/settings.json` with both `npm:` registrations and keeps both variables unexported; the release guard and six mutations make the registration non-droppable. Bounded suites, build, gofmt, and a direct create-or-merge exercise pass; the only `go test ./...` failures are the known pre-existing ambient ones. No live run was started.
+
+#### Known pre-existing failures (not fixed, out of scope)
+
+- `internal/cli`: `TestCodexResolveManifestAgainstInstalledHost` (ambient local codex plugin cache), `TestVersionAmbiguousMarkersExitZero` (ambient `PI_CODING_AGENT=true`).
+- `skills/integration`: `TestSurveyCodexPresenceThroughSync` (`blank_cwd=0`).
+- `internal/ensigncycle`: `TestCodexProcessActivityResetsQuietBudget` is a known CI race outside scope; it did not fire in this worktree run.
