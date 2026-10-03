@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -122,7 +123,7 @@ func TestPiFrontDoorLaunchesWithNativeResourcePaths(t *testing.T) {
 	// from the installed package's extension (resources_discover), not the flags.
 	wantPrefix := []string{
 		"pi",
-		"--extension", filepath.Join(pkg, "src", "extension", "index.ts"),
+		"--extension", filepath.Join(pkg, "index.js"),
 		"--skill", filepath.Join(pkg, "skills", "pi-subagents"),
 		"--model", "google/gemini",
 	}
@@ -203,7 +204,7 @@ func TestRunPi_DevOverridePassesSpacedockExtensionAndSkills(t *testing.T) {
 		t.Fatalf("expected 2 --skill flags (pi-subagents + spacedock skills), got %d: %v", got, ops.launched)
 	}
 	// Ordering: pi-subagents extension/skill precede the Spacedock extension/skill.
-	piSubExt := strings.Index(joined, "--extension "+filepath.Join(pkg, "src", "extension", "index.ts"))
+	piSubExt := strings.Index(joined, "--extension "+filepath.Join(pkg, "index.js"))
 	sdExt := strings.Index(joined, "--extension "+wantExt)
 	if piSubExt < 0 || sdExt < 0 || sdExt < piSubExt {
 		t.Fatalf("expected pi-subagents extension before spacedock extension: %v", ops.launched)
@@ -473,6 +474,7 @@ func TestPiRuntimeConfigResolvesEnvPathsForSubagentsIntercomAuthAndSessions(t *t
 	intercom := filepath.Join(t.TempDir(), "pi-intercom")
 	authRoot := filepath.Join(t.TempDir(), "coding-agent")
 	sessionDir := filepath.Join(t.TempDir(), "sessions")
+	extensionPath, _ := writePiSubagentsManifest(t, subagents, compiledPiSubagentsFixtureManifest())
 
 	cfg := piRuntimeConfigFromEnv([]string{
 		"SPACEDOCK_REPO_ROOT=" + repo,
@@ -485,7 +487,8 @@ func TestPiRuntimeConfigResolvesEnvPathsForSubagentsIntercomAuthAndSessions(t *t
 	assertEqual(t, cfg.repoRoot, repo)
 	assertEqual(t, cfg.packageRoot, subagents)
 	assertEqual(t, cfg.intercomPackageRoot, intercom)
-	assertEqual(t, cfg.extensionPath, filepath.Join(subagents, "src", "extension", "index.ts"))
+	assertEqual(t, cfg.extensionPath, extensionPath)
+	assertEqual(t, cfg.extensionPath, filepath.Join(subagents, "index.js"))
 	assertEqual(t, cfg.subagentsSkill, filepath.Join(subagents, "skills", "pi-subagents"))
 	assertEqual(t, cfg.authPath, filepath.Join(authRoot, "auth.json"))
 	assertEqual(t, cfg.sessionDir, sessionDir)
@@ -665,6 +668,119 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 	})
 }
 
+// TestPiSubagentsProbesResolveFromPackageManifest proves the two pi-subagents
+// doctor probes consume the installed package's own declarations — pi.extensions
+// for the extension and exports["./intercom-bridge"].default for the bridge —
+// instead of an assumed TypeScript source layout the package no longer ships.
+// The fixture declares and ships compiled output, and every expected path is read
+// back from the written package.json (AC-3), so a probe that hardcodes
+// src/extension/index.ts or src/intercom/intercom-bridge.ts turns this RED.
+func TestPiSubagentsProbesResolveFromPackageManifest(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	home := t.TempDir()
+	auth := filepath.Join(home, ".pi", "agent", "auth.json")
+
+	newFixture := func(t *testing.T) (pkg, extensionPath, bridgePath string) {
+		t.Helper()
+		pkg = t.TempDir()
+		extensionPath, bridgePath = writePiSubagentsManifest(t, pkg, compiledPiSubagentsFixtureManifest())
+		writeFileWithDirs(t, filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"), "---\nname: pi-subagents\ndescription: test\n---\n")
+		return pkg, extensionPath, bridgePath
+	}
+	// doctor runs the check the launch readiness gate consumes and renders it.
+	doctor := func(t *testing.T, pkg string) (string, piCheckResult) {
+		t.Helper()
+		statOK := statOKForPiResources(repo, pkg)
+		statOK[auth] = true
+		check := checkPiRuntime(&fakePiRuntimeOps{
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOK,
+			packageStatus: healthyPiPackageStatus(),
+		}, piRuntimeConfigFromEnv(piTestEnv(pkg, home), t.TempDir(), ""))
+		var out bytes.Buffer
+		printPiDoctorReport(&out, check)
+		return out.String(), check
+	}
+
+	t.Run("compiled manifest reports both lines OK and launches", func(t *testing.T) {
+		pkg, extensionPath, bridgePath := newFixture(t)
+		// AC-3: the expectation is read back from the artifact, not named by the
+		// production probe's stat map.
+		readExt, readBridge := readPiSubagentsManifest(t, pkg)
+		if extensionPath != readExt || bridgePath != readBridge {
+			t.Fatalf("fixture expectation drift: wrote (%q,%q) read (%q,%q)", extensionPath, bridgePath, readExt, readBridge)
+		}
+		if strings.HasSuffix(extensionPath, ".ts") || strings.HasSuffix(bridgePath, ".ts") {
+			t.Fatalf("fixture must ship compiled output, got ext=%q bridge=%q", extensionPath, bridgePath)
+		}
+		out, check := doctor(t, pkg)
+		if !strings.Contains(out, "OK pi-subagents extension: "+extensionPath) {
+			t.Fatalf("extension line not OK at manifest path %q:\n%s", extensionPath, out)
+		}
+		if !strings.Contains(out, "OK pi-subagents intercom bridge: "+bridgePath) {
+			t.Fatalf("bridge line not OK at manifest path %q:\n%s", bridgePath, out)
+		}
+		if !piRuntimeLaunchReady(check) {
+			t.Fatalf("runtime should be launch-ready against the compiled fixture; check=%+v", check)
+		}
+	})
+
+	t.Run("declared extension target removed reports MISSING", func(t *testing.T) {
+		pkg, extensionPath, bridgePath := newFixture(t)
+		if err := os.Remove(extensionPath); err != nil {
+			t.Fatal(err)
+		}
+		out, check := doctor(t, pkg)
+		if !strings.Contains(out, "MISSING pi-subagents extension") {
+			t.Fatalf("extension line should be MISSING after its declared target is removed:\n%s", out)
+		}
+		if !strings.Contains(out, "OK pi-subagents intercom bridge: "+bridgePath) {
+			t.Fatalf("bridge line should stay OK:\n%s", out)
+		}
+		if piRuntimeLaunchReady(check) {
+			t.Fatalf("runtime must not be launch-ready with the declared extension absent")
+		}
+	})
+
+	t.Run("declared bridge target removed reports MISSING", func(t *testing.T) {
+		pkg, extensionPath, bridgePath := newFixture(t)
+		if err := os.Remove(bridgePath); err != nil {
+			t.Fatal(err)
+		}
+		out, check := doctor(t, pkg)
+		if !strings.Contains(out, "MISSING pi-subagents intercom bridge") {
+			t.Fatalf("bridge line should be MISSING after its declared target is removed:\n%s", out)
+		}
+		// The bridge remedy must print an executable command, not a vague
+		// "install/update" phrase: reverting it turns this RED.
+		if !strings.Contains(out, "remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge") {
+			t.Fatalf("bridge remedy must be the executable install command:\n%s", out)
+		}
+		if strings.Contains(out, "install/update pi-subagents") {
+			t.Fatalf("bridge remedy must not use the non-executable install/update phrase:\n%s", out)
+		}
+		if !strings.Contains(out, "OK pi-subagents extension: "+extensionPath) {
+			t.Fatalf("extension line should stay OK:\n%s", out)
+		}
+		if piRuntimeLaunchReady(check) {
+			t.Fatalf("runtime must not be launch-ready with the declared bridge absent")
+		}
+	})
+
+	t.Run("removed exports entry reports MISSING", func(t *testing.T) {
+		pkg := t.TempDir()
+		manifest := compiledPiSubagentsFixtureManifest()
+		delete(manifest.Exports, "./intercom-bridge")
+		writePiSubagentsManifest(t, pkg, manifest)
+		writeFileWithDirs(t, filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"), "---\nname: pi-subagents\ndescription: test\n---\n")
+		out, _ := doctor(t, pkg)
+		if !strings.Contains(out, "MISSING pi-subagents intercom bridge") {
+			t.Fatalf("bridge line should be MISSING when exports[./intercom-bridge] is absent:\n%s", out)
+		}
+	})
+}
+
 // TestPiRuntimeDevOverrideSatisfiesPackageGate verifies the regression fix for
 // the --plugin-dir / SPACEDOCK_REPO_ROOT dev-override launch path: when the
 // Spacedock package is NOT registered in settings.json (fresh pi-home), a
@@ -745,10 +861,11 @@ func TestPiRuntimeDevOverrideSatisfiesPackageGate(t *testing.T) {
 	t.Run("dev override without ensign skill does not satisfy gate", func(t *testing.T) {
 		bareRepo := t.TempDir() // no skills/ensign/SKILL.md
 		home := t.TempDir()
+		extensionPath, bridgePath := readPiSubagentsManifest(t, pkg)
 		statOK := map[string]bool{
-			filepath.Join(pkg, "src", "extension", "index.ts"):          true,
-			filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"):    true,
-			filepath.Join(pkg, "src", "intercom", "intercom-bridge.ts"): true,
+			extensionPath: true,
+			filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"): true,
+			bridgePath:        true,
 			pkg + "-intercom": true,
 			filepath.Join(pkg+"-intercom", "skills", "pi-intercom", "SKILL.md"): true,
 		}
@@ -777,9 +894,91 @@ func writePiSkillFixtures(t *testing.T, repo string) {
 	writeFileWithDirs(t, filepath.Join(repo, "skills", "ensign", "SKILL.md"), "---\nname: ensign\ndescription: test\n---\n")
 }
 
+// piSubagentsFixtureManifest declares a fixture pi-subagents package's own
+// entry points — the same artifact pi reads. The extension is named in
+// pi.extensions; the intercom bridge is named by the exports["./intercom-bridge"]
+// subpath's default condition.
+type piSubagentsFixtureManifest struct {
+	Pi struct {
+		Extensions []string `json:"extensions"`
+	} `json:"pi"`
+	Exports map[string]struct {
+		Default string `json:"default"`
+	} `json:"exports"`
+}
+
+// compiledPiSubagentsFixtureManifest mirrors a real compiled pi-subagents
+// install: the extension ships as ./index.js and the bridge is reached through
+// the exports subpath at ./src/api/intercom-bridge.js. No plain .ts source is
+// declared, matching the package the probes must resolve against.
+func compiledPiSubagentsFixtureManifest() piSubagentsFixtureManifest {
+	var m piSubagentsFixtureManifest
+	m.Pi.Extensions = []string{"./index.js"}
+	m.Exports = map[string]struct {
+		Default string `json:"default"`
+	}{"./intercom-bridge": {Default: "./src/api/intercom-bridge.js"}}
+	return m
+}
+
+// writePiSubagentsManifest writes pkg/package.json from manifest and creates
+// every file the manifest declares, so the fixture is a package that ships the
+// compiled output it advertises. It returns the manifest-resolved absolute
+// paths, so callers' expectations derive from the written artifact rather than
+// from the production probe (AC-3).
+func writePiSubagentsManifest(t *testing.T, pkg string, manifest piSubagentsFixtureManifest) (extensionPath, bridgePath string) {
+	t.Helper()
+	raw, err := json.Marshal(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFileWithDirs(t, filepath.Join(pkg, "package.json"), string(raw))
+	if len(manifest.Pi.Extensions) > 0 {
+		extensionPath = filepath.Join(pkg, filepath.FromSlash(manifest.Pi.Extensions[0]))
+		writeFileWithDirs(t, extensionPath, "export default function() {}\n")
+	}
+	if bridge, ok := manifest.Exports["./intercom-bridge"]; ok && bridge.Default != "" {
+		bridgePath = filepath.Join(pkg, filepath.FromSlash(bridge.Default))
+		writeFileWithDirs(t, bridgePath, "module.exports = {};\n")
+	}
+	return extensionPath, bridgePath
+}
+
+// piSubagentsManifestPaths resolves the fixture package's declared extension and
+// bridge targets from its written package.json. Empty paths mean the manifest is
+// absent or unreadable, so callers omit them and the probe fails closed.
+func piSubagentsManifestPaths(pkg string) (extensionPath, bridgePath string) {
+	raw, err := os.ReadFile(filepath.Join(pkg, "package.json"))
+	if err != nil {
+		return "", ""
+	}
+	var manifest piSubagentsFixtureManifest
+	if err := json.Unmarshal(raw, &manifest); err != nil {
+		return "", ""
+	}
+	if len(manifest.Pi.Extensions) > 0 {
+		extensionPath = filepath.Join(pkg, filepath.FromSlash(manifest.Pi.Extensions[0]))
+	}
+	if bridge, ok := manifest.Exports["./intercom-bridge"]; ok && bridge.Default != "" {
+		bridgePath = filepath.Join(pkg, filepath.FromSlash(bridge.Default))
+	}
+	return extensionPath, bridgePath
+}
+
+// readPiSubagentsManifest reads the written package.json back and resolves the
+// declared extension and bridge targets relative to pkg. It fails the test when
+// the manifest is absent so a fixture cannot silently lose its expectation source
+// (AC-3).
+func readPiSubagentsManifest(t *testing.T, pkg string) (extensionPath, bridgePath string) {
+	t.Helper()
+	if _, err := os.Stat(filepath.Join(pkg, "package.json")); err != nil {
+		t.Fatalf("fixture package.json missing: %v", err)
+	}
+	return piSubagentsManifestPaths(pkg)
+}
+
 func writePiSubagentsFixtures(t *testing.T, pkg string) {
 	t.Helper()
-	writeFileWithDirs(t, filepath.Join(pkg, "src", "extension", "index.ts"), "export default function() {}\n")
+	writePiSubagentsManifest(t, pkg, compiledPiSubagentsFixtureManifest())
 	writeFileWithDirs(t, filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"), "---\nname: pi-subagents\ndescription: test\n---\n")
 }
 
@@ -792,12 +991,11 @@ func writeFileWithDirs(t *testing.T, path, content string) {
 }
 
 func statOKForPiResources(repo, pkg string) map[string]bool {
-	return map[string]bool{
-		filepath.Join(pkg, "src", "extension", "index.ts"):          true,
-		filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"):    true,
-		filepath.Join(pkg, "src", "intercom", "intercom-bridge.ts"): true,
-		filepath.Join(repo, "skills", "first-officer", "SKILL.md"):  true,
-		filepath.Join(repo, "skills", "ensign", "SKILL.md"):         true,
+	extensionPath, bridgePath := piSubagentsManifestPaths(pkg)
+	m := map[string]bool{
+		filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"):   true,
+		filepath.Join(repo, "skills", "first-officer", "SKILL.md"): true,
+		filepath.Join(repo, "skills", "ensign", "SKILL.md"):        true,
 		// The repo (dev-override) extension: the ready gate Stats the
 		// effective package root's extension (AC-5a).
 		filepath.Join(repo, ".pi", "extensions", "spacedock.ts"): true,
@@ -807,6 +1005,18 @@ func statOKForPiResources(repo, pkg string) map[string]bool {
 		pkg + "-intercom": true,
 		filepath.Join(pkg+"-intercom", "skills", "pi-intercom", "SKILL.md"): true,
 	}
+	// The pi-subagents entries are present only when the fixture actually
+	// shipped them on disk, so removing a declared file moves its probe to
+	// MISSING exactly as the real ops would.
+	for _, path := range []string{extensionPath, bridgePath} {
+		if path == "" {
+			continue
+		}
+		if _, err := os.Stat(path); err == nil {
+			m[path] = true
+		}
+	}
+	return m
 }
 
 func piHealthyPathFixtures() map[string]string {
@@ -942,7 +1152,7 @@ func TestPiFrontDoorWrapsWhenKnobPresent(t *testing.T) {
 	// passed, matching TestPiFrontDoorLaunchesWithNativeResourcePaths.
 	wantPrefix := []string{
 		"pi",
-		"--extension", filepath.Join(pkg, "src", "extension", "index.ts"),
+		"--extension", filepath.Join(pkg, "index.js"),
 		"--skill", filepath.Join(pkg, "skills", "pi-subagents"),
 	}
 	if len(inner) != len(wantPrefix) {
