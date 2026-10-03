@@ -251,6 +251,29 @@ registrations removed, both substrate tools disappear.
 
 **AC-9 — ordinary non-live helper tests plus gofmt, live-tagged vet and build, and the authorized front-door smoke pass with both variables unset, with durable entity report and commit evidence.** The helper seam must NOT carry a live build constraint, because a live-tagged definition is invisible to ordinary Go tests. Proof: `internal/ensigncycle/pi_default_extensions_test.go` has no build constraint; `gofmt -w ./cmd ./internal`, `go vet -tags live ./internal/ensigncycle`, and `go build -tags live ./internal/ensigncycle` pass; the smoke run carries durable entity report/commit evidence. Named falsifying edit **live-tag-the-helper**: define the helper under the live tag and watch the ordinary tests fail to see it.
 
+**AC-10 (no regression) — the offline `go test ./...` gate is deterministic and tests only our decision logic, not the machine.**
+(a) The reset-on-activity decision must not be tested by racing real sleeps.
+`TestCodexProcessActivityResetsQuietBudget` (`internal/ensigncycle/codex_single_run_test.go`)
+must supply the activity through a test-controlled signal or an injected deadline so it
+asserts the decision logic, and must not decide on a real-time window: remove the
+`const quietBudget = 250 * time.Millisecond` wall-clock race and the
+`result.duration > 4*quietBudget` machine-speed assertion. The kill-on-silence sibling
+`TestCodexProcessQuietTimeoutPreservesFaultEvidence` (mode `stall`, silent by
+construction) stays as the deterministic offline test of the kill path; the
+real-pacing property against the real watchdog remains covered by the live lane and is
+not re-asserted offline.
+(b) `TestCodexResolveManifestAgainstInstalledHost` and `TestVersionAmbiguousMarkersExitZero`
+(`internal/cli`) and `TestSurveyCodexPresenceThroughSync` (`skills/integration`) must build
+their own isolated host home — using the existing `internal/ensigncycle/codex_liveenv.go`
+machinery (isolated `CODEX_HOME`, scrubbed parent `CODEX_HOME`, `HOME`,
+`PI_CODING_AGENT_DIR`) or an equivalent fake host — instead of reading the operator's
+machine.
+Proof: the offline suite passes in the CI offline job on a loaded runner, and the same
+tests pass locally with an operator `CODEX_HOME`/`PI_CODING_AGENT_DIR` set. Named
+falsifying edits **race-real-sleeps**: reintroduce the real-sleep reset test;
+**inherit-operator-home**: read the operator's `CODEX_HOME`/`PI_CODING_AGENT_DIR` again
+and require the local plugin cache.
+
 ## Out of scope
 
 Doctor resolution (`mc`), the harness Node-runtime task (`3g8`), claude-live/codex-live
