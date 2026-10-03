@@ -61,12 +61,22 @@ started: 2026-08-14T06:44:31Z
 
 ## Problem
 
-An isolated Pi home does not auto-discover the `pi-subagents` / `pi-intercom`
-extensions. The live harness works around this by hand-wiring paths: `piSubagentsPackageRoot`
-requires `PI_SUBAGENTS_PACKAGE_ROOT` or falls back to `~/.pi/agent/npm/node_modules/pi-subagents`,
-and the smoke launches pi with an explicit `--extension .../src/extension/index.ts`.
-The operator's normal Pi install knows where these extensions live; an isolated
-home forgets and has to be told.
+An isolated Pi home does not auto-discover the two required Pi extensions:
+`pi-subagents` and `pi-intercom`. The live harness currently takes three manual steps:
+
+1. `piSubagentsPackageRoot` requires `PI_SUBAGENTS_PACKAGE_ROOT` or falls back
+   to `~/.pi/agent/npm/node_modules/pi-subagents` under HOME
+   (`pi_live_runner_test.go:251-262` in the original investigation; currently
+   `pi_live_runner_test.go:278-291`).
+2. The smoke launches pi with an explicit `--extension` path through
+   `spacedock pi` (`internal/cli/pi.go:314`).
+3. `piLiveEnv` exports `PI_SUBAGENTS_PACKAGE_ROOT`
+   (`pi_live_controls_test.go:64` in the original investigation; currently line 49).
+
+The isolated HOME is a temp directory. Without the exported variable, the
+fallback resolves inside that directory and finds no npm install, Pi finds
+no `pi-subagents`, and the run errors that the pi-subagents package extension
+was not found. The test passes today only because it exports the variable.
 
 `docs/runtime-support.md:147` names this as first-contact friction that is
 supposed to be harness work ("an extension not auto-discovered in a temp home...
@@ -74,6 +84,18 @@ is harness work"), and the "assume it works" operating prompt expects auth and
 package paths to be ironed out without a real blocker. Today the ironing is
 manual and per-harness; a better default probe would make the isolated home
 discover the operator's installed extensions the same way a normal home does.
+
+## Ideation gate attempt-2 rejection
+
+Ideation gate attempt-2 was closed with decision **revise** at
+`resolution:spacedock:3w1ncf1thj12aryvkf5gj1rd:ideation:2`. The captain rejected
+it as a bad gate attempt because its bound summary used invented vocabulary
+instead of naming `pi-subagents`, `pi-intercom`, and the three manual steps
+above. This was a wording rejection, not a rejection of the substance.
+The corrected plain operator wording in this body and the cycle 3 summary
+below is the text the next gate attempt binds. Scope, out-of-scope, acceptance
+criteria, expected surface, tolerance, semantic changes and the per-criterion
+proof plan are not reopened.
 
 ## Visible value
 
@@ -97,7 +119,7 @@ installed package location and proceeds.
 AC-1–AC-4 below as the earlier baseline. Proposed AC-1 requires BOTH
 `pi-subagents` and `pi-intercom` to load through Pi package discovery with BOTH
 `PI_SUBAGENTS_PACKAGE_ROOT` and `PI_INTERCOM_PACKAGE_ROOT` absent, no
-harness-supplied substrate extension paths, and the Spacedock package/ensign
+harness-supplied extension paths for pi-subagents or pi-intercom, and the Spacedock package/ensign
 skill still loaded. A successful explicit fallback is not AC-1 evidence.
 Proposed AC-2 covers independently located packages and the actual agentDir
 settings, including supported absolute/relative local package entries, not
@@ -157,10 +179,11 @@ authorized. Preserve the explicit-override path.
 Pi's package manager (`@earendil-works/pi-coding-agent/dist/core/package-manager.js`)
 discovers extensions through two mechanisms:
 
-1. **Settings.json `packages` array** — entries like `npm:pi-subagents` are
-   resolved by `getManagedNpmInstallPath(source, "user")` to
-   `join(agentDir, "npm", "node_modules", <name>)` (i.e.
-   `~/.pi/agent/npm/node_modules/pi-subagents`). Each package's `package.json`
+1. **Settings.json `packages` array** — Pi reads the `packages` array in
+   `settings.json` and resolves an npm entry to
+   `<agentDir>/npm/node_modules/<name>`. For example, `npm:pi-subagents`
+   resolves to `~/.pi/agent/npm/node_modules/pi-subagents` with the default
+   agentDir (`getManagedNpmInstallPath(source, "user")`). Each package's `package.json`
    `pi.extensions` field lists the extension entry points (e.g. `./index.ts`).
    `file:<path>` entries resolve as local packages.
 2. **Auto-discovered extensions** — `addAutoDiscoveredResources` scans
@@ -354,7 +377,7 @@ implementation or live journey is claimed by this ideation fold.
   (`repo`, not `"file:"+repo`), and preserve any other intentionally seeded
   settings. Root symlinks alone do not register resources with Pi.
 - Compose settings once in setup (or merge additions); neither fixture may
-  overwrite the substrate registrations with the old repo-only settings write.
+  overwrite the pi-subagents and pi-intercom registrations with the old repo-only settings write.
   `newPiLiveSmokeFixture` and `newPiSharedLiveDriver` use the same contract.
   `seedPiLiveAuth` still owns auth/models copying into this same piHome (pnc);
   no credential/model policy change is proposed here.
@@ -363,7 +386,7 @@ implementation or live journey is claimed by this ideation fold.
   assignments. In explicit mode each nonempty operator override independently
   wins root selection and is forwarded unchanged; the other package still
   discovers normally. Preserve foreign-runtime and `PI_SUBAGENT_*` scrubbing.
-  No harness substrate `--extension` paths or additional-extension SDK paths
+  No harness `--extension` paths for pi-subagents or pi-intercom or additional-extension SDK paths
   are allowed in default-discovery proof. The existing launcher's unregistered
   explicit fallback remains valid only as a separate compatibility path.
 
@@ -434,7 +457,7 @@ successful explicit fallback does NOT prove default discovery. Proposed checks:
   the seeded settings to Pi's `DefaultResourceLoader` without additional
   extension paths. Require BOTH loaded package entries and BOTH `subagent`
   and `intercom` tools, plus Spacedock/ensign. Negative control retains root
-  symlinks but removes both substrate registrations and loses both tools.
+  symlinks but removes both pi-subagents and pi-intercom registrations and loses both tools.
   This proves supported loader behavior, not just Go's JSON writer. Do not
   add a CI lane or make ordinary Go tests require a local Pi install.
 - AC-3, deterministic override tests (seconds): each override alone and both
@@ -445,8 +468,8 @@ successful explicit fallback does NOT prove default discovery. Proposed checks:
   the default-discovery run.
 - AC-4/front-door, authorized live run (existing live cost/budget): unset BOTH
   package-root variables in the test process and resulting child env; capture
-  launch argv proving no substrate extension path was supplied, including by
-  the launcher's fallback. Require both loaded substrate tools in addition to
+  launch argv proving no extension path for pi-subagents or pi-intercom was supplied, including by
+  the launcher's fallback. Require the loaded subagent and intercom tools in addition to
   the existing report/commit evidence. Run gofmt, ordinary helper tests,
   `go vet -tags live ./internal/ensigncycle`, and
   `go build -tags live ./internal/ensigncycle` before the live proof. A live
@@ -463,7 +486,7 @@ scrubbed. It did not launch a model, dispatch a worker, or invoke intercom.
 | Settings `packages` entries | Observed result |
 | --- | --- |
 | `["file:/Users/clkao/git/spacedock-research/spacedock-v1"]` | 0 extensions, 0 skills, 0 tools; no loader error |
-| `["/Users/clkao/git/spacedock-research/spacedock-v1"]` | Spacedock extension, 11 skills including ensign; no substrate tools despite both symlinks |
+| `["/Users/clkao/git/spacedock-research/spacedock-v1"]` | Spacedock extension, 11 skills including ensign; no subagent or intercom tools despite both symlinks |
 | `["repo"]` and separately `["./repo"]`, with agentDir/repo linked to that checkout | Same Spacedock extension and 11 skills; both relative forms work |
 | `["/Users/clkao/git/spacedock-research/spacedock-v1","npm:pi-subagents","npm:pi-intercom"]` | 3 extensions (Spacedock, subagents/index.js, intercom/index.ts), 14 skills, tools subagent/bg_wait/subagents_enable/intercom, no loader errors |
 
@@ -531,9 +554,9 @@ try {
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Define one isolated-home setup contract covering the real home, the agent directory, the clean HOME, and package registration, with the explicit-override behavior named.
-  M1 contract aligns piHome with cleanHome/.pi/agent, captures the real source agentDir before isolation, independently preserves explicit root overrides, and composes settings once with both substrates and one Spacedock entry; all changed AC/surface semantics are proposed for the captain's gate.
-- DONE: Register and load BOTH the pi-subagents and pi-intercom packages through Pi's supported discovery path while preserving the Spacedock package entry; the proof must hold with both package-root variables absent and no substrate extension path supplied by the harness, and it must not count the retained explicit fallback.
-  Pi 1.0.0 no-model loader spike with both root variables absent loaded all 3 extensions, subagent/intercom tools and ensign; removing npm registrations lost both substrate tools despite symlinks. Unsupported file: baseline loaded 0 extensions/skills; absolute and both relative forms loaded Spacedock. Reproducer and observed results are in M1 risk evidence, not a claim that harness implementation/live smoke shipped.
+  M1 contract aligns piHome with cleanHome/.pi/agent, captures the real source agentDir before isolation, independently preserves explicit root overrides, and composes settings once with pi-subagents, pi-intercom and one Spacedock entry; all changed AC/surface semantics are proposed for the captain's gate.
+- DONE: Register and load BOTH the pi-subagents and pi-intercom packages through Pi's supported discovery path while preserving the Spacedock package entry; the proof must hold with both package-root variables absent and no extension path for pi-subagents or pi-intercom supplied by the harness, and it must not count the retained explicit fallback.
+  Pi 1.0.0 no-model loader spike with both root variables absent loaded all 3 extensions, subagent/intercom tools and ensign; removing npm registrations lost both subagent and intercom tools despite symlinks. Unsupported file: baseline loaded 0 extensions/skills; absolute and both relative forms loaded Spacedock. Reproducer and observed results are in M1 risk evidence, not a claim that harness implementation/live smoke shipped.
 - DONE: Name the non-live helper seam, since a live-tagged definition is invisible to ordinary Go tests, and name the changed old sibling-root test contract; keep mc as entry-resolution owner and do not propose a broader launcher change without separate scope approval.
   Proposed pi_default_extensions_test.go has no live constraint; replaces TestPiIntercomPackageRootDefaultsBesideSubagents with independent settings-root/decoy coverage. mc retains manifest-entry ownership; the separate launcher reader mismatch was routed to FO without a fix or scope expansion.
 - DONE: Validate the existing focused offline baseline and document bounded validation limits.
@@ -541,7 +564,7 @@ try {
 - SKIPPED: Implement proposed harness changes and run authorized live front-door smoke.
   This is a staff-review ideation fold; captain approval, mc readiness, and live authorization remain implementation/validation prerequisites. No code, launcher, docs, operator settings, or YAML frontmatter change is delivered.
 
-- DONE: AC-1 proof plan cited: M1 “Proposed proof refinements” requires both packages/tools and ensign through registered discovery with both root variables absent and no substrate extension paths; the recorded no-model loader spike supports registration, while authorized `TestLivePiFrontDoorSmoke` remains pending and explicit fallback does not count.
+- DONE: AC-1 proof plan cited: M1 “Proposed proof refinements” requires both packages/tools and ensign through registered discovery with both root variables absent and no extension paths for pi-subagents or pi-intercom; the recorded no-model loader spike supports registration, while authorized `TestLivePiFrontDoorSmoke` remains pending and explicit fallback does not count.
 - DONE: AC-2 proof plan cited: M1 deterministic setup tests use a custom real agentDir and independent non-sibling local roots; selecting the sibling decoy or a hard-coded npm root falsifies discovery from actual settings (supported absolute/relative sources).
 - DONE: AC-3 proof plan cited: M1 deterministic override tests exercise each root override alone and both together against conflicting settings, preserve marker scrubbing, and check the retained explicit fallback separately; ignoring an override or deriving intercom from subagents falsifies precedence.
 - DONE: AC-4 proof plan cited: M1 requires ordinary non-live helper tests, gofmt, live-tagged vet/build, the no-model loader check, and authorized front-door smoke with durable report/commit evidence; cycle 2 records only the focused offline baseline and loader spike as passed, not full-suite or live completion. All M1 refinements remain proposed for the captain's gate.
@@ -555,5 +578,32 @@ Folded M1 into the retained design with one composable isolated-home contract, a
 `spacedock status --read docs/dev/.spacedock-state/pi-default-extension-discovery.md --ac-scan --json --workflow-dir docs/dev`
 
 ```json
-{"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"100","unevidenced":"false","citations":[{"line":"531","text":"- DONE: AC-1 proof plan cited: M1 “Proposed proof refinements” requires both packages/tools and ensign through registered discovery with both root variables absent and no substrate extension paths; the recorded no-model loader spike supports registration, while authorized `TestLivePiFrontDoorSmoke` remains pending and explicit fallback does not count."}]},{"id":"AC-2","line":"108","unevidenced":"false","citations":[{"line":"532","text":"- DONE: AC-2 proof plan cited: M1 deterministic setup tests use a custom real agentDir and independent non-sibling local roots; selecting the sibling decoy or a hard-coded npm root falsifies discovery from actual settings (supported absolute/relative sources)."}]},{"id":"AC-3","line":"115","unevidenced":"false","citations":[{"line":"533","text":"- DONE: AC-3 proof plan cited: M1 deterministic override tests exercise each root override alone and both together against conflicting settings, preserve marker scrubbing, and check the retained explicit fallback separately; ignoring an override or deriving intercom from subagents falsifies precedence."}]},{"id":"AC-4","line":"121","unevidenced":"false","citations":[{"line":"534","text":"- DONE: AC-4 proof plan cited: M1 requires ordinary non-live helper tests, gofmt, live-tagged vet/build, the no-model loader check, and authorized front-door smoke with durable report/commit evidence; cycle 2 records only the focused offline baseline and loader spike as passed, not full-suite or live completion. All M1 refinements remain proposed for the captain's gate."}]}]}
+{"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"100","unevidenced":"false","citations":[{"line":"531","text":"- DONE: AC-1 proof plan cited: M1 “Proposed proof refinements” requires both packages/tools and ensign through registered discovery with both root variables absent and no extension paths for pi-subagents or pi-intercom; the recorded no-model loader spike supports registration, while authorized `TestLivePiFrontDoorSmoke` remains pending and explicit fallback does not count."}]},{"id":"AC-2","line":"108","unevidenced":"false","citations":[{"line":"532","text":"- DONE: AC-2 proof plan cited: M1 deterministic setup tests use a custom real agentDir and independent non-sibling local roots; selecting the sibling decoy or a hard-coded npm root falsifies discovery from actual settings (supported absolute/relative sources)."}]},{"id":"AC-3","line":"115","unevidenced":"false","citations":[{"line":"533","text":"- DONE: AC-3 proof plan cited: M1 deterministic override tests exercise each root override alone and both together against conflicting settings, preserve marker scrubbing, and check the retained explicit fallback separately; ignoring an override or deriving intercom from subagents falsifies precedence."}]},{"id":"AC-4","line":"121","unevidenced":"false","citations":[{"line":"534","text":"- DONE: AC-4 proof plan cited: M1 requires ordinary non-live helper tests, gofmt, live-tagged vet/build, the no-model loader check, and authorized front-door smoke with durable report/commit evidence; cycle 2 records only the focused offline baseline and loader spike as passed, not full-suite or live completion. All M1 refinements remain proposed for the captain's gate."}]}]}
 ```
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Reword the artifact in plain operator language; name the two required Pi extensions explicitly as pi-subagents and pi-intercom.
+  “Problem” names both extensions and all three manual steps; “Discovery path a normal Pi home uses” says Pi reads the packages array in settings.json and resolves an npm entry to <agentDir>/npm/node_modules/<name>; vague package/tool labels were replaced throughout the body only.
+- DONE: State the symptom the operator actually meets.
+  “Problem” explains that isolated HOME is a temp directory with no npm install, its fallback finds no pi-subagents, the run errors that the pi-subagents package extension was not found, and the test passes today only because piLiveEnv exports PI_SUBAGENTS_PACKAGE_ROOT.
+- DONE: Record that ideation gate attempt-2 was rejected on wording and that the corrected wording is what the next gate attempt binds.
+  “Ideation gate attempt-2 rejection” cites resolution:spacedock:3w1ncf1thj12aryvkf5gj1rd:ideation:2, decision revise, and the captain's reason: invented vocabulary in the bound summary made it a bad gate attempt, not a rejected design.
+- DONE: Change nothing else; preserve scope, out-of-scope, acceptance criteria, expected surface, tolerance, semantic changes and the per-criterion proof plan; add no file.
+  Single existing entity body edited for wording and this report; prior plan requirements and falsifiers retained, no code or YAML frontmatter edits, no new file. The FO-owned historical resolution reason is untouched.
+- DONE: Re-run the focused offline checks and produce the stage report with the per-criterion citations.
+  `go test ./internal/ensigncycle -run 'PiLiveEnv|PiIntercom|TestPiLive' -count=1 -v` passed all five tests; `go vet -tags live ./internal/ensigncycle`, `go build -tags live ./internal/ensigncycle`, and `gofmt -l ./internal/ensigncycle` passed (no formatting output); `status --read … --ac-scan --json --workflow-dir docs/dev` returned AC-1–AC-4 with unevidenced=false and cycle 3 citations.
+- DONE: Cite what the focused baseline proves and what would make it fail.
+  TestPiLiveEnvDropsForeignRuntimeMarkers and TestPiLiveEnvScrubsAmbientPiSubagentMarkers check explicit roots/isolated env and reject leaked runtime markers; TestPiIntercomPackageRootDefaultsBesideSubagents checks the existing sibling fallback and explicit override, not independent discovery; changing those outputs fails them. TestPiLiveAuthSelectionAndSeeding and TestPiLiveAuthRejectsIncompleteCodexCredentials reject wrong auth selection/seeding or accepted incomplete credentials; none proves default extension discovery.
+- DONE: AC-1 proof plan cited: M1 “Proposed proof refinements” requires pi-subagents and pi-intercom, their subagent/intercom tools and ensign through package discovery with both root variables absent and no explicit extension paths for either package; removing registrations loses the tools in the retained no-model spike, while authorized TestLivePiFrontDoorSmoke remains pending and explicit fallback does not count.
+- DONE: AC-2 proof plan cited: M1 deterministic setup tests use a custom real agentDir and independent non-sibling local roots from settings; choosing the sibling decoy or a hard-coded npm root falsifies discovery. Supported absolute/relative source cases and the earlier proof plan remain unchanged; proposed tests are not implemented here.
+- DONE: AC-3 proof plan cited: M1 deterministic override tests require each explicit root alone and both together to win conflicting settings, preserving marker scrubbing and checking explicit fallback separately; ignoring an override or deriving intercom from subagents falsifies precedence. This round reran the existing env/override baseline, not those proposed independent-discovery tests.
+- DONE: AC-4 proof plan cited: M1 retains ordinary helper tests, formatting, live-tagged vet/build, the no-model loader check and authorized front-door smoke with durable report/commit evidence; this round passed the focused baseline and vet/build/formatting checks only. A failing check or missing live report/commit falsifies completion; no full-suite or live completion is claimed.
+- FAILED: Complete the repository-wide test and race checks within a bounded offline run.
+  `go test ./...` and `go test ./... -race` each timed out at 120 seconds; their process groups were stopped. `gofmt -w ./cmd ./internal` exited zero; its unrelated pre-existing formatting change in internal/release/runtime_live_evidence_workflow_test.go was restored to keep the one-file scope.
+- SKIPPED: Implement discovery changes or rerun the live front-door smoke and no-model loader spike.
+  Wording-only correction: implementation/live authorization and the existing entry-resolution dependency are unchanged; prior spike results remain historical evidence, not a newly executed run.
+
+### Summary
+
+The proposed harness change lets an isolated Pi home find pi-subagents and pi-intercom through Pi's packages array in settings.json, where an npm entry resolves to <agentDir>/npm/node_modules/<name>. Today piSubagentsPackageRoot requires PI_SUBAGENTS_PACKAGE_ROOT or falls back under HOME, the smoke launches pi with an explicit --extension path, and piLiveEnv exports the variable; without that export, isolated HOME is a temp directory with no npm install, Pi finds no pi-subagents, and the run errors that the pi-subagents package extension was not found, so the test passes today only because it exports the variable. Attempt-2 was closed with decision revise for invented vocabulary in its bound summary; this corrected wording is what the next gate attempt binds, with scope and per-criterion proof unchanged and focused offline checks passed.
