@@ -8,6 +8,17 @@ group: gate
 sprint-readiness: ready
 issue:
 id: 9w59t6m1qc46hccd54p04z2j
+gates:
+    version: 1
+    records:
+        - id: gate:9w59t6m1qc46hccd54p04z2j:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:9w59t6m1qc46hccd54p04z2j-backlog-1
+              briefing:
+                id: briefing:9w59t6m1qc46hccd54p04z2j:backlog:attempt-1:revision-1
+                digest: sha256:7e4248e69210ba2f494ada2ed8e817d47694c8e53f6ddc9013493fcb20ff9bf6
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 ## Problem

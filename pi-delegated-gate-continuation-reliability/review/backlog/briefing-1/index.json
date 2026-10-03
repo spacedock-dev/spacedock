@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9w59t6m1qc46hccd54p04z2j:backlog:attempt-1:revision-1",
+  "question": "Approve this seed as the backlog baseline and advance to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:9w59t6m1qc46hccd54p04z2j:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d6def3b7b97516cb23fce583b6f67f159a070381/pi-delegated-gate-continuation-reliability.md",
+      "rev": "sha256:41bb911269861c40a5a1291e4527b31f632df39be140604e524a69d9bec5b1d9",
+      "mediaType": "text/markdown",
+      "summary": "Pi delegated gate approval does not continue reliably through successor dispatch. At exact tip ce4ac943, the first retained run completed the gate lifecycle but presented an invented Briefing digest before reading the canonical value, and the one authorized retry presented the exact bound gate but stopped before recording or consuming the delegated approval. The seed asks for reliable presentation-through-successor completion on Pi."
+    }
+  ]
+}
