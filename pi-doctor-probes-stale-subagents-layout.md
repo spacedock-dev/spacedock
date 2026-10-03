@@ -84,7 +84,7 @@ gates:
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
-pr: "#817"
+pr: pr-merge:817
 ---
 
 ## Problem
