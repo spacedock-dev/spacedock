@@ -422,3 +422,68 @@ Command: `/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock status --r
 | AC-7 | 248 | point-settings-elsewhere / write-file-prefix | implementation (cycle 2), AC-7 line |
 | AC-8 | 250 | set-one-override / re-add-empty | implementation (cycle 2), AC-8 line |
 | AC-9 | 252 | live-tag-the-helper | implementation (cycle 2), AC-9 line + SKIPPED smoke |
+
+
+## Review-finding disposition
+
+Validation at candidate `631b482e6`; advisory classifications only. No candidate edits or FO authorization are implied.
+
+### V1 — Missing promised live evidence
+
+- Observation: implementation cycle 2 explicitly SKIPPED the authorized front-door model smoke; no candidate green pi-live CI URL/SHA, journey grades, or durable child report/commit evidence was supplied. Independent no-model loading passes, but never launches or observes an ensign.
+- Released user and normal workflow: Pi 1.0 users running the supported default-discovery first-officer/ensign path and the existing pi-live lane.
+- Observable harm: acceptance cannot establish actual delegation, child boot, durable completion, or current-family journey compatibility; this is not evidence that the product fails at runtime.
+- Authority: value-ac[AC-6] requires the authorized model-backed isolated-home run, not merely package loading. AC-1 and AC-9 also retain unfulfilled live requirements.
+- Trigger evidence: the cycle-2 SKIPPED entry, absence of a candidate run reference/results, and this validation's intentionally no-model observation boundary.
+- Proposal: **evidence defect / Material**; ownership = this task's live acceptance evidence; disposition = hold acceptance pending separately authorized proof, not an automatic implementation retry. A budget prohibition is not an out-of-promise trigger and does not turn a promised value AC into a deferred risk.
+- Closure: after V2's observation gap is addressed or the captain explicitly revises the criterion, record an authorized `TestLivePiFrontDoorSmoke` at the candidate SHA with BOTH root variables actually absent, no supplied substrate extension paths, observed Spacedock/ensign and both substrate tools, passing boot grade, committed entity stage report, clean entity state, and root/child session artifacts. AC-1 additionally needs the candidate green existing pi-live CI URL/SHA, installed 1.0.0/0.75.0/0.16.0 logs, doctor success, unchanged common-journey grades and smoke results under the existing XFAIL policy. Do not substitute override-enabled success or this loader probe.
+
+### V2 — AC-6 names observation that the shipped smoke grader does not make
+
+- Observation: `internal/ensigncycle/pi_live_runner_test.go:320-432` and `pi_evidence_grade_impl_test.go:57-99` grade artifact forwarding, ordered ensign reads, absence of first-officer reads, sessions and durable output. Neither records/asserts an inventory containing both substrate tools or absence of the two package-root variables. AC-6's assertion that this grader “still requires … both substrate tools” does not describe the shipped implementation.
+- Released user and normal workflow: default-discovery smoke acceptance on the supported Pi lane.
+- Observable harm: a passing grade can be presented as default-discovery/both-tools proof without observing those conditions; subagent execution establishes subagent availability, not independent intercom availability. The workflow also still exports both override variables into GITHUB_ENV, and its unchanged smoke step does not unset them.
+- Authority: value-ac[AC-6] promises both required extensions through native discovery with both variables unset; the named proof boundary must distinguish that from explicit fallback.
+- Trigger evidence: `go test ./internal/ensigncycle -run '^TestPiFrontDoorEvidenceGrade' -count=1 -v` passes with the existing model/timestamp/cost-only session fixtures (no substrate inventory/environment evidence); source tracing confirms the outer boot grader does not add those observations.
+- Proposal: **evidence defect / Material**; ownership = this task's folded AC-6 proof; disposition = FO-authorized narrow evidence correction at the existing smoke/grade boundary, or route to captain if the intended criterion differs. No new controller/lifecycle layer is proposed. Candidate remains unchanged.
+- Closure: an independently falsifiable observation in the authorized default-mode smoke must reject a missing intercom/subagent tool and any present override (including empty assignments), preserve the ensign/durable-state checks, and run with the two workflow overrides explicitly absent. Current no-model positive/negative proof remains complementary, not a replacement for the promised live observation.
+
+### Evidence quality and residual scope
+
+- AC-2's Go guard deliberately duplicates the reviewed Node body: it proves executable wiring, not Node semantics. The separately executed real-package matrix supplies the independent behavioral oracle.
+- `TestPiIsolatedHomeNegativeControlDropsSubstrateRegistrations` invokes the harness's own settings reader, not Pi. Standing alone its “Pi discovery” interpretation is self-referential and is rejected as runtime proof. The independent Pi 1.0 loader experiment below closes that specific load-bearing mechanism claim.
+- No other AC depends solely on checking its own prose. AC-7/8 describe the shipped resolver, registrations and environment behavior; AC-9 correctly places the helper outside the live build tag, but its live half remains unproved. AC-5's explicit full/race-pass requirement remains unestablished, despite the prior report's “resolved as skipped” wording; this validation neither reruns nor claims those suites.
+- No newly established outcome defect or deferred-risk finding. Existing four registered journey exceptions remain owned; retained XFAILs are not new proof of product correctness. Required independent reviewer gate remains outstanding.
+
+## Stage Report: validation
+
+- DONE: Reproduce the deterministic evidence for every criterion in the body, AC-1 through AC-9: run the ordinary helper tests in pi_default_extensions_test.go, the focused controls tests, and the live-tagged vet and build. For each criterion, confirm that the criterion describes the shipped implementation and not obsolete prose, and flag any criterion whose evidence is self-referential.
+  Candidate `631b482e6`; bounded evidence reproduced below. AC-1/5/6/9 are incomplete, not silently redefined as green; V2 identifies the obsolete AC-6 grader claim and Evidence quality identifies the helper-only circular runtime interpretation.
+- DONE: AC-1 deterministic pin proof; AC-2 declarations and runtime files; AC-3 integrity enforcement.
+  `go test ./internal/release/... -count=1` PASS (22.6s), including all 34 mutations; installed local names/versions independently read as 1.0.0/0.75.0/0.16.0. Reverting a pin, removing either check, or bypassing verified-pack wiring fails the guards; no CI-green inference.
+- DONE: AC-2 independently execute both candidate Node heredocs against a fresh real `npm pack pi-subagents@0.75.0` extraction.
+  Each checkpoint: published/restored package exits 0; either missing runtime file, either directory in place of a file, missing/empty extensions, missing bridge, types-only bridge and missing second extension each exit 1 (18 negative results total). Removing existence/regular-file/all-entry checks falsifies these expectations.
+- DONE: AC-3 independently execute the candidate's actual `verified_pack` shell function.
+  Published hash exits 0; `sha512-corrupted-for-negative-probe` exits 1 before installation; disabling only the mismatch exit returns 0 and falsifies the negative. Independent SHA-512 of tarball bytes equals the body snapshot; no global installation was changed.
+- DONE: AC-4 current-family instructions/comment and AC-5 protected boundaries.
+  One-off comparison against the independent three-version snapshot passes; stale doc-version mutation fails. Against `12b695f26`, only the two authorized Pi setup steps differ: other lanes/actions/Node/selectors, compatibility step, doctor call and CLI floor are unchanged (binding owner re-anchor audited separately).
+- DONE: Detached semantic adversarial pass over the changed CI assertions.
+  In a disposable `git archive HEAD` snapshot under the assigned worktree, revert-agent-pin, restore-setup-source-assertion and corrupt-subagents-integrity each fail `TestPiLivePinsAndSubstrateAssertions`; downgrade-other-lane-checkout fails `TestNode24ActionsPinnedAtMinimum`. Restored snapshot passes both guards plus the mutation companion. This is validator evidence, not an independent reviewer sign-off.
+- DONE: Independently reproduce the no-model loader check on the exact isolated layout: both package-root variables unset, no substrate extension path supplied, and require spacedock plus pi-subagents plus pi-intercom loaded with the subagent and intercom tools and the ensign skill. Then remove both npm registrations and require zero substrate tools. That negative control is the load-bearing fact.
+  Node 24.13.1 / Pi 1.0.0 `DefaultResourceLoader({cwd: emptyWorkflow, agentDir: cleanHome+'/.pi/agent'})`, then `await reload()`; no additional paths/factories. Both actual substrate roots symlinked at agentDir/npm/node_modules; settings packages exactly `["npm:pi-subagents","npm:pi-intercom",absoluteCandidateCheckout]`; both root variables and parent PI_SUBAGENT_* absent before import. Inspect `getExtensions()` errors/paths/tool-map keys and `getSkills()` names.
+  Positive: exactly spacedock.ts, pi-subagents/index.js, pi-intercom/index.ts; exact tool set `{subagent,bg_wait,subagents_enable,intercom}`; ensign present; zero errors. Remove both npm entries, retain both symlinks: exactly spacedock.ts, ZERO substrate tools, ensign retained, zero errors. Replace sole checkout entry with `file:`+path: ZERO extensions/skills/tools. Fresh Node process per variant; all assertions pass; no model/auth/session calls made.
+- DONE: AC-7 and AC-8 focused ordinary helper/controls tests.
+  `go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIntercomPackageRootDiscoversIndependently|TestPiIsolatedHome|TestPiLive' -count=1 -v` PASS (0.25s): custom-agentDir npm roots, package-name-matched local roots, non-sibling intercom, exact settings order, registration negative, unset-not-empty env and each independent override; changing those expected paths/registrations/presence makes the respective test fail.
+- DONE: AC-9 non-live visibility, formatting and live-tagged checks; bounded AC-5 build.
+  Ordinary tests discover the helper without `-tags live`; `go vet -tags live ./internal/ensigncycle`, `go build -tags live ./internal/ensigncycle`, `go build ./...`, and `git diff --check` PASS. Read-only `gofmt -l` on all six changed Go files returns empty; no repository-wide formatting mutation in this validation-only stage.
+- DONE: Verify the recorded disposition of every live Pi binding against the live registry and the owner bodies, and confirm the rejection-flow binding names an active owner rather than the archived one.
+  `SPACEDOCK_LIVE_STATE_DIR=/Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state go test ./internal/contractlint -run '^TestRuntimeLive(RegistryReconciliation|TODOOwnersAreActive)$' -count=1 -v` PASS; derived Pi XFAIL count exactly 4; active-owner join runs (not skipped).
+  Re-anchored rejection-flow -> `6h3teccccn3qh71yqcmjbjx4` (active backlog topology owner); old `p17swb3375rt525fn7f8xt7e` is archived done/PASSED for timeout only. Kept owner-handoff -> `fe7bfjz9sb8wyckmnnm3ncjx`, keep-moving -> `x02375wsg6q61xek7p0t36j2`, smallest-mechanism -> `h30c9jrfcf21fdh2qs5z58sd`; all active backlog bodies own the exact semantics and require exact PASS before removal. Keep-moving's historical XPASS alone does not authorize clearance. Cleared: zero.
+- DONE: Report the missing live model proof explicitly as a finding, with the defect-kind and release-scope classification that this stage defines. Do not run that smoke. State what evidence would close it.
+  V1 = evidence defect / Material, not demonstrated runtime failure or deferred risk; V2 = evidence defect / Material at AC-6's named observation boundary. Exact closure evidence and advisory ownership/dispositions recorded above; no candidate correction authorized or attempted.
+- SKIPPED: Full repository suite, race suite, live model front-door smoke and green pi-live CI execution.
+  Explicit FO budget prohibition; no prohibited command run. Prior cross-tree failures remain historical evidence only. AC-1/6/9 live acceptance and AC-5 full/race-pass clauses are not claimed satisfied.
+
+### Summary
+
+Recommend **REJECTED / hold acceptance** for material evidence findings V1/V2, not a product-failure diagnosis or a mechanism/design reset. Deterministic pin, package, environment and independent loader positive/negative checks pass, including the load-bearing zero-tools result with both symlinks retained; all four Pi bindings have active semantic owners. Code HEAD and candidate files remain unchanged; only this state report is committed, and live proof plus the independent reviewer gate remain owed.
