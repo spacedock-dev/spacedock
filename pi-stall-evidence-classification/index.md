@@ -7,6 +7,17 @@ id: z6eb1krpyfmr01dwyb7703hx
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
+gates:
+    version: 1
+    records:
+        - id: gate:z6eb1krpyfmr01dwyb7703hx:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:z6eb1krpyfmr01dwyb7703hx-backlog-1
+              briefing:
+                id: briefing:z6eb1krpyfmr01dwyb7703hx:backlog:attempt-1:revision-1
+                digest: sha256:df46fdbb84739f3ffc3e48e5b644510c514be915e658607aebeb62c54152990d
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 A stalled Pi live run leaves artifacts that nobody classifies. The operator cannot

@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:z6eb1krpyfmr01dwyb7703hx:backlog:attempt-1:revision-1",
+  "question": "Approve this seed as the backlog baseline and advance to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:z6eb1krpyfmr01dwyb7703hx:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d6def3b7b97516cb23fce583b6f67f159a070381/pi-stall-evidence-classification/index.md",
+      "rev": "sha256:8fef96ebc106b0a1618c42dbdd034a9935003befec42ef6bfe761950b98e7475",
+      "mediaType": "text/markdown",
+      "summary": "A stalled Pi live run leaves artifacts the runner already archives, but nothing classifies the stall, so each stall costs a re-run and teaches nothing. Capture is not the gap: the Claude-lane capture task stays out of this sprint and states Pi needs no capture change. The seed asks for a classification of a Pi stall from the archived artifacts, within stated limits."
+    }
+  ]
+}
