@@ -55,6 +55,7 @@ sprint: pi-ux
 group: tooling
 sprint-readiness: ready
 started: 2026-10-03T04:04:56Z
+worktree: .worktrees/spacedock-ensign-pi-live-lane-pin-refresh
 ---
 
 The pi-live Runtime Live E2E lane validates a superseded Pi family. Refresh its three
