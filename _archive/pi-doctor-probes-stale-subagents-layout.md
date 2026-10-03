@@ -1,11 +1,11 @@
 ---
 title: Pi doctor probes a pi-subagents source layout the package no longer ships
-status: validation
+status: done
 source: "Captain ran `spacedock doctor --host pi` against pi-subagents 0.74.0, 2026-10-01, and reported the two MISSING lines."
 score:
 started: 2026-10-03T02:42:26Z
-completed:
-verdict:
+completed: 2026-10-03T15:43:34Z
+verdict: PASSED
 worktree: .worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout
 issue:
 id: mc0ajnpb4wh5nhd2p4q0vx9n
@@ -80,11 +80,12 @@ gates:
                 reason: Captain approved the independent validation result in this session.
               application:
                 target-stage: done
-                state: pending
+                state: consumed
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
 pr: pr-merge:817
+archived: 2026-10-03T15:43:34Z
 ---
 
 ## Problem
