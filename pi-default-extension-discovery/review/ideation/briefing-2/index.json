@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:3w1ncf1thj12aryvkf5gj1rd:ideation:attempt-2:revision-1",
+  "question": "Approve the ideation baseline and advance to implementation: one isolated-home setup contract so an isolated Pi run finds both substrate packages with no package-root variable exported?",
+  "artifacts": [
+    {
+      "id": "artifact:3w1ncf1thj12aryvkf5gj1rd:ideation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/3c1a0a3d4a9ab4030f4fdc7d6250c908abd2d5a7/pi-default-extension-discovery.md",
+      "rev": "sha256:4d01d11db7f1f01d175053a5cc7f51c30066d78f1909f9bf733ecb9f4f78f6bd",
+      "mediaType": "text/markdown",
+      "summary": "Delivers first-contact discovery without hand-wiring. Selected approach: one setup contract that captures the real home and agent directory, allocates the clean home once and passes that same path as the agent directory, resolves both substrates independently from explicit overrides and then from real installed locations by reading package.json names, and registers both npm entries in settings.json while preserving the Spacedock package as an absolute checkout path. Risk evidence: the loader spike found Pi 1.0.0 rejects the file: form outright and loads nothing, and that root symlinks alone do not register resources. The staff review closed M1 on this fold, and the fold matches the corrected loading model verified today. Surface: non-live helper file plus fixture updates; both live fixtures use the same contract. Semantic changes: which roots discovery reads and what the isolated home registers. Proof per criterion: AC-1 a run without the variable resolves both substrates from the installed location; AC-2 discovery reads a real location, not a hard-coded path; AC-3 an exported override still wins; AC-4 offline checks and the front-door smoke pass with the variable unset."
+    }
+  ]
+}

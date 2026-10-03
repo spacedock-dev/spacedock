@@ -43,6 +43,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-08-14T14:30:13.698305Z"
                 reason: Captain dropped Phase 0; not relevant right now. Entity moved to live-evidence-followups; ideation work retained on the body.
+            - id: gate-attempt:3w1ncf1thj12aryvkf5gj1rd-ideation-2
+              briefing:
+                id: briefing:3w1ncf1thj12aryvkf5gj1rd:ideation:attempt-2:revision-1
+                digest: sha256:83c51381a27be6ed4dc266d622644f72f322488f0f78eb66c28dd7591741097f
+                room-ref: '@review/ideation/briefing-2'
 started: 2026-08-14T06:44:31Z
 ---
 
