@@ -7,6 +7,17 @@ id: d525n1p5zgnz99hmtjq16z57
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
+gates:
+    version: 1
+    records:
+        - id: gate:d525n1p5zgnz99hmtjq16z57:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:d525n1p5zgnz99hmtjq16z57-backlog-1
+              briefing:
+                id: briefing:d525n1p5zgnz99hmtjq16z57:backlog:attempt-1:revision-1
+                digest: sha256:d4571aa8babbfc59dfb8670f73e8bb79bb6c5a7ee2029184c2b3763b2a4a3e40
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 The live Pi XFAIL registry does not state the truth. Some bindings name owners that no

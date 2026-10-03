@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:d525n1p5zgnz99hmtjq16z57:backlog:attempt-1:revision-1",
+  "question": "Approve this seed as the backlog baseline and advance to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:d525n1p5zgnz99hmtjq16z57:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d6def3b7b97516cb23fce583b6f67f159a070381/pi-xfail-binding-reconciliation/index.md",
+      "rev": "sha256:5a6b4cd7e1dac5c7e384d0fd3519eac1a95d8feebaa54c63837a8bd4dba63935",
+      "mediaType": "text/markdown",
+      "summary": "The live Pi XFAIL registry does not state the truth. The rejection-flow binding names an owner that is archived with verdict PASSED; the smallest-mechanism journey still grades a Pi stream through a Claude-dialect extractor; and recorded-gate-lifecycle carries no binding although it describes a real unowned Pi conduct gap. Scope is bindings, owner status, and evidence only, and it must not absorb the journey repairs or weaken their assertions."
+    }
+  ]
+}
