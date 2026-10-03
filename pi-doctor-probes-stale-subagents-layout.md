@@ -48,6 +48,9 @@ gates:
                 id: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:ideation:attempt-2:revision-1
                 digest: sha256:b77d1eb699105693bfbc421dfd2d921e1d5cddce9f28f1e4a1772e48e4d42c9c
                 room-ref: '@review/ideation/briefing-2'
+sprint: pi-ux
+group: tooling
+sprint-readiness: ready
 ---
 
 ## Problem
