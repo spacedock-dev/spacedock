@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mc0ajnpb4wh5nhd2p4q0vx9n:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation baseline — resolver design (A), per-probe restated AC-2, and the added 2-file documentation surface — and advance this task to implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:mc0ajnpb4wh5nhd2p4q0vx9n:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2fac0d77420c36cd6400810c94a7d18e5d56cbc0/pi-doctor-probes-stale-subagents-layout.md",
+      "rev": "sha256:bc683749780805da76894f7fe7d870bc43ec77a1540a96675471578cc5bba5f6",
+      "mediaType": "text/markdown",
+      "summary": "Ideation baseline for the two stale pi-subagents doctor probes. Approach: both probes resolve from the installed package's own package.json — the extension from pi.extensions, the intercom bridge from exports[\"./intercom-bridge\"]. AC-2 is restated per-probe because pi-subagents declares the bridge only in exports, so one shared entry cannot drive both lines; the restatement is proposed, not pre-approved. Surface: 2 code files (internal/cli/pi.go, internal/cli/pi_frontdoor_test.go), net +60 to +90 LOC at +/-25 percent; plus a new 2-file documentation surface (docs/runtime-support.md, docs/site/contributing/adding-a-runtime.md) carrying four one-line --extension path edits, which exceeds the seed's 2-file code estimate and is flagged for this gate. Primary proof owner is internal/cli/pi_frontdoor_test.go, reshaped to a manifest-driven fixture whose expected paths derive from the written package.json. Deterministic Go tests only; no live lane needed."
+    }
+  ]
+}
