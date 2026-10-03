@@ -1,6 +1,6 @@
 ---
 title: Pi doctor probes a pi-subagents source layout the package no longer ships
-status: ideation
+status: implementation
 source: "Captain ran `spacedock doctor --host pi` against pi-subagents 0.74.0, 2026-10-01, and reported the two MISSING lines."
 score:
 started: 2026-10-03T02:42:26Z
@@ -61,7 +61,7 @@ gates:
                     source: captain instruction, this session, 2026-10-03
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
