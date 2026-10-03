@@ -318,6 +318,9 @@ not modern CLI compatibility requirements.
 
 - DONE: Task body states the problem, the chosen approach, and criteria under the exact `## Acceptance criteria` heading, with every AC paired to a named falsifying edit.
   Proposed Pi-only grade restoration at the existing callback; AC-1–4 each name proof and mutants, with no production/scaffolding changes.
+  AC-2 proof plan: exact diff audit, existing real-CLI/provenance tests, and replay with different retained canonical values preserve provider-neutral authority; `trust-presenter` must fail, and detached audit rejects shared-runner or other-runtime grade changes.
+  AC-3 proof plan: retained wrong-digest/early-stop runs and single-obligation role/order, model, completion, and report-read controls must reject their named mutants; a real current passing trace supplies the positive control, including canonical compact presentation.
+  AC-4 proof plan: registry reconciliation rejects `quarantine-pi`; retain exact candidate SHA, all three focused live runs, registered Pi common package and front-door smoke results/artifacts, while Claude/Codex lanes and deterministic gate tests remain active and unchanged.
 - DONE: A value AC measures the end outcome - a repeated Pi recorded-gate journey completes presentation through successor dispatch - against an independent baseline that can move the wrong way (the retained exact-tip run whose digest was invented before it was read).
   AC-1 requires 3/3 complete live transactions against the inspected 0/2 retained baseline; line 39's invented digest precedes canonical read at 42, and retry ends with zero children.
 - DONE: Expected surface declares net LOC change, files, and tolerance; the test plan names the primary proof owner and states whether that proof is a live lane or deterministic.
@@ -334,3 +337,11 @@ not modern CLI compatibility requirements.
 ### Summary
 
 Shaped the task into a proposed Pi-only proof restoration after finding the current journey's no-op grading seam and inspecting both retained counterexamples. The original end-value remains a three-run live requirement, not a claim that tests or prose repaired conduct; captain approval of the restated ACs and scope, followed by independent staff review, is still required.
+
+### Report repair verification
+
+`spacedock status --read docs/dev/.spacedock-state/pi-delegated-gate-continuation-reliability.md --ac-scan --json --workflow-dir docs/dev` (exit 0):
+
+```json
+{"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"119","unevidenced":"false","citations":[{"line":"320","text":"  Proposed Pi-only grade restoration at the existing callback; AC-1–4 each name proof and mutants, with no production/scaffolding changes."},{"line":"325","text":"  AC-1 requires 3/3 complete live transactions against the inspected 0/2 retained baseline; line 39's invented digest precedes canonical read at 42, and retry ends with zero children."},{"line":"335","text":"  This stage defines the proof; no candidate grade exists yet, and offline checks do not establish live conduct or satisfy AC-1."}]},{"id":"AC-2","line":"138","unevidenced":"false","citations":[{"line":"321","text":"  AC-2 proof plan: exact diff audit, existing real-CLI/provenance tests, and replay with different retained canonical values preserve provider-neutral authority; `trust-presenter` must fail, and detached audit rejects shared-runner or other-runtime grade changes."}]},{"id":"AC-3","line":"150","unevidenced":"false","citations":[{"line":"322","text":"  AC-3 proof plan: retained wrong-digest/early-stop runs and single-obligation role/order, model, completion, and report-read controls must reject their named mutants; a real current passing trace supplies the positive control, including canonical compact presentation."}]},{"id":"AC-4","line":"167","unevidenced":"false","citations":[{"line":"323","text":"  AC-4 proof plan: registry reconciliation rejects `quarantine-pi`; retain exact candidate SHA, all three focused live runs, registered Pi common package and front-door smoke results/artifacts, while Claude/Codex lanes and deterministic gate tests remain active and unchanged."}]}]}
+```
