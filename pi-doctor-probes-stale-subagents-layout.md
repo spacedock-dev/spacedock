@@ -572,3 +572,37 @@ Docs example paths updated. Focused tests green; noted a pre-existing,
 environment-dependent `TestCodexResolveManifestAgainstInstalledHost` failure in
 the full suite.
 
+
+## Review-finding disposition
+
+Validation recommendation: **PASSED (AC-1–4)**. No material outcome or evidence defect found in the promised probe-resolution/remedy behavior; no deferred task defect identified. No candidate repair is proposed or authorized by this report.
+
+- Baseline/environment caveats, not task regressions: `TestCodexResolveManifestAgainstInstalledHost`, `TestVersionAmbiguousMarkersExitZero`, and `TestSurveyCodexPresenceThroughSync` fail unchanged on `dc7d9a0cd` as well as the candidate. The installed Codex cache, ambient `PI_CODING_AGENT`, and agentsview cwd behavior respectively trigger them; none supplies evidence of a violated task value AC. Full-suite results are not claimed green.
+- Scope-accounting advisory for the FO: merged code is two files, +287/-20 (net +267), versus the stated +60..+90 ±25% estimate; two documentation files are +4/-4. This exceeds the LOC tolerance but introduces no additional semantic surface. This validator does not retroactively approve the variance or initiate a candidate feedback cycle.
+
+## Stage Report: validation
+
+- DONE: Every acceptance criterion is independently verified against the merged candidate with evidence that can fail, including the manifest-driven resolution and the integrated remedy acceptance.
+  Validated `1f41f289f`, tree-identical to merged `origin/main` `12b695f26`; commands, complete captures, executable harnesses, and observations are retained in [_evidence/pi-doctor-probes-stale-subagents-layout/validation-independent.txt](_evidence/pi-doctor-probes-stale-subagents-layout/validation-independent.txt).
+- DONE: AC-1 — compiled package declarations drive both OK lines and the actual launcher gate.
+  `go test ./internal/cli -run '^TestPiSubagentsProbesResolveFromPackageManifest$' -count=1 -v` exits 0, including `piRuntimeLaunchReady(check)`; independent `spacedock doctor --host pi --plugin-dir <fixture>` and `spacedock pi validation-marker --plugin-dir <fixture>` exit 0 against real installed pi-subagents 0.75.0, with argv-capturing Pi stub and other prerequisites supplied as filesystem fixtures. The pre-change binary refuses that same package (exit 1); the candidate launches with the manifest's `index.js` argument, not a `.ts` source.
+- DONE: AC-2 — each declared target's absence fails only its own probe.
+  The named Go test passes both removal subtests and the removed-exports subtest; the independent real-package transaction separately removes `pi.extensions[0]` then `exports["./intercom-bridge"].default`, observing own line MISSING / other line OK before each repair.
+- DONE: AC-3 — expected paths derive from the written artifact, independently of production probes.
+  The Go fixture reads its written `package.json`; removing that write with `go test -overlay <AC3-manifest.json> ./internal/cli -run '^TestPiSubagentsProbesResolveFromPackageManifest/compiled' -count=1 -v` exits 1 at `pi_frontdoor_test.go:710` (fixture manifest missing), not at a compiler error. Independent CLI fixtures relocate declarations to Unicode/space-containing `.mjs`/`.cjs` paths and still launch at the declared extension.
+- DONE: AC-4 — the printed remedies reproduce in a disposable home.
+  `python3 <scratch>/live.py` exits 0: fresh `env -i` home `/tmp/spacedock-validation-k_wx7s8m`, Pi 1.0.0, Node v24.13.1, npm 11.8.0, pi-subagents 0.75.0 throughout; each exact printed `pi install npm:pi-subagents` exits 0 and moves its line MISSING → OK at its declared path while the other stays OK. Doctor exits remain 1 only for unrelated missing auth/intercom/Spacedock setup. Full stdout/stderr, versions, manifests, commands, exits and candidate SHA-256 are retained; no global mutation.
+- DONE: The named falsifiers hold: re-hardcoding either TypeScript source path turns the manifest subtest RED, and removing a probe's own declared target turns that line MISSING while the other stays OK.
+  `python3 <scratch>/mutations.py`: both independent stale-.ts overlays make the compiled subtest exit 1 at the corresponding line assertion; accepting unrelated `package.json` instead of each own target makes its removal subtest exit 1; deleting the manifest write exits 1. `live.py` also sees AC-4's exact postcondition go RED after each affected line prints `true` and it exits 0, and after either stale-path binary follows successful installation. Candidate files are never mutated.
+- DONE: No launcher behaviour beyond probe resolution changed; the shared runtime, the XFAIL bindings, and every other doctor line are untouched.
+  `git diff HEAD^ HEAD --name-only` names only `pi.go`, `pi_frontdoor_test.go`, and the two documentation examples; protected-surface diff is empty. Pre-change/candidate real-home doctor captures compare identically after excluding only the two affected lines and their remedies (including identical stderr/exits). The approved bridge executable-remedy exception is the only wording change.
+- DONE: Semantic adversarial matrix and focused regressions.
+  `python3 <scratch>/matrix.py` exits 0 across relocated Unicode/spaces, bare-string bridge export, first-of-two extensions, empty extensions/default, absent export, malformed JSON and missing manifest; exact manifest extension reaches the child only in ready cases, all invalid cases refuse without launching. Focused frontdoor/doctor/readiness tests pass normally and with `-race`; resolution is one linear manifest read, not a multiplicative hot path.
+- FAILED: Repository-wide regression commands are not wholly green in this environment.
+  `go test ./...` exits 1 on the three baseline-reproduced tests above; `go test ./... -race` also exits 1 with the same three failures and no reported data race. No failure is hidden or repaired. Changed Go files pass `gofmt -d`; `gofmt -w ./cmd ./internal` runs only in a candidate archive, exposing an unrelated pre-existing release-test formatting difference without touching the canonical worktree.
+- SKIPPED: Real model session / supervisor-talkback validation.
+  Explicitly out of scope: the installed-package repairs are real; the ready-gate child is a capture stub and does not claim loaded extensions, credentials, or live talkback.
+
+### Summary
+
+**PASSED:** independently reproduced AC-1–4 and made every named falsifier fail at its intended behavioral boundary. The remedy acceptance holds in a disposable home, the launcher's actual ready gate accepts compiled output, and no other doctor line or shared runtime changed; candidate bytes/HEAD remain untouched, with only this state report and its evidence committed.

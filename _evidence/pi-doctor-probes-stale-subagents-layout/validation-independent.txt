@@ -1,0 +1,2864 @@
+Independent validation: Pi doctor stale pi-subagents layout
+Date: 2026-10-03
+Verdict: PASSED AC-1, AC-2, AC-3, AC-4; no candidate edits.
+Candidate: 1f41f289faad73fa1ce14684b80ee920e502f89e
+Merged origin/main: 12b695f262253d013b1b092abe4eebea61348b8d (identical tree)
+Pre-change: dc7d9a0cd (full SHA in revisions.txt below)
+
+Commands and observations:
+- go build -o <scratch>/spacedock ./cmd/spacedock: exit 0.
+- go test ./internal/cli -run '^TestPiSubagentsProbesResolveFromPackageManifest$' -count=1 -v: exit 0; four subtests, including real readiness function true against compiled-only fixture.
+- go test ./internal/cli -run '^(TestPiSubagentsProbesResolveFromPackageManifest|TestRunPi_|TestPiDoctor)' -count=1 -v: exit 0.
+- go test ./internal/cli -race -run '^(TestPiSubagentsProbesResolveFromPackageManifest|TestPiFrontDoorLaunchesWithNativeResourcePaths|TestRunPi_|TestPiDoctor)' -count=1: exit 0.
+- python3 <scratch>/mutations.py: exit 0 only because all five deliberate Go-test mutations returned exit 1 at behavioral assertions (not compilation failures).
+  AC1-extension: stale src/extension/index.ts -> compiled subtest RED.
+  AC1-bridge: stale src/intercom/intercom-bridge.ts -> compiled subtest RED.
+  AC2-extension and AC2-bridge: accept an existing package.json regardless of own declared entry -> corresponding removal subtest RED.
+  AC3-manifest: omit manifest write -> missing fixture package.json assertion RED.
+- python3 <scratch>/live.py: exit 0; real printed installers restore both deleted declared targets in a fresh isolated home. All versions and full stdout/stderr/exits below. No-op printed remedy and both stale-path binaries fail exact same-line OK postconditions despite successful commands.
+  Supplementary bridge no-op mutation also changes only that affected remedy's command to `true` in a Go overlay; build exits 0, the printed `true` exits 0, exact bridge-OK assertion fails (RED), extension stays OK. Real candidate printed install restores both again. This capture is appended to live.txt.
+- python3 <scratch>/matrix.py: exit 0; exact CLI readiness/captured fallback paths under adjacent manifest layouts, and refusal with no child on missing/invalid declarations.
+- Additional actual launcher run with PI_SUBAGENTS_PACKAGE_ROOT set to the real disposable-home 0.75.0 package: candidate doctor/launcher exit 0 and child argv carries manifest index.js; pre-change binary exits 1 without invoking child. Other prerequisites are filesystem fixtures; Pi is a capture stub, not a model session. Complete environment/commands in installed-gate.txt.
+- go test ./...: exit 1; exactly three unrelated failures. go test ./... -race: exit 1, same three failures; no reported data race.
+- On an archive of HEAD^, go test ./internal/cli -run '^(TestCodexResolveManifestAgainstInstalledHost|TestVersionAmbiguousMarkersExitZero)$' -count=1: exit 1 with same two failures; go test ./skills/integration -run '^TestSurveyCodexPresenceThroughSync$' -count=1: exit 1 with same third failure. Baseline logs below.
+- gofmt -d internal/cli/pi.go internal/cli/pi_frontdoor_test.go: empty, exit 0.
+- gofmt -w ./cmd ./internal: exit 0 in candidate archive ONLY; pre-existing internal/release/runtime_live_evidence_workflow_test.go formatting is not repaired in the canonical candidate.
+- git diff HEAD origin/main --exit-code: exit 0; git merge-base --is-ancestor HEAD origin/main: exit 0.
+- git diff HEAD^ HEAD --name-only: only two assigned code files and two documentation example files.
+- git diff HEAD^ HEAD -- .github/workflows internal/piruntime internal/release skills/first-officer/references skills/ensign/references: empty. XFAIL/lane assertions/shared runtime unchanged.
+- Independent pre-change/candidate doctor comparison: after excluding only affected probe lines/remedies, every other stdout line is identical; stderr and overall exit match too. All doctor stdout/stderr retained.
+- git diff --check and git diff --cached --name-only: clean/no staged code.
+
+Interpretation and limits:
+AC4 does reproduce with Pi 1.0.0, Node v24.13.1, npm 11.8.0, pi-subagents 0.75.0. No auth, global installation or actual runtime session was mutated. Disposable doctor's overall exit 1 reflects deliberately missing unrelated prerequisites, not failure to repair either accepted line. Stub launch proves only the actual readiness/argv boundary, not module execution or live supervisor talkback.
+No material task defect or unmet AC was found. Repository-wide commands are NOT claimed green. Candidate code LOC +287/-20 (net267) exceeds estimate (+60..+90 +/-25%); documentation +4/-4. Reported as FO scope-accounting advisory, not retroactive scope approval.
+One preliminary live-harness run incorrectly canonicalized macOS /tmp to /private/tmp when expecting the printed path; it failed before fault injection. The actual healthy doctor output was correct. Harness was corrected to lexical manifest-relative joining, then the entire transaction repeated in a NEW home. Both attempts are retained for transparency; no candidate was repaired.
+
+Reproduction of validator harnesses:
+Create a fresh dot-prefixed scratch directory directly under the assigned code worktree at the candidate revision; extract the three Python source sections below there (their parent must be the code worktree). Create <scratch>/logs with mkdir -p, then run go build -o <scratch>/spacedock ./cmd/spacedock in that worktree, then python3 <scratch>/mutations.py, python3 <scratch>/live.py, python3 <scratch>/matrix.py. Go overlays mutate throwaway source copies only; none of the scripts patches a tracked candidate. PATH must supply Go, Python 3, real Pi/Node/npm; live.py requires registry access. Supplied local Pi/Node executables are read-only and all install/settings/cache writes use an env-isolated disposable home. Captured absolute paths are evidence of this run, not required paths for another run.
+
+===== HARNESS mutations.py =====
+import pathlib, subprocess, json
+s=pathlib.Path(__file__).parent; w=s.parent
+prod=w/'internal/cli/pi.go'; test=w/'internal/cli/pi_frontdoor_test.go'
+cases=[
+ ('AC1-extension',prod,'res.extensionPath = cfg.extensionPath','res.extensionPath = filepath.Join(cfg.packageRoot, "src", "extension", "index.ts")','compiled'),
+ ('AC1-bridge',prod,'res.intercomBridgePath = cfg.intercomBridgePath','res.intercomBridgePath = filepath.Join(cfg.packageRoot, "src", "intercom", "intercom-bridge.ts")','compiled'),
+ ('AC2-extension',prod,'res.extensionPath != "" && ops.Stat(res.extensionPath) == nil','func() bool { _, err := os.Stat(filepath.Join(cfg.packageRoot, "package.json")); return err == nil }()','declared_extension'),
+ ('AC2-bridge',prod,'res.intercomBridgePath != "" && ops.Stat(res.intercomBridgePath) == nil','func() bool { _, err := os.Stat(filepath.Join(cfg.packageRoot, "package.json")); return err == nil }()','declared_bridge'),
+ ('AC3-manifest',test,'writeFileWithDirs(t, filepath.Join(pkg, "package.json"), string(raw))','_ = raw // falsifier: do not write the manifest','compiled'),
+]
+for name,path,old,new,subtest in cases:
+ text=path.read_text(); assert text.count(old)==1
+ mutated=s/(name+'.go'); mutated.write_text(text.replace(old,new))
+ overlay=s/(name+'.json'); overlay.write_text(json.dumps({'Replace':{str(path):str(mutated)}}))
+ cmd=['go','test','-overlay',str(overlay),'./internal/cli','-run','^TestPiSubagentsProbesResolveFromPackageManifest/'+subtest,'-count=1','-v']
+ result=subprocess.run(cmd,cwd=w,capture_output=True,text=True)
+ (s/'logs'/(name+'.txt')).write_text('$ '+' '.join(cmd)+'\n'+result.stdout+result.stderr+'\nEXIT '+str(result.returncode)+'\n')
+ print(name,'RED' if result.returncode else 'GREEN',result.returncode)
+ print('\n'.join(x for x in result.stdout.splitlines() if 'pi_frontdoor_test.go:' in x or 'FAIL' in x))
+ assert result.returncode!=0, name+' survived falsifier'
+# Build the pre-change binary and two stale-path binary falsifiers without touching candidate bytes.
+old=subprocess.check_output(['git','show','HEAD^:internal/cli/pi.go'],cwd=w,text=True)
+(s/'old-pi.go').write_text(old)
+(s/'old.json').write_text(json.dumps({'Replace':{str(prod):str(s/'old-pi.go')}}))
+for name,overlay in [('old',s/'old.json'),('stale-extension',s/'AC1-extension.json'),('stale-bridge',s/'AC1-bridge.json')]:
+ subprocess.run(['go','build','-overlay',str(overlay),'-o',str(s/('spacedock-'+name)),'./cmd/spacedock'],cwd=w,check=True)
+# AC4 printed successful no-op falsifier (only the affected lines in an overlay).
+text=prod.read_text(); old='"run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT"'
+# Alter extension's remedy only, not the skill or other lines.
+line='printPiCheck(w, c.extensionOK, "pi-subagents extension", c.extensionPath, '+old+')'
+assert text.count(line)==1
+text=text.replace(line,line.replace('`pi install npm:pi-subagents`','`true`'))
+(s/'noop-pi.go').write_text(text)
+(s/'noop.json').write_text(json.dumps({'Replace':{str(prod):str(s/'noop-pi.go')}}))
+subprocess.run(['go','build','-overlay',str(s/'noop.json'),'-o',str(s/'spacedock-noop'),'./cmd/spacedock'],cwd=w,check=True)
+
+===== HARNESS live.py =====
+import pathlib, subprocess, json, tempfile, os, shlex, hashlib, re
+s=pathlib.Path(__file__).parent; root=pathlib.Path(tempfile.mkdtemp(prefix='spacedock-validation-',dir='/tmp'))
+home=root/'home'; work=root/'work'; home.mkdir(); work.mkdir()
+env={'PATH':os.environ['PATH'],'HOME':str(home),'PI_CODING_AGENT_DIR':str(home/'.pi/agent'),'npm_config_cache':str(home/'.npm'),'npm_config_prefix':str(home/'.npm-global')}
+log=open(s/'logs/live.txt','w',buffering=1)
+def note(text): print(text,file=log); print(text)
+note('Isolation: '+shlex.join(['env','-i']+[k+'='+v for k,v in env.items()])+'; cwd='+str(work))
+def run(args):
+ r=subprocess.run(args,cwd=work,env=env,capture_output=True,text=True,timeout=180)
+ log.write('\n$ '+shlex.join(args)+'\nSTDOUT:\n'+r.stdout+'STDERR:\n'+r.stderr+'EXIT '+str(r.returncode)+'\n')
+ return r
+for args in [['pi','--version'],['node','--version'],['npm','--version'],[str(s/'spacedock'),'--version']]:
+ r=run(args); note(shlex.join(args)+' => '+str(r.returncode)+' '+r.stdout.strip())
+note('candidate SHA256 '+hashlib.sha256((s/'spacedock').read_bytes()).hexdigest())
+r=run(['pi','install','npm:pi-subagents']); assert r.returncode==0
+pkg=home/'.pi/agent/npm/node_modules/pi-subagents'
+def manifest(tag):
+ raw=(pkg/'package.json').read_text(); m=json.loads(raw); log.write('\nMANIFEST '+tag+'\n'+raw+'\n')
+ ext=pkg/m['pi']['extensions'][0]; bridge=pkg/m['exports']['./intercom-bridge']['default']
+ note(tag+' version='+m['version']+' extension='+str(ext)+' bridge='+str(bridge)); return ext,bridge
+ext,bridge=manifest('installed')
+plain=[str(p.relative_to(pkg)) for p in pkg.rglob('*.ts') if not p.name.endswith('.d.ts')]; note('Plain .ts files: '+json.dumps(plain)); assert not plain
+labels=['pi-subagents extension','pi-subagents intercom bridge']; targets=[ext,bridge]
+def doctor(binary='spacedock'): return run([str(s/binary),'doctor','--host','pi'])
+def assert_lines(r,states):
+ for label,path,state in zip(labels,targets,states):
+  line=state+' '+label+': '+str(path)
+  assert line in r.stdout.splitlines(), 'Absent exact line '+line
+healthy=doctor(); assert_lines(healthy,['OK','OK']); note('Healthy candidate: both exact declared lines OK; doctor exit='+str(healthy.returncode))
+old=doctor('spacedock-old'); assert all('MISSING '+label+':' in old.stdout for label in labels)
+def without_affected(text):
+ lines=text.splitlines(); kept=[]; skip=False
+ for line in lines:
+  if any(re.match(r'^(OK|MISSING) '+re.escape(label)+r':',line) for label in labels): skip=True; continue
+  if skip and line.startswith('  remedy:'): skip=False; continue
+  skip=False; kept.append(line)
+ return kept
+assert without_affected(old.stdout)==without_affected(healthy.stdout)
+assert old.stderr==healthy.stderr and old.returncode==healthy.returncode
+note('Pre-change vs candidate: both stale .ts lines MISSING -> OK; all other stdout lines, stderr and exit byte-identical after excluding only affected lines/remedies.')
+for i,target in enumerate(targets):
+ manifest('before remove '+labels[i]); note('$ rm '+str(target)); target.unlink()
+ before=doctor(); states=['OK','OK']; states[i]='MISSING'; assert_lines(before,states)
+ lines=before.stdout.splitlines(); line=next(j for j,x in enumerate(lines) if x.startswith('MISSING '+labels[i]+':'))
+ remedy=re.search(r'`([^`]+)`',lines[line+1]).group(1); assert remedy=='pi install npm:pi-subagents'
+ repaired=run(shlex.split(remedy)); assert repaired.returncode==0
+ manifest('after repair '+labels[i]); after=doctor(); assert_lines(after,['OK','OK'])
+ assert without_affected(before.stdout)==without_affected(after.stdout)
+ note(labels[i]+': MISSING -> printed '+repr(remedy)+' exit 0 -> OK; other probe OK throughout; doctor exits '+str(before.returncode)+','+str(after.returncode))
+# AC4: a printed no-op exits zero but must fail the exact same-line postcondition.
+note('$ rm '+str(ext)); ext.unlink(); before=doctor('spacedock-noop'); assert_lines(before,['MISSING','OK'])
+lines=before.stdout.splitlines(); j=next(j for j,x in enumerate(lines) if x.startswith('MISSING '+labels[0]+':'))
+remedy=re.search(r'`([^`]+)`',lines[j+1]).group(1); assert remedy=='true'
+assert run(shlex.split(remedy)).returncode==0
+after=doctor('spacedock-noop')
+try: assert_lines(after,['OK','OK'])
+except AssertionError as e: note('AC4 no-op falsifier RED: '+str(e)+'; printed true exited 0, same line remains MISSING')
+else: raise AssertionError('no-op falsifier stayed GREEN')
+# Return to health only by candidate printed remedy, then prove stale-path builds fail after installation succeeds.
+assert run(['pi','install','npm:pi-subagents']).returncode==0
+for binary,label in [('spacedock-stale-extension',labels[0]),('spacedock-stale-bridge',labels[1])]:
+ assert run(['pi','install','npm:pi-subagents']).returncode==0
+ r=doctor(binary)
+ try: assert_lines(r,['OK','OK'])
+ except AssertionError as e: note('AC4 '+binary+' falsifier RED: '+str(e)+'; installation exit 0 and stale probe remains MISSING')
+ else: raise AssertionError('stale-path falsifier stayed GREEN')
+manifest('final'); assert_lines(doctor(),['OK','OK']); note('AC4 independently reproduced in disposable home; no global mutation.')
+
+===== HARNESS matrix.py =====
+import pathlib, subprocess, os, json
+s=pathlib.Path(__file__).parent; root=s/'fixture'; root.mkdir(exist_ok=True)
+log=open(s/'logs/matrix.txt','w',buffering=1)
+def put(path,text='fixture\n'):
+ path.parent.mkdir(parents=True,exist_ok=True); path.write_text(text)
+home=root/'home'; work=root/'work'; work.mkdir(); pkg=root/'package'; intercom=root/'intercom'; repo=root/'spacedock'; bin=root/'bin'
+put(bin/'pi','#!/bin/sh\nif [ "$1" = "--version" ]; then echo 1.0.0; exit 0; fi\nprintf "LAUNCHED_ARG:%s\\n" "$@"\n'); (bin/'pi').chmod(0o755)
+for p in [home/'.pi/agent/auth.json',pkg/'skills/pi-subagents/SKILL.md',intercom/'skills/pi-intercom/SKILL.md',repo/'skills/ensign/SKILL.md',repo/'skills/first-officer/SKILL.md',repo/'.pi/extensions/spacedock.ts']: put(p)
+ext=pkg/'arbitrary Ω/build entry.mjs'; bridge=pkg/'different bridge/endpoint.cjs'; put(ext); put(bridge)
+base={'pi':{'extensions':['./arbitrary Ω/build entry.mjs']},'exports':{'./intercom-bridge':{'default':'./different bridge/endpoint.cjs'}}}
+env={'PATH':str(bin)+':'+os.environ['PATH'],'HOME':str(home),'PI_CODING_AGENT_DIR':str(home/'.pi/agent'),'PI_SUBAGENTS_PACKAGE_ROOT':str(pkg),'PI_INTERCOM_PACKAGE_ROOT':str(intercom)}
+log.write('Isolated real-filesystem fixture; stub pi proves launcher invocation only, not runtime loading/talkback.\nENV '+json.dumps(env)+'\n')
+cases=[('relocated Unicode/spaces',base,['OK','OK']),('bare string export',{'pi':base['pi'],'exports':{'./intercom-bridge':'./different bridge/endpoint.cjs'}},['OK','OK']),('first entry only',{'pi':{'extensions':base['pi']['extensions']+['./absent-second.js']},'exports':base['exports']},['OK','OK']),('empty extensions',{'pi':{'extensions':[]},'exports':base['exports']},['MISSING','OK']),('empty default',{'pi':base['pi'],'exports':{'./intercom-bridge':{'default':''}}},['OK','MISSING']),('removed exports',{'pi':base['pi']},['OK','MISSING']),('malformed JSON','{',['MISSING','MISSING']),('missing manifest',None,['MISSING','MISSING'])]
+for name,manifest,expected in cases:
+ p=pkg/'package.json'
+ if manifest is None: p.unlink()
+ else: put(p,manifest if isinstance(manifest,str) else json.dumps(manifest))
+ args=[str(s/'spacedock'),'doctor','--host','pi','--plugin-dir',str(repo)]
+ r=subprocess.run(args,env=env,cwd=work,capture_output=True,text=True)
+ log.write('\nCASE '+name+'\n$ '+' '.join(args)+'\n'+r.stdout+'STDERR:\n'+r.stderr+'EXIT '+str(r.returncode)+'\n')
+ lines=[]
+ for label,state in zip(['pi-subagents extension','pi-subagents intercom bridge'],expected):
+  line=next(l for l in r.stdout.splitlines() if l.startswith(state+' '+label))
+  lines.append(line)
+ ready=expected==['OK','OK']; assert r.returncode==(0 if ready else 1)
+ args=[str(s/'spacedock'),'pi','validation-marker','--plugin-dir',str(repo)]
+ launch=subprocess.run(args,env=env,cwd=work,capture_output=True,text=True)
+ log.write('$ '+' '.join(args)+'\n'+launch.stdout+'STDERR:\n'+launch.stderr+'EXIT '+str(launch.returncode)+'\n')
+ assert launch.returncode==(0 if ready else 1)
+ if ready:
+  assert 'LAUNCHED_ARG:'+str(ext) in launch.stdout
+  assert 'LAUNCHED_ARG:validation-marker' in launch.stdout
+ else:
+  assert 'LAUNCHED_ARG:' not in launch.stdout
+  assert 'Pi runtime is not ready' in launch.stderr
+ print(name,expected,'doctor exit',r.returncode,'actual launcher', 'READY, captured manifest extension' if ready else 'REFUSED without child launch')
+ print('\n'.join(lines))
+
+===== CAPTURE AC1-bridge.txt =====
+$ go test -overlay /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/AC1-bridge.json ./internal/cli -run ^TestPiSubagentsProbesResolveFromPackageManifest/compiled -count=1 -v
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches
+    pi_frontdoor_test.go:722: bridge line not OK at manifest path "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes3115133444/001/src/api/intercom-bridge.js":
+        Pi runtime check
+        OK pi CLI: /bin/pi
+        OK Pi auth: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest1238921206/002/.pi/agent/auth.json
+        OK pi-subagents extension: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes3115133444/001/index.js
+        OK pi-subagents skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes3115133444/001/skills/pi-subagents
+        INFO Pi auth/session dirs: auth=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest1238921206/002/.pi/agent/auth.json session=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest1238921206/002/.pi/agent/sessions
+        Supervisor-talkback setup prerequisites
+        MISSING pi-subagents intercom bridge: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes3115133444/001/src/intercom/intercom-bridge.ts
+          remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+        OK pi-intercom package root: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes3115133444/001-intercom
+        OK pi-intercom skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes3115133444/001-intercom/skills/pi-intercom
+        OK Spacedock package: /pkg-store/spacedock
+        OK Spacedock extension: /pkg-store/spacedock/.pi/extensions/spacedock.ts
+        OK Spacedock first-officer skill (package discovery): /pkg-store/spacedock/skills/first-officer
+        OK pi version: 0.85.1 (floor 0.83.0)
+        NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+        NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.311s
+FAIL
+
+EXIT 1
+
+===== CAPTURE AC1-extension.txt =====
+$ go test -overlay /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/AC1-extension.json ./internal/cli -run ^TestPiSubagentsProbesResolveFromPackageManifest/compiled -count=1 -v
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches
+    pi_frontdoor_test.go:719: extension line not OK at manifest path "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1484232992/001/index.js":
+        Pi runtime check
+        OK pi CLI: /bin/pi
+        OK Pi auth: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest946934768/002/.pi/agent/auth.json
+        MISSING pi-subagents extension: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1484232992/001/src/extension/index.ts
+          remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+        OK pi-subagents skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1484232992/001/skills/pi-subagents
+        INFO Pi auth/session dirs: auth=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest946934768/002/.pi/agent/auth.json session=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest946934768/002/.pi/agent/sessions
+        Supervisor-talkback setup prerequisites
+        OK pi-subagents intercom bridge: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1484232992/001/src/api/intercom-bridge.js
+        OK pi-intercom package root: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1484232992/001-intercom
+        OK pi-intercom skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1484232992/001-intercom/skills/pi-intercom
+        OK Spacedock package: /pkg-store/spacedock
+        OK Spacedock extension: /pkg-store/spacedock/.pi/extensions/spacedock.ts
+        OK Spacedock first-officer skill (package discovery): /pkg-store/spacedock/skills/first-officer
+        OK pi version: 0.85.1 (floor 0.83.0)
+        NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+        NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.305s
+FAIL
+
+EXIT 1
+
+===== CAPTURE AC2-bridge.txt =====
+$ go test -overlay /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/AC2-bridge.json ./internal/cli -run ^TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge -count=1 -v
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge_target_removed_reports_MISSING
+    pi_frontdoor_test.go:753: bridge line should be MISSING after its declared target is removed:
+        Pi runtime check
+        OK pi CLI: /bin/pi
+        OK Pi auth: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest7745789/002/.pi/agent/auth.json
+        OK pi-subagents extension: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_bridge_4294316840/001/index.js
+        OK pi-subagents skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_bridge_4294316840/001/skills/pi-subagents
+        INFO Pi auth/session dirs: auth=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest7745789/002/.pi/agent/auth.json session=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest7745789/002/.pi/agent/sessions
+        Supervisor-talkback setup prerequisites
+        OK pi-subagents intercom bridge: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_bridge_4294316840/001/src/api/intercom-bridge.js
+        OK pi-intercom package root: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_bridge_4294316840/001-intercom
+        OK pi-intercom skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_bridge_4294316840/001-intercom/skills/pi-intercom
+        OK Spacedock package: /pkg-store/spacedock
+        OK Spacedock extension: /pkg-store/spacedock/.pi/extensions/spacedock.ts
+        OK Spacedock first-officer skill (package discovery): /pkg-store/spacedock/skills/first-officer
+        OK pi version: 0.85.1 (floor 0.83.0)
+        NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+        NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge_target_removed_reports_MISSING (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.296s
+FAIL
+
+EXIT 1
+
+===== CAPTURE AC2-extension.txt =====
+$ go test -overlay /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/AC2-extension.json ./internal/cli -run ^TestPiSubagentsProbesResolveFromPackageManifest/declared_extension -count=1 -v
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/declared_extension_target_removed_reports_MISSING
+    pi_frontdoor_test.go:736: extension line should be MISSING after its declared target is removed:
+        Pi runtime check
+        OK pi CLI: /bin/pi
+        OK Pi auth: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest809569884/002/.pi/agent/auth.json
+        OK pi-subagents extension: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_extensi2808758507/001/index.js
+        OK pi-subagents skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_extensi2808758507/001/skills/pi-subagents
+        INFO Pi auth/session dirs: auth=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest809569884/002/.pi/agent/auth.json session=/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifest809569884/002/.pi/agent/sessions
+        Supervisor-talkback setup prerequisites
+        OK pi-subagents intercom bridge: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_extensi2808758507/001/src/api/intercom-bridge.js
+        OK pi-intercom package root: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_extensi2808758507/001-intercom
+        OK pi-intercom skill: /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestdeclared_extensi2808758507/001-intercom/skills/pi-intercom
+        OK Spacedock package: /pkg-store/spacedock
+        OK Spacedock extension: /pkg-store/spacedock/.pi/extensions/spacedock.ts
+        OK Spacedock first-officer skill (package discovery): /pkg-store/spacedock/skills/first-officer
+        OK pi version: 0.85.1 (floor 0.83.0)
+        NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+        NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.00s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/declared_extension_target_removed_reports_MISSING (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.474s
+FAIL
+
+EXIT 1
+
+===== CAPTURE AC3-manifest.txt =====
+$ go test -overlay /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/AC3-manifest.json ./internal/cli -run ^TestPiSubagentsProbesResolveFromPackageManifest/compiled -count=1 -v
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches
+    pi_frontdoor_test.go:710: fixture package.json missing: stat /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1940562503/001/package.json: no such file or directory
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.302s
+FAIL
+
+EXIT 1
+
+===== CAPTURE background.txt =====
+
+===== CAPTURE baseline-failures.txt =====
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (0.95s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+--- FAIL: TestVersionAmbiguousMarkersExitZero (0.00s)
+    version_session_test.go:305: --version output = "spacedock 0.28.0-pre3+dev\nOS: darwin/arm64\nChannel: edge (spacedock@spacedock-edge)\nRuntime: ambiguous (CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT)\nSandbox: none (safehouse available)\ncontract 3\n", want a whole line "Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	1.344s
+FAIL
+
+===== CAPTURE baseline-survey.txt =====
+--- FAIL: TestSurveyCodexPresenceThroughSync (2.69s)
+    survey_sync_codex_test.go:122: agentsview blanks Codex cwd, so blank_cwd must be > 0, got "0"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/skills/integration	3.053s
+FAIL
+
+===== CAPTURE candidate-files.txt =====
+docs/runtime-support.md
+docs/site/contributing/adding-a-runtime.md
+internal/cli/pi.go
+internal/cli/pi_frontdoor_test.go
+
+===== CAPTURE candidate-numstat.txt =====
+2	2	docs/runtime-support.md
+2	2	docs/site/contributing/adding-a-runtime.md
+63	6	internal/cli/pi.go
+224	14	internal/cli/pi_frontdoor_test.go
+
+===== CAPTURE changed-gofmt.txt =====
+
+===== CAPTURE docs-diff.txt =====
+diff --git a/docs/runtime-support.md b/docs/runtime-support.md
+index 727190565..0ac07b786 100644
+--- a/docs/runtime-support.md
++++ b/docs/runtime-support.md
+@@ -189,7 +189,7 @@ The harness did this:
+ 5. Launch `pi --print` with explicit local resources:
+ 
+    ```text
+-   --extension ~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
++   --extension ~/.pi/agent/npm/node_modules/pi-subagents/index.js
+    --skill ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+    --skill <spacedock checkout>/skills/first-officer
+    --skill <spacedock checkout>/skills/ensign
+@@ -244,7 +244,7 @@ For Pi, `spacedock pi` launches the proven front door by loading local resources
+ <spacedock checkout>/skills/first-officer
+ <spacedock checkout>/skills/ensign
+ ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+-~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
++~/.pi/agent/npm/node_modules/pi-subagents/index.js
+ ```
+ 
+ `spacedock install --host pi` installs Spacedock as a Pi package via `pi install` (idempotent; pass `--check` for a readiness check without installing). It is not a Claude/Codex-style marketplace plugin, and it accepts `--plugin-dir` as the dev-override install source (defaulting to the published package otherwise). Resolve the local skill checkout by running it from the checkout or setting `SPACEDOCK_REPO_ROOT`. `spacedock doctor --host pi` reports the Pi CLI, auth file, `pi-subagents` extension/skill, local Spacedock skill health, and supervisor-talkback setup prerequisites: the `pi-subagents` intercom bridge source, the resolved `PI_INTERCOM_PACKAGE_ROOT` package root, and the `pi-intercom` skill resource. Current `pi-subagents`/`pi-intercom` packages do not expose stable `pi-intercom` or `subagents-doctor` PATH commands, so readiness is based on package/resource paths instead of command shims. These doctor/install checks are necessary setup checks but insufficient to prove live supervisor talkback. Live proof still requires the cq-style `pi-intercom-supervisor-talkback` probe: progress update -> decision request -> supervisor reply -> child resume -> durable marker evidence. Live tests should not mutate global `~/.pi/agent`; they should keep using isolated Pi homes with copied auth.
+diff --git a/docs/site/contributing/adding-a-runtime.md b/docs/site/contributing/adding-a-runtime.md
+index 09b640046..d24e2141c 100644
+--- a/docs/site/contributing/adding-a-runtime.md
++++ b/docs/site/contributing/adding-a-runtime.md
+@@ -110,7 +110,7 @@ The harness did this:
+ 5. Launch `pi --print` with explicit local resources:
+ 
+     ```text
+-    --extension ~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
++    --extension ~/.pi/agent/npm/node_modules/pi-subagents/index.js
+     --skill ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+     --skill <spacedock checkout>/skills/first-officer
+     --skill <spacedock checkout>/skills/ensign
+@@ -191,7 +191,7 @@ For Pi, `spacedock pi` launches the front door through the registered Spacedock
+ <spacedock package root>/skills/first-officer
+ <spacedock package root>/skills/ensign
+ ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+-~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
++~/.pi/agent/npm/node_modules/pi-subagents/index.js
+ ```
+ 
+ `spacedock install --host pi` installs Spacedock as a Pi package via `pi install` (idempotent; pass `--check` for a readiness check without installing). It is not a Claude/Codex-style marketplace plugin, and it accepts `--plugin-dir` as the dev-override install source (defaulting to the published package otherwise). Resolve the local skill checkout by running it from the checkout or setting `SPACEDOCK_REPO_ROOT`. `spacedock doctor --host pi` reports the Pi CLI, auth file, `pi-subagents` extension/skill, local Spacedock skill health, and supervisor-talkback setup prerequisites: the `pi-subagents` intercom bridge source, the resolved `PI_INTERCOM_PACKAGE_ROOT` package root, and the `pi-intercom` skill resource. Current `pi-subagents`/`pi-intercom` packages do not expose stable `pi-intercom` or `subagents-doctor` PATH commands, so readiness is based on package/resource paths instead of command shims. These doctor/install checks are necessary setup checks but insufficient to prove live supervisor talkback. Live proof still requires the cq-style `pi-intercom-supervisor-talkback` probe: progress update -> decision request -> supervisor reply -> child resume -> durable marker evidence. Live tests should not mutate global `~/.pi/agent`; they should keep using isolated Pi homes with copied auth.
+
+===== CAPTURE focused-race.txt =====
+ok  	github.com/spacedock-dev/spacedock/internal/cli	1.717s
+
+===== CAPTURE focused.txt =====
+=== RUN   TestRunPi_DevOverridePassesSpacedockExtensionAndSkills
+--- PASS: TestRunPi_DevOverridePassesSpacedockExtensionAndSkills (0.00s)
+=== RUN   TestRunPi_DevOverrideWithoutExtensionFallsBackGracefully
+--- PASS: TestRunPi_DevOverrideWithoutExtensionFallsBackGracefully (0.00s)
+=== RUN   TestRunPi_InstalledPathDoesNotPassSpacedockExtension
+--- PASS: TestRunPi_InstalledPathDoesNotPassSpacedockExtension (0.00s)
+=== RUN   TestPiDoctorReportsMissingAndHealthyRuntime
+=== RUN   TestPiDoctorReportsMissingAndHealthyRuntime/missing
+=== RUN   TestPiDoctorReportsMissingAndHealthyRuntime/openai-api-key-auth
+=== RUN   TestPiDoctorReportsMissingAndHealthyRuntime/healthy
+--- PASS: TestPiDoctorReportsMissingAndHealthyRuntime (0.00s)
+    --- PASS: TestPiDoctorReportsMissingAndHealthyRuntime/missing (0.00s)
+    --- PASS: TestPiDoctorReportsMissingAndHealthyRuntime/openai-api-key-auth (0.00s)
+    --- PASS: TestPiDoctorReportsMissingAndHealthyRuntime/healthy (0.00s)
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/declared_extension_target_removed_reports_MISSING
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge_target_removed_reports_MISSING
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/removed_exports_entry_reports_MISSING
+--- PASS: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.00s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/declared_extension_target_removed_reports_MISSING (0.00s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge_target_removed_reports_MISSING (0.00s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/removed_exports_entry_reports_MISSING (0.00s)
+=== RUN   TestRunPi_SetsTasklessMarkerIffNoTaskOrResume
+=== RUN   TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskless_installed
+=== RUN   TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskless_dev_override
+=== RUN   TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskful
+=== RUN   TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/resume_passthrough
+=== RUN   TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskless_wrap
+=== RUN   TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskful_wrap
+--- PASS: TestRunPi_SetsTasklessMarkerIffNoTaskOrResume (0.02s)
+    --- PASS: TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskless_installed (0.00s)
+    --- PASS: TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskless_dev_override (0.00s)
+    --- PASS: TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskful (0.00s)
+    --- PASS: TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/resume_passthrough (0.00s)
+    --- PASS: TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskless_wrap (0.00s)
+    --- PASS: TestRunPi_SetsTasklessMarkerIffNoTaskOrResume/taskful_wrap (0.00s)
+=== RUN   TestRunPi_SetsLaunchMarkerEnvOnEveryLaunchShape
+=== RUN   TestRunPi_SetsLaunchMarkerEnvOnEveryLaunchShape/installed
+=== RUN   TestRunPi_SetsLaunchMarkerEnvOnEveryLaunchShape/dev_override
+--- PASS: TestRunPi_SetsLaunchMarkerEnvOnEveryLaunchShape (0.01s)
+    --- PASS: TestRunPi_SetsLaunchMarkerEnvOnEveryLaunchShape/installed (0.00s)
+    --- PASS: TestRunPi_SetsLaunchMarkerEnvOnEveryLaunchShape/dev_override (0.00s)
+=== RUN   TestRunPi_ReadyGateRequiresSpacedockExtension
+--- PASS: TestRunPi_ReadyGateRequiresSpacedockExtension (0.00s)
+=== RUN   TestRunPi_ReadyGateRequiresFirstOfficerSkill
+--- PASS: TestRunPi_ReadyGateRequiresFirstOfficerSkill (0.00s)
+=== RUN   TestRunPi_ReadyGateRefusesSubFloorPiVersion
+=== RUN   TestRunPi_ReadyGateRefusesSubFloorPiVersion/0.82.9
+=== RUN   TestRunPi_ReadyGateRefusesSubFloorPiVersion/0.83.0
+=== RUN   TestRunPi_ReadyGateRefusesSubFloorPiVersion/0.85.1
+=== RUN   TestRunPi_ReadyGateRefusesSubFloorPiVersion/1.0.0
+=== RUN   TestRunPi_ReadyGateRefusesSubFloorPiVersion/dev_
+=== RUN   TestRunPi_ReadyGateRefusesSubFloorPiVersion/garbage
+--- PASS: TestRunPi_ReadyGateRefusesSubFloorPiVersion (0.01s)
+    --- PASS: TestRunPi_ReadyGateRefusesSubFloorPiVersion/0.82.9 (0.00s)
+    --- PASS: TestRunPi_ReadyGateRefusesSubFloorPiVersion/0.83.0 (0.00s)
+    --- PASS: TestRunPi_ReadyGateRefusesSubFloorPiVersion/0.85.1 (0.00s)
+    --- PASS: TestRunPi_ReadyGateRefusesSubFloorPiVersion/1.0.0 (0.00s)
+    --- PASS: TestRunPi_ReadyGateRefusesSubFloorPiVersion/dev_ (0.00s)
+    --- PASS: TestRunPi_ReadyGateRefusesSubFloorPiVersion/garbage (0.00s)
+=== RUN   TestRunPi_WarnsOnDuplicateSpacedockRegistration
+--- PASS: TestRunPi_WarnsOnDuplicateSpacedockRegistration (0.00s)
+=== RUN   TestRunPi_WarnsOnDevOverrideDoubleExtension
+--- PASS: TestRunPi_WarnsOnDevOverrideDoubleExtension (0.00s)
+=== RUN   TestPiDoctorReportsFirstOfficerVersionDuplicates
+=== RUN   TestPiDoctorReportsFirstOfficerVersionDuplicates/healthy_floors_and_duplicates_flagged
+=== RUN   TestPiDoctorReportsFirstOfficerVersionDuplicates/sub-floor_version_flagged_as_stale-org_signal
+=== RUN   TestPiDoctorReportsFirstOfficerVersionDuplicates/missing_first-officer_and_extension_lines
+--- PASS: TestPiDoctorReportsFirstOfficerVersionDuplicates (0.00s)
+    --- PASS: TestPiDoctorReportsFirstOfficerVersionDuplicates/healthy_floors_and_duplicates_flagged (0.00s)
+    --- PASS: TestPiDoctorReportsFirstOfficerVersionDuplicates/sub-floor_version_flagged_as_stale-org_signal (0.00s)
+    --- PASS: TestPiDoctorReportsFirstOfficerVersionDuplicates/missing_first-officer_and_extension_lines (0.00s)
+=== RUN   TestRunPi_LaunchArgv0_StableForMultishell
+--- PASS: TestRunPi_LaunchArgv0_StableForMultishell (0.00s)
+=== RUN   TestRunPi_LaunchArgv0_StableUnderWrapWithAddDirs
+--- PASS: TestRunPi_LaunchArgv0_StableUnderWrapWithAddDirs (0.00s)
+=== RUN   TestRunPi_LaunchEnvForwarding
+--- PASS: TestRunPi_LaunchEnvForwarding (0.00s)
+=== RUN   TestRunPi_LaunchArgv0_UnchangedForDirect
+--- PASS: TestRunPi_LaunchArgv0_UnchangedForDirect (0.00s)
+=== RUN   TestRunPi_WrapCarriesLaunchMarker
+--- PASS: TestRunPi_WrapCarriesLaunchMarker (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/cli	0.390s
+
+===== CAPTURE full.exit =====
+1
+
+===== CAPTURE full.txt =====
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	(cached)
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (0.72s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+--- FAIL: TestVersionAmbiguousMarkersExitZero (0.00s)
+    version_session_test.go:305: --version output = "spacedock 0.28.0-pre3+dev\nOS: darwin/arm64\nChannel: edge (spacedock@spacedock-edge)\nRuntime: ambiguous (CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT)\nSandbox: none (safehouse available)\ncontract 3\n", want a whole line "Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	157.577s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	0.923s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	71.934s
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	277.632s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	0.933s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	0.782s
+ok  	github.com/spacedock-dev/spacedock/internal/release	26.311s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	0.508s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	(cached)
+ok  	github.com/spacedock-dev/spacedock/internal/status	61.374s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	(cached)
+--- FAIL: TestSurveyCodexPresenceThroughSync (2.72s)
+    survey_sync_codex_test.go:122: agentsview blanks Codex cwd, so blank_cwd must be > 0, got "0"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/skills/integration	13.331s
+FAIL
+
+===== CAPTURE gofmt.txt =====
+internal/release/runtime_live_evidence_workflow_test.go
+
+===== CAPTURE installed-gate.txt =====
+Real installed pi-subagents 0.75.0; other prerequisites are real-filesystem fixtures, Pi executable is argv-capturing stub (no live runtime claim).
+ENV {"PATH": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin:/Users/clkao/.pi/agent/bin:/Applications/Paseo.app/Contents/Resources/bin:/Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin:/Users/clkao/.bun/bin:/Users/clkao/go/bin:/Users/clkao/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/quarto/bin", "HOME": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home", "PI_CODING_AGENT_DIR": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent", "PI_SUBAGENTS_PACKAGE_ROOT": "/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents", "PI_INTERCOM_PACKAGE_ROOT": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom"}
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 0
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+STDOUT:
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills
+LAUNCHED_ARG:validation-marker
+STDERR:
+spacedock 0.28.0-pre3+dev · launching pi as your first officer
+Workflows: .validation-euqnAv/baseline/docs/dev docs/dev
+Sandbox: not wrapping this launch (no .safehouse profile)
+pi is your first officer — ask it for the queue and next steps.
+EXIT 0
+
+Pre-change same-installed-package readiness baseline
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-old pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+MISSING pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/intercom/intercom-bridge.ts
+  remedy: install/update pi-subagents or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`
+EXIT 1
+
+===== CAPTURE live-first-attempt-summary.txt =====
+Isolation: env -i PATH=/Users/clkao/.pi/agent/bin:/Applications/Paseo.app/Contents/Resources/bin:/Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin:/Users/clkao/.bun/bin:/Users/clkao/go/bin:/Users/clkao/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/quarto/bin HOME=/tmp/spacedock-validation-scy9m8u0/home PI_CODING_AGENT_DIR=/tmp/spacedock-validation-scy9m8u0/home/.pi/agent npm_config_cache=/tmp/spacedock-validation-scy9m8u0/home/.npm npm_config_prefix=/tmp/spacedock-validation-scy9m8u0/home/.npm-global; cwd=/tmp/spacedock-validation-scy9m8u0/work
+pi --version => 0 1.0.0
+node --version => 0 v24.13.1
+npm --version => 0 11.8.0
+/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock --version => 0 spacedock 0.28.0-pre3+dev
+OS: darwin/arm64
+Channel: edge (spacedock@spacedock-edge)
+Runtime: pi (PI_CODING_AGENT_DIR)
+Sandbox: none (safehouse available)
+contract 3
+candidate SHA256 f00e1bcb31f93950fb4335ec996ed6306a51403e970cd2ba9edb842a39224b4f
+installed version=0.75.0 extension=/private/tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/private/tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+Plain .ts files: []
+Traceback (most recent call last):
+  File "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/live.py", line 29, in <module>
+    healthy=doctor(); assert_lines(healthy,['OK','OK']); note('Healthy candidate: both exact declared lines OK; doctor exit='+str(healthy.returncode))
+                      ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/live.py", line 28, in assert_lines
+    assert line in r.stdout.splitlines(), 'Absent exact line '+line
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Absent exact line OK pi-subagents extension: /private/tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+
+===== CAPTURE live-first-attempt.txt =====
+Isolation: env -i PATH=/Users/clkao/.pi/agent/bin:/Applications/Paseo.app/Contents/Resources/bin:/Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin:/Users/clkao/.bun/bin:/Users/clkao/go/bin:/Users/clkao/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/quarto/bin HOME=/tmp/spacedock-validation-scy9m8u0/home PI_CODING_AGENT_DIR=/tmp/spacedock-validation-scy9m8u0/home/.pi/agent npm_config_cache=/tmp/spacedock-validation-scy9m8u0/home/.npm npm_config_prefix=/tmp/spacedock-validation-scy9m8u0/home/.npm-global; cwd=/tmp/spacedock-validation-scy9m8u0/work
+
+$ pi --version
+STDOUT:
+1.0.0
+STDERR:
+EXIT 0
+pi --version => 0 1.0.0
+
+$ node --version
+STDOUT:
+v24.13.1
+STDERR:
+EXIT 0
+node --version => 0 v24.13.1
+
+$ npm --version
+STDOUT:
+11.8.0
+STDERR:
+EXIT 0
+npm --version => 0 11.8.0
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock --version
+STDOUT:
+spacedock 0.28.0-pre3+dev
+OS: darwin/arm64
+Channel: edge (spacedock@spacedock-edge)
+Runtime: pi (PI_CODING_AGENT_DIR)
+Sandbox: none (safehouse available)
+contract 3
+STDERR:
+EXIT 0
+/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock --version => 0 spacedock 0.28.0-pre3+dev
+OS: darwin/arm64
+Channel: edge (spacedock@spacedock-edge)
+Runtime: pi (PI_CODING_AGENT_DIR)
+Sandbox: none (safehouse available)
+contract 3
+candidate SHA256 f00e1bcb31f93950fb4335ec996ed6306a51403e970cd2ba9edb842a39224b4f
+
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+added 5 packages, and audited 7 packages in 1s
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+npm notice
+npm notice New minor version of npm available! 11.8.0 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice
+EXIT 0
+
+MANIFEST installed
+{
+  "type": "module",
+  "name": "pi-subagents",
+  "version": "0.75.0",
+  "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
+  "author": "Nico Bailon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+  },
+  "homepage": "https://github.com/nicobailon/pi-subagents#readme",
+  "bugs": {
+    "url": "https://github.com/nicobailon/pi-subagents/issues"
+  },
+  "bin": {
+    "pi-subagents": "install.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "jiti": "2.7.0",
+    "undici": "8.10.2",
+    "yaml": "2.8.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": ">=0.86.1",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "subagents",
+    "ai",
+    "agents",
+    "cli"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./background-work": {
+      "types": "./src/api/background-work.d.ts",
+      "default": "./src/api/background-work.js"
+    },
+    "./external-job-provider": {
+      "types": "./src/api/external-job-provider.d.ts",
+      "default": "./src/api/external-job-provider.js"
+    },
+    "./external-runs": {
+      "types": "./src/api/external-runs.d.ts",
+      "default": "./src/api/external-runs.js"
+    },
+    "./agents": {
+      "types": "./src/api/agents.d.ts",
+      "default": "./src/api/agents.js"
+    },
+    "./inspectors": {
+      "types": "./src/api/inspectors.d.ts",
+      "default": "./src/api/inspectors.js"
+    },
+    "./delegation": {
+      "types": "./src/api/delegation.d.ts",
+      "default": "./src/api/delegation.js"
+    },
+    "./capability-ceiling": {
+      "types": "./src/api/capability-ceiling.d.ts",
+      "default": "./src/api/capability-ceiling.js"
+    },
+    "./workflow-resources": {
+      "types": "./src/api/workflow-resources.d.ts",
+      "default": "./src/api/workflow-resources.js"
+    },
+    "./required-child-extensions": {
+      "types": "./src/api/required-child-extensions.d.ts",
+      "default": "./src/api/required-child-extensions.js"
+    },
+    "./preflight": {
+      "types": "./src/api/preflight.d.ts",
+      "default": "./src/api/preflight.js"
+    },
+    "./control-channel": {
+      "types": "./src/api/control-channel.d.ts",
+      "default": "./src/api/control-channel.js"
+    },
+    "./intercom-bridge": {
+      "types": "./src/api/intercom-bridge.d.ts",
+      "default": "./src/api/intercom-bridge.js"
+    },
+    "./child-tool-plan": {
+      "types": "./src/api/child-tool-plan.d.ts",
+      "default": "./src/api/child-tool-plan.js"
+    },
+    "./shared-types": {
+      "types": "./src/api/shared-types.d.ts",
+      "default": "./src/api/shared-types.js"
+    },
+    "./project-panes": {
+      "types": "./src/api/project-panes.d.ts",
+      "default": "./src/api/project-panes.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}
+
+installed version=0.75.0 extension=/private/tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/private/tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+Plain .ts files: []
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-scy9m8u0/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-scy9m8u0/home/.pi/agent/auth.json session=/tmp/spacedock-validation-scy9m8u0/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-scy9m8u0/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+
+===== CAPTURE live-summary.txt =====
+Isolation: env -i PATH=/Users/clkao/.pi/agent/bin:/Applications/Paseo.app/Contents/Resources/bin:/Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin:/Users/clkao/.bun/bin:/Users/clkao/go/bin:/Users/clkao/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/quarto/bin HOME=/tmp/spacedock-validation-k_wx7s8m/home PI_CODING_AGENT_DIR=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent npm_config_cache=/tmp/spacedock-validation-k_wx7s8m/home/.npm npm_config_prefix=/tmp/spacedock-validation-k_wx7s8m/home/.npm-global; cwd=/tmp/spacedock-validation-k_wx7s8m/work
+pi --version => 0 1.0.0
+node --version => 0 v24.13.1
+npm --version => 0 11.8.0
+/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock --version => 0 spacedock 0.28.0-pre3+dev
+OS: darwin/arm64
+Channel: edge (spacedock@spacedock-edge)
+Runtime: pi (PI_CODING_AGENT_DIR)
+Sandbox: none (safehouse available)
+contract 3
+candidate SHA256 f00e1bcb31f93950fb4335ec996ed6306a51403e970cd2ba9edb842a39224b4f
+installed version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+Plain .ts files: []
+Healthy candidate: both exact declared lines OK; doctor exit=1
+Pre-change vs candidate: both stale .ts lines MISSING -> OK; all other stdout lines, stderr and exit byte-identical after excluding only affected lines/remedies.
+before remove pi-subagents extension version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+$ rm /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+after repair pi-subagents extension version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+pi-subagents extension: MISSING -> printed 'pi install npm:pi-subagents' exit 0 -> OK; other probe OK throughout; doctor exits 1,1
+before remove pi-subagents intercom bridge version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+$ rm /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+after repair pi-subagents intercom bridge version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+pi-subagents intercom bridge: MISSING -> printed 'pi install npm:pi-subagents' exit 0 -> OK; other probe OK throughout; doctor exits 1,1
+$ rm /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+AC4 no-op falsifier RED: Absent exact line OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js; printed true exited 0, same line remains MISSING
+AC4 spacedock-stale-extension falsifier RED: Absent exact line OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js; installation exit 0 and stale probe remains MISSING
+AC4 spacedock-stale-bridge falsifier RED: Absent exact line OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js; installation exit 0 and stale probe remains MISSING
+final version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+AC4 independently reproduced in disposable home; no global mutation.
+
+===== CAPTURE live.txt =====
+Isolation: env -i PATH=/Users/clkao/.pi/agent/bin:/Applications/Paseo.app/Contents/Resources/bin:/Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin:/Users/clkao/.bun/bin:/Users/clkao/go/bin:/Users/clkao/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/quarto/bin HOME=/tmp/spacedock-validation-k_wx7s8m/home PI_CODING_AGENT_DIR=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent npm_config_cache=/tmp/spacedock-validation-k_wx7s8m/home/.npm npm_config_prefix=/tmp/spacedock-validation-k_wx7s8m/home/.npm-global; cwd=/tmp/spacedock-validation-k_wx7s8m/work
+
+$ pi --version
+STDOUT:
+1.0.0
+STDERR:
+EXIT 0
+pi --version => 0 1.0.0
+
+$ node --version
+STDOUT:
+v24.13.1
+STDERR:
+EXIT 0
+node --version => 0 v24.13.1
+
+$ npm --version
+STDOUT:
+11.8.0
+STDERR:
+EXIT 0
+npm --version => 0 11.8.0
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock --version
+STDOUT:
+spacedock 0.28.0-pre3+dev
+OS: darwin/arm64
+Channel: edge (spacedock@spacedock-edge)
+Runtime: pi (PI_CODING_AGENT_DIR)
+Sandbox: none (safehouse available)
+contract 3
+STDERR:
+EXIT 0
+/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock --version => 0 spacedock 0.28.0-pre3+dev
+OS: darwin/arm64
+Channel: edge (spacedock@spacedock-edge)
+Runtime: pi (PI_CODING_AGENT_DIR)
+Sandbox: none (safehouse available)
+contract 3
+candidate SHA256 f00e1bcb31f93950fb4335ec996ed6306a51403e970cd2ba9edb842a39224b4f
+
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+added 5 packages, and audited 7 packages in 1s
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+npm notice
+npm notice New minor version of npm available! 11.8.0 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice
+EXIT 0
+
+MANIFEST installed
+{
+  "type": "module",
+  "name": "pi-subagents",
+  "version": "0.75.0",
+  "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
+  "author": "Nico Bailon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+  },
+  "homepage": "https://github.com/nicobailon/pi-subagents#readme",
+  "bugs": {
+    "url": "https://github.com/nicobailon/pi-subagents/issues"
+  },
+  "bin": {
+    "pi-subagents": "install.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "jiti": "2.7.0",
+    "undici": "8.10.2",
+    "yaml": "2.8.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": ">=0.86.1",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "subagents",
+    "ai",
+    "agents",
+    "cli"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./background-work": {
+      "types": "./src/api/background-work.d.ts",
+      "default": "./src/api/background-work.js"
+    },
+    "./external-job-provider": {
+      "types": "./src/api/external-job-provider.d.ts",
+      "default": "./src/api/external-job-provider.js"
+    },
+    "./external-runs": {
+      "types": "./src/api/external-runs.d.ts",
+      "default": "./src/api/external-runs.js"
+    },
+    "./agents": {
+      "types": "./src/api/agents.d.ts",
+      "default": "./src/api/agents.js"
+    },
+    "./inspectors": {
+      "types": "./src/api/inspectors.d.ts",
+      "default": "./src/api/inspectors.js"
+    },
+    "./delegation": {
+      "types": "./src/api/delegation.d.ts",
+      "default": "./src/api/delegation.js"
+    },
+    "./capability-ceiling": {
+      "types": "./src/api/capability-ceiling.d.ts",
+      "default": "./src/api/capability-ceiling.js"
+    },
+    "./workflow-resources": {
+      "types": "./src/api/workflow-resources.d.ts",
+      "default": "./src/api/workflow-resources.js"
+    },
+    "./required-child-extensions": {
+      "types": "./src/api/required-child-extensions.d.ts",
+      "default": "./src/api/required-child-extensions.js"
+    },
+    "./preflight": {
+      "types": "./src/api/preflight.d.ts",
+      "default": "./src/api/preflight.js"
+    },
+    "./control-channel": {
+      "types": "./src/api/control-channel.d.ts",
+      "default": "./src/api/control-channel.js"
+    },
+    "./intercom-bridge": {
+      "types": "./src/api/intercom-bridge.d.ts",
+      "default": "./src/api/intercom-bridge.js"
+    },
+    "./child-tool-plan": {
+      "types": "./src/api/child-tool-plan.d.ts",
+      "default": "./src/api/child-tool-plan.js"
+    },
+    "./shared-types": {
+      "types": "./src/api/shared-types.d.ts",
+      "default": "./src/api/shared-types.js"
+    },
+    "./project-panes": {
+      "types": "./src/api/project-panes.d.ts",
+      "default": "./src/api/project-panes.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}
+
+installed version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+Plain .ts files: []
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+Healthy candidate: both exact declared lines OK; doctor exit=1
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-old doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+MISSING pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/intercom/intercom-bridge.ts
+  remedy: install/update pi-subagents or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+Pre-change vs candidate: both stale .ts lines MISSING -> OK; all other stdout lines, stderr and exit byte-identical after excluding only affected lines/remedies.
+
+MANIFEST before remove pi-subagents extension
+{
+  "type": "module",
+  "name": "pi-subagents",
+  "version": "0.75.0",
+  "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
+  "author": "Nico Bailon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+  },
+  "homepage": "https://github.com/nicobailon/pi-subagents#readme",
+  "bugs": {
+    "url": "https://github.com/nicobailon/pi-subagents/issues"
+  },
+  "bin": {
+    "pi-subagents": "install.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "jiti": "2.7.0",
+    "undici": "8.10.2",
+    "yaml": "2.8.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": ">=0.86.1",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "subagents",
+    "ai",
+    "agents",
+    "cli"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./background-work": {
+      "types": "./src/api/background-work.d.ts",
+      "default": "./src/api/background-work.js"
+    },
+    "./external-job-provider": {
+      "types": "./src/api/external-job-provider.d.ts",
+      "default": "./src/api/external-job-provider.js"
+    },
+    "./external-runs": {
+      "types": "./src/api/external-runs.d.ts",
+      "default": "./src/api/external-runs.js"
+    },
+    "./agents": {
+      "types": "./src/api/agents.d.ts",
+      "default": "./src/api/agents.js"
+    },
+    "./inspectors": {
+      "types": "./src/api/inspectors.d.ts",
+      "default": "./src/api/inspectors.js"
+    },
+    "./delegation": {
+      "types": "./src/api/delegation.d.ts",
+      "default": "./src/api/delegation.js"
+    },
+    "./capability-ceiling": {
+      "types": "./src/api/capability-ceiling.d.ts",
+      "default": "./src/api/capability-ceiling.js"
+    },
+    "./workflow-resources": {
+      "types": "./src/api/workflow-resources.d.ts",
+      "default": "./src/api/workflow-resources.js"
+    },
+    "./required-child-extensions": {
+      "types": "./src/api/required-child-extensions.d.ts",
+      "default": "./src/api/required-child-extensions.js"
+    },
+    "./preflight": {
+      "types": "./src/api/preflight.d.ts",
+      "default": "./src/api/preflight.js"
+    },
+    "./control-channel": {
+      "types": "./src/api/control-channel.d.ts",
+      "default": "./src/api/control-channel.js"
+    },
+    "./intercom-bridge": {
+      "types": "./src/api/intercom-bridge.d.ts",
+      "default": "./src/api/intercom-bridge.js"
+    },
+    "./child-tool-plan": {
+      "types": "./src/api/child-tool-plan.d.ts",
+      "default": "./src/api/child-tool-plan.js"
+    },
+    "./shared-types": {
+      "types": "./src/api/shared-types.d.ts",
+      "default": "./src/api/shared-types.js"
+    },
+    "./project-panes": {
+      "types": "./src/api/project-panes.d.ts",
+      "default": "./src/api/project-panes.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}
+
+before remove pi-subagents extension version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+$ rm /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+MISSING pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 12 packages in 993ms
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+EXIT 0
+
+MANIFEST after repair pi-subagents extension
+{
+  "type": "module",
+  "name": "pi-subagents",
+  "version": "0.75.0",
+  "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
+  "author": "Nico Bailon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+  },
+  "homepage": "https://github.com/nicobailon/pi-subagents#readme",
+  "bugs": {
+    "url": "https://github.com/nicobailon/pi-subagents/issues"
+  },
+  "bin": {
+    "pi-subagents": "install.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "jiti": "2.7.0",
+    "undici": "8.10.2",
+    "yaml": "2.8.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": ">=0.86.1",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "subagents",
+    "ai",
+    "agents",
+    "cli"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./background-work": {
+      "types": "./src/api/background-work.d.ts",
+      "default": "./src/api/background-work.js"
+    },
+    "./external-job-provider": {
+      "types": "./src/api/external-job-provider.d.ts",
+      "default": "./src/api/external-job-provider.js"
+    },
+    "./external-runs": {
+      "types": "./src/api/external-runs.d.ts",
+      "default": "./src/api/external-runs.js"
+    },
+    "./agents": {
+      "types": "./src/api/agents.d.ts",
+      "default": "./src/api/agents.js"
+    },
+    "./inspectors": {
+      "types": "./src/api/inspectors.d.ts",
+      "default": "./src/api/inspectors.js"
+    },
+    "./delegation": {
+      "types": "./src/api/delegation.d.ts",
+      "default": "./src/api/delegation.js"
+    },
+    "./capability-ceiling": {
+      "types": "./src/api/capability-ceiling.d.ts",
+      "default": "./src/api/capability-ceiling.js"
+    },
+    "./workflow-resources": {
+      "types": "./src/api/workflow-resources.d.ts",
+      "default": "./src/api/workflow-resources.js"
+    },
+    "./required-child-extensions": {
+      "types": "./src/api/required-child-extensions.d.ts",
+      "default": "./src/api/required-child-extensions.js"
+    },
+    "./preflight": {
+      "types": "./src/api/preflight.d.ts",
+      "default": "./src/api/preflight.js"
+    },
+    "./control-channel": {
+      "types": "./src/api/control-channel.d.ts",
+      "default": "./src/api/control-channel.js"
+    },
+    "./intercom-bridge": {
+      "types": "./src/api/intercom-bridge.d.ts",
+      "default": "./src/api/intercom-bridge.js"
+    },
+    "./child-tool-plan": {
+      "types": "./src/api/child-tool-plan.d.ts",
+      "default": "./src/api/child-tool-plan.js"
+    },
+    "./shared-types": {
+      "types": "./src/api/shared-types.d.ts",
+      "default": "./src/api/shared-types.js"
+    },
+    "./project-panes": {
+      "types": "./src/api/project-panes.d.ts",
+      "default": "./src/api/project-panes.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}
+
+after repair pi-subagents extension version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+pi-subagents extension: MISSING -> printed 'pi install npm:pi-subagents' exit 0 -> OK; other probe OK throughout; doctor exits 1,1
+
+MANIFEST before remove pi-subagents intercom bridge
+{
+  "type": "module",
+  "name": "pi-subagents",
+  "version": "0.75.0",
+  "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
+  "author": "Nico Bailon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+  },
+  "homepage": "https://github.com/nicobailon/pi-subagents#readme",
+  "bugs": {
+    "url": "https://github.com/nicobailon/pi-subagents/issues"
+  },
+  "bin": {
+    "pi-subagents": "install.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "jiti": "2.7.0",
+    "undici": "8.10.2",
+    "yaml": "2.8.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": ">=0.86.1",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "subagents",
+    "ai",
+    "agents",
+    "cli"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./background-work": {
+      "types": "./src/api/background-work.d.ts",
+      "default": "./src/api/background-work.js"
+    },
+    "./external-job-provider": {
+      "types": "./src/api/external-job-provider.d.ts",
+      "default": "./src/api/external-job-provider.js"
+    },
+    "./external-runs": {
+      "types": "./src/api/external-runs.d.ts",
+      "default": "./src/api/external-runs.js"
+    },
+    "./agents": {
+      "types": "./src/api/agents.d.ts",
+      "default": "./src/api/agents.js"
+    },
+    "./inspectors": {
+      "types": "./src/api/inspectors.d.ts",
+      "default": "./src/api/inspectors.js"
+    },
+    "./delegation": {
+      "types": "./src/api/delegation.d.ts",
+      "default": "./src/api/delegation.js"
+    },
+    "./capability-ceiling": {
+      "types": "./src/api/capability-ceiling.d.ts",
+      "default": "./src/api/capability-ceiling.js"
+    },
+    "./workflow-resources": {
+      "types": "./src/api/workflow-resources.d.ts",
+      "default": "./src/api/workflow-resources.js"
+    },
+    "./required-child-extensions": {
+      "types": "./src/api/required-child-extensions.d.ts",
+      "default": "./src/api/required-child-extensions.js"
+    },
+    "./preflight": {
+      "types": "./src/api/preflight.d.ts",
+      "default": "./src/api/preflight.js"
+    },
+    "./control-channel": {
+      "types": "./src/api/control-channel.d.ts",
+      "default": "./src/api/control-channel.js"
+    },
+    "./intercom-bridge": {
+      "types": "./src/api/intercom-bridge.d.ts",
+      "default": "./src/api/intercom-bridge.js"
+    },
+    "./child-tool-plan": {
+      "types": "./src/api/child-tool-plan.d.ts",
+      "default": "./src/api/child-tool-plan.js"
+    },
+    "./shared-types": {
+      "types": "./src/api/shared-types.d.ts",
+      "default": "./src/api/shared-types.js"
+    },
+    "./project-panes": {
+      "types": "./src/api/project-panes.d.ts",
+      "default": "./src/api/project-panes.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}
+
+before remove pi-subagents intercom bridge version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+$ rm /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 17 packages in 1s
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+EXIT 0
+
+MANIFEST after repair pi-subagents intercom bridge
+{
+  "type": "module",
+  "name": "pi-subagents",
+  "version": "0.75.0",
+  "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
+  "author": "Nico Bailon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+  },
+  "homepage": "https://github.com/nicobailon/pi-subagents#readme",
+  "bugs": {
+    "url": "https://github.com/nicobailon/pi-subagents/issues"
+  },
+  "bin": {
+    "pi-subagents": "install.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "jiti": "2.7.0",
+    "undici": "8.10.2",
+    "yaml": "2.8.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": ">=0.86.1",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "subagents",
+    "ai",
+    "agents",
+    "cli"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./background-work": {
+      "types": "./src/api/background-work.d.ts",
+      "default": "./src/api/background-work.js"
+    },
+    "./external-job-provider": {
+      "types": "./src/api/external-job-provider.d.ts",
+      "default": "./src/api/external-job-provider.js"
+    },
+    "./external-runs": {
+      "types": "./src/api/external-runs.d.ts",
+      "default": "./src/api/external-runs.js"
+    },
+    "./agents": {
+      "types": "./src/api/agents.d.ts",
+      "default": "./src/api/agents.js"
+    },
+    "./inspectors": {
+      "types": "./src/api/inspectors.d.ts",
+      "default": "./src/api/inspectors.js"
+    },
+    "./delegation": {
+      "types": "./src/api/delegation.d.ts",
+      "default": "./src/api/delegation.js"
+    },
+    "./capability-ceiling": {
+      "types": "./src/api/capability-ceiling.d.ts",
+      "default": "./src/api/capability-ceiling.js"
+    },
+    "./workflow-resources": {
+      "types": "./src/api/workflow-resources.d.ts",
+      "default": "./src/api/workflow-resources.js"
+    },
+    "./required-child-extensions": {
+      "types": "./src/api/required-child-extensions.d.ts",
+      "default": "./src/api/required-child-extensions.js"
+    },
+    "./preflight": {
+      "types": "./src/api/preflight.d.ts",
+      "default": "./src/api/preflight.js"
+    },
+    "./control-channel": {
+      "types": "./src/api/control-channel.d.ts",
+      "default": "./src/api/control-channel.js"
+    },
+    "./intercom-bridge": {
+      "types": "./src/api/intercom-bridge.d.ts",
+      "default": "./src/api/intercom-bridge.js"
+    },
+    "./child-tool-plan": {
+      "types": "./src/api/child-tool-plan.d.ts",
+      "default": "./src/api/child-tool-plan.js"
+    },
+    "./shared-types": {
+      "types": "./src/api/shared-types.d.ts",
+      "default": "./src/api/shared-types.js"
+    },
+    "./project-panes": {
+      "types": "./src/api/project-panes.d.ts",
+      "default": "./src/api/project-panes.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}
+
+after repair pi-subagents intercom bridge version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+pi-subagents intercom bridge: MISSING -> printed 'pi install npm:pi-subagents' exit 0 -> OK; other probe OK throughout; doctor exits 1,1
+$ rm /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-noop doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+MISSING pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+  remedy: run `true` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+
+$ true
+STDOUT:
+STDERR:
+EXIT 0
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-noop doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+MISSING pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+  remedy: run `true` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+AC4 no-op falsifier RED: Absent exact line OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js; printed true exited 0, same line remains MISSING
+
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 22 packages in 958ms
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+EXIT 0
+
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 27 packages in 1s
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+EXIT 0
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-stale-extension doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+MISSING pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+AC4 spacedock-stale-extension falsifier RED: Absent exact line OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js; installation exit 0 and stale probe remains MISSING
+
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 32 packages in 5s
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+EXIT 0
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-stale-bridge doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/intercom/intercom-bridge.ts
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+AC4 spacedock-stale-bridge falsifier RED: Absent exact line OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js; installation exit 0 and stale probe remains MISSING
+
+MANIFEST final
+{
+  "type": "module",
+  "name": "pi-subagents",
+  "version": "0.75.0",
+  "description": "Pi extension for single-agent delegation and scripted multi-agent workflows",
+  "author": "Nico Bailon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicobailon/pi-subagents.git"
+  },
+  "homepage": "https://github.com/nicobailon/pi-subagents#readme",
+  "bugs": {
+    "url": "https://github.com/nicobailon/pi-subagents/issues"
+  },
+  "bin": {
+    "pi-subagents": "install.mjs"
+  },
+  "dependencies": {
+    "acorn": "8.18.0",
+    "jiti": "2.7.0",
+    "undici": "8.10.2",
+    "yaml": "2.8.3"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-ai": ">=0.86.1",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-agent-core": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "keywords": [
+    "pi-package",
+    "pi",
+    "pi-coding-agent",
+    "subagents",
+    "ai",
+    "agents",
+    "cli"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./background-work": {
+      "types": "./src/api/background-work.d.ts",
+      "default": "./src/api/background-work.js"
+    },
+    "./external-job-provider": {
+      "types": "./src/api/external-job-provider.d.ts",
+      "default": "./src/api/external-job-provider.js"
+    },
+    "./external-runs": {
+      "types": "./src/api/external-runs.d.ts",
+      "default": "./src/api/external-runs.js"
+    },
+    "./agents": {
+      "types": "./src/api/agents.d.ts",
+      "default": "./src/api/agents.js"
+    },
+    "./inspectors": {
+      "types": "./src/api/inspectors.d.ts",
+      "default": "./src/api/inspectors.js"
+    },
+    "./delegation": {
+      "types": "./src/api/delegation.d.ts",
+      "default": "./src/api/delegation.js"
+    },
+    "./capability-ceiling": {
+      "types": "./src/api/capability-ceiling.d.ts",
+      "default": "./src/api/capability-ceiling.js"
+    },
+    "./workflow-resources": {
+      "types": "./src/api/workflow-resources.d.ts",
+      "default": "./src/api/workflow-resources.js"
+    },
+    "./required-child-extensions": {
+      "types": "./src/api/required-child-extensions.d.ts",
+      "default": "./src/api/required-child-extensions.js"
+    },
+    "./preflight": {
+      "types": "./src/api/preflight.d.ts",
+      "default": "./src/api/preflight.js"
+    },
+    "./control-channel": {
+      "types": "./src/api/control-channel.d.ts",
+      "default": "./src/api/control-channel.js"
+    },
+    "./intercom-bridge": {
+      "types": "./src/api/intercom-bridge.d.ts",
+      "default": "./src/api/intercom-bridge.js"
+    },
+    "./child-tool-plan": {
+      "types": "./src/api/child-tool-plan.d.ts",
+      "default": "./src/api/child-tool-plan.js"
+    },
+    "./shared-types": {
+      "types": "./src/api/shared-types.d.ts",
+      "default": "./src/api/shared-types.js"
+    },
+    "./project-panes": {
+      "types": "./src/api/project-panes.d.ts",
+      "default": "./src/api/project-panes.js"
+    }
+  },
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ],
+    "skills": [
+      "./skills"
+    ],
+    "prompts": [
+      "./prompts"
+    ]
+  }
+}
+
+final version=0.75.0 extension=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js bridge=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+AC4 independently reproduced in disposable home; no global mutation.
+
+AC4 SECOND NO-OP FALSIFIER, bridge only; same isolated environment
+$ rm /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-noop-bridge doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+  remedy: run `true` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+$ true
+STDOUT:
+STDERR:
+EXIT 0
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock-noop-bridge doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+  remedy: run `true` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+AC4 bridge no-op falsifier RED: printed true exits 0, bridge remains MISSING while extension stays OK.
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+$ pi install npm:pi-subagents
+STDOUT:
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 37 packages in 769ms
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+STDERR:
+EXIT 0
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi
+STDOUT:
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/auth.json session=/tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-validation-k_wx7s8m/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+Final package version 0.75.0
+
+===== CAPTURE manifest.txt =====
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/declared_extension_target_removed_reports_MISSING
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge_target_removed_reports_MISSING
+=== RUN   TestPiSubagentsProbesResolveFromPackageManifest/removed_exports_entry_reports_MISSING
+--- PASS: TestPiSubagentsProbesResolveFromPackageManifest (0.03s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.01s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/declared_extension_target_removed_reports_MISSING (0.01s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge_target_removed_reports_MISSING (0.00s)
+    --- PASS: TestPiSubagentsProbesResolveFromPackageManifest/removed_exports_entry_reports_MISSING (0.00s)
+PASS
+ok  	github.com/spacedock-dev/spacedock/internal/cli	0.423s
+
+===== CAPTURE matrix-summary.txt =====
+relocated Unicode/spaces ['OK', 'OK'] doctor exit 0 actual launcher READY, captured manifest extension
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+bare string export ['OK', 'OK'] doctor exit 0 actual launcher READY, captured manifest extension
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+first entry only ['OK', 'OK'] doctor exit 0 actual launcher READY, captured manifest extension
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+empty extensions ['MISSING', 'OK'] doctor exit 1 actual launcher REFUSED without child launch
+MISSING pi-subagents extension
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+empty default ['OK', 'MISSING'] doctor exit 1 actual launcher REFUSED without child launch
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+MISSING pi-subagents intercom bridge
+removed exports ['OK', 'MISSING'] doctor exit 1 actual launcher REFUSED without child launch
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+MISSING pi-subagents intercom bridge
+malformed JSON ['MISSING', 'MISSING'] doctor exit 1 actual launcher REFUSED without child launch
+MISSING pi-subagents extension
+MISSING pi-subagents intercom bridge
+missing manifest ['MISSING', 'MISSING'] doctor exit 1 actual launcher REFUSED without child launch
+MISSING pi-subagents extension
+MISSING pi-subagents intercom bridge
+
+===== CAPTURE matrix.txt =====
+Isolated real-filesystem fixture; stub pi proves launcher invocation only, not runtime loading/talkback.
+ENV {"PATH": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin:/Users/clkao/.pi/agent/bin:/Applications/Paseo.app/Contents/Resources/bin:/Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin:/Users/clkao/.bun/bin:/Users/clkao/go/bin:/Users/clkao/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/quarto/bin", "HOME": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home", "PI_CODING_AGENT_DIR": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent", "PI_SUBAGENTS_PACKAGE_ROOT": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package", "PI_INTERCOM_PACKAGE_ROOT": "/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom"}
+
+CASE relocated Unicode/spaces
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 0
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills
+LAUNCHED_ARG:validation-marker
+STDERR:
+spacedock 0.28.0-pre3+dev · launching pi as your first officer
+Workflow: docs/dev
+Sandbox: not wrapping this launch (no .safehouse profile)
+pi is your first officer — ask it for the queue and next steps.
+EXIT 0
+
+CASE bare string export
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 0
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills
+LAUNCHED_ARG:validation-marker
+STDERR:
+spacedock 0.28.0-pre3+dev · launching pi as your first officer
+Workflow: docs/dev
+Sandbox: not wrapping this launch (no .safehouse profile)
+pi is your first officer — ask it for the queue and next steps.
+EXIT 0
+
+CASE first entry only
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 0
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+LAUNCHED_ARG:--extension
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+LAUNCHED_ARG:--skill
+LAUNCHED_ARG:/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills
+LAUNCHED_ARG:validation-marker
+STDERR:
+spacedock 0.28.0-pre3+dev · launching pi as your first officer
+Workflow: docs/dev
+Sandbox: not wrapping this launch (no .safehouse profile)
+pi is your first officer — ask it for the queue and next steps.
+EXIT 0
+
+CASE empty extensions
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+MISSING pi-subagents extension
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+MISSING pi-subagents extension
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/different bridge/endpoint.cjs
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`
+EXIT 1
+
+CASE empty default
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`
+EXIT 1
+
+CASE removed exports
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+OK pi-subagents extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/arbitrary Ω/build entry.mjs
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`
+EXIT 1
+
+CASE malformed JSON
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+MISSING pi-subagents extension
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+MISSING pi-subagents extension
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`
+EXIT 1
+
+CASE missing manifest
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock doctor --host pi --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+MISSING pi-subagents extension
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+EXIT 1
+$ /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/spacedock pi validation-marker --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+Pi runtime check
+OK pi CLI: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/bin/pi
+OK Pi auth: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json
+MISSING pi-subagents extension
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/package/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/auth.json session=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+OK pi-intercom package root: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom
+OK pi-intercom skill: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/intercom/skills/pi-intercom
+OK Spacedock package: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock
+OK Spacedock extension: /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/.pi/extensions/spacedock.ts
+OK Spacedock first-officer skill (package discovery): /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout/.validation-euqnAv/fixture/spacedock/skills/first-officer
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+STDERR:
+spacedock pi: Pi runtime is not ready; run `spacedock doctor --host pi` or `spacedock install --host pi`
+EXIT 1
+
+===== CAPTURE merged-tree.txt =====
+
+===== CAPTURE mutation-summary.txt =====
+AC1-extension RED 1
+    pi_frontdoor_test.go:719: extension line not OK at manifest path "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1484232992/001/index.js":
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.305s
+FAIL
+AC1-bridge RED 1
+    pi_frontdoor_test.go:722: bridge line not OK at manifest path "/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes3115133444/001/src/api/intercom-bridge.js":
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.311s
+FAIL
+AC2-extension RED 1
+    pi_frontdoor_test.go:736: extension line should be MISSING after its declared target is removed:
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.00s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/declared_extension_target_removed_reports_MISSING (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.474s
+FAIL
+AC2-bridge RED 1
+    pi_frontdoor_test.go:753: bridge line should be MISSING after its declared target is removed:
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/declared_bridge_target_removed_reports_MISSING (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.296s
+FAIL
+AC3-manifest RED 1
+    pi_frontdoor_test.go:710: fixture package.json missing: stat /var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/TestPiSubagentsProbesResolveFromPackageManifestcompiled_manifes1940562503/001/package.json: no such file or directory
+--- FAIL: TestPiSubagentsProbesResolveFromPackageManifest (0.01s)
+    --- FAIL: TestPiSubagentsProbesResolveFromPackageManifest/compiled_manifest_reports_both_lines_OK_and_launches (0.00s)
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	0.302s
+FAIL
+
+===== CAPTURE production-diff.txt =====
+diff --git a/internal/cli/pi.go b/internal/cli/pi.go
+index 62742ac89..790a5c531 100644
+--- a/internal/cli/pi.go
++++ b/internal/cli/pi.go
+@@ -208,6 +208,7 @@ type piRuntimeConfig struct {
+ 	packageRoot           string
+ 	intercomPackageRoot   string
+ 	extensionPath         string
++	intercomBridgePath    string
+ 	subagentsSkill        string
+ 	authPath              string
+ 	openAIAPIKey          string
+@@ -249,6 +250,8 @@ type piCheckResult struct {
+ 	repoRoot            string
+ 	authPath            string
+ 	sessionDir          string
++	extensionPath       string
++	intercomBridgePath  string
+ }
+ 
+ func runPi(ctx context.Context, args []string, dir string, env []string, ops piRuntimeOps, stdout, stderr io.Writer) int {
+@@ -300,7 +303,8 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
+ 	// permission-mode flag is added on the wrap arm — safehouse isolation alone is
+ 	// the boundary, and the operator's --tools/--exclude-tools passthrough wins.
+ 	// When pi-subagents is registered in settings.json `packages`, pi's own
+-	// package discovery loads <pkg>/index.ts (re-exporting ./src/extension/index.ts)
++	// package discovery loads the package's declared pi.extensions entry (the
++	// package manifest's own entry, not an assumed source path)
+ 	// as the sole extension specifier — passing the explicit --extension/--skill
+ 	// would register a second specifier for the same extension and collide
+ 	// (Tool "subagent" conflicts). Gate the explicit flags on the package NOT
+@@ -572,6 +576,55 @@ func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host str
+ 	return host, check, pluginDir, 0
+ }
+ 
++// resolvePiSubagentsEntries resolves the pi-subagents extension and intercom
++// bridge entry paths from the package's own package.json — the artifact pi
++// itself reads — rather than assuming a TypeScript source layout the installed
++// package does not ship. The extension is the first pi.extensions entry; the
++// bridge is the exports["./intercom-bridge"] subpath, either a bare target
++// string or an object whose "default" condition holds the target. Both are
++// resolved relative to packageRoot. A missing or unparseable manifest, or a
++// missing declaration, yields "" so the probes fail closed instead of falling
++// back to a guessed path.
++func resolvePiSubagentsEntries(packageRoot string) (extensionPath, intercomBridgePath string) {
++	raw, err := os.ReadFile(filepath.Join(packageRoot, "package.json"))
++	if err != nil {
++		return "", ""
++	}
++	var manifest struct {
++		Pi struct {
++			Extensions []string `json:"extensions"`
++		} `json:"pi"`
++		Exports map[string]json.RawMessage `json:"exports"`
++	}
++	if err := json.Unmarshal(raw, &manifest); err != nil {
++		return "", ""
++	}
++	resolve := func(subpath string) string {
++		if subpath == "" {
++			return ""
++		}
++		return filepath.Join(packageRoot, filepath.FromSlash(subpath))
++	}
++	if len(manifest.Pi.Extensions) > 0 {
++		extensionPath = resolve(manifest.Pi.Extensions[0])
++	}
++	if raw := manifest.Exports["./intercom-bridge"]; len(raw) > 0 {
++		var target string
++		if json.Unmarshal(raw, &target) != nil {
++			var conditions struct {
++				Default string `json:"default"`
++			}
++			if json.Unmarshal(raw, &conditions) == nil {
++				target = conditions.Default
++			} else {
++				target = ""
++			}
++		}
++		intercomBridgePath = resolve(target)
++	}
++	return extensionPath, intercomBridgePath
++}
++
+ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig {
+ 	_ = dir
+ 	envMap := envMap(env)
+@@ -614,11 +667,13 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
+ 		sessionDir = filepath.Join(home, ".pi", "agent", "sessions")
+ 		sessionDirSource = "default ~/.pi/agent/sessions"
+ 	}
++	extensionPath, intercomBridgePath := resolvePiSubagentsEntries(pkg)
+ 	return piRuntimeConfig{
+ 		repoRoot:              repo,
+ 		packageRoot:           pkg,
+ 		intercomPackageRoot:   intercomPkg,
+-		extensionPath:         filepath.Join(pkg, "src", "extension", "index.ts"),
++		extensionPath:         extensionPath,
++		intercomBridgePath:    intercomBridgePath,
+ 		subagentsSkill:        filepath.Join(pkg, "skills", "pi-subagents"),
+ 		authPath:              authPath,
+ 		openAIAPIKey:          envMap["OPENAI_API_KEY"],
+@@ -644,10 +699,12 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
+ 		authPath:            cfg.authPath,
+ 		sessionDir:          cfg.sessionDir,
+ 	}
++	res.extensionPath = cfg.extensionPath
++	res.intercomBridgePath = cfg.intercomBridgePath
+ 	res.authOK = ops.Stat(cfg.authPath) == nil || strings.TrimSpace(cfg.openAIAPIKey) != ""
+-	res.extensionOK = ops.Stat(cfg.extensionPath) == nil
++	res.extensionOK = res.extensionPath != "" && ops.Stat(res.extensionPath) == nil
+ 	res.subagentsSkillOK = ops.Stat(filepath.Join(cfg.subagentsSkill, "SKILL.md")) == nil
+-	res.subagentsIntercomBridgeOK = ops.Stat(filepath.Join(cfg.packageRoot, "src", "intercom", "intercom-bridge.ts")) == nil
++	res.subagentsIntercomBridgeOK = res.intercomBridgePath != "" && ops.Stat(res.intercomBridgePath) == nil
+ 	res.intercomPackageOK = ops.Stat(cfg.intercomPackageRoot) == nil
+ 	res.intercomSkillOK = ops.Stat(filepath.Join(cfg.intercomPackageRoot, "skills", "pi-intercom", "SKILL.md")) == nil
+ 	// The retired repo-path Stat checks (firstOfficerOK/ensignOK) are replaced by
+@@ -774,11 +831,11 @@ func printPiDoctorReport(w io.Writer, c piCheckResult) {
+ 	fmt.Fprintln(w, "Pi runtime check")
+ 	printPiCheck(w, c.piBinOK, "pi CLI", c.piBin, "install Pi and ensure `pi` is on PATH")
+ 	printPiCheck(w, c.authOK, "Pi auth", c.authPath, "run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR")
+-	printPiCheck(w, c.extensionOK, "pi-subagents extension", filepath.Join(c.packageRoot, "src", "extension", "index.ts"), "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
++	printPiCheck(w, c.extensionOK, "pi-subagents extension", c.extensionPath, "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
+ 	printPiCheck(w, c.subagentsSkillOK, "pi-subagents skill", filepath.Join(c.packageRoot, "skills", "pi-subagents"), "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
+ 	fmt.Fprintf(w, "INFO Pi auth/session dirs: auth=%s session=%s\n", c.authPath, c.sessionDir)
+ 	fmt.Fprintln(w, "Supervisor-talkback setup prerequisites")
+-	printPiCheck(w, c.subagentsIntercomBridgeOK, "pi-subagents intercom bridge", filepath.Join(c.packageRoot, "src", "intercom", "intercom-bridge.ts"), "install/update pi-subagents or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge")
++	printPiCheck(w, c.subagentsIntercomBridgeOK, "pi-subagents intercom bridge", c.intercomBridgePath, "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge")
+ 	printPiCheck(w, c.intercomPackageOK, "pi-intercom package root", c.intercomPackageRoot, "set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root")
+ 	printPiCheck(w, c.intercomSkillOK, "pi-intercom skill", filepath.Join(c.intercomPackageRoot, "skills", "pi-intercom"), "install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md")
+ 	printPiCheck(w, c.spacedockPackageOK, "Spacedock package", piPackageReportPath(c.packageStatus), "run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)")
+
+===== CAPTURE protected-surfaces-diff.txt =====
+
+===== CAPTURE race.exit =====
+1
+
+===== CAPTURE race.txt =====
+?   	github.com/spacedock-dev/spacedock	[no test files]
+?   	github.com/spacedock-dev/spacedock/cmd/spacedock	[no test files]
+ok  	github.com/spacedock-dev/spacedock/cmd/spacedock-release	2.571s
+ok  	github.com/spacedock-dev/spacedock/internal/claudeteam	1.933s
+--- FAIL: TestCodexResolveManifestAgainstInstalledHost (2.30s)
+    codex_resolve_test.go:44: spacedock@spacedock not installed in codex, but resolver returned "/Users/clkao/.codex/plugins/cache/spacedock-local/spacedock/0.28.0-pre0/.codex-plugin/plugin.json"
+--- FAIL: TestVersionAmbiguousMarkersExitZero (0.00s)
+    version_session_test.go:305: --version output = "spacedock 0.28.0-pre3+dev\nOS: darwin/arm64\nChannel: edge (spacedock@spacedock-edge)\nRuntime: ambiguous (CODEX_THREAD_ID, CLAUDECODE, PI_CODING_AGENT)\nSandbox: none (safehouse available)\ncontract 3\n", want a whole line "Runtime: ambiguous (CODEX_THREAD_ID, CLAUDECODE)"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/internal/cli	249.405s
+ok  	github.com/spacedock-dev/spacedock/internal/contract	5.110s
+ok  	github.com/spacedock-dev/spacedock/internal/contractlint	12.092s
+ok  	github.com/spacedock-dev/spacedock/internal/dispatch	121.110s
+ok  	github.com/spacedock-dev/spacedock/internal/ensigncycle	353.980s
+ok  	github.com/spacedock-dev/spacedock/internal/gates	81.693s
+ok  	github.com/spacedock-dev/spacedock/internal/gitsource	10.675s
+ok  	github.com/spacedock-dev/spacedock/internal/hostneutrality	3.651s
+ok  	github.com/spacedock-dev/spacedock/internal/journeymetrics	3.182s
+ok  	github.com/spacedock-dev/spacedock/internal/livescenario	7.683s
+ok  	github.com/spacedock-dev/spacedock/internal/piruntime	2.374s
+ok  	github.com/spacedock-dev/spacedock/internal/release	49.633s
+ok  	github.com/spacedock-dev/spacedock/internal/runtimehost	1.374s
+ok  	github.com/spacedock-dev/spacedock/internal/safehouse	1.382s
+ok  	github.com/spacedock-dev/spacedock/internal/statesync	9.195s
+ok  	github.com/spacedock-dev/spacedock/internal/status	107.739s
+ok  	github.com/spacedock-dev/spacedock/internal/testgit	2.250s
+--- FAIL: TestSurveyCodexPresenceThroughSync (2.87s)
+    survey_sync_codex_test.go:122: agentsview blanks Codex cwd, so blank_cwd must be > 0, got "0"
+FAIL
+FAIL	github.com/spacedock-dev/spacedock/skills/integration	14.896s
+FAIL
+
+===== CAPTURE revisions.txt =====
+1f41f289faad73fa1ce14684b80ee920e502f89e
+12b695f262253d013b1b092abe4eebea61348b8d
+dc7d9a0cdef60bbacd4c293437b75cc789f0e313
+
+===== CAPTURE scratch-gofmt-before.txt =====
+internal/release/runtime_live_evidence_workflow_test.go
+
+===== CAPTURE scratch-gofmt.txt =====
+gofmt -w ./cmd ./internal: exit=0 (candidate archive only; canonical worktree untouched)
