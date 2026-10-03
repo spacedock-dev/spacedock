@@ -312,3 +312,46 @@ Command: `/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock status --r
 ```json
 {"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"162","unevidenced":"false","citations":[{"line":"262","text":"  AC-1 measures installed versions and existing live results against an independent npm snapshot; AC-1 through AC-5 each name a falsifying edit."},{"line":"262","text":"  AC-1 measures installed versions and existing live results against an independent npm snapshot; AC-1 through AC-5 each name a falsifying edit."},{"line":"273","text":"- DONE: AC-1 proof plan: independent npm version/hash snapshot plus Go pin guard and unchanged green pi-live run; revert-agent-pin must fail (live proof remains pending implementation)."}]},{"id":"AC-2","line":"173","unevidenced":"false","citations":[{"line":"274","text":"- DONE: AC-2 proof plan/evidence: guard both setup checkpoints and exercise actual manifest files; real-tarball missing-target probes fail; restore-setup-source-assertion and remove-bridge-target falsify it."}]},{"id":"AC-3","line":"184","unevidenced":"false","citations":[{"line":"275","text":"- DONE: AC-3 proof plan/evidence: guard all verified_pack call sites; actual function exits 1 for corrupt-subagents-integrity and accepts the published hash."}]},{"id":"AC-4","line":"193","unevidenced":"false","citations":[{"line":"276","text":"- DONE: AC-4 proof plan: one-off doc-command/comment comparison to the independent registry snapshot; restore-stale-doc-version must produce a mismatch."}]},{"id":"AC-5","line":"203","unevidenced":"false","citations":[{"line":"262","text":"  AC-1 measures installed versions and existing live results against an independent npm snapshot; AC-1 through AC-5 each name a falsifying edit."},{"line":"277","text":"- DONE: AC-5 proof plan/evidence: baseline suites/build and protected-boundary audit; focused release/registry/build pass, broad baseline failures noted above; downgrade-other-lane-checkout must fail the existing guard."}]}]}
 ```
+
+
+## Stage Report: implementation
+
+- DONE: The three pins name the published family with verified sha512 integrity values, and the lane installs that family.
+  Code commit `ed19357ef` (branch `spacedock-ensign/pi-live-lane-pin-refresh`): the extracted install step succeeded in an isolated local HOME/npm prefix on macOS, Node 24.13.1/npm 11.8.0; installed-name/version checks logged 1.0.0 / 0.75.0 / 0.16.0. This is not a green CI claim (AC-1).
+- DONE: All four hardcoded TypeScript assertions at lines 669, 671, 777, and 779 are replaced by assertions derived from the installed package's own declarations, and no TypeScript source path remains.
+  Both executable checkpoint blocks read installed package.json; no old source assertions remain in the workflow. Their exact replacement checks are enumerated below (AC-2).
+- DONE: The workflow comments and docs/runtime-live-ci.md state the pinned family consistently, and the repository's release-machinery checks pass.
+  `go test ./internal/release/...` passed; one-off doc/comment comparison agrees with the independent npm snapshot, retains the distinct 0.83.0 floor, and rejects restore-stale-doc-version (AC-4).
+- DONE: Add deterministic tests before editing pins, with an independent published snapshot and negative wiring mutations.
+  New guard first failed on the old workflow, then passed with 34 mutation cases covering all old versions/hashes, corrupt hashes, commented pins, removed/bypassed pack calls, tarball-install bypasses, wrong owning job, both checks' declarations/file validation, and all four restored source assertions (AC-1/2/3).
+- DONE: Exercise both actual Node bodies against the real packed and installed pi-subagents 0.75.0 package.
+  Both passed; each exited 1 for either hidden runtime target, either target replaced by a directory, missing/empty extensions, missing bridge default, types-only bridge, and a missing second extension; restored packages passed. These fail if existence/declaration enforcement or all-extension iteration is removed (AC-2).
+- DONE: Exercise the actual verified_pack integrity failure path.
+  Extracted workflow function accepted the published subagents hash (exit 0), rejected `sha512-corrupted-for-negative-probe` (exit 1 before installation); disabling its mismatch exit in the temporary probe returned 0 and falsified the bad-hash expectation. Independent SHA-512 of all three packed tarballs matched registry values (AC-3).
+- DONE: Preserve compatibility guard, doctor invocation, launcher, other lanes, journeys, XFAILs, grading, and Node/action settings.
+  Extracted unchanged compatibility step passed its real pi-ai 1.0.0 /compat dynamic import; protected-boundary comparison against base `25a67d219` found all other steps/jobs byte-identical and separately confirmed doctor invocation unchanged; a checkout downgrade failed that audit (AC-5).
+- DONE: Run focused validation and formatting/build checks.
+  `go test ./internal/contractlint -run '^TestRuntimeLiveRegistryReconciliation$' -count=1`, `go build ./...`, `gofmt -w ./cmd ./internal`, and `git diff --check` passed; unrelated pre-existing formatting was restored to keep exactly three changed code files (+200/-15).
+- FAILED: Repository-wide `go test ./...` and `go test ./... -race` (both exit 1).
+  Both reproduced known baseline failures: TestCodexResolveManifestAgainstInstalledHost (local plugin cache), TestVersionAmbiguousMarkersExitZero (ambient PI_CODING_AGENT), TestSurveyCodexPresenceThroughSync (blank_cwd=0), and internal/ensigncycle package timeout at 10m. No unrelated fixes were made (AC-5 remains incomplete).
+- FAILED: Current-checkout doctor against the installed published family.
+  Strict-shell extracted setup probe exited 1: only the unchanged doctor's extension/bridge source probes were MISSING; CLI 1.0.0, auth, skills, intercom root, and floor checks passed. The separate `mc` dependency owns this fix; nothing was bypassed (AC-1).
+- SKIPPED: Green pi-live CI run and detached adversarial reviewer audit.
+  No CI run URL/SHA or journey/smoke grades are claimed; full live proof awaits the separate doctor fix and CI approval, and independent review remains required before merge (AC-1).
+
+### Registry commands and returned integrity values
+
+- `npm view @earendil-works/pi-coding-agent@1.0.0 name version dist.integrity --json` → `sha512-/FtbxoSQU/mEv1QnichJjRjqteqaIaMWxmhB4G367+MwZfX7/DI5B9YAg5lqbN7nztFskBEtUSZ+FlmMBECtMw==`
+- `npm view pi-subagents@0.75.0 name version dist.integrity --json` → `sha512-RO4DiTJM6pnK8y9PnD7Y6TLeiX2c8Kh6QhmkecFo+ou5qtnz5qiM+vUKru48UmJG1nB9eJ6rALd1M04uBOR4XQ==`
+- `npm view pi-intercom@0.16.0 name version dist.integrity --json` → `sha512-ClGQuovPsz7r1iQwMRjEN+8wxywfrDrMILAkCSf/z19Nezzyfz77U8362Wb/VFNoZOwmF4PBsuGWCtB9AsEJMQ==`
+
+### Exact replacement assertions
+
+- Install, former 669: read `$pi_npm_root/node_modules/pi-subagents/package.json`; require nonempty `pi.extensions`; every entry must be a nonempty string resolving relative to that package root to a regular file.
+- Install, former 671: read that same manifest's `exports["./intercom-bridge"].default`; require a nonempty runtime string resolving relative to that root to a regular file (not the types declaration).
+- Current-checkout setup, former 777: read `$PI_SUBAGENTS_PACKAGE_ROOT/package.json`; require nonempty `pi.extensions`; every entry must be a nonempty string resolving relative to that root to a regular file.
+- Current-checkout setup, former 779: read that same manifest's `exports["./intercom-bridge"].default`; require a nonempty runtime string resolving relative to that root to a regular file (not the types declaration).
+
+### Summary
+
+Committed the bounded three-file Pi 1.0 refresh, with independently registry-verified pins, manifest-driven assertions at both checkpoints, and a 34-negative-case structural guard. Local install, manifest/integrity experiments, compatibility import, release checks, reconciliation, and build pass; full suites reproduce baseline failures and live acceptance remains blocked by the unchanged doctor probes. Local raw validation logs are under `/tmp/pi-live-pin-refresh.TRTQoZ/`; the copied temporary auth file was removed, and no launcher/journey/grading changes are included.
