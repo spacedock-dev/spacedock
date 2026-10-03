@@ -14,13 +14,16 @@ A failed First Officer install writes one file:
 
     ${TMPDIR:-/tmp}/spacedock-install-attempted
 
-The file has no session key and no project key. The install-and-resume flow in
+The file has no host key, no session key and no project key. `fo-install.md` is the
+one install reference for all three hosts: `first-officer-shared-core.md` loads it
+for claude, codex and Pi alike. So a failure in one host suppresses the offer in
+the other two, and every project on the machine shares one scope. The install-and-resume flow in
 `skills/first-officer/references/fo-install.md` offers the install only when the
 file is absent. The First Officer writes the file before it runs the install, so
 both a failed install and a good one consume the single attempt.
 
-The file has one effect. After one failed install, no later Pi session on this
-machine receives the install offer, in any project. The First Officer prints the
+The file has one effect. After one failed install, no later session in any host on this machine receives the
+install offer, in any project. The First Officer prints the
 manual command instead and says the file exists. The operator must delete a temp
 file to get the automatic path back. The operator has no reason to know that the
 file is there.
@@ -37,7 +40,7 @@ child's parent. Task ekw measured this and is superseded by this task.
 
 ## Visible value
 
-After one failed install, a new Pi session gets the install offer again. The same
+After one failed install, a new session in any host gets the install offer again. The same
 session gets no second offer, because the flow still stops after a failure.
 Measured against baseline: before, a session that starts after one failed install
 prints the manual command and no offer; after, that session gets the offer.
@@ -59,8 +62,12 @@ prints the manual command and no offer; after, that session gets the offer.
 4. `skills/integration/version_gate_fixture_test.go` line 126: remove the sentinel.
 5. `docs/site/get-started/install.md`: keep the manual command. Remove the sentinel
    text and the "re-enables the offer" sentence.
+6. `skills/integration/install_hint_channel_test.go`: edit only if it pins the
+   sentinel text. It also pins the channel classifier, the Linux curl commands and
+   two brew casks. Those must not change.
 
-Estimate net LOC change: about -25, across 5 files. Tolerance: net 0 to -60, and
+Estimate net LOC change: about -25, across 5 files, or 6 if
+`install_hint_channel_test.go` pins the sentinel text. Tolerance: net 0 to -60, and
 at most 6 files. A larger change needs a revised gate.
 
 Semantic changes: the install offer no longer has an attempt file. No other
@@ -68,7 +75,7 @@ behaviour changes.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - A new session gets the offer after an earlier failed install.**
+**AC-1 (VALUE) - A new session in any host gets the offer after an earlier failed install.**
 Verified by: a test that runs the install flow, fails the install, then starts a
 new session and requires the offer. Falsifier: restore the sentinel check and the
 new session must lose the offer.
@@ -78,7 +85,7 @@ Verified by: the existing "never loop" behaviour. The flow stops after one attem
 with the manual command. Falsifier: add a retry to the step-5 fallback and require
 the flow to stop instead.
 
-**AC-3 - No file under TMPDIR records an install attempt.**
+**AC-3 - No file under TMPDIR records an install attempt, so no host can suppress another host.**
 Verified by: the flow fixture test must pass with no sentinel file present.
 Falsifier: write the file and require the test to fail.
 
@@ -92,4 +99,5 @@ Check first whether a test requires this rule: "a bad install stays suppressed".
 If such a test is there, it protects the fault. Remove it in the same change.
 Primary proof owner: `skills/integration/version_gate_fixture_test.go` together
 with the `internal/contractlint` version-gate smoke test. Deterministic tests
-only. No live run.
+only. No live run. The changed file is a shared instruction file, so the proof
+must cover all three hosts, not Pi alone.
