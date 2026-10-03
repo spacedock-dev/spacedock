@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:ekw79nn8z9829d77dw7y9353:backlog:attempt-1:revision-1",
+  "question": "Approve this seed as the backlog baseline and advance to ideation?",
+  "artifacts": [
+    {
+      "id": "artifact:ekw79nn8z9829d77dw7y9353:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/d6def3b7b97516cb23fce583b6f67f159a070381/pi-session-identity-subagent-parent-session.md",
+      "rev": "sha256:cb9876232e7fd3ce08f879d9ed4b1eaa9469a56e6138289b8ec37b8bdae2f51d",
+      "mediaType": "text/markdown",
+      "summary": "The runtimehost marker table claims pi exposes no identity environment variable, but live evidence on 2026-07-31 shows that both the captain's shell and the first officer's own tool shell carried PI_SUBAGENT_PARENT_SESSION equal to the running pi session id. The code is stale about pi's real environment surface, so the install-gate sentinel can over-reach across sessions."
+    }
+  ]
+}
