@@ -55,8 +55,13 @@ func (d piSharedLiveDriver) emitMetrics(t *testing.T, scenario sharedRuntimeScen
 	emitPiScenarioMetrics(t, scenario, result, d.modelName)
 }
 func (d piSharedLiveDriver) gradeShallowBootObservation(*testing.T, liveResult) {}
-func (d piSharedLiveDriver) prepareRecordedGate(*testing.T) (liveDriver, func(liveResult)) {
-	return d, noLiveGrade
+func (d piSharedLiveDriver) prepareRecordedGate(t *testing.T) (liveDriver, func(liveResult)) {
+	return d, func(result liveResult) {
+		findings := piRecordedGateFindings(piRecordedGateTraceFromArtifacts(t, result.artifactDir), nil)
+		if len(findings) > 0 {
+			t.Fatalf("Pi recorded-gate grade rejected the journey: %s\nArtifacts: %s", piRecordedGateFindingsString(findings), result.artifactDir)
+		}
+	}
 }
 
 func (d piSharedLiveDriver) run(t *testing.T, scenario sharedRuntimeScenario, root, prompt string) liveResult {
