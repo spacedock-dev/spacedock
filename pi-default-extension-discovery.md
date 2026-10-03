@@ -528,6 +528,19 @@ try {
 - SKIPPED: Implement proposed harness changes and run authorized live front-door smoke.
   This is a staff-review ideation fold; captain approval, mc readiness, and live authorization remain implementation/validation prerequisites. No code, launcher, docs, operator settings, or YAML frontmatter change is delivered.
 
+- DONE: AC-1 proof plan cited: M1 “Proposed proof refinements” requires both packages/tools and ensign through registered discovery with both root variables absent and no substrate extension paths; the recorded no-model loader spike supports registration, while authorized `TestLivePiFrontDoorSmoke` remains pending and explicit fallback does not count.
+- DONE: AC-2 proof plan cited: M1 deterministic setup tests use a custom real agentDir and independent non-sibling local roots; selecting the sibling decoy or a hard-coded npm root falsifies discovery from actual settings (supported absolute/relative sources).
+- DONE: AC-3 proof plan cited: M1 deterministic override tests exercise each root override alone and both together against conflicting settings, preserve marker scrubbing, and check the retained explicit fallback separately; ignoring an override or deriving intercom from subagents falsifies precedence.
+- DONE: AC-4 proof plan cited: M1 requires ordinary non-live helper tests, gofmt, live-tagged vet/build, the no-model loader check, and authorized front-door smoke with durable report/commit evidence; cycle 2 records only the focused offline baseline and loader spike as passed, not full-suite or live completion. All M1 refinements remain proposed for the captain's gate.
+
 ### Summary
 
 Folded M1 into the retained design with one composable isolated-home contract, a non-live helper seam, explicit old-test replacement, and falsifiable default-discovery proof for both packages. Exercised Pi's actual loader (not a model session) to show registration is necessary and that the harness's file: prefix must become a supported absolute checkout entry; all AC/surface refinements await the captain's gate, and mc remains the entry-resolution owner.
+
+### Report repair validation
+
+`spacedock status --read docs/dev/.spacedock-state/pi-default-extension-discovery.md --ac-scan --json --workflow-dir docs/dev`
+
+```json
+{"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"100","unevidenced":"false","citations":[{"line":"531","text":"- DONE: AC-1 proof plan cited: M1 “Proposed proof refinements” requires both packages/tools and ensign through registered discovery with both root variables absent and no substrate extension paths; the recorded no-model loader spike supports registration, while authorized `TestLivePiFrontDoorSmoke` remains pending and explicit fallback does not count."}]},{"id":"AC-2","line":"108","unevidenced":"false","citations":[{"line":"532","text":"- DONE: AC-2 proof plan cited: M1 deterministic setup tests use a custom real agentDir and independent non-sibling local roots; selecting the sibling decoy or a hard-coded npm root falsifies discovery from actual settings (supported absolute/relative sources)."}]},{"id":"AC-3","line":"115","unevidenced":"false","citations":[{"line":"533","text":"- DONE: AC-3 proof plan cited: M1 deterministic override tests exercise each root override alone and both together against conflicting settings, preserve marker scrubbing, and check the retained explicit fallback separately; ignoring an override or deriving intercom from subagents falsifies precedence."}]},{"id":"AC-4","line":"121","unevidenced":"false","citations":[{"line":"534","text":"- DONE: AC-4 proof plan cited: M1 requires ordinary non-live helper tests, gofmt, live-tagged vet/build, the no-model loader check, and authorized front-door smoke with durable report/commit evidence; cycle 2 records only the focused offline baseline and loader spike as passed, not full-suite or live completion. All M1 refinements remain proposed for the captain's gate."}]}]}
+```
