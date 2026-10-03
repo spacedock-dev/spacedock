@@ -32,6 +32,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-10-03T04:04:59Z
 ---
 
 A stalled Pi live run leaves artifacts that nobody classifies. The operator cannot
