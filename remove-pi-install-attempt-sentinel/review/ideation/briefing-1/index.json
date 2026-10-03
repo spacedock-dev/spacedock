@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:271f46crset81jwf2rgast0c:ideation:attempt-1:revision-1",
+  "question": "Approve the ideation baseline and advance to implementation: delete the machine-wide install-attempt file from the one shared install instruction, with no replacement marker?",
+  "artifacts": [
+    {
+      "id": "artifact:271f46crset81jwf2rgast0c:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/b889f4a8e1b6bfb1d3ec311083dba6e381299e02/remove-pi-install-attempt-sentinel.md",
+      "rev": "sha256:1a564db75be650fff5f77eefa2e57d2fe76a30b2b374bfefb950a6f5d9ae0c3f",
+      "mediaType": "text/markdown",
+      "summary": "Removes one instruction that suppresses the install offer wrongly. Today the flow writes one file, ${TMPDIR:-/tmp}/spacedock-install-attempted, before it runs the install. The file has no host key, no session key and no project key. The one shipped install reference, skills/first-officer/references/fo-install.md, is loaded by the shared core for claude, codex and Pi alike. So one failed install in one host suppresses the offer in the other two hosts, for every project on the machine, until someone deletes a temp file they have no reason to know about. The file does not bound a loop: step 5 of the same flow already says 'Fall back, never loop', and the flow ends after one attempt with the manual command. When the install is good the binary is present and no session gets an offer, so the file's only effect is the false suppression. The change deletes the sentinel step and the write, and adds no session-scoped marker. Surface: net -1 line across 1 file, four insertions and five deletions. No command, classifier, sandbox rule or convergence step changes. Proof: AC-1 searches the product checkout for the sentinel path and requires no match, which measures the shipped text; AC-2 and AC-3 are preservation checks by diff and independent review of the preserved commands and the one-attempt termination. Residual limit, stated plainly: no check on HEAD exercises the install-offer flow, so the claim that a new session gets the offer afterwards cannot be observed without a live First Officer run. That is a limit of the proof, not evidence for it. The four other paths the task first cited are obsolete: they exist only in stale worktree checkouts, and the body now records them as such."
+    }
+  ]
+}

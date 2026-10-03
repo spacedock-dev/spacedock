@@ -7,6 +7,17 @@ sprint: pi-ux
 sprint-readiness: ready
 id: 271f46crset81jwf2rgast0c
 started: 2026-10-03T17:32:28Z
+gates:
+    version: 1
+    records:
+        - id: gate:271f46crset81jwf2rgast0c:ideation
+          stage: ideation
+          attempts:
+            - id: gate-attempt:271f46crset81jwf2rgast0c-ideation-1
+              briefing:
+                id: briefing:271f46crset81jwf2rgast0c:ideation:attempt-1:revision-1
+                digest: sha256:b5468d7dede594b3b955763bdff5f636257252272941a0c80b931f2ae33d2b1f
+                room-ref: '@review/ideation/briefing-1'
 ---
 
 ## Problem
