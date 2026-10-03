@@ -48,6 +48,20 @@ gates:
                 id: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:ideation:attempt-2:revision-1
                 digest: sha256:b77d1eb699105693bfbc421dfd2d921e1d5cddce9f28f1e4a1772e48e4d42c9c
                 room-ref: '@review/ideation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mc0ajnpb4wh5nhd2p4q0vx9n:ideation:2
+                briefing: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:ideation:attempt-2:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T05:27:26.731446Z"
+                decision: approve
+                reason: Covers resolving both doctor probes from the installed package declarations, including the folded remedy acceptance; the CI run proves every Pi launch is refused until this lands.
+                conn:
+                    quote: yes do it
+                    source: captain instruction, this session, 2026-10-03
+              application:
+                target-stage: implementation
+                state: pending
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
