@@ -15,6 +15,20 @@ gates:
                 id: briefing:mh698y3ht6ydmr6ethaw9hg9:backlog:attempt-1:revision-1
                 digest: sha256:6041994faf9dbfafbc683fc9a5b47729d9b34825fab9707546d87835726e2b53
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mh698y3ht6ydmr6ethaw9hg9:backlog:1
+                briefing: briefing:mh698y3ht6ydmr6ethaw9hg9:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T04:04:23.251551Z"
+                decision: approve
+                reason: Covers validating the published Pi family and deriving substrate assertions from the installed package.
+                conn:
+                    quote: i already said dispatch to ideation, but don't present the ideation gate until staff review finishes
+                    source: captain instruction, this session, 2026-10-03
+              application:
+                target-stage: ideation
+                state: pending
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
