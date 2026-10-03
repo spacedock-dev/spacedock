@@ -1,6 +1,6 @@
 ---
 title: Reconcile the live Pi XFAIL bindings with the owners and evidence that exist today
-status: backlog
+status: ideation
 score: 0.7
 source: "pi-ux carve review, 2026-10-03: live Pi bindings name an archived owner, one binding cannot XPASS in code, and one real Pi FAIL carries no binding."
 id: d525n1p5zgnz99hmtjq16z57
@@ -31,7 +31,7 @@ gates:
                     source: captain instruction, this session, 2026-10-03
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The live Pi XFAIL registry does not state the truth. Some bindings name owners that no
