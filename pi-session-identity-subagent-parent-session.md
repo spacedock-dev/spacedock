@@ -9,9 +9,9 @@ verdict:
 score:
 worktree:
 issue:
-sprint: pi-ux
+sprint:
 group: tooling
-sprint-readiness: ready
+sprint-readiness: defer
 gates:
     version: 1
     records:
