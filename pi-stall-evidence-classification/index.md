@@ -4,9 +4,9 @@ status: ideation
 score: 0.7
 source: "pi-ux carve review, 2026-10-03: stall classification has no Pi implementation owner once the Claude-only capture task stays out of the sprint."
 id: z6eb1krpyfmr01dwyb7703hx
-sprint: pi-ux
+sprint:
 group: tooling
-sprint-readiness: ready
+sprint-readiness: defer
 gates:
     version: 1
     records:
