@@ -179,7 +179,9 @@ Observable semantics this task **must not** change:
 
 - The report's line labels (`pi-subagents extension`, `pi-subagents intercom
   bridge`), the `OK`/`MISSING` grammar, remedy text, exit codes, and every other
-  doctor line.
+  doctor line. **Proposed M4 scope exception, pending captain approval:** only
+  the bridge remedy text may change, exactly as proposed below; all other
+  remedy text remains unchanged.
 - `pi.skills` discovery, the `--version` floor, the Spacedock package checks,
   and the front-door launch shapes.
 
@@ -217,6 +219,27 @@ Falsifying edit: delete the manifest write from the fixture (or the written
 `package.json`) — the test must fail because the expectation cannot be derived
 from the artifact.
 
+**AC-4 - Each affected prerequisite's printed remedy clears that same failing doctor line in a disposable home.**
+**Proposed M4 acceptance addition — pending the captain's gate, not approved.**
+Verified by: an integrated, one-off validation using the implementation candidate
+and a real installed pi-subagents package in a disposable home. Independently
+remove the manifest-declared extension target, then the manifest-declared bridge
+target in a restored case. For each, capture `doctor --host pi` reporting that
+line `MISSING`, execute the command printed beneath it without substituting an
+unprinted repair, and rerun the same binary/environment: that same line must be
+`OK` at its manifest-declared path, while the other probe remains `OK`.
+Retain package/tool versions, exact commands and exits, and full before/after
+doctor stdout/stderr in the entity's validation report (or a committed artifact
+linked there). The primary proof owner is the implementation ensign, with the
+validation ensign independently checking the retained transaction; the Go tests
+for AC-1–3 cannot discharge AC-4. No global install mutation is authorized.
+Falsifying edit: print a successful no-op command as the remedy — its exit 0
+must not pass while the same prerequisite remains `MISSING`. Reintroducing a
+stale `.ts` probe also fails the post-remedy assertion even when installation
+succeeds. If the printed command does not clear its own line, acceptance fails:
+return the needed text or scope change to the captain, not an install-exit-only
+or file-existence substitute for the outcome.
+
 ## Test plan
 
 Primary proof owner: `internal/cli/pi_frontdoor_test.go`. Its current
@@ -233,8 +256,11 @@ when a real package changes layout. Reshape:
 - `fakePiRuntimeOps.Stat` keys become the manifest-resolved paths
   (`<pkg>/index.js`, `<pkg>/src/api/intercom-bridge.js`), not the `.ts` paths.
 
-Deterministic Go tests only — the claim is path resolution, not runtime
-behavior; no live lane is needed.
+**Proposed M4 proof-scope change, pending captain approval:** deterministic
+Go tests remain the proof for path resolution (AC-1–3), supplemented by the
+one-off, disposable-home remedy transaction for AC-4 described below. No live
+agent dispatch/talkback lane is added; this exercises the package installer and
+the doctor command, not a host session.
 
 Per-check falsifying edits (each turns its own check RED):
 
@@ -246,6 +272,168 @@ Per-check falsifying edits (each turns its own check RED):
   `package.json`.
 
 Cost: low — one new resolver plus fixture helpers, no runtime changes.
+
+## M4 remedy acceptance and scope proposal
+
+This is a staff-review fold over commits `2fac0d774` and `38a5f040d`, not a new
+design. AC-1–3 and the resolver approach are unchanged. AC-4, the integrated
+proof scope, and the bridge-only wording exception are **proposed for the
+captain's gate**, not authorized implementation changes. The earlier "No spike
+needed" applies to manifest decoding/stat resolution only; the newly proposed
+installer transaction was exercised separately below.
+
+### Remedy-text resolution (proposed)
+
+The existing extension command `pi install npm:pi-subagents` cannot fix the old
+binary's false negative: installation does not manufacture the obsolete `.ts`
+paths. Resolving the two probes from the manifest remains necessary. Against
+Pi 1.0.0 / npm 11.8.0 / pi-subagents 0.75.0, the same install command **did**
+restore each independently deleted declared target in the isolated spike. Thus
+no extension-remedy change or forced uninstall/reinstall is justified by this
+evidence. The seed's "up to date" observation does not prove that a genuinely
+missing declared file will remain absent; nor does this spike prove that the
+candidate doctor line clears (there is no implementation candidate yet).
+
+The bridge's current "install/update" phrase does not print an executable
+command. Proposed exact change in `printPiDoctorReport`, bridge line only:
+
+```diff
+-install/update pi-subagents or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
++run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+```
+
+This is the needed narrow exception to the previous remedy-text freeze and the
+out-of-scope statement that only target resolution changes. It does not change
+other remedies, exit codes, override resolution, labels, or line grammar. The
+extension remedy stays verbatim. The existing four-line proposed documentation
+diff below stays unchanged; it does not quote the bridge remedy.
+
+The additional deterministic assertion belongs to the existing primary proof
+owner, `internal/cli/pi_frontdoor_test.go`: a missing bridge prints the exact
+executable remedy above; reverting to vague "install/update" makes it fail.
+That assertion proves wording only, not AC-4. The existing two-code-file estimate
+and ±25% tolerance remain the proposed budget: the one-line replacement and
+approximately ten test lines fit within it. Live proof is recorded in the entity,
+not a new CI lane or test framework. Simplest alternative: leave the bridge text
+unchanged and have the validator invent a command. Rejected because it does not
+exercise a printed command and could conceal a non-actionable remedy. A forced
+remove/reinstall was considered and exercised but adds disruption with no
+observed benefit over install-only, so is not proposed.
+
+### Integrated proof procedure (proposed; AC-4 owner assignment)
+
+1. Implementation ensign builds the candidate once and records its revision,
+   binary version/hash, Pi, Node, npm and pi-subagents versions. Use a fresh
+   `mktemp -d` root; keep HOME, `PI_CODING_AGENT_DIR=$HOME/.pi/agent`, npm cache,
+   npm prefix, working directory and all install/settings files inside it. Use
+   `env -i` with only the required PATH and those isolation variables; inherit
+   no `PI_SUBAGENTS_PACKAGE_ROOT`, auth, project `.pi`, or global npm settings.
+   The existing Pi/Node executables may be read, never updated. Install the real
+   `npm:pi-subagents` package there and retain its manifest/version. Registry
+   access is required; an unavailable registry means proof is blocked, not passed.
+2. Record the candidate's healthy **two pi-subagents probe lines** before fault
+   injection. Derive targets from the installed manifest, not production code.
+   Remove only the extension target; record full doctor output and exit, execute
+   the exact printed install command, record output and exit, then record full
+   doctor output and exit again. Require extension `MISSING` → `OK` at the
+   declared path and bridge `OK` throughout. Never create a substitute `.ts` file
+   or manually restore the target after the failing observation.
+3. With the repaired install, repeat for only the bridge target, requiring bridge
+   `MISSING` → `OK` and extension `OK` throughout. Retain manifest/package versions
+   before and after each transaction to expose any registry-driven update. Do
+   not claim a tested version beyond those recorded.
+4. Capture all command exits, including nonzero doctor exits. Unrelated auth,
+   pi-intercom or Spacedock checks may keep the overall doctor exit at 1; acceptance
+   is the same affected **line** clearing, not a fabricated overall healthy host.
+   Keep those unrelated diagnostics in the full output; no credentials or global
+   installs are needed. Validation ensign checks versions, exact printed-command
+   fidelity, failure setup and line-by-line postconditions in the durable report.
+5. If install succeeds but the line stays `MISSING`, retain that failure and return
+   the exact needed remedy-text or scope change to the captain. Do not substitute
+   the spike's file-restoration evidence, silently run remove/reinstall, or relax
+   AC-4. If the captain rejects the bridge text exception, explicitly resolve the
+   resulting acceptance gap at the gate; the unchanged freeze is not evidence.
+
+Estimated cost: two small package installs/repairs plus command captures, minutes
+with registry access; no live model/session or new persistent mechanism. A
+Go-only simulated install is simpler but insufficient: it cannot establish what
+the real printed package-manager command does to the declared artifact.
+
+### Isolated remedy spike evidence (ideation, not AC-4 completion)
+
+Executed 2026-10-03 with Spacedock **0.28.0-pre3** (unfixed), Pi **1.0.0**,
+Node **v24.13.1**, npm **11.8.0**, pi-subagents **0.75.0** before and after every
+repair. Disposable root: `/tmp/spacedock-pi-remedy.R9fC5T`. No global install,
+credentials, source code or runtime configuration was changed. The following
+setup describes the actual isolation (PATH supplied existing read-only tools):
+
+```sh
+ROOT=$(mktemp -d /tmp/spacedock-pi-remedy.XXXXXX)
+mkdir -p "$ROOT/home" "$ROOT/work"
+cd "$ROOT/work"
+# Run every pi/doctor command through this environment:
+env -i PATH="$PATH" HOME="$ROOT/home" \
+  PI_CODING_AGENT_DIR="$ROOT/home/.pi/agent" \
+  npm_config_cache="$ROOT/home/.npm" \
+  npm_config_prefix="$ROOT/home/.npm-global" <command>
+```
+
+Installed manifest: `pi.extensions[0] = ./index.js`;
+`exports["./intercom-bridge"].default = ./src/api/intercom-bridge.js`.
+For each case the selected file was removed before the "before" doctor run.
+The table retains commands/exits and the observed artifact state (not an inferred
+`OK`). `doctor` below means
+`/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock doctor --host pi`.
+
+| Case | Command | Exit | Observation |
+| --- | --- | --- | --- |
+| Setup | `pi install npm:pi-subagents` | 0 | 0.75.0 installed, both targets present |
+| Setup | `doctor` | 1 | Both stale `.ts` probes MISSING |
+| Extension target removed | `doctor` (before) | 1 | Full output retained below |
+| Extension | `pi install npm:pi-subagents` | 0 | `changed 5 packages`; declared extension restored |
+| Extension | `doctor` (after install) | 1 | Byte-identical to before; stale probes still MISSING |
+| Extension alternative | `pi remove npm:pi-subagents` then `pi install npm:pi-subagents` | 0, 0 | Declared target present; no extra benefit |
+| Extension alternative | `doctor` | 1 | Byte-identical output |
+| Bridge target removed | `doctor` (before) | 1 | Full output retained below |
+| Bridge | `pi install npm:pi-subagents` | 0 | `changed 5 packages`; declared bridge restored |
+| Bridge | `doctor` (after install) | 1 | Byte-identical to before; stale probes still MISSING |
+| Bridge alternative | `pi remove npm:pi-subagents` then `pi install npm:pi-subagents` | 0, 0 | Declared target present; no extra benefit |
+| Bridge alternative | `doctor` | 1 | Byte-identical output |
+
+All seven doctor captures (setup; each case before, after install, after the
+alternative) have SHA-256
+`7ec79e91046a878505739d9f276e13b322662f715afc8addafb1ec7dbf6edecd`.
+Their full combined stdout/stderr is identical and retained once below without
+path normalization. This is durable negative evidence: the **old** printed
+remedy cannot clear the **old** probe. Candidate before/after `MISSING` → `OK`
+proof remains required and assigned, not claimed by this ideation report.
+
+```text
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+MISSING pi-subagents extension: /tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/auth.json session=/tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/npm/node_modules/pi-subagents/src/intercom/intercom-bridge.ts
+  remedy: install/update pi-subagents or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-pi-remedy.R9fC5T/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+```
 
 ## Proposed documentation diff
 
@@ -322,3 +510,27 @@ Checklist count summary:
   edit, is unchanged apart from that line wrap.
 - DONE (3/3): the repair is committed path-scoped in the state checkout with no
   other file touched and no staged residue.
+
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Assign the integrated remedy acceptance: in a disposable home, demonstrate the applicable failing prerequisite, execute its printed remedy, and show the same line clear.
+  Proposed AC-4 assigns implementation ownership and independent validation of both per-target MISSING → printed command → same-line OK transactions; AC-1, AC-2 and AC-3 remain byte-identical to the prior body.
+- DONE: Retain package versions, command exits, and before/after doctor output as that proof; no global install mutation is authorized.
+  AC-4 requires durable full transaction evidence; the isolated ideation spike retains Pi 1.0.0/npm 11.8.0/pi-subagents 0.75.0, exits and all identical old-doctor captures above, explicitly not a candidate pass. Every install mutation stayed inside the disposable home.
+- DONE: Resolve the remedy-text scope question explicitly: if the existing text cannot clear its own line, return the needed text or scope change to the gate rather than weakening the outcome.
+  Old doctor stays MISSING after successful repair; manifest resolution is still required. The extension command restores real missing declared files; proposed bridge-only “install/update” → executable `pi install npm:pi-subagents` wording and AC-4 are pending captain approval, with no relaxed postcondition.
+- DONE: Preserve the previous design and make every acceptance or scope change proposed for the captain's gate.
+  AC-1–3, frontmatter and historical reports were byte-compared to HEAD before append; only AC-4, its one-off proof and the bridge-text exception are added as explicit proposals. No production/test/doc-source edits are shipped in ideation.
+- DONE: Check the body and existing doctor regression tests.
+  `status --read --ac-scan --json` discovers AC-1–4 with report citations; `git diff --check` passes. `go test ./internal/cli -run '^TestPiDoctor' -count=1` passes normally and with `-race`; these existing tests check missing/healthy diagnostics, not the new AC-4 transaction.
+- SKIPPED: Complete repository-wide regression results for this body-only fold.
+  `go test ./...` exceeded the 120s command budget; `go test ./... -race` was stopped after its 120s budget without a full result. `gofmt -w ./cmd ./internal` ran; its unrelated two-line formatting diff was reversed, leaving no code changes.
+
+### Summary
+
+Folded M4 into the existing ideation body, retaining the manifest-driven design and
+adding a proposed integrated remedy acceptance with named proof owners. The real
+isolated installer restored each deleted declared target, but the unfixed doctor
+still reported stale `.ts` paths; the report does not confuse that negative spike
+with completed AC-4, and returns the exact bridge remedy-text exception to the gate.
