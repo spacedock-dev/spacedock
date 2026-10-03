@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,9 +18,8 @@ import (
 //spacedock:live-proof id=pi-front-door-subagent-dispatch lane=pi-live
 func TestLivePiFrontDoorSmoke(t *testing.T) {
 	repo := repoRoot(t)
-	piSubagentsRoot := piSubagentsPackageRoot(t)
 	binary := piSpacedockBinary(t, repo)
-	workflowRoot, stateRoot, entityPath, artifactDir, env, model := newPiLiveSmokeFixture(t, "pi-frontdoor-smoke", repo, piSubagentsRoot, binary)
+	workflowRoot, stateRoot, entityPath, artifactDir, env, model := newPiLiveSmokeFixture(t, "pi-frontdoor-smoke", repo, binary)
 
 	envelope := runPiSmokeDispatchBuild(t, binary, workflowRoot, entityPath)
 	prompt := piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath, envelope)
@@ -38,25 +36,23 @@ func TestLivePiFrontDoorSmoke(t *testing.T) {
 	assertPiEnsignBootContract(t, workflowRoot, envelope, artifactDir)
 }
 
-func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string, model string) {
+func newPiLiveSmokeFixture(t *testing.T, name, repo, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string, model string) {
 	t.Helper()
-	piHome := t.TempDir()
-	sessionDir := t.TempDir()
+	realHome := os.Getenv("HOME")
 	cleanHome := t.TempDir()
-	decision := seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("CODEX_AUTH_JSON"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
-	// Patch 3 (validation attempt-1 correction): seed piHome/settings.json with
-	// the repo as a path package so pi-subagents' settings-package skill
-	// discovery (skills.ts collectSettingsPackageSkillPaths over
-	// agentDir/settings.json) resolves the basename skill "ensign"; auth-only
-	// piHome boots the child contract-free (skills: []).
-	writeFile(t, filepath.Join(piHome, "settings.json"), fmt.Sprintf("{\"packages\":[%q]}\n", "file:"+repo))
+	// The isolated home registers both substrate packages (npm:pi-subagents,
+	// npm:pi-intercom) plus the Spacedock checkout as one absolute path, so Pi's
+	// own package discovery loads them with no PI_*_PACKAGE_ROOT exported.
+	piHome := seedPiIsolatedHome(t, cleanHome, realPiAgentDir(realHome), repo)
+	sessionDir := t.TempDir()
+	decision := seedPiLiveAuth(t, piHome, realHome, os.Getenv("CODEX_AUTH_JSON"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 	writePiSubagentsProjectArtifactDir(t, piHome)
 	workflowRoot, stateRoot, entityPath = writePiSplitRootSmokeWorkflow(t)
 	artifactDir = filepath.Join(piLiveArtifactDir(t, name), "run")
 	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	env = piLiveEnvForAuth(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot, os.Getenv("OPENAI_API_KEY"), decision.mode)
+	env = piLiveEnvForAuth(piHome, sessionDir, cleanHome, filepath.Dir(binary), os.Getenv("OPENAI_API_KEY"), decision.mode)
 	model = piLiveChildModel(decision)
 	return workflowRoot, stateRoot, entityPath, artifactDir, env, model
 }
@@ -273,22 +269,6 @@ func writePiSubagentsProjectArtifactDir(t *testing.T, piHome string) {
 	if err := os.WriteFile(filepath.Join(configDir, "config.json"), []byte("{\"artifactDir\":\"project\"}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func piSubagentsPackageRoot(t *testing.T) string {
-	t.Helper()
-	if p := os.Getenv("PI_SUBAGENTS_PACKAGE_ROOT"); p != "" {
-		return p
-	}
-	home := os.Getenv("HOME")
-	if home == "" {
-		t.Fatal("HOME is empty; set PI_SUBAGENTS_PACKAGE_ROOT to the local pi-subagents package")
-	}
-	p := filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-subagents")
-	if _, err := os.Stat(filepath.Join(p, "src", "extension", "index.ts")); err != nil {
-		t.Fatalf("pi-subagents package extension not found at %s: %v; set PI_SUBAGENTS_PACKAGE_ROOT", p, err)
-	}
-	return p
 }
 
 // piLiveChildModel resolves the model the Pi live child runs on. An operator
