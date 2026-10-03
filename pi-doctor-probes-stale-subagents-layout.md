@@ -70,6 +70,17 @@ gates:
                 id: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:validation:attempt-1:revision-1
                 digest: sha256:b1924916ac17b43cfe00e60da44784f3cc056e7d80616f06d06632230b03382e
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mc0ajnpb4wh5nhd2p4q0vx9n:validation:1
+                briefing: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-03T15:43:18.139111Z"
+                decision: approve
+                reason: Captain approved the independent validation result in this session.
+              application:
+                target-stage: done
+                state: pending
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
