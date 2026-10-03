@@ -32,6 +32,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-10-03T04:05:02Z
 ---
 
 The live Pi XFAIL registry does not state the truth. Some bindings name owners that no
