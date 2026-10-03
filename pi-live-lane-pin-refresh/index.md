@@ -487,3 +487,36 @@ Validation at candidate `631b482e6`; advisory classifications only. No candidate
 ### Summary
 
 Recommend **REJECTED / hold acceptance** for material evidence findings V1/V2, not a product-failure diagnosis or a mechanism/design reset. Deterministic pin, package, environment and independent loader positive/negative checks pass, including the load-bearing zero-tools result with both symlinks retained; all four Pi bindings have active semantic owners. Code HEAD and candidate files remain unchanged; only this state report is committed, and live proof plus the independent reviewer gate remain owed.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Require both extension tools, subagent and intercom, in the inventory the grade records, and fail the grade on a missing tool.
+  `piBootContractEvidence` gains `Tools`; `buildPiFrontDoorEvidenceGrade` rejects an inventory lacking either name and records it as `isolated_discovery.tools`. The live smoke builds the inventory from the run's recorded toolCalls across the parent and child JSONL transcripts via `recordedPiToolInventory`. New negative subtests `missing subagent tool` / `missing intercom tool` fail. (AC-6 / review V2)
+- DONE: Require neither PI_SUBAGENTS_PACKAGE_ROOT nor PI_INTERCOM_PACKAGE_ROOT present in the child environment, including as an empty assignment; fail the grade on a present override.
+  `piBootContractEvidence` gains `ChildEnv`; the grade rejects any KEY=VALUE pair for either variable (empty value included) and records `isolated_discovery.package_root_env_absent`. The smoke passes the env it launches the child with. New negative subtests `present package root` / `empty package root assignment` fail. (AC-6 / review V2)
+- DONE: Stop the workflow exporting the two overrides into the run.
+  Removed the two `>> "$GITHUB_ENV"` echoes from `Install Pi CLI and substrates`. The `Verify Pi current-checkout setup` step now sets `PI_SUBAGENTS_PACKAGE_ROOT` / `PI_INTERCOM_PACKAGE_ROOT` shell-locally (never exported) so the explicit-override path stays deliberately exercised there while the smoke step sees neither variable.
+- DONE: Smoke records the intercom tool so the inventory can carry it.
+  `piLiveSmokePrompt` now instructs the FO to call `intercom({action:"list"})` once; the parent transcript records that toolCall, so a native-discovery run records both subagent and intercom.
+- DONE: Keep every existing check; add no framework or lane; do not touch pins, guard, or manifest assertions.
+  Ensign read order, durable state commits, session checks, and the four manifest checks are unchanged; `internal/release/pi_live_pins_guard_test.go` and the pins are untouched. Changed only the smoke, its grade, and the workflow env.
+- DONE: Focused validation per the FO budget.
+  `go test ./internal/ensigncycle -run 'TestPiFrontDoorEvidenceGrade|TestPiLiveEnv|TestPiDefaultExtensionRoots|TestPiIsolatedHome|TestPiIntercomPackageRoot' -count=1` PASS; `go vet -tags live ./internal/ensigncycle` PASS; `go build -tags live ./internal/ensigncycle` PASS; `go test ./internal/release/... -run TestPiLivePinsAndSubstrateAssertions -count=1` PASS; `go test -tags live ./internal/ensigncycle -run 'TestPiFrontDoorEvidenceGrade|TestPiLiveEnv' -count=1` PASS; `gofmt`/`git diff --check` clean. Full suite and race suite not run per the budget prohibition.
+- SKIPPED: `TestLivePiFrontDoorSmoke` model run with both variables absent.
+  Out of the bounded budget; the observation is implemented and unit-falsified but not exercised against a live model. AC-6's live acceptance still owes a run URL/SHA and the durable grade JSON.
+
+### Changed evidence boundary
+
+The grade now observes two facts it previously did not, and both are falsified by a named mutation:
+
+- tool inventory: `isolated_discovery.tools` must contain `subagent` and `intercom`; removing either tool from the recorded calls fails the grade.
+- environment: `isolated_discovery.package_root_env_absent` must hold; any present override, including an empty assignment, fails the grade.
+
+### What the smoke can now tell apart
+
+- Native discovery with both tools: both variables absent from the workflow, the isolated home's `settings.json` registers `npm:pi-subagents` + `npm:pi-intercom`, and the run records `subagent` and `intercom` -> the grade passes.
+- An override we ran on purpose: with either `PI_SUBAGENTS_PACKAGE_ROOT` or `PI_INTERCOM_PACKAGE_ROOT` set (empty or nonempty), the child environment carries it and the grade fails on `package_root_env_absent`; a run that needs the override can no longer be presented as native discovery. Explicit overrides remain independently honored by `piLiveEnv`/`piIsolatedExtensionRoots` for that deliberate path.
+
+### Summary
+
+Implemented the review-V2 evidence-gap fix at the existing grade boundary: the smoke now requires both extension tools in the recorded inventory and requires both package-root overrides absent from the child environment, and the workflow no longer exports those overrides. Focused tests plus live-tagged vet/build pass; the live model smoke and the full/race suites were not run per the FO budget. Code commit `32049bdbd`.
