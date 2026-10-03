@@ -4,9 +4,9 @@ status: ideation
 score: 0.7
 source: "pi-ux carve review, 2026-10-03: live Pi bindings name an archived owner, one binding cannot XPASS in code, and one real Pi FAIL carries no binding."
 id: d525n1p5zgnz99hmtjq16z57
-sprint: pi-ux
+sprint:
 group: tooling
-sprint-readiness: ready
+sprint-readiness: defer
 gates:
     version: 1
     records:
