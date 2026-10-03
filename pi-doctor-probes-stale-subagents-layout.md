@@ -177,8 +177,7 @@ Observable semantics this task **must not** change:
 
 ## Acceptance criteria
 
-**AC-1 - The two pi-subagents probes report OK for a package that declares a
-compiled entry.**
+**AC-1 - The two pi-subagents probes report OK for a package that declares a compiled entry.**
 Verified by: a Go test that writes a fixture package from a declarative
 manifest — a `package.json` declaring `pi.extensions` and
 `exports["./intercom-bridge"]`, plus those declared entry files and no plain
@@ -292,3 +291,26 @@ only via the package `exports` map; escalated and got decision (A) approved
 Output: a fleshed task body with the resolver approach, a restated per-probe
 AC-2 (reported at the gate as proposed, not pre-approved), and a manifest-driven
 test plan.
+
+### Same-stage repair: AC-1 bold-span line wrap
+
+Repaired the one defect from the gate withdrawal: AC-1's bold identifier
+wrapped across two lines (176-177 at authoring), so the line-based `--ac-scan`
+reader could not see AC-1. Joined the AC-1 bold span onto a single line; no
+other paragraph was reflowed.
+
+Evidence — `spacedock status --read docs/dev/.spacedock-state/pi-doctor-probes-stale-subagents-layout.md --ac-scan --json --workflow-dir docs/dev`:
+
+```json
+{"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"180","unevidenced":"false"},{"id":"AC-2","line":"191","unevidenced":"false"},{"id":"AC-3","line":"204","unevidenced":"false"}]}
+```
+
+Checklist count summary:
+
+- DONE (1/3): AC-1's bold identifier closes on a single line; `--ac-scan` now
+  lists AC-1, AC-2, and AC-3 (previously AC-2 and AC-3 only).
+- DONE (2/3): every other byte of the acceptance-criteria section, including the
+  `## Acceptance criteria` heading and each AC's 'Verified by' and falsifying
+  edit, is unchanged apart from that line wrap.
+- DONE (3/3): the repair is committed path-scoped in the state checkout with no
+  other file touched and no staged residue.
