@@ -3,8 +3,8 @@ title: Pi default extension discovery for an isolated home
 status: ideation
 source: "Pi-UX carve, 2026-08-13: runtime-support first-contact friction"
 score: 0.8
-sprint: pi-ux
-sprint-readiness: ready
+sprint:
+sprint-readiness: defer
 group: tooling
 id: 3w1ncf1thj12aryvkf5gj1rd
 gates:
