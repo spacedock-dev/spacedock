@@ -15,6 +15,9 @@ gates:
                 id: briefing:mh698y3ht6ydmr6ethaw9hg9:backlog:attempt-1:revision-1
                 digest: sha256:6041994faf9dbfafbc683fc9a5b47729d9b34825fab9707546d87835726e2b53
                 room-ref: '@review/backlog/briefing-1'
+sprint: pi-ux
+group: tooling
+sprint-readiness: ready
 ---
 
 The pi-live Runtime Live E2E lane pins an obsolete Pi family, so the shipped launcher
