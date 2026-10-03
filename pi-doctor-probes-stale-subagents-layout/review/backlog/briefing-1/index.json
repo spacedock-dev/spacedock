@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mc0ajnpb4wh5nhd2p4q0vx9n:backlog:attempt-1:revision-1",
+  "question": "Start design on the pi-subagents probe paths in spacedock doctor --host pi?",
+  "artifacts": [
+    {
+      "id": "artifact:mc0ajnpb4wh5nhd2p4q0vx9n:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/bfd14a0322d9af07f32cdb108945fe4a396153a2/pi-doctor-probes-stale-subagents-layout.md",
+      "rev": "sha256:7787b4d167f123c242174450eb96d92688e79bb14e69bd93ab46a9542f09d7d1",
+      "mediaType": "text/markdown",
+      "summary": "The pi doctor probes src/extension/index.ts and src/intercom/intercom-bridge.ts. pi-subagents 0.74.0 ships compiled output and declares its entry as ./index.js, so both probes report MISSING against a correct install, and the printed remedy reports up to date. Four call sites hardcode the source paths in internal/cli/pi.go, and the existing test fabricates the same paths, which is why it passed."
+    }
+  ]
+}

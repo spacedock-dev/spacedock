@@ -9,6 +9,17 @@ verdict:
 worktree:
 issue:
 id: mc0ajnpb4wh5nhd2p4q0vx9n
+gates:
+    version: 1
+    records:
+        - id: gate:mc0ajnpb4wh5nhd2p4q0vx9n:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:mc0ajnpb4wh5nhd2p4q0vx9n-backlog-1
+              briefing:
+                id: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:backlog:attempt-1:revision-1
+                digest: sha256:1238b011f4548835cdc914d79e2b7ec094be63f774d7ed21e6cea30f2c69ce8f
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 ## Problem
