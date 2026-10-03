@@ -4,6 +4,17 @@ status: backlog
 score: 0.75
 source: "Captain directive, 2026-10-03: Pi 1.0 shipped; update the CI pin and the relevant Pi extensions."
 id: mh698y3ht6ydmr6ethaw9hg9
+gates:
+    version: 1
+    records:
+        - id: gate:mh698y3ht6ydmr6ethaw9hg9:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:mh698y3ht6ydmr6ethaw9hg9-backlog-1
+              briefing:
+                id: briefing:mh698y3ht6ydmr6ethaw9hg9:backlog:attempt-1:revision-1
+                digest: sha256:6041994faf9dbfafbc683fc9a5b47729d9b34825fab9707546d87835726e2b53
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 The pi-live Runtime Live E2E lane pins an obsolete Pi family, so the shipped launcher
