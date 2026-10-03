@@ -18,6 +18,20 @@ gates:
                 id: briefing:d525n1p5zgnz99hmtjq16z57:backlog:attempt-1:revision-1
                 digest: sha256:d4571aa8babbfc59dfb8670f73e8bb79bb6c5a7ee2029184c2b3763b2a4a3e40
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:d525n1p5zgnz99hmtjq16z57:backlog:1
+                briefing: briefing:d525n1p5zgnz99hmtjq16z57:backlog:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T04:04:34.372071Z"
+                decision: approve
+                reason: Covers truthful live Pi XFAIL bindings, owners, and evidence, without touching the journey repairs.
+                conn:
+                    quote: i already said dispatch to ideation, but don't present the ideation gate until staff review finishes
+                    source: captain instruction, this session, 2026-10-03
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The live Pi XFAIL registry does not state the truth. Some bindings name owners that no
