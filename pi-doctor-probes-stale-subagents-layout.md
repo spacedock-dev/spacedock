@@ -548,3 +548,26 @@ adding a proposed integrated remedy acceptance with named proof owners. The real
 isolated installer restored each deleted declared target, but the unfixed doctor
 still reported stale `.ts` paths; the report does not confuse that negative spike
 with completed AC-4, and returns the exact bridge remedy-text exception to the gate.
+
+## Stage Report: implementation
+
+- DONE: The extension probe and the intercom bridge probe resolve from the installed package's own declarations, proven by a fixture that ships compiled output and reports OK, and by the same fixture with the declared entry removed reporting MISSING.
+  `resolvePiSubagentsEntries` reads `<pkg>/package.json`; `TestPiSubagentsProbesResolveFromPackageManifest` writes a compiled fixture (`pi.extensions=["./index.js"]`, `exports["./intercom-bridge"].default="./src/api/intercom-bridge.js"`) and asserts `OK` for both lines at the manifest-resolved paths; removing `index.js` → extension `MISSING`, bridge `OK`; removing the bridge target or deleting the `exports` entry → bridge `MISSING`.
+- DONE: The integrated remedy acceptance holds: in a disposable home the applicable failing prerequisite appears, its printed remedy runs, and the same line then clears.
+  Disposable `mktemp` home (`env -i`), candidate `0.28.0-pre3+dev`, pi 1.0.0/npm 11.8.0/pi-subagents 0.75.0: extension removed → `MISSING` → printed `pi install npm:pi-subagents` (exit 0) → `OK` at declared path, bridge `OK` throughout; bridge removed → `MISSING` → same remedy (exit 0) → `OK`, extension `OK` throughout. Full before/after captured in `_evidence/pi-doctor-probes-stale-subagents-layout/remedy-transactions.txt`.
+- DONE: No launcher behaviour changes beyond probe resolution; the shared runtime, the XFAIL bindings, and every other doctor line are untouched.
+  `pi.go` diff is one resolver plus wiring at the four call sites and the stale comment; runtime/XFAIL/CI workflow/lane assertions untouched. The only remedy-text change is the in-scope intercom-bridge line, `install/update ...` → `run \`pi install npm:pi-subagents\` ...` (the folded M4 exception the gate approved), asserted by `TestPiSubagentsProbesResolveFromPackageManifest`.
+
+### Summary
+
+Implemented manifest-driven resolution of the two pi-subagents doctor probes:
+the extension from `pi.extensions[0]`, the bridge from
+`exports["./intercom-bridge"]`, both relative to the package root, failing closed
+on a missing/unparseable manifest. Reshaped `pi_frontdoor_test.go` so the fixture
+ships compiled output and derives its expected paths from the written
+`package.json` (AC-3). Verified the readiness gate passes against the fixture and
+that both probes move to `MISSING` when their own declared target is removed.
+Docs example paths updated. Focused tests green; noted a pre-existing,
+environment-dependent `TestCodexResolveManifestAgainstInstalledHost` failure in
+the full suite.
+

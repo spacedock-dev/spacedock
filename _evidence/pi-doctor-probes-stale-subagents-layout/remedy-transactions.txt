@@ -1,0 +1,151 @@
+Pi doctor probe stale-layout fix — AC-4 integrated remedy transactions
+Generated 2026-10-03. Candidate binary: /tmp/spacedock-candidate (spacedock 0.28.0-pre3+dev)
+Isolation: mktemp root /tmp/spacedock-pi-remedy.Q3AXk5; env -i PATH HOME PI_CODING_AGENT_DIR npm_config_cache npm_config_prefix; no global mutation.
+Versions: pi 1.0.0, npm 11.8.0, pi-subagents 0.75.0, node v24.13.1
+Installed manifest: pi.extensions=["./index.js"]; exports["./intercom-bridge"].default="./src/api/intercom-bridge.js"
+
+== Baseline (no fault) doctor --host pi ==
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json session=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+
+== EXTENSION CASE ==
+-- remove /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/index.js --
+-- doctor before (extension MISSING) --
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+MISSING pi-subagents extension: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+OK pi-subagents skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json session=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+-- printed remedy --
+MISSING pi-subagents extension: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT
+-- run printed remedy --
+$ pi install npm:pi-subagents
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 12 packages in 431ms
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+-- doctor after (extension OK) --
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json session=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+
+== BRIDGE CASE ==
+-- remove /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js --
+-- doctor before (bridge MISSING) --
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json session=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+MISSING pi-subagents intercom bridge: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+MISSING pi-intercom package root: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+-- printed remedy --
+MISSING pi-subagents intercom bridge: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+  remedy: run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge
+-- run printed remedy --
+$ pi install npm:pi-subagents
+Installing npm:pi-subagents...
+
+changed 5 packages, and audited 17 packages in 3s
+
+found 0 vulnerabilities
+Installed npm:pi-subagents
+-- doctor after (bridge OK) --
+Pi runtime check
+OK pi CLI: /Users/clkao/.local/state/fnm_multishells/77762_1790878083686/bin/pi
+MISSING Pi auth: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+OK pi-subagents extension: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/index.js
+OK pi-subagents skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/auth.json session=/tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-subagents intercom bridge: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-subagents/src/api/intercom-bridge.js
+MISSING pi-intercom package root: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom
+  remedy: set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root
+MISSING pi-intercom skill: /tmp/spacedock-pi-remedy.Q3AXk5/home/.pi/agent/npm/node_modules/pi-intercom/skills/pi-intercom
+  remedy: install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md
+MISSING Spacedock package
+  remedy: run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)
+MISSING Spacedock extension: .pi/extensions/spacedock.ts
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)
+MISSING Spacedock first-officer skill (package discovery): skills/first-officer
+  remedy: run `spacedock install --host pi` to reinstall the Spacedock package
+OK pi version: 1.0.0 (floor 0.83.0)
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
