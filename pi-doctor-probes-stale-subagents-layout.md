@@ -6,7 +6,7 @@ score:
 started: 2026-10-03T02:42:26Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-doctor-probes-stale-subagents-layout
 issue:
 id: mc0ajnpb4wh5nhd2p4q0vx9n
 gates:
