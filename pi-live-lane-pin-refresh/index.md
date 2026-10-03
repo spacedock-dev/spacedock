@@ -569,3 +569,28 @@ Fixed the live-lane setup failure at its real cause: commit `32049bdbd` stopped 
 - `internal/cli`: `TestCodexResolveManifestAgainstInstalledHost` (ambient local codex plugin cache), `TestVersionAmbiguousMarkersExitZero` (ambient `PI_CODING_AGENT=true`).
 - `skills/integration`: `TestSurveyCodexPresenceThroughSync` (`blank_cwd=0`).
 - `internal/ensigncycle`: `TestCodexProcessActivityResetsQuietBudget` is a known CI race outside scope; it did not fire in this worktree run.
+
+## Stage Report: implementation (cycle 5)
+
+AC-10 (no regression): make the offline `go test ./...` gate deterministic and test our decision logic, not the machine.
+
+- DONE: Make the reset-on-activity offline decision deterministic and machine-independent: rewrite TestCodexProcessActivityResetsQuietBudget so the helper's activity is supplied by a test-controlled signal or an injected deadline (assert the decision logic), remove the `const quietBudget = 250 * time.Millisecond` wall-clock race and the `result.duration > 4*quietBudget` machine-speed assertion, and keep TestCodexProcessQuietTimeoutPreservesFaultEvidence (mode `stall`) as the deterministic offline kill-path test.
+  `streamwatch_test.go` adds `now`/`sleep` clock seams (production default `time.Now`/`time.Sleep`); `codex_single_run_test.go` drains `drainCodexToTerminal` against a fake line source and never-exiting fake proc, injecting activity while a fake clock advances one poll step per sleep. The test asserts the no-progress decision (`stepTimeout`, kill happens only after the activity window closes) with no real timer; the old `progress-then-exit` helper mode and the duration/count machine assertions are gone. `stall` kill-path test unchanged. `go test ./internal/ensigncycle -run 'TestCodexProcessActivityResetsQuietBudget|TestCodexProcessQuietTimeoutPreservesFaultEvidence' -count=5` PASS (4.2s).
+- DONE: Isolate the three environment-dependent tests from the operator's machine (isolated CODEX_HOME / fake host, scrubbed markers, existing HOME/data-dir isolation).
+  `TestCodexResolveManifestAgainstInstalledHost` now sets an isolated `CODEX_HOME`, installs `spacedock@spacedock` from a local-path marketplace via the production `execHost.Install`, and asserts the resolver returns that isolated install's `.codex-plugin/plugin.json` under `codexHomeDir` — never the operator `~/.codex`. `TestVersionAmbiguousMarkersExitZero` scrubs all four marker vars (`PI_CODING_AGENT`, `PI_CODING_AGENT_DIR`, plus its two controlled ones). `TestSurveyCodexPresenceThroughSync` keeps `HOME`/`AGENTSVIEW_DATA_DIR`/`CODEX_SESSIONS_DIR`/`CLAUDE_PROJECTS_DIR`. All three pass with an operator `CODEX_HOME`/`PI_CODING_AGENT`/`PI_CODING_AGENT_DIR` set.
+- DONE: Survey-test decision (pre-approved, not escalated): keep the sync-ingest property (repo-project Codex row count = 2).
+  Chose option (2): deleted the `blank_cwd > 0` expectation. Whether agentsview persists or blanks a Codex cwd is an ambient binary-version behavior, not this repo's code; the real sync here persists the cwd (`blank_cwd=0`). The query's blank-cwd counting stays deterministically covered by the fixture-only codex-presence test in `survey_queries_test.go`, which injects `cwd=''` rows. Kept the count-2 assertion and the HOME/data-dir isolation; test still runs, not skipped.
+- DONE: Bounded proof.
+  `go test ./internal/ensigncycle -run '...' -count=5` PASS; `go test ./internal/cli -run '...' -count=1` PASS, and again with operator `CODEX_HOME`/`PI_CODING_AGENT`/`PI_CODING_AGENT_DIR` set PASS; `go test ./skills/integration -run TestSurveyCodexPresenceThroughSync -count=1` PASS; `gofmt -l` on the five changed files empty; `go build ./...` PASS; one `go test ./...` in the worktree EXIT=0 (internal/cli 126s, internal/ensigncycle 204s, no package timeout).
+- DONE: Write the cycle-5 report citing AC-10, commit on `spacedock-ensign/pi-live-lane-pin-refresh` and push; touch only named tests plus the needed clock helper.
+  Code commit `4e95513e3` pushed (`7e13e49b4..4e95513e3`); five files changed, +114/-52, all named tests plus the `streamwatch_test.go` clock seam. The three previously-ambient failures reported in cycle 4 now pass offline; the cycle-4 note that they were pre-existing ambient failures was correct and item 2 is what makes them machine-independent.
+- SKIPPED: Real Codex pacing against the real watchdog.
+  Deliberately not re-asserted offline; it stays covered by the live lane. The offline direction that remains is the deterministic `stall` kill-path test.
+
+### Summary
+
+AC-10 is satisfied: the reset-on-activity test now asserts the no-progress decision through an injected clock and test-controlled activity instead of racing real sleeps, and the three host-dependent tests build their own isolated home so the offline gate no longer reads the operator's machine. The blank-cwd expectation was deleted under the pre-approved option (2) because the blank-cwd behavior belongs to the ambient agentsview version, not our code, and is already covered deterministically by the fixture-only query test. Code commit `4e95513e3` is pushed; `go test ./...` is green in the worktree.
+
+### AC scan evidence
+
+AC-10 cited above with its named falsifiers: **race-real-sleeps** is contradicted because the reset test no longer sleeps against a real timer; **inherit-operator-home** is contradicted because the three tests pass with an operator `CODEX_HOME`/`PI_CODING_AGENT` set.
