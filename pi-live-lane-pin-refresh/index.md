@@ -378,7 +378,7 @@ Committed the bounded three-file Pi 1.0 refresh, with independently registry-ver
 ## Stage Report: implementation (cycle 2)
 
 - DONE: Implement the folded isolated-home setup contract for the required pi-subagents and pi-intercom extensions: one setup contract, a non-live helper seam, both npm registrations in the isolated home's settings, the Spacedock package as one absolute checkout path, independent explicit overrides, and no substrate extension path in default discovery. Keep the negative control from the scope note.
-  Code commit `115e37fad`: `seedPiIsolatedHome`/`seedPiDefaultExtensions` in non-live `pi_default_extensions_test.go`; isolated settings = `["npm:pi-subagents","npm:pi-intercom",repo]` (never `file:`); both live fixtures call it; `piLiveEnv` scrubs both root vars by default and forwards only nonempty explicit overrides. The removed `.ts` source assertion was replaced by root discovery, not restored.
+  Code commit `631b482e6` (rebased onto the merge-augmented remote tip): `seedPiIsolatedHome`/`seedPiDefaultExtensions` in non-live `pi_default_extensions_test.go`; isolated settings = `["npm:pi-subagents","npm:pi-intercom",repo]` (never `file:`); both live fixtures call it; `piLiveEnv` scrubs both root vars by default and forwards only nonempty explicit overrides. The removed `.ts` source assertion was replaced by root discovery, not restored.
 - DONE: AC-7 (discovery reads the real installed location) — deterministic proof.
   `TestPiDefaultExtensionRootsReadsRealInstalledLocation` points settings at a custom agentDir and requires that agentDir's npm path; `TestPiDefaultExtensionRootsMatchesLocalSourceByPackageName` requires the package.json-named local source and rejects a same-named decoy; falsifiers point-settings-elsewhere and write-file-prefix.
 - DONE: AC-8 (independent explicit overrides) — deterministic proof.
@@ -388,19 +388,19 @@ Committed the bounded three-file Pi 1.0 refresh, with independently registry-ver
 - DONE: Record the folded scope and the four criteria in the task body, and cite each criterion in the stage report. Record the disposition of every live Pi binding (cleared, kept, or re-anchored) with the evidence that decided it.
   Body `### Folded scope — isolated-home Pi discovery (M1)` adds AC-6..AC-9 under the existing numbering, each with its own falsifying edit; all four are cited above and in the binding section below.
 - DONE: AC-1 through AC-5 carried forward unchanged from the implementation cycle-1 report.
-  AC-1 lane pins, AC-2 manifest-derived assertions at both setup checkpoints, AC-3 verified integrity pins, AC-4 doc/comment agreement, and AC-5 bounded non-Pi behavior remain as committed (`094e06ff7`); this cycle neither narrows nor renumbers them.
+  AC-1 lane pins, AC-2 manifest-derived assertions at both setup checkpoints, AC-3 verified integrity pins, AC-4 doc/comment agreement, and AC-5 bounded non-Pi behavior remain as committed (`094e06ff7`, rebased as `818b9c4ad`); this cycle neither narrows nor renumbers them.
 - SKIPPED: AC-6/AC-9 authorized front-door smoke (`TestLivePiFrontDoorSmoke`) with both package-root variables unset.
   Not run this cycle: it is a live, model-auth, multi-minute run outside the FO's bounded-proof budget; its default-discovery value and durable report/commit evidence remain owed by the live lane.
 - DONE: AC-9 non-live half — ordinary helper tests plus formatting and live-tagged vet/build.
   `go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIntercomPackageRootDiscoversIndependently|TestPiIsolatedHome|TestPiLiveEnv' -count=1` passed; `gofmt -w ./internal/ensigncycle`, `go vet -tags live ./internal/ensigncycle`, `go build -tags live ./internal/ensigncycle` passed; falsifier live-tag-the-helper is contradicted by the helper file carrying no build constraint.
 - SKIPPED: Repository-wide `go test ./...` / `go test ./... -race` (the prior cycle's FAILED item), resolved with bounded evidence.
-  `TestCodexResolveManifestAgainstInstalledHost` + `TestVersionAmbiguousMarkersExitZero` (`internal/cli`) and `TestSurveyCodexPresenceThroughSync` (`skills/integration`) fail identically on this tree at `115e37fad` and on base `1f41f289f` (`/tmp/spacedock-base`): local codex plugin cache, ambient `PI_CODING_AGENT`, and `blank_cwd=0`. Pre-existing, so the item is skipped; full/race runs were not repeated per the budget rule.
+  `TestCodexResolveManifestAgainstInstalledHost` + `TestVersionAmbiguousMarkersExitZero` (`internal/cli`) and `TestSurveyCodexPresenceThroughSync` (`skills/integration`) fail identically on this tree at `631b482e6` and on base `1f41f289f` (`/tmp/spacedock-base`): local codex plugin cache, ambient `PI_CODING_AGENT`, and `blank_cwd=0`. Pre-existing, so the item is skipped; full/race runs were not repeated per the budget rule.
 
 ### Live Pi binding disposition
 
 Four Pi XFAILs in `internal/ensigncycle/shared_live_runner_test.go`; no XFAIL added, no selector narrowed.
 
-- re-anchored: `TestLiveCommonRejectionFlow` -> `6h3teccccn3qh71yqcmjbjx4` (was `p17swb3375rt525fn7f8xt7e`). Evidence: commit `b4ef3a90f`; the prior owner was the archived timeout repair, while `6h3teccccn3qh71yqcmjbjx4` owns the live Pi rejection-worker topology fault.
+- re-anchored: `TestLiveCommonRejectionFlow` -> `6h3teccccn3qh71yqcmjbjx4` (was `p17swb3375rt525fn7f8xt7e`). Evidence: commit `d8f758bd1` (pre-rebase `b4ef3a90f`); the prior owner was the archived timeout repair, while `6h3teccccn3qh71yqcmjbjx4` owns the live Pi rejection-worker topology fault.
 - kept: `TestLiveCommonOwnedConflictOwnerHandoff` -> `fe7bfjz9sb8wyckmnnm3ncjx`.
 - kept: `TestLiveCommonKeepMovingPosture` -> `x02375wsg6q61xek7p0t36j2`.
 - kept: `TestLiveCommonSmallestSufficientMechanism` -> `h30c9jrfcf21fdh2qs5z58sd`.
@@ -409,6 +409,8 @@ Four Pi XFAILs in `internal/ensigncycle/shared_live_runner_test.go`; no XFAIL ad
 ### Summary
 
 Folded the M1 isolated-home discovery contract into the pi-live lane: one setup contract now links and registers both substrate packages in the isolated home (Spacedock kept as one absolute checkout path), discovery reads the real installed roots from the agentDir settings, and explicit overrides stay independent while default mode scrubs both package-root variables. Deterministic non-live tests, gofmt, live-tagged vet/build, and the retained negative control pass; AC-6/AC-9's live front-door run and the full/race suites remain unclaimed. The prior cycle's FAILED suite item is resolved as skipped on bounded cross-tree evidence.
+
+Rebase note: the remote branch had advanced past the worktree (pin refresh rebased onto the `mc` merge #817); cycle-2 commits were rebased onto the remote tip, so the pre-rebase SHAs `094e06ff7`/`b4ef3a90f`/`115e37fad` are now `818b9c4ad`/`d8f758bd1`/`631b482e6`. The lane pins and all four manifest-derived assertions are unchanged.
 
 ### AC scan evidence
 
