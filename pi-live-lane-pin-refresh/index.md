@@ -268,11 +268,24 @@ editing workflow pins.
   Body contains the exact two-line install-command diff, leaves frontmatter byte-identical, and keeps the doctor's `mc` fix and live green proof explicitly separate.
 - DONE: Run focused baseline validation.
   `go test ./internal/release/...`, registry reconciliation, and `go build ./...` pass; downgraded checkout wiring is the existing guard's concrete falsifier, not a new test claimed shipped here.
-- FAILED: Repository-wide baseline `go test ./...` validation.
-  Unchanged CLI tests report host-local Codex plugin-resolution mismatch and an extra inherited PI_CODING_AGENT ambiguity marker; no product-code fix is included in this ideation-only stage.
+- FAILED: Repository-wide baseline `go test ./...` and `go test ./... -race` validation.
+  Baseline fails Codex plugin resolution, inherited PI_CODING_AGENT ambiguity, and survey Codex cwd expectations; ensigncycle times out at 10m. Race repeats Codex/survey failures and times out CLI/ensigncycle at 10m; no product-code fix is included.
+- DONE: AC-1 proof plan: independent npm version/hash snapshot plus Go pin guard and unchanged green pi-live run; revert-agent-pin must fail (live proof remains pending implementation).
+- DONE: AC-2 proof plan/evidence: guard both setup checkpoints and exercise actual manifest files; real-tarball missing-target probes fail; restore-setup-source-assertion and remove-bridge-target falsify it.
+- DONE: AC-3 proof plan/evidence: guard all verified_pack call sites; actual function exits 1 for corrupt-subagents-integrity and accepts the published hash.
+- DONE: AC-4 proof plan: one-off doc-command/comment comparison to the independent registry snapshot; restore-stale-doc-version must produce a mismatch.
+- DONE: AC-5 proof plan/evidence: baseline suites/build and protected-boundary audit; focused release/registry/build pass, broad baseline failures noted above; downgrade-other-lane-checkout must fail the existing guard.
 - SKIPPED: Implement the pin refresh and obtain a green live-lane acceptance run.
   This dispatch is ideation only; implementation follows the reviewed design and live acceptance requires the separate doctor fix plus CI environment approval.
 
 ### Summary
 
 Fleshed out a bounded three-file Pi 1.0 pin refresh, covering all four stale assertions and proving manifest resolution against the published tarball. The proposal includes independent version/integrity evidence, falsifiable acceptance criteria, a concrete documentation diff, and a larger explicit LOC estimate for the guard; staff review and the ideation gate remain with the first officer.
+
+### AC scan evidence
+
+Command: `/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock status --read /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev/.spacedock-state/pi-live-lane-pin-refresh/index.md --ac-scan --json --workflow-dir docs/dev`. All five criteria have citations.
+
+```json
+{"command":"read","stage":"ideation","acs":[{"id":"AC-1","line":"162","unevidenced":"false","citations":[{"line":"262","text":"  AC-1 measures installed versions and existing live results against an independent npm snapshot; AC-1 through AC-5 each name a falsifying edit."},{"line":"262","text":"  AC-1 measures installed versions and existing live results against an independent npm snapshot; AC-1 through AC-5 each name a falsifying edit."},{"line":"273","text":"- DONE: AC-1 proof plan: independent npm version/hash snapshot plus Go pin guard and unchanged green pi-live run; revert-agent-pin must fail (live proof remains pending implementation)."}]},{"id":"AC-2","line":"173","unevidenced":"false","citations":[{"line":"274","text":"- DONE: AC-2 proof plan/evidence: guard both setup checkpoints and exercise actual manifest files; real-tarball missing-target probes fail; restore-setup-source-assertion and remove-bridge-target falsify it."}]},{"id":"AC-3","line":"184","unevidenced":"false","citations":[{"line":"275","text":"- DONE: AC-3 proof plan/evidence: guard all verified_pack call sites; actual function exits 1 for corrupt-subagents-integrity and accepts the published hash."}]},{"id":"AC-4","line":"193","unevidenced":"false","citations":[{"line":"276","text":"- DONE: AC-4 proof plan: one-off doc-command/comment comparison to the independent registry snapshot; restore-stale-doc-version must produce a mismatch."}]},{"id":"AC-5","line":"203","unevidenced":"false","citations":[{"line":"262","text":"  AC-1 measures installed versions and existing live results against an independent npm snapshot; AC-1 through AC-5 each name a falsifying edit."},{"line":"277","text":"- DONE: AC-5 proof plan/evidence: baseline suites/build and protected-boundary audit; focused release/registry/build pass, broad baseline failures noted above; downgrade-other-lane-checkout must fail the existing guard."}]}]}
+```
