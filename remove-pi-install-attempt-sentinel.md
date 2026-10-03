@@ -265,3 +265,45 @@ Designed removal of the machine-wide attempt file for claude, codex and Pi witho
 ### Summary
 
 Removed the machine-wide install-attempt latch from the shared FO install reference (one instruction file, `+4/-5`, net -1) for claude, codex and Pi, with no replacement marker and no session key. Byte-preserved lines 1-27 (classifier, per-OS commands, both casks, sandbox arm) and the convergence/version re-check body. Sentinel-path search returns no matches; focused contractlint and integration checks green (cask resolution skipped under `-short`). The install-offer behaviour remains unproven because no HEAD check exercises it.
+
+
+## Review-finding disposition
+
+### V-1 — Install-offer behaviour remains unobserved
+
+- Observation: no check on candidate `355042389` executes the FO offer/approval/install/abort/resume flow. The six passing focused tests can stay green while a host skips the offer or retries after failure; removal searches establish instruction absence only.
+- Released user and normal workflow: claude, Codex and Pi users with a missing binary, outside a sandbox on a supported OS, after an earlier failed installation.
+- Observable harm: possible continued offer suppression, repeated installation or unchecked resume; none was observed in this validation. The demonstrated limitation is lack of behavioural evidence, not a demonstrated product failure.
+- Authority: captain-ruling[2026-10-03] — approved removal of the shared instruction's attempt-file dependency with the behavioural limit recorded, not a claim of observed cross-session offers.
+- Trigger evidence: the old existence gate/write is visible at `4436ec14c`; no retained test exercises a failed install followed by fresh-session offer eligibility. A live forced-failure/new-session trigger was not run and remains unobserved.
+- Worker proposal: defect kind **evidence defect**; release scope **deferred risk** under the explicitly approved instruction-only scope. Task ownership: recording the limit belongs here; obtaining behavioural evidence requires separately authorized host execution. No implementation repair or new harness/controller proposed.
+- FO authorization: via `contact_supervisor`, explicitly authorized deferring this gap, recording AC-1 through AC-3 as instruction checks only, and settling validation **PASSED**; no implementation repair. This is a scope decision already approved by the captain, not a testing-budget exception.
+- Close with: separately authorized, durable real-FO transcripts and tool/exit/on-disk logs against the actual shipped instructions for claude, Codex and Pi. Force one approved install to fail; observe exactly one invocation and terminal manual hint/abort. Start fresh sessions in each host with the same TMPDIR and retained legacy sentinel, including a different project, and observe the offer without deleting the sentinel. Record decline causing zero install invocations; approval causing exactly one; failed/missing-path re-check aborting; compatible version re-check preceding resume, with no persistent launcher override. Compare the old baseline's suppression with the candidate under the same conditions; a copied model of the prose or another text assertion does not close this gap.
+- Promote to material: any release-facing note, changelog, document or report claims the offer actually returns after failure without that observation, or authorized execution demonstrates a promised flow violation. The release claim is limited to removal of the shipped attempt-file dependency: no shipped file names or consults it. This does not claim deletion of a user's legacy temp file. The intended restored possibility of an offer is not an observed outcome.
+
+## Stage Report: validation
+
+- DONE: AC-1 (VALUE, instruction-level) — Shipped instructions have no persistent attempt gate or write.
+  At `355042389`, `git grep -n -I -F spacedock-install-attempted` in the product worktree returned no matches (exit 1); complete diff review found no replacement marker, session key, cleanup or retry mechanism. Instruction evidence only; restoring the gate/write falsifies it.
+- DONE: AC-2 — The required install content is unchanged.
+  Python byte comparison against `4436ec14c` passed for lines 1-27, the offer/decline body and convergence body (only step 4→3); classifier, per-OS commands, sandbox arm, casks `spacedock`/`spacedock@next` and version re-check are preserved. Any changed preserved byte fails comparison.
+- DONE: AC-3 — The instruction still terminates after one approved attempt.
+  Reviewed all five old steps against four new steps: approval retains “exactly once”; failure prints the channel-correct manual hint, preserves stale-launcher advice and ABORTs; no second install attempt or unchecked resume is permitted. No install-retry/proceed-without-re-check permission was added; actual host termination was not observed.
+- DONE: Run the contractlint checks and the integration checks that read fo-install.md.
+  Ran `go test ./internal/contractlint -run '^(TestVersionGateDeferredTrigger|TestVersionGateSandboxRegistry|TestInstallHintNoDrift)$' -count=1 -v`: all three PASS. Missing deferred reference, missing outside-sandbox message/registry mirror, or stable command/tap drift respectively fail these structural/drift guards; they do not run the offer.
+- DONE: Run the focused integration checks and report their actual proof boundaries.
+  Ran `go test ./skills/integration -short -run '^(TestChannelClassifierTable|TestStableHintMatchesPublishedDoc|TestEdgeHintDeliversChannelToScript|TestContractCasks)$' -count=1 -v`: classifier, stable-doc equality and edge-doc pipeline PASS. Removing an edge classifier arm, drifting the stable reference command, or moving the edge assignment to curl respectively fails them; the edge test executes the doc's command, not the reference's offer flow.
+- SKIPPED: TestContractCasks tap resolution, names and edge-satisfies-pin.
+  Top-level test SKIP: “-short: cask resolution needs Homebrew and the tap”; subtests never ran. Preliminary two-token extraction reached the skip, but cask availability and edge compatibility are NOT passed evidence.
+- DONE: Note which hosts share the changed file and confirm wording stayed host-neutral.
+  `skills/first-officer/SKILL.md:29-38` loads the common core before claude/Codex/Pi adapters; shared core lines 10/47 defer to `fo-install.md`. The unchanged “host's spacedock launcher command” and generic offer/fallback text introduce no host-specific path or API.
+- DONE: Check the four-step replacement itself against the old five steps; perform the semantic adversarial pass.
+  Instruction matrix: legacy sentinel absent/present→same offer; decline→manual hint/ABORT; approval→one command; compatible re-check→resume; failed re-check/no path→manual hint/ABORT; stale override→session-only replacement advice. Sandbox/unsupported OS/wrong version remain outside this offer path. These are inspected instructions, not observed host outcomes.
+- DONE: Check latest captain feedback, scope and review-finding disposition.
+  `git diff --stat 4436ec14c HEAD`: only `skills/first-officer/references/fo-install.md`, +4/-5; `git diff --check 4436ec14c HEAD` clean. Matches approved exact replacement; no test files changed. V-1 records the FO-authorized evidence-defect/deferred-risk classification and closure/promotion conditions; no material or polish findings.
+- SKIPPED: Live install-offer observation, repository-wide suite, race suite and formatting sweep.
+  Explicitly excluded for this verification-only round. Small-change fast path applies; no executable hot path, scaling/over-limit risk or format parser changed, so no detached audit or additional scaling test was run.
+
+### Summary
+
+**PASSED for the approved instruction-only scope; delivery may proceed to independent review, not automatic merge.** All three ACs have instruction-level evidence; six focused tests passed and `TestContractCasks` was skipped. The shared host-neutral change removes the documented attempt-file dependency without a replacement; actual cross-session offers and one-attempt host execution remain unobserved, recorded as FO-authorized deferred evidence risk V-1, never a behavioural pass.
