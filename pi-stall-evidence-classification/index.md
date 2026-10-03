@@ -4,6 +4,9 @@ status: backlog
 score: 0.7
 source: "pi-ux carve review, 2026-10-03: stall classification has no Pi implementation owner once the Claude-only capture task stays out of the sprint."
 id: z6eb1krpyfmr01dwyb7703hx
+sprint: pi-ux
+group: tooling
+sprint-readiness: ready
 ---
 
 A stalled Pi live run leaves artifacts that nobody classifies. The operator cannot
