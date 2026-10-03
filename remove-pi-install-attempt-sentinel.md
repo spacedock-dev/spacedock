@@ -18,6 +18,17 @@ gates:
                 id: briefing:271f46crset81jwf2rgast0c:ideation:attempt-1:revision-1
                 digest: sha256:b5468d7dede594b3b955763bdff5f636257252272941a0c80b931f2ae33d2b1f
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:271f46crset81jwf2rgast0c:ideation:1
+                briefing: briefing:271f46crset81jwf2rgast0c:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-03T17:41:51.988831Z"
+                decision: approve
+                reason: 'Captain: "approve". Approved the ideation baseline: delete the machine-wide install-attempt file from the shared install instruction, with no replacement marker, and with the install-offer behavioural limit recorded rather than claimed.'
+              application:
+                target-stage: implementation
+                state: pending
 ---
 
 ## Problem
