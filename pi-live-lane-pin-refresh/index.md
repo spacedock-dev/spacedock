@@ -37,6 +37,20 @@ gates:
                 id: briefing:mh698y3ht6ydmr6ethaw9hg9:ideation:attempt-1:revision-1
                 digest: sha256:67395f0bd45e31a6c2842ca0be396b50f674b3dce43940f7af9728518f69f6f8
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mh698y3ht6ydmr6ethaw9hg9:ideation:1
+                briefing: briefing:mh698y3ht6ydmr6ethaw9hg9:ideation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-03T04:58:35.738946Z"
+                decision: approve
+                reason: Covers refreshing the pi-live lane to the published Pi family and deriving substrate assertions from the installed package, as the fastest way to observe the real matrix.
+                conn:
+                    quote: just update the pi and run the ci in pr
+                    source: captain instruction, this session, 2026-10-03
+              application:
+                target-stage: implementation
+                state: pending
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
