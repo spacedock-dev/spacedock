@@ -606,17 +606,17 @@ jobs:
           npm --version
           node --version
 
-          # Compatibility pins: pi-coding-agent 0.85.x is the ready-gate floor
-          # (s98: spacedock pi refuses launches when `pi --version` < 0.83.0), and
-          # the substrate pins ride the same family (pi-subagents, pi-intercom).
+          # Compatibility pins: Pi 1.0 family — pi-coding-agent 1.0.0,
+          # pi-subagents 0.75.0, and pi-intercom 0.16.0. This is distinct from
+          # the unchanged spacedock ready-gate floor (s98): pi >= 0.83.0.
           # Keep these exact pins together; do not let npm's engine-aware resolver
           # mix a sub-floor pi-coding-agent with newer substrates.
-          PI_CODING_AGENT_VERSION="0.85.1"
-          PI_CODING_AGENT_INTEGRITY="sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ=="
-          PI_SUBAGENTS_VERSION="0.67.0"
-          PI_SUBAGENTS_INTEGRITY="sha512-43FGBi82sbxEGhEfsaj0P7I/rRJfsw1UPuFSVSkjZw0Fy92lrBIB9d3gDTpwmK5hLj3ZzZUnvtlqiKQatySCTw=="
-          PI_INTERCOM_VERSION="0.13.0"
-          PI_INTERCOM_INTEGRITY="sha512-+QjKJRAEhrgQZj4+M9OW/8unRLvCzeCp0K66lZmbS5/me0fsClXRtANBgM6mY+EoX+Fcd+qBE8dTThp8+ND//g=="
+          PI_CODING_AGENT_VERSION="1.0.0"
+          PI_CODING_AGENT_INTEGRITY="sha512-/FtbxoSQU/mEv1QnichJjRjqteqaIaMWxmhB4G367+MwZfX7/DI5B9YAg5lqbN7nztFskBEtUSZ+FlmMBECtMw=="
+          PI_SUBAGENTS_VERSION="0.75.0"
+          PI_SUBAGENTS_INTEGRITY="sha512-RO4DiTJM6pnK8y9PnD7Y6TLeiX2c8Kh6QhmkecFo+ou5qtnz5qiM+vUKru48UmJG1nB9eJ6rALd1M04uBOR4XQ=="
+          PI_INTERCOM_VERSION="0.16.0"
+          PI_INTERCOM_INTEGRITY="sha512-ClGQuovPsz7r1iQwMRjEN+8wxywfrDrMILAkCSf/z19Nezzyfz77U8362Wb/VFNoZOwmF4PBsuGWCtB9AsEJMQ=="
 
           pack_dir="$RUNNER_TEMP/pi-live-npm-packs"
           mkdir -p "$pack_dir"
@@ -653,9 +653,23 @@ jobs:
             --ignore-scripts --no-audit --no-fund --omit=dev
           node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); if (p.version !== '$PI_SUBAGENTS_VERSION') throw new Error('unexpected pi-subagents version '+p.version); console.log('verified '+p.name+'@'+p.version)"
           node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); if (p.version !== '$PI_INTERCOM_VERSION') throw new Error('unexpected pi-intercom version '+p.version); console.log('verified '+p.name+'@'+p.version)"
-          test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"
+          node - "$pi_npm_root/node_modules/pi-subagents" <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = process.argv[2];
+          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+          const extensions = manifest.pi?.extensions;
+          if (!Array.isArray(extensions) || extensions.length === 0) throw new Error('missing pi.extensions');
+          const bridge = manifest.exports?.['./intercom-bridge']?.default;
+          if (typeof bridge !== 'string' || !bridge) throw new Error('missing intercom-bridge runtime export');
+          for (const entry of [...extensions, bridge]) {
+            if (typeof entry !== 'string' || !entry) throw new Error('invalid runtime entry');
+            const target = path.resolve(root, entry);
+            if (!fs.statSync(target).isFile()) throw new Error('not a runtime file: ' + target);
+            console.log('verified runtime file ' + target);
+          }
+          NODE
           test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
-          test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"
           test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
           echo "PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents" >> "$GITHUB_ENV"
           echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"
@@ -761,9 +775,23 @@ jobs:
           spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE" | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/pi-doctor.txt"
           test -f "$GITHUB_WORKSPACE/skills/first-officer/references/pi-first-officer-runtime.md"
           test -f "$GITHUB_WORKSPACE/skills/ensign/references/pi-ensign-runtime.md"
-          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/extension/index.ts"
+          node - "$PI_SUBAGENTS_PACKAGE_ROOT" <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = process.argv[2];
+          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+          const extensions = manifest.pi?.extensions;
+          if (!Array.isArray(extensions) || extensions.length === 0) throw new Error('missing pi.extensions');
+          const bridge = manifest.exports?.['./intercom-bridge']?.default;
+          if (typeof bridge !== 'string' || !bridge) throw new Error('missing intercom-bridge runtime export');
+          for (const entry of [...extensions, bridge]) {
+            if (typeof entry !== 'string' || !entry) throw new Error('invalid runtime entry');
+            const target = path.resolve(root, entry);
+            if (!fs.statSync(target).isFile()) throw new Error('not a runtime file: ' + target);
+            console.log('verified runtime file ' + target);
+          }
+          NODE
           test -f "$PI_SUBAGENTS_PACKAGE_ROOT/skills/pi-subagents/SKILL.md"
-          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/intercom/intercom-bridge.ts"
           test -f "$PI_INTERCOM_PACKAGE_ROOT/skills/pi-intercom/SKILL.md"
 
       - name: Show tool versions
