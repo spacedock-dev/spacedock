@@ -48,6 +48,14 @@ gates:
                 id: briefing:3w1ncf1thj12aryvkf5gj1rd:ideation:attempt-2:revision-1
                 digest: sha256:83c51381a27be6ed4dc266d622644f72f322488f0f78eb66c28dd7591741097f
                 room-ref: '@review/ideation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:3w1ncf1thj12aryvkf5gj1rd:ideation:2
+                briefing: briefing:3w1ncf1thj12aryvkf5gj1rd:ideation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-10-03T17:04:58.810792Z"
+                decision: revise
+                reason: 'Captain: "no, send it back to reword it so we know that was a bad gate attempt". The bound ideation attempt-2 summary was a bad gate attempt: it described the change in invented vocabulary - ''substrate packages'' for the required pi-subagents and pi-intercom extensions, and ''hand-wired'' for three nameable manual steps - so the captain could not tell what the change does or why it matters. Reword the artifact in plain operator language and record in the body that attempt-2 was rejected on wording, so the rejection is visible on the record. Scope, surface, tolerance and criteria are not reopened by this rejection.'
 started: 2026-08-14T06:44:31Z
 ---
 
