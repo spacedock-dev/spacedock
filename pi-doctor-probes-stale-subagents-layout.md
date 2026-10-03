@@ -20,6 +20,17 @@ gates:
                 id: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:backlog:attempt-1:revision-1
                 digest: sha256:1238b011f4548835cdc914d79e2b7ec094be63f774d7ed21e6cea30f2c69ce8f
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mc0ajnpb4wh5nhd2p4q0vx9n:backlog:1
+                briefing: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-03T02:42:14.267902Z"
+                decision: approve
+                reason: 'Captain directed dispatch of the seed: the defect, scope, and the ACs pinning the probe''s proof owner are stated.'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 ## Problem
