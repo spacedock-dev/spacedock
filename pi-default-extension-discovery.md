@@ -80,6 +80,23 @@ installed package location and proceeds.
 
 ## Acceptance criteria
 
+**M1 proposed refinements for the captain's gate (not yet approved):** retain
+AC-1–AC-4 below as the earlier baseline. Proposed AC-1 requires BOTH
+`pi-subagents` and `pi-intercom` to load through Pi package discovery with BOTH
+`PI_SUBAGENTS_PACKAGE_ROOT` and `PI_INTERCOM_PACKAGE_ROOT` absent, no
+harness-supplied substrate extension paths, and the Spacedock package/ensign
+skill still loaded. A successful explicit fallback is not AC-1 evidence.
+Proposed AC-2 covers independently located packages and the actual agentDir
+settings, including supported absolute/relative local package entries, not
+just the conventional npm directory. Proposed AC-3 preserves independent
+explicit overrides for both roots and the retained fallback as a separate
+compatibility check. Proposed AC-4 adds ordinary (non-live-tagged) helper tests
+and a no-model package-loader check to the existing authorized front-door
+smoke; the latter still owes durable dispatch/report/commit evidence. See
+“M1 staff-review fold” below for falsifiers and the corrected setup contract.
+These refinements supersede the earlier proof's symlink-only and single-env
+interpretation only if approved at the captain's gate.
+
 **AC-1 (VALUE) — An isolated-home Pi run finds the subagents extension with no env var exported.**
 
 Verified by: an isolated-home Pi run that does NOT export `PI_SUBAGENTS_PACKAGE_ROOT`
@@ -290,3 +307,227 @@ authorized. Preserve the explicit-override path.
 ### Summary
 
 Investigated Pi's extension discovery chain end-to-end: `settings.json` packages → `getManagedNpmInstallPath` → `~/.pi/agent/npm/node_modules/<name>` → `package.json` `pi.extensions`. The test-harness fallback mirrors this path but is hard-coded and requires `PI_SUBAGENTS_PACKAGE_ROOT` to be set for isolated homes. Proposed `piDefaultExtensionRoots` — a test helper that reads the operator's real `settings.json` packages to dynamically discover the installed package roots, plus `seedPiDefaultExtensions` to symlink them into the isolated `cleanHome` so `piRuntimeConfigFromEnv`'s fallback resolves without the env var. No production code changes; explicit override preserved; per-AC proof plan recorded.
+
+## M1 staff-review fold — proposed for the captain's gate
+
+This is a correction to the retained ideation, not a new design. All AC,
+surface, and harness-semantic changes in this section are **proposed for the
+captain's gate**. The earlier body/report remain as history; this proposal
+replaces their symlink-only setup, live-tagged helper placement, unconditional
+sibling-root expectation, and single-variable/fallback-based proof. No
+implementation or live journey is claimed by this ideation fold.
+
+### One isolated-home setup contract (proposed)
+
+- Capture `realHome` from the parent HOME before constructing the child env.
+  Capture the real agent directory from the parent's `PI_CODING_AGENT_DIR`
+  when explicitly set, otherwise `realHome/.pi/agent`. Read discovery settings
+  and installed roots from that directory; never read them from clean HOME.
+  Treat real-home packages/settings as read-only; do not copy unrelated packages.
+- Allocate `cleanHome` once; define `piHome = cleanHome/.pi/agent` and pass that
+  SAME path as `PI_CODING_AGENT_DIR`. This deliberately aligns Pi's agentDir
+  loader with the launcher's existing HOME-based package-root probes, without
+  changing production resolution. Sessions remain separately isolated.
+- Resolve subagents and intercom independently from explicit overrides, then
+  real-agent settings/installed-package probes already proposed. For supported
+  local sources, recognize absolute and agentDir-relative entries and match
+  `package.json` names. Do not mistake a non-sibling intercom install for an
+  error, or infer its root from a subagents override. The earlier `file:`
+  example is not supported by the exercised Pi 1.0.0 loader; do not emit it.
+- `seedPiDefaultExtensions(t, piHome, roots)` links BOTH packages under
+  `piHome/npm/node_modules/{pi-subagents,pi-intercom}`. Register BOTH
+  `npm:pi-subagents` and `npm:pi-intercom` in `piHome/settings.json`'s `packages`
+  array. Preserve the Spacedock package as one absolute checkout-path entry
+  (`repo`, not `"file:"+repo`), and preserve any other intentionally seeded
+  settings. Root symlinks alone do not register resources with Pi.
+- Compose settings once in setup (or merge additions); neither fixture may
+  overwrite the substrate registrations with the old repo-only settings write.
+  `newPiLiveSmokeFixture` and `newPiSharedLiveDriver` use the same contract.
+  `seedPiLiveAuth` still owns auth/models copying into this same piHome (pnc);
+  no credential/model policy change is proposed here.
+- Capture overrides separately from discovered roots. In default mode scrub
+  BOTH package-root variables and do not re-add them, including as empty
+  assignments. In explicit mode each nonempty operator override independently
+  wins root selection and is forwarded unchanged; the other package still
+  discovers normally. Preserve foreign-runtime and `PI_SUBAGENT_*` scrubbing.
+  No harness substrate `--extension` paths or additional-extension SDK paths
+  are allowed in default-discovery proof. The existing launcher's unregistered
+  explicit fallback remains valid only as a separate compatibility path.
+
+This serves proposed AC-1/AC-2. Alternatives: symlinks alone leave the loader
+unaware of packages; registration in an unrelated piHome leaves HOME-based
+preflight probes empty; root env injection masks the default path. Aligning
+piHome with clean HOME is smaller than changing the launcher. Explicit
+package-root precedence serves proposed AC-3 without retaining the sibling
+assumption for a different package.
+
+### Non-live seam, old test contract, and bounded surface (proposed)
+
+- Add `internal/ensigncycle/pi_default_extensions_test.go` WITHOUT a `live`
+  build constraint. Put `piDefaultExtensionRoots`, `seedPiDefaultExtensions`,
+  their small shared setup representation if needed, and deterministic tests
+  there. A definition in `pi_live_runner_test.go` is invisible to ordinary
+  Go tests; ordinary tests must not depend on a live-tagged definition.
+- Update `pi_live_controls_test.go`: distinguish explicit overrides from
+  discovered roots in `piLiveEnv`/`piLiveEnvForAuth`, preserve env scrubbing,
+  and revise `piIntercomPackageRoot` to independent discovery. Replace
+  `TestPiIntercomPackageRootDefaultsBesideSubagents` with
+  `TestPiIntercomPackageRootDiscoversIndependently`: settings point intercom
+  at a non-sibling directory while a plausible sibling exists; require the
+  settings root. Keep the independent intercom override case. This is a
+  proposed CHANGE to the old test contract, not a promise it passes unchanged.
+  `TestPiLiveEnvDropsForeignRuntimeMarkers` currently expects the explicit
+  `/target/package` argument, not `/parent/package`; retain that precedence
+  and the explicit `/parent/intercom` override in its compatibility case.
+- Update `pi_live_runner_test.go` and `pi_shared_live_runner_test.go`: align
+  cleanHome/piHome, compose package registration, remove automatic env root
+  injection, and use the non-live helper. `piSubagentsPackageRoot` must no
+  longer assert a source-layout `.ts` entry: it delegates root discovery only.
+- **Estimate net LOC change: +220, across 4 test files** (approximately +260
+  insertions / -40 deletions; proposed tolerance net +160..+280, no extra
+  files without reapproval). This replaces the earlier three-file estimate.
+  The non-live seam serves AC-4; putting it in production or behind `live`
+  adds unnecessary scope or defeats ordinary tests.
+- Observable semantics allowed to change: isolated harness directory layout,
+  package registrations, absence of default root env injections, independent
+  intercom discovery, and replacement of the unsupported harness `file:`
+  prefix with an absolute path. No command grammar, stored entity format,
+  authority, shipped extension/skill, production runtime, or CI-lane change.
+  No launcher/docs changes are proposed; no user-facing documentation diff
+  is needed for this harness-only correction.
+- `mc` (`pi-doctor-probes-stale-subagents-layout`) remains the owner of
+  manifest extension/bridge entry resolution and stale launcher probes.
+  This task finds and registers package ROOTS, letting Pi load manifest
+  entries; it must not implement another entry resolver or restore `.ts`
+  assumptions. A front-door preflight failure on current compiled packages
+  is an mc dependency to report, not permission to change `internal/cli/pi.go`.
+  Any broader launcher change requires separate scope approval.
+
+### Proposed proof refinements
+
+Existing primary proof owner remains `TestLivePiFrontDoorSmoke` for end-to-end
+value, with durable entity report/commit and boot-contract grading. Its
+successful explicit fallback does NOT prove default discovery. Proposed checks:
+
+- AC-1/AC-2, deterministic Go setup tests (seconds): fake real HOME and custom
+  real agentDir, two packages at non-sibling local roots, and separate clean
+  HOME. Inspect the constructed child env and follow both symlinks; parse
+  settings to require both npm registrations plus exactly one Spacedock path.
+  Distinct falsifiers: point PI_CODING_AGENT_DIR elsewhere; remove one
+  registration; replace settings with repo-only content; inject either root
+  env var; select the sibling decoy. Settings-source cases use non-default
+  local directories so a hardcoded npm fallback cannot satisfy the test.
+- AC-1/AC-4, no-model real Pi loader check (seconds, Pi install required): feed
+  the seeded settings to Pi's `DefaultResourceLoader` without additional
+  extension paths. Require BOTH loaded package entries and BOTH `subagent`
+  and `intercom` tools, plus Spacedock/ensign. Negative control retains root
+  symlinks but removes both substrate registrations and loses both tools.
+  This proves supported loader behavior, not just Go's JSON writer. Do not
+  add a CI lane or make ordinary Go tests require a local Pi install.
+- AC-3, deterministic override tests (seconds): each override alone and both
+  together win their respective discovery conflicts; the non-overridden root
+  still comes from settings. Preserve marker-scrub tests. Falsifiers: override
+  ignored, intercom derived from subagents, or ambient child marker retained.
+  The retained explicit fallback is exercised separately, never counted as
+  the default-discovery run.
+- AC-4/front-door, authorized live run (existing live cost/budget): unset BOTH
+  package-root variables in the test process and resulting child env; capture
+  launch argv proving no substrate extension path was supplied, including by
+  the launcher's fallback. Require both loaded substrate tools in addition to
+  the existing report/commit evidence. Run gofmt, ordinary helper tests,
+  `go vet -tags live ./internal/ensigncycle`, and
+  `go build -tags live ./internal/ensigncycle` before the live proof. A live
+  smoke remains pending authorization and mc's entry-resolution readiness.
+
+### Exercised risk evidence and routed findings
+
+A no-model SDK loader spike on **Pi 1.0.0**, Node **v24.13.1**, installed
+`pi-subagents` **0.75.0** / `pi-intercom` **0.16.0** exercised real package
+loading with clean HOME, aligned agentDir, both root variables deleted, no
+additional extension paths, an empty cwd, and parent `PI_SUBAGENT_*` markers
+scrubbed. It did not launch a model, dispatch a worker, or invoke intercom.
+
+| Settings `packages` entries | Observed result |
+| --- | --- |
+| `["file:/Users/clkao/git/spacedock-research/spacedock-v1"]` | 0 extensions, 0 skills, 0 tools; no loader error |
+| `["/Users/clkao/git/spacedock-research/spacedock-v1"]` | Spacedock extension, 11 skills including ensign; no substrate tools despite both symlinks |
+| `["repo"]` and separately `["./repo"]`, with agentDir/repo linked to that checkout | Same Spacedock extension and 11 skills; both relative forms work |
+| `["/Users/clkao/git/spacedock-research/spacedock-v1","npm:pi-subagents","npm:pi-intercom"]` | 3 extensions (Spacedock, subagents/index.js, intercom/index.ts), 14 skills, tools subagent/bg_wait/subagents_enable/intercom, no loader errors |
+
+The initial spike asserted ensign availability for `file:` and failed; the
+corrected absolute-path retry succeeded. Another preliminary assertion found
+that inherited `PI_SUBAGENT_CHILD=1` suppresses the subagent tool even when
+its extension loads; the final spike preserved the existing harness scrub
+contract and passed every assertion. This does not justify changing that
+contract or count as live front-door evidence.
+
+The `file:` PREFIX is unsupported in the exercised loader; local paths are
+supported. FO approved recording the harness correction, subject to the
+captain's gate. Search of package-entry writers, front-door/install code,
+docs and skills found only two affected writers:
+`pi_live_runner_test.go:52` and `pi_shared_live_runner_test.go:28`.
+`runInitWithPi` (`internal/cli/pi.go:436-440`) passes raw pluginDir or the
+existing git package source to `pi install`, not a constructed `file:` entry;
+no user-facing registration example emitting this prefix was found.
+
+Related reader mismatch, routed to FO/launcher owner without a fix here:
+`internal/cli/pi.go:944-977` claims/supports stripping `file:` but rejects bare
+relative names such as `repo`, which the actual Pi loader accepts. This is
+not mc's manifest-entry-resolution work and does not expand this entity.
+FO reports real operator settings use `../../git/spacedock-research/spacedock-v1`
+and a second `git:github.com/spacedock-dev/spacedock` registration. The duplicate
+Spacedock warning is a separate two-entry consequence, not this prefix failure;
+this fixture seeds one Spacedock registration and does not edit operator state.
+
+Reproduction inputs are declared, not silent machine dependencies: Node and
+Pi SDK installed globally via npm, both named packages installed in the real
+home's managed npm directory (adjust the source roots if installed elsewhere),
+and this checkout as REPO_ROOT. Save the following as a temporary `.mjs` file
+outside `.pi/extensions/`, then run:
+
+```bash
+PI_SDK="$(npm root -g)/@earendil-works/pi-coding-agent/dist/index.js" \
+REAL_HOME="$HOME" REPO_ROOT="$PWD" node /path/to/spike.mjs
+```
+
+```javascript
+import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; import assert from 'node:assert/strict'; import {pathToFileURL} from 'node:url';
+const base = fs.mkdtempSync(path.join(os.tmpdir(), 'pi-discovery-M1-'));
+const home = path.join(base, 'home'), agentDir = path.join(home, '.pi/agent'), cwd = path.join(base, 'cwd');
+fs.mkdirSync(path.join(agentDir, 'npm/node_modules'), {recursive: true}); fs.mkdirSync(cwd);
+for (const name of ['pi-subagents','pi-intercom']) fs.symlinkSync(path.join(process.env.REAL_HOME, '.pi/agent/npm/node_modules', name), path.join(agentDir, 'npm/node_modules', name));
+fs.symlinkSync(process.env.REPO_ROOT, path.join(agentDir, 'repo'));
+process.env.HOME = home; process.env.PI_CODING_AGENT_DIR = agentDir; process.env.PI_OFFLINE = '1';
+delete process.env.PI_SUBAGENTS_PACKAGE_ROOT; delete process.env.PI_INTERCOM_PACKAGE_ROOT;
+for (const key of Object.keys(process.env)) if (key.startsWith('PI_SUBAGENT_')) delete process.env[key];
+const {DefaultResourceLoader, VERSION} = await import(pathToFileURL(process.env.PI_SDK).href);
+try {
+  for (const [label, source, registered, expected] of [['file-prefix','file:'+process.env.REPO_ROOT,false,false], ['absolute',process.env.REPO_ROOT,false,true], ['bare-relative','repo',false,true], ['dot-relative','./repo',false,true], ['registered',process.env.REPO_ROOT,true,true]]) {
+    const packages = [source, ...(registered ? ['npm:pi-subagents','npm:pi-intercom'] : [])];
+    fs.writeFileSync(path.join(agentDir, 'settings.json'), JSON.stringify({packages}));
+    const loader = new DefaultResourceLoader({cwd, agentDir}); await loader.reload();
+    const result = loader.getExtensions(), skills = loader.getSkills().skills;
+    const tools = result.extensions.flatMap(e => [...e.tools.keys()]);
+    console.log(JSON.stringify({version: VERSION, label, packages, extensions: result.extensions.map(e => e.path), tools, errors: result.errors, skills: skills.map(s=>s.name)}));
+    assert.equal(result.errors.length, 0); assert.equal(tools.includes('subagent'), registered); assert.equal(tools.includes('intercom'), registered);
+    assert.equal(skills.some(s=>s.name==='ensign'), expected);
+  }
+} finally { fs.rmSync(base, {recursive: true, force: true}); }
+```
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Define one isolated-home setup contract covering the real home, the agent directory, the clean HOME, and package registration, with the explicit-override behavior named.
+  M1 contract aligns piHome with cleanHome/.pi/agent, captures the real source agentDir before isolation, independently preserves explicit root overrides, and composes settings once with both substrates and one Spacedock entry; all changed AC/surface semantics are proposed for the captain's gate.
+- DONE: Register and load BOTH the pi-subagents and pi-intercom packages through Pi's supported discovery path while preserving the Spacedock package entry; the proof must hold with both package-root variables absent and no substrate extension path supplied by the harness, and it must not count the retained explicit fallback.
+  Pi 1.0.0 no-model loader spike with both root variables absent loaded all 3 extensions, subagent/intercom tools and ensign; removing npm registrations lost both substrate tools despite symlinks. Unsupported file: baseline loaded 0 extensions/skills; absolute and both relative forms loaded Spacedock. Reproducer and observed results are in M1 risk evidence, not a claim that harness implementation/live smoke shipped.
+- DONE: Name the non-live helper seam, since a live-tagged definition is invisible to ordinary Go tests, and name the changed old sibling-root test contract; keep mc as entry-resolution owner and do not propose a broader launcher change without separate scope approval.
+  Proposed pi_default_extensions_test.go has no live constraint; replaces TestPiIntercomPackageRootDefaultsBesideSubagents with independent settings-root/decoy coverage. mc retains manifest-entry ownership; the separate launcher reader mismatch was routed to FO without a fix or scope expansion.
+- DONE: Validate the existing focused offline baseline and document bounded validation limits.
+  `go test ./internal/ensigncycle -run 'PiLiveEnv|PiIntercom|TestPiLive' -count=1` passed; these existing checks detect env-scrub/old sibling-root regressions, not the proposed discovery contract. `gofmt -w ./cmd ./internal` ran; its unrelated pre-existing formatting delta was undone. `go test ./...` timed out at 120s; own race run was stopped after >3m with cli/ensigncycle/status still running, so neither full suite is claimed green.
+- SKIPPED: Implement proposed harness changes and run authorized live front-door smoke.
+  This is a staff-review ideation fold; captain approval, mc readiness, and live authorization remain implementation/validation prerequisites. No code, launcher, docs, operator settings, or YAML frontmatter change is delivered.
+
+### Summary
+
+Folded M1 into the retained design with one composable isolated-home contract, a non-live helper seam, explicit old-test replacement, and falsifiable default-discovery proof for both packages. Exercised Pi's actual loader (not a model session) to show registration is necessary and that the harness's file: prefix must become a supported absolute checkout entry; all AC/surface refinements await the captain's gate, and mc remains the entry-resolution owner.
