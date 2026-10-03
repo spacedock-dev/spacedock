@@ -43,6 +43,11 @@ gates:
                 by: agent:first-officer
                 at: "2026-10-03T02:58:08.665278Z"
                 reason: Bound artifact's AC-1 identifier wraps its bold span across two lines (lines 176-177), so the shipped status --read --ac-scan reader omits AC-1 entirely; proven by unwrapping it in a copy, where the scan returns AC-1, AC-2, AC-3. The gate AC cross-check cannot see the primary value AC. Repairing before presentation.
+            - id: gate-attempt:mc0ajnpb4wh5nhd2p4q0vx9n-ideation-2
+              briefing:
+                id: briefing:mc0ajnpb4wh5nhd2p4q0vx9n:ideation:attempt-2:revision-1
+                digest: sha256:b77d1eb699105693bfbc421dfd2d921e1d5cddce9f28f1e4a1772e48e4d42c9c
+                room-ref: '@review/ideation/briefing-2'
 ---
 
 ## Problem
