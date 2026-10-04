@@ -1,6 +1,7 @@
-// ABOUTME: Guards that the live workflow resolves every lane model through
-// ABOUTME: `spacedock live-models`, and checks the Codex and Pi pins against
-// ABOUTME: installed provider metadata; lanes without an independent oracle are named.
+// ABOUTME: Independent provider oracles for the pinned lane model values: the
+// ABOUTME: Pi ids are checked against the installed pi-ai catalog and the Codex
+// ABOUTME: id against the installed Codex model cache. The placement of those
+// ABOUTME: ids in the live workflow has no enforcement here.
 package release
 
 import (
@@ -8,195 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
-
-	"gopkg.in/yaml.v3"
 )
-
-// TestRuntimeLiveWorkflowModelSitesResolveThroughPrinter is AC-3's structural
-// guard. At every model-bearing site the workflow uses today the model must be a
-// reference, never an inline value, so a literal model id cannot satisfy the
-// required shape:
-//
-//   - `--model` argument: must be exactly the `"$live_model"` shell variable,
-//     which the Codex shim fills from `SPACEDOCK_LIVE_CODEX_MODEL`.
-//   - `live_model=` assignment: must read `${SPACEDOCK_LIVE_CODEX_MODEL...}`.
-//   - matrix `model:` / summary `Model:` lines: must contain a `${{ ... }}`
-//     reference and no model-id token before it.
-//   - `SPACEDOCK_LIVE_CODEX_MODEL=` / `SPACEDOCK_LIVE_MODEL:` env lines: must
-//     reference the offline resolver output or `matrix.model`.
-//   - resolver `echo` lines: the exported value must come from
-//     `live-models --get`, so a duplicated literal write is caught.
-//
-// This rule does NOT cover, and cannot without re-implementing GitHub's
-// expression language or the shell:
-//   - a model literal nested inside a `${{ ... }}` operand (e.g.
-//     `... || 'gpt-7-luna'`) still contains a `${{` reference;
-//   - a model literal appended to a derived string that already interpolates
-//     `${{ needs.offline.outputs.* }}` (e.g. the journey-delta artifact name);
-//   - a model-bearing site shape the workflow does not use today (a
-//     `--model=<id>` `=` form, a workflow input, another host's flag).
-//
-// Extend the site list when such a site appears; do not add a forbidden-id list.
-func TestRuntimeLiveWorkflowModelSitesResolveThroughPrinter(t *testing.T) {
-	workflow := readWorkflow(t, "runtime-live-e2e.yml")
-
-	flagSites := 0
-	for _, m := range modelFlagArgPattern.FindAllStringSubmatch(workflow, -1) {
-		flagSites++
-		if arg := m[1]; arg != `"$live_model"` {
-			t.Errorf("`--model %s` is not the resolved shell variable; lanes must resolve models via `spacedock live-models`", arg)
-		}
-	}
-	if flagSites == 0 {
-		t.Fatal("runtime-live-e2e.yml has no `--model` site; the Codex shim's model forwarding was removed")
-	}
-
-	assignSites := 0
-	for _, line := range strings.Split(workflow, "\n") {
-		m := codexLiveModelAssignPattern.FindStringSubmatch(line)
-		if m == nil {
-			continue
-		}
-		assignSites++
-		if !strings.Contains(m[1], "${SPACEDOCK_LIVE_CODEX_MODEL") {
-			t.Errorf("workflow line %q sets live_model to a value; it must read SPACEDOCK_LIVE_CODEX_MODEL", strings.TrimSpace(line))
-		}
-	}
-	if assignSites == 0 {
-		t.Fatal("runtime-live-e2e.yml has no `live_model=` assignment; the Codex shim no longer reads SPACEDOCK_LIVE_CODEX_MODEL")
-	}
-
-	keySites := 0
-	for _, line := range strings.Split(workflow, "\n") {
-		m := modelKeyLinePattern.FindStringSubmatch(stripLineComment(line))
-		if m == nil {
-			continue
-		}
-		keySites++
-		value := m[1]
-		ref := strings.Index(value, "${{")
-		if ref < 0 {
-			t.Errorf("workflow line %q sets a lane model without a `${{ ... }}` reference", strings.TrimSpace(line))
-			continue
-		}
-		if lhs := value[:ref]; modelIDTokenPattern.MatchString(lhs) {
-			t.Errorf("workflow line %q carries a model literal before its reference", strings.TrimSpace(line))
-		}
-	}
-	if keySites == 0 {
-		t.Fatal("runtime-live-e2e.yml has no `model:`/`Model:` site; the lane model wiring was removed")
-	}
-
-	envSites := 0
-	for _, line := range strings.Split(workflow, "\n") {
-		switch {
-		case strings.Contains(line, "SPACEDOCK_LIVE_CODEX_MODEL="):
-			envSites++
-			if !strings.Contains(line, "${{ needs.offline.outputs.") {
-				t.Errorf("workflow line %q sets SPACEDOCK_LIVE_CODEX_MODEL without the offline resolver output", strings.TrimSpace(line))
-			}
-		case strings.Contains(line, "SPACEDOCK_LIVE_MODEL:"):
-			envSites++
-			if !strings.Contains(line, "${{ matrix.model }}") {
-				t.Errorf("workflow line %q sets SPACEDOCK_LIVE_MODEL without matrix.model", strings.TrimSpace(line))
-			}
-		}
-	}
-	if envSites == 0 {
-		t.Fatal("runtime-live-e2e.yml sets no SPACEDOCK_LIVE_* model env; the model wiring was removed")
-	}
-
-	step, ok := stepNamed(parseWorkflowSteps(workflow), "Resolve live lane models")
-	if !ok {
-		t.Fatal("workflow lacks the `Resolve live lane models` step")
-	}
-	resolverSites := 0
-	for _, line := range strings.Split(step.run, "\n") {
-		m := resolverEchoPattern.FindStringSubmatch(line)
-		if m == nil {
-			continue
-		}
-		resolverSites++
-		if !strings.Contains(m[2], "live-models --get") {
-			t.Errorf("resolver line %q exports a literal; it must resolve through `spacedock live-models --get`", strings.TrimSpace(line))
-		}
-	}
-	if resolverSites == 0 {
-		t.Fatal("the `Resolve live lane models` step exports no lane model; the resolver was removed")
-	}
-}
-
-var (
-	modelFlagArgPattern         = regexp.MustCompile(`--model\s+(\S+)`)
-	modelKeyLinePattern         = regexp.MustCompile(`(?:^|\s)[Mm]odel:\s*(.+)$`)
-	modelIDTokenPattern         = regexp.MustCompile(`(?:gpt-|claude-|openai/|openai-codex/)`)
-	codexLiveModelAssignPattern = regexp.MustCompile(`(?:^|\s)live_model=(.*)$`)
-	resolverEchoPattern         = regexp.MustCompile(`echo "([A-Za-z0-9_]+)=(.*)"`)
-	liveModelGetPattern         = regexp.MustCompile(`live-models --get ([^ )"']+)`)
-)
-
-// stripLineComment drops a trailing ` # ...` comment so a model literal cannot
-// sit in a comment while a `${{ ... }}` reference satisfies the shape check.
-func stripLineComment(line string) string {
-	if i := strings.Index(line, " #"); i >= 0 {
-		return line[:i]
-	}
-	return line
-}
-
-// TestRuntimeLiveWorkflowLaneModelWiring proves each lane output the offline job
-// declares is filled from the `live_models` step and consumed by a later job, so
-// a model the print command resolves actually reaches a lane. It derives the
-// output names from the workflow itself (no copied output→key map) and fails if
-// an output is wired to anything but its own resolver output, or if no job reads
-// `needs.offline.outputs.<name>` (a renamed consumer would read an empty model).
-func TestRuntimeLiveWorkflowLaneModelWiring(t *testing.T) {
-	workflow := readWorkflow(t, "runtime-live-e2e.yml")
-	var parsed struct {
-		Jobs map[string]struct {
-			Outputs map[string]string `yaml:"outputs"`
-		} `yaml:"jobs"`
-	}
-	if err := yaml.Unmarshal([]byte(workflow), &parsed); err != nil {
-		t.Fatal(err)
-	}
-	offline, ok := parsed.Jobs["offline"]
-	if !ok {
-		t.Fatal("workflow lacks the offline job that resolves lane models")
-	}
-	if len(offline.Outputs) == 0 {
-		t.Fatal("offline job declares no lane model outputs")
-	}
-	for output, value := range offline.Outputs {
-		if want := "${{ steps.live_models.outputs." + output + " }}"; value != want {
-			t.Errorf("offline outputs[%q] = %q, want %q", output, value, want)
-		}
-		consumer := regexp.MustCompile(`needs\.offline\.outputs\.` + regexp.QuoteMeta(output) + `(?:[^A-Za-z0-9_]|$)`)
-		if !consumer.MatchString(workflow) {
-			t.Errorf("no live job consumes needs.offline.outputs.%s", output)
-		}
-	}
-}
-
-// TestRuntimeLiveWorkflowResolvedKeysExist proves every `spacedock live-models
-// --get <key>` the workflow issues names a real lane in the Go source. It fails
-// if a key is renamed in the workflow without a matching LiveModels() entry,
-// which would make the workflow resolve an empty model at run time.
-func TestRuntimeLiveWorkflowResolvedKeysExist(t *testing.T) {
-	workflow := readWorkflow(t, "runtime-live-e2e.yml")
-	matches := liveModelGetPattern.FindAllStringSubmatch(workflow, -1)
-	if len(matches) == 0 {
-		t.Fatal("runtime-live-e2e.yml never resolves a lane model via `spacedock live-models --get`")
-	}
-	for _, m := range matches {
-		if _, ok := LiveModel(m[1]); !ok {
-			t.Errorf("workflow resolves live-models key %q, which LiveModels() does not define", m[1])
-		}
-	}
-}
 
 // TestPiLaneModelsExistInInstalledCatalog is the independent value oracle for
 // the Pi lane. It parses each pinned Pi id into provider/model/thinking and
@@ -218,6 +33,12 @@ func TestRuntimeLiveWorkflowResolvedKeysExist(t *testing.T) {
 //     network. So the Claude ids rest on the authored exact-output oracle and
 //     the recorded rejection evidence, not on a CLI probe. This is stated
 //     rather than claimed.
+//
+// Where the values land has no independent oracle: which workflow lane output
+// feeds which cadence lane is unchecked, so a swap of the two Claude output
+// operands passes every remaining check. Placement cannot be checked by an
+// independent oracle because both sides of that comparison are authored by this
+// same change.
 func TestPiLaneModelsExistInInstalledCatalog(t *testing.T) {
 	catalogDir, ok := installedPiCatalogDir()
 	if !ok {

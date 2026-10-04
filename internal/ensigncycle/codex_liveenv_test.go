@@ -268,8 +268,8 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 
 	// The model is supplied independently of the shim (a distinct sentinel), so
 	// this asserts the shim forwards SPACEDOCK_LIVE_CODEX_MODEL instead of
-	// hardcoding a model of its own. The pinned value is proven separately by the
-	// live-models print test and the workflow no-literal test.
+	// hardcoding a model of its own. The pinned value itself is proven separately
+	// by the live-models print test and the installed-catalog oracles.
 	const liveModel = "luna-sentinel-model"
 
 	run := func(args ...string) {

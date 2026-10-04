@@ -16,8 +16,8 @@ import (
 // internal/release — so this fails if a lane constant changes without the print
 // moving in lockstep (e.g. reverting the Pi lane to the old gpt-5.6-luna), or if
 // a lane/auth key is added, dropped, or reordered. It fixes the printed contract
-// values; whether the workflow consumes them is checked separately and
-// structurally by the release workflow guards, which this test does not exercise.
+// values only; whether the workflow consumes them, and where, has no test
+// enforcement.
 func TestLiveModelsCommandPrintsPinnedLaneModels(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := run(context.Background(), []string{"live-models"}, nil, "", nil, &stdout, &stderr, &status.NativeRunner{}, nil)
@@ -36,8 +36,8 @@ func TestLiveModelsCommandPrintsPinnedLaneModels(t *testing.T) {
 
 // TestLiveModelsCommandGetPrintsOneID proves `--get` resolves one lane key to its
 // id and that an unknown key exits 2 with a diagnostic rather than printing an
-// empty model. It fails if a key renamed in the workflow has no entry here, or
-// if the unknown-key path silently succeeds.
+// empty model. It fails if a named key stops resolving or if the unknown-key
+// path silently succeeds.
 func TestLiveModelsCommandGetPrintsOneID(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	if code := run(context.Background(), []string{"live-models", "--get", "pi.oauth"}, nil, "", nil, &stdout, &stderr, &status.NativeRunner{}, nil); code != 0 {
