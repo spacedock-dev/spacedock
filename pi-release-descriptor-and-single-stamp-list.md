@@ -261,3 +261,26 @@ Replaced the defeated pre-check with a read-back verification of the command's o
 ### Summary
 
 The exact rejected uppercase-key case now fails loudly over unchanged bytes, and removing only the CLI repair independently makes the new regression fail; restoration makes it pass. Default stamping/gating, nested-field identity, marketplace compatibility and non-tautological test oracles remain sound under focused tests and race checks. The repaired behavior can proceed to captain review, with the 9-file/net +485 overrun and inconclusive full suites explicitly visible rather than waived.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Simplify the surface by removing the stamp-paths command, and have the stamping command report the paths it actually rewrote so the workflow captures them from that run.
+  Removed the `stamp-paths` subcommand, its `stampPaths` function, its usage line and its doc-comment references. `stamp-version` now buffers the paths it rewrites and prints them one per line on stdout only after every target verifies; `release.yml` and both ritual steps in `docs/releasing.md` capture `STAMP_PATHS="$(go run ./cmd/spacedock-release stamp-version <v>)"` from that run. `grep -rn 'stamp-paths\|stampPaths'` over the worktree (excluding historical `docs/roadmap/`) returns nothing. Commit `055af370a`.
+- DONE: Keep the single target list in internal/release.
+  `release.StampTargets()` remains the one authority; `stamp-version` and `manifest-tag-gate` still default to it. Only its comment and the gate comment were reworded to say the stamp run (not a second command) reports the list.
+- DONE: Keep a named target that does not end up carrying the requested version failing loudly with a non-zero exit and no success line.
+  The read-back guard `release.VerifyStampedVersion` is untouched. Manual on the built CLI: `stamp-version 7.8.9 uppercase.json` -> exit 1, stdout empty, bytes SHA-unchanged; `stamp-version 7.8.9 missing.json` -> exit 1, stdout empty. Because the report is buffered, a mid-list failure prints no path at all.
+- DONE: Keep the top-level version being the field replaced when a nested version appears earlier.
+  `replaceTopLevelVersion` is untouched. Manual nested-first input `{ "meta": {"version":"schema-7"}, "version" : "1.0.0", "tail":"stay" }` -> output keeps `"metadata"`/`"meta"` nested value and writes only top-level `7.8.9`.
+- DONE: Do not re-add the paths command under another name.
+  No new subcommand; the path report is part of `stamp-version`'s normal success output. `spacedock-release` still has exactly the same subcommand set minus `stamp-paths`.
+- DONE: Report the new increment and file count against main, and name what was removed.
+  Branch vs `main` (commit `055af370a`): 9 files, +530/-75, net +455 — down 30 net lines from the prior 9 files +559/-74 net +485. This cycle alone vs `cc20c4c59`: 7 files, +82/-112, net -30. Removed: the `stamp-paths` subcommand + `stampPaths` function + usage/doc references; the separate list invocation in `release.yml` and in the two `docs/releasing.md` ritual steps; and the now-subsumed `TestStampVersionCommandDefaultsToStampTargets`.
+- DONE: Keep any check a removal would lose.
+  AC-2's single-authority check survives, not dropped: `TestStampVersionReportsStampedPaths` requires the run's report to equal an independently authored 4-path set (incl. `.pi/plugin.json`) and each listed file to be rewritten; `TestManifestTagGateDefaultsToStampTargets` requires the gate default to pass that set and to block when any one path diverges. Both failure tests now assert stdout is empty, a stronger no-false-success oracle than the old substring checks.
+- DONE: Verify with focused packages only (no repo-wide suite, no CI lane).
+  `go test ./internal/release ./cmd/spacedock-release -count=1` pass (17.6s / 0.35s); the same two packages with `-race -count=1` pass (19.1s / 1.7s), which includes the `release.yml` channel-agreement and workflow-exec guards. `gofmt -l ./cmd ./internal` reports only the pre-existing `runtime_live_evidence_workflow_test.go` deviation (unchanged at HEAD).
+
+### Summary
+
+Removed the `stamp-paths` command and made `stamp-version` report the paths it rewrote, one per line on stdout, buffered until every target verifies; `release.yml` and `docs/releasing.md` now capture that list from the stamp run, so one command is the single source of truth. The loud-failure guard, the single `release.StampTargets` list, and top-level-version replacement are unchanged. Net branch increment vs main fell by 30 lines and the single-authority checks were preserved rather than dropped.
