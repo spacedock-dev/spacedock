@@ -861,3 +861,37 @@ with a global copy, and the settings idempotence plus install tests are now
 falsifiable (four mutation probes each fail the intended test). Call surface and all
 other behaviours unchanged; focused build/vet/gofmt/tests green; no repository-wide
 suite or CI lane was started.
+
+## Implementation cycle 12 — the confounded version assertion
+
+- DONE: De-confounded the installed-version rejection in
+  `TestInstallVerifiesAndRegistersThePinnedFamily`. The fixture previously replaced the
+  package manifest with only a name and a version, which also removed `pi.extensions`, so
+  `verifyManifest` rejected it for its own reason and the assertion passed even with the
+  version check deleted.
+  Evidence: the fixture now changes only the identity inside an otherwise valid manifest
+  (`pilive_test.go:229-232`) and requires the version-mismatch diagnostic.
+- DONE: Proved the assertion can fail. Removing the version check fails the test at
+  `pilive_test.go:231` with `install must fail with the version-mismatch diagnostic, got
+  <nil>`; the source was then restored byte-identical to HEAD.
+- DONE: Added the wrong-name case the same way, since the cycle-10 report claims name
+  enforcement is proven. Removing the name check fails at `pilive_test.go:235`.
+- DONE: Test-only change, `5a2ad16e9`, `internal/pilive/pilive_test.go` +16/-7, pushed.
+- SKIPPED: No state report was written by the worker; the first officer records it here.
+
+## First-officer gate record — frozen tip `5a2ad16e9`
+
+- The lane run `37189752489` is in flight at this commit and carries `go test ./...` on a
+  runner with disk. One duplicate run at the same tip and one at the superseded
+  `52223fe29` were cancelled.
+- Local offline suite: **one failure**, `TestCodexProcessRecognizesTerminalTurnBeforeOSExit`
+  in `internal/ensigncycle` — the 250 ms no-progress quiet budget under machine pressure.
+  The test passes 3 of 3 in about 0.5 s when run alone; in the failing run its package took
+  447 s, with 289 MiB free on the disk. This is machine thrash, not a fault at the tip, and
+  the local suite is not trustworthy evidence on this machine in this condition.
+- Race on the packages this layer touches — `internal/pilive`, `internal/cli`,
+  `internal/release`: **PASS**. The full race suite is unrun because a race build of every
+  package does not fit in the free space.
+- `gofmt`: this layer's files are clean. One file is unformatted **on `main`**
+  (`internal/release/runtime_live_evidence_workflow_test.go`), untouched by this layer, and
+  no workflow runs a format gate.
