@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 // TestContextLimitForModelBoundary is the AC-4 boundary table: the forward opus
@@ -21,20 +23,20 @@ func TestContextLimitForModelBoundary(t *testing.T) {
 		model string
 		want  int
 	}{
-		{"claude-opus-4-8", extendedContextLimit},     // the live false-negative, now 1M
-		{"claude-opus-4-8[1m]", extendedContextLimit}, // explicit suffix
-		{"claude-opus-4-7", extendedContextLimit},     // first 1M-default minor
-		{"claude-opus-4-6", defaultContextLimit},      // pre-default minor stays 200k
-		{"claude-opus-4-6[1m]", extendedContextLimit}, // 4-6 with the suffix opts in
-		{"claude-opus-4-10", extendedContextLimit},    // forward-safe: never goes stale
-		{"claude-opus-4-100", extendedContextLimit},   // multi-digit minor
-		{"claude-sonnet-4-6", defaultContextLimit},    // pre-5 sonnet, non-opus
-		{"claude-haiku-4-5", defaultContextLimit},     // non-opus
-		{"some-unknown-model", defaultContextLimit},   // safe fallback
-		{"claude-opus-4", defaultContextLimit},        // no minor token -> no match
+		{release.ClaudeOpusModel, extendedContextLimit}, // the live false-negative, now 1M
+		{"claude-opus-4-8[1m]", extendedContextLimit},   // explicit suffix
+		{"claude-opus-4-7", extendedContextLimit},       // first 1M-default minor
+		{"claude-opus-4-6", defaultContextLimit},        // pre-default minor stays 200k
+		{"claude-opus-4-6[1m]", extendedContextLimit},   // 4-6 with the suffix opts in
+		{"claude-opus-4-10", extendedContextLimit},      // forward-safe: never goes stale
+		{"claude-opus-4-100", extendedContextLimit},     // multi-digit minor
+		{"claude-sonnet-4-6", defaultContextLimit},      // pre-5 sonnet, non-opus
+		{"claude-haiku-4-5", defaultContextLimit},       // non-opus
+		{"some-unknown-model", defaultContextLimit},     // safe fallback
+		{"claude-opus-4", defaultContextLimit},          // no minor token -> no match
 
 		// AC-2/AC-3/AC-4: the claude-{sonnet|fable|opus}-{major} family rule.
-		{"claude-sonnet-5", extendedContextLimit},           // AC-2: sonnet-5 is 1M
+		{release.ClaudeSonnetModel, extendedContextLimit},   // AC-2: sonnet-5 is 1M
 		{"claude-sonnet-5[1m]", extendedContextLimit},       // explicit suffix, never observed live but consistent
 		{"claude-sonnet-5-20260301", extendedContextLimit},  // hypothetical dated 5-family shape
 		{"claude-sonnet-6", extendedContextLimit},           // forward-safe: next sonnet generation

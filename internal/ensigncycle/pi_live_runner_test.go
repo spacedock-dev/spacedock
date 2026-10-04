@@ -243,7 +243,7 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, oauthJSON, openAIAPIKey, req
 					t.Fatal(err)
 				}
 			}
-			return piLiveAuthDecision{mode: piAuthOAuth, model: "openai-codex/gpt-5.6-luna:max"}
+			return piLiveAuthDecision{mode: piAuthOAuth, model: piOAuthModel}
 		}
 	}
 	if required != "" {
