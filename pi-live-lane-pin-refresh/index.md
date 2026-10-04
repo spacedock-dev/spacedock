@@ -1,6 +1,6 @@
 ---
 title: Refresh the pi-live lane pins and substrate assertions for the Pi 1.0 family
-status: implementation
+status: validation
 score: 0.75
 source: "Captain directive, 2026-10-03: Pi 1.0 shipped; update the CI pin and the relevant Pi extensions."
 id: mh698y3ht6ydmr6ethaw9hg9
@@ -895,3 +895,59 @@ suite or CI lane was started.
 - `gofmt`: this layer's files are clean. One file is unformatted **on `main`**
   (`internal/release/runtime_live_evidence_workflow_test.go`), untouched by this layer, and
   no workflow runs a format gate.
+
+## Stage Report: validation (frozen tip 5a2ad16e9)
+
+Validation of the frozen candidate `5a2ad16e9` against `/tmp/mh-validation-evidence.md`, the
+exception register at `/tmp/pi-art/pi-coverage-detail.jsonl`, and the code in the worktree.
+Criteria were read from this entity (AC-1..AC-10). No repository-wide suite, race suite, or CI
+run was started.
+
+- DONE: Lane assertions reachable from the register: the run passed, 17 journeys executed, 5 XFAIL engagements, 2 XPASS alerts.
+  `/tmp/pi-art/pi-coverage-detail.jsonl` carries 18 `pass` actions (17 `TestLiveCommon*` journeys + package `PASS`), exactly 5 `XFAIL` lines and 2 `XPASS ALERT` lines; `/tmp/pi-art/pi-front-door-smoke-detail.jsonl` shows `TestLivePiFrontDoorSmoke` PASS. Run `37189752489` is `completed success` at `5a2ad16e9` per the pack.
+- DONE: Bound-journey reason check (point 1) — 4 of the 5 XFAIL engagements failed for the fault their binding names.
+  `owned-conflict-owner-handoff` observed=[conflict-owner-handoff-violation] matches owner `fe7bfjz9sb8wyckmnnm3ncjx` (repair-pi-owner-handoff); `auto-continue-after-implementation` single-root and split-root observed=[validation-worker-not-dispatched] match owner `mk72bnt1b5hsp9sfv83979xs` (repair-pi-worker-lifecycle-observation); `rejection-flow` observed=[rejection-worker-topology] matches the active owner `6h3teccccn3qh71yqcmjbjx4` (own-pi-rejection-worker-topology).
+- DONE: Bound-journey reason check — the exception: `pi/default-headless-gate-stop` did NOT fail for the reason its binding names.
+  Register line: owner=`gcmfwfjd9735b58sbzw7xsb8` observed=[implementation-worker-not-dispatched]. The binding's own comment (`internal/ensigncycle/shared_live_runner_test.go:138-147`) says it "covers the missing-prepare reds" (`gate-hold-violation`/`gate-not-held`) and that `implementation-worker-not-dispatched` "is noted, not bound here" (owned by `mk72bnt1b5hsp9sfv83979xs`); the owner body `repair-pi-recorded-gate-lifecycle.md:112` records the same observed code and that the missing-reference fault did not reproduce. `gradeLive` only checks that an XFAIL failed, never that the observed codes match the bound owner, so this binding engaged for an unbound fault.
+- DONE: Stale bindings (point 2) — confirmed for both, journeys named exactly.
+  `pi/smallest-sufficient-mechanism` (owner `h30c9jrfcf21fdh2qs5z58sd`) and `pi/keep-moving-posture` (owner `x02375wsg6q61xek7p0t36j2`) each emitted `XPASS ALERT … observed=[]` and each test ended `--- PASS`, so the retained XFAIL bindings are stale. The smallest-sufficient-mechanism comment's claim that it "can never XPASS" (`shared_live_runner_test.go:155-157`) is contradicted by the run.
+- DONE: The eight internal/pilive behaviours are present and wired into the workflow.
+  install (`install`), guard (`guard`), verify-manifest (`verifyManifest` + `Command`), integrity check (`pack` rejects `entries[0].Integrity != p.integrity`), manifest resolution (`verifyManifest` requires nonempty `pi.extensions` and `exports["./intercom-bridge"].default` resolving to regular files), settings create-or-merge (`mergeSettings` keeps existing entries incl. object entries and is idempotent), floor guard (`versionAtLeast` + Node/Pi/pi-subagents floors), compatibility guard (`compatExportPath` prefers the installed copy and fails on an invalid `./compat`; `compatExportLoads`). The workflow calls only `spacedock-release install|guard|verify-manifest`; `go test ./internal/pilive/... ./cmd/spacedock-release/... -count=1` PASS.
+- DONE: AC-1 — NOT MET.
+  `/tmp/pi-art/live-artifacts/pi/pi-doctor.txt` logs `OK pi version: 1.0.2 (floor 0.83.0)`, but AC-1 names the baseline `@earendil-works/pi-coding-agent@1.0.0` (integrity `sha512-/FtbxoSQU…`); the shipped pin is `1.0.2` (`sha512-3ZdIghMS…`). AC-1's proof "the release Go guard compares every pair to the registry snapshot" has no implementation — no registry oracle or pin guard remains (grep finds none; `internal/pilive/registry_oracle_live_test.go` and `internal/release/pi_live_pins_guard_test.go` were deleted), so the named falsifier `revert-agent-pin` fails no test. The lane is green and doctor passes, but the installed-version condition is false and the stated proof owner is gone.
+- DONE: AC-2 — NOT MET as written.
+  Behaviour is implemented (install calls `verifyManifest`; the setup step calls `spacedock-release verify-manifest`), but AC-2's proof "Go structural guard binds both checkpoint blocks" and falsifier "restore … the line-777 extension assertion" refer to a guard deleted in `2c061b2e9` and a line that no longer exists. At the tip the only demonstration is the same-change `internal/pilive/pilive_test.go`.
+- DONE: AC-3 — NOT MET as written.
+  Integrity enforcement exists and is exercised (`TestPackRejectsIntegrityMismatch`), but AC-3's proof names a Go structural check binding each spec/integrity to `verified_pack`, and its falsifier `corrupt-subagents-integrity` names `PI_SUBAGENTS_INTEGRITY` — all removed. Only demonstration at the tip is the same-change pilive test.
+- DONE: AC-4 — NOT MET.
+  The pi-live job comments no longer identify the "Pi 1.0 family" or preserve a separate `0.83.0` floor explanation, and `docs/runtime-live-ci.md` no longer names the three versions — it runs `eval "$(go run ./cmd/spacedock-release print-install)"`. AC-4 requires the compatibility comment plus two doc install commands naming the same three versions.
+- DONE: AC-5 — MET (residual note).
+  Pack: race `go test ./... -race -count=1` 21/21 packages ok; offline CI job success; `gofmt` clean for this layer. Boundary audit: `git diff c5ca95e74 HEAD -- .github/workflows/runtime-live-e2e.yml` touches only the pi-live job; `piVersionFloor = pilive.PiCodingAgentFloor` keeps the value `0.83.0`; no other lane's pins, action majors, or live selectors change. Residual: the pack records one local offline failure `TestCodexProcessRecognizesTerminalTurnBeforeOSExit` on a real 250 ms budget in a test this layer does not touch.
+- DONE: AC-6 — MET.
+  `/tmp/pi-art/live-artifacts/pi/pi-frontdoor-smoke/run/pi-ensign-boot-grade.json`: verdict `pass`, `boot_contract` true, skills `["ensign"]`, `isolated_discovery.tools` contains both `subagent` and `intercom`, `package_root_env_absent` true; the workflow no longer exports either override. This is a live model run, not a same-change unit test.
+- DONE: AC-7 — MET (same-change tests).
+  `TestPiDefaultExtensionRootsReadsRealInstalledLocation` and `TestPiIsolatedHomeRegistersBothSubstratesAndAbsoluteSpacedock` (with `TestPiIsolatedHomeNegativeControlDropsSubstrateRegistrations`) pass; the resolver matches candidates by `package.json` name and resolves `<agentDir>/npm/node_modules/<name>`. Caveat: the dedicated local-source-by-name test was deleted in cycle 8, so that clause rests on the code, and every remaining test was authored by this change.
+- DONE: AC-8 — MET (same-change tests).
+  `TestPiLiveEnvDefaultScrubsPackageRoots`, `TestPiLiveEnvHonorsIndependentOverrides`, and `TestPiLiveEnvDropsForeignRuntimeMarkers` exist and pass (`go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIsolatedHome|TestPiLiveEnv' -count=1` PASS).
+- DONE: AC-9 — MET (non-live half + the AC-6 smoke).
+  `internal/ensigncycle/pi_default_extensions_test.go` carries no `//go:build` constraint; the helper/controls tests pass; the front-door smoke passed; the pack records gofmt clean and live-tagged vet/build pass.
+- DONE: AC-10 — MET on clauses (a)/(b) with a residual determinism gap.
+  `drainCodexToTerminal` now uses `w.now()`/`w.sleep()`, and `TestCodexProcessActivityResetsQuietBudget` drives a fake clock + fake line source with no real sleeps and no duration assertion; the `stall` kill-path test is unchanged and the three host tests build isolated homes. Residual: the pack's own recorded local offline failure (`TestCodexProcessRecognizesTerminalTurnBeforeOSExit`, untouched, real 250 ms budget) means the offline gate is not yet fully machine-independent.
+- DONE: Same-change-only demonstrations flagged.
+  AC-2, AC-3, AC-7, AC-8, and AC-10 are demonstrated solely by tests authored in this change; AC-6 is the only value criterion with an independent live artifact. AC-1's independent artifacts (green lane, doctor) plus its own version condition disagree with its text.
+- DONE: Evidence-pack inaccuracies.
+  The pack's "Port … `pilive_test.go` 242 = 669 lines" is stale: at the frozen tip `pilive.go` is 427 and `pilive_test.go` is 251 (sum 678), and the layer is +1367/-289 (net +1078) across 19 files vs base `c5ca95e74`, not the pack's "net +1069". The pack's criteria note also omits AC-10, which the entity declares.
+- SKIPPED: Repository-wide `go test ./...`, `go test ./... -race`, and any CI lane run.
+  Explicit FO budget prohibition; those results are taken from the pack only. No prohibited command was run.
+
+### Summary
+
+The frozen candidate is green and all eight port behaviours are present, but the entity's AC-1,
+AC-2, AC-3, and AC-4 are not met as written: AC-1 installs 1.0.2 against a criterion naming 1.0.0
+and whose registry-comparison guard was deleted; AC-2/AC-3 describe proof owners and falsifiers
+that no longer exist; AC-4 requires workflow/doc prose that was deliberately removed. AC-5 through
+AC-10 are met on their named requirements, with the caveats that several rest on same-change tests
+and that the recorded local offline flake leaves AC-10's determinism not absolute. Recommendation:
+return the four stale criteria to the owner for revision (or a captain decision), keep the
+mechanism, and do not treat the green lane as evidence for criteria the evidence cannot reach.
+
