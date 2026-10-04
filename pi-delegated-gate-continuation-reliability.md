@@ -79,6 +79,7 @@ gates:
                 state: pending
 started: 2026-10-03T04:04:50Z
 worktree: .worktrees/spacedock-ensign-pi-delegated-gate-continuation-reliability
+pr: "#820"
 ---
 
 ## Problem
