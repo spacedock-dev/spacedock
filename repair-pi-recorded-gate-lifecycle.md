@@ -104,7 +104,8 @@ Preserve all Sonnet and Codex behavior and the shared assert.
   Shared assertions (`assertGateHeld`, `assertRecordedGateHoldLog`, `assertImplementationWorkerLifecycle`) are byte-unchanged; `internal/gates/prepare.go` is untouched, so the fail-closed refusal of an unreadable/missing selected source stands; the skill's single-prepare/no-retry sentence is untouched.
 - DONE: Focused offline checks.
   `gofmt -l` clean; `go vet -tags live ./internal/ensigncycle` clean; `go test -tags live -run '^$' ./internal/ensigncycle` compiles; `go test ./internal/contractlint/... ./internal/ensigncycle/... ./internal/gates/... ./internal/cli/... -run '...' -count=1` green (ensigncycle offline 308s, contractlint 1.3s, gates/cli gate-prepare green). Per the FO scope, the repository-wide `go test ./...`/`-race` was not run.
-- SKIPPED: none.
+- SKIPPED: Repository-wide `go test ./...` and `go test ./... -race` (AC-4).
+  Scoped out by the FO for this stage: offline proof was limited to the focused packages (contractlint, ensigncycle, gates, cli) and the focused live Pi lane supplied the journey proof, so the repo-wide suites were not run in this stage.
 
 ### Summary
 
