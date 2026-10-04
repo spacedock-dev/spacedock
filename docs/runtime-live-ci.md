@@ -92,7 +92,7 @@ in exactly one place (`internal/pilive`); print the exact install commands from
 the helper, then install:
 
 ```bash
-eval "$(go run ./cmd/spacedock-pilive print-install)"
+eval "$(go run ./cmd/spacedock-release print-install)"
 export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
 export PI_INTERCOM_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-intercom"
 ```

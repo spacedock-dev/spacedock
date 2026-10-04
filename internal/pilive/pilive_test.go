@@ -75,16 +75,18 @@ func TestVerifyRuntimeManifestRejectsBadDeclarations(t *testing.T) {
 		name       string
 		manifest   string
 		files      []string
+		dirs       []string
 		wantSubstr string
 	}{
-		{"missing pi.extensions", runtimeManifestJSON("pi-subagents", "1", nil, exportsWithBridge(bridge)), []string{bridge}, "pi.extensions"},
-		{"empty pi.extensions", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{}}, exportsWithBridge(bridge)), []string{bridge}, "pi.extensions"},
-		{"missing bridge export", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, nil), []string{"./index.js"}, "intercom-bridge"},
-		{"bridge is a bare string", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, map[string]any{"./intercom-bridge": bridge}), []string{"./index.js", bridge}, "intercom-bridge"},
-		{"types-only bridge", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, map[string]any{"./intercom-bridge": map[string]any{"types": "./bridge.d.ts"}}), []string{"./index.js"}, "intercom-bridge"},
-		{"extension target missing", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./absent.js"}}, exportsWithBridge(bridge)), []string{bridge}, "absent.js"},
-		{"bridge target missing", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, exportsWithBridge(bridge)), []string{"./index.js"}, "intercom-bridge"},
-		{"second extension missing", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js", "./second.js"}}, exportsWithBridge(bridge)), []string{"./index.js", bridge}, "second.js"},
+		{"missing pi.extensions", runtimeManifestJSON("pi-subagents", "1", nil, exportsWithBridge(bridge)), []string{bridge}, nil, "pi.extensions"},
+		{"empty pi.extensions", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{}}, exportsWithBridge(bridge)), []string{bridge}, nil, "pi.extensions"},
+		{"missing bridge export", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, nil), []string{"./index.js"}, nil, "intercom-bridge"},
+		{"bridge is a bare string", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, map[string]any{"./intercom-bridge": bridge}), []string{"./index.js", bridge}, nil, "intercom-bridge"},
+		{"types-only bridge", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, map[string]any{"./intercom-bridge": map[string]any{"types": "./bridge.d.ts"}}), []string{"./index.js"}, nil, "intercom-bridge"},
+		{"extension target missing", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./absent.js"}}, exportsWithBridge(bridge)), []string{bridge}, nil, "absent.js"},
+		{"extension target is a directory", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, exportsWithBridge(bridge)), []string{bridge}, []string{"./index.js"}, "index.js"},
+		{"bridge target missing", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js"}}, exportsWithBridge(bridge)), []string{"./index.js"}, nil, "intercom-bridge"},
+		{"second extension missing", runtimeManifestJSON("pi-subagents", "1", map[string]any{"extensions": []string{"./index.js", "./second.js"}}, exportsWithBridge(bridge)), []string{"./index.js", bridge}, nil, "second.js"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -92,24 +94,16 @@ func TestVerifyRuntimeManifestRejectsBadDeclarations(t *testing.T) {
 			for _, f := range tc.files {
 				writeFile(t, filepath.Join(root, filepath.FromSlash(strings.TrimPrefix(f, "./"))), "x")
 			}
+			for _, d := range tc.dirs {
+				if err := os.MkdirAll(filepath.Join(root, filepath.FromSlash(strings.TrimPrefix(d, "./"))), 0o755); err != nil {
+					t.Fatal(err)
+				}
+			}
 			writeFile(t, filepath.Join(root, "package.json"), tc.manifest)
 			if _, err := VerifyRuntimeManifest(root); err == nil || !strings.Contains(err.Error(), tc.wantSubstr) {
 				t.Fatalf("error = %v, want containing %q", err, tc.wantSubstr)
 			}
 		})
-	}
-}
-
-func TestVerifyRuntimeManifestRejectsDirectoryEntry(t *testing.T) {
-	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, "index.js"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	writeFile(t, filepath.Join(root, "src", "api", "intercom-bridge.js"), "x")
-	writeFile(t, filepath.Join(root, "package.json"), runtimeManifestJSON("pi-subagents", "1",
-		map[string]any{"extensions": []string{"./index.js"}}, exportsWithBridge("./src/api/intercom-bridge.js")))
-	if _, err := VerifyRuntimeManifest(root); err == nil {
-		t.Fatal("a directory extension target must not pass the regular-file check")
 	}
 }
 
@@ -158,16 +152,6 @@ func TestMergeSettingsRejectsMalformedJSON(t *testing.T) {
 	writeFile(t, path, "{not json")
 	if _, err := MergeSettings(path, SubstrateNpmSources); err == nil {
 		t.Fatal("malformed settings JSON must be an error, not silently overwritten")
-	}
-}
-
-func TestParsePackMetadataAcceptsSingleEntry(t *testing.T) {
-	meta, err := ParsePackMetadata([]byte(`[{"filename":"pi-subagents-0.75.0.tgz","integrity":"sha512-abc"}]`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if meta.Filename != "pi-subagents-0.75.0.tgz" || meta.Integrity != "sha512-abc" {
-		t.Fatalf("meta = %+v", meta)
 	}
 }
 
@@ -228,6 +212,9 @@ func TestVersionAtLeastComparesFloors(t *testing.T) {
 		{"1.0.2", PiCodingAgentFloor, true},
 		{"0.0.0", PiSubagentsFloor, false},
 		{PiSubagentsVersion, PiSubagentsFloor, true},
+		{"22.18.0", NodeEngineFloor, false},
+		{NodeEngineFloor, NodeEngineFloor, true},
+		{"24.13.1", NodeEngineFloor, true},
 	} {
 		if got := VersionAtLeast(tc.version, tc.floor); got != tc.want {
 			t.Errorf("VersionAtLeast(%q, %q) = %v, want %v", tc.version, tc.floor, got, tc.want)
@@ -235,34 +222,36 @@ func TestVersionAtLeastComparesFloors(t *testing.T) {
 	}
 }
 
-func TestNodeEngineAtLeastEnforcesFloor(t *testing.T) {
-	for _, tc := range []struct {
-		version string
-		want    bool
-	}{
-		{"22.18.0", false},
-		{NodeEngineFloor, true},
-		{"24.13.1", true},
-	} {
-		if got := NodeEngineAtLeast(tc.version); got != tc.want {
-			t.Errorf("NodeEngineAtLeast(%q) = %v, want %v", tc.version, got, tc.want)
-		}
-	}
-}
-
 func TestCompatExportPathPrefersNestedThenGlobal(t *testing.T) {
 	global := t.TempDir()
-	writeFile(t, filepath.Join(global, "@earendil-works", "pi-ai", "package.json"),
-		`{"version":"9.9.9","exports":{"./compat":{"import":"./compat.js"}}}`)
-	writeFile(t, filepath.Join(global, "@earendil-works", "pi-ai", "compat.js"), "x")
-	agentRoot := filepath.Join(t.TempDir(), "pi-coding-agent") // no nested pi-ai
+	nestedPackage := writeCompatPiAi(t, filepath.Join(global, "@earendil-works", "pi-ai"), "9.9.9")
+	agentRoot := filepath.Join(t.TempDir(), "pi-coding-agent")
+	writeCompatPiAi(t, filepath.Join(agentRoot, "node_modules", "@earendil-works", "pi-ai"), "1.2.3")
+
 	root, path, err := CompatExportPath(agentRoot, global)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if root != filepath.Join(global, "@earendil-works", "pi-ai") || path != filepath.Join(root, "compat.js") {
-		t.Fatalf("root=%s path=%s", root, path)
+	if root != filepath.Join(agentRoot, "node_modules", "@earendil-works", "pi-ai") || path != filepath.Join(root, "compat.js") {
+		t.Fatalf("nested pi-ai must win: root=%s path=%s", root, path)
 	}
+
+	// With no nested copy, the global root resolves instead.
+	root, _, err = CompatExportPath(filepath.Join(t.TempDir(), "pi-coding-agent"), global)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if root != nestedPackage {
+		t.Fatalf("global fallback root = %s, want %s", root, nestedPackage)
+	}
+}
+
+func writeCompatPiAi(t *testing.T, root, version string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "package.json"),
+		`{"version":"`+version+`","exports":{"./compat":{"import":"./compat.js"}}}`)
+	writeFile(t, filepath.Join(root, "compat.js"), "x")
+	return root
 }
 
 func TestCompatExportPathRejectsMissingExportOrFile(t *testing.T) {
@@ -309,8 +298,7 @@ func TestGuardRejectsBelowFloorSubstrate(t *testing.T) {
 }
 
 func TestGuardRejectsBelowFloorNode(t *testing.T) {
-	err := Guard(fakeRunner{}, GuardOptions{NodeVersion: "22.18.0"})
-	if err == nil || !strings.Contains(err.Error(), NodeEngineFloor) {
+	if err := Guard(fakeRunner{}, GuardOptions{NodeVersion: "22.18.0"}); err == nil || !strings.Contains(err.Error(), NodeEngineFloor) {
 		t.Fatalf("err = %v, want the Node engine floor %s", err, NodeEngineFloor)
 	}
 }
