@@ -60,6 +60,15 @@ jobs:
     # this default surface; only tests that launch a real host retain the live tag.
   offline:
     runs-on: ubuntu-latest
+    # The lane model ids live once in internal/release; this job resolves them
+    # through `spacedock live-models` so the matrix, shim, and summary below
+    # consume outputs instead of carrying model literals.
+    outputs:
+      claude_sonnet: ${{ steps.live_models.outputs.claude_sonnet }}
+      claude_opus: ${{ steps.live_models.outputs.claude_opus }}
+      codex_exec: ${{ steps.live_models.outputs.codex_exec }}
+      pi_oauth: ${{ steps.live_models.outputs.pi_oauth }}
+      pi_api_key: ${{ steps.live_models.outputs.pi_api_key }}
     steps:
       - uses: actions/checkout@v5
 
@@ -69,6 +78,20 @@ jobs:
 
       - name: Build
         run: go build ./...
+
+      - name: Resolve live lane models
+        id: live_models
+        run: |
+          set -euo pipefail
+          bin="$RUNNER_TEMP/spacedock-live-models"
+          go build -o "$bin" ./cmd/spacedock
+          {
+            echo "claude_sonnet=$("$bin" live-models --get claude.sonnet)"
+            echo "claude_opus=$("$bin" live-models --get claude.opus)"
+            echo "codex_exec=$("$bin" live-models --get codex.exec)"
+            echo "pi_oauth=$("$bin" live-models --get pi.oauth)"
+            echo "pi_api_key=$("$bin" live-models --get pi.api-key)"
+          } >> "$GITHUB_OUTPUT"
 
       # The offline suite includes the AC tests that exercise the live steps'
       # clean-log + jsonl-archive shape over a fixture; they invoke the pinned
@@ -96,7 +119,7 @@ jobs:
       matrix:
         include:
           - cadence: ${{ github.event_name == 'pull_request' && 'pull-request' || inputs.live_cadence }}
-            model: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'claude-sonnet-5' || 'claude-opus-4-8' }}
+            model: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && needs.offline.outputs.claude_sonnet || needs.offline.outputs.claude_opus }}
             effort: max
             environment: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet') && 'CI-E2E' || 'CI-E2E-OPUS' }}
     environment:
@@ -350,26 +373,28 @@ jobs:
           real_codex="$(command -v codex)"
           shim_dir="$RUNNER_TEMP/spacedock-codex-shim"
           mkdir -p "$shim_dir"
+          printf 'SPACEDOCK_LIVE_CODEX_MODEL=%s\n' "${{ needs.offline.outputs.codex_exec }}" >> "$GITHUB_ENV"
           cat > "$shim_dir/codex" <<'SH'
           #!/usr/bin/env bash
           set -euo pipefail
 
           real_codex="${SPACEDOCK_CODEX_REAL_BIN:?SPACEDOCK_CODEX_REAL_BIN is not set}"
+          live_model="${SPACEDOCK_LIVE_CODEX_MODEL:?SPACEDOCK_LIVE_CODEX_MODEL is not set}"
           # The live runner reaches Codex through one of these exact front-door
           # prefixes. Match the subcommand boundary, not an arbitrary token:
           # plugin paths/arguments may legitimately be named "exec".
           case "${1:-}" in
             exec)
-              exec "$real_codex" exec --model gpt-5.6-luna -c 'model_reasoning_effort="max"' "${@:2}"
+              exec "$real_codex" exec --model "$live_model" -c 'model_reasoning_effort="max"' "${@:2}"
               ;;
             --ask-for-approval)
               if [ "${2:-}" = "on-request" ] && [ "${3:-}" = "exec" ]; then
-                exec "$real_codex" "${@:1:3}" --model gpt-5.6-luna -c 'model_reasoning_effort="max"' "${@:4}"
+                exec "$real_codex" "${@:1:3}" --model "$live_model" -c 'model_reasoning_effort="max"' "${@:4}"
               fi
               ;;
             --dangerously-bypass-approvals-and-sandbox)
               if [ "${2:-}" = "exec" ]; then
-                exec "$real_codex" "${@:1:2}" --model gpt-5.6-luna -c 'model_reasoning_effort="max"' "${@:3}"
+                exec "$real_codex" "${@:1:2}" --model "$live_model" -c 'model_reasoning_effort="max"' "${@:3}"
               fi
               ;;
           esac
@@ -660,9 +685,9 @@ jobs:
           echo "### Pi live tool versions" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`pi --version\`: \`$(pi --version)\`" >> "$GITHUB_STEP_SUMMARY"
           if [ -n "$CODEX_AUTH_JSON" ]; then
-            echo "- Model: \`openai-codex/gpt-5.6-luna\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Model: \`${{ needs.offline.outputs.pi_oauth }}\`" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- Model: \`openai/gpt-5.6-luna\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Model: \`${{ needs.offline.outputs.pi_api_key }}\`" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "- Thinking: \`max\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
@@ -727,7 +752,7 @@ jobs:
   # replaces (not merges with) the workflow default, so contents/actions read
   # are restated here for checkout and cross-job artifact download.
   journey-delta-comment:
-    needs: [claude-live, codex-live]
+    needs: [offline, claude-live, codex-live]
     if: github.event_name == 'pull_request' && github.event.action != 'labeled'
     runs-on: ubuntu-latest
     permissions:
@@ -758,7 +783,7 @@ jobs:
 
           mkdir -p "$RUNNER_TEMP/current-run-artifacts"
           for artifact_name in \
-            runtime-live-e2e-claude-live-claude-sonnet-5 \
+            runtime-live-e2e-claude-live-${{ needs.offline.outputs.claude_sonnet }} \
             runtime-live-e2e-codex-live
           do
             if ! artifact_id="$(gh api \

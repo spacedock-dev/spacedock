@@ -18,7 +18,7 @@ func FuzzPiSharedLiveDriverEmitsJourneyMetric(f *testing.F) {
 	f.Fuzz(func(t *testing.T, scenarioName string) {
 		dir := t.TempDir()
 		t.Setenv("SPACEDOCK_JOURNEY_METRICS_DIR", dir)
-		driver := piSharedLiveDriver{modelName: "openai/gpt-5.6-luna:max"}
+		driver := piSharedLiveDriver{modelName: piAPIKeyModel}
 		driver.emitMetrics(t, sharedRuntimeScenario{name: scenarioName}, liveResult{duration: 2 * time.Second})
 
 		paths, err := filepath.Glob(filepath.Join(dir, "shared-scenarios", "*.json"))
