@@ -210,3 +210,22 @@ Deviation: diff is net +353 across 9 files vs the design's estimate +120 / toler
 ### Summary
 
 Verified the default stamp/gate/list behavior and real Pi discovery, but falsified the promised named-manifest fail-loud boundary: a case-variant key still produces the original unchanged-byte false success. The intended value remains reachable by a narrow exact-key guard correction, not a new mechanism; validation recommends REJECTED pending FO disposition, with duplicate-key handling and missing root-manifest documentation recorded separately. Only this state report was changed; candidate `d9842ab5a` remains untouched.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Fix the false success the validation reproduced.
+  Commit cc20c4c59. `release.VerifyStampedVersion` re-reads each target after the write and the CLI prints success only once it passes. Live run on `{"name":"fixture","Version":"1.0.0"}`: `stamp-version 7.8.9 uppercase.json` -> exit 1, stdout empty, stderr `stamp …/uppercase.json: wrote bytes but the target did not take version 7.8.9: target still reports version "1.0.0", want "7.8.9"`; shasum identical before/after.
+- DONE: Do not patch by widening the key check; verify the command's own result, for every named target not only JSON manifests.
+  The exact-lowercase-key writer and the pre-check are untouched; the new guard is a post-write read-back. Dispatch by extension: JSON via `ManifestVersion`, prose via `ProseMinor` (both readers the gate already uses), so a prose target whose minor did not change also fails.
+- DONE: Keep the low-level marketplace no-op contract.
+  `TestStampVersionLeavesMarketplaceCalendarUntouched` unchanged and passing; `StampVersion` still returns marketplace bytes unchanged.
+- DONE: Add the negative case for the exact reproduction, and state why each new test could fail.
+  `TestStampVersionCommandFailsOnCaseVariantVersionKey` (cmd): asserts exit != 0, no success line, bytes == authored `src`. Falsifier demonstrated: stashing only `main.go` makes it FAIL with "exit = 0".
+  `TestVerifyStampedVersionRejectsUnchangedProse` (release): prose at minor 1.2 for requested 9.9.0 must error; fails if the guard returns nil without reading `ProseMinor`.
+  `TestVerifyStampedVersionAcceptsStampedTargets` (release): stamped manifest + prose must pass; fails if the prose expectation is the full "9.9.0" instead of major.minor.
+- DONE: Record the surface overrun for the captain; do not reduce it.
+  Branch vs main: 9 files, +559/-74, net +485 (design tolerance +50..+200, at most 8 files). This cycle alone: 4 files, +132/-0, no new files.
+
+### Summary
+
+Replaced the defeated pre-check with a read-back verification of the command's own result: after writing each named target, `stamp-version` re-reads it and requires the requested version, exiting non-zero with an error naming the target and printing no success line otherwise. The exact case-variant reproduction now fails loudly over unchanged bytes, `git stash` of the guard makes the new test fail, and the marketplace no-op contract is unchanged. No expected value in the new tests is copied from the file under test.
