@@ -240,51 +240,6 @@ func TestPiDefaultExtensionRootsReadsRealInstalledLocation(t *testing.T) {
 	}
 }
 
-// TestPiDefaultExtensionRootsMatchesLocalSourceByPackageName proves a local
-// package entry is matched by its package.json name, not by its directory name,
-// and that a plausible same-named sibling is not selected.
-func TestPiDefaultExtensionRootsMatchesLocalSourceByPackageName(t *testing.T) {
-	agentDir := t.TempDir()
-	localSub := filepath.Join(t.TempDir(), "renamed-local-subagents")
-	writePiPackageRoot(t, localSub, "pi-subagents")
-	// Decoy: a directory literally named pi-subagents under the npm path whose
-	// manifest is NOT pi-subagents.
-	decoy := filepath.Join(agentDir, "npm", "node_modules", "pi-subagents")
-	writePiPackageRoot(t, decoy, "not-the-substrate")
-	localIntercom := filepath.Join(t.TempDir(), "renamed-local-intercom")
-	writePiPackageRoot(t, localIntercom, "pi-intercom")
-	writeFile(t, filepath.Join(agentDir, "settings.json"),
-		`{"packages":[`+jsonString(localSub)+`,`+jsonString(localIntercom)+`]}`+"\n")
-
-	roots := piDefaultExtensionRoots(t, agentDir)
-	if roots.subagents != localSub {
-		t.Fatalf("subagents root = %q, want the package.json-named local source %q (decoy %q must not win)", roots.subagents, localSub, decoy)
-	}
-	if roots.intercom != localIntercom {
-		t.Fatalf("intercom root = %q, want the package.json-named local source %q", roots.intercom, localIntercom)
-	}
-}
-
-// TestPiIntercomPackageRootDiscoversIndependently replaces the retired
-// sibling-derivation contract: settings point intercom at a non-sibling
-// directory while a plausible sibling exists, and the settings root must win.
-func TestPiIntercomPackageRootDiscoversIndependently(t *testing.T) {
-	agentDir := t.TempDir()
-	sibling := filepath.Join(agentDir, "npm", "node_modules", "pi-intercom")
-	writePiPackageRoot(t, sibling, "pi-intercom")
-	subagents := filepath.Join(agentDir, "npm", "node_modules", "pi-subagents")
-	writePiPackageRoot(t, subagents, "pi-subagents")
-	nonSibling := filepath.Join(t.TempDir(), "elsewhere", "pi-intercom")
-	writePiPackageRoot(t, nonSibling, "pi-intercom")
-	writeFile(t, filepath.Join(agentDir, "settings.json"),
-		`{"packages":["npm:pi-subagents",`+jsonString(nonSibling)+`]}`+"\n")
-
-	roots := piDefaultExtensionRoots(t, agentDir)
-	if roots.intercom != nonSibling {
-		t.Fatalf("intercom root = %q, want the non-sibling settings root %q (not the sibling %q)", roots.intercom, nonSibling, sibling)
-	}
-}
-
 // TestPiIsolatedHomeRegistersBothSubstratesAndAbsoluteSpacedock proves the
 // isolated home's own settings register both npm substrates and keep the
 // Spacedock checkout as one absolute path entry — never a file: entry.

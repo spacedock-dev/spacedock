@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
+	"github.com/spacedock-dev/spacedock/internal/pilive"
 	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
@@ -88,16 +89,8 @@ func main() {
 		os.Exit(runManifestTagGate(os.Args[2:]))
 	case "notes":
 		os.Exit(notes(os.Args[2:]))
-	case "pins":
-		os.Exit(piLivePins())
-	case "print-install":
-		os.Exit(piLivePrintInstall())
-	case "install":
-		os.Exit(piLiveInstall())
-	case "guard":
-		os.Exit(piLiveGuard())
-	case "verify-manifest":
-		os.Exit(piLiveVerifyManifest(os.Args[2:]))
+	case "pins", "print-install", "install", "guard", "verify-manifest":
+		os.Exit(pilive.Command(os.Args[1], os.Args[2:]))
 	default:
 		fmt.Fprintf(os.Stderr, "spacedock-release: unknown command %q\n", os.Args[1])
 		usage()
