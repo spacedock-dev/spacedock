@@ -51,6 +51,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:mh698y3ht6ydmr6ethaw9hg9:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:mh698y3ht6ydmr6ethaw9hg9-validation-1
+              briefing:
+                id: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-1:revision-1
+                digest: sha256:d8ff7c2b4faf19191eff5360afd23d248d7bcd5c2742a21a41df0c57e697fd34
+                room-ref: '@review/validation/briefing-1'
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready

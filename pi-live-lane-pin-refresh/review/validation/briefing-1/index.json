@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-1:revision-1",
+  "question": "Approve this layer's validation, so merge guard may proceed and the train merges in order #822 -\u003e #820 -\u003e #816?",
+  "artifacts": [
+    {
+      "id": "artifact:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/1c5a6d1b2b6b42c26d5af4b5c1a6c0dcc3ec7530/pi-live-lane-pin-refresh-validation-review.md",
+      "rev": "sha256:cac5f05a249f674c236b6cc6a13b974463999440393bb9fdc2ab9b3537b809ec",
+      "mediaType": "text/markdown",
+      "summary": "Validated after a captain-approved criteria amendment: lane run 37189752489 green at 5a2ad16e9 with 17 journeys plus smoke, race 21/21 uncached, 5 XFAIL engagements and 2 stale bindings recorded. Four criteria were amended to the shipped mechanism with each lost guarantee recorded."
+    }
+  ]
+}
