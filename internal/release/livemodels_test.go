@@ -26,19 +26,20 @@ import (
 //   - pi.oauth, pi.api-key: this test (installed pi-ai catalog).
 //   - codex.exec: TestCodexLaneModelExistsInInstalledCache (installed Codex
 //     model cache).
-//   - claude.sonnet, claude.opus: no implemented provider-backed oracle. The
-//     installed Claude CLI validates a model only after auth; with an isolated
-//     home it short-circuits with "Not logged in" before the model is checked,
-//     and with real credentials it would spend an API call and depend on the
-//     network. So the Claude ids rest on the authored exact-output oracle and
-//     the recorded rejection evidence, not on a CLI probe. This is stated
-//     rather than claimed.
+//   - claude.sonnet, claude.opus: no independent oracle. The installed Claude
+//     CLI validates a model only after auth; with an isolated home it
+//     short-circuits with "Not logged in" before the model is checked, and with
+//     real credentials it would spend an API call and depend on the network.
+//     The recorded rejection establishes only that one candidate id
+//     (claude-sonnet-5.5) is refused by the installed CLI; it does not validate
+//     the retained ids. The retained claude.sonnet and claude.opus ids rest only
+//     on the authored print test, with no independent oracle.
 //
-// Where the values land has no independent oracle: which workflow lane output
+// Where the values land has no enforcement today: which workflow lane output
 // feeds which cadence lane is unchecked, so a swap of the two Claude output
-// operands passes every remaining check. Placement cannot be checked by an
-// independent oracle because both sides of that comparison are authored by this
-// same change.
+// operands passes every remaining check. A comparison between the workflow and
+// the source is not independent here, because this change authors both sides;
+// that is an absence of enforcement today, not proof that none is possible.
 func TestPiLaneModelsExistInInstalledCatalog(t *testing.T) {
 	catalogDir, ok := installedPiCatalogDir()
 	if !ok {
