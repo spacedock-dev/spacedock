@@ -183,46 +183,48 @@ GitHub action majors, or Node setting changes are authorized.
 
 ## Acceptance criteria
 
-**AC-1 (value) — pi-live installs and validates the published Pi 1.0 family.**
-The three installed package names/versions equal the independently observed published
-baseline `@earendil-works/pi-coding-agent@1.0.0`, `pi-subagents@0.75.0`, and
-`pi-intercom@0.16.0`; the existing pi-live Runtime Live E2E lane completes green on
-that candidate, with its existing common journeys and front-door smoke still selected.
-Proof: the release Go guard compares every pair to the registry snapshot, and a
-recorded CI run URL/SHA supplies installed-version logs, doctor output, and durable
-journey/smoke results under the existing grading policy. No new skips/XFAILs count.
-Named falsifying edit **revert-agent-pin**: set `PI_CODING_AGENT_VERSION` back to
-`0.85.1`; the structural guard fails even if the older runtime still passes journeys.
+**AC-1 (value) — pi-live installs and validates the Pi family it pins.**
+The three installed package names/versions equal the pins the layer declares once in
+`internal/pilive/pilive.go` — `@earendil-works/pi-coding-agent@1.0.2`,
+`pi-subagents@0.75.0`, and `pi-intercom@0.16.0` — and the pi-live Runtime Live E2E lane
+completes green on that candidate, with its existing common journeys and front-door smoke
+still selected. Proof: the lane run at the frozen tip, which installs those pins and
+supplies installed-version logs, doctor output, and durable journey/smoke results under
+the existing grading policy. No new skips count.
+**Guarantee lost by the shipped design (recorded, not claimed):** the registry-comparison
+Go guard is gone, so drift between a pin and the published registry is caught only by the
+lane's install step, not by a test that can fail on its own. The named falsifying edit
+**revert-agent-pin** is retired with it. The criterion's original literal `1.0.0` was the
+observed baseline at ideation; the family moved to `1.0.2` before implementation.
 
-**AC-2 — all four substrate assertions follow installed runtime declarations.**
+**AC-2 — the substrate assertions follow installed runtime declarations.**
 Both setup checkpoints resolve every `pi.extensions` entry and the intercom bridge
-runtime export from the installed manifest, fail for missing declarations/files,
-and no longer require either old source path. Proof: Go structural guard binds both
-checkpoint blocks; one-off real-package exercise checks success and failure with
-an extension/bridge target removed in turn. Named falsifying edit
-**restore-setup-source-assertion**: restore the line-777 extension assertion while
-leaving the install check correct; the guard and published-package setup fail.
-Additional negative **remove-bridge-target**: hide the manifest-resolved bridge file;
-the Node check must exit nonzero, proving existence checks are load-bearing.
+runtime export from the installed manifest, fail for missing declarations or files, and
+require neither old source path. Proof: the port's `verify-manifest` command and its tests,
+and the live lane's green run at the frozen tip.
+**Guarantee lost by the shipped design (recorded, not claimed):** the Go structural guard is
+gone, and with it the **restore-setup-source-assertion** and **remove-bridge-target**
+falsifiers. The remaining demonstration is a test authored by the same change, so it does not
+independently bind the workflow's two checkpoint blocks.
 
 **AC-3 — corrupted integrity prevents installation.**
-All three exact integrity pins are verified before their tarballs are installed.
-Proof: Go structural checks bind each package spec and expected-integrity argument
-to `verified_pack`; the existing function is exercised once with the real published
-subagents package and a bad expected hash. Named falsifying edit
-**corrupt-subagents-integrity**: replace `PI_SUBAGENTS_INTEGRITY` with an invalid
-hash; both the independent pin guard and pack step fail before install. Removing
-the mismatch exit is separately falsified by that negative pack exercise.
+All three integrity pins are verified before their tarballs are installed. Proof: the port's
+install path and its tests, and the live lane's install of the pinned tarballs at the frozen
+tip.
+**Guarantee lost by the shipped design (recorded, not claimed):** the `verified_pack` wiring
+and the **PI_SUBAGENTS_INTEGRITY** falsifier are gone. The comparison reads npm-reported
+metadata against the pin rather than the tarball bytes independently, and its demonstration is
+a test authored by the same change.
 
-**AC-4 — current-family instructions agree with executable pins.**
-The workflow compatibility comment identifies the Pi 1.0 family, preserves the
-separate `0.83.0` floor explanation, and the two local-install commands in
-`docs/runtime-live-ci.md` name the same three versions as the verified pins.
-Proof: one-off comparison of those commands/comment against AC-1's registry snapshot
-and workflow values, recorded during validation; no standing instruction prose test.
-Named falsifying edit **restore-stale-doc-version**: restore `pi-subagents@0.35.1`
-in the doc command; the independent agreement check must report a mismatch.
-Historical floor comments are not stale pins and must not be indiscriminately removed.
+**AC-4 — the pins live in one place and the instructions agree with them.**
+The three versions are declared once, in `internal/pilive/pilive.go`, and the local-install
+documentation delegates to `spacedock-release print-install` instead of naming versions.
+Proof: one-off comparison of that documentation against the declared pins, recorded during
+validation.
+**Guarantee lost by the shipped design (recorded, not claimed):** the workflow compatibility
+comment no longer names the Pi 1.0 family or explains the separate `0.83.0` floor, and the named
+**restore-stale-doc-version** falsifier is gone. The floor survives as a code value only, and no
+standing check catches documentation that drifts from the pins.
 
 **AC-5 (no regression) — the bounded change preserves existing non-Pi behavior.**
 `go test ./internal/release/...`, `go test ./...`, `go test ./... -race`, and
@@ -232,6 +234,30 @@ plus a candidate-versus-base diff audit of these boundaries. Named falsifying ed
 **downgrade-other-lane-checkout**: change claude-live's `actions/checkout@v5` to `@v4`;
 `TestNode24ActionsPinnedAtMinimum` and the boundary audit fail. Any unauthorized
 other-lane version change must also fail the diff audit, even if still above a floor.
+
+### Criteria amendment — captain-approved, 2026-10-04
+
+The validation returned AC-1 to AC-4 as **not met**, because each named an artifact the
+captain's simplification rounds removed: the registry-comparison Go guard, the Go structural
+guard with its falsifiers, the `verified_pack` wiring with `PI_SUBAGENTS_INTEGRITY`, and the
+version-naming workflow comment and documentation lines. The work was not at fault; those
+criteria were written against a design that no longer ships.
+
+The captain directed the amendment. Each criterion above is restated against the shipped
+mechanism, and each records the guarantee it loses. Per the science officer's ruling, a
+deliberately removed guarantee is recorded rather than described as equivalent. This layer
+therefore claims the pinned family, the manifest-resolved checks, the integrity comparison,
+and the single pin source. It does not claim a standalone pin-revert falsifier, an independent
+structural guard, an independent integrity falsifier, or a standing doc-versus-pin check.
+
+AC-5 to AC-10 were met as written. Of those, AC-2, AC-3, AC-7, AC-8 and AC-10 rest on
+demonstrations authored by the same change, and AC-6 is the only criterion holding an
+independent live artifact.
+
+Two lane defects found by the same validation are recorded and owned elsewhere: the
+`default-headless-gate-stop` binding engaged on `implementation-worker-not-dispatched`, which its
+own comment says it does not cover, and two bindings (`smallest-sufficient-mechanism`,
+`keep-moving-posture`) are stale because their journeys now pass.
 
 ### Folded scope — isolated-home Pi discovery (M1)
 
