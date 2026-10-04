@@ -253,10 +253,12 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 		}
 		// The same host also announces the detached worker's completion natively:
 		// a top-level custom_message (`customType: subagent-notify`) whose body is
-		// `Background task completed: **worker**` followed by the child session
-		// file. Credit it only when a spawn's async run id was observed, under the
-		// same completed<validation ordering.
-		if piRunID != "" && completed < 0 && event.CustomType == "subagent-notify" && event.Type == "custom_message" && strings.Contains(event.Content, "Background task completed") {
+		// `Background task completed: **worker**`. The notice names its own run
+		// identity in a `Retention-managed async directory: …/async-subagent-runs/<id>`
+		// field, so credit it only when it names the SAME run id the spawn returned,
+		// under the same completed<validation ordering. An unrelated worker's notice
+		// must not complete this spawn.
+		if piRunID != "" && completed < 0 && event.CustomType == "subagent-notify" && event.Type == "custom_message" && strings.Contains(event.Content, "Background task completed") && strings.Contains(event.Content, piRunID) {
 			completed = i
 		}
 		if event.Message != nil {
