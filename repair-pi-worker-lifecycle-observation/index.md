@@ -84,3 +84,20 @@ assert) plus one replay test. The captured root transcript is preserved under
 `docs/dev/.spacedock-state/_evidence/pi-delegated-gate-continuation-reliability/retained-pi-recorded-gate/`
 and must be copied to repository testdata before the replay test depends on it. Deterministic
 tests only.
+
+## Stage Report: implementation
+
+- DONE: Fix the shared assert so it credits the completion surfaces this host supplies: a bg_wait result keyed on the spawned run id, and the native completion notice. Today it credits only a subagent result carrying Run/State, or a subagent_wait result, so it reports spawns=1 completed=-1 while the officer did dispatch and did observe the completion. Keep the rule that a genuinely missing dispatch still fails, and keep the completed-before-validation ordering. Add the deterministic test from the captured transcript shape, and keep the negative control that removes the new credit so the test turns red.
+  Commit `4516bc906`: `assertWorkerLifecycle` now credits a `bg_wait` result that names the spawned run id and reports `done`/`complete` (alongside `subagent_wait`), and a top-level `custom_message` `customType: subagent-notify` whose body is `Background task completed`. Both stay behind the existing spawn-count and `completed < validation` checks. Positive control `TestPiWorkerLifecycleObservationReplay` feeds the captured shape; removing either new credit makes it RED with `validation lifecycle incomplete: spawns=1 completed=-1 validation=5 report=<nil>` — the same completed=-1 run 37101046846 reported.
+- DONE: Prove it: the focused deterministic tests, then a local live run of the affected journey auto-continue-after-implementation using SPACEDOCK_LIVE_RUNTIME=pi and a distinct SPACEDOCK_LIVE_ARTIFACT_DIR. Record the exact result. Do not start a CI lane run.
+  `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/live-observer SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 45m -run '^TestLiveCommonAutoContinueAfterImplementation$' ./internal/ensigncycle -v` -> `--- PASS: TestLiveCommonAutoContinueAfterImplementation (766.12s)`. Both fixtures passed: single-root `error=<nil> timeout=false` 7m40.9s, split-root `error=<nil> timeout=false` 5m03.6s, model `openai-codex/gpt-5.6-luna:max`. Grade `pass`, observed codes `[]`; no XFAIL/XPASS line, because the binding is gone. No CI lane run started.
+- DONE: When that journey passes locally with an exact passing pair, clear its XFAIL binding in the shared runner and record the evidence in the entity. Do not leave the binding as XPASS.
+  Commit `05bdfa7da`: `TestLiveCommonAutoContinueAfterImplementation` gaps are `nil` (binding to `mk72bnt1b5hsp9sfv83979xs` removed with its stale evidence-defect comment). Rebased onto the peer tip `fb4428e9c`, where the binding lived; original base was main `4436ec14c`. Peer branch untouched.
+- DONE: Keep a genuinely missing dispatch failing, and the completed-before-validation ordering.
+  Same test includes the zero-spawn control (spawn retargeted to implementation -> spawns=0, RED) and the inverted-order control (completion moved after `gate prepare` -> `completed >= validation`, RED). Each turns RED only while its guard exists.
+- DONE: no-regression `go test ./internal/ensigncycle/...` and no other runtime's grading changes.
+  `go test ./internal/ensigncycle/... -count=1` green (286.7s); `go test -race ./internal/ensigncycle/ -run TestPiWorkerLifecycleObservationReplay` green; `go test ./internal/contractlint/` green; gofmt clean. The claude/codex branches are untouched.
+
+### Summary
+
+The shared worker-lifecycle assert now credits the two completion surfaces a Pi host supplies — a `bg_wait` result keyed on the spawned run id and a native `subagent-notify` completion notice — while preserving the spawn-count and `completed < validation` guards. A deterministic replay of the captured transcript shape plus its removed-credit, zero-spawn, and inverted-order controls proves each guard is load-bearing. After rebasing onto the peer stack tip, the auto-continue Pi XFAIL was cleared, and the journey passed locally with an exact two-variant passing pair (766.12s) and no XPASS.
