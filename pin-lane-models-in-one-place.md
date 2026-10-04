@@ -406,3 +406,24 @@ Proposal: **evidence/reporting defect, material to the explicit no-overclaim che
 ### Summary
 
 The reduction is real, the two metadata oracles pass and reject wrong values, and the reproduced Claude operand swap confirms the deliberately unenforced placement boundary. Correct only the identified coverage overclaims; the captain still owes the single over-tolerance surface disposition (13 files/net +401), with no pinned-value or workflow-behaviour change required.
+
+## Stage Report: implementation (wording repair)
+
+FO-directed wording-only repair of the two R4-C1 coverage-record overclaims against `87c6b2ac1`. Code commit `5ff137093`. No guard, pinned value, or workflow change.
+
+- DONE: Correct the overclaim that the Claude model rejection validates the retained Claude ids.
+  `internal/release/livemodels_test.go:32–38` now reads "claude.sonnet, claude.opus: no independent oracle" and states that the recorded rejection "establishes only that one candidate id (claude-sonnet-5.5) is refused by the installed CLI; it does not validate the retained ids. The retained claude.sonnet and claude.opus ids rest only on the authored print test, with no independent oracle." Removed the phrase that had folded "the recorded rejection evidence" into the retained ids' support.
+- DONE: Correct the overclaim that placement enforcement is impossible by an independent oracle.
+  `internal/release/livemodels_test.go:40–44` now reads "Where the values land has no enforcement today" and "A comparison between the workflow and the source is not independent here, because this change authors both sides; that is an absence of enforcement today, not proof that none is possible." Removed "Placement cannot be checked by an independent oracle", which asserted impossibility from absence. The reproduced residual is unchanged: a swap of the two `needs.offline.outputs.claude_*` operands passes every remaining check.
+- DONE: Change nothing else — no code, no guard, no pinned value, no workflow change.
+  `git diff 87c6b2ac1..5ff137093 --stat` = 1 file, +12/-11, comment lines only (`internal/release/livemodels_test.go`); `.github/workflows/runtime-live-e2e.yml`, `internal/release/livemodels.go`, `internal/cli/live_models.go` and all pinned constants byte-identical. Rationale: the two sentences were the identified defect; no adjacent wording was edited.
+- DONE: Verify the wording edit compiles and the retained oracles still pass and still reject a wrong value.
+  `gofmt -l internal/release/livemodels_test.go` = clean. `go test ./internal/release -run 'TestPiLaneModelsExistInInstalledCatalog|TestCodexLaneModelExistsInInstalledCache' -count=1` = ok 0.344s; `go test ./internal/cli -run 'TestLiveModelsCommand' -count=1` = ok 0.258s. Both comments are non-executable; the tests exercising them passed, and neither wrong-value falsifier behavior changed (comment-only diff).
+- DONE: Report the final measured surface, files and net lines, against the approved 8 files and net +140, and say plainly that the only remaining item is the captain's authorization of that number.
+  `git diff --numstat main...HEAD` at `5ff137093` = **13 files, +441/-39, net +402** (was 13 files/net +401 at `87c6b2ac1`; the +1 is the net comment line). Versus the approved **at most 8 files / net +30..+140**: over by 5 files and 262 net lines. The only remaining item is the captain's authorization of this surface (13 files, net +402); no other decision is requested.
+- SKIPPED: Repository-wide suite, `-race` across all packages, and any live/CI lane run.
+  FO prohibition / separate ownership carried over from the reduction round. Comment-only change; focused package checks were run, and no quiet-machine or full offline-suite evidence is claimed.
+
+### Summary
+
+Corrected the two R4-C1 coverage-record sentences in `internal/release/livemodels_test.go`: the Claude ids now rest explicitly on the authored print test alone with no independent oracle (the rejection proves only that claude-sonnet-5.5 is refused), and placement is stated as having no enforcement today with the reason a workflow-vs-source comparison is not independent — rather than as an impossibility. Nothing else changed: a one-file comment edit. Final measured surface is 13 files, net +402, still over the approved 8 files/net +140; the sole remaining item is the captain's authorization of that number.
