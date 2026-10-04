@@ -35,12 +35,17 @@ func writeFile(t *testing.T, path, content string) {
 // runtime files: two extensions and the intercom bridge.
 func substrateRoot(t *testing.T, root string) {
 	t.Helper()
-	writeFile(t, filepath.Join(root, "package.json"),
-		`{"name":"pi-subagents","version":"`+PiSubagentsVersion+`",`+
-			`"pi":{"extensions":["./index.js"]},`+
-			`"exports":{"./intercom-bridge":{"default":"./src/api/intercom-bridge.js"}}}`)
+	writeFile(t, filepath.Join(root, "package.json"), substrateManifest("pi-subagents", PiSubagentsVersion))
 	writeFile(t, filepath.Join(root, "index.js"), "x")
 	writeFile(t, filepath.Join(root, "src/api/intercom-bridge.js"), "x")
+}
+
+// substrateManifest is the installed pi-subagents manifest with the given
+// identity, otherwise fully valid so a mismatch is the only reason to reject it.
+func substrateManifest(name, version string) string {
+	return `{"name":"` + name + `","version":"` + version + `",` +
+		`"pi":{"extensions":["./index.js"]},` +
+		`"exports":{"./intercom-bridge":{"default":"./src/api/intercom-bridge.js"}}}`
 }
 
 func TestVerifyManifestResolvesDeclaredRuntimeFiles(t *testing.T) {
@@ -221,9 +226,13 @@ func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
 			t.Fatalf("settings %s missing %s", settings, source)
 		}
 	}
-	writeFile(t, filepath.Join(subRoot, "package.json"), `{"name":"pi-subagents","version":"0.0.0"}`)
-	if err := install(r, agentDir); err == nil {
-		t.Fatal("install must fail when an installed version is not the pin")
+	writeFile(t, filepath.Join(subRoot, "package.json"), substrateManifest("pi-subagents", "0.0.0"))
+	if err := install(r, agentDir); err == nil || !strings.Contains(err.Error(), `version "0.0.0"`) {
+		t.Fatalf("install must fail with the version-mismatch diagnostic, got %v", err)
+	}
+	writeFile(t, filepath.Join(subRoot, "package.json"), substrateManifest("not-pi-subagents", PiSubagentsVersion))
+	if err := install(r, agentDir); err == nil || !strings.Contains(err.Error(), `name "not-pi-subagents"`) {
+		t.Fatalf("install must fail with the name-mismatch diagnostic, got %v", err)
 	}
 	substrateRoot(t, subRoot)
 	if err := os.Remove(filepath.Join(icRoot, "skills/pi-intercom/SKILL.md")); err != nil {
