@@ -368,3 +368,41 @@ Directed reduction round against `829e6c049`. Code commit `87c6b2ac1`. FO direct
 ### Summary
 
 Reduced to the directed deliverable: the single `internal/release` source and the `spacedock live-models` print command, plus the two independent provider oracles (installed pi-ai catalog for Pi, installed Codex cache for Codex). Every workflow-placement guard is deleted — structural site rule, `LaneModelWiring`, and the workflow-vs-source `--get` key comparison — with no replacement. The coverage outcome is recorded plainly, including the exact residual (a swapped Claude output operand passes every remaining check) and why it cannot be closed by an independent oracle. Measured surface is 13 files, net +401, which does not fit the approved 8 files/net +140; it is reported rather than trimmed. No pinned value or workflow behaviour changed.
+
+## Review-finding disposition (light reduction validation)
+
+### R4-C1 — coverage wording exceeds the observed boundary
+
+Released user / normal workflow: maintainers using the reduced checks and coverage record to judge lane-model changes. Observable harm: retained Claude ids appear supported by rejection evidence about a different candidate, and an absent placement oracle is presented as a proved impossibility.
+Authority: contract[docs/dev/README.md#validation] Report the actual observation boundary; do not claim proof beyond what the checks establish.
+Trigger evidence: `internal/release/livemodels_test.go:33–34` says the Claude ids rest on the authored oracle **and the recorded rejection evidence**; rejection of Sonnet 5.5 does not establish retained Sonnet 5 or Opus. Lines 39–41 say placement **cannot** have an independent oracle; `livemodels.go:38` generalizes to **any** placement comparison; reduction-report lines 356 and 370 repeat that impossibility. Deleting these guards proves absence, not impossibility. Reject those sentences, not the directed deletion.
+Proposal: **evidence/reporting defect, material to the explicit no-overclaim checklist**, task-owned wording correction only; no guard, parser, architecture or scope change proposed. State simply: Pi/Codex have independent metadata oracles; Claude ids rest on the authored print test; workflow placement has no enforcement; swapping the two `needs.offline.outputs.claude_*` operands passes the remaining checks. The previously recorded surface decision remains captain-owned.
+
+## Stage Report: validation (light reduction round)
+
+- DONE: Run the grep yourself and confirm all three workflow-placement guards and their helpers are gone, with nothing replacing them.
+  Repo-bounded `git grep -nE 'TestRuntimeLiveWorkflow(ModelSitesResolveThroughPrinter|LaneModelWiring|ResolvedKeysExist|ResolverBindsEachOutputToItsKey)|modelFlagArgPattern|modelKeyLinePattern|modelIDTokenPattern|codexLiveModelAssignPattern|resolverEchoPattern|liveModelGetPattern|resolverLinePattern|stripLineComment' -- .` returned exit 1 / zero matches; reviewed the entire `829e6c049..87c6b2ac1` diff and related test references: no replacement, only deletions/comment edits.
+- DONE: Confirm the Pi catalog check and the Codex models_cache check pass and fail for a wrong value.
+  Both pass without skips; independently read installed pi-ai `providers/data/{openai,openai-codex}.json` and `/Users/clkao/.codex/models_cache.json`: `gpt-6-luna`/max present, `gpt-6-luan` absent. One-at-a-time disposable-archive mutations of each Pi pin and the Codex pin to that same-form typo exit 1 specifically for missing metadata membership; source restored after each.
+- DONE: Confirm the remaining oracles are genuinely independent.
+  Tests read installed provider metadata rather than expected ids copied from the pin source; retained provider tests/helpers are byte-identical to `829e6c049`. This proves catalog/cache membership and reasoning metadata, not intended-pin identity, entitlement or successful execution; missing host metadata causes skips.
+- DONE: Read the coverage comments and the report for overclaiming.
+  REJECT the sentences identified in R4-C1: Claude retained ids have only the authored print oracle, not support from a different candidate's rejection; no placement enforcement exists, but impossibility of an independent oracle is unproved. Historical reports remain historical, not renewed claims. The requested reduction itself is accepted; no guard is proposed.
+- DONE: Confirm the exact residual: a swapped needs.offline.outputs.claude_* operand passes every remaining check.
+  Swapped only the two Claude matrix operands in a disposable archive; both provider tests, both print tests, Codex sentinel shim, Claude effort shim and context-boundary test all passed without skips. These are the remaining focused checks exercised, not a claim that the prohibited repository-wide suite ran; placement has no enforcement.
+- DONE: Confirm the pinned values and the workflow's behaviour are unchanged by this pass.
+  Workflow, print-command implementation and docs are byte-identical to `829e6c049`; non-comment production source is identical. `go run ./cmd/spacedock live-models` printed, in order: `claude.sonnet=claude-sonnet-5`, `claude.opus=claude-opus-4-8`, `codex.exec=gpt-6-luna`, `pi.oauth=openai-codex/gpt-6-luna:max`, `pi.api-key=openai/gpt-6-luna:max`. No numeric Claude/GPT model literal matches in the current workflow.
+- DONE: Measure the surface yourself: files and net lines, against the approved 8 files and net +140. Report the numbers.
+  Independently summed `git diff --numstat main...HEAD` at `87c6b2ac1`: **13 files, +440/-39, net +401**; exceeds limits by **5 files / 261 net lines**. Reduction alone: 4 files, +21/-199, net -178. No trimming performed or proposed.
+- DONE: Run only focused checks and preserve the candidate.
+  `go test ./internal/release ./internal/cli ./internal/ensigncycle ./internal/claudeteam -run '^(TestPiLaneModelsExistInInstalledCatalog|TestCodexLaneModelExistsInInstalledCache|TestLiveModelsCommand.*|TestCodexLiveWorkflowPinsOnlyExecToLuna|TestRuntimeLiveClaudeShimSetsMaximumEffort|TestContextLimitForModelBoundary)$' -count=1 -v` passed baseline and operand swap; wrong-value probes failed as intended. `git diff --check main...HEAD` and changed-file `gofmt -l` clean; disposable archive removed; code HEAD/worktree/index unchanged.
+- DONE: State acceptance evidence at the reduced boundary.
+  AC-1: source/print PASS, placement enforcement deliberately absent (original divergence clause not proved). AC-2: both Pi spellings/metadata PASS, no new live proof. AC-3: current workflow literal search clear, no future-placement enforcement. AC-4: reduction leaves runtime bytes unchanged and focused checks PASS; full offline suite not newly established.
+- SKIPPED: Repository-wide suite and any live/CI lane run.
+  Explicit FO prohibition on full suite/CI; no new host or quiet-machine smoke launched, and no new live acceptance claimed.
+- DONE: Say whether the change can proceed, and name the single decision the captain owes.
+  **Not ready for unconditional acceptance as written:** reduction and independent-oracle evidence PASS, but reject R4-C1's wording overclaims. After reporting-only correction, the sole captain decision is whether to authorize **13 files/net +401 instead of 8 files/net +140** for this already-directed reduced deliverable. No renewed guard-design decision or automatic guard repair is requested.
+
+### Summary
+
+The reduction is real, the two metadata oracles pass and reject wrong values, and the reproduced Claude operand swap confirms the deliberately unenforced placement boundary. Correct only the identified coverage overclaims; the captain still owes the single over-tolerance surface disposition (13 files/net +401), with no pinned-value or workflow-behaviour change required.
