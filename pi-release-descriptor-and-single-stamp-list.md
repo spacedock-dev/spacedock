@@ -1,9 +1,10 @@
 ---
 title: Give the Pi extension its own release descriptor, and make the stamp list exist once
-status: backlog
+status: implementation
 score: 0.8
 source: "Captain constraint, 2026-10-04: the Pi extension's canonical metadata must not be the top-level package.json, because every other host has its own. Astra design review, run b3928dbb."
 id: 8vahpzjd358ygqce5etw6fr2
+started: 2026-10-04T05:28:21Z
 ---
 
 ## Problem
