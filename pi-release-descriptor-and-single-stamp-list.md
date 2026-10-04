@@ -130,3 +130,25 @@ Behavioural tests only, with the version supplied independently. No test may ass
 file's own text against a copy of it, and no expected value may come from the thing
 it tests. Pi discovery is checked through the real installed loader, not a copied
 manifest string.
+
+## Stage Report: implementation
+
+- DONE: Create .pi/plugin.json with the identity, description and version shown in the design, and no resource routing. Leave the root package.json unchanged and unversioned.
+  New `.pi/plugin.json` (30 lines) carries name/version/description/author/homepage/repository/license/keywords/interface only. Commit `d9842ab5a` touches no `package.json` (`git show --stat` grep for it is empty).
+- DONE: Put the authoritative stamp target list in internal/release, including the new Pi descriptor, and have stamp-version and manifest-tag-gate use it by default. Add a stamp-paths subcommand that prints it, then remove the repeated target lists from the release workflow's gate, stamp, diff and commit steps and drop its FO_PROSE variable, and from the three invocations in docs/releasing.md.
+  `release.StampTargets()` is the sole list (`.pi/plugin.json` included); `stampVersion`/`runManifestTagGate` default to it; `stampPaths` prints it. `grep -n 'plugin.json\|FO_PROSE' .github/workflows/release.yml docs/releasing.md` returns nothing.
+- DONE: Make a named JSON manifest with no usable top-level version fail with a clear error and a non-zero exit instead of writing unchanged bytes and printing success. Keep the low-level marketplace no-op contract.
+  Manual: `stamp-version 9.9.9 marketplace.json` -> exit 1, `stamp marketplace.json: no usable top-level "version" field...`, bytes unchanged. `StampVersion` still returns marketplace bytes unchanged (TestStampVersionLeavesMarketplaceCalendarUntouched, unchanged).
+- DONE: Replace the top-level version field, not the first textual occurrence, and cover a nested version appearing earlier in the file.
+  `replaceTopLevelVersion` walks top-level keys with json.Decoder. Manual nested-first run left `"metadata":{"version":"schema-7"}` and wrote only top-level `3.4.5`; covered by TestStampVersionReplacesTopLevelVersionWhenNestedVersionPrecedes.
+- DONE: Add behavioural tests for all four: the default list stamps the Pi descriptor, stamp-paths and the gate share one list, a version-less named manifest fails, and a nested version is not the one written. Verify Pi discovery through the real installed loader with the root manifest untouched, and say what that check observes.
+  Tests: TestStampVersionCommandDefaultsToStampTargets (fails if `.pi/plugin.json` missing from the default list -> stays 0.0.0); TestStampPathsMatchesDefaultStampList + TestManifestTagGateDefaultsToStampPathsList (fail if stamp-paths and the default stamp/gate lists diverge); TestStampVersionCommandFailsOnVersionlessNamedManifest (fails if exit 0 or a `stamped` success line on unchanged bytes); TestStampVersionReplacesTopLevelVersionWhenNestedVersionPrecedes (fails if the nested value changes). All in `go test ./internal/release/ ./cmd/spacedock-release/`.
+- DONE: Pi discovery through the real installed loader (pi SDK `DefaultResourceLoader`, v1.0.2) with the worktree as the registered package, root manifest untouched.
+  Observed: `ROOT_MANIFEST.pi = {"extensions":["./.pi/extensions/spacedock.ts"],"skills":["./skills"]}`; `ROOT_MANIFEST_UNCHANGED = true`; `DISCOVERED_EXTENSIONS = [".pi/extensions/spacedock.ts"]`; `EXTENSION_ERRORS = 0`; repo skills include `first-officer` and `ensign`. `.pi/plugin.json` was present during the load and caused no resource or error: Pi reads `pi.extensions`/`pi.skills` from the root manifest, not the descriptor.
+
+### Summary
+
+Gave Pi its own release descriptor and made the stamp target list exist once in `internal/release`, consumed by `stamp-version`, `manifest-tag-gate`, and the new `stamp-paths` subcommand; removed the repeated lists from `release.yml` (incl. `FO_PROSE`) and `docs/releasing.md`. Fixed the two release defects: a version-less named JSON manifest now exits non-zero with a clear error and no success line (low-level marketplace no-op kept), and the top-level `version` field is replaced even when a nested `version` precedes it. Verified Pi discovery through the real installed pi loader with the root manifest untouched.
+
+Deviation: diff is net +353 across 9 files vs the design's estimate +120 / tolerance +50..+200 / at most 8 files. The extra surface is forced: `manifest_tag_gate.go` must change for the gate default, and the four mandated CLI behavioural tests land in the pre-existing `cmd/spacedock-release` test files. Pre-existing gofmt deviation in `internal/release/runtime_live_evidence_workflow_test.go` (unformatted at HEAD) was left untouched to keep scope narrow.
+
