@@ -777,3 +777,87 @@ green; no repo-wide suite or CI lane was run.
   non-zero node import is ignored.
 - `TestInstallVerifiesAndRegistersThePinnedFamily` fails if any installed
   name/version, manifest, skill, or settings registration check is dropped.
+
+## Stage Report: implementation (cycle 10)
+
+An independent review of the 597-line port found three correctness faults and said
+explicitly not to rewrite for a smaller number. Fixed those three; changed nothing
+else. Call surface frozen: same `install`/`guard`/`verify-manifest` commands, same
+exit codes, same printed output. Code commit `52223fe29`.
+
+- DONE: `mergeSettings` now preserves every existing `packages` entry, object entries included, and appends only missing registrations.
+  `internal/pilive/pilive.go`: the string-only `[]string` accumulator became
+  `pkgs []any` (kept verbatim) with a parallel `names []string` used only for the
+  missing-registration check (`switch` reads a string entry or a map's `"source"`).
+  Mutation A (restore the old string-only filter): `TestMergeSettingsPreservesEntriesAndIsIdempotent` fails at `pilive_test.go:84` with
+  `merged packages=[npm:other npm:pi-subagents npm:pi-intercom]` — the `{"source":"npm:other-object"}` entry is gone. On the fixed code the same test returns `npm:other,npm:other-object,npm:pi-subagents,npm:pi-intercom`.
+- DONE: `compatExportPath` selects the installed nested pi-ai copy first and fails when its `./compat` export is invalid, instead of falling through to a working global copy.
+  It now `os.Stat`s each candidate's `package.json`, skips only a genuinely absent
+  copy, and returns an error when an existing installed copy has no valid
+  `./compat` import; the global copy is consulted only when nothing is installed.
+  Mutation B (restore `continue` on a missing `./compat`): `TestCompatExportPathPrefersInstalledAndRejectsIncompatible` fails at
+  `pilive_test.go:161`, proving the global copy was masking the incompatible
+  installed one.
+- DONE: Added the negative settings fixture: seed settings holding an object package entry, merge, and require that entry to survive.
+  `TestMergeSettingsPreservesEntriesAndIsIdempotent` seeds
+  `{"theme":"dark","packages":["npm:other",{"source":"npm:other-object"}]}`, then asserts the written file still contains
+  `"source": "npm:other-object"`.
+- DONE: Added the negative compatibility fixture: installed copy present, no usable `./compat`, working global copy present, resolution must fail.
+  `TestCompatExportPathPrefersInstalledAndRejectsIncompatible` also positively locks
+  that the installed copy wins when valid and that the global copy is used only when
+  nothing is installed.
+- DONE: Strengthened the idempotence assertion so it fails on duplicate registrations, not just on a returned error.
+  The second merge is now followed by a byte comparison of the settings file before
+  and after (`data` vs `again`). Mutation D (make the append unconditional):
+  `TestMergeSettingsPreservesEntriesAndIsIdempotent` fails with the duplicated
+  packages array; the old error-only assertion would have passed it.
+- DONE: Strengthened the install test so deleting a check or mis-wiring an npm call fails it.
+  (a) Exact-argument assertions: the fake now records `npm install` args and the
+  test requires exactly two installs — `npm install -g <pinned pi-coding-agent
+  tarball>` and `npm install --prefix <agentDir>/npm <pinned pi-subagents tarball>
+  <pinned pi-intercom tarball>` — so a dropped install, a wrong tarball, or a
+  wrong prefix fails. (b) `npm pack` now errors on any spec/version other than the
+  pin. (c) Three negatives re-run `install` against a broken tree and require
+  failure: installed version not the pin, a packaged skill file removed, and a
+  declared runtime file removed. Mutation C (delete the packaged-skill existence
+  check): the test fails at `pilive_test.go:233` (`install must fail when a
+  packaged skill file is missing`); the old positive-only test passed it.
+- DONE: Froze the call surface and held the port at its accepted behaviour set.
+  `Command` is untouched; the pre-fix and fixed binaries print identical `pins` /
+  `print-install` and keep `verify-manifest` exit codes. The port is now 669 lines
+  (427 impl + 242 tests) versus the accepted 597 (412 + 185): +15 impl for the two
+  fix bodies and +57 tests for the required negative fixtures and strengthened
+  assertions. No behaviour was cut and no size-driven rewrite was done; the growth
+  is exactly the negatives the review asked to add.
+- DONE: Bounded validation, no repository-wide suite and no CI lane run.
+  `go build ./...`, `go vet ./internal/pilive`, `gofmt -l internal/pilive` (empty),
+  `git diff --check`, and `go test ./internal/pilive/ -count=1` all pass; the four
+  mutation probes above were run and reverted. `go test ./...` and any race/live/
+  CI lane were deliberately not run per the dispatch.
+
+### Why each touched test can now fail
+
+- `TestMergeSettingsPreservesEntriesAndIsIdempotent` (renamed from
+  `TestMergeSettingsCreateOrMergeRejectsMalformed`): fails when an existing object
+  `packages` entry is dropped (Mutation A) and when a second merge duplicates a
+  registration (Mutation D). The old body only checked that the second call returned
+  no error and seeded no object entry.
+- `TestCompatExportPathPrefersInstalledAndRejectsIncompatible` (new): fails when an
+  installed pi-ai without `./compat` silently resolves to the global copy
+  (Mutation B), when the installed copy does not win over the global one, or when
+  the global fallback is used with nothing installed.
+- `TestInstallVerifiesAndRegistersThePinnedFamily`: fails when an install call is
+  dropped, when a tarball/prefix is not the pinned one, when any `npm pack` spec is
+  not the pin, and when the installed-version, manifest, or packaged-skill check is
+  removed (Mutation C). The old body pre-created every valid file, accepted any npm
+  arguments, and asserted no failure.
+
+### Summary
+
+Fixed the three reviewed faults at 669 lines: `mergeSettings` preserves object
+`packages` entries and dedupes registrations, `compatExportPath` treats the installed
+pi-ai copy as authoritative and fails on an invalid `./compat` instead of masking it
+with a global copy, and the settings idempotence plus install tests are now
+falsifiable (four mutation probes each fail the intended test). Call surface and all
+other behaviours unchanged; focused build/vet/gofmt/tests green; no repository-wide
+suite or CI lane was started.
