@@ -91,3 +91,21 @@ Preserve all Sonnet and Codex behavior and the shared assert.
 - Filed from the pnc pi-live run (31770740214), which surfaced this gap because
   pnc's parallelism change let all 17 common journeys run (vs -failfast stopping
   at the first failure on non-parallel branches).
+
+## Stage Report: implementation
+
+- DONE: Fix the officer instruction so the gate-prepare reference path is composed from the observed workflow root or the committed entity path, and is never reproduced from prose in the prompt.
+  `skills/fo-gate-lifecycle/SKILL.md` Prepare step now reads "Compose the selected-source `<R>/<P>` (observed workflow root or committed entity path); never retype prose. Use absolute if cwd/state spellings differ." This restores the `<R>/<P>` composition that commit 6060c382a replaced with "Supply absolute, launch-cwd-relative, or state-relative judgment paths" (the wording that invited the hand-typed path). The 7700-byte component cap holds: file is 7695 B.
+- DONE: Prove it: the focused checks, then a local live run of default-headless-gate-stop using SPACEDOCK_LIVE_RUNTIME=pi and a distinct SPACEDOCK_LIVE_ARTIFACT_DIR.
+  After-fix run (base 05bdfa7da, binding removed, skill fixed): `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/live-refpath SPACEDOCK_LIVE_RUNTIME=pi go test -tags live -count=1 -timeout 45m -run '^TestLiveCommonDefaultHeadlessGateStop$' ./internal/ensigncycle -v` -> `--- PASS: TestLiveCommonDefaultHeadlessGateStop (551.12s)`, no XFAIL and no XPASS alert (the binding is gone, so an XPASS is impossible), empty observed set. The run's `command.log` shows `gate prepare ... --artifact .../entity-snapshot.md --reference .../recorder-contract.md` exit=0, then `state commit` exit=0 (`state-head d70d84bf`).
+- DONE: When that journey passes locally with an exact passing pair, clear its XFAIL binding and record the evidence in the entity.
+  Removed `[]liveJourneyGap{liveXFail("pi","gcmfwfjd9735b58sbzw7xsb8")}` -> `nil` for `TestLiveCommonDefaultHeadlessGateStop` in `internal/ensigncycle/shared_live_runner_test.go` and dropped its now-obsolete comment; committed with the skill fix in 3b5711ea5.
+- DONE: Do not weaken the shared assertion, the binary's refusal, or the no-retry rule.
+  Shared assertions (`assertGateHeld`, `assertRecordedGateHoldLog`, `assertImplementationWorkerLifecycle`) are byte-unchanged; `internal/gates/prepare.go` is untouched, so the fail-closed refusal of an unreadable/missing selected source stands; the skill's single-prepare/no-retry sentence is untouched.
+- DONE: Focused offline checks.
+  `gofmt -l` clean; `go vet -tags live ./internal/ensigncycle` clean; `go test -tags live -run '^$' ./internal/ensigncycle` compiles; `go test ./internal/contractlint/... ./internal/ensigncycle/... ./internal/gates/... ./internal/cli/... -run '...' -count=1` green (ensigncycle offline 308s, contractlint 1.3s, gates/cli gate-prepare green). Per the FO scope, the repository-wide `go test ./...`/`-race` was not run.
+- SKIPPED: none.
+
+### Summary
+
+This is hardening against a transcription slip, not the repair of a reproducible fault. The before-fix local run (peer base fb4428e9c, binding present, skill unfixed) did NOT reproduce the missing-reference fault at all: `gate prepare` succeeded (exit=0, `state=open`, correct `--artifact`/`--reference` paths, committed) and the sole red was the separate observer defect `implementation-worker-not-dispatched` (owned by mk72bnt1b5hsp9sfv83979xs), producing `XFAIL pi/default-headless-gate-stop observed=[implementation-worker-not-dispatched]`. The reference-path failure recorded from CI kept the random suffix while dropping one word, which is only possible when the path was written from the prompt prose rather than read from the boot record; the instruction change makes that harder without claiming a reproduced fault. Because the headless journey passes only once the observer fix is present, my branch is stacked on the sibling tip 05bdfa7da (peer fb4428e9c + `4516bc906` bg_wait/native-completion credit + `05bdfa7da`); the Pi binding is cleared only in this layer. Residual risk: the journey is stochastic — the after-fix run needed a clean artifact directory (a killed prior run in the same dir made the harness see two root sessions and fail before the journey); a future rerun must start from an empty `SPACEDOCK_LIVE_ARTIFACT_DIR`.
