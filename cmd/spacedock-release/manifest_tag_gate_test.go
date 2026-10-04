@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -47,11 +48,40 @@ func TestManifestTagGateCommandChecksEveryManifest(t *testing.T) {
 	}
 }
 
-// TestManifestTagGateCommandRejectsMissingArgs — with no manifest argument the
+// TestManifestTagGateCommandRejectsMissingTag — with no tag argument the
 // subcommand exits with a usage error and does not pass.
-func TestManifestTagGateCommandRejectsMissingArgs(t *testing.T) {
-	if code := runManifestTagGate([]string{"v0.22.0"}); code == 0 {
-		t.Fatalf("manifest-tag-gate exit = 0 with no manifest argument; want non-zero")
+func TestManifestTagGateCommandRejectsMissingTag(t *testing.T) {
+	if code := runManifestTagGate(nil); code == 0 {
+		t.Fatalf("manifest-tag-gate exit = 0 with no tag argument; want non-zero")
+	}
+}
+
+// TestManifestTagGateDefaultsToStampPathsList locks AC-2: with no explicit
+// files the gate reads the list `stamp-paths` prints. A fully-stamped target
+// set must pass (a gate default carrying a path absent from stamp-paths would
+// fail to read it and block), and diverging ANY printed path alone must block
+// (a gate default omitting it would still pass).
+func TestManifestTagGateDefaultsToStampPathsList(t *testing.T) {
+	out, _ := captureStdout(t, func() int { return stampPaths(nil) })
+	paths := strings.Fields(out)
+	if len(paths) == 0 {
+		t.Fatal("stamp-paths printed nothing")
+	}
+	dir := t.TempDir()
+	for _, rel := range paths {
+		writeStampTarget(t, filepath.Join(dir, rel), "1.2.3")
+	}
+	chdirTemp(t, dir)
+
+	if code := runManifestTagGate([]string{"v1.2.3"}); code != 0 {
+		t.Fatalf("manifest-tag-gate with no explicit files exit = %d, want 0 for a fully stamped target set", code)
+	}
+	for _, rel := range paths {
+		writeStampTarget(t, filepath.Join(dir, rel), "2.0.0") // diverge from the tag
+		if code := runManifestTagGate([]string{"v1.2.3"}); code == 0 {
+			t.Fatalf("manifest-tag-gate passed while %s diverged from the tag; the default list omits it", rel)
+		}
+		writeStampTarget(t, filepath.Join(dir, rel), "1.2.3") // restore for the next target
 	}
 }
 

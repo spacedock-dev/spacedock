@@ -19,7 +19,8 @@ import (
 //
 // Usage:
 //
-//	spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
+//	spacedock-release stamp-version <release-version> [<manifest-or-prose> ...]
+//	spacedock-release stamp-paths
 //	spacedock-release dev-preversion <stable-version>
 //	spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
 //	spacedock-release e2e-gate <release-commit-sha>
@@ -28,7 +29,11 @@ import (
 // plugin.json gets its top-level `version` field rewritten (AC-4); a `.md`
 // argument is the FO shared-core prose, whose single release-stamped "required
 // binary minor" literal is rewritten to the release's major.minor (D5) —
-// erroring unless the literal appears exactly once. All rewrite in place.
+// erroring unless the literal appears exactly once. A `.json` argument with no
+// usable top-level version fails loud rather than writing unchanged bytes. With
+// no target arguments it stamps the authoritative release.StampTargets list.
+// stamp-paths prints that list, so every ritual step derives it from one source.
+// All rewrite in place.
 // dev-preversion prints the post-release dev pre-version
 // (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`.
 // edge-advance-decision prints `advance` or `skip` (exit 0 either way) deciding
@@ -55,8 +60,10 @@ import (
 // is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
 // unless every tagged `.json` manifest's version equals the tag semver AND every
 // tagged `.md` prose's stamped minor equals the tag's major.minor (the
-// stamp-then-tag ordering). notes summarizes the commit log
-// since the last tag into clean release notes and, on confirmation, cuts the
+// stamp-then-tag ordering); with no explicit targets it reads the same
+// release.StampTargets list stamp-version and stamp-paths use. notes summarizes
+// the commit log since the last tag into clean release notes and, on
+// confirmation, cuts the
 // annotated tag whose body carries them (CI extracts that body and feeds
 // goreleaser via --release-notes).
 func main() {
@@ -67,6 +74,8 @@ func main() {
 	switch os.Args[1] {
 	case "stamp-version":
 		os.Exit(stampVersion(os.Args[2:]))
+	case "stamp-paths":
+		os.Exit(stampPaths(os.Args[2:]))
 	case "dev-preversion":
 		os.Exit(devPreversion(os.Args[2:]))
 	case "edge-advance-decision":
@@ -157,11 +166,16 @@ func journeyCosts(args []string) int {
 }
 
 func stampVersion(args []string) int {
-	if len(args) < 2 {
-		fmt.Fprintln(os.Stderr, "spacedock-release stamp-version: need <release-version> <manifest> [<manifest> ...]")
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "spacedock-release stamp-version: need <release-version> [<manifest-or-prose> ...]")
 		return 2
 	}
 	version, manifests := args[0], args[1:]
+	if len(manifests) == 0 {
+		// No explicit targets: use the ONE authoritative list (release.StampTargets),
+		// the same list `stamp-paths` prints and `manifest-tag-gate` defaults to.
+		manifests = release.StampTargets()
+	}
 	for _, path := range manifests {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -176,6 +190,20 @@ func stampVersion(args []string) int {
 		if strings.HasSuffix(path, ".md") {
 			out, err = release.StampProseVersion(data, version)
 		} else {
+			// A NAMED JSON manifest must carry a usable top-level version. The
+			// marketplace/no-op shape (no top-level version) is not a stamp target:
+			// StampVersion returns such a manifest unchanged, so without this guard
+			// the CLI would rewrite identical bytes and print a success line for a
+			// descriptor it never stamped.
+			existing, verr := release.ManifestVersion(data)
+			if verr != nil {
+				fmt.Fprintf(os.Stderr, "stamp %s: %v\n", path, verr)
+				return 1
+			}
+			if strings.TrimSpace(existing) == "" {
+				fmt.Fprintf(os.Stderr, "stamp %s: no usable top-level \"version\" field to replace (marketplace/no-op shape is not a stamp target)\n", path)
+				return 1
+			}
 			out, err = release.StampVersion(data, version)
 		}
 		if err != nil {
@@ -187,6 +215,20 @@ func stampVersion(args []string) int {
 			return 1
 		}
 		fmt.Printf("stamped %s version=%s\n", path, version)
+	}
+	return 0
+}
+
+// stampPaths prints the ONE authoritative stamp target list
+// (release.StampTargets), one path per line, so the release workflow's gate,
+// stamp, diff and commit steps derive the same list instead of restating it.
+func stampPaths(args []string) int {
+	if len(args) != 0 {
+		fmt.Fprintln(os.Stderr, "spacedock-release stamp-paths: takes no arguments")
+		return 2
+	}
+	for _, path := range release.StampTargets() {
+		fmt.Println(path)
 	}
 	return 0
 }
@@ -359,7 +401,8 @@ func usage() {
 	fmt.Fprint(os.Stderr, `spacedock-release is the release-pipeline version tool.
 
 Usage:
-  spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
+  spacedock-release stamp-version <release-version> [<manifest-or-prose> ...]
+  spacedock-release stamp-paths
   spacedock-release dev-preversion <stable-version>
   spacedock-release edge-advance-decision <tag> <known-version-plugin.json>
   spacedock-release highest-known-edge-version [<tag> ...]
@@ -367,7 +410,7 @@ Usage:
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
   spacedock-release e2e-gate <release-commit-sha>
-  spacedock-release manifest-tag-gate <tag> <manifest-or-prose> [<manifest-or-prose> ...]
+  spacedock-release manifest-tag-gate <tag> [<manifest-or-prose> ...]
   spacedock-release notes <release-version>
 `)
 }

@@ -1,35 +1,98 @@
-// ABOUTME: Release-pipeline version steps — stamp plugin.json `version` to the
-// ABOUTME: release (AC-4).
+// ABOUTME: Release-pipeline version steps — the single stamp target list and the
+// ABOUTME: top-level plugin.json version stamp (AC-4).
 package release
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
 )
 
-// versionRe matches a `"version": "..."` member of a JSON object. Both stamp
-// steps rewrite only the FIRST match in the blob (see replaceFirstVersion): in a
-// plugin.json that first match is the top-level version; in a marketplace.json,
-// which carries no top-level version, it is the nested plugin entry's calendar
-// key. A second `version` key elsewhere in the blob is left untouched.
-var versionRe = regexp.MustCompile(`("version"\s*:\s*")[^"]*(")`)
-
-// replaceFirstVersion rewrites only the FIRST `"version": "..."` member of blob
-// to value, preserving the `"version": "` prefix and closing `"` and leaving any
-// later `version` key untouched. Returns blob unchanged when there is no match.
-func replaceFirstVersion(blob []byte, value string) []byte {
-	loc := versionRe.FindSubmatchIndex(blob)
-	if loc == nil {
-		return blob
+// StampTargets is the ONE authoritative list of files a release stamps: the
+// per-host plugin descriptors plus the first-officer shared-core prose. The
+// `stamp-version` and `manifest-tag-gate` subcommands default to it when given
+// no explicit targets, and `stamp-paths` prints it, so the list has exactly one
+// authority instead of being restated per ritual step.
+func StampTargets() []string {
+	return []string{
+		".claude-plugin/plugin.json",
+		".codex-plugin/plugin.json",
+		".pi/plugin.json",
+		"skills/first-officer/references/first-officer-shared-core.md",
 	}
-	// loc indices: [matchStart, matchEnd, g1Start, g1End, g2Start, g2End].
-	out := make([]byte, 0, len(blob)+len(value))
-	out = append(out, blob[:loc[3]]...) // up to and including the prefix group
-	out = append(out, value...)
-	out = append(out, blob[loc[4]:]...) // from the closing-quote group onward
-	return out
+}
+
+// replaceTopLevelVersion rewrites the value of the TOP-LEVEL `version` member of
+// blob to value, preserving all surrounding bytes and formatting. It is
+// JSON-structure aware: a `version` nested inside another object — which can
+// appear BEFORE the top-level one — is skipped, because only the first object's
+// members are inspected. Errors when the top-level version is absent or is not a
+// JSON string, so a malformed manifest fails loud instead of writing unchanged
+// bytes.
+func replaceTopLevelVersion(blob []byte, value string) ([]byte, error) {
+	dec := json.NewDecoder(bytes.NewReader(blob))
+	tok, err := dec.Token()
+	if err != nil {
+		return nil, fmt.Errorf("parse manifest: %w", err)
+	}
+	if d, ok := tok.(json.Delim); !ok || d != '{' {
+		return nil, fmt.Errorf("parse manifest: top level is not a JSON object")
+	}
+	for dec.More() {
+		keyTok, err := dec.Token()
+		if err != nil {
+			return nil, fmt.Errorf("parse manifest: %w", err)
+		}
+		key, _ := keyTok.(string)
+		if key != "version" {
+			// Skip this member's value (object, array, or scalar) so the scan
+			// stays at the top-level object's keys.
+			var skip json.RawMessage
+			if err := dec.Decode(&skip); err != nil {
+				return nil, fmt.Errorf("parse manifest: %w", err)
+			}
+			continue
+		}
+		// The decoder sits just after the `"version"` key string; walk past
+		// the colon and whitespace to the opening quote of the value, so only
+		// the value's bytes are replaced.
+		i := dec.InputOffset()
+		for i < int64(len(blob)) && isJSONSpace(blob[i]) {
+			i++
+		}
+		if i >= int64(len(blob)) || blob[i] != ':' {
+			return nil, fmt.Errorf("parse manifest: malformed version member")
+		}
+		i++
+		for i < int64(len(blob)) && isJSONSpace(blob[i]) {
+			i++
+		}
+		if i >= int64(len(blob)) || blob[i] != '"' {
+			return nil, fmt.Errorf("parse manifest: top-level version is not a string")
+		}
+		valTok, err := dec.Token()
+		if err != nil {
+			return nil, fmt.Errorf("parse manifest: %w", err)
+		}
+		if _, ok := valTok.(string); !ok {
+			return nil, fmt.Errorf("parse manifest: top-level version is not a string")
+		}
+		valueEnd := dec.InputOffset() // just past the value's closing quote
+		out := make([]byte, 0, len(blob)+len(value))
+		out = append(out, blob[:i+1]...) // through the value's opening quote
+		out = append(out, value...)
+		out = append(out, blob[valueEnd-1:]...) // from the value's closing quote
+		return out, nil
+	}
+	return nil, fmt.Errorf("parse manifest: no top-level version member")
+}
+
+// isJSONSpace reports whether b is insignificant whitespace BETWEEN JSON
+// tokens (the bytes json.Decoder itself skips).
+func isJSONSpace(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\n' || b == '\r'
 }
 
 // stableVersionRe matches a bare stable semver (no `v` prefix, no `-pre`
@@ -65,11 +128,12 @@ func ManifestVersion(manifest []byte) (string, error) {
 }
 
 // StampVersion rewrites the top-level `version` field of a plugin manifest
-// (plugin.json / .codex-plugin/plugin.json) to version, preserving the rest of
-// the file's formatting. When the manifest has no top-level `version` key (e.g.
-// a marketplace.json, whose version lives on the nested plugin entry), the input
-// is returned unchanged — the stamp is a plugin.json operation and must not move
-// the marketplace entry's calendar key.
+// (plugin.json / .codex-plugin/plugin.json / .pi/plugin.json) to version,
+// preserving the rest of the file's formatting. When the manifest has no
+// top-level `version` key (e.g. a marketplace.json, whose version lives on the
+// nested plugin entry), the input is returned unchanged — the stamp is a named
+// plugin descriptor operation and must not move the marketplace entry's calendar
+// key. The release CLI turns that no-op into a loud failure for a named manifest.
 func StampVersion(manifest []byte, version string) ([]byte, error) {
 	var top map[string]json.RawMessage
 	if err := json.Unmarshal(manifest, &top); err != nil {
@@ -79,5 +143,5 @@ func StampVersion(manifest []byte, version string) ([]byte, error) {
 		// No top-level version (marketplace.json shape): nothing to stamp.
 		return manifest, nil
 	}
-	return replaceFirstVersion(manifest, version), nil
+	return replaceTopLevelVersion(manifest, version)
 }

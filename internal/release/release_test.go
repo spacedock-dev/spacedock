@@ -68,6 +68,41 @@ func TestStampVersionLeavesMarketplaceCalendarUntouched(t *testing.T) {
 	}
 }
 
+// TestStampVersionReplacesTopLevelVersionWhenNestedVersionPrecedes locks AC-4's
+// ordering half: with a NESTED `version` appearing BEFORE the top-level one, the
+// TOP-LEVEL value is what changes and the nested value is untouched. A
+// first-textual-occurrence replace would rewrite the nested `schema-7` instead.
+func TestStampVersionReplacesTopLevelVersionWhenNestedVersionPrecedes(t *testing.T) {
+	src := `{
+  "metadata": {
+    "version": "schema-7"
+  },
+  "name": "spacedock",
+  "version": "0.1.0-dev",
+  "skills": "./skills/"
+}
+`
+	out, err := StampVersion([]byte(src), "0.19.0")
+	if err != nil {
+		t.Fatalf("StampVersion: %v", err)
+	}
+	var m struct {
+		Version  string `json:"version"`
+		Metadata struct {
+			Version string `json:"version"`
+		} `json:"metadata"`
+	}
+	if err := json.Unmarshal(out, &m); err != nil {
+		t.Fatalf("stamped manifest does not parse: %v\n%s", err, out)
+	}
+	if m.Version != "0.19.0" {
+		t.Errorf("top-level version = %q, want 0.19.0 (a nested version preceded it)", m.Version)
+	}
+	if m.Metadata.Version != "schema-7" {
+		t.Errorf("nested metadata.version = %q, want schema-7 — the top-level field, not the first textual occurrence, must be replaced", m.Metadata.Version)
+	}
+}
+
 // TestStampVersionRewritesOnlyFirstVersionKey locks the replace-first contract:
 // a manifest carrying a second nested `version` key (beyond the top-level one)
 // must have ONLY its top-level version rewritten — the nested key is left

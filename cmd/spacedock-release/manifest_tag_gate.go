@@ -13,19 +13,24 @@ import (
 // runManifestTagGate asserts the tag semver agrees with each tagged file the
 // cutter is about to tag: a `.json` plugin manifest's version must equal the
 // tag semver exactly; a `.md` prose file's stamped minor (D5) must equal the
-// tag's major.minor. It reads each file's value (independent of the tag), runs
-// the pure decision predicate, records the outcome to $GITHUB_STEP_SUMMARY, and
-// returns the process exit code: 0 when every file matches the tag, 1 when any
-// diverges or cannot be read, 2 on a usage error. This is the divergeable guard
-// behind the reconciled releasing.md's stamp-then-tag ordering: a
-// tag-vs-manifest/prose mismatch (the pre-stamp inversion) is caught before
-// goreleaser fires.
+// tag's major.minor. With no explicit files it reads the authoritative
+// release.StampTargets list — the same list `stamp-version` defaults to and
+// `stamp-paths` prints — so the gate cannot drift from what was stamped. It
+// reads each file's value (independent of the tag), runs the pure decision
+// predicate, records the outcome to $GITHUB_STEP_SUMMARY, and returns the
+// process exit code: 0 when every file matches the tag, 1 when any diverges or
+// cannot be read, 2 on a usage error. This is the divergeable guard behind the
+// reconciled releasing.md's stamp-then-tag ordering: a tag-vs-manifest/prose
+// mismatch (the pre-stamp inversion) is caught before goreleaser fires.
 func runManifestTagGate(args []string) int {
-	if len(args) < 2 {
-		fmt.Fprintln(os.Stderr, "spacedock-release manifest-tag-gate: need <tag> <manifest-or-prose> [<manifest-or-prose> ...]")
+	if len(args) < 1 {
+		fmt.Fprintln(os.Stderr, "spacedock-release manifest-tag-gate: need <tag> [<manifest-or-prose> ...]")
 		return 2
 	}
 	tag, files := args[0], args[1:]
+	if len(files) == 0 {
+		files = release.StampTargets()
+	}
 	for _, path := range files {
 		data, err := os.ReadFile(path)
 		if err != nil {
