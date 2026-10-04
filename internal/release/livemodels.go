@@ -1,6 +1,6 @@
 // ABOUTME: The single source of truth for the live E2E lane model ids. The
-// ABOUTME: workflow discovers them through `spacedock live-models`, so no model
-// ABOUTME: literal remains in .github/workflows/runtime-live-e2e.yml.
+// ABOUTME: workflow resolves them through `spacedock live-models` rather than
+// ABOUTME: repeating literals, but that placement has no independent test.
 package release
 
 // The live lane model ids, each pinned once. The workflow matrix, the Codex
@@ -33,8 +33,9 @@ type LiveLaneModel struct {
 }
 
 // LiveModels returns the lane models in print order. It is the one list
-// `spacedock live-models` prints, so the workflow and the Go harness cannot
-// disagree about which model a lane runs.
+// `spacedock live-models` prints, so the workflow and the Go harness resolve a
+// lane model from one source. Which lane that value lands in is not enforced:
+// both sides of any placement comparison are authored by this same change.
 func LiveModels() []LiveLaneModel {
 	return []LiveLaneModel{
 		{Key: "claude.sonnet", ID: ClaudeSonnetModel},
