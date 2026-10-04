@@ -664,3 +664,25 @@ not cut behavioural tests and do not simplify load-bearing logic. Neither delete
 (the workflow-text guard, the `internal/release` fingerprint test) is re-added, and the
 Pi registry oracle is untouched. The final increment is **net +1453 across 21 files**, and
 the captain owns the tolerance decision.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Cut mh by giving the port the specified shape: merge internal/pilive/*.go and cmd/spacedock-release/pilive.go into ONE file, keep ONE test file, drop registry_oracle_live_test.go unless a behaviour depends on it, and do not change what the workflow calls or how install/guard/verify-manifest behave.
+  Code commit `2c061b2e9` on `spacedock-ensign/pi-live-lane-pin-refresh`. `internal/pilive/pilive.go` is the single port file (pins + floors + `Command`/`install`/`guard`/`verifyManifest` + helpers); `internal/pilive/pilive_test.go` is the single test file; `cmd/spacedock-release/pilive.go` (106 lines) and `internal/pilive/registry_oracle_live_test.go` (43 lines) are deleted. `cmd/spacedock-release/main.go` routes the five pi-live commands to `pilive.Command`. The workflow still calls `spacedock-release install|guard|verify-manifest|print-install`; `pins`/`print-install`/`verify-manifest` stdout and exit codes diff clean against the pre-merge binary `a24c489bc` (built side by side); install/guard keep the same npm/node invocations and verification order as `a24c489bc` and are exercised by the fake-runner unit tests, which error on any unexpected command.
+- SKIPPED: The "roughly 250 lines for the port including its tests" target (1001 -> 759).
+  The port is now ONE logic file at 464 lines (398 code) plus ONE test file at 295 lines (271 code). Reaching 250 total would require deleting load-bearing install/guard/verify-manifest behaviour (integrity verify, manifest resolution, settings create-or-merge, floor + compat guard) or the named negative cases; the note's escape hatch ("if a cut would remove real coverage, say so and keep it") is invoked, so the shape bound is met and the line bound is reported, not forced.
+- DONE: Trim internal/ensigncycle/pi_default_extensions_test.go from 353 lines while keeping the deterministic setup contract and the negative control that removing both registrations loses both extensions, and cut tests that restate rather than check.
+  File is now 308 lines. Kept `seedPiIsolatedHome`/`seedPiDefaultExtensions` + their helpers, `TestPiIsolatedHomeRegistersBothSubstratesAndAbsoluteSpacedock` (setup contract), and `TestPiIsolatedHomeNegativeControlDropsSubstrateRegistrations` (negative control). Deleted two discovery tests that re-asserted the resolver under alternate settings shapes: `TestPiDefaultExtensionRootsMatchesLocalSourceByPackageName` and `TestPiIntercomPackageRootDiscoversIndependently`.
+- DONE: Report the new increment per file and the total, and name what was deleted.
+  Port, before -> after: `internal/pilive/pilive.go` 495 -> 464, `internal/pilive/pilive_test.go` 357 -> 295, `cmd/spacedock-release/pilive.go` 106 -> 0, `internal/pilive/registry_oracle_live_test.go` 43 -> 0; port total 1001 -> 759. `internal/ensigncycle/pi_default_extensions_test.go` 353 -> 308. Entity net increment vs its base `c5ca95e74` +1453 -> +1159; vs `origin/main` (4436ec14c) +1471 -> +1177. Deleted: `cmd/spacedock-release/pilive.go`, `internal/pilive/registry_oracle_live_test.go`, and the two ensigncycle discovery tests named above.
+- DONE: Validate the merge without the repository-wide suite or a CI lane.
+  `go build ./...`, `go test ./internal/pilive/...`, `go test ./cmd/spacedock-release/...`, `go test ./internal/cli -run 'TestPiVersionAtLeast|TestPiVersionFloor'`, `go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIsolatedHome|TestPiLiveEnv|TestPiIntercomPackageRoot'`, `go vet -tags live ./internal/pilive ./internal/ensigncycle ./cmd/spacedock-release`, and `go build -tags live ./internal/ensigncycle ./internal/pilive` all pass; `gofmt -w cmd internal` clean for changed files. No repository-wide `go test ./...`, race suite, or CI run was started.
+
+### Coverage note (what stayed)
+
+`TestPiDefaultExtensionRootsReadsRealInstalledLocation` is kept because AC-7 names `TestPiDefaultExtensionRoots…` as its deterministic proof; only the two resolver variants the fold no longer needs were cut. The port keeps every pilive negative table (`verifyManifest` 9 cases, `mergeSettings` malformed/merge/idempotent, `pack` corrupt/invalid integrity, version floors, guard floors, compat resolve/load, install registration).
+
+### Risk
+
+Deleting `registry_oracle_live_test.go` removes the only check-time query against the npm registry, so a pin drift no longer fails any Go test (no production behaviour depends on it, per the dispatch). The single source of the pins remains `internal/pilive/pilive.go`, but nothing now compares it to the published family.
+
