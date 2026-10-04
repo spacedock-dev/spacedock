@@ -73,22 +73,29 @@ func TestPackRejectsIntegrityMismatch(t *testing.T) {
 	}
 }
 
-func TestMergeSettingsCreateOrMergeRejectsMalformed(t *testing.T) {
+func TestMergeSettingsPreservesEntriesAndIsIdempotent(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings.json")
 	if pkgs, err := mergeSettings(path, substrateNpmSources); err != nil || strings.Join(pkgs, ",") != "npm:pi-subagents,npm:pi-intercom" {
 		t.Fatalf("fresh packages=%v err=%v", pkgs, err)
 	}
-	writeFile(t, path, `{"theme":"dark","packages":["npm:other"]}`)
+	writeFile(t, path, `{"theme":"dark","packages":["npm:other",{"source":"npm:other-object"}]}`)
 	pkgs, err := mergeSettings(path, substrateNpmSources)
-	if err != nil || strings.Join(pkgs, ",") != "npm:other,npm:pi-subagents,npm:pi-intercom" {
+	if err != nil || strings.Join(pkgs, ",") != "npm:other,npm:other-object,npm:pi-subagents,npm:pi-intercom" {
 		t.Fatalf("merged packages=%v err=%v", pkgs, err)
 	}
 	data, _ := os.ReadFile(path)
 	if !strings.Contains(string(data), `"theme": "dark"`) {
 		t.Fatalf("merge dropped an unrelated key: %s", data)
 	}
+	if !strings.Contains(string(data), `"source": "npm:other-object"`) {
+		t.Fatalf("merge dropped an existing object package entry: %s", data)
+	}
 	if _, err := mergeSettings(path, substrateNpmSources); err != nil {
 		t.Fatalf("merge must be idempotent: %v", err)
+	}
+	again, _ := os.ReadFile(path)
+	if string(data) != string(again) {
+		t.Fatalf("a second merge duplicated registrations:\n%s\n---\n%s", data, again)
 	}
 	writeFile(t, path, "{not json")
 	if _, err := mergeSettings(path, substrateNpmSources); err == nil {
@@ -134,6 +141,27 @@ func TestGuardRejectsBelowFloorNodeAndSubstrate(t *testing.T) {
 	}
 }
 
+func TestCompatExportPathPrefersInstalledAndRejectsIncompatible(t *testing.T) {
+	globalRoot := t.TempDir()
+	global := filepath.Join(globalRoot, "@earendil-works", "pi-ai")
+	writeFile(t, filepath.Join(global, "package.json"), `{"exports":{"./compat":{"import":"compat.js"}}}`)
+	writeFile(t, filepath.Join(global, "compat.js"), "x")
+	agentRoot := filepath.Join(t.TempDir(), "pi-coding-agent")
+	nested := filepath.Join(agentRoot, "node_modules", "@earendil-works", "pi-ai")
+	writeFile(t, filepath.Join(nested, "package.json"), `{"exports":{"./compat":{"import":"compat.js"}}}`)
+	writeFile(t, filepath.Join(nested, "compat.js"), "x")
+	if path, err := compatExportPath(agentRoot, globalRoot); err != nil || path != filepath.Join(nested, "compat.js") {
+		t.Fatalf("installed pi-ai must win: path=%s err=%v", path, err)
+	}
+	if path, err := compatExportPath(filepath.Join(t.TempDir(), "pi-coding-agent"), globalRoot); err != nil || path != filepath.Join(global, "compat.js") {
+		t.Fatalf("global fallback when nothing is installed: path=%s err=%v", path, err)
+	}
+	writeFile(t, filepath.Join(nested, "package.json"), `{"exports":{}}`)
+	if path, err := compatExportPath(agentRoot, globalRoot); err == nil {
+		t.Fatalf("installed pi-ai without ./compat must fail, not use the global copy (%s)", path)
+	}
+}
+
 func TestCompatExportLoadsPropagatesNodeFailure(t *testing.T) {
 	r := fakeRunner{run: func(name string, args ...string) ([]byte, error) {
 		return []byte("boom"), fmt.Errorf("exit status 1")
@@ -144,7 +172,7 @@ func TestCompatExportLoadsPropagatesNodeFailure(t *testing.T) {
 }
 
 func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
-	agentDir, globalRoot := t.TempDir(), t.TempDir()
+	agentDir, globalRoot, packDir := t.TempDir(), t.TempDir(), filepath.Join(os.TempDir(), "pi-live-npm-packs")
 	writeFile(t, filepath.Join(globalRoot, PiCodingAgentSpec, "package.json"),
 		`{"name":"`+PiCodingAgentSpec+`","version":"`+PiCodingAgentVersion+`"}`)
 	subRoot := filepath.Join(agentDir, "npm", "node_modules", PiSubagentsSpec)
@@ -154,24 +182,35 @@ func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
 	writeFile(t, filepath.Join(icRoot, "package.json"), `{"name":"pi-intercom","version":"`+PiIntercomVersion+`"}`)
 	writeFile(t, filepath.Join(icRoot, "skills/pi-intercom/SKILL.md"), "x")
 
+	var installs [][]string
 	r := fakeRunner{run: func(name string, args ...string) ([]byte, error) {
 		switch {
 		case name == "npm" && args[0] == "pack":
 			spec := args[1][:strings.LastIndex(args[1], "@")]
 			for _, p := range packages {
-				if p.spec == spec {
-					return []byte(fmt.Sprintf(`[{"filename":"x.tgz","integrity":%q}]`, p.integrity)), nil
+				if p.spec == spec && args[1] == p.spec+"@"+p.version {
+					return []byte(fmt.Sprintf(`[{"filename":%q,"integrity":%q}]`, args[1]+".tgz", p.integrity)), nil
 				}
 			}
+			return nil, fmt.Errorf("unexpected pack %q", args[1])
 		case name == "npm" && args[0] == "root":
 			return []byte(globalRoot + "\n"), nil
 		case name == "npm" && args[0] == "install":
+			installs = append(installs, args)
 			return nil, nil
 		}
 		return nil, fmt.Errorf("unexpected command %s %v", name, args)
 	}}
 	if err := install(r, agentDir); err != nil {
 		t.Fatalf("install: %v", err)
+	}
+	if len(installs) != 2 || installs[0][1] != "-g" || installs[0][2] != filepath.Join(packDir, PiCodingAgentSpec+"@"+PiCodingAgentVersion+".tgz") {
+		t.Fatalf("global install = %v, want exactly the pinned pi-coding-agent tarball", installs)
+	}
+	if installs[1][1] != "--prefix" || installs[1][2] != filepath.Join(agentDir, "npm") ||
+		installs[1][3] != filepath.Join(packDir, PiSubagentsSpec+"@"+PiSubagentsVersion+".tgz") ||
+		installs[1][4] != filepath.Join(packDir, PiIntercomSpec+"@"+PiIntercomVersion+".tgz") {
+		t.Fatalf("substrate install = %v, want both pinned substrate tarballs", installs[1])
 	}
 	settings, err := os.ReadFile(filepath.Join(agentDir, "settings.json"))
 	if err != nil {
@@ -181,5 +220,23 @@ func TestInstallVerifiesAndRegistersThePinnedFamily(t *testing.T) {
 		if !strings.Contains(string(settings), source) {
 			t.Fatalf("settings %s missing %s", settings, source)
 		}
+	}
+	writeFile(t, filepath.Join(subRoot, "package.json"), `{"name":"pi-subagents","version":"0.0.0"}`)
+	if err := install(r, agentDir); err == nil {
+		t.Fatal("install must fail when an installed version is not the pin")
+	}
+	substrateRoot(t, subRoot)
+	if err := os.Remove(filepath.Join(icRoot, "skills/pi-intercom/SKILL.md")); err != nil {
+		t.Fatal(err)
+	}
+	if err := install(r, agentDir); err == nil {
+		t.Fatal("install must fail when a packaged skill file is missing")
+	}
+	writeFile(t, filepath.Join(icRoot, "skills/pi-intercom/SKILL.md"), "x")
+	if err := os.Remove(filepath.Join(subRoot, "src/api/intercom-bridge.js")); err != nil {
+		t.Fatal(err)
+	}
+	if err := install(r, agentDir); err == nil {
+		t.Fatal("install must fail when a declared runtime file is missing")
 	}
 }

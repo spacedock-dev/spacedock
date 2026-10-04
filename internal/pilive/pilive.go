@@ -285,17 +285,25 @@ func mergeSettings(path string, sources []string) ([]string, error) {
 			return nil, fmt.Errorf("parse %s: %w", path, err)
 		}
 	}
-	var pkgs []string
+	var pkgs []any
+	var names []string
 	if entries, ok := settings["packages"].([]any); ok {
 		for _, entry := range entries {
-			if s, ok := entry.(string); ok {
-				pkgs = append(pkgs, s)
+			pkgs = append(pkgs, entry)
+			switch e := entry.(type) {
+			case string:
+				names = append(names, e)
+			case map[string]any:
+				if s, ok := e["source"].(string); ok {
+					names = append(names, s)
+				}
 			}
 		}
 	}
 	for _, source := range sources {
-		if !slices.Contains(pkgs, source) {
+		if !slices.Contains(names, source) {
 			pkgs = append(pkgs, source)
+			names = append(names, source)
 		}
 	}
 	settings["packages"] = pkgs
@@ -309,7 +317,7 @@ func mergeSettings(path string, sources []string) ([]string, error) {
 	if err := os.WriteFile(path, append(out, '\n'), 0o644); err != nil {
 		return nil, err
 	}
-	return pkgs, nil
+	return names, nil
 }
 
 func guard(r Runner, agentDir string) error {
@@ -351,28 +359,35 @@ func guard(r Runner, agentDir string) error {
 	return nil
 }
 
-// compatExportPath checks the nested pi-ai copy under pi-coding-agent first
-// (npm usually does not hoist it), then the global npm root.
+// compatExportPath uses the installed nested pi-ai copy under pi-coding-agent
+// first (npm usually does not hoist it); an installed copy with no valid
+// ./compat export is fatal, so a working global copy cannot mask it.
 func compatExportPath(agentRoot, globalNpmRoot string) (string, error) {
-	for _, candidate := range []string{
+	candidates := []string{
 		filepath.Join(agentRoot, "node_modules", "@earendil-works", "pi-ai"),
 		filepath.Join(globalNpmRoot, "@earendil-works", "pi-ai"),
-	} {
-		var m struct {
-			Exports map[string]struct {
-				Import string `json:"import"`
-			} `json:"exports"`
-		}
-		if err := readJSON(filepath.Join(candidate, "package.json"), &m); err != nil {
+	}
+	var m struct {
+		Exports map[string]struct {
+			Import string `json:"import"`
+		} `json:"exports"`
+	}
+	for _, candidate := range candidates {
+		if _, err := os.Stat(filepath.Join(candidate, "package.json")); err != nil {
 			continue
 		}
-		if compat, ok := m.Exports["./compat"]; ok && compat.Import != "" {
-			path := filepath.Join(candidate, compat.Import)
-			if _, err := os.Stat(path); err != nil {
-				return "", fmt.Errorf("@earendil-works/pi-ai/compat resolves to missing file %s", path)
-			}
-			return path, nil
+		if err := readJSON(filepath.Join(candidate, "package.json"), &m); err != nil {
+			return "", err
 		}
+		compat, ok := m.Exports["./compat"]
+		if !ok || compat.Import == "" {
+			return "", fmt.Errorf("@earendil-works/pi-ai at %s declares no exports[\"./compat\"] import", candidate)
+		}
+		path := filepath.Join(candidate, compat.Import)
+		if _, err := os.Stat(path); err != nil {
+			return "", fmt.Errorf("@earendil-works/pi-ai/compat resolves to missing file %s", path)
+		}
+		return path, nil
 	}
 	return "", fmt.Errorf("cannot locate @earendil-works/pi-ai with a ./compat import export")
 }
