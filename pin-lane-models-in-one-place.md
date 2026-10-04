@@ -5,6 +5,7 @@ score: 0.8
 source: "Captain, 2026-10-04: pin gpt-6-luna for CI, and move the Claude lane to sonnet-5.5. Local smoke on openai-codex/gpt-6-luna passed (root and child, 166s, grade artifact written)."
 id: q67rfhn33tncbvf9xqbq960r
 started: 2026-10-04T05:48:52Z
+worktree: .worktrees/spacedock-ensign-pin-lane-models-in-one-place
 ---
 
 ## Problem
