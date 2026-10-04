@@ -11,11 +11,13 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
-// TestLiveModelsCommandPrintsPinnedLaneModels fixes the exact `live-models`
-// output. The expected ids are authored here — not read from internal/release —
-// so this fails if a lane constant changes without the print moving in lockstep
-// (e.g. reverting the Pi lane to the old gpt-5.6-luna), or if a lane/auth key is
-// added, dropped, or reordered without the workflow's `--get` calls following.
+// TestLiveModelsCommandPrintsPinnedLaneModels fixes the exact ids `spacedock
+// live-models` prints. The expected ids are authored here — not read from
+// internal/release — so this fails if a lane constant changes without the print
+// moving in lockstep (e.g. reverting the Pi lane to the old gpt-5.6-luna), or if
+// a lane/auth key is added, dropped, or reordered. It fixes the printed contract
+// values; whether the workflow consumes them is checked separately and
+// structurally by the release workflow guards, which this test does not exercise.
 func TestLiveModelsCommandPrintsPinnedLaneModels(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := run(context.Background(), []string{"live-models"}, nil, "", nil, &stdout, &stderr, &status.NativeRunner{}, nil)
