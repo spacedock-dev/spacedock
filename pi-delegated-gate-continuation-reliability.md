@@ -55,6 +55,28 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:9w59t6m1qc46hccd54p04z2j:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:9w59t6m1qc46hccd54p04z2j-validation-1
+              briefing:
+                id: briefing:9w59t6m1qc46hccd54p04z2j:validation:attempt-1:revision-1
+                digest: sha256:2f030fe6150631229cbf3177d7fd8fb91f2a130e5b98784fdcbdb326cf6d8afd
+                room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:9w59t6m1qc46hccd54p04z2j:validation:1
+                briefing: briefing:9w59t6m1qc46hccd54p04z2j:validation:attempt-1:revision-1
+                by: agent:first-officer
+                at: "2026-10-04T04:54:41.37178Z"
+                decision: approve
+                reason: 'Approve the validation result for the cycle-6 deliverable: 9w removes the divergent Pi-only recorded-gate judge, restores piSharedLiveDriver.prepareRecordedGate to a no-op so the shared assertion runs, and its presentation-reliability acceptance stays OPEN. Validation PASSED for the judge-removal only (AC-2 preservation, AC-4 active/unbound shared proof); AC-1 remains OPEN. Deferred risks recorded: no new 3/3 presentation proof, observer attribution, stale smallest-sufficient XPASS binding, race suite environment-limited.'
+                conn:
+                    quote: make this work
+                    source: captain, pi session 2026-10-03
+              application:
+                target-stage: done
+                state: pending
 started: 2026-10-03T04:04:50Z
 worktree: .worktrees/spacedock-ensign-pi-delegated-gate-continuation-reliability
 ---

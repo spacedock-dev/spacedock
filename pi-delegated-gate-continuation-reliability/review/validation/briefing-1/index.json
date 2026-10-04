@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:9w59t6m1qc46hccd54p04z2j:validation:attempt-1:revision-1",
+  "question": "Approve the validation result and deliver: 9w removes the divergent Pi-only recorded-gate judge, restores the shared assertion, and its presentation-reliability acceptance stays OPEN?",
+  "artifacts": [
+    {
+      "id": "artifact:9w59t6m1qc46hccd54p04z2j:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/edc8044eb755e96a1fd386ee9d7d5ac8cc6db5fe/pi-delegated-gate-continuation-reliability.md",
+      "rev": "sha256:0395d7494c745df3e7c0ed13f4d669e97b3d9a419d95aecec1d1866ea60a122c",
+      "mediaType": "text/markdown",
+      "summary": "Validation PASSED for the cycle-6 judge-removal deliverable only: exact inverse patch (8 files, +2/-845), surviving shared lifecycle controls, active XFAIL ownership (xfail/pi=6), and the exact-tip Pi lane run 37176062049 green (offline 1m1s; pi-live 25m50s; 17 common tests + smoke). AC-1 presentation reliability remains OPEN. Deferred risks: no new 3/3 presentation proof; observer attribution; stale TestLiveCommonSmallestSufficientMechanism XPASS binding; race suite could not run (no space left on device)."
+    }
+  ]
+}
