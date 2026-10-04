@@ -427,3 +427,24 @@ FO-directed wording-only repair of the two R4-C1 coverage-record overclaims agai
 ### Summary
 
 Corrected the two R4-C1 coverage-record sentences in `internal/release/livemodels_test.go`: the Claude ids now rest explicitly on the authored print test alone with no independent oracle (the rejection proves only that claude-sonnet-5.5 is refused), and placement is stated as having no enforcement today with the reason a workflow-vs-source comparison is not independent — rather than as an impossibility. Nothing else changed: a one-file comment edit. Final measured surface is 13 files, net +402, still over the approved 8 files/net +140; the sole remaining item is the captain's authorization of that number.
+
+## Stage Report: implementation (cut round)
+
+Captain-ordered cut round against `5ff137093`. Code commit `dab89d50d`; comment/test deletion only, no functional change.
+
+- DONE: Delete both provider oracle tests and all the coverage prose that lives in the test files.
+  `internal/release/livemodels_test.go` deleted whole (192 lines): `TestPiLaneModelsExistInInstalledCatalog` with `installedPiCatalogDir`, `splitPiModelID`, `catalogDeclaresModel`, and `TestCodexLaneModelExistsInInstalledCache` with `codexModelsCachePath`, plus their ABOUTME/coverage comments. `git grep` for the six symbols outside the deleted file = no match. Coverage-prose sentences removed from `internal/cli/live_models_test.go` (the "independent oracle for the printed list" ABOUTME line and the "printed contract values only; workflow consumption has no test enforcement" sentence) and from `internal/ensigncycle/codex_liveenv_test.go` (the sentence pointing at "the installed-catalog oracles").
+- DONE: Keep exactly: the single source in internal/release, the print command and its exact-output test, and the consumer realignment.
+  Kept `internal/release/livemodels.go` (five constants, `LiveModels()`, `LiveModel()`), `internal/cli/live_models.go` (`spacedock live-models`, `--get`), the exact-output test `TestLiveModelsCommandPrintsPinnedLaneModels` (and the print command's `--get` test `TestLiveModelsCommandGetPrintsOneID`), and the workflow consumer realignment (offline `Resolve live lane models` step feeding the Claude matrix, the Codex shim `SPACEDOCK_LIVE_CODEX_MODEL`, the Pi step summary, and the journey-delta artifact name).
+- DONE: Keep the pinned values exactly as they are and change nothing functional.
+  `claude.sonnet=claude-sonnet-5`, `claude.opus=claude-opus-4-8`, `codex.exec=gpt-6-luna`, `pi.oauth=openai-codex/gpt-6-luna:max`, `pi.api-key=openai/gpt-6-luna:max`; `go run ./cmd/spacedock live-models` prints exactly those five in order. `git diff 5ff137093..dab89d50d` = 4 files, all comments plus the deleted test file; no constant value or workflow line changed.
+- DONE: Move the coverage reasoning out of the code and into the entity body.
+  Recorded here, not in code: the five pinned ids above; neither their values nor their placement has an independent check any more — the Pi-catalog and Codex-cache value oracles and every workflow-placement guard were deleted this round, leaving only the authored exact-output print test and the sentinel shim test, and a swap of the two `needs.offline.outputs.claude_*` operands passes every remaining check. This is a deliberate cut ordered by the captain (line-count reduction after the captain saw the increment), not an oversight.
+- DONE: Report the new increment and the file count against main, and name what was deleted.
+  `git diff --numstat main...HEAD` = **12 files, +242/-39, net +203** (was 13 files, net +402 at `5ff137093`; the cut round removed 199 net lines). Deleted: the whole `internal/release/livemodels_test.go` (192 lines, both provider oracles); coverage-prose comment lines in `internal/cli/live_models_test.go`, `internal/ensigncycle/codex_liveenv_test.go`, and `internal/release/livemodels.go`. Still over the approved 8 files/net +140; unchanged from prior rounds and reported, not self-authorized.
+- SKIPPED: Repository-wide suite, `-race` across all packages, and any live/CI lane run.
+  FO prohibition carried over; ran only focused packages. No new quiet-machine or full-suite evidence is claimed.
+
+### Summary
+
+Cut to the directed deliverable: the single `internal/release` source and the `spacedock live-models` print command with its exact-output test, plus the workflow consumer realignment. Both provider oracle tests (`internal/release/livemodels_test.go`, 192 lines) and the coverage prose in the test/source files are deleted, and the coverage reasoning now lives only in this entity. No pinned value or workflow behaviour changed; the increment is 12 files, net +203 against main.
