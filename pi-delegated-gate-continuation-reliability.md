@@ -452,6 +452,23 @@ AC citations:
   - Three separate invocations with distinct artifact dirs were the valid attempts, all rejected by the grade: attempt 1 (392s) the three missing findings plus successor dispatches = 2; attempt 2 (324s) the three missing findings plus successor requested model `""`; attempt 3 (359s) the three missing findings plus successor requested model `""`. No skips; **0/3 complete**.
 - Conclusion: the restored grade detects the fault, the fault is real, AC-1 is unmet, and the conduct repair belongs to gc. This task measures and does not repair.
 
+### Contract disagreement: recorded-gate trace shape (`recorded-gate-lifecycle` left unbound)
+
+This finding is recorded, not papered over; it is why `recorded-gate-lifecycle` carries no Pi XFAIL yet.
+
+- The shared contract `internal/ensigncycle/recorded_gate_lifecycle_test.go:19-44` requires the classic trace `[prepare, decision-record, consume]` and explicitly blesses the collapsed shape `[prepare, decision-record-and-consume]` produced by `gate record --decision approve --consume`. Its own comment (lines 42-44) says "Neither shape is more \"correct\" than the other — --consume is opt-in, not mandatory — so both must authorize".
+- The Pi grade `internal/ensigncycle/pi_recorded_gate_grade_test.go` additionally requires a bash/shell call whose command contains `gate record` **and** `--briefing`, with output `state=open` and a briefing id (lines 195-196), plus a canonical bound Briefing id/digest read (line 264) and a root-assistant review (line 261).
+- A real Pi run does satisfy that requirement: the retained traces `docs/dev/.spacedock-state/_evidence/pi-delegated-gate-continuation-reliability/retained-pi-recorded-gate/first-root.jsonl` and `.../retry-root.jsonl` contain actual `gate record ... --briefing ...` calls.
+- The current Pi run does not: run `37165203650` ran `gate record ... --decision approve --actor ...` with no `--briefing`.
+
+So the Pi grade requires a trace shape the shared contract allows to be absent. `recorded-gate-lifecycle` stays unbound until the captain decides which artifact changes: the FO instructions (the officer records the review round) or the Pi grade (it accepts the collapsed shape).
+
+### Pi XFAIL bindings added (this round)
+
+- `auto-continue-after-implementation` -> `mk72bnt1b5hsp9sfv83979xs` (`repair-pi-worker-lifecycle-observation`): its only red assert is `validation-worker-not-dispatched` (spawns=1 completed=-1), the observer defect. This red is an evidence defect in the shared worker-lifecycle assert (`subagent_wait` keyed on the spawned run id vs a Pi first officer observing completion through `bg_wait` and the native completion notice), not a product fault. Code commit `080d37f23`.
+- `default-headless-gate-stop` -> `gcmfwfjd9735b58sbzw7xsb8` (`repair-pi-recorded-gate-lifecycle`), the owner of the missing-prepare behaviour. Its reds are mixed: `gate-hold-violation` and `gate-not-held` are the shared assertion failing because `gate prepare` never published a room (it aborted on a nonexistent reference path — the required committed reference is missing); `implementation-worker-not-dispatched` is the separate observer defect (`mk72bnt1b5hsp9sfv83979xs`), noted in the source comment but not bound here. Code commit `080d37f23`.
+- `recorded-gate-lifecycle` is deliberately left unbound pending the captain's artifact decision above.
+
 ### Summary
 
 Restored the Pi recorded-gate semantic grade at the existing `prepareRecordedGate` callback as proof-only test support, wiring the Pi driver to a retained-trace grade that observes canonical bound authority read order, root review provenance/rendering, approval record/consume, one successor on the requested model, completion, and post-completion durable-report read. Retained the se0 exact-tip negative traces (checksums verified) plus deterministic single-obligation mutants and compact-prefix/follows-canonical/clean-observation controls. Shared runner/grader, `present-gate`, registry, and Claude/Codex grades are untouched; AC-1's live 3/3 remains unmet and routes to gc, so this is measurement, not conduct repair. Net LOC is +843 (845 insertions/2 deletions), above the +500 estimate and +650 tolerance for the stated reason.
