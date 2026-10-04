@@ -8,6 +8,7 @@ sprint-readiness: ready
 group: pi-live-followup
 id: gcmfwfjd9735b58sbzw7xsb8
 started: 2026-10-04T04:35:04Z
+worktree: .worktrees/spacedock-ensign-repair-pi-recorded-gate-lifecycle
 ---
 
 ## Problem
