@@ -172,8 +172,14 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 		Subtype   string `json:"subtype"`
 		Status    string `json:"status"`
 		ToolUseID string `json:"tool_use_id"`
-		Message   *struct{ Content []block }
-		Payload   struct {
+		// Pi delivers a completed detached worker as a top-level custom_message
+		// (`customType: subagent-notify`), not as a message row, so the native
+		// completion notice is read from the record's own fields. Other rows carry
+		// no top-level content, leaving these empty.
+		CustomType string `json:"customType"`
+		Content    string `json:"content"`
+		Message    *struct{ Content []block }
+		Payload    struct {
 			Type, Name, Arguments, Author string
 			CallID                        string `json:"call_id"`
 			Output                        string `json:"output"`
@@ -231,16 +237,27 @@ func assertWorkerLifecycle(stream, entity, stage, nextSignal string) error {
 				completed = i
 			}
 		}
-		// subagent_wait (a recent pi-subagents) is the blocking completion wait the
-		// FO uses after an async dispatch. Credit a wait result that names the
-		// spawned run id and reports the run done as the completion signal, with
-		// the same completed<validation ordering the State: complete branch enforces.
-		if piRunID != "" && completed < 0 && pi.Message.ToolName == "subagent_wait" {
+		// A completed async dispatch is observed through the blocking wait, whose
+		// tool name differs by host: pi-subagents 0.53.0 exposes it as
+		// `subagent_wait`, while the host in run 37101046846 exposes it as
+		// `bg_wait`. Both return the same sentence — `Waited … for run "<id>"; done.
+		// Outcome: 1 complete.` — so credit either tool when it names the spawned run
+		// id and reports it done, with the same completed<validation ordering the
+		// State: complete branch enforces.
+		if piRunID != "" && completed < 0 && (pi.Message.ToolName == "subagent_wait" || pi.Message.ToolName == "bg_wait") {
 			for _, item := range pi.Message.Content {
 				if strings.Contains(item.Text, "for run \""+piRunID+"\"") && strings.Contains(item.Text, "done") && strings.Contains(item.Text, "complete") {
 					completed = i
 				}
 			}
+		}
+		// The same host also announces the detached worker's completion natively:
+		// a top-level custom_message (`customType: subagent-notify`) whose body is
+		// `Background task completed: **worker**` followed by the child session
+		// file. Credit it only when a spawn's async run id was observed, under the
+		// same completed<validation ordering.
+		if piRunID != "" && completed < 0 && event.CustomType == "subagent-notify" && event.Type == "custom_message" && strings.Contains(event.Content, "Background task completed") {
+			completed = i
 		}
 		if event.Message != nil {
 			for _, item := range event.Message.Content {
