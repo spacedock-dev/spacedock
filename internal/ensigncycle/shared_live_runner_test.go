@@ -117,17 +117,9 @@ func TestLiveCommonRejectionFlow(t *testing.T) {
 	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
-// The Pi red on this journey is an evidence defect in the shared
-// worker-lifecycle assert, not a product fault: the assert credits a
-// `subagent_wait` result keyed on the spawned run id, while a Pi first officer
-// observes completion through `bg_wait` and the native completion notice, so it
-// computes completed=-1 and reports validation-worker-not-dispatched although
-// the dispatch succeeded. Sole owner:
-// mk72bnt1b5hsp9sfv83979xs (repair-pi-worker-lifecycle-observation).
-//
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
 func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
-	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, []liveJourneyGap{liveXFail("pi", "mk72bnt1b5hsp9sfv83979xs")}, runAutoContinueJourney, assertAutoContinue)
+	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, nil, runAutoContinueJourney, assertAutoContinue)
 }
 
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
