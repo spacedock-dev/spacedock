@@ -169,7 +169,6 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newCompletionCommand(stdout, stderr),
 		newDispatchCommand(dispatchProbe, env, stdin, stdout, stderr),
 		newGateCommand(dir, stdout, stderr),
-		newLiveModelsCommand(stdout, stderr),
 	)
 	return root
 }

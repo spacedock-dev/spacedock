@@ -340,7 +340,7 @@ func TestRuntimeLiveClaudeShimSetsMaximumEffort(t *testing.T) {
 		}
 	}
 	var got []byte
-	for _, args := range [][]string{{"--version"}, {"--model", release.ClaudeSonnetModel, "--help"}} {
+	for _, args := range [][]string{{"--version"}, {"--model", release.LiveModels["claude.sonnet"], "--help"}} {
 		cmd := exec.Command(shimPath, args...)
 		cmd.Env = append(os.Environ(), "SPACEDOCK_CLAUDE_REAL_BIN="+realClaude)
 		if out, err := cmd.CombinedOutput(); err != nil {
@@ -349,7 +349,7 @@ func TestRuntimeLiveClaudeShimSetsMaximumEffort(t *testing.T) {
 			got = append(got, out...)
 		}
 	}
-	if want := "--effort max --version\n--effort max --model " + release.ClaudeSonnetModel + " --help\n"; string(got) != want {
+	if want := "--effort max --version\n--effort max --model " + release.LiveModels["claude.sonnet"] + " --help\n"; string(got) != want {
 		t.Fatalf("Claude shim argv = %q, want %q", got, want)
 	}
 }

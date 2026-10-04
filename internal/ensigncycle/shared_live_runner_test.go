@@ -93,12 +93,12 @@ func liveDriverForRuntime(t *testing.T, id string) (func() liveDriver, string) {
 
 func claudeLiveRole(model string) (string, error) {
 	switch model {
-	case "sonnet", release.ClaudeSonnetModel:
+	case "sonnet", release.LiveModels["claude.sonnet"]:
 		return "claude-sonnet", nil
-	case release.ClaudeOpusModel:
+	case release.LiveModels["claude.opus"]:
 		return "claude-opus", nil
 	default:
-		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, %s, or %s", model, release.ClaudeSonnetModel, release.ClaudeOpusModel)
+		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, %s, or %s", model, release.LiveModels["claude.sonnet"], release.LiveModels["claude.opus"])
 	}
 }
 
