@@ -73,7 +73,7 @@ type piRuntimeOps interface {
 	// home is used to resolve ~ entries.
 	SpacedockPackageStatus(agentDir, home string) piPackageStatus
 	// PiVersion runs the pi binary's `pi --version` — the binary-level read
-	// the 0.83.0 floor is enforced from (no package paths); tests fake it.
+	// the launcher floor is enforced from (no package paths); tests fake it.
 	PiVersion() (string, error)
 }
 
@@ -239,7 +239,7 @@ type piCheckResult struct {
 	// (AC-5a — the FO contract delivery path).
 	firstOfficerSkillOK  bool
 	spacedockExtensionOK bool
-	// piVersionOK: `pi --version` parses at the 0.83.0 floor (binary-level).
+	// piVersionOK: `pi --version` parses at the launcher floor (binary-level).
 	piVersionOK bool
 	piVersion   string
 	// doubleExtensionLoad: repoRoot set (checkout spacedock.ts loads via
