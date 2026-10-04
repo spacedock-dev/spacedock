@@ -17,8 +17,9 @@ import (
 // StampTargets is the ONE authoritative list of files a release stamps: the
 // per-host plugin descriptors plus the first-officer shared-core prose. The
 // `stamp-version` and `manifest-tag-gate` subcommands default to it when given
-// no explicit targets, and `stamp-paths` prints it, so the list has exactly one
-// authority instead of being restated per ritual step.
+// no explicit targets, and `stamp-version` reports the paths it rewrote so the
+// release workflow captures the list from the stamp run, giving the list exactly
+// one authority instead of being restated per ritual step.
 func StampTargets() []string {
 	return []string{
 		".claude-plugin/plugin.json",

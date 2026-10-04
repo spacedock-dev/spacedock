@@ -153,9 +153,10 @@ jobs:
       # Assert every file in the release stamp list already carries the tag's
       # semver/minor — the stamp-then-tag ordering docs/releasing.md documents.
       # With no explicit file arguments the gate reads the ONE authoritative list
-      # (`spacedock-release stamp-paths` prints it), so it can never drift from
-      # what the stamp step wrote. The checkout above is at the tagged commit, so
-      # these are the tagged commit's files. A mismatch (the v0.20.0 pre-stamp
+      # (`release.StampTargets`, the same list `stamp-version` defaults to and
+      # reports), so it can never drift from what the stamp step wrote. The
+      # checkout above is at the tagged commit, so these are the tagged commit's
+      # files. A mismatch (the v0.20.0 pre-stamp
       # inversion: tag 0.20.0, manifest 0.19.9; or a forgotten prose stamp) exits
       # non-zero and blocks the cut, since goreleaser needs: this job. The `if`
       # skips pre-releases (a vX.Y.Z-pre.N tag legitimately differs from its
@@ -255,10 +256,6 @@ jobs:
         run: |
           set -euo pipefail
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
-          # The ONE authoritative stamp list, printed by the release CLI, so the
-          # stamp, diff and commit steps all operate on the same paths instead of
-          # each restating them.
-          STAMP_PATHS="$(go run ./cmd/spacedock-release stamp-paths)"
           # The tagged commit is the SHA the e2e-gate greened and the manifest-tag
           # gate matched. Resolve it BEFORE switching to main, so the stable ref
           # below advances to exactly THIS commit, not whatever main HEAD happens to
@@ -272,7 +269,12 @@ jobs:
           case "$RELEASE_VERSION" in
             *.0)
               git switch main
-              go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" $STAMP_PATHS
+              # `stamp-version` rewrites the ONE authoritative release.StampTargets
+              # list and reports the paths it rewrote, one per line on stdout. The
+              # diff and commit steps below capture that report from THIS run, so
+              # they operate on exactly the stamped paths with no second list to
+              # keep in sync.
+              STAMP_PATHS="$(go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION")"
               if git diff --quiet -- $STAMP_PATHS; then
                 echo "release stamp files already at $RELEASE_VERSION; nothing to commit"
               else

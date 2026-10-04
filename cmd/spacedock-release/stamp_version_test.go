@@ -54,13 +54,13 @@ func TestStampVersionCommandStampsManifestAndProseInOneInvocation(t *testing.T) 
 // the validation reproduced: a named manifest whose top-level version key is
 // spelled `Version` — `{"name":"fixture","Version":"1.0.0"}` — is not
 // rewritten by the exact-lowercase-key stamp, so the command must read its own
-// result back and fail instead of printing `stamped uppercase.json
-// version=7.8.9` over unchanged bytes.
+// result back and fail instead of reporting a rewritten path over unchanged
+// bytes.
 //
 // This test fails if the command trusts the bytes it just wrote (or a
 // case-insensitive pre-check) rather than re-reading the target: StampVersion
 // returns this input unchanged, so without the read-back the command exits 0 and
-// prints a success line naming a version it never installed.
+// reports a stamped path for a version it never installed.
 func TestStampVersionCommandFailsOnCaseVariantVersionKey(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "uppercase.json")
@@ -72,8 +72,8 @@ func TestStampVersionCommandFailsOnCaseVariantVersionKey(t *testing.T) {
 	if code == 0 {
 		t.Fatalf("stamp-version exit = 0 for a manifest whose top-level version key is not lowercase `version`; want non-zero")
 	}
-	if strings.Contains(out, "stamped") || strings.Contains(out, "7.8.9") {
-		t.Fatalf("stamp-version printed a success line for an unstamped manifest: %q", out)
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("stamp-version reported paths despite failing to stamp: %q", out)
 	}
 	after, err := os.ReadFile(path)
 	if err != nil {
@@ -135,12 +135,15 @@ func writeStampTarget(t *testing.T, path, oldVersion string) {
 	}
 }
 
-// TestStampVersionCommandDefaultsToStampTargets locks AC-1: one `stamp-version`
-// call with NO target arguments stamps every host descriptor — including the new
-// Pi `.pi/plugin.json` — plus the FO prose. The expected target set is written
-// out here independently of release.StampTargets: if the default list omitted
-// the Pi descriptor, `.pi/plugin.json` would stay at its old version and fail.
-func TestStampVersionCommandDefaultsToStampTargets(t *testing.T) {
+// TestStampVersionReportsStampedPaths locks AC-1 and AC-2: one `stamp-version`
+// call with NO target arguments rewrites every host descriptor — including the
+// new Pi `.pi/plugin.json` — plus the FO prose, AND reports exactly those paths
+// on stdout, one per line, so the release workflow captures the list from this
+// run. The expected set is written out here independently of
+// release.StampTargets: if the default list omitted the Pi descriptor,
+// `.pi/plugin.json` would be neither reported nor rewritten and the report would
+// not match.
+func TestStampVersionReportsStampedPaths(t *testing.T) {
 	dir := t.TempDir()
 	targets := []string{
 		".claude-plugin/plugin.json",
@@ -153,66 +156,36 @@ func TestStampVersionCommandDefaultsToStampTargets(t *testing.T) {
 	}
 	chdirTemp(t, dir)
 
-	if code := stampVersion([]string{"1.2.3"}); code != 0 {
+	out, code := captureStdout(t, func() int { return stampVersion([]string{"4.5.6"}) })
+	if code != 0 {
 		t.Fatalf("stamp-version with no target arguments exit = %d, want 0", code)
 	}
+	reported := strings.Fields(out)
+	if len(reported) != len(targets) {
+		t.Fatalf("stamp-version reported %d paths %v, want the %d default targets %v", len(reported), reported, len(targets), targets)
+	}
+	seen := map[string]bool{}
+	for _, p := range reported {
+		seen[p] = true
+	}
 	for _, rel := range targets {
-		data, err := os.ReadFile(filepath.Join(dir, rel))
-		if err != nil {
-			t.Fatal(err)
+		if !seen[rel] {
+			t.Fatalf("stamp-version did not report default target %s: %v", rel, reported)
 		}
-		if !strings.Contains(string(data), "1.2.3") && !strings.Contains(string(data), "minor 1.2 ") {
-			t.Fatalf("%s was not stamped to 1.2.3 by the default target list: %s", rel, data)
-		}
-	}
-}
-
-// TestStampPathsMatchesDefaultStampList locks AC-2: the list `stamp-paths`
-// prints is the list the no-argument stamp rewrites. Every printed path is
-// staged old, then stamped; a stamp default list that diverged (or a printed
-// path the default omitted) leaves that file unrewritten and fails.
-func TestStampPathsMatchesDefaultStampList(t *testing.T) {
-	out, code := captureStdout(t, func() int { return stampPaths(nil) })
-	if code != 0 {
-		t.Fatalf("stamp-paths exit = %d, want 0", code)
-	}
-	listed := strings.Fields(out)
-	if len(listed) == 0 {
-		t.Fatal("stamp-paths printed nothing")
-	}
-	foundPi := false
-	for _, p := range listed {
-		if p == ".pi/plugin.json" {
-			foundPi = true
-		}
-	}
-	if !foundPi {
-		t.Fatalf("stamp-paths does not list .pi/plugin.json: %v", listed)
-	}
-
-	dir := t.TempDir()
-	for _, rel := range listed {
-		writeStampTarget(t, filepath.Join(dir, rel), "0.0.0")
-	}
-	chdirTemp(t, dir)
-	if code := stampVersion([]string{"4.5.6"}); code != 0 {
-		t.Fatalf("stamp-version over the stamp-paths list exit = %d, want 0", code)
-	}
-	for _, rel := range listed {
 		data, err := os.ReadFile(filepath.Join(dir, rel))
 		if err != nil {
 			t.Fatal(err)
 		}
 		if !strings.Contains(string(data), "4.5.6") && !strings.Contains(string(data), "minor 4.5 ") {
-			t.Fatalf("stamp-paths listed %s but the default stamp did not rewrite it: %s", rel, data)
+			t.Fatalf("stamp-version reported %s but did not rewrite it: %s", rel, data)
 		}
 	}
 }
 
 // TestStampVersionCommandFailsOnVersionlessNamedManifest locks AC-3: a named
 // JSON manifest with no usable top-level version exits non-zero, leaves the
-// bytes untouched, and prints NO success line — the loud failure that replaces
-// writing unchanged bytes and reporting success.
+// bytes untouched, and reports no path — the loud failure that replaces writing
+// unchanged bytes and reporting success.
 func TestStampVersionCommandFailsOnVersionlessNamedManifest(t *testing.T) {
 	dir := t.TempDir()
 	marketplace := filepath.Join(dir, "marketplace.json")
@@ -225,8 +198,8 @@ func TestStampVersionCommandFailsOnVersionlessNamedManifest(t *testing.T) {
 	if code == 0 {
 		t.Fatalf("stamp-version exit = 0 on a named manifest with no top-level version; want non-zero")
 	}
-	if strings.Contains(out, "stamped") {
-		t.Fatalf("stamp-version printed a success line for an unstamped manifest: %q", out)
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("stamp-version reported paths despite failing to stamp: %q", out)
 	}
 	after, err := os.ReadFile(marketplace)
 	if err != nil {

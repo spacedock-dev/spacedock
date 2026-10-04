@@ -15,7 +15,7 @@ import (
 // tag semver exactly; a `.md` prose file's stamped minor (D5) must equal the
 // tag's major.minor. With no explicit files it reads the authoritative
 // release.StampTargets list — the same list `stamp-version` defaults to and
-// `stamp-paths` prints — so the gate cannot drift from what was stamped. It
+// reports — so the gate cannot drift from what was stamped. It
 // reads each file's value (independent of the tag), runs the pure decision
 // predicate, records the outcome to $GITHUB_STEP_SUMMARY, and returns the
 // process exit code: 0 when every file matches the tag, 1 when any diverges or

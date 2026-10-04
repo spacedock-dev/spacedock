@@ -82,8 +82,7 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    SHA and the `e2e-gate` would block the cut.
 
    ```bash
-   STAMP_PATHS="$(go run ./cmd/spacedock-release stamp-paths)"
-   go run ./cmd/spacedock-release stamp-version X.Y.Z
+   STAMP_PATHS="$(go run ./cmd/spacedock-release stamp-version X.Y.Z)"
    git commit -m "release: bump version to spacedock@X.Y.Z" -- $STAMP_PATHS
    git push origin release/X.Y.Z:main
    ```
@@ -129,10 +128,11 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    git diff --name-only <greened-sha> "$REL_SHA"
    ```
 
-   When that diff contains only the release stamp files (the `stamp-paths`
-   list — every host descriptor plus an unchanged-minor shared-core stamp) and
-   files no live lane loads (this repo's own workflow docs under `docs/dev/`),
-   the prior green already proved this tree: a fresh run re-buys the same
+   When that diff contains only the release stamp files (the release stamp
+   target list — every host descriptor plus an unchanged-minor shared-core
+   stamp) and files no live lane loads (this repo's own workflow docs under
+   `docs/dev/`), the prior green already proved this tree: a fresh run re-buys
+   the same
    evidence plus one roll of host stochasticity. In that case the cutter MAY
    satisfy the gate with `SPACEDOCK_E2E_GATE_WAIVER` instead of a fresh
    dispatch, citing the equivalent
@@ -192,8 +192,7 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    2026-08-25):
 
    ```bash
-   STAMP_PATHS="$(go run ./cmd/spacedock-release stamp-paths)"
-   go run ./cmd/spacedock-release stamp-version X.(Y+1).0-pre0
+   STAMP_PATHS="$(go run ./cmd/spacedock-release stamp-version X.(Y+1).0-pre0)"
    git commit -m "release: bump version to spacedock@X.(Y+1).0-pre0" -- $STAMP_PATHS
    git push origin main
    ```

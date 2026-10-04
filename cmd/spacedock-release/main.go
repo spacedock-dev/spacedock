@@ -20,7 +20,6 @@ import (
 // Usage:
 //
 //	spacedock-release stamp-version <release-version> [<manifest-or-prose> ...]
-//	spacedock-release stamp-paths
 //	spacedock-release dev-preversion <stable-version>
 //	spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
 //	spacedock-release e2e-gate <release-commit-sha>
@@ -31,9 +30,10 @@ import (
 // binary minor" literal is rewritten to the release's major.minor (D5) —
 // erroring unless the literal appears exactly once. A `.json` argument with no
 // usable top-level version fails loud rather than writing unchanged bytes. With
-// no target arguments it stamps the authoritative release.StampTargets list.
-// stamp-paths prints that list, so every ritual step derives it from one source.
-// All rewrite in place.
+// no target arguments it stamps the authoritative release.StampTargets list, and
+// on success it reports the paths it rewrote — one per line on stdout — so the
+// release workflow captures the stamped list from that run instead of asking a
+// second command for it. All rewrite in place.
 // dev-preversion prints the post-release dev pre-version
 // (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`.
 // edge-advance-decision prints `advance` or `skip` (exit 0 either way) deciding
@@ -61,7 +61,7 @@ import (
 // unless every tagged `.json` manifest's version equals the tag semver AND every
 // tagged `.md` prose's stamped minor equals the tag's major.minor (the
 // stamp-then-tag ordering); with no explicit targets it reads the same
-// release.StampTargets list stamp-version and stamp-paths use. notes summarizes
+// release.StampTargets list stamp-version defaults to. notes summarizes
 // the commit log since the last tag into clean release notes and, on
 // confirmation, cuts the
 // annotated tag whose body carries them (CI extracts that body and feeds
@@ -74,8 +74,6 @@ func main() {
 	switch os.Args[1] {
 	case "stamp-version":
 		os.Exit(stampVersion(os.Args[2:]))
-	case "stamp-paths":
-		os.Exit(stampPaths(os.Args[2:]))
 	case "dev-preversion":
 		os.Exit(devPreversion(os.Args[2:]))
 	case "edge-advance-decision":
@@ -173,9 +171,10 @@ func stampVersion(args []string) int {
 	version, manifests := args[0], args[1:]
 	if len(manifests) == 0 {
 		// No explicit targets: use the ONE authoritative list (release.StampTargets),
-		// the same list `stamp-paths` prints and `manifest-tag-gate` defaults to.
+		// the same list `manifest-tag-gate` defaults to.
 		manifests = release.StampTargets()
 	}
+	stamped := make([]string, 0, len(manifests))
 	for _, path := range manifests {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -224,20 +223,14 @@ func stampVersion(args []string) int {
 			fmt.Fprintf(os.Stderr, "stamp %s: wrote bytes but the target did not take version %s: %v\n", path, version, err)
 			return 1
 		}
-		fmt.Printf("stamped %s version=%s\n", path, version)
+		stamped = append(stamped, path)
 	}
-	return 0
-}
-
-// stampPaths prints the ONE authoritative stamp target list
-// (release.StampTargets), one path per line, so the release workflow's gate,
-// stamp, diff and commit steps derive the same list instead of restating it.
-func stampPaths(args []string) int {
-	if len(args) != 0 {
-		fmt.Fprintln(os.Stderr, "spacedock-release stamp-paths: takes no arguments")
-		return 2
-	}
-	for _, path := range release.StampTargets() {
+	// Report the paths actually rewritten, one per line on stdout, so the release
+	// workflow captures the stamped list from THIS run rather than from a second
+	// command that only prints it. Buffered until every target has verified: a
+	// failure leaves stdout empty and prints no success line for a target that did
+	// not take the version.
+	for _, path := range stamped {
 		fmt.Println(path)
 	}
 	return 0
@@ -412,7 +405,6 @@ func usage() {
 
 Usage:
   spacedock-release stamp-version <release-version> [<manifest-or-prose> ...]
-  spacedock-release stamp-paths
   spacedock-release dev-preversion <stable-version>
   spacedock-release edge-advance-decision <tag> <known-version-plugin.json>
   spacedock-release highest-known-edge-version [<tag> ...]

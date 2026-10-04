@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -56,19 +55,23 @@ func TestManifestTagGateCommandRejectsMissingTag(t *testing.T) {
 	}
 }
 
-// TestManifestTagGateDefaultsToStampPathsList locks AC-2: with no explicit
-// files the gate reads the list `stamp-paths` prints. A fully-stamped target
-// set must pass (a gate default carrying a path absent from stamp-paths would
-// fail to read it and block), and diverging ANY printed path alone must block
-// (a gate default omitting it would still pass).
-func TestManifestTagGateDefaultsToStampPathsList(t *testing.T) {
-	out, _ := captureStdout(t, func() int { return stampPaths(nil) })
-	paths := strings.Fields(out)
-	if len(paths) == 0 {
-		t.Fatal("stamp-paths printed nothing")
+// TestManifestTagGateDefaultsToStampTargets locks AC-2: with no explicit files
+// the gate reads the ONE authoritative release.StampTargets list — the same list
+// the no-argument stamp rewrites and reports. A fully-stamped target set must
+// pass (a gate default wider than the stamp list would fail to read a path and
+// block), and diverging ANY target alone must block (a gate default omitting it
+// would still pass while that file disagrees with the tag). The expected set is
+// written out here independently of release.StampTargets and of the stamp
+// report.
+func TestManifestTagGateDefaultsToStampTargets(t *testing.T) {
+	targets := []string{
+		".claude-plugin/plugin.json",
+		".codex-plugin/plugin.json",
+		".pi/plugin.json",
+		"skills/first-officer/references/first-officer-shared-core.md",
 	}
 	dir := t.TempDir()
-	for _, rel := range paths {
+	for _, rel := range targets {
 		writeStampTarget(t, filepath.Join(dir, rel), "1.2.3")
 	}
 	chdirTemp(t, dir)
@@ -76,7 +79,7 @@ func TestManifestTagGateDefaultsToStampPathsList(t *testing.T) {
 	if code := runManifestTagGate([]string{"v1.2.3"}); code != 0 {
 		t.Fatalf("manifest-tag-gate with no explicit files exit = %d, want 0 for a fully stamped target set", code)
 	}
-	for _, rel := range paths {
+	for _, rel := range targets {
 		writeStampTarget(t, filepath.Join(dir, rel), "2.0.0") // diverge from the tag
 		if code := runManifestTagGate([]string{"v1.2.3"}); code == 0 {
 			t.Fatalf("manifest-tag-gate passed while %s diverged from the tag; the default list omits it", rel)
