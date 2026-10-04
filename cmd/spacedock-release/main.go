@@ -214,6 +214,16 @@ func stampVersion(args []string) int {
 			fmt.Fprintf(os.Stderr, "write %s: %v\n", path, err)
 			return 1
 		}
+		// Read the target back and require it to report the requested version
+		// before announcing success: a write that left the bytes unchanged (e.g. a
+		// manifest whose top-level key is not the lower-case `version` the stamp
+		// rewrites) must fail loud, naming the target, instead of printing a
+		// success line for a version it never installed. Applies to every named
+		// target, prose included.
+		if err := release.VerifyStampedVersion(path, version); err != nil {
+			fmt.Fprintf(os.Stderr, "stamp %s: wrote bytes but the target did not take version %s: %v\n", path, version, err)
+			return 1
+		}
 		fmt.Printf("stamped %s version=%s\n", path, version)
 	}
 	return 0

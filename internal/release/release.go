@@ -6,8 +6,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
+	"strings"
+
+	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
 // StampTargets is the ONE authoritative list of files a release stamps: the
@@ -144,4 +148,38 @@ func StampVersion(manifest []byte, version string) ([]byte, error) {
 		return manifest, nil
 	}
 	return replaceTopLevelVersion(manifest, version)
+}
+
+// VerifyStampedVersion re-reads the named stamp target from disk and requires
+// that it now reports wantVersion: a JSON manifest through its top-level
+// `version` (ManifestVersion, the same reader the tag gate uses), the FO prose
+// through its pinned major.minor (ProseMinor). The release CLI calls this after
+// writing each target, so a write that could not actually change the target — a
+// manifest whose top-level version key is spelled differently, say — exits
+// non-zero instead of announcing a success line for a version it never
+// installed.
+func VerifyStampedVersion(path, wantVersion string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read back: %w", err)
+	}
+	want := wantVersion
+	var got string
+	if strings.HasSuffix(path, ".md") {
+		major, minor, ok := contract.ParseMajorMinor(wantVersion)
+		if !ok {
+			return fmt.Errorf("release version %q has no parseable major.minor", wantVersion)
+		}
+		want = fmt.Sprintf("%d.%d", major, minor)
+		got, err = ProseMinor(data)
+	} else {
+		got, err = ManifestVersion(data)
+	}
+	if err != nil {
+		return err
+	}
+	if got != want {
+		return fmt.Errorf("target still reports version %q, want %q", got, want)
+	}
+	return nil
 }

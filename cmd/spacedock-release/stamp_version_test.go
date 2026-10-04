@@ -50,6 +50,40 @@ func TestStampVersionCommandStampsManifestAndProseInOneInvocation(t *testing.T) 
 	}
 }
 
+// TestStampVersionCommandFailsOnCaseVariantVersionKey is the exact regression
+// the validation reproduced: a named manifest whose top-level version key is
+// spelled `Version` — `{"name":"fixture","Version":"1.0.0"}` — is not
+// rewritten by the exact-lowercase-key stamp, so the command must read its own
+// result back and fail instead of printing `stamped uppercase.json
+// version=7.8.9` over unchanged bytes.
+//
+// This test fails if the command trusts the bytes it just wrote (or a
+// case-insensitive pre-check) rather than re-reading the target: StampVersion
+// returns this input unchanged, so without the read-back the command exits 0 and
+// prints a success line naming a version it never installed.
+func TestStampVersionCommandFailsOnCaseVariantVersionKey(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "uppercase.json")
+	src := `{"name":"fixture","Version":"1.0.0"}` + "\n"
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out, code := captureStdout(t, func() int { return stampVersion([]string{"7.8.9", path}) })
+	if code == 0 {
+		t.Fatalf("stamp-version exit = 0 for a manifest whose top-level version key is not lowercase `version`; want non-zero")
+	}
+	if strings.Contains(out, "stamped") || strings.Contains(out, "7.8.9") {
+		t.Fatalf("stamp-version printed a success line for an unstamped manifest: %q", out)
+	}
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != src {
+		t.Fatalf("stamp-version rewrote a manifest it could not stamp:\nwant %q\ngot  %q", src, after)
+	}
+}
+
 // TestStampVersionCommandErrorsOnUnstampableProse locks that a `.md` argument
 // with no pinned literal (or a duplicated one) errors the whole invocation
 // rather than silently leaving the prose untouched.

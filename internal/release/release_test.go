@@ -5,6 +5,8 @@ package release
 import (
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -136,6 +138,54 @@ func TestStampVersionRewritesOnlyFirstVersionKey(t *testing.T) {
 	}
 	if m.Metadata.Version != "schema-7" {
 		t.Errorf("nested metadata.version was clobbered: %q, want schema-7 (replace-first must leave it untouched)", m.Metadata.Version)
+	}
+}
+
+// TestVerifyStampedVersionRejectsUnchangedProse locks that the CLI's read-back
+// check covers prose targets, not only JSON manifests: a `.md` file still
+// carrying a different pinned minor than the requested version must fail.
+// StampProseVersion itself errors rather than no-oping on un-stampable prose,
+// but a guard that skipped the prose branch (e.g. treated every `.md` target as
+// always stamped) would let a prose target whose version did not change pass.
+//
+// This test fails if VerifyStampedVersion returns nil without reading the prose
+// back through ProseMinor, or if it compared the full version "9.9.0" against
+// the prose literal "1.2" and so rejected the mismatch for the wrong reason.
+func TestVerifyStampedVersionRejectsUnchangedProse(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "first-officer-shared-core.md")
+	if err := os.WriteFile(path, []byte("These skills require binary minor 1.2 (skew is fine).\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyStampedVersion(path, "9.9.0"); err == nil {
+		t.Fatalf("VerifyStampedVersion accepted prose still at minor 1.2 for requested 9.9.0")
+	}
+}
+
+// TestVerifyStampedVersionAcceptsStampedTargets locks the passing side of the
+// read-back for both target kinds: a manifest and a prose file that DO report
+// the requested version must not be rejected, so the guard cannot regress into
+// false failures.
+//
+// This test fails if the prose expectation is computed as the full version
+// ("9.9.0") instead of its major.minor ("9.9"): valid stamped prose would then
+// be rejected. The expected literals are authored here, not copied from the
+// files.
+func TestVerifyStampedVersionAcceptsStampedTargets(t *testing.T) {
+	dir := t.TempDir()
+	manifest := filepath.Join(dir, "plugin.json")
+	if err := os.WriteFile(manifest, []byte(`{"name":"spacedock","version":"9.9.0"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyStampedVersion(manifest, "9.9.0"); err != nil {
+		t.Fatalf("VerifyStampedVersion rejected a stamped manifest: %v", err)
+	}
+	prose := filepath.Join(dir, "first-officer-shared-core.md")
+	if err := os.WriteFile(prose, []byte("These skills require binary minor 9.9 (skew is fine).\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := VerifyStampedVersion(prose, "9.9.0"); err != nil {
+		t.Fatalf("VerifyStampedVersion rejected stamped prose: %v", err)
 	}
 }
 
