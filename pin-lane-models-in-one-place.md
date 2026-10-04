@@ -173,3 +173,27 @@ pi.api-key=openai/gpt-6-luna:max
 ### Summary
 
 **REJECTED / do not proceed yet.** The runtime wiring, printed values, provider spellings and Claude disposition are correct, and the no-literal guard is independent rather than tautological. Documentation still violates single-source intent, the identity-wiring test accepts swapped lanes, and the 13-file/+289 surface exceeds approved tolerance; obtain FO dispositions and captain scope resolution before a focused follow-up, while FO supplies the quiet-machine evidence separately.
+
+## Stage Report: implementation (validation-finding fix pass)
+
+FO-authorized narrow fix of the four findings in `Stage Report: validation` against `fbb6cc8df`. Code commit `207b2d980`; no new product/architecture decision.
+
+- DONE (Finding 1, material) - Remove every lane model id from `docs/runtime-live-ci.md` and point at the print command.
+  The prose paragraphs that named the OAuth/API-key Pi ids, the Sonnet/Opus ids, the Codex id, and the pending Claude candidate now say only how to obtain them: `spacedock live-models`, `spacedock live-models --get <lane>.<auth>`. The pending Claude candidate and its CLI rejection are recorded here in the entity, not in the doc. Evidence: `grep -nE 'claude-sonnet-5|claude-opus-4-8|gpt-6-luna|gpt-5.6-luna|claude-sonnet-5\.5' docs/runtime-live-ci.md` = no match. Illustrative `SPACEDOCK_PI_LIVE_CHILD_MODEL` override examples for third-party providers (not lane pins, not named in the finding) are left untouched.
+- DONE (Finding 2, material) - Strengthen the guards so a wrong value fails, using independent sources where one exists.
+  Added `TestRuntimeLiveWorkflowResolverBindsEachOutputToItsKey`: it parses the `Resolve live lane models` step and requires each published output to be filled from its OWN `--get` key, against an independently authored output->key map. This closes the V2 hole: exchanging the resolver's `--get claude.sonnet`/`--get claude.opus` now fails (verified by mutation). Added `TestPiLaneModelsExistInInstalledCatalog`, the independent value oracle for `pi.oauth`/`pi.api-key`, which splits each pinned id into provider/model/thinking and requires the installed pi-ai catalog to declare that model with that thinking level (verified by mutating `PiAPIKeyModel` to a non-existent id, which failed). The test skips when no pi catalog is installed (host state). Lanes with no independent oracle are named plainly in the test comment rather than claimed: `codex.exec` (no installed registry declares Codex `exec --model` ids) and `claude.sonnet`/`claude.opus` (the installed Claude CLI validates a model only after auth; an isolated home short-circuits with "Not logged in" before validation, and real credentials would spend an API call, so no CLI probe is deterministic offline). Their independent oracle remains the authored exact-output CLI test plus recorded rejection evidence.
+- DONE (Finding 3, deferred risk) - Replace the finite forbidden-id list with a rule that does not need enumeration.
+  `TestRuntimeLiveWorkflowCarriesNoLaneModelLiteral` (the finite id list) is replaced by `TestRuntimeLiveWorkflowModelSitesResolveThroughPrinter`, which keys off site shape: every `--model` argument must be a shell expansion, and every matrix `model:` / summary `Model:` value must be a `${{ ... }}` expression. A literal model id at any of those sites fails, including a future id never listed. Verified by injecting `--model gpt-6-luna` and `model: claude-opus-4-8`, each of which failed. Residual deferred risk recorded with its exact trigger: a model literal inlined at a *different* workflow site shape (e.g. a new `SPACEDOCK_*_MODEL:` env assignment) still passes; the site list must be extended when such a site is added.
+- RECORDED (Finding 4, authorization) - the surface is not reduced.
+  As validated: `git diff --numstat main...HEAD` at `fbb6cc8df` = 13 files, +327/-38, net +289, against an approved 8 files / +140. After this fix pass the branch is 13 files, +511/-39, net +472 (the increase is the doc rewrite and the strengthened guards). No file or scope was removed. This remains a captain-visible authorization record; the extra surface is not self-authorized.
+
+### Verification (this pass)
+
+- `go test ./internal/release -run 'TestRuntimeLiveWorkflow(ModelSitesResolveThroughPrinter|ResolverBindsEachOutputToItsKey|ResolvedKeysExist|LaneModelWiring)|TestPiLaneModelsExistInInstalledCatalog' -count=1` -> PASS.
+- `go test ./internal/cli -run 'TestLiveModelsCommand' -count=1` -> PASS.
+- Mutation matrix, each run and reverted: resolver `--get` swap -> `TestRuntimeLiveWorkflowResolverBindsEachOutputToItsKey` FAIL; `--model gpt-6-luna` literal -> site rule FAIL; `model: claude-opus-4-8` literal -> site rule FAIL; `PiAPIKeyModel` = non-existent id -> catalog oracle FAIL; Sonnet/Opus constant swap -> CLI exact-output oracle FAIL.
+- Boundary: every test reads a real repo file or the installed catalog and states the reason it can fail; no expected value comes from the thing it tests; no file is asserted against a copy of itself. The repository-wide suite was not run (FO prohibition) and no CI lane was started.
+
+### Summary
+
+All four material/deferred/authorization findings are addressed narrowly: the doc restates no id, the resolver identity and Pi values now have failing oracles, the forbidden list is replaced by a site-shape rule with the residual risk recorded, and the surface deviation is recorded for the captain. Focused tests and the mutation matrix pass; the branch surface grew but was not reduced.
