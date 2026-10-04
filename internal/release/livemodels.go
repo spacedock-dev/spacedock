@@ -1,6 +1,6 @@
 // ABOUTME: The single source of truth for the live E2E lane model ids. The
 // ABOUTME: workflow resolves them through `spacedock live-models` rather than
-// ABOUTME: repeating literals, but that placement has no independent test.
+// ABOUTME: repeating literals.
 package release
 
 // The live lane model ids, each pinned once. The workflow matrix, the Codex
@@ -17,10 +17,8 @@ const (
 	// PiOAuthModel is the Pi lane model for subscription (OAuth) auth. It passed
 	// a local front-door smoke on 2026-10-04 (root and child both on it).
 	PiOAuthModel = "openai-codex/gpt-6-luna:max"
-	// PiAPIKeyModel is the Pi lane model for API-key auth. The id and the `max`
-	// thinking suffix are verified against the installed pi-ai provider catalog
-	// (openai/gpt-6-luna declares thinkingLevelMap.max = "max"), not assumed from
-	// the OAuth spelling.
+	// PiAPIKeyModel is the Pi lane model for API-key auth: the `openai` provider
+	// counterpart of PiOAuthModel, with the same `max` thinking suffix.
 	PiAPIKeyModel = "openai/gpt-6-luna:max"
 )
 
@@ -34,8 +32,7 @@ type LiveLaneModel struct {
 
 // LiveModels returns the lane models in print order. It is the one list
 // `spacedock live-models` prints, so the workflow and the Go harness resolve a
-// lane model from one source. Which lane that value lands in is not enforced:
-// both sides of any placement comparison are authored by this same change.
+// lane model from one source.
 func LiveModels() []LiveLaneModel {
 	return []LiveLaneModel{
 		{Key: "claude.sonnet", ID: ClaudeSonnetModel},

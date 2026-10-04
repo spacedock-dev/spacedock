@@ -1,5 +1,4 @@
-// ABOUTME: `spacedock live-models` fixes the exact live lane ids the workflow
-// ABOUTME: resolves; this test is the independent oracle for the printed list.
+// ABOUTME: `spacedock live-models` fixes the exact live lane ids it prints.
 package cli
 
 import (
@@ -15,9 +14,7 @@ import (
 // live-models` prints. The expected ids are authored here — not read from
 // internal/release — so this fails if a lane constant changes without the print
 // moving in lockstep (e.g. reverting the Pi lane to the old gpt-5.6-luna), or if
-// a lane/auth key is added, dropped, or reordered. It fixes the printed contract
-// values only; whether the workflow consumes them, and where, has no test
-// enforcement.
+// a lane/auth key is added, dropped, or reordered.
 func TestLiveModelsCommandPrintsPinnedLaneModels(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := run(context.Background(), []string{"live-models"}, nil, "", nil, &stdout, &stderr, &status.NativeRunner{}, nil)
