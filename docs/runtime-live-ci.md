@@ -151,18 +151,17 @@ Replace a revoked or expired secret from a trusted workstation. If OAuth is
 absent, `OPENAI_API_KEY` is used; a lane fails before launch only when both
 credentials are absent.
 
-The lane model ids live in one place in `internal/release`, so this document
-never restates one. Run `spacedock live-models` to print every lane id, or
-`spacedock live-models --get <lane>.<auth>` to print one; the workflow matrix,
-the Codex exec shim, and the Pi step summary read that command rather than
-repeating a literal, and the OAuth and API-key Pi auth paths get their own
-entries (`pi.oauth`, `pi.api-key`). The `max` thinking level rides in the
-printed id.
+The lane model ids live in one place, `internal/release/live_models.txt`, so
+this document never restates one. The Go harness embeds that file and the live
+workflow reads it directly; the workflow matrix, the Codex exec shim, and the
+Pi step summary consume those values rather than repeating a literal. The OAuth
+and API-key Pi auth paths get their own entries (`pi.oauth`, `pi.api-key`), and
+the `max` thinking level rides in the id.
 
 A newer Claude Sonnet id has been proposed. The installed CLI refuses it today
-("There's an issue with the selected model"), so the Claude lane keeps the id
-`spacedock live-models --get claude.sonnet` prints until the captain confirms an
-exact id. The candidate and the rejection are recorded in the
+("There's an issue with the selected model"), so the Claude lane keeps the
+`claude.sonnet` entry in `internal/release/live_models.txt` until the captain
+confirms an exact id. The candidate and the rejection are recorded in the
 `pin-lane-models-in-one-place` entity, not here.
 
 | Selected command | Unique evidence | Measured sample or cost |
@@ -179,9 +178,9 @@ If one artifact is unavailable or incomplete, the job warns and skips the commen
 
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
-- Pull requests run the id from `spacedock live-models --get claude.sonnet` at maximum effort and the id from `spacedock live-models --get codex.exec` at maximum effort.
-- An explicit `live_cadence=opus-pre-release` dispatch runs offline plus the id from `spacedock live-models --get claude.opus` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
-- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with the id from `spacedock live-models --get pi.oauth` for OAuth or the id from `spacedock live-models --get pi.api-key` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment to attach a Pi live check to the PR (see "Running the pi lane on a pull request" below). Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
+- Pull requests run the `claude.sonnet` id from `internal/release/live_models.txt` at maximum effort and the `codex.exec` id from the same file at maximum effort.
+- An explicit `live_cadence=opus-pre-release` dispatch runs offline plus the `claude.opus` id from `internal/release/live_models.txt` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
+- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with the `pi.oauth` id from `internal/release/live_models.txt` for OAuth or the `pi.api-key` id from the same file for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment to attach a Pi live check to the PR (see "Running the pi lane on a pull request" below). Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
 #### Running the pi lane on a pull request
 

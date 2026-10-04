@@ -60,8 +60,8 @@ jobs:
     # this default surface; only tests that launch a real host retain the live tag.
   offline:
     runs-on: ubuntu-latest
-    # The lane model ids live once in internal/release; this job resolves them
-    # through `spacedock live-models` so the matrix, shim, and summary below
+    # The lane model ids live once in internal/release/live_models.txt; this
+    # job reads that file directly so the matrix, shim, and summary below
     # consume outputs instead of carrying model literals.
     outputs:
       claude_sonnet: ${{ steps.live_models.outputs.claude_sonnet }}
@@ -83,15 +83,13 @@ jobs:
         id: live_models
         run: |
           set -euo pipefail
-          bin="$RUNNER_TEMP/spacedock-live-models"
-          go build -o "$bin" ./cmd/spacedock
-          {
-            echo "claude_sonnet=$("$bin" live-models --get claude.sonnet)"
-            echo "claude_opus=$("$bin" live-models --get claude.opus)"
-            echo "codex_exec=$("$bin" live-models --get codex.exec)"
-            echo "pi_oauth=$("$bin" live-models --get pi.oauth)"
-            echo "pi_api_key=$("$bin" live-models --get pi.api-key)"
-          } >> "$GITHUB_OUTPUT"
+          # The Go harness embeds internal/release/live_models.txt; read the same
+          # file here rather than rebuilding a command or repeating a literal.
+          while IFS='=' read -r key id; do
+            if [ -n "$key" ]; then
+              echo "${key//[.-]/_}=$id"
+            fi
+          done < internal/release/live_models.txt >> "$GITHUB_OUTPUT"
 
       # The offline suite includes the AC tests that exercise the live steps'
       # clean-log + jsonl-archive shape over a fixture; they invoke the pinned

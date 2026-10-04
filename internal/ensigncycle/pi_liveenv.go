@@ -15,9 +15,11 @@ import (
 const (
 	piAuthAPIKey = "api-key"
 	piAuthOAuth  = "oauth"
+)
 
-	piOAuthModel  = release.PiOAuthModel
-	piAPIKeyModel = release.PiAPIKeyModel
+var (
+	piOAuthModel  = release.LiveModels["pi.oauth"]
+	piAPIKeyModel = release.LiveModels["pi.api-key"]
 )
 
 type piLiveAuthDecision struct{ mode, model, message string }
