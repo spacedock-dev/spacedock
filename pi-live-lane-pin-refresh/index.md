@@ -686,3 +686,94 @@ the captain owns the tolerance decision.
 
 Deleting `registry_oracle_live_test.go` removes the only check-time query against the npm registry, so a pin drift no longer fails any Go test (no production behaviour depends on it, per the dispatch). The single source of the pins remains `internal/pilive/pilive.go`, but nothing now compares it to the published family.
 
+
+## Stage Report: implementation (cycle 9)
+
+Hard-bounded cut of the port (`internal/pilive/pilive.go` + `pilive_test.go`) from 759
+to 400 lines or fewer, implementation plus tests. Priced every behaviour first.
+
+- DONE: Price all seven behaviours with line cost and what breaks without each.
+  Costs measured at HEAD `2c061b2e9` (pilive.go 464 lines): install 60; guard 41;
+  verify-manifest 40 (verifyManifest) + ~11 dispatcher; integrity check (pack) 20;
+  manifest resolution 40 (same verifyManifest body); settings create-or-merge
+  (mergeSettings) 52; floor guard (versionAtLeast 9 + parseVersion 13 + guard floor
+  branches ~15) 37; compatibility guard (compatExportPath 31 + compatExportLoads 11 +
+  guard compat branch ~8) 50. Every one is load-bearing — consequences below — so the
+  "no consequence" cut rule removes none.
+- DONE: Remove what is not behaviour: per-function comment blocks deleted, the four
+  repeated read/unmarshal sites replaced by one `readJSON`, `mergeSettings` rewritten
+  to a single `map[string]any` round-trip, `parseVersion` folded into `versionAtLeast`,
+  and the single-use `agentDir`/`fail` kept only where reused.
+  Commit `d6900386c`: -303/+141 across the two files. `gofmt`/`go vet`/`go build`
+  clean.
+- DONE: Cut the test file to the behaviours the workflow exercises plus one negative
+  each, deleting the copy-restating tables.
+  `pilive_test.go` 295 -> 185: verify-manifest, integrity (pack), settings merge,
+  floor comparison, guard floor, compat load, and install each keep one positive and
+  one load-bearing negative. No acceptance criterion cites a committed pilive
+  negative by name (AC-2/AC-3 proofs are the one-off real-package exercise), so none
+  was retained for a citation.
+- DONE: Freeze the call surface.
+  The workflow still calls `spacedock-release install|guard|verify-manifest`; the
+  pre-cut binary `2c061b2e9` and the cut binary produce byte-identical `pins` and
+  `print-install` stdout and identical `verify-manifest` usage exit 2 and resolved
+  "verified runtime file <path>" lines/exit 0 (diffed side by side).
+- SKIPPED: Cut to 400 lines or fewer (reached 597, not 400).
+  BLOCKED. The implementation alone is 412 physical lines after removing every
+  per-function comment block (381 code + 9 comments + 22 blank); 412 > 400, so even
+  deleting the entire test file cannot reach the target. The seven behaviours above
+  account for the implementation; none has no consequence, so 400 requires deleting a
+  behaviour. Cheapest blockers and what breaks: integrity check 20 lines (AC-3:
+  corrupted tarballs install), verify-manifest 51 lines (AC-2: setup checkpoint
+  loses the installed-manifest assertion). Reached number is 597 = 412 impl + 185
+  tests. Not deleting the integrity check or the manifest checkpoint to hit a number.
+- DONE: Validate without the repository-wide suite or a CI lane run.
+  `go build ./...`, `go vet ./internal/pilive ./cmd/spacedock-release`,
+  `go test ./internal/pilive/... ./cmd/spacedock-release/... -count=1`, and
+  `go test ./internal/cli -run 'TestPi|TestPiFrontDoor' -count=1` all pass; `gofmt -l`
+  clean; call-surface diff frozen. No repo-wide suite, race suite, or CI lane started.
+- DONE: Commit code on `spacedock-ensign/pi-live-lane-pin-refresh` and push.
+  `d6900386c` pushed (`2c061b2e9..d6900386c`); only the two pilive files changed, no
+  workflow, pin, launcher, or ensigncycle change.
+
+### Pricing (line cost at HEAD -> what breaks without it)
+
+- install — 60 lines. Removing it fails the "Install Pi CLI and substrates" step: no
+  pinned family installed, no agent-dir settings registration -> AC-1/AC-6/AC-7 break.
+- guard — 41 lines. Removing it fails the "Guard Pi substrate compatibility" step.
+- verify-manifest — 51 lines (verifyManifest 40 + dispatcher). Removing it fails the
+  current-checkout manifest checkpoint -> AC-2's installed-manifest assertion gone.
+- integrity check (pack) — 20 lines. Removing it installs tarballs without matching
+  the published sha512 -> AC-3 breaks.
+- manifest resolution (verifyManifest body) — 40 lines. Removing it lets setup accept
+  missing/stale runtime paths -> AC-2 breaks.
+- settings create-or-merge (mergeSettings) — 52 lines. Removing it leaves the isolated
+  home with no `npm:pi-subagents`/`npm:pi-intercom` registrations -> AC-6/AC-7 break.
+- floor guard (versionAtLeast+parseVersion+guard floors) — 37 lines. Removing it
+  accepts Node < 22.19.0 or pi-coding-agent < 0.83.0 or pi-subagents < 0.53.0.
+- compatibility guard (compatExportPath+compatExportLoads+guard branch) — 50 lines.
+  Removing it stops verifying that `@earendil-works/pi-ai/compat` resolves AND loads.
+
+### Summary
+
+Trimmed the port 759 -> 597 with the workflow-observable surface frozen and all
+behavioural checks intact. 400 is not reachable without deleting a load-bearing
+behaviour because the behaviour-only implementation is already 412 lines; reported
+the exact blocking behaviours (integrity check 20 lines, verify-manifest 51 lines and
+their AC-3/AC-2 consequences) rather than deleting a check to hit the number. Code
+commit `d6900386c` pushed; focused build/vet/tests/gofmt and the call-surface diff are
+green; no repo-wide suite or CI lane was run.
+
+### Cut-falsifiability
+
+- `TestVerifyManifestResolvesDeclaredRuntimeFiles` fails if a missing declared runtime
+  file or a manifest without `pi.extensions` is accepted.
+- `TestPackRejectsIntegrityMismatch` fails if a tarball whose integrity does not match
+  the pin is accepted.
+- `TestMergeSettingsCreateOrMergeRejectsMalformed` fails if the merge drops unrelated
+  keys/existing packages, is non-idempotent, or accepts malformed JSON.
+- `TestGuardRejectsBelowFloorNodeAndSubstrate` fails if a Node or pi-subagents version
+  below floor is accepted; `TestCompatExportLoadsPropagatesNodeFailure` fails if a
+  non-zero node import is ignored.
+- `TestInstallVerifiesAndRegistersThePinnedFamily` fails if any installed
+  name/version, manifest, skill, or settings registration check is dropped.
