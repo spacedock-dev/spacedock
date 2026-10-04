@@ -448,3 +448,39 @@ Captain-ordered cut round against `5ff137093`. Code commit `dab89d50d`; comment/
 ### Summary
 
 Cut to the directed deliverable: the single `internal/release` source and the `spacedock live-models` print command with its exact-output test, plus the workflow consumer realignment. Both provider oracle tests (`internal/release/livemodels_test.go`, 192 lines) and the coverage prose in the test/source files are deleted, and the coverage reasoning now lives only in this entity. No pinned value or workflow behaviour changed; the increment is 12 files, net +203 against main.
+
+## Stage Report: implementation (simplification round)
+
+Captain-ordered simplification round against `dab89d50d`. Code commit `1dc6b7534`. Replaces the bespoke Go channel with one data file; the five ids are unchanged.
+
+- DONE: Delete the Go channel — the constants, the typed list, the lookup — and the `spacedock live-models` command, and replace them with one data file of `key=id` lines under internal/release.
+  `internal/release/live_models.txt` is now the one place: `claude.sonnet=claude-sonnet-5`, `claude.opus=claude-opus-4-8`, `codex.exec=gpt-6-luna`, `pi.oauth=openai-codex/gpt-6-luna:max`, `pi.api-key=openai/gpt-6-luna:max`. Gone: the five `release.*Model` constants, the `LiveLaneModel` struct, `LiveModels()`, and `LiveModel(key)` in `internal/release/livemodels.go`; the whole `internal/cli/live_models.go` command and its `internal/cli/live_models_test.go`; and the `newLiveModelsCommand` registration line in `internal/cli/cli.go`. `git grep -nE 'ClaudeSonnetModel|ClaudeOpusModel|CodexExecModel|PiOAuthModel|PiAPIKeyModel|LiveLaneModel|newLiveModelsCommand|live-models' -- .` = no match.
+- DONE: Read the file from Go through go:embed.
+  `internal/release/livemodels.go` now carries only `//go:embed live_models.txt`, `var liveModelsText string`, `parseLiveModels`, and an exported `var LiveModels map[string]string` parsed once at package init. The four live Go consumers index that map: `pi_liveenv.go` (`pi.oauth`, `pi.api-key`), `claudeteam/contextbudget_test.go` (`claude.opus`, `claude.sonnet`), `ensigncycle/shared_live_runner_test.go` (both Claude keys), and `ensigncycle/codex_liveenv_test.go` (`claude.sonnet`). `go build ./...` succeeds, so the embed target resolves.
+- DONE: Read the same file directly from the workflow, keeping no model literal and no command call.
+  The offline job's `Resolve live lane models` step now loops `while IFS='=' read -r key id ... done < internal/release/live_models.txt` and writes `${key//[.-]/_}=$id` to `$GITHUB_OUTPUT`, yielding exactly `claude_sonnet`, `claude_opus`, `codex_exec`, `pi_oauth`, `pi_api_key`. The `go build`/`"$bin" live-models --get …` resolver is gone. `grep -nE 'claude-sonnet-5|claude-opus-4-8|gpt-6-luna|gpt-5.6-luna' .github/workflows/runtime-live-e2e.yml` = no match; no `live-models` call remains. The existing consumers are untouched: the Claude cadence matrix, the Codex shim `SPACEDOCK_LIVE_CODEX_MODEL`, the two Pi summary lines, and the journey-delta artifact name all still read the same `needs.offline.outputs`.
+- DONE: Confirm the workflow can read the file without a tool the runner lacks; if not, keep the smallest working mechanism.
+  The step uses only the ubuntu-latest default bash shell: `read`, the `${key//[.-]/_}` parameter expansion, and the `$GITHUB_OUTPUT` redirect — all builtins, no grep/sed/awk/yq, no command rebuild. Simulated locally with the repo file and it emitted the five records; `ruby -ryaml` parses the workflow and `yq` round-trips the step. No gap, so nothing had to be kept.
+- DONE: Update the doc that pointed at the command.
+  `docs/runtime-live-ci.md` now names `internal/release/live_models.txt` as the one place and drops every `spacedock live-models` invocation; `grep -nE 'claude-sonnet-5|claude-opus-4-8|gpt-6-luna|gpt-5.6-luna|claude-sonnet-5\.5' docs/runtime-live-ci.md` = no match.
+- DONE: Keep the five ids exactly as they are and change nothing functional.
+  The data file holds the five ids verbatim and in the same order. `pi.oauth`/`pi.api-key` resolve to the same strings the harness used before; the Claude lanes keep `claude-sonnet-5`/`claude-opus-4-8`; the Pi cadence is unchanged.
+- DONE: Report the new increment and file count against main, and name every file deleted.
+  `git diff --numstat main...HEAD` = **10 files, +134/-47, net +87** (was 12 files, net +203 at `dab89d50d`; this round removed 116 net lines and 2 files). Deleted this round: `internal/cli/live_models.go` and `internal/cli/live_models_test.go`. `internal/cli/cli.go` no longer differs from main (its only added line was the registration), and `internal/release/livemodels.go` was rewritten in place. Net +87 is now inside the approved net +30..+140 band; 10 files is still above the approved 8-file cap and is reported, not self-authorized.
+- DONE: Record the coverage boundary honestly.
+  Deleting the command also deleted `TestLiveModelsCommandPrintsPinnedLaneModels`, the only exact-value pin test; nothing now pins the five values except the data file itself. This is the directed outcome of this round: the file is the source, and the workflow and Go both read it, so a wrong edit is one visible line rather than a divergence between a source and a copy.
+- SKIPPED: Repository-wide suite, `-race` across all packages, and any live/CI lane run.
+  FO prohibition carried over. Ran only focused checks (below); no quiet-machine or full-suite evidence is claimed.
+
+### Verification (this round)
+
+- `go build ./...` -> OK (proves `go:embed live_models.txt` resolves).
+- `go test ./internal/release -count=1` -> ok 13.4s; `go test ./internal/claudeteam -count=1` -> ok.
+- `go test ./internal/ensigncycle -run 'TestPi|TestCodex|TestContextLimit|TestRuntimeLiveClaudeShimSetsMaximumEffort' -count=1` -> ok 7.0s.
+- `go test ./internal/cli -count=1` -> FAIL, only `TestCodexResolveManifestAgainstInstalledHost` (host has a codex plugin installed) and `TestVersionAmbiguousMarkersExitZero` (ambient `PI_CODING_AGENT` marker). Both are the pre-existing host/ambient failures recorded in the cut-round/cycle-3 reports and neither touches lane models; no other CLI test failed.
+- Simulated the workflow resolver loop over the real file: emitted `claude_sonnet=claude-sonnet-5`, `claude_opus=claude-opus-4-8`, `codex_exec=gpt-6-luna`, `pi_oauth=openai-codex/gpt-6-luna:max`, `pi_api_key=openai/gpt-6-luna:max`.
+- `gofmt -l` on the changed Go files = clean; `git diff --check main...HEAD` = clean; YAML parses.
+
+### Summary
+
+One data file (`internal/release/live_models.txt`) is now the single place for the five lane model ids. The Go constants, typed `LiveLaneModel` list, `LiveModel()` lookup, and the `spacedock live-models` command are gone; Go embeds and parses the file into `release.LiveModels`, and the live workflow reads the same file directly with bash builtins, so it carries no model literal and calls no command. Deleted `internal/cli/live_models.go` and `internal/cli/live_models_test.go`; `internal/cli/cli.go` and `internal/release/livemodels.go` were reduced in place. Increment against main: 10 files, +134/-47, net +87. The five ids are unchanged. Focused checks pass; only the two known ambient CLI failures remain.
