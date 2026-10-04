@@ -208,8 +208,6 @@ The harness did this:
    - State checkout git log contains the worker commit.
    - The entity path has no uncommitted changes.
 
-The Pi execution of `TestLiveCommonRecordedGateLifecycle` additionally grades the root-session review against canonical bound authority before decision, then observes approval application, the requested successor model, completion, and the first officer's durable-report verification. A correct compact digest prefix is allowed in review prose; an invented value, child/tool-only review, or presentation followed by an early stop is not. Retained negative traces validate the grader; only repeated clean live journeys establish conduct.
-
 ## Exact Pi parent prompt
 
 The live test formats this prompt with repository and temp paths. Keep the structure when debugging Pi runtime support; only substitute the paths and marker.
