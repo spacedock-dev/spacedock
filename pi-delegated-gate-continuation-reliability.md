@@ -442,33 +442,78 @@ AC citations:
 - **AC-3 — satisfied deterministically.** `TestPiRecordedGateRetainedRootsStayRed` asserts first-root red only for invented-digest/before-authority and retry red only for approval-not-recorded. `TestPiRecordedGateControls` runs the eight named mutants (`accept-wrong-digest`, `accept-early-stop`, `accept-child-review`, `accept-tool-review`, `accept-late-review`, `ignore-model`, `ignore-completion`, `ignore-report-read`): each asserts the full grade names its obligation and the single-obligation mutant no longer reports it. `TestPiRecordedGateCompactDigestPrefixAccepted` fails a full-digest-only grader. `TestPiRecordedGateCleanObservationPasses` is a unit-level positive control at the judge seam (no live passing trace exists in this checkout). `TestPiRecordedGateArtifactLoader` pins live session discovery.
 - **AC-4 — satisfied deterministically.** `TestRuntimeLiveRegistryReconciliation` passes; no Pi TODO/XFAIL binding added. The focused live batch, registered Pi common package, and front-door smoke remain due and are NOT claimed.
 
-### Live measurement of AC-1 (restored grade on real Pi runs)
 
-- Tip lane (single-use CI rotation): run `37165203650`, ref `spacedock-ensign/pi-delegated-gate-continuation-reliability` at `d70bd32d6`, `-f live_cadence=pi`. Offline job green; `pi-live` ran 17 tests, **14 passed, 3 failed**.
-  - `TestLiveCommonRecordedGateLifecycle` (350s): the restored grade detected the fault — `pi-gate-binding-missing` (no successful `gate record --briefing` bind with a briefing id), `pi-gate-canonical-authority-missing` (no canonical bound Briefing id/digest read from a successful tool result), `pi-gate-review-missing` (no root-assistant gate review), `pi-gate-successor-model-mismatch` (successor requested model `""`, want `openai-codex/gpt-5.6-luna`). This is the real finding this task exists to expose; its repair owner is `gcmfwfjd9735b58sbzw7xsb8` (`repair-pi-recorded-gate-lifecycle`), outside this sprint. AC-1 remains unmet.
-  - `TestLiveCommonDefaultHeadlessGateStop` (426s) and `TestLiveCommonAutoContinueAfterImplementation` (390s) both end in worker-not-dispatched. These are the already-diagnosed observer defect (`repair-pi-worker-lifecycle-observation`, not implemented): the shared assert credits a completion surface this host does not provide — it looks for a `subagent_wait` result keyed on the spawned run id, while a Pi first officer observes completion through `bg_wait` and the native completion notice, computing `completed=-1` and reporting no worker dispatched although the launcher log shows both dispatches succeeded. They are NOT product failures, are NOT XFAIL'd, and on that surface the lane cannot yet tell a spurious failure from a real one.
-- Local AC-1 batch on the captain's own Pi credentials (no CI rotation consumed):
-  - The entity's stated `-count=3` focused form is contaminated by one shared artifact dir: attempt 1 was a valid rejection (`pi-gate-binding-missing`, `pi-gate-canonical-authority-missing`, `pi-gate-review-missing`, `pi-gate-successor-count`: successor dispatches = 2, want exactly one); attempts 2 and 3 were invalid journey results (`Pi root sessions=2/3, want exactly one`).
-  - Three separate invocations with distinct artifact dirs were the valid attempts, all rejected by the grade: attempt 1 (392s) the three missing findings plus successor dispatches = 2; attempt 2 (324s) the three missing findings plus successor requested model `""`; attempt 3 (359s) the three missing findings plus successor requested model `""`. No skips; **0/3 complete**.
-- Conclusion: the restored grade detects the fault, the fault is real, AC-1 is unmet, and the conduct repair belongs to gc. This task measures and does not repair.
+### Deliverable change (cycle 6): 9w removes a divergent Pi judge
 
-### Contract disagreement: recorded-gate trace shape (`recorded-gate-lifecycle` left unbound)
+**9w no longer restores a Pi grade. It removes a divergent one. Its
+presentation-reliability acceptance stays OPEN.** Code commit `fb4428e9c` reverts
+the judge commit `d70bd32d6`.
 
-This finding is recorded, not papered over; it is why `recorded-gate-lifecycle` carries no Pi XFAIL yet.
+- Deleted `internal/ensigncycle/pi_recorded_gate_grade_test.go` and its companion
+  `pi_recorded_gate_grade_test_test.go` (the companion only served this judge),
+  the fixtures it alone consumed (`internal/ensigncycle/testdata/pi-recorded-gate/`),
+  and the `docs/runtime-support.md` paragraph that advertised it.
+- Restored `piSharedLiveDriver.prepareRecordedGate` in
+  `internal/ensigncycle/pi_shared_live_runner_test.go` to the no-op
+  (`return d, noLiveGrade`) so the shared assertion runs.
+- The shared assertion itself is unchanged.
 
-- The shared contract `internal/ensigncycle/recorded_gate_lifecycle_test.go:19-44` requires the classic trace `[prepare, decision-record, consume]` and explicitly blesses the collapsed shape `[prepare, decision-record-and-consume]` produced by `gate record --decision approve --consume`. Its own comment (lines 42-44) says "Neither shape is more \"correct\" than the other — --consume is opt-in, not mandatory — so both must authorize".
-- The Pi grade `internal/ensigncycle/pi_recorded_gate_grade_test.go` additionally requires a bash/shell call whose command contains `gate record` **and** `--briefing`, with output `state=open` and a briefing id (lines 195-196), plus a canonical bound Briefing id/digest read (line 264) and a root-assistant review (line 261).
-- A real Pi run does satisfy that requirement: the retained traces `docs/dev/.spacedock-state/_evidence/pi-delegated-gate-continuation-reliability/retained-pi-recorded-gate/first-root.jsonl` and `.../retry-root.jsonl` contain actual `gate record ... --briefing ...` calls.
-- The current Pi run does not: run `37165203650` ran `gate record ... --decision approve --actor ...` with no `--briefing`.
+Why the judge is divergent (captain's evidence):
 
-So the Pi grade requires a trace shape the shared contract allows to be absent. `recorded-gate-lifecycle` stays unbound until the captain decides which artifact changes: the FO instructions (the officer records the review round) or the Pi grade (it accepts the collapsed shape).
+- it requires the legacy `gate record --briefing` shape, while the shared
+  contract at `internal/ensigncycle/recorded_gate_lifecycle_test.go:19-47`
+  explicitly accepts the collapsed `gate record --decision approve --consume`;
+- its digest detector searches presentation prose instead of the prepare
+  output's own fields;
+- its review pattern rejects the presentation style that `present-gate` /
+  `SKILL.md:13-16` allows;
+- it compares the spawn argument against the root model instead of the child's
+  effective model, and the child used the expected model;
+- it calls `t.Fatalf` before the XFAIL handling runs, so no binding can defer it.
 
-### Pi XFAIL bindings added (this round)
+### Live measurement history (produced by the now-removed judge)
 
-- `auto-continue-after-implementation` -> `mk72bnt1b5hsp9sfv83979xs` (`repair-pi-worker-lifecycle-observation`): its only red assert is `validation-worker-not-dispatched` (spawns=1 completed=-1), the observer defect. This red is an evidence defect in the shared worker-lifecycle assert (`subagent_wait` keyed on the spawned run id vs a Pi first officer observing completion through `bg_wait` and the native completion notice), not a product fault. Code commit `080d37f23`.
-- `default-headless-gate-stop` -> `gcmfwfjd9735b58sbzw7xsb8` (`repair-pi-recorded-gate-lifecycle`), the owner of the missing-prepare behaviour. Its reds are mixed: `gate-hold-violation` and `gate-not-held` are the shared assertion failing because `gate prepare` never published a room (it aborted on a nonexistent reference path — the required committed reference is missing); `implementation-worker-not-dispatched` is the separate observer defect (`mk72bnt1b5hsp9sfv83979xs`), noted in the source comment but not bound here. Code commit `080d37f23`.
-- `recorded-gate-lifecycle` is deliberately left unbound pending the captain's artifact decision above.
+Recorded for the history; the recorded-gate red they show was produced by the
+divergent judge, so it is not a product verdict. With the judge removed, the
+shared assertion runs; whether it passes is unknown until the next lane run.
+
+- Tip lane (single-use CI rotation): run `37165203650`, ref
+  `spacedock-ensign/pi-delegated-gate-continuation-reliability` at `d70bd32d6`,
+  `-f live_cadence=pi`. Offline job green; `pi-live` ran 17 tests, 14 passed,
+  3 failed. The `TestLiveCommonRecordedGateLifecycle` red was the removed
+  judge's `pi-gate-binding-missing` / `pi-gate-canonical-authority-missing` /
+  `pi-gate-review-missing` / `pi-gate-successor-model-mismatch`.
+- Local focused batch on the captain's own Pi credentials (no CI rotation
+  consumed): the entity's `-count=3` form is contaminated by one shared artifact
+  dir (attempt 1 valid; attempts 2-3 invalid on `Pi root sessions=N, want exactly
+  one`); three separate invocations with distinct dirs were the valid attempts,
+  all rejected by the removed judge. Kept as history only.
+
+### Deferred reds and bindings (rule: defer everything that is not a product defect)
+
+- `auto-continue-after-implementation` keeps its binding to
+  `mk72bnt1b5hsp9sfv83979xs` (`repair-pi-worker-lifecycle-observation`). Record:
+  **evidence defect** — the assert recognizes only `subagent` status and
+  `subagent_wait`, while this host supplies `bg_wait` and a native completion
+  notice.
+- `default-headless-gate-stop` keeps its binding to
+  `gcmfwfjd9735b58sbzw7xsb8` (`repair-pi-recorded-gate-lifecycle`), with a
+  **corrected record**: the reference was not missing. The officer mis-transcribed
+  the path — it passed `/tmp/TestLiveCommonDefaultGateStop732520555/003/README.md`
+  while the workflow root is `/tmp/TestLiveCommonDefaultHeadlessGateStop732520555/003`
+  (same random suffix, one word dropped while reproducing a path the officer could
+  see). The binary failed closed and the officer stopped per its own no-retry
+  rule. Recorded as a **fragility red**; the deferred fix is to compose the
+  reference from the observed workflow root instead of reproducing it. Stays
+  deferred: no new task, and gc is not pulled in.
+- `recorded-gate-lifecycle` stays unbound for now. With the judge gone the shared
+  assertion runs; whether it passes is unknown until the next lane run.
 
 ### Summary
 
-Restored the Pi recorded-gate semantic grade at the existing `prepareRecordedGate` callback as proof-only test support, wiring the Pi driver to a retained-trace grade that observes canonical bound authority read order, root review provenance/rendering, approval record/consume, one successor on the requested model, completion, and post-completion durable-report read. Retained the se0 exact-tip negative traces (checksums verified) plus deterministic single-obligation mutants and compact-prefix/follows-canonical/clean-observation controls. Shared runner/grader, `present-gate`, registry, and Claude/Codex grades are untouched; AC-1's live 3/3 remains unmet and routes to gc, so this is measurement, not conduct repair. Net LOC is +843 (845 insertions/2 deletions), above the +500 estimate and +650 tolerance for the stated reason.
+Cycle 6 removes the divergent Pi-only recorded-gate judge that cycle 3 added:
+9w no longer restores a Pi grade, it removes one, and its presentation-reliability
+acceptance stays OPEN. The `prepareRecordedGate` hook is back to a no-op so the
+shared assertion runs, and the shared assertion is unchanged. The two
+non-product-defect reds are deferred with bindings and corrected records; no new
+task was created and gc was not pulled in.
