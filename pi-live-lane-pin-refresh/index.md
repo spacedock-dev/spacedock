@@ -647,3 +647,20 @@ Moved the whole Pi family stamp and every piece of pi-live lane logic into `inte
 ### Summary
 
 Folded the pi-live helper into `spacedock-release` (one CI binary, no second artifact), collapsed the two-file `internal/pilive` split into one, and deduped the restating pilive tests. Offline `go test ./...`, build, vet, and the real end-to-end install/guard/verify-manifest runs are green; the registry oracle is unchanged. The measured increment is net +1471 (22 files), only 40 lines below pre-trim, because the remainder is AC-6..AC-10 behavioural coverage the dispatch says to keep; a "materially smaller" surface requires a captain decision to narrow those ACs, so it is reported rather than silently done.
+
+### Trim disposition (captain decision)
+
+The captain called the volume and sent mh back for a trim. The trim executed the three
+specified moves — fold the helper into `spacedock-release`, collapse
+`internal/pilive/runner.go` into `pilive.go`, cut tests that restate rather than check —
+and measured **mh's own increment at net +1453 across 21 files** against its base (9w
+`c5ca95e74`), down from +1493 before the trim. The three moves relocate and merge code
+rather than delete behaviour, so the reduction is only about 40 lines.
+
+Cause and disposition: the declaration said +160 across 3 files; the real content is a
+faithful Go port of the four moved heredocs plus mh's earlier AC-6..AC-10 folds, so the
+estimate was the fiction, not the code. The captain accepted the volume (decision c): do
+not cut behavioural tests and do not simplify load-bearing logic. Neither deleted guard
+(the workflow-text guard, the `internal/release` fingerprint test) is re-added, and the
+Pi registry oracle is untouched. The final increment is **net +1453 across 21 files**, and
+the captain owns the tolerance decision.
