@@ -1,8 +1,13 @@
-// ABOUTME: Guards that the live workflow carries no lane model literal and that
-// ABOUTME: every model it runs resolves through `spacedock live-models`.
+// ABOUTME: Guards that the live workflow resolves every lane model through
+// ABOUTME: `spacedock live-models`, and checks the pinned Pi ids against the
+// ABOUTME: installed provider catalog; lanes with no independent oracle are named.
 package release
 
 import (
+	"encoding/json"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -10,16 +15,84 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TestRuntimeLiveWorkflowCarriesNoLaneModelLiteral pins AC-3: the workflow must
-// resolve every lane model from `spacedock live-models`, so no pinned id may
-// appear as a literal. The ids are authored here, independent of LiveModels(),
-// so this fails if a literal is re-added (including the old gpt-5.6-luna) or a
-// new model is inlined instead of added to the single source.
-func TestRuntimeLiveWorkflowCarriesNoLaneModelLiteral(t *testing.T) {
+// TestRuntimeLiveWorkflowModelSitesResolveThroughPrinter pins AC-3 without
+// enumerating model ids. It fails if a model value appears as a literal at any
+// workflow site that carries one — a `--model` argument, a matrix `model:` key,
+// or a step-summary `Model:` label. Because the rule keys off the site's shape
+// and not a fixed id list, a model id that did not exist when this test was
+// written still fails if it is inlined at one of these sites.
+//
+// Deferred risk: this rule only sees the three site shapes the workflow uses
+// today. Its exact trigger is a model literal inlined at a different site shape
+// (for example a new `SPACEDOCK_*_MODEL:` env assignment or a `model=` flag on
+// a different command); that literal would pass. Extend the site list when such
+// a site is added rather than adding ids to a forbidden list.
+func TestRuntimeLiveWorkflowModelSitesResolveThroughPrinter(t *testing.T) {
 	workflow := readWorkflow(t, "runtime-live-e2e.yml")
-	for _, id := range []string{"claude-sonnet-5", "claude-opus-4-8", "gpt-6-luna", "gpt-5.6-luna"} {
-		if strings.Contains(workflow, id) {
-			t.Errorf("runtime-live-e2e.yml carries the model literal %q; lanes must resolve models via `spacedock live-models`", id)
+
+	flagSites := 0
+	for _, m := range modelFlagArgPattern.FindAllStringSubmatch(workflow, -1) {
+		flagSites++
+		if arg := m[1]; !strings.HasPrefix(arg, `"$`) {
+			t.Errorf("`--model %s` is a literal; lanes must resolve models via `spacedock live-models`", arg)
+		}
+	}
+	if flagSites == 0 {
+		t.Fatal("runtime-live-e2e.yml has no `--model` site; the Codex shim's model forwarding was removed")
+	}
+
+	keySites := 0
+	for _, line := range strings.Split(workflow, "\n") {
+		m := modelKeyLinePattern.FindStringSubmatch(line)
+		if m == nil {
+			continue
+		}
+		keySites++
+		if !strings.Contains(m[1], "${{") {
+			t.Errorf("workflow line %q sets a lane model to a literal; it must resolve through `spacedock live-models`", strings.TrimSpace(line))
+		}
+	}
+	if keySites == 0 {
+		t.Fatal("runtime-live-e2e.yml has no `model:`/`Model:` site; the lane model wiring was removed")
+	}
+}
+
+var (
+	modelFlagArgPattern = regexp.MustCompile(`--model\s+(\S+)`)
+	modelKeyLinePattern = regexp.MustCompile(`(?:^|\s)[Mm]odel:\s*(.+)$`)
+	resolverLinePattern = regexp.MustCompile(`echo "([A-Za-z0-9_]+)=\$\(.*live-models --get ([^)]+)\)"`)
+	liveModelGetPattern = regexp.MustCompile(`live-models --get ([^ )"']+)`)
+)
+
+// TestRuntimeLiveWorkflowResolverBindsEachOutputToItsKey proves the offline
+// resolver fills each published output from its OWN `--get` key. It fails if
+// the resolver's keys are exchanged — e.g. `claude_sonnet` filled from
+// `--get claude.opus` — which leaves every output name and every `--get` key
+// present, so the presence-only wiring guard below cannot see it. The expected
+// output→key map is authored here, independent of the workflow.
+func TestRuntimeLiveWorkflowResolverBindsEachOutputToItsKey(t *testing.T) {
+	workflow := readWorkflow(t, "runtime-live-e2e.yml")
+	step, ok := stepNamed(parseWorkflowSteps(workflow), "Resolve live lane models")
+	if !ok {
+		t.Fatal("workflow lacks the `Resolve live lane models` step")
+	}
+	got := map[string]string{}
+	for _, m := range resolverLinePattern.FindAllStringSubmatch(step.run, -1) {
+		got[m[1]] = m[2]
+	}
+	want := map[string]string{
+		"claude_sonnet": "claude.sonnet",
+		"claude_opus":   "claude.opus",
+		"codex_exec":    "codex.exec",
+		"pi_oauth":      "pi.oauth",
+		"pi_api_key":    "pi.api-key",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("resolver emits %d lane outputs, want %d: %v", len(got), len(want), got)
+	}
+	for output, key := range want {
+		if got[output] != key {
+			t.Errorf("resolver output %q resolves key %q, want %q", output, got[output], key)
 		}
 	}
 }
@@ -40,8 +113,6 @@ func TestRuntimeLiveWorkflowResolvedKeysExist(t *testing.T) {
 		}
 	}
 }
-
-var liveModelGetPattern = regexp.MustCompile(`live-models --get ([^ )"']+)`)
 
 // TestRuntimeLiveWorkflowLaneModelWiring proves the offline job publishes each
 // lane output and a live job consumes it, so a model resolved by the print
@@ -83,4 +154,112 @@ func TestRuntimeLiveWorkflowLaneModelWiring(t *testing.T) {
 			t.Errorf("no live job consumes needs.offline.outputs.%s", output)
 		}
 	}
+}
+
+// TestPiLaneModelsExistInInstalledCatalog is the independent value oracle for
+// the Pi lane. It parses each pinned Pi id into provider/model/thinking and
+// requires the installed pi-ai provider catalog to declare that model with that
+// thinking level. It fails when a pinned Pi id names a provider/model the
+// catalog does not have, or a thinking level it does not allow — a wrong value
+// that no name-presence guard can catch. It skips when the host has no pi
+// install with a catalog, because the catalog is host state, not repository
+// content, so this oracle cannot run in the offline CI image.
+//
+// Independent-value coverage by lane:
+//   - pi.oauth, pi.api-key: this test (installed catalog).
+//   - codex.exec: none in reach. No installed registry declares the Codex
+//     `exec --model` ids, so its value rests on the authored exact-output
+//     oracle in internal/cli/live_models_test.go and on the live smoke.
+//   - claude.sonnet, claude.opus: none in reach. The installed Claude CLI
+//     validates a model only after auth; with an isolated home it short-circuits
+//     with "Not logged in" before the model is checked, and with real
+//     credentials it would spend an API call and depend on the network. So the
+//     Claude ids rest on the authored exact-output oracle and the recorded
+//     rejection evidence, not on a CLI probe. This is stated rather than claimed.
+func TestPiLaneModelsExistInInstalledCatalog(t *testing.T) {
+	catalogDir, ok := installedPiCatalogDir()
+	if !ok {
+		t.Skip("no installed pi-ai provider catalog on this host; the catalog is host state, not repository content")
+	}
+	for _, tc := range []struct{ lane, id string }{
+		{"pi.oauth", PiOAuthModel},
+		{"pi.api-key", PiAPIKeyModel},
+	} {
+		provider, model, thinking := splitPiModelID(t, tc.lane, tc.id)
+		catalogPath := filepath.Join(catalogDir, provider+".json")
+		data, err := os.ReadFile(catalogPath)
+		if err != nil {
+			t.Errorf("%s: read catalog %s: %v", tc.lane, catalogPath, err)
+			continue
+		}
+		declared, err := catalogDeclaresModel(data, model, thinking)
+		if err != nil {
+			t.Errorf("%s: parse catalog %s: %v", tc.lane, catalogPath, err)
+			continue
+		}
+		if !declared {
+			t.Errorf("%s: pinned id %q is not declared by %s with thinking %q", tc.lane, tc.id, provider+".json", thinking)
+		}
+	}
+}
+
+// installedPiCatalogDir finds the pi-ai provider catalog beside the installed
+// pi package. It returns ("", false) when pi is absent or the catalog layout
+// is not present, so a caller skips rather than fails on a machine without pi.
+func installedPiCatalogDir() (string, bool) {
+	bin, err := exec.LookPath("pi")
+	if err != nil {
+		return "", false
+	}
+	resolved, err := filepath.EvalSymlinks(bin)
+	if err != nil {
+		return "", false
+	}
+	for dir := filepath.Dir(resolved); ; {
+		catalog := filepath.Join(dir, "node_modules", "@earendil-works", "pi-ai", "dist", "providers", "data")
+		if info, err := os.Stat(catalog); err == nil && info.IsDir() {
+			return catalog, true
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", false
+		}
+		dir = parent
+	}
+}
+
+// splitPiModelID splits a pinned Pi id of the form provider/model:thinking.
+func splitPiModelID(t *testing.T, lane, id string) (provider, model, thinking string) {
+	t.Helper()
+	provider, rest, ok := strings.Cut(id, "/")
+	if !ok {
+		t.Fatalf("%s: pinned id %q is not provider-qualified", lane, id)
+	}
+	model, thinking, ok = strings.Cut(rest, ":")
+	if !ok {
+		t.Fatalf("%s: pinned id %q carries no :thinking suffix", lane, id)
+	}
+	return provider, model, thinking
+}
+
+// catalogDeclaresModel reports whether the pi-ai catalog declares model with a
+// non-null thinkingLevelMap entry for thinking.
+func catalogDeclaresModel(data []byte, model, thinking string) (bool, error) {
+	var catalog map[string]map[string]struct {
+		ID               string             `json:"id"`
+		ThinkingLevelMap map[string]*string `json:"thinkingLevelMap"`
+	}
+	if err := json.Unmarshal(data, &catalog); err != nil {
+		return false, err
+	}
+	for _, models := range catalog {
+		for _, entry := range models {
+			if entry.ID != model {
+				continue
+			}
+			level, ok := entry.ThinkingLevelMap[thinking]
+			return ok && level != nil, nil
+		}
+	}
+	return false, nil
 }
