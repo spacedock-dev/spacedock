@@ -229,7 +229,7 @@ func TestPiDefaultExtensionRootsReadsRealInstalledLocation(t *testing.T) {
 	writePiPackageRoot(t, sub, "pi-subagents")
 	writePiPackageRoot(t, ic, "pi-intercom")
 	writeFile(t, filepath.Join(agentDir, "settings.json"),
-		`{"packages":["npm:pi-subagents@0.75.0","npm:pi-intercom"]}`+"\n")
+		`{"packages":["npm:pi-subagents@0.0.0-synthetic","npm:pi-intercom"]}`+"\n")
 
 	roots := piDefaultExtensionRoots(t, agentDir)
 	if roots.subagents != sub {

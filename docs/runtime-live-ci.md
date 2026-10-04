@@ -87,11 +87,12 @@ SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^Tes
 
 Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI_API_KEY` is set, the harness copies `~/.codex/auth.json` into an isolated `CODEX_HOME`; if the variable is already set, run `unset SPACEDOCK_CODEX_LIVE_REQUIRED` first.
 
-Run the Pi live proofs locally with the same package versions pinned in CI:
+Run the Pi live proofs locally with the pinned Pi family. The version list lives
+in exactly one place (`internal/pilive`); print the exact install commands from
+the helper, then install:
 
 ```bash
-npm install -g @earendil-works/pi-coding-agent@1.0.0
-npm install --prefix "$HOME/.pi/agent/npm" pi-subagents@0.75.0 pi-intercom@0.16.0
+eval "$(go run ./cmd/spacedock-pilive print-install)"
 export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
 export PI_INTERCOM_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-intercom"
 ```

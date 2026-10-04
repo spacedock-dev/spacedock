@@ -15,6 +15,7 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"github.com/spacedock-dev/spacedock/internal/pilive"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
@@ -38,8 +39,9 @@ const piLaunchTasklessEnv = "PI_SPACEDOCK_LAUNCH_TASKLESS"
 // piVersionFloor is the declared floor for the load-bearing pi behaviors the
 // FO bootstrap mechanism rests on (context-hook injection; <available_skills>
 // with absolute per-skill locations; /skill: user-input-only expansion).
-// Enforced from the binary's `pi --version` only — never package paths.
-const piVersionFloor = "0.83.0"
+// Enforced from the binary's `pi --version` only — never package paths. The
+// value is the single pi-live source of truth (internal/pilive), not a copy.
+const piVersionFloor = pilive.PiCodingAgentFloor
 
 // piSkillRoutesPerPackage is the number of skill-registration routes each
 // registered package contributes: the manifest's `pi.skills` scan AND the

@@ -94,7 +94,7 @@ func assertPiLiveSmokeResult(t *testing.T, stateRoot, entityPath, artifactDir st
 	// The stage report structure (heading + DONE + Summary) plus the durable
 	// git commit below prove the spawned worker ran the ensign smoke. The exact
 	// piLiveSmokeMarker sentinel is intentionally NOT required: pi-subagents
-	// 0.53.0+ and model variance mean the worker reliably writes the structural
+	// releases and model variance mean the worker reliably writes the structural
 	// report but does not always embed the literal sentinel the dispatch asks
 	// for. The commit message check is the durable proof of work.
 	for _, want := range []string{"## Stage Report: implementation", "- DONE:", "### Summary"} {
@@ -255,10 +255,10 @@ func seedPiLiveAuth(t *testing.T, piHome, realHome, oauthJSON, openAIAPIKey, req
 
 // writePiSubagentsProjectArtifactDir opts the live test fixture into the
 // "project" artifact dir so spawned-worker meta artifacts land in
-// workflowRoot/.pi/subagents/artifacts/ (pi-subagents 0.53.0's
+// workflowRoot/.pi/subagents/artifacts/ (pi-subagents's
 // PROJECT_SUBAGENTS_RELATIVE_DIR is ".pi/subagents", not ".pi-subagents"),
-// where the FrontDoorSmoke grader globs for them. pi-subagents 0.53.0
-// (#1062) flipped the default to "session" to keep worktrees clean; the live
+// where the FrontDoorSmoke grader globs for them. A later pi-subagents
+// change (#1062) flipped the default to "session" to keep worktrees clean; the live
 // tests need a stable, inspectable location.
 func writePiSubagentsProjectArtifactDir(t *testing.T, piHome string) {
 	t.Helper()
@@ -354,7 +354,7 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 		t.Fatalf("spawn skills %v do not include the artifact's skill %q", meta.Skills, envelope.Skill)
 	}
 	if !strings.Contains(meta.Task, envelope.DispatchFile) {
-		// pi-subagents 0.53.0+ redacts the task in the meta artifact
+		// pi-subagents redacts the task in the meta artifact
 		// ("[prompt redacted]", live Prompt Audit #1021), so the dispatch-file
 		// pointer is no longer recoverable from meta.Task. Verify it instead from
 		// the parent FO transcript: the subagent toolCall's task argument is the
@@ -403,7 +403,7 @@ func assertPiEnsignBootContract(t *testing.T, workflowRoot string, envelope piSm
 	// used: the parent FO records subagent (and intercom when the smoke asks it
 	// to exercise both extension tools), the child records its own calls.
 	tools := recordedPiToolInventory(t, rootSession, meta.TranscriptPath)
-	// pi-subagents 0.53.0+ redacts meta.Task ("[prompt redacted]"), so the
+	// pi-subagents redacts meta.Task ("[prompt redacted]"), so the
 	// dispatch-file pointer is recovered from the parent transcript's spawn
 	// toolCall, not meta.Task. Reuse the parent-transcript check above.
 	dispatchForwarded := false
@@ -500,7 +500,7 @@ func piTranscriptReadPaths(t *testing.T, transcriptPath string) []string {
 }
 
 // piTranscriptSubagentTasks extracts the unredacted task arguments from every
-// subagent spawn toolCall in a parent FO transcript. pi-subagents 0.53.0+
+// subagent spawn toolCall in a parent FO transcript. pi-subagents
 // redacts the task in the worker meta artifact ("[prompt redacted]", live
 // Prompt Audit #1021), so the dispatch-file pointer the FO forwarded is
 // recoverable only from the parent's spawn toolCall, not from meta.Task.

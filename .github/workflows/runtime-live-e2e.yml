@@ -599,194 +599,33 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Build spacedock binary
+        run: |
+          go build -o ./spacedock ./cmd/spacedock
+          go build -o ./spacedock-pilive ./cmd/spacedock-pilive
+          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
+          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "$(pwd)" >> "$GITHUB_PATH"
+
       - name: Install Pi CLI and substrates
         run: |
           set -euo pipefail
 
-          npm --version
-          node --version
-
-          # Compatibility pins: Pi 1.0 family — pi-coding-agent 1.0.0,
-          # pi-subagents 0.75.0, and pi-intercom 0.16.0. This is distinct from
-          # the unchanged spacedock ready-gate floor (s98): pi >= 0.83.0.
-          # Keep these exact pins together; do not let npm's engine-aware resolver
-          # mix a sub-floor pi-coding-agent with newer substrates.
-          PI_CODING_AGENT_VERSION="1.0.0"
-          PI_CODING_AGENT_INTEGRITY="sha512-/FtbxoSQU/mEv1QnichJjRjqteqaIaMWxmhB4G367+MwZfX7/DI5B9YAg5lqbN7nztFskBEtUSZ+FlmMBECtMw=="
-          PI_SUBAGENTS_VERSION="0.75.0"
-          PI_SUBAGENTS_INTEGRITY="sha512-RO4DiTJM6pnK8y9PnD7Y6TLeiX2c8Kh6QhmkecFo+ou5qtnz5qiM+vUKru48UmJG1nB9eJ6rALd1M04uBOR4XQ=="
-          PI_INTERCOM_VERSION="0.16.0"
-          PI_INTERCOM_INTEGRITY="sha512-ClGQuovPsz7r1iQwMRjEN+8wxywfrDrMILAkCSf/z19Nezzyfz77U8362Wb/VFNoZOwmF4PBsuGWCtB9AsEJMQ=="
-
-          pack_dir="$RUNNER_TEMP/pi-live-npm-packs"
-          mkdir -p "$pack_dir"
-          verified_pack() {
-            local spec="$1"
-            local expected_integrity="$2"
-            local pack_json actual_integrity filename
-            pack_json="$(npm pack "$spec" --pack-destination "$pack_dir" --ignore-scripts --json)"
-            actual_integrity="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.integrity)")"
-            filename="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.filename)")"
-            if [ "$actual_integrity" != "$expected_integrity" ]; then
-              echo "integrity mismatch for $spec: expected $expected_integrity got $actual_integrity" >&2
-              exit 1
-            fi
-            printf '%s/%s\n' "$pack_dir" "$filename"
-          }
-
-          pi_coding_agent_tgz="$(verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY")"
-          pi_subagents_tgz="$(verified_pack "pi-subagents@$PI_SUBAGENTS_VERSION" "$PI_SUBAGENTS_INTEGRITY")"
-          pi_intercom_tgz="$(verified_pack "pi-intercom@$PI_INTERCOM_VERSION" "$PI_INTERCOM_INTEGRITY")"
-
-          npm install -g "$pi_coding_agent_tgz" --ignore-scripts --no-audit --no-fund --omit=dev
-          command -v pi
-          test -x "$(command -v pi)"
+          # The pinned Pi family, its sha512 integrity, and the readiness floors
+          # live in exactly one place (internal/pilive); this step only invokes
+          # the helper. Do NOT export either package-root override here: the live
+          # smoke must exercise Pi's own discovery with both variables absent.
+          spacedock-pilive install
           pi --version
-          global_npm_root="$(npm root -g)"
-          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (p.version !== '$PI_CODING_AGENT_VERSION') throw new Error('unexpected Pi version '+p.version); if (!p.bin || !p.bin.pi) throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
-
-          pi_npm_root="$HOME/.pi/agent/npm"
-          mkdir -p "$pi_npm_root"
-          npm install --prefix "$pi_npm_root" \
-            "$pi_subagents_tgz" \
-            "$pi_intercom_tgz" \
-            --ignore-scripts --no-audit --no-fund --omit=dev
-          node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); if (p.version !== '$PI_SUBAGENTS_VERSION') throw new Error('unexpected pi-subagents version '+p.version); console.log('verified '+p.name+'@'+p.version)"
-          node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); if (p.version !== '$PI_INTERCOM_VERSION') throw new Error('unexpected pi-intercom version '+p.version); console.log('verified '+p.name+'@'+p.version)"
-          node - "$pi_npm_root/node_modules/pi-subagents" <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const root = process.argv[2];
-          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-          const extensions = manifest.pi?.extensions;
-          if (!Array.isArray(extensions) || extensions.length === 0) throw new Error('missing pi.extensions');
-          const bridge = manifest.exports?.['./intercom-bridge']?.default;
-          if (typeof bridge !== 'string' || !bridge) throw new Error('missing intercom-bridge runtime export');
-          for (const entry of [...extensions, bridge]) {
-            if (typeof entry !== 'string' || !entry) throw new Error('invalid runtime entry');
-            const target = path.resolve(root, entry);
-            if (!fs.statSync(target).isFile()) throw new Error('not a runtime file: ' + target);
-            console.log('verified runtime file ' + target);
-          }
-          NODE
-          test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
-          test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
-
-          # Register both substrate packages in the real agent directory's
-          # settings.json so Pi's own package discovery loads them. The root
-          # symlinks above are not enough: settings registration is what makes
-          # the resources visible (see the retained negative control).
-          # Create-or-merge: preserve any existing packages and unrelated keys.
-          settings_path="$HOME/.pi/agent/settings.json"
-          node - "$settings_path" <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const settingsPath = process.argv[2];
-          let settings = {};
-          try {
-            settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-          } catch (error) {
-            if (error.code !== 'ENOENT') throw error;
-          }
-          const packages = Array.isArray(settings.packages) ? settings.packages.filter((entry) => typeof entry === 'string') : [];
-          for (const source of ['npm:pi-subagents', 'npm:pi-intercom']) {
-            if (!packages.includes(source)) packages.push(source);
-          }
-          settings.packages = packages;
-          fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
-          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
-          console.log('registered ' + packages.join(', ') + ' in ' + settingsPath);
-          NODE
-          # Do NOT export PI_SUBAGENTS_PACKAGE_ROOT / PI_INTERCOM_PACKAGE_ROOT here:
-          # the live smoke must exercise Pi's own package discovery with both
-          # variables absent. The explicit-override path is exercised locally in
-          # the current-checkout setup step below.
 
       - name: Guard Pi substrate compatibility
         run: |
           set -euo pipefail
 
-          global_npm_root="$(npm root -g)"
-          pi_npm_root="$HOME/.pi/agent/npm"
-          GLOBAL_NPM_ROOT="$global_npm_root" \
-          PI_AGENT_ROOT="$global_npm_root/@earendil-works/pi-coding-agent" \
-          PI_SUBAGENTS_ROOT="$pi_npm_root/node_modules/pi-subagents" \
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const { pathToFileURL } = require('url');
-
-          function readPackage(root) {
-            return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-          }
-          function fail(message) {
-            console.error(`Pi substrate compatibility guard failed: ${message}`);
-            process.exit(1);
-          }
-
-          const nodeVersion = process.versions.node.split('.').map(Number);
-          if (nodeVersion[0] < 22 || (nodeVersion[0] === 22 && nodeVersion[1] < 19)) {
-            fail(`Node ${process.versions.node} does not satisfy pi-coding-agent's >=22.19.0 engine requirement`);
-          }
-
-          const agentRoot = process.env.PI_AGENT_ROOT;
-          const subagentsRoot = process.env.PI_SUBAGENTS_ROOT;
-          const agentPackage = readPackage(agentRoot);
-          const subagentsPackage = readPackage(subagentsRoot);
-          // Floor checks, not equality: the pins move together (see the install
-          // step), but the guard's job is to catch a sub-floor or mismatched
-          // runtime, not to mirror a version literal. pi >= 0.83.0 is the
-          // spacedock ready-gate floor (s98).
-          function versionAtLeast(version, floor) {
-            const parse = (v) => v.replace(/^v/, '').split('-')[0].split('.').map(Number);
-            const v = parse(version), f = parse(floor);
-            for (let i = 0; i < 3; i++) {
-              if ((v[i] || 0) > (f[i] || 0)) return true;
-              if ((v[i] || 0) < (f[i] || 0)) return false;
-            }
-            return true;
-          }
-          if (!versionAtLeast(agentPackage.version, '0.83.0')) {
-            fail(`@earendil-works/pi-coding-agent ${agentPackage.version} is below the spacedock ready-gate floor 0.83.0`);
-          }
-          if (!versionAtLeast(subagentsPackage.version, '0.53.0')) {
-            fail(`pi-subagents ${subagentsPackage.version} is below the last verified pairing (0.53.0)`);
-          }
-
-          // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
-          // to the global root); check the nested copy pi actually loads first, then the
-          // top-level global root. The /compat export is ESM-only (import condition), so
-          // probe it with a dynamic import, never require.resolve.
-          const piAICandidates = [
-            path.join(agentRoot, 'node_modules', '@earendil-works', 'pi-ai'),
-            path.join(process.env.GLOBAL_NPM_ROOT, '@earendil-works/pi-ai'),
-          ];
-          const piAIRoot = piAICandidates.find((candidate) => fs.existsSync(path.join(candidate, 'package.json')));
-          if (!piAIRoot) {
-            fail(`cannot locate @earendil-works/pi-ai under pi-coding-agent ${agentPackage.version} (checked ${piAICandidates.join(', ')})`);
-          }
-          const piAIPackage = readPackage(piAIRoot);
-          const compatExport = piAIPackage.exports && piAIPackage.exports['./compat'] && piAIPackage.exports['./compat'].import;
-          if (!compatExport) {
-            fail(`pi-subagents ${subagentsPackage.version} requires @earendil-works/pi-ai/compat, but @earendil-works/pi-ai ${piAIPackage.version} from pi-coding-agent ${agentPackage.version} does not declare that export`);
-          }
-          const compatPath = path.join(piAIRoot, compatExport);
-          if (!fs.existsSync(compatPath)) {
-            fail(`@earendil-works/pi-ai/compat resolves to missing file ${compatPath}`);
-          }
-          import(pathToFileURL(compatPath).href).then(() => {
-            console.log(`verified pi-subagents ${subagentsPackage.version} is paired with @earendil-works/pi-ai ${piAIPackage.version}: ${compatPath}`);
-          }).catch((error) => {
-            fail(`@earendil-works/pi-ai/compat exists but failed to load: ${error.message}`);
-          });
-          NODE
-
-      - name: Build spacedock binary
-        run: |
-          go build -o ./spacedock ./cmd/spacedock
-          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
-          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
-          echo "$(pwd)" >> "$GITHUB_PATH"
+          # Node engine floor, the pi-coding-agent and pi-subagents floors, and
+          # the @earendil-works/pi-ai/compat resolution+load all live in the
+          # helper, never as inline JavaScript in this workflow.
+          spacedock-pilive guard
 
       - name: Install gotestsum
         run: bash .github/scripts/install-gotestsum.sh
@@ -809,22 +648,7 @@ jobs:
           spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE" | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/pi-doctor.txt"
           test -f "$GITHUB_WORKSPACE/skills/first-officer/references/pi-first-officer-runtime.md"
           test -f "$GITHUB_WORKSPACE/skills/ensign/references/pi-ensign-runtime.md"
-          node - "$PI_SUBAGENTS_PACKAGE_ROOT" <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const root = process.argv[2];
-          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-          const extensions = manifest.pi?.extensions;
-          if (!Array.isArray(extensions) || extensions.length === 0) throw new Error('missing pi.extensions');
-          const bridge = manifest.exports?.['./intercom-bridge']?.default;
-          if (typeof bridge !== 'string' || !bridge) throw new Error('missing intercom-bridge runtime export');
-          for (const entry of [...extensions, bridge]) {
-            if (typeof entry !== 'string' || !entry) throw new Error('invalid runtime entry');
-            const target = path.resolve(root, entry);
-            if (!fs.statSync(target).isFile()) throw new Error('not a runtime file: ' + target);
-            console.log('verified runtime file ' + target);
-          }
-          NODE
+          spacedock-pilive verify-manifest "$PI_SUBAGENTS_PACKAGE_ROOT"
           test -f "$PI_SUBAGENTS_PACKAGE_ROOT/skills/pi-subagents/SKILL.md"
           test -f "$PI_INTERCOM_PACKAGE_ROOT/skills/pi-intercom/SKILL.md"
 
@@ -844,7 +668,7 @@ jobs:
 
       - name: Run live Pi common journeys
         env:
-          # pi-subagents 0.53.0+ async dispatch: the rejection-flow journey
+          # Recent pi-subagents async dispatch: the rejection-flow journey
           # (four sequential dispatches: implementation -> validation REJECT
           # -> rework -> validation PASS -> gate prepare) reaches its stop at
           # ~25m. The default 12m per-journey cap fires before the stop, so the
