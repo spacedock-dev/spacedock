@@ -484,3 +484,24 @@ Captain-ordered simplification round against `dab89d50d`. Code commit `1dc6b7534
 ### Summary
 
 One data file (`internal/release/live_models.txt`) is now the single place for the five lane model ids. The Go constants, typed `LiveLaneModel` list, `LiveModel()` lookup, and the `spacedock live-models` command are gone; Go embeds and parses the file into `release.LiveModels`, and the live workflow reads the same file directly with bash builtins, so it carries no model literal and calls no command. Deleted `internal/cli/live_models.go` and `internal/cli/live_models_test.go`; `internal/cli/cli.go` and `internal/release/livemodels.go` were reduced in place. Increment against main: 10 files, +134/-47, net +87. The five ids are unchanged. Focused checks pass; only the two known ambient CLI failures remain.
+
+## Stage Report: implementation (rebase onto pi-live lane layer)
+
+FO-directed rebase of `spacedock-ensign/pin-lane-models-in-one-place` from its pre-train base `4436ec14c` onto `origin/spacedock-ensign/pi-live-lane-pin-refresh` at `5ead9b85c`. No product/architecture decision; no pinned value or workflow behaviour changed.
+
+- DONE: Rebase this branch onto the pi-live lane layer at 5ead9b85c (spacedock-ensign/pi-live-lane-pin-refresh). Keep this task's own change intact. Do not take the base side wholesale, and do not drop this task's commits.
+  `git rebase 5ead9b85c` replayed all 7 own commits (`fbb6cc8df..1dc6b7534`) onto the target tip; new tip `28caa26d983cce2a622dade319cb59dfa9d537bb`. `git merge-base --is-ancestor 5ead9b85c HEAD` = true, so this layer now sits above the pi-live layer. `git range-diff 4436ec14c..<old-tip> 5ead9b85c..HEAD` marks all 7 commits `=`, so no own commit was dropped or altered.
+- SKIPPED: Resolve conflicts in internal/ensigncycle/shared_live_runner_test.go.
+  No conflict occurred. The lines this branch edits (the `claudeLiveRole` switch and the import block) are byte-identical in the target `5ead9b85c` and the old base `4436ec14c`; the target's own 35-line edit to that file is in a disjoint hunk, so `git rebase` applied this branch's change as a clean 3-way merge. There were two sides to compare only trivially (same base text); resolution = keep this branch's change, which is exactly what the merge produced.
+- SKIPPED: Resolve conflicts in skills/first-officer/references/fo-install.md where this branch touches it.
+  This branch does not touch `fo-install.md` (`git diff --name-only 4436ec14c..HEAD` does not list it), so nothing conflicted. After the rebase `git diff 5ead9b85c..HEAD -- skills/first-officer/references/fo-install.md` is empty; the file equals the target's version.
+- DONE: Run this task's focused tests after the rebase. Do not run the repository-wide suite and do not start a CI run.
+  `go build ./...` OK; `go test ./internal/release -count=1` ok 15.5s; `go test ./internal/claudeteam -count=1` ok 0.294s; `go test ./internal/ensigncycle -count=1` ok 147.6s. No `go test ./...` and no CI lane were run.
+- DONE: Report the new tip commit, the files that conflicted, and the evidence for each resolution.
+  New tip `28caa26d9`; conflicted files = none. `git status` clean; `git diff --check 5ead9b85c..HEAD` clean; `gofmt -l` clean on every changed Go file (the single unformatted file, internal/release/runtime_live_evidence_workflow_test.go, is pre-existing on the target and untouched by this branch). This branch's diff against the target is the same 10 files / +134/-47 as before the rebase.
+- DONE: Confirm the accepted shape survived the rebase - one data file read by Go through go:embed and by the workflow with shell builtins.
+  Intact and untouched by the rebase: `internal/release/live_models.txt` holds the five `key=id` lines; `internal/release/livemodels.go` is only `//go:embed live_models.txt` plus `parseLiveModels` and `var LiveModels`; the workflow's `Resolve live lane models` step reads the same file with bash builtins (`while IFS='=' read`, `${key//[.-]/_}`) and the workflow carries no model literal and calls no `live-models` command. No Go package or command was reintroduced for the pins.
+
+### Summary
+
+Rebased this branch onto the pi-live lane layer at `5ead9b85c`; the 7 own commits replayed cleanly and identically, so the layer now sits above the pi-live tip with the lane-model change intact. Contrary to the dispatch's expectation, neither `internal/ensigncycle/shared_live_runner_test.go` nor `skills/first-officer/references/fo-install.md` conflicted - the overlapping hunks were disjoint, reported above with evidence. Focused package tests pass; no repository-wide suite or CI run.
