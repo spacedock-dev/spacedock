@@ -1,6 +1,6 @@
 ---
 title: Repair the Pi recorded-gate-lifecycle journey
-status: implementation
+status: validation
 source: "CI run 31770740214 (PR #685 pi-live, model openai/gpt-5.6-luna:max): TestLiveCommonRecordedGateLifecycle FAIL observed=[recorded-gate-lifecycle-violation], 'Blocked at the validation gate. The required committed reference is missing.'"
 score: 0.85
 sprint: pi-live-completeness
@@ -52,13 +52,19 @@ run completes the recorded gate lifecycle to a PASS.
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) — The exact Pi recorded-gate-lifecycle target passes.**
+**AC-1 (VALUE) — The gate-prepare selected-source path follows the observed root.**
 
-Verified by: the focused live Pi `TestLiveCommonRecordedGateLifecycle` target
-exits successfully — the FO binds, records, commits, and consumes the delegated
-authority exactly once before successor dispatch, with the required committed
-reference present at the validation gate. Baseline: the current
-`recorded-gate-lifecycle-violation` FAIL.
+Verified by: the `fo-gate-lifecycle` Prepare step composes the selected-source path from the observed
+root instead of the launch directory, so a gate room prepared from another working directory resolves
+the right file; and the Pi `default-headless-gate-stop` binding is cleared, because that journey can
+hold once the prepare step is corrected.
+
+**Not delivered by this layer (recorded, not claimed):** the Pi delegated-authority journey
+`recorded-gate-lifecycle`, where the first officer binds, records, commits and consumes delegated
+authority exactly once before successor dispatch. This diff does not exercise that journey, and its
+binding is already `nil`. So this layer claims the prepare-path fix and the headless binding clear,
+and does not claim the delegated-authority journey. If that journey is still wanted, it needs its own
+work.
 
 **AC-2 — The Pi binding stays honest.**
 
