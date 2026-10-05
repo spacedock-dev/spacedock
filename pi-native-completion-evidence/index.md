@@ -9,7 +9,7 @@ score: 0.95
 worktree: .worktrees/spacedock-ensign-pi-native-completion-evidence
 issue:
 pr: "#806"
-mod-block: merge:pr-merge
+mod-block:
 id: cpx5q07b7wqmd6xv6wc7khvd
 gates:
     version: 1
