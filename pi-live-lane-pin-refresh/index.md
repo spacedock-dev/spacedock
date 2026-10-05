@@ -1232,3 +1232,70 @@ updated the two normative docs and left the ten point-in-time roadmap/review
 references intact per the supervisor. All 17 journey markers and live tests are
 untouched. Code branch pushed fast-forward to `515344ddd`; focused contractlint
 tests, build, vet, and gofmt pass.
+
+## Stage Report: validation (final-tip round at `e80f3463c`)
+
+Validation of the final tip `e80f3463c` against this entity's acceptance criteria
+(AC-1..AC-10, as amended on 2026-10-04). Criteria were read from this entity, not from
+the dispatch brief. No repository-wide suite, race suite, or CI run was started, per the
+FO budget. Any criterion whose proof needs a live lane is reported **pending, not met**:
+the run that counts is a run at this tip, and none exists yet (the `7ac7bb69b` run passed
+its `offline` job but its tip was superseded before this one).
+
+- DONE: The Pi readiness floor is `1.0.0`, no comment carries a version string, and the other two floors are untouched.
+  `internal/pilive/pilive.go:32` reads `PiCodingAgentFloor = "1.0.0"`; `NodeEngineFloor = "22.19.0"` (line 31) and `PiSubagentsFloor = "0.53.0"` (line 33) are byte-identical to before; the const-block comment names only a date, no `x.y.z`; `grep -rnE '//.*[0-9]+\.[0-9]+\.[0-9]+' internal/pilive internal/cli cmd/spacedock-release` returns only unrelated codex/plugin comments.
+- DONE: The rescued checks in `internal/contractlint/runtime_live_lane_test.go` run without any environment variable, as requested rather than assumed.
+  `env -i PATH=… HOME=… go test ./internal/contractlint -run 'TestRuntimeLive(CommonSuiteTimeouts|CommonFailFastPolicy|GapBindingValidation)$' -count=1 -v` → `TestRuntimeLiveCommonSuiteTimeouts` PASS, `TestRuntimeLiveCommonFailFastPolicy` PASS, `TestRuntimeLiveGapBindingValidation` PASS. None reads `SPACEDOCK_LIVE_STATE_DIR` or any other env var; they read only repo files (workflow, `docs/runtime-live-ci.md`) and an in-test parsed AST expression.
+- DONE: No journey declaration or live test was lost in the deletions; the `spacedock:live-journey` marker count is unchanged, as requested rather than assumed.
+  `git grep -h 'spacedock:live-journey' 7ac7bb69b -- '*.go' | wc -l` = 17 and at HEAD = 17; `git grep -h '^func TestLive'` = 45 at both with zero name-for-name diff. The three deleted tests (`TestRetainedAtomicWorkerJourney`, `TestClassifierPrecisionRecallOnLiveCorpus`+`liveStateRoot`, and the Pi double-dispatch replay) carried no marker.
+- DONE: The journey-binding registry is refreshed as described: two stale Pi bindings dropped, one re-pointed to the owner whose fault the lane actually observes.
+  `internal/ensigncycle/shared_live_runner_test.go`: `smallest-sufficient-mechanism` → `nil`; `keep-moving-posture` → only `liveXFail("claude-sonnet", …)`; `default-headless-gate-stop` → `liveXFail("pi", "mk72bnt1b5hsp9sfv83979xs")` with its comment rewritten to the observed `implementation-worker-not-dispatched` worker-lifecycle fault (commit `f37bda151`).
+- DONE: The redundant live-registry machinery is deleted, with the three unrelated checks rescued.
+  `docs/runtime-live-ci-registry.md` and `internal/contractlint/live_registry_reconciliation_test.go` are absent; `internal/contractlint/runtime_live_lane_test.go` exists with the three checks; the only remaining references to the deleted test names are the ten historical roadmap/review records (intentionally kept).
+- DONE: The three unreachable tests are deleted, the codex-live step and its `liveClaims` registration are added, and the false audit comment is removed.
+  Commits `c6be2d67c` (double-dispatch replay), `2515a8454` (`TestRetainedAtomicWorkerJourney` + live state-corpus check), `e80f3463c` (`liveClaims` entry `{"Run live Codex multi-agent lifecycle", "TestCodexIsolatedHomeCollaborationLifecycle", "codex-isolated-home-collaboration-lifecycle"}`), `3fed0a16e` (the `can never XPASS` AUDIT note above `smallest-sufficient-mechanism`). `TestCodexIsolatedHomeCollaborationLifecycle` exists at `internal/cli/codex_multi_agent_test.go:99`; the step sets `SPACEDOCK_LIVE_CODEX_MULTI_AGENT=1`.
+- DONE: AC-1 code half — the declared pins equal the installed family and `print-install` emits them.
+  `internal/pilive/pilive.go` declares `@earendil-works/pi-coding-agent@1.0.2`, `pi-subagents@0.75.0`, `pi-intercom@0.16.0`; `go run ./cmd/spacedock-release print-install` prints exactly those two install commands; `go test ./internal/pilive/... ./cmd/spacedock-release/... -count=1` PASS.
+- SKIPPED: AC-1 lane half — a green pi-live run at this tip.
+  No run exists at `e80f3463c`; the `7ac7bb69b` offline-pass run was superseded. Amended AC-1's lane proof (installed-version logs, doctor output, journey/smoke grades) is **pending, not met**.
+- DONE: AC-2 code half — both checkpoints resolve the installed manifest's declared runtime artifacts, and the tests pass.
+  `verifyManifest` requires a nonempty `pi.extensions` whose every entry resolves to a regular file and `exports["./intercom-bridge"].default`; the workflow calls `spacedock-release verify-manifest` at both checkpoints and neither old `.ts` source path remains; `go test ./internal/pilive/... -count=1` PASS.
+- SKIPPED: AC-2 lane half ("the live lane's green run at the frozen tip") — pending, no tip run.
+- DONE: AC-3 code half — integrity pins are verified before installation.
+  `pack` rejects any `npm pack --json` entry whose integrity differs from the pin before either tarball install; `TestPackRejectsIntegrityMismatch` passes under `go test ./internal/pilive/...`.
+- SKIPPED: AC-3 lane half ("the live lane's install of the pinned tarballs") — pending, no tip run.
+- DONE: AC-4 — one pin source, and the local-install documentation agrees with it.
+  The three versions are declared once in `internal/pilive/pilive.go`; `docs/runtime-live-ci.md:68` is `eval "$(go run ./cmd/spacedock-release print-install)"` and names no version; `print-install` output matches the declarations exactly.
+- DONE: AC-5 deterministic half — release tests, build, and the protected-boundary diff audit pass.
+  `go test ./internal/release/... -count=1` PASS; `go build ./...` exit 0; against `origin/main` the workflow diff changes only the `pi-live` job body and adds the `codex-live` step, with no `uses:`/action-major change and no live-selector text change (`git diff origin/main...HEAD -- .github/workflows/runtime-live-e2e.yml | grep -E '^[+-].*(uses:|TestLive|SPACEDOCK_LIVE_RUNTIME)'` is empty); the `0.83.0`→`1.0.0` floor raise is the captain's authorized change.
+- SKIPPED: AC-5 repository-wide `go test ./...` and `go test ./... -race` clauses.
+  Explicit FO budget prohibition; no prohibited command was run, so those clauses are not evidenced here.
+- SKIPPED: AC-6 — the authorized `TestLivePiFrontDoorSmoke` with both package-root variables unset.
+  Not run (live model/auth, outside the bounded budget and with no tip run available). AC-6's value proof is **pending, not met**. Its deterministic preconditions pass: `go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIsolatedHome|TestPiLiveEnv|TestPiIntercomPackageRoot' -count=1` PASS, and the workflow no longer exports either override (lines 651-652 set them shell-locally in the deliberate current-checkout step only).
+- DONE: AC-7 — discovery reads the real installed location (deterministic half).
+  `TestPiDefaultExtensionRootsReadsRealInstalledLocation` and `TestPiIsolatedHomeRegistersBothSubstratesAndAbsoluteSpacedock` (with `TestPiIsolatedHomeNegativeControlDropsSubstrateRegistrations`) pass in the focused ensigncycle run above. Caveat unchanged: the dedicated local-source-by-name test was cut in cycle 8, and these are same-change tests.
+- DONE: AC-8 — each explicit override wins independently and default mode scrubs both variables.
+  `TestPiLiveEnvHonorsIndependentOverrides`, `TestPiLiveEnvDefaultScrubsPackageRoots`, and the retained `TestPiLiveEnvDropsForeignRuntimeMarkers` pass in the focused ensigncycle run.
+- DONE: AC-9 non-live half — the helper seam carries no live constraint, and live-tagged vet/build plus gofmt pass.
+  `internal/ensigncycle/pi_default_extensions_test.go` has no `//go:build`; `go vet -tags live ./internal/ensigncycle` exit 0; `go build -tags live ./internal/ensigncycle` exit 0; `gofmt -l` on the changed Go files is empty.
+- SKIPPED: AC-9 smoke half — the authorized front-door smoke with both variables unset and its durable report/commit evidence.
+- DONE: AC-10 (a) — the reset-on-activity decision is tested without racing real sleeps.
+  `TestCodexProcessActivityResetsQuietBudget` owns both `w.now` and `w.sleep` (a fake clock advanced one poll per injected sleep) and injects activity through a fake line source, with no real-time-window or `duration` assertion; the `stall` kill-path sibling `TestCodexProcessQuietTimeoutPreservesFaultEvidence` is retained. `go test ./internal/ensigncycle -run 'TestCodexProcessActivityResetsQuietBudget|TestCodexProcessQuietTimeoutPreservesFaultEvidence' -count=1` PASS.
+- DONE: AC-10 (b) — the three host-dependent tests build their own isolated home instead of reading the operator's machine.
+  `go test ./internal/cli -run 'TestCodexResolveManifestAgainstInstalledHost|TestVersionAmbiguousMarkersExitZero' -count=1` PASS; `go test ./skills/integration -run TestSurveyCodexPresenceThroughSync -count=1` PASS.
+- DONE: The code worktree is clean and nothing is staged.
+  `git status --porcelain` is empty in `.worktrees/spacedock-ensign-pi-live-lane-pin-refresh`; `git diff --check origin/main...HEAD` is clean.
+
+### Summary
+
+Both requested spot-checks pass: the three rescued checks run with a scrubbed environment,
+and the journey-marker count is unchanged at 17 (with all 45 `TestLive*` functions intact).
+The new changes since the last approved candidate are all present at `e80f3463c`: floor
+`1.0.0` with no version in any comment, the two stale Pi bindings dropped and the gate-stop
+binding re-pointed, the registry machinery deleted with three checks rescued, the three
+unreachable tests deleted, the codex-live step plus its `liveClaims` registration, and the
+false audit comment removed. Deterministic halves of AC-1..AC-5 and AC-7..AC-10 pass under
+bounded focused runs. AC-1/2/3's lane halves and AC-6/AC-9's live-smoke halves are **pending
+on a run at this tip** and are not claimed met. Recommendation: hold acceptance for the tip's
+live-lane run rather than change the mechanism; the entity is otherwise consistent at this
+tip.
