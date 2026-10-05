@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-2:revision-1",
+  "question": "Do you accept the validation of this layer, pi-live-lane-pin-refresh? This approves the validation only; it approves no merge, and no merge runs when it is approved.",
+  "artifacts": [
+    {
+      "id": "artifact:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-2:revision-1:item-1",
+      "uri": "git-root://state/3e77ef0fa5c33d6a6729ef7928ff240ca387c116/pi-live-lane-pin-refresh-validation-review.md",
+      "rev": "sha256:ad9b039c4ab5b23dbf9e5f66e82cc6aadf98018365378d8670285245d2efe032",
+      "mediaType": "text/markdown",
+      "summary": "Validated after a captain-approved criteria amendment: lane run 37189752489 green at 5a2ad16e9 with 17 journeys plus smoke, race 21/21 uncached, five engaged bindings and two stale bindings recorded. Four criteria amended to the shipped mechanism, each lost guarantee recorded."
+    }
+  ]
+}

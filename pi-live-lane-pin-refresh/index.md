@@ -59,6 +59,15 @@ gates:
                 id: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-1:revision-1
                 digest: sha256:d8ff7c2b4faf19191eff5360afd23d248d7bcd5c2742a21a41df0c57e697fd34
                 room-ref: '@review/validation/briefing-1'
+              withdrawal:
+                by: agent:first-officer
+                at: "2026-10-05T01:43:58.731238Z"
+                reason: The prepared question bundled the validation approval with three merge actions. Corrected to ask about the validation only.
+            - id: gate-attempt:mh698y3ht6ydmr6ethaw9hg9-validation-2
+              briefing:
+                id: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-2:revision-1
+                digest: sha256:0867dd2a8a0d09af5fc9f688dd6f919d0be239b4641b8ddeeac9dfb2519ad333
+                room-ref: '@review/validation/briefing-2'
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
