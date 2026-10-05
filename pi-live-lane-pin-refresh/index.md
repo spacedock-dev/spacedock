@@ -68,6 +68,16 @@ gates:
                 id: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-2:revision-1
                 digest: sha256:0867dd2a8a0d09af5fc9f688dd6f919d0be239b4641b8ddeeac9dfb2519ad333
                 room-ref: '@review/validation/briefing-2'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mh698y3ht6ydmr6ethaw9hg9:validation:2
+                briefing: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-2:revision-1
+                by: person:captain
+                at: "2026-10-05T02:32:10.426728Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
