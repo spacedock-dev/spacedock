@@ -256,7 +256,7 @@ standing check catches documentation that drifts from the pins.
 **AC-5 (no regression) — the bounded change preserves existing non-Pi behavior.**
 `go test ./internal/release/...`, `go test ./...`, `go test ./... -race`, and
 `go build ./...` pass; the reviewed diff leaves all other lanes' CLI pins/action
-majors, the Pi floor, and live selectors unchanged. Proof: existing release tests
+majors and every live selector unchanged, and raises the Pi readiness floor to the Pi 1.0 family by the captain's direction. Proof: existing release tests
 plus a candidate-versus-base diff audit of these boundaries. Named falsifying edit
 **downgrade-other-lane-checkout**: change claude-live's `actions/checkout@v5` to `@v4`;
 `TestNode24ActionsPinnedAtMinimum` and the boundary audit fail. Any unauthorized
