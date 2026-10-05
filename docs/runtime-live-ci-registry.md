@@ -28,8 +28,9 @@ recorded here.
   registered journey or runtime-specific proof is orphaned.
 - Runtime-specific proofs cover only behavior unique to one host substrate. They
   do not duplicate common workflow semantics.
-- A live test intentionally excluded from CI is not release evidence and must be
-  listed under **Non-gating live experiments** with a reason.
+- A live test intentionally excluded from CI is not release evidence. Register it
+  under **Non-gating live experiments** with an explicit, nonblank reason.
+  Every other live test must be selected by its routine runtime lane.
 
 ## Supported runtime targets
 
@@ -84,8 +85,7 @@ the host-specific outcome.
 
 ### Keep a live test outside CI
 
-An intentionally unselected live test belongs under **Non-gating live
-experiments**. Record why a negative result is useful data rather than a release
+Intentionally unselected live tests belong under **Non-gating live experiments**. Record why a negative result is useful data rather than a release
 failure. Otherwise promote it to a registered journey or runtime proof, move its
 deterministic coverage to the default suite, or delete it.
 
@@ -157,6 +157,20 @@ adds no journey or substrate assertion.
 - **Fixtures:**
   - `rejection/before-validation-1` — a candidate entering its first validation
     with a deliberate defect and a two-cycle correction path.
+
+### `same-stage-revision`
+
+- **Entry point:** `TestLiveCommonSameStageRevision`
+- **Required outcome:** A correction follows workflow-declared review and round
+  obligations, preserves frozen attempts, and selects the committed corrected
+  plan in a fresh open gate only after applicable obligations are met.
+- **Fixtures:**
+  - `rejection/self-feedback-plain` — no review or round requirement.
+  - `rejection/self-feedback-review-required` — missing required review evidence.
+  - `rejection/self-feedback-separate-review-required` — distinct correction and review stages with missing evidence.
+  - `rejection/self-feedback-round-required` — required canonical round without a prose projection.
+  - `rejection/self-feedback-round-missing` — required round with unavailable source log.
+  - `rejection/self-feedback-cycle-limit` — third rejection escalates without a fourth attempt.
 
 ### `feedback-3-cycle-escalation`
 

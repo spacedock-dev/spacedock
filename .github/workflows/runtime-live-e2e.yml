@@ -807,7 +807,7 @@ jobs:
             echo "live_parallel must be at least 1 (got \"$PI_LIVE_PARALLEL\")" >&2
             exit 1
           fi
-          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 50m -run '^TestLiveCommon' -failfast -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle
+          SPACEDOCK_LIVE_RUNTIME=pi gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 50m -run '^TestLiveCommon' -parallel "$PI_LIVE_PARALLEL" ./internal/ensigncycle
 
       - name: Run live Pi front-door smoke
         if: ${{ !cancelled() }}

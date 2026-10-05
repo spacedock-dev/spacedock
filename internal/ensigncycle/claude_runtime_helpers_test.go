@@ -7,12 +7,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/gates"
+	"github.com/spacedock-dev/spacedock/internal/gitsource"
 	statuspkg "github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -755,4 +758,277 @@ func gradeLive(xfail bool, errs ...error) liveGrade {
 		grade.status = "fail"
 	}
 	return grade
+}
+
+// A frozen, independently specified plan is the oracle; the worker must derive it
+// from the input, not from another generated report or the skill under test.
+const sameStagePlan = "KEEP message A; DELETE message B\n"
+
+//spacedock:live-fixture id=rejection/self-feedback-plain,rejection/self-feedback-review-required,rejection/self-feedback-separate-review-required,rejection/self-feedback-round-required,rejection/self-feedback-round-missing,rejection/self-feedback-cycle-limit
+func writeSameStageRevision(t *testing.T, root, variant string) string {
+	t.Helper()
+	fixture := writePreparedRecordedGateFixtureAt(t, root)
+	writeFile(t, fixture.entity, strings.Replace(strings.Replace(recordedGateEntity(), "Successor dispatch requires consumed approval.", "The selected plan matches the frozen input.", 1), "title:", "id: recorded-gate-task\ntitle:", 1))
+	readme := strings.Replace(recordedGateReadme(), "feedback-to: implementation", "feedback-to: validation", 1)
+	policy := "Correct selected/plan.md against selected/frozen-input.txt. The intended gate review source is selected/plan.md. Append and commit your own validation stage report. This workflow has no canonical correction round and no Feedback Cycles projection."
+	switch variant {
+	case "review-required", "separate-review-required":
+		policy += " Independent review is required after correction, by a different worker at this same validation stage. Its fresh verdict requires selected/reviewer-source.txt; that external evidence is unavailable and must never be fabricated. Record in the entity body which review source is missing and why review is held, commit that hold reason, and keep the gate held."
+	case "round-required", "round-missing":
+		policy = strings.Replace(policy, "no canonical correction round", "a canonical correction round validation/1 using inputs/briefing.json and inputs/briefing.review.jsonl", 1)
+		writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "candidate.txt"), rejectionCandidate)
+		writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "inputs", "briefing.json"), rejectionBriefing())
+		if variant == "round-missing" {
+			policy += " The required reviewer log is unavailable and cannot be authored by the correction worker or first officer."
+		}
+		if variant == "round-required" {
+			writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "inputs", "briefing.review.jsonl"), rejectionCompleteLog())
+		}
+	case "cycle-limit":
+		policy += " This is correction cycle 3. Record a durable escalation to the captain when the limit is reached."
+	}
+	if variant == "separate-review-required" {
+		readme = strings.Replace(readme, "feedback-to: validation", "feedback-to: implementation", 1) + "\n### implementation\nCorrect selected/plan.md against selected/frozen-input.txt, append your own implementation stage report, and commit.\n"
+	}
+	writeFile(t, filepath.Join(root, "README.md"), strings.Replace(readme, "Validate and present the retained package.", policy, 1))
+	writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "selected", "frozen-input.txt"), sameStagePlan)
+	writeFile(t, filepath.Join(filepath.Dir(fixture.entity), "selected", "plan.md"), "KEEP message B; DELETE message A\n")
+	gitCommitPathScoped(t, root, "README.md", "declare correction obligations")
+	binary := buildRecordedGateBinary(t)
+	commitRecordedGateState(t, binary, fixture, "seed correction inputs")
+	cycles := 1
+	if variant == "cycle-limit" {
+		cycles = 3
+	}
+	for n := 0; n < cycles; n++ {
+		mustRecordedGate(t, binary, root, "gate", "prepare", "recorded-gate-task", "--question", "Approve plan?", "--artifact", filepath.Join(filepath.Dir(fixture.entity), "selected", "plan.md"), "--summary", "Plan awaiting decision", "--workflow-dir", root)
+		commitRecordedGateState(t, binary, fixture, "prepare prior attempt")
+		mustRecordedGate(t, binary, root, "gate", "record", "recorded-gate-task", "--decision", "revise", "--actor", "person:captain", "--reason", "Correct the plan against frozen input", "--workflow-dir", root)
+		commitRecordedGateState(t, binary, fixture, "record authorized revision")
+	}
+	return fixture.entity
+}
+
+func assertSameStageWorkers(routes []rejectionRoute, independent bool) error {
+	rounds, err := parseRejectionRounds(routes)
+	if err != nil {
+		return err
+	}
+	var workers []rejectionRound
+	seen := map[string]bool{}
+	for _, round := range rounds {
+		if round.target == "" {
+			return fmt.Errorf("worker has no native identity")
+		}
+		if round.dispatch == routeSpawn {
+			if seen[round.target] {
+				return fmt.Errorf("fresh dispatch repeats native identity %q", round.target)
+			}
+			seen[round.target] = true
+			workers = append(workers, round)
+		} else if round.dispatch != routeReuse || len(workers) == 0 || round.target != workers[len(workers)-1].target || round.stage != workers[len(workers)-1].stage {
+			return fmt.Errorf("reuse does not continue the current worker: %v", round)
+		}
+	}
+	want := 1
+	if independent {
+		want = 2
+	}
+	if len(workers) != want {
+		return fmt.Errorf("completed %d native workers, want %d: %v", len(workers), want, workers)
+	}
+	return nil
+}
+
+func TestSameStageWorkerObligations(t *testing.T) {
+	if len(anyHeadingLine.FindAllString("No Feedback Cycles projection or finding classifications were invented.", -1)) != 0 {
+		t.Fatal("a prose mention is not a workflow projection heading")
+	}
+	correction := []rejectionRoute{{event: routeSpawn, stage: "validation", target: "fix"}, {event: routeDone, stage: "validation", target: "fix"}}
+	review := append(append([]rejectionRoute{}, correction...), rejectionRoute{event: routeSpawn, stage: "validation", target: "review"}, rejectionRoute{event: routeDone, stage: "validation", target: "review"})
+	for _, tc := range []struct {
+		routes            []rejectionRoute
+		independent, pass bool
+	}{{correction, false, true}, {correction, true, false}, {correction[:1], false, false}, {review, true, true}, {review, false, false}, {append(append([]rejectionRoute{}, correction...), correction...), true, false}} {
+		if err := assertSameStageWorkers(tc.routes, tc.independent); (err == nil) != tc.pass {
+			t.Fatalf("routes=%v independent=%v: %v", tc.routes, tc.independent, err)
+		}
+	}
+}
+
+func assertSameStageSelectedPlan(roots gitsource.Roots, briefing []byte) error {
+	var room struct {
+		Artifacts, Context []struct{ Type, URI, Rev string }
+	}
+	if err := json.Unmarshal(briefing, &room); err != nil {
+		return err
+	}
+	for i, selected := range append(room.Artifacts, room.Context...) {
+		if (i < len(room.Artifacts) || selected.Type == "Reference") && strings.HasPrefix(selected.URI, "git-root://state/") && strings.HasSuffix(selected.URI, "/recorded-gate-task/selected/plan.md") {
+			content, err := gitsource.Resolve(roots, selected.URI, selected.Rev)
+			if err != nil || string(content) != sameStagePlan {
+				return fmt.Errorf("selected plan is not the correction: %v", err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("fresh gate omitted the intended plan artifact")
+}
+
+func TestSameStageSelectedPlanRejectsPrematureGate(t *testing.T) {
+	entity := writeSameStageRevision(t, t.TempDir(), "plain")
+	state := filepath.Dir(filepath.Dir(entity))
+	roots := gitsource.Roots{Main: filepath.Dir(state), State: state}
+	plan := filepath.Join(filepath.Dir(entity), "selected/plan.md")
+	stale := readFile(t, filepath.Join(filepath.Dir(entity), "review/validation/briefing-1/index.json"))
+	writeFile(t, plan, sameStagePlan)
+	unrelated := filepath.Join(filepath.Dir(entity), "unrelated.md")
+	writeFile(t, unrelated, sameStagePlan)
+	gitCommitPathScoped(t, state, "recorded-gate-task", "correct plan after premature gate")
+	for i, path := range []string{"", unrelated, plan, plan} {
+		briefing := []byte(stale)
+		if path != "" {
+			source, _ := gitsource.Inspect(roots, path)
+			briefing, _ = json.Marshal(map[string]any{"artifacts": []gitsource.Source{source}})
+			if i == 3 {
+				briefing, _ = json.Marshal(map[string]any{"context": []map[string]string{{"type": "Reference", "uri": source.URI, "rev": source.Rev}}})
+			}
+		}
+		if err := assertSameStageSelectedPlan(roots, briefing); (err == nil) != (i >= 2) {
+			t.Errorf("selected %q: %v", path, err)
+		}
+	}
+}
+
+// Native identities retained from tip CI35148797301 review-required (Claude)
+// and cycle-limit (Codex); only non-identity payload text is omitted here.
+func TestSameStageNativeIdentityAndReuse(t *testing.T) {
+	claude := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_013tQCCE4kV67J8wWfYJttpV","input":{"name":"recorded-gate-task-validation"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_013tQCCE4kV67J8wWfYJttpV","content":[{"type":"text","text":"agentId: a891653619c5fb829"}]}]}}
+{"type":"system","subtype":"task_notification","task_id":"a891653619c5fb829","tool_use_id":"toolu_013tQCCE4kV67J8wWfYJttpV","status":"completed"}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_012HxAjBzxemi3YCjWsCFFCt","input":{"name":"recorded-gate-task-validation"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_012HxAjBzxemi3YCjWsCFFCt","content":[{"type":"text","text":"agentId: a6f8a511fd35edfb4"}]}]}}
+{"type":"system","subtype":"task_notification","task_id":"a6f8a511fd35edfb4","tool_use_id":"toolu_012HxAjBzxemi3YCjWsCFFCt","status":"completed"}`
+	t.Run("fresh native IDs sharing display name", func(t *testing.T) {
+		routes, _ := claudeRejectionRoutes(claude)
+		if err := assertSameStageWorkers(routes, true); err != nil {
+			t.Fatal(err)
+		}
+	})
+	for name, stream := range map[string]string{
+		"missing completion":                 strings.Split(claude, `{"type":"system","subtype":"task_notification","task_id":"a6`)[0],
+		"wrong completion":                   strings.Replace(claude, `"task_id":"a6f8a511fd35edfb4","tool_use_id":"toolu_012HxAjBzxemi3YCjWsCFFCt"`, `"task_id":"a6f8a511fd35edfb4","tool_use_id":"wrong"`, 1),
+		"wrong task owner":                   strings.Replace(claude, `"task_id":"a6f8a511fd35edfb4"`, `"task_id":"a000000"`, 1),
+		"same task under another tool ID":    strings.ReplaceAll(claude, "a6f8a511fd35edfb4", "a891653619c5fb829"),
+		"same native identity changed label": strings.ReplaceAll(strings.Replace(claude, `"name":"recorded-gate-task-validation"`, `"name":"renamed-validation"`, 1), "toolu_012HxAjBzxemi3YCjWsCFFCt", "toolu_013tQCCE4kV67J8wWfYJttpV"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			routes, _ := claudeRejectionRoutes(stream)
+			if assertSameStageWorkers(routes, true) == nil {
+				t.Fatal("invalid identity/completion passed")
+			}
+		})
+	}
+	codex := `{"payload":{"type":"function_call","name":"spawn_agent","call_id":"call_V8lU1VVXKqm3vlGDc2ij2X9Y"}}
+{"payload":{"type":"function_call_output","call_id":"call_V8lU1VVXKqm3vlGDc2ij2X9Y","output":"{\"task_name\":\"/root/recorded_gate_task_validation\"}"}}
+{"payload":{"type":"agent_message","author":"/root/recorded_gate_task_validation","content":"Message Type: FINAL_ANSWER Done:"}}
+{"payload":{"type":"function_call","name":"followup_task","call_id":"call_pH4Ubx6bZQiWNEhnC8iNLwkL","arguments":"{\"target\":\"/root/recorded_gate_task_validation\"}"}}
+{"payload":{"type":"agent_message","author":"/root/recorded_gate_task_validation","content":"Message Type: FINAL_ANSWER Done:"}}`
+
+	for name, stream := range map[string]string{
+		"missing followup completion": codex[:strings.LastIndex(codex, "\n")],
+		"wrong followup owner":        codex[:strings.LastIndex(codex, "\n")] + strings.Replace(codex[strings.LastIndex(codex, "\n"):], "/root/recorded_gate_task_validation", "/root/other_validation", 1),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if assertSameStageWorkers(codexRejectionRoutes(stream), false) == nil {
+				t.Fatal("unfinished followup passed")
+			}
+		})
+	}
+	t.Run("completed same-worker followup", func(t *testing.T) {
+		routes := codexRejectionRoutes(codex)
+		if err := assertSameStageWorkers(routes, false); err != nil {
+			t.Fatal(err)
+		}
+		for _, bad := range [][]rejectionRoute{routes[:3], append(append([]rejectionRoute{}, routes...), rejectionRoute{event: routeSpawn, stage: "validation", target: "extra"}, rejectionRoute{event: routeDone, stage: "validation", target: "extra"})} {
+			if assertSameStageWorkers(bad, false) == nil {
+				t.Fatal("unfinished reuse or extra fresh worker passed")
+			}
+		}
+		if assertSameStageWorkers(routes, true) == nil {
+			t.Fatal("self-review passed")
+		}
+	})
+}
+
+func TestSameStageCommittedReviewHold(t *testing.T) {
+	for _, name := range []string{"committed", "wrapped wording", "not provided", "unrelated absence", "absent reason", "uncommitted reason", "fabricated source", "advanced gate", "advanced stage"} {
+		t.Run(name, func(t *testing.T) {
+			entity := writeSameStageRevision(t, t.TempDir(), "review-required")
+			root := filepath.Dir(filepath.Dir(entity))
+			before, _, err := gates.Read(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			note := "\nReview held: selected/reviewer-source.txt is unavailable.\n"
+			if name == "wrapped wording" {
+				note = "\nAwaiting external evidence:\nselected/reviewer-source.txt. Review remains held.\n"
+			}
+			if name == "not provided" {
+				note = "\nReview is on hold because selected/reviewer-source.txt has not been provided.\n"
+			}
+			if name == "unrelated absence" {
+				note = "\nArtifact inventory: selected/reviewer-source.txt.\n\nImplementation report: an unrelated optional screenshot is missing. Ready for re-review.\n"
+			}
+			if name != "absent reason" {
+				writeFile(t, entity, readFile(t, entity)+note)
+			}
+			if name == "fabricated source" {
+				writeFile(t, filepath.Join(filepath.Dir(entity), "selected/reviewer-source.txt"), "invented")
+			}
+			if name == "advanced stage" {
+				writeFile(t, entity, strings.Replace(readFile(t, entity), "status: validation", "status: done", 1))
+			}
+			if name == "advanced gate" {
+				writeFile(t, entity, strings.Replace(readFile(t, entity), "decision: revise", "decision: approve", 1))
+			}
+			if name != "uncommitted reason" {
+				git(t, root, "add", "recorded-gate-task")
+				git(t, root, "commit", "--allow-empty", "-m", "record hold")
+			}
+			after, _, err := gates.Read(entity)
+			if err != nil {
+				t.Fatal(err)
+			}
+			committed := git(t, root, "show", "HEAD:recorded-gate-task/index.md")
+			err = assertSameStageReviewHold(entity, committed, before, after)
+			valid := name == "committed" || name == "wrapped wording" || name == "not provided"
+			if (err == nil) != valid {
+				t.Fatalf("hold error=%v; valid=%v", err, valid)
+			}
+		})
+	}
+}
+
+func assertSameStageReviewHold(entityPath, committed string, before, after *gates.Document) error {
+	_, body, ok := strings.Cut(strings.TrimPrefix(committed, "---\n"), "\n---\n")
+	// A paragraph is one note unit; line wrapping does not separate its reason.
+	absence := regexp.MustCompile(`(?i)\b(missing|unavailable|absent|awaiting|not\s+(available|present|supplied|(been\s+)?provided))\b`)
+	hasReason := false
+	for _, note := range regexp.MustCompile(`\n[\t ]*\n`).Split(body, -1) {
+		if strings.Contains(note, "reviewer-source.txt") && absence.MatchString(note) {
+			hasReason = true
+			break
+		}
+	}
+	if !ok || !hasReason {
+		return fmt.Errorf("committed entity body lacks the missing review source reason")
+	}
+	if _, err := os.Lstat(filepath.Join(filepath.Dir(entityPath), "selected/reviewer-source.txt")); !os.IsNotExist(err) {
+		return fmt.Errorf("required external review source is not absent: %v", err)
+	}
+	if !reflect.DeepEqual(before, after) || statuspkg.ParseFrontmatterData([]byte(committed))["status"] != "validation" {
+		return fmt.Errorf("missing-source review advanced or changed gate authority")
+	}
+	return nil
 }

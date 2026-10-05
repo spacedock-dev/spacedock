@@ -1,18 +1,23 @@
 package contractlint
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"gopkg.in/yaml.v3"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 type desiredLiveJourney struct {
@@ -191,9 +196,29 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 		}
 	}
 
+	found := readLiveTestNames(t, repo)
+	scheduledLanes := observeLiveSchedule(t, repo, string(mustRead(t, filepath.Join(repo, "internal/ensigncycle/scheduled_live_test.go"))))
+	workflow := string(mustRead(t, filepath.Join(repo, ".github", "workflows", "runtime-live-e2e.yml")))
+	for name := range found {
+		if err := liveTestCoverageError(name, registry, workflow, scheduledLanes); err != nil {
+			t.Error(err)
+		}
+		if !registered[name] {
+			t.Errorf("live-tagged test %q is unregistered", name)
+		}
+	}
+
+	for test := range registered {
+		if !found[test] {
+			t.Errorf("registered live test %q has no live-tagged declaration", test)
+		}
+	}
+}
+
+func readLiveTestNames(t *testing.T, repo string) map[string]bool {
+	t.Helper()
 	fset := token.NewFileSet()
 	found := map[string]bool{}
-	scheduled := map[string]int{}
 	dir := filepath.Join(repo, "internal", "ensigncycle")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -213,53 +238,66 @@ func reconcileRegisteredLiveTests(t *testing.T, repo, registryPath string) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if entry.Name() == "scheduled_live_test.go" {
-			ast.Inspect(file, func(node ast.Node) bool {
-				row, ok := node.(*ast.CompositeLit)
-				if !ok || len(row.Elts) < 3 {
-					return true
-				}
-				literal, ok := row.Elts[0].(*ast.BasicLit)
-				if !ok || literal.Kind != token.STRING {
-					return true
-				}
-				name := stringLiteral(t, literal)
-				if name != exprName(row.Elts[len(row.Elts)-1]) {
-					t.Errorf("scheduled name/callable mismatch: %s", name)
-				}
-				scheduled[name]++
-				return true
-			})
-		}
+
 		for _, declaration := range file.Decls {
 			function, ok := declaration.(*ast.FuncDecl)
 			if !ok || !strings.HasPrefix(function.Name.Name, "Test") {
 				continue
 			}
 			found[function.Name.Name] = true
-			if !registered[function.Name.Name] {
-				t.Errorf("live-tagged test %q is not a registered common journey, runtime proof, or non-gating experiment", function.Name.Name)
-			}
 		}
 	}
-	for name := range found {
-		want := strings.HasPrefix(name, "TestLiveCommon") || name == "TestLiveBareReachable" || name == "TestLiveBreakGlassShimRecovery" || name == "TestLiveMergedTeamModeDispatch" || name == "TestLiveSemanticNamesCodex"
-		if want && scheduled[name] != 1 {
-			t.Errorf("scheduled callable %s appears %d times, want 1", name, scheduled[name])
-		}
-		if want {
-			delete(scheduled, name)
-		}
-	}
-	if len(scheduled) != 0 {
-		t.Errorf("unexpected scheduled callables: %v", scheduled)
-	}
+	return found
+}
 
-	for test := range registered {
-		if !found[test] {
-			t.Errorf("registered live test %q has no live-tagged declaration", test)
+// Execute the shipped selection/slot loop; only model-driving callables become stubs.
+func observeLiveSchedule(t *testing.T, repo, source string) map[string]map[string]int {
+	t.Helper()
+	root := t.TempDir()
+	callbacks := "package ensigncycle\nimport \"testing\"\n"
+	for name := range readLiveTestNames(t, repo) {
+		if name != "TestLiveScheduled" {
+			callbacks += fmt.Sprintf("func %s(t *testing.T) { t.Log(\"SCHEDULED %s\") }\n", name, name)
 		}
 	}
+	for name, data := range map[string]string{
+		"scheduled_live_test.go": source,
+		"live_schedule_test.go":  string(mustRead(t, filepath.Join(repo, "internal/ensigncycle/live_schedule_test.go"))),
+		"callbacks_test.go":      callbacks,
+	} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(data), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	observed := map[string]map[string]int{}
+	for _, runtime := range []string{"claude", "codex"} {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		cmd := exec.CommandContext(ctx, "go", "test", "-json", "-tags", "live", "-run", "^TestLiveScheduled$", "-count=1", filepath.Join(root, "scheduled_live_test.go"), filepath.Join(root, "live_schedule_test.go"), filepath.Join(root, "callbacks_test.go"))
+		cmd.Env = append(os.Environ(), "SPACEDOCK_LIVE_RUNTIME="+runtime)
+		start := time.Now()
+		output, err := cmd.CombinedOutput()
+		cancel()
+		if err != nil {
+			t.Fatalf("offline %s scheduler: %v\n%s", runtime, err, output)
+		}
+		t.Logf("offline %s scheduler: %s", runtime, time.Since(start))
+		for _, line := range strings.Split(string(output), "\n") {
+			var event struct{ Action, Output string }
+			if json.Unmarshal([]byte(line), &event) != nil || event.Action != "output" {
+				continue
+			}
+			_, name, ok := strings.Cut(event.Output, "SCHEDULED ")
+			if !ok {
+				continue
+			}
+			name = strings.TrimSpace(name)
+			if observed[name] == nil {
+				observed[name] = map[string]int{}
+			}
+			observed[name][runtime+"-live"]++
+		}
+	}
+	return observed
 }
 
 func readActiveEntityIDs(t *testing.T, stateDir string) map[string]bool {
@@ -360,14 +398,11 @@ func TestRuntimeLiveCommonSuiteTimeouts(t *testing.T) {
 
 func TestRuntimeLiveCommonFailFastPolicy(t *testing.T) {
 	workflow := string(mustRead(t, filepath.Join(repoRoot(t), ".github", "workflows", "runtime-live-e2e.yml")))
-	for _, runtime := range []string{"claude", "codex"} {
+	for _, runtime := range []string{"claude", "codex", "pi"} {
 		command := runtimeLiveCommonCommand(t, workflow, runtime)
 		if strings.Contains(command, " -failfast") {
 			t.Errorf("%s common journeys must all run before the job reports failure", runtime)
 		}
-	}
-	if command := runtimeLiveCommonCommand(t, workflow, "pi"); !strings.Contains(command, " -failfast") {
-		t.Error("Pi common journeys must retain -failfast")
 	}
 }
 
@@ -659,4 +694,146 @@ func liveSuiteSelector(runtime string) string {
 		return "-run '^TestLiveCommon'"
 	}
 	return "-run '^TestLiveScheduled$'"
+}
+
+func TestLiveCoverageRequiresSelectionOrExplicitExemption(t *testing.T) {
+	registry := "## Common journeys\n### `sample`\n- **Entry point:** `TestLiveCommonSample`\n"
+	workflow := "jobs:\n"
+	for _, runtime := range []string{"claude", "codex", "pi"} {
+		workflow += fmt.Sprintf("  %s-live:\n    steps:\n      - run: go test -tags live %s ./internal/ensigncycle\n", runtime, liveSuiteSelector(runtime))
+	}
+	scheduled := map[string]map[string]int{"TestLiveCommonSample": {"claude-live": 1, "codex-live": 1}}
+	for _, tc := range []struct {
+		name, registry, workflow string
+		valid                    bool
+	}{
+		{"selected", registry, workflow, true},
+		{"missing-membership", registry, workflow, false},
+		{"duplicate-selection", registry, workflow + "      - run: go test -tags live -run '^TestLiveCommon' ./internal/ensigncycle\n", false},
+		{"commented-selector", registry, strings.ReplaceAll(workflow, "- run: go test", "- run: |\n          # go test"), false},
+		{"missing-selector", registry, strings.ReplaceAll(workflow, "^TestLiveScheduled$", "^Other$"), false},
+		{"unclassified", strings.ReplaceAll(registry, "Common journeys", "Targeted implementation proofs"), workflow, false},
+		{"explicit-exemption", "## Non-gating live experiments\n### `TestLiveCommonSample`\n- **Reason unselected:** Measures an experimental host.\n", "", true},
+		{"blank-reason", "## Non-gating live experiments\n### `TestLiveCommonSample`\n- **Reason unselected:**   \n", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			membership := scheduled
+			if tc.name == "missing-membership" {
+				membership = nil
+			}
+			if err := liveTestCoverageError("TestLiveCommonSample", tc.registry, tc.workflow, membership); (err == nil) != tc.valid {
+				t.Fatalf("coverage error = %v, valid=%t", err, tc.valid)
+			}
+		})
+	}
+}
+
+var registryLane = regexp.MustCompile("(?m)^- \\*\\*Lane:\\*\\* `([^`]+)`$")
+
+func liveRegistryEntry(name, registry string) (string, string) {
+	section, blockSection, block, current := "", "", "", ""
+	for _, line := range strings.Split(registry, "\n") {
+		if strings.HasPrefix(line, "## ") {
+			section = strings.TrimPrefix(line, "## ")
+			current = ""
+		}
+		if registryHeading.MatchString(line) {
+			current = line + "\n"
+		} else {
+			current += line + "\n"
+		}
+		heading := registryTestHeading.FindStringSubmatch(current)
+		entry := registryEntryPoint.FindStringSubmatch(current)
+		if (heading != nil && heading[1] == name) || (entry != nil && entry[1] == name) {
+			block, blockSection = current, section
+		}
+	}
+	return blockSection, block
+}
+
+func liveTestCoverageError(name, registry, workflow string, scheduled map[string]map[string]int) error {
+	blockSection, block := liveRegistryEntry(name, registry)
+	lanes := []string{}
+	switch blockSection {
+	case "Common journeys":
+		lanes = []string{"claude-live", "codex-live", "pi-live"}
+	case "Suite orchestration":
+		lanes = []string{"claude-live", "codex-live"}
+	case "Runtime-specific live proofs":
+		match := registryLane.FindStringSubmatch(block)
+		if match != nil {
+			lanes = []string{match[1]}
+		}
+	case "Non-gating live experiments":
+		if regexp.MustCompile(`(?m)^- \*\*Reason unselected:\*\*[^\S\n]*\S[^\n]*$`).MatchString(block) {
+			return nil
+		}
+		return fmt.Errorf("%s has no explicit exemption reason", name)
+	}
+	if len(lanes) == 0 {
+		return fmt.Errorf("%s has no recognized live coverage classification", name)
+	}
+	var document struct {
+		Jobs map[string]struct{ Steps []struct{ Run string } }
+	}
+	if err := yaml.Unmarshal([]byte(workflow), &document); err != nil {
+		return err
+	}
+	selections := map[string]int{}
+	for lane, job := range document.Jobs {
+		for _, step := range job.Steps {
+			for _, line := range strings.Split(step.Run, "\n") {
+				if strings.HasPrefix(strings.TrimSpace(line), "#") || !strings.Contains(line, "-tags live") || !strings.Contains(line, "./internal/ensigncycle") {
+					continue
+				}
+				match := regexp.MustCompile(`-run\s+['"]?([^'"\s]+)`).FindStringSubmatch(line)
+				if match == nil {
+					return fmt.Errorf("live command has no explicit selector: %s", line)
+				}
+				selector, err := regexp.Compile(match[1])
+				if err != nil {
+					return err
+				}
+				if selector.MatchString(name) {
+					selections[lane]++
+				}
+				if name != "TestLiveScheduled" && selector.MatchString("TestLiveScheduled") {
+					selections[lane] += scheduled[name][lane]
+				}
+			}
+		}
+	}
+
+	for _, lane := range lanes {
+		if selections[lane] != 1 {
+			return fmt.Errorf("%s selected %d times in %s, want 1", name, selections[lane], lane)
+		}
+	}
+	return nil
+}
+
+func TestLiveSelectionMutationsAreObservable(t *testing.T) {
+	repo := repoRoot(t)
+	source := string(mustRead(t, filepath.Join(repo, "internal/ensigncycle/scheduled_live_test.go")))
+	source = strings.Replace(source, "for _, row := range rows {", "for _, row := range rows {\n if runtime == \"codex\" && row.name == \"TestLiveCommonSameStageRevision\" { continue }", 1)
+	observed := observeLiveSchedule(t, repo, source)
+	registry := string(mustRead(t, filepath.Join(repo, "docs/runtime-live-ci-registry.md")))
+	workflow := string(mustRead(t, filepath.Join(repo, ".github/workflows/runtime-live-e2e.yml")))
+	if got := observed["TestLiveCommonSameStageRevision"]; got["claude-live"] != 1 || got["codex-live"] != 0 {
+		t.Fatalf("observed calls: %v", got)
+	}
+	if err := liveTestCoverageError("TestLiveCommonSameStageRevision", registry, workflow, observed); err == nil {
+		t.Fatal("runtime omission passed coverage")
+	}
+	if err := liveTestCoverageError("TestLiveCommonFiling", registry, workflow, observed); err != nil {
+		t.Fatal(err)
+	}
+	command := "SPACEDOCK_LIVE_RUNTIME=claude gotestsum"
+	if strings.Count(workflow, command) != 1 {
+		t.Fatal("expected one actual Claude command")
+	}
+	workflow = strings.Replace(workflow, command, "# "+command, 1)
+	if err := liveTestCoverageError("TestLiveCommonFiling", registry, workflow, observed); err == nil || !strings.Contains(err.Error(), "selected 0 times in claude-live") {
+		t.Fatalf("commented actual command: %v", err)
+	}
 }

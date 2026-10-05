@@ -32,6 +32,8 @@ func TestLiveScheduled(t *testing.T) {
 		{"TestLiveCommonOwnedConflictOwnerHandoff", 130, 300, TestLiveCommonOwnedConflictOwnerHandoff},
 		{"TestLiveCommonRecordedGateLifecycle", 160, 190, TestLiveCommonRecordedGateLifecycle},
 		{"TestLiveCommonRejectionFlow", 340, 430, TestLiveCommonRejectionFlow},
+		// Six serial variants: rounded retained Codex timings; Claude is an estimate.
+		{"TestLiveCommonSameStageRevision", 1400, 1800, TestLiveCommonSameStageRevision},
 		{"TestLiveCommonSelfEvidenceMergeTriage", 70, 120, TestLiveCommonSelfEvidenceMergeTriage},
 		{"TestLiveCommonShallowBoot", 20, 30, TestLiveCommonShallowBoot},
 		{"TestLiveCommonSmallestSufficientMechanism", 240, 250, TestLiveCommonSmallestSufficientMechanism},

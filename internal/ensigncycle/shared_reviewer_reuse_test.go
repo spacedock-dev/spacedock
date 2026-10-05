@@ -352,7 +352,7 @@ func codexReviewerReuseTool(tool string) bool {
 // rejectionRoute is one ordered routing observation in a rejection-flow run: the FO
 // OPENED a worker for a stage, ROUTED follow-up work to a worker it had already
 // opened, or a dispatched worker reported DONE. Identity is the host's own
-// structured handle — a Codex task path, a Claude teammate name — and never prompt
+// structured handle — a Codex task path, a Claude native task/tool ID — and never prompt
 // content: a Codex `spawn_agent`'s arguments are an encrypted blob EXCEPT the
 // plaintext task path, so the path is the only identity the rollout exposes at all.
 type rejectionRoute struct {
@@ -507,11 +507,12 @@ func claudeRejectionRoutes(stream string) ([]rejectionRoute, rejectionBranch) {
 	// therefore tracked as a debt against that id, which a dispatch (spawn or reuse
 	// advance) arms and the round's notification clears — one completion per round,
 	// and a reused worker can report twice without a second spawn.
-	openedBy := map[string]string{}       // teammate name -> the tool_use id that opened it
-	awaitingStage := map[string]string{}  // armed tool_use id -> stage awaited
-	awaitingTarget := map[string]string{} // armed tool_use id -> teammate name
-	probeIDs := map[string]bool{}         // Bash tool_use id of a context-budget probe
-	live := map[string]bool{}             // teammate names this run has opened
+	openedBy := map[string]string{}      // teammate name -> the tool_use id that opened it
+	awaitingStage := map[string]string{} // armed tool_use id -> stage awaited
+	probeIDs := map[string]bool{}        // Bash tool_use id of a context-budget probe
+	live := map[string]bool{}            // teammate names this run has opened
+	nativeByTool := map[string]string{}
+	stageByTool := map[string]string{}
 	branch := rejectionBranchFresh
 	for i, line := range strings.Split(stream, "\n") {
 		var event struct {
@@ -519,6 +520,7 @@ func claudeRejectionRoutes(stream string) ([]rejectionRoute, rejectionBranch) {
 			Subtype   string `json:"subtype"`
 			Status    string `json:"status"`
 			ToolUseID string `json:"tool_use_id"`
+			TaskID    string `json:"task_id"`
 			Message   *struct {
 				Content []struct {
 					Type      string `json:"type"`
@@ -540,8 +542,8 @@ func claudeRejectionRoutes(stream string) ([]rejectionRoute, rejectionBranch) {
 			continue
 		}
 		if event.Type == "system" && event.Subtype == "task_notification" && event.Status == "completed" {
-			if stage, ok := awaitingStage[event.ToolUseID]; ok {
-				routes = append(routes, rejectionRoute{index: i, event: routeDone, stage: stage, target: awaitingTarget[event.ToolUseID]})
+			if stage, ok := awaitingStage[event.ToolUseID]; ok && (event.TaskID == "" || nativeByTool[event.ToolUseID] == event.ToolUseID || event.TaskID == nativeByTool[event.ToolUseID]) {
+				routes = append(routes, rejectionRoute{index: i, event: routeDone, stage: stage, target: nativeByTool[event.ToolUseID]})
 				delete(awaitingStage, event.ToolUseID)
 			}
 		}
@@ -556,19 +558,33 @@ func claudeRejectionRoutes(stream string) ([]rejectionRoute, rejectionBranch) {
 					stage = rejectionStageOfDescription(block.Input.Description)
 				}
 				openedBy[block.Input.Name] = block.ID
-				awaitingStage[block.ID], awaitingTarget[block.ID] = stage, block.Input.Name
+				awaitingStage[block.ID], stageByTool[block.ID] = stage, stage
+				if nativeByTool[block.ID] == "" {
+					nativeByTool[block.ID] = block.ID
+				}
 				live[block.Input.Name] = true
-				routes = append(routes, rejectionRoute{index: i, event: routeSpawn, stage: stage, target: block.Input.Name})
+				routes = append(routes, rejectionRoute{index: i, event: routeSpawn, stage: stage, target: nativeByTool[block.ID]})
+			case block.Type == "tool_result" && nativeByTool[block.ToolUseID] != "":
+				if match := claudeAgentIDResult.FindStringSubmatch(string(block.Content)); match != nil {
+					previous := nativeByTool[block.ToolUseID]
+					nativeByTool[block.ToolUseID] = match[1]
+					openedBy[match[1]], live[match[1]] = block.ToolUseID, true
+					for j := range routes {
+						if routes[j].target == previous {
+							routes[j].target = match[1]
+						}
+					}
+				}
 			case block.Type == "tool_use" && block.Name == "Bash" && strings.Contains(block.Input.Command, "dispatch context-budget"):
 				probeIDs[block.ID] = true
 			// A shutdown_request is the contract's supersede teardown, not a reuse
 			// advance, so it never counts as routing follow-up work.
 			case block.Type == "tool_use" && block.Name == "SendMessage" && live[block.Input.To] && !isShutdownRequest(block.Input.Message):
-				stage := rejectionStageOfHandle(block.Input.To)
+				stage := stageByTool[openedBy[block.Input.To]]
 				if id := openedBy[block.Input.To]; id != "" {
-					awaitingStage[id], awaitingTarget[id] = stage, block.Input.To
+					awaitingStage[id] = stage
 				}
-				routes = append(routes, rejectionRoute{index: i, event: routeReuse, stage: stage, target: block.Input.To})
+				routes = append(routes, rejectionRoute{index: i, event: routeReuse, stage: stage, target: nativeByTool[openedBy[block.Input.To]]})
 			case block.Type == "tool_result" && probeIDs[block.ToolUseID] && strings.Contains(string(block.Content), "reuse_ok"):
 				branch = rejectionBranchReuse
 			}
