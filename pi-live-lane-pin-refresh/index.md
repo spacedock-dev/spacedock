@@ -1136,3 +1136,18 @@ is contradicted by the authorized floor raise and needs a criteria amendment.
 ### Summary
 
 Removed the two now-passing pi XFAIL bindings (`smallest-sufficient-mechanism`, `keep-moving-posture`) and re-pointed the `default-headless-gate-stop` pi binding from the retired gate-lifecycle owner to the active worker-lifecycle-observation owner with a corrected comment. Branch pushed fast-forward to `f37bda151`; focused ensigncycle tests, live-tagged vet/compile, gofmt, and the contractlint registry/owner joins pass (`xfail/pi` 6→4). One stale AUDIT-comment sentence remains above the `smallest-sufficient-mechanism` test because the assignment scoped the edit to the three binding lines.
+
+## Stage Report: implementation (obsolete AUDIT comment correction at `3fed0a16e`)
+
+- DONE: Delete the false sentence claiming the pi XFAIL below `smallest-sufficient-mechanism` is structural and "can never XPASS", plus every phrase referring to a binding below it.
+  `internal/ensigncycle/shared_live_runner_test.go` lines 151-153 removed: "The pi XFAIL below is structural (finding 11): a claude-dialect trace reads the pi stream, so it can never XPASS." The `nil` gap at `f37bda151` had already removed the binding and it XPASSed before removal, so the claim was false. Commit `3fed0a16e`.
+- DONE: Check whether the other AUDIT sentence (finding 5 — "the direct-commit marker matches ANY git commit and no assertion checks the strategy doc landed") still describes the assertion, and keep it only if still true.
+  Both clauses are obsolete, so it was removed as well — nothing from the note was kept. `71d1f6b1c` ("Verify smallest mechanism outcomes across direct and commissioned phases") deleted the `ssmGitCommitRe` marker and the `committedDirectly` trace field (`git log -S ssmGitCommitRe` resolves only to that removal; `grep -rn 'committedDirectly\|ssmGitCommitRe' internal/ensigncycle` is empty). The same commit added `assertSmallestMechanismDirect`, which requires `assertSmallestMechanismFiles(root)` (pinned body on disk) and `git show HEAD:roadmap-strategy.md` == "# Roadmap Strategy\n", so an assertion now proves the strategy doc landed. `TestSmallestMechanismOutcomes` covers this: its `uncommitted strategy` case REDs when the doc is not committed and its `wrong strategy` case REDs when the body differs.
+- DONE: Push the branch as a fast-forward, no force.
+  `git push origin HEAD:spacedock-ensign/pi-live-lane-pin-refresh` advanced `f37bda151..3fed0a16e`; no `--force`.
+- DONE: Run only focused `internal/ensigncycle` tests.
+  `go test ./internal/ensigncycle -run 'TestSmallestMechanism' -count=1` PASS; `go vet -tags live ./internal/ensigncycle` PASS; `go build -tags live ./internal/ensigncycle` PASS; `gofmt -l internal/ensigncycle/shared_live_runner_test.go` clean; `git diff --check` clean. The change is a comment-only deletion, so no behavior test changes; the live journey test needs `SPACEDOCK_LIVE_RUNTIME` auth and was not run under the focused budget.
+
+### Summary
+
+Removed the whole obsolete AUDIT note above `TestLiveCommonSmallestSufficientMechanism`. The finding-11 structural-XPASS sentence was false (`f37bda151` removed the binding and it XPASSed before removal); the finding-5 sentence was also obsolete (`71d1f6b1c` removed its marker and added a strategy-doc assertion), so none of the note was kept. Pushed the code branch fast-forward; focused ensigncycle tests, live-tagged vet/build, gofmt, and diff-check pass. The FO's uncommitted frontmatter edit in the state checkout (`status: validation`->`implementation`, gate application `pending`->`superseded`) was intentionally left unstaged and is not part of this report commit.
