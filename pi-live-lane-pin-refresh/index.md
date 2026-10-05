@@ -93,6 +93,11 @@ gates:
               application:
                 target-stage: done
                 state: superseded
+            - id: gate-attempt:mh698y3ht6ydmr6ethaw9hg9-validation-4
+              briefing:
+                id: briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-4:revision-1
+                digest: sha256:8850493458f6839e007b3b1355ac66559dac9cad34b122c480a04db9fc5f093f
+                room-ref: '@review/validation/briefing-4'
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready

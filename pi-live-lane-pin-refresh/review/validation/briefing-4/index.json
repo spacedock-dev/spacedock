@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-4:revision-1",
+  "question": "Do you accept the validation of this layer, pi-live-lane-pin-refresh, at tip e80f3463c?",
+  "artifacts": [
+    {
+      "id": "artifact:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-4:revision-1:item-1",
+      "uri": "git-root://state/62fac25954343483788a3aa947a226b1b413acc0/pi-live-lane-pin-refresh-validation-review.md",
+      "rev": "sha256:f2ee1a93c3f2fd00aecad56d554e6e058f5ee9dfe673186c924bbcb11fb3d093",
+      "mediaType": "text/markdown",
+      "summary": "Validated at tip e80f3463c: floor 1.0.0 with no version string in comments; the three rescued checks pass with no environment variable; 17 journeys and 45 live tests unchanged through the deletions; binding registry refreshed; the redundant machinery and three unreachable tests deleted; codex-live step and claim registered. The live lane at this tip is pending and is the last evidence."
+    }
+  ]
+}
