@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-3:revision-1",
+  "question": "Do you accept the validation of this layer, pi-live-lane-pin-refresh? This approves the validation only, no merge.",
+  "artifacts": [
+    {
+      "id": "artifact:mh698y3ht6ydmr6ethaw9hg9:validation:attempt-3:revision-1:item-1",
+      "uri": "git-root://state/ed6abeb9b4e984073e1b4326b3b7a9b976e24e6d/pi-live-lane-pin-refresh-validation-review.md",
+      "rev": "sha256:5ad9d28dcee1dff64722fc7dc2baf782d61d00cd461f97d55c788ed5b6300e24",
+      "mediaType": "text/markdown",
+      "summary": "Successor validation after the captain's floor change: PiCodingAgentFloor is 1.0.0, no version string in any comment, other floors unchanged, the tests that assumed the old floor were corrected. The lane halves of AC-1 to AC-3 await the chain-top run 37338782614, whose offline job is green and whose pi-live job was still running."
+    }
+  ]
+}
