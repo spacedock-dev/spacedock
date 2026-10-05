@@ -1,11 +1,11 @@
 ---
 id: h30c9jrfcf21fdh2qs5z58sd
 title: Repair the Pi smallest-sufficient mechanism journey
-status: backlog
+status: done
 source: "Deferred Pi follow-up from the test-behavior-completeness priority recarve, 2026-08-10"
 started:
 completed:
-verdict:
+verdict: REJECTED
 score: 0.8
 group: pi-live-followup
 worktree:
@@ -13,6 +13,7 @@ issue:
 pr:
 mod-block:
 sprint: pi-live-completeness
+archived: true
 ---
 
 Pi still needs a product repair for the `smallest-sufficient-mechanism` journey. Sonnet and Codex are complete. This task owns only the deferred Pi result.

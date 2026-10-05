@@ -1,11 +1,11 @@
 ---
 id: x02375wsg6q61xek7p0t36j2
 title: Repair the Pi keep-moving posture journey
-status: backlog
+status: done
 source: Deferred Pi follow-up 2026-08-10; CI XPASS 2026-08-14 run 31770740214 (openai/gpt-5.6-luna:max) observed=[] — binding x0 is stale, removable on exact normal PASS
 started:
 completed:
-verdict:
+verdict: REJECTED
 score: 0.8
 group: pi-live-followup
 worktree:
@@ -13,6 +13,7 @@ issue:
 pr:
 mod-block:
 sprint: pi-live-completeness
+archived: true
 ---
 
 Pi still needs a product repair for the `keep-moving-posture` journey. Sonnet and Codex are complete. This task owns only the deferred Pi result.
