@@ -42,3 +42,9 @@ removed.
 ## Question
 
 Do you accept the validation of this layer?
+## Verified after this room was first written
+
+- The three rescued checks in `internal/contractlint/runtime_live_lane_test.go` pass under `env -i`, so they
+  need no environment variable and are reachable by a runner.
+- No journey was lost to the deletions: 17 `spacedock:live-journey` markers and 45 `TestLive*` functions at
+  both the pre-deletion tip and this one, with no name difference.
