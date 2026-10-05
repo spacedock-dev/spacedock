@@ -251,3 +251,14 @@ Recommend PASSED for this bounded deterministic correction and integration revie
 ### Summary
 
 Recommend PASSED for bounded final local integration verification at 1a28b4fa2bce041569e93f9327bc8f35447e7954: 2 DONE, 0 SKIPPED, 0 FAILED work items. Both full commands remain exit 1 for the exact previously declined resolver defect; all other packages pass, with no race/timeout or new defect. No native acceptance, publication or merge clearance is implied. Candidate/frontmatter unchanged; state report/artifacts committed locally for FO synchronization.
+
+## Superseded — 2026-10-05
+
+This task is superseded. Its subject, recognizing native Pi worker completion, is delivered by
+`repair-pi-worker-lifecycle-observation`, which credits `bg_wait` and the native `subagent-notify`
+completion path in the shared worker-lifecycle assert, and which the current stack carries as its
+second layer. The branch `spacedock-ensign/pi-native-completion-evidence` stays on origin, so its
+three commits remain recoverable.
+
+An earlier comparison misattributed fourteen commits from this branch's base, PR #801, to this
+task. This task owns three commits, all on the native-completion subject.
