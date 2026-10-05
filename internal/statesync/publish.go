@@ -52,6 +52,21 @@ func Preflight(checkout, branch string) Outcome {
 		}
 		return outcome
 	}
+	return checkHeadBranch(checkout, branch)
+}
+
+// CheckCheckout validates storage without aborting or otherwise changing a rebase.
+func CheckCheckout(checkout, branch string) Outcome {
+	if ok, detail := validBranch(branch); !ok {
+		return Outcome{Result: ResultFailed, Detail: detail}
+	}
+	if ok, detail := exactCheckoutRoot(checkout); !ok {
+		return Outcome{Result: ResultFailed, Detail: detail}
+	}
+	return checkHeadBranch(checkout, branch)
+}
+
+func checkHeadBranch(checkout, branch string) Outcome {
 	ok, head := runGit(checkout, "symbolic-ref", "--quiet", "--short", "HEAD")
 	actual := strings.TrimSpace(head)
 	if !ok {

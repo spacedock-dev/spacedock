@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -574,5 +575,140 @@ func TestRoutedTerminalApprovalSurfacesExistingDisplay(t *testing.T) {
 	}
 	if fields := entityFields(t, entity); strings.TrimSpace(fields["status"]) != "validation" {
 		t.Fatalf("routed entity status moved: %q", fields["status"])
+	}
+}
+
+func TestLocalDeliveryProofBeforeTerminalSpend(t *testing.T) {
+	root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{localMerge: true})
+	git(t, root, "branch", "-M", "trunk")
+	readme, _ := os.ReadFile(filepath.Join(root, "README.md"))
+	writeFile(t, filepath.Join(root, "README.md"), strings.Replace(string(readme), "merge: local", "merge: local\ntrunk: trunk", 1))
+	writeFile(t, filepath.Join(root, "delivery.txt"), "base\n")
+	git(t, root, "add", ".")
+	git(t, root, "commit", "-qm", "delivery base")
+	old := strings.TrimSpace(git(t, root, "rev-parse", "HEAD"))
+	wt := filepath.Join(t.TempDir(), "task")
+	git(t, root, "worktree", "add", "-qb", "task", wt)
+	writeFile(t, filepath.Join(wt, "delivery.txt"), "task\n")
+	git(t, wt, "commit", "-qam", "task change")
+	taskHead := strings.TrimSpace(git(t, wt, "rev-parse", "HEAD"))
+	writeFile(t, filepath.Join(root, "delivery.txt"), "trunk\n")
+	git(t, root, "commit", "-qam", "conflicting trunk")
+	approvedTerminalGate(t, root)
+	if c, o, e := terminalInvoke(t, root, "gate", "consume", "task", "--workflow-dir", root); c != 0 {
+		t.Fatalf("consume: %d %s %s", c, o, e)
+	}
+	set := func(field string) {
+		t.Helper()
+		if c, o, e := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", field); c != 0 {
+			t.Fatalf("set: %d %s %s", c, o, e)
+		}
+	}
+	set("worktree=" + wt)
+	refuse := func() {
+		t.Helper()
+		before, _ := os.ReadFile(entity)
+		head := git(t, root, "rev-parse", "HEAD")
+		c, o, e := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root)
+		if c != 1 {
+			t.Fatalf("undelivered guard: %d %s %s", c, o, e)
+		}
+		after, err := os.ReadFile(entity)
+		if err != nil || !bytes.Equal(before, after) || head != git(t, root, "rev-parse", "HEAD") {
+			t.Fatal("refusal mutated active state or commit")
+		}
+		if !slices.Equal(gateApplicationStates(t, entity), []string{"pending"}) {
+			t.Fatal("approval spent before delivery")
+		}
+	}
+	refuse()
+	git(t, root, "add", ".")
+	git(t, root, "commit", "-qm", "record approval")
+	cmd := exec.Command("git", "-C", root, "merge", "--no-ff", "task")
+	if out, err := cmd.CombinedOutput(); err == nil {
+		t.Fatalf("expected real merge conflict: %s", out)
+	}
+	refuse()
+	git(t, root, "merge", "--abort")
+	for _, sha := range []string{"deadbeef", taskHead, old} {
+		set("pr=local-merge:" + sha)
+		refuse()
+	}
+	set("worktree=" + filepath.Join(root, "missing"))
+	refuse()
+	set("worktree=" + filepath.Join(root, "delivery.txt"))
+	refuse()
+	set("worktree=" + wt)
+	git(t, root, "branch", "-m", "trunk", "missing-trunk")
+	refuse()
+	git(t, root, "branch", "-m", "missing-trunk", "trunk")
+	git(t, root, "add", ".")
+	git(t, root, "commit", "-qm", "record delivery attempt")
+	// Resolve the known content conflict, producing a genuine merge containing task HEAD.
+	cmd = exec.Command("git", "-C", root, "merge", "--no-ff", "task")
+	if _, err := cmd.CombinedOutput(); err == nil {
+		t.Fatal("expected conflict again")
+	}
+	writeFile(t, filepath.Join(root, "delivery.txt"), "task and trunk\n")
+	git(t, root, "add", "delivery.txt")
+	git(t, root, "commit", "-qm", "deliver task")
+	delivered := strings.TrimSpace(git(t, root, "rev-parse", "HEAD"))
+	set("pr=local-merge:" + delivered)
+	for _, sha := range []string{taskHead, delivered} {
+		git(t, root, "merge-base", "--is-ancestor", sha, "trunk")
+	}
+	if c, o, e := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root); c != 0 {
+		t.Fatalf("delivered: %d %s %s", c, o, e)
+	}
+	archived := filepath.Join(root, "_archive", "task.md")
+	if !slices.Equal(gateApplicationStates(t, archived), []string{"consumed"}) {
+		t.Fatal("delivery did not spend approval")
+	}
+	head := git(t, root, "rev-parse", "HEAD")
+	if c, _, _ := terminalInvoke(t, root, "merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root); c != 1 || head != git(t, root, "rev-parse", "HEAD") {
+		t.Fatal("retry spent or committed twice")
+	}
+}
+
+func TestStateOnlyLocalDeliveryAndRetirementKeepDistinctAuthority(t *testing.T) {
+	for _, retire := range []bool{false, true} {
+		t.Run(fmt.Sprint(retire), func(t *testing.T) {
+			root, entity := terminalCLIWorkflow(t, terminalWorkflowOpts{localMerge: true})
+			git(t, root, "branch", "-M", "main")
+			approvedTerminalGate(t, root)
+			args := []string{"merge", "guard", "task", "--verdict", "passed", "--workflow-dir", root}
+			expected := "consumed"
+			if retire {
+				// Move the approved entity and its companion into a real separate state checkout.
+				state := filepath.Join(root, "state")
+				os.Mkdir(state, 0755)
+				testgit.InitRepo(t, state, "-q")
+				git(t, state, "branch", "-M", "spacedock-state/test")
+				os.Rename(entity, filepath.Join(state, "task.md"))
+				os.Rename(filepath.Join(root, "task"), filepath.Join(state, "task"))
+				git(t, state, "add", ".")
+				git(t, state, "commit", "-qm", "approved retirement")
+				readme, _ := os.ReadFile(filepath.Join(root, "README.md"))
+				writeFile(t, filepath.Join(root, "README.md"), strings.Replace(string(readme), "merge: local", "merge: local\nstate: state\nstate-branch: spacedock-state/test", 1))
+				args = []string{"status", "--workflow-dir", root, "--archive", "task"}
+				expected = "pending"
+				entity = filepath.Join(state, "_archive", "task.md")
+			} else {
+				sha := strings.TrimSpace(git(t, root, "rev-parse", "main"))
+				if c, o, e := terminalInvoke(t, root, "status", "--workflow-dir", root, "--set", "task", "pr=local-merge:"+sha); c != 0 {
+					t.Fatalf("sentinel %d %s %s", c, o, e)
+				}
+				entity = filepath.Join(root, "_archive", "task.md")
+			}
+			if c, o, e := terminalInvoke(t, root, args...); c != 0 {
+				t.Fatalf("archive %d %s %s", c, o, e)
+			}
+			if !slices.Equal(gateApplicationStates(t, entity), []string{expected}) {
+				t.Fatal("retirement and delivery authority confused")
+			}
+			if retire && entityFields(t, entity)["status"] != "validation" {
+				t.Fatal("retirement marked delivery complete")
+			}
+		})
 	}
 }

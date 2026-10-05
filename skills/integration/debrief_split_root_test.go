@@ -50,6 +50,8 @@ stages:
 // debriefBoot holds the three fields the debrief skill reads from the boot record
 // (Step 1b) to resolve the debrief home. The binary emits them as JSON strings.
 type debriefBoot struct {
+	Error            string `json:"error"`
+	StatePath        string `json:"state_path"`
 	StateBackend     string `json:"state_backend"`
 	EntityDir        string `json:"entity_dir"`
 	EntityDirPresent string `json:"entity_dir_present"`
@@ -65,12 +67,13 @@ func debriefBootRecord(t *testing.T, defDir string) debriefBoot {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("spacedock status --boot --json: %v\nstderr=%s", err, stderr.String())
-	}
+	runErr := cmd.Run()
 	var rec debriefBoot
 	if err := json.Unmarshal(stdout.Bytes(), &rec); err != nil {
 		t.Fatalf("parse boot json: %v\n%s", err, stdout.String())
+	}
+	if runErr != nil && rec.Error != "state-checkout-missing" {
+		t.Fatalf("spacedock status --boot --json: %v\nstderr=%s", runErr, stderr.String())
 	}
 	return rec
 }
@@ -95,6 +98,9 @@ func runDebriefFlow(t *testing.T, defDir, date string) debriefResult {
 
 	// Step 1b — resolve the debrief home from the boot record.
 	boot := debriefBootRecord(t, defDir)
+	if boot.Error == "state-checkout-missing" {
+		return debriefResult{backend: "split-root", root: boot.StatePath, halted: true}
+	}
 	res := debriefResult{backend: boot.StateBackend, root: boot.EntityDir}
 
 	// Halt-gate: a declared-but-absent split-root checkout writes/commits NOTHING.
@@ -248,7 +254,7 @@ func stageSingleRootDebrief(t *testing.T) (defDir, codeBranch string) {
 
 // stageAbsentCheckoutDebrief builds a split-root workflow whose state checkout is
 // declared but NOT materialized (no linked worktree at the path — a fresh clone /
-// removed worktree). Boot reports entity_dir_present:false. Returns the
+// removed worktree). Boot refuses with state-checkout-missing. Returns the
 // definition dir and the code branch name.
 func stageAbsentCheckoutDebrief(t *testing.T) (defDir, codeBranch string) {
 	t.Helper()

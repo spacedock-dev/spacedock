@@ -2,7 +2,7 @@
 
 A busy workflow generates constant small state commits. Split-root keeps them off your code branch. The README and stage declarations stay on your main branch; the mutable entity state (frontmatter updates, stage reports, archive moves) lives in a separate state checkout. Your code history stays clean, and several agents or operators can drive the same workflow at once.
 
-The README [opts in with one `state:` field](../concepts/workflows-and-entities.md#keep-workflow-state-off-your-code-branch); the split is transparent, and you read the workflow exactly as you would any other. On a fresh clone the state checkout is absent; run `spacedock state init` to restore it. The shipped [`docs/dev` workflow](https://github.com/spacedock-dev/spacedock/tree/main/docs/dev) runs split-root, a live example.
+The README [opts in with one `state:` field](../concepts/workflows-and-entities.md#keep-workflow-state-off-your-code-branch); the split is transparent, and you read the workflow exactly as you would any other. On a fresh clone, `status` reports the missing state checkout and filing refuses. Run `spacedock state init` to restore it. For a newly declared workflow with no state branch, use `spacedock state new`. Status distinguishes missing or invalid storage from a valid workflow with no entities. The shipped [`docs/dev` workflow](https://github.com/spacedock-dev/spacedock/tree/main/docs/dev) runs split-root, a live example.
 
 ## Concurrent writers
 
