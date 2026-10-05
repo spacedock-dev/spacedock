@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:q67rfhn33tncbvf9xqbq960r:validation:attempt-1:revision-1",
+  "question": "Do you accept the validation of the lane-model pin, pin-lane-models-in-one-place?",
+  "artifacts": [
+    {
+      "id": "artifact:q67rfhn33tncbvf9xqbq960r:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/091081f7f9b66c8329e8a808e59f0f4ff5397b80/lane-models-validation-review.md",
+      "rev": "sha256:430f280f31300a199fb65662f418449e4b790b4903929329edba18501fc2dc0d",
+      "mediaType": "text/markdown",
+      "summary": "Validated at its stack tip. Live-lane clauses are pending: there is no green lane at this tip yet. Pending and unmet items are stated in the review file."
+    }
+  ]
+}

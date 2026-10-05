@@ -6,6 +6,27 @@ source: "Captain, 2026-10-04: pin gpt-6-luna for CI, and move the Claude lane to
 id: q67rfhn33tncbvf9xqbq960r
 started: 2026-10-04T05:48:52Z
 worktree: .worktrees/spacedock-ensign-pin-lane-models-in-one-place
+gates:
+    version: 1
+    records:
+        - id: gate:q67rfhn33tncbvf9xqbq960r:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:q67rfhn33tncbvf9xqbq960r-validation-1
+              briefing:
+                id: briefing:q67rfhn33tncbvf9xqbq960r:validation:attempt-1:revision-1
+                digest: sha256:fcaa11027c7cb540e1ae4a6056a06f2f035b7dbfaa1ac8ca21f4ad2c698d5d0c
+                room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:q67rfhn33tncbvf9xqbq960r:validation:1
+                briefing: briefing:q67rfhn33tncbvf9xqbq960r:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-05T17:22:59.399835Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem
