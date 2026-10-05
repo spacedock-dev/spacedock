@@ -524,3 +524,30 @@ FO-directed rebase of `spacedock-ensign/pin-lane-models-in-one-place` from its p
 ### Summary
 
 Rebased this branch onto the journey line at `e5907d00b`; the 7 own commits replayed cleanly and identically, so the layer now sits at the top of the chain with the lane-model change intact. New tip `238a2d59a` (10 files, +134/-47 vs the base), force-with-lease pushed. The accepted shape is intact: one `internal/release/live_models.txt` read by Go through `go:embed` and by the workflow with bash builtins, no Go command, no model literal in the workflow. Focused package tests pass; no repository-wide suite or CI run.
+
+## Stage Report: validation (rebase tip 7ac7bb69b)
+
+- DONE: Read the acceptance criteria from the entity itself (not the brief) and validate each against the tip `7ac7bb69b`.
+  AC-1..AC-4 read from this entity; code inspected in `.worktrees/spacedock-ensign-pin-lane-models-in-one-place` at `7ac7bb69b`.
+- DONE: Validate AC-1 (one place holds each lane model): the five ids live once and are read by both Go and the workflow.
+  `internal/release/live_models.txt` holds the five `key=id` lines; `internal/release/livemodels.go` is only `//go:embed live_models.txt` + `parseLiveModels` + `var LiveModels`; the workflow step `Resolve live lane models` (lines 63-92) loops the same file with `while IFS='=' read` and `${key//[.-]/_}`. Simulated the loop over the real file: `claude_sonnet=claude-sonnet-5`, `claude_opus=claude-opus-4-8`, `codex_exec=gpt-6-luna`, `pi_oauth=openai-codex/gpt-6-luna:max`, `pi_api_key=openai/gpt-6-luna:max`. Single place = MET; the AC verifier "a test fails when they diverge" is NOT MET: no test pins the values or the workflow consumption (`internal/release/livemodels_test.go` and all `TestLiveModelsCommand*`/`TestRuntimeLiveWorkflow*` guards were deleted).
+- DONE: Validate AC-2 (Pi runs gpt-6-luna on both auth paths).
+  `pi_liveenv.go:21-22` aliases `release.LiveModels["pi.oauth"]`=`openai-codex/gpt-6-luna:max` and `["pi.api-key"]`=`openai/gpt-6-luna:max`; `decidePiLiveAuth` returns them per auth path. Harness-values clause MET; the "local front-door smoke passes" clause is PENDING (no green live run at this tip).
+- DONE: Validate AC-3 (no model literal remains in the workflow).
+  `grep -nE 'claude-sonnet-5|claude-opus-4-8|gpt-6-luna|gpt-5\.6-luna' .github/workflows/runtime-live-e2e.yml` = no match; only cadence labels (`sonnet`, `opus-pre-release`) and `needs.offline.outputs.*` references remain. MET. The "add one and the check must fail" falsifier has no automated test (placement guards deleted).
+- DONE: Validate AC-4 (no-regression): Pi discovery/consumers read the single source, Claude keeps its confirmed pin, offline suite.
+  `claude.sonnet=claude-sonnet-5` retained; the four Go consumers index `release.LiveModels` (`pi_liveenv.go`, `contextbudget_test.go`, `shared_live_runner_test.go`, `codex_liveenv_test.go`). Claude-pin clause MET; "offline suite passes" PENDING - no green lane at this tip.
+- DONE: Known issue 1 - confirm the stage report's cited tests do not exist at this tip.
+  TRUE: `TestPiLaneModelsExistInInstalledCatalog` removed by `c38688034`; `TestLiveModelsCommand*` removed by `7ac7bb69b`; `TestRuntimeLiveWorkflowCarriesNoLaneModelLiteral|ResolvedKeysExist|LaneModelWiring|ResolverBindsEachOutputToItsKey|ModelSitesResolveThroughPrinter` removed by `f1c62cf08`. `grep -rn` finds none. The `TestRuntimeLiveWorkflow` prefix still matches unrelated tests in `runtime_live_evidence_workflow_test.go`/`journey_delta_workflow_test.go`, not the cited names. Defect in the (historical) report, not in the code.
+- DONE: Known issue 2 - confirm no model literal remains in the workflow and no Go command prints the models.
+  No lane-id literal in the workflow (search above); `grep -rn 'live-models' --include=*.go --include=*.md --include=*.yml .` = no match; no CLI/`cmd` registration. Confirmed both.
+- DONE: Run only focused, bounded checks; no repository-wide suite, race suite, or CI run.
+  `go build ./...` OK; `gofmt -l` clean on the changed Go files; `go test ./internal/release -run 'TestRuntimeLiveWorkflow' -count=1` ok; `go test ./internal/claudeteam -run 'TestContextLimitForModelBoundary|TestContextBudget' -count=1` ok; workflow resolver loop simulated over the repo file.
+- SKIPPED: Repository-wide offline suite, race suite, and any CI/live rerun.
+  Prohibited by the assignment; consequently AC-4's offline-suite clause and AC-2's live clause cannot be established and are reported PENDING, not met.
+- DONE: Report the outcome per acceptance criterion.
+  AC-1 single place MET / divergence-test NOT MET; AC-2 values MET / live smoke PENDING; AC-3 MET; AC-4 Claude pin MET / offline suite PENDING. No criterion requiring a green lane is met.
+
+### Summary
+
+At tip `7ac7bb69b` the accepted shape holds: the five lane ids live once in `internal/release/live_models.txt`, read by Go through `go:embed` and by the workflow with bash builtins, with no model literal in the workflow and no Go command for the models. The two known issues are confirmed: the entity's earlier stage reports cite tests (`TestPiLaneModelsExistInInstalledCatalog`, `TestLiveModelsCommand*`, the `TestRuntimeLiveWorkflow*` guards) that later commits deleted, and no placement/value divergence test remains. AC-3 is met and the AC-1 single-source structure is met, but AC-1's "test fails when they diverge" verifier, AC-2's live smoke, and AC-4's offline-suite clause are unmet or pending because there is no green lane at this tip.
