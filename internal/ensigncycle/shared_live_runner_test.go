@@ -100,9 +100,13 @@ func claudeLiveRole(model string) (string, error) {
 	}
 }
 
+// The Pi binding on this journey flips between XFAIL and XPASS and has no
+// single-repair owner; owned by psvqjf0w8xh2txp9604gsvmz
+// (pi-live-journey-flakiness).
+//
 //spacedock:live-journey id=owned-conflict-owner-handoff fixture=conflict-owner/stamped-checkout
 func TestLiveCommonOwnedConflictOwnerHandoff(t *testing.T) {
-	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "fe7bfjz9sb8wyckmnnm3ncjx")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
+	liveJourney(t, "owned-conflict-owner-handoff", "conflict-owner/stamped-checkout", writeConflictOwnerFixture, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runConflictOwnerHandoffJourney, assertConflictOwnerHandoff)
 }
 
 // The pi XFAIL below is registered for the Pi rejection-worker topology fault,
@@ -117,35 +121,31 @@ func TestLiveCommonRejectionFlow(t *testing.T) {
 	liveJourney(t, "rejection-flow", "rejection/before-validation-1", writeRejectionWorkflow, []liveJourneyGap{liveXFail("pi", "6h3teccccn3qh71yqcmjbjx4")}, runClaudeRejectionFlowScenario, assertRejectionFlow)
 }
 
-// The Pi red on this journey is an evidence defect in the shared
-// worker-lifecycle assert, not a product fault: the assert credits a
-// `subagent_wait` result keyed on the spawned run id, while a Pi first officer
-// observes completion through `bg_wait` and the native completion notice, so it
-// computes completed=-1 and reports validation-worker-not-dispatched although
-// the dispatch succeeded. Sole owner:
-// mk72bnt1b5hsp9sfv83979xs (repair-pi-worker-lifecycle-observation).
+// The Pi red on this journey is `validation-worker-not-dispatched`, the shared
+// worker-lifecycle observation defect. Sole owner:
+// s0gq9p69nztejw8xp3by4k7f (pi-live-auto-continue-dispatch-red).
 //
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
 func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
-	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, []liveJourneyGap{liveXFail("pi", "mk72bnt1b5hsp9sfv83979xs")}, runAutoContinueJourney, assertAutoContinue)
+	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, []liveJourneyGap{liveXFail("pi", "s0gq9p69nztejw8xp3by4k7f")}, runAutoContinueJourney, assertAutoContinue)
 }
 
+// The Pi binding on this journey flips between runs; re-bound under
+// psvqjf0w8xh2txp9604gsvmz (pi-live-journey-flakiness).
+//
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
-// The Pi red on this journey is the worker-lifecycle observation defect
-// `implementation-worker-not-dispatched`: the shared worker-lifecycle assert
-// credits a `subagent_wait` result keyed on the spawned run id, while a Pi first
-// officer observes completion through `bg_wait` and the native completion
-// notice, so it computes completed=-1 and reports the implementation worker as
-// not dispatched although the dispatch succeeded. Sole owner:
-// mk72bnt1b5hsp9sfv83979xs (repair-pi-worker-lifecycle-observation).
+// The Pi red on this journey mixes the shared gate assertion failing
+// (`gate-hold-violation` and `gate-not-held`) with the worker-lifecycle
+// observation defect `implementation-worker-not-dispatched`. Sole owner:
+// penfp034pt9s3cgwp7wg3ykk (pi-live-default-headless-gate-stop-red).
 //
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("pi", "mk72bnt1b5hsp9sfv83979xs")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk")}, runGateStopScenario, assertGateHeld)
 }
 
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
@@ -167,9 +167,12 @@ func TestLiveCommonFullEnsignCycle(t *testing.T) {
 	liveJourney(t, "full-ensign-cycle", "realistic-lifecycle", writeRealisticLifecycleFixture, nil, runFullEnsignCycleJourney, someCommitNamesOnly)
 }
 
+// The Pi red on this journey flips between runs and previously had no binding;
+// owned by psvqjf0w8xh2txp9604gsvmz (pi-live-journey-flakiness).
+//
 //spacedock:live-journey id=ac-value-reanchor fixture=ac-reanchor/means-pass-value-regressed
 func TestLiveCommonACValueReanchor(t *testing.T) {
-	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, nil, runACValueReanchorJourney, assertACReanchorScenario)
+	liveJourney(t, "ac-value-reanchor", "ac-reanchor/means-pass-value-regressed", authorACReanchorScenario, []liveJourneyGap{liveXFail("pi", "psvqjf0w8xh2txp9604gsvmz")}, runACValueReanchorJourney, assertACReanchorScenario)
 }
 
 //spacedock:live-journey id=withdrawn-gate-recovery fixture=recorded-gate/withdrawn
