@@ -1,6 +1,6 @@
 ---
 title: Refresh the pi-live lane pins and substrate assertions for the Pi 1.0 family
-status: validation
+status: implementation
 score: 0.75
 source: "Captain directive, 2026-10-03: Pi 1.0 shipped; update the CI pin and the relevant Pi extensions."
 id: mh698y3ht6ydmr6ethaw9hg9
@@ -77,13 +77,13 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
 started: 2026-10-03T04:04:56Z
 worktree: .worktrees/spacedock-ensign-pi-live-lane-pin-refresh
-pr: "#816"
+pr:
 ---
 
 The pi-live Runtime Live E2E lane validates a superseded Pi family. Refresh its three
