@@ -27,6 +27,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
 ---
 
 Two Pi journeys report a false cause. The assert cannot see how the First Officer

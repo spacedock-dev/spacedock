@@ -30,6 +30,7 @@ gates:
               application:
                 target-stage: done
                 state: pending
+mod-block: merge:pr-merge
 ---
 
 ## Problem
