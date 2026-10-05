@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:mk72bnt1b5hsp9sfv83979xs:validation:attempt-1:revision-1",
+  "question": "Do you accept the validation of the observation repair, repair-pi-worker-lifecycle-observation?",
+  "artifacts": [
+    {
+      "id": "artifact:mk72bnt1b5hsp9sfv83979xs:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/091081f7f9b66c8329e8a808e59f0f4ff5397b80/observer-repair-validation-review.md",
+      "rev": "sha256:d23bfa12fac762efd26113f98acc6718f1f43c4b6527388a9c64e4b7553ae818",
+      "mediaType": "text/markdown",
+      "summary": "Validated at its stack tip. Live-lane clauses are pending: there is no green lane at this tip yet. Pending and unmet items are stated in the review file."
+    }
+  ]
+}

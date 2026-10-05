@@ -6,6 +6,17 @@ source: "Live lane run 37101046846, journey default-headless-gate-stop, 2026-10-
 id: mk72bnt1b5hsp9sfv83979xs
 started: 2026-10-04T04:35:01Z
 worktree: .worktrees/spacedock-ensign-repair-pi-worker-lifecycle-observation
+gates:
+    version: 1
+    records:
+        - id: gate:mk72bnt1b5hsp9sfv83979xs:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:mk72bnt1b5hsp9sfv83979xs-validation-1
+              briefing:
+                id: briefing:mk72bnt1b5hsp9sfv83979xs:validation:attempt-1:revision-1
+                digest: sha256:d8ca66d86c8c517c877418a96cd471775dbce4f5558f50b95460b052dfefa529
+                room-ref: '@review/validation/briefing-1'
 ---
 
 Two Pi journeys report a false cause. The assert cannot see how the First Officer
