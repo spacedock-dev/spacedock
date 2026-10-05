@@ -134,31 +134,30 @@ For OAuth Pi uses `openai-codex/gpt-5.6-luna:max`; the API-key fallback uses
 | Codex resolver and `TestLiveCommon...` | Current-checkout resolution and common journeys | Both PR and release jobs consume Codex metrics. |
 | Pi `TestLiveCommon...` and `TestLivePiFrontDoorSmoke` | Common journeys plus one four-part substrate proof | The detail artifacts preserve each run. |
 
-The manual Pi lane keeps the lean surface: it does not install tmux and runs one front-door substrate smoke.
+The Pi lane keeps a lean setup: it does not install tmux and runs one front-door substrate smoke. It is not a cheap lane — a run takes about 35 minutes and spends live model calls.
 
 The optional journey-delta job uses the newest metrics artifact for each live producer in the run.
 If one artifact is unavailable or incomplete, the job warns and skips the comment. The required test result does not change.
 
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
-- Pull requests run `claude-sonnet-5` at maximum effort and `gpt-5.6-luna` at maximum effort.
+- Pull requests to `main` run `claude-sonnet-5` at maximum effort, `gpt-5.6-luna` at maximum effort, and the Pi lane. Pi is not opt-in: every pull request runs it by default. The lane is not cheap — it takes about 35 minutes and spends live model calls.
 - An explicit `live_cadence=opus-pre-release` dispatch runs offline plus `claude-opus-4-8` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
-- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment to attach a Pi live check to the PR (see "Running the pi lane on a pull request" below). Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
+- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. The manual dispatch path still works unchanged. The `live:pi` label is no longer required, on the dispatch path or on a pull request. Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
 #### Running the pi lane on a pull request
 
-To attach a Pi live check to a pull request:
+Every pull request to `main` runs the Pi lane by default; no label is required. The lane is `pi-live`, and it waits on its environment approval.
 
-1. Add the `live:pi` label. The label event runs only the secret-free `offline` gate plus `pi-live`; the other paid lanes skip the event (`github.event.action != 'labeled'`), and a non-Pi label runs no live lane at all.
-2. Approve the `CI-E2E-PI` environment when the run waits on it. The required reviewer is the human gate. Approve in the Checks tab ("Review deployment"), or with the API:
+1. Approve the `CI-E2E-PI` environment when the run waits on it. The required reviewer is the human gate. Approve in the Checks tab ("Review deployment"), or with the API:
 
         gh api -X POST repos/{owner}/{repo}/actions/runs/<run-id>/pending_deployments \
           --input - <<< '{"environment_ids":[<environment-id>],"state":"approved"}'
 
    The pending-deployment record can take several seconds to appear after `pi-live` reaches `waiting`; re-read the endpoint before concluding it is missing.
-3. The run appears in the pull request's Checks tab. `pi-live` is not a merge requirement.
+2. The run appears in the pull request's Checks tab. `pi-live` is not a merge requirement.
 
-A `workflow_dispatch` run with `live_cadence: pi` produces the same evidence, but its run is not associated with a pull request.
+The `live:pi` label is no longer a precondition: a label event skips the lane (`github.event.action != 'labeled'`), so adding the label does not attach the check — the pull request already ran it. A `workflow_dispatch` run with `live_cadence: pi` produces the same evidence, but its run is not associated with a pull request.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 
