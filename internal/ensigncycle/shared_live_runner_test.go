@@ -148,10 +148,6 @@ func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
 	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("pi", "mk72bnt1b5hsp9sfv83979xs")}, runGateStopScenario, assertGateHeld)
 }
 
-// AUDIT(2026-08-16): finding 5 — the direct-commit marker matches ANY git commit and
-// no assertion checks the strategy doc landed. The pi XFAIL below is structural
-// (finding 11): a claude-dialect trace reads the pi stream, so it can never XPASS.
-//
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
 	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, nil, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
