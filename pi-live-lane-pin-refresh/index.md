@@ -1151,3 +1151,84 @@ Removed the two now-passing pi XFAIL bindings (`smallest-sufficient-mechanism`, 
 ### Summary
 
 Removed the whole obsolete AUDIT note above `TestLiveCommonSmallestSufficientMechanism`. The finding-11 structural-XPASS sentence was false (`f37bda151` removed the binding and it XPASSed before removal); the finding-5 sentence was also obsolete (`71d1f6b1c` removed its marker and added a strategy-doc assertion), so none of the note was kept. Pushed the code branch fast-forward; focused ensigncycle tests, live-tagged vet/build, gofmt, and diff-check pass. The FO's uncommitted frontmatter edit in the state checkout (`status: validation`->`implementation`, gate application `pending`->`superseded`) was intentionally left unstaged and is not part of this report commit.
+
+## Stage Report: implementation (live-journey registry deletion at `515344ddd`)
+
+Captain-directed deletion: the journey list is derivable from the 17
+`spacedock:live-journey` markers in `internal/ensigncycle`, the lanes select
+journeys by `TestLiveCommon` prefix, and the registry was a hand-maintained copy
+the reconciliation test compared against the code. The only drift-catching half
+of the machinery — the binding-owner join — skipped in CI because no workflow
+sets `SPACEDOCK_LIVE_STATE_DIR`.
+
+- DONE: Delete `docs/runtime-live-ci-registry.md` and the registry-reading tests.
+  `git rm`; commit `515344ddd` on `spacedock-ensign/pi-live-lane-pin-refresh`.
+  `TestRuntimeLiveRegistryReconciliation` and `TestRuntimeLiveTODOOwnersAreActive`
+  both read the registry doc and are gone.
+- DONE: Rescue the three checks that were not registry machinery into
+  `internal/contractlint/runtime_live_lane_test.go` (kept, run every CI).
+  `TestRuntimeLiveCommonSuiteTimeouts` and `TestRuntimeLiveCommonFailFastPolicy`
+  assert the workflow's own lane policy and read no registry doc; both need no
+  env var. `TestRuntimeLiveGapBindingValidation` is a pure `parseLiveGap` unit
+  test that reads no registry doc; it does not depend on the deleted file. All
+  three PASS.
+- DONE: Confirm the deletion did not depend on the whole file being registry code.
+  Applied the supervisor's discriminator — reads the registry doc, runs without
+  `SPACEDOCK_LIVE_STATE_DIR`? — to each test: registry/owner joins fail both and
+  were deleted; the suite-timeout, fail-fast, and gap-binding tests fail neither
+  and were kept. (Contra the earlier "delete-whole-file" instruction, which would
+  have dropped two CI-running live-policy checks.)
+- DONE: Remove every reference to the deleted files outside the historical records.
+  `docs/runtime-live-ci.md`: unlinked the registry, removed the whole
+  `### Registry reconciliation` section (both commands) and the `active-owner`
+  sentence. `docs/specs/scenario-testing-principles.md`: repointed the 17 journeys
+  to `internal/ensigncycle/` and dropped the reconciliation sentence. No workflow,
+  skill, or other Go source referenced either file.
+- DONE: Leave the ten historical references untouched, per the supervisor.
+  `docs/roadmap/test-behavior-completeness/{index,dispatch-sprint-execution}.md`,
+  `docs/roadmap/live-test-truth/{index,dispatch-sprint-execution}.md`, and
+  `docs/roadmap/pi-ux/{staff-review,staff-review-2}.md` are point-in-time records
+  (sprint desired-state and executed-command evidence); editing them would falsify
+  the record. This report is the durable record of the deletion instead.
+- DONE: Keep every journey declaration and live test untouched.
+  `grep -rn 'spacedock:live-journey' --include='*.go' .` still returns 17 markers;
+  no `internal/ensigncycle` file was edited. The deletion cost no journey.
+- DONE: Push the branch as a fast-forward, no force.
+  `git push origin HEAD:spacedock-ensign/pi-live-lane-pin-refresh` advanced
+  `3fed0a16e..515344ddd`; remote tip confirmed `515344ddd`.
+- DONE: Run only focused tests for the touched package.
+  `go test ./internal/contractlint/ -count=1` PASS; the three rescued tests run
+  `-v` PASS; `go build ./...` PASS; `go vet ./internal/contractlint/` PASS;
+  `gofmt -l internal/contractlint/runtime_live_lane_test.go` clean. The
+  repository-wide suite and any CI run were not run, per the FO budget.
+
+### Surviving assertions carried only by the deleted files
+
+No surviving test or doc asserted anything that only the deleted files carried:
+a repo-wide grep for both filenames and both test names finds only the ten
+historical records left deliberately. The assertions that *were* lost with the
+deletion are recorded here rather than dropped quietly:
+
+- Registry/source count equality, registered-journey ID and entry-point join,
+  fixture-union join, duplicate-ID detection, unclassified-live-test detection,
+  builder/assertion drift, orphan-fixture detection, scheduled-callable coverage,
+  and the three-runtime selector-uniqueness check from
+  `TestRuntimeLiveRegistryReconciliation`.
+- The mutable binding-owner join across `TODO`/`XFAIL` bindings and runtime proofs
+  from `TestRuntimeLiveTODOOwnersAreActive` (which only ran when the state
+  variable was set).
+
+These are exactly the duplicated-facts checks the captain directed removed. The
+kept tests still cover common-suite run-shape agreement between the workflow and
+`docs/runtime-live-ci.md`, the fail-fast policy, and `parseLiveGap` binding
+validation.
+
+### Summary
+
+Deleted the redundant live-journey registry doc and its reconciliation test;
+rescued the three non-registry checks (suite run-shape, fail-fast policy,
+`parseLiveGap` validation) into `internal/contractlint/runtime_live_lane_test.go`;
+updated the two normative docs and left the ten point-in-time roadmap/review
+references intact per the supervisor. All 17 journey markers and live tests are
+untouched. Code branch pushed fast-forward to `515344ddd`; focused contractlint
+tests, build, vet, and gofmt pass.
