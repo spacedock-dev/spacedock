@@ -1,6 +1,6 @@
 ---
 title: Refresh the pi-live lane pins and substrate assertions for the Pi 1.0 family
-status: implementation
+status: validation
 score: 0.75
 source: "Captain directive, 2026-10-03: Pi 1.0 shipped; update the CI pin and the relevant Pi extensions."
 id: mh698y3ht6ydmr6ethaw9hg9
@@ -1023,3 +1023,82 @@ mechanism, and do not treat the green lane as evidence for criteria the evidence
 ### Summary
 
 Raised `PiCodingAgentFloor` to `1.0.0` in `internal/pilive/pilive.go` as a one-constant change; no comment names any version and no other pin/floor moved. Under the new floor, two `TestPiVersionAtLeast` cases in `internal/cli/pi_frontdoor_test.go` that asserted true for a version just above the OLD floor sat below 1.0.0: `{"0.83.1", true}` was lifted to `{"1.0.1", true}` by inspection and the focused run then caught `{"garbage 0.90.0 trailing", true}` still failing, which was lifted to `{"garbage 1.2.3 trailing", true}`. Focused `go test ./internal/cli/... ./internal/pilive/...`, `go build ./...`, and `gofmt -l` pass. Code commit `5ead9b85c` (pre-rebase `665835f87`).
+
+## Stage Report: validation (successor — readiness floor `1.0.0` at `5ead9b85c`)
+
+Successor validation of tip `5ead9b85c`, which adds exactly one change over the previously
+validated tip: `PiCodingAgentFloor` `0.83.0` -> `1.0.0`. Lane evidence is run `37338782614
+at chain top `238a2d59a` (a descendant of `5ead9b85c`). Run state checked once: the run is
+`in_progress` — `offline` job `completed/success`, `pi-live` job `in_progress`,
+`claude-live`/`codex-live` skipped. No repository-wide suite, race suite, or CI run was
+started by this stage; results for lane-dependent criteria are therefore reported as
+awaiting the run.
+
+- DONE: The floor constant is `1.0.0`.
+  `internal/pilive/pilive.go:32` reads `PiCodingAgentFloor = "1.0.0"`; it is the launcher
+  ready-gate through `internal/cli/pi.go:44` `const piVersionFloor = pilive.PiCodingAgentFloor`.
+- DONE: No comment carries a version string.
+  `grep -nE '//.*[0-9]+\.[0-9]+\.[0-9]+' internal/pilive/ internal/cli/` returns nothing; the
+  const-block comment (`pilive.go:19-20`) and the floor comment (`pi.go:39-43`) name no number;
+  `git diff 5ead9b85c^ 5ead9b85c` changes no comment line.
+- DONE: The pi-subagents floor and the node floor are unchanged.
+  `PiSubagentsFloor = "0.53.0"` and `NodeEngineFloor = "22.19.0"` are byte-identical; the floor
+  commit's only logic line is the `PiCodingAgentFloor` value.
+- DONE: Tests that assumed the old floor were corrected, not deleted.
+  In `internal/cli/pi_frontdoor_test.go` `TestPiVersionAtLeast`, `{"0.83.1", true}` ->
+  `{"1.0.1", true}` and `{"garbage 0.90.0 trailing", true}` -> `{"garbage 1.2.3 trailing", true}`;
+  the case count is unchanged (no cases removed), and the remaining cases use
+  `pilive.PiCodingAgentFloor` or values clearly above/below. No literal `0.83.0`/`0.83.1`/`0.90.0`
+  remains in code, tests, docs, or workflow.
+- DONE: Focused checks pass.
+  `go build ./...`, `go test ./internal/pilive/...`, `go test ./internal/cli -run
+  'TestPiVersionAtLeast|TestPiFrontDoor|TestPiVersionFloor|TestPiDoctor'`,
+  `go test ./cmd/spacedock-release/...`, `go vet ./internal/pilive ./cmd/spacedock-release`, and
+  `gofmt -l` on the changed files (empty) all pass.
+- DONE: Amended AC-4 holds at this tip and needs no lane result.
+  The three versions are declared once in `internal/pilive/pilive.go`; `go run
+  ./cmd/spacedock-release print-install` emits exactly `@earendil-works/pi-coding-agent@1.0.2`,
+  `pi-subagents@0.75.0`, `pi-intercom@0.16.0`; `docs/runtime-live-ci.md:95` delegates with
+  `eval "$(go run ./cmd/spacedock-release print-install)"`. The only non-declaration occurrences
+  of the pin numbers are a synthetic comparison-test literal and non-consumed roadmap prose.
+- DONE: Amended AC-1 code half holds; the installed-name/version condition is unaffected by the
+  floor raise.
+  Pins are `1.0.2` / `0.75.0` / `0.16.0`; the lane's `guard` requires the installed
+  pi-coding-agent version >= `PiCodingAgentFloor` (`1.0.0`), and the pinned `1.0.2` satisfies it.
+- DONE: Amended AC-2 code half holds; unaffected by the floor change.
+  `verifyManifest` requires nonempty `pi.extensions` and `exports["./intercom-bridge"].default`
+  resolving to regular files; `install` calls it for the installed subagents root and the
+  "Verify Pi current-checkout setup" step calls `spacedock-release verify-manifest`.
+- DONE: Amended AC-3 code half holds; unaffected by the floor change.
+  `pack` rejects any `npm pack --json` entry whose integrity differs from the pin before either
+  tarball install; covered by `internal/pilive` tests that pass.
+- SKIPPED: Amended AC-1 lane half (green pi-live run on the pinned candidate).
+  Run `37338782614` is `in_progress` with its `pi-live` job running; the installed-version logs,
+  doctor output, and journey/smoke grades are not yet available. Awaiting that run.
+- SKIPPED: Amended AC-2 lane half ("the live lane's green run at the frozen tip").
+  Same run; the pi-live job has not completed. Awaiting that run.
+- SKIPPED: Amended AC-3 lane half ("the live lane's install of the pinned tarballs").
+  Same run; the pi-live job has not completed. Awaiting that run.
+- DONE: The amended criteria's recorded lost guarantees are still absent, so no criterion is
+  silently strengthened.
+  `grep` for `registry_oracle`, `pi_live_pins_guard`, `verified_pack`, and
+  `PI_SUBAGENTS_INTEGRITY` finds no match in Go or workflow files; AC-1..AC-3 rest only on the
+  pins, the port's commands/tests, and the pending lane run, exactly as amended.
+- SKIPPED: AC-5's suite clauses could not be re-run here.
+  FO budget forbids the repository-wide and race suites. The run's `offline` job ran
+  `go test ./...` and is green at `238a2d59a`; the race clause is not evidenced by this run's
+  visible jobs.
+- OPEN RISK: AC-5's text says the reviewed diff "leaves ... the Pi floor ... unchanged", but the
+  captain-directed successor change raises that floor. The floor raise is authorized, so AC-5's
+  Pi-floor clause is stale against it and needs an FO/captain criteria amendment; the other
+  boundary clauses (other lanes' pins/action majors/live selectors) still hold, since the floor
+  commit touches only `internal/pilive/pilive.go` and `internal/cli/pi_frontdoor_test.go`.
+
+### Summary
+
+Settled the floor change against the code: the constant is `1.0.0`, no comment names a version,
+`PiSubagentsFloor`/`NodeEngineFloor` are unchanged, the two old-floor test cases were corrected
+in place rather than deleted, and focused build/vet/gofmt/tests pass. Amended AC-4 holds
+outright; amended AC-1/AC-2/AC-3 hold on their code halves but their lane halves await run
+`37338782614`, which is still `in_progress`. Flagged that AC-5's "Pi floor ... unchanged" clause
+is contradicted by the authorized floor raise and needs a criteria amendment.
