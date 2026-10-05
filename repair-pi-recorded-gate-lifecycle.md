@@ -9,6 +9,27 @@ group: pi-live-followup
 id: gcmfwfjd9735b58sbzw7xsb8
 started: 2026-10-04T04:35:04Z
 worktree: .worktrees/spacedock-ensign-repair-pi-recorded-gate-lifecycle
+gates:
+    version: 1
+    records:
+        - id: gate:gcmfwfjd9735b58sbzw7xsb8:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:gcmfwfjd9735b58sbzw7xsb8-validation-1
+              briefing:
+                id: briefing:gcmfwfjd9735b58sbzw7xsb8:validation:attempt-1:revision-1
+                digest: sha256:945b09c94a62a4944c64f0c1a6d18f6bbd30d65e69c78a0b365189aa1a9f747c
+                room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:gcmfwfjd9735b58sbzw7xsb8:validation:1
+                briefing: briefing:gcmfwfjd9735b58sbzw7xsb8:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-05T17:22:55.89839Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 ---
 
 ## Problem

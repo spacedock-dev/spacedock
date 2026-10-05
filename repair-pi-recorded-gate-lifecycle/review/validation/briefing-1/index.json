@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:gcmfwfjd9735b58sbzw7xsb8:validation:attempt-1:revision-1",
+  "question": "Do you accept the validation of the recorded-gate repair, repair-pi-recorded-gate-lifecycle?",
+  "artifacts": [
+    {
+      "id": "artifact:gcmfwfjd9735b58sbzw7xsb8:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/091081f7f9b66c8329e8a808e59f0f4ff5397b80/recorded-gate-repair-validation-review.md",
+      "rev": "sha256:60292f0910f2879a337e8d175c61290740efe8dfbe8fdd8fbacf8259ac052cbf",
+      "mediaType": "text/markdown",
+      "summary": "Validated at its stack tip. Live-lane clauses are pending: there is no green lane at this tip yet. Pending and unmet items are stated in the review file."
+    }
+  ]
+}
