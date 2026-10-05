@@ -1,6 +1,6 @@
 ---
 title: Refresh the pi-live lane pins and substrate assertions for the Pi 1.0 family
-status: validation
+status: implementation
 score: 0.75
 source: "Captain directive, 2026-10-03: Pi 1.0 shipped; update the CI pin and the relevant Pi extensions."
 id: mh698y3ht6ydmr6ethaw9hg9
@@ -92,7 +92,7 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
+                state: superseded
 sprint: pi-ux
 group: tooling
 sprint-readiness: ready
