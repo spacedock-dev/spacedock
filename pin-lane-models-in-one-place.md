@@ -551,3 +551,10 @@ Rebased this branch onto the journey line at `e5907d00b`; the 7 own commits repl
 ### Summary
 
 At tip `7ac7bb69b` the accepted shape holds: the five lane ids live once in `internal/release/live_models.txt`, read by Go through `go:embed` and by the workflow with bash builtins, with no model literal in the workflow and no Go command for the models. The two known issues are confirmed: the entity's earlier stage reports cite tests (`TestPiLaneModelsExistInInstalledCatalog`, `TestLiveModelsCommand*`, the `TestRuntimeLiveWorkflow*` guards) that later commits deleted, and no placement/value divergence test remains. AC-3 is met and the AC-1 single-source structure is met, but AC-1's "test fails when they diverge" verifier, AC-2's live smoke, and AC-4's offline-suite clause are unmet or pending because there is no green lane at this tip.
+
+### Stage report correction — 2026-10-05
+
+Earlier stage reports in this entity cite `TestPiLaneModelsExistInInstalledCatalog`, `TestLiveModelsCommand*`
+and `TestRuntimeLiveWorkflow*`. This branch's own later commits removed all three, so those citations are
+stale. The code is unaffected; the report was. Validation at `7ac7bb69b` confirmed the five ids live once in
+`internal/release/live_models.txt`, read by Go through `go:embed` and by the workflow with shell builtins.
