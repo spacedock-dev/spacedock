@@ -573,7 +573,12 @@ jobs:
           if-no-files-found: warn
 
   pi-live:
-    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'live:pi')) || (github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi') }}
+    # The Pi lane runs on every pull request to the trunk by default, so the
+    # live:pi label is no longer required to attach it. The label stays useful
+    # to other workflows, but it is not a precondition here. The != 'labeled'
+    # guard matches the sibling live jobs: a label event skips the lane rather
+    # than firing a redundant run after the PR's own push already ran it.
+    if: ${{ (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi')) && github.event.action != 'labeled' }}
     needs: offline
     runs-on: ubuntu-latest
     environment:
