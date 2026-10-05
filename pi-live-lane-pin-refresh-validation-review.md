@@ -48,5 +48,8 @@ doc-versus-pin check.
 
 ## Question
 
-Approve this layer's validation, so `merge guard` may proceed and the train merges in order
-`#822` -> `#820` -> `#816`?
+Do you accept the validation of this layer, `pi-live-lane-pin-refresh`?
+
+This gate approves the validation only. It does not approve any merge, and no merge runs when it is
+approved. The approval stays pending, because the gate's target stage is terminal. The tool
+`merge guard` consumes that pending approval later, and only after it sees a merged pull request.
