@@ -226,7 +226,20 @@ func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
 
 func finishLiveScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, result liveResult, semantic ...error) {
 	t.Helper()
-	scenario.grade = gradeLive(scenario.gap.kind == "xfail", semantic...)
+	finishLiveGrade(t, runner, scenario, result, liveScenarioGrade(scenario, semantic...))
+}
+
+// liveScenarioGrade is the single gap-aware verdict for a live journey run: a
+// graded finding whose target carries an xfail binding is owned (XFAIL); an
+// unbound finding reds the lane (FAIL). Durable-branch runners grade through
+// here too, so a durable failure is ownable exactly like an ordinary-path one.
+func liveScenarioGrade(scenario sharedRuntimeScenario, semantic ...error) liveGrade {
+	return gradeLive(scenario.gap.kind == "xfail", semantic...)
+}
+
+func finishLiveGrade(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario, result liveResult, grade liveGrade) {
+	t.Helper()
+	scenario.grade = grade
 	runner.emitMetrics(t, scenario, result)
 	if scenario.grade.status == "xfail" {
 		t.Logf("XFAIL %s/%s owner=%s observed=%v", scenario.gap.target, scenario.name, scenario.gap.owner, scenario.grade.codes)
