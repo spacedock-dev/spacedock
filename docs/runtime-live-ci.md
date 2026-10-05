@@ -3,8 +3,8 @@
 The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
 
 A runtime regression is proved by one of the 17 exported `TestLiveCommon...`
-functions registered in [`runtime-live-ci-registry.md`](runtime-live-ci-registry.md).
-Each declaration has an adjacent `liveJourney(...)` call that binds its stable
+functions declared in `internal/ensigncycle/`. Each declaration has an adjacent
+`liveJourney(...)` call that binds its stable
 journey ID, fixture builder, target-scoped TODO or strict-XFAIL owner, runtime-
 neutral exercise, and durable assertion. A TODO skips only when the target
 cannot run. An XFAIL runs the target and accepts its typed semantic failures.
@@ -15,42 +15,15 @@ The helper selects only the Claude, Codex, or Pi transport from
 the exercise and durable grade are shared. Claude's three substrate proofs retain
 their separate assertions and share the common journeys' three-slot queue.
 
-### Registry reconciliation
-
-`TestRuntimeLiveRegistryReconciliation` parses the real Go declarations and calls,
-the immediately adjacent journey and fixture annotations, the desired registry,
-and the executable workflow. It fails on missing or duplicate IDs, unclassified
-live tests, malformed TODO ownership, builder/assertion drift, orphan fixtures,
-and an incorrect common-suite selector.
-
-Run it after changes to `internal/ensigncycle/`, `internal/livescenario/`, the
-registry, or `.github/workflows/runtime-live-e2e.yml`:
-
-```bash
-go test ./internal/contractlint -run '^TestRuntimeLiveRegistryReconciliation$'
-```
-
-The state checkout changes independently from a code commit. Run the mutable
-owner join during sprint close and before a release:
-
-```bash
-SPACEDOCK_LIVE_STATE_DIR=docs/dev/.spacedock-state \
-  go test ./internal/contractlint -run '^TestRuntimeLiveTODOOwnersAreActive$'
-```
-
-This check fails when a TODO or XFAIL names an inactive entity. Stable code CI
-does not fetch mutable workflow state.
-
 Live records use `pass`, `xfail`, `xpass`, or `fail`. After infrastructure
 succeeds, the grade runs the durable semantic assertions. One or more typed
 semantic failures produce XFAIL for an XFAIL target. The metric keeps all
 observed semantic codes. An empty semantic set is XPASS. XPASS keeps the lane
 green only so the complete lane can finish, and emits an alert with the target
-and owner. XPASS is not a terminal green registry state. Before archiving the
-owner, remove the source binding and matching reconciliation expectation, then
-run the unchanged candidate without the binding and require PASS. Run the
-active-owner join at that terminal gate. Authentication, launch, timeout,
-fixture, parsing, state-read, and metric failures remain ordinary failures.
+and owner. XPASS is not a terminal green state. Before archiving the owner,
+remove the source binding, then run the unchanged candidate without the binding
+and require PASS. Authentication, launch, timeout, fixture, parsing, state-read,
+and metric failures remain ordinary failures.
 
 ### Local live execution
 

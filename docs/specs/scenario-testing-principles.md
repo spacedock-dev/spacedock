@@ -52,7 +52,7 @@ The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, 
 
 ## Seed Scenarios
 
-The first foundation is the 17 exported `TestLiveCommon...` journeys registered in `docs/runtime-live-ci-registry.md`. Each function owns one stable ID, executable fixture binding, target-specific TODO ownership, runtime-neutral exercise, and durable assertion. There is no central scenario table or per-runtime runner registry.
+The first foundation is the 17 exported `TestLiveCommon...` journeys declared in `internal/ensigncycle/`. Each function owns one stable ID, executable fixture binding, target-specific TODO ownership, runtime-neutral exercise, and durable assertion. There is no central scenario table or per-runtime runner registry.
 
 <!-- seed-scenarios -->
 - `gate-guardrail` — the FO binds and commits the retained package, presents exactly one semantic root review, then stops open without Resolution, consume, advance, dispatch, or archival.
@@ -66,8 +66,6 @@ The first foundation is the 17 exported `TestLiveCommon...` journeys registered 
 - `smallest-sufficient-mechanism` — the FO chooses the smallest sufficient mechanism: it applies deterministic edits it already holds in-house and commits a convention-direct doc directly (no worker/PR climb), while engaging a commissioned stage's ready entities via the standing dispatch loop without a per-entity justification (the gate stays silent through engage).
 - `keep-moving-posture` — the FO keeps moving: after a gate approval it advances + dispatches the next stage with no permission question, dispatches independent ready entities in parallel, re-shapes a questioned entity and pauses only its dispatch while the independent ones keep moving, and does not end its turn on an async wait while independent work remains.
 <!-- /seed-scenarios -->
-
-The registry names the desired journeys. `TestRuntimeLiveRegistryReconciliation` joins it to the real declarations, adjacent metadata calls, fixture annotations, and all three executable workflow selectors.
 
 ## Prioritizing New Cross-Runtime Scenarios
 
