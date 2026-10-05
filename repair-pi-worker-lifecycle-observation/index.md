@@ -17,6 +17,16 @@ gates:
                 id: briefing:mk72bnt1b5hsp9sfv83979xs:validation:attempt-1:revision-1
                 digest: sha256:d8ca66d86c8c517c877418a96cd471775dbce4f5558f50b95460b052dfefa529
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:mk72bnt1b5hsp9sfv83979xs:validation:1
+                briefing: briefing:mk72bnt1b5hsp9sfv83979xs:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-05T17:22:52.399838Z"
+                decision: approve
+              application:
+                target-stage: done
+                state: pending
 ---
 
 Two Pi journeys report a false cause. The assert cannot see how the First Officer
