@@ -3,6 +3,7 @@ title: Measure and stabilise Pi common-journey flakiness
 sprint: pi-live-completeness
 source: "Cross-run evidence: owned-conflict-owner-handoff XFAIL then XPASS; keep-moving-posture XPASS then FAIL, its binding removed on that single XPASS per its own recorded condition; ac-value-reanchor pass then FAIL with no binding."
 id: psvqjf0w8xh2txp9604gsvmz
+status: backlog
 ---
 
 ## Problem

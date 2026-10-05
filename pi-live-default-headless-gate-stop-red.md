@@ -3,6 +3,7 @@ title: Repair the Pi default-headless-gate-stop red
 sprint: pi-live-completeness
 source: "Run at chain top c94323204: FAIL /default-headless-gate-stop owner= observed=[gate-hold-violation gate-not-held implementation-worker-not-dispatched], after the gate-prepare selected-source anchor was corrected."
 id: penfp034pt9s3cgwp7wg3ykk
+status: backlog
 ---
 
 ## Problem

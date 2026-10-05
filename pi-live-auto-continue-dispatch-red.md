@@ -3,6 +3,7 @@ title: Repair the Pi auto-continue dispatch red
 sprint: pi-live-completeness
 source: "Run at chain top c94323204: FAIL /auto-continue-after-implementation--auto-continue/single-root owner= observed=[validation-worker-not-dispatched], after the shared assert began crediting bg_wait and the native subagent-notify completion."
 id: s0gq9p69nztejw8xp3by4k7f
+status: backlog
 ---
 
 ## Problem
