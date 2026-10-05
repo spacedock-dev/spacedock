@@ -1008,7 +1008,7 @@ mechanism, and do not treat the green lane as evidence for criteria the evidence
 ## Stage Report: implementation (cycle 3)
 
 - DONE: Change the pi-coding-agent readiness floor to 1.0.0. It is PiCodingAgentFloor in internal/pilive/pilive.go. Change that constant and nothing else about the value.
-  `PiCodingAgentFloor = "1.0.0"` (was `"0.83.0"`); the launcher gate still reads it through `const piVersionFloor = pilive.PiCodingAgentFloor` (internal/cli/pi.go:44). Code commit `665835f87` on `spacedock-ensign/pi-live-lane-pin-refresh`.
+  `PiCodingAgentFloor = "1.0.0"` (was `"0.83.0"`); the launcher gate still reads it through `const piVersionFloor = pilive.PiCodingAgentFloor` (internal/cli/pi.go:44). Code commit `5ead9b85c` on `spacedock-ensign/pi-live-lane-pin-refresh` (rebased onto the remote tip `eef9bef49`; the pre-rebase SHA was `665835f87`).
 - DONE: Write no version string in any comment. The constant stays the only place the number appears. Do not add a comment naming the old floor or the new one.
   The const-block comment is unchanged and still reads only "readiness floors (pi-coding-agent's is also the launcher ready-gate floor): the ONLY place these numbers may be written" (internal/pilive/pilive.go:19-20); `git diff` shows no comment line touched. The new number is written only at the constant.
 - DONE: Keep every other constant as it is, including the pi-subagents floor and the node floor.
@@ -1022,4 +1022,4 @@ mechanism, and do not treat the green lane as evidence for criteria the evidence
 
 ### Summary
 
-Raised `PiCodingAgentFloor` to `1.0.0` in `internal/pilive/pilive.go` as a one-constant change; no comment names any version and no other pin/floor moved. Under the new floor, two `TestPiVersionAtLeast` cases in `internal/cli/pi_frontdoor_test.go` that asserted true for a version just above the OLD floor sat below 1.0.0: `{"0.83.1", true}` was lifted to `{"1.0.1", true}` by inspection and the focused run then caught `{"garbage 0.90.0 trailing", true}` still failing, which was lifted to `{"garbage 1.2.3 trailing", true}`. Focused `go test ./internal/cli/... ./internal/pilive/...`, `go build ./...`, and `gofmt -l` pass. Code commit `665835f87`.
+Raised `PiCodingAgentFloor` to `1.0.0` in `internal/pilive/pilive.go` as a one-constant change; no comment names any version and no other pin/floor moved. Under the new floor, two `TestPiVersionAtLeast` cases in `internal/cli/pi_frontdoor_test.go` that asserted true for a version just above the OLD floor sat below 1.0.0: `{"0.83.1", true}` was lifted to `{"1.0.1", true}` by inspection and the focused run then caught `{"garbage 0.90.0 trailing", true}` still failing, which was lifted to `{"garbage 1.2.3 trailing", true}`. Focused `go test ./internal/cli/... ./internal/pilive/...`, `go build ./...`, and `gofmt -l` pass. Code commit `5ead9b85c` (pre-rebase `665835f87`).
