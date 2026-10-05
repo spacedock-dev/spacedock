@@ -1117,3 +1117,22 @@ in place rather than deleted, and focused build/vet/gofmt/tests pass. Amended AC
 outright; amended AC-1/AC-2/AC-3 hold on their code halves but their lane halves await run
 `37338782614`, which is still `in_progress`. Flagged that AC-5's "Pi floor ... unchanged" clause
 is contradicted by the authorized floor raise and needs a criteria amendment.
+
+## Stage Report: implementation (base-layer pi binding refresh at `f37bda151`)
+
+- DONE: Remove the pi XFAIL binding for `smallest-sufficient-mechanism` (line 160).
+  Edit `f37bda151` replaces `[]liveJourneyGap{liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}` with `nil`; its journey passes on the pi lane now. Covering assertion: `TestLiveCommonSmallestSufficientMechanism`'s `assertDurableSmallestMechanism` (an unbound pi regression now fails the lane instead of being absorbed as XFAIL).
+- DONE: Remove the pi XFAIL binding for `keep-moving-posture` (line 135), leaving the claude-sonnet binding.
+  Edit `f37bda151` keeps `liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")` and drops `liveXFail("pi", "x02375wsg6q61xek7p0t36j2")`; the claude lane has not run at this tip, so it is unverified rather than stale and stays. Covering assertion: `TestLiveCommonKeepMovingPosture`'s `assertDurableKeepMoving`.
+- DONE: Re-point the `default-headless-gate-stop` pi binding from retired `gcmfwfjd9735b58sbzw7xsb8` to `mk72bnt1b5hsp9sfv83979xs` and correct its comment.
+  Edit `f37bda151` sets `liveXFail("pi", "mk72bnt1b5hsp9sfv83979xs")` and rewrites the adjacent comment to name the observed `implementation-worker-not-dispatched` worker-lifecycle observation fault. Covering assertion: `TestLiveCommonDefaultHeadlessGateStop`'s `assertGateHeld`; `TestRuntimeLiveTODOOwnersAreActive` also joins the new owner to active `repair-pi-worker-lifecycle-observation`. Note: that join passes for the old owner too (`repair-pi-recorded-gate-lifecycle` is still status `implementation`), so the deciding evidence for the re-point is the lane observation, not a deterministic test.
+- DONE: Push the branch as a fast-forward.
+  `git push origin HEAD:spacedock-ensign/pi-live-lane-pin-refresh` advanced `5ead9b85c..f37bda151`; remote tip confirmed `f37bda151631302de59615a02222df308aaec927`, no force.
+- DONE: Run only focused `internal/ensigncycle` tests, and report the assertion covering each edit.
+  `go test ./internal/ensigncycle -run 'TestPiDefaultExtensionRoots|TestPiIsolatedHome|TestPiLiveEnv|TestPiIntercomPackageRootDiscoversIndependently' -count=1` PASS; `go vet -tags live ./internal/ensigncycle` PASS; `go test -tags live ./internal/ensigncycle -run '^$' -count=1` compiles the live runner; `gofmt -l` clean. The file's own covering assertions are the per-journey live assertions plus the `internal/contractlint` registry joins: `SPACEDOCK_LIVE_STATE_DIR=<state checkout> go test ./internal/contractlint -run '^TestRuntimeLive(RegistryReconciliation|TODOOwnersAreActive)$' -count=1` PASS, deriving `xfail/pi=4` (was 6) and joining every binding to an active owner.
+- SKIPPED: Dropping the now-stale sentence in the AUDIT comment above `smallest-sufficient-mechanism` (lines 154-156: "The pi XFAIL below is structural (finding 11) ... it can never XPASS").
+  The assignment limited the change to the three binding lines ("and nothing else") and did not authorize a further comment edit, so it is left in place and surfaced here rather than patched silently.
+
+### Summary
+
+Removed the two now-passing pi XFAIL bindings (`smallest-sufficient-mechanism`, `keep-moving-posture`) and re-pointed the `default-headless-gate-stop` pi binding from the retired gate-lifecycle owner to the active worker-lifecycle-observation owner with a corrected comment. Branch pushed fast-forward to `f37bda151`; focused ensigncycle tests, live-tagged vet/compile, gofmt, and the contractlint registry/owner joins pass (`xfail/pi` 6→4). One stale AUDIT-comment sentence remains above the `smallest-sufficient-mechanism` test because the assignment scoped the edit to the three binding lines.
