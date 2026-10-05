@@ -72,6 +72,7 @@ var liveClaims = []liveClaim{
 	{"Run live Claude substrate proofs", "TestLiveBareReachable", "claude-bare-dispatch"},
 	{"Run live Claude substrate proofs", "TestLiveBreakGlassShimRecovery", "claude-break-glass-recovery"},
 	{"Verify Codex resolver against installed plugin", "TestCodexResolveManifestAgainstInstalledHost", "codex-current-checkout-manifest-resolution"},
+	{"Run live Codex multi-agent lifecycle", "TestCodexIsolatedHomeCollaborationLifecycle", "codex-isolated-home-collaboration-lifecycle"},
 	{"Run live Codex shared scenarios", "TestLiveCommon", "codex-common-journeys"},
 	{"Run live Pi common journeys", "TestLiveCommon", "pi-common-journeys"},
 	{"Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke", "pi-front-door-substrate"},
