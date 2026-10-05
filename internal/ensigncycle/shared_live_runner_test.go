@@ -157,6 +157,11 @@ func TestLiveCommonKeepMovingPosture(t *testing.T) {
 // presented a completed validation gate review. Owner:
 // jfdrr2dbdtt952s4cvvy74k8 (claude-live-completion-observation-gap).
 //
+// The Pi red on this journey mixes the shared gate assertion failing
+// (`gate-hold-violation` and `gate-not-held`) with the worker-lifecycle
+// observation defect `implementation-worker-not-dispatched`. Sole owner:
+// penfp034pt9s3cgwp7wg3ykk (pi-live-default-headless-gate-stop-red).
+//
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
 	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "penfp034pt9s3cgwp7wg3ykk")}, runGateStopScenario, assertGateHeld)
