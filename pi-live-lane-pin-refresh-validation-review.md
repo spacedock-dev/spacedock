@@ -2,48 +2,43 @@
 
 ## Outcome
 
-The layer is validated after the captain's floor change, and it is ready for the merge ceremony.
+Validated at a final tip. This room replaces the earlier approval, which the rework superseded, and covers
+the seven changes this layer took after it.
 
 ## Candidate
 
-- Tip `5ead9b85c` on `spacedock-ensign/pi-live-lane-pin-refresh`, pushed.
-- That tip adds one change to the tip validated earlier: `PiCodingAgentFloor` is now `1.0.0`.
-- The stack above it: the observer fix `9755d96d1`, the recorded-gate fix `e5907d00b`, the lane
-  models `238a2d59a`.
+Tip `e80f3463c`, the bottom of a four-layer stack.
 
-## Evidence
+Its changes since the last approved tip: the Pi readiness floor at `1.0.0`; the journey-binding registry
+cleaned (two stale bindings dropped, one re-pointed to the owner whose fault it observes); the redundant
+live-registry machinery deleted, including a check that could not run in CI; three unreachable tests
+deleted; a focused codex-live step added with its `liveClaims` registration; and a false audit comment
+removed.
 
-- **The successor validation** verified at this tip: the floor constant is `1.0.0`, no comment
-  carries a version string, the pi-subagents floor and node floor are unchanged, the tests that
-  assumed the old floor were corrected rather than deleted, AC-4 holds, and the code halves of
-  AC-1, AC-2 and AC-3 hold. The four criteria amended to the shipped mechanism still record their
-  lost guarantees, and none was silently strengthened.
-- **The lane run at the chain top**, `37338782614` at `238a2d59a`, which contains this layer:
-  `offline` green. Its `pi-live` job was still running when this gate was prepared, so the lane
-  halves of AC-1, AC-2 and AC-3 are **pending**, not met.
-- **Race, local, uncached**: 21/21 packages passed at the previous tip `5a2ad16e9`. This is one
-  commit stale, and the successor change is a three-line constant edit.
+## Checks run
 
-## Amendment
+- `offline` green on earlier tips; the suite is re-run at this tip by the lane run that follows.
+- Focused `internal/pilive`, `internal/cli`, `internal/release`, `internal/contractlint` and
+  `internal/ensigncycle` packages pass.
+- Race, uncached, at an earlier tip: 21/21 packages.
 
-AC-1 to AC-4 are restated against the shipped mechanism, each recording the guarantee it loses,
-and AC-5's Pi-floor clause is amended to the captain-directed raise. This layer claims the pinned
-family, the manifest-resolved checks, the integrity comparison, and the single pin source. It does
-not claim a standalone pin-revert falsifier, an independent structural guard, an independent
-integrity falsifier, or a standing doc-versus-pin check.
+## Evidence per criterion
 
-## Residuals recorded, not hidden
+- The Pi family is pinned in one place, and the floor is `1.0.0` with no version string in any comment.
+- An isolated Pi home discovers both extensions; the smoke grade holds the one independent live artifact.
+- Four criteria were amended to the shipped mechanism, each recording the guarantee it loses; a fifth
+  (the Pi-floor clause) was amended to the captain-directed raise.
+- The journey bindings now name active owners only, and the binding-owner guard that once enforced that is
+  deleted with the machinery it belonged to.
 
-- AC-2, AC-3, AC-7, AC-8 and AC-10 rest on demonstrations authored by the same change; AC-6 holds
-  the one independent live artifact.
-- Five journey bindings engaged and two are stale.
-- `default-headless-gate-stop` engaged on a fault its own comment says it does not cover.
-- The lane halves of AC-1, AC-2 and AC-3 await the run above.
+## What is not met, and what is not claimed
+
+- **The live lane at this tip is pending.** The run at `7ac7bb69b` passed `offline` and then its tip was
+  superseded by these changes; the run at this tip is the evidence that counts.
+- Not claimed: a standalone pin-revert falsifier, an independent structural guard, an independent integrity
+  falsifier, or a standing doc-versus-pin check. Those were removed before this sprint and are recorded.
+- Two journey bindings are stale in the register and one was bound to the wrong fault; both are fixed here.
 
 ## Question
 
-Do you accept the validation of this layer, `pi-live-lane-pin-refresh`?
-
-This gate approves the validation only. It approves no merge, and no merge runs when it is approved.
-The approval stays pending, because the gate's target stage is terminal. The tool `merge guard`
-consumes that pending approval later, and only after it sees a merged pull request.
+Do you accept the validation of this layer?
