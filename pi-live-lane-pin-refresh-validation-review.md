@@ -2,54 +2,48 @@
 
 ## Outcome
 
-The layer is validated after a criteria amendment, and it is ready for the merge ceremony.
+The layer is validated after the captain's floor change, and it is ready for the merge ceremony.
 
 ## Candidate
 
-- Tip `5a2ad16e9` on `spacedock-ensign/pi-live-lane-pin-refresh`, pushed and level with origin.
-- Stack: `#822` (271, base `main`) -> `#820` (9w, base 271) -> `#816` (mh, base 9w).
-- Size: 19 files, **net +1078**. Port `internal/pilive/pilive.go` 427 + `pilive_test.go` 251 = 678 lines.
+- Tip `5ead9b85c` on `spacedock-ensign/pi-live-lane-pin-refresh`, pushed.
+- That tip adds one change to the tip validated earlier: `PiCodingAgentFloor` is now `1.0.0`.
+- The stack above it: the observer fix `9755d96d1`, the recorded-gate fix `e5907d00b`, the lane
+  models `238a2d59a`.
 
 ## Evidence
 
-- **Lane run `37189752489` at the frozen tip: success.** `offline` job success, which runs
-  `go test ./...` on the runner; `pi-live` job success, `DONE 17 tests` for the 17 common
-  journeys plus the front-door smoke.
-- **Race, local, uncached:** `go test ./... -race -count=1` -> 21/21 packages ok, no failures.
-- **Exception register**, read from the run's `pi-coverage-detail.jsonl`: 5 XFAIL engagements
-  and 2 XPASS alerts. All 17 journeys passed.
-- **AC-6** carries the independent live artifact: the doctor and durable smoke grade
-  (`boot_contract` true, isolated discovery exposing both tools, package-root env absent).
+- **The successor validation** verified at this tip: the floor constant is `1.0.0`, no comment
+  carries a version string, the pi-subagents floor and node floor are unchanged, the tests that
+  assumed the old floor were corrected rather than deleted, AC-4 holds, and the code halves of
+  AC-1, AC-2 and AC-3 hold. The four criteria amended to the shipped mechanism still record their
+  lost guarantees, and none was silently strengthened.
+- **The lane run at the chain top**, `37338782614` at `238a2d59a`, which contains this layer:
+  `offline` green. Its `pi-live` job was still running when this gate was prepared, so the lane
+  halves of AC-1, AC-2 and AC-3 are **pending**, not met.
+- **Race, local, uncached**: 21/21 packages passed at the previous tip `5a2ad16e9`. This is one
+  commit stale, and the successor change is a three-line constant edit.
 
 ## Amendment
 
-Validation returned **AC-1 to AC-4 as not met**, because each named an artifact the captain's
-simplification rounds removed — the registry-comparison Go guard, the Go structural guard with
-its falsifiers, the `verified_pack` wiring with `PI_SUBAGENTS_INTEGRITY`, and the version-naming
-workflow comment and doc lines — and AC-1's literal named `1.0.0` where the shipped pin is
-`1.0.2`. The captain directed the amendment; each criterion is restated against the shipped
-mechanism and records the guarantee it loses.
-
-This layer therefore claims: the pinned family, the manifest-resolved checks, the integrity
-comparison, and the single pin source. It does **not** claim a standalone pin-revert falsifier,
-an independent structural guard, an independent integrity falsifier, or a standing
-doc-versus-pin check.
+AC-1 to AC-4 are restated against the shipped mechanism, each recording the guarantee it loses,
+and AC-5's Pi-floor clause is amended to the captain-directed raise. This layer claims the pinned
+family, the manifest-resolved checks, the integrity comparison, and the single pin source. It does
+not claim a standalone pin-revert falsifier, an independent structural guard, an independent
+integrity falsifier, or a standing doc-versus-pin check.
 
 ## Residuals recorded, not hidden
 
-- **AC-2, AC-3, AC-7, AC-8 and AC-10 rest on demonstrations authored by the same change.**
-- **The `default-headless-gate-stop` binding engaged on the wrong fault.** It observed
-  `implementation-worker-not-dispatched`, which its own comment says it does not cover, and
-  `gradeLive` never checks an observed code against the bound owner.
-- **Two bindings are stale:** `smallest-sufficient-mechanism` and `keep-moving-posture` pass
-  with `observed=[]`.
-- **One local offline flake** in a test this layer does not touch, under a full disk; the same
-  code is green on the runner.
+- AC-2, AC-3, AC-7, AC-8 and AC-10 rest on demonstrations authored by the same change; AC-6 holds
+  the one independent live artifact.
+- Five journey bindings engaged and two are stale.
+- `default-headless-gate-stop` engaged on a fault its own comment says it does not cover.
+- The lane halves of AC-1, AC-2 and AC-3 await the run above.
 
 ## Question
 
 Do you accept the validation of this layer, `pi-live-lane-pin-refresh`?
 
-This gate approves the validation only. It does not approve any merge, and no merge runs when it is
-approved. The approval stays pending, because the gate's target stage is terminal. The tool
-`merge guard` consumes that pending approval later, and only after it sees a merged pull request.
+This gate approves the validation only. It approves no merge, and no merge runs when it is approved.
+The approval stays pending, because the gate's target stage is terminal. The tool `merge guard`
+consumes that pending approval later, and only after it sees a merged pull request.
