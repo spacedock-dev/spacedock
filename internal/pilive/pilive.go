@@ -29,7 +29,7 @@ const (
 	PiIntercomVersion      = "0.16.0"
 	PiIntercomIntegrity    = "sha512-ClGQuovPsz7r1iQwMRjEN+8wxywfrDrMILAkCSf/z19Nezzyfz77U8362Wb/VFNoZOwmF4PBsuGWCtB9AsEJMQ=="
 	NodeEngineFloor        = "22.19.0"
-	PiCodingAgentFloor     = "0.83.0"
+	PiCodingAgentFloor     = "1.0.0"
 	PiSubagentsFloor       = "0.53.0"
 )
 

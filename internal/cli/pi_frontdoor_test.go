@@ -1743,13 +1743,13 @@ func TestPiVersionAtLeast(t *testing.T) {
 	}{
 		{"0.82.9", false},
 		{pilive.PiCodingAgentFloor, true},
-		{"0.83.1", true},
+		{"1.0.1", true},
 		{piTestVersionAboveFloor, true},
 		{"0.8.9", false},
 		{"0.9.0", false},
 		{"", false},
 		{"dev", false},
-		{"garbage 0.90.0 trailing", true}, // first semver triple in the output wins
+		{"garbage 1.2.3 trailing", true}, // first semver triple in the output wins
 	}
 	for _, tc := range cases {
 		if got := piVersionAtLeast(tc.version, piVersionFloor); got != tc.want {
