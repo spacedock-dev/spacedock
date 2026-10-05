@@ -132,23 +132,20 @@ func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 
 //spacedock:live-journey id=keep-moving-posture fixture=keep-moving/mixed-events
 func TestLiveCommonKeepMovingPosture(t *testing.T) {
-	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy"), liveXFail("pi", "x02375wsg6q61xek7p0t36j2")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
+	liveJourney(t, "keep-moving-posture", "keep-moving/mixed-events", writeKeepMovingWorkflow, []liveJourneyGap{liveXFail("claude-sonnet", "060xp69y61yhrww23g3wvwqy")}, runClaudeKeepMovingScenario, assertDurableKeepMoving)
 }
 
-// The Pi red on this journey is mixed. `gate-hold-violation` and
-// `gate-not-held` are the shared assertion failing: the run never published a
-// prepared Briefing room because its `gate prepare` aborted on a nonexistent
-// reference path (the required committed reference is missing) — the
-// shared-contract / missing-prepare behaviour owned by
-// gcmfwfjd9735b58sbzw7xsb8 (repair-pi-recorded-gate-lifecycle).
-// `implementation-worker-not-dispatched` is the separate observer defect owned
-// by mk72bnt1b5hsp9sfv83979xs (repair-pi-worker-lifecycle-observation). This
-// binding covers the missing-prepare reds; the observer red is noted, not bound
-// here.
+// The Pi red on this journey is the worker-lifecycle observation defect
+// `implementation-worker-not-dispatched`: the shared worker-lifecycle assert
+// credits a `subagent_wait` result keyed on the spawned run id, while a Pi first
+// officer observes completion through `bg_wait` and the native completion
+// notice, so it computes completed=-1 and reports the implementation worker as
+// not dispatched although the dispatch succeeded. Sole owner:
+// mk72bnt1b5hsp9sfv83979xs (repair-pi-worker-lifecycle-observation).
 //
 //spacedock:live-journey id=default-headless-gate-stop fixture=recorded-gate/pre-gate
 func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
-	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("pi", "gcmfwfjd9735b58sbzw7xsb8")}, runGateStopScenario, assertGateHeld)
+	liveJourney(t, "default-headless-gate-stop", "recorded-gate/pre-gate", writePreGateWorkflow, []liveJourneyGap{liveXFail("pi", "mk72bnt1b5hsp9sfv83979xs")}, runGateStopScenario, assertGateHeld)
 }
 
 // AUDIT(2026-08-16): finding 5 — the direct-commit marker matches ANY git commit and
@@ -157,7 +154,7 @@ func TestLiveCommonDefaultHeadlessGateStop(t *testing.T) {
 //
 //spacedock:live-journey id=smallest-sufficient-mechanism fixture=mechanism-choice/mixed-authority
 func TestLiveCommonSmallestSufficientMechanism(t *testing.T) {
-	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, []liveJourneyGap{liveXFail("pi", "h30c9jrfcf21fdh2qs5z58sd")}, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
+	liveJourney(t, "smallest-sufficient-mechanism", "mechanism-choice/mixed-authority", writeSmallestMechanismWorkflow, nil, runClaudeSmallestSufficientMechanismScenario, assertDurableSmallestMechanism)
 }
 
 //spacedock:live-journey id=recorded-gate-lifecycle fixture=recorded-gate/prepared
