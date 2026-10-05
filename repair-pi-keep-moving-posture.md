@@ -13,7 +13,7 @@ issue:
 pr:
 mod-block:
 sprint: pi-live-completeness
-archived: true
+archived: 2026-10-05T17:08:10Z
 ---
 
 Pi still needs a product repair for the `keep-moving-posture` journey. Sonnet and Codex are complete. This task owns only the deferred Pi result.
