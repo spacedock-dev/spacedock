@@ -134,6 +134,10 @@ func TestLiveCommonRejectionFlow(t *testing.T) {
 // committed as cbf74b1; the validator's SendMessage to team-lead failed. Owner:
 // jfdrr2dbdtt952s4cvvy74k8 (claude-live-completion-observation-gap).
 //
+// The Pi red on this journey is `validation-worker-not-dispatched`, the shared
+// worker-lifecycle observation defect. Sole owner:
+// s0gq9p69nztejw8xp3by4k7f (pi-live-auto-continue-dispatch-red).
+//
 //spacedock:live-journey id=auto-continue-after-implementation fixture=auto-continue/single-root,auto-continue/split-root
 func TestLiveCommonAutoContinueAfterImplementation(t *testing.T) {
 	liveJourney(t, "auto-continue-after-implementation", "auto-continue/single-root,auto-continue/split-root", autoContinueFixtureVariants, []liveJourneyGap{liveXFail("claude-sonnet", "jfdrr2dbdtt952s4cvvy74k8"), liveXFail("pi", "s0gq9p69nztejw8xp3by4k7f")}, runAutoContinueJourney, assertAutoContinue)
