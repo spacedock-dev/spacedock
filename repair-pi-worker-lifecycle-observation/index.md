@@ -1,6 +1,6 @@
 ---
 title: The Pi worker-lifecycle assert credits a completion surface this host does not provide
-status: validation
+status: implementation
 score: 0.8
 source: "Live lane run 37101046846, journey default-headless-gate-stop, 2026-10-03: the journey reported implementation-worker-not-dispatched while the launcher log proved both dispatches succeeded."
 id: mk72bnt1b5hsp9sfv83979xs
@@ -195,3 +195,20 @@ Advisory review of candidate `3e7036970` against `fb4428e9c`; no candidate edits
 ### Summary
 
 Independent mutation tests confirm the repaired correlation, both new credits and ordering are load-bearing; the source-traceable fixture and both real passing live roots support the promised recognition behavior. The quoted SHA-256 belongs to the full source session, not the projected fixture, and the report now records both hashes precisely. Candidate `3e7036970` is unchanged and technically validated, but cannot proceed to release until the captain disposes of the documented scope overrun.
+
+## Stage Report: implementation (rebase onto pi-live lane)
+
+- DONE: Rebase this branch onto `origin/spacedock-ensign/pi-live-lane-pin-refresh` at `5ead9b85c`, keeping this task's own change intact.
+  `git rebase origin/spacedock-ensign/pi-live-lane-pin-refresh` replayed this task's three commits as `67d413a39`, `c65bba735`, `9755d96d1`; new tip `9755d96d1`. The lower shared commits were dropped as patch-identical upstream (`fadf4e453`, `080d37f23`, `17858e911`, `d70bd32d6`, `fb4428e9c`, …), so only this task's own change sits on the new base. Pre-rebase ref saved at `refs/backup/repair-pi-worker-pre-rebase` (`3e7036970`). `git diff refs/backup/repair-pi-worker-pre-rebase..HEAD` is empty for `claude_runtime_helpers_test.go` and the replay test: the change survived byte-for-byte.
+- DONE: Report the conflict, both sides, and the resolution.
+  One conflict: `internal/ensigncycle/claude_runtime_helpers_test.go` at the async-wait credit. Base (`5ead9b85c`, via the pi-live lane layer) carried `ToolName == "subagent_wait"` with the comment "subagent_wait (a recent pi-subagents)"; this task's `2d5bd25f6` generalizes it to `(subagent_wait || bg_wait)` and rewrites the comment for both host tool names. Resolved in favour of this task's side; the base condition is subsumed by the `|| bg_wait` form, so no lane-layer semantics were dropped.
+- DONE: Report `internal/ensigncycle/shared_live_runner_test.go`, where the FO note expected a conflict.
+  No conflict. This task's `a2166585a` removed the `mk72bnt1b5hsp9sfv83979xs` XFAIL binding and its owner comment with context that still matched the lane layer, so git applied it cleanly. Result vs the lane tip: `liveJourney(..., nil, ...)` and the binding comment removed, net `+1/-9`.
+- DONE: Report `skills/first-officer/references/fo-install.md`, where the FO note expected a conflict.
+  No conflict. This branch's install-sentinel commit `17858e911` is patch-identical to the lane layer's `c6170ea8c`, so rebase skipped it as already upstream; the file is byte-identical to the rebase target and needs no resolution.
+- DONE: Run only this task's focused tests; no repository-wide suite, no CI run.
+  `go test ./internal/ensigncycle/ -count=1 -run 'TestPiWorkerLifecycleObservationReplay|TestPiAutoContinueReplayDoubleDispatch|TestAutoContinueReplay|TestAutoContinueFixtureIsDiscoverable|TestAutoContinueGateFixturesParseAsIntended|TestAutoContinueRevalidateStreamCountsBothValidators' -v` PASS (0.518s); `TestPiAutoContinueReplayDoubleDispatch` SKIP (its `/tmp/pi-live-10-art` artifact is absent, unchanged from the recorded pre-rebase skip); `go test -race ./internal/ensigncycle/ -count=1 -run '^TestPiWorkerLifecycleObservationReplay$'` PASS; changed files `gofmt -l` empty. No repository-wide suite or CI lane started.
+
+### Summary
+
+This task's three commits were rebased cleanly onto the pi-live lane tip `5ead9b85c`, producing new tip `9755d96d1`. The only conflict was the async-wait credit comment/condition in `claude_runtime_helpers_test.go`, resolved in favour of this task's `subagent_wait || bg_wait` generalization. The two files the FO flagged -- `shared_live_runner_test.go` and `fo-install.md` -- needed no resolution: the XFAIL-binding removal applied cleanly, and the install-sentinel commit was already upstream. Focused lifecycle tests and the race run pass.
