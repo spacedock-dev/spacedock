@@ -59,7 +59,7 @@ import (
 // stamp-then-tag ordering). notes summarizes the commit log
 // since the last tag into clean release notes and, on confirmation, cuts the
 // annotated tag whose body carries them (CI extracts that body and feeds
-// goreleaser via --release-notes). pins/print-install/install/guard/
+// goreleaser via --release-notes). install/guard/
 // verify-manifest are the pi-live Runtime Live E2E lane commands, folded here
 // from the former spacedock-pilive helper; every pin and floor they print or
 // enforce comes from the single source in internal/pilive.
@@ -89,7 +89,7 @@ func main() {
 		os.Exit(runManifestTagGate(os.Args[2:]))
 	case "notes":
 		os.Exit(notes(os.Args[2:]))
-	case "pins", "print-install", "install", "guard", "verify-manifest":
+	case "install", "guard", "verify-manifest":
 		os.Exit(pilive.Command(os.Args[1], os.Args[2:]))
 	default:
 		fmt.Fprintf(os.Stderr, "spacedock-release: unknown command %q\n", os.Args[1])
@@ -375,8 +375,6 @@ Usage:
   spacedock-release e2e-gate <release-commit-sha>
   spacedock-release manifest-tag-gate <tag> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release notes <release-version>
-  spacedock-release pins
-  spacedock-release print-install
   spacedock-release install
   spacedock-release guard
   spacedock-release verify-manifest <package-root>
