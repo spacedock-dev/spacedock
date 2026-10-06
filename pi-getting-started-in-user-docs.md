@@ -1,9 +1,10 @@
 ---
 title: The user documentation has no Pi path
-status: ideation
+status: implementation
 score: 0.7
 source: "FO review, 2026-10-04: docs/site/get-started covers Claude and Codex; nothing covers spacedock on Pi."
 id: 7gq0w79d76gcx2v2qnda5js6
+worktree: .worktrees/spacedock-ensign-pi-getting-started-in-user-docs
 ---
 
 ## Problem
@@ -35,17 +36,24 @@ at most 4 files.
 ## Acceptance criteria
 
 **AC-1 (VALUE) - The Pi path is documented end to end.**
-Verified by: the page names the host command, both required extensions, how to
-install each, the authentication path, and the check command.
+Verified by: the page names `spacedock pi`, the two launch-required packages
+`pi-subagents` and `pi-intercom` with their install commands, the Pi auth step,
+`spacedock install --host pi`, and `spacedock doctor --host pi`.
 Falsifier: remove any one of those and a reader cannot complete the path.
 
-**AC-2 - The documented commands match the binary.**
-Verified by: running each documented command's help and comparing the flags.
-Falsifier: document a flag the binary rejects.
+**AC-2 - The documented commands and setup claims match the tools that ship.**
+Verified by: running each documented Spacedock command's help (`spacedock pi`,
+`spacedock install`, `spacedock doctor`) and comparing subcommands and flags;
+comparing the Pi-side commands against the Pi CLI's own help; and reading the
+launcher and doctor source for the extension-resolution and readiness paths.
+Falsifier: document a Spacedock flag the binary rejects, a Pi subcommand the Pi
+CLI rejects, or a resolution or auto-install behaviour the shipped launcher does
+not perform.
 
-**AC-3 - No version stamp appears.**
-Verified by: searching the changed pages for the family versions and requiring no
-match. Falsifier: add one and the check must fail.
+**AC-3 - No version number and no model id appears.**
+Verified by: searching the changed pages for the family version string and for
+every exact lane model id owned by `internal/release/live_models.txt`, requiring
+no match. Falsifier: add either and the check must fail.
 
 **AC-4 (no-regression) -** The documentation build passes and the existing pages
 keep their links.
