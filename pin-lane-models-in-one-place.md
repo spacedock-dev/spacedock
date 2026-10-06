@@ -1,6 +1,6 @@
 ---
 title: The lane model ids are written down five times, and the Pi lane runs an older Luna
-status: validation
+status: done
 score: 0.8
 source: "Captain, 2026-10-04: pin gpt-6-luna for CI, and move the Claude lane to sonnet-5.5. Local smoke on openai-codex/gpt-6-luna passed (root and child, 166s, grade artifact written)."
 id: q67rfhn33tncbvf9xqbq960r
@@ -26,8 +26,10 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
+verdict: PASSED
+completed: 2026-10-06T06:45:55Z
 ---
 
 ## Problem

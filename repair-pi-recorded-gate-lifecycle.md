@@ -1,6 +1,6 @@
 ---
 title: Repair the Pi recorded-gate-lifecycle journey
-status: validation
+status: done
 source: "CI run 31770740214 (PR #685 pi-live, model openai/gpt-5.6-luna:max): TestLiveCommonRecordedGateLifecycle FAIL observed=[recorded-gate-lifecycle-violation], 'Blocked at the validation gate. The required committed reference is missing.'"
 score: 0.85
 sprint: pi-live-completeness
@@ -29,8 +29,10 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
+verdict: PASSED
+completed: 2026-10-06T06:45:54Z
 ---
 
 ## Problem

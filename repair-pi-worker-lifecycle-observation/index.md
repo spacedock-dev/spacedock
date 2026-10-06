@@ -1,6 +1,6 @@
 ---
 title: The Pi worker-lifecycle assert credits a completion surface this host does not provide
-status: validation
+status: done
 score: 0.8
 source: "Live lane run 37101046846, journey default-headless-gate-stop, 2026-10-03: the journey reported implementation-worker-not-dispatched while the launcher log proved both dispatches succeeded."
 id: mk72bnt1b5hsp9sfv83979xs
@@ -26,8 +26,10 @@ gates:
                 decision: approve
               application:
                 target-stage: done
-                state: pending
-mod-block: merge:pr-merge
+                state: consumed
+mod-block:
+verdict: PASSED
+completed: 2026-10-06T06:45:53Z
 ---
 
 Two Pi journeys report a false cause. The assert cannot see how the First Officer
