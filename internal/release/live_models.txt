@@ -1,5 +1,5 @@
-claude.sonnet=claude-sonnet-5
-claude.opus=claude-opus-4-8
+claude.sonnet=claude-sonnet-5-5
+claude.opus=claude-opus-5-5
 codex.exec=gpt-6-luna
 pi.oauth=openai-codex/gpt-6-luna:max
 pi.api-key=openai/gpt-6-luna:max

@@ -131,6 +131,14 @@ Pi step summary consume those values rather than repeating a literal. The OAuth
 and API-key Pi auth paths get their own entries (`pi.oauth`, `pi.api-key`), and
 the `max` thinking level rides in the id.
 
+The Claude lane ids were confirmed live on an installed CLI: each answered and
+was served under exactly the id pinned in `internal/release/live_models.txt`, by
+the CLI's own `modelUsage` field. An earlier probe was misled by id shape — the
+CLI refuses the dotted form and serves the hyphenated one — so the exact ids
+live in `internal/release/live_models.txt`, and the candidate, the rejection,
+and the confirmation are recorded in the `pin-lane-models-in-one-place` entity,
+not here.
+
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
 | Claude `TestLiveCommon...` | The 17 registered common journeys | Journey metrics record duration, tokens, model, and available cost. |

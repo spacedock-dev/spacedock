@@ -11,7 +11,7 @@
 # and runs unconditionally on every PR. Only live jobs declare an `environment:`
 # (a required-reviewer approval gate, reviewer = clkao) and read only the
 # host-specific secret they need: ANTHROPIC_API_KEY for Claude and
-# CODEX_AUTH_JSON/OPENAI_API_KEY for Codex and Pi. Pull requests queue Sonnet 5,
+# CODEX_AUTH_JSON/OPENAI_API_KEY for Codex and Pi. Pull requests queue Sonnet 5.5,
 # Codex Luna, and the Pi lane.
 # Manual Opus and Pi cadences run only their selected runtime.
 
@@ -105,7 +105,7 @@ jobs:
       - name: Run deterministic live-harness controls offline
         run: go test ./internal/ensigncycle -count=1 -run 'TestCleanupKeepMovingRootRetainsOnlyFailures|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestCodexLiveRunnerUsesSpacedockFrontDoorBeforeHostArgs|TestAssertRecordedGateHoldLogAcceptsPrepareFirstLifecycle|TestShallowBootFixtureContainsOnlyHeldGate|TestPiLiveEnvDropsForeignRuntimeMarkers|TestPiLiveEnvScrubsAmbientPiSubagentMarkers|TestPiIntercomPackageRootDefaultsBesideSubagents'
 
-  # Pull requests normalize to one Sonnet 5 leg. Manual dispatches choose the
+  # Pull requests normalize to one Sonnet 5.5 leg. Manual dispatches choose the
   # routine Sonnet cadence or the separately approved Opus pre-release cadence.
   claude-live:
     if: ${{ (github.event_name == 'pull_request' || inputs.live_cadence == 'sonnet' || inputs.live_cadence == 'opus-pre-release') && github.event.action != 'labeled' }}
