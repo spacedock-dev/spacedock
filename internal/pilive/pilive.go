@@ -73,14 +73,6 @@ func readJSON(path string, v any) error {
 
 func Command(name string, args []string) int {
 	switch name {
-	case "pins":
-		for _, p := range packages {
-			fmt.Printf("%s %s %s\n", p.spec, p.version, p.integrity)
-		}
-		fmt.Printf("floors node=%s pi-coding-agent=%s pi-subagents=%s\n", NodeEngineFloor, PiCodingAgentFloor, PiSubagentsFloor)
-	case "print-install":
-		fmt.Printf("npm install -g %s@%s\n", PiCodingAgentSpec, PiCodingAgentVersion)
-		fmt.Printf("npm install --prefix \"$HOME/.pi/agent/npm\" %s@%s %s@%s\n", PiSubagentsSpec, PiSubagentsVersion, PiIntercomSpec, PiIntercomVersion)
 	case "verify-manifest":
 		if len(args) != 1 {
 			fmt.Fprintln(os.Stderr, "spacedock-release verify-manifest: need exactly one <package-root>")
