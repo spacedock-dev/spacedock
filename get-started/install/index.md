@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-10-06 07:05:10"
+last_updated: "2026-10-06 07:05:24"
 ---
 
 # Install Spacedock
@@ -50,6 +50,32 @@ spacedock claude "what can spacedock do for me in this project"
 
 Replace `claude` with `codex` or `pi` for the respective coding agents.
 
+## Pi
+
+Pi is an experimental host, alongside Codex (see the [command reference](../../reference/command-reference/)). Spacedock starts Pi as your first officer through Pi's own `pi-subagents` substrate, which needs two Pi packages installed alongside Spacedock:
+
+```
+pi install npm:pi-subagents
+pi install npm:pi-intercom
+```
+
+Authenticate Pi through its own flow before launching. `pi auth` reports provider readiness, and `spacedock doctor --host pi` prints the credentials file it expects.
+
+Install the Spacedock package for Pi, then launch:
+
+```
+spacedock install --host pi
+spacedock pi "/spacedock:survey"
+```
+
+`spacedock pi` resolves the `pi-subagents` and `pi-intercom` packages the same way Pi does — from the entries `pi install` writes to Pi's settings — so no extra configuration is needed. If the packages live outside Pi's agent directory, point Spacedock at them with the `PI_SUBAGENTS_PACKAGE_ROOT` and `PI_INTERCOM_PACKAGE_ROOT` environment variables.
+
+Check the setup end to end:
+
+```
+spacedock doctor --host pi
+```
+
 ## Skills
 
 Spacedock installs the relevant skills on launch. To install them manually:
@@ -87,6 +113,8 @@ See [supported sandboxes](../../reference/sandbox/).
 ## Troubleshooting
 
 Run `spacedock doctor`.
+
+On Pi, run `spacedock doctor --host pi`: it reports each missing prerequisite (the Pi CLI, Pi auth, the `pi-subagents` extension and skill, the `pi-intercom` package and skill, and the Spacedock package) with the remedy for each.
 
 ## Next
 

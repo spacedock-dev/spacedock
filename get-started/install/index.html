@@ -71,7 +71,7 @@
         "headline": "Install",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/get-started/install/",
-        "dateModified": "2026-10-06 07:05:10",
+        "dateModified": "2026-10-06 07:05:24",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -530,6 +530,15 @@
   <a href="#launch" class="md-nav__link">
     <span class="md-ellipsis">
       Launch
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pi" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pi
     </span>
   </a>
   
@@ -1252,6 +1261,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pi" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pi
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#skills" class="md-nav__link">
     <span class="md-ellipsis">
       Skills
@@ -1345,6 +1363,26 @@ edge path.</p>
 <p>Or launch directly:</p>
 <pre class="highlight"><code class="language-bash">spacedock claude "what can spacedock do for me in this project"</code></pre>
 <p>Replace <code>claude</code> with <code>codex</code> or <code>pi</code> for the respective coding agents.</p>
+<h2 id="pi">Pi<a class="headerlink" href="#pi" title="Permanent link">&para;</a></h2>
+<p>Pi is an experimental host, alongside Codex (see the
+<a href="../../reference/command-reference/">command reference</a>). Spacedock starts Pi as
+your first officer through Pi's own <code>pi-subagents</code> substrate, which needs two Pi
+packages installed alongside Spacedock:</p>
+<pre class="highlight"><code class="language-bash">pi install npm:pi-subagents
+pi install npm:pi-intercom</code></pre>
+<p>Authenticate Pi through its own flow before launching. <code>pi auth</code> reports provider
+readiness, and <code>spacedock doctor --host pi</code> prints the credentials file it
+expects.</p>
+<p>Install the Spacedock package for Pi, then launch:</p>
+<pre class="highlight"><code class="language-bash">spacedock install --host pi
+spacedock pi "/spacedock:survey"</code></pre>
+<p><code>spacedock pi</code> resolves the <code>pi-subagents</code> and <code>pi-intercom</code> packages the same
+way Pi does — from the entries <code>pi install</code> writes to Pi's settings — so no extra
+configuration is needed. If the packages live outside Pi's agent directory, point
+Spacedock at them with the <code>PI_SUBAGENTS_PACKAGE_ROOT</code> and
+<code>PI_INTERCOM_PACKAGE_ROOT</code> environment variables.</p>
+<p>Check the setup end to end:</p>
+<pre class="highlight"><code class="language-bash">spacedock doctor --host pi</code></pre>
 <h2 id="skills">Skills<a class="headerlink" href="#skills" title="Permanent link">&para;</a></h2>
 <p>Spacedock installs the relevant skills on launch. To install them manually:</p>
 <pre class="highlight"><code class="language-bash"># Stable (default channel) — marketplace named `spacedock`, entry `spacedock`
@@ -1402,6 +1440,9 @@ not necessarily its current HEAD. Codex does not accept a post-<code>--</code>
 <p>See <a href="../../reference/sandbox/">supported sandboxes</a>.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <p>Run <code>spacedock doctor</code>.</p>
+<p>On Pi, run <code>spacedock doctor --host pi</code>: it reports each missing prerequisite
+(the Pi CLI, Pi auth, the <code>pi-subagents</code> extension and skill, the <code>pi-intercom</code>
+package and skill, and the Spacedock package) with the remedy for each.</p>
 <h2 id="next">Next<a class="headerlink" href="#next" title="Permanent link">&para;</a></h2>
 <p>Read about the <a href="../survey/">survey report</a> to understand your usage pattern
 with coding agents, or start with <a href="../first-workflow/">your first workflow</a>.</p>
@@ -1425,7 +1466,7 @@ with coding agents, or start with <a href="../first-workflow/">your first workfl
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="October 6, 2026 07:05:10 UTC">2026-10-06 07:05:10</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="October 6, 2026 07:05:24 UTC">2026-10-06 07:05:24</span>
   </span>
 
     
