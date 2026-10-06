@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6dhxxd047s3c32n21h8ppf9y:backlog:attempt-1:revision-1",
+  "question": "Approve this seed and dispatch ideation for the commission gate-timing change?",
+  "artifacts": [
+    {
+      "id": "artifact:6dhxxd047s3c32n21h8ppf9y:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/fe360ace720845a99cf3b32edd5118d801b9cc22/.briefings/commission-seed-backlog.md",
+      "rev": "sha256:503f37fa369439696520621da719a54cd1f62b6612f3fcad8e9e52179d2c3456",
+      "mediaType": "text/markdown",
+      "summary": "Documentation-only fix for an initial seed gate whose prose claimed to review work no worker had produced. Behavioural acceptance included."
+    }
+  ]
+}
