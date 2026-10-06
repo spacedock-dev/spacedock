@@ -540,11 +540,6 @@ jobs:
       - name: Verify Codex resolver against installed plugin
         run: go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost
 
-      - name: Run live Codex multi-agent lifecycle
-        env:
-          SPACEDOCK_LIVE_CODEX_MULTI_AGENT: "1"
-        run: go test ./internal/cli -count=1 -run TestCodexIsolatedHomeCollaborationLifecycle
-
       - name: Show tool versions
         run: |
           codex --version

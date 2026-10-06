@@ -124,8 +124,8 @@ Replace a revoked or expired secret from a trusted workstation. If OAuth is
 absent, `OPENAI_API_KEY` is used; a lane fails before launch only when both
 credentials are absent.
 
-For OAuth Pi uses `openai-codex/gpt-5.6-luna:max`; the API-key fallback uses
-`openai/gpt-5.6-luna:max`. The model ID and `max` thinking level are unchanged.
+For OAuth Pi uses `openai-codex/gpt-6-luna:max`; the API-key fallback uses
+`openai/gpt-6-luna:max`. The model ID and `max` thinking level are unchanged.
 
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
