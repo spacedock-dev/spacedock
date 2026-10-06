@@ -3,6 +3,7 @@ title: Claude live journeys cannot observe the completion path the agent reports
 sprint: test-behavior-completeness
 source: "Run 37421110550 claude-live: the first officer narrated advancing the entity, dispatching a fresh validator, and AC-1 passing with the stage report committed, then stopped at the gate; the harness recorded validation-worker-not-dispatched. Its message noted the validator's SendMessage to team-lead failed."
 id: jfdrr2dbdtt952s4cvvy74k8
+status: backlog
 ---
 
 ## Problem

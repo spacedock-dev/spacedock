@@ -3,6 +3,7 @@ title: Codex live lifecycle fails on a follow-up target name mismatch
 sprint: test-behavior-completeness
 source: "Run 37421110550 codex-live, after the CI-E2E-CODEX credential refresh: codex_multi_agent_test.go:143: structured launcher lifecycle: follow-up target \"worker\" != spawned worker \"/root/worker...\"."
 id: phwzty950t2de11g4g7h95me
+status: backlog
 ---
 
 ## Problem

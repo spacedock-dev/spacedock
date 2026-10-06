@@ -3,6 +3,7 @@ title: Claude live break-glass journey fails on uncommitted entity state
 sprint: test-behavior-completeness
 source: "Run 37421110550 claude-live: FAIL TestLiveBreakGlassShimRecovery/selected-team, dispatch_recovery_live_test.go:119: entity has uncommitted changes: M widget-task.md."
 id: y5hde203rm3ga4s6mm30yv0r
+status: backlog
 ---
 
 ## Problem
