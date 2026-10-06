@@ -14,6 +14,17 @@ gates:
                 id: briefing:6dhxxd047s3c32n21h8ppf9y:backlog:attempt-1:revision-1
                 digest: sha256:a3c37779e5cbc8beb54e51b618936ef0718fe5fe474b989d565b69b2bbaffb1c
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6dhxxd047s3c32n21h8ppf9y:backlog:1
+                briefing: briefing:6dhxxd047s3c32n21h8ppf9y:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-06T23:39:04.936403Z"
+                decision: approve
+                reason: 'Captain, 2026-10-06, in session: "file the commission issue first and dispatch to astra for ideation"'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 A commissioned workflow can declare an initial stage gated, then describe that gate as reviewing the stage's own worker output. The binary's semantics are the opposite: an initial gated stage reviews the committed seed, because no prior stage wrote a report. Approving it advances to the successor without the stage's worker ever running.
