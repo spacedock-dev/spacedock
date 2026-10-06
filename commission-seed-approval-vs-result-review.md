@@ -25,6 +25,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-10-06T23:39:26Z
 ---
 
 A commissioned workflow can declare an initial stage gated, then describe that gate as reviewing the stage's own worker output. The binary's semantics are the opposite: an initial gated stage reviews the committed seed, because no prior stage wrote a report. Approving it advances to the successor without the stage's worker ever running.
