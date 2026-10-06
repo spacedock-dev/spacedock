@@ -245,15 +245,17 @@ type piCheckResult struct {
 	// doubleExtensionLoad: repoRoot set (checkout spacedock.ts loads via
 	// --extension) AND a spacedock package registered (installed copy loads
 	// via package discovery).
-	doubleExtensionLoad bool
-	packageStatus       piPackageStatus
-	packageRoot         string
-	intercomPackageRoot string
-	repoRoot            string
-	authPath            string
-	sessionDir          string
-	extensionPath       string
-	intercomBridgePath  string
+	doubleExtensionLoad   bool
+	packageStatus         piPackageStatus
+	packageRoot           string
+	packageRootSource     string
+	intercomPackageRoot   string
+	intercomPackageSource string
+	repoRoot              string
+	authPath              string
+	sessionDir            string
+	extensionPath         string
+	intercomBridgePath    string
 }
 
 func runPi(ctx context.Context, args []string, dir string, env []string, ops piRuntimeOps, stdout, stderr io.Writer) int {
@@ -459,7 +461,7 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 	}
 	printPiDoctorReport(stdout, check)
 	if piRuntimeLaunchReady(check) {
-		fmt.Fprintf(stdout, "Pi runtime ready.\n  pi-subagents: %s\n  pi-intercom: %s\n  Spacedock package: %s\n", check.packageRoot, check.intercomPackageRoot, check.packageStatus.source)
+		fmt.Fprintf(stdout, "Pi runtime ready.\n  pi-subagents: %s (source: %s)\n  pi-intercom: %s (source: %s)\n  Spacedock package: %s\n", check.packageRoot, check.packageRootSource, check.intercomPackageRoot, check.intercomPackageSource, check.packageStatus.source)
 		printPiSupervisorTalkbackBoundary(stdout)
 		return 0
 	}
@@ -644,23 +646,36 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 		repo = envMap["SPACEDOCK_REPO_ROOT"]
 		pluginDirSource = "SPACEDOCK_REPO_ROOT"
 	}
-	pkg := envMap["PI_SUBAGENTS_PACKAGE_ROOT"]
-	pkgSource := "PI_SUBAGENTS_PACKAGE_ROOT"
-	if pkg == "" {
-		pkg = filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-subagents")
-		pkgSource = "default ~/.pi/agent/npm/node_modules/pi-subagents"
-	}
-	intercomPkg := envMap["PI_INTERCOM_PACKAGE_ROOT"]
-	intercomPkgSource := "PI_INTERCOM_PACKAGE_ROOT"
-	if intercomPkg == "" {
-		intercomPkg = filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-intercom")
-		intercomPkgSource = "default ~/.pi/agent/npm/node_modules/pi-intercom"
-	}
 	agentDir := envMap["PI_CODING_AGENT_DIR"]
 	authPathSource := "PI_CODING_AGENT_DIR"
 	if agentDir == "" {
 		agentDir = filepath.Join(home, ".pi", "agent")
 		authPathSource = "default ~/.pi/agent"
+	}
+	// The launch path must use the same resolution as the host it launches: an
+	// exported override wins, else the package registered in the agent
+	// directory's settings.json (pi's own discovery), else the default home
+	// layout. The winning source is carried so the operator can see which root
+	// resolved.
+	pkg := envMap["PI_SUBAGENTS_PACKAGE_ROOT"]
+	pkgSource := "PI_SUBAGENTS_PACKAGE_ROOT"
+	if pkg == "" {
+		if root, src := resolveRegisteredPiRoot(agentDir, home, "pi-subagents"); root != "" {
+			pkg, pkgSource = root, "settings.json "+src
+		} else {
+			pkg = filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-subagents")
+			pkgSource = "default ~/.pi/agent/npm/node_modules/pi-subagents"
+		}
+	}
+	intercomPkg := envMap["PI_INTERCOM_PACKAGE_ROOT"]
+	intercomPkgSource := "PI_INTERCOM_PACKAGE_ROOT"
+	if intercomPkg == "" {
+		if root, src := resolveRegisteredPiRoot(agentDir, home, "pi-intercom"); root != "" {
+			intercomPkg, intercomPkgSource = root, "settings.json "+src
+		} else {
+			intercomPkg = filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-intercom")
+			intercomPkgSource = "default ~/.pi/agent/npm/node_modules/pi-intercom"
+		}
 	}
 	authPath := filepath.Join(agentDir, "auth.json")
 	sessionDir := envMap["PI_CODING_AGENT_SESSION_DIR"]
@@ -693,13 +708,15 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	bin, err := ops.LookPath("pi")
 	res := piCheckResult{
-		piBinOK:             err == nil,
-		piBin:               bin,
-		packageRoot:         cfg.packageRoot,
-		intercomPackageRoot: cfg.intercomPackageRoot,
-		repoRoot:            cfg.repoRoot,
-		authPath:            cfg.authPath,
-		sessionDir:          cfg.sessionDir,
+		piBinOK:               err == nil,
+		piBin:                 bin,
+		packageRoot:           cfg.packageRoot,
+		packageRootSource:     cfg.packageRootSource,
+		intercomPackageRoot:   cfg.intercomPackageRoot,
+		intercomPackageSource: cfg.intercomPackageSource,
+		repoRoot:              cfg.repoRoot,
+		authPath:              cfg.authPath,
+		sessionDir:            cfg.sessionDir,
 	}
 	res.extensionPath = cfg.extensionPath
 	res.intercomBridgePath = cfg.intercomBridgePath
@@ -836,6 +853,12 @@ func printPiDoctorReport(w io.Writer, c piCheckResult) {
 	printPiCheck(w, c.extensionOK, "pi-subagents extension", c.extensionPath, "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
 	printPiCheck(w, c.subagentsSkillOK, "pi-subagents skill", filepath.Join(c.packageRoot, "skills", "pi-subagents"), "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
 	fmt.Fprintf(w, "INFO Pi auth/session dirs: auth=%s session=%s\n", c.authPath, c.sessionDir)
+	if c.packageRootSource != "" {
+		fmt.Fprintf(w, "INFO pi-subagents root: %s (source: %s)\n", c.packageRoot, c.packageRootSource)
+	}
+	if c.intercomPackageSource != "" {
+		fmt.Fprintf(w, "INFO pi-intercom root: %s (source: %s)\n", c.intercomPackageRoot, c.intercomPackageSource)
+	}
 	fmt.Fprintln(w, "Supervisor-talkback setup prerequisites")
 	printPiCheck(w, c.subagentsIntercomBridgeOK, "pi-subagents intercom bridge", c.intercomBridgePath, "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge")
 	printPiCheck(w, c.intercomPackageOK, "pi-intercom package root", c.intercomPackageRoot, "set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root")
@@ -964,6 +987,41 @@ func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
 	st.spacedockEntries = len(spacedockRoots)
 	st.packageRoots = spacedockRoots
 	return st
+}
+
+// resolveRegisteredPiRoot resolves the package `name` registered in
+// agentDir/settings.json `packages` to its filesystem root and source label,
+// applying the same resolution pi's own package discovery uses. It returns
+// empty strings when no entry names the package, so the caller falls back to
+// the default home layout.
+func resolveRegisteredPiRoot(agentDir, home, name string) (root, source string) {
+	if agentDir == "" {
+		return "", ""
+	}
+	data, err := os.ReadFile(filepath.Join(agentDir, "settings.json"))
+	if err != nil {
+		return "", ""
+	}
+	var settings struct {
+		Packages []json.RawMessage `json:"packages"`
+	}
+	if json.Unmarshal(data, &settings) != nil {
+		return "", ""
+	}
+	for _, raw := range settings.Packages {
+		src := piPackageSourceFromEntry(raw)
+		if src == "" {
+			continue
+		}
+		candidate := resolveSettingsPackageRoot(src, agentDir, home)
+		if candidate == "" {
+			continue
+		}
+		if pkgName, _ := readPackagePiSkills(candidate); pkgName == name {
+			return candidate, src
+		}
+	}
+	return "", ""
 }
 
 func piPackageSourceFromEntry(raw json.RawMessage) string {

@@ -515,6 +515,122 @@ func TestPiRuntimeConfigDefaultsIntercomAndAuthPathsUnderHome(t *testing.T) {
 	assertEqual(t, cfg.agentDir, filepath.Join(home, ".pi", "agent"))
 }
 
+// TestPiRuntimeConfigResolvesRegisteredRootsWithoutEnv is AC-1's test: with both
+// npm packages registered in the agent directory's settings.json and HOME
+// pointing elsewhere, piRuntimeConfigFromEnv resolves both roots under the agent
+// directory's npm path with neither package-root variable exported. Falsifier:
+// drop the registration read and both roots fall back under HOME, RED.
+func TestPiRuntimeConfigResolvesRegisteredRootsWithoutEnv(t *testing.T) {
+	agentDir := t.TempDir()
+	home := t.TempDir()
+	writePiSettingsJSON(t, agentDir, home, []string{"npm:pi-subagents", "npm:pi-intercom"})
+
+	cfg := piRuntimeConfigFromEnv([]string{"PI_CODING_AGENT_DIR=" + agentDir, "HOME=" + home}, t.TempDir(), "")
+
+	assertEqual(t, cfg.packageRoot, filepath.Join(agentDir, "npm", "node_modules", "pi-subagents"))
+	assertEqual(t, cfg.intercomPackageRoot, filepath.Join(agentDir, "npm", "node_modules", "pi-intercom"))
+	assertEqual(t, cfg.packageRootSource, "settings.json npm:pi-subagents")
+	assertEqual(t, cfg.intercomPackageSource, "settings.json npm:pi-intercom")
+}
+
+// TestPiRuntimeConfigOverrideBeatsRegistration pins the override precedence the
+// resolution contract claims: an exported PI_SUBAGENTS_PACKAGE_ROOT wins over a
+// competing settings.json registration for the same package, while a package
+// with no override (pi-intercom) still resolves from its registration. Falsifier:
+// resolve the registered root for pi-subagents and this is RED (override loses).
+func TestPiRuntimeConfigOverrideBeatsRegistration(t *testing.T) {
+	agentDir := t.TempDir()
+	home := t.TempDir()
+	writePiSettingsJSON(t, agentDir, home, []string{"npm:pi-subagents", "npm:pi-intercom"})
+	override := t.TempDir()
+
+	cfg := piRuntimeConfigFromEnv([]string{
+		"PI_CODING_AGENT_DIR=" + agentDir,
+		"PI_SUBAGENTS_PACKAGE_ROOT=" + override,
+		"HOME=" + home,
+	}, t.TempDir(), "")
+
+	assertEqual(t, cfg.packageRoot, override)
+	assertEqual(t, cfg.packageRootSource, "PI_SUBAGENTS_PACKAGE_ROOT")
+	// No override for pi-intercom: the registration still wins over the default.
+	assertEqual(t, cfg.intercomPackageRoot, filepath.Join(agentDir, "npm", "node_modules", "pi-intercom"))
+	assertEqual(t, cfg.intercomPackageSource, "settings.json npm:pi-intercom")
+}
+
+// TestPiRuntimeConfigResolvesByNameNotFirstEntry pins that the registration scan
+// matches a package's own package.json name, not the first entry it can resolve:
+// a decoy entry registered before the real one resolves to a directory whose
+// manifest name is something else, and pi-subagents must still resolve to the
+// later real registration. Falsifier: return the first resolvable entry and the
+// decoy wins, RED.
+func TestPiRuntimeConfigResolvesByNameNotFirstEntry(t *testing.T) {
+	agentDir := t.TempDir()
+	home := t.TempDir()
+	// Decoy first, real package second; writePiSettingsJSON names each npm
+	// directory and its package.json from the source, so the decoy's manifest
+	// name is "pi-subagents-decoy" — not the requested package.
+	writePiSettingsJSON(t, agentDir, home, []string{"npm:pi-subagents-decoy", "npm:pi-subagents"})
+
+	decoyRoot := filepath.Join(agentDir, "npm", "node_modules", "pi-subagents-decoy")
+	if name, _ := readPackagePiSkills(decoyRoot); name == "pi-subagents" {
+		t.Fatalf("decoy manifest name must differ from the requested package, got %q", name)
+	}
+
+	cfg := piRuntimeConfigFromEnv([]string{"PI_CODING_AGENT_DIR=" + agentDir, "HOME=" + home}, t.TempDir(), "")
+
+	realRoot := filepath.Join(agentDir, "npm", "node_modules", "pi-subagents")
+	assertEqual(t, cfg.packageRoot, realRoot)
+	assertEqual(t, cfg.packageRootSource, "settings.json npm:pi-subagents")
+	if cfg.packageRoot == decoyRoot {
+		t.Fatalf("resolver returned the decoy registration %q instead of the manifest-named package", decoyRoot)
+	}
+}
+
+// TestPiRuntimeConfigFailsClosedWithoutRegistrationOrOverride is AC-3's test:
+// with no package-root variable and no settings.json registration, both roots
+// fall back to the default home layout (absent here) and the runtime check
+// reports them MISSING rather than inventing a path. Falsifier: resolve a
+// registered or otherwise existing root here and the check turns ready, RED.
+func TestPiRuntimeConfigFailsClosedWithoutRegistrationOrOverride(t *testing.T) {
+	home := t.TempDir()
+	cfg := piRuntimeConfigFromEnv([]string{"HOME=" + home}, t.TempDir(), "")
+
+	assertEqual(t, cfg.packageRoot, filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-subagents"))
+	assertEqual(t, cfg.intercomPackageRoot, filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-intercom"))
+	assertEqual(t, cfg.packageRootSource, "default ~/.pi/agent/npm/node_modules/pi-subagents")
+	if _, err := os.Stat(cfg.packageRoot); err == nil {
+		t.Fatalf("no-registration default root %s unexpectedly exists", cfg.packageRoot)
+	}
+
+	check := checkPiRuntime(&fakePiRuntimeOps{}, cfg)
+	if check.extensionOK || check.intercomPackageOK {
+		t.Fatalf("no-registration defaults must fail closed: extensionOK=%v intercomPackageOK=%v", check.extensionOK, check.intercomPackageOK)
+	}
+}
+
+// TestPiDoctorPrintsResolutionSource proves the operator-visible half of the
+// fix: the doctor names which source won for each package root, so an operator
+// whose HOME is not the default learns the registration resolved the packages.
+// Falsifier: drop the INFO lines and this test is RED.
+func TestPiDoctorPrintsResolutionSource(t *testing.T) {
+	agentDir := t.TempDir()
+	home := t.TempDir()
+	writePiSettingsJSON(t, agentDir, home, []string{"npm:pi-subagents", "npm:pi-intercom"})
+	cfg := piRuntimeConfigFromEnv([]string{"PI_CODING_AGENT_DIR=" + agentDir, "HOME=" + home}, t.TempDir(), "")
+
+	var buf bytes.Buffer
+	printPiDoctorReport(&buf, checkPiRuntime(&fakePiRuntimeOps{}, cfg))
+	out := buf.String()
+	for _, want := range []string{
+		"INFO pi-subagents root: " + cfg.packageRoot + " (source: settings.json npm:pi-subagents)",
+		"INFO pi-intercom root: " + cfg.intercomPackageRoot + " (source: settings.json npm:pi-intercom)",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("doctor output missing %q:\n%s", want, out)
+		}
+	}
+}
+
 // TestPiRuntimeConfigRetiresSkillFlagsAndCwdFallback is the AC-3 behavior test: the
 // launcher's --skill first-officer/ensign flags and the cwd fallback are retired,
 // the doctor gates on spacedockPackageOK (package registered + ensign discoverable
