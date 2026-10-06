@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 type liveJourneyGap struct{ kind, target, owner string }
@@ -91,12 +93,12 @@ func liveDriverForRuntime(t *testing.T, id string) (func() liveDriver, string) {
 
 func claudeLiveRole(model string) (string, error) {
 	switch model {
-	case "sonnet", "claude-sonnet-5":
+	case "sonnet", release.LiveModels["claude.sonnet"]:
 		return "claude-sonnet", nil
-	case "claude-opus-4-8":
+	case release.LiveModels["claude.opus"]:
 		return "claude-opus", nil
 	default:
-		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, claude-sonnet-5, or claude-opus-4-8", model)
+		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, %s, or %s", model, release.LiveModels["claude.sonnet"], release.LiveModels["claude.opus"])
 	}
 }
 

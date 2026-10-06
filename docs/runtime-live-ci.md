@@ -124,8 +124,20 @@ Replace a revoked or expired secret from a trusted workstation. If OAuth is
 absent, `OPENAI_API_KEY` is used; a lane fails before launch only when both
 credentials are absent.
 
-For OAuth Pi uses `openai-codex/gpt-6-luna:max`; the API-key fallback uses
-`openai/gpt-6-luna:max`. The model ID and `max` thinking level are unchanged.
+The lane model ids live in one place, `internal/release/live_models.txt`, so
+this document never restates one. The Go harness embeds that file and the live
+workflow reads it directly; the workflow matrix, the Codex exec shim, and the
+Pi step summary consume those values rather than repeating a literal. The OAuth
+and API-key Pi auth paths get their own entries (`pi.oauth`, `pi.api-key`), and
+the `max` thinking level rides in the id.
+
+The Claude lane ids were confirmed live on an installed CLI: each answered and
+was served under exactly the id pinned in `internal/release/live_models.txt`, by
+the CLI's own `modelUsage` field. An earlier probe was misled by id shape — the
+CLI refuses the dotted form and serves the hyphenated one — so the exact ids
+live in `internal/release/live_models.txt`, and the candidate, the rejection,
+and the confirmation are recorded in the `pin-lane-models-in-one-place` entity,
+not here.
 
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
@@ -141,9 +153,9 @@ If one artifact is unavailable or incomplete, the job warns and skips the commen
 
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
-- Pull requests to `main` run `claude-sonnet-5` at maximum effort, `gpt-5.6-luna` at maximum effort, and the Pi lane. Pi is not opt-in: every pull request runs it by default. The lane is not cheap — it takes about 35 minutes and spends live model calls.
-- An explicit `live_cadence=opus-pre-release` dispatch runs offline plus `claude-opus-4-8` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
-- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. The manual dispatch path still works unchanged. The `live:pi` label is no longer required, on the dispatch path or on a pull request. Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
+- Pull requests to `main` run the `claude.sonnet` id from `internal/release/live_models.txt` at maximum effort, the `codex.exec` id from the same file at maximum effort, and the Pi lane. Pi is not opt-in: every pull request runs it by default. The lane is not cheap — it takes about 35 minutes and spends live model calls.
+- An explicit `live_cadence=opus-pre-release` dispatch runs offline plus the `claude.opus` id from `internal/release/live_models.txt` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
+- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with the `pi.oauth` id from `internal/release/live_models.txt` for OAuth or the `pi.api-key` id from the same file for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. The manual dispatch path still works unchanged. The `live:pi` label is no longer required, on the dispatch path or on a pull request. Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
 #### Running the pi lane on a pull request
 

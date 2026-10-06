@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 // TestContextLimitForModelBoundary is the AC-4 boundary table: the forward opus
@@ -21,28 +23,28 @@ func TestContextLimitForModelBoundary(t *testing.T) {
 		model string
 		want  int
 	}{
-		{"claude-opus-4-8", extendedContextLimit},     // the live false-negative, now 1M
-		{"claude-opus-4-8[1m]", extendedContextLimit}, // explicit suffix
-		{"claude-opus-4-7", extendedContextLimit},     // first 1M-default minor
-		{"claude-opus-4-6", defaultContextLimit},      // pre-default minor stays 200k
-		{"claude-opus-4-6[1m]", extendedContextLimit}, // 4-6 with the suffix opts in
-		{"claude-opus-4-10", extendedContextLimit},    // forward-safe: never goes stale
-		{"claude-opus-4-100", extendedContextLimit},   // multi-digit minor
-		{"claude-sonnet-4-6", defaultContextLimit},    // pre-5 sonnet, non-opus
-		{"claude-haiku-4-5", defaultContextLimit},     // non-opus
-		{"some-unknown-model", defaultContextLimit},   // safe fallback
-		{"claude-opus-4", defaultContextLimit},        // no minor token -> no match
+		{release.LiveModels["claude.opus"], extendedContextLimit}, // the live false-negative, now 1M
+		{"claude-opus-4-8[1m]", extendedContextLimit},             // explicit suffix
+		{"claude-opus-4-7", extendedContextLimit},                 // first 1M-default minor
+		{"claude-opus-4-6", defaultContextLimit},                  // pre-default minor stays 200k
+		{"claude-opus-4-6[1m]", extendedContextLimit},             // 4-6 with the suffix opts in
+		{"claude-opus-4-10", extendedContextLimit},                // forward-safe: never goes stale
+		{"claude-opus-4-100", extendedContextLimit},               // multi-digit minor
+		{"claude-sonnet-4-6", defaultContextLimit},                // pre-5 sonnet, non-opus
+		{"claude-haiku-4-5", defaultContextLimit},                 // non-opus
+		{"some-unknown-model", defaultContextLimit},               // safe fallback
+		{"claude-opus-4", defaultContextLimit},                    // no minor token -> no match
 
 		// AC-2/AC-3/AC-4: the claude-{sonnet|fable|opus}-{major} family rule.
-		{"claude-sonnet-5", extendedContextLimit},           // AC-2: sonnet-5 is 1M
-		{"claude-sonnet-5[1m]", extendedContextLimit},       // explicit suffix, never observed live but consistent
-		{"claude-sonnet-5-20260301", extendedContextLimit},  // hypothetical dated 5-family shape
-		{"claude-sonnet-6", extendedContextLimit},           // forward-safe: next sonnet generation
-		{"claude-fable-5", extendedContextLimit},            // AC-3: fable-5 is 1M
-		{"claude-opus-5", extendedContextLimit},             // hypothetical opus 5th generation (no "4-" minor token)
-		{"claude-sonnet-4-5-20250929", defaultContextLimit}, // dated pre-5 shape (major 4) stays 200k
-		{"claude-haiku-5", defaultContextLimit},             // haiku deliberately excluded from the family rule
-		{"claude-opus-4-20250514", extendedContextLimit},    // pre-existing quirk: the date token parses as minor >= 7 -> 1M (harness registry says 200k for this deprecated id; pinned as out of this entity's scope, not a change here)
+		{release.LiveModels["claude.sonnet"], extendedContextLimit}, // AC-2: sonnet-5 is 1M
+		{"claude-sonnet-5[1m]", extendedContextLimit},               // explicit suffix, never observed live but consistent
+		{"claude-sonnet-5-20260301", extendedContextLimit},          // hypothetical dated 5-family shape
+		{"claude-sonnet-6", extendedContextLimit},                   // forward-safe: next sonnet generation
+		{"claude-fable-5", extendedContextLimit},                    // AC-3: fable-5 is 1M
+		{"claude-opus-5", extendedContextLimit},                     // hypothetical opus 5th generation (no "4-" minor token)
+		{"claude-sonnet-4-5-20250929", defaultContextLimit},         // dated pre-5 shape (major 4) stays 200k
+		{"claude-haiku-5", defaultContextLimit},                     // haiku deliberately excluded from the family rule
+		{"claude-opus-4-20250514", extendedContextLimit},            // pre-existing quirk: the date token parses as minor >= 7 -> 1M (harness registry says 200k for this deprecated id; pinned as out of this entity's scope, not a change here)
 	}
 	for _, tc := range cases {
 		if got := contextLimitForModel(tc.model); got != tc.want {

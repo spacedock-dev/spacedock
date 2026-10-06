@@ -7,6 +7,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 func TestDecideCodexLiveAuth(t *testing.T) {
@@ -264,12 +266,18 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// The model is supplied independently of the shim (a distinct sentinel), so
+	// this asserts the shim forwards SPACEDOCK_LIVE_CODEX_MODEL instead of
+	// hardcoding a model of its own.
+	const liveModel = "luna-sentinel-model"
+
 	run := func(args ...string) {
 		t.Helper()
 		cmd := exec.Command(shimPath, args...)
 		cmd.Env = append(os.Environ(),
 			"SPACEDOCK_CODEX_REAL_BIN="+realCodex,
 			"SPACEDOCK_CODEX_LOG="+logPath,
+			"SPACEDOCK_LIVE_CODEX_MODEL="+liveModel,
 		)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			t.Fatalf("Codex shim %v failed: %v\n%s", args, err, out)
@@ -293,16 +301,16 @@ func TestCodexLiveWorkflowPinsOnlyExecToLuna(t *testing.T) {
 		"login status exec",
 		"plugin list exec",
 		"plugin add exec",
-		"exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
-		"--ask-for-approval on-request exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
-		"--dangerously-bypass-approvals-and-sandbox exec --model gpt-5.6-luna -c model_reasoning_effort=\"max\" --json prompt",
+		"exec --model " + liveModel + " -c model_reasoning_effort=\"max\" --json prompt",
+		"--ask-for-approval on-request exec --model " + liveModel + " -c model_reasoning_effort=\"max\" --json prompt",
+		"--dangerously-bypass-approvals-and-sandbox exec --model " + liveModel + " -c model_reasoning_effort=\"max\" --json prompt",
 	}
 	if strings.Join(got, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("Codex shim argv = %q, want %q", got, want)
 	}
 	for _, line := range got[4:] {
-		if strings.Count(line, "--model gpt-5.6-luna") != 1 {
-			t.Fatalf("pinned Codex exec argv = %q, want exactly one Luna model flag", line)
+		if strings.Count(line, "--model "+liveModel) != 1 {
+			t.Fatalf("pinned Codex exec argv = %q, want exactly one %s model flag", line, liveModel)
 		}
 		if strings.Count(line, `-c model_reasoning_effort="max"`) != 1 {
 			t.Fatalf("pinned Codex exec argv = %q, want exactly one maximum-effort setting", line)
@@ -332,7 +340,7 @@ func TestRuntimeLiveClaudeShimSetsMaximumEffort(t *testing.T) {
 		}
 	}
 	var got []byte
-	for _, args := range [][]string{{"--version"}, {"--model", "claude-sonnet-5", "--help"}} {
+	for _, args := range [][]string{{"--version"}, {"--model", release.LiveModels["claude.sonnet"], "--help"}} {
 		cmd := exec.Command(shimPath, args...)
 		cmd.Env = append(os.Environ(), "SPACEDOCK_CLAUDE_REAL_BIN="+realClaude)
 		if out, err := cmd.CombinedOutput(); err != nil {
@@ -341,7 +349,7 @@ func TestRuntimeLiveClaudeShimSetsMaximumEffort(t *testing.T) {
 			got = append(got, out...)
 		}
 	}
-	if want := "--effort max --version\n--effort max --model claude-sonnet-5 --help\n"; string(got) != want {
+	if want := "--effort max --version\n--effort max --model " + release.LiveModels["claude.sonnet"] + " --help\n"; string(got) != want {
 		t.Fatalf("Claude shim argv = %q, want %q", got, want)
 	}
 }

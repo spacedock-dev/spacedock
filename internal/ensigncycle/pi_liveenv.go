@@ -8,14 +8,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 const (
 	piAuthAPIKey = "api-key"
 	piAuthOAuth  = "oauth"
+)
 
-	piOAuthModel  = "openai-codex/gpt-5.6-luna:max"
-	piAPIKeyModel = "openai/gpt-5.6-luna:max"
+var (
+	piOAuthModel  = release.LiveModels["pi.oauth"]
+	piAPIKeyModel = release.LiveModels["pi.api-key"]
 )
 
 type piLiveAuthDecision struct{ mode, model, message string }
