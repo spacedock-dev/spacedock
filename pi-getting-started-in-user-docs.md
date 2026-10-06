@@ -61,3 +61,33 @@ keep their links.
 ## Test plan
 
 The documentation build, plus the command help comparisons. No live run.
+
+## Stage Report: ideation
+
+Design round, no files written. Recorded here by the first officer; the round was instructed not to write
+files, so its report was returned inline and its substance is preserved below.
+
+- DONE: Chosen the page and its position.
+  Evidence: one `## Pi` section in `docs/site/get-started/install.md`, between `## Launch` and `## Skills`,
+  plus one line in `## Troubleshooting`; not a new page, because `docs/site/AGENTS.md` says to split pages by
+  cadence rather than topic. `mkdocs.yml` is unchanged.
+- DONE: Specified the reader's path in launch order.
+  Evidence: `pi install npm:pi-subagents`, `pi install npm:pi-intercom`, then `spacedock install --host pi`
+  (launch-required: `piRuntimeLaunchReady`, `internal/cli/pi.go:758`), then Pi auth, then
+  `spacedock pi "/spacedock:survey"`.
+- DONE: Mapped each doctor line to a remedy.
+  Evidence: a seven-row table drawn from `internal/cli/pi.go:833-856`: pi CLI, Pi auth, the pi-subagents
+  extension/skill, the intercom bridge, the pi-intercom package root/skill, the Spacedock package lines, and
+  the pi version floor.
+- DONE: Stated the prohibitions, each verified against source.
+  Evidence: no version numbers (do not paste doctor output, which prints them); no model ids, which are owned
+  by `internal/release/live_models.txt`; do not promise env-var-free resolution until the sibling launcher fix
+  lands; do not claim auto-install parity with Claude and Codex; do not call Pi tier-1, since
+  `docs/site/reference/command-reference.md:51` says Codex and Pi are experimental; do not present
+  `--plugin-dir` as an install substitute; do not document unregistered Pi flags; keep runtime internals off a
+  getting-started page.
+- DONE: Identified the criteria needing rewording, with exact text.
+  Evidence: AC-2, because half the path's commands belong to the Pi CLI and cannot be checked by
+  `spacedock --help`; AC-3, because it banned version stamps but not model ids. Both replacements were
+  applied, and AC-1 was tightened to name the two packages, `spacedock install --host pi` and
+  `spacedock doctor --host pi`.

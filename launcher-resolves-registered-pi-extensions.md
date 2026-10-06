@@ -89,3 +89,26 @@ reason other than editing its own expectation.
 ### Summary
 
 The Pi launch path now uses the same package resolution as the host it launches: an exported `PI_SUBAGENTS_PACKAGE_ROOT`/`PI_INTERCOM_PACKAGE_ROOT` wins, else the package registered in the agent directory's `settings.json` (pi's own discovery), else the default home layout. The winning source label — previously populated but unprinted — is now carried into `piCheckResult` and shown in the doctor report and the ready line, so an operator whose HOME is not the default learns which root resolved. Net +121 across 2 files; no probe-line or setup-message bytes changed.
+
+## Stage Report: ideation
+
+Design round, no code written. Recorded here by the first officer; the round was instructed not to write files,
+so its report was returned inline and is preserved below.
+
+- DONE: Located the single resolution seam.
+  Evidence: `piRuntimeConfigFromEnv` (`internal/cli/pi.go:630`), called by `runPi` (`:266`),
+  `runInitWithPi` (`:454`) and `runDoctorWithPi` (`:486`).
+- DONE: Defined the helper and the three cases per root.
+  Evidence: a new `registeredPackageRoot(agentDir, home, name)` reusing `resolveSettingsPackageRoot`,
+  `readPackagePiSkills` and `piPackageSourceFromEntry`; cases are override exported -> the variable
+  verbatim; unset with registration -> the settings entry resolving to a package whose manifest name
+  matches; unset with none -> today's `join(home, ".pi/agent/npm/node_modules/<name>")` default.
+- DONE: Named the operator-visible source carrier, and found it unprinted.
+  Evidence: `piRuntimeConfig.packageRootSource` / `.intercomPackageSource` (`pi.go:221-222`) are populated
+  at `:686-687` and printed nowhere, so an operator never learns which root won.
+- DONE: Sized the work inside the stated tolerance.
+  Evidence: ~net +80..+115 across `internal/cli/pi.go` and `internal/cli/pi_frontdoor_test.go`.
+- DONE: Identified the criterion needing rewording, with exact replacement text.
+  Evidence: AC-4, because the doctor shares `piRuntimeConfigFromEnv` and therefore necessarily inherits the
+  registration resolution; its reported pi-subagents/pi-intercom paths change in the isolated-home case, so
+  "keep their current behaviour" was ambiguous. The replacement wording was applied and is the current AC-4.
