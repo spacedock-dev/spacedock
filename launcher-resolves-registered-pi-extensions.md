@@ -64,3 +64,28 @@ Falsifier: return a path that does not exist and the test must fail.
 
 Deterministic tests only. No live run. Every test must be able to fail for a
 reason other than editing its own expectation.
+
+## Stage Report: implementation
+
+- DONE: Implement the registered-extension resolution in the Pi launch path, exactly as the entity's ideation stage report designs it.
+  `resolveRegisteredPiRoot` (internal/cli/pi.go) resolves a settings.json `packages` entry to its root+source; `piRuntimeConfigFromEnv` applies the three cases (env override -> registration -> default home). Commit 55f3a48ff. Note: the entity has no `## Stage Report: ideation` section (headings: Problem/Visible value/Out of scope/Expected surface/Acceptance criteria/Test plan); the functions, three cases and source-label field were taken from the entity's Problem + Expected surface + dispatch brief, and no product decision was outstanding.
+- DONE: Stay inside the stated tolerance: net +40 to +140 across at most 3 files.
+  net +121 (148 insertions / 27 deletions) across 2 files: internal/cli/pi.go, internal/cli/pi_frontdoor_test.go (`git diff --numstat 894ff5dfd..HEAD`).
+- DONE: State the falsifier for each acceptance criterion you claim, and run it.
+  Each falsifier below was executed against a temporarily mutated pi.go, observed RED, then reverted (clean gofmt).
+- DONE: AC-1 (VALUE) - Both roots resolve from the registration with no variable exported.
+  Test `TestPiRuntimeConfigResolvesRegisteredRootsWithoutEnv`: registers `npm:pi-subagents`+`npm:pi-intercom` in a temp agent dir, HOME elsewhere, no vars -> both roots resolve under `<agentDir>/npm/node_modules`, sources `settings.json npm:*`. Falsifier (own test): neutering `resolveRegisteredPiRoot` fell both roots back under HOME and the test went RED.
+- DONE: AC-2 - An exported override still wins.
+  Pre-existing `TestPiRuntimeConfigResolvesEnvPathsForSubagentsIntercomAuthAndSessions` asserts `packageRootSource`/`intercomPackageSource` = the env var names. Falsifier (pre-existing test): forcing the env branch to be skipped made it resolve the default and go RED.
+- DONE: AC-3 - A missing install still fails closed.
+  Test `TestPiRuntimeConfigFailsClosedWithoutRegistrationOrOverride`: no vars, no settings.json -> default roots under HOME (asserted absent on disk) and `checkPiRuntime` reports extensionOK/intercomPackageOK false. Falsifier (own test): pointing the default at an existing dir made the test RED.
+- DONE: AC-4 (no-regression) - doctor probe semantics unchanged; `Pi runtime setup incomplete` text byte-identical.
+  Diff touches no probe `printPiCheck` line and no setup-message line; only additive `INFO ... (source: ...)` lines. Falsifier (pre-existing test): rewording the setup message to `Pi runtime incomplete.` made `TestPiInstallMissingSubagentsPrintsActionableInstructions` RED. Offline `go test ./internal/cli/` green (172.9s).
+- DONE: Make the source label operator-visible.
+  `piCheckResult` now carries `packageRootSource`/`intercomPackageSource`; `printPiDoctorReport` prints `INFO pi-subagents root: <root> (source: <source>)` (and the intercom twin) and the `Pi runtime ready` line prints `(source: ...)`. Test `TestPiDoctorPrintsResolutionSource`; falsifier (own test): dropping the INFO lines made it RED.
+- DONE: Commit on the branch and push only that branch.
+  55f3a48ff on `spacedock-ensign/launcher-resolves-registered-pi-extensions`; pushed with `git push origin HEAD:spacedock-ensign/...`. No push to main.
+
+### Summary
+
+The Pi launch path now uses the same package resolution as the host it launches: an exported `PI_SUBAGENTS_PACKAGE_ROOT`/`PI_INTERCOM_PACKAGE_ROOT` wins, else the package registered in the agent directory's `settings.json` (pi's own discovery), else the default home layout. The winning source label — previously populated but unprinted — is now carried into `piCheckResult` and shown in the doctor report and the ready line, so an operator whose HOME is not the default learns which root resolved. Net +121 across 2 files; no probe-line or setup-message bytes changed.
