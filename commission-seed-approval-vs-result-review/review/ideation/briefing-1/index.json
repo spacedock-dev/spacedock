@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6dhxxd047s3c32n21h8ppf9y:ideation:attempt-1:revision-1",
+  "question": "Approve this design, one file in the commission skill, so an initial seed gate cannot promise review of work no worker produced?",
+  "artifacts": [
+    {
+      "id": "artifact:6dhxxd047s3c32n21h8ppf9y:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/96b587959ea72911b2563023a0df49cbfc6f117b/commission-seed-approval-vs-result-review.md",
+      "rev": "sha256:8572e02c76750a1cb29e97ed3d925f180600b8748f6c5f41f99bb3c6aa3a54ec",
+      "mediaType": "text/markdown",
+      "summary": "One-file authoring correction in skills/commission/SKILL.md, net +6 LOC. Guidance, not mechanical prevention. Two value criteria. Incident-shaped blind trial passed; live proof deferred to implementation."
+    }
+  ]
+}
