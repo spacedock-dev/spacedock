@@ -4,6 +4,7 @@ status: implementation
 score: 0.8
 source: "FO review of the Pi stack, 2026-10-04: internal/cli/pi.go:645-648 resolves pi-subagents from the env var or HOME, while Pi resolves a registered npm entry from the agent directory."
 id: 7qksxxpbdcqz96mh0basxxzb
+worktree: .worktrees/spacedock-ensign-launcher-resolves-registered-pi-extensions
 ---
 
 ## Problem
