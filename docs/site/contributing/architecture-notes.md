@@ -31,8 +31,8 @@ Each common test binds its stable ID, fixture builder, target-scoped TODO owner,
 
 CI runs these in `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane spends its environment approval:
 
-- **Pull requests** run Claude Sonnet 5 at maximum effort and Codex Luna at maximum effort; they do not run Pi.
-- **Manual release evidence** is runtime-exclusive: `opus-pre-release` runs only Opus/max behind `CI-E2E-OPUS`, and `pi` runs only Pi Luna/max behind `CI-E2E-PI` while retaining the common-journey and front-door artifacts.
+- **Pull requests** to `main` run Claude Sonnet 5 at maximum effort, Codex Luna at maximum effort, and the Pi lane by default; the `live:pi` label is no longer required.
+- **Manual release evidence** is runtime-exclusive: `opus-pre-release` runs only Opus/max behind `CI-E2E-OPUS`, and a `live_cadence=pi` dispatch runs only Pi Luna/max behind `CI-E2E-PI` while retaining the common-journey and front-door artifacts.
 
 Every live lane tests the current checkout, never a remote `--ref next` install. For the local invocation commands and the full layer-by-layer breakdown of the scenario surface, see [the development workflow](development-workflow.md).
 

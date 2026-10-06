@@ -11,7 +11,8 @@
 # and runs unconditionally on every PR. Only live jobs declare an `environment:`
 # (a required-reviewer approval gate, reviewer = clkao) and read only the
 # host-specific secret they need: ANTHROPIC_API_KEY for Claude and
-# CODEX_AUTH_JSON/OPENAI_API_KEY for Codex and Pi. Pull requests queue Sonnet 5 and Codex Luna.
+# CODEX_AUTH_JSON/OPENAI_API_KEY for Codex and Pi. Pull requests queue Sonnet 5,
+# Codex Luna, and the Pi lane.
 # Manual Opus and Pi cadences run only their selected runtime.
 
 name: Runtime Live E2E
@@ -568,7 +569,12 @@ jobs:
           if-no-files-found: warn
 
   pi-live:
-    if: ${{ (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'live:pi')) || (github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi') }}
+    # The Pi lane runs on every pull request to the trunk by default, so the
+    # live:pi label is no longer required to attach it. The label stays useful
+    # to other workflows, but it is not a precondition here. The != 'labeled'
+    # guard matches the sibling live jobs: a label event skips the lane rather
+    # than firing a redundant run after the PR's own push already ran it.
+    if: ${{ (github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.live_cadence == 'pi')) && github.event.action != 'labeled' }}
     needs: offline
     runs-on: ubuntu-latest
     environment:
@@ -599,152 +605,34 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Build spacedock binary
+        run: |
+          go build -o ./spacedock ./cmd/spacedock
+          go build -o ./spacedock-release ./cmd/spacedock-release
+          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
+          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+          echo "$(pwd)" >> "$GITHUB_PATH"
+
       - name: Install Pi CLI and substrates
         run: |
           set -euo pipefail
 
-          npm --version
-          node --version
-
-          # Compatibility pins: pi-coding-agent 0.85.x is the ready-gate floor
-          # (s98: spacedock pi refuses launches when `pi --version` < 0.83.0), and
-          # the substrate pins ride the same family (pi-subagents, pi-intercom).
-          # Keep these exact pins together; do not let npm's engine-aware resolver
-          # mix a sub-floor pi-coding-agent with newer substrates.
-          PI_CODING_AGENT_VERSION="0.85.1"
-          PI_CODING_AGENT_INTEGRITY="sha512-FGRN+OHbWaefBPGaTggAdLjrIHW+s2PzLyglz/5dfLzb9of7uuXMXYC0fJIeZTw+shS32o2cuQ9jF7YSDuL/oQ=="
-          PI_SUBAGENTS_VERSION="0.67.0"
-          PI_SUBAGENTS_INTEGRITY="sha512-43FGBi82sbxEGhEfsaj0P7I/rRJfsw1UPuFSVSkjZw0Fy92lrBIB9d3gDTpwmK5hLj3ZzZUnvtlqiKQatySCTw=="
-          PI_INTERCOM_VERSION="0.13.0"
-          PI_INTERCOM_INTEGRITY="sha512-+QjKJRAEhrgQZj4+M9OW/8unRLvCzeCp0K66lZmbS5/me0fsClXRtANBgM6mY+EoX+Fcd+qBE8dTThp8+ND//g=="
-
-          pack_dir="$RUNNER_TEMP/pi-live-npm-packs"
-          mkdir -p "$pack_dir"
-          verified_pack() {
-            local spec="$1"
-            local expected_integrity="$2"
-            local pack_json actual_integrity filename
-            pack_json="$(npm pack "$spec" --pack-destination "$pack_dir" --ignore-scripts --json)"
-            actual_integrity="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.integrity)")"
-            filename="$(printf '%s' "$pack_json" | node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8'))[0]; process.stdout.write(p.filename)")"
-            if [ "$actual_integrity" != "$expected_integrity" ]; then
-              echo "integrity mismatch for $spec: expected $expected_integrity got $actual_integrity" >&2
-              exit 1
-            fi
-            printf '%s/%s\n' "$pack_dir" "$filename"
-          }
-
-          pi_coding_agent_tgz="$(verified_pack "@earendil-works/pi-coding-agent@$PI_CODING_AGENT_VERSION" "$PI_CODING_AGENT_INTEGRITY")"
-          pi_subagents_tgz="$(verified_pack "pi-subagents@$PI_SUBAGENTS_VERSION" "$PI_SUBAGENTS_INTEGRITY")"
-          pi_intercom_tgz="$(verified_pack "pi-intercom@$PI_INTERCOM_VERSION" "$PI_INTERCOM_INTEGRITY")"
-
-          npm install -g "$pi_coding_agent_tgz" --ignore-scripts --no-audit --no-fund --omit=dev
-          command -v pi
-          test -x "$(command -v pi)"
+          # The pinned Pi family, its sha512 integrity, and the readiness floors
+          # live in exactly one place (internal/pilive); this step only invokes
+          # the release binary's pi-live `install` command. Do NOT export either
+          # package-root override here: the live smoke must exercise Pi's own
+          # discovery with both variables absent.
+          spacedock-release install
           pi --version
-          global_npm_root="$(npm root -g)"
-          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (p.version !== '$PI_CODING_AGENT_VERSION') throw new Error('unexpected Pi version '+p.version); if (!p.bin || !p.bin.pi) throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
-
-          pi_npm_root="$HOME/.pi/agent/npm"
-          mkdir -p "$pi_npm_root"
-          npm install --prefix "$pi_npm_root" \
-            "$pi_subagents_tgz" \
-            "$pi_intercom_tgz" \
-            --ignore-scripts --no-audit --no-fund --omit=dev
-          node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); if (p.version !== '$PI_SUBAGENTS_VERSION') throw new Error('unexpected pi-subagents version '+p.version); console.log('verified '+p.name+'@'+p.version)"
-          node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); if (p.version !== '$PI_INTERCOM_VERSION') throw new Error('unexpected pi-intercom version '+p.version); console.log('verified '+p.name+'@'+p.version)"
-          test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"
-          test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
-          test -f "$pi_npm_root/node_modules/pi-subagents/src/intercom/intercom-bridge.ts"
-          test -f "$pi_npm_root/node_modules/pi-intercom/skills/pi-intercom/SKILL.md"
-          echo "PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents" >> "$GITHUB_ENV"
-          echo "PI_INTERCOM_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-intercom" >> "$GITHUB_ENV"
 
       - name: Guard Pi substrate compatibility
         run: |
           set -euo pipefail
 
-          global_npm_root="$(npm root -g)"
-          pi_npm_root="$HOME/.pi/agent/npm"
-          GLOBAL_NPM_ROOT="$global_npm_root" \
-          PI_AGENT_ROOT="$global_npm_root/@earendil-works/pi-coding-agent" \
-          PI_SUBAGENTS_ROOT="$pi_npm_root/node_modules/pi-subagents" \
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const { pathToFileURL } = require('url');
-
-          function readPackage(root) {
-            return JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
-          }
-          function fail(message) {
-            console.error(`Pi substrate compatibility guard failed: ${message}`);
-            process.exit(1);
-          }
-
-          const nodeVersion = process.versions.node.split('.').map(Number);
-          if (nodeVersion[0] < 22 || (nodeVersion[0] === 22 && nodeVersion[1] < 19)) {
-            fail(`Node ${process.versions.node} does not satisfy pi-coding-agent's >=22.19.0 engine requirement`);
-          }
-
-          const agentRoot = process.env.PI_AGENT_ROOT;
-          const subagentsRoot = process.env.PI_SUBAGENTS_ROOT;
-          const agentPackage = readPackage(agentRoot);
-          const subagentsPackage = readPackage(subagentsRoot);
-          // Floor checks, not equality: the pins move together (see the install
-          // step), but the guard's job is to catch a sub-floor or mismatched
-          // runtime, not to mirror a version literal. pi >= 0.83.0 is the
-          // spacedock ready-gate floor (s98).
-          function versionAtLeast(version, floor) {
-            const parse = (v) => v.replace(/^v/, '').split('-')[0].split('.').map(Number);
-            const v = parse(version), f = parse(floor);
-            for (let i = 0; i < 3; i++) {
-              if ((v[i] || 0) > (f[i] || 0)) return true;
-              if ((v[i] || 0) < (f[i] || 0)) return false;
-            }
-            return true;
-          }
-          if (!versionAtLeast(agentPackage.version, '0.83.0')) {
-            fail(`@earendil-works/pi-coding-agent ${agentPackage.version} is below the spacedock ready-gate floor 0.83.0`);
-          }
-          if (!versionAtLeast(subagentsPackage.version, '0.53.0')) {
-            fail(`pi-subagents ${subagentsPackage.version} is below the last verified pairing (0.53.0)`);
-          }
-
-          // pi-ai is usually vendored nested under pi-coding-agent (npm does not hoist it
-          // to the global root); check the nested copy pi actually loads first, then the
-          // top-level global root. The /compat export is ESM-only (import condition), so
-          // probe it with a dynamic import, never require.resolve.
-          const piAICandidates = [
-            path.join(agentRoot, 'node_modules', '@earendil-works', 'pi-ai'),
-            path.join(process.env.GLOBAL_NPM_ROOT, '@earendil-works/pi-ai'),
-          ];
-          const piAIRoot = piAICandidates.find((candidate) => fs.existsSync(path.join(candidate, 'package.json')));
-          if (!piAIRoot) {
-            fail(`cannot locate @earendil-works/pi-ai under pi-coding-agent ${agentPackage.version} (checked ${piAICandidates.join(', ')})`);
-          }
-          const piAIPackage = readPackage(piAIRoot);
-          const compatExport = piAIPackage.exports && piAIPackage.exports['./compat'] && piAIPackage.exports['./compat'].import;
-          if (!compatExport) {
-            fail(`pi-subagents ${subagentsPackage.version} requires @earendil-works/pi-ai/compat, but @earendil-works/pi-ai ${piAIPackage.version} from pi-coding-agent ${agentPackage.version} does not declare that export`);
-          }
-          const compatPath = path.join(piAIRoot, compatExport);
-          if (!fs.existsSync(compatPath)) {
-            fail(`@earendil-works/pi-ai/compat resolves to missing file ${compatPath}`);
-          }
-          import(pathToFileURL(compatPath).href).then(() => {
-            console.log(`verified pi-subagents ${subagentsPackage.version} is paired with @earendil-works/pi-ai ${piAIPackage.version}: ${compatPath}`);
-          }).catch((error) => {
-            fail(`@earendil-works/pi-ai/compat exists but failed to load: ${error.message}`);
-          });
-          NODE
-
-      - name: Build spacedock binary
-        run: |
-          go build -o ./spacedock ./cmd/spacedock
-          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
-          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
-          echo "$(pwd)" >> "$GITHUB_PATH"
+          # Node engine floor, the pi-coding-agent and pi-subagents floors, and
+          # the @earendil-works/pi-ai/compat resolution+load all live in the
+          # pi-live `guard` command, never as inline JavaScript in this workflow.
+          spacedock-release guard
 
       - name: Install gotestsum
         run: bash .github/scripts/install-gotestsum.sh
@@ -757,13 +645,18 @@ jobs:
 
       - name: Verify Pi current-checkout setup
         run: |
+          # Deliberately exercise the explicit-override path locally (shell-scoped,
+          # never exported) so the manifest checks below run against the installed
+          # package while the smoke step sees neither variable.
+          pi_npm_root="$HOME/.pi/agent/npm"
+          PI_SUBAGENTS_PACKAGE_ROOT="$pi_npm_root/node_modules/pi-subagents"
+          PI_INTERCOM_PACKAGE_ROOT="$pi_npm_root/node_modules/pi-intercom"
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
           spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE" | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/pi-doctor.txt"
           test -f "$GITHUB_WORKSPACE/skills/first-officer/references/pi-first-officer-runtime.md"
           test -f "$GITHUB_WORKSPACE/skills/ensign/references/pi-ensign-runtime.md"
-          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/extension/index.ts"
+          spacedock-release verify-manifest "$PI_SUBAGENTS_PACKAGE_ROOT"
           test -f "$PI_SUBAGENTS_PACKAGE_ROOT/skills/pi-subagents/SKILL.md"
-          test -f "$PI_SUBAGENTS_PACKAGE_ROOT/src/intercom/intercom-bridge.ts"
           test -f "$PI_INTERCOM_PACKAGE_ROOT/skills/pi-intercom/SKILL.md"
 
       - name: Show tool versions
@@ -782,7 +675,7 @@ jobs:
 
       - name: Run live Pi common journeys
         env:
-          # pi-subagents 0.53.0+ async dispatch: the rejection-flow journey
+          # Recent pi-subagents async dispatch: the rejection-flow journey
           # (four sequential dispatches: implementation -> validation REJECT
           # -> rework -> validation PASS -> gate prepare) reaches its stop at
           # ~25m. The default 12m per-journey cap fires before the stop, so the

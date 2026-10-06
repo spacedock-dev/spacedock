@@ -28,13 +28,21 @@ An initial-dispatch artifact was assembled for the entity with `+"`spacedock dis
 
 Use the pi-subagents subagent(...) tool exactly once with those fields verbatim (context must be "fresh", working directory %[2]s). Do not use or mention Claude Agent, SendMessage, TeamCreate, or TeamDelete tools. Do not paraphrase, re-order, or extend the task string.
 
+Also call the intercom tool exactly once as intercom({action:"list"}) so the isolated-home run records both extension tools (subagent and intercom); name that call in your final message.
+
 After subagent(...) returns, you as first officer must verify the entity file %[4]s contains %[8]s and verify the state checkout %[3]s git log contains 'ensign: pi live smoke' over pi-live-smoke/index.md. The stage report must use the exact heading '## Stage Report: implementation' — confirm that too. Exit successfully only after those durable checks pass; your final message names the agent and skill values you passed to subagent(...) and the child's run id.
 
 Reference paths: ensign contract at %[1]s/skills/ensign/SKILL.md; Pi ensign adapter at %[1]s/skills/ensign/references/pi-ensign-runtime.md (the worker's dispatch artifact already points at them).`,
 		repo, workflowRoot, stateRoot, entityPath, envelope.Agent, envelope.Skill, envelope.Prompt, piLiveSmokeMarker)
 }
 
-func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string) []string {
+// piLiveEnv builds the child environment for an isolated Pi run. The isolated
+// home's settings.json package registration drives Pi's own discovery of the
+// substrate packages; the two package-root variables are scrubbed by default and
+// only forwarded when the operator supplied a nonempty explicit override — an
+// override wins its own package independently, and the other package still
+// discovers normally. Neither variable is re-added as an empty assignment.
+func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir string) []string {
 	env := cleanEnviron(
 		"CODEX_THREAD_ID", "CLAUDECODE", "HOME", "PI_CODING_AGENT_DIR",
 		"PI_CODING_AGENT_SESSION_DIR", "PI_INTERCOM_PACKAGE_ROOT",
@@ -45,15 +53,18 @@ func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string)
 		"HOME="+cleanHome,
 		"PI_CODING_AGENT_DIR="+piHome,
 		"PI_CODING_AGENT_SESSION_DIR="+sessionDir,
-		"PI_INTERCOM_PACKAGE_ROOT="+piIntercomPackageRoot(piSubagentsRoot),
-		"PI_SUBAGENTS_PACKAGE_ROOT="+piSubagentsRoot,
 		"PI_OFFLINE=1",
 	)
+	for _, key := range []string{"PI_SUBAGENTS_PACKAGE_ROOT", "PI_INTERCOM_PACKAGE_ROOT"} {
+		if v := os.Getenv(key); v != "" {
+			env = append(env, key+"="+v)
+		}
+	}
 	return withBinaryOnPath(env, filepath.Join(binaryDir, "spacedock"))
 }
 
-func piLiveEnvForAuth(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot, openAIKey, mode string) []string {
-	env := piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot)
+func piLiveEnvForAuth(piHome, sessionDir, cleanHome, binaryDir, openAIKey, mode string) []string {
+	env := piLiveEnv(piHome, sessionDir, cleanHome, binaryDir)
 	if mode == piAuthOAuth {
 		env = withoutPiEnvKey(env, "OPENAI_API_KEY")
 	} else if openAIKey != "" {
@@ -104,10 +115,10 @@ func TestPiLiveEnvDropsForeignRuntimeMarkers(t *testing.T) {
 		"PI_OFFLINE":                "0", "HOME": "/parent/home", "OPENAI_API_KEY": "key", "CODEX_AUTH_JSON": "oauth", "PATH": "/parent/bin"} {
 		t.Setenv(key, value)
 	}
-	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin", "/target/package")
+	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin")
 	want := map[string]string{"CODEX_THREAD_ID": "", "CLAUDECODE": "",
 		"PI_CODING_AGENT": "pi", "PI_CODING_AGENT_DIR": "/target/pi",
-		"PI_CODING_AGENT_SESSION_DIR": "/target/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/target/package",
+		"PI_CODING_AGENT_SESSION_DIR": "/target/sessions", "PI_SUBAGENTS_PACKAGE_ROOT": "/parent/package",
 		"PI_INTERCOM_PACKAGE_ROOT": "/parent/intercom",
 		"PI_OFFLINE":               "1", "HOME": "/target/home", "OPENAI_API_KEY": "", "CODEX_AUTH_JSON": "",
 		"PATH": "/spacedock/bin" + string(os.PathListSeparator) + "/parent/bin"}
@@ -135,7 +146,7 @@ func TestPiLiveEnvScrubsAmbientPiSubagentMarkers(t *testing.T) {
 	t.Setenv("PI_SUBAGENT_CHILD", "1")
 	t.Setenv("PI_SUBAGENT_RUN_ID", "ambient-run")
 	t.Setenv("PI_SUBAGENT_DEPTH", "1")
-	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin", "/target/package")
+	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin")
 	for _, kv := range env {
 		key := kv
 		if i := strings.IndexByte(kv, '='); i >= 0 {
@@ -147,16 +158,46 @@ func TestPiLiveEnvScrubsAmbientPiSubagentMarkers(t *testing.T) {
 	}
 }
 
-func piIntercomPackageRoot(piSubagentsRoot string) string {
-	if p := os.Getenv("PI_INTERCOM_PACKAGE_ROOT"); p != "" {
-		return p
+func TestPiLiveEnvDefaultScrubsPackageRoots(t *testing.T) {
+	t.Setenv("PI_SUBAGENTS_PACKAGE_ROOT", "")
+	t.Setenv("PI_INTERCOM_PACKAGE_ROOT", "")
+	env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin")
+	for _, key := range []string{"PI_SUBAGENTS_PACKAGE_ROOT", "PI_INTERCOM_PACKAGE_ROOT"} {
+		if v, ok := envValue(env, key); ok {
+			t.Fatalf("default discovery must not carry %s, got %q", key, v)
+		}
 	}
-	return filepath.Join(filepath.Dir(piSubagentsRoot), "pi-intercom")
 }
 
-func TestPiIntercomPackageRootDefaultsBesideSubagents(t *testing.T) {
-	t.Setenv("PI_INTERCOM_PACKAGE_ROOT", "")
-	if got := piIntercomPackageRoot("/packages/pi-subagents"); got != "/packages/pi-intercom" {
-		t.Fatalf("piIntercomPackageRoot() = %q, want sibling package", got)
+func TestPiLiveEnvHonorsIndependentOverrides(t *testing.T) {
+	cases := []struct {
+		name       string
+		subagents  string
+		intercom   string
+		wantSub    string
+		wantSubSet bool
+		wantIC     string
+		wantICSet  bool
+	}{
+		{"subagents only", "/override/subagents", "", "/override/subagents", true, "", false},
+		{"intercom only", "", "/override/intercom", "", false, "/override/intercom", true},
+		{"both", "/override/subagents", "/override/intercom", "/override/subagents", true, "/override/intercom", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("PI_SUBAGENTS_PACKAGE_ROOT", tc.subagents)
+			t.Setenv("PI_INTERCOM_PACKAGE_ROOT", tc.intercom)
+			env := piLiveEnv("/target/pi", "/target/sessions", "/target/home", "/spacedock/bin")
+			assertEnvPresence(t, env, "PI_SUBAGENTS_PACKAGE_ROOT", tc.wantSub, tc.wantSubSet)
+			assertEnvPresence(t, env, "PI_INTERCOM_PACKAGE_ROOT", tc.wantIC, tc.wantICSet)
+		})
+	}
+}
+
+func assertEnvPresence(t *testing.T, env []string, key, want string, wantSet bool) {
+	t.Helper()
+	got, ok := envValue(env, key)
+	if ok != wantSet || (wantSet && got != want) {
+		t.Fatalf("%s = (%q, present=%t), want (%q, present=%t)", key, got, ok, want, wantSet)
 	}
 }

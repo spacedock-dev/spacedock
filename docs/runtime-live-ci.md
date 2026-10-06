@@ -3,8 +3,8 @@
 The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
 
 A runtime regression is proved by one of the 17 exported `TestLiveCommon...`
-functions registered in [`runtime-live-ci-registry.md`](runtime-live-ci-registry.md).
-Each declaration has an adjacent `liveJourney(...)` call that binds its stable
+functions declared in `internal/ensigncycle/`. Each declaration has an adjacent
+`liveJourney(...)` call that binds its stable
 journey ID, fixture builder, target-scoped TODO or strict-XFAIL owner, runtime-
 neutral exercise, and durable assertion. A TODO skips only when the target
 cannot run. An XFAIL runs the target and accepts its typed semantic failures.
@@ -15,42 +15,15 @@ The helper selects only the Claude, Codex, or Pi transport from
 the exercise and durable grade are shared. Claude's three substrate proofs retain
 their separate assertions and share the common journeys' three-slot queue.
 
-### Registry reconciliation
-
-`TestRuntimeLiveRegistryReconciliation` parses the real Go declarations and calls,
-the immediately adjacent journey and fixture annotations, the desired registry,
-and the executable workflow. It fails on missing or duplicate IDs, unclassified
-live tests, malformed TODO ownership, builder/assertion drift, orphan fixtures,
-and an incorrect common-suite selector.
-
-Run it after changes to `internal/ensigncycle/`, `internal/livescenario/`, the
-registry, or `.github/workflows/runtime-live-e2e.yml`:
-
-```bash
-go test ./internal/contractlint -run '^TestRuntimeLiveRegistryReconciliation$'
-```
-
-The state checkout changes independently from a code commit. Run the mutable
-owner join during sprint close and before a release:
-
-```bash
-SPACEDOCK_LIVE_STATE_DIR=docs/dev/.spacedock-state \
-  go test ./internal/contractlint -run '^TestRuntimeLiveTODOOwnersAreActive$'
-```
-
-This check fails when a TODO or XFAIL names an inactive entity. Stable code CI
-does not fetch mutable workflow state.
-
 Live records use `pass`, `xfail`, `xpass`, or `fail`. After infrastructure
 succeeds, the grade runs the durable semantic assertions. One or more typed
 semantic failures produce XFAIL for an XFAIL target. The metric keeps all
 observed semantic codes. An empty semantic set is XPASS. XPASS keeps the lane
 green only so the complete lane can finish, and emits an alert with the target
-and owner. XPASS is not a terminal green registry state. Before archiving the
-owner, remove the source binding and matching reconciliation expectation, then
-run the unchanged candidate without the binding and require PASS. Run the
-active-owner join at that terminal gate. Authentication, launch, timeout,
-fixture, parsing, state-read, and metric failures remain ordinary failures.
+and owner. XPASS is not a terminal green state. Before archiving the owner,
+remove the source binding, then run the unchanged candidate without the binding
+and require PASS. Authentication, launch, timeout, fixture, parsing, state-read,
+and metric failures remain ordinary failures.
 
 ### Local live execution
 
@@ -87,11 +60,12 @@ SPACEDOCK_LIVE_RUNTIME=codex go test -tags live -count=1 -timeout 40m -run '^Tes
 
 Leave `SPACEDOCK_CODEX_LIVE_REQUIRED` unset for this local path. When no `OPENAI_API_KEY` is set, the harness copies `~/.codex/auth.json` into an isolated `CODEX_HOME`; if the variable is already set, run `unset SPACEDOCK_CODEX_LIVE_REQUIRED` first.
 
-Run the Pi live proofs locally with the same package versions pinned in CI:
+Run the Pi live proofs locally with the pinned Pi family. The version list lives
+in exactly one place (`internal/pilive`); print the exact install commands from
+the helper, then install:
 
 ```bash
-npm install -g @earendil-works/pi-coding-agent@0.80.10
-npm install --prefix "$HOME/.pi/agent/npm" pi-subagents@0.35.1 pi-intercom@0.6.0
+eval "$(go run ./cmd/spacedock-release print-install)"
 export PI_SUBAGENTS_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-subagents"
 export PI_INTERCOM_PACKAGE_ROOT="$HOME/.pi/agent/npm/node_modules/pi-intercom"
 ```
@@ -150,8 +124,8 @@ Replace a revoked or expired secret from a trusted workstation. If OAuth is
 absent, `OPENAI_API_KEY` is used; a lane fails before launch only when both
 credentials are absent.
 
-For OAuth Pi uses `openai-codex/gpt-5.6-luna:max`; the API-key fallback uses
-`openai/gpt-5.6-luna:max`. The model ID and `max` thinking level are unchanged.
+For OAuth Pi uses `openai-codex/gpt-6-luna:max`; the API-key fallback uses
+`openai/gpt-6-luna:max`. The model ID and `max` thinking level are unchanged.
 
 | Selected command | Unique evidence | Measured sample or cost |
 |---|---|---|
@@ -160,31 +134,30 @@ For OAuth Pi uses `openai-codex/gpt-5.6-luna:max`; the API-key fallback uses
 | Codex resolver and `TestLiveCommon...` | Current-checkout resolution and common journeys | Both PR and release jobs consume Codex metrics. |
 | Pi `TestLiveCommon...` and `TestLivePiFrontDoorSmoke` | Common journeys plus one four-part substrate proof | The detail artifacts preserve each run. |
 
-The manual Pi lane keeps the lean surface: it does not install tmux and runs one front-door substrate smoke.
+The Pi lane keeps a lean setup: it does not install tmux and runs one front-door substrate smoke. It is not a cheap lane — a run takes about 35 minutes and spends live model calls.
 
 The optional journey-delta job uses the newest metrics artifact for each live producer in the run.
 If one artifact is unavailable or incomplete, the job warns and skips the comment. The required test result does not change.
 
 Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before a live lane uses an environment approval.
 
-- Pull requests run `claude-sonnet-5` at maximum effort and `gpt-5.6-luna` at maximum effort.
+- Pull requests to `main` run `claude-sonnet-5` at maximum effort, `gpt-5.6-luna` at maximum effort, and the Pi lane. Pi is not opt-in: every pull request runs it by default. The lane is not cheap — it takes about 35 minutes and spends live model calls.
 - An explicit `live_cadence=opus-pre-release` dispatch runs offline plus `claude-opus-4-8` at maximum effort. It allocates no Codex or Pi runner and requests only `CI-E2E-OPUS` approval.
-- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. Pull requests run Sonnet and Codex; Pi is opt-in per PR — add the `live:pi` label and approve the `CI-E2E-PI` environment to attach a Pi live check to the PR (see "Running the pi lane on a pull request" below). Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
+- An explicit `live_cadence=pi` dispatch runs the 17 common Pi journeys and the Pi front-door proof with `openai-codex/gpt-5.6-luna` for OAuth or `openai/gpt-5.6-luna` for the API-key fallback, at maximum thinking. It waits only for `CI-E2E-PI` approval and retains Pi logs, diagnostics, journey metrics, and session artifacts. The manual dispatch path still works unchanged. The `live:pi` label is no longer required, on the dispatch path or on a pull request. Pi is not a merge requirement. Local Pi execution remains supported with `pi login` or an API key.
 
 #### Running the pi lane on a pull request
 
-To attach a Pi live check to a pull request:
+Every pull request to `main` runs the Pi lane by default; no label is required. The lane is `pi-live`, and it waits on its environment approval.
 
-1. Add the `live:pi` label. The label event runs only the secret-free `offline` gate plus `pi-live`; the other paid lanes skip the event (`github.event.action != 'labeled'`), and a non-Pi label runs no live lane at all.
-2. Approve the `CI-E2E-PI` environment when the run waits on it. The required reviewer is the human gate. Approve in the Checks tab ("Review deployment"), or with the API:
+1. Approve the `CI-E2E-PI` environment when the run waits on it. The required reviewer is the human gate. Approve in the Checks tab ("Review deployment"), or with the API:
 
         gh api -X POST repos/{owner}/{repo}/actions/runs/<run-id>/pending_deployments \
           --input - <<< '{"environment_ids":[<environment-id>],"state":"approved"}'
 
    The pending-deployment record can take several seconds to appear after `pi-live` reaches `waiting`; re-read the endpoint before concluding it is missing.
-3. The run appears in the pull request's Checks tab. `pi-live` is not a merge requirement.
+2. The run appears in the pull request's Checks tab. `pi-live` is not a merge requirement.
 
-A `workflow_dispatch` run with `live_cadence: pi` produces the same evidence, but its run is not associated with a pull request.
+The `live:pi` label is no longer a precondition: a label event skips the lane (`github.event.action != 'labeled'`), so adding the label does not attach the check — the pull request already ran it. A `workflow_dispatch` run with `live_cadence: pi` produces the same evidence, but its run is not associated with a pull request.
 
 All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 

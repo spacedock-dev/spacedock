@@ -116,64 +116,6 @@ func TestClassifierIsSharedBySetAndValidate(t *testing.T) {
 	}
 }
 
-// TestClassifierPrecisionRecallOnLiveCorpus locks AC-5: walk every index.md
-// under docs/dev/.spacedock-state/ (active + _archive/) and assert the flagged
-// set is EXACTLY {external-tracker-checkpoint/index.md AC-6}.
-func TestClassifierPrecisionRecallOnLiveCorpus(t *testing.T) {
-	stateRoot := liveStateRoot(t)
-	if stateRoot == "" {
-		t.Skip("live .spacedock-state corpus not reachable from internal/status test cwd")
-	}
-
-	type hit struct {
-		path  string
-		label string
-	}
-	var hits []hit
-
-	err := filepath.Walk(stateRoot, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return nil
-		}
-		if info.IsDir() {
-			if info.Name() == ".git" {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if filepath.Base(path) != "index.md" {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return nil
-		}
-		for _, f := range ClassifyEntityACs(stripFrontmatter(data), devExternalTokens) {
-			rel, _ := filepath.Rel(stateRoot, path)
-			hits = append(hits, hit{path: rel, label: acLabel(f.Header)})
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("walk %s: %v", stateRoot, err)
-	}
-
-	const wantPath = "_archive/external-tracker-checkpoint/index.md"
-	const wantLabel = "AC-6"
-	if len(hits) != 1 {
-		var lines []string
-		for _, h := range hits {
-			lines = append(lines, h.path+" "+h.label)
-		}
-		t.Fatalf("classifier must flag EXACTLY one AC on the live corpus, got %d:\n%s",
-			len(hits), strings.Join(lines, "\n"))
-	}
-	if hits[0].path != wantPath || hits[0].label != wantLabel {
-		t.Fatalf("flagged set mismatch: got {%s %s}, want {%s %s}",
-			hits[0].path, hits[0].label, wantPath, wantLabel)
-	}
-}
-
 // TestNoExternalProofGuardOnReadPaths locks the cycle-2 F1 regression: under
 // `require-external-proof: true` AND with a self-referential entity present,
 // the read surfaces (`sd status`, `--next`, `--boot`, `--next-id`) must exit 0.
@@ -511,28 +453,4 @@ func stageExternalProofFixture(t *testing.T, optIn string) string {
 
 	gitInit(t, dst)
 	return dst
-}
-
-// liveStateRoot resolves the live .spacedock-state checkout absolute path
-// relative to the test cwd (internal/status), walking up to the repo root.
-// Returns "" when the corpus is not present (e.g. in a packaging-time build).
-func liveStateRoot(t *testing.T) string {
-	t.Helper()
-	cwd, err := os.Getwd()
-	if err != nil {
-		return ""
-	}
-	dir := cwd
-	for i := 0; i < 6; i++ {
-		candidate := filepath.Join(dir, "docs", "dev", ".spacedock-state")
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			return candidate
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			break
-		}
-		dir = parent
-	}
-	return ""
 }

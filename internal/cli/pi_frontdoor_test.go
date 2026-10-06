@@ -12,8 +12,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/pilive"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
+
+// piTestVersionAboveFloor is an obviously synthetic version above the launcher
+// floor for faking `pi --version`. It is not a pin: the pinned Pi family lives
+// only in internal/pilive.
+const piTestVersionAboveFloor = "99.0.0"
 
 type fakePiRuntimeOps struct {
 	lookPath      map[string]string
@@ -27,7 +33,7 @@ type fakePiRuntimeOps struct {
 	piInstallErr  error
 	packageStatus piPackageStatus
 	// piVersionOut/Err fake `pi --version`. Empty out with nil err means a
-	// healthy current binary (0.85.1, above the 0.83.0 floor) so the many
+	// healthy current binary, above the launcher floor, so the many
 	// existing fixtures don't each need a version field; sub-floor and
 	// garbage-version tests set it explicitly.
 	piVersionOut string
@@ -66,7 +72,7 @@ func (f *fakePiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPacka
 
 func (f *fakePiRuntimeOps) PiVersion() (string, error) {
 	if f.piVersionOut == "" && f.piVersionErr == nil {
-		return "0.85.1\n", nil
+		return piTestVersionAboveFloor + "\n", nil
 	}
 	return f.piVersionOut, f.piVersionErr
 }
@@ -1690,17 +1696,17 @@ func TestRunPi_ReadyGateRequiresFirstOfficerSkill(t *testing.T) {
 	}
 }
 
-// TestRunPi_ReadyGateRefusesSubFloorPiVersion pins AC-5's pi >= 0.83.0 floor,
-// read from the binary's `pi --version` only; unparseable output fails closed.
+// TestRunPi_ReadyGateRefusesSubFloorPiVersion pins the pi floor derived from
+// internal/pilive, read from the binary's `pi --version` only; unparseable
+// output fails closed.
 func TestRunPi_ReadyGateRefusesSubFloorPiVersion(t *testing.T) {
 	cases := []struct {
 		version string
 		want    int
 	}{
 		{"0.82.9", 1},
-		{"0.83.0", 0},
-		{"0.85.1", 0},
-		{"1.0.0", 0},
+		{pilive.PiCodingAgentFloor, 0},
+		{piTestVersionAboveFloor, 0},
 		{"dev\n", 1},   // unparseable fails closed
 		{"garbage", 1}, // unparseable fails closed
 	}
@@ -1736,15 +1742,14 @@ func TestPiVersionAtLeast(t *testing.T) {
 		want    bool
 	}{
 		{"0.82.9", false},
-		{"0.83.0", true},
-		{"0.83.1", true},
-		{"0.85.1", true},
-		{"1.0.0", true},
+		{pilive.PiCodingAgentFloor, true},
+		{"1.0.1", true},
+		{piTestVersionAboveFloor, true},
 		{"0.8.9", false},
 		{"0.9.0", false},
 		{"", false},
 		{"dev", false},
-		{"garbage 0.90.0 trailing", true}, // first semver triple in the output wins
+		{"garbage 1.2.3 trailing", true}, // first semver triple in the output wins
 	}
 	for _, tc := range cases {
 		if got := piVersionAtLeast(tc.version, piVersionFloor); got != tc.want {
@@ -1846,7 +1851,7 @@ func TestPiDoctorReportsFirstOfficerVersionDuplicates(t *testing.T) {
 		for _, want := range []string{
 			"OK Spacedock first-officer skill (package discovery)",
 			"OK Spacedock extension",
-			"OK pi version: 0.85.1 (floor 0.83.0)",
+			"OK pi version: " + piTestVersionAboveFloor + " (floor " + pilive.PiCodingAgentFloor + ")",
 			"WARN duplicate Spacedock registration: 2 package entries",
 			"up to 4 skill registrations",
 			"remedy: `pi remove` the stale entry",
@@ -1871,7 +1876,7 @@ func TestPiDoctorReportsFirstOfficerVersionDuplicates(t *testing.T) {
 		}
 		out := stdout.String()
 		for _, want := range []string{
-			"MISSING pi version: 0.73.1 (floor 0.83.0)",
+			"MISSING pi version: 0.73.1 (floor " + pilive.PiCodingAgentFloor + ")",
 			"@earendil-works",
 			"@mariozechner",
 		} {
