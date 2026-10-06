@@ -1,6 +1,6 @@
 ---
 title: The Pi launcher demands an extension path that Pi itself already resolves from settings
-status: ideation
+status: implementation
 score: 0.8
 source: "FO review of the Pi stack, 2026-10-04: internal/cli/pi.go:645-648 resolves pi-subagents from the env var or HOME, while Pi resolves a registered npm entry from the agent directory."
 id: 7qksxxpbdcqz96mh0basxxzb
@@ -57,8 +57,7 @@ must fail.
 Verified by: the setup-incomplete path, with no registration and no variables.
 Falsifier: return a path that does not exist and the test must fail.
 
-**AC-4 (no-regression) -** The doctor's probes and the setup message keep their
-current behaviour, and the offline suite passes.
+**AC-4 (no-regression) -** The doctor's probe semantics are unchanged - the same lines (`pi-subagents extension`, `pi-subagents skill`, `pi-intercom package root`, `pi-intercom skill`) test the same conditions and keep their OK/MISSING meaning - and the `Pi runtime setup incomplete` message text is byte-identical. Because the doctor shares `piRuntimeConfigFromEnv`, it resolves the same registered roots as the launch path; only the no-override/no-registration (default-home) case is byte-identical to today. The offline suite passes.
 
 ## Test plan
 

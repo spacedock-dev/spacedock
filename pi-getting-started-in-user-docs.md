@@ -1,6 +1,6 @@
 ---
 title: The user documentation has no Pi path
-status: backlog
+status: ideation
 score: 0.7
 source: "FO review, 2026-10-04: docs/site/get-started covers Claude and Codex; nothing covers spacedock on Pi."
 id: 7gq0w79d76gcx2v2qnda5js6
