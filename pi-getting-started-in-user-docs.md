@@ -91,3 +91,34 @@ files, so its report was returned inline and its substance is preserved below.
   `spacedock --help`; AC-3, because it banned version stamps but not model ids. Both replacements were
   applied, and AC-1 was tightened to name the two packages, `spacedock install --host pi` and
   `spacedock doctor --host pi`.
+
+## Stage Report: implementation
+
+- DONE: Load the ensign discipline before the assignment.
+  Evidence: read `skills/ensign/SKILL.md` and `references/ensign-shared-core.md` + `pi-ensign-runtime.md`; no Pi env marker was set, so the Pi runtime adapter applies.
+- DONE: Write the Pi getting-started path exactly as the ideation report designs it.
+  Evidence: one `## Pi` section in `docs/site/get-started/install.md` between `## Launch` and `## Skills` (install.md:62), one `## Troubleshooting` line (install.md:170), no new page, `mkdocs.yml` untouched. Commit 5e8893294.
+- DONE: Name every AC-1 element end to end.
+  Evidence: the section names `spacedock pi`, `pi install npm:pi-subagents`, `pi install npm:pi-intercom`, the Pi auth step (`pi auth` + the `auth.json` doctor check), `spacedock install --host pi`, and `spacedock doctor --host pi`.
+- DONE: Match documented commands and setup claims to the tools that ship.
+  Evidence: built `./cmd/spacedock` and ran `pi --help`, `install --help`, `doctor --help`, `install --host pi --check` (exit 0), `doctor --host pi` (exit 0); compared `pi install npm:pi-subagents`/`npm:pi-intercom` against `pi install --help` and `pi auth` against `pi auth --help`; read `resolvePiSubagentsEntries`, `piRuntimeConfigFromEnv`, and `piRuntimeLaunchReady` in `internal/cli/pi.go`.
+- DONE: State the registration-resolved resolution and keep the package-root escape hatch.
+  Evidence: the section says `spacedock pi` resolves both packages from the entries `pi install` writes to Pi's settings (the sibling launcher fix's post-landing behaviour) and names `PI_SUBAGENTS_PACKAGE_ROOT` / `PI_INTERCOM_PACKAGE_ROOT` as the outside-the-agent-dir override.
+- DONE: Obey the "must not claim" list.
+  Evidence: no version number or doctor output pasted; no model id from `internal/release/live_models.txt`; no env-var-free promise beyond the registration read; no auto-install/tier-1 claim (the section says "Pi is an experimental host, alongside Codex", matching `reference/command-reference.md`); `--plugin-dir` not presented as an install substitute; no unregistered Pi flags; no runtime internals.
+- DONE: Satisfy AC-3 with a search of the changed page.
+  Evidence: `grep -nE "0\.28|0\.20\.2|claude-sonnet-5-5|claude-opus-5-5|gpt-6-luna" docs/site/get-started/install.md` → no match. Falsifier: adding `0.28` or any lane model id makes it match.
+- DONE: Run `mkdocs build --strict` per AC-4.
+  Evidence: installed `docs/requirements.txt` into `/tmp/mkdocs-venv` and ran `/tmp/mkdocs-venv/bin/mkdocs build --strict` → exit 0, "Documentation built". Falsifier: a broken internal link or nav entry makes the strict build exit non-zero.
+- DONE: Confirm no Go regression and commit + push on the assigned branch.
+  Evidence: `go test ./...` exit 0; worktree commit 5e8893294 pushed to `origin/spacedock-ensign/pi-getting-started-in-user-docs` only (never `main`).
+
+### Summary
+
+Added the missing Pi path to `docs/site/get-started/install.md`: a `## Pi` section
+covering the two required Pi packages, Pi auth, `spacedock install --host pi`,
+`spacedock pi`, the registration-based package resolution with the package-root
+variables as the escape hatch, and `spacedock doctor --host pi`, plus one
+troubleshooting line. No new page and no other file changed. Verified against the
+binary's and Pi CLI's own help, kept clear of every item on the must-not-claim
+list, and passed the strict docs build and the Go suite.
