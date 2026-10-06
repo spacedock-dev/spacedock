@@ -112,3 +112,33 @@ so its report was returned inline and is preserved below.
   Evidence: AC-4, because the doctor shares `piRuntimeConfigFromEnv` and therefore necessarily inherits the
   registration resolution; its reported pi-subagents/pi-intercom paths change in the isolated-home case, so
   "keep their current behaviour" was ambiguous. The replacement wording was applied and is the current AC-4.
+
+## Stage Report: validation
+
+Read-only round; mutations were run in a scratch export, and the repository was not modified.
+Recorded here by the first officer because the round was instructed not to write files.
+
+- DONE: Tolerance verified from the diff, not the report.
+  Evidence: `git diff --numstat 894ff5dfd..HEAD` = 148 insertions / 27 deletions, net +121 across 2 files,
+  inside the declared +40..+140 and at most 3 files.
+- DONE: AC-1 falsified. Removing the registration read turned
+  `TestPiRuntimeConfigResolvesRegisteredRootsWithoutEnv` red, resolving under HOME instead of the agent dir.
+- DONE: AC-3 falsified. Pointing the default at a directory that exists turned
+  `TestPiRuntimeConfigFailsClosedWithoutRegistrationOrOverride` red.
+- DONE: AC-4 confirmed byte-for-byte. The four doctor probe lines and the `Pi runtime setup incomplete`
+  block are unchanged; the only additions are two `INFO ... root: (source: ...)` lines. Both falsifiers
+  were reproduced red.
+- DONE: The dangling-registration case verified. A registration whose package manifest is absent falls
+  through to the default, and `os.Stat` confirmed the resolved root does not exist on disk.
+- FOUND: AC-2's literal claim was not covered by any committed test. The committed test had no competing
+  registration, so it exercised override-versus-default only; the override-versus-registration half held
+  only in a scratch probe.
+- FOUND: the name-match was unproven. The committed test registered only the two packages under test, with
+  no decoy, so it could not show the resolver matches on the manifest name rather than taking the first entry.
+- FIXED: both gaps closed in `9c5f6817f` by `TestPiRuntimeConfigOverrideBeatsRegistration` (red at
+  `pi_frontdoor_test.go:553` when the registration is made to win) and
+  `TestPiRuntimeConfigResolvesByNameNotFirstEntry` (red at `:582` when the first resolvable entry wins).
+
+### Offline suite
+
+`go test ./...` at `9c5f6817f`: 21 packages ok, no failures.
