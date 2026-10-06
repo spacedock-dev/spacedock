@@ -1,0 +1,17 @@
+{
+  "fixture": "auto-continue-validation-parent.jsonl",
+  "run": "auto-continue-after-implementation (validation stage)",
+  "source": "/tmp/live-observer-verify/pi-common/auto-continue-after-implementation--auto-continue/single-root/sessions/2026-10-04T05-06-33-345Z_01a1054e-80ff-7456-ad63-1d879a2c0011.jsonl",
+  "source_sha256": "057933408037181af4ec990d5e394eff8754afe76640a10e0cc83bcd72003ca8",
+  "source_lines": [
+    39,
+    40,
+    41,
+    42,
+    43,
+    108
+  ],
+  "spawn_run_id": "6d33973c-4c8d-449b-a356-91c156c76c49",
+  "captured": "2026-10-04",
+  "projection": "Selected original records in original order: the validation-stage subagent dispatch, its async run-id result, the bg_wait call and result, the native subagent-notify notice, and the gate prepare call. Omitted model reasoning/signatures, provider/usage/response metadata, mission and launch-contract fields, and unrelated tool results. Retained record type, id, timestamp, tool name/call id, run id, notification text and the run-bearing Retention-managed async directory unchanged."
+}
