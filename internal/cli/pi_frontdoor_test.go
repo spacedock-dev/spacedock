@@ -533,6 +533,59 @@ func TestPiRuntimeConfigResolvesRegisteredRootsWithoutEnv(t *testing.T) {
 	assertEqual(t, cfg.intercomPackageSource, "settings.json npm:pi-intercom")
 }
 
+// TestPiRuntimeConfigOverrideBeatsRegistration pins the override precedence the
+// resolution contract claims: an exported PI_SUBAGENTS_PACKAGE_ROOT wins over a
+// competing settings.json registration for the same package, while a package
+// with no override (pi-intercom) still resolves from its registration. Falsifier:
+// resolve the registered root for pi-subagents and this is RED (override loses).
+func TestPiRuntimeConfigOverrideBeatsRegistration(t *testing.T) {
+	agentDir := t.TempDir()
+	home := t.TempDir()
+	writePiSettingsJSON(t, agentDir, home, []string{"npm:pi-subagents", "npm:pi-intercom"})
+	override := t.TempDir()
+
+	cfg := piRuntimeConfigFromEnv([]string{
+		"PI_CODING_AGENT_DIR=" + agentDir,
+		"PI_SUBAGENTS_PACKAGE_ROOT=" + override,
+		"HOME=" + home,
+	}, t.TempDir(), "")
+
+	assertEqual(t, cfg.packageRoot, override)
+	assertEqual(t, cfg.packageRootSource, "PI_SUBAGENTS_PACKAGE_ROOT")
+	// No override for pi-intercom: the registration still wins over the default.
+	assertEqual(t, cfg.intercomPackageRoot, filepath.Join(agentDir, "npm", "node_modules", "pi-intercom"))
+	assertEqual(t, cfg.intercomPackageSource, "settings.json npm:pi-intercom")
+}
+
+// TestPiRuntimeConfigResolvesByNameNotFirstEntry pins that the registration scan
+// matches a package's own package.json name, not the first entry it can resolve:
+// a decoy entry registered before the real one resolves to a directory whose
+// manifest name is something else, and pi-subagents must still resolve to the
+// later real registration. Falsifier: return the first resolvable entry and the
+// decoy wins, RED.
+func TestPiRuntimeConfigResolvesByNameNotFirstEntry(t *testing.T) {
+	agentDir := t.TempDir()
+	home := t.TempDir()
+	// Decoy first, real package second; writePiSettingsJSON names each npm
+	// directory and its package.json from the source, so the decoy's manifest
+	// name is "pi-subagents-decoy" — not the requested package.
+	writePiSettingsJSON(t, agentDir, home, []string{"npm:pi-subagents-decoy", "npm:pi-subagents"})
+
+	decoyRoot := filepath.Join(agentDir, "npm", "node_modules", "pi-subagents-decoy")
+	if name, _ := readPackagePiSkills(decoyRoot); name == "pi-subagents" {
+		t.Fatalf("decoy manifest name must differ from the requested package, got %q", name)
+	}
+
+	cfg := piRuntimeConfigFromEnv([]string{"PI_CODING_AGENT_DIR=" + agentDir, "HOME=" + home}, t.TempDir(), "")
+
+	realRoot := filepath.Join(agentDir, "npm", "node_modules", "pi-subagents")
+	assertEqual(t, cfg.packageRoot, realRoot)
+	assertEqual(t, cfg.packageRootSource, "settings.json npm:pi-subagents")
+	if cfg.packageRoot == decoyRoot {
+		t.Fatalf("resolver returned the decoy registration %q instead of the manifest-named package", decoyRoot)
+	}
+}
+
 // TestPiRuntimeConfigFailsClosedWithoutRegistrationOrOverride is AC-3's test:
 // with no package-root variable and no settings.json registration, both roots
 // fall back to the default home layout (absent here) and the runtime check
