@@ -1,6 +1,6 @@
 ---
 title: The commission skill lets an initial seed gate claim to review work no worker produced
-status: backlog
+status: ideation
 source: "Captain, 2026-10-06: incident while commissioning an exploratory workflow on 0.28.0-pre4. An `exploration` stage was declared both initial and gated, and its prose implied the gate reviewed research no worker had run. Approving it would have advanced straight past the research worker."
 id: 6dhxxd047s3c32n21h8ppf9y
 gates:
@@ -24,7 +24,7 @@ gates:
                 reason: 'Captain, 2026-10-06, in session: "file the commission issue first and dispatch to astra for ideation"'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 A commissioned workflow can declare an initial stage gated, then describe that gate as reviewing the stage's own worker output. The binary's semantics are the opposite: an initial gated stage reviews the committed seed, because no prior stage wrote a report. Approving it advances to the successor without the stage's worker ever running.
