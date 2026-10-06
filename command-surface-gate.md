@@ -21,3 +21,17 @@ This sprint is the proof case: `merge guard` introduces a NEW top-level `merge` 
 Out of scope: enforcing the FULL decision tree (flag-vs-mode-vs-mod) in code — that stays human judgment at the gate. This gate enforces the one mechanical invariant: the top-level surface is an explicit, deliberate allowlist that AGREES with the advertised completion verbs.
 
 Acceptance criteria (ideation fleshes; behavior-first / oracle-based, NO prose-grep): a contractlint test that RED on (a) a top-level command added without an allowlist entry, and (b) the allowlist and completion verbs disagreeing — proven by exercising a stray-command fixture (RED) vs the real surface (GREEN), asserting exit/failure. The allowlist value is external to the cli.go file under test (the test owns the expected set), so it is not a tautology.
+
+## Evidence from the pi-ux sprint, 2026-10-05
+
+Two command surfaces were added to `cmd/spacedock-release` that nobody requested, and only one was
+removed by the change that created it.
+
+1. `live-models` — added in `09d0600ec` and deleted in `262474b49`, 37 seconds apart, both inside an
+   unmerged layer. It never reached `main` and no user ever had it. It was the over-built first answer
+   to "pin the model ids in one place", replaced by a single data file read through `go:embed`.
+2. `pins` — still present at the stack tip. Nothing consumes it: no workflow, no doc, no skill. It is
+   in the same dispatch arm as `install`, `guard` and `verify-manifest`, which the lane workflow does
+   call. `pins` does not, and should be deleted.
+
+The surface that would have caught both is this task. `liveClaims` guards live tests, not commands.
