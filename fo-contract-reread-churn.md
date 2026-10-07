@@ -308,3 +308,42 @@ Handoff-only prior-run evidence: normal suite passed in full (`internal/cli` 136
 ### Summary
 
 The four-file retry reconciles shared residency with concrete host loads and presenter reuse while preserving lazy invalidation, fresh gate evidence, and gate/write/merge ordering. Full normal and race suites pass, and the published earlier attempt remains auditable as an ancestor rather than being rewritten. Empirical residency, real-compaction, and replacement acceptance remain outstanding for the FO's one-off live validation and independent review.
+
+## Stage Report: validation
+
+- DONE: Verify the deliverable: exactly four skill files, matching the approved design and the two fixes the retained review required.
+  Read the complete candidate and retained `.briefings/fo-contract-reread-churn-astra-review.md`; `ecee2ccc1` changes only shared core, Claude/Pi adapters, and fo-gate-lifecycle, as the retry dispatch authorizes.
+- DONE: Confirm the Claude adapter no longer names two unconditional concrete Reads, and “Only” no longer gates invalidation.
+  Claude establishes/restores residency with separate required Reads, forbids resident-body rereads, and keeps write-before-merge ordering; shared-core unavailability independently requires reload, so summaries or remembered loads cannot satisfy residency without a body. This is semantic inspection, not host-behavior proof.
+- DONE: Re-run go test ./..., go test ./... -race, and gofmt -w ./cmd ./internal, and report each result with durations.
+  All exited 0: normal 119.693s, race 190.434s, gofmt 0.067s wall time; focused contractlint/ensigncycle also passed in 2.158s with cached package results. Local logs and timings: `/tmp/fo-contract-validation/{normal,race,gofmt,focused}.log` and `results.json`.
+- DONE: Retain independently rerun package timings without claiming cached tests executed afresh.
+  Normal/race seconds: internal/cli 113.703/131.853, contractlint cached/3.235, dispatch 44.797/53.495, ensigncycle cached/181.009, piruntime 0.471/1.379, release 19.501/25.436, status 38.823/48.799, skills/integration 9.200/11.853; all other tested packages cached, module root and cmd/spacedock have no tests.
+- DONE: Confirm cmd and internal are byte-unchanged from the base.
+  `git diff --exit-code origin/main -- cmd internal` and `git diff --exit-code HEAD` passed after formatting; restored only gofmt's pre-existing formatting drift in `internal/release/runtime_live_evidence_workflow_test.go` from its original bytes. No lasting Go or skill edits were made.
+- DONE: Verify the declared surface: shared core at most 23,500 bytes and fo-gate-lifecycle at most 7,700 bytes, and net LOC +2 with tolerance +1 to +4 measured by git diff --numstat against origin/main.
+  Measured 23,497/23,500 and 7,699/7,700 bytes; `git diff --numstat origin/main HEAD` gives +9/-7 = +2 across four files, against base `077fb3bc1`. Remaining storage headroom is only 3 and 1 bytes.
+- DONE: Confirm the branch tree is exactly the four-file change, that the earlier attempt survives as an ancestor, and that no trace of the superseded paragraph remains.
+  HEAD stayed `ecee2ccc1`; `git diff --exit-code b06e6116e HEAD` and `git merge-base --is-ancestor 073b7e156 HEAD` passed. Diff inspection and tracked-tree absence checks found no superseded paragraph; this establishes source/history facts only, not runtime behavior.
+- DONE: Confirm no test file was added or changed.
+  `git diff --name-only origin/main HEAD -- '*test*' '*fixture*'` returned nothing; the code working tree and index are clean, and `git diff --check origin/main HEAD` passed.
+- DONE: Run independent mechanical checks and identify their falsifiers.
+  Fresh `go test -count=1 -v ./internal/contractlint -run '^(TestFOInstructionComponentCaps|TestBootResidentDeferredLoadPointsResolve|TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget|TestFOWriteCoreMutationGateClassifiesTargets|TestFOWriteCoreMutationGateRequiresExactOverride)$'` passed in 0.614s wall/0.306s package time; over-cap bytes, dangling targets, or independently specified path/authority misclassifications fail these checks, not live reread churn.
+- DONE: Perform a semantic adversarial pass over the changed instruction paths.
+  Inspected cold/summary-only, unchanged-resident, unavailable-without-cue, compaction, single-body replacement, repeated Pi gates, and gated terminal cases: retain lazy scoped reloads, no probes, fresh evidence/presentation, and gate→write→merge prerequisites with separate required load events. No host execution or synthetic self-authored oracle is claimed.
+- SKIPPED: The three live acceptance legs are FO-owned and outstanding. Do not attempt them, do not fix them, and record them as FO-owned and pending rather than passed or failed.
+  FO-owned and PENDING: residency (AC-1/AC-2 and initial AC-4), real compaction (AC-3/AC-4), and changed-instruction replacement (AC-3/AC-4). None was attempted; pending work is neither passed nor a validator failure.
+- SKIPPED: Reproduce empirical acceptance evidence and durable workflow-effect comparisons.
+  AC-1's fresh-FO ≤5-read/≤4.0% replay and historical counter were not rerun; AC-2 reuse/probe observations, AC-3 reload observations, AC-4 event ordering, and AC-5 live effect/state equivalence remain unverified here. AC-5's mechanical surface/regression portion passed above; earlier replay claims were not reused as behavioral evidence.
+- SKIPPED: Claim a detached behavioral mutation audit or completed independent review gate.
+  Neither was run in this round; the required reviewer gate and live trace/mutation evidence remain outstanding before final acceptance. Static matrix inspection is not a substitute.
+- DONE: Reject any evidence that asserts an artifact's own text against a copy of that text.
+  Accepted measurements bind actual bytes, Git history/tree, resolved filesystem targets, independent path fixtures, and executed regression commands; no wording-presence assertion or copied expected paragraph is credited for any behavioral AC.
+- DONE: Disposition any new finding with the four evidence fields the workflow's Review-finding disposition section requires.
+  No new candidate finding arose, so no new four-field disposition or candidate repair is proposed. The retained review's behavioral-evidence gap remains explicitly FO-owned/pending; this report grants no mutation or merge authority.
+- DONE: Report with a verdict of PASSED or REJECTED, in the canonical item form, one DONE/SKIPPED/FAILED line per checklist item with an evidence or rationale line, ending with a non-empty Summary.
+  Verdict: PASSED for the assigned read-only source/mechanical validation scope. This is not an all-AC or merge-acceptance verdict; the FO's three live legs and the reviewer gate remain pending.
+
+### Summary
+
+PASSED: the unchanged four-file candidate satisfies the assigned source reconciliation, history, size, LOC, and regression checks. Both retained source fixes are present, and no new candidate defect was found. The FO must still supply the three live acceptance legs and obtain independent review; no live or detached-audit result is claimed here.
