@@ -150,6 +150,10 @@ Apply the **Stage Naming Convention** (below) when proposing the default list an
 
 Store the confirmed stages as `{stages}`. The first stage is `{first_stage}` and the last is `{last_stage}`.
 
+**Gate timing:** An initial approval gate reviews the committed seed, not completed work assigned to that stage. No worker runs for that initial stage before seed approval. Approval advances to its successor. A later approval gate reviews its stage's completed, committed report and required artifacts.
+
+Separate permission to start research from permission to build from research results. When both approvals are requested, propose a seed stage, a research stage, then the next work stage. Put seed approval on the initial stage and result approval on the research stage. Name the reviewed artifact and successor work for each approval. Do not describe seed approval as review of research that has not run. If the supplied stages conflict with these decisions, explain the conflict and propose the separated route during Confirm Design.
+
 #### Stage Naming Convention
 
 **Stage names describe the bucket the entity is sitting in.** The bucket can be activity-flavored (`implementation`, `validation`, `analysis`, `draft`, `review`) when the captain is actively working, or state-flavored (`proposed`, `evaluated`, `sent`, `published`, `triaged`, `accepted`) when the entity has reached a state of having been X-ed. Both pass the test "the entity is in `{name}`."
@@ -188,7 +192,7 @@ Do NOT spawn an Agent for this — a direct file read is sufficient. Look for:
 
 After collecting answers, derive all remaining values from the mission context:
 
-- `{approval_gates}` — default: gate before the terminal stage (e.g., the last stage before terminal).
+- `{approval_gates}` — default: approval at the last stage before terminal. Apply the Gate timing rule from Question 2, including in batch mode. For each approval, name its reviewed artifact and successor work. Preserve requested research between seed approval and research-result approval.
 - `{rejection_flow}` — for each approval gate, determine which earlier stage gets bounced back to on rejection (default: the stage immediately before the gated stage).
 - `{dir}` — `docs/{mission-slug}/` where `{mission-slug}` is the mission condensed to a short lowercase hyphenated directory name.
 - `{captain}` — "Captain".
@@ -208,6 +212,7 @@ Present the full summary with all derived values. Use plain language for stage b
 > For each run, we process {entity_description_as_item_label} going through the following stages:
 >
 > {for each stage: "{letter}. {stage_name} — {stage_description}"}
+> {for each approval: "At {stage_name}, you review {artifact}. Approval starts {successor_work}."}
 >
 > {if any gates: "If you reject at {gated_stage}, it goes back to {target_stage} for revision."}
 >
@@ -354,7 +359,7 @@ stages:
 
 {One paragraph expanding on the mission, describing what this workflow processes and why.}
 
-For every gated stage, add `- **Gate content:**` to its stage subsection and state the evidence needed for that decision. This rule also applies to custom stages and template variants.
+For every gated stage, add `- **Gate content:**` to its stage subsection. Name the reviewed artifact, required evidence, and actual successor work. Apply the Gate timing rule to custom stages and template variants. For an initial gate, name the committed seed and permission to start successor work, not that initial stage's worker results. For a later gate, name its completed, committed stage report and required artifacts.
 
 ## File Naming
 
@@ -543,6 +548,7 @@ After generating all files, verify before proceeding:
 
 - [ ] `{dir}/README.md` exists with mission, schema, all stage definitions, and {entity_label} template
 - [ ] Each seed entity file exists at `{dir}/{slug}.md` with valid YAML frontmatter
+- [ ] Reconcile confirmed approvals, reviewed artifacts, and successor work with generated stage declarations and Gate content, including requested initial approvals.
 - [ ] `{dir}/_mods/pr-merge.md` exists (only if a worktree stage exists and pr-merge was accepted)
 - [ ] `.worktrees/` is in `{project_root}/.gitignore`
 
