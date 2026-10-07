@@ -25,6 +25,7 @@ gates:
               application:
                 target-stage: ideation
                 state: consumed
+started: 2026-10-07T18:15:05Z
 ---
 
 The Claude live lane has no model input. `claude_version` pins the CLI version, not the model. The model comes from `internal/release/live_models.txt`, and the `live_cadence` input selects between the entries. The lane's matrix maps one cadence to one model and one environment.
