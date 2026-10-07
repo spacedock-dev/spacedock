@@ -759,6 +759,66 @@ gh run view 37703335512 --log-failed
 gh run download 37703335512 --name runtime-live-e2e-claude-live-claude-haiku-5-5 --dir /tmp/haiku-final-evidence
 ```
 
+### Follow-up: corrected hosted Claude job FAILED; implementation remains blocked
+
+The completion guard's FAILED item is retained, not relabelled or removed. Both
+attempts failed the hosted Haiku acceptance obligation; **AC-1 is not met**.
+No replacement run was started and no code, XFAIL binding, or acceptance criterion
+was changed in this follow-up. Worktree HEAD remains `29525bea0`.
+
+| Attempt | Run | Claude job | Artifact | Outcome |
+|---|---|---|---|---|
+| Before role correction (`d3df726fe`) | `37702366584` | `113068993047` | `11517724513` | Claude failed; whole run concluded failure |
+| Corrected candidate (`29525bea0`) | `37703335512` | `113072132719` | `11517939481` | Claude failed at 2026-10-07T23:47:08Z, exit 1; whole run concluded failure |
+
+Final API observation at **2026-10-07T23:50:23Z**: corrected run 37703335512 is
+`completed`, conclusion `failure`. Offline job 113071744105 and Codex job
+113072132702 concluded success; Pi and journey-delta-comment were skipped.
+The run is finished, not awaiting another result.
+
+Both artifacts are named `runtime-live-e2e-claude-live-claude-haiku-5-5`:
+- Initial: https://github.com/spacedock-dev/spacedock/actions/runs/37702366584/artifacts/11517724513
+- Corrected: https://github.com/spacedock-dev/spacedock/actions/runs/37703335512/artifacts/11517939481
+
+The initial harness error, verbatim, remains:
+
+```text
+SPACEDOCK_LIVE_MODEL="claude-haiku-5-5", want sonnet, claude-sonnet-5-5, or claude-opus-5-5
+```
+
+The corrected job reached the common journeys but failed four named journeys.
+Its harness errors and findings are quoted verbatim (timestamps omitted):
+
+```text
+shared_live_runner_test.go:174: FAIL /keep-moving-posture owner= observed=[keep-moving-violation]
+keep-moving-violation: durable keep-moving journeys = 2/3: map[approved-gate:active entity remains beside canonical archive]
+shared_live_runner_test.go:190: FAIL /default-headless-gate-stop owner= observed=[gate-hold-violation gate-not-held implementation-worker-not-dispatched]
+gate-hold-violation: gate hold crossed its committed no-authority boundary: no successful gate prepare recorded
+gate-not-held: read prepared gate expectation: prepared fixture Briefing count = 0, want 1
+implementation-worker-not-dispatched: implementation lifecycle incomplete: spawns=1 completed=121 validation=-1 report=<nil>
+shared_live_runner_test.go:230: withdrawn recovery crossed its prepare/commit gate-stop boundary
+shared_live_runner_test.go:261: FAIL /filing owner= observed=[filing-command-not-observed]
+filing-command-not-observed: filing command log has no spacedock new wire-the-thing invocation
+DONE 26 tests, 8 failures in 312.526s
+Process completed with exit code 1.
+```
+
+The eight failures include the four journeys, three parent slots, and the suite.
+The log also reports a wrong-root diagnostic for DefaultHeadlessGateStop; the full
+log and stream artifacts remain available under the corrected run/job/artifact.
+This is a failed hosted acceptance outcome, not a pass with caveats.
+
+Observed execution configuration: `sonnet` cadence, `claude-haiku-5-5`, `max`,
+`CI-E2E`; CLI version **2.1.293**. The max-effort shim step completed and the
+archived filing stream's init/result identify `claude-haiku-5-5`, including
+`canonicalModel=claude-haiku-5-5` and 533 thinking tokens / 1962 output tokens
+(session `45a52cce-e6dc-4a81-b7a6-3f10c12b4d39`). These observations identify
+what ran; they do not turn the failed journey assertions into hosted AC-1 success.
+Candidate provenance matches checkout and embedded SHA
+`29525bea0cd558b8d305fd1d4417669568b384d7`, with `vcs_modified=false`.
+Corrected artifact ZIP SHA-256:
+`336115cff79802d2e6d430ddd9647f72b598801361223af6e3a763d83f298c7d`.
+
 ## Stage Report: implementation
 
 - DONE: Reach the goal with the smallest change that works. Remove machinery rather than add it. Drop permitted-set metadata or the proposed test file if it does not earn its place, and say why.
@@ -778,14 +838,14 @@ gh run download 37703335512 --name runtime-live-e2e-claude-live-claude-haiku-5-5
 - DONE: Add no lane, no job, and no CI step.
   Parsed YAML comparison preserves all five jobs and step counts, cadence approval expressions, effort, dependencies, and Codex/Pi definitions; role fix changes no XFAIL bindings.
 - DONE: Report in the canonical item form, one DONE/SKIPPED/FAILED line per checklist item with an evidence or rationale line, ending with a non-empty Summary.
-  This report records code commits d3df726fe and 29525bea0, separate failure evidence, and the unfinished hosted half without claiming a pass.
+  This report records code commits d3df726fe and 29525bea0 and both hosted failures without claiming AC-1 success; the FAILED item remains a completion blocker.
 - FAILED: Initial hosted Haiku acceptance before the authorized role correction.
-  Run 37702366584/job 113068993047/artifact 11517724513 rejected the model in claudeLiveRole; exact error and four-field finding are preserved; Codex finished successfully.
+  Initial run 37702366584/job 113068993047/artifact 11517724513 failed with `SPACEDOCK_LIVE_MODEL="claude-haiku-5-5", want sonnet, claude-sonnet-5-5, or claude-opus-5-5`; corrected run 37703335512/job 113072132719/artifact 11517939481 also failed (four journey errors quoted above, exit 1). Hosted AC-1 is not met; implementation stays blocked.
 - SKIPPED: Claim completed hosted AC-1 on the corrected candidate within this worker's bound.
-  At 23:44:29Z run 37703335512 remains in progress (Claude 113072132719, Codex 113072132702); resume commands above, no successful lane claim or replacement run.
+  The initial bound ended at 23:44:29Z with run 37703335512 in progress; this follow-up records Claude job 113072132719 failing at 23:47:08Z. No successful lane claim or replacement run.
 - SKIPPED: Independent adversarial audit.
   FO owns and will orchestrate the required independent review; worker did not self-audit or self-approve environments.
 
 ### Summary
 
-Implemented the registry-key model parameter and cadence eligibility gate, then removed the hosted-discovered harness allowlist under an explicit six-file scope reset. Final code is +126 net LOC; both Go suites pass, hosted pre-approval refusal is proved, and the newer CLI removes the local Haiku warning. Corrected hosted Haiku execution remains in progress at the monitoring bound, with exact resume instructions and independent review still required.
+Implemented the registry-key model parameter and cadence eligibility gate, then removed the hosted-discovered harness allowlist under an explicit six-file scope reset. Final code is +126 net LOC; both Go suites pass, hosted pre-approval refusal is proved, and the newer CLI removes the local Haiku warning. Corrected hosted Haiku execution FAILED with four journey failures; AC-1 is not met, the FAILED checklist item is retained, and implementation remains blocked. No further run was started.
