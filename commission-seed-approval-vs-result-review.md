@@ -1,6 +1,6 @@
 ---
 title: The commission skill lets an initial seed gate claim to review work no worker produced
-status: ideation
+status: implementation
 source: "Captain, 2026-10-06: incident while commissioning an exploratory workflow on 0.28.0-pre4. An `exploration` stage was declared both initial and gated, and its prose implied the gate reviewed research no worker had run. Approving it would have advanced straight past the research worker."
 id: 6dhxxd047s3c32n21h8ppf9y
 gates:
@@ -43,7 +43,7 @@ gates:
                 reason: 'Captain approved the presented ideation gate in session: one-file commission guidance, net +6, incident-shaped blind trial as limited evidence, live proof deferred to implementation'
               application:
                 target-stage: implementation
-                state: pending
+                state: consumed
 started: 2026-10-06T23:39:26Z
 ---
 
