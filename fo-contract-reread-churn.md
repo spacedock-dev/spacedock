@@ -241,3 +241,70 @@ Cycle 3 repairs only the gate evidence report: all five ACs now have explicit ci
 ### Summary
 
 The approved host-neutral paragraph now makes deferred loads sticky until compaction or direct replacement evidence, with lazy next-trigger reload and all existing ordering rules preserved. The replay meets the 5-read/4.0% value cap, boundary mutations are rejected, the final surface matches estimate exactly, and the complete race suite passes with a timeout large enough for the repository's Git-heavy fixtures.
+
+## Implementation retry mechanical evidence
+
+Both complete commands exited 0: `go test ./...` and `go test ./... -race`. Package durations below are from this retry; `(cached)` means Go reused a passing result, not a newly measured duration. Raw local logs: `/tmp/fo-contract-reread-churn-retry/{normal,race}.log`; the table retains their complete package results durably. These are regression checks, not proof of live FO instruction adherence.
+
+| Package (module-relative) | Normal | Race |
+| --- | --- | --- |
+| `(module root)` | [no test files] | [no test files] |
+| `cmd/spacedock` | [no test files] | [no test files] |
+| `cmd/spacedock-release` | (cached) | (cached) |
+| `internal/claudeteam` | (cached) | (cached) |
+| `internal/cli` | 125.865s | 161.377s |
+| `internal/contract` | (cached) | (cached) |
+| `internal/contractlint` | 0.413s | 4.540s |
+| `internal/dispatch` | 48.540s | 61.162s |
+| `internal/ensigncycle` | 180.969s | 234.864s |
+| `internal/gates` | (cached) | (cached) |
+| `internal/gitsource` | (cached) | (cached) |
+| `internal/hostneutrality` | (cached) | (cached) |
+| `internal/journeymetrics` | (cached) | (cached) |
+| `internal/livescenario` | (cached) | (cached) |
+| `internal/pilive` | (cached) | (cached) |
+| `internal/piruntime` | 0.493s | 1.671s |
+| `internal/release` | 19.871s | 28.274s |
+| `internal/runtimehost` | (cached) | (cached) |
+| `internal/safehouse` | (cached) | (cached) |
+| `internal/statesync` | (cached) | (cached) |
+| `internal/status` | 42.257s | 56.301s |
+| `internal/testgit` | (cached) | (cached) |
+| `skills/integration` | 9.070s | 12.774s |
+
+Handoff-only prior-run evidence: normal suite passed in full (`internal/cli` 136.973s); the interrupted race run had passed `internal/cli` 241.133s and `internal/dispatch` 114.912s. Those partial race results are not counted as a suite pass; the complete retry above supplies that result. After the merge, focused `go test ./internal/contractlint ./internal/ensigncycle` also passed (0.899s / 216.094s).
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Review the four uncommitted edits already present in the worktree against this assignment. Keep what is correct and fix what is not. Do not revert them blindly.
+  Retained all four edits; `b06e6116e` makes body availability authoritative, explicitly includes review policy, and fixes the Claude dispatch sentence; retained review: `.briefings/fo-contract-reread-churn-astra-review.md`.
+- DONE: Finish the race suite (go test ./... -race) and record both suite results with package names and durations. The earlier run was killed mid-race; internal/cli 241s and internal/dispatch 115s had already passed.
+  Both complete suites exited 0; package names/durations are in `## Implementation retry mechanical evidence`; existing contract lint/smoke coverage rejects component-cap, load topology, write-scope, or routing regressions, not live reread churn.
+- DONE: Confirm the rule makes actual body availability authoritative, drops the word "Only", and covers the current deferred list plus the review policy and the presenter.
+  Shared core residency applies across core/skills/adapters to the deferred list, review policy, host dispatch references, and presenter; missing bodies, compaction, and replacement require lazy reload; remembered loads/summaries do not satisfy residency.
+- DONE: Confirm every sentence that names a concrete load, in the Claude adapter, the Pi adapter, and fo-gate-lifecycle, now means ensure resident.
+  Claude concrete Reads establish/restore residency separately in write-before-merge order; Pi lifecycle/presenter and lifecycle write/presenter loads follow the shared rule; gate evidence and state rereads remain fresh, not cached.
+- DONE: Declare the expected surface and net LOC with tolerance for the files you changed.
+  Retry expectation supersedes the earlier one-file estimate: exactly the four assigned files, net +2 LOC (tolerance +1..+4); actual +9/-7 = +2 versus `origin/main` 077fb3bc1. Shared-core/lifecycle sizes are 23,497/7,699 bytes, below 23,500/7,700 caps.
+- DONE: Record the captain's decisions: the presenter is in scope, empirical evidence is required, interactive validation is permitted, and the live test is a one-off rather than a standing journey.
+  All four decisions govern this retry; presenter reuse never reuses prior gate evidence or presentation. Mechanical checks do not substitute for the required one-off empirical live evidence.
+- DONE: Write the acceptance as three legs, residency, reload after compaction, and replacement, and name for each whether it is mechanical or live interactive, with its falsifier. Do not claim a leg you did not run; the FO owns the live legs.
+  The three live-interactive legs below are outstanding and FO-owned; this worker ran only the separately labeled mechanical regression checks. Earlier report replay claims are not accepted here as fresh-host behavioral evidence.
+- SKIPPED: Residency acceptance leg — live interactive (AC-1/AC-2, initial AC-4).
+  FO must trace repeated gate/write/dispatch/status/terminal triggers on Claude/Codex/Pi, including review-policy and presenter reuse; falsify on a second unchanged resident-body load, replacement probe, stale gate evidence, or wrong prerequisite order. Codex's bound historical stream must still meet <=5 deferred reads and <=4.0%; newly covered bodies are tracked separately, not used to dilute that metric.
+- SKIPPED: Reload after compaction acceptance leg — live interactive (AC-3/AC-4).
+  FO must capture each host's real compaction and model-visible signal, then next triggers; falsify on eager reads, missing/duplicate reloads, summary-only reuse of an unavailable body, or violation of gate→write→mutation / gate→write→merge→transition with separate required host events. Injected cues alone do not prove real compaction delivery.
+- SKIPPED: Replacement acceptance leg — live interactive (AC-3/AC-4).
+  FO must supply direct replacement evidence for a covered body containing a changed instruction and observe its use at the next trigger; falsify on eager reload/probe, use of the old instruction, omitted/duplicate affected-body reload, or lost prerequisite ordering. No live leg was run by this worker.
+- DONE: Do not touch the binary, and do not add a standing check, lane, or CI job.
+  Final diff contains only four skill Markdown files; no test files added or changed. Ran mandated gofmt, then restored its unrelated baseline formatting change in `internal/release/runtime_live_evidence_workflow_test.go`; `cmd` and `internal` remain byte-unchanged from base.
+- DONE: Preserve the published earlier attempt as an ancestor and supersede its paragraph by design.
+  FO-authorized merge `ecee2ccc1` retains `073b7e156`; only conflict was the expected shared-core paragraph, resolved to retry wording. Tree equals `b06e6116e`; `git diff --name-status origin/main..HEAD` lists exactly four assigned files, and tracked-tree text search finds no old paragraph.
+- DONE: Commit the four-file change and push your own branch. Write the stage report into the entity and commit the state branch. Never push to main.
+  Code `b06e6116e` plus preservation merge `ecee2ccc1` pushed normally to `spacedock-ensign/fo-contract-reread-churn`; this report is committed path-scoped on `spacedock-state/dev`. No main push, force push, remote-ref replacement, or history rewrite.
+- DONE: Report in the canonical item form, one DONE/SKIPPED/FAILED line per checklist item with an evidence or rationale line, ending with a non-empty Summary.
+  Every retry checklist item is represented; outstanding live legs are explicitly SKIPPED/delegated rather than reported as passing.
+
+### Summary
+
+The four-file retry reconciles shared residency with concrete host loads and presenter reuse while preserving lazy invalidation, fresh gate evidence, and gate/write/merge ordering. Full normal and race suites pass, and the published earlier attempt remains auditable as an ancestor rather than being rewritten. Empirical residency, real-compaction, and replacement acceptance remain outstanding for the FO's one-off live validation and independent review.
