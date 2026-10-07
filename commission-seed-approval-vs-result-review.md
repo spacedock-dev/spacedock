@@ -1,6 +1,6 @@
 ---
 title: The commission skill lets an initial seed gate claim to review work no worker produced
-status: implementation
+status: validation
 source: "Captain, 2026-10-06: incident while commissioning an exploratory workflow on 0.28.0-pre4. An `exploration` stage was declared both initial and gated, and its prose implied the gate reviewed research no worker had run. Approving it would have advanced straight past the research worker."
 id: 6dhxxd047s3c32n21h8ppf9y
 gates:
