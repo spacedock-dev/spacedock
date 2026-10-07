@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:6dhxxd047s3c32n21h8ppf9y:validation:attempt-1:revision-1",
+  "question": "Accept this delivery at validation, with the live proof to come from the pull request's live lane?",
+  "artifacts": [
+    {
+      "id": "artifact:6dhxxd047s3c32n21h8ppf9y:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/780cc0a68d86721e76405faf6535c4f0ce2bc13b/commission-seed-approval-vs-result-review.md",
+      "rev": "sha256:31ceefeaaf2d0b2ff0f04678795f67653247aee7b95e44f53fd273230bbc5376",
+      "mediaType": "text/markdown",
+      "summary": "One-file commission guidance, net +6. Validation rejected for missing live proof, not for a candidate defect. The captain accepts and routes the live proof to the pull request."
+    }
+  ]
+}

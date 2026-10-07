@@ -44,6 +44,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:6dhxxd047s3c32n21h8ppf9y:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:6dhxxd047s3c32n21h8ppf9y-validation-1
+              briefing:
+                id: briefing:6dhxxd047s3c32n21h8ppf9y:validation:attempt-1:revision-1
+                digest: sha256:99ff71f009bdd9d5fac696d021519bd7a15034f64604109aeb859f8f42a7c7fa
+                room-ref: '@review/validation/briefing-1'
 started: 2026-10-06T23:39:26Z
 worktree: .worktrees/spacedock-ensign-commission-seed-approval-vs-result-review
 ---
