@@ -3,6 +3,17 @@ title: The Claude live lane selects a model by cadence, so a new model needs a w
 status: backlog
 source: "Captain, 2026-10-07: a manual run on claude-haiku-5-5 was requested and cannot be dispatched. The captain wants opus and sonnet to be a parameter, not a mode, and the underlying entry point to be model-agnostic."
 id: f77r1rj2g7sgj3hkrht7n37f
+gates:
+    version: 1
+    records:
+        - id: gate:f77r1rj2g7sgj3hkrht7n37f:backlog
+          stage: backlog
+          attempts:
+            - id: gate-attempt:f77r1rj2g7sgj3hkrht7n37f-backlog-1
+              briefing:
+                id: briefing:f77r1rj2g7sgj3hkrht7n37f:backlog:attempt-1:revision-1
+                digest: sha256:431932767c9eefcead1a0540c5d3118b8f86f71c1f6fa6e6d552029da7f51eae
+                room-ref: '@review/backlog/briefing-1'
 ---
 
 The Claude live lane has no model input. `claude_version` pins the CLI version, not the model. The model comes from `internal/release/live_models.txt`, and the `live_cadence` input selects between the entries. The lane's matrix maps one cadence to one model and one environment.

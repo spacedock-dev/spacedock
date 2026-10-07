@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f77r1rj2g7sgj3hkrht7n37f:backlog:attempt-1:revision-1",
+  "question": "Approve this seed and dispatch ideation to make the Claude lane entry point model-agnostic?",
+  "artifacts": [
+    {
+      "id": "artifact:f77r1rj2g7sgj3hkrht7n37f:backlog:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/85620d861061689d770e6d9ca0660e288860ebb4/claude-lane-model-agnostic-entry-point.md",
+      "rev": "sha256:d9533834da604f6894b974d50e77628d9a09ad95d10cdc7ff9074225f50db6d9",
+      "mediaType": "text/markdown",
+      "summary": "Replace cadence-as-model with a model parameter over the single model source, so any named model runs without a workflow edit."
+    }
+  ]
+}
