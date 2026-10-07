@@ -68,6 +68,17 @@ gates:
                 id: briefing:kc1rvn663yt8qkzqbakzda1v:validation:attempt-1:revision-1
                 digest: sha256:e0cc7515e1c63da7b5a36b032b972e9a1d54c8f890f19af2e591b12af1d73cd9
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:kc1rvn663yt8qkzqbakzda1v:validation:1
+                briefing: briefing:kc1rvn663yt8qkzqbakzda1v:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-07T05:34:50.858139Z"
+                decision: approve
+                reason: 'Captain, 2026-10-07: "accept. and we can still do the interactive tests from the worktree"'
+              application:
+                target-stage: done
+                state: pending
 ---
 
 The contract's deferred load points phrase their triggers per occurrence: "load before every selected gate", "read immediately before the first FO-authored mutation". The contract never states that a file already resident in context satisfies the precondition. A literal reader therefore re-reads unchanged bodies at later triggers inside one context. That qualitative ambiguity is the problem; the exact quantitative risk evidence is the reproducible transcript slice in `## Risk evidence`, not the original seed estimate preserved in frontmatter.
