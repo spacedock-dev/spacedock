@@ -38,6 +38,8 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 
 A greet-and-stop boot loads NONE of these — it composes its summary from `«state.boot»()` and follows the interactive branch of `«interaction.boundary»()`. Each loads only at its trigger:
 
+**Residency.** Across core, skills, and adapters, loads/reads of the bodies below (review policy and host dispatch references) and `spacedock:present-gate` mean ensure resident. Reuse an unchanged body while available in uncompacted context; a summary or remembered load is not the body. Unavailability, a harness notice or captain cue of compaction (all bodies), or direct source-replacement evidence (that body) requires reload at the next existing trigger, never eagerly. Never probe for replacement. Preserve trigger order and separate host events. Reuse instructions, not gate evidence or presentations.
+
 **Combined-boundary order:** evaluate the write trigger before the merge trigger. A terminal status transition is both an FO-authored mutation and a terminal boundary, so complete the write-core read first, then the merge-core read, then issue the transition. Never select merge first merely because the requested action is terminal. Each deferred read must complete in its own host event; do not batch either read with the other or with the mutation command.
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
@@ -70,7 +72,7 @@ Stay at the project root; never `cd` into a worktree. Use `git -C {path}` for op
 ## «gate.assemble-verdict»(slug, stage): assemble the gate review and render the verdict
 
 - **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
-- **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Present via `Skill(skill="spacedock:present-gate")` and its template + assembly rules.
+- **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Ensure `spacedock:present-gate` is resident under the residency rule, then present via its template + assembly rules.
 - **done-when:** the gate review is presented and the FO is waiting on the captain's decision, the worker kept alive.
 - **block:** never self-approve; never resolve a gate the contract reserves to the captain.
 - → **prose** — no binary ships; the verdict is judgment.
