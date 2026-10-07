@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f77r1rj2g7sgj3hkrht7n37f:ideation:attempt-1:revision-1",
+  "question": "Approve this design and enter implementation for the model-agnostic Claude lane, kept as a small change?",
+  "artifacts": [
+    {
+      "id": "artifact:f77r1rj2g7sgj3hkrht7n37f:ideation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/2b60598ff2b59cd764f20b144b06206f4a0e6e16/claude-lane-model-agnostic-entry-point.md",
+      "rev": "sha256:9c328a150aa1cd72a6e51d0e10fd2fb331b22ed9b8228cbad0e4a73d36e60ff3",
+      "mediaType": "text/markdown",
+      "summary": "Model becomes a parameter over the one registry; model ids stay in live_models.txt; an out-of-cadence model is refused in the offline job so no approval is spent. Captain directs the smallest change that works, and a CI run."
+    }
+  ]
+}
