@@ -33,6 +33,17 @@ gates:
                 id: briefing:f77r1rj2g7sgj3hkrht7n37f:ideation:attempt-1:revision-1
                 digest: sha256:199aef9b60fd507abc0b87a1989b82019785b7cb27c726c2fe2197debe3107aa
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f77r1rj2g7sgj3hkrht7n37f:ideation:1
+                briefing: briefing:f77r1rj2g7sgj3hkrht7n37f:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-07T23:14:48.895734Z"
+                decision: approve
+                reason: 'Captain, 2026-10-07: "this should be a small change. let us send this to implementation and run ci"'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-10-07T18:15:05Z
 ---
 
