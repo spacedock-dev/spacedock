@@ -460,3 +460,84 @@ FO attribution, recorded as its conclusion rather than a baseline reproduction: 
 ### Summary
 
 Implemented and pushed the exact one-file seed/result approval guidance, net +6 lines; four self-applied workflows schema-validated, but live commission-to-FO acceptance remains unproved. Both full Go suites failed and their focused reruns passed; the cause is unproven, and the FO classifies the failures as not attributable to this candidate (untouched-base reproduction remains UNVERIFIED). At the FO's direction, the check item is DONE because its obligation was to run and report each check, not obtain a pass; all failure evidence remains above, and validation owns independent broad-check reruns, actual interactive/batch worker observations, and the acceptance verdict.
+
+
+## Review-finding disposition — validation
+
+These are validator recommendations, not candidate-edit authorization. Candidate remains `c4a605df3`; declared `feedback-to` is `implementation`. No outcome defect in the actual candidate has been demonstrated; the rejection concerns missing behavioral evidence. No new controller, harness, schema guard, or product edit is proposed.
+
+| Finding | Released user and normal workflow | Observable harm | Affected value AC or boundary | Trigger evidence | Defect kind; materiality; ownership; proposed disposition |
+| --- | --- | --- | --- | --- | --- |
+| V1: No observed live commissioning-to-FO worker sequence | Captain commissions research then prototype, interactive or batch | Acceptance cannot establish that requested research actually runs before prototype | value-ac[AC-1] Actual research/scout and prototype spawns must be observed around explicit approvals | Validation context explicitly forbids subagent launches; neither mode was driven live; inspected smoke histories contain only seed commits, no worker reports/events | Evidence defect; material; proof execution requires an authorized root session, outside this worker's execution boundary; recommend REJECTED, hold candidate unchanged and route the evidence requirement through the FO, not an automatic prose-fix cycle |
+| V2: Live confirmation/Gate output proof missing; deterministic checks survive semantic corruption | Captain relies on initial approval descriptions while commissioning either mode | Passing schema/structural checks cannot establish truthfulness at the seed boundary | value-ac[AC-2] Both live generated descriptions must review the seed rather than nonexistent research | Detached mutated skill still passes integration/contractlint and orphan scaffold test; false-research Gate content returns VALID; existing samples manually agree with the independent request, but no fresh live outputs exist | Evidence defect; material; acceptance-evidence owner, not a demonstrated product defect; recommend reject substitution of deterministic tests for live proof, retain fixed-request manual comparison, decline new schema or Go fixes |
+
+Detached audit evidence: `/tmp/commission-seed-validation.qZesPx/{adversarial-skill.diff,audit-control.log,audit-mutant.log,audit-mutant.exit,audit-mutant-orphan.log,audit-matrix.log,independent-review.md}`. The material refutation is that the available deterministic checks can remain green under a claim-breaking instruction or output edit. The implementation already admitted their schema-only limits; the audit does not refute the unrun live proof owner or prove the candidate generates incorrect workflows. No deferred-risk or polish finding is added.
+
+**FO authorization (validation, through `contact_supervisor`):** V1 and V2 accepted as material evidence defects; verdict **REJECTED for missing evidence, not a defective candidate**. The candidate matches the approved one-file design exactly, net +6, but AC-1's value claim has no live evidence. The FO identifies the design's assignment of root-only proof to workers unable to produce it as the design defect. Route proof execution to an authorized interactive root session through the FO; implementation rework is NOT authorized. No prose, Go, schema, or new-harness fix is authorized. Although the workflow declares `feedback-to: implementation`, do not consume an automatic implementation correction round for this evidence gap; the FO will present the gate and design/evidence issue to the captain.
+
+**Separate audit limitation:** No existing mechanical check exercised in this audit catches the gate-truth defect class: inverted skill passes integration/contractlint and orphan scaffolding, and false-research Gate content returns `VALID`. The approved guidance is not mechanical prevention. This is a limitation of the deliverable, not a candidate defect; a mechanical guard would be a separate task. The live proof owner was not executed, so the audit makes no claim about its sensitivity.
+
+
+## Independent validation evidence
+
+Validation candidate: `c4a605df36d1443f6b7553287dbaa496c4429390`. `origin/main` resolved to `077fb3bc1a353b7f8384a3b37c1309c199d82ba1`. Manual review of `git diff origin/main HEAD -- skills/commission/SKILL.md` against the independently approved entity blocks confirms all five exact edits and no other deliverable: Question 2 timing, approval defaults, confirmation summary, README Gate content, reconciliation checklist. `git diff --numstat origin/main HEAD` reports **8 insertions, 2 deletions, net +6**, equal to the estimate, within +4 to +18. This is approved-scope verification, not behavioral proof; no check asserting an artifact's own text against its copy was accepted. `git diff --check origin/main HEAD` passed.
+
+Evidence root: `/tmp/commission-seed-validation.qZesPx`. Metadata (`metadata.log`): pinned `/opt/homebrew/Caskroom/spacedock@next/0.28.0-pre3/spacedock` reports pre3, darwin/arm64, runtime pi, contract 3; `pi --version` is 1.0.2; Go is go1.26.7 darwin/arm64. Validation does not claim execution on manifest pre4. Temporary files and throwaway checkout stay under `/tmp`; no permanent tests were added.
+
+I independently ran the following four commands, using that pinned executable. Each returned `VALID`, exit 0; fresh logs are `{mode}-validation.log` under the evidence root:
+
+| Command suffix | Result | Inspected seed commit |
+| --- | --- | --- |
+| `status --workflow-dir /tmp/commission-seed-implementation.btjAj8/before-interactive --validate` | VALID, 0 | d47494f |
+| `status --workflow-dir /tmp/commission-seed-implementation.btjAj8/before-batch --validate` | VALID, 0 | d47494f |
+| `status --workflow-dir /tmp/commission-seed-implementation.btjAj8/after-interactive --validate` | VALID, 0 | 936cedf |
+| `status --workflow-dir /tmp/commission-seed-implementation.btjAj8/after-batch --validate` | VALID, 0 | 5593590 |
+
+**AC-1 (VALUE): OUTSTANDING, not passed.** The independent oracle is the fixed request: seed approval → research with reference scout → result approval → prototype. Existing four smoke declarations preserve that order with `backlog(initial,gate) → exploration(gate) → prototype → done(terminal)`. No live commissioning-to-FO drive, actual research or prototype spawn, approval sequence, research report, or transition commit was observed by this validator. The delegated context forbids launching subagents; that is not a demonstrated Pi runtime failure. A built assignment would not prove a spawn and is not offered as evidence.
+
+**AC-2 (VALUE): PARTIAL ONLY, not passed.** I inspected all four actual confirmation files and READMEs against the fixed request, not against the edited skill. All explain and correct the conflicting initial-exploration draft; both changed-mode confirmations review the committed seed before exploration with scout, then a completed committed report and research artifacts before prototype. The generated Gate content agrees. Idea files and their single seed commits contain no research reports. These samples show zero false completed-research claims at the seed boundary and retain initial approval, but are implementation self-applied samples, not fresh live generation outputs from AC-1. Both changed workflows schema-validate; that alone cannot satisfy AC-2.
+
+**Semantic adversarial pass:** traced both input modes through confirmation artifact/successor pairs, declarations, seed approval, research assignment/spawn, committed report, result approval, prototype spawn, and terminal. Evidence stops at confirmation/declarations; no timing/cardinality/authority claim is made for unobserved events. In detached output variants, canonical validation accepted control, false seed findings, research bypass, omitted seed approval, reversed work order, duplicate stage, initial terminal stage, and Unicode title/no-final-newline; it rejected empty stages. Manual comparison to the independent request rejects the four semantic corruptions (false findings, bypass, omitted approval, reversed order). Results and construction are in `audit-matrix.log` and `audit-variants.py`; no new schema requirement follows from the other variants. No binary hot path, allocation, or size limit changed, so a scaling test is inapplicable.
+
+**Detached audit execution:** a local shared clone at `audit-checkout` was detached at the candidate. Control `go test ./skills/integration ./internal/contractlint -count=1` reported both packages ok (12.954s/1.104s). After inverting only that checkout's skill gate rule to skip research and claim completed findings, the same command exited 0 (25.331s/2.828s). `go test ./internal/cli -run '^TestCommissionOrphanBranchScaffolding$' -count=1` also exited 0 (3.211s). Those tests do not detect the falsifying instruction change; they are not credited as AC behavior proof. The original validator/manual checks likewise distinguish schema validity from the fixed requested meaning. V2 records the material evidence limitation, not a product regression.
+
+**Formatting:** ran `gofmt -w ./cmd ./internal` in the pristine detached candidate checkout, not the validation worktree, to honor the no-Go-edits boundary. Exit 0; `gofmt.log` records only +2/-2 field alignment in `internal/release/runtime_live_evidence_workflow_test.go`, restored there before audit tests. No Go or skill file in the validation worktree was changed.
+
+
+### Independent broad-check results
+
+Both required broad commands **passed, exit 0**, in this validation run. They were launched concurrently, each with its own retained output and exit file, and polled to completion without overriding Go's package timeout. Several packages reused Go's cache, explicitly marked in the logs; `cli` and `ensigncycle` executed uncached in both runs. No package timeout, race diagnostic, or test assertion failure was reported. These results do not erase the implementation's failed runs and establish no explanation for their failures; no baseline reproduction or cause attribution is claimed.
+
+| Command | Observed result | Package durations | Log locator under `/tmp/commission-seed-validation.qZesPx` |
+| --- | --- | --- | --- |
+| `go test ./...` | PASS, exit 0 | cli 577.717s; ensigncycle 522.357s; status 133.812s; skills/integration cached PASS | `go-test.log`, `go-test.exit` |
+| `go test ./... -race` | PASS, exit 0 | cli 584.151s; ensigncycle 527.366s; status 147.277s; skills/integration cached PASS | `go-test-race.log`, `go-test-race.exit` |
+
+No failing package or test name exists in these new logs. In particular there is no reported `TestCodexProcessRequiresFinalMessageForTerminalTurn` assertion failure in this run; the non-verbose package logs do not provide individual test timings. The implementation's full-suite finding is not reproduced here, not diagnosed or declared fixed.
+
+## Stage Report: validation
+
+- DONE: Independently confirm the deliverable: skills/commission/SKILL.md only, with the five edits matching the approved before/after blocks in the entity body.
+  Reviewed candidate `c4a605df3` against approved wording and `origin/main`; all five edits match exactly, one file, no deliverable or Go edits by validation.
+- DONE: Measure the diff with git diff --numstat against origin/main and report insertions, deletions, and net against the +6 estimate and the +4 to +18 tolerance.
+  Base `077fb3bc1`: 8 insertions, 2 deletions, net +6, zero deviation, within tolerance; `git diff --check origin/main HEAD` passed.
+- DONE: Re-run go test ./..., go test ./... -race, and gofmt -w ./cmd ./internal. Report each result honestly, including any package timeout, with package and test names and a log locator. Do not attribute a cause you have not shown.
+  Both suites exited 0, no timeout/assertion/race failure reported; independent durations/logs appear above. Formatting exited 0 in the pristine detached checkout; incidental alignment restored there, candidate untouched.
+- DONE: Re-run the four smoke workflows the implementation validated and confirm or refute the recorded results.
+  Four fresh pinned-pre3 `status --validate` commands all returned VALID/0; mode-specific logs under `/tmp/commission-seed-validation.qZesPx` confirm schema validity, not model generation or spawns.
+- SKIPPED: Verify AC-1 and AC-2. AC-1 needs a live commission-to-FO drive with observed worker spawns in interactive and batch modes. If you cannot run it, say so plainly and record it as outstanding. Do not claim a spawn you did not observe.
+  Both live drives remain outstanding: this worker cannot launch subagents. No worker spawn, approval sequence, report, or live handoff observed; V1/V2 are FO-accepted material evidence defects, not candidate defects.
+- DONE: Compare confirmation summaries and generated Gate content against the fixed request, not against the edited file's own text.
+  All four existing samples correct the draft, review seed before research/scout and committed results before prototype; zero false seed findings observed. This is partial AC-2 evidence only, not fresh live output.
+- DONE: Run the workflow's detached adversarial audit, because this change touches the shipped contract and scaffolding surface: on a throwaway checkout, construct an adversarial edit that the deliverable's own tests should catch, and confirm whether they catch it. Record whether anything material was refuted.
+  Inverted skill still passes integration/contractlint and orphan scaffolding; false-research Gate content still validates. Audit refutes mechanical-check sufficiency, not candidate efficacy; no exercised existing mechanical check catches this class.
+- DONE: Reject any evidence that asserts an artifact's own text against a copy of that text.
+  No such check accepted; approved-block review verifies scope only, and behavioral samples/mutants were judged against the separately fixed captain request. Green structural/schema tests are not credited as value proof.
+- DONE: Disposition every new finding with the four evidence fields the workflow's Review-finding disposition section requires.
+  V1/V2 table and distinct FO authorization above: material evidence defects; REJECTED; authorized root-session route via FO, no implementation rework, prose/Go/schema fix, or new harness authorized.
+- DONE: Report with a verdict of PASSED or REJECTED, in the canonical item form, one DONE/SKIPPED/FAILED line per checklist item with an evidence or rationale line, ending with a non-empty Summary.
+  Verdict: **REJECTED — missing live evidence, not a defective candidate**. Report covers every assignment item; only this state entity is changed, with frontmatter preserved.
+
+### Summary
+
+**REJECTED for missing evidence, not a defective candidate.** The candidate matches the approved design exactly: one file, net +6; both broad suites and all four schema smokes passed independently, but AC-1's value claim has no live evidence and full AC-2 proof remains outstanding. The detached audit exposes no mechanical guard for this defect class; the FO-authorized next step is an authorized interactive root session and captain-visible design/evidence decision, not an implementation prose-fix loop.
