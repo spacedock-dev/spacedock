@@ -10,7 +10,7 @@ Compass is a screen on your own machine that lists every agent session you have 
 
 This is **Intent and drift**. You state your intent for a session: a goal, and up to six lines describing the outcome you expect. When you ask, Compass [checks the session against that intent](use.md#check-a-session-for-drift) and says where the agent departed, citing the exact entries in the session record. You decide what to do about it: tell the agent, adjust the intent, or leave it.
 
-Compass only reads. It never types into a session, and it never answers a prompt for you. Session content stays on your machine unless you [allow a check](use.md#check-a-session-for-drift), and the check asks first.
+Compass reads your agents' session files and never writes to them. It never types into a session, and it never answers a prompt for you. It keeps its own notes, your intent and a short history of what it observed, on your machine. Session content leaves your machine only through the model-backed features, [Analyze drift](use.md#check-a-session-for-drift), goal summaries and checks on its own, and each one asks for your permission first.
 
 > **Draft note, not page copy:** as of Cargento v0.28.0, Compass checks for drift only when you press the button. Checking on its own is a setting that is off by default. Confirm before 10-09 whether that stays true for 10-15, then update [Use it](use.md#let-compass-check-while-you-are-away).
 
