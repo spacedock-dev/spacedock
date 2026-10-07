@@ -546,3 +546,246 @@ No product edits in this round. Only this entity body and its stage report are c
 Designed a model-agnostic Claude parameter with one registry for IDs and permitted cadence sets, while retaining cadence-controlled approval.
 The throwaway resolver passed 22 cases, including registry-only extension and explicit pre-approval refusal; live host and GitHub evidence remain unverified.
 The five-file implementation proposal, acceptance criteria, documentation changes, and audit requirement are ready for independent ideation review.
+
+
+## Implementation contract and evidence (supersedes the earlier surface estimate)
+
+The implementation checkout was rebased to baseline B before work. Code commit
+`d3df726fe4123ba2d9c053fb361b828ad4850d51` is on
+`spacedock-ensign/claude-lane-model-agnostic-entry-point`, not main.
+The captain's small-change direction and FO authorization re-declare the surface:
+**at most +150 net LOC across the five named product files**, superseding the
+ideation estimate of +180 with +120..+240 tolerance. Actual diff against B is
+**+105 net (+124/-19), five files**:
+
+| File | Added/deleted | Net | User-visible reason |
+|---|---:|---:|---|
+| `.github/workflows/runtime-live-e2e.yml` | 76/11 | +65 | Optional input, pre-approval refusal, resolved model delivery |
+| `internal/release/live_models.txt` | 3/0 | +3 | Haiku registration and cadence eligibility |
+| `internal/release/livemodels.go` | 10/8 | +2 | Keep policy lists out of existing model-ID consumers |
+| `internal/release/livemodels_test.go` | 18/0 | +18 | Regression proof for the changed Go reader, not schema duplication |
+| `docs/releasing.md` | 17/0 | +17 | Operator dispatch syntax and preserved release obligations |
+
+Both workflow and registry change. No lane, job, environment, or CI step was added.
+**Architecture: model-agnostic resolution with cadence-dependent eligibility.**
+Cadence gates both model eligibility and the approval environment, and selects jobs;
+it is NOT merely a convenience default over the model parameter. The older ideation
+checklist wording was incomplete. Model overrides cannot promote approval or bypass it.
+
+The independent review findings are addressed as authorized by the FO:
+- Keep `claude.allowed.*`: it earns its place by allowing future registered keys to
+  declare eligibility without workflow edits. Removing it needs a hardcoded model
+  exception or another policy format. These are reviewed approval-policy records.
+- Cut the proposed duplicate schema validator and broad new wiring test. The only
+  new test is `TestParseLiveModelsExcludesCadencePolicy`: synthetic model records
+  must survive intact while policy records do not. It failed before the Go change
+  and passes after it; removing the filter fails it. No second schema implementation.
+
+### Actual resolver and approval evidence
+
+Executed the candidate's actual offline shell, extracted from `Resolve live lane models`,
+not a reimplementation. SHA-256 (dedented, trailing newline included):
+`29784c5835a2803e0ee7e8928585f7e41f35fb8df2047b9548a51ea498cb62b3`.
+**25 cases passed**: PR precedence; routine/pre-release/Pi defaults; all five allowed
+cadence/key pairs; forbidden Opus/routine with the exact cadence remedy; Pi override;
+unknown/raw/injected keys; unknown/empty/duplicate policy members; duplicate/malformed
+records; unsafe ID; missing default; unknown policy cadence, event, and cadence;
+registry-only `claude.future=fixture-model` extension permitted on routine.
+Success cases checked selected IDs and unchanged Codex/Pi outputs; every rejection
+checked nonzero exit, diagnostic, and zero outputs. Injection created no file.
+The extension resolved `fixture-model` with byte-identical workflow. Ignoring the
+parameter or allowing routine Opus makes these cases fail. These cases are NOT the
+host spike and do not establish GitHub approval semantics or model availability.
+
+Reproduce by extracting the existing step's `run: |` body, preserving shell quoting,
+and executing it with `LIVE_EVENT`, `LIVE_CADENCE`, `CLAUDE_MODEL_KEY`, and
+`GITHUB_OUTPUT` set against a scratch copy of `internal/release/live_models.txt`.
+The case list above names the independent mutations and expected outcomes. Local
+throwaway driver/log: `.claude/model-probe/resolver-check.py` and `resolver-check.log`
+(ignored worktree evidence, not required installation dependencies).
+A parsed-YAML comparison against B confirmed the same five jobs, every step count,
+job guards/dependencies/environments, effort, and unchanged Codex/Pi/job definitions.
+`matrix.model` alone changes to the selected offline output. The existing host path
+is `SPACEDOCK_LIVE_MODEL` -> `newClaudeLiveRunner.modelName` -> front-door `--model`;
+the unchanged workflow shim supplies `--effort max`.
+
+### Host spike: Haiku at requested maximum effort, older versus newer CLI
+
+Prior FO evidence, recorded explicitly: Claude **2.1.283**, exit 0,
+`canonicalModel=claude-haiku-5-5`, 77 thinking tokens / 81 output tokens, stderr
+`[claude-code:unrecognized_model] {"model":"claude-haiku-5-5","query_source":"sdk"}`.
+That old warning is a finding, not accepted as noise. Independently reproduced below.
+The first unisolated re-run also exited 0 with that canonical model and warning,
+but loaded local instructions and returned a permission-related response rather
+than `ok`; it is not counted as the clean probe. Both clean comparison runs used:
+
+```bash
+"$CLI" -p --model claude-haiku-5-5 --effort max --output-format json \
+  --setting-sources '' --tools '' --disable-slash-commands \
+  --system-prompt 'Respond to the user directly. No tools are available.' \
+  'Reply with the single word ok and nothing else.'
+```
+
+CWD: worktree-local `.claude/model-probe`; existing local login, no CI API-key proof.
+New CLI installed only under that directory using
+`npm install --prefix "$PWD/.claude/model-probe/newer" --no-audit --no-fund @anthropic-ai/claude-code@2.1.293`.
+Local npm disables install scripts, so ran that package's `install.cjs` explicitly;
+`newer/node_modules/.bin/claude --version` then reported 2.1.293. Operator CLI stayed 2.1.283.
+
+| Observation | Existing CLI 2.1.283 | Isolated newer CLI 2.1.293 |
+|---|---|---|
+| Exit / result / is_error | 0 / `ok` / false | 0 / `ok` / false |
+| modelUsage key and canonicalModel | `claude-haiku-5-5` | `claude-haiku-5-5` |
+| Thinking / output tokens | 264 / 268 | 687 / 691 |
+| stderr | Same `unrecognized_model` warning | Empty (0 bytes) |
+| costBasis / contextWindow | unknown / 200000 | list / 1000000 |
+| Session ID | `598306e2-b165-44cc-a59e-47fea0db0bc2` | `28621284-0fd1-47ec-af50-e4e3f6ca179c` |
+
+Both accepted `--effort max` and thinking was active; the older-CLI hypothesis is
+supported: upgrading to 2.1.293 removed the warning in this comparison. No effort
+fallback or product CLI pin was added. Context-size policy remains out of scope.
+Raw local outputs: `.claude/model-probe/{2.1.283,2.1.293}.isolated.{stdout.json,stderr.txt}`.
+Stdout SHA-256 respectively:
+`fa010389af0ef7b799804c720f6e91914bb18d79b0464bc91dce45179345794b`,
+`20a62bfc15a99bd5ec6c8fc7867f9056beeba2516ed52d96e6d193025daff273`.
+This is direct local host proof, NOT a successful hosted live-lane run or proof of
+provider-internal effort accounting. AC-1's full hosted execution and independent
+adversarial audit remain required; no acceptance criterion has been narrowed.
+
+
+### Authorized harness-role correction and final surface (supersedes five-file declaration)
+
+Hosted run `37702366584`, Claude job `113068993047`, artifact `11517724513`
+(`runtime-live-e2e-claude-live-claude-haiku-5-5`) exposed this exact error:
+`SPACEDOCK_LIVE_MODEL="claude-haiku-5-5", want sonnet, claude-sonnet-5-5, or claude-opus-5-5`.
+The hosted Claude job **failed because of the harness role switch**, not because
+Haiku was unavailable. CLI 2.1.293 was installed; candidate provenance confirmed
+checkout/embedded revision `d3df726fe4123ba2d9c053fb361b828ad4850d51`, unmodified.
+Seventeen common journeys failed at the model-role guard before their host launch;
+AC-1's hosted half did not pass. The matrix label alone was insufficient proof.
+Artifact: https://github.com/spacedock-dev/spacedock/actions/runs/37702366584/artifacts/11517724513
+
+Finding's four evidence fields:
+1. Released user/normal workflow: maintainer submits the documented Haiku dispatch.
+2. Observable harm: `claudeLiveRole` rejects the registered model before common journeys.
+3. `value-ac[AC-1]` requires a registered model to complete the existing Claude lane.
+4. Trigger evidence: the CI error above and the two-ID switch in
+   `internal/ensigncycle/shared_live_runner_test.go:94`.
+
+Worker proposal: Material, task-owned behavior, surface reset required. The FO
+separately authorized **fix**, a sixth file, and a **+150 net LOC ceiling across
+six files**. This supersedes the five-file declaration above; no AC is narrowed.
+Corrective code commit: `29525bea0` (same assigned branch, pushed; no main push).
+Actual cumulative diff against B is **+126 net (+151/-25), six files**:
+
+| File | Added/deleted | Net | Reason |
+|---|---:|---:|---|
+| `.github/workflows/runtime-live-e2e.yml` | 76/11 | +65 | Input and pre-approval resolver |
+| `internal/release/live_models.txt` | 3/0 | +3 | Registration and eligibility policy |
+| `internal/release/livemodels.go` | 10/8 | +2 | Exclude policies from model-ID consumers |
+| `internal/release/livemodels_test.go` | 18/0 | +18 | Focused Go parser regression |
+| `docs/releasing.md` | 17/0 | +17 | Operator surface |
+| `internal/ensigncycle/shared_live_runner_test.go` | 27/6 | +21 | Generic point-of-use model roles and focused test |
+
+`claudeLiveRole` now resolves IDs through `release.LiveModels`, deriving each role
+as `claude-<registry suffix>`. The existing `sonnet` alias still returns
+`claude-sonnet`; registered Sonnet/Opus retain `claude-sonnet`/`claude-opus`.
+A future key requires no harness edit. **No inherited XFAIL:** gap selection is
+exact equality on role strings, so `claude-haiku`/`claude-future` cannot match
+`claude-sonnet`'s known-failure entries. No gap bindings were changed.
+
+`TestClaudeLiveRole` uses an independent synthetic registry and checks the alias,
+Sonnet, Opus, Haiku, future-key identity, and rejection of Codex/unknown IDs.
+It failed on Haiku and the future key before the fix, then passed:
+`go test -tags live ./internal/ensigncycle -run '^TestClaudeLiveRole$' -count=1`.
+The test remains live-tagged and is excluded from the default offline suite.
+No lane, job, CI step, effort change, or per-new-key branch was added.
+The rerun is `37703335512` on corrected candidate `29525bea0`; it requires hosted
+completion before claiming AC-1. The original run's Codex job was not modified or cancelled.
+
+
+### Hosted approval-boundary proof
+
+**AC-3 PROVED on GitHub:** run [37702369289](https://github.com/spacedock-dev/spacedock/actions/runs/37702369289)
+on `d3df726fe4123ba2d9c053fb361b828ad4850d51`, inputs
+`live_cadence=sonnet`, `claude_model=opus`, failed in the offline resolver at
+2026-10-07T23:27:42Z with exit 1 and
+`claude_model is not permitted; use live_cadence=opus-pre-release`.
+Every live job was skipped. The pending-deployments endpoint returned `[]`.
+No live environment approval was spent. This establishes the pre-approval guarantee
+on the real platform, unlike the shell-only cases. The correction in `29525bea0`
+changes only the live harness file; the negative-tested workflow/registry are byte-identical.
+
+Both Haiku dispatches used the documented fields with `--ref` set to the assigned
+branch rather than main. The observed matrix was `sonnet, claude-haiku-5-5, max, CI-E2E`.
+Run 37702366584 concluded failure (Claude role-switch failure; **Codex success**).
+No Codex changes or cancellation occurred. Corrected run 37703335512 passed offline;
+live completion is still required. Environment approval was left to the FO/captain,
+never self-issued by the worker using operator credentials.
+
+
+### Final local verification
+
+- `gofmt -w ./cmd ./internal`: exit 0. Its unrelated pre-existing two-line
+  alignment change in `runtime_live_evidence_workflow_test.go` was restored to
+  keep the six-file surface; the changed Go files are formatted.
+- `go test ./...`: passed before the harness fix and on final candidate 29525bea0.
+  One intervening retry hit the tool's 240-second bound; the next completed with
+  exit 0 (ensigncycle 181.387s). It is not hidden as a passing invocation.
+- `go test ./... -race`: passed before and after the harness fix (final exit 0).
+- Both focused tests had observed red/green transitions; the parser test runs in
+  the default suite, and the role test uses the explicit live-tagged command above.
+- `git diff --check`: passed. The 25 actual-resolver cases and parsed-YAML
+  invariants passed; the harness-only correction did not change their workflow bytes.
+
+
+### Hosted rerun handoff at monitoring bound
+
+Last observation **2026-10-07T23:44:29Z**, inside the 23:44:36Z bound:
+run [37703335512](https://github.com/spacedock-dev/spacedock/actions/runs/37703335512)
+on final SHA `29525bea0cd558b8d305fd1d4417669568b384d7` is **in_progress**,
+with no conclusion. Offline job `113071744105` succeeded; Claude job
+`113072132719` is in `Run live Claude E2E`; Codex job `113072132702` is in
+`Run live Codex shared scenarios`; Pi is skipped. The FO approved the environments.
+No corrected-run artifact is available yet. **AC-1's hosted half is in progress,
+not passed**; final CLI/model observations must be recovered from that run's artifact.
+The local monitoring process was stopped at the bound, not the GitHub run.
+Resume without starting another run:
+
+```bash
+gh run watch 37703335512 --interval 30 --exit-status
+gh run view 37703335512 --json status,conclusion,headSha,jobs
+gh run view 37703335512 --log-failed
+gh run download 37703335512 --name runtime-live-e2e-claude-live-claude-haiku-5-5 --dir /tmp/haiku-final-evidence
+```
+
+## Stage Report: implementation
+
+- DONE: Reach the goal with the smallest change that works. Remove machinery rather than add it. Drop permitted-set metadata or the proposed test file if it does not earn its place, and say why.
+  Code 29525bea0 is +126 net across six authorized files; policy is necessary for generic eligibility, duplicate schema/wiring tests were cut, and the sixth file removes the discovered point-of-use allowlist.
+- DONE: Keep the entry point model-agnostic: a parameter selects a registry key, and model ids stay in live_models.txt only.
+  Actual resolver passed registry-only future-key extension; TestClaudeLiveRole passed a synthetic future ID while preserving Sonnet/Opus identities and rejecting non-Claude IDs.
+- DONE: Keep the approval boundary: refuse an explicit model that the selected cadence does not cover, inside the offline job, so no environment approval is spent. The failure must name the remedy.
+  AC-3 PROVED: hosted run 37702369289 failed offline with use live_cadence=opus-pre-release; all live jobs skipped and pending_deployments=[]; tested workflow is unchanged in final candidate.
+- DONE: Describe the architecture accurately as model-agnostic resolution with cadence-dependent eligibility, and say so in the task body.
+  The body and operator docs state that the model is a parameter while cadence gates eligibility and the approval environment, not merely defaults.
+- DONE: Record the local probe: claude-haiku-5-5 ran with canonicalModel claude-haiku-5-5, thinking active, exit 0, using claude 2.1.283. Record the stderr warning [claude-code:unrecognized_model]. Test whether an older local CLI causes it, and state the result. Do not silently accept the warning.
+  Reproduced on 2.1.283 (264 thinking tokens); isolated 2.1.293 accepted max, returned ok/exit 0 with 687 thinking tokens and empty stderr; commands, sessions, hashes, and limits are recorded above.
+- DONE: Report the actual surface: files and net LOC with a re-declared tolerance, and note that both the workflow and the registry change.
+  Authorized six-file declaration supersedes five files; +151/-25 = +126 net under +150 ceiling, with per-file reasons and both workflow/registry changes.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race, and report each result.
+  All passed; one intervening ordinary-suite invocation exceeded its 240s tool bound, then retry passed; focused parser and live-tagged role tests both have red/green evidence.
+- DONE: Add no lane, no job, and no CI step.
+  Parsed YAML comparison preserves all five jobs and step counts, cadence approval expressions, effort, dependencies, and Codex/Pi definitions; role fix changes no XFAIL bindings.
+- DONE: Report in the canonical item form, one DONE/SKIPPED/FAILED line per checklist item with an evidence or rationale line, ending with a non-empty Summary.
+  This report records code commits d3df726fe and 29525bea0, separate failure evidence, and the unfinished hosted half without claiming a pass.
+- FAILED: Initial hosted Haiku acceptance before the authorized role correction.
+  Run 37702366584/job 113068993047/artifact 11517724513 rejected the model in claudeLiveRole; exact error and four-field finding are preserved; Codex finished successfully.
+- SKIPPED: Claim completed hosted AC-1 on the corrected candidate within this worker's bound.
+  At 23:44:29Z run 37703335512 remains in progress (Claude 113072132719, Codex 113072132702); resume commands above, no successful lane claim or replacement run.
+- SKIPPED: Independent adversarial audit.
+  FO owns and will orchestrate the required independent review; worker did not self-audit or self-approve environments.
+
+### Summary
+
+Implemented the registry-key model parameter and cadence eligibility gate, then removed the hosted-discovered harness allowlist under an explicit six-file scope reset. Final code is +126 net LOC; both Go suites pass, hosted pre-approval refusal is proved, and the newer CLI removes the local Haiku warning. Corrected hosted Haiku execution remains in progress at the monitoring bound, with exact resume instructions and independent review still required.
