@@ -92,13 +92,34 @@ func liveDriverForRuntime(t *testing.T, id string) (func() liveDriver, string) {
 }
 
 func claudeLiveRole(model string) (string, error) {
-	switch model {
-	case "sonnet", release.LiveModels["claude.sonnet"]:
+	if model == "sonnet" {
 		return "claude-sonnet", nil
-	case release.LiveModels["claude.opus"]:
-		return "claude-opus", nil
-	default:
-		return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want sonnet, %s, or %s", model, release.LiveModels["claude.sonnet"], release.LiveModels["claude.opus"])
+	}
+	for key, id := range release.LiveModels {
+		if strings.HasPrefix(key, "claude.") && model == id {
+			return "claude-" + strings.TrimPrefix(key, "claude."), nil
+		}
+	}
+	return "", fmt.Errorf("SPACEDOCK_LIVE_MODEL=%q, want a registered Claude model ID or sonnet", model)
+}
+
+func TestClaudeLiveRole(t *testing.T) {
+	original := release.LiveModels
+	release.LiveModels = map[string]string{
+		"claude.sonnet": "fixture-sonnet", "claude.opus": "fixture-opus",
+		"claude.haiku": "fixture-haiku", "claude.future": "fixture-future", "codex.exec": "fixture-codex",
+	}
+	defer func() { release.LiveModels = original }()
+	for model, want := range map[string]string{
+		"sonnet": "claude-sonnet", "fixture-sonnet": "claude-sonnet", "fixture-opus": "claude-opus",
+		"fixture-haiku": "claude-haiku", "fixture-future": "claude-future", "fixture-codex": "", "unknown": "",
+	} {
+		t.Run(model, func(t *testing.T) {
+			got, err := claudeLiveRole(model)
+			if got != want || (err != nil) != (want == "") {
+				t.Fatalf("claudeLiveRole(%q) = %q, %v; want %q (error iff empty)", model, got, err, want)
+			}
+		})
 	}
 }
 
