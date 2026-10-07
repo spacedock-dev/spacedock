@@ -45,6 +45,7 @@ gates:
                 target-stage: implementation
                 state: consumed
 started: 2026-10-07T18:15:05Z
+worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 ---
 
 ## Problem
