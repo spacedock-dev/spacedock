@@ -8,7 +8,7 @@ user-invocable: false
 
 ## «gate.lifecycle»(slug, stage): bind, decide, apply one recorded authorization
 
-Load before engaged gate action. It grants no writes; read `fo-write-core.md` before FO mutation.
+Per shared residency: load before gate action; `fo-write-core.md` before mutation. No write grant.
 
 The binary owns preparation, withdrawal, recording, and one-use consume; this skill only routes their observed results.
 
@@ -22,7 +22,7 @@ Run this sequence once and in this order:
 1. ${SPACEDOCK_BIN:-spacedock} gate prepare ENTITY --question QUESTION --artifact REVIEW --summary SUMMARY [--reference FILE ...] --workflow-dir WORKFLOW_DIR
 2. ${SPACEDOCK_BIN:-spacedock} state commit ENTITY --workflow-dir WORKFLOW_DIR
 3. In one shell event, run `${SPACEDOCK_BIN:-spacedock} status --read ENTITY --checklist --json --workflow-dir WORKFLOW_DIR` and the same command with `--ac-scan` instead of `--checklist`.
-4. Load spacedock:present-gate and present once from that structured evidence.
+4. Ensure spacedock:present-gate resident; present once from that fresh evidence.
 ```
 
 **Initial-stage gate.** At a stage the workflow marks `initial: true`, the committed seed IS the reviewed artifact: no prior stage existed to write a report. Prepare directly from the seed with `--artifact` naming the entity; never author, request, or wait for a stage report, and never emit `report-incomplete`. Skip step 3 — both structured reads exit nonzero with no report. Present outcome, scope, exclusions, and the ideation proof the next stage owes.
