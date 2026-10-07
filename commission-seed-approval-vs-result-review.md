@@ -33,6 +33,17 @@ gates:
                 id: briefing:6dhxxd047s3c32n21h8ppf9y:ideation:attempt-1:revision-1
                 digest: sha256:398b0bcf219806d53062113804426a2b3cb1811d92730b30543bbafb9dd9af3b
                 room-ref: '@review/ideation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6dhxxd047s3c32n21h8ppf9y:ideation:1
+                briefing: briefing:6dhxxd047s3c32n21h8ppf9y:ideation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-07T00:33:15.295714Z"
+                decision: approve
+                reason: 'Captain approved the presented ideation gate in session: one-file commission guidance, net +6, incident-shaped blind trial as limited evidence, live proof deferred to implementation'
+              application:
+                target-stage: implementation
+                state: pending
 started: 2026-10-06T23:39:26Z
 ---
 
