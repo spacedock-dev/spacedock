@@ -1,6 +1,6 @@
 ---
 title: The Claude live lane selects a model by cadence, so a new model needs a workflow edit
-status: backlog
+status: ideation
 source: "Captain, 2026-10-07: a manual run on claude-haiku-5-5 was requested and cannot be dispatched. The captain wants opus and sonnet to be a parameter, not a mode, and the underlying entry point to be model-agnostic."
 id: f77r1rj2g7sgj3hkrht7n37f
 gates:
@@ -24,7 +24,7 @@ gates:
                 reason: 'Captain, 2026-10-07: "file a task to reorg how we assign model to the claude-code harness. opus/sonnet should be a param, not a mode... dispatch."'
               application:
                 target-stage: ideation
-                state: pending
+                state: consumed
 ---
 
 The Claude live lane has no model input. `claude_version` pins the CLI version, not the model. The model comes from `internal/release/live_models.txt`, and the `live_cadence` input selects between the entries. The lane's matrix maps one cadence to one model and one environment.
