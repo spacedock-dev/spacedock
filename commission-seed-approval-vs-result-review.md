@@ -52,6 +52,17 @@ gates:
                 id: briefing:6dhxxd047s3c32n21h8ppf9y:validation:attempt-1:revision-1
                 digest: sha256:99ff71f009bdd9d5fac696d021519bd7a15034f64604109aeb859f8f42a7c7fa
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:6dhxxd047s3c32n21h8ppf9y:validation:1
+                briefing: briefing:6dhxxd047s3c32n21h8ppf9y:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-07T01:22:23.38347Z"
+                decision: approve
+                reason: 'Captain, 2026-10-06, in session: "accept the commission change and let PR run live proof"'
+              application:
+                target-stage: done
+                state: pending
 started: 2026-10-06T23:39:26Z
 worktree: .worktrees/spacedock-ensign-commission-seed-approval-vs-result-review
 ---
