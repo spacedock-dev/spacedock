@@ -2,7 +2,7 @@
 
 Set a goal for a session, read the board, and act when an agent drifts from it.
 
-You need Compass installed. See [Install Compass](../index.md#install).
+You need Spacedock installed with Compass enabled. See [Install Spacedock and enable Compass](../index.md#install).
 
 Start Compass from your agent session:
 
@@ -97,4 +97,4 @@ Notifications are native on macOS, and browser notifications elsewhere while a C
 ## Next
 
 - [Compass reference](reference.md): every command, option and key.
-- **Review what drifted.** [Spacedock Review](../review/index.md) opens the work a drifting session produced and sends your comments back to the exact lines.
+- **Workflow.** [Spacedock Workflow](../workflow/index.md) keeps work moving through steps you define, and Compass shows where each item is.

@@ -26,6 +26,6 @@ If you run work through [Spacedock Workflow](../workflow/index.md), Compass also
 
 ## Next
 
-- [Install Compass](../index.md#install), then [set a goal and read the board](use.md).
-- **Then Review.** When Compass shows a session has drifted and you want to mark up what it produced, [Spacedock Review](../review/index.md) puts the work beside your session and sends your comments back to the exact lines.
+- [Install Spacedock and enable Compass](../index.md#install), then [set a goal and read the board](use.md).
+- **Then Workflow.** If drift keeps coming from work that was never pinned down, [Spacedock Workflow](../workflow/index.md) lets you write down once what good looks like at each step.
 - [Compass reference](reference.md): every command and option.
