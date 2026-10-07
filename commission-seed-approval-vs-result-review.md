@@ -66,7 +66,7 @@ gates:
 started: 2026-10-06T23:39:26Z
 worktree: .worktrees/spacedock-ensign-commission-seed-approval-vs-result-review
 mod-block: merge:pr-merge
-pr: "#838"
+pr: pr-merge:838
 ---
 
 ## Problem
