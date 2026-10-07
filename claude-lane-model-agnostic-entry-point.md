@@ -14,6 +14,17 @@ gates:
                 id: briefing:f77r1rj2g7sgj3hkrht7n37f:backlog:attempt-1:revision-1
                 digest: sha256:431932767c9eefcead1a0540c5d3118b8f86f71c1f6fa6e6d552029da7f51eae
                 room-ref: '@review/backlog/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f77r1rj2g7sgj3hkrht7n37f:backlog:1
+                briefing: briefing:f77r1rj2g7sgj3hkrht7n37f:backlog:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-07T18:14:48.37703Z"
+                decision: approve
+                reason: 'Captain, 2026-10-07: "file a task to reorg how we assign model to the claude-code harness. opus/sonnet should be a param, not a mode... dispatch."'
+              application:
+                target-stage: ideation
+                state: pending
 ---
 
 The Claude live lane has no model input. `claude_version` pins the CLI version, not the model. The model comes from `internal/release/live_models.txt`, and the `live_cadence` input selects between the entries. The lane's matrix maps one cadence to one model and one environment.
