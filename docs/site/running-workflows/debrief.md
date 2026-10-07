@@ -5,6 +5,6 @@ A workflow improves when friction is recorded and revisited instead of lost when
 The friction splits two ways:
 
 - **Workflow friction stays local.** Quirks in your pipeline, fixed by tightening the workflow's README.
-- **Spacedock friction goes upstream.** For each framework issue, debrief offers to file an anonymized GitHub issue: the body carries the bug, repro steps, and scale, never your mission, entity titles, or domain. You approve, edit, or decline each one before anything is filed.
+- **Spacedock Workflow friction goes upstream.** For each framework issue, debrief offers to file an anonymized GitHub issue: the body carries the bug, repro steps, and scale, never your mission, entity titles, or domain. You approve, edit, or decline each one before anything is filed.
 
 Debrief drafts everything from git and the workflow files, and pauses for you three times: confirm where the session starts, add the why behind decisions and observations, approve each upstream issue. It commits the record, and the next debrief picks up where this one ended.

@@ -1,25 +1,25 @@
-# Spacedock
+# Welcome
 
-Spacedock runs your work as a series of stages. **Nothing crosses a gate without a decision you own.**
+Your agents finish work faster than you can judge it. **Your judgment is the bottleneck, and Spacedock is built around it.**
 
-A gate is a checkpoint where the workflow pauses and puts the question to you: ship this, or not? You approve it, send it back, or escalate. You can also delegate the call to an agent. Either way, the decision is recorded with its evidence and its reason. That is the whole idea. Everything else is detail.
+## Who it's for
 
-You are the captain. You set the bar and make the calls; the agents do the rest. The bar starts rough and sharpens every time you reject, so calls that once needed you become ones you can hand off with confidence. See [the operating model](concepts/operating-model.md) for how the three roles divide the work.
+You hand agents whole chunks of work and run several sessions at once, in Claude Code or Codex. You may build your own skills, or use agents beyond code: email, research, content, go-to-market.
 
-## What's different
+## Install
 
-- **The agent doesn't get to judge its own work.** Review runs as a separate stage with fresh context, no access to the maker's reasoning. It pushes back on thin evidence and work that looks busy without proving its claim.
-- **Every decision leaves a trail.** Each gate carries a stage report: findings, verdicts, artifacts, anomalies. You decide on evidence, not the transcript, and the record outlives the reviewer.
-- **The bar sharpens as you use it.** Each stage declares what good means and the agent works to that line. When a standard turns out fuzzy in practice, the agent proposes an edit to the written criteria for your approval.
-- **Batch the work; decide as it flows back.** Queue many work items at once. Agents advance each through its stages, and you handle gates as they surface, not one session at a time.
-- **Work survives the context limit.** When an agent runs out of context, a successor carries forward what's in flight.
+One command installs Spacedock.
 
-## Where to go next
+```sh
+brew install spacedock-dev/tap/spacedock [TBD]
+```
 
-- **[Get started](get-started/install.md)**: [install](get-started/install.md) Spacedock, then pick an entry. [Survey an existing project](get-started/survey.md) to see where your agents burn your time and surface the workflow you are already running without naming it. Or [start a fresh workflow](get-started/first-workflow.md) from a common shape like development or research.
-- **[Concepts](concepts/operating-model.md)** covers the operating model, workflows and entities, the stage lifecycle, and gates and decisions.
-- **[Running workflows](running-workflows/commission.md)** walks through commissioning a workflow, operating a running workflow, and debriefing and refitting between sessions.
+## One problem, three places
 
-## For agents using Spacedock
+The bottleneck shows up in three places. Each Spacedock feature takes one.
 
-Agents read these docs too. Start from [`llms.txt`](/llms.txt), the curated index of these pages.
+| When this happens | Use | What it does |
+| --- | --- | --- |
+| An agent's work is waiting for your call | **[Review](review/index.md)** | Opens the work beside your session, in the terminal or the browser. You comment on the exact line, and the agent revises from your comments. You can send it to a colleague for a second opinion. |
+| An agent may have left the goal you agreed on | **[Compass](compass/index.md)** | Shows the goal beside what each session is doing, so the one that has left it stands out. |
+| Every call comes to you, and only some need your judgment | **[Workflow](workflow/index.md)** | You write down once what good looks like at each step. Only the calls that need you reach you, with the evidence attached. |

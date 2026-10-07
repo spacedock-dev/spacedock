@@ -1,6 +1,8 @@
-# Install Spacedock
+# Install Spacedock Workflow
 
-Spacedock works with a coding agent you already have: Claude Code, Codex, or
+> **Draft note, not page copy:** this page stays until one install ships (launch plan O7), then it's deleted and Get Started carries the one command.
+
+Spacedock Workflow works with a coding agent you already have: Claude Code, Codex, or
 Pi. Install one of those first.
 
 === "macOS (Homebrew)"
@@ -96,7 +98,7 @@ spacedock doctor --host pi
 
 ## Skills
 
-Spacedock installs the relevant skills on launch. To install them manually:
+Workflow installs the relevant skills on launch. To install them manually:
 
 ```bash
 # Stable (default channel) — marketplace named `spacedock`, entry `spacedock`
