@@ -1,6 +1,6 @@
 # Use Compass
 
-Set a goal for a session, read the board, and act when an agent drifts from it.
+State an intent for a session, read the board, and act when an agent drifts from it.
 
 You need Spacedock installed with Compass enabled. See [Install Spacedock and enable Compass](../index.md#install).
 

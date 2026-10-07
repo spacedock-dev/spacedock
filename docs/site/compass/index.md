@@ -8,7 +8,7 @@ Compass is a screen on your own machine that lists every agent session you have 
 
 > **[Screenshot to take:** the Sessions screen with several active sessions, each showing its goal beside what the agent is doing now, and one marked as drifting.**]**
 
-You type the goal for a session, and up to six lines describing the outcome you expect. When you ask, Compass [checks the session against them](use.md#check-a-session-for-drift) and says where the agent departed, citing the exact entries in the session record. You decide what to do about it: tell the agent, adjust the goal, or leave it.
+This is **Intent and drift**. You state your intent for a session: a goal, and up to six lines describing the outcome you expect. When you ask, Compass [checks the session against that intent](use.md#check-a-session-for-drift) and says where the agent departed, citing the exact entries in the session record. You decide what to do about it: tell the agent, adjust the intent, or leave it.
 
 Compass only reads. It never types into a session, and it never answers a prompt for you. Session content stays on your machine unless you [allow a check](use.md#check-a-session-for-drift), and the check asks first.
 
@@ -26,6 +26,6 @@ If you run work through [Spacedock Workflow](../workflow/index.md), Compass also
 
 ## Next
 
-- [Install Spacedock and enable Compass](../index.md#install), then [set a goal and read the board](use.md).
+- **Set your first intent.** [Install Spacedock and enable Compass](../index.md#install), then [state an intent for a session and check it for drift](use.md#set-the-goal).
 - **Then Workflow.** If drift keeps coming from work that was never pinned down, [Spacedock Workflow](../workflow/index.md) lets you write down once what good looks like at each step.
 - [Compass reference](reference.md): every command and option.
