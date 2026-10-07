@@ -1,0 +1,15 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:kc1rvn663yt8qkzqbakzda1v:validation:attempt-1:revision-1",
+  "question": "Accept the four-file residency change, with the live presenter, lifecycle, compaction, and replacement legs recorded as outstanding?",
+  "artifacts": [
+    {
+      "id": "artifact:kc1rvn663yt8qkzqbakzda1v:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9813f0c5351c8ce6c19612ee5b5e4e763237cb56/fo-contract-reread-churn.md",
+      "rev": "sha256:d3be3e5243eac69c5f1e5831001f396b5ec03f72853a324bb0f61ae74a33ea3a",
+      "mediaType": "text/markdown",
+      "summary": "Four skill files, net +2. Both suites pass. Live Pi residency leg passes for fo-write-core: one load for two mutation triggers. Remaining live legs stay runnable from the worktree."
+    }
+  ]
+}
