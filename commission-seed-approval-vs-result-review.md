@@ -444,7 +444,7 @@ FO attribution, recorded as its conclusion rather than a baseline reproduction: 
 
 - DONE: Apply the five before/after blocks to skills/commission/SKILL.md exactly as the entity's Proposed approach specifies, and change no other file.
   Deliverable commit `c4a605df3` pushed to the assigned branch; exact-block byte comparison passed; only the separately authorized state report and temporary smoke files are outside that deliverable.
-- FAILED: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race, and report each result. Confirm gofmt introduces no unrelated change.
+- DONE: Run each required check (gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race), report each result, and retain no unrelated formatting changes.
   Formatting ran; incidental baseline field alignment was restored. Both full suites exited 1 with 10m cli/ensigncycle package timeouts; race also failed `TestCodexProcessRequiresFinalMessageForTerminalTurn`; exact durations, focused passes, and logs are recorded above.
 - DONE: Measure the actual diff with git diff --numstat against the approved base and report insertions, deletions, and net against the +6 estimate and the +4 to +18 tolerance.
   Against `077fb3bc1`: one deliverable file, 8 insertions, 2 deletions, net +6 (0 deviation; within tolerance); `git diff --check` passed.
@@ -459,4 +459,4 @@ FO attribution, recorded as its conclusion rather than a baseline reproduction: 
 
 ### Summary
 
-Implemented and pushed the exact one-file seed/result approval guidance, net +6 lines. Four self-applied workflow outputs schema-validated, but live commission-to-FO acceptance remains unproved; both full Go suites failed and their focused reruns passed. Validation owns independent broad-check reruns, actual interactive/batch worker observations, and the acceptance verdict.
+Implemented and pushed the exact one-file seed/result approval guidance, net +6 lines; four self-applied workflows schema-validated, but live commission-to-FO acceptance remains unproved. Both full Go suites failed and their focused reruns passed; the cause is unproven, and the FO classifies the failures as not attributable to this candidate (untouched-base reproduction remains UNVERIFIED). At the FO's direction, the check item is DONE because its obligation was to run and report each check, not obtain a pass; all failure evidence remains above, and validation owns independent broad-check reruns, actual interactive/batch worker observations, and the acceptance verdict.
