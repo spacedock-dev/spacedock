@@ -918,3 +918,84 @@ https://github.com/spacedock-dev/spacedock/actions/runs/37702366584/artifacts/11
 ### Summary
 
 Implemented registry-key selection and cadence eligibility, including the authorized generic harness-role correction; code remains +126 net LOC across six files and both Go suites pass. The captain re-scoped acceptance to a named model running the lane without a workflow edit, proved by run 37703335512 at Haiku/max, so that one item is DONE. Both failed run outcomes, the initial role-switch rejection, the corrected run's 26 tests / 8 failures (four failing journeys), and the unrecognized_model warning remain recorded; model compliance is owned outside this task for separate classification, and no further run was started.
+
+## Review-finding disposition
+
+### Validation: three central claims lack a standing proof owner
+
+**Recommendation: REJECTED. Defect kind: evidence defect. Release scope: material. Task ownership: this dispatch task.**
+The candidate's observed behavior passed the one-off checks below. The defect is in its regression proof, not Haiku compliance or the resolution architecture.
+
+Four evidence fields:
+1. **Released user and normal workflow:** a maintainer selects a registered Claude key and its permitted approval cadence through the existing manual dispatch.
+2. **Observable harm:** the shipped checks stay green when the offline dependency is removed, routine policy admits Opus, or the matrix ignores the selected key. They cannot defend the claimed dispatch and approval boundaries.
+3. **Authority:** `contract[docs/dev/README.md#proof-policy]` requires the detached high-stakes audit to catch claim-breaking edits; these survivors leave AC-1, AC-2, and AC-3 without a standing proof owner for their central claims.
+4. **Trigger evidence:** detached checkout of `29525bea0`; apply each mutation below separately, run the stated command, then restore the file. These are actual green runs, not inferred coverage gaps.
+
+| Adversarial edit in the throwaway checkout | Command | Result / duration |
+|---|---|---|
+| First `needs: offline` (Claude job) becomes `needs: []` | `go test ./internal/release ./internal/contractlint -count=1` | **exit 0**, 19.653s; AC-3 dependency bypass survives |
+| `claude.allowed.sonnet=sonnet,haiku` becomes `claude.allowed.sonnet=sonnet,opus,haiku` | Same command | **exit 0**, 14.530s; AC-2 routine permission expansion survives |
+| Matrix `needs.offline.outputs.claude_selected` becomes `needs.offline.outputs.claude_sonnet` | Same command | **exit 0**, 14.301s; AC-1 parameter bypass survives |
+| Reader's policy-filter condition becomes `false` | `go test ./internal/release -run '^TestParseLiveModelsExcludesCadencePolicy$' -count=1` | **exit 1**, 0.799s; independent expected map catches policy leakage |
+| Generic role return becomes `return "claude-sonnet", nil` | `go test -tags live ./internal/ensigncycle -run '^TestClaudeLiveRole$' -count=1` | **exit 1**, 1.772s; Haiku/future/Opus identities fail |
+
+**FO-authorized disposition:** record REJECTED; keep the candidate unchanged and route the three new standing assertions to the captain. No acceptance of this hole was authorized.
+**Cause and accountability, as directed by the FO:** the FO authorized the earlier coverage cut on independent review advice. That review requested removal of duplicated schema checks while retaining parser and wiring coverage. The authorization removed the wiring coverage too. This was the FO's authorization error, not this validator's error.
+
+**Three NEW STANDING CHECKS — captain approval required:** one assertion for Claude's `needs: offline`; one excluding `opus` from the routine permitted set; one binding the matrix to the selected registry output (`claude_selected`, not the fixed `claude_sonnet` output). Each must fail under its own mutation above. Keep them in `internal/release/livemodels_test.go`; do not restore a broad schema/wiring suite. No lane, job, or CI step is proposed.
+
+### Measured surface and prospective reset
+
+Current measured diff: `git diff --numstat origin/main HEAD`, baseline `7558f2e0`, candidate `29525bea0`.
+
+| File | Added/deleted | Net |
+|---|---:|---:|
+| `.github/workflows/runtime-live-e2e.yml` | 76/11 | +65 |
+| `docs/releasing.md` | 17/0 | +17 |
+| `internal/ensigncycle/shared_live_runner_test.go` | 27/6 | +21 |
+| `internal/release/live_models.txt` | 3/0 | +3 |
+| `internal/release/livemodels.go` | 10/8 | +2 |
+| `internal/release/livemodels_test.go` | 18/0 | +18 |
+| **Total** | **151/25** | **+126** |
+
+**Prospective surface, not a measurement:** the same six files; only `internal/release/livemodels_test.go` grows to carry the three assertions. **THE INCREMENT IS UNMEASURED.** The code does not exist yet, so any figure would be a guess. Replace this prospective reset with the measured diff at implementation. The current +126 is within the +150 ceiling. If the assertions would exceed +150, stop for the FO; do not weaken them to fit or exceed the ceiling silently. No candidate edit was authorized or made in this validation.
+
+## Stage Report: validation
+
+- DONE: Confirm the six-file surface and net LOC against the re-declared tolerance, measured with git diff --numstat against origin/main.
+  Candidate 29525bea0 versus origin/main 7558f2e0 is +151/-25 = +126 net, six files, within +150; the measured split and captain-pending prospective reset are above.
+- DONE: Re-run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race, and report each result with durations.
+  All exit 0: gofmt 0.127s, ordinary suite 230.262s, race suite 252.952s; formatting ran on the detached copy to preserve candidate bytes and exposed only the pre-existing two-line alignment in runtime_live_evidence_workflow_test.go. Candidate suites ran unchanged.
+- DONE: Confirm the model is a parameter and that model ids live only in live_models.txt.
+  Actual offline shell passed 33 independent exit/output/atomicity cases; a registry-only future key resolved fixture-future-model with identical workflow bytes. Tracked-file ID search found no pinned live IDs outside live_models.txt.
+- DONE: Confirm the cadence gates both eligibility and the environment, and that an out-of-cadence model is refused before any approval is spent. Cite the hosted negative run.
+  Run 37702369289 at d3df726fe: routine/opus failed offline with use live_cadence=opus-pre-release; all live jobs skipped, approvals=[] and pending_deployments=[]; final workflow/registry are byte-identical to that run.
+- DONE: Confirm the harness resolves the model role generically, that sonnet, claude-sonnet, and claude-opus are unchanged, and that a new key inherits no known-failure binding.
+  TestClaudeLiveRole passed with -tags live (1.306s); synthetic Sonnet/Opus/Haiku/future IDs assert distinct roles, alias sonnet stays claude-sonnet, and exact gap.target equality cannot transfer Sonnet's unchanged XFAILs to new suffixes.
+- DONE: Confirm the restated acceptance item is honest: both run identifiers, the harness error, and the eight journey failures remain in the record. Say plainly whether any failure evidence was softened or removed.
+  Fresh GitHub logs confirm 37702366584's 17 role-guard errors and 37703335512's 26 tests/8 failures: four journeys, three parent slots, suite (plus a package fail event). No failure evidence was softened or removed; the captain changed acceptance, not either failed conclusion.
+- DONE: Confirm the model-compliance finding carries its four evidence fields and an owner outside this task.
+  The retained finding names normal dispatch, concrete harm, captain-ruling[2026-10-08], and both run/job/artifact triples; ownership remains outside this task. Its four named failed journeys match the downloaded JSONL failure events.
+- DONE: Run the workflow's detached adversarial audit on a throwaway checkout, since the CI and release machinery is a declared high-stakes surface.
+  Detached 29525bea0 checkout under /tmp caught policy leakage and role inheritance but missed three central-claim mutations; exact commands/results and the FO's REJECTED disposition are recorded above. No candidate mutation occurred.
+- DONE: Reject any evidence that asserts an artifact's own text against a copy of that text.
+  No self-copy assertion is accepted: fixture outputs and exit codes are independent expectations; hosted host-init/result events prove actual identity, not artifact labels; separate baseline bytes establish only unchanged wiring. Green suite counts do not prove the three uncovered claims.
+- DONE: Report with a verdict of PASSED or REJECTED, in the canonical item form, ending with a non-empty Summary.
+  Verdict: REJECTED for a material evidence defect, not for the captain-owned model-compliance outcome. The FO owns the earlier authorization error; three focused new standing checks require captain approval.
+- DONE: AC-1 (VALUE), as superseded by the captain: a named model runs the lane without a workflow edit.
+  Artifact 11517939481 (SHA-256 336115cff79802d2e6d430ddd9647f72b598801361223af6e3a763d83f298c7d) and job logs verify Haiku init/canonicalModel, CLI 2.1.293, max/CI-E2E, clean embedded/checkout SHA 29525bea0; initial-to-corrected change is harness-only. Hardcoding the matrix is the uncovered regression falsifier, not a current dispatch failure.
+- DONE: AC-2 and AC-3 current behavior: existing cadence defaults, approval authority, and explicit pre-approval refusal.
+  Parsed candidate/baseline comparison preserves five jobs, step counts, guards, dependencies, environments, max effort and Codex/Pi definitions; local PR/routine/pre-release/Pi defaults and forbidden Opus exercise actual resolver output. GitHub confirms four reviewer-protected environments and expected secret names; dependency/policy mutation survivors block regression-proof acceptance.
+- DONE: AC-4: operator instructions select a key without duplicating IDs or weakening release evidence.
+  Corrected offline job 113071744105 logs workflow_dispatch/sonnet/haiku, matching documented fields; host stream independently confirms the requested ID. Default release command is unchanged; docs separate CLI version, cadence permission, and exploratory versus release evidence. No new dispatch was made.
+- DONE: Semantic adversarial pass over parameter, registry, output, host argv, role, approval and terminal state.
+  The 33-case shell matrix adds whitespace/Unicode/newline inputs, CRLF, absent final newline and record reordering to defaults/overrides, malformed/duplicate/empty policy data, injection, and generic extension; rejects emit zero outputs. Registry work is linear over reviewed records; no new blocking/network hot path or supported scaling hazard was found.
+- FAILED: Central dispatch and approval claims have a standing regression proof owner.
+  Removing offline dependency, allowing routine Opus, or forcing the Sonnet matrix output all leave release/contractlint checks green. Existing parser/role tests have genuine independent oracles but do not defend these boundaries; no broad schema suite is requested.
+- SKIPPED: New live lanes, environment approvals, repeated Sonnet classification, and claims not observable in this validation.
+  No run/approval/classifier was started. Historical reviewer/secret-value snapshots and fresh hosted executions of every blank cadence were not independently verified; current metadata and local defaults are not substitutes for those observations. Compliance remains failed and outside-task, not waived.
+
+### Summary
+
+REJECTED: current named-model dispatch and hosted pre-approval refusal are independently verified, and both Go suites pass, but three claim-breaking edits survive the detached audit. The FO accepts responsibility for the earlier coverage cut and routes three focused new standing assertions to the captain; their prospective LOC increment is unmeasured. Candidate 29525bea0 stays unchanged, both failed Haiku runs and all eight failed test outcomes remain unsoftened, and temporary audit artifacts are removed after committing this report.
