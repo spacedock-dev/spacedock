@@ -759,7 +759,11 @@ gh run view 37703335512 --log-failed
 gh run download 37703335512 --name runtime-live-e2e-claude-live-claude-haiku-5-5 --dir /tmp/haiku-final-evidence
 ```
 
-### Follow-up: corrected hosted Claude job FAILED; implementation remains blocked
+### Historical follow-up: corrected hosted Claude job FAILED; implementation blocked under prior acceptance
+
+Historical assessment before the captain ruling below: its failure evidence is
+retained unchanged. The ruling supersedes the acceptance/blocker interpretation,
+not the failed run conclusion or any assertion error.
 
 The completion guard's FAILED item is retained, not relabelled or removed. Both
 attempts failed the hosted Haiku acceptance obligation; **AC-1 is not met**.
@@ -819,6 +823,71 @@ Candidate provenance matches checkout and embedded SHA
 Corrected artifact ZIP SHA-256:
 `336115cff79802d2e6d430ddd9647f72b598801361223af6e3a763d83f298c7d`.
 
+### Captain ruling: dispatch acceptance re-scoped; compliance failure retained
+
+The captain's ruling, relayed in this follow-up on **2026-10-08**, re-scopes the
+acceptance owed by this task to: **a named model runs the lane without a workflow
+edit**. This supersedes the earlier AC-1 requirement for a green/completed-success
+journey suite and the prior interpretation that those journey failures block this
+dispatch task. The report item changes to DONE because the captain changed the
+acceptance, not because the failed run was reclassified as green.
+
+Run `37703335512`, job `113072132719`, actually executed `claude-live` with
+`claude-haiku-5-5` at `max` in `CI-E2E`, using CLI 2.1.293; the artifact's host
+init and result identify that model. The harness role rejection from initial run
+`37702366584` is gone. Between those runs, the correction changed only the harness
+role resolver: workflow and registry bytes were unchanged. The earlier registry-only
+future-key trial separately established extension without a workflow edit.
+Thus the re-scoped dispatch acceptance is proved. **The corrected live run still
+concluded failure: 26 tests / 8 failures. No green-suite claim is made.**
+
+The first role-switch failure, its verbatim error, all corrected-run assertion
+errors, and the older CLI's `[claude-code:unrecognized_model]` warning remain in
+this entity. No code, model-compliance policy, XFAIL, or CLI pin is changed here;
+no new lane run was started. Code remains `29525bea0` (+126 net across six files).
+
+### Finding: Haiku model compliance — owned outside this dispatch task
+
+Ownership/disposition per captain: the eight reported failures are a model-compliance
+finding owned outside this task, not a dispatch-mechanism defect. The FO will
+commission a separate classifier; this report does not assign a new classifier,
+waive a failure, add XFAILs, or attempt a repair.
+
+Four evidence fields:
+
+1. **Released user and normal workflow:** a maintainer dispatches the existing
+   Claude lane with `live_cadence=sonnet`, `claude_model=haiku`, maximum effort,
+   and the normal `CI-E2E` environment approval. The host runs the requested model.
+2. **Observable harm:** comparison live outcome **26 tests / 8 failures on
+   claude-haiku-5-5**, exit 1. The failing journeys are
+   `TestLiveCommonKeepMovingPosture`, `TestLiveCommonDefaultHeadlessGateStop`,
+   `TestLiveCommonWithdrawnGateRecovery`, and `TestLiveCommonFiling`.
+   The eight failures count those four journeys, three parent slots, and the suite;
+   gate/commit boundaries, durable archive state, and filing-command observation failed.
+3. **Authority:** `captain-ruling[2026-10-08]` retains these model-compliance
+   failures for separate ownership/classification while accepting named-model
+   execution as this task's dispatch value; it does not waive the observed
+   gate-boundary or durable-workflow assertion failures.
+4. **Trigger evidence:** initial run `37702366584` / job `113068993047` /
+   artifact `11517724513` rejected the model in the role switch; corrected run
+   `37703335512` / job `113072132719` / artifact `11517939481` executed Haiku
+   and produced the eight failures. The complete verbatim harness assertions are
+   retained in the historical outcome section above, including:
+
+   ```text
+   shared_live_runner_test.go:261: FAIL /filing owner= observed=[filing-command-not-observed]
+   filing-command-not-observed: filing command log has no spacedock new wire-the-thing invocation
+   ```
+
+Corrected artifact path:
+https://github.com/spacedock-dev/spacedock/actions/runs/37703335512/artifacts/11517939481
+(`runtime-live-e2e-claude-live-claude-haiku-5-5`). Inside it, the per-journey
+streams are under
+`spacedock/spacedock/live-artifacts/claude/claude-haiku-5-5/claude-shared-scenarios/`,
+including `filing/claude-stream.jsonl`; the job log records all assertion errors.
+The initial artifact remains at
+https://github.com/spacedock-dev/spacedock/actions/runs/37702366584/artifacts/11517724513.
+
 ## Stage Report: implementation
 
 - DONE: Reach the goal with the smallest change that works. Remove machinery rather than add it. Drop permitted-set metadata or the proposed test file if it does not earn its place, and say why.
@@ -838,14 +907,14 @@ Corrected artifact ZIP SHA-256:
 - DONE: Add no lane, no job, and no CI step.
   Parsed YAML comparison preserves all five jobs and step counts, cadence approval expressions, effort, dependencies, and Codex/Pi definitions; role fix changes no XFAIL bindings.
 - DONE: Report in the canonical item form, one DONE/SKIPPED/FAILED line per checklist item with an evidence or rationale line, ending with a non-empty Summary.
-  This report records code commits d3df726fe and 29525bea0 and both hosted failures without claiming AC-1 success; the FAILED item remains a completion blocker.
-- FAILED: Initial hosted Haiku acceptance before the authorized role correction.
-  Initial run 37702366584/job 113068993047/artifact 11517724513 failed with `SPACEDOCK_LIVE_MODEL="claude-haiku-5-5", want sonnet, claude-sonnet-5-5, or claude-opus-5-5`; corrected run 37703335512/job 113072132719/artifact 11517939481 also failed (four journey errors quoted above, exit 1). Hosted AC-1 is not met; implementation stays blocked.
+  This report records code commits d3df726fe and 29525bea0, both failed run outcomes, and the captain-authorized acceptance reset; DONE applies only to the re-scoped named-model dispatch obligation.
+- DONE: A named model runs the lane without a workflow edit.
+  Captain re-scoped the acceptance: initial run 37702366584/job 113068993047/artifact 11517724513 failed with `SPACEDOCK_LIVE_MODEL="claude-haiku-5-5", want sonnet, claude-sonnet-5-5, or claude-opus-5-5`; corrected run 37703335512/job 113072132719/artifact 11517939481 executed claude-haiku-5-5 at max with no further workflow edit and no role rejection. Its 26 tests / 8 failures remain an outside-task model-compliance finding, not a green run.
 - SKIPPED: Claim completed hosted AC-1 on the corrected candidate within this worker's bound.
-  The initial bound ended at 23:44:29Z with run 37703335512 in progress; this follow-up records Claude job 113072132719 failing at 23:47:08Z. No successful lane claim or replacement run.
+  The initial bound ended at 23:44:29Z with run 37703335512 in progress; this follow-up records Claude job 113072132719 failing at 23:47:08Z. No green-suite claim or replacement run; the later captain ruling changes the acceptance, not this outcome.
 - SKIPPED: Independent adversarial audit.
   FO owns and will orchestrate the required independent review; worker did not self-audit or self-approve environments.
 
 ### Summary
 
-Implemented the registry-key model parameter and cadence eligibility gate, then removed the hosted-discovered harness allowlist under an explicit six-file scope reset. Final code is +126 net LOC; both Go suites pass, hosted pre-approval refusal is proved, and the newer CLI removes the local Haiku warning. Corrected hosted Haiku execution FAILED with four journey failures; AC-1 is not met, the FAILED checklist item is retained, and implementation remains blocked. No further run was started.
+Implemented registry-key selection and cadence eligibility, including the authorized generic harness-role correction; code remains +126 net LOC across six files and both Go suites pass. The captain re-scoped acceptance to a named model running the lane without a workflow edit, proved by run 37703335512 at Haiku/max, so that one item is DONE. Both failed run outcomes, the initial role-switch rejection, the corrected run's 26 tests / 8 failures (four failing journeys), and the unrecognized_model warning remain recorded; model compliance is owned outside this task for separate classification, and no further run was started.
