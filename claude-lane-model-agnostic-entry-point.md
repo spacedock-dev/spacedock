@@ -1,6 +1,6 @@
 ---
 title: The Claude live lane selects a model by cadence, so a new model needs a workflow edit
-status: implementation
+status: validation
 source: "Captain, 2026-10-07: a manual run on claude-haiku-5-5 was requested and cannot be dispatched. The captain wants opus and sonnet to be a parameter, not a mode, and the underlying entry point to be model-agnostic."
 id: f77r1rj2g7sgj3hkrht7n37f
 gates:
