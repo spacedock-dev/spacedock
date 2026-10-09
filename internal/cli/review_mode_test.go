@@ -19,7 +19,7 @@ func runIn(t *testing.T, dir string, env []string, args ...string) (int, string,
 
 func reviewModeEnv(t *testing.T) []string {
 	t.Helper()
-	return append(os.Environ(), "XDG_CONFIG_HOME="+t.TempDir())
+	return append(os.Environ(), "XDG_STATE_HOME="+t.TempDir())
 }
 
 func TestReviewModeIsUnsetUntilChosenAndScopedToTheProject(t *testing.T) {
