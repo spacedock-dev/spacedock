@@ -154,8 +154,8 @@ install_extra() {
 	dir="$(mktemp -d)"
 	curl -fsSL -o "$dir/$asset" "$base/$asset" && curl -fsSL -o "$dir/checksums.txt" "$base/checksums.txt" \
 		|| { err "$name: download failed — skipped"; return 1; }
-	expected="$(awk -v f="$asset" '$2 == f {print $1}' "$dir/checksums.txt" | head -n 1)"
-	[ -n "$expected" ] && [ "$expected" = "$(sha256_of "$dir/$asset")" ] \
+	want_sum="$(awk -v f="$asset" '$2 == f {print $1}' "$dir/checksums.txt" | head -n 1)"
+	[ -n "$want_sum" ] && [ "$want_sum" = "$(sha256_of "$dir/$asset")" ] \
 		|| { err "$name: checksum mismatch for $asset — skipped"; return 1; }
 	tar -xzf "$dir/$asset" -C "$dir" || return 1
 	for b in $binaries; do
