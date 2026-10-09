@@ -67,6 +67,13 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 // command tree captures env/dir/stdin/stdout/stderr/runner in its RunE closures.
 func run(ctx context.Context, args []string, env []string, dir string, stdin io.Reader, stdout io.Writer, stderr io.Writer, runner status.Runner, dispatchProbe claudeteam.TeamStateProbe) int {
 	root := newRootCommand(ctx, args, env, dir, stdin, stdout, stderr, runner, dispatchProbe)
+	if argv := extensionArgv(root, args, exec.LookPath); argv != nil {
+		code, err := execHost{}.Launch(argv, env)
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock %s: %v\n", args[0], err)
+		}
+		return code
+	}
 	root.SetArgs(args)
 	if err := root.Execute(); err != nil {
 		return exitCodeFor(err)
@@ -169,6 +176,8 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newCompletionCommand(stdout, stderr),
 		newDispatchCommand(dispatchProbe, env, stdin, stdout, stderr),
 		newGateCommand(dir, stdout, stderr),
+		newReviewModeCommand(env, dir, stdout, stderr),
+		newRemoteReviewCommand(env, dir, stderr),
 	)
 	return root
 }

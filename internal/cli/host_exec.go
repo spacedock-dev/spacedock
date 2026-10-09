@@ -447,6 +447,7 @@ func installArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
+		{argv: []string{"plugin", "install", companionPluginID(devBranch)}, tolerateExit: true},
 	}
 }
 
@@ -484,7 +485,15 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
+		{argv: []string{"plugin", "add", companionPluginID(devBranch)}, tolerateExit: true},
 	}
+}
+
+// companionPluginID is the Subspace plugin installed beside Spacedock from the
+// same channel marketplace. It is tolerated: a missing companion never fails the
+// Spacedock install.
+func companionPluginID(devBranch string) string {
+	return "subspace@" + channelMarketplace(devBranch)
 }
 
 // codexPluginDirInstallArgvSequence is the `--plugin-dir` dev-install analog of
