@@ -135,6 +135,54 @@ asset_name() {
 	fi
 }
 
+# EXTRAS is the full set installed beside spacedock, one entry per product:
+#   name|repo|archive prefix|binaries|links (binary:extra-name)
+# Each extra comes from the latest stable release of its own repo, verified the
+# same way as spacedock. A binary an archive does not carry is skipped. A failed
+# extra is reported and never fails the install.
+EXTRAS='subspace|spacedock-dev/subspace|subspace|subspace-tui subspace-relay-client|subspace-tui:spacedock-review subspace-relay-client:spacedock-remote-review'
+
+install_extra() {
+	name="$1" repo="$2" prefix="$3" binaries="$4" links="$5" os="$6" arch="$7"
+	tag="$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" \
+		| grep '"tag_name"' | head -n 1 \
+		| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || return 1
+	[ -n "$tag" ] || { err "$name: could not resolve the latest release of $repo"; return 1; }
+	ver="${tag#v}"
+	asset="${prefix}_${ver}_${os}_${arch}.tar.gz"
+	base="https://github.com/$repo/releases/download/$tag"
+	dir="$(mktemp -d)"
+	curl -fsSL -o "$dir/$asset" "$base/$asset" && curl -fsSL -o "$dir/checksums.txt" "$base/checksums.txt" \
+		|| { err "$name: download failed — skipped"; return 1; }
+	expected="$(awk -v f="$asset" '$2 == f {print $1}' "$dir/checksums.txt" | head -n 1)"
+	[ -n "$expected" ] && [ "$expected" = "$(sha256_of "$dir/$asset")" ] \
+		|| { err "$name: checksum mismatch for $asset — skipped"; return 1; }
+	tar -xzf "$dir/$asset" -C "$dir" || return 1
+	for b in $binaries; do
+		[ -f "$dir/$b" ] || continue
+		install -m 0755 "$dir/$b" "$INSTALL_DIR/$b" 2>/dev/null \
+			|| { cp "$dir/$b" "$INSTALL_DIR/$b" && chmod 0755 "$INSTALL_DIR/$b"; } || return 1
+	done
+	for l in $links; do
+		[ -f "$INSTALL_DIR/${l%%:*}" ] && ln -sf "${l%%:*}" "$INSTALL_DIR/${l#*:}"
+	done
+	rm -rf "$dir"
+	err "installed $name $tag"
+}
+
+# install_extras runs by default on a real install. A mirror or test install
+# (SPACEDOCK_INSTALL_FROM set) skips it unless SPACEDOCK_EXTRAS asks for it;
+# SPACEDOCK_EXTRAS=none skips it everywhere.
+install_extras() {
+	want="${SPACEDOCK_EXTRAS:-}"
+	[ "$want" = none ] && return 0
+	[ -n "${SPACEDOCK_INSTALL_FROM:-}" ] && [ -z "$want" ] && return 0
+	echo "$EXTRAS" | while IFS='|' read -r name repo prefix binaries links; do
+		install_extra "$name" "$repo" "$prefix" "$binaries" "$links" "$1" "$2" \
+			|| err "$name failed to install; spacedock works without it"
+	done
+}
+
 main() {
 	validate_channel
 	need uname
@@ -228,6 +276,8 @@ main() {
 		*":$INSTALL_DIR:"*) ;;
 		*) err "note: $INSTALL_DIR is not on PATH; add it to run 'spacedock' directly" ;;
 	esac
+
+	install_extras "$os" "$arch"
 }
 
 main "$@"
