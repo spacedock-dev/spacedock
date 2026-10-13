@@ -178,7 +178,7 @@ The extensions Spacedock installs today, and what each adds to the rules above.
 | name | repo | prefix | programs | links | kind |
 |---|---|---|---|---|---|
 | subspace | `spacedock-dev/subspace` | `subspace` | `subspace-tui subspace-relay-client` | `subspace-tui:spacedock-review` | `bin` |
-| cargento | `spacedock-dev/cargento` | `cargento` | `cargento/bin/cargento` | `cargento:spacedock-compass` | `tree` |
+| compass | `spacedock-dev/compass` | `compass` | `compass/compass` | `compass:spacedock-compass` | `tree` |
 
 ### Plugins
 
@@ -224,8 +224,9 @@ then publish the new names.
 
 ## Open in v0
 
-- Cargento publishes no release archives yet; its first is the release after
-  `bin/cargento` lands.
+- Compass publishes no release archives yet; its first is the release after
+  its standalone binary lands. Each archive unpacks to one `compass/` directory
+  holding the `compass` program and the Python it carries, so it needs no runtime.
 - A Homebrew formula pattern for an extension that needs a runtime such as Python.
 - Review refusing to upload when the project's recorded review choice is not Web, in
   the uploader itself; today only the Review skills enforce it.
