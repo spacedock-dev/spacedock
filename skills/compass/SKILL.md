@@ -1,6 +1,6 @@
 ---
 name: compass
-description: "Open Spacedock Compass, the local dashboard of what your coding-agent sessions are doing: sessions, subagents, progress and drift. Use when the user wants to see, monitor or check on agent sessions, or asks to open Compass or Cargento."
+description: "Open Spacedock Compass, the local dashboard of what your coding-agent sessions are doing: sessions, subagents, progress and drift. Use when the user wants to see, monitor or check on agent sessions, or asks to open Compass."
 ---
 
 # Open Compass
@@ -31,6 +31,5 @@ and uploads nothing.
 
 4. Give the user http://127.0.0.1:4553/.
 
-If `spacedock compass` says it needs Python 3.11 or newer, pass that line on as
-written: the user needs a newer `python3`, or `CARGENTO_PYTHON` pointing at one.
+Compass carries its own Python, so nothing else needs installing.
 To stop the dashboard: `spacedock compass --port 4553 --stop`.
