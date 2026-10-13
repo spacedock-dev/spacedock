@@ -139,7 +139,7 @@ asset_name() {
 # docs/specs/extension-install-contract.md defines its rows. SPACEDOCK_EXTRAS_FROM=<dir>
 # reads an extension's archive and checksums.txt from that directory first.
 EXTRAS='subspace|spacedock-dev/subspace|subspace|subspace-tui subspace-relay-client|subspace-tui:spacedock-review|bin
-cargento|spacedock-dev/cargento|cargento|cargento/bin/cargento|cargento:spacedock-compass|tree'
+compass|spacedock-dev/compass|compass|compass/compass|compass:spacedock-compass|tree'
 
 tree_version() {
 	tlink="$INSTALL_DIR/$(basename "$1")"
