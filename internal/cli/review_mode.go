@@ -61,6 +61,20 @@ func readReviewSetting(env []string, dir string) (reviewSetting, string, error) 
 	return setting, path, nil
 }
 
+// reviewChoiceCheck is the review choice's row in the doctor version table. A choice
+// that cannot be read is a problem, because the review skill stops on it.
+func reviewChoiceCheck(in versionInputs) ([]pieceRow, []string) {
+	setting, path, err := readReviewSetting(in.env, in.dir)
+	switch {
+	case err != nil:
+		return []pieceRow{{"review choice", "unreadable", path}},
+			[]string{"UNREADABLE: the review choice for this directory. Run `spacedock review-mode clear` to be asked again."}
+	case setting.Mode == "":
+		return []pieceRow{{"review choice", "not chosen", "for " + setting.Project}}, nil
+	}
+	return []pieceRow{{"review choice", setting.Mode, "chosen " + setting.DecidedAt + " for " + setting.Project}}, nil
+}
+
 func newReviewModeCommand(env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
 		Use:                "review-mode get [--json] | set local|remote | clear",
