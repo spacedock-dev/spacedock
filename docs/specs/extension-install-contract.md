@@ -90,7 +90,7 @@ hello|spacedock-dev/hello|hello|hello-tui hello-client|hello-tui:spacedock-hello
 
 The Go table `extensions` in `internal/cli` names the same extensions, so that
 `spacedock doctor` and `spacedock update` can read them. The two tables must agree.
-Both are empty until a product adds its row.
+The rows for the extensions Spacedock installs today are under "The first extensions".
 
 A failed extra (unresolvable release, failed download, checksum mismatch) is
 reported and skipped; Spacedock's own install still succeeds.
@@ -220,6 +220,7 @@ The file holds `project`, `mode` (`local` or `remote`) and `decided_at` (RFC 333
 `/spacedock:review` asks the user when no mode is recorded and records only their
 answer. The uploader that sends artifacts to the relay should refuse when the mode
 is not `remote`; today the skills enforce it.
+`spacedock doctor` shows the choice as a row and names an unreadable one `UNREADABLE`.
 
 ## Release asset names
 

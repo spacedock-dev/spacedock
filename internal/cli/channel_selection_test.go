@@ -64,6 +64,10 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "marketplace", "update", tc.wantMarketplace}, tolerateExit: true},
 				{argv: []string{"plugin", "install", tc.wantID}},
+				{argv: []string{"plugin", "install", "subspace@" + tc.wantMarketplace}, tolerateExit: true},
+				{argv: []string{"plugin", "update", "subspace@" + tc.wantMarketplace}, tolerateExit: true, reportExit: true},
+				{argv: []string{"plugin", "install", "compass@" + tc.wantMarketplace}, tolerateExit: true},
+				{argv: []string{"plugin", "update", "compass@" + tc.wantMarketplace}, tolerateExit: true, reportExit: true},
 			}
 			got := installArgvSequence("spacedock-dev/marketplace", tc.devBranch)
 			if !reflect.DeepEqual(got, want) {
@@ -111,6 +115,8 @@ func TestCodexChannelInstallArgvSequence(t *testing.T) {
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "marketplace", "upgrade", tc.wantMarketplace}, tolerateExit: true},
 				{argv: []string{"plugin", "add", tc.wantID}},
+				{argv: []string{"plugin", "add", "subspace@" + tc.wantMarketplace}, tolerateExit: true},
+				{argv: []string{"plugin", "add", "compass@" + tc.wantMarketplace}, tolerateExit: true},
 			}
 			got := codexInstallArgvSequence("spacedock-dev/marketplace", tc.devBranch)
 			if !reflect.DeepEqual(got, want) {
