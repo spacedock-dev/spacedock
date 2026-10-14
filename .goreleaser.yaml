@@ -148,6 +148,7 @@ homebrew_casks:
     # rather than declare a dependency that would break the fresh-install path.
     dependencies:
       - cask: agentsview
+      - formula: spacedock-dev/tap/subspace-beta
     caveats: |
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
@@ -201,6 +202,7 @@ homebrew_casks:
     # install command.
     dependencies:
       - cask: agentsview
+      - formula: spacedock-dev/tap/subspace-beta
     caveats: |
       Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)

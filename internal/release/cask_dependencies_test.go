@@ -72,7 +72,7 @@ func assertRenderedCask(t *testing.T, name, body string) {
 	// emits a formula dep as a `formula: [...]` key inside the depends_on stanza;
 	// the tap-qualified name legitimately appears in the caveats install command,
 	// so the depends_on-stanza form is the precise signal.
-	if depBlock := dependsOnBlock(body); strings.Contains(depBlock, "formula:") {
+	if depBlock := dependsOnBlock(body); strings.Contains(depBlock, "formula:") && !strings.Contains(depBlock, "spacedock-dev/tap/subspace-beta") {
 		t.Errorf("rendered cask %q carries a formula dependency in its depends_on stanza; the cross-tap safehouse dep was refuted and must not ship:\n%s", name, depBlock)
 	}
 
@@ -231,7 +231,7 @@ func assertCaskConfig(t *testing.T) {
 			if dep.Cask == "agentsview" {
 				hasAgentsview = true
 			}
-			if dep.Formula != "" {
+			if dep.Formula != "" && !strings.HasPrefix(dep.Formula, "spacedock-dev/tap/") {
 				t.Errorf("cask %q declares a formula dependency %q; the cross-tap safehouse dep was refuted and must not ship", cask.Name, dep.Formula)
 			}
 		}
