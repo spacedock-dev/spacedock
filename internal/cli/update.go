@@ -167,7 +167,7 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 		fmt.Fprintf(w, "  Homebrew owns spacedock and its extensions. Run: brew upgrade %s\n", formula)
 	} else {
 		row("spacedock")
-		for _, ext := range extensions {
+		for _, ext := range channelExtensions(devBranch) {
 			row(ext.name + " program")
 		}
 	}
@@ -176,7 +176,7 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 		fmt.Fprintln(w, "  claude is not on PATH, so the plugins were skipped. Run: spacedock install --host claude")
 	} else {
 		row("spacedock plugin")
-		for _, ext := range extensions {
+		for _, ext := range channelExtensions(devBranch) {
 			row(ext.name + " plugin")
 		}
 	}
@@ -187,7 +187,7 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 		}
 	}
 	fmt.Fprintln(w, "\nOpen Claude Code sessions keep the old plugins until you restart them or run /reload-plugins.")
-	for _, ext := range extensions {
+	for _, ext := range channelExtensions(devBranch) {
 		if before.version(ext.name+" program") != after.version(ext.name+" program") {
 			for _, line := range ext.afterUpdate {
 				fmt.Fprintln(w, line)

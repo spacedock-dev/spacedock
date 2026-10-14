@@ -95,18 +95,24 @@ Both are empty until a product adds its row.
 A failed extra (unresolvable release, failed download, checksum mismatch) is
 reported and skipped; Spacedock's own install still succeeds.
 
-On Homebrew, the `spacedock` cask depends on each extension's formula in
-`spacedock-dev/tap`. The formula provides the same `spacedock-NAME` name. Formulas
-from other taps are refused, because Homebrew does not load them as a transitive
-dependency on a fresh install.
+The edge channel installs the extensions. The stable channel installs none, because
+no stable marketplace pin matches a stable release yet. `SPACEDOCK_EXTRAS=1` makes
+stable install their programs. Stable `spacedock install`, `doctor` and `update`
+ignore the table, so on stable they install, expect and update no extension plugin.
+
+On Homebrew, the edge cask `spacedock@next` depends on each extension's formula in
+`spacedock-dev/tap`, and the stable cask depends on none. The formula provides the
+same `spacedock-NAME` name. Formulas from other taps are refused, because Homebrew
+does not load them as a transitive dependency on a fresh install.
 
 ## Plugins
 
-When Spacedock installs its own plugin, it also installs `NAME@CHANNEL` for each
-extension from the same marketplace (`spacedock-dev/marketplace`). Each companion
-install may fail without failing Spacedock's. Claude Code does nothing when you
-install a plugin that is already installed, so Spacedock runs `plugin update` after
-each companion install. A companion that fails both steps is named in the output.
+On the edge channel, when Spacedock installs its own plugin, it also installs
+`NAME@CHANNEL` for each extension from the same marketplace
+(`spacedock-dev/marketplace`). Each companion install may fail without failing
+Spacedock's. Claude Code does nothing when you install a plugin that is already
+installed, so Spacedock runs `plugin update` after each companion install. A
+companion that fails both steps is named in the output.
 
 The marketplace on each channel must list every extension's plugin.
 Without its entry, the companion install fails.

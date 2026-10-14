@@ -135,16 +135,9 @@ asset_name() {
 	fi
 }
 
-# EXTRAS is the table of extensions installed beside spacedock, one row each:
-#   name|repo|archive prefix|programs|links (program:extra-name)|kind
-# kind `bin` copies each program into the install dir; kind `tree` unpacks the
-# archive under ${XDG_DATA_HOME:-~/.local/share}/<name>/<version> and links each
-# program path from there. Each extra comes from its own repo's release on the
-# same channel as spacedock (stable: the latest release; edge: the newest,
-# prereleases included), verified the same way as spacedock; SPACEDOCK_EXTRAS_FROM=<dir>
-# reads a matching archive and checksums.txt from that directory first. A
-# program an archive does not carry is skipped. A failed extra is reported and
-# never fails the install.
+# EXTRAS is the table of extensions installed beside spacedock. The contract
+# docs/specs/extension-install-contract.md defines its rows. SPACEDOCK_EXTRAS_FROM=<dir>
+# reads an extension's archive and checksums.txt from that directory first.
 EXTRAS=''
 
 tree_version() {
@@ -157,8 +150,6 @@ tree_version() {
 	esac
 }
 
-# installed_version prints the version that every program and link of an extra agrees
-# on, or nothing: a missing program or link, or a different version, forces a reinstall.
 installed_version() {
 	iver=""
 	for iprog in $2; do
@@ -247,18 +238,21 @@ install_plugins() {
 	fi
 }
 
-# install_extras runs by default on a real install. A mirror or test install
-# (SPACEDOCK_INSTALL_FROM set) skips it unless SPACEDOCK_EXTRAS asks for it;
-# SPACEDOCK_EXTRAS=none skips it everywhere.
+# install_extras installs the extensions on edge, and on stable only when
+# SPACEDOCK_EXTRAS asks: no stable marketplace pin matches a stable release yet.
+# SPACEDOCK_EXTRAS=none skips them on either channel, and a mirror install
+# (SPACEDOCK_INSTALL_FROM) skips them unless asked.
 install_extras() {
 	want="${SPACEDOCK_EXTRAS:-}"
 	[ "$want" = none ] && return 0
 	[ -n "${SPACEDOCK_INSTALL_FROM:-}" ] && [ -z "$want" ] && return 0
-	printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
-		[ -n "$name" ] || continue
-		install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \
-			|| err "$name failed to install; spacedock works without it"
-	done
+	if [ -n "$want" ] || [ "$CHANNEL" = edge ]; then
+		printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
+			[ -n "$name" ] || continue
+			install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \
+				|| err "$name failed to install; spacedock works without it"
+		done
+	fi
 	install_plugins
 }
 

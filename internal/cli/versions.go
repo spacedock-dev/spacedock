@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
 // extension is one row of the extension table. program is the `spacedock-NAME` link on
@@ -29,6 +31,16 @@ type extension struct {
 // EXTRAS rows, and the two must name the same programs.
 var extensions = []extension{}
 
+// channelExtensions is the table as this channel applies it. Stable installs no
+// extension unless SPACEDOCK_EXTRAS asks, so stable neither expects, updates nor
+// installs their plugins.
+func channelExtensions(devBranch string) []extension {
+	if devBranch == "main" {
+		return nil
+	}
+	return extensions
+}
+
 const notInstalled = "not installed"
 
 type pieceRow struct{ label, version, where string }
@@ -38,6 +50,7 @@ type versionReport struct {
 	rows                   []pieceRow
 	problems               []string
 	needsUpdate, extraCopy bool
+	pluginsBehind          []string
 }
 
 type versionInputs struct {
@@ -81,7 +94,7 @@ func collectVersions(in versionInputs) versionReport {
 	spacedockID := channelPluginID(devBranch)
 	add("spacedock plugin", pluginVersion(spacedockID), spacedockID)
 
-	for _, ext := range extensions {
+	for _, ext := range channelExtensions(devBranch) {
 		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
 		add(ext.name+" program", programVersion, programPath)
 		id := ext.name + "@" + channelMarketplace(devBranch)
@@ -97,11 +110,15 @@ func collectVersions(in versionInputs) versionReport {
 			report.needsUpdate = true
 		case programVersion != "unknown" && pluginVer != "unknown" && programVersion != pluginVer:
 			problem("MIXED: the %s program %s does not match its plugin %s.", ext.name, programVersion, pluginVer)
-			report.needsUpdate = true
+			if cmp, err := release.ComparePreVersion(programVersion, pluginVer); err == nil && cmp > 0 {
+				report.pluginsBehind = append(report.pluginsBehind, ext.name)
+			} else {
+				report.needsUpdate = true
+			}
 		}
 	}
 
-	for _, ext := range extensions {
+	for _, ext := range channelExtensions(devBranch) {
 		if ext.check == nil {
 			continue
 		}
@@ -144,6 +161,10 @@ func printVersionReport(w io.Writer, report versionReport) {
 	fmt.Fprintf(w, "\nProblems found: %d.", len(report.problems))
 	if report.needsUpdate {
 		fmt.Fprint(w, " Run `spacedock update` to bring every program and plugin to the same release.")
+	}
+	if len(report.pluginsBehind) > 0 {
+		fmt.Fprintf(w, " The %s plugin waits on the %s marketplace. Run `spacedock update` after it is bumped.",
+			strings.Join(report.pluginsBehind, " and "), report.channel)
 	}
 	if report.extraCopy {
 		fmt.Fprint(w, " Remove the copies of spacedock that you do not want to run.")

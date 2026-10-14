@@ -27,10 +27,10 @@ func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
 		t.Errorf("claude companion steps = %v, want %v", got, wantClaude)
 	}
 
-	codex := codexInstallArgvSequence("spacedock-dev/marketplace", "main")
+	codex := codexInstallArgvSequence("spacedock-dev/marketplace", "next")
 	wantCodex := []installStep{
-		{argv: []string{"plugin", "add", "alpha@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "add", "beta@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "add", "alpha@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "add", "beta@spacedock-edge"}, tolerateExit: true},
 	}
 	if got := codex[len(codex)-2:]; !reflect.DeepEqual(got, wantCodex) {
 		t.Errorf("codex companion steps = %v, want %v", got, wantCodex)
@@ -68,5 +68,23 @@ func TestInstallNamesAnExtensionPluginThatCannotBeUpdated(t *testing.T) {
 	}
 	if strings.Contains(out, "alpha@spacedock-edge failed") {
 		t.Errorf("output blames alpha, which updated fine\nout=%q", out)
+	}
+}
+
+func TestInstallSequencesNameNoCompanionOnStable(t *testing.T) {
+	saved := extensions
+	extensions = fakeExtensions()
+	defer func() { extensions = saved }()
+
+	sequences := map[string][]installStep{
+		"claude": installArgvSequence("spacedock-dev/marketplace", "main"),
+		"codex":  codexInstallArgvSequence("spacedock-dev/marketplace", "main"),
+	}
+	for host, steps := range sequences {
+		for _, step := range steps {
+			if strings.Contains(strings.Join(step.argv, " "), "alpha") || strings.Contains(strings.Join(step.argv, " "), "beta") {
+				t.Errorf("%s sequence on stable installs an extension plugin: %v", host, step.argv)
+			}
+		}
 	}
 }

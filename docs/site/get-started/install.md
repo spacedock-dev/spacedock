@@ -43,6 +43,10 @@ Pi. Install one of those first.
     equivalent; casks are macOS-only, so on Linux this script is the only
     edge path.
 
+    The edge script also installs each Spacedock extension beside the binary;
+    the stable script installs none. Set `SPACEDOCK_EXTRAS=1` on stable to add
+    them.
+
 ## Update
 
 Run `spacedock update`. A Homebrew install prints the `brew upgrade` command.

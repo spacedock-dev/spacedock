@@ -152,3 +152,21 @@ func TestUpdateFailsWhenThePluginStepLeavesNoSpacedockPlugin(t *testing.T) {
 		t.Errorf("stderr = %q, want it to name the missing plugin", stderr.String())
 	}
 }
+
+func TestUpdateOnStableListsNoExtension(t *testing.T) {
+	s := stageInstall(t)
+	devBranch = "main"
+	s.host.inventory[0].ID = "spacedock@spacedock"
+	script := filepath.Join(t.TempDir(), "install.sh")
+	mustWrite(t, script, "#!/bin/sh\n:\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, s.host, script), &stdout, &stderr); code != 0 {
+		t.Fatalf("update exited %d: %s", code, stderr.String())
+	}
+	for _, label := range []string{"alpha program", "beta plugin"} {
+		if strings.Contains(stdout.String(), label) {
+			t.Errorf("stable update prints %q:\n%s", label, stdout.String())
+		}
+	}
+}

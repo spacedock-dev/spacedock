@@ -499,13 +499,12 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 	return steps
 }
 
-// companionPluginIDs are the plugins installed beside Spacedock from the same
-// channel marketplace, one per extension. Each step is tolerated: a missing companion
-// never fails the Spacedock install. Claude's `plugin install` does nothing for an
-// installed plugin, so the claude sequence follows it with a named `plugin update`.
+// companionPluginIDs are the plugins installed beside Spacedock, one per extension.
+// Claude's `plugin install` does nothing for an installed plugin, so the claude
+// sequence follows it with `plugin update`.
 func companionPluginIDs(devBranch string) []string {
 	var ids []string
-	for _, ext := range extensions {
+	for _, ext := range channelExtensions(devBranch) {
 		ids = append(ids, ext.name+"@"+channelMarketplace(devBranch))
 	}
 	return ids

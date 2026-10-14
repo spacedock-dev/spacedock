@@ -37,7 +37,6 @@ func fakeExtensions() []extension {
 	}
 }
 
-// alphaChoiceCheck reads the one-word choice file alpha keeps in the project directory.
 func alphaChoiceCheck(in versionInputs) ([]pieceRow, []string) {
 	path := filepath.Join(in.dir, "alpha.choice")
 	data, err := os.ReadFile(path)
@@ -179,5 +178,49 @@ func TestVersionReportCopiesNamePathVersionAndTheOneThatRuns(t *testing.T) {
 		if !strings.Contains(out.String(), want) {
 			t.Errorf("report lacks %q:\n%s", want, out.String())
 		}
+	}
+}
+
+func TestVersionReportRemedyDependsOnWhichSideIsNewer(t *testing.T) {
+	cases := map[string]struct {
+		alphaVersion string
+		want, absent string
+	}{
+		"program newer: the plugin waits on the marketplace": {"0.16.0-beta.3",
+			"The alpha plugin waits on the edge marketplace. Run `spacedock update` after it is bumped.",
+			"to bring every program and plugin"},
+		"program older: update fixes it": {"0.16.0-beta.1",
+			"Run `spacedock update` to bring every program and plugin to the same release.",
+			"waits on"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			s := stageInstall(t)
+			writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), tc.alphaVersion)
+			var out bytes.Buffer
+			printVersionReport(&out, s.report())
+			if !strings.Contains(out.String(), tc.want) {
+				t.Errorf("report lacks %q:\n%s", tc.want, out.String())
+			}
+			if strings.Contains(out.String(), tc.absent) {
+				t.Errorf("report contains %q:\n%s", tc.absent, out.String())
+			}
+		})
+	}
+}
+
+func TestVersionReportExpectsNoExtensionOnStable(t *testing.T) {
+	s := stageInstall(t)
+	devBranch = "main"
+	os.Remove(filepath.Join(s.first, "spacedock-alpha"))
+	os.Remove(filepath.Join(s.first, "spacedock-beta"))
+	s.host.inventory = s.host.inventory[:1]
+
+	report := s.report()
+	if len(report.problems) != 0 {
+		t.Errorf("stable named a problem for extensions it does not install: %q", report.problems)
+	}
+	if got := report.version("alpha program"); got != "" {
+		t.Errorf("stable lists the alpha program (%q)", got)
 	}
 }

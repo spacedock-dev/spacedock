@@ -127,13 +127,16 @@ func (r *extrasRun) addProgram(name, body string) string {
 
 func (r *extrasRun) run() (stderr string, code int) {
 	r.t.Helper()
+	return r.runWith("SPACEDOCK_INSTALL_FROM="+r.dist, "SPACEDOCK_EXTRAS=1", "SPACEDOCK_EXTRAS_FROM="+r.extras)
+}
+
+func (r *extrasRun) runWith(env ...string) (stderr string, code int) {
+	r.t.Helper()
 	cmd := exec.Command("sh", scriptWithExtras(r.t, fakeExtrasRows))
-	cmd.Env = []string{
+	cmd.Env = append([]string{
 		"PATH=" + strings.Join(append(append([]string{}, r.pathDir...), "/usr/bin", "/bin"), ":"),
-		"HOME=" + r.home, "XDG_DATA_HOME=" + r.data,
-		"SPACEDOCK_INSTALL_DIR=" + r.bin, "SPACEDOCK_INSTALL_FROM=" + r.dist,
-		"SPACEDOCK_EXTRAS=1", "SPACEDOCK_EXTRAS_FROM=" + r.extras,
-	}
+		"HOME=" + r.home, "XDG_DATA_HOME=" + r.data, "SPACEDOCK_INSTALL_DIR=" + r.bin,
+	}, env...)
 	var errOut strings.Builder
 	cmd.Stderr = &errOut
 	err := cmd.Run()
@@ -295,5 +298,80 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 	}
 	if entries, _ := os.ReadDir(r.data); len(entries) != 0 {
 		t.Errorf("an empty table wrote under the data directory: %v", entries)
+	}
+}
+
+// stubCurl serves install.sh's release lookups and downloads from the staged
+// directories and logs every URL, so a run without SPACEDOCK_INSTALL_FROM stays offline.
+func (r *extrasRun) stubCurl(osName, arch string) (log string) {
+	r.t.Helper()
+	log = filepath.Join(r.t.TempDir(), "urls.log")
+	stable := filepath.Join(r.dist, "spacedock_9.9.9_"+osName+"_"+arch+".tar.gz")
+	src, err := os.ReadFile(stable)
+	if err != nil {
+		r.t.Fatal(err)
+	}
+	if err := os.WriteFile(strings.TrimSuffix(stable, ".tar.gz")+"_edge.tar.gz", src, 0o644); err != nil {
+		r.t.Fatal(err)
+	}
+	r.writeChecksums(r.dist)
+	body := `#!/bin/sh
+out=""; url=""
+while [ $# -gt 0 ]; do
+	case "$1" in -o) out="$2"; shift ;; -*) ;; *) url="$1" ;; esac
+	shift
+done
+echo "$url" >> '` + log + `'
+repo="${url#https://api.github.com/repos/}"; repo="${repo#https://github.com/}"; repo="${repo%%/releases*}"
+case "$url" in
+	https://api.github.com/*)
+		case "$repo" in
+			spacedock-dev/spacedock) tag=v9.9.9 ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
+		esac
+		printf '{"tag_name": "%s"}\n' "$tag" ;;
+	https://github.com/*/releases/download/*)
+		dir='` + r.extras + `'; [ "$repo" = spacedock-dev/spacedock ] && dir='` + r.dist + `'
+		cp "$dir/${url##*/}" "$out" ;;
+	*) exit 22 ;;
+esac
+`
+	dir := r.addProgram("curl", "")
+	if err := os.WriteFile(filepath.Join(dir, "curl"), []byte(body), 0o755); err != nil {
+		r.t.Fatal(err)
+	}
+	return log
+}
+
+func TestInstallExtrasFollowTheChannel(t *testing.T) {
+	cases := []struct {
+		name      string
+		env       []string
+		extension bool
+	}{
+		{"stable installs none", []string{"SPACEDOCK_CHANNEL=stable"}, false},
+		{"stable installs them when asked", []string{"SPACEDOCK_CHANNEL=stable", "SPACEDOCK_EXTRAS=1"}, true},
+		{"edge installs them", []string{"SPACEDOCK_CHANNEL=edge"}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newExtrasRun(t, "1.0.1")
+			osName, arch := goosArch(t)
+			log := r.stubCurl(osName, arch)
+
+			stderr, code := r.runWith(tc.env...)
+			if code != 0 {
+				t.Fatalf("install.sh exited %d", code)
+			}
+			urls, _ := os.ReadFile(log)
+			if !strings.Contains(stderr, "installed spacedock") {
+				t.Errorf("spacedock itself was not installed:\n%s", stderr)
+			}
+			_, linkErr := os.Stat(filepath.Join(r.bin, "spacedock-alpha"))
+			asked := strings.Contains(string(urls), "repos/spacedock-dev/alpha/")
+			if tc.extension != (linkErr == nil) || tc.extension != asked {
+				t.Errorf("extension wanted=%v, but spacedock-alpha linked=%v and its release asked=%v\nurls:\n%s\nstderr:\n%s",
+					tc.extension, linkErr == nil, asked, urls, stderr)
+			}
+		})
 	}
 }
