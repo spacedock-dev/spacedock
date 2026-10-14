@@ -173,6 +173,16 @@ there.
 
 The extensions Spacedock installs today, and what each adds to the rules above.
 
+### Hand-offs
+
+Each skill checks its row with `--supports` before it hands off, as the Compatibility
+section says.
+
+| Hand-off | Program | Capability |
+|---|---|---|
+| `/spacedock:review`, local | `spacedock-review` | `review-invocation-prepare-v1` |
+| `/spacedock:review`, remote | `subspace-relay-client` | `relay-publish-v1` |
+
 ### The review choice
 
 `spacedock review-mode set local|remote` records how a project's artifacts are
