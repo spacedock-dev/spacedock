@@ -185,7 +185,12 @@ The extensions Spacedock installs today, and what each adds to the rules above.
 | Extension | Plugin |
 |---|---|
 | subspace | `subspace@CHANNEL` |
-| cargento | `cargento@CHANNEL` |
+| compass | `compass@CHANNEL` |
+
+### Tree reference
+
+Compass v1.0.0 is the reference for kind `tree`: `compass/compass` beside the
+`compass/_internal/` files it runs with.
 
 ### Hand-offs
 
@@ -224,9 +229,6 @@ then publish the new names.
 
 ## Open in v0
 
-- Compass publishes no release archives yet; its first is the release after
-  its standalone binary lands. Each archive unpacks to one `compass/` directory
-  holding the `compass` program and the Python it carries, so it needs no runtime.
 - A Homebrew formula pattern for an extension that needs a runtime such as Python.
 - Review refusing to upload when the project's recorded review choice is not Web, in
   the uploader itself; today only the Review skills enforce it.
