@@ -355,6 +355,7 @@ func TestInstallExtrasFollowTheChannel(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := newExtrasRun(t, "1.0.1")
+			r.addProgram("claude", "exit 0")
 			osName, arch := goosArch(t)
 			log := r.stubCurl(osName, arch)
 
@@ -371,6 +372,10 @@ func TestInstallExtrasFollowTheChannel(t *testing.T) {
 			if tc.extension != (linkErr == nil) || tc.extension != asked {
 				t.Errorf("extension wanted=%v, but spacedock-alpha linked=%v and its release asked=%v\nurls:\n%s\nstderr:\n%s",
 					tc.extension, linkErr == nil, asked, urls, stderr)
+			}
+			pluginStep := strings.Contains(r.calls(), "install --host claude")
+			if tc.extension != pluginStep || (!tc.extension && strings.Contains(stderr, "Claude Code")) {
+				t.Errorf("plugin step wanted=%v, but it ran=%v\ncalls:\n%s\nstderr:\n%s", tc.extension, pluginStep, r.calls(), stderr)
 			}
 		})
 	}

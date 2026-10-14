@@ -99,6 +99,8 @@ The edge channel installs the extensions. The stable channel installs none, beca
 no stable marketplace pin matches a stable release yet. `SPACEDOCK_EXTRAS=1` makes
 stable install their programs. Stable `spacedock install`, `doctor` and `update`
 ignore the table, so on stable they install, expect and update no extension plugin.
+`install.sh` runs the Claude Code plugin step only when it installs extensions:
+a plain stable run neither adds a marketplace nor a plugin to Claude's settings.
 
 On Homebrew, the edge cask `spacedock@next` depends on each extension's formula in
 `spacedock-dev/tap`, and the stable cask depends on none. The formula provides the

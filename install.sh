@@ -238,21 +238,21 @@ install_plugins() {
 	fi
 }
 
-# install_extras installs the extensions on edge, and on stable only when
-# SPACEDOCK_EXTRAS asks: no stable marketplace pin matches a stable release yet.
+# install_extras installs the extensions and the Claude Code plugins on edge, and
+# on stable only when SPACEDOCK_EXTRAS asks: no stable marketplace pin matches a
+# stable release yet, and a plain stable run must leave Claude's settings alone.
 # SPACEDOCK_EXTRAS=none skips them on either channel, and a mirror install
 # (SPACEDOCK_INSTALL_FROM) skips them unless asked.
 install_extras() {
 	want="${SPACEDOCK_EXTRAS:-}"
 	[ "$want" = none ] && return 0
 	[ -n "${SPACEDOCK_INSTALL_FROM:-}" ] && [ -z "$want" ] && return 0
-	if [ -n "$want" ] || [ "$CHANNEL" = edge ]; then
-		printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
-			[ -n "$name" ] || continue
-			install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \
-				|| err "$name failed to install; spacedock works without it"
-		done
-	fi
+	[ -n "$want" ] || [ "$CHANNEL" = edge ] || return 0
+	printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
+		[ -n "$name" ] || continue
+		install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \
+			|| err "$name failed to install; spacedock works without it"
+	done
 	install_plugins
 }
 
