@@ -44,12 +44,14 @@ Pi. Install one of those first.
     edge path.
 
     The edge script also installs each Spacedock extension beside the binary;
-    the stable script installs none. Set `SPACEDOCK_EXTRAS=1` on stable to add
-    them.
+    the stable script installs none. Edge only until a stable release carries
+    it: `SPACEDOCK_EXTRAS=1` on stable adds the programs, but the stable
+    `spacedock` has no command to run them.
 
 ## Update
 
-Run `spacedock update`. A Homebrew install prints the `brew upgrade` command.
+Edge only until a stable release carries it: run `spacedock update`. A Homebrew
+install prints the `brew upgrade` command.
 
 ## Launch
 
