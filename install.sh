@@ -138,7 +138,8 @@ asset_name() {
 	fi
 }
 
-EXTRAS='subspace|spacedock-dev/subspace|subspace|subspace-tui subspace-relay-client|subspace-tui:spacedock-review|bin'
+EXTRAS='subspace|spacedock-dev/subspace|subspace|subspace-tui subspace-relay-client|subspace-tui:spacedock-review|bin
+cargento|spacedock-dev/cargento|cargento|cargento/bin/cargento|cargento:spacedock-compass|tree'
 
 tree_version() {
 	tlink="$INSTALL_DIR/$(basename "$1")"

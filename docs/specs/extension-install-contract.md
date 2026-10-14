@@ -178,12 +178,14 @@ The extensions Spacedock installs today, and what each adds to the rules above.
 | name | repo | prefix | programs | links | kind |
 |---|---|---|---|---|---|
 | subspace | `spacedock-dev/subspace` | `subspace` | `subspace-tui subspace-relay-client` | `subspace-tui:spacedock-review` | `bin` |
+| cargento | `spacedock-dev/cargento` | `cargento` | `cargento/bin/cargento` | `cargento:spacedock-compass` | `tree` |
 
 ### Plugins
 
 | Extension | Plugin |
 |---|---|
 | subspace | `subspace@CHANNEL` |
+| cargento | `cargento@CHANNEL` |
 
 ### Hand-offs
 
@@ -194,6 +196,7 @@ section says.
 |---|---|---|
 | `/spacedock:review`, local | `spacedock-review` | `review-invocation-prepare-v1` |
 | `/spacedock:review`, remote | `subspace-relay-client` | `relay-publish-v1` |
+| `/spacedock:compass` | `spacedock-compass` | none: checks that the program is on PATH |
 
 ### The review choice
 
@@ -221,6 +224,8 @@ then publish the new names.
 
 ## Open in v0
 
+- Cargento publishes no release archives yet; its first is the release after
+  `bin/cargento` lands.
 - A Homebrew formula pattern for an extension that needs a runtime such as Python.
 - Review refusing to upload when the project's recorded review choice is not Web, in
   the uploader itself; today only the Review skills enforce it.
