@@ -67,6 +67,13 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 // command tree captures env/dir/stdin/stdout/stderr/runner in its RunE closures.
 func run(ctx context.Context, args []string, env []string, dir string, stdin io.Reader, stdout io.Writer, stderr io.Writer, runner status.Runner, dispatchProbe claudeteam.TeamStateProbe) int {
 	root := newRootCommand(ctx, args, env, dir, stdin, stdout, stderr, runner, dispatchProbe)
+	if argv := extensionArgv(root, args, exec.LookPath); argv != nil {
+		code, err := execHost{}.Launch(argv, env)
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock %s: %v\n", args[0], err)
+		}
+		return code
+	}
 	root.SetArgs(args)
 	if err := root.Execute(); err != nil {
 		return exitCodeFor(err)
@@ -160,8 +167,9 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newClaudeCommand(ctx, env, dir, stdout, stderr),
 		newCodexCommand(ctx, env, dir, stdout, stderr),
 		newPiCommand(ctx, env, dir, stdout, stderr),
-		newInstallCommand(ctx, env, stdout, stderr),
-		newDoctorCommand(ctx, env, stdout, stderr),
+		newInstallCommand(ctx, env, dir, stdout, stderr),
+		newDoctorCommand(ctx, env, dir, stdout, stderr),
+		newUpdateCommand(ctx, env, dir, stdout, stderr),
 		newStatusCommand(ctx, env, dir, stdin, stdout, stderr, runner),
 		newNewCommand(ctx, env, dir, stdin, stdout, stderr, runner),
 		newStateCommand(ctx, env, dir, stdout, stderr),
@@ -500,7 +508,7 @@ func newPiCommand(ctx context.Context, env []string, dir string, stdout, stderr 
 // emit the documented codex add prose. DisableFlagParsing keeps the post-subcommand
 // argv verbatim for the existing hand-parsed runInit (so `--host`/`--check` parse
 // exactly as before); `-h`/`--help` is intercepted here.
-func newInstallCommand(ctx context.Context, env []string, stdout, stderr io.Writer) *cobra.Command {
+func newInstallCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                "install [--host claude|codex|pi] [--check]",
 		Short:              "Install the Spacedock plugin for a host, then check it",
@@ -512,7 +520,11 @@ func newInstallCommand(ctx context.Context, env []string, stdout, stderr io.Writ
 			}
 			applyDevBranchOverride(env)
 			applyMarketplaceSourceOverride(env)
-			if code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
+			code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr)
+			if code == 0 {
+				reportClaudeVersions(args, env, dir, stdout)
+			}
+			if code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
@@ -532,7 +544,7 @@ Examples:
 
 // newDoctorCommand wires `spacedock doctor` with its existing hand-parsed
 // `--host`/`--plugin-manifest` handling preserved verbatim.
-func newDoctorCommand(ctx context.Context, env []string, stdout, stderr io.Writer) *cobra.Command {
+func newDoctorCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                "doctor [--host claude|codex|pi]",
 		Short:              "Check the installed plugin and this binary are compatible",
@@ -543,7 +555,9 @@ func newDoctorCommand(ctx context.Context, env []string, stdout, stderr io.Write
 				return cmd.Help()
 			}
 			applyDevBranchOverride(env)
-			if code := runDoctorWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
+			code := runDoctorWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr)
+			reportClaudeVersions(args, env, dir, stdout)
+			if code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
@@ -942,7 +956,7 @@ _spacedock() {
   local cur prev verbs status_flags
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  verbs="claude codex pi install doctor status new state merge completion dispatch --version --help"
+  verbs="claude codex pi install doctor update status new state merge completion dispatch --version --help"
   status_flags="--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root --page --limit"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$verbs" -- "$cur") )
@@ -963,7 +977,7 @@ const zshCompletion = `#compdef spacedock
 # spacedock zsh completion
 _spacedock() {
   local -a verbs status_flags
-  verbs=(claude codex pi install doctor status new state merge completion dispatch --version --help)
+  verbs=(claude codex pi install doctor update status new state merge completion dispatch --version --help)
   status_flags=(--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root --page --limit)
   if (( CURRENT == 2 )); then
     compadd -- $verbs

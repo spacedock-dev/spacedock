@@ -414,6 +414,7 @@ func (execHost) Launch(argv []string, env []string) (int, error) {
 type installStep struct {
 	argv         []string
 	tolerateExit bool
+	reportExit   bool
 }
 
 // retiredRouteAID is the retired route-A plugin id from round 1's collapse (the
@@ -440,7 +441,7 @@ const retiredRouteAID = "spacedock-edge@spacedock"
 // steps stay fail-fast, because they report a broken install.
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
-	return []installStep{
+	steps := []installStep{
 		{argv: []string{"plugin", "uninstall", id}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", retiredRouteAID}, tolerateExit: true},
@@ -448,6 +449,13 @@ func installArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
 	}
+	for _, companion := range companionPluginIDs(devBranch) {
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "install", companion}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "update", companion}, tolerateExit: true, reportExit: true},
+		)
+	}
+	return steps
 }
 
 // codexInstallArgvSequence is the codex analog of installArgvSequence: no step
@@ -477,7 +485,7 @@ func installArgvSequence(source, devBranch string) []installStep {
 // unconditionally re-clones content (probe 8) and stays fail-fast.
 func codexInstallArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
-	return []installStep{
+	steps := []installStep{
 		{argv: []string{"plugin", "remove", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", id}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", codexLocalPluginID}, tolerateExit: true},
@@ -485,6 +493,22 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
 	}
+	for _, companion := range companionPluginIDs(devBranch) {
+		steps = append(steps, installStep{argv: []string{"plugin", "add", companion}, tolerateExit: true})
+	}
+	return steps
+}
+
+// companionPluginIDs are the plugins installed beside Spacedock from the same
+// channel marketplace, one per extension. Each step is tolerated: a missing companion
+// never fails the Spacedock install. Claude's `plugin install` does nothing for an
+// installed plugin, so the claude sequence follows it with a named `plugin update`.
+func companionPluginIDs(devBranch string) []string {
+	var ids []string
+	for _, ext := range extensions {
+		ids = append(ids, ext.name+"@"+channelMarketplace(devBranch))
+	}
+	return ids
 }
 
 // codexPluginDirInstallArgvSequence is the `--plugin-dir` dev-install analog of
@@ -553,6 +577,9 @@ func runInstallSteps(host string, steps []installStep) (string, error) {
 		sb.Write(out)
 		if err != nil {
 			if step.tolerateExit {
+				if step.reportExit {
+					fmt.Fprintf(&sb, "spacedock install: %s %s failed: %v\n", host, strings.Join(step.argv, " "), err)
+				}
 				continue
 			}
 			return sb.String(), fmt.Errorf("%s %s: %w", host, strings.Join(step.argv, " "), err)

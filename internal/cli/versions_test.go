@@ -1,0 +1,183 @@
+package cli
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+type stagedInstall struct {
+	t        *testing.T
+	first    string
+	second   string
+	dataHome string
+	env      []string
+	project  string
+	host     *fakeHost
+}
+
+func writeProgram(t *testing.T, path, output string) {
+	t.Helper()
+	mustMkdir(t, filepath.Dir(path))
+	mustWrite(t, path, "#!/bin/sh\necho '"+output+"'\n")
+	if err := os.Chmod(path, 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// fakeExtensions is a bin extension with a check hook and a tree extension with an
+// update note, so the tests drive the mechanism without naming any product.
+func fakeExtensions() []extension {
+	return []extension{
+		{name: "alpha", program: "spacedock-alpha", check: alphaChoiceCheck},
+		{name: "beta", program: "spacedock-beta", tree: true,
+			afterUpdate: []string{"A running beta keeps its old version until you restart it:", "  spacedock beta --restart"}},
+	}
+}
+
+// alphaChoiceCheck reads the one-word choice file alpha keeps in the project directory.
+func alphaChoiceCheck(in versionInputs) ([]pieceRow, []string) {
+	path := filepath.Join(in.dir, "alpha.choice")
+	data, err := os.ReadFile(path)
+	switch {
+	case os.IsNotExist(err):
+		return []pieceRow{{"alpha choice", "not chosen", ""}}, nil
+	case err != nil || strings.TrimSpace(string(data)) == "bad":
+		return []pieceRow{{"alpha choice", "unreadable", path}}, []string{"UNREADABLE: the alpha choice for this directory."}
+	}
+	return []pieceRow{{"alpha choice", strings.TrimSpace(string(data)), path}}, nil
+}
+
+func stageInstall(t *testing.T) *stagedInstall {
+	return stageInstallWith(t, fakeExtensions())
+}
+
+// stageInstallWith installs a consistent set of extensions: a bin program that
+// reports 0.16.0-beta.2 and a tree program at 1.0.1, each with its plugin.
+func stageInstallWith(t *testing.T, table []extension) *stagedInstall {
+	t.Helper()
+	savedBranch, savedTable := devBranch, extensions
+	devBranch, extensions = "next", table
+	t.Cleanup(func() { devBranch, extensions = savedBranch, savedTable })
+
+	root := t.TempDir()
+	s := &stagedInstall{t: t, first: filepath.Join(root, "first"), second: filepath.Join(root, "second"),
+		dataHome: filepath.Join(root, "data"), project: filepath.Join(root, "project")}
+	mustMkdir(t, s.project)
+	s.env = []string{
+		"PATH=" + s.first + string(os.PathListSeparator) + s.second + ":/usr/bin:/bin",
+		"HOME=" + root, "XDG_STATE_HOME=" + filepath.Join(root, "state"), "XDG_DATA_HOME=" + s.dataHome,
+	}
+	writeProgram(t, filepath.Join(s.first, "spacedock"), "spacedock 0.28.0-pre6")
+	s.host = &fakeHost{inventory: []pluginInventoryEntry{
+		{ID: "spacedock@spacedock-edge", Version: "0.28.0-pre6", Installed: true, Enabled: true},
+	}}
+	for _, ext := range table {
+		version := "0.16.0-beta.2"
+		if ext.tree {
+			version = "1.0.1"
+			s.stageTreeProgram(ext, version)
+		} else {
+			writeProgram(t, filepath.Join(s.first, ext.program), version)
+		}
+		s.host.inventory = append(s.host.inventory,
+			pluginInventoryEntry{ID: ext.name + "@spacedock-edge", Version: version, Installed: true, Enabled: true})
+	}
+	return s
+}
+
+func (s *stagedInstall) stageTreeProgram(ext extension, version string) {
+	s.t.Helper()
+	program := filepath.Join(s.dataHome, ext.name, version, ext.name, ext.name)
+	writeProgram(s.t, program, ext.name+" has no version flag")
+	link := filepath.Join(s.first, ext.program)
+	os.Remove(link)
+	if err := os.Symlink(program, link); err != nil {
+		s.t.Fatal(err)
+	}
+}
+
+func (s *stagedInstall) report() versionReport {
+	return collectVersions(versionInputs{env: s.env, dir: s.project, host: s.host,
+		selfPath: filepath.Join(s.first, "spacedock"), selfVersion: "0.28.0-pre6"})
+}
+
+func TestVersionReportNamesNothingForAConsistentInstall(t *testing.T) {
+	s := stageInstall(t)
+	report := s.report()
+	if len(report.problems) != 0 {
+		t.Fatalf("a consistent install reported problems: %q", report.problems)
+	}
+	want := map[string]string{
+		"spacedock": "0.28.0-pre6", "spacedock plugin": "0.28.0-pre6",
+		"alpha program": "0.16.0-beta.2", "alpha plugin": "0.16.0-beta.2",
+		"beta program": "1.0.1", "beta plugin": "1.0.1", "alpha choice": "not chosen",
+	}
+	for label, version := range want {
+		if got := report.version(label); got != version {
+			t.Errorf("%s = %q, want %q", label, got, version)
+		}
+	}
+	var out bytes.Buffer
+	printVersionReport(&out, report)
+	for _, word := range []string{"MIXED", "MISSING", "UNREADABLE"} {
+		if strings.Contains(out.String(), word) {
+			t.Errorf("clean report prints %s:\n%s", word, out.String())
+		}
+	}
+}
+
+func TestVersionReportNamesEachMixedInstallProblem(t *testing.T) {
+	breakIt := map[string]struct {
+		apply func(s *stagedInstall)
+		want  string
+	}{
+		"program newer than its plugin": {
+			func(s *stagedInstall) { writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), "0.16.0-beta.3") },
+			"MIXED: the alpha program 0.16.0-beta.3 does not match its plugin 0.16.0-beta.2.",
+		},
+		"two spacedock copies": {
+			func(s *stagedInstall) { writeProgram(t, filepath.Join(s.second, "spacedock"), "spacedock 0.27.2") },
+			"MIXED: 2 copies of spacedock on PATH.",
+		},
+		"extension plugin missing": {
+			func(s *stagedInstall) { s.host.inventory = s.host.inventory[:2] },
+			"MISSING: the beta plugin is not installed from spacedock-edge.",
+		},
+		"extension program missing": {
+			func(s *stagedInstall) { os.Remove(filepath.Join(s.first, "spacedock-beta")) },
+			"MISSING: the beta program is not on PATH.",
+		},
+		"an extension's own check": {
+			func(s *stagedInstall) { mustWrite(t, filepath.Join(s.project, "alpha.choice"), "bad") },
+			"UNREADABLE: the alpha choice for this directory.",
+		},
+	}
+	for name, tc := range breakIt {
+		t.Run(name, func(t *testing.T) {
+			s := stageInstall(t)
+			tc.apply(s)
+			problems := s.report().problems
+			if len(problems) != 1 || !strings.HasPrefix(problems[0], tc.want) {
+				t.Fatalf("problems = %q, want exactly one starting %q", problems, tc.want)
+			}
+		})
+	}
+}
+
+func TestVersionReportCopiesNamePathVersionAndTheOneThatRuns(t *testing.T) {
+	s := stageInstall(t)
+	writeProgram(t, filepath.Join(s.second, "spacedock"), "spacedock 0.27.2")
+	var out bytes.Buffer
+	printVersionReport(&out, s.report())
+	for _, want := range []string{
+		filepath.Join(s.first, "spacedock") + "    0.28.0-pre6  (runs)",
+		filepath.Join(s.second, "spacedock") + "    0.27.2",
+	} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("report lacks %q:\n%s", want, out.String())
+		}
+	}
+}

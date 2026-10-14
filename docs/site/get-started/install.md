@@ -43,6 +43,10 @@ Pi. Install one of those first.
     equivalent; casks are macOS-only, so on Linux this script is the only
     edge path.
 
+## Update
+
+Run `spacedock update`. A Homebrew install prints the `brew upgrade` command.
+
 ## Launch
 
 In a project you already have:
