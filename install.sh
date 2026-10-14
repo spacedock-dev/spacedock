@@ -138,7 +138,7 @@ asset_name() {
 	fi
 }
 
-EXTRAS=''
+EXTRAS='subspace|spacedock-dev/subspace|subspace|subspace-tui subspace-relay-client|subspace-tui:spacedock-review|bin'
 
 tree_version() {
 	tlink="$INSTALL_DIR/$(basename "$1")"

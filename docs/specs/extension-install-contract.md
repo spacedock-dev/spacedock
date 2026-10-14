@@ -173,6 +173,18 @@ there.
 
 The extensions Spacedock installs today, and what each adds to the rules above.
 
+### Install rows
+
+| name | repo | prefix | programs | links | kind |
+|---|---|---|---|---|---|
+| subspace | `spacedock-dev/subspace` | `subspace` | `subspace-tui subspace-relay-client` | `subspace-tui:spacedock-review` | `bin` |
+
+### Plugins
+
+| Extension | Plugin |
+|---|---|
+| subspace | `subspace@CHANNEL` |
+
 ### Hand-offs
 
 Each skill checks its row with `--supports` before it hands off, as the Compatibility
