@@ -63,10 +63,6 @@ func TestInstallArgvSequence(t *testing.T) {
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
-		{argv: []string{"plugin", "install", "subspace@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "update", "subspace@spacedock"}, tolerateExit: true, reportExit: true},
-		{argv: []string{"plugin", "install", "compass@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "update", "compass@spacedock"}, tolerateExit: true, reportExit: true},
 	}
 	if got := installArgvSequence("spacedock-dev/marketplace", "main"); !reflect.DeepEqual(got, wantStable) {
 		t.Errorf("installArgvSequence(devBranch=main) = %v, want %v", got, wantStable)
