@@ -135,6 +135,127 @@ asset_name() {
 	fi
 }
 
+# EXTRAS is the table of extensions installed beside spacedock. The contract
+# docs/specs/extension-install-contract.md defines its rows. SPACEDOCK_EXTRAS_FROM=<dir>
+# reads an extension's archive and checksums.txt from that directory first.
+EXTRAS=''
+
+tree_version() {
+	tlink="$INSTALL_DIR/$(basename "$1")"
+	[ -e "$tlink" ] || return 0
+	ttarget="$(readlink "$tlink" 2>/dev/null)" || return 0
+	troot="${XDG_DATA_HOME:-$HOME/.local/share}/$2/"
+	case "$ttarget" in
+		"$troot"*) trest="${ttarget#"$troot"}"; printf '%s\n' "${trest%%/*}" ;;
+	esac
+}
+
+installed_version() {
+	iver=""
+	for iprog in $2; do
+		if [ "$3" = tree ]; then
+			v="$(tree_version "$iprog" "$1")"
+		else
+			[ -x "$INSTALL_DIR/$iprog" ] || return 0
+			v="$("$INSTALL_DIR/$iprog" --version 2>/dev/null | head -n 1)"
+		fi
+		[ -n "$v" ] && { [ -z "$iver" ] || [ "$iver" = "$v" ]; } || return 0
+		iver="$v"
+	done
+	for l in $4; do
+		[ -e "$INSTALL_DIR/${l#*:}" ] || return 0
+	done
+	printf '%s\n' "$iver"
+}
+
+install_extra() {
+	name="$1" repo="$2" prefix="$3" programs="$4" links="$5" kind="$6" os="$7" arch="$8"
+	dir="$(mktemp -d)"
+	local_from="${SPACEDOCK_EXTRAS_FROM:-}"
+	asset=""
+	if [ -n "$local_from" ]; then
+		asset="$(cd "$local_from" 2>/dev/null && ls ${prefix}_*_${os}_${arch}.tar.gz 2>/dev/null | head -n 1)" || asset=""
+	fi
+	if [ -n "$asset" ]; then
+		ver="${asset#${prefix}_}"; ver="${ver%_${os}_${arch}.tar.gz}"; tag="v$ver (from $local_from)"
+		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
+		cp "$local_from/$asset" "$dir/$asset" && cp "$local_from/checksums.txt" "$dir/checksums.txt" || return 1
+	else
+		if [ "$CHANNEL" = edge ]; then
+			api="https://api.github.com/repos/$repo/releases?per_page=1"
+		else
+			api="https://api.github.com/repos/$repo/releases/latest"
+		fi
+		tag="$(curl -fsSL "$api" \
+			| grep '"tag_name"' | head -n 1 \
+			| sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')" || tag=""
+		[ -n "$tag" ] || { err "$name: could not resolve the latest release of $repo"; return 1; }
+		ver="${tag#v}"
+		[ "$(installed_version "$name" "$programs" "$kind" "$links")" = "$ver" ] && { err "$name $ver unchanged"; rm -rf "$dir"; return 0; }
+		asset="${prefix}_${ver}_${os}_${arch}.tar.gz"
+		base="https://github.com/$repo/releases/download/$tag"
+		curl -fsSL -o "$dir/$asset" "$base/$asset" && curl -fsSL -o "$dir/checksums.txt" "$base/checksums.txt" \
+			|| { err "$name: download failed — skipped"; return 1; }
+	fi
+	want_sum="$(awk -v f="$asset" '$2 == f {print $1}' "$dir/checksums.txt" | head -n 1)"
+	[ -n "$want_sum" ] && [ "$want_sum" = "$(sha256_of "$dir/$asset")" ] \
+		|| { err "$name: checksum mismatch for $asset — skipped"; return 1; }
+	if [ "$kind" = tree ]; then
+		prev="$(tree_version "${programs%% *}" "$name")"
+		root="${XDG_DATA_HOME:-$HOME/.local/share}/$name"
+		dest="$root/$ver"
+		rm -rf "$dest" && mkdir -p "$dest" && tar -xzf "$dir/$asset" -C "$dest" || return 1
+		for p in $programs; do
+			[ -f "$dest/$p" ] && ln -sf "$dest/$p" "$INSTALL_DIR/$(basename "$p")"
+		done
+		for old in "$root"/*; do
+			[ -n "$prev" ] && [ -d "$old" ] && [ "$(basename "$old")" != "$ver" ] && [ "$(basename "$old")" != "$prev" ] && rm -rf "$old"
+		done
+	else
+		tar -xzf "$dir/$asset" -C "$dir" || return 1
+		for p in $programs; do
+			[ -f "$dir/$p" ] || continue
+			install -m 0755 "$dir/$p" "$INSTALL_DIR/$p" 2>/dev/null \
+				|| { cp "$dir/$p" "$INSTALL_DIR/$p" && chmod 0755 "$INSTALL_DIR/$p"; } || return 1
+		done
+	fi
+	for l in $links; do
+		[ -f "$INSTALL_DIR/${l%%:*}" ] && ln -sf "${l%%:*}" "$INSTALL_DIR/${l#*:}"
+	done
+	rm -rf "$dir"
+	err "installed $name $tag"
+}
+
+# install_plugins uses the spacedock this script just installed, not an older copy
+# that comes first on PATH.
+install_plugins() {
+	if command -v claude >/dev/null 2>&1; then
+		err "adding the Claude Code plugins (spacedock install --host claude)"
+		"$INSTALL_DIR/spacedock" install --host claude \
+			|| err "the plugin install failed; run: spacedock install --host claude"
+	else
+		err "claude is not on PATH; run \`spacedock install --host claude\` after you install Claude Code"
+	fi
+}
+
+# install_extras installs the extensions and the Claude Code plugins on edge, and
+# on stable only when SPACEDOCK_EXTRAS asks: no stable marketplace pin matches a
+# stable release yet, and a plain stable run must leave Claude's settings alone.
+# SPACEDOCK_EXTRAS=none skips them on either channel, and a mirror install
+# (SPACEDOCK_INSTALL_FROM) skips them unless asked.
+install_extras() {
+	want="${SPACEDOCK_EXTRAS:-}"
+	[ "$want" = none ] && return 0
+	[ -n "${SPACEDOCK_INSTALL_FROM:-}" ] && [ -z "$want" ] && return 0
+	[ -n "$want" ] || [ "$CHANNEL" = edge ] || return 0
+	printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
+		[ -n "$name" ] || continue
+		install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \
+			|| err "$name failed to install; spacedock works without it"
+	done
+	install_plugins
+}
+
 main() {
 	validate_channel
 	need uname
@@ -228,6 +349,13 @@ main() {
 		*":$INSTALL_DIR:"*) ;;
 		*) err "note: $INSTALL_DIR is not on PATH; add it to run 'spacedock' directly" ;;
 	esac
+
+	first="$(command -v spacedock 2>/dev/null)" || first=""
+	if [ -n "$first" ] && ! [ "$first" -ef "$INSTALL_DIR/spacedock" ]; then
+		err "warning: $first ($("$first" --version 2>/dev/null | head -n 1)) comes first on PATH and will run instead"
+	fi
+
+	install_extras "$os" "$arch"
 }
 
 main "$@"
