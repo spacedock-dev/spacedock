@@ -29,7 +29,13 @@ type extension struct {
 
 // extensions lists the extensions Spacedock installs. install.sh holds the matching
 // EXTRAS rows, and the two must name the same programs.
-var extensions = []extension{}
+var extensions = []extension{
+	{name: "subspace", program: "spacedock-review", check: reviewChoiceCheck},
+	{name: "compass", program: "spacedock-compass", tree: true, afterUpdate: []string{
+		"A Compass dashboard that already runs keeps its old version until you restart it:",
+		"  spacedock compass --port 4553 --stop && spacedock compass --port 4553 --daemon",
+	}},
+}
 
 // channelExtensions is the table as this channel applies it. Stable installs no
 // extension unless SPACEDOCK_EXTRAS asks, so stable neither expects, updates nor

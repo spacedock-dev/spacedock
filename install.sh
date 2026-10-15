@@ -138,7 +138,8 @@ asset_name() {
 # EXTRAS is the table of extensions installed beside spacedock. The contract
 # docs/specs/extension-install-contract.md defines its rows. SPACEDOCK_EXTRAS_FROM=<dir>
 # reads an extension's archive and checksums.txt from that directory first.
-EXTRAS=''
+EXTRAS='subspace|spacedock-dev/subspace|subspace|subspace-tui subspace-relay-client|subspace-tui:spacedock-review|bin
+compass|spacedock-dev/compass|compass|compass/compass|compass:spacedock-compass|tree'
 
 tree_version() {
 	tlink="$INSTALL_DIR/$(basename "$1")"

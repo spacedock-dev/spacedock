@@ -25,8 +25,8 @@ flowchart LR
   S -->|spacedock NAME, /spacedock:NAME| U
 ```
 
-- **Spacedock owns** the install table, the two entry points, and the companion
-  plugin list.
+- **Spacedock owns** the install table, the two entry points, the companion
+  plugin list, and where a recorded review choice lives.
 - **Each extension owns** its programs, its release archives and checksums,
   its plugin and skills, and everything they do once started.
 
@@ -90,7 +90,7 @@ hello|spacedock-dev/hello|hello|hello-tui hello-client|hello-tui:spacedock-hello
 
 The Go table `extensions` in `internal/cli` names the same extensions, so that
 `spacedock doctor` and `spacedock update` can read them. The two tables must agree.
-Both are empty until a product adds its row.
+The rows for the extensions Spacedock installs today are under "The first extensions".
 
 A failed extra (unresolvable release, failed download, checksum mismatch) is
 reported and skipped; Spacedock's own install still succeeds.
@@ -140,6 +140,59 @@ refreshes the plugins, and prints the version of every piece before and after.
 plugin, a second `spacedock` on PATH, and a missing program or plugin. An extension
 may add rows and problems of its own to that list.
 
+## The first extensions
+
+The extensions Spacedock installs today, and what each adds to the rules above.
+
+### Install rows
+
+| name | repo | prefix | programs | links | kind |
+|---|---|---|---|---|---|
+| subspace | `spacedock-dev/subspace` | `subspace` | `subspace-tui subspace-relay-client` | `subspace-tui:spacedock-review` | `bin` |
+| compass | `spacedock-dev/compass` | `compass` | `compass/compass` | `compass:spacedock-compass` | `tree` |
+
+### Plugins
+
+| Extension | Plugin |
+|---|---|
+| subspace | `subspace@CHANNEL` |
+| compass | `compass@CHANNEL` |
+
+### Tree reference
+
+Compass v1.0.0 is the reference for kind `tree`: `compass/compass` beside the
+`compass/_internal/` files it runs with.
+
+### Hand-offs
+
+Each skill checks its row with `--supports` before it hands off, as the Compatibility
+section says.
+
+| Hand-off | Program | Capability |
+|---|---|---|
+| `/spacedock:review`, local | `spacedock-review` | `review-invocation-prepare-v1` |
+| `/spacedock:review`, remote | `subspace-relay-client` | `relay-publish-v1` |
+| `/spacedock:compass` | `spacedock-compass` | none: checks that the program is on PATH |
+
+### The review choice
+
+`spacedock review-mode set local|remote` records how a project's artifacts are
+reviewed, for this person on this machine, at:
+
+```text
+$XDG_STATE_HOME/subspace/review-mode/HASH.json   (default ~/.local/state/subspace/…)
+```
+
+`HASH` is the first 16 hex characters of the SHA-256 of the project root, which is
+`git rev-parse --show-toplevel`, or the working directory outside a repository.
+The file holds `project`, `mode` (`local` or `remote`) and `decided_at` (RFC 3339).
+`review-mode get` exits 1 when the file is unreadable or holds another `mode`, and
+`review-mode clear` removes it. The file is never inside the repository.
+`/spacedock:review` asks the user when no mode is recorded and records only their
+answer. The uploader that sends artifacts to the relay should refuse when the mode
+is not `remote`; today the skills enforce it.
+`spacedock doctor` shows the choice as a row and names an unreadable one `UNREADABLE`.
+
 ## Release asset names
 
 The install table builds each archive name from the table row. An extension that
@@ -149,4 +202,5 @@ then publish the new names.
 ## Open in v0
 
 - A Homebrew formula pattern for an extension that needs a runtime such as Python.
+- Moving the review-choice refusal into the uploader.
 - Codex and Pi skill entries.

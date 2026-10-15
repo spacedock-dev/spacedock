@@ -47,6 +47,10 @@ func TestInstallArgvSequence(t *testing.T) {
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "spacedock@spacedock-edge"}},
+		{argv: []string{"plugin", "install", "subspace@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "update", "subspace@spacedock-edge"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "install", "compass@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "update", "compass@spacedock-edge"}, tolerateExit: true, reportExit: true},
 	}
 	if got := installArgvSequence("spacedock-dev/marketplace", "next"); !reflect.DeepEqual(got, wantEdge) {
 		t.Errorf("installArgvSequence(devBranch=next) = %v, want %v", got, wantEdge)
@@ -68,7 +72,7 @@ func TestInstallArgvSequence(t *testing.T) {
 	// fails here.
 	seq := installArgvSequence("spacedock-dev/marketplace", "next")
 	for i, step := range seq {
-		isCleanup := isUninstallStep(step.argv) || isMarketplaceUpdateStep(step.argv)
+		isCleanup := isUninstallStep(step.argv) || isMarketplaceUpdateStep(step.argv) || isCompanionStep(step.argv)
 		if isCleanup && !step.tolerateExit {
 			t.Errorf("step %d (%v) tolerateExit = false, want true (cleanup step)", i, step.argv)
 		}
@@ -84,4 +88,13 @@ func isUninstallStep(argv []string) bool {
 
 func isMarketplaceUpdateStep(argv []string) bool {
 	return len(argv) >= 3 && argv[0] == "plugin" && argv[1] == "marketplace" && argv[2] == "update"
+}
+
+func isCompanionStep(argv []string) bool {
+	for _, id := range companionPluginIDs("next") {
+		if argv[len(argv)-1] == id {
+			return true
+		}
+	}
+	return false
 }
