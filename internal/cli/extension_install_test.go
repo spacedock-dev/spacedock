@@ -17,8 +17,10 @@ func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
 	wantClaude := []installStep{
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "alpha@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "alpha@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "alpha@spacedock"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "uninstall", "beta@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "beta@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "beta@spacedock"}, tolerateExit: true, reportExit: true},
 	}
@@ -33,7 +35,9 @@ func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
 	wantCodex := []installStep{
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", "alpha@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "add", "alpha@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", "beta@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "add", "beta@spacedock"}, tolerateExit: true},
 	}
 	if got := codex[len(codex)-len(wantCodex):]; !reflect.DeepEqual(got, wantCodex) {
@@ -53,7 +57,7 @@ func TestExtensionPluginsInstallFromTheSpacedockMarketplaceWhateverTheChannel(t 
 			}
 		}
 		for _, step := range installArgvSequence(channelMarketplaceSource(devBranch), devBranch) {
-			if strings.Contains(strings.Join(step.argv, " "), "alpha@spacedock-edge") {
+			if step.argv[1] == "install" && strings.Contains(strings.Join(step.argv, " "), "alpha@spacedock-edge") {
 				t.Errorf("devBranch %q: step %v installs a companion from the channel marketplace", devBranch, step.argv)
 			}
 		}
@@ -127,5 +131,29 @@ func TestInstallSequencesNameNoCompanionOnStable(t *testing.T) {
 				t.Errorf("%s sequence on stable installs an extension plugin: %v", host, step.argv)
 			}
 		}
+	}
+}
+
+func TestInstallGoesOnWhenTheEdgeCopyIsNotThereToRemove(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("stub script uses /bin/sh; not portable to Windows")
+	}
+	saved := extensions
+	extensions = fakeExtensions()
+	defer func() { extensions = saved }()
+	dir := writeClaudeStub(t, "plugin uninstall alpha@spacedock-edge")
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
+	if err != nil {
+		t.Fatalf("Install stopped on a missing edge copy: %v\nout=%q", err, out)
+	}
+	for _, want := range []string{"plugin install alpha@spacedock", "plugin update alpha@spacedock"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output lacks %q after the failed removal\nout=%q", want, out)
+		}
+	}
+	if strings.Contains(out, "failed") {
+		t.Errorf("a missing edge copy is reported as a failure\nout=%q", out)
 	}
 }

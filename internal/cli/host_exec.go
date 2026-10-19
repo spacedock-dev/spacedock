@@ -458,6 +458,7 @@ func installArgvSequence(source, devBranch string) []installStep {
 	}
 	for _, companion := range companions {
 		steps = append(steps,
+			installStep{argv: []string{"plugin", "uninstall", edgeCopyID(companion)}, tolerateExit: true},
 			installStep{argv: []string{"plugin", "install", companion}, tolerateExit: true},
 			installStep{argv: []string{"plugin", "update", companion}, tolerateExit: true, reportExit: true},
 		)
@@ -508,7 +509,10 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		)
 	}
 	for _, companion := range companions {
-		steps = append(steps, installStep{argv: []string{"plugin", "add", companion}, tolerateExit: true})
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "remove", edgeCopyID(companion)}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "add", companion}, tolerateExit: true},
+		)
 	}
 	return steps
 }
@@ -519,6 +523,13 @@ const extensionMarketplace = "spacedock"
 
 func extensionPluginID(name string) string {
 	return name + "@" + extensionMarketplace
+}
+
+// edgeCopyID is the id an extension plugin had when the edge marketplace listed it.
+// A machine that installed that copy keeps it beside the spacedock one unless
+// removed first; the removal is tolerated because a clean machine has none.
+func edgeCopyID(companion string) string {
+	return strings.TrimSuffix(companion, "@"+extensionMarketplace) + "@spacedock-edge"
 }
 
 // companionPluginIDs are the plugins installed beside Spacedock, one per extension.

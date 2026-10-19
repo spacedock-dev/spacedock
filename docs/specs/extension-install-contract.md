@@ -113,8 +113,10 @@ When Spacedock installs its own plugin on the edge channel, it also installs
 `NAME@spacedock` for each extension. Those plugins come from the `spacedock`
 marketplace (`spacedock-dev/marketplace`, branch `main`) whatever Spacedock's
 channel, and Spacedock adds that marketplace when it is missing and refreshes it
-first. Spacedock's own plugin keeps its channel marketplace. Each companion install
-may fail without failing Spacedock's. Claude Code does nothing when you install a
+first. Spacedock's own plugin keeps its channel marketplace. Before each companion
+install it removes `NAME@spacedock-edge`, the copy an earlier edge listing installed,
+so a machine ends with one copy. Each companion step may fail without failing
+Spacedock's. Claude Code does nothing when you install a
 plugin that is already installed, so Spacedock runs `plugin update` after each
 companion install. A companion that fails both steps is named in the output.
 
