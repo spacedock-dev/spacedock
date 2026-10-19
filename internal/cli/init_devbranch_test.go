@@ -49,8 +49,10 @@ func TestInstallArgvSequence(t *testing.T) {
 		{argv: []string{"plugin", "install", "spacedock@spacedock-edge"}},
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "subspace@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "subspace@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "subspace@spacedock"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "uninstall", "compass@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "compass@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "compass@spacedock"}, tolerateExit: true, reportExit: true},
 	}

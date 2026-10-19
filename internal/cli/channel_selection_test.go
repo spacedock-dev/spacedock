@@ -69,8 +69,10 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 				want = append(want,
 					installStep{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
 					installStep{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "uninstall", "subspace@spacedock-edge"}, tolerateExit: true},
 					installStep{argv: []string{"plugin", "install", "subspace@spacedock"}, tolerateExit: true},
 					installStep{argv: []string{"plugin", "update", "subspace@spacedock"}, tolerateExit: true, reportExit: true},
+					installStep{argv: []string{"plugin", "uninstall", "compass@spacedock-edge"}, tolerateExit: true},
 					installStep{argv: []string{"plugin", "install", "compass@spacedock"}, tolerateExit: true},
 					installStep{argv: []string{"plugin", "update", "compass@spacedock"}, tolerateExit: true, reportExit: true})
 			}
@@ -125,7 +127,9 @@ func TestCodexChannelInstallArgvSequence(t *testing.T) {
 				want = append(want,
 					installStep{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true},
 					installStep{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "remove", "subspace@spacedock-edge"}, tolerateExit: true},
 					installStep{argv: []string{"plugin", "add", "subspace@spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "remove", "compass@spacedock-edge"}, tolerateExit: true},
 					installStep{argv: []string{"plugin", "add", "compass@spacedock"}, tolerateExit: true})
 			}
 			got := codexInstallArgvSequence("spacedock-dev/marketplace", tc.devBranch)
