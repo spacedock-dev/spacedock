@@ -184,8 +184,8 @@ The extensions Spacedock installs today, and what each adds to the rules above.
 
 | Extension | Plugin |
 |---|---|
-| subspace | `subspace@CHANNEL` |
-| compass | `compass@CHANNEL` |
+| subspace | `subspace@spacedock` |
+| compass | `compass@spacedock` |
 
 ### Tree reference
 

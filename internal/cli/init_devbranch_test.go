@@ -44,15 +44,17 @@ func TestInstallArgvSequence(t *testing.T) {
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
+		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace@edge"}},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "spacedock@spacedock-edge"}},
-		{argv: []string{"plugin", "install", "subspace@spacedock-edge"}, tolerateExit: true},
-		{argv: []string{"plugin", "update", "subspace@spacedock-edge"}, tolerateExit: true, reportExit: true},
-		{argv: []string{"plugin", "install", "compass@spacedock-edge"}, tolerateExit: true},
-		{argv: []string{"plugin", "update", "compass@spacedock-edge"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "install", "subspace@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "update", "subspace@spacedock"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "install", "compass@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "update", "compass@spacedock"}, tolerateExit: true, reportExit: true},
 	}
-	if got := installArgvSequence("spacedock-dev/marketplace", "next"); !reflect.DeepEqual(got, wantEdge) {
+	if got := installArgvSequence("spacedock-dev/marketplace@edge", "next"); !reflect.DeepEqual(got, wantEdge) {
 		t.Errorf("installArgvSequence(devBranch=next) = %v, want %v", got, wantEdge)
 	}
 
@@ -70,7 +72,7 @@ func TestInstallArgvSequence(t *testing.T) {
 
 	// A change toward tolerance on every step, or tolerance on a pinning step,
 	// fails here.
-	seq := installArgvSequence("spacedock-dev/marketplace", "next")
+	seq := installArgvSequence("spacedock-dev/marketplace@edge", "next")
 	for i, step := range seq {
 		isCleanup := isUninstallStep(step.argv) || isMarketplaceUpdateStep(step.argv) || isCompanionStep(step.argv)
 		if isCleanup && !step.tolerateExit {
@@ -91,6 +93,9 @@ func isMarketplaceUpdateStep(argv []string) bool {
 }
 
 func isCompanionStep(argv []string) bool {
+	if len(argv) == 4 && argv[1] == "marketplace" && argv[2] == "add" && argv[3] == extensionMarketplaceSource() {
+		return true
+	}
 	for _, id := range companionPluginIDs("next") {
 		if argv[len(argv)-1] == id {
 			return true

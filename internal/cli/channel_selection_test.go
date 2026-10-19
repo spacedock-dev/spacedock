@@ -67,10 +67,12 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 			}
 			if tc.channel == "edge" {
 				want = append(want,
-					installStep{argv: []string{"plugin", "install", "subspace@" + tc.wantMarketplace}, tolerateExit: true},
-					installStep{argv: []string{"plugin", "update", "subspace@" + tc.wantMarketplace}, tolerateExit: true, reportExit: true},
-					installStep{argv: []string{"plugin", "install", "compass@" + tc.wantMarketplace}, tolerateExit: true},
-					installStep{argv: []string{"plugin", "update", "compass@" + tc.wantMarketplace}, tolerateExit: true, reportExit: true})
+					installStep{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
+					installStep{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "install", "subspace@spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "update", "subspace@spacedock"}, tolerateExit: true, reportExit: true},
+					installStep{argv: []string{"plugin", "install", "compass@spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "update", "compass@spacedock"}, tolerateExit: true, reportExit: true})
 			}
 			got := installArgvSequence("spacedock-dev/marketplace", tc.devBranch)
 			if !reflect.DeepEqual(got, want) {
@@ -121,8 +123,10 @@ func TestCodexChannelInstallArgvSequence(t *testing.T) {
 			}
 			if tc.channel == "edge" {
 				want = append(want,
-					installStep{argv: []string{"plugin", "add", "subspace@" + tc.wantMarketplace}, tolerateExit: true},
-					installStep{argv: []string{"plugin", "add", "compass@" + tc.wantMarketplace}, tolerateExit: true})
+					installStep{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "add", "subspace@spacedock"}, tolerateExit: true},
+					installStep{argv: []string{"plugin", "add", "compass@spacedock"}, tolerateExit: true})
 			}
 			got := codexInstallArgvSequence("spacedock-dev/marketplace", tc.devBranch)
 			if !reflect.DeepEqual(got, want) {
