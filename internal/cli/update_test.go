@@ -47,7 +47,7 @@ func TestUpdateShowsEachPieceBeforeAndAfterAndIsIdempotent(t *testing.T) {
 	}
 	s.host.inventory[2].Version = "1.0.0"
 	host := &switchHost{fakeHost: s.host, flag: flag, after: []pluginInventoryEntry{
-		s.host.inventory[0], s.host.inventory[1], {ID: "beta@spacedock-edge", Version: "1.0.1", Installed: true, Enabled: true}}}
+		s.host.inventory[0], s.host.inventory[1], {ID: "beta@spacedock", Version: "1.0.1", Installed: true, Enabled: true}}}
 	beta101 := filepath.Join(s.dataHome, "beta", "1.0.1", "beta", "beta")
 	script := filepath.Join(t.TempDir(), "install.sh")
 	mustWrite(t, script, "#!/bin/sh\n"+

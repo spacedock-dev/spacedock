@@ -171,7 +171,7 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 			row(ext.name + " program")
 		}
 	}
-	fmt.Fprintf(w, "Claude Code plugins (%s)\n", channelMarketplace(devBranch))
+	fmt.Fprintln(w, "Claude Code plugins")
 	if noClaude {
 		fmt.Fprintln(w, "  claude is not on PATH, so the plugins were skipped. Run: spacedock install --host claude")
 	} else {

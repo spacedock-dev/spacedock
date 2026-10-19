@@ -109,15 +109,20 @@ does not load them as a transitive dependency on a fresh install.
 
 ## Plugins
 
-On the edge channel, when Spacedock installs its own plugin, it also installs
-`NAME@CHANNEL` for each extension from the same marketplace
-(`spacedock-dev/marketplace`). Each companion install may fail without failing
-Spacedock's. Claude Code does nothing when you install a plugin that is already
-installed, so Spacedock runs `plugin update` after each companion install. A
-companion that fails both steps is named in the output.
+When Spacedock installs its own plugin on the edge channel, it also installs
+`NAME@spacedock` for each extension. Those plugins come from the `spacedock`
+marketplace (`spacedock-dev/marketplace`, branch `main`) whatever Spacedock's
+channel, and Spacedock adds that marketplace when it is missing and refreshes it
+first. Spacedock's own plugin keeps its channel marketplace. Each companion install
+may fail without failing Spacedock's. Claude Code does nothing when you install a
+plugin that is already installed, so Spacedock runs `plugin update` after each
+companion install. A companion that fails both steps is named in the output.
 
-The marketplace on each channel must list every extension's plugin.
-Without its entry, the companion install fails.
+Each extension's own release keeps its listing on the `spacedock` marketplace
+current. The edge marketplace lists Spacedock only. An extension without a listing on
+the `spacedock` marketplace has no companion plugin: the companion install fails.
+`SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE` replaces the source of that marketplace, so a
+test can stage a newer release.
 
 ## Compatibility
 

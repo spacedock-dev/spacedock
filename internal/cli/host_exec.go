@@ -449,7 +449,14 @@ func installArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
 	}
-	for _, companion := range companionPluginIDs(devBranch) {
+	companions := companionPluginIDs(devBranch)
+	if len(companions) > 0 {
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
+			installStep{argv: []string{"plugin", "marketplace", "update", extensionMarketplace}, tolerateExit: true},
+		)
+	}
+	for _, companion := range companions {
 		steps = append(steps,
 			installStep{argv: []string{"plugin", "install", companion}, tolerateExit: true},
 			installStep{argv: []string{"plugin", "update", companion}, tolerateExit: true, reportExit: true},
@@ -493,10 +500,25 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
 	}
-	for _, companion := range companionPluginIDs(devBranch) {
+	companions := companionPluginIDs(devBranch)
+	if len(companions) > 0 {
+		steps = append(steps,
+			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "marketplace", "upgrade", extensionMarketplace}, tolerateExit: true},
+		)
+	}
+	for _, companion := range companions {
 		steps = append(steps, installStep{argv: []string{"plugin", "add", companion}, tolerateExit: true})
 	}
 	return steps
+}
+
+// extensionMarketplace is the marketplace every extension plugin installs from, on
+// every channel: each extension's own release keeps its listing there current.
+const extensionMarketplace = "spacedock"
+
+func extensionPluginID(name string) string {
+	return name + "@" + extensionMarketplace
 }
 
 // companionPluginIDs are the plugins installed beside Spacedock, one per extension.
@@ -505,7 +527,7 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 func companionPluginIDs(devBranch string) []string {
 	var ids []string
 	for _, ext := range channelExtensions(devBranch) {
-		ids = append(ids, ext.name+"@"+channelMarketplace(devBranch))
+		ids = append(ids, extensionPluginID(ext.name))
 	}
 	return ids
 }

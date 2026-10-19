@@ -834,7 +834,9 @@ func applyMarketplaceSourceOverride(env []string) {
 	for _, kv := range env {
 		if strings.HasPrefix(kv, "SPACEDOCK_MARKETPLACE_SOURCE=") {
 			marketplaceSource = strings.TrimPrefix(kv, "SPACEDOCK_MARKETPLACE_SOURCE=")
-			return
+		}
+		if strings.HasPrefix(kv, "SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE=") {
+			extensionMarketplaceSourceOverride = strings.TrimPrefix(kv, "SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE=")
 		}
 	}
 }

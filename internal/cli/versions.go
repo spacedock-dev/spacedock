@@ -97,7 +97,7 @@ func collectVersions(in versionInputs) versionReport {
 	for _, ext := range channelExtensions(devBranch) {
 		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
 		add(ext.name+" program", programVersion, programPath)
-		id := ext.name + "@" + channelMarketplace(devBranch)
+		id := extensionPluginID(ext.name)
 		pluginVer := pluginVersion(id)
 		add(ext.name+" plugin", pluginVer, id)
 
@@ -106,7 +106,7 @@ func collectVersions(in versionInputs) versionReport {
 			problem("MISSING: the %s program is not on PATH.", ext.name)
 			report.needsUpdate = true
 		case inventoryErr == nil && pluginVer == notInstalled:
-			problem("MISSING: the %s plugin is not installed from %s.", ext.name, channelMarketplace(devBranch))
+			problem("MISSING: the %s plugin is not installed from %s.", ext.name, extensionMarketplace)
 			report.needsUpdate = true
 		case programVersion != "unknown" && pluginVer != "unknown" && programVersion != pluginVer:
 			problem("MIXED: the %s program %s does not match its plugin %s.", ext.name, programVersion, pluginVer)
@@ -163,8 +163,8 @@ func printVersionReport(w io.Writer, report versionReport) {
 		fmt.Fprint(w, " Run `spacedock update` to bring every program and plugin to the same release.")
 	}
 	if len(report.pluginsBehind) > 0 {
-		fmt.Fprintf(w, " The %s plugin waits on the %s marketplace. Run `spacedock update` after it is bumped.",
-			strings.Join(report.pluginsBehind, " and "), report.channel)
+		fmt.Fprintf(w, " The %s plugin waits on its listing in the %s marketplace, which each extension's release keeps current. Run `spacedock update` after the listing shows the new version.",
+			strings.Join(report.pluginsBehind, " and "), extensionMarketplace)
 	}
 	if report.extraCopy {
 		fmt.Fprint(w, " Remove the copies of spacedock that you do not want to run.")

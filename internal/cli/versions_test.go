@@ -82,7 +82,7 @@ func stageInstallWith(t *testing.T, table []extension) *stagedInstall {
 			writeProgram(t, filepath.Join(s.first, ext.program), version)
 		}
 		s.host.inventory = append(s.host.inventory,
-			pluginInventoryEntry{ID: ext.name + "@spacedock-edge", Version: version, Installed: true, Enabled: true})
+			pluginInventoryEntry{ID: ext.name + "@spacedock", Version: version, Installed: true, Enabled: true})
 	}
 	return s
 }
@@ -143,7 +143,7 @@ func TestVersionReportNamesEachMixedInstallProblem(t *testing.T) {
 		},
 		"extension plugin missing": {
 			func(s *stagedInstall) { s.host.inventory = s.host.inventory[:2] },
-			"MISSING: the beta plugin is not installed from spacedock-edge.",
+			"MISSING: the beta plugin is not installed from spacedock.",
 		},
 		"extension program missing": {
 			func(s *stagedInstall) { os.Remove(filepath.Join(s.first, "spacedock-beta")) },
@@ -187,7 +187,7 @@ func TestVersionReportRemedyDependsOnWhichSideIsNewer(t *testing.T) {
 		want, absent string
 	}{
 		"program newer: the plugin waits on the marketplace": {"0.16.0-beta.3",
-			"The alpha plugin waits on the edge marketplace. Run `spacedock update` after it is bumped.",
+			"The alpha plugin waits on its listing in the spacedock marketplace, which each extension's release keeps current. Run `spacedock update` after the listing shows the new version.",
 			"to bring every program and plugin"},
 		"program older: update fixes it": {"0.16.0-beta.1",
 			"Run `spacedock update` to bring every program and plugin to the same release.",
