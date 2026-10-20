@@ -14,7 +14,9 @@ Start Compass from your agent session:
 
 In Codex, type `$compass`. You can also ask your agent to "open compass". Compass starts on your machine and gives you its address, `http://127.0.0.1:4553/` by default. It does not open a browser for you, so open the address yourself.
 
-> **[Screenshot to take:** the Sessions screen right after Compass opens.**]**
+![The Sessions screen with the sample session link, the Active now count and one active session row](img/sessions-screen.png)
+
+*The Sessions screen opens with the link to the sample session, a count of active sessions, and one row for each active session showing its goal, what it is doing now, and whether it is blocked.*
 
 New to Intent and drift? Open **See a sample session (view only)** above the Sessions list. It is an anonymized session that drifted, with its reading and the correction Compass composed. Nothing in it is saved, sent or run.
 
