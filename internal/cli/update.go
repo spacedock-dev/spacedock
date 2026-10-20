@@ -132,6 +132,7 @@ func runInstallScript(d updateDeps, stdout, stderr io.Writer) error {
 		io.Copy(stdout, &out)
 		return fmt.Errorf("the install script failed: %w", err)
 	}
+	printInstallFailures(stdout, out.String())
 	return nil
 }
 

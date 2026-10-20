@@ -85,6 +85,24 @@ func TestUpdateShowsEachPieceBeforeAndAfterAndIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestUpdateShowsTheInstallScriptsFailedPluginLinesWhenTheScriptSucceeds(t *testing.T) {
+	s := stageInstall(t)
+	script := filepath.Join(t.TempDir(), "install.sh")
+	const failed = "spacedock install: claude plugin update beta@spacedock failed: exit status 1"
+	mustWrite(t, script, "#!/bin/sh\necho 'Updating plugin noise'\necho '"+failed+"'\nexit 0\n")
+
+	var stdout, stderr bytes.Buffer
+	if code := runUpdate(updateDepsFor(s, s.host, script), &stdout, &stderr); code != 0 {
+		t.Fatalf("update exited %d: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), failed) {
+		t.Errorf("update output lacks the install script's failure line:\n%s", stdout.String())
+	}
+	if strings.Contains(stdout.String(), "Updating plugin noise") {
+		t.Errorf("update output repeats the install script's other output:\n%s", stdout.String())
+	}
+}
+
 func TestUpdateOnHomebrewChangesNoProgramAndNamesTheBrewCommand(t *testing.T) {
 	for path, formula := range map[string]string{
 		"/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock":      "brew upgrade spacedock\n",
