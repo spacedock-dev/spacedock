@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -72,8 +73,15 @@ func assertRenderedCask(t *testing.T, name, body string) {
 	// emits a formula dep as a `formula: [...]` key inside the depends_on stanza;
 	// the tap-qualified name legitimately appears in the caveats install command,
 	// so the depends_on-stanza form is the precise signal.
-	if depBlock := dependsOnBlock(body); strings.Contains(depBlock, "formula:") && !(name == "spacedock@next" && strings.Contains(depBlock, "spacedock-dev/tap/subspace-beta")) {
-		t.Errorf("rendered cask %q carries a formula dependency in its depends_on stanza; the cross-tap safehouse dep was refuted and must not ship:\n%s", name, depBlock)
+	if depBlock := dependsOnBlock(body); strings.Contains(depBlock, "formula:") {
+		names := renderedFormula.FindAllStringSubmatch(depBlock, -1)
+		allowed := len(names) > 0
+		for _, n := range names {
+			allowed = allowed && formulaAllowed(name, n[1])
+		}
+		if !allowed {
+			t.Errorf("rendered cask %q carries a formula dependency in its depends_on stanza; the cross-tap safehouse dep was refuted and must not ship:\n%s", name, depBlock)
+		}
 	}
 
 	caveats := caveatsBlock(body)
@@ -105,6 +113,14 @@ func assertSafehouseCaveat(t *testing.T, name, caveats string) {
 		t.Errorf("cask %q caveats still says safehouse is \"not installed by brew\"; it is brew-installable from its tap:\n%s", name, caveats)
 	}
 }
+
+// formulaAllowed is the one formula dependency a cask may declare: on spacedock@next,
+// a formula from spacedock-dev/tap, which Homebrew loads as a transitive dependency.
+func formulaAllowed(cask, formula string) bool {
+	return cask == "spacedock@next" && strings.HasPrefix(formula, "spacedock-dev/tap/")
+}
+
+var renderedFormula = regexp.MustCompile(`formula:\s*\[?\s*"([^"]+)"`)
 
 // dependsOnBlock extracts the `depends_on …` stanza of a rendered cask up to the
 // blank line that separates it from the next stanza, so a `formula:` check sees
@@ -231,7 +247,7 @@ func assertCaskConfig(t *testing.T) {
 			if dep.Cask == "agentsview" {
 				hasAgentsview = true
 			}
-			if dep.Formula != "" && !(cask.Name == "spacedock@next" && dep.Formula == "spacedock-dev/tap/subspace-beta") {
+			if dep.Formula != "" && !formulaAllowed(cask.Name, dep.Formula) {
 				t.Errorf("cask %q declares a formula dependency %q; the cross-tap safehouse dep was refuted and must not ship", cask.Name, dep.Formula)
 			}
 		}
