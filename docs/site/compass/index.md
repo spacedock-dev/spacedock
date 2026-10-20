@@ -4,15 +4,13 @@ You give an agent a goal and go do something else. Twenty turns later it is rewr
 
 ## How it works
 
-Compass is a screen on your own machine that lists every agent session you have running, in Claude Code, Codex and the other agent tools you use. For each active session it shows where the work is, what the agent is doing now, what it does next, and whether it is blocked.
+Compass is a screen on your own machine that lists every agent session you have running, across Claude Code, Codex and eight other agent tools. For each active session it shows where the work is, what the agent is doing now, what it does next, and whether it is blocked.
 
 > **[Screenshot to take:** the Sessions screen with several active sessions, each showing its goal beside what the agent is doing now, and one marked as drifting.**]**
 
-This is **Intent and drift**. You state your intent for a session: a goal, and up to six lines describing the outcome you expect. When you ask, Compass [checks the session against that intent](use.md#check-a-session-for-drift) and says where the agent departed, citing the exact entries in the session record. You decide what to do about it: tell the agent, adjust the intent, or leave it.
+This is **Intent and drift**. You state your intent for a session: a goal, and up to six lines describing the outcome you expect. When you ask, Compass [checks the session against that intent](use.md#check-a-session-for-drift) and says where the agent departed, citing the exact entries in the session record. You decide what to do about it: tell the agent, adjust the intent, or leave it. Treat a drift level as an account of the evidence, not a measurement.
 
-Compass reads your agents' session files and never writes to them. It never types into a session, and it never answers a prompt for you. It keeps its own notes, your intent and a short history of what it observed, on your machine. Session content leaves your machine only through the model-backed features, [Analyze drift](use.md#check-a-session-for-drift), goal summaries and checks on its own, and each one asks for your permission first.
-
-> **Draft note, not page copy:** as of Cargento v0.28.0, Compass checks for drift only when you press the button. Checking on its own is a setting that is off by default. Confirm before 10-09 whether that stays true for 10-15, then update [Use it](use.md#let-compass-check-while-you-are-away).
+Compass reads your agents' session files and never writes to them. It never types into a session, and it never answers a prompt for you. It keeps its own notes, your intent and a short history of what it observed, on your machine. Session content leaves your machine only through the model-backed features: [Analyze drift](use.md#check-a-session-for-drift), goal summaries, and [checks Compass runs on its own](use.md#let-compass-check-while-you-are-away). Each one asks for your permission first, and one option, `--no-observer-model`, refuses all of them.
 
 ## With Workflow
 
