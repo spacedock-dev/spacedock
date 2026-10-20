@@ -90,7 +90,6 @@ hello|spacedock-dev/hello|hello|hello-tui hello-client|hello-tui:spacedock-hello
 
 The Go table `extensions` in `internal/cli` names the same extensions, so that
 `spacedock doctor` and `spacedock update` can read them. The two tables must agree.
-The rows for the extensions Spacedock installs today are under "The first extensions".
 
 A failed extra (unresolvable release, failed download, checksum mismatch) is
 reported and skipped; Spacedock's own install still succeeds.
@@ -173,19 +172,8 @@ there.
 
 The extensions Spacedock installs today, and what each adds to the rules above.
 
-### Install rows
-
-| name | repo | prefix | programs | links | kind |
-|---|---|---|---|---|---|
-| subspace | `spacedock-dev/subspace` | `subspace` | `subspace-tui subspace-relay-client` | `subspace-tui:spacedock-review` | `bin` |
-| compass | `spacedock-dev/compass` | `compass` | `compass/compass` | `compass:spacedock-compass` | `tree` |
-
-### Plugins
-
-| Extension | Plugin |
-|---|---|
-| subspace | `subspace@spacedock` |
-| compass | `compass@spacedock` |
+The rows are `EXTRAS` in `install.sh` and the `extensions` table in `internal/cli`.
+Each plugin is `NAME@spacedock`.
 
 ### Tree reference
 
