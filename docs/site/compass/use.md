@@ -28,7 +28,13 @@ New to Intent and drift? Open **See a sample session (view only)** above the Ses
 
 4. **Press Save intent.** Compass keeps the words you typed and shows them beside the session from now on. Nothing is sent to the agent.
 
-> **[Screenshot to take:** the Intent section with a typed goal and three outcome lines, saved.**]**
+![The sample session's Intent section with a goal and two outcome lines, beside a High drift analysis with Steer back](img/sample-session-intent-and-drift.png)
+
+*In the sample session, the Intent section holds a goal and two outcome lines, and the Drift section beside it shows a High level with Steer back.*
+
+![The sample session's analysis result, with each departure cited by entry number](img/sample-session-analysis-result.png)
+
+*The same analysis lists each departure against your intent and cites the session entries behind it.*
 
 ## Read the board
 
