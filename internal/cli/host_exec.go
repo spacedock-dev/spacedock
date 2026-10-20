@@ -449,18 +449,22 @@ func installArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
 	}
-	companions := companionPluginIDs(devBranch)
-	if len(companions) > 0 {
+	exts := channelExtensions(devBranch)
+	if len(exts) > 0 {
 		steps = append(steps,
 			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
 			installStep{argv: []string{"plugin", "marketplace", "update", extensionMarketplace}, tolerateExit: true},
 		)
 	}
-	for _, companion := range companions {
+	for _, ext := range exts {
+		extID := extensionPluginID(ext.name)
+		// An earlier edge listing installed NAME@spacedock-edge, which stays beside the
+		// spacedock copy unless removed; a clean machine has none, so the removal may fail.
+		// Claude's `plugin install` does nothing for an installed plugin, hence the update.
 		steps = append(steps,
-			installStep{argv: []string{"plugin", "uninstall", edgeCopyID(companion)}, tolerateExit: true},
-			installStep{argv: []string{"plugin", "install", companion}, tolerateExit: true},
-			installStep{argv: []string{"plugin", "update", companion}, tolerateExit: true, reportExit: true},
+			installStep{argv: []string{"plugin", "uninstall", ext.name + "@spacedock-edge"}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "install", extID}, tolerateExit: true},
+			installStep{argv: []string{"plugin", "update", extID}, tolerateExit: true, reportExit: true},
 		)
 	}
 	return steps
@@ -493,7 +497,7 @@ func installArgvSequence(source, devBranch string) []installStep {
 // unconditionally re-clones content (probe 8) and stays fail-fast.
 func codexInstallArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
-	steps := []installStep{
+	return []installStep{
 		{argv: []string{"plugin", "remove", "spacedock@" + otherChannelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", id}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", codexLocalPluginID}, tolerateExit: true},
@@ -501,20 +505,6 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
 	}
-	companions := companionPluginIDs(devBranch)
-	if len(companions) > 0 {
-		steps = append(steps,
-			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true},
-			installStep{argv: []string{"plugin", "marketplace", "upgrade", extensionMarketplace}, tolerateExit: true},
-		)
-	}
-	for _, companion := range companions {
-		steps = append(steps,
-			installStep{argv: []string{"plugin", "remove", edgeCopyID(companion)}, tolerateExit: true},
-			installStep{argv: []string{"plugin", "add", companion}, tolerateExit: true},
-		)
-	}
-	return steps
 }
 
 // extensionMarketplace is the marketplace every extension plugin installs from, on
@@ -523,24 +513,6 @@ const extensionMarketplace = "spacedock"
 
 func extensionPluginID(name string) string {
 	return name + "@" + extensionMarketplace
-}
-
-// edgeCopyID is the id an extension plugin had when the edge marketplace listed it.
-// A machine that installed that copy keeps it beside the spacedock one unless
-// removed first; the removal is tolerated because a clean machine has none.
-func edgeCopyID(companion string) string {
-	return strings.TrimSuffix(companion, "@"+extensionMarketplace) + "@spacedock-edge"
-}
-
-// companionPluginIDs are the plugins installed beside Spacedock, one per extension.
-// Claude's `plugin install` does nothing for an installed plugin, so the claude
-// sequence follows it with `plugin update`.
-func companionPluginIDs(devBranch string) []string {
-	var ids []string
-	for _, ext := range channelExtensions(devBranch) {
-		ids = append(ids, extensionPluginID(ext.name))
-	}
-	return ids
 }
 
 // codexPluginDirInstallArgvSequence is the `--plugin-dir` dev-install analog of

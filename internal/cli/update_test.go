@@ -83,6 +83,9 @@ func TestUpdateShowsEachPieceBeforeAndAfterAndIsIdempotent(t *testing.T) {
 	if strings.Contains(stdout.String(), "->") {
 		t.Errorf("second update still shows a change:\n%s", stdout.String())
 	}
+	if strings.Contains(stdout.String(), "spacedock beta --restart") {
+		t.Errorf("second update tells the user to restart beta, which did not change:\n%s", stdout.String())
+	}
 }
 
 func TestUpdateShowsTheInstallScriptsFailedPluginLinesWhenTheScriptSucceeds(t *testing.T) {

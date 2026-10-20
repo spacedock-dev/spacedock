@@ -135,9 +135,6 @@ asset_name() {
 	fi
 }
 
-# EXTRAS is the table of extensions installed beside spacedock. The contract
-# docs/specs/extension-install-contract.md defines its rows. SPACEDOCK_EXTRAS_FROM=<dir>
-# reads an extension's archive and checksums.txt from that directory first.
 EXTRAS=''
 
 tree_version() {
@@ -238,11 +235,8 @@ install_plugins() {
 	fi
 }
 
-# install_extras installs the extensions and the Claude Code plugins on edge, and
-# on stable only when SPACEDOCK_EXTRAS asks: no stable marketplace pin matches a
-# stable release yet, and a plain stable run must leave Claude's settings alone.
-# SPACEDOCK_EXTRAS=none skips them on either channel, and a mirror install
-# (SPACEDOCK_INSTALL_FROM) skips them unless asked.
+# A plain stable run installs no extension: no stable marketplace pin matches a
+# stable release yet, and it must leave Claude's settings alone.
 install_extras() {
 	want="${SPACEDOCK_EXTRAS:-}"
 	[ "$want" = none ] && return 0

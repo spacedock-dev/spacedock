@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -31,9 +30,8 @@ type extension struct {
 // EXTRAS rows, and the two must name the same programs.
 var extensions = []extension{}
 
-// channelExtensions is the table as this channel applies it. Stable installs no
-// extension unless SPACEDOCK_EXTRAS asks, so stable neither expects, updates nor
-// installs their plugins.
+// channelExtensions is the table as this channel applies it: stable installs no
+// extension unless SPACEDOCK_EXTRAS asks, so it expects and updates none.
 func channelExtensions(devBranch string) []extension {
 	if devBranch == "main" {
 		return nil
@@ -263,19 +261,12 @@ func isHomebrewPath(path string) bool {
 	return false
 }
 
-func selfInputs(env []string, dir string, host hostOps) versionInputs {
-	selfPath, _ := resolvedLauncherBin()
-	if env == nil {
-		env = os.Environ()
-	}
-	return versionInputs{env: env, dir: dir, host: host, selfPath: selfPath, selfVersion: displayVersion()}
-}
-
 func reportClaudeVersions(args, env []string, dir string, stdout io.Writer) {
 	for i, a := range args {
 		if a == "--plugin-manifest" || a == "--plugin-dir" || (a == "--host" && i+1 < len(args) && args[i+1] != "claude") {
 			return
 		}
 	}
-	printVersionReport(stdout, collectVersions(selfInputs(env, dir, execHost{})))
+	selfPath, _ := resolvedLauncherBin()
+	printVersionReport(stdout, collectVersions(versionInputs{env: env, dir: dir, host: execHost{}, selfPath: selfPath, selfVersion: displayVersion()}))
 }

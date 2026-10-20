@@ -50,8 +50,6 @@ func writeTarGzFiles(t *testing.T, path string, files map[string]string) {
 const fakeExtrasRows = `alpha|spacedock-dev/alpha|alpha|alpha-tui alpha-client|alpha-tui:spacedock-alpha|bin
 beta|spacedock-dev/beta|beta|beta/beta|beta:spacedock-beta|tree`
 
-// scriptWithExtras is install.sh with its EXTRAS table replaced by rows, so the tests
-// drive the machinery with fake extensions whatever the shipped table holds.
 func scriptWithExtras(t *testing.T, rows string) string {
 	t.Helper()
 	src, err := os.ReadFile(filepath.Join("..", "..", "install.sh"))

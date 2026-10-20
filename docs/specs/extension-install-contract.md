@@ -119,6 +119,7 @@ so a machine ends with one copy. Each companion step may fail without failing
 Spacedock's. Claude Code does nothing when you install a
 plugin that is already installed, so Spacedock runs `plugin update` after each
 companion install. A companion that fails both steps is named in the output.
+Extension plugins are installed for Claude Code only for now.
 
 Each extension's own release keeps its listing on the `spacedock` marketplace
 current. The edge marketplace lists Spacedock only. An extension without a listing on

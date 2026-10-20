@@ -106,7 +106,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 }
 
 // runInstallScript installs into the directory of this binary, so the new program
-// replaces it. The script's stdout is shown only when it fails.
+// replaces it.
 func runInstallScript(d updateDeps, stdout, stderr io.Writer) error {
 	script := envMap(d.env)["SPACEDOCK_INSTALL_SCRIPT"]
 	if script == "" {

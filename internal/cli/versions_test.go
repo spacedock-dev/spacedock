@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -53,8 +54,6 @@ func stageInstall(t *testing.T) *stagedInstall {
 	return stageInstallWith(t, fakeExtensions())
 }
 
-// stageInstallWith installs a consistent set of extensions: a bin program that
-// reports 0.16.0-beta.2 and a tree program at 1.0.1, each with its plugin.
 func stageInstallWith(t *testing.T, table []extension) *stagedInstall {
 	t.Helper()
 	savedBranch, savedTable := devBranch, extensions
@@ -222,5 +221,46 @@ func TestVersionReportExpectsNoExtensionOnStable(t *testing.T) {
 	}
 	if got := report.version("alpha program"); got != "" {
 		t.Errorf("stable lists the alpha program (%q)", got)
+	}
+}
+
+func TestExtensionTableAgreesWithInstallScript(t *testing.T) {
+	src, err := os.ReadFile(filepath.Join("..", "..", "install.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := regexp.MustCompile(`(?s)\nEXTRAS='([^']*)'\n`).FindStringSubmatch(string(src))
+	if m == nil {
+		t.Fatal("install.sh declares no EXTRAS table")
+	}
+	rows := map[string][]string{}
+	if table := strings.TrimSpace(m[1]); table != "" {
+		for _, line := range strings.Split(table, "\n") {
+			fields := strings.Split(line, "|")
+			if len(fields) != 6 {
+				t.Fatalf("EXTRAS row %q has %d fields, want 6", line, len(fields))
+			}
+			rows[fields[0]] = fields
+		}
+	}
+	if len(rows) != len(extensions) {
+		t.Errorf("install.sh lists %d extensions and internal/cli lists %d", len(rows), len(extensions))
+	}
+	for _, ext := range extensions {
+		fields, ok := rows[ext.name]
+		if !ok {
+			t.Errorf("%s is in internal/cli but not in install.sh", ext.name)
+			continue
+		}
+		if (fields[5] == "tree") != ext.tree {
+			t.Errorf("%s: install.sh kind %q, internal/cli tree=%v", ext.name, fields[5], ext.tree)
+		}
+		linked := false
+		for _, link := range strings.Fields(fields[4]) {
+			linked = linked || link[strings.Index(link, ":")+1:] == ext.program
+		}
+		if !linked {
+			t.Errorf("%s: install.sh links %q, internal/cli looks for %q", ext.name, fields[4], ext.program)
+		}
 	}
 }

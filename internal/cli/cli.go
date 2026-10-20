@@ -520,13 +520,10 @@ func newInstallCommand(ctx context.Context, env []string, dir string, stdout, st
 			}
 			applyDevBranchOverride(env)
 			applyMarketplaceSourceOverride(env)
-			code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr)
-			if code == 0 {
-				reportClaudeVersions(args, env, dir, stdout)
-			}
-			if code != 0 {
+			if code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
+			reportClaudeVersions(args, env, dir, stdout)
 			return nil
 		},
 	}

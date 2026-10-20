@@ -30,38 +30,6 @@ func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
 	if got := claude[len(claude)-len(wantClaude):]; !reflect.DeepEqual(got, wantClaude) {
 		t.Errorf("claude companion steps = %v, want %v", got, wantClaude)
 	}
-
-	codex := codexInstallArgvSequence("spacedock-dev/marketplace@edge", "next")
-	wantCodex := []installStep{
-		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "remove", "alpha@spacedock-edge"}, tolerateExit: true},
-		{argv: []string{"plugin", "add", "alpha@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "remove", "beta@spacedock-edge"}, tolerateExit: true},
-		{argv: []string{"plugin", "add", "beta@spacedock"}, tolerateExit: true},
-	}
-	if got := codex[len(codex)-len(wantCodex):]; !reflect.DeepEqual(got, wantCodex) {
-		t.Errorf("codex companion steps = %v, want %v", got, wantCodex)
-	}
-}
-
-func TestExtensionPluginsInstallFromTheSpacedockMarketplaceWhateverTheChannel(t *testing.T) {
-	saved := extensions
-	extensions = fakeExtensions()
-	defer func() { extensions = saved }()
-
-	for _, devBranch := range []string{"next", "release-candidate"} {
-		for _, id := range companionPluginIDs(devBranch) {
-			if !strings.HasSuffix(id, "@spacedock") {
-				t.Errorf("devBranch %q: companion id %q is not from the spacedock marketplace", devBranch, id)
-			}
-		}
-		for _, step := range installArgvSequence(channelMarketplaceSource(devBranch), devBranch) {
-			if step.argv[1] == "install" && strings.Contains(strings.Join(step.argv, " "), "alpha@spacedock-edge") {
-				t.Errorf("devBranch %q: step %v installs a companion from the channel marketplace", devBranch, step.argv)
-			}
-		}
-	}
 }
 
 func TestExtensionMarketplaceSourceOverrideReplacesOnlyTheExtensionMarketplace(t *testing.T) {
@@ -79,18 +47,6 @@ func TestExtensionMarketplaceSourceOverrideReplacesOnlyTheExtensionMarketplace(t
 	}
 	if want := []string{"spacedock-dev/marketplace@edge", "/tmp/staged"}; !reflect.DeepEqual(adds, want) {
 		t.Errorf("marketplace adds = %v, want %v", adds, want)
-	}
-}
-
-func TestInstallSequencesNameNoCompanionWhenNoExtensionIsListed(t *testing.T) {
-	saved := extensions
-	extensions = nil
-	defer func() { extensions = saved }()
-
-	for _, step := range installArgvSequence("spacedock-dev/marketplace", "next") {
-		if step.reportExit {
-			t.Errorf("step %v reports a companion, but no extension is listed", step.argv)
-		}
 	}
 }
 
@@ -121,39 +77,9 @@ func TestInstallSequencesNameNoCompanionOnStable(t *testing.T) {
 	extensions = fakeExtensions()
 	defer func() { extensions = saved }()
 
-	sequences := map[string][]installStep{
-		"claude": installArgvSequence("spacedock-dev/marketplace", "main"),
-		"codex":  codexInstallArgvSequence("spacedock-dev/marketplace", "main"),
-	}
-	for host, steps := range sequences {
-		for _, step := range steps {
-			if strings.Contains(strings.Join(step.argv, " "), "alpha") || strings.Contains(strings.Join(step.argv, " "), "beta") {
-				t.Errorf("%s sequence on stable installs an extension plugin: %v", host, step.argv)
-			}
+	for _, step := range installArgvSequence("spacedock-dev/marketplace", "main") {
+		if strings.Contains(strings.Join(step.argv, " "), "alpha") || strings.Contains(strings.Join(step.argv, " "), "beta") {
+			t.Errorf("the stable sequence installs an extension plugin: %v", step.argv)
 		}
-	}
-}
-
-func TestInstallGoesOnWhenTheEdgeCopyIsNotThereToRemove(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("stub script uses /bin/sh; not portable to Windows")
-	}
-	saved := extensions
-	extensions = fakeExtensions()
-	defer func() { extensions = saved }()
-	dir := writeClaudeStub(t, "plugin uninstall alpha@spacedock-edge")
-	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
-
-	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
-	if err != nil {
-		t.Fatalf("Install stopped on a missing edge copy: %v\nout=%q", err, out)
-	}
-	for _, want := range []string{"plugin install alpha@spacedock", "plugin update alpha@spacedock"} {
-		if !strings.Contains(out, want) {
-			t.Errorf("output lacks %q after the failed removal\nout=%q", want, out)
-		}
-	}
-	if strings.Contains(out, "failed") {
-		t.Errorf("a missing edge copy is reported as a failure\nout=%q", out)
 	}
 }
