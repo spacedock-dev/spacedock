@@ -30,6 +30,22 @@ func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
 	if got := claude[len(claude)-len(wantClaude):]; !reflect.DeepEqual(got, wantClaude) {
 		t.Errorf("claude companion steps = %v, want %v", got, wantClaude)
 	}
+
+	codex := codexInstallArgvSequence("spacedock-dev/marketplace@edge", "next")
+	wantCodex := []installStep{
+		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", "alpha@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "add", "alpha@spacedock"}, tolerateExit: true, reportExit: true},
+		{argv: []string{"plugin", "remove", "beta@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "add", "beta@spacedock"}, tolerateExit: true, reportExit: true},
+	}
+	if len(codex) < len(wantCodex) {
+		t.Fatalf("codex sequence = %v, want the companion steps at its end", codex)
+	}
+	if got := codex[len(codex)-len(wantCodex):]; !reflect.DeepEqual(got, wantCodex) {
+		t.Errorf("codex companion steps = %v, want %v", got, wantCodex)
+	}
 }
 
 func TestExtensionMarketplaceSourceOverrideReplacesOnlyTheExtensionMarketplace(t *testing.T) {
@@ -72,14 +88,42 @@ func TestInstallNamesAnExtensionPluginThatCannotBeUpdated(t *testing.T) {
 	}
 }
 
+func TestCodexInstallNamesAnExtensionPluginThatCannotBeAdded(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("stub script uses /bin/sh; not portable to Windows")
+	}
+	saved := extensions
+	extensions = fakeExtensions()
+	defer func() { extensions = saved }()
+	dir := writeHostStub(t, "codex", "plugin add beta@spacedock")
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	out, err := execHost{}.Install("codex", "spacedock-dev/marketplace@edge", "next")
+	if err != nil {
+		t.Fatalf("Install returned error on a failed companion: %v\nout=%q", err, out)
+	}
+	if want := "codex plugin add beta@spacedock failed"; !strings.Contains(out, want) {
+		t.Errorf("output does not name the failed companion, want %q\nout=%q", want, out)
+	}
+	if strings.Contains(out, "alpha@spacedock failed") {
+		t.Errorf("output blames alpha, which was added fine\nout=%q", out)
+	}
+}
+
 func TestInstallSequencesNameNoCompanionOnStable(t *testing.T) {
 	saved := extensions
 	extensions = fakeExtensions()
 	defer func() { extensions = saved }()
 
-	for _, step := range installArgvSequence("spacedock-dev/marketplace", "main") {
-		if strings.Contains(strings.Join(step.argv, " "), "alpha") || strings.Contains(strings.Join(step.argv, " "), "beta") {
-			t.Errorf("the stable sequence installs an extension plugin: %v", step.argv)
+	sequences := map[string][]installStep{
+		"claude": installArgvSequence("spacedock-dev/marketplace", "main"),
+		"codex":  codexInstallArgvSequence("spacedock-dev/marketplace", "main"),
+	}
+	for host, steps := range sequences {
+		for _, step := range steps {
+			if strings.Contains(strings.Join(step.argv, " "), "alpha") || strings.Contains(strings.Join(step.argv, " "), "beta") {
+				t.Errorf("the %s stable sequence installs an extension plugin: %v", host, step.argv)
+			}
 		}
 	}
 }
