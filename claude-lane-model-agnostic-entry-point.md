@@ -62,6 +62,14 @@ gates:
                 reason: 'Captain rejects validation (REJECTED verdict accepted) and approves the three new standing checks; route to implementation. Asks: add to internal/release/livemodels_test.go (1) an assertion that the Claude live job keeps needs: offline, (2) an assertion that opus is excluded from the routine (sonnet cadence) permitted set, (3) an assertion that the matrix binds to the selected registry output claude_selected, not claude_sonnet. Each must fail under its own audit mutation (show red/green). No broad schema/wiring suite, no new lane/job/CI step. Stay within the +150 net LOC ceiling; if it would exceed, stop for the FO rather than weaken. Report the measured diff.'
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
+review-round:
+    id: round:f77r1rj2g7sgj3hkrht7n37f:implementation:1
+    stage: implementation
+    cycle: 1
+    briefing:
+        id: briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-1
+        digest: sha256:d6bf0cf11bffa04b1199e287703b7b774e7cf4db609781c077995a6ce9d822c7
+        room-ref: '@review/implementation/round-1'
 ---
 
 ## Problem
@@ -1038,3 +1046,7 @@ REJECTED: current named-model dispatch and hosted pre-approval refusal are indep
 ### Summary
 
 One test function now holds the three captain-approved standing assertions. Each one fails only under its own audit mutation and passes on candidate a9f7e8143. Both Go suites pass. The surface is the same six files at exactly +150 net, which is the ceiling. Haiku model compliance and the pre-existing gofmt drift on main stay outside this task.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation detached audit (three central dispatch/approval claims had no standing regression check); surface 6 files / +150 net LOC vs estimate 5 files / +180 net LOC (83%); AC narrowed: AC-1 re-scoped by captain-ruling[2026-10-08] to named-model execution without a workflow edit, six-file surface authorized earlier. Captain revised the validation gate (66bb17a16) and approved three standing assertions within +150; producer correction a9f7e8143 is complete, independent re-review pending.
