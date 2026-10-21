@@ -328,6 +328,21 @@ Handoff-only prior-run evidence: normal suite passed in full (`internal/cli` 136
 
 The four-file retry reconciles shared residency with concrete host loads and presenter reuse while preserving lazy invalidation, fresh gate evidence, and gate/write/merge ordering. Full normal and race suites pass, and the published earlier attempt remains auditable as an ancestor rather than being rewritten. Empirical residency, real-compaction, and replacement acceptance remain outstanding for the FO's one-off live validation and independent review.
 
+## Gate-pending: pi-live is red on PR #841
+
+**Hypothesis, UNVERIFIED.** The `pi-live` failure on PR #841 is caused by this change, not by a pre-existing flake. This change edits `pi-first-officer-runtime.md` and `fo-gate-lifecycle/SKILL.md`, which are exactly the contract text the Pi lane exercises. Control: PR #838 changed only a commission markdown file and its `pi-live` passed in 42m34s.
+
+Observed on head `ecee2ccc1`: `offline` pass, `codex-live` pass, `build` and both `install` jobs pass, `pi-live` FAIL (42m55s), `claude-live` FAIL (6m18s, the known sonnet failures). The failure log has not been read, so the cause is unverified.
+
+## Next steps
+
+1. Read the `pi-live` log from run 37664260001, job 112939854396. Classify the failure: contract regression, lane flake, or environment.
+2. If it is a regression, do not merge. Route the finding to implementation through the declared `feedback-to`.
+3. Run the same journeys against unmodified `main` to separate regression from flake. Do not attribute a cause that has not been shown.
+4. Decide the merge of PR #841 only after 1 to 3. `main` is unprotected, so nothing mechanical blocks a merge; the caution has to be deliberate.
+5. Still outstanding from the accepted scope: the presenter and lifecycle repeat leg, the reload-after-compaction leg, and the replacement leg. All three remain runnable from the worktree.
+
+
 ## Stage Report: validation
 
 - DONE: Verify the deliverable: exactly four skill files, matching the approved design and the two fixes the retained review required.
