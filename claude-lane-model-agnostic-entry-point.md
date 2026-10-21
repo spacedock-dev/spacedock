@@ -52,6 +52,14 @@ gates:
                 id: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-1:revision-1
                 digest: sha256:c9e924c982b1ee9758423be9e5c94dbaf693ce71c5ed458b4894f3f25094126a
                 room-ref: '@review/validation/briefing-1'
+              resolution:
+                type: Resolution
+                id: resolution:spacedock:f77r1rj2g7sgj3hkrht7n37f:validation:1
+                briefing: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-1:revision-1
+                by: person:captain
+                at: "2026-10-21T18:51:45.991607Z"
+                decision: revise
+                reason: 'Captain rejects validation (REJECTED verdict accepted) and approves the three new standing checks; route to implementation. Asks: add to internal/release/livemodels_test.go (1) an assertion that the Claude live job keeps needs: offline, (2) an assertion that opus is excluded from the routine (sonnet cadence) permitted set, (3) an assertion that the matrix binds to the selected registry output claude_selected, not claude_sonnet. Each must fail under its own audit mutation (show red/green). No broad schema/wiring suite, no new lane/job/CI step. Stay within the +150 net LOC ceiling; if it would exceed, stop for the FO rather than weaken. Report the measured diff.'
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 ---
