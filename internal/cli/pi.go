@@ -461,14 +461,12 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	if !checkOnly {
 		source := piSpacedockPackagePin(devBranch)
-		var out string
-		var err error
 		if pluginDir != "" {
 			source = pluginDir
-			out, err = piOps.PiInstall(source)
 		} else {
-			out, err = replacePiPackage(piOps, cfg.agentDir, piSpacedockPackageSource, source)
+			piOps.PiRemove(piSpacedockPackageSource)
 		}
+		out, err := piOps.PiInstall(source)
 		if strings.TrimSpace(out) != "" {
 			fmt.Fprint(stdout, out)
 		}

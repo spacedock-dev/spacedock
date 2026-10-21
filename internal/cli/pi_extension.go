@@ -71,7 +71,11 @@ func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer) 
 			fmt.Fprintf(stdout, "spacedock install: %v, so the %s Pi package was not installed\n", err, ext.name)
 			continue
 		}
-		out, err := replacePiPackage(piOps, agentDir, bare, pinned)
+		if piSettingsHold(agentDir, pinned) {
+			continue
+		}
+		piOps.PiRemove(bare)
+		out, err := piOps.PiInstall(pinned)
 		if strings.TrimSpace(out) != "" {
 			fmt.Fprint(stdout, out)
 		}
@@ -105,17 +109,16 @@ type piExtensionPackage struct {
 	ok           bool
 }
 
-// replacePiPackage moves a package to the pinned source: `pi install` over an installed
-// package changes nothing, so the old entry is removed first. A settings.json that
-// already holds the pinned source needs neither, and keeps its working checkout.
-func replacePiPackage(piOps piRuntimeOps, agentDir, bare, pinned string) (string, error) {
+// piSettingsHold reports whether settings.json already holds the pinned source. That
+// is evidence only for a tag ref: a branch ref keeps its name while it moves, so
+// Spacedock's own package, pinned to a channel branch, is always replaced.
+func piSettingsHold(agentDir, pinned string) bool {
 	for _, src := range piSettingsSources(agentDir) {
 		if strings.TrimSpace(src) == pinned {
-			return "", nil
+			return true
 		}
 	}
-	piOps.PiRemove(bare)
-	return piOps.PiInstall(pinned)
+	return false
 }
 
 func piSettingsSources(agentDir string) []string {

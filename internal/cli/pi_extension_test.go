@@ -58,16 +58,17 @@ func TestPiInstallPinsBothPackagesRemovingEachBeforeItsInstall(t *testing.T) {
 	}
 }
 
-func TestPiInstallLeavesAPackageAloneWhenSettingsHoldItsExactSourceAndRef(t *testing.T) {
+func TestPiInstallLeavesATagPinnedExtensionAloneWhenSettingsHoldItsExactSourceAndRef(t *testing.T) {
 	savedBranch := devBranch
 	defer func() { devBranch = savedBranch }()
 	devBranch = "main"
 	spacedock, subspace := piSpacedockPackageSource+"@stable", piTestSubspace+"@v9.9.9"
+	// The Spacedock package is pinned to a channel branch that moves under its name, so it is always replaced.
+	replaceSpacedock := "remove " + piSpacedockPackageSource + "\ninstall " + spacedock
 	for name, tc := range map[string]struct{ settings, want string }{
-		"both held":           {`{"packages":["` + spacedock + `",{"source":"` + subspace + `"}]}`, ""},
-		"subspace ref moved":  {`{"packages":["` + spacedock + `","` + piTestSubspace + `@v9.9.8"]}`, "remove " + piTestSubspace + "\ninstall " + subspace},
-		"spacedock unpinned":  {`{"packages":["` + piSpacedockPackageSource + `","` + subspace + `"]}`, "remove " + piSpacedockPackageSource + "\ninstall " + spacedock},
-		"spacedock other ref": {`{"packages":["` + piSpacedockPackageSource + `@main","` + subspace + `"]}`, "remove " + piSpacedockPackageSource + "\ninstall " + spacedock},
+		"both held":          {`{"packages":["` + spacedock + `",{"source":"` + subspace + `"}]}`, replaceSpacedock},
+		"subspace ref moved": {`{"packages":["` + spacedock + `","` + piTestSubspace + `@v9.9.8"]}`, replaceSpacedock + "\nremove " + piTestSubspace + "\ninstall " + subspace},
+		"subspace unpinned":  {`{"packages":["` + spacedock + `","` + piTestSubspace + `"]}`, replaceSpacedock + "\nremove " + piTestSubspace + "\ninstall " + subspace},
 	} {
 		ops := &fakePiRuntimeOps{listing: []byte(piTestListing)}
 		if code, out := installPiWithSettings(t, ops, tc.settings); code != 0 {
