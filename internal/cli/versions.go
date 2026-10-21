@@ -79,16 +79,7 @@ func collectVersions(in versionInputs) versionReport {
 	pathEnv := envMap(in.env)["PATH"]
 
 	add("spacedock", in.selfVersion, in.selfPath)
-	inventory, inventoryErr := in.host.PluginInventory("claude")
-	pluginVersion := func(id string) string {
-		if inventoryErr != nil {
-			return "unknown"
-		}
-		if entry, ok := installedPlugin(inventory, id); ok {
-			return entry.Version
-		}
-		return notInstalled
-	}
+	pluginVersion, inventoryErr := pluginVersionLookup(in.host, "claude")
 	spacedockID := channelPluginID(devBranch)
 	add("spacedock plugin", pluginVersion(spacedockID), spacedockID)
 
@@ -141,6 +132,19 @@ func collectVersions(in versionInputs) versionReport {
 		report.extraCopy = true
 	}
 	return report
+}
+
+func pluginVersionLookup(h hostOps, host string) (lookup func(id string) string, err error) {
+	inventory, err := h.PluginInventory(host)
+	return func(id string) string {
+		if err != nil {
+			return "unknown"
+		}
+		if entry, ok := installedPlugin(inventory, id); ok {
+			return entry.Version
+		}
+		return notInstalled
+	}, err
 }
 
 func printVersionReport(w io.Writer, report versionReport) {

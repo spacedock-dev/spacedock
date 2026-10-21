@@ -124,8 +124,7 @@ Codex gets the same plugins on the same channels. `spacedock install --host code
 adds the `spacedock` marketplace, refreshes it, removes `NAME@spacedock-edge` and
 adds `NAME@spacedock`. Codex moves an installed plugin to the listing's version
 when you add it again, so re-running that command is the Codex update, and a
-companion that fails to add is named in the output. `spacedock update` and the
-version list cover Claude Code only.
+companion that fails to add is named in the output.
 
 Each extension's own release keeps its listing on the `spacedock` marketplace
 current. The edge marketplace lists Spacedock only. An extension without a listing on
@@ -146,10 +145,19 @@ its directory name, and Spacedock cannot ask it `--supports`.
 Each hand-off names the program that does the work and the capability it needs.
 Before a hand-off, the skill runs `--supports` for that program. When the answer is
 no, the skill stops and tells the user to run `spacedock update`, then restart
-Claude Code or run `/reload-plugins`.
+Claude Code or run `/reload-plugins`, or start a new Codex session.
 
 `spacedock update` installs each extension's newest release on its channel. It
-refreshes the plugins, and prints the version of every piece before and after.
+refreshes the plugins of each of Claude Code and Codex that is on PATH and has the
+Spacedock plugin installed, and skips any other with a line naming it. It prints the
+version of every piece before and after, the plugin rows under a heading for their
+host. It runs the new program's `spacedock install --host NAME` for each, so a
+companion the new release adds reaches every refreshed host in the same run; it tells
+`install.sh` to skip its own plugin step (`SPACEDOCK_PLUGINS=none`). Homebrew has not
+replaced the program yet, so there the running program does it. Codex reads plugins
+when a session starts, so the closing line tells the user to start a new Codex
+session.
+
 `spacedock doctor` lists the same versions and names a program that differs from its
 plugin, a second `spacedock` on PATH, and a missing program or plugin. An extension
 may add rows and problems of its own to that list.

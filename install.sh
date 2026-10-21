@@ -25,6 +25,9 @@
 #   * Extracts the bare `spacedock` binary and installs it to SPACEDOCK_INSTALL_DIR
 #     (default ~/.local/bin).
 #
+# SPACEDOCK_PLUGINS=none skips the plugin step; `spacedock update` sets it and
+# refreshes the plugins itself, only on the hosts that already have Spacedock's.
+#
 # SPACEDOCK_PRINT_TARGET=1 runs the detection + URL-construction path and prints
 # the resolved os/arch/asset/tarball/checksums, then exits before any download —
 # the inspection seam the AC-3 live-URL test asserts against.
@@ -226,6 +229,7 @@ install_extra() {
 # install_plugins uses the spacedock this script just installed, not an older copy
 # that comes first on PATH.
 install_plugins() {
+	[ "${SPACEDOCK_PLUGINS:-}" = none ] && return 0
 	if command -v claude >/dev/null 2>&1; then
 		err "adding the Claude Code plugins (spacedock install --host claude)"
 		"$INSTALL_DIR/spacedock" install --host claude \

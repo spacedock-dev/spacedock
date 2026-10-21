@@ -24,6 +24,7 @@ type updateDeps struct {
 	selfPath    string
 	lookPath    func(string) (string, error)
 	fetchScript func(dst string) error
+	runSelf     func(args ...string) (string, error)
 }
 
 func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
@@ -47,6 +48,14 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 				fetchScript: func(dst string) error {
 					return exec.CommandContext(ctx, "curl", "-fsSL", "-o", dst, installScriptURL).Run()
 				}}
+			if selfPath != "" {
+				deps.runSelf = func(args ...string) (string, error) {
+					cmd := exec.CommandContext(ctx, selfPath, args...)
+					cmd.Env = env
+					out, err := cmd.CombinedOutput()
+					return string(out), err
+				}
+			}
 			if code := runUpdate(deps, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
@@ -54,8 +63,9 @@ func newUpdateCommand(ctx context.Context, env []string, dir string, stdout, std
 		},
 	}
 	setSetupHelp(cmd, stdout, `
-Update every program and plugin on the channel of this binary. Homebrew owns its
-own programs: update prints the brew command and updates only the plugins.
+Update every program and plugin on the channel of this binary, for each of Claude
+Code and Codex that is on PATH and has the Spacedock plugin installed. Homebrew
+owns its own programs: update prints the brew command and updates only the plugins.
 SPACEDOCK_INSTALL_SCRIPT=PATH runs that script in place of the downloaded one.
 `)
 	return cmd
@@ -75,34 +85,101 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "Updating Spacedock on the %s channel (%s)\n", before.channel, owner)
 
-	_, claudeErr := d.lookPath("claude")
-	switch {
-	case brew:
-		if claudeErr == nil {
-			out, err := d.host.Install("claude", channelMarketplaceSource(devBranch), devBranch)
-			printInstallFailures(stdout, out)
-			if err != nil {
-				fmt.Fprintf(stderr, "spacedock update: plugin update failed: %v\n", err)
-				return 1
-			}
-		}
-	default:
+	hosts := []*hostUpdate{planHostUpdate(d, "claude", "Claude Code"), planHostUpdate(d, "codex", "Codex")}
+	if !brew {
 		if err := runInstallScript(d, stdout, stderr); err != nil {
 			fmt.Fprintf(stderr, "spacedock update: %v\n", err)
 			return 1
 		}
+	}
+	for _, h := range hosts {
+		if !h.refresh {
+			continue
+		}
+		// The new program owns the install sequence, so a companion it adds reaches
+		// the host in the same run; Homebrew has not replaced the program yet.
+		var out string
+		if brew || d.runSelf == nil {
+			out, h.err = d.host.Install(h.name, channelMarketplaceSource(devBranch), devBranch)
+		} else {
+			out, h.err = d.runSelf("install", "--host", h.name)
+		}
+		printInstallFailures(stdout, out)
+		if h.err != nil && strings.TrimSpace(out) != "" {
+			h.err = fmt.Errorf("%w\n%s", h.err, strings.TrimSpace(out))
+		}
+		h.after = hostPluginRows(d.host, h.name)
 	}
 
 	if d.selfPath != "" && !brew {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
 	after := collectVersions(inputs)
-	printUpdateChanges(stdout, before, after, brewFormula(d.selfPath, brew), claudeErr != nil)
-	if claudeErr == nil && after.version("spacedock plugin") == notInstalled {
-		fmt.Fprintln(stderr, "spacedock update: the Spacedock plugin is not installed. Run: spacedock install --host claude")
-		return 1
+	printUpdateChanges(stdout, before, after, brewFormula(d.selfPath, brew), hosts)
+	code := 0
+	for _, h := range hosts {
+		switch {
+		case !h.refresh:
+		case h.err != nil:
+			fmt.Fprintf(stderr, "spacedock update: the %s plugin update failed: %v\n", h.title, h.err)
+			code = 1
+		case pieceVersion(h.after, "spacedock plugin") == notInstalled:
+			fmt.Fprintf(stderr, "spacedock update: the Spacedock plugin is not installed on %s. Run: spacedock install --host %s\n", h.title, h.name)
+			code = 1
+		}
 	}
-	return 0
+	return code
+}
+
+// hostUpdate is one host's share of an update. A host that is absent or holds no
+// Spacedock plugin is skipped, never installed into: update refreshes, install adds.
+type hostUpdate struct {
+	name, title   string
+	refresh       bool
+	skipped       string
+	before, after []pieceRow
+	err           error
+}
+
+func planHostUpdate(d updateDeps, name, title string) *hostUpdate {
+	h := &hostUpdate{name: name, title: title}
+	if _, err := d.lookPath(name); err != nil {
+		h.skipped = name + " is not on PATH, so its plugins were skipped."
+		return h
+	}
+	lookup, err := pluginVersionLookup(d.host, name)
+	if err != nil {
+		h.skipped = fmt.Sprintf("%s plugin list failed (%v), so its plugins were skipped.", name, err)
+		return h
+	}
+	if lookup(channelPluginID(devBranch)) == notInstalled {
+		h.skipped = name + " has no Spacedock plugin, so its plugins were skipped."
+		return h
+	}
+	h.refresh, h.before = true, hostPluginRowsFrom(lookup)
+	return h
+}
+
+func hostPluginRows(h hostOps, host string) []pieceRow {
+	lookup, _ := pluginVersionLookup(h, host)
+	return hostPluginRowsFrom(lookup)
+}
+
+func hostPluginRowsFrom(lookup func(id string) string) []pieceRow {
+	rows := []pieceRow{{label: "spacedock plugin", version: lookup(channelPluginID(devBranch))}}
+	for _, ext := range channelExtensions(devBranch) {
+		rows = append(rows, pieceRow{label: ext.name + " plugin", version: lookup(extensionPluginID(ext.name))})
+	}
+	return rows
+}
+
+func pieceVersion(rows []pieceRow, label string) string {
+	for _, r := range rows {
+		if r.label == label {
+			return r.version
+		}
+	}
+	return ""
 }
 
 // runInstallScript installs into the directory of this binary, so the new program
@@ -120,7 +197,7 @@ func runInstallScript(d updateDeps, stdout, stderr io.Writer) error {
 			return fmt.Errorf("could not download the install script, nothing was changed: %w", err)
 		}
 	}
-	env := append(append([]string{}, d.env...), "SPACEDOCK_CHANNEL="+selectedChannelWord())
+	env := append(append([]string{}, d.env...), "SPACEDOCK_CHANNEL="+selectedChannelWord(), "SPACEDOCK_PLUGINS=none")
 	if d.selfPath != "" {
 		env = append(env, "SPACEDOCK_INSTALL_DIR="+filepath.Dir(d.selfPath))
 	}
@@ -154,15 +231,20 @@ func brewFormula(selfPath string, brew bool) string {
 	return "spacedock"
 }
 
-func printUpdateChanges(w io.Writer, before, after versionReport, formula string, noClaude bool) {
-	row := func(label string) {
-		b, a := before.version(label), after.version(label)
+var restartAdvice = map[string]string{
+	"claude": "Open Claude Code sessions keep the old plugins until you restart them or run /reload-plugins.",
+	"codex":  "Open Codex sessions keep the old plugins until you start a new Codex session.",
+}
+
+func printUpdateChanges(w io.Writer, before, after versionReport, formula string, hosts []*hostUpdate) {
+	printRow := func(label, b, a string) {
 		if b == a {
 			fmt.Fprintf(w, "  %-18s %-15s unchanged\n", label, a)
 			return
 		}
 		fmt.Fprintf(w, "  %-18s %s -> %s\n", label, b, a)
 	}
+	row := func(label string) { printRow(label, before.version(label), after.version(label)) }
 	fmt.Fprintln(w, "\nPrograms")
 	if formula != "" {
 		fmt.Fprintf(w, "  Homebrew owns spacedock and its extensions. Run: brew upgrade %s\n", formula)
@@ -172,13 +254,14 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 			row(ext.name + " program")
 		}
 	}
-	fmt.Fprintln(w, "Claude Code plugins")
-	if noClaude {
-		fmt.Fprintln(w, "  claude is not on PATH, so the plugins were skipped. Run: spacedock install --host claude")
-	} else {
-		row("spacedock plugin")
-		for _, ext := range channelExtensions(devBranch) {
-			row(ext.name + " plugin")
+	for _, h := range hosts {
+		fmt.Fprintf(w, "%s plugins\n", h.title)
+		if !h.refresh {
+			fmt.Fprintln(w, "  "+h.skipped)
+			continue
+		}
+		for _, r := range h.after {
+			printRow(r.label, pieceVersion(h.before, r.label), r.version)
 		}
 	}
 	if len(after.problems) > 0 {
@@ -187,7 +270,17 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 			fmt.Fprintln(w, p)
 		}
 	}
-	fmt.Fprintln(w, "\nOpen Claude Code sessions keep the old plugins until you restart them or run /reload-plugins.")
+	fmt.Fprintln(w)
+	refreshed := false
+	for _, h := range hosts {
+		if h.refresh {
+			refreshed = true
+			fmt.Fprintln(w, restartAdvice[h.name])
+		}
+	}
+	if !refreshed {
+		fmt.Fprintln(w, "No plugins were updated. Run: spacedock install --host claude   or: spacedock install --host codex")
+	}
 	for _, ext := range channelExtensions(devBranch) {
 		if before.version(ext.name+" program") != after.version(ext.name+" program") {
 			for _, line := range ext.afterUpdate {
