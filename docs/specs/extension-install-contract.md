@@ -206,12 +206,16 @@ The file holds `project`, `mode` (`local` or `remote`) and `decided_at` (RFC 333
 `review-mode get` exits 1 when the file is unreadable or holds another `mode`, and
 `review-mode clear` removes it. The file is never inside the repository.
 `/spacedock:review FILE` asks the user when no mode is recorded and records only their
-answer. The question says Terminal (TUI) keeps the file on this machine, and Web uploads
-it to review.spacedock.md where anyone with the link can open it. `/spacedock:review`
-with no argument shows the recorded choice and offers keep, switch, clear or leave,
-publishing nothing. An argument that is not an existing file is a request: the skill
-writes the artifact first, then reviews it. The uploader that sends artifacts to the
-relay should refuse when the mode is not `remote`; today the skills enforce it.
+answer. It asks "Terminal (TUI) or Web?" first; Terminal (TUI) keeps the file on this
+machine. Choosing Web asks a second question: the file uploads to review.spacedock.md,
+anyone with the link can open it, and it expires after seven days, agree? Declining
+records nothing and offers Terminal (TUI). After either answer the skill says the
+setting can be changed at any time with `/spacedock:review` and no argument, which
+shows the recorded choice and offers keep, switch, clear or leave, publishing nothing
+(switching to Web asks the second question). An argument that is not an existing file
+is a request: the skill writes the artifact first, then reviews it. The uploader that
+sends artifacts to the relay should refuse when the mode is not `remote`; today the
+skills enforce it.
 `spacedock doctor` shows the choice as a row and names an unreadable one `UNREADABLE`.
 
 ## Release asset names

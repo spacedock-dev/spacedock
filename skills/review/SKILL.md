@@ -29,6 +29,28 @@ on Homebrew, or run the install line again. Stop.
 - An argument that names an existing file (`test -f`): do **Review the file**.
 - Any other argument is a request, not a path: do **Write first, then review**.
 
+## Ask for the choice
+
+Used whenever a choice is needed. Record only what the user answers, never your guess.
+
+1. Ask "Terminal (TUI) or Web?" and show the two choices above. Say the answer is
+   remembered for this project only.
+
+2. Terminal (TUI): `spacedock review-mode set local`.
+
+3. Web: do not record yet. Ask a second question on its own:
+
+   ```text
+   Web uploads the file to review.spacedock.md. Anyone with the link can open it, and it expires automatically after seven days. Agree?
+   ```
+
+   Yes: `spacedock review-mode set remote`. No: record nothing, say so, and offer the
+   Terminal (TUI) instead; record `local` only if they accept it.
+
+4. In your reply to the final answer, whichever it is (a Terminal (TUI) choice, a Yes,
+   or a No while you still offer the Terminal (TUI)), tell the user they can change
+   the setting at any time by running `/spacedock:review` with no argument.
+
 ## Show or change the choice
 
 Publish nothing and open nothing.
@@ -36,18 +58,16 @@ Publish nothing and open nothing.
 1. Run `spacedock review-mode get --json`. If it exits 1, the recorded choice is
    unreadable: tell the user to run `spacedock review-mode clear`. Stop.
 
-2. Tell the user this project's choice in the words above, or that none is recorded.
+2. Tell the user this project's choice by quoting its line above word for word, or
+   that none is recorded.
    Then offer exactly: keep it, switch to the other one, clear it (the next review
-   asks again), or leave. With none recorded, offer the two choices or leave.
+   asks again), or leave. With none recorded, run **Ask for the choice**.
 
-3. Act only on the user's answer, never your own guess:
-
-   ```bash
-   spacedock review-mode set local    # or: set remote
-   spacedock review-mode clear
-   ```
-
-   Keep and leave run nothing. Then state what is recorded now and stop.
+3. Act only on the user's answer. Switching to the Terminal (TUI) runs
+   `spacedock review-mode set local`; switching to the Web runs **Ask for the
+   choice** from its second question, so it needs the explicit agreement.
+   Clearing runs `spacedock review-mode clear`. Keep and leave run nothing. Then
+   state what is recorded now and stop.
 
 ## Write first, then review
 
@@ -68,13 +88,8 @@ the project gets no file nobody asked for. Never overwrite an existing file. The
    choice is unreadable. Tell the user to run `spacedock review-mode clear`, then
    ask again. Stop.
 
-2. If `mode` is empty, ask the user before anything else, with the two choices above.
-   Say the answer is remembered for this project only.
-   Record their answer, never your own guess:
-
-   ```bash
-   spacedock review-mode set local    # or: set remote
-   ```
+2. If `mode` is empty, run **Ask for the choice** before anything else. If the user
+   declines the Web and does not accept the Terminal (TUI), stop and publish nothing.
 
 3. Ask the program that will do the work if it supports the hand-off. Run the line
    for the recorded mode.
