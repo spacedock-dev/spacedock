@@ -214,15 +214,25 @@ $XDG_STATE_HOME/subspace/review-mode/HASH.json   (default ~/.local/state/subspac
 The file holds `project`, `mode` (`local` or `remote`) and `decided_at` (RFC 3339).
 `review-mode get` exits 1 when the file is unreadable or holds another `mode`, and
 `review-mode clear` removes it. The file is never inside the repository.
-`/spacedock:review FILE` asks the user when no mode is recorded and records only their
-answer. It asks "Terminal (TUI) or Web?" first; Terminal (TUI) keeps the file on this
-machine. Choosing Web asks a second question: the file uploads to review.spacedock.md,
+`/spacedock:review` reads its argument in this order:
+
+| Argument | Result |
+|---|---|
+| none | Shows the recorded choice and offers keep, switch, clear or leave, on every entry. Publishes nothing. |
+| `tui`, `terminal` or `local`, any case | Records Terminal (TUI) and says so. |
+| `web`, `webui` or `remote`, any case | Asks the Web agreement below; records Web only on yes. |
+| an existing file path | Reviews the file under the recorded choice: Terminal (TUI) opens it, Web uploads it. Asks first when no choice is recorded. |
+| any other text | A prompt the agent carries out, for example writing a file; the resulting file is then reviewed as above. |
+
+The question "Terminal (TUI) or Web?" keeps the file on this machine for Terminal
+(TUI). Choosing Web asks a second question: the file uploads to review.spacedock.md,
 anyone with the link can open it, and it expires after seven days, agree? Declining
 records nothing and offers Terminal (TUI). After either answer the skill says the
-setting can be changed at any time with `/spacedock:review` and no argument, which
-shows the recorded choice and offers keep, switch, clear or leave, publishing nothing
-(switching to Web asks the second question). An argument that is not an existing file
-is a request: the skill writes the artifact first, then reviews it. The uploader that
+setting can be changed at any time with `/spacedock:review` and no argument
+(switching to Web asks the second question). Where the harness offers a question tool
+(Claude Code: AskUserQuestion), the skill asks each of the three questions (Terminal
+(TUI) or Web, the Web agreement, keep or switch or clear or leave) through it as a
+menu; elsewhere it asks in plain text. The uploader that
 sends artifacts to the relay should refuse when the mode is not `remote`; today the
 skills enforce it.
 `spacedock doctor` shows the choice as a row and names an unreadable one `UNREADABLE`.
@@ -238,6 +248,8 @@ then publish the new names.
 - A Homebrew formula pattern for an extension that needs a runtime such as Python.
 - Review refusing to upload when the project's recorded review choice is not Web, in
   the uploader itself; today only the Review skills enforce it.
+- Review menus on Pi and Codex: the question-tool menus above are specified for Claude
+  Code only; Pi and Codex ask in plain text.
 - Pi support for Review: Subspace publishes no Pi package carrying its review skills,
   and nothing has run on Pi.
 - A live logged-in Codex run of the review and compass skills.

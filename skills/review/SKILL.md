@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Get a person's review of an artifact you produced or were handed: a plan, spec, report or other Markdown file. Use when you have a file that someone should read and react to before work continues, or when the user asks to send something for review. Picks the Terminal (TUI) or the Web from this project's recorded choice and never uploads without it. With no argument it shows or changes that choice; with text that is not a file it writes the artifact first."
+description: "Get a person's review of an artifact you produced or were handed: a plan, spec, report or other Markdown file. Use when you have a file that someone should read and react to before work continues, or when the user asks to send something for review. Picks the Terminal (TUI) or the Web from this project's recorded choice and never uploads without it. With no argument it shows or changes that choice; tui or web records it; a file path is reviewed; any other text is a prompt to carry out first."
 ---
 
 # Review an artifact
@@ -23,29 +23,45 @@ If `spacedock review-mode` is an unknown command, spacedock is too old for this
 skill and has no `update` command. Tell the user to update it: `brew upgrade spacedock`
 on Homebrew, or run the install line again. Stop.
 
+## Asking the user
+
+Each question below is asked through the harness's question tool when it has one
+(Claude Code: AskUserQuestion), as one menu with the options named. Elsewhere ask
+it in plain text with the same options. Wait for the answer; record only what the
+user chose, never your guess.
+
 ## Pick the branch from the argument
 
-- No argument: do **Show or change the choice** and nothing else.
-- An argument that names an existing file (`test -f`): do **Review the file**.
-- Any other argument is a request, not a path: do **Write first, then review**.
+Take the first branch that fits. Compare the reserved words as the whole argument,
+ignoring case.
+
+1. No argument: do **Show or change the choice** and nothing else.
+2. `tui`, `terminal` or `local`: run `spacedock review-mode set local`, say that
+   Terminal (TUI) is recorded for this project, and end with the sentence about
+   changing it (**Ask for the choice**, step 4). Open and upload nothing.
+3. `web`, `webui` or `remote`: do **Ask for the choice** from step 3. Open and upload
+   nothing.
+4. An argument that names an existing file (`test -f`): do **Review the file**.
+5. Any other text is a prompt: do **Carry out the prompt, then review**.
 
 ## Ask for the choice
 
-Used whenever a choice is needed. Record only what the user answers, never your guess.
+Used whenever a choice is needed.
 
-1. Ask "Terminal (TUI) or Web?" and show the two choices above. Say the answer is
-   remembered for this project only.
+1. Ask "Terminal (TUI) or Web?" with two options, Terminal (TUI) and Web, each
+   described by its line above. Say the answer is remembered for this project only.
 
 2. Terminal (TUI): `spacedock review-mode set local`.
 
-3. Web: do not record yet. Ask a second question on its own:
+3. Web: do not record yet. Ask a second question on its own, with two options,
+   "Yes, upload it" and "No":
 
    ```text
    Web uploads the file to review.spacedock.md. Anyone with the link can open it, and it expires automatically after seven days. Agree?
    ```
 
    Yes: `spacedock review-mode set remote`. No: record nothing, say so, and offer the
-   Terminal (TUI) instead; record `local` only if they accept it.
+   Terminal (TUI) instead in your reply; record `local` only if they accept it.
 
 4. In your reply to the final answer, whichever it is (a Terminal (TUI) choice, a Yes,
    or a No while you still offer the Terminal (TUI)), tell the user they can change
@@ -60,8 +76,10 @@ Publish nothing and open nothing.
 
 2. Tell the user this project's choice by quoting its line above word for word, or
    that none is recorded.
-   Then offer exactly: keep it, switch to the other one, clear it (the next review
-   asks again), or leave. With none recorded, run **Ask for the choice**.
+   Then ask, with four options, Keep, Switch, Clear or Leave: keep it, switch to the
+   other one, clear it (the next review asks again), or leave. With none recorded,
+   run **Ask for the choice**. This is asked on every entry, however often the
+   project has chosen before.
 
 3. Act only on the user's answer. Switching to the Terminal (TUI) runs
    `spacedock review-mode set local`; switching to the Web runs **Ask for the
@@ -69,12 +87,13 @@ Publish nothing and open nothing.
    Clearing runs `spacedock review-mode clear`. Keep and leave run nothing. Then
    state what is recorded now and stop.
 
-## Write first, then review
+## Carry out the prompt, then review
 
-Write the artifact the argument asks for as a new Markdown file. Use the path the
-argument names; otherwise create the file in a directory made with `mktemp -d`, so
-the project gets no file nobody asked for. Never overwrite an existing file. Then
-**Review the file** with it, and tell the user its path.
+Do what the prompt asks, for example writing a Markdown file. Use the path the prompt
+names; otherwise create the file in a directory made with `mktemp -d`, so the project
+gets no file nobody asked for. Never overwrite an existing file the prompt did not
+ask you to change. Then **Review the file** with the resulting file, and tell the user its path. If the prompt produced no
+file, say so and stop.
 
 ## Review the file
 
