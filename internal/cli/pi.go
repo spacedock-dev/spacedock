@@ -77,8 +77,6 @@ type piRuntimeOps interface {
 	// PiRemove runs `pi remove <source>`. `pi install` over an installed package
 	// changes nothing, even for another ref, so moving a ref takes remove then install.
 	PiRemove(source string) (string, error)
-	// ReadExtensionListing returns the extension marketplace's marketplace.json from a
-	// directory or an owner/repo on GitHub, the one listing every host installs from.
 	ReadExtensionListing(source string) ([]byte, error)
 	// SpacedockPackageStatus reports whether the Spacedock package is registered
 	// in ~/.pi/agent/settings.json `packages` and whether the ensign (and

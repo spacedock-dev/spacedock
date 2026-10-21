@@ -177,8 +177,7 @@ func planHostUpdates(before versionReport) []*hostUpdate {
 	return updates
 }
 
-// piUpdate is Pi's share of an update. Pi has no plugin inventory, so the step is gated
-// on the Spacedock package in settings.json and reports the packages' refs from there.
+// piUpdate is Pi's share of an update; Pi has no plugin inventory, so settings.json is read.
 type piUpdate struct {
 	agentDir, home string
 	refresh        bool
