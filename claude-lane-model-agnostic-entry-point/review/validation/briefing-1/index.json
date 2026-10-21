@@ -1,0 +1,24 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-1:revision-1",
+  "question": "Accept the validation verdict (REJECTED: three central dispatch/approval claims lack a standing regression check) and route back to implementation to add the three standing assertions?",
+  "artifacts": [
+    {
+      "id": "artifact:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-1:revision-1:item-1",
+      "uri": "git-root://state/9139b62f8dc8a4613e4ee5982cad7c6e45ffe74b/claude-lane-model-agnostic-entry-point.md",
+      "rev": "sha256:c211e184d5a197af9d7c5012a3d985bd2300c08954d07fb82261ecd67047bc31",
+      "mediaType": "text/markdown",
+      "summary": "Validation REJECTED candidate 29525bea0: named-model dispatch (Haiku run 37703335512) and pre-approval refusal (run 37702369289) are verified and both Go suites pass, but the detached audit found three claim-breaking edits that keep tests green: Claude job needs: offline -\u003e [], opus admitted to routine allowed set, matrix bound to claude_sonnet instead of claude_selected. Proposed fix: three focused assertions in internal/release/livemodels_test.go, each failing under its own mutation, within the +150 net LOC ceiling."
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-1:revision-1:item-2",
+      "uri": "git-root://main/c450d5d526fca30bbcd2c06cf2b40358e5a6ea8f/docs/dev/README.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:68525cd15144ae445da3f721418e16585c3f4d7168a09c507b0485988ff8b948"
+    }
+  ]
+}

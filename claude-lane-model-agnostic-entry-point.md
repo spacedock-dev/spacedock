@@ -44,6 +44,14 @@ gates:
               application:
                 target-stage: implementation
                 state: consumed
+        - id: gate:f77r1rj2g7sgj3hkrht7n37f:validation
+          stage: validation
+          attempts:
+            - id: gate-attempt:f77r1rj2g7sgj3hkrht7n37f-validation-1
+              briefing:
+                id: briefing:f77r1rj2g7sgj3hkrht7n37f:validation:attempt-1:revision-1
+                digest: sha256:c9e924c982b1ee9758423be9e5c94dbaf693ce71c5ed458b4894f3f25094126a
+                room-ref: '@review/validation/briefing-1'
 started: 2026-10-07T18:15:05Z
 worktree: .worktrees/spacedock-ensign-claude-lane-model-agnostic-entry-point
 ---
