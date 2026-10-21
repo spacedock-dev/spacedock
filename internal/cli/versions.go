@@ -8,6 +8,7 @@ import (
 	"io"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -46,6 +47,8 @@ type pieceRow struct{ label, version, where string }
 type versionReport struct {
 	channel                string
 	rows                   []pieceRow
+	hosts                  []hostStatus
+	hostPlugins            map[string][]pieceRow
 	problems               []string
 	needsUpdate, extraCopy bool
 	pluginsBehind          []string
@@ -55,8 +58,43 @@ type versionInputs struct {
 	env         []string
 	dir         string
 	host        hostOps
+	lookPath    func(string) (string, error)
 	selfPath    string
 	selfVersion string
+}
+
+// hostStatus is what one plugin host holds: its plugin versions by id, or why it has
+// none to show. skipped is set for a host that is absent, holds no Spacedock plugin, or
+// fails to list its plugins; only the last still shows rows, at "unknown", because the
+// host is there and its state is not.
+type hostStatus struct {
+	name, title string
+	skipped     string
+	err         error
+	lookup      func(id string) string
+}
+
+func (h hostStatus) listed() bool { return h.skipped == "" || h.err != nil }
+
+func readHosts(in versionInputs) []hostStatus {
+	var hosts []hostStatus
+	for _, h := range []struct{ name, title string }{{"claude", "Claude Code"}, {"codex", "Codex"}} {
+		status := hostStatus{name: h.name, title: h.title}
+		if _, err := in.lookPath(h.name); err != nil {
+			status.skipped = h.name + " is not on PATH, so its plugins were skipped."
+			hosts = append(hosts, status)
+			continue
+		}
+		status.lookup, status.err = pluginVersionLookup(in.host, h.name)
+		switch {
+		case status.err != nil:
+			status.skipped = fmt.Sprintf("%s plugin list failed (%v), so its plugins were skipped.", h.name, status.err)
+		case status.lookup(channelPluginID(devBranch)) == notInstalled:
+			status.skipped = h.name + " has no Spacedock plugin, so its plugins were skipped."
+		}
+		hosts = append(hosts, status)
+	}
+	return hosts
 }
 
 func (r versionReport) version(label string) string {
@@ -69,9 +107,13 @@ func (r versionReport) version(label string) string {
 }
 
 func collectVersions(in versionInputs) versionReport {
-	report := versionReport{channel: selectedChannelWord()}
+	report := versionReport{channel: selectedChannelWord(), hosts: readHosts(in), hostPlugins: map[string][]pieceRow{}}
 	add := func(label, version, where string) {
 		report.rows = append(report.rows, pieceRow{label, version, where})
+	}
+	addPlugin := func(h hostStatus, label, version, where string) {
+		report.hostPlugins[h.name] = append(report.hostPlugins[h.name], pieceRow{label, version, where})
+		add(label+" ("+h.title+")", version, where)
 	}
 	problem := func(format string, a ...any) {
 		report.problems = append(report.problems, fmt.Sprintf(format, a...))
@@ -79,30 +121,41 @@ func collectVersions(in versionInputs) versionReport {
 	pathEnv := envMap(in.env)["PATH"]
 
 	add("spacedock", in.selfVersion, in.selfPath)
-	pluginVersion, inventoryErr := pluginVersionLookup(in.host, "claude")
 	spacedockID := channelPluginID(devBranch)
-	add("spacedock plugin", pluginVersion(spacedockID), spacedockID)
+	for _, h := range report.hosts {
+		if h.listed() {
+			addPlugin(h, "spacedock plugin", h.lookup(spacedockID), spacedockID)
+		}
+	}
 
 	for _, ext := range channelExtensions(devBranch) {
 		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
 		add(ext.name+" program", programVersion, programPath)
 		id := extensionPluginID(ext.name)
-		pluginVer := pluginVersion(id)
-		add(ext.name+" plugin", pluginVer, id)
-
-		switch {
-		case programVersion == notInstalled:
+		if programVersion == notInstalled {
 			problem("MISSING: the %s program is not on PATH.", ext.name)
 			report.needsUpdate = true
-		case inventoryErr == nil && pluginVer == notInstalled:
-			problem("MISSING: the %s plugin is not installed from %s.", ext.name, extensionMarketplace)
-			report.needsUpdate = true
-		case programVersion != "unknown" && pluginVer != "unknown" && programVersion != pluginVer:
-			problem("MIXED: the %s program %s does not match its plugin %s.", ext.name, programVersion, pluginVer)
-			if cmp, err := release.ComparePreVersion(programVersion, pluginVer); err == nil && cmp > 0 {
-				report.pluginsBehind = append(report.pluginsBehind, ext.name)
-			} else {
+		}
+		for _, h := range report.hosts {
+			if !h.listed() {
+				continue
+			}
+			pluginVer := h.lookup(id)
+			addPlugin(h, ext.name+" plugin", pluginVer, id)
+			switch {
+			case programVersion == notInstalled:
+			case h.err == nil && pluginVer == notInstalled:
+				problem("MISSING: the %s plugin is not installed on %s from %s.", ext.name, h.title, extensionMarketplace)
 				report.needsUpdate = true
+			case programVersion != "unknown" && pluginVer != "unknown" && programVersion != pluginVer:
+				problem("MIXED: the %s program %s does not match its plugin %s on %s.", ext.name, programVersion, pluginVer, h.title)
+				if cmp, err := release.ComparePreVersion(programVersion, pluginVer); err == nil && cmp > 0 {
+					if !slices.Contains(report.pluginsBehind, ext.name) {
+						report.pluginsBehind = append(report.pluginsBehind, ext.name)
+					}
+				} else {
+					report.needsUpdate = true
+				}
 			}
 		}
 	}
@@ -149,8 +202,12 @@ func pluginVersionLookup(h hostOps, host string) (lookup func(id string) string,
 
 func printVersionReport(w io.Writer, report versionReport) {
 	fmt.Fprintf(w, "\nVersions (%s channel)\n", report.channel)
+	width := 18
 	for _, row := range report.rows {
-		fmt.Fprintf(w, "  %-18s %-15s %s\n", row.label, row.version, row.where)
+		width = max(width, len(row.label))
+	}
+	for _, row := range report.rows {
+		fmt.Fprintf(w, "  %-*s %-15s %s\n", width, row.label, row.version, row.where)
 	}
 	if len(report.problems) == 0 {
 		fmt.Fprintln(w, "\nNo problems found.")
@@ -265,12 +322,19 @@ func isHomebrewPath(path string) bool {
 	return false
 }
 
-func reportClaudeVersions(args, env []string, dir string, stdout io.Writer) {
+func versionsWanted(args []string) bool {
 	for i, a := range args {
-		if a == "--plugin-manifest" || a == "--plugin-dir" || (a == "--host" && i+1 < len(args) && args[i+1] != "claude") {
-			return
+		if a == "--plugin-manifest" || a == "--plugin-dir" || (a == "--host" && i+1 < len(args) && args[i+1] != "claude" && args[i+1] != "codex") {
+			return false
 		}
 	}
+	return true
+}
+
+func reportVersions(args, env []string, dir string, stdout io.Writer) {
+	if !versionsWanted(args) {
+		return
+	}
 	selfPath, _ := resolvedLauncherBin()
-	printVersionReport(stdout, collectVersions(versionInputs{env: env, dir: dir, host: execHost{}, selfPath: selfPath, selfVersion: displayVersion()}))
+	printVersionReport(stdout, collectVersions(versionInputs{env: env, dir: dir, host: execHost{}, lookPath: exec.LookPath, selfPath: selfPath, selfVersion: displayVersion()}))
 }

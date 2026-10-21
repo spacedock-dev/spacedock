@@ -158,9 +158,11 @@ replaced the program yet, so there the running program does it. Codex reads plug
 when a session starts, so the closing line tells the user to start a new Codex
 session.
 
-`spacedock doctor` lists the same versions and names a program that differs from its
-plugin, a second `spacedock` on PATH, and a missing program or plugin. An extension
-may add rows and problems of its own to that list.
+`spacedock doctor` lists the same versions, with the plugins of each of Claude Code
+and Codex that is on PATH and has the Spacedock plugin installed, labelled by host. It
+names a program that differs from a host's plugin, a second `spacedock` on PATH, and a
+missing program or plugin, each per host. An extension may add rows and problems of its
+own to that list.
 
 ## Release asset names
 
@@ -171,4 +173,8 @@ then publish the new names.
 ## Open in v0
 
 - A Homebrew formula pattern for an extension that needs a runtime such as Python.
-- Codex and Pi skill entries.
+- Review refusing to upload when the project's recorded review choice is not Web, in
+  the uploader itself; today only the Review skills enforce it.
+- Pi support for Review: Subspace publishes no Pi package carrying its review skills,
+  and nothing has run on Pi.
+- A live logged-in Codex run of the review and compass skills.

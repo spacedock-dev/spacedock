@@ -72,7 +72,7 @@ SPACEDOCK_INSTALL_SCRIPT=PATH runs that script in place of the downloaded one.
 }
 
 func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
-	inputs := versionInputs{env: d.env, dir: d.dir, host: d.host, selfPath: d.selfPath, selfVersion: displayVersion()}
+	inputs := versionInputs{env: d.env, dir: d.dir, host: d.host, lookPath: d.lookPath, selfPath: d.selfPath, selfVersion: displayVersion()}
 	if d.selfPath != "" {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
@@ -85,7 +85,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "Updating Spacedock on the %s channel (%s)\n", before.channel, owner)
 
-	hosts := []*hostUpdate{planHostUpdate(d, "claude", "Claude Code"), planHostUpdate(d, "codex", "Codex")}
+	hosts := planHostUpdates(before)
 	if !brew {
 		if err := runInstallScript(d, stdout, stderr); err != nil {
 			fmt.Fprintf(stderr, "spacedock update: %v\n", err)
@@ -108,13 +108,15 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		if h.err != nil && strings.TrimSpace(out) != "" {
 			h.err = fmt.Errorf("%w\n%s", h.err, strings.TrimSpace(out))
 		}
-		h.after = hostPluginRows(d.host, h.name)
 	}
 
 	if d.selfPath != "" && !brew {
 		inputs.selfVersion = programReportedVersion(d.selfPath, d.env, "spacedock ")
 	}
 	after := collectVersions(inputs)
+	for _, h := range hosts {
+		h.after = after.hostPlugins[h.name]
+	}
 	printUpdateChanges(stdout, before, after, brewFormula(d.selfPath, brew), hosts)
 	code := 0
 	for _, h := range hosts {
@@ -123,7 +125,7 @@ func runUpdate(d updateDeps, stdout, stderr io.Writer) int {
 		case h.err != nil:
 			fmt.Fprintf(stderr, "spacedock update: the %s plugin update failed: %v\n", h.title, h.err)
 			code = 1
-		case pieceVersion(h.after, "spacedock plugin") == notInstalled:
+		case len(h.after) == 0:
 			fmt.Fprintf(stderr, "spacedock update: the Spacedock plugin is not installed on %s. Run: spacedock install --host %s\n", h.title, h.name)
 			code = 1
 		}
@@ -141,36 +143,13 @@ type hostUpdate struct {
 	err           error
 }
 
-func planHostUpdate(d updateDeps, name, title string) *hostUpdate {
-	h := &hostUpdate{name: name, title: title}
-	if _, err := d.lookPath(name); err != nil {
-		h.skipped = name + " is not on PATH, so its plugins were skipped."
-		return h
+func planHostUpdates(before versionReport) []*hostUpdate {
+	var updates []*hostUpdate
+	for _, status := range before.hosts {
+		updates = append(updates, &hostUpdate{name: status.name, title: status.title, skipped: status.skipped,
+			refresh: status.skipped == "", before: before.hostPlugins[status.name]})
 	}
-	lookup, err := pluginVersionLookup(d.host, name)
-	if err != nil {
-		h.skipped = fmt.Sprintf("%s plugin list failed (%v), so its plugins were skipped.", name, err)
-		return h
-	}
-	if lookup(channelPluginID(devBranch)) == notInstalled {
-		h.skipped = name + " has no Spacedock plugin, so its plugins were skipped."
-		return h
-	}
-	h.refresh, h.before = true, hostPluginRowsFrom(lookup)
-	return h
-}
-
-func hostPluginRows(h hostOps, host string) []pieceRow {
-	lookup, _ := pluginVersionLookup(h, host)
-	return hostPluginRowsFrom(lookup)
-}
-
-func hostPluginRowsFrom(lookup func(id string) string) []pieceRow {
-	rows := []pieceRow{{label: "spacedock plugin", version: lookup(channelPluginID(devBranch))}}
-	for _, ext := range channelExtensions(devBranch) {
-		rows = append(rows, pieceRow{label: ext.name + " plugin", version: lookup(extensionPluginID(ext.name))})
-	}
-	return rows
+	return updates
 }
 
 func pieceVersion(rows []pieceRow, label string) string {

@@ -17,6 +17,7 @@ type stagedInstall struct {
 	env      []string
 	project  string
 	host     *fakeHost
+	lookPath func(string) (string, error)
 }
 
 func writeProgram(t *testing.T, path, output string) {
@@ -69,6 +70,7 @@ func stageInstallWith(t *testing.T, table []extension) *stagedInstall {
 		"HOME=" + root, "XDG_STATE_HOME=" + filepath.Join(root, "state"), "XDG_DATA_HOME=" + s.dataHome,
 	}
 	writeProgram(t, filepath.Join(s.first, "spacedock"), "spacedock 0.28.0-pre6")
+	s.lookPath = hostsOnPath("claude")
 	s.host = &fakeHost{inventory: []pluginInventoryEntry{
 		{ID: "spacedock@spacedock-edge", Version: "0.28.0-pre6", Installed: true, Enabled: true},
 	}}
@@ -98,7 +100,7 @@ func (s *stagedInstall) stageTreeProgram(ext extension, version string) {
 }
 
 func (s *stagedInstall) report() versionReport {
-	return collectVersions(versionInputs{env: s.env, dir: s.project, host: s.host,
+	return collectVersions(versionInputs{env: s.env, dir: s.project, host: s.host, lookPath: s.lookPath,
 		selfPath: filepath.Join(s.first, "spacedock"), selfVersion: "0.28.0-pre6"})
 }
 
@@ -109,9 +111,9 @@ func TestVersionReportNamesNothingForAConsistentInstall(t *testing.T) {
 		t.Fatalf("a consistent install reported problems: %q", report.problems)
 	}
 	want := map[string]string{
-		"spacedock": "0.28.0-pre6", "spacedock plugin": "0.28.0-pre6",
-		"alpha program": "0.16.0-beta.2", "alpha plugin": "0.16.0-beta.2",
-		"beta program": "1.0.1", "beta plugin": "1.0.1", "alpha choice": "not chosen",
+		"spacedock": "0.28.0-pre6", "spacedock plugin (Claude Code)": "0.28.0-pre6",
+		"alpha program": "0.16.0-beta.2", "alpha plugin (Claude Code)": "0.16.0-beta.2",
+		"beta program": "1.0.1", "beta plugin (Claude Code)": "1.0.1", "alpha choice": "not chosen",
 	}
 	for label, version := range want {
 		if got := report.version(label); got != version {
@@ -134,7 +136,7 @@ func TestVersionReportNamesEachMixedInstallProblem(t *testing.T) {
 	}{
 		"program newer than its plugin": {
 			func(s *stagedInstall) { writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), "0.16.0-beta.3") },
-			"MIXED: the alpha program 0.16.0-beta.3 does not match its plugin 0.16.0-beta.2.",
+			"MIXED: the alpha program 0.16.0-beta.3 does not match its plugin 0.16.0-beta.2 on Claude Code.",
 		},
 		"two spacedock copies": {
 			func(s *stagedInstall) { writeProgram(t, filepath.Join(s.second, "spacedock"), "spacedock 0.27.2") },
@@ -142,7 +144,7 @@ func TestVersionReportNamesEachMixedInstallProblem(t *testing.T) {
 		},
 		"extension plugin missing": {
 			func(s *stagedInstall) { s.host.inventory = s.host.inventory[:2] },
-			"MISSING: the beta plugin is not installed from spacedock.",
+			"MISSING: the beta plugin is not installed on Claude Code from spacedock.",
 		},
 		"extension program missing": {
 			func(s *stagedInstall) { os.Remove(filepath.Join(s.first, "spacedock-beta")) },
@@ -162,6 +164,127 @@ func TestVersionReportNamesEachMixedInstallProblem(t *testing.T) {
 				t.Fatalf("problems = %q, want exactly one starting %q", problems, tc.want)
 			}
 		})
+	}
+}
+
+func (s *stagedInstall) withCodex(plugins []pluginInventoryEntry) *twoHosts {
+	s.t.Helper()
+	host := &twoHosts{fakeHost: s.host, codexPlugins: plugins}
+	s.host = host.fakeHost
+	s.lookPath = hostsOnPath("claude", "codex")
+	return host
+}
+
+func (s *stagedInstall) reportWith(host hostOps) versionReport {
+	return collectVersions(versionInputs{env: s.env, dir: s.project, host: host, lookPath: s.lookPath,
+		selfPath: filepath.Join(s.first, "spacedock"), selfVersion: "0.28.0-pre6"})
+}
+
+func TestVersionReportListsEachHostsPluginsLabelledByHost(t *testing.T) {
+	s := stageInstall(t)
+	host := s.withCodex(codexPlugins("1.0.1"))
+	report := s.reportWith(host)
+	if len(report.problems) != 0 {
+		t.Fatalf("a consistent install on both hosts reported problems: %q", report.problems)
+	}
+	for _, label := range []string{"spacedock plugin", "alpha plugin", "beta plugin"} {
+		for _, title := range []string{"Claude Code", "Codex"} {
+			if report.version(label+" ("+title+")") == "" {
+				t.Errorf("no row %q (%s)", label, title)
+			}
+		}
+	}
+	var out bytes.Buffer
+	printVersionReport(&out, report)
+	if !strings.Contains(out.String(), "beta plugin (Codex)") || !strings.Contains(out.String(), "alpha plugin (Claude Code)") {
+		t.Errorf("printed list lacks the host labels:\n%s", out.String())
+	}
+}
+
+func TestVersionReportChecksEachHostOnItsOwn(t *testing.T) {
+	cases := map[string]struct {
+		apply func(*twoHosts)
+		want  string
+	}{
+		"MIXED on Codex only": {
+			func(h *twoHosts) { h.codexPlugins[1].Version = "0.16.0-beta.1" },
+			"MIXED: the alpha program 0.16.0-beta.2 does not match its plugin 0.16.0-beta.1 on Codex.",
+		},
+		"MISSING on Codex only": {
+			func(h *twoHosts) { h.codexPlugins = h.codexPlugins[:2] },
+			"MISSING: the beta plugin is not installed on Codex from spacedock.",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			s := stageInstall(t)
+			host := s.withCodex(codexPlugins("1.0.1"))
+			tc.apply(host)
+			problems := s.reportWith(host).problems
+			if len(problems) != 1 || !strings.HasPrefix(problems[0], tc.want) {
+				t.Fatalf("problems = %q, want exactly one starting %q", problems, tc.want)
+			}
+		})
+	}
+}
+
+func TestVersionReportNamesAPluginBehindOnceWhenBothHostsAreBehind(t *testing.T) {
+	s := stageInstall(t)
+	host := s.withCodex(codexPlugins("1.0.1"))
+	writeProgram(t, filepath.Join(s.first, "spacedock-alpha"), "0.16.0-beta.3")
+	var out bytes.Buffer
+	printVersionReport(&out, s.reportWith(host))
+	if !strings.Contains(out.String(), "The alpha plugin waits on its listing") || strings.Contains(out.String(), "alpha and alpha") {
+		t.Errorf("remedy does not name alpha exactly once:\n%s", out.String())
+	}
+	if strings.Count(out.String(), "MIXED: the alpha program") != 2 {
+		t.Errorf("want one MIXED line per host:\n%s", out.String())
+	}
+}
+
+func TestVersionReportGivesNoRowsAndNoProblemToAHostThatIsAbsentOrHoldsNoSpacedockPlugin(t *testing.T) {
+	cases := map[string]struct {
+		onPath  []string
+		codex   []pluginInventoryEntry
+		claude  func(*stagedInstall)
+		absent  string
+		present string
+	}{
+		"codex absent":                       {[]string{"claude"}, codexPlugins("9.9.9"), nil, "(Codex)", "(Claude Code)"},
+		"codex without the Spacedock plugin": {[]string{"claude", "codex"}, codexPlugins("9.9.9")[1:], nil, "(Codex)", "(Claude Code)"},
+		"claude without the Spacedock plugin": {[]string{"claude", "codex"}, codexPlugins("1.0.1"),
+			func(s *stagedInstall) { s.host.inventory = s.host.inventory[1:] }, "(Claude Code)", "(Codex)"},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			s := stageInstall(t)
+			if tc.claude != nil {
+				tc.claude(s)
+			}
+			host := s.withCodex(tc.codex)
+			s.lookPath = hostsOnPath(tc.onPath...)
+			report := s.reportWith(host)
+			var out bytes.Buffer
+			printVersionReport(&out, report)
+			if strings.Contains(out.String(), tc.absent) || !strings.Contains(out.String(), tc.present) {
+				t.Errorf("want rows for %s and none for %s:\n%s", tc.present, tc.absent, out.String())
+			}
+			if len(report.problems) != 0 {
+				t.Errorf("problems = %q, want none", report.problems)
+			}
+		})
+	}
+}
+
+func TestVersionsAreShownForClaudeAndCodexHostsOnly(t *testing.T) {
+	cases := map[string]bool{
+		"": true, "--host claude": true, "--host codex": true,
+		"--host pi": false, "--plugin-manifest x": false, "--plugin-dir x": false,
+	}
+	for args, want := range cases {
+		if got := versionsWanted(strings.Fields(args)); got != want {
+			t.Errorf("versionsWanted(%q) = %v, want %v", args, got, want)
+		}
 	}
 }
 

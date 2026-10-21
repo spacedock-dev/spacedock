@@ -57,11 +57,11 @@ func (h *twoHosts) Install(host, source, branch string) (string, error) {
 	return h.fakeHost.Install(host, source, branch)
 }
 
-func codexPlugins(version string) []pluginInventoryEntry {
+func codexPlugins(betaVersion string) []pluginInventoryEntry {
 	return []pluginInventoryEntry{
 		{ID: "spacedock@spacedock-edge", Version: "0.28.0-pre6", Installed: true, Enabled: true},
-		{ID: "alpha@spacedock", Version: version, Installed: true, Enabled: true},
-		{ID: "beta@spacedock", Version: version, Installed: true, Enabled: true},
+		{ID: "alpha@spacedock", Version: "0.16.0-beta.2", Installed: true, Enabled: true},
+		{ID: "beta@spacedock", Version: betaVersion, Installed: true, Enabled: true},
 	}
 }
 
@@ -264,14 +264,17 @@ func TestUpdateRefreshesTheCodexPluginsWithTheNewProgramAndLabelsEachHost(t *tes
 			t.Errorf("Claude section lacks %q:\n%s", want, out)
 		}
 	}
-	for _, want := range []string{"alpha plugin       1.0.0 -> 1.0.1", "beta plugin        1.0.0 -> 1.0.1", "spacedock plugin   ",
+	if !strings.Contains(codex, "beta plugin        1.0.0 -> 1.0.1") {
+		t.Errorf("Codex section lacks the beta change:\n%s", out)
+	}
+	for _, want := range []string{"spacedock plugin   ",
 		"spacedock install: codex plugin add beta@spacedock failed", "/reload-plugins", "start a new Codex session"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("update output lacks %q:\n%s", want, out)
 		}
 	}
-	if strings.Contains(codex, "0.16.0-beta.2") || strings.Contains(out, "noise") {
-		t.Errorf("Codex rows show Claude's versions or the new program's other output:\n%s", out)
+	if strings.Contains(claude, "->") || strings.Contains(out, "noise") {
+		t.Errorf("Claude rows show a change Codex made, or the new program's other output was printed:\n%s", out)
 	}
 }
 

@@ -523,7 +523,7 @@ func newInstallCommand(ctx context.Context, env []string, dir string, stdout, st
 			if code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
-			reportClaudeVersions(args, env, dir, stdout)
+			reportVersions(args, env, dir, stdout)
 			return nil
 		},
 	}
@@ -553,7 +553,7 @@ func newDoctorCommand(ctx context.Context, env []string, dir string, stdout, std
 			}
 			applyDevBranchOverride(env)
 			code := runDoctorWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr)
-			reportClaudeVersions(args, env, dir, stdout)
+			reportVersions(args, env, dir, stdout)
 			if code != 0 {
 				return exitCodeError{code}
 			}
