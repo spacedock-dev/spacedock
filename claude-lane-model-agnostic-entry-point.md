@@ -961,9 +961,9 @@ Four evidence fields:
 
 **Three NEW STANDING CHECKS — captain approval required:** one assertion for Claude's `needs: offline`; one excluding `opus` from the routine permitted set; one binding the matrix to the selected registry output (`claude_selected`, not the fixed `claude_sonnet` output). Each must fail under its own mutation above. Keep them in `internal/release/livemodels_test.go`; do not restore a broad schema/wiring suite. No lane, job, or CI step is proposed.
 
-### Measured surface and prospective reset
+### Measured surface
 
-Current measured diff: `git diff --numstat origin/main HEAD`, baseline `7558f2e0`, candidate `29525bea0`.
+Measured diff: `git diff --numstat origin/main HEAD`, baseline `7558f2e0`, candidate `a9f7e8143` (implementation cycle 2; validation measured `29525bea0` at +126).
 
 | File | Added/deleted | Net |
 |---|---:|---:|
@@ -972,10 +972,10 @@ Current measured diff: `git diff --numstat origin/main HEAD`, baseline `7558f2e0
 | `internal/ensigncycle/shared_live_runner_test.go` | 27/6 | +21 |
 | `internal/release/live_models.txt` | 3/0 | +3 |
 | `internal/release/livemodels.go` | 10/8 | +2 |
-| `internal/release/livemodels_test.go` | 18/0 | +18 |
-| **Total** | **151/25** | **+126** |
+| `internal/release/livemodels_test.go` | 42/0 | +42 |
+| **Total** | **175/25** | **+150** |
 
-**Prospective surface, not a measurement:** the same six files; only `internal/release/livemodels_test.go` grows to carry the three assertions. **THE INCREMENT IS UNMEASURED.** The code does not exist yet, so any figure would be a guess. Replace this prospective reset with the measured diff at implementation. The current +126 is within the +150 ceiling. If the assertions would exceed +150, stop for the FO; do not weaken them to fit or exceed the ceiling silently. No candidate edit was authorized or made in this validation.
+The three standing assertions add +24 net, all in `internal/release/livemodels_test.go`. The same six files remain. The total is exactly at the +150 ceiling, not over it. The assertions were compacted to fit; none was weakened, and each still fails under its own audit mutation (see Stage Report: implementation (cycle 2)).
 
 ## Stage Report: validation
 
@@ -1015,3 +1015,26 @@ Current measured diff: `git diff --numstat origin/main HEAD`, baseline `7558f2e0
 ### Summary
 
 REJECTED: current named-model dispatch and hosted pre-approval refusal are independently verified, and both Go suites pass, but three claim-breaking edits survive the detached audit. The FO accepts responsibility for the earlier coverage cut and routes three focused new standing assertions to the captain; their prospective LOC increment is unmeasured. Candidate 29525bea0 stays unchanged, both failed Haiku runs and all eight failed test outcomes remain unsoftened, and temporary audit artifacts are removed after committing this report.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Three standing assertions in internal/release/livemodels_test.go (needs: offline, opus excluded from routine set, matrix bound to claude_selected), each shown red under its own audit mutation and green on the candidate.
+  Commit a9f7e8143 adds `TestClaudeLiveKeepsCadenceBoundaryAndSelectedModel`. It parses the workflow YAML and the embedded registry. Audit: throwaway detached worktree of a9f7e8143, command `go test ./internal/release ./internal/contractlint -count=1`, each mutation applied alone and then reverted with `git checkout`:
+
+  | State | Exit | Duration | Failing assertion |
+  |---|---:|---:|---|
+  | Candidate, unmutated | 0 | 81.6s | none |
+  | Claude job `needs: offline` becomes `needs: []` | 1 | 28.6s | only `livemodels_test.go:34` (claude-live needs = []) |
+  | `claude.allowed.sonnet=sonnet,opus,haiku` | 1 | 39.6s | only `livemodels_test.go:40` (routine policy permits opus) |
+  | Matrix model becomes `needs.offline.outputs.claude_sonnet` | 1 | 27.5s | only `livemodels_test.go:37` (matrix not bound to claude_selected) |
+  | Restored after all three | 0 | 52.1s | none |
+
+  What each assertion checks: (1) the `claude-live` job's `needs` is exactly `offline`. (2) The `claude.allowed.sonnet` record exists and its members exclude `opus`. (3) The matrix `model` names an offline output, and that output is bound to `steps.live_models.outputs.claude_selected`. Assertion 3 compares the matrix with a separate part of the workflow. It does not compare the matrix text with a copy of itself.
+- DONE: Measured diff vs origin/main stays within +150 net LOC across the same six files, with no lane/job/CI step or behavior change.
+  `git diff --numstat origin/main HEAD` (7558f2e0..a9f7e8143) is 175/25, +150 net, across the same six files. Only `livemodels_test.go` changed (+24). The total is exactly at the ceiling. To fit, the assertions were compacted, not weakened: the YAML parse folds into the first check, and the policy cut uses an if-init. The prospective reset under `## Review-finding disposition` is now this measured table. The workflow, registry, harness, and CI steps are unchanged.
+- DONE: gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race all pass on the final commit.
+  gofmt exit 0 (0.38s). `go test ./...` exit 0 (453s). `go test ./... -race` exit 0 (499s). All runs were on a9f7e8143. gofmt also rewrote two alignment lines in `internal/release/runtime_live_evidence_workflow_test.go`. That formatting drift already exists on origin/main (`git show origin/main:… | gofmt -l` lists the file), so I reverted it and kept it out of the six-file surface.
+
+### Summary
+
+One test function now holds the three captain-approved standing assertions. Each one fails only under its own audit mutation and passes on candidate a9f7e8143. Both Go suites pass. The surface is the same six files at exactly +150 net, which is the ceiling. Haiku model compliance and the pre-existing gofmt drift on main stay outside this task.
