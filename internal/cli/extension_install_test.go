@@ -9,31 +9,38 @@ import (
 )
 
 func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
-	for _, ch := range []struct{ name, source, branch string }{
-		{"edge", "spacedock-dev/marketplace@edge", "next"},
-		{"stable", "spacedock-dev/marketplace", "main"},
+	for _, ch := range []struct {
+		name, source, branch string
+		addsMarketplace      bool
+	}{
+		{"edge", "spacedock-dev/marketplace@edge", "next", true},
+		{"stable", "spacedock-dev/marketplace", "main", false},
 	} {
 		t.Run(ch.name, func(t *testing.T) {
-			testInstallSequencesFollowEachExtension(t, ch.source, ch.branch)
+			testInstallSequencesFollowEachExtension(t, ch.source, ch.branch, ch.addsMarketplace)
 		})
 	}
 }
 
-func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string) {
+func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string, addsMarketplace bool) {
 	saved := extensions
 	extensions = fakeExtensions()
 	defer func() { extensions = saved }()
 
 	claude := installArgvSequence(source, branch)
 	wantClaude := []installStep{
-		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
-		{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "uninstall", "alpha@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "alpha@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "alpha@spacedock"}, tolerateExit: true, reportExit: true},
 		{argv: []string{"plugin", "uninstall", "beta@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "install", "beta@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "update", "beta@spacedock"}, tolerateExit: true, reportExit: true},
+	}
+	if addsMarketplace {
+		wantClaude = append([]installStep{
+			{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
+			{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
+		}, wantClaude...)
 	}
 	if len(claude) < len(wantClaude) {
 		t.Fatalf("claude sequence = %v, want the companion steps at its end", claude)
@@ -44,18 +51,38 @@ func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string
 
 	codex := codexInstallArgvSequence(source, branch)
 	wantCodex := []installStep{
-		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
-		{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "remove", "alpha@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "add", "alpha@spacedock"}, tolerateExit: true, reportExit: true},
 		{argv: []string{"plugin", "remove", "beta@spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "add", "beta@spacedock"}, tolerateExit: true, reportExit: true},
+	}
+	if addsMarketplace {
+		wantCodex = append([]installStep{
+			{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
+			{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
+		}, wantCodex...)
 	}
 	if len(codex) < len(wantCodex) {
 		t.Fatalf("codex sequence = %v, want the companion steps at its end", codex)
 	}
 	if got := codex[len(codex)-len(wantCodex):]; !reflect.DeepEqual(got, wantCodex) {
 		t.Errorf("codex companion steps = %v, want %v", got, wantCodex)
+	}
+
+	wantAdds := 1
+	if addsMarketplace {
+		wantAdds = 2
+	}
+	for host, steps := range map[string][]installStep{"claude": claude, "codex": codex} {
+		adds := 0
+		for _, step := range steps {
+			if len(step.argv) > 2 && step.argv[1] == "marketplace" && step.argv[2] == "add" {
+				adds++
+			}
+		}
+		if adds != wantAdds {
+			t.Errorf("%s sequence adds %d marketplaces, want %d: on stable the channel marketplace already is the extension marketplace", host, adds, wantAdds)
+		}
 	}
 }
 

@@ -131,7 +131,9 @@ Each extension's own release keeps its listing on the `spacedock` marketplace
 current. The edge marketplace lists Spacedock only. An extension without a listing on
 the `spacedock` marketplace has no companion plugin: the companion install fails.
 `SPACEDOCK_EXTENSION_MARKETPLACE_SOURCE` replaces the source of that marketplace, so a
-test can stage a newer release.
+test can stage a newer release. On stable, Spacedock's own marketplace is that
+marketplace and is added once, so `SPACEDOCK_MARKETPLACE_SOURCE` sets it and the
+extension variable has no effect.
 
 ## Compatibility
 

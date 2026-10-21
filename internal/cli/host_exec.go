@@ -449,7 +449,7 @@ func installArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
 	}
-	if len(extensions) > 0 {
+	if addsExtensionMarketplace(devBranch) {
 		steps = append(steps,
 			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
 			installStep{argv: []string{"plugin", "marketplace", "update", extensionMarketplace}, tolerateExit: true},
@@ -502,7 +502,7 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
 	}
-	if len(extensions) > 0 {
+	if addsExtensionMarketplace(devBranch) {
 		steps = append(steps,
 			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
 			installStep{argv: []string{"plugin", "marketplace", "upgrade", extensionMarketplace}, tolerateExit: true},
@@ -522,6 +522,13 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 // extensionMarketplace is the marketplace every extension plugin installs from, on
 // every channel: each extension's own release keeps its listing there current.
 const extensionMarketplace = "spacedock"
+
+// addsExtensionMarketplace is false on stable, where the channel marketplace is the
+// extension marketplace: adding it again from another source would re-point it, and
+// Codex refuses.
+func addsExtensionMarketplace(devBranch string) bool {
+	return len(extensions) > 0 && channelMarketplace(devBranch) != extensionMarketplace
+}
 
 func extensionPluginID(name string) string {
 	return name + "@" + extensionMarketplace
