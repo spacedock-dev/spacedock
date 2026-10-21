@@ -20,12 +20,24 @@ const (
 
 func installPiForTest(t *testing.T, ops *fakePiRuntimeOps) (code int, stdout string) {
 	t.Helper()
-	repo, pkg := t.TempDir(), t.TempDir()
+	return installPiWithSettings(t, ops, "")
+}
+
+func installPiWithSettings(t *testing.T, ops *fakePiRuntimeOps, settings string) (code int, stdout string) {
+	t.Helper()
+	repo, pkg, home := t.TempDir(), t.TempDir(), t.TempDir()
+	if settings != "" {
+		agentDir := filepath.Join(home, ".pi", "agent")
+		if err := os.MkdirAll(agentDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		writeFile(t, filepath.Join(agentDir, "settings.json"), settings)
+	}
 	writePiSkillFixtures(t, repo)
 	writePiSubagentsFixtures(t, pkg)
 	ops.lookPath, ops.statOK, ops.packageStatus = piHealthyPathFixtures(), statOKForPiResources(repo, pkg), healthyPiPackageStatus()
 	var out, errOut bytes.Buffer
-	code = runInitWithPi(context.Background(), []string{"--host", "pi"}, &fakeHost{}, ops, append(piTestEnv(pkg, t.TempDir()), "SPACEDOCK_REPO_ROOT="+repo), &out, &errOut)
+	code = runInitWithPi(context.Background(), []string{"--host", "pi"}, &fakeHost{}, ops, append(piTestEnv(pkg, home), "SPACEDOCK_REPO_ROOT="+repo), &out, &errOut)
 	return code, out.String()
 }
 
@@ -42,6 +54,27 @@ func TestPiInstallPinsBothPackagesRemovingEachBeforeItsInstall(t *testing.T) {
 			"\nremove " + piTestSubspace + "\ninstall " + piTestSubspace + "@v9.9.9"
 		if got := strings.Join(ops.piCalls, "\n"); got != want {
 			t.Errorf("%s: pi calls =\n%s\nwant\n%s", tc.branch, got, want)
+		}
+	}
+}
+
+func TestPiInstallLeavesAPackageAloneWhenSettingsHoldItsExactSourceAndRef(t *testing.T) {
+	savedBranch := devBranch
+	defer func() { devBranch = savedBranch }()
+	devBranch = "main"
+	spacedock, subspace := piSpacedockPackageSource+"@stable", piTestSubspace+"@v9.9.9"
+	for name, tc := range map[string]struct{ settings, want string }{
+		"both held":           {`{"packages":["` + spacedock + `",{"source":"` + subspace + `"}]}`, ""},
+		"subspace ref moved":  {`{"packages":["` + spacedock + `","` + piTestSubspace + `@v9.9.8"]}`, "remove " + piTestSubspace + "\ninstall " + subspace},
+		"spacedock unpinned":  {`{"packages":["` + piSpacedockPackageSource + `","` + subspace + `"]}`, "remove " + piSpacedockPackageSource + "\ninstall " + spacedock},
+		"spacedock other ref": {`{"packages":["` + piSpacedockPackageSource + `@main","` + subspace + `"]}`, "remove " + piSpacedockPackageSource + "\ninstall " + spacedock},
+	} {
+		ops := &fakePiRuntimeOps{listing: []byte(piTestListing)}
+		if code, out := installPiWithSettings(t, ops, tc.settings); code != 0 {
+			t.Fatalf("%s: exit=%d\n%s", name, code, out)
+		}
+		if got := strings.Join(ops.piCalls, "\n"); got != tc.want {
+			t.Errorf("%s: pi calls =\n%s\nwant\n%s", name, got, tc.want)
 		}
 	}
 }

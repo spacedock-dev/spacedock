@@ -49,7 +49,7 @@ func piExtensionSource(listing []byte, name string) (pinned, bare string, err er
 // installPiExtensions installs each extension that has a Pi package. A failure prints
 // a `spacedock install:` line and leaves the exit code alone, as for a Claude Code
 // companion, so `update` can show it.
-func installPiExtensions(piOps piRuntimeOps, stdout io.Writer) {
+func installPiExtensions(piOps piRuntimeOps, agentDir string, stdout io.Writer) {
 	var wanted []extension
 	for _, ext := range extensions {
 		if ext.piTitle != "" {
@@ -71,8 +71,7 @@ func installPiExtensions(piOps piRuntimeOps, stdout io.Writer) {
 			fmt.Fprintf(stdout, "spacedock install: %v, so the %s Pi package was not installed\n", err, ext.name)
 			continue
 		}
-		piOps.PiRemove(bare)
-		out, err := piOps.PiInstall(pinned)
+		out, err := replacePiPackage(piOps, agentDir, bare, pinned)
 		if strings.TrimSpace(out) != "" {
 			fmt.Fprint(stdout, out)
 		}
@@ -106,22 +105,42 @@ type piExtensionPackage struct {
 	ok           bool
 }
 
-// piRegisteredPackage finds the git package of repository repoName in settings.json by
-// its repository name: the root of a package without a package.json has no name to
-// read, and doctor cannot ask the listing.
-func piRegisteredPackage(agentDir, home, repoName string) (root, ref string, ok bool) {
+// replacePiPackage moves a package to the pinned source: `pi install` over an installed
+// package changes nothing, so the old entry is removed first. A settings.json that
+// already holds the pinned source needs neither, and keeps its working checkout.
+func replacePiPackage(piOps piRuntimeOps, agentDir, bare, pinned string) (string, error) {
+	for _, src := range piSettingsSources(agentDir) {
+		if strings.TrimSpace(src) == pinned {
+			return "", nil
+		}
+	}
+	piOps.PiRemove(bare)
+	return piOps.PiInstall(pinned)
+}
+
+func piSettingsSources(agentDir string) []string {
 	data, err := os.ReadFile(filepath.Join(agentDir, "settings.json"))
 	if err != nil {
-		return "", "", false
+		return nil
 	}
 	var settings struct {
 		Packages []json.RawMessage `json:"packages"`
 	}
 	if json.Unmarshal(data, &settings) != nil {
-		return "", "", false
+		return nil
 	}
+	var sources []string
 	for _, raw := range settings.Packages {
-		src := piPackageSourceFromEntry(raw)
+		sources = append(sources, piPackageSourceFromEntry(raw))
+	}
+	return sources
+}
+
+// piRegisteredPackage finds the git package of repository repoName in settings.json by
+// its repository name: the root of a package without a package.json has no name to
+// read, and doctor cannot ask the listing.
+func piRegisteredPackage(agentDir, home, repoName string) (root, ref string, ok bool) {
+	for _, src := range piSettingsSources(agentDir) {
 		spec, isGit := strings.CutPrefix(strings.TrimSpace(src), "git:")
 		if !isGit {
 			continue

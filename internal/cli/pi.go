@@ -458,14 +458,17 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		}
 		return runInit(ctx, args, hostOps, stdout, stderr)
 	}
+	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	if !checkOnly {
 		source := piSpacedockPackagePin(devBranch)
+		var out string
+		var err error
 		if pluginDir != "" {
 			source = pluginDir
+			out, err = piOps.PiInstall(source)
 		} else {
-			piOps.PiRemove(piSpacedockPackageSource)
+			out, err = replacePiPackage(piOps, cfg.agentDir, piSpacedockPackageSource, source)
 		}
-		out, err := piOps.PiInstall(source)
 		if strings.TrimSpace(out) != "" {
 			fmt.Fprint(stdout, out)
 		}
@@ -473,9 +476,8 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			fmt.Fprintf(stderr, "spacedock install: pi install %q failed: %v\n", source, err)
 			return 1
 		}
-		installPiExtensions(piOps, stdout)
+		installPiExtensions(piOps, cfg.agentDir, stdout)
 	}
-	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
 	if checkOnly {
 		printPiDoctorReport(stdout, check)
