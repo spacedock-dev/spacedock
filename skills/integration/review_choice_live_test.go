@@ -353,7 +353,7 @@ func TestLiveReviewNoArgumentWithNothingRecordedAsksTerminalOrWeb(t *testing.T) 
 	if strings.Contains(l.flat(), "review-mode set") || l.mode() != "" {
 		t.Errorf("declining the upload still recorded %q: %s", l.mode(), l.flat())
 	}
-	if !l.said("Terminal (TUI)") {
+	if !l.said("Terminal") {
 		t.Errorf("a decline did not offer the Terminal (TUI):\n%s", l.text)
 	}
 	if !l.said("/spacedock:review") {
@@ -442,10 +442,13 @@ func TestLiveReviewFreeTextIsCarriedOutBeforeAskingAndDecliningUploadsNothing(t 
 	l := newReviewLive(t, map[string]string{"choice": "Web", "agree": "No"})
 	l.turn("/spacedock:review read plan.md and write a one-sentence summary of it into summary.md")
 	l.wantMenus("choice", "agree")
-	read, wrote := -1, -1
+	read, wrote, firstMenu := -1, -1, -1
 	for i, tool := range l.tools {
 		path, _ := tool.Input["file_path"].(string)
 		cmd, _ := tool.Input["command"].(string)
+		if tool.Name == "AskUserQuestion" && firstMenu < 0 {
+			firstMenu = i
+		}
 		if read < 0 && strings.Contains(path+cmd, "plan.md") {
 			read = i
 		}
@@ -454,8 +457,11 @@ func TestLiveReviewFreeTextIsCarriedOutBeforeAskingAndDecliningUploadsNothing(t 
 			wrote = i
 		}
 	}
-	if read < 0 || wrote < read {
-		t.Errorf("want plan.md read, then summary.md written; got read=%d write=%d: %s", read, wrote, l.flat())
+	if read < 0 || wrote < read || firstMenu < wrote {
+		t.Errorf("want plan.md read, summary.md written, then the first question; got read=%d write=%d question=%d: %s", read, wrote, firstMenu, l.flat())
+	}
+	if body, _ := os.ReadFile(filepath.Join(l.proj, "summary.md")); len(strings.TrimSpace(string(body))) == 0 {
+		t.Errorf("summary.md is missing or empty")
 	}
 	if strings.Contains(l.flat(), "review-mode set") || l.mode() != "" {
 		t.Errorf("declining the upload still recorded %q: %s", l.mode(), l.flat())

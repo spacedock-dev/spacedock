@@ -26,9 +26,10 @@ on Homebrew, or run the install line again. Stop.
 ## Asking the user
 
 Each question below is asked through the harness's question tool when it has one
-(Claude Code: AskUserQuestion), as one menu with the options named. Elsewhere ask
-it in plain text with the same options. Wait for the answer; record only what the
-user chose, never your guess.
+(Claude Code: AskUserQuestion; if its schema is not loaded, load it with ToolSearch
+first), as one menu with the options named. Where there is no such tool, ask in plain
+text with the same options. Wait for the answer; record only what the user chose,
+never your guess.
 
 ## Pick the branch from the argument
 
@@ -60,8 +61,9 @@ Used whenever a choice is needed.
    Web uploads the file to review.spacedock.md. Anyone with the link can open it, and it expires automatically after seven days. Agree?
    ```
 
-   Yes: `spacedock review-mode set remote`. No: record nothing, say so, and offer the
-   Terminal (TUI) instead in your reply; record `local` only if they accept it.
+   Yes: `spacedock review-mode set remote`. No: record nothing, say so, and end
+   the turn. Offer the Terminal (TUI) in a sentence of your reply, not as another
+   question: the user records it by running `/spacedock:review tui`.
 
 4. In your reply to the final answer, whichever it is (a Terminal (TUI) choice, a Yes,
    or a No while you still offer the Terminal (TUI)), tell the user they can change
