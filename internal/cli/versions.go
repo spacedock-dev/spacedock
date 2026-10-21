@@ -22,11 +22,14 @@ import (
 // changed in an update. missingOnHomebrew, when set, is what `doctor` says on a
 // Homebrew install that lacks the program, in place of `spacedock update`, which
 // installs no program there.
+// piTitle, when set, is the extension's public git repository installed as a Pi
+// package at the listing's ref, and the name `doctor --host pi` shows it under.
 type extension struct {
 	name              string
 	program           string
 	tree              bool
 	missingOnHomebrew string
+	piTitle           string
 	check             func(in versionInputs) (rows []pieceRow, problems []string)
 	afterUpdate       []string
 }
@@ -34,7 +37,7 @@ type extension struct {
 // extensions lists the extensions Spacedock installs. install.sh holds the matching
 // EXTRAS rows, and the two must name the same programs.
 var extensions = []extension{
-	{name: "subspace", program: "spacedock-review", check: reviewChoiceCheck},
+	{name: "subspace", program: "spacedock-review", piTitle: "Subspace", check: reviewChoiceCheck},
 	{name: "compass", program: "spacedock-compass", tree: true, missingOnHomebrew: "Install it with: brew install spacedock-dev/tap/compass", afterUpdate: []string{
 		"A Compass dashboard that already runs keeps its old version until you restart it:",
 		"  spacedock compass --port 4553 --stop && spacedock compass --port 4553 --daemon",

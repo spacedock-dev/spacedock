@@ -9,6 +9,9 @@ Hand one artifact to a person for review. The project's recorded choice decides 
 view and where the file goes. Never upload anything that the project has not agreed
 to upload.
 
+On Pi there are no plugin names: `/spacedock:review` is `/skill:review`, and
+`subspace:r` and `subspace:remote-review` are the skills `r` and `remote-review`.
+
 The two choices, worded as the view first, then where the file goes. Use these words
 whenever you show or ask for the choice:
 
@@ -130,7 +133,7 @@ file, say so and stop.
    If the output starts with `UNSUPPORTED`, stop and publish nothing. Name the
    program and its version from that line. Tell the user to run `spacedock update` in
    a terminal, then restart Claude Code or run `/reload-plugins`, or in Codex start
-   a new session, then ask again.
+   a new session, or in Pi run `/reload`, then ask again.
 
 4. Local: invoke the `subspace:r` skill on the file.
 

@@ -57,6 +57,15 @@ const piSkillRoutesPerPackage = 2
 // a local checkout path so in-tree edits are picked up without reinstall.
 const piSpacedockPackageSource = "git:github.com/spacedock-dev/spacedock"
 
+// piSpacedockPackagePin is the source installed for a channel: the ref the plugin
+// marketplace resolves, which a pinned `pi update` leaves alone.
+func piSpacedockPackagePin(devBranch string) string {
+	if devBranch == "main" {
+		return piSpacedockPackageSource + "@stable"
+	}
+	return piSpacedockPackageSource + "@main"
+}
+
 type piRuntimeOps interface {
 	LookPath(name string) (string, error)
 	Stat(path string) error
@@ -65,6 +74,12 @@ type piRuntimeOps interface {
 	// real implementation execs `pi`; tests record the source and return canned
 	// output. This is the install seam that retires Pi's check-only status.
 	PiInstall(source string) (string, error)
+	// PiRemove runs `pi remove <source>`. `pi install` over an installed package
+	// changes nothing, even for another ref, so moving a ref takes remove then install.
+	PiRemove(source string) (string, error)
+	// ReadExtensionListing returns the extension marketplace's marketplace.json from a
+	// directory or an owner/repo on GitHub, the one listing every host installs from.
+	ReadExtensionListing(source string) ([]byte, error)
 	// SpacedockPackageStatus reports whether the Spacedock package is registered
 	// in ~/.pi/agent/settings.json `packages` and whether the ensign (and
 	// first-officer) skills are discoverable via the package-root skill scan —
@@ -196,6 +211,11 @@ func (execPiRuntimeOps) PiInstall(source string) (string, error) {
 	return string(out), err
 }
 
+func (execPiRuntimeOps) PiRemove(source string) (string, error) {
+	out, err := exec.Command("pi", "remove", source).CombinedOutput()
+	return string(out), err
+}
+
 func (execPiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPackageStatus {
 	return piSpacedockPackageStatus(agentDir, home)
 }
@@ -247,6 +267,7 @@ type piCheckResult struct {
 	// via package discovery).
 	doubleExtensionLoad   bool
 	packageStatus         piPackageStatus
+	extensionPackages     []piExtensionPackage
 	packageRoot           string
 	packageRootSource     string
 	intercomPackageRoot   string
@@ -440,9 +461,11 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		return runInit(ctx, args, hostOps, stdout, stderr)
 	}
 	if !checkOnly {
-		source := piSpacedockPackageSource
+		source := piSpacedockPackagePin(devBranch)
 		if pluginDir != "" {
 			source = pluginDir
+		} else {
+			piOps.PiRemove(piSpacedockPackageSource)
 		}
 		out, err := piOps.PiInstall(source)
 		if strings.TrimSpace(out) != "" {
@@ -452,6 +475,7 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			fmt.Fprintf(stderr, "spacedock install: pi install %q failed: %v\n", source, err)
 			return 1
 		}
+		installPiExtensions(piOps, stdout)
 	}
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
@@ -732,6 +756,7 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	// coincidence at a cwd-derived path.
 	status := ops.SpacedockPackageStatus(cfg.agentDir, cfg.home)
 	res.packageStatus = status
+	res.extensionPackages = piExtensionPackages(cfg.agentDir, cfg.home)
 	res.spacedockPackageOK = status.registered && status.ensignDiscoverable
 	// Dev-override double-extension load: a static consequence of runPi's
 	// dev-override argv block (checkout via --extension, installed copy via
@@ -864,6 +889,9 @@ func printPiDoctorReport(w io.Writer, c piCheckResult) {
 	printPiCheck(w, c.intercomPackageOK, "pi-intercom package root", c.intercomPackageRoot, "set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root")
 	printPiCheck(w, c.intercomSkillOK, "pi-intercom skill", filepath.Join(c.intercomPackageRoot, "skills", "pi-intercom"), "install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md")
 	printPiCheck(w, c.spacedockPackageOK, "Spacedock package", piPackageReportPath(c.packageStatus), "run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)")
+	for _, p := range c.extensionPackages {
+		printPiCheck(w, p.ok, p.title+" package", p.where, "run `spacedock install --host pi` to install it at the ref the extension marketplace lists")
+	}
 	printPiCheck(w, c.spacedockExtensionOK, "Spacedock extension", filepath.Join(piPackageReportPath(c.packageStatus), ".pi", "extensions", "spacedock.ts"), "run `spacedock install --host pi` to reinstall the Spacedock package (its .pi/extensions/spacedock.ts delivers the FO contract)")
 	printPiCheck(w, c.firstOfficerSkillOK, "Spacedock first-officer skill (package discovery)", filepath.Join(piPackageReportPath(c.packageStatus), "skills", "first-officer"), "run `spacedock install --host pi` to reinstall the Spacedock package")
 	if c.piVersionOK {
