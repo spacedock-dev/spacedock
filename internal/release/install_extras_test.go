@@ -340,15 +340,16 @@ esac
 	return log
 }
 
-func TestInstallExtrasFollowTheChannel(t *testing.T) {
+func TestInstallExtrasRunOnEveryChannelUnlessNone(t *testing.T) {
 	cases := []struct {
 		name      string
 		env       []string
 		extension bool
 	}{
-		{"stable installs none", []string{"SPACEDOCK_CHANNEL=stable"}, false},
-		{"stable installs them when asked", []string{"SPACEDOCK_CHANNEL=stable", "SPACEDOCK_EXTRAS=1"}, true},
+		{"stable installs them", []string{"SPACEDOCK_CHANNEL=stable"}, true},
 		{"edge installs them", []string{"SPACEDOCK_CHANNEL=edge"}, true},
+		{"stable with none installs none", []string{"SPACEDOCK_CHANNEL=stable", "SPACEDOCK_EXTRAS=none"}, false},
+		{"edge with none installs none", []string{"SPACEDOCK_CHANNEL=edge", "SPACEDOCK_EXTRAS=none"}, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

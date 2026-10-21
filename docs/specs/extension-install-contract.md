@@ -95,21 +95,22 @@ Both are empty until a product adds its row.
 A failed extra (unresolvable release, failed download, checksum mismatch) is
 reported and skipped; Spacedock's own install still succeeds.
 
-The edge channel installs the extensions. The stable channel installs none, because
-no stable marketplace pin matches a stable release yet. `SPACEDOCK_EXTRAS=1` makes
-stable install their programs. Stable `spacedock install`, `doctor` and `update`
-ignore the table, so on stable they install, expect and update no extension plugin.
-`install.sh` runs the Claude Code plugin step only when it installs extensions:
-a plain stable run neither adds a marketplace nor a plugin to Claude's settings.
+Both channels install the extensions: `install.sh`, `spacedock install`, `doctor` and
+`update` read the same table on stable and on edge. Each extension comes from its
+newest release on the channel: stable reads the latest stable release, edge the newest
+release including prereleases. `SPACEDOCK_EXTRAS=none` skips the extensions. A run with
+`SPACEDOCK_INSTALL_FROM` set skips them too unless `SPACEDOCK_EXTRAS` is set to another
+value, so tests and CI stay offline. `install.sh` runs the Claude Code plugin step after
+the extensions.
 
-On Homebrew, the edge cask `spacedock@next` depends on each extension's formula in
-`spacedock-dev/tap`, and the stable cask depends on none. The formula provides the
-same `spacedock-NAME` name. Formulas from other taps are refused, because Homebrew
-does not load them as a transitive dependency on a fresh install.
+On Homebrew, both casks, `spacedock` and `spacedock@next`, depend on each extension's
+formula in `spacedock-dev/tap`. The formula provides the same `spacedock-NAME` name.
+Formulas from other taps are refused, because Homebrew does not load them as a
+transitive dependency on a fresh install.
 
 ## Plugins
 
-When Spacedock installs its own plugin on the edge channel, it also installs
+When Spacedock installs its own plugin, it also installs
 `NAME@spacedock` for each extension. Those plugins come from the `spacedock`
 marketplace (`spacedock-dev/marketplace`, branch `main`) whatever Spacedock's
 channel, and Spacedock adds that marketplace when it is missing and refreshes it
@@ -139,8 +140,8 @@ A program that offers a capability answers `--supports CAPABILITY` with exit 0.
 Any other exit means no, and so does a program that is not on PATH.
 
 Every extension program must answer `--version` with its version on the first line
-of its output. A tree extension that does not yet do this has its version read from
-its directory name, and Spacedock cannot ask it `--supports`.
+of its output. For a tree extension that does not yet do this, `doctor` and `update`
+read the version from its directory name, and Spacedock cannot ask it `--supports`.
 
 Each hand-off names the program that does the work and the capability it needs.
 Before a hand-off, the skill runs `--supports` for that program. When the answer is
@@ -162,7 +163,9 @@ session.
 and Codex that is on PATH and has the Spacedock plugin installed, labelled by host. It
 names a program that differs from a host's plugin, a second `spacedock` on PATH, and a
 missing program or plugin, each per host. An extension may add rows and problems of its
-own to that list.
+own to that list. On a Homebrew install that lacks the program of an extension with no
+formula, it says so and names no remedy, since `spacedock update` installs no program
+there.
 
 ## Release asset names
 

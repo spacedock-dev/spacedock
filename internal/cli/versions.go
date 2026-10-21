@@ -16,29 +16,23 @@ import (
 )
 
 // extension is one row of the extension table. program is the `spacedock-NAME` link on
-// PATH. A tree extension answers no `--version`, so its version is the directory that
-// its link resolves into. check adds the rows and problems that only this extension
-// knows how to find, and afterUpdate is printed when its program changed in an update.
+// PATH. A tree extension that does not answer `--version` has the version of the
+// directory that its link resolves into. check adds the rows and problems that only
+// this extension knows how to find, and afterUpdate is printed when its program
+// changed in an update. missingOnHomebrew, when set, is what `doctor` says on a
+// Homebrew install that lacks the program, in place of a remedy that cannot work.
 type extension struct {
-	name        string
-	program     string
-	tree        bool
-	check       func(in versionInputs) (rows []pieceRow, problems []string)
-	afterUpdate []string
+	name              string
+	program           string
+	tree              bool
+	missingOnHomebrew string
+	check             func(in versionInputs) (rows []pieceRow, problems []string)
+	afterUpdate       []string
 }
 
 // extensions lists the extensions Spacedock installs. install.sh holds the matching
 // EXTRAS rows, and the two must name the same programs.
 var extensions = []extension{}
-
-// channelExtensions is the table as this channel applies it: stable installs no
-// extension unless SPACEDOCK_EXTRAS asks, so it expects and updates none.
-func channelExtensions(devBranch string) []extension {
-	if devBranch == "main" {
-		return nil
-	}
-	return extensions
-}
 
 const notInstalled = "not installed"
 
@@ -128,13 +122,17 @@ func collectVersions(in versionInputs) versionReport {
 		}
 	}
 
-	for _, ext := range channelExtensions(devBranch) {
+	for _, ext := range extensions {
 		programPath, programVersion := extensionProgram(ext, in.env, pathEnv)
 		add(ext.name+" program", programVersion, programPath)
 		id := extensionPluginID(ext.name)
 		if programVersion == notInstalled {
-			problem("MISSING: the %s program is not on PATH.", ext.name)
-			report.needsUpdate = true
+			if ext.missingOnHomebrew != "" && in.selfPath != "" && isHomebrewPath(in.selfPath) {
+				problem("MISSING: the %s program is not on PATH. %s", ext.name, ext.missingOnHomebrew)
+			} else {
+				problem("MISSING: the %s program is not on PATH.", ext.name)
+				report.needsUpdate = true
+			}
 		}
 		for _, h := range report.hosts {
 			if !h.listed() {
@@ -160,7 +158,7 @@ func collectVersions(in versionInputs) versionReport {
 		}
 	}
 
-	for _, ext := range channelExtensions(devBranch) {
+	for _, ext := range extensions {
 		if ext.check == nil {
 			continue
 		}
@@ -236,10 +234,11 @@ func extensionProgram(ext extension, env []string, pathEnv string) (path, versio
 	if len(found) == 0 {
 		return "", notInstalled
 	}
-	if ext.tree {
-		return found[0], treeVersion(found[0], ext.name, env)
+	version = programReportedVersion(found[0], env, "")
+	if ext.tree && version == "unknown" {
+		version = treeVersion(found[0], ext.name, env)
 	}
-	return found[0], programReportedVersion(found[0], env, "")
+	return found[0], version
 }
 
 func treeVersion(link, name string, env []string) string {

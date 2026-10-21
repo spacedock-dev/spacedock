@@ -229,7 +229,7 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 		fmt.Fprintf(w, "  Homebrew owns spacedock and its extensions. Run: brew upgrade %s\n", formula)
 	} else {
 		row("spacedock")
-		for _, ext := range channelExtensions(devBranch) {
+		for _, ext := range extensions {
 			row(ext.name + " program")
 		}
 	}
@@ -260,7 +260,7 @@ func printUpdateChanges(w io.Writer, before, after versionReport, formula string
 	if !refreshed {
 		fmt.Fprintln(w, "No plugins were updated. Run: spacedock install --host claude   or: spacedock install --host codex")
 	}
-	for _, ext := range channelExtensions(devBranch) {
+	for _, ext := range extensions {
 		if before.version(ext.name+" program") != after.version(ext.name+" program") {
 			for _, line := range ext.afterUpdate {
 				fmt.Fprintln(w, line)

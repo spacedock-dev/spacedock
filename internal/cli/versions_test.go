@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -24,6 +26,15 @@ func writeProgram(t *testing.T, path, output string) {
 	t.Helper()
 	mustMkdir(t, filepath.Dir(path))
 	mustWrite(t, path, "#!/bin/sh\necho '"+output+"'\n")
+	if err := os.Chmod(path, 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writeProgramExiting(t *testing.T, path string, code int, stderr string) {
+	t.Helper()
+	mustMkdir(t, filepath.Dir(path))
+	mustWrite(t, path, "#!/bin/sh\necho '"+stderr+"' >&2\nexit "+strconv.Itoa(code)+"\n")
 	if err := os.Chmod(path, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +102,7 @@ func stageInstallWith(t *testing.T, table []extension) *stagedInstall {
 func (s *stagedInstall) stageTreeProgram(ext extension, version string) {
 	s.t.Helper()
 	program := filepath.Join(s.dataHome, ext.name, version, ext.name, ext.name)
-	writeProgram(s.t, program, ext.name+" has no version flag")
+	writeProgramExiting(s.t, program, 2, "usage: "+ext.name+": unrecognized arguments: --version")
 	link := filepath.Join(s.first, ext.program)
 	os.Remove(link)
 	if err := os.Symlink(program, link); err != nil {
@@ -331,19 +342,73 @@ func TestVersionReportRemedyDependsOnWhichSideIsNewer(t *testing.T) {
 	}
 }
 
-func TestVersionReportExpectsNoExtensionOnStable(t *testing.T) {
+func TestVersionReportExpectsTheExtensionsOnStable(t *testing.T) {
 	s := stageInstall(t)
 	devBranch = "main"
-	os.Remove(filepath.Join(s.first, "spacedock-alpha"))
-	os.Remove(filepath.Join(s.first, "spacedock-beta"))
-	s.host.inventory = s.host.inventory[:1]
+	s.host.inventory[0].ID = "spacedock@spacedock"
 
 	report := s.report()
 	if len(report.problems) != 0 {
-		t.Errorf("stable named a problem for extensions it does not install: %q", report.problems)
+		t.Errorf("a consistent stable install reported problems: %q", report.problems)
 	}
-	if got := report.version("alpha program"); got != "" {
-		t.Errorf("stable lists the alpha program (%q)", got)
+	if got := report.version("alpha program"); got != "0.16.0-beta.2" {
+		t.Errorf("stable lists the alpha program as %q, want 0.16.0-beta.2", got)
+	}
+
+	os.Remove(filepath.Join(s.first, "spacedock-alpha"))
+	if report := s.report(); !strings.Contains(strings.Join(report.problems, "\n"), "MISSING: the alpha program is not on PATH.") {
+		t.Errorf("stable did not name the missing alpha program: %q", report.problems)
+	}
+}
+
+func TestVersionReportReadsATreeProgramsOwnVersionWhenItAnswers(t *testing.T) {
+	s := stageInstall(t)
+	if got := s.report().version("beta program"); got != "1.0.1" {
+		t.Errorf("a tree program that exits 2 for --version reads %q, want the directory name 1.0.1", got)
+	}
+
+	outside := filepath.Join(t.TempDir(), "libexec", "spacedock-beta")
+	writeProgram(t, outside, "1.4.0")
+	os.Remove(filepath.Join(s.first, "spacedock-beta"))
+	if err := os.Symlink(outside, filepath.Join(s.first, "spacedock-beta")); err != nil {
+		t.Fatal(err)
+	}
+	s.host.inventory[2].Version = "1.4.0"
+	report := s.report()
+	if got := report.version("beta program"); got != "1.4.0" {
+		t.Errorf("a tree program outside the extension directory that answers --version reads %q, want 1.4.0", got)
+	}
+	if len(report.problems) != 0 {
+		t.Errorf("a program that answers --version beside a matching plugin reported problems: %q", report.problems)
+	}
+}
+
+func TestVersionReportOnHomebrewNamesNoRemedyForAnExtensionWithoutAFormula(t *testing.T) {
+	table := fakeExtensions()
+	table[1].missingOnHomebrew = "Beta is not yet available from Homebrew."
+	s := stageInstallWith(t, table)
+	os.Remove(filepath.Join(s.first, "spacedock-beta"))
+	report := func(selfPath string) versionReport {
+		return collectVersions(versionInputs{env: s.env, dir: s.project, host: s.host, lookPath: s.lookPath,
+			selfPath: selfPath, selfVersion: "0.28.0-pre6"})
+	}
+	const brewPath = "/opt/homebrew/Caskroom/spacedock/0.28.0/spacedock"
+
+	onBrew := report(brewPath)
+	if want := "MISSING: the beta program is not on PATH. Beta is not yet available from Homebrew."; !slices.Contains(onBrew.problems, want) {
+		t.Errorf("Homebrew problems = %q, want %q", onBrew.problems, want)
+	}
+	if onBrew.needsUpdate {
+		t.Errorf("Homebrew report points at `spacedock update`, which cannot install the program")
+	}
+
+	if got := report(filepath.Join(s.first, "spacedock")); !slices.Contains(got.problems, "MISSING: the beta program is not on PATH.") || !got.needsUpdate {
+		t.Errorf("install.sh problems = %q, needsUpdate = %v, want the plain MISSING line and the update remedy", got.problems, got.needsUpdate)
+	}
+
+	os.Remove(filepath.Join(s.first, "spacedock-alpha"))
+	if got := report(brewPath); !slices.Contains(got.problems, "MISSING: the alpha program is not on PATH.") || !got.needsUpdate {
+		t.Errorf("a Homebrew extension that has a formula: problems = %q, needsUpdate = %v, want the plain MISSING line and the update remedy", got.problems, got.needsUpdate)
 	}
 }
 

@@ -239,13 +239,12 @@ install_plugins() {
 	fi
 }
 
-# A plain stable run installs no extension: no stable marketplace pin matches a
-# stable release yet, and it must leave Claude's settings alone.
+# SPACEDOCK_INSTALL_FROM runs skip the extensions unless SPACEDOCK_EXTRAS asks, so
+# tests and CI stay offline.
 install_extras() {
 	want="${SPACEDOCK_EXTRAS:-}"
 	[ "$want" = none ] && return 0
 	[ -n "${SPACEDOCK_INSTALL_FROM:-}" ] && [ -z "$want" ] && return 0
-	[ -n "$want" ] || [ "$CHANNEL" = edge ] || return 0
 	printf '%s\n' "$EXTRAS" | while IFS='|' read -r name repo prefix programs links kind; do
 		[ -n "$name" ] || continue
 		install_extra "$name" "$repo" "$prefix" "$programs" "$links" "${kind:-bin}" "$1" "$2" \

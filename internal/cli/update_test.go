@@ -75,57 +75,68 @@ func updateDepsFor(s *stagedInstall, host hostOps, script string) updateDeps {
 }
 
 func TestUpdateShowsEachPieceBeforeAndAfterAndIsIdempotent(t *testing.T) {
-	s := stageInstall(t)
-	flag := filepath.Join(t.TempDir(), "plugins-updated")
-	seen := filepath.Join(t.TempDir(), "seen")
-	beta100 := filepath.Join(s.dataHome, "beta", "1.0.0", "beta", "beta")
-	writeProgram(t, beta100, "beta has no version flag")
-	if err := os.Remove(filepath.Join(s.first, "spacedock-beta")); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Symlink(beta100, filepath.Join(s.first, "spacedock-beta")); err != nil {
-		t.Fatal(err)
-	}
-	s.host.inventory[2].Version = "1.0.0"
-	host := &switchHost{fakeHost: s.host, flag: flag, after: []pluginInventoryEntry{
-		s.host.inventory[0], s.host.inventory[1], {ID: "beta@spacedock", Version: "1.0.1", Installed: true, Enabled: true}}}
-	beta101 := filepath.Join(s.dataHome, "beta", "1.0.1", "beta", "beta")
-	script := filepath.Join(t.TempDir(), "install.sh")
-	mustWrite(t, script, "#!/bin/sh\n"+
-		"echo \"$SPACEDOCK_CHANNEL $SPACEDOCK_INSTALL_DIR $SPACEDOCK_PLUGINS\" > '"+seen+"'\n"+
-		"mkdir -p '"+filepath.Dir(beta101)+"' && echo x > '"+beta101+"'\n"+
-		"ln -sf '"+beta101+"' '"+filepath.Join(s.first, "spacedock-beta")+"'\n"+
-		"touch '"+flag+"'\n")
-
-	var stdout, stderr bytes.Buffer
-	if code := runUpdate(updateDepsFor(s, host, script), &stdout, &stderr); code != 0 {
-		t.Fatalf("update exited %d: %s", code, stderr.String())
-	}
-	out := stdout.String()
-	for _, want := range []string{
-		"beta program       1.0.0 -> 1.0.1",
-		"beta plugin        1.0.0 -> 1.0.1",
-		"alpha plugin       0.16.0-beta.2   unchanged",
-		"spacedock          0.28.0-pre6     unchanged",
-		"spacedock beta --restart",
+	for _, ch := range []struct{ name, branch, pluginID, word string }{
+		{"edge", "next", "spacedock@spacedock-edge", "edge"},
+		{"stable", "main", "spacedock@spacedock", "stable"},
 	} {
-		if !strings.Contains(out, want) {
-			t.Errorf("update output lacks %q:\n%s", want, out)
-		}
-	}
-	if got, _ := os.ReadFile(seen); strings.TrimSpace(string(got)) != "edge "+s.first+" none" {
-		t.Errorf("install script saw %q, want the edge channel, the directory of the running binary %q and no plugin step", got, s.first)
-	}
+		t.Run(ch.name, func(t *testing.T) {
+			s := stageInstall(t)
+			devBranch = ch.branch
+			s.host.inventory[0].ID = ch.pluginID
+			flag := filepath.Join(t.TempDir(), "plugins-updated")
+			seen := filepath.Join(t.TempDir(), "seen")
+			beta100 := filepath.Join(s.dataHome, "beta", "1.0.0", "beta", "beta")
+			writeProgramExiting(t, beta100, 2, "unrecognized arguments: --version")
+			if err := os.Remove(filepath.Join(s.first, "spacedock-beta")); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(beta100, filepath.Join(s.first, "spacedock-beta")); err != nil {
+				t.Fatal(err)
+			}
+			s.host.inventory[2].Version = "1.0.0"
+			host := &switchHost{fakeHost: s.host, flag: flag, after: []pluginInventoryEntry{
+				{ID: ch.pluginID, Version: "0.28.0-pre7", Installed: true, Enabled: true},
+				s.host.inventory[1], {ID: "beta@spacedock", Version: "1.0.1", Installed: true, Enabled: true}}}
+			beta101 := filepath.Join(s.dataHome, "beta", "1.0.1", "beta", "beta")
+			script := filepath.Join(t.TempDir(), "install.sh")
+			mustWrite(t, script, "#!/bin/sh\n"+
+				"echo \"$SPACEDOCK_CHANNEL $SPACEDOCK_INSTALL_DIR $SPACEDOCK_PLUGINS\" > '"+seen+"'\n"+
+				"mkdir -p '"+filepath.Dir(beta101)+"' && echo x > '"+beta101+"'\n"+
+				"ln -sf '"+beta101+"' '"+filepath.Join(s.first, "spacedock-beta")+"'\n"+
+				"touch '"+flag+"'\n")
 
-	stdout.Reset()
-	if code := runUpdate(updateDepsFor(s, host, script), &stdout, &stderr); code != 0 {
-		t.Fatalf("second update exited %d: %s", code, stderr.String())
-	}
-	if strings.Contains(stdout.String(), "->") {
-		t.Errorf("second update still shows a change:\n%s", stdout.String())
-	}
-	if strings.Contains(stdout.String(), "spacedock beta --restart") {
-		t.Errorf("second update tells the user to restart beta, which did not change:\n%s", stdout.String())
+			var stdout, stderr bytes.Buffer
+			if code := runUpdate(updateDepsFor(s, host, script), &stdout, &stderr); code != 0 {
+				t.Fatalf("update exited %d: %s", code, stderr.String())
+			}
+			out := stdout.String()
+			for _, want := range []string{
+				"beta program       1.0.0 -> 1.0.1",
+				"beta plugin        1.0.0 -> 1.0.1",
+				"alpha plugin       0.16.0-beta.2   unchanged",
+				"spacedock plugin   0.28.0-pre6 -> 0.28.0-pre7",
+				"spacedock          0.28.0-pre6     unchanged",
+				"spacedock beta --restart",
+			} {
+				if !strings.Contains(out, want) {
+					t.Errorf("update output lacks %q:\n%s", want, out)
+				}
+			}
+			if got, _ := os.ReadFile(seen); strings.TrimSpace(string(got)) != ch.word+" "+s.first+" none" {
+				t.Errorf("install script saw %q, want the %s channel, the directory of the running binary %q and no plugin step", got, ch.word, s.first)
+			}
+
+			stdout.Reset()
+			if code := runUpdate(updateDepsFor(s, host, script), &stdout, &stderr); code != 0 {
+				t.Fatalf("second update exited %d: %s", code, stderr.String())
+			}
+			if strings.Contains(stdout.String(), "->") {
+				t.Errorf("second update still shows a change:\n%s", stdout.String())
+			}
+			if strings.Contains(stdout.String(), "spacedock beta --restart") {
+				t.Errorf("second update tells the user to restart beta, which did not change:\n%s", stdout.String())
+			}
+		})
 	}
 }
 
@@ -212,24 +223,6 @@ func TestUpdateFailsWhenThePluginStepLeavesNoSpacedockPlugin(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "the Spacedock plugin is not installed on Claude Code") {
 		t.Errorf("stderr = %q, want it to name the missing plugin", stderr.String())
-	}
-}
-
-func TestUpdateOnStableListsNoExtension(t *testing.T) {
-	s := stageInstall(t)
-	devBranch = "main"
-	s.host.inventory[0].ID = "spacedock@spacedock"
-	script := filepath.Join(t.TempDir(), "install.sh")
-	mustWrite(t, script, "#!/bin/sh\n:\n")
-
-	var stdout, stderr bytes.Buffer
-	if code := runUpdate(updateDepsFor(s, s.host, script), &stdout, &stderr); code != 0 {
-		t.Fatalf("update exited %d: %s", code, stderr.String())
-	}
-	for _, label := range []string{"alpha program", "beta plugin"} {
-		if strings.Contains(stdout.String(), label) {
-			t.Errorf("stable update prints %q:\n%s", label, stdout.String())
-		}
 	}
 }
 

@@ -43,9 +43,9 @@ Pi. Install one of those first.
     equivalent; casks are macOS-only, so on Linux this script is the only
     edge path.
 
-    The edge script also installs each Spacedock extension beside the binary;
-    the stable script installs none. `SPACEDOCK_EXTRAS=1` on stable adds the
-    programs, but the stable `spacedock` has no command to run them.
+    The script also installs each Spacedock extension beside the binary, on
+    either channel, from its newest release on that channel.
+    `SPACEDOCK_EXTRAS=none` skips them.
 
 ## Update
 

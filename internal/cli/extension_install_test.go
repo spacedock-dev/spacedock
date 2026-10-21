@@ -9,11 +9,22 @@ import (
 )
 
 func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
+	for _, ch := range []struct{ name, source, branch string }{
+		{"edge", "spacedock-dev/marketplace@edge", "next"},
+		{"stable", "spacedock-dev/marketplace", "main"},
+	} {
+		t.Run(ch.name, func(t *testing.T) {
+			testInstallSequencesFollowEachExtension(t, ch.source, ch.branch)
+		})
+	}
+}
+
+func testInstallSequencesFollowEachExtension(t *testing.T, source, branch string) {
 	saved := extensions
 	extensions = fakeExtensions()
 	defer func() { extensions = saved }()
 
-	claude := installArgvSequence("spacedock-dev/marketplace@edge", "next")
+	claude := installArgvSequence(source, branch)
 	wantClaude := []installStep{
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
 		{argv: []string{"plugin", "marketplace", "update", "spacedock"}, tolerateExit: true},
@@ -31,7 +42,7 @@ func TestInstallSequencesFollowEachExtensionWithItsOwnPluginStep(t *testing.T) {
 		t.Errorf("claude companion steps = %v, want %v", got, wantClaude)
 	}
 
-	codex := codexInstallArgvSequence("spacedock-dev/marketplace@edge", "next")
+	codex := codexInstallArgvSequence(source, branch)
 	wantCodex := []installStep{
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}, tolerateExit: true, reportExit: true},
 		{argv: []string{"plugin", "marketplace", "upgrade", "spacedock"}, tolerateExit: true},
@@ -107,23 +118,5 @@ func TestCodexInstallNamesAnExtensionPluginThatCannotBeAdded(t *testing.T) {
 	}
 	if strings.Contains(out, "alpha@spacedock failed") {
 		t.Errorf("output blames alpha, which was added fine\nout=%q", out)
-	}
-}
-
-func TestInstallSequencesNameNoCompanionOnStable(t *testing.T) {
-	saved := extensions
-	extensions = fakeExtensions()
-	defer func() { extensions = saved }()
-
-	sequences := map[string][]installStep{
-		"claude": installArgvSequence("spacedock-dev/marketplace", "main"),
-		"codex":  codexInstallArgvSequence("spacedock-dev/marketplace", "main"),
-	}
-	for host, steps := range sequences {
-		for _, step := range steps {
-			if strings.Contains(strings.Join(step.argv, " "), "alpha") || strings.Contains(strings.Join(step.argv, " "), "beta") {
-				t.Errorf("the %s stable sequence installs an extension plugin: %v", host, step.argv)
-			}
-		}
 	}
 }

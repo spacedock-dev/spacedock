@@ -449,14 +449,13 @@ func installArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "update", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "install", id}},
 	}
-	exts := channelExtensions(devBranch)
-	if len(exts) > 0 {
+	if len(extensions) > 0 {
 		steps = append(steps,
 			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
 			installStep{argv: []string{"plugin", "marketplace", "update", extensionMarketplace}, tolerateExit: true},
 		)
 	}
-	for _, ext := range exts {
+	for _, ext := range extensions {
 		extID := extensionPluginID(ext.name)
 		// Claude's `plugin install` does nothing for an installed plugin, hence the update.
 		steps = append(steps,
@@ -503,8 +502,7 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 		{argv: []string{"plugin", "marketplace", "upgrade", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "add", id}},
 	}
-	exts := channelExtensions(devBranch)
-	if len(exts) > 0 {
+	if len(extensions) > 0 {
 		steps = append(steps,
 			installStep{argv: []string{"plugin", "marketplace", "add", extensionMarketplaceSource()}, tolerateExit: true, reportExit: true},
 			installStep{argv: []string{"plugin", "marketplace", "upgrade", extensionMarketplace}, tolerateExit: true},
@@ -512,7 +510,7 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 	}
 	// Codex's `plugin add` on an installed plugin moves it to the listing's version,
 	// so the same step installs and updates.
-	for _, ext := range exts {
+	for _, ext := range extensions {
 		steps = append(steps,
 			installStep{argv: []string{"plugin", "remove", edgeCopyID(ext.name)}, tolerateExit: true},
 			installStep{argv: []string{"plugin", "add", extensionPluginID(ext.name)}, tolerateExit: true, reportExit: true},
