@@ -187,8 +187,8 @@ section says.
 
 | Hand-off | Program | Capability |
 |---|---|---|
-| `/spacedock:review`, local | `spacedock-review` | `review-invocation-prepare-v1` |
-| `/spacedock:review`, remote | `subspace-relay-client` | `relay-publish-v1` |
+| `/spacedock:review`, Terminal (TUI) (`local`) | `spacedock-review` | `review-invocation-prepare-v1` |
+| `/spacedock:review`, Web (`remote`) | `subspace-relay-client` | `relay-publish-v1` |
 | `/spacedock:compass` | `spacedock-compass` | none: checks that the program is on PATH |
 
 ### The review choice
@@ -205,9 +205,13 @@ $XDG_STATE_HOME/subspace/review-mode/HASH.json   (default ~/.local/state/subspac
 The file holds `project`, `mode` (`local` or `remote`) and `decided_at` (RFC 3339).
 `review-mode get` exits 1 when the file is unreadable or holds another `mode`, and
 `review-mode clear` removes it. The file is never inside the repository.
-`/spacedock:review` asks the user when no mode is recorded and records only their
-answer. The uploader that sends artifacts to the relay should refuse when the mode
-is not `remote`; today the skills enforce it.
+`/spacedock:review FILE` asks the user when no mode is recorded and records only their
+answer. The question says Terminal (TUI) keeps the file on this machine, and Web uploads
+it to review.spacedock.md where anyone with the link can open it. `/spacedock:review`
+with no argument shows the recorded choice and offers keep, switch, clear or leave,
+publishing nothing. An argument that is not an existing file is a request: the skill
+writes the artifact first, then reviews it. The uploader that sends artifacts to the
+relay should refuse when the mode is not `remote`; today the skills enforce it.
 `spacedock doctor` shows the choice as a row and names an unreadable one `UNREADABLE`.
 
 ## Release asset names
