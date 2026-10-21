@@ -34,7 +34,7 @@ type extension struct {
 // EXTRAS rows, and the two must name the same programs.
 var extensions = []extension{
 	{name: "subspace", program: "spacedock-review", check: reviewChoiceCheck},
-	{name: "compass", program: "spacedock-compass", tree: true, afterUpdate: []string{
+	{name: "compass", program: "spacedock-compass", tree: true, missingOnHomebrew: "Compass is not yet available from Homebrew.", afterUpdate: []string{
 		"A Compass dashboard that already runs keeps its old version until you restart it:",
 		"  spacedock compass --port 4553 --stop && spacedock compass --port 4553 --daemon",
 	}},

@@ -178,7 +178,16 @@ Each plugin is `NAME@spacedock`.
 ### Tree reference
 
 Compass v1.0.0 is the reference for kind `tree`: `compass/compass` beside the
-`compass/_internal/` files it runs with.
+`compass/_internal/` files it runs with. Compass v1.3.0 answers no `--version`, so
+`doctor` reads its version from the directory; a Compass that answers `--version`,
+including a Homebrew copy, is read from the program.
+
+### Homebrew
+
+Subspace's formula, `subspace-beta` in `spacedock-dev/tap`, is a dependency of both
+casks. Compass publishes no formula yet, so no cask depends on it, and `doctor` on a
+Homebrew install without `spacedock-compass` says that Compass is not yet available from
+Homebrew. Each cask gains the Compass formula as a dependency once the tap holds it.
 
 ### Hand-offs
 

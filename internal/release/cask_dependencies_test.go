@@ -77,11 +77,14 @@ func assertRenderedCask(t *testing.T, name, body string) {
 		names := renderedFormula.FindAllStringSubmatch(depBlock, -1)
 		allowed := len(names) > 0
 		for _, n := range names {
-			allowed = allowed && formulaAllowed(name, n[1])
+			allowed = allowed && formulaAllowed(n[1])
 		}
 		if !allowed {
 			t.Errorf("rendered cask %q carries a formula dependency in its depends_on stanza; the cross-tap safehouse dep was refuted and must not ship:\n%s", name, depBlock)
 		}
+	}
+	if !strings.Contains(dependsOnBlock(body), `"`+subspaceFormula+`"`) {
+		t.Errorf("rendered cask %q does not depend on %s:\n%s", name, subspaceFormula, dependsOnBlock(body))
 	}
 
 	caveats := caveatsBlock(body)
@@ -114,11 +117,11 @@ func assertSafehouseCaveat(t *testing.T, name, caveats string) {
 	}
 }
 
-// formulaAllowed is the one formula dependency a cask may declare: on spacedock@next,
-// a formula from spacedock-dev/tap, which Homebrew loads as a transitive dependency.
-func formulaAllowed(cask, formula string) bool {
-	return cask == "spacedock@next" && strings.HasPrefix(formula, "spacedock-dev/tap/")
-}
+// subspaceFormula is the one formula either cask depends on, from spacedock-dev/tap,
+// which Homebrew loads as a transitive dependency.
+const subspaceFormula = "spacedock-dev/tap/subspace-beta"
+
+func formulaAllowed(formula string) bool { return formula == subspaceFormula }
 
 var renderedFormula = regexp.MustCompile(`formula:\s*\[?\s*"([^"]+)"`)
 
@@ -242,17 +245,23 @@ func assertCaskConfig(t *testing.T) {
 		t.Fatalf("expected 2 homebrew_casks (stable + edge), got %d", len(cfg.HomebrewCasks))
 	}
 	for _, cask := range cfg.HomebrewCasks {
-		hasAgentsview := false
+		hasAgentsview, hasSubspace := false, false
 		for _, dep := range cask.Dependencies {
 			if dep.Cask == "agentsview" {
 				hasAgentsview = true
 			}
-			if dep.Formula != "" && !formulaAllowed(cask.Name, dep.Formula) {
+			if dep.Formula == subspaceFormula {
+				hasSubspace = true
+			}
+			if dep.Formula != "" && !formulaAllowed(dep.Formula) {
 				t.Errorf("cask %q declares a formula dependency %q; the cross-tap safehouse dep was refuted and must not ship", cask.Name, dep.Formula)
 			}
 		}
 		if !hasAgentsview {
 			t.Errorf("cask %q does not declare `cask: agentsview` as a dependency", cask.Name)
+		}
+		if !hasSubspace {
+			t.Errorf("cask %q does not declare `formula: %s` as a dependency", cask.Name, subspaceFormula)
 		}
 		assertSafehouseCaveat(t, cask.Name, cask.Caveats)
 		if strings.Contains(cask.Caveats, "agentsview") {
