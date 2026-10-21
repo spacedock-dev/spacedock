@@ -108,7 +108,8 @@ the project gets no file nobody asked for. Never overwrite an existing file. The
 
    If the output starts with `UNSUPPORTED`, stop and publish nothing. Name the
    program and its version from that line. Tell the user to run `spacedock update` in
-   a terminal, then restart Claude Code or run `/reload-plugins`, then ask again.
+   a terminal, then restart Claude Code or run `/reload-plugins`, or in Codex start
+   a new session, then ask again.
 
 4. Local: invoke the `subspace:r` skill on the file.
 
