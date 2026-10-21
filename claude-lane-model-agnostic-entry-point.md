@@ -985,6 +985,20 @@ Measured diff: `git diff --numstat origin/main HEAD`, baseline `7558f2e0`, candi
 
 The three standing assertions add +24 net, all in `internal/release/livemodels_test.go`. The same six files remain. The total is exactly at the +150 ceiling, not over it. The assertions were compacted to fit; none was weakened, and each still fails under its own audit mutation (see Stage Report: implementation (cycle 2)).
 
+### Validation cycle 2: adjacent mutations outside the three approved checks
+
+Reviewer observation; proposed class **Deferred risk** for 1-4 and **Polish** for 5. FO authorization pending; no candidate change requested.
+Probe: throwaway clone of `a9f7e8143`, one edit at a time, `go test ./internal/release ./internal/contractlint -count=1`.
+
+1. Resolver ignores the key (`selected = records["claude." model]` -> `records["claude.sonnet"]`): exit 0. New behavior with no standing test.
+2. `always() &&` prefixed to the `claude-live` `if:` (live job runs after offline refusal): exit 0. Guard line unchanged from B.
+3. Opus-cadence environment `'CI-E2E-OPUS'` -> `'CI-E2E'`: exit 0. Expression unchanged from B.
+4. `claude.big=claude-opus-5-5` registered and added to `claude.allowed.sonnet`: focused test and resolver pass. Assertion 3 guards the key `opus`, not the Opus ID.
+5. `needs: [offline]` (semantically equal) fails assertion 1. Stricter than needed; fails closed.
+
+Four evidence fields (1-4): released workflow is a maintainer editing the resolver, guard, environment expression, or registry policy; harm is a regression that keeps CI green while removing parameter precedence or refusal-before-approval; authority `captain-ruling[2026-10-21]` limits standing proof to three named assertions with no broad schema/wiring suite; trigger is hypothetical (each needs a future edit), and current candidate behavior is verified by the actual-resolver spot-check and hosted runs 37702369289 / 37703335512.
+Promote to material when a change touches the resolver step, the `claude-live` `if:`/environment expressions, or adds a second key resolving to an Opus ID; or when the captain extends the standing-proof scope.
+
 ## Stage Report: validation
 
 - DONE: Confirm the six-file surface and net LOC against the re-declared tolerance, measured with git diff --numstat against origin/main.
@@ -1050,3 +1064,16 @@ One test function now holds the three captain-approved standing assertions. Each
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation detached audit (three central dispatch/approval claims had no standing regression check); surface 6 files / +150 net LOC vs estimate 5 files / +180 net LOC (83%); AC narrowed: AC-1 re-scoped by captain-ruling[2026-10-08] to named-model execution without a workflow edit, six-file surface authorized earlier. Captain revised the validation gate (66bb17a16) and approved three standing assertions within +150; producer correction a9f7e8143 is complete, independent re-review pending.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently re-run the three audit mutations (Claude job needs: offline -> [], routine allowed set admits opus, matrix reads claude_sonnet) on a throwaway checkout of a9f7e8143: each must fail only its own new assertion, and the unmutated candidate must pass; the assertions must check real values against an independent source, not text against a copy of itself.
+  Fresh clone at a9f7e8143 under /tmp, `go test ./internal/release ./internal/contractlint -count=1`: unmutated exit 0 (28.9s). `needs: []` exit 1, only `livemodels_test.go:34`; `sonnet,opus,haiku` exit 1, only `:40`; matrix `claude_sonnet` exit 1, only `:37`. No other test failed in any run. Oracles: (1) parsed `needs` vs the constant `offline`; (2) matrix output name looked up in the offline job's separate `outputs` map, which must bind `claude_selected`; (3) embedded registry policy vs the ruled exclusion of `opus`. None compares text with a copy of itself. Clone removed.
+- DONE: Confirm surface (6 files, +150 net vs origin/main, within the captain ceiling), gofmt, go test ./..., and go test ./... -race on a9f7e8143, and that workflow/registry/harness behavior is unchanged from 29525bea0.
+  `git diff --numstat 7558f2e0 a9f7e8143`: 6 files, +175/-25 = +150, at the ceiling. `go test ./... -count=1` exit 0 (538s); `-race` exit 0 (467s); 21 packages ok, zero FAIL lines. `gofmt -l` lists only `runtime_live_evidence_workflow_test.go`, which origin/main also lists. `git diff --name-only 29525bea0 a9f7e8143` = `livemodels_test.go` only; workflow, registry, and reader are byte-identical to d3df726fe.
+- DONE: Re-check AC-1..AC-4 evidence against the current task body and captain rulings, then recommend PASSED or REJECTED with material findings separated from deferred risks.
+  AC-1 (re-scoped 2026-10-08): `gh run view 37703335512` shows head 29525bea0, job `claude-live (sonnet, claude-haiku-5-5, max, CI-E2E)`. Its 8 journey failures stay owned outside this task. The actual resolver from the candidate workflow selects claude-haiku-5-5 for sonnet+haiku. A registry-only key `zeta=zz-synthetic-9` resolves with workflow bytes unchanged. AC-2: PR+haiku still yields Sonnet; blank sonnet yields Sonnet and blank pre-release yields Opus; pi+haiku is refused; assertions 1-3 now hold the boundary. AC-3: run 37702369289 shows offline failure and all live jobs skipped; pending_deployments length is 0; the resolver prints the `use live_cadence=opus-pre-release` remedy with zero outputs. AC-4: the docs diff uses registry keys, keeps `claude_version` as the CLI pin, and keeps release evidence intact. No material finding. Four deferred risks and one polish item are recorded under `## Review-finding disposition`.
+
+### Summary
+
+PASSED recommendation. The cycle-1 evidence defect is closed: each of the three captain-approved assertions fails only under its own mutation and passes on a9f7e8143. Surface is 6 files at +150 net. Both Go suites pass, and product behavior is unchanged from 29525bea0. Adjacent survivors (resolver precedence, `always()` guard, Opus environment expression, Opus-ID alias key) fall outside the captain's three-check scope. They are recorded as deferred risks with promote conditions, not as blockers. Haiku model compliance stays a separate finding.
