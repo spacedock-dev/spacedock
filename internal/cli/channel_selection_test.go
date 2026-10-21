@@ -93,6 +93,7 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 // remove`) keeps Codex's global `spacedock:*` skill namespace authoritative for
 // the selected install.
 func TestCodexChannelInstallArgvSequence(t *testing.T) {
+	withNoExtensions(t)
 	cases := []struct {
 		channel         string
 		devBranch       string
