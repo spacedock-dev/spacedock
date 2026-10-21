@@ -1,0 +1,21 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:f77r1rj2g7sgj3hkrht7n37f:implementation:round-1",
+  "question": "Does the authorized correction give AC-1/2/3's central dispatch and approval claims a standing regression proof without changing workflow behavior?",
+  "artifacts": [
+    {
+      "id": "artifact:f77r1rj2g7-entity-cycle-2",
+      "uri": "git-root://state/93419c14b1c24d113d0eb9c35e1ad41112e35467/claude-lane-model-agnostic-entry-point.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:ae47eb503a969c24f141e43b3c84115b1c98847f1356f4b9c4c8075c1b95a3b1"
+    }
+  ],
+  "context": [
+    {
+      "type": "Reference",
+      "id": "reference:f77r1rj2g7-standing-checks-authorization",
+      "label": "Captain resolution:spacedock:f77r1rj2g7sgj3hkrht7n37f:validation:1 (person:captain, decision revise, state commit 66bb17a16) accepts validation REJECTED and approves three new standing checks in internal/release/livemodels_test.go: Claude live job keeps needs: offline; opus excluded from the routine (sonnet cadence) permitted set; matrix bound to claude_selected, not claude_sonnet. Each must fail under its own audit mutation. No broad schema/wiring suite, no new lane/job/CI step. Ceiling: +150 net LOC vs origin/main; stop for the FO rather than weaken."
+    }
+  ]
+}
