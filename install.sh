@@ -353,6 +353,21 @@ main() {
 		err "warning: $first ($("$first" --version 2>/dev/null | head -n 1)) comes first on PATH and will run instead"
 	fi
 
+	# The script on main can precede a stable release of the combined installer.
+	# Preserve the binary-only install for stable launchers before 0.28.0.
+	# Read the resolved asset so local dist directories obey the same boundary.
+	if [ "$CHANNEL" = stable ]; then
+		launcher_version="${asset#spacedock_}"
+		launcher_version="${launcher_version%_${os}_${arch}.tar.gz}"
+		launcher_major="${launcher_version%%.*}"
+		launcher_minor="${launcher_version#*.}"
+		launcher_minor="${launcher_minor%%.*}"
+		if [ "$launcher_major" -eq 0 ] && [ "$launcher_minor" -lt 28 ]; then
+			err "stable $launcher_version installs only the spacedock binary; extensions and plugins require stable 0.28.0 or later"
+			return 0
+		fi
+	fi
+
 	install_extras "$os" "$arch"
 }
 

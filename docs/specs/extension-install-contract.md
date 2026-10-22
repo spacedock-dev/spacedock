@@ -102,6 +102,10 @@ release including prereleases. `SPACEDOCK_EXTRAS=none` skips the extensions. A r
 value, so tests and CI stay offline. `install.sh` runs the Claude Code plugin step after
 the extensions.
 
+For stable launchers before 0.28.0, `install.sh` installs only the Spacedock binary.
+It skips extensions and plugin installation, even when `SPACEDOCK_EXTRAS` is set.
+This boundary uses the resolved archive version and does not change edge behavior.
+
 On Homebrew, both casks, `spacedock` and `spacedock@next`, depend on each extension's
 formula in `spacedock-dev/tap`. The formula provides the same `spacedock-NAME` name.
 Formulas from other taps are refused, because Homebrew does not load them as a

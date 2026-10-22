@@ -12,14 +12,15 @@ import (
 )
 
 type extrasRun struct {
-	t       *testing.T
-	home    string
-	bin     string
-	data    string
-	dist    string
-	extras  string
-	log     string
-	pathDir []string
+	t               *testing.T
+	home            string
+	bin             string
+	data            string
+	dist            string
+	extras          string
+	log             string
+	pathDir         []string
+	launcherVersion string
 }
 
 func writeTarGzFiles(t *testing.T, path string, files map[string]string) {
@@ -70,17 +71,22 @@ func scriptWithExtras(t *testing.T, rows string) string {
 
 func newExtrasRun(t *testing.T, betaVersion string) *extrasRun {
 	t.Helper()
+	return newExtrasRunWithLauncher(t, betaVersion, "9.9.9")
+}
+
+func newExtrasRunWithLauncher(t *testing.T, betaVersion, launcherVersion string) *extrasRun {
+	t.Helper()
 	osName, arch := goosArch(t)
 	root := t.TempDir()
 	r := &extrasRun{t: t, home: filepath.Join(root, "home"), bin: filepath.Join(root, "bin"), data: filepath.Join(root, "data"),
-		dist: filepath.Join(root, "dist"), extras: filepath.Join(root, "extras"), log: filepath.Join(root, "calls.log")}
+		dist: filepath.Join(root, "dist"), extras: filepath.Join(root, "extras"), log: filepath.Join(root, "calls.log"), launcherVersion: launcherVersion}
 	for _, d := range []string{r.home, r.bin, r.data, r.dist, r.extras} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}
-	spacedock := "#!/bin/sh\necho \"installed-spacedock $*\" >> '" + r.log + "'\necho 'spacedock 9.9.9'\n"
-	writeTarGzFiles(t, filepath.Join(r.dist, "spacedock_9.9.9_"+osName+"_"+arch+".tar.gz"), map[string]string{"spacedock": spacedock})
+	spacedock := "#!/bin/sh\necho \"installed-spacedock $*\" >> '" + r.log + "'\necho 'spacedock " + launcherVersion + "'\n"
+	writeTarGzFiles(t, filepath.Join(r.dist, "spacedock_"+launcherVersion+"_"+osName+"_"+arch+".tar.gz"), map[string]string{"spacedock": spacedock})
 	r.writeChecksums(r.dist)
 
 	r.stageExtras(osName, arch, betaVersion)
@@ -304,7 +310,7 @@ func TestInstallWithNoExtensionTableRowInstallsOnlySpacedock(t *testing.T) {
 func (r *extrasRun) stubCurl(osName, arch string) (log string) {
 	r.t.Helper()
 	log = filepath.Join(r.t.TempDir(), "urls.log")
-	stable := filepath.Join(r.dist, "spacedock_9.9.9_"+osName+"_"+arch+".tar.gz")
+	stable := filepath.Join(r.dist, "spacedock_"+r.launcherVersion+"_"+osName+"_"+arch+".tar.gz")
 	src, err := os.ReadFile(stable)
 	if err != nil {
 		r.t.Fatal(err)
@@ -324,7 +330,7 @@ repo="${url#https://api.github.com/repos/}"; repo="${repo#https://github.com/}";
 case "$url" in
 	https://api.github.com/*)
 		case "$repo" in
-			spacedock-dev/spacedock) tag=v9.9.9 ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
+			spacedock-dev/spacedock) tag=v` + r.launcherVersion + ` ;; spacedock-dev/alpha) tag=v0.16.0 ;; *) tag=v1.0.1 ;;
 		esac
 		printf '{"tag_name": "%s"}\n' "$tag" ;;
 	https://github.com/*/releases/download/*)
@@ -375,6 +381,67 @@ func TestInstallExtrasRunOnEveryChannelUnlessNone(t *testing.T) {
 			pluginStep := strings.Contains(r.calls(), "install --host claude")
 			if tc.extension != pluginStep || (!tc.extension && strings.Contains(stderr, "Claude Code")) {
 				t.Errorf("plugin step wanted=%v, but it ran=%v\ncalls:\n%s\nstderr:\n%s", tc.extension, pluginStep, r.calls(), stderr)
+			}
+		})
+	}
+}
+
+// The script on main can be newer than the latest stable launcher. Older stable
+// launchers must keep their binary-only install until the combined stack ships.
+func TestInstallExtrasRespectStableLauncherBoundary(t *testing.T) {
+	cases := []struct {
+		name      string
+		version   string
+		channel   string
+		local     bool
+		extension bool
+	}{
+		{name: "default stable 0.27.3", version: "0.27.3"},
+		{name: "local stable 0.27.3", version: "0.27.3", local: true},
+		{name: "stable 0.28.0", version: "0.28.0", extension: true},
+		{name: "local stable 0.28.0", version: "0.28.0", local: true, extension: true},
+		{name: "stable 0.29.0", version: "0.29.0", extension: true},
+		{name: "stable 1.0.0", version: "1.0.0", extension: true},
+		{name: "edge unchanged", version: "0.28.0-pre4", channel: "edge", extension: true},
+		{name: "older edge unchanged", version: "0.27.3", channel: "edge", extension: true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := newExtrasRunWithLauncher(t, "1.0.1", tc.version)
+			r.addProgram("claude", "exit 0")
+			osName, arch := goosArch(t)
+			log := r.stubCurl(osName, arch)
+			var env []string
+			if tc.channel != "" {
+				env = append(env, "SPACEDOCK_CHANNEL="+tc.channel)
+			}
+			if tc.local {
+				env = append(env, "SPACEDOCK_INSTALL_FROM="+r.dist, "SPACEDOCK_EXTRAS=1", "SPACEDOCK_EXTRAS_FROM="+r.extras)
+			}
+			stderr, code := r.runWith(env...)
+			if code != 0 {
+				t.Fatalf("install.sh exited %d:\n%s", code, stderr)
+			}
+			if _, err := os.Stat(filepath.Join(r.bin, "spacedock")); err != nil {
+				t.Fatalf("launcher was not installed: %v", err)
+			}
+			urls, _ := os.ReadFile(log)
+			for _, name := range []string{"alpha-tui", "alpha-client", "spacedock-alpha", "beta", "spacedock-beta"} {
+				_, err := os.Stat(filepath.Join(r.bin, name))
+				if installed := err == nil; installed != tc.extension {
+					t.Errorf("%s installed=%v, want %v", name, installed, tc.extension)
+				}
+			}
+			if !tc.extension {
+				if strings.Contains(string(urls), "repos/spacedock-dev/alpha/") || strings.Contains(string(urls), "repos/spacedock-dev/beta/") {
+					t.Errorf("binary-only install looked up extension releases:\n%s", urls)
+				}
+				if entries, _ := os.ReadDir(r.data); len(entries) != 0 {
+					t.Errorf("binary-only install wrote extension data: %v", entries)
+				}
+			}
+			if pluginStep := strings.Contains(r.calls(), "install --host claude"); pluginStep != tc.extension {
+				t.Errorf("plugin bootstrap ran=%v, want %v; calls=%q", pluginStep, tc.extension, r.calls())
 			}
 		})
 	}
